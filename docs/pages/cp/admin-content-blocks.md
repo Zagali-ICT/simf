@@ -208,6 +208,9 @@ Excel import, 020 Excel import rejection.
 
 ## 12. Related docs
 
+- Per-page CP documentation set (4-aspect + README, D-380):
+  [`../../CP/admin-content-blocks/README.md`](../../CP/admin-content-blocks/README.md)
+  (Function / Logic / API / Design).
 - Page index: `docs/pages/PAGE-INDEX.md`.
 - Sibling CMS page: Banners (`/admin/banners`) — shares `AdminCmsService`.
 - Permission catalogue: `docs/SIMF-Permission-Catalogue.md` (the

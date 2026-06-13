@@ -251,6 +251,9 @@ Authored at [`docs/tests/e2e/cp-admin-interests.md`](../../tests/e2e/cp-admin-in
 
 ## 12. Related docs
 
+- Per-page CP documentation set (4-aspect + README, D-380):
+  [`../../CP/admin-interests/README.md`](../../CP/admin-interests/README.md)
+  (Function / Logic / API / Design).
 - Admin Manual chapter: [`Admin-Manual.md#interests`](../../manuals/Admin-Manual.md#interests)
 - Pattern doc: [`SIMF_TABLE_PATTERN.md`](../../dev/SIMF_TABLE_PATTERN.md) — this page is the reference implementation of the D-132-extended canonical CRUD pattern.
 - Architecture: [`SIMF-SAD-001`](../../SIMF-SAD-001-Software-Architecture-Document.md) — modular monolith / DDD layering.

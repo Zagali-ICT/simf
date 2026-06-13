@@ -200,6 +200,9 @@ rejection scenarios (`E2E-CTY-018`…`020`).
 
 ## 12. Related docs
 
+- Per-page CP documentation set (4-aspect + README, D-380):
+  [`../../CP/admin-countries/README.md`](../../CP/admin-countries/README.md)
+  (Function / Logic / API / Design).
 - Decisions: D-151 / D-155 (Country CRUD + reference lookup), D-157
   (Data ↔ Identity separation — `Country` is App-side), D-353 (CrudShell
   presentation toggle), D-356 (grid Excel export + import).

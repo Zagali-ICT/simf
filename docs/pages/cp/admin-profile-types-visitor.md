@@ -61,6 +61,9 @@ shortcut that writes `#rrggbb` back. When the text isn't a canonical
 
 ## 12. Related
 
+- Per-page CP documentation set (4-aspect + README, D-380):
+  [`../../CP/admin-profile-types-visitor/README.md`](../../CP/admin-profile-types-visitor/README.md)
+  (Function / Logic / API / Design).
 - Sibling: [`admin-profile-types-other.md`](admin-profile-types-other.md)
 - Consumer: [`admin-visitors.md`](admin-visitors.md) walk-in wizard
 - Decisions: D-115 (backend), D-118 (CP pages), D-120 (PageColor picker).

@@ -27,4 +27,10 @@ guard.
 
 Same shape as Visitor sibling — see [`admin-profile-types-visitor.md`](admin-profile-types-visitor.md) §11; substitute "Other" for "Visitor".
 
+## 12. Related
+
+- Per-page CP documentation set (4-aspect + README, D-380):
+  [`../../CP/admin-profile-types-other/README.md`](../../CP/admin-profile-types-other/README.md)
+  (Function / Logic / API / Design).
+
 _Last reviewed:_ 2026-05-28 by Claude (D-133 slice 3).

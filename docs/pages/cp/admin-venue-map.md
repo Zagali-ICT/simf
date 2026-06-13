@@ -232,6 +232,9 @@ order. (See the EN-gap caveat in §7.)
 
 ## 12. Related docs
 
+- Per-page CP documentation set (4-aspect + README, D-380):
+  [`../../CP/admin-venue-map/README.md`](../../CP/admin-venue-map/README.md)
+  (Function / Logic / API / Design).
 - Pattern doc: [`SIMF_TABLE_PATTERN.md`](../../dev/SIMF_TABLE_PATTERN.md)
 - Architecture: [`SIMF-SAD-001`](../../SIMF-SAD-001-Software-Architecture-Document.md)
 - API spec: [`SIMF-API-001`](../../SIMF-API-001-API-Specification.md) — `ApiResult<T>` envelope + error model

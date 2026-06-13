@@ -250,6 +250,9 @@ See [`docs/tests/e2e/cp-admin-booths.md`](../../tests/e2e/cp-admin-booths.md):
 
 ## 12. Related docs
 
+- Per-page CP documentation set (4-aspect + README, D-380):
+  [`../../CP/admin-booths/README.md`](../../CP/admin-booths/README.md)
+  (Function / Logic / API / Design).
 - Pattern doc: [`SIMF_TABLE_PATTERN.md`](../../dev/SIMF_TABLE_PATTERN.md) (CRUD pages).
 - Sibling reference docs: [`admin-sponsors.md`](admin-sponsors.md), [`admin-themes.md`](admin-themes.md).
 - Architecture: [`SIMF-SAD-001`](../../SIMF-SAD-001-Software-Architecture-Document.md).

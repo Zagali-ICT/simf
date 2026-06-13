@@ -192,6 +192,9 @@ E2E-ORG-001 golden round-trip, 002 empty/no-match, 003 server-side search,
 
 ## 12. Related docs
 
+- Per-page CP documentation set (4-aspect + README, D-380):
+  [`../../CP/admin-organisations/README.md`](../../CP/admin-organisations/README.md)
+  (Function / Logic / API / Design).
 - E2E catalogue: `docs/tests/e2e/cp-admin-organisations.md`.
 - Lower-layer API tests: `tests/SIMF.Api.Tests/OrganisationTests.cs` (CRUD +
   import upsert + public picker) and `tests/SIMF.Api.Tests/OrganisationExcelTests.cs`

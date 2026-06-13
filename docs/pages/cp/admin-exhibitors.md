@@ -207,6 +207,9 @@ Excel export, 022 Excel import, 023 Excel import rejection.
 
 ## 12. Related docs
 
+- Per-page CP documentation set (4-aspect + README, D-380):
+  [`../../CP/admin-exhibitors/README.md`](../../CP/admin-exhibitors/README.md)
+  (Function / Logic / API / Design).
 - Sibling Exhibition modules: [`admin-booths.md`](admin-booths.md),
   [`admin-sponsors.md`](admin-sponsors.md).
 - Shared Contact directory: [`admin-contacts.md`](admin-contacts.md)

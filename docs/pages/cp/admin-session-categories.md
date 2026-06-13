@@ -162,6 +162,9 @@ export, 020 Excel import, 021 import rejection (D-356).
 
 ## 12. Related docs
 
+- Per-page CP documentation set (4-aspect + README, D-380):
+  [`../../CP/admin-session-categories/README.md`](../../CP/admin-session-categories/README.md)
+  (Function / Logic / API / Design).
 - Authority spec: SIMF-FDS-004 §5.4 (dynamic Category) + §7.
 - Decisions: D-226 (built as a team-seeded lookup, NOT a fixed enum; ships empty
   pending the client's list, OI-2); D-256 raw-table → `SimfDataGrid`; D-353

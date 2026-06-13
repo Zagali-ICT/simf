@@ -26,6 +26,11 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 
 ## Control Panel (CP) — http://localhost:5158
 
+> The **config pages that back the documented app pages** also have an app-style
+> per-page 5-file documentation set (README + Function/Logic/API/Design) under
+> [`../CP/`](../CP/README.md) — D-380. The `Doc` column below stays the canonical
+> single-file reference; the `docs/CP/<slug>/` set supplements it.
+
 | Route | Status | Audience | Doc | Test |
 |-------|--------|----------|-----|------|
 | **Overview** | | | | |

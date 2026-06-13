@@ -259,6 +259,9 @@ The Add/Edit form also lazy-loads its pickers on first render:
 
 ## 12. Related docs
 
+- Per-page CP documentation set (4-aspect + README, D-380):
+  [`../../CP/admin-sessions/README.md`](../../CP/admin-sessions/README.md)
+  (Function / Logic / API / Design).
 - Pattern doc: [`SIMF_TABLE_PATTERN.md`](../../dev/SIMF_TABLE_PATTERN.md).
 - API spec: [`SIMF-API-001`](../../SIMF-API-001-API-Specification.md) — admin Sessions group + `ApiResult<T>`.
 - Architecture: [`SIMF-SAD-001`](../../SIMF-SAD-001-Software-Architecture-Document.md).

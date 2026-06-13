@@ -217,6 +217,9 @@ export (D-356), 021 Excel import (D-356), 022 Excel import rejection (D-356)**.
 
 ## 12. Related docs
 
+- Per-page CP documentation set (4-aspect + README, D-380):
+  [`../../CP/admin-speakers/README.md`](../../CP/admin-speakers/README.md)
+  (Function / Logic / API / Design).
 - Authority spec: SIMF-DAT-001 §5.4.
 - Decisions: D-199 (build-wave freeze-lift — original Speakers module), D-353
   (Page↔Popup toggle + `CrudShell` + `SimfConfirm` delete gate), D-356 (generic

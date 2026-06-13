@@ -76,6 +76,9 @@ E2E-HAL-001..007.
 
 ## 12. Related docs
 
+- Per-page CP documentation set (4-aspect + README, D-380):
+  [`../../CP/admin-halls/README.md`](../../CP/admin-halls/README.md)
+  (Function / Logic / API / Design).
 - Admin Manual: `Admin-Manual.md § 5.2 Halls & seating`.
 - Decisions: D-134-B2 (this commit).
 - Authority spec: SIMF-FDS-004 §5.2.
