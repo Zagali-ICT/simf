@@ -9,6 +9,16 @@
 // turned into a structured ApiResult error so the calling page shows a toast
 // instead of throwing a JSException that trips the global Blazor error UI.
 async function simfReadEnvelope(response) {
+    // When the API rejects the session (HTTP 401 — the access token was
+    // rejected, or the BFF found no token in the cookie), send the user to the
+    // login page. This lives here because every JSON API helper below funnels
+    // its response through this function, so a single check covers them all.
+    // The never-resolving promise stops the calling page from acting on a bogus
+    // body while the full-page navigation to /login is in flight.
+    if (response.status === 401) {
+        window.location.assign('/login');
+        return await new Promise(() => { });
+    }
     const text = await response.text();
     if (text.length === 0) {
         return null;
@@ -165,6 +175,12 @@ window.simfAccount = {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body),
         });
+        // Same 401 handling as simfReadEnvelope — this binary path does not go
+        // through it, so the session-expired redirect is repeated here.
+        if (response.status === 401) {
+            window.location.assign('/login');
+            return;
+        }
         if (!response.ok) return;
         const blob = await response.blob();
 
