@@ -783,6 +783,14 @@
   <data name="Admin.Pending.View.Field.InternationalMobile" xml:space="preserve"><value>الجوال الدولي</value></data>
   <data name="Admin.Pending.View.Field.HasIdImage" xml:space="preserve"><value>صورة الهوية مرفوعة</value></data>
   <data name="Admin.Pending.View.Field.InterestCount" xml:space="preserve"><value>الاهتمامات المختارة</value></data>
+  <data name="Admin.Pending.View.Field.JobTitle" xml:space="preserve"><value>المسمى الوظيفي</value></data>
+  <data name="Admin.Pending.View.Field.Gender" xml:space="preserve"><value>الجنس</value></data>
+  <data name="Admin.Pending.View.Field.Organisation" xml:space="preserve"><value>الجهة</value></data>
+  <data name="Admin.Pending.View.Field.PlateNumber" xml:space="preserve"><value>رقم اللوحة</value></data>
+  <data name="Admin.Pending.View.Field.ReferenceNumber" xml:space="preserve"><value>الرقم المرجعي</value></data>
+  <data name="Admin.Pending.View.Field.Interests" xml:space="preserve"><value>الاهتمامات</value></data>
+  <data name="Admin.Pending.View.Gender.Male" xml:space="preserve"><value>ذكر</value></data>
+  <data name="Admin.Pending.View.Gender.Female" xml:space="preserve"><value>أنثى</value></data>
   <data name="Admin.Pending.View.Field.Created" xml:space="preserve"><value>تاريخ التقديم</value></data>
   <data name="Admin.Pending.View.IdentityType.National" xml:space="preserve"><value>الهوية الوطنية السعودية</value></data>
   <data name="Admin.Pending.View.IdentityType.Iqama" xml:space="preserve"><value>الإقامة</value></data>

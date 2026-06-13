@@ -35,4 +35,17 @@ public sealed record PendingProfileResponse(
     string? InternationalMobile,
     bool HasIdImage,
     IReadOnlyList<Guid> InterestIds,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    // CS-C (D-385) — the remaining captured profile columns, surfaced on the
+    // approval screen so the admin sees ALL data. No schema change.
+    string Gender = "Unspecified",
+    Guid? OrganisationId = null,
+    string? OrganisationName = null,
+    string? OrganisationNameArabic = null,
+    string? PlateNumber = null,
+    string? ReferenceNumber = null,
+    IReadOnlyList<PendingProfileInterest>? Interests = null);
+
+/// <summary>CS-C (D-385) — a picked interest's bilingual name for the approval
+/// screen's interest list (the modal previously showed only the count).</summary>
+public sealed record PendingProfileInterest(string Name, string NameArabic);

@@ -790,6 +790,14 @@
   <data name="Admin.Pending.View.Field.InternationalMobile" xml:space="preserve"><value>International mobile</value></data>
   <data name="Admin.Pending.View.Field.HasIdImage" xml:space="preserve"><value>ID image uploaded</value></data>
   <data name="Admin.Pending.View.Field.InterestCount" xml:space="preserve"><value>Selected interests</value></data>
+  <data name="Admin.Pending.View.Field.JobTitle" xml:space="preserve"><value>Job title</value></data>
+  <data name="Admin.Pending.View.Field.Gender" xml:space="preserve"><value>Gender</value></data>
+  <data name="Admin.Pending.View.Field.Organisation" xml:space="preserve"><value>Organisation</value></data>
+  <data name="Admin.Pending.View.Field.PlateNumber" xml:space="preserve"><value>Plate number</value></data>
+  <data name="Admin.Pending.View.Field.ReferenceNumber" xml:space="preserve"><value>Reference number</value></data>
+  <data name="Admin.Pending.View.Field.Interests" xml:space="preserve"><value>Interests</value></data>
+  <data name="Admin.Pending.View.Gender.Male" xml:space="preserve"><value>Male</value></data>
+  <data name="Admin.Pending.View.Gender.Female" xml:space="preserve"><value>Female</value></data>
   <data name="Admin.Pending.View.Field.Created" xml:space="preserve"><value>Submitted</value></data>
   <data name="Admin.Pending.View.IdentityType.National" xml:space="preserve"><value>Saudi national ID</value></data>
   <data name="Admin.Pending.View.IdentityType.Iqama" xml:space="preserve"><value>Iqama</value></data>

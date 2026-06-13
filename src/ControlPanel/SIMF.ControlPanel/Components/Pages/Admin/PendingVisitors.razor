@@ -188,6 +188,12 @@
                         <dd>@(_viewProfile.ArabicName ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
                         <dt>@L["Admin.Pending.View.Field.EnglishName"]</dt>
                         <dd>@(_viewProfile.EnglishName ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                        <dt>@L["Admin.Pending.View.Field.JobTitle"]</dt>
+                        <dd>@(_viewProfile.JobTitle ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                        <dt>@L["Admin.Pending.View.Field.Gender"]</dt>
+                        <dd>@GenderLabel(_viewProfile)</dd>
+                        <dt>@L["Admin.Pending.View.Field.Organisation"]</dt>
+                        <dd>@OrganisationLabel(_viewProfile)</dd>
                         <dt>@L["Admin.Pending.View.Field.Nationality"]</dt>
                         <dd>@(_viewProfile.NationalityCode ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
                         <dt>@L["Admin.Pending.View.Field.DateOfBirth"]</dt>
@@ -207,8 +213,12 @@
                         <dd>@(_viewProfile.HasIdImage
                                 ? L["Admin.Pending.View.Yes"]
                                 : L["Admin.Pending.View.No"])</dd>
-                        <dt>@L["Admin.Pending.View.Field.InterestCount"]</dt>
-                        <dd>@_viewProfile.InterestIds.Count</dd>
+                        <dt>@L["Admin.Pending.View.Field.PlateNumber"]</dt>
+                        <dd>@(_viewProfile.PlateNumber ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                        <dt>@L["Admin.Pending.View.Field.ReferenceNumber"]</dt>
+                        <dd>@(_viewProfile.ReferenceNumber ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                        <dt>@L["Admin.Pending.View.Field.Interests"]</dt>
+                        <dd>@InterestsLabel(_viewProfile)</dd>
                     </dl>
                     @if (_viewProfile.HasIdImage)
                     {
@@ -503,4 +513,33 @@
         profile.NationalId
             ?? profile.IqamaNumber
             ?? profile.PassportNumber;
+
+    private string GenderLabel(PendingProfileResponse p) => p.Gender switch
+    {
+        "Male" => L["Admin.Pending.View.Gender.Male"].Value,
+        "Female" => L["Admin.Pending.View.Gender.Female"].Value,
+        _ => L["Admin.Pending.View.MissingValue"].Value,
+    };
+
+    private string OrganisationLabel(PendingProfileResponse p)
+    {
+        var ar = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
+        var name = ar
+            ? (p.OrganisationNameArabic ?? p.OrganisationName)
+            : (p.OrganisationName ?? p.OrganisationNameArabic);
+        return string.IsNullOrEmpty(name) ? L["Admin.Pending.View.MissingValue"].Value : name;
+    }
+
+    private string InterestsLabel(PendingProfileResponse p)
+    {
+        if (p.Interests is null || p.Interests.Count == 0)
+        {
+            return L["Admin.Pending.View.MissingValue"].Value;
+        }
+        var ar = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
+        var names = p.Interests.Select(i => ar
+            ? (string.IsNullOrEmpty(i.NameArabic) ? i.Name : i.NameArabic)
+            : (string.IsNullOrEmpty(i.Name) ? i.NameArabic : i.Name));
+        return string.Join(ar ? "، " : ", ", names);
+    }
 }

@@ -236,8 +236,13 @@ internal sealed class AdminApprovalReadService(
                 p.PassportNumber,
                 p.SaudiMobile,
                 p.InternationalMobile,
+                p.Gender,
+                p.OrganisationId,
+                Organisation = p.Organisation,
+                p.PlateNumber,
+                p.ReferenceNumber,
                 HasIdImage = p.IdImageRelativePath != null,
-                InterestIds = p.Interests.Select(interest => interest.Id).ToList(),
+                Interests = p.Interests.Select(interest => new { interest.Id, interest.Name, interest.NameArabic }).ToList(),
             })
             .SingleOrDefaultAsync(cancellationToken);
 
@@ -267,8 +272,15 @@ internal sealed class AdminApprovalReadService(
             profile?.SaudiMobile,
             profile?.InternationalMobile,
             profile?.HasIdImage ?? false,
-            profile?.InterestIds ?? new List<Guid>(),
-            user.CreatedAt);
+            profile?.Interests.Select(i => i.Id).ToList() ?? new List<Guid>(),
+            user.CreatedAt,
+            (profile?.Gender ?? Gender.Unspecified).ToString(),
+            profile?.OrganisationId,
+            string.IsNullOrEmpty(profile?.Organisation?.Name) ? null : profile!.Organisation!.Name,
+            string.IsNullOrEmpty(profile?.Organisation?.NameArabic) ? null : profile!.Organisation!.NameArabic,
+            profile?.PlateNumber,
+            profile?.ReferenceNumber,
+            profile?.Interests.Select(i => new PendingProfileInterest(i.Name, i.NameArabic)).ToList());
     }
 
     // D-151 — Country lookup helper. Cross-context (Country lives in

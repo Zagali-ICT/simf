@@ -56,6 +56,131 @@ public sealed class PendingProfileReadTests : IClassFixture<SimfApiFactory>
         // identity fields plus an empty interest list and HasIdImage=false.
         Assert.Empty(body.Data.InterestIds);
         Assert.False(body.Data.HasIdImage);
+        // No profile fields filled → gender is the default enum string.
+        Assert.Equal("Unspecified", body.Data.Gender);
+    }
+
+    [Fact]
+    public async Task Admin_read_of_a_visitor_without_an_organisation_returns_null_org_fields()
+    {
+        // CS-C (D-385) — the Organisation left-join must return cleanly (null,
+        // not throw) when the visitor picked no organisation.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var visitor = await CreatePendingVisitorAsync(adminToken, displayName: "No Org Visitor");
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var profile = await appDb.UserProfiles
+                .FirstOrDefaultAsync(p => p.UserId == visitor);
+            if (profile is null)
+            {
+                profile = new UserProfile
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = visitor,
+                    CreatedAt = DateTimeOffset.UtcNow,
+                };
+                appDb.UserProfiles.Add(profile);
+            }
+            profile.Gender = Gender.Female;
+            profile.OrganisationId = null;
+            await appDb.SaveChangesAsync();
+        }
+
+        var response = await GetAuthAsync(
+            $"/api/v1/admin/visitors/{visitor}/profile-for-approval", adminToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var data = (await response.Content
+            .ReadFromJsonAsync<ApiResult<PendingProfileResponse>>())!.Data!;
+        Assert.Equal("Female", data.Gender);
+        Assert.Null(data.OrganisationId);
+        Assert.Null(data.OrganisationName);
+        Assert.Null(data.OrganisationNameArabic);
+    }
+
+    [Fact]
+    public async Task Admin_read_returns_the_full_profile_data()
+    {
+        // CS-C (D-385) — the approval read must surface ALL captured profile
+        // data: gender, organisation (bilingual), plate, reference, job title
+        // and the interest NAMES (not just the count).
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var visitor = await CreatePendingVisitorAsync(adminToken, displayName: "Full Data Visitor");
+
+        Guid orgId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var org = new SIMF.Domain.Organisations.Organisation
+            {
+                Id = Guid.NewGuid(),
+                Name = "Royal Saudi Naval Forces",
+                NameArabic = "القوات البحرية الملكية السعودية",
+                CommercialRegistration = $"CR{Guid.NewGuid():N}"[..12],
+                IsActive = true,
+                CreatedAt = DateTimeOffset.UtcNow,
+            };
+            appDb.Organisations.Add(org);
+            orgId = org.Id;
+
+            var interestA = new UserInterest
+            {
+                Id = Guid.NewGuid(),
+                Name = "Naval Defence",
+                NameArabic = "الدفاع البحري",
+                IsActive = true,
+                CreatedAt = DateTimeOffset.UtcNow,
+            };
+            var interestB = new UserInterest
+            {
+                Id = Guid.NewGuid(),
+                Name = "Shipbuilding",
+                NameArabic = "بناء السفن",
+                IsActive = true,
+                CreatedAt = DateTimeOffset.UtcNow,
+            };
+            appDb.AddRange(interestA, interestB);
+
+            var profile = await appDb.UserProfiles
+                .FirstOrDefaultAsync(p => p.UserId == visitor);
+            if (profile is null)
+            {
+                profile = new UserProfile
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = visitor,
+                    CreatedAt = DateTimeOffset.UtcNow,
+                };
+                appDb.UserProfiles.Add(profile);
+            }
+            profile.Gender = Gender.Male;
+            profile.OrganisationId = orgId;
+            profile.PlateNumber = "ABC1234";
+            profile.ReferenceNumber = "SIMF-2026-00000042";
+            profile.JobTitle = "Captain";
+            profile.Interests = new List<UserInterest> { interestA, interestB };
+            await appDb.SaveChangesAsync();
+        }
+
+        var response = await GetAuthAsync(
+            $"/api/v1/admin/visitors/{visitor}/profile-for-approval", adminToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var data = (await response.Content
+            .ReadFromJsonAsync<ApiResult<PendingProfileResponse>>())!.Data!;
+        Assert.Equal("Male", data.Gender);
+        Assert.Equal(orgId, data.OrganisationId);
+        Assert.Equal("Royal Saudi Naval Forces", data.OrganisationName);
+        Assert.Equal("القوات البحرية الملكية السعودية", data.OrganisationNameArabic);
+        Assert.Equal("ABC1234", data.PlateNumber);
+        Assert.Equal("SIMF-2026-00000042", data.ReferenceNumber);
+        Assert.Equal("Captain", data.JobTitle);
+        Assert.NotNull(data.Interests);
+        Assert.Equal(2, data.Interests!.Count);
+        Assert.Contains(data.Interests, i => i.Name == "Naval Defence");
+        Assert.Contains(data.Interests, i => i.Name == "Shipbuilding");
     }
 
     [Fact]
