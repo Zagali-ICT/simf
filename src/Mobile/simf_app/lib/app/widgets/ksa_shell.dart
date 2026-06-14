@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/profile/data/profile_repository.dart'
+    show myAvatarBytesProvider;
 import '../localization/app_l10n.dart';
 import '../route_names.dart';
 import '../theme/tokens.dart';
@@ -455,42 +458,50 @@ class _TileBody extends StatelessWidget {
 }
 
 /// The gold rounded-square avatar (home header 203:1238 / profile identity
-/// cards): the photo when [imageUrl] is set (falling back on error), else the
-/// name's initials on gold.
-class KsaAvatar extends StatelessWidget {
+/// cards). When [currentUser] is true it shows the **signed-in user's** photo,
+/// fetched as authenticated bytes via [myAvatarBytesProvider] (the avatar
+/// endpoint is bearer-gated and behind self-signed TLS, so a bare
+/// `Image.network` can't load it) and refreshed immediately after an upload via
+/// the avatar bust token. Otherwise — and whenever no photo is available — it
+/// renders the brand-mark fallback. [name] drives the accessibility label only.
+class KsaAvatar extends ConsumerWidget {
   const KsaAvatar({
     required this.name,
-    this.imageUrl,
+    this.currentUser = false,
     this.size = 42,
     super.key,
   });
 
-  /// Kept for the accessibility label only — the fallback is the brand mark,
-  /// not initials, so the name no longer drives the rendered glyphs.
   final String name;
-  final String? imageUrl;
+
+  /// True for the signed-in user's own avatar (home / badge / my-area). False
+  /// for any other person's avatar (e.g. a question submitter) — that always
+  /// shows the fallback, never the signed-in user's photo.
+  final bool currentUser;
   final double size;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final fallback = _AvatarFallback(size: size);
+    Widget child = fallback;
+    if (currentUser) {
+      final bytes = ref.watch(myAvatarBytesProvider).asData?.value;
+      if (bytes != null && bytes.isNotEmpty) {
+        child = Image.memory(
+          bytes,
+          fit: BoxFit.cover,
+          gaplessPlayback: true,
+          errorBuilder: (_, __, ___) => fallback,
+        );
+      }
+    }
     return Semantics(
       image: true,
       label: name.trim().isEmpty ? null : name,
       child: ClipRRect(
         borderRadius:
             const BorderRadius.all(Radius.circular(SimfTokens.radius)),
-        child: SizedBox(
-          width: size,
-          height: size,
-          child: imageUrl == null
-              ? fallback
-              : Image.network(
-                  imageUrl!,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => fallback,
-                ),
-        ),
+        child: SizedBox(width: size, height: size, child: child),
       ),
     );
   }

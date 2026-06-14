@@ -101,7 +101,6 @@ class HomeScreen extends ConsumerWidget {
         profile?.identity.localizedName(l10n.isArabic),
         user?.displayName,
       ),
-      avatarUrl: profile?.identity.avatarUrl,
       unread: unread,
       latestPost: latestPost,
     );
@@ -284,14 +283,12 @@ class _VisitorHome extends StatelessWidget {
     required this.l10n,
     required this.name,
     required this.unread,
-    this.avatarUrl,
     this.latestPost,
   });
 
   final AppL10n l10n;
   final String name;
   final int unread;
-  final String? avatarUrl;
   final NewsListItem? latestPost;
 
   @override
@@ -302,7 +299,6 @@ class _VisitorHome extends StatelessWidget {
         l10n: l10n,
         name: name,
         unread: unread,
-        avatarUrl: avatarUrl,
       ),
       body: ListView(
         padding: const EdgeInsets.all(SimfTokens.space4),
@@ -456,13 +452,11 @@ class _GreetingHeader extends StatelessWidget {
     required this.l10n,
     required this.name,
     required this.unread,
-    this.avatarUrl,
   });
 
   final AppL10n l10n;
   final String name;
   final int unread;
-  final String? avatarUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -476,7 +470,7 @@ class _GreetingHeader extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          KsaAvatar(name: name, imageUrl: avatarUrl),
+          KsaAvatar(name: name, currentUser: true),
           const SizedBox(width: SimfTokens.space2),
           Expanded(
             child: Column(

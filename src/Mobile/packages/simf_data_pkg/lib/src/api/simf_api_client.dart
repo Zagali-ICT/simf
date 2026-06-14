@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 
 import '../config/simf_data_config.dart';
@@ -227,6 +229,47 @@ class SimfApiClient {
 
     final body = response.data;
     return body is String ? body : (body?.toString() ?? '');
+  }
+
+  /// Fetches a **raw binary** body (not the `ApiResult` envelope) — for the
+  /// streamed image endpoints that return image bytes (e.g. the account avatar
+  /// `GET /app/account/avatar/{id}`). Goes through this client so it inherits
+  /// the bearer + `X-App-Key` headers and the self-signed-TLS handling that a
+  /// bare `Image.network` cannot. Refreshes + replays once on a 401 like the
+  /// other paths. Returns the bytes on a 2xx; throws [ApiFailure] on a transport
+  /// error or a non-2xx status (a 404 = "no avatar", surfaced to the caller).
+  Future<Uint8List> getBytes(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+    CancelToken? cancelToken,
+  }) async {
+    final response = await _execute(
+      (options) => _dio.get<dynamic>(
+        path,
+        queryParameters: queryParameters,
+        cancelToken: cancelToken,
+        options: (options ?? Options())..responseType = ResponseType.bytes,
+      ),
+    );
+
+    final status = response.statusCode ?? 0;
+    if (status < 200 || status >= 300) {
+      throw ApiFailure(
+        code: ApiErrorCodes.clientNetwork,
+        message: 'Request failed with status $status.',
+        httpStatus: status,
+      );
+    }
+
+    final body = response.data;
+    if (body is List<int>) {
+      return Uint8List.fromList(body);
+    }
+    throw ApiFailure(
+      code: ApiErrorCodes.clientMalformedResponse,
+      message: 'Expected a binary response body.',
+      httpStatus: status,
+    );
   }
 
   Future<T> _send<T>(

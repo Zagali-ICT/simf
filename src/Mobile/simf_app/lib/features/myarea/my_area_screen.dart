@@ -14,7 +14,8 @@ import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import '../../core/sharing/content_sharer.dart';
-import '../profile/data/profile_repository.dart' show referenceNumberProvider;
+import '../profile/data/profile_repository.dart'
+    show avatarBustProvider, referenceNumberProvider;
 import 'data/myarea_models.dart';
 import 'data/myarea_repository.dart';
 import 'identity_verification_screen.dart';
@@ -128,8 +129,10 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
   }
 
   /// Runs the guided face-capture / liveness flow (D-404) and uploads the
-  /// returned selfie. On success the image cache is cleared (the avatar URL can
-  /// be stable) and the dashboard reloads so the new photo shows.
+  /// returned selfie. On success the avatar bust token is bumped so every avatar
+  /// on screen (home greeting / badge / this card) refetches the new photo
+  /// immediately — the avatar URL is stable, so the token is what forces the
+  /// refresh — and the dashboard reloads for the rest of the identity card.
   Future<void> _changeAvatar() async {
     final l10n = AppL10n.of(context);
     final messenger = ScaffoldMessenger.of(context);
@@ -146,8 +149,7 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
       if (!mounted) {
         return;
       }
-      PaintingBinding.instance.imageCache.clear();
-      PaintingBinding.instance.imageCache.clearLiveImages();
+      ref.read(avatarBustProvider.notifier).state++;
       await _load();
     } on ApiFailure {
       messenger.showSnackBar(SnackBar(content: Text(l10n.avatarUploadFailed)));
@@ -233,7 +235,6 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
           name: identity.localizedName(isArabic),
           line: subtitle,
           reference: reference,
-          avatarUrl: identity.avatarUrl,
           shareLabel: l10n.shareLabel,
           onShare: () => unawaited(_shareContact()),
           onAvatarTap: () => unawaited(_changeAvatar()),
@@ -333,7 +334,6 @@ class _IdentityCard extends StatelessWidget {
     required this.name,
     required this.line,
     this.reference,
-    this.avatarUrl,
     this.shareLabel,
     this.onShare,
     this.onAvatarTap,
@@ -343,7 +343,6 @@ class _IdentityCard extends StatelessWidget {
   final String name;
   final String line;
   final String? reference;
-  final String? avatarUrl;
   final String? shareLabel;
   final VoidCallback? onShare;
   final VoidCallback? onAvatarTap;
@@ -362,7 +361,6 @@ class _IdentityCard extends StatelessWidget {
         children: <Widget>[
           _TappableAvatar(
             name: name,
-            imageUrl: avatarUrl,
             onTap: onAvatarTap,
             tooltip: avatarTooltip,
           ),
@@ -456,19 +454,17 @@ class _IdentityCard extends StatelessWidget {
 class _TappableAvatar extends StatelessWidget {
   const _TappableAvatar({
     required this.name,
-    this.imageUrl,
     this.onTap,
     this.tooltip,
   });
 
   final String name;
-  final String? imageUrl;
   final VoidCallback? onTap;
   final String? tooltip;
 
   @override
   Widget build(BuildContext context) {
-    final avatar = KsaAvatar(name: name, imageUrl: imageUrl, size: 64);
+    final avatar = KsaAvatar(name: name, currentUser: true, size: 64);
     if (onTap == null) {
       return avatar;
     }

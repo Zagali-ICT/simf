@@ -234,7 +234,7 @@ class _Badge extends StatelessWidget {
                     // replaced by the photo when present.
                     KsaAvatar(
                       name: name,
-                      imageUrl: identity.avatarUrl,
+                      currentUser: true,
                       size: 64,
                     ),
                     const SizedBox(width: SimfTokens.space2),
