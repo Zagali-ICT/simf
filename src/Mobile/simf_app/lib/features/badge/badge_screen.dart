@@ -215,7 +215,9 @@ class _Badge extends StatelessWidget {
                       color: Colors.black,
                     ),
                     dataModuleStyle: const QrDataModuleStyle(
-                      dataModuleShape: QrDataModuleShape.square,
+                      // Owner: a fully "circle" QR — circular dots, not square
+                      // modules (the finder eyes are already circular) (D-423).
+                      dataModuleShape: QrDataModuleShape.circle,
                       color: Colors.black,
                     ),
                   );
