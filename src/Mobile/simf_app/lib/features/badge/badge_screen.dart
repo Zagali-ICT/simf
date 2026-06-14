@@ -205,15 +205,13 @@ class _Badge extends StatelessWidget {
                 ),
                 child: Row(
                   children: <Widget>[
-                    // Frame 221:769 — a 64-px rounded box; the initials get a
-                    // white box (navy text) so مم stays visible on the gold
-                    // strip, replaced by the photo when present.
+                    // Frame 221:769 — a 64-px rounded box; the SIMF brand-mark
+                    // fallback on its navy box stays visible on the gold strip,
+                    // replaced by the photo when present.
                     KsaAvatar(
                       name: name,
                       imageUrl: identity.avatarUrl,
                       size: 64,
-                      initialsBackground: Colors.white,
-                      initialsForeground: SimfTokens.navy,
                     ),
                     const SizedBox(width: SimfTokens.space3),
                     Expanded(

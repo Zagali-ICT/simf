@@ -6,6 +6,7 @@ import '../route_names.dart';
 import '../theme/tokens.dart';
 import 'more_drawer.dart';
 import 'simf_bottom_nav.dart';
+import 'simf_logo.dart';
 
 /// Shared KSA main-shell chrome for the Wave-2 in-app pages (frames
 /// 512:1492 / 203:1236 / 512:1780 / 215:767 / 221:769 / 215:562): the navy
@@ -441,91 +442,60 @@ class KsaAvatar extends StatelessWidget {
     required this.name,
     this.imageUrl,
     this.size = 42,
-    this.initialsBackground = SimfTokens.accent,
-    this.initialsForeground = SimfTokens.navy,
     super.key,
   });
 
+  /// Kept for the accessibility label only — the fallback is the brand mark,
+  /// not initials, so the name no longer drives the rendered glyphs.
   final String name;
   final String? imageUrl;
   final double size;
 
-  /// The initials-fallback box colours. The badge identity strip is gold, so it
-  /// overrides these to a white box with navy text (the default gold-on-gold
-  /// would vanish there).
-  final Color initialsBackground;
-  final Color initialsForeground;
-
   @override
   Widget build(BuildContext context) {
-    final initials = _Initials(
-      name: name,
-      size: size,
-      background: initialsBackground,
-      foreground: initialsForeground,
-    );
-    return ClipRRect(
-      borderRadius: const BorderRadius.all(Radius.circular(SimfTokens.radius)),
-      child: SizedBox(
-        width: size,
-        height: size,
-        child: imageUrl == null
-            ? initials
-            : Image.network(
-                imageUrl!,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => initials,
-              ),
-      ),
-    );
-  }
-}
-
-class _Initials extends StatelessWidget {
-  const _Initials({
-    required this.name,
-    required this.size,
-    required this.background,
-    required this.foreground,
-  });
-
-  final String name;
-  final double size;
-  final Color background;
-  final Color foreground;
-
-  @override
-  Widget build(BuildContext context) {
-    return ColoredBox(
-      color: background,
-      child: Center(
-        child: Text(
-          ksaInitials(name),
-          style: TextStyle(
-            color: foreground,
-            fontWeight: FontWeight.w700,
-            fontSize: size * 0.33,
-          ),
+    final fallback = _AvatarFallback(size: size);
+    return Semantics(
+      image: true,
+      label: name.trim().isEmpty ? null : name,
+      child: ClipRRect(
+        borderRadius:
+            const BorderRadius.all(Radius.circular(SimfTokens.radius)),
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: imageUrl == null
+              ? fallback
+              : Image.network(
+                  imageUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => fallback,
+                ),
         ),
       ),
     );
   }
 }
 
-/// The first letters of the first + last name parts (`·` when empty) — the
-/// avatar fallback used wherever no photo is available.
-String ksaInitials(String name) {
-  final parts =
-      name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
-  String first(String s) =>
-      s.isEmpty ? '' : String.fromCharCode(s.runes.first).toUpperCase();
-  if (parts.isEmpty) {
-    return '·';
+/// The default avatar when a user has no photo (or the photo fails to load):
+/// the SIMF brand mark on a navy box. The owner chose the logo over a cultural
+/// figure (D-402); the logo art is white, so the box stays dark (navyDeep) for
+/// contrast on every surface — the navy scaffold, the my-area card, and the
+/// gold badge strip alike.
+class _AvatarFallback extends StatelessWidget {
+  const _AvatarFallback({required this.size});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: SimfTokens.navyDeep,
+      child: Padding(
+        padding: EdgeInsets.all(size * 0.18),
+        child: SimfLogo(size: size * 0.64),
+      ),
+    );
   }
-  if (parts.length == 1) {
-    return first(parts.first);
-  }
-  return first(parts.first) + first(parts.last);
 }
 
 /// One navy list row (frames' FAQ / روح السعودية / المزيد rows): a gold badge
