@@ -587,8 +587,11 @@ class KsaListRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: SimfTokens.space2),
-            const Icon(
-              Icons.arrow_left,
+            // Frame 758:1274 — a gold left-pointing caret. Material's
+            // Icons.arrow_left auto-mirrors to the right under RTL; the bundled
+            // SVG does not, so it stays pointing left as the design shows.
+            const SimfSvgIcon(
+              'assets/icons/ic_caret_left.svg',
               color: SimfTokens.accent,
               size: 24,
             ),

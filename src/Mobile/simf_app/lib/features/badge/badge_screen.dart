@@ -15,6 +15,7 @@ import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import '../myarea/data/myarea_models.dart';
 import '../myarea/data/myarea_repository.dart';
+import '../profile/data/profile_repository.dart' show referenceNumberProvider;
 
 /// Page 032 — بطاقة الدخول · Entry badge (#32, `/badge`), rebuilt to the
 /// KSA frame **758:1469 "QR"** on the shared shell.
@@ -94,16 +95,19 @@ class _BadgeScreenState extends ConsumerState<BadgeScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
+    // The displayed ID is the reference number (SIMF-2026-…), not the qrId the
+    // QR encodes. Best-effort; falls back to the qrId tail while it loads.
+    final referenceNumber = ref.watch(referenceNumberProvider).asData?.value;
     return KsaPage(
       title: l10n.badgeTitle,
       onBack: () => ksaBackOrHome(context),
       tab: SimfTab.badge,
       showSweep: true,
-      body: _buildBody(l10n),
+      body: _buildBody(l10n, referenceNumber),
     );
   }
 
-  Widget _buildBody(AppL10n l10n) {
+  Widget _buildBody(AppL10n l10n, String? referenceNumber) {
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -130,7 +134,12 @@ class _BadgeScreenState extends ConsumerState<BadgeScreen> {
         message: l10n.badgePendingBody,
       );
     }
-    return _Badge(l10n: l10n, identity: identity, qrId: qrId);
+    return _Badge(
+      l10n: l10n,
+      identity: identity,
+      qrId: qrId,
+      referenceNumber: referenceNumber,
+    );
   }
 }
 
@@ -146,11 +155,20 @@ String maskedBadgeId(String qrId) {
 /// The issued badge (frame node tree under 758:1469): the gold-bordered white
 /// card (QR + hint + gold identity strip) and the add-person action below it.
 class _Badge extends StatelessWidget {
-  const _Badge({required this.l10n, required this.identity, required this.qrId});
+  const _Badge({
+    required this.l10n,
+    required this.identity,
+    required this.qrId,
+    this.referenceNumber,
+  });
 
   final AppL10n l10n;
   final MyAreaIdentity identity;
   final String qrId;
+
+  /// The human reference number (SIMF-2026-…) shown on the ID line; the QR still
+  /// encodes [qrId]. Falls back to the qrId tail until it loads.
+  final String? referenceNumber;
 
   @override
   Widget build(BuildContext context) {
@@ -161,7 +179,7 @@ class _Badge extends StatelessWidget {
       padding: const EdgeInsets.all(SimfTokens.space4),
       children: <Widget>[
         Container(
-          padding: const EdgeInsets.all(SimfTokens.space2),
+          padding: const EdgeInsets.all(SimfTokens.space4),
           decoration: BoxDecoration(
             color: SimfTokens.surface,
             borderRadius: BorderRadius.circular(SimfTokens.radiusLg),
@@ -171,21 +189,25 @@ class _Badge extends StatelessWidget {
           child: Column(
             children: <Widget>[
               Padding(
-                // Frame 758:1469 — the QR sits ~12 % inset from the card edge.
+                // Frame 758:1477 — the QR (≈265 on the 343 card) sits ~24 inset
+                // inside the card padding; sized to the available width so it
+                // stays proportional on any device.
                 padding: const EdgeInsets.all(SimfTokens.space6),
-                child: QrImageView(
-                  data: qrId,
-                  version: QrVersions.auto,
-                  size: 250,
-                  gapless: true,
-                  // Frame 758:1469 — square finder eyes, pure-black modules.
-                  eyeStyle: const QrEyeStyle(
-                    eyeShape: QrEyeShape.square,
-                    color: Colors.black,
-                  ),
-                  dataModuleStyle: const QrDataModuleStyle(
-                    dataModuleShape: QrDataModuleShape.square,
-                    color: Colors.black,
+                child: LayoutBuilder(
+                  builder: (context, constraints) => QrImageView(
+                    data: qrId,
+                    version: QrVersions.auto,
+                    size: constraints.maxWidth,
+                    gapless: true,
+                    // Frame 758:1477 — rounded finder eyes, pure-black modules.
+                    eyeStyle: const QrEyeStyle(
+                      eyeShape: QrEyeShape.circle,
+                      color: Colors.black,
+                    ),
+                    dataModuleStyle: const QrDataModuleStyle(
+                      dataModuleShape: QrDataModuleShape.square,
+                      color: Colors.black,
+                    ),
                   ),
                 ),
               ),
@@ -244,7 +266,7 @@ class _Badge extends StatelessWidget {
                           ],
                           const SizedBox(height: SimfTokens.space2),
                           Text(
-                            'ID · ${maskedBadgeId(qrId)}',
+                            'ID · ${maskedBadgeId(referenceNumber ?? qrId)}',
                             textDirection: TextDirection.ltr,
                             // Frame 758:1469 — 12px, muted #F0F0F0.
                             style: const TextStyle(

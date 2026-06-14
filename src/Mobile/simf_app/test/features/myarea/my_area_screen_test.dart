@@ -306,7 +306,7 @@ void main() {
       );
 
       // Header matches the frame 758:1283 + the bottom-nav label.
-      expect(find.text('الملف الشخصي'), findsWidgets);
+      expect(find.text('الملف الشخصى'), findsWidgets);
       await _scrollTo(tester, find.text('الافتتاح'));
       expect(
         Directionality.of(tester.element(find.text('الافتتاح'))),

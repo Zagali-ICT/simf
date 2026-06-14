@@ -152,7 +152,12 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
             child: _DayStrip(
-              days: _days,
+              // Frame 758:1415 — the full contiguous range is shown; days with
+              // no sessions render greyed + inert.
+              days: _contiguousDayRange(_days),
+              activeDays: <DateTime>{
+                for (final d in _days) DateUtils.dateOnly(d),
+              },
               selected: _selectedDay,
               onChanged: (day) => setState(() => _selectedDay = day),
             ),
@@ -321,20 +326,28 @@ class _Pill extends StatelessWidget {
 class _DayStrip extends StatelessWidget {
   const _DayStrip({
     required this.days,
+    required this.activeDays,
     required this.selected,
     required this.onChanged,
   });
 
+  /// The full contiguous range to render (first → last programme day).
   final List<DateTime> days;
+
+  /// The days that actually have sessions; days outside this set render greyed
+  /// and inert (frame 758:1415).
+  final Set<DateTime> activeDays;
   final DateTime? selected;
   final ValueChanged<DateTime?> onChanged;
 
   Widget _cell(DateTime day) {
+    final active = activeDays.contains(DateUtils.dateOnly(day));
     final isSelected = DateUtils.isSameDay(selected, day);
     return _DayCell(
       day: day,
+      active: active,
       selected: isSelected,
-      onTap: () => onChanged(isSelected ? null : day),
+      onTap: active ? () => onChanged(isSelected ? null : day) : null,
     );
   }
 
@@ -366,9 +379,17 @@ class _DayStrip extends StatelessWidget {
 }
 
 class _DayCell extends StatelessWidget {
-  const _DayCell({required this.day, required this.selected, this.onTap});
+  const _DayCell({
+    required this.day,
+    required this.active,
+    required this.selected,
+    this.onTap,
+  });
 
   final DateTime day;
+
+  /// Whether this day has sessions. Inactive days render grey + inert (758:1415).
+  final bool active;
   final bool selected;
   final VoidCallback? onTap;
 
@@ -376,11 +397,20 @@ class _DayCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final weekend =
         day.weekday == DateTime.friday || day.weekday == DateTime.saturday;
-    final weekdayColor = selected
-        ? Colors.white
-        : weekend
-            ? SimfTokens.danger
-            : SimfTokens.navy;
+    // Inactive (no-session) days are grey; active days are navy / weekend-red;
+    // the selected day inverts to white on navy.
+    final Color weekdayColor;
+    final Color numberColor;
+    if (selected) {
+      weekdayColor = Colors.white;
+      numberColor = Colors.white;
+    } else if (!active) {
+      weekdayColor = SimfTokens.dayInactive;
+      numberColor = SimfTokens.dayInactive;
+    } else {
+      weekdayColor = weekend ? SimfTokens.danger : SimfTokens.navy;
+      numberColor = SimfTokens.navy;
+    }
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
@@ -406,7 +436,7 @@ class _DayCell extends StatelessWidget {
             Text(
               day.day.toString(),
               style: TextStyle(
-                color: selected ? Colors.white : SimfTokens.navy,
+                color: numberColor,
                 fontSize: SimfTokens.textMd,
                 fontWeight: FontWeight.w600,
               ),
@@ -416,6 +446,23 @@ class _DayCell extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The full contiguous day range (first → last programme day) so the strip can
+/// render no-session days greyed between active ones (frame 758:1415).
+List<DateTime> _contiguousDayRange(List<DateTime> sessionDays) {
+  if (sessionDays.isEmpty) {
+    return const <DateTime>[];
+  }
+  final sorted = sessionDays.map(DateUtils.dateOnly).toList()..sort();
+  final end = sorted.last;
+  final out = <DateTime>[];
+  var d = sorted.first;
+  while (!d.isAfter(end)) {
+    out.add(d);
+    d = DateUtils.addDaysToDate(d, 1);
+  }
+  return out;
 }
 
 /// One agenda row (frame node 218:845): the white two-line time chip at the

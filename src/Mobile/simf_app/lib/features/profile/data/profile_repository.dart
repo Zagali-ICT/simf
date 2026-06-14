@@ -133,3 +133,16 @@ class ProfileRepository {
 final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
   return ProfileRepository(ref.watch(simfApiClientProvider));
 });
+
+/// Best-effort reference number (`SIMF-2026-…`) for the badge + profile ID line.
+/// It lives on the user-profile (the My-Area dashboard doesn't carry it), so the
+/// badge/profile read it here. Null while loading / on error.
+final referenceNumberProvider = FutureProvider.autoDispose<String?>((ref) async {
+  try {
+    final profile = await ref.watch(profileRepositoryProvider).getMyProfile();
+    final ref0 = profile.referenceNumber?.trim();
+    return (ref0 == null || ref0.isEmpty) ? null : ref0;
+  } on ApiFailure {
+    return null;
+  }
+});

@@ -214,9 +214,9 @@ class AppL10n {
   // Page 007 advances to the interests screen with Next (D-332); Page 007‑01 title.
   String get nextLabel => _t('التالي', 'Next');
   String get interestsTitle => _t('اهتماماتي', 'My interests');
-  String get profileSavedToast => _t('تم حفظ الملف الشخصي', 'Profile saved');
+  String get profileSavedToast => _t('تم حفظ الملف الشخصى', 'Profile saved');
   String get idImageUploadFailed => _t(
-        'تم حفظ الملف الشخصي، لكن تعذر رفع الصورة. حاول لاحقًا.',
+        'تم حفظ الملف الشخصى، لكن تعذر رفع الصورة. حاول لاحقًا.',
         'Profile saved, but the image upload failed. Try again later.',
       );
   String get requiredField => _t('هذا الحقل مطلوب', 'This field is required');
@@ -464,7 +464,7 @@ class AppL10n {
 
   // Bottom navigation (KSA Wave-2 shell — frames 512:1492 / 213:963).
   String get navAgenda => _t('الأجندة', 'Agenda');
-  String get navProfile => _t('الملف الشخصي', 'Profile');
+  String get navProfile => _t('الملف الشخصى', 'Profile');
 
   // Home — KSA Wave-2 redesign (guest 512:1492 / signed-in 203:1236).
   String get homeGuestTitle => _t('الرئيسية • ضيف', 'Home • Guest');
@@ -523,8 +523,8 @@ class AppL10n {
   String postTimeDaysAgo(int n) => _t('قبل $n يوم', '$n d ago');
 
   // My Area — personal dashboard (Page 014).
-  // Frame 758:1283 header (matches the bottom-nav "الملف الشخصي" label).
-  String get myAreaTitle => _t('الملف الشخصي', 'Profile');
+  // Frame 758:1283 header (matches the bottom-nav "الملف الشخصى" label).
+  String get myAreaTitle => _t('الملف الشخصى', 'Profile');
   String enrolledInSessions(int count) =>
       _t('مسجّل في $count جلسات', 'Enrolled in $count sessions');
   String get shareLabel => _t('مشاركة', 'Share');

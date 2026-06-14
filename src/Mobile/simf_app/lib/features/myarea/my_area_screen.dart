@@ -14,6 +14,7 @@ import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import '../../core/sharing/content_sharer.dart';
+import '../profile/data/profile_repository.dart' show referenceNumberProvider;
 import 'data/myarea_models.dart';
 import 'data/myarea_repository.dart';
 import 'identity_verification_screen.dart';
@@ -156,16 +157,18 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
+    // The ID line is the reference number (SIMF-2026-…), not the qrId.
+    final referenceNumber = ref.watch(referenceNumberProvider).asData?.value;
     return KsaPage(
       title: l10n.myAreaTitle,
       onBack: () => ksaBackOrHome(context),
       tab: SimfTab.profile,
       showSweep: true,
-      body: _buildBody(l10n),
+      body: _buildBody(l10n, referenceNumber),
     );
   }
 
-  Widget _buildBody(AppL10n l10n) {
+  Widget _buildBody(AppL10n l10n, String? referenceNumber) {
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -176,7 +179,7 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
     if (dashboard == null) {
       return _buildLimited(l10n);
     }
-    return _buildDashboard(l10n, dashboard);
+    return _buildDashboard(l10n, dashboard, referenceNumber);
   }
 
   Widget _buildErrorState(AppL10n l10n) {
@@ -206,13 +209,22 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
     );
   }
 
-  Widget _buildDashboard(AppL10n l10n, MyAreaDashboard dashboard) {
+  Widget _buildDashboard(
+    AppL10n l10n,
+    MyAreaDashboard dashboard,
+    String? referenceNumber,
+  ) {
     final isArabic = l10n.isArabic;
     final identity = dashboard.identity;
     final tier = identity.localizedTier(isArabic);
     final enrolled =
         l10n.enrolledInSessions(dashboard.counters.bookedSessionsCount);
     final subtitle = tier == null ? enrolled : '$tier · $enrolled';
+    // The reference number (SIMF-2026-…) is the displayed ID; fall back to the
+    // qrId only until the reference loads.
+    final reference = referenceNumber != null
+        ? '#$referenceNumber'
+        : (identity.qrId == null ? null : '#${identity.qrId}');
 
     return ListView(
       padding: const EdgeInsets.all(SimfTokens.space4),
@@ -220,7 +232,7 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
         _IdentityCard(
           name: identity.localizedName(isArabic),
           line: subtitle,
-          reference: identity.qrId == null ? null : '#${identity.qrId}',
+          reference: reference,
           avatarUrl: identity.avatarUrl,
           shareLabel: l10n.shareLabel,
           onShare: () => unawaited(_shareContact()),

@@ -36,6 +36,7 @@ class SimfTokens {
   static const Color timestampMuted = Color(0xFF4C555F); // notification timestamp (758:2491)
   static const Color codeBoxBeige = Color(0xCCFFF4DC); // pale-beige code chip fill (venue map 758:1358, #FFF4DC @ 80%)
   static const Color cardShadow = Color(0x29111827); // soft card drop-shadow (headlineInk @ ~16%)
+  static const Color dayInactive = Color(0xFFC2C2C2); // calendar day with no sessions (758:1415)
 
   // KSA main-shell disabled palette (W2 frames 512:1492 / 512:1780): the
   // "بطاقتي" locked card and the disabled theme tile render on these.
