@@ -12,11 +12,12 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
+import '../../app/widgets/simf_svg_icon.dart';
 import '../myarea/data/myarea_models.dart';
 import '../myarea/data/myarea_repository.dart';
 
 /// Page 032 — بطاقة الدخول · Entry badge (#32, `/badge`), rebuilt to the
-/// KSA Wave-2 frame **221:769 "QR"** on the shared shell.
+/// KSA frame **758:1469 "QR"** on the shared shell.
 ///
 /// **Auth-gated** (route 32 in `_authenticatedRoutes`); data contract
 /// unchanged: the shipped My-Area layer (`GET /app/account/dashboard`,
@@ -142,7 +143,7 @@ String maskedBadgeId(String qrId) {
   return '•••• ${qrId.substring(qrId.length - 4)}';
 }
 
-/// The issued badge (frame node tree under 221:769): the gold-bordered white
+/// The issued badge (frame node tree under 758:1469): the gold-bordered white
 /// card (QR + hint + gold identity strip) and the add-person action below it.
 class _Badge extends StatelessWidget {
   const _Badge({required this.l10n, required this.identity, required this.qrId});
@@ -162,38 +163,39 @@ class _Badge extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(SimfTokens.space2),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: SimfTokens.surface,
             borderRadius: BorderRadius.circular(SimfTokens.radiusLg),
-            // Frame 221:769 — the gold card edge is a heavy 4-px stroke.
-            border: Border.all(color: SimfTokens.accent, width: 4),
+            // Frame 758:1469 — the gold card edge is a thin 1-px stroke.
+            border: Border.all(color: SimfTokens.accent, width: 1),
           ),
           child: Column(
             children: <Widget>[
               Padding(
-                // Frame 221:769 — the QR sits ~12 % inset from the card edge.
+                // Frame 758:1469 — the QR sits ~12 % inset from the card edge.
                 padding: const EdgeInsets.all(SimfTokens.space6),
                 child: QrImageView(
                   data: qrId,
                   version: QrVersions.auto,
-                  size: 230,
+                  size: 250,
                   gapless: true,
-                  // Frame 221:769 — the three finder eyes are rounded, not
-                  // square boxes.
+                  // Frame 758:1469 — square finder eyes, pure-black modules.
                   eyeStyle: const QrEyeStyle(
-                    eyeShape: QrEyeShape.circle,
-                    color: SimfTokens.navy,
+                    eyeShape: QrEyeShape.square,
+                    color: Colors.black,
                   ),
                   dataModuleStyle: const QrDataModuleStyle(
                     dataModuleShape: QrDataModuleShape.square,
-                    color: SimfTokens.navy,
+                    color: Colors.black,
                   ),
                 ),
               ),
               Text(
                 l10n.badgeScanToEnter,
+                // Frame 758:1469 — black, 16px, slight negative tracking.
                 style: const TextStyle(
-                  color: SimfTokens.greyText,
-                  fontSize: SimfTokens.textSm,
+                  color: Colors.black,
+                  fontSize: SimfTokens.textLg,
+                  letterSpacing: -0.366,
                 ),
               ),
               const SizedBox(height: SimfTokens.space4),
@@ -205,7 +207,7 @@ class _Badge extends StatelessWidget {
                 ),
                 child: Row(
                   children: <Widget>[
-                    // Frame 221:769 — a 64-px rounded box; the SIMF brand-mark
+                    // Frame 758:1469 — a 64-px rounded box; the SIMF brand-mark
                     // fallback on its navy box stays visible on the gold strip,
                     // replaced by the photo when present.
                     KsaAvatar(
@@ -213,7 +215,7 @@ class _Badge extends StatelessWidget {
                       imageUrl: identity.avatarUrl,
                       size: 64,
                     ),
-                    const SizedBox(width: SimfTokens.space3),
+                    const SizedBox(width: SimfTokens.space2),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -222,30 +224,32 @@ class _Badge extends StatelessWidget {
                             name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
+                            // Frame 758:1469 — 18px SemiBold white.
                             style: const TextStyle(
                               color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                              fontSize: SimfTokens.textLg,
+                              fontWeight: FontWeight.w600,
+                              fontSize: SimfTokens.textTitle,
                             ),
                           ),
                           if (tier != null) ...<Widget>[
-                            const SizedBox(height: 2),
+                            const SizedBox(height: SimfTokens.space2),
                             Text(
                               tier,
+                              // Frame 758:1469 — 12px, muted #F0F0F0.
                               style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                                fontSize: SimfTokens.textXs,
+                                color: SimfTokens.onGoldMuted,
+                                fontSize: SimfTokens.textSm,
                               ),
                             ),
                           ],
-                          const SizedBox(height: 2),
+                          const SizedBox(height: SimfTokens.space2),
                           Text(
                             'ID · ${maskedBadgeId(qrId)}',
                             textDirection: TextDirection.ltr,
+                            // Frame 758:1469 — 12px, muted #F0F0F0.
                             style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: SimfTokens.textXs,
+                              color: SimfTokens.onGoldMuted,
+                              fontSize: SimfTokens.textSm,
                             ),
                           ),
                         ],
@@ -263,25 +267,24 @@ class _Badge extends StatelessWidget {
           onPressed: () => context.pushNamed(RouteNames.scanContact),
           style: OutlinedButton.styleFrom(
             minimumSize: const Size.fromHeight(48),
-            side: const BorderSide(
-              color: SimfTokens.beigeBorder,
-              width: SimfTokens.hairlineBold,
-            ),
+            // Frame 758:1469 — gold 1-px border.
+            side: const BorderSide(color: SimfTokens.accent, width: 1),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
             ),
           ),
-          icon: const Icon(
-            Icons.qr_code_scanner,
-            size: 20,
+          icon: const SimfSvgIcon(
+            'assets/icons/badge_scan.svg',
+            size: 24,
             color: Colors.white,
           ),
           label: Text(
             l10n.badgeAddPerson,
+            // Frame 758:1469 — 16px Bold white.
             style: const TextStyle(
               color: Colors.white,
-              fontWeight: FontWeight.w600,
-              fontSize: SimfTokens.textMd,
+              fontWeight: FontWeight.w700,
+              fontSize: SimfTokens.textLg,
             ),
           ),
         ),

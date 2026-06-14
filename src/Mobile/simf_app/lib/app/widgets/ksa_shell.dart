@@ -113,9 +113,10 @@ class KsaPage extends StatelessWidget {
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
+              // Figma sub-page headers: 18px / SemiBold (was 20 / w500).
               style: const TextStyle(
-                fontSize: SimfTokens.textXl,
-                fontWeight: FontWeight.w500,
+                fontSize: SimfTokens.textTitle,
+                fontWeight: FontWeight.w600,
                 color: Colors.white,
               ),
             ),
@@ -158,11 +159,11 @@ class KsaBackButton extends StatelessWidget {
         backgroundColor: SimfTokens.navyDeep,
         shape: const CircleBorder(),
       ),
-      icon: const Icon(
-        Icons.arrow_back_ios_new,
+      // Figma frames use the iconamoon chevron, not a Material back-arrow.
+      icon: const SimfSvgIcon(
+        'assets/icons/ic_back.svg',
+        size: 24,
         color: Colors.white,
-        size: 18,
-        textDirection: TextDirection.ltr,
       ),
     );
   }

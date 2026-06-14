@@ -152,6 +152,12 @@ void main() {
       expect(find.text('VIP'), findsOneWidget);
       // The strip masks the id down to its last 4 characters.
       expect(find.text('ID · •••• C123'), findsOneWidget);
+      // The add-person action sits below the (larger 758:1469) QR card; scroll.
+      await tester.scrollUntilVisible(
+        find.text('Scan to add a contact'),
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.text('Scan to add a contact'), findsOneWidget);
     });
 
