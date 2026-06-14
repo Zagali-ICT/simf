@@ -75,6 +75,9 @@ class RouteNames {
   static const String shareMyContact = 'shareMyContact';
   static const String scanContact = 'scanContact';
   static const String myContacts = 'myContacts';
+  // Guided face-capture / liveness for the avatar (D-404; additive, reached from
+  // My Area; signed-in + Approved).
+  static const String identityVerification = 'identityVerification';
 
   // Auxiliary auth routes (not numbered in the mockup but in API-001 §12)
   static const String forgotPassword = 'forgotPassword';

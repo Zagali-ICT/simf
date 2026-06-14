@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
@@ -16,6 +15,7 @@ import '../../app/widgets/simf_bottom_nav.dart';
 import '../../core/sharing/content_sharer.dart';
 import 'data/myarea_models.dart';
 import 'data/myarea_repository.dart';
+import 'identity_verification_screen.dart';
 
 /// One 12-hour formatter for the schedule rows (hoisted off the build path).
 final DateFormat _timeFormat = DateFormat('hh:mm a');
@@ -125,25 +125,22 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
     }
   }
 
-  /// Picks a new avatar from the gallery and uploads it (D-401). On success the
-  /// image cache is cleared (the avatar URL can be stable) and the dashboard
-  /// reloads so the new photo shows.
+  /// Runs the guided face-capture / liveness flow (D-404) and uploads the
+  /// returned selfie. On success the image cache is cleared (the avatar URL can
+  /// be stable) and the dashboard reloads so the new photo shows.
   Future<void> _changeAvatar() async {
     final l10n = AppL10n.of(context);
     final messenger = ScaffoldMessenger.of(context);
-    final picked = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1024,
-      imageQuality: 85,
-    );
-    if (picked == null || !mounted) {
+    final selfie = await context
+        .pushNamed<CapturedSelfie>(RouteNames.identityVerification);
+    if (selfie == null || !mounted) {
       return;
     }
-    final bytes = await picked.readAsBytes();
     try {
-      await ref
-          .read(myAreaRepositoryProvider)
-          .uploadAvatar(bytes: bytes, filename: picked.name);
+      await ref.read(myAreaRepositoryProvider).uploadAvatar(
+            bytes: selfie.bytes,
+            filename: selfie.filename,
+          );
       if (!mounted) {
         return;
       }

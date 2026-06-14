@@ -205,6 +205,7 @@ testing (see [`SIMF-APP-Build-Plan.md`](../App/SIMF-APP-Build-Plan.md)).
 | `shareMyContact` (`GET/POST /app/account/share-token` + `.vcf`) — FDS-014, additive | 🟢 Screen built (D-324) | Visitor (approved) | [App/FDS-014-Contact-UI](../App/FDS-014-Contact-UI/README.md) | [e2e/mobile-my-contacts.md](../tests/e2e/mobile-my-contacts.md) |
 | `scanContact` (`POST /app/contacts/resolve` + `/save`) — FDS-014, additive | 🟢 Screen built (D-324) | Visitor (approved) | [App/FDS-014-Contact-UI](../App/FDS-014-Contact-UI/README.md) | [e2e/mobile-my-contacts.md](../tests/e2e/mobile-my-contacts.md) |
 | `myContacts` (`GET /app/contacts` + `/{id}` delete + `/{id}/vcard`) — FDS-014, additive | 🟢 Screen built (D-324) | Visitor (approved) | [App/FDS-014-Contact-UI](../App/FDS-014-Contact-UI/README.md) | [e2e/mobile-my-contacts.md](../tests/e2e/mobile-my-contacts.md) |
+| `identityVerification` (`POST /app/account/avatar`) — avatar liveness, additive | 🟢 Screen built (D-404) | Visitor (approved) | — (Figma 758:4180/4248/4316) | [e2e/mobile-identity-verification.md](../tests/e2e/mobile-identity-verification.md) |
 
 ---
 

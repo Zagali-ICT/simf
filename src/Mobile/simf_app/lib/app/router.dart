@@ -36,6 +36,7 @@ import '../features/meet/meet_people_screen.dart';
 import '../features/more/more_screen.dart';
 import '../features/notifications/notifications_screen.dart';
 import '../features/questions/send_question_screen.dart';
+import '../features/myarea/identity_verification_screen.dart';
 import '../features/myarea/my_area_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/venuemap/venue_map_screen.dart';
@@ -139,6 +140,7 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 100, name: RouteNames.myContacts, path: '/contacts', labelAr: 'جهات اتصالي', labelEn: 'My Contacts'),
   _Route(number: 101, name: RouteNames.shareMyContact, path: '/contacts/share', labelAr: 'شارك جهة اتصالي', labelEn: 'Share my contact'),
   _Route(number: 102, name: RouteNames.scanContact, path: '/contacts/scan', labelAr: 'مسح رمز QR', labelEn: 'Scan QR'),
+  _Route(number: 103, name: RouteNames.identityVerification, path: '/my-area/verify-identity', labelAr: 'التحقق من الهوية', labelEn: 'Identity verification'),
 ];
 
 /// Auxiliary auth routes that aren't numbered in the mockup but live in
@@ -168,6 +170,7 @@ const Set<int> _authenticatedRoutes = <int>{
   100, // My Contacts (FDS-014, approved-only — D-286)
   101, // Share my contact (FDS-014, approved-only — D-286)
   102, // Scan contact QR (FDS-014, approved-only — D-286)
+  103, // Identity verification — avatar liveness (D-404, from My Area)
 };
 
 /// Builds the go_router instance.
@@ -364,6 +367,9 @@ GoRouter buildRouter(Ref ref) {
             }
             if (r.name == RouteNames.scanContact) {
               return const ScanContactScreen();
+            }
+            if (r.name == RouteNames.identityVerification) {
+              return const IdentityVerificationScreen();
             }
             return ComingSoonScreen(
               screenNumber: r.number,

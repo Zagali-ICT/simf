@@ -526,6 +526,19 @@ class AppL10n {
         'تعذّر تحديث الصورة. حاول مرة أخرى.',
         'Could not update the photo. Try again.',
       );
+  // التحقق من الهوية — the guided face-capture / liveness flow (D-404, frames
+  // 758:4180 / 758:4248 / 758:4316).
+  String get identityVerificationTitle =>
+      _t('التحقق من الهوية', 'Identity verification');
+  String get stepSmilePrompt => _t('ابتسم', 'Smile');
+  String get stepTurnRightPrompt =>
+      _t('ادر راسك لليمين', 'Turn your head right');
+  String get stepTurnLeftPrompt => _t('ادر راسك لليسار', 'Turn your head left');
+  String get identityCameraUnavailable => _t(
+        'الكاميرا غير متاحة. اختر صورة من المعرض بدلاً من ذلك.',
+        'The camera is unavailable. Choose a photo from the gallery instead.',
+      );
+  String get chooseFromGallery => _t('اختر من المعرض', 'Choose from gallery');
   String get statBookedSessions => _t('جلسات محفوظة', 'Booked sessions');
   String get statMeetings => _t('مقابلات مؤكدة', 'Confirmed meetings');
   String get statisticsTitle => _t('الإحصائيات', 'Statistics');

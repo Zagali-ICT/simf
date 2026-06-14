@@ -37,6 +37,21 @@ sample `android/app/src/main/AndroidManifest.xml` + `ios/Runner/Info.plist`
 templates. Any tweaks needed (display name, signing config, deep-link
 schemes) go in there after `flutter create` runs.
 
+### Native runtime permissions (re-apply after `flutter create`)
+
+Because `android/` and `ios/` are **not committed**, these permissions must be
+re-added to the regenerated native projects (or by the build/`simf-run` step):
+
+| Permission | Needed by | Where |
+|------------|-----------|-------|
+| `android.permission.CAMERA` + `<uses-feature android:name="android.hardware.camera" android:required="false"/>` (and `…camera.front`) | `mobile_scanner` (contact QR scan) **and** `camera` (avatar liveness / التحقق من الهوية, D-404) | `android/app/src/main/AndroidManifest.xml` |
+| `NSCameraUsageDescription` | same two features on iOS | `ios/Runner/Info.plist` |
+
+`image_picker`'s camera capture delegates to the system camera app and does
+**not** require the app to declare `CAMERA`; the live-preview `camera` plugin
+**does**. Without the permission the avatar liveness screen degrades to its
+gallery fallback (D-404).
+
 ## Environment configuration
 
 The app reads its base URL, app key, and device type from

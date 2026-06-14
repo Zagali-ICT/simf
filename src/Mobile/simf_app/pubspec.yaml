@@ -28,6 +28,11 @@ dependencies:
   # (instant feedback; the server's offline FaceAiSharp gate is the
   # authority). Android/iOS only — web/test runtimes defer to the server.
   google_mlkit_face_detection: ^0.13.1
+  # D-404 — live camera preview + frame stream for the guided face-capture /
+  # liveness flow (التحقق من الهوية): ML Kit reads smilingProbability +
+  # headEulerAngleY off the stream to verify Smile → turn-right → turn-left.
+  # Android/iOS only; web/test runtimes degrade gracefully (no live preview).
+  camera: ^0.11.0+2
   # Native OS share sheet for My-Area (Page_014): share the user's contact-card
   # (.vcf) and calendar (.ics) fetched from the App API. Native share config lands
   # in the generated folders (simf-run).
