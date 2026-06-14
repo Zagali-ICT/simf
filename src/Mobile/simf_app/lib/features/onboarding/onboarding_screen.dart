@@ -172,29 +172,49 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           SafeArea(
             child: Column(
               children: <Widget>[
-                // Back chevron on steps 2-3; a fixed-height slot keeps the
-                // layout stable when it is absent on step 1.
+                // Top bar: back chevron (steps 2-3) at the physical left and a
+                // prominent تخطي skip at the top-trailing corner (every step but
+                // the last). Forced LTR so both sit in the same place in AR + EN
+                // and the chevron is not auto-mirrored. The fixed height keeps
+                // the layout stable when either control is absent.
                 SizedBox(
                   height: 48,
-                  child: _index > 0
-                      ? Align(
-                          alignment: Alignment.topLeft,
-                          child: Padding(
-                            padding: const EdgeInsets.only(left: 8, top: 8),
-                            // The frame draws the chevron pointing left even
-                            // in RTL; force LTR so it is not auto-mirrored.
-                            child: IconButton(
-                              onPressed: _onBack,
-                              icon: const Icon(
-                                Icons.arrow_back_ios_new,
-                                color: Colors.white,
-                                size: 20,
-                                textDirection: TextDirection.ltr,
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: Row(
+                      textDirection: TextDirection.ltr,
+                      children: <Widget>[
+                        if (_index > 0)
+                          IconButton(
+                            onPressed: _onBack,
+                            icon: const Icon(
+                              Icons.arrow_back_ios_new,
+                              color: Colors.white,
+                              size: 20,
+                              textDirection: TextDirection.ltr,
+                            ),
+                          )
+                        else
+                          const SizedBox(width: 48),
+                        const Spacer(),
+                        if (!isLast)
+                          TextButton(
+                            onPressed: _onSkip,
+                            style: TextButton.styleFrom(
+                              foregroundColor: SimfTokens.accent,
+                            ),
+                            child: Text(
+                              l10n.onboardingSkip,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
-                        )
-                      : null,
+                      ],
+                    ),
+                  ),
                 ),
                 const Spacer(),
                 const SimfLogo(size: 136),
@@ -248,38 +268,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 const Spacer(flex: 2),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: <Widget>[
-                      FilledButton(
-                        onPressed: _onNext,
-                        child: Text(
-                          l10n.onboardingNext,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
+                  // The skip moved to the top-trailing corner; the bottom keeps
+                  // only the primary التالي action.
+                  child: FilledButton(
+                    onPressed: _onNext,
+                    child: Text(
+                      l10n.onboardingNext,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
                       ),
-                      const SizedBox(height: 16),
-                      // The skip link disappears on the last step (159:1052);
-                      // the fixed-height slot keeps the button from jumping.
-                      SizedBox(
-                        height: 32,
-                        child: isLast
-                            ? null
-                            : TextButton(
-                                onPressed: _onSkip,
-                                style: TextButton.styleFrom(
-                                  foregroundColor: SimfTokens.accent,
-                                ),
-                                child: Text(
-                                  l10n.onboardingSkip,
-                                  style: const TextStyle(fontSize: 18),
-                                ),
-                              ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
