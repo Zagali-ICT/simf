@@ -403,14 +403,21 @@ class _VisitorHome extends StatelessWidget {
           const SizedBox(height: SimfTokens.space6),
           KsaSectionHeader(title: l10n.followUsSection),
           const SizedBox(height: SimfTokens.space3),
-          const _SocialRow(),
+          // Frame 758:1134 — brand row stays LTR (X · Instagram · LinkedIn ·
+          // YouTube · TikTok) regardless of locale.
+          const Directionality(
+            textDirection: TextDirection.ltr,
+            child: _SocialRow(),
+          ),
           const SizedBox(height: SimfTokens.space3),
           Text(
             l10n.followUsHandle,
             textAlign: TextAlign.center,
+            // Frame 758:1134 — handle line is Medium.
             style: const TextStyle(
               color: SimfTokens.beigeBorder,
               fontSize: SimfTokens.textSm,
+              fontWeight: FontWeight.w500,
             ),
           ),
           // أحدث منشوراتنا (frame node 522:2345) — hidden until a post exists.
@@ -575,7 +582,7 @@ class _LiveBanner extends StatelessWidget {
                         fontSize: SimfTokens.textMd,
                       ),
                     ),
-                    const SizedBox(height: SimfTokens.space1),
+                    const SizedBox(height: SimfTokens.space2),
                     Text(
                       l10n.homeLiveSubtitle,
                       style: const TextStyle(
@@ -589,7 +596,8 @@ class _LiveBanner extends StatelessWidget {
               const SizedBox(width: SimfTokens.space2),
               const Icon(
                 Icons.arrow_left,
-                color: SimfTokens.accent,
+                // Frame 758:1134 — the live-banner arrow is white, not gold.
+                color: Colors.white,
                 size: 24,
               ),
             ],
@@ -690,18 +698,39 @@ class _LatestPostCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(SimfTokens.radius),
       child: Container(
-        padding: const EdgeInsets.all(SimfTokens.space4),
+        // Frame 758:1134 — px16 / py8, borderless.
+        padding: const EdgeInsets.symmetric(
+          horizontal: SimfTokens.space4,
+          vertical: SimfTokens.space2,
+        ),
         decoration: BoxDecoration(
           color: SimfTokens.navyDeep,
           borderRadius: BorderRadius.circular(SimfTokens.radius),
-          border: Border.all(color: SimfTokens.accent, width: 0.2),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Row(
               children: <Widget>[
-                const KsaAvatar(name: 'SIMF', size: 40),
+                // Frame 758:1134 — a round gold chip with white "SIMF", not the
+                // navy logo-square avatar.
+                Container(
+                  width: 44,
+                  height: 44,
+                  alignment: Alignment.center,
+                  decoration: const BoxDecoration(
+                    color: SimfTokens.accent,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Text(
+                    'SIMF',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: SimfTokens.textSm,
+                    ),
+                  ),
+                ),
                 const SizedBox(width: SimfTokens.space3),
                 Expanded(
                   child: Column(
@@ -711,10 +740,11 @@ class _LatestPostCard extends StatelessWidget {
                         l10n.postSourceName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
+                        // Frame 758:1134 — source name 14px Bold.
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,
-                          fontSize: SimfTokens.textSm,
+                          fontSize: SimfTokens.textMd,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -751,9 +781,10 @@ class _LatestPostCard extends StatelessWidget {
                 excerpt,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
+                // Frame 758:1134 — post body 14px.
                 style: const TextStyle(
                   color: SimfTokens.beigeBorder,
-                  fontSize: SimfTokens.textSm,
+                  fontSize: SimfTokens.textMd,
                 ),
               ),
             ],

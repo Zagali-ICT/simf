@@ -297,9 +297,11 @@ class KsaSectionHeader extends StatelessWidget {
               ),
               child: Text(
                 moreLabel!,
+                // Frame 758:1134 — the "more" link is white, Medium.
                 style: const TextStyle(
                   fontSize: SimfTokens.textSm,
-                  color: SimfTokens.txtSecondary,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
                 ),
               ),
             ),
