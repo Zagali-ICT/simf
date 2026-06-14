@@ -40,8 +40,12 @@ class AuthStateSignedIn extends AuthState {
 /// A sign-in needs the emailed OTP second factor (visitor 2FA). The router
 /// redirects to the OTP entry screen. The app has no TOTP path.
 class AuthStateAwaitingOtp extends AuthState {
-  const AuthStateAwaitingOtp(this.otpToken);
+  const AuthStateAwaitingOtp(this.otpToken, {this.email});
   final String otpToken;
+
+  /// The address the code was emailed to — shown on the OTP screen's recipient
+  /// line. Null when the sign-in path didn't carry it.
+  final String? email;
 }
 
 /// The repository the controller consumes. Wired by [authRepositoryProvider]
@@ -138,7 +142,7 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
         // GET /app/users/me so the app does not treat the user as Guest.
         await reloadCurrentUser();
       case SignInOtpChallenge(:final otpToken):
-        state = AuthStateAwaitingOtp(otpToken);
+        state = AuthStateAwaitingOtp(otpToken, email: email);
     }
   }
 

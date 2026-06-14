@@ -385,6 +385,12 @@ class AppL10n {
       );
   String get otpLabel => _t('الرمز', 'Code');
   String get verifyButton => _t('تحقّق', 'Verify');
+  // Email-OTP screen (frame 758:2616).
+  String get otpHeaderTitle => _t('التحقق بالبريد', 'Email verification');
+  String get otpSentToPrefix => _t('أرسلنا رمزاً الى', 'We sent a code to');
+  String get otpResendCountdown => _t('إعادة الإرسال خلال', 'Resend in');
+  String get otpDidntReceive => _t('لم يصلك الرمز؟', 'Didn\'t get the code?');
+  String get otpResendAction => _t('إعادة الإرسال', 'Resend');
   String get forgotPasswordTitle =>
       _t('استعادة كلمة المرور', 'Reset password');
   String get forgotPasswordBody => _t(
