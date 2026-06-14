@@ -26,7 +26,12 @@ class MoreDrawer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppL10n.of(context);
-    final signedIn = ref.watch(authControllerProvider) is AuthStateSignedIn;
+    final auth = ref.watch(authControllerProvider);
+    final signedIn = auth is AuthStateSignedIn;
+    final role = signedIn ? auth.session.user.appRole : AppRole.guest;
+    // Staff-only gate-operator scanner entry (D-406). UX gate only — the router
+    // role-gates the route and the server enforces the Gates.Operate grant.
+    final isStaff = role.isAtLeast(AppRole.staff);
     return Drawer(
       backgroundColor: SimfTokens.navySurface,
       child: SafeArea(
@@ -57,6 +62,15 @@ class MoreDrawer extends ConsumerWidget {
                       onTap: () {
                         Navigator.of(context).pop();
                         context.pushNamed(entry.routeName);
+                      },
+                    ),
+                  if (isStaff)
+                    _DrawerTile(
+                      icon: Icons.qr_code_scanner,
+                      title: l10n.gateScannerEntry,
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        context.pushNamed(RouteNames.gateScanner);
                       },
                     ),
                   const Divider(color: SimfTokens.beigeBorder, height: 1),

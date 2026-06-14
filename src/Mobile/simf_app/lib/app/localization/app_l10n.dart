@@ -563,6 +563,45 @@ class AppL10n {
       );
   String get moderatorActionFailed =>
       _t('تعذّر تنفيذ الإجراء. حاول مرة أخرى.', 'Action failed. Try again.');
+
+  // Staff gate-operator console (Figma 758:4380/4651/4735/4819/4886, D-406).
+  String get gateScannerEntry => _t('مسح البوابة', 'Gate scanner');
+  String get gateSelectGate => _t('اختر البوابة', 'Select gate');
+  String get gateScanHint =>
+      _t('وجّه الكاميرا إلى رمز QR', 'Point the camera at the QR code');
+  String get gateManualHint => _t('أدخل الرمز يدويًا', 'Enter the code manually');
+  String get gateManualSubmit => _t('تحقّق', 'Check');
+  String get gateHold => _t('إيقاف مؤقت', 'Hold');
+  String get gateResume => _t('استئناف', 'Resume');
+  String get gateAllowed => _t('مسموح', 'Allowed');
+  String get gateAllowedSub =>
+      _t('مرحباً بك في الفعالية', 'Welcome to the event');
+  String get gateDenied => _t('ممنوع', 'Denied');
+  String get gateDeniedSub =>
+      _t('غير مصرح بالدخول', 'Entry not authorised');
+  String get gateFieldName => _t('الاسم', 'Name');
+  String get gateFieldReference => _t('الرقم المرجعي', 'Reference');
+  String get gateFieldType => _t('النوع', 'Type');
+  String get gateFieldGate => _t('البوابة', 'Gate');
+  String get gateFieldDirection => _t('الحركة', 'Direction');
+  String get gateScanAgain => _t('سكان مرة أخرى', 'Scan again');
+  String get gateNone => _t('لا يوجد', 'None');
+  String get gateDirectionIn => _t('دخول', 'Entry');
+  String get gateDirectionOut => _t('خروج', 'Exit');
+  String get gateNotAssigned => _t(
+        'لست مشغّلاً لأي بوابة.',
+        'You are not assigned to any gate.',
+      );
+  String get gateForbidden => _t(
+        'لا تملك صلاحية تشغيل البوابات.',
+        'You are not authorised to operate gates.',
+      );
+  String get gateError => _t(
+        'تعذّر الاتصال بالبوابة. حاول مرة أخرى.',
+        'Could not reach the gate. Try again.',
+      );
+  String get gateRateLimited =>
+      _t('محاولات كثيرة. انتظر قليلاً.', 'Too many attempts. Wait a moment.');
   String get statBookedSessions => _t('جلسات محفوظة', 'Booked sessions');
   String get statMeetings => _t('مقابلات مؤكدة', 'Confirmed meetings');
   String get statisticsTitle => _t('الإحصائيات', 'Statistics');

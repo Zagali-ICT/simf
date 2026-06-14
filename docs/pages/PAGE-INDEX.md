@@ -207,6 +207,7 @@ testing (see [`SIMF-APP-Build-Plan.md`](../App/SIMF-APP-Build-Plan.md)).
 | `myContacts` (`GET /app/contacts` + `/{id}` delete + `/{id}/vcard`) — FDS-014, additive | 🟢 Screen built (D-324) | Visitor (approved) | [App/FDS-014-Contact-UI](../App/FDS-014-Contact-UI/README.md) | [e2e/mobile-my-contacts.md](../tests/e2e/mobile-my-contacts.md) |
 | `identityVerification` (`POST /app/account/avatar`) — avatar liveness, additive | 🟢 Screen built (D-404) | Visitor (approved) | — (Figma 758:4180/4248/4316) | [e2e/mobile-identity-verification.md](../tests/e2e/mobile-identity-verification.md) |
 | `sessionModerate` (`GET/PUT /app/sessions/{id}/questions/moderate·push·hide`) — moderator Q&A, additive | 🟢 Screen built (D-405) | Moderator+ (server: per-session grant) | — (Figma 758:5307) | [e2e/mobile-session-moderate.md](../tests/e2e/mobile-session-moderate.md) |
+| `gateScanner` (`GET /app/gates/my-assignments` · `POST /app/gates/{id}/scans`) — staff gate console, additive | 🟢 Screen built (D-406) | Staff (server: GateOperator grant) | — (Figma 758:4380/4651/4735/4819/4886) | [e2e/mobile-gate-scan.md](../tests/e2e/mobile-gate-scan.md) |
 
 ---
 

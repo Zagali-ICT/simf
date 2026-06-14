@@ -36,6 +36,7 @@ import '../features/meet/meet_people_screen.dart';
 import '../features/more/more_screen.dart';
 import '../features/notifications/notifications_screen.dart';
 import '../features/questions/send_question_screen.dart';
+import '../features/gates/gate_scan_screen.dart';
 import '../features/moderation/session_moderate_screen.dart';
 import '../features/myarea/identity_verification_screen.dart';
 import '../features/myarea/my_area_screen.dart';
@@ -143,6 +144,7 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 102, name: RouteNames.scanContact, path: '/contacts/scan', labelAr: 'مسح رمز QR', labelEn: 'Scan QR'),
   _Route(number: 103, name: RouteNames.identityVerification, path: '/my-area/verify-identity', labelAr: 'التحقق من الهوية', labelEn: 'Identity verification'),
   _Route(number: 104, name: RouteNames.sessionModerate, path: '/sessions/:sessionId/moderate', labelAr: 'أسئلة الجلسة', labelEn: 'Session questions'),
+  _Route(number: 105, name: RouteNames.gateScanner, path: '/gates/scan', labelAr: 'مسح البوابة', labelEn: 'Gate scanner'),
 ];
 
 /// Auxiliary auth routes that aren't numbered in the mockup but live in
@@ -174,14 +176,16 @@ const Set<int> _authenticatedRoutes = <int>{
   102, // Scan contact QR (FDS-014, approved-only — D-286)
   103, // Identity verification — avatar liveness (D-404, from My Area)
   104, // Moderator session Q&A desk (D-405; also role-gated below)
+  105, // Staff gate scanner (D-406; also role-gated below)
 };
 
-/// Routes that additionally require a minimum app privilege (D-405). The server
-/// is still the real authority (per-session grant / GateOperator role); this is
-/// a UX gate so the wrong role never opens the screen. A signed-in user whose
-/// role is below the minimum is redirected home.
+/// Routes that additionally require a minimum app privilege (D-405/D-406). The
+/// server is still the real authority (per-session grant / GateOperator role);
+/// this is a UX gate so the wrong role never opens the screen. A signed-in user
+/// whose role is below the minimum is redirected home.
 const Map<int, AppRole> _roleGatedRoutes = <int, AppRole>{
   104: AppRole.moderator, // Session Q&A desk — moderator (or higher)
+  105: AppRole.staff, // Gate scanner — staff
 };
 
 /// Builds the go_router instance.
@@ -389,6 +393,9 @@ GoRouter buildRouter(Ref ref) {
               return SessionModerateScreen(
                 sessionId: state.pathParameters['sessionId'] ?? '',
               );
+            }
+            if (r.name == RouteNames.gateScanner) {
+              return const GateScanScreen();
             }
             return ComingSoonScreen(
               screenNumber: r.number,

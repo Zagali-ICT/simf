@@ -187,5 +187,30 @@ void main() {
         '/sign-in',
       );
     });
+
+    test('the gate scanner requires staff exactly', () {
+      expect(requiredRoleForPath('/gates/scan'), AppRole.staff);
+      // A moderator (below staff) is sent home; staff is allowed.
+      expect(
+        redirectDecision(
+          isInitial: false,
+          isSignedIn: true,
+          goingTo: '/gates/scan',
+          fullPath: '/gates/scan',
+          appRole: AppRole.moderator,
+        ),
+        '/',
+      );
+      expect(
+        redirectDecision(
+          isInitial: false,
+          isSignedIn: true,
+          goingTo: '/gates/scan',
+          fullPath: '/gates/scan',
+          appRole: AppRole.staff,
+        ),
+        isNull,
+      );
+    });
   });
 }
