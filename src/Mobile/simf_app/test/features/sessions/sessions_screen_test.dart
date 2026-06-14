@@ -162,8 +162,8 @@ void main() {
       expect(find.textContaining('Maritime security panel'), findsNothing);
     });
 
-    testWidgets('the Event-agenda pill reveals past sessions hidden by '
-        'Upcoming', (tester) async {
+    testWidgets('the Upcoming pill hides past sessions; Event-agenda reveals '
+        'them', (tester) async {
       await _pump(
         tester,
         repo: _FakeSessionsRepository(
@@ -171,13 +171,19 @@ void main() {
         ),
       );
 
-      // Default view is Upcoming → the past session is hidden.
+      // Default view is Event-agenda (frame 758:1396) → past + future shown.
+      expect(find.textContaining('Archived opening'), findsOneWidget);
+      expect(find.textContaining('Closing keynote'), findsOneWidget);
+
+      // Upcoming hides the past session...
+      await tester.tap(find.text('Upcoming agenda'));
+      await tester.pumpAndSettle();
       expect(find.textContaining('Archived opening'), findsNothing);
       expect(find.textContaining('Closing keynote'), findsOneWidget);
 
+      // ...and Event-agenda brings it back.
       await tester.tap(find.text('Event agenda'));
       await tester.pumpAndSettle();
-
       expect(find.textContaining('Archived opening'), findsOneWidget);
     });
 

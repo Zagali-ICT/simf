@@ -11,6 +11,7 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
+import '../../app/widgets/simf_svg_icon.dart';
 import 'data/session_models.dart';
 import 'data/sessions_repository.dart';
 
@@ -48,7 +49,8 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
   // every (per-keystroke) rebuild.
   List<DateTime> _days = const <DateTime>[];
 
-  SessionsView _view = SessionsView.upcoming;
+  // Frame 758:1396 shows the forum (full-programme) pill active by default.
+  SessionsView _view = SessionsView.forum;
   DateTime? _selectedDay;
   String _query = '';
 
@@ -215,7 +217,11 @@ class _SearchField extends StatelessWidget {
           color: Colors.white,
           fontSize: SimfTokens.textSm,
         ),
-        suffixIcon: const Icon(Icons.search, size: 18, color: Colors.white),
+        suffixIcon: const SimfSvgIcon(
+          'assets/icons/ic_search.svg',
+          size: 18,
+          color: Colors.white,
+        ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: SimfTokens.space3,
           vertical: SimfTokens.space4,
@@ -485,7 +491,12 @@ class _SessionRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: SimfTokens.space2),
-              const Icon(Icons.chevron_left, size: 20, color: Colors.white),
+              // Frame 758:1396 — gold iconamoon chevron, not a white Material one.
+              const SimfSvgIcon(
+                'assets/icons/ic_back.svg',
+                size: 20,
+                color: SimfTokens.accent,
+              ),
             ],
           ),
       ),
