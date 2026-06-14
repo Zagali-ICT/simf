@@ -358,6 +358,9 @@ public static class DependencyInjection
         // SIMF-FDS-014 — D-284 (Track 2): visitor-to-visitor contact sharing.
         services.AddScoped<SIMF.Application.Contacts.Abstractions.IVisitorShareService,
             SIMF.Infrastructure.Contacts.VisitorShareService>();
+        // D-426 — exhibitor ("Other") lead capture: scan visitor badge → My Visitors.
+        services.AddScoped<SIMF.Application.Exhibitors.Abstractions.IExhibitorVisitorService,
+            SIMF.Infrastructure.Exhibitors.ExhibitorVisitorService>();
         // B9b — D-226: dynamic session-category lookup (FDS-004 §5.4).
         services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminSessionCategoryService,
             SIMF.Infrastructure.Programme.AdminSessionCategoryService>();

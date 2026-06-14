@@ -185,6 +185,10 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
     public DbSet<VisitorShareToken> VisitorShareTokens => Set<VisitorShareToken>();
     public DbSet<SavedContact> SavedContacts => Set<SavedContact>();
 
+    // D-426 — exhibitor ("Other") lead capture: visitors scanned at a booth.
+    // Bare-Guid logical FKs to SimfUser.Id (Identity DB) — no DB FK.
+    public DbSet<ExhibitorVisitorScan> ExhibitorVisitorScans => Set<ExhibitorVisitorScan>();
+
     // P2.1 (D-211) — two-level FAQ: groups own ordered question/answer entries.
     public DbSet<FaqGroup> FaqGroups => Set<FaqGroup>();
     public DbSet<FaqEntry> FaqEntries => Set<FaqEntry>();

@@ -12,6 +12,7 @@ public static class ErrorCodes
     public const string RateLimitExceeded = "RATE_LIMIT_EXCEEDED";
     public const string InternalError = "INTERNAL_ERROR";
     public const string NotFound = "NOT_FOUND";
+    public const string Forbidden = "FORBIDDEN";
 
     // Authentication (SIMF-API-001 section 12.6 and Amendment A)
     public const string AuthEmailAlreadyRegistered = "AUTH_EMAIL_ALREADY_REGISTERED";
