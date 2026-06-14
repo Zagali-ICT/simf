@@ -113,8 +113,28 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
+    final auth = ref.watch(authControllerProvider);
+    final role = auth is AuthStateSignedIn
+        ? auth.session.user.appRole
+        : AppRole.guest;
+    // Moderator (محاور) entry to the Q&A desk (D-405). UX gate only — the
+    // server still enforces the per-session SessionModerator grant (403).
+    final canModerate = role.isAtLeast(AppRole.moderator);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.sessionDetailTitle)),
+      appBar: AppBar(
+        title: Text(l10n.sessionDetailTitle),
+        actions: <Widget>[
+          if (canModerate)
+            IconButton(
+              tooltip: l10n.moderatorManageQuestions,
+              icon: const Icon(Icons.forum_outlined),
+              onPressed: () => context.pushNamed(
+                RouteNames.sessionModerate,
+                pathParameters: <String, String>{'sessionId': widget.sessionId},
+              ),
+            ),
+        ],
+      ),
       bottomNavigationBar: const SimfBottomNav(current: SimfTab.sessions),
       body: SafeArea(top: false, child: _buildBody(l10n)),
     );

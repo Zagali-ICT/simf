@@ -78,6 +78,9 @@ class RouteNames {
   // Guided face-capture / liveness for the avatar (D-404; additive, reached from
   // My Area; signed-in + Approved).
   static const String identityVerification = 'identityVerification';
+  // Moderator (محاور) per-session Q&A desk (D-405; additive, reached from a
+  // session's detail; role-gated to Moderator+, server enforces per-session grant).
+  static const String sessionModerate = 'sessionModerate';
 
   // Auxiliary auth routes (not numbered in the mockup but in API-001 §12)
   static const String forgotPassword = 'forgotPassword';

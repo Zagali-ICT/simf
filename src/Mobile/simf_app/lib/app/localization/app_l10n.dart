@@ -539,6 +539,30 @@ class AppL10n {
         'The camera is unavailable. Choose a photo from the gallery instead.',
       );
   String get chooseFromGallery => _t('اختر من المعرض', 'Choose from gallery');
+
+  // Moderator (محاور) per-session Q&A desk (Figma 758:5307, D-405).
+  String get moderatorDeskTitle => _t('أسئلة الجلسة', 'Session questions');
+  String get moderatorBadge => _t('محاوِر', 'Moderator');
+  String get moderatorManageQuestions =>
+      _t('إدارة الأسئلة', 'Manage questions');
+  String get moderatorChipAll => _t('الكل', 'All');
+  String get moderatorChipNew => _t('جديد', 'New');
+  String get moderatorChipOnStage => _t('يتم الإجابة', 'Being answered');
+  String get moderatorActionOnStage => _t('يتم الإجابة', 'Being answered');
+  String get moderatorActionReject => _t('مرفوض', 'Reject');
+  String get moderatorToHost => _t('إلى المضيف', 'To host');
+  String get moderatorEmpty =>
+      _t('لا توجد أسئلة معتمدة بعد.', 'No approved questions yet.');
+  String get moderatorForbidden => _t(
+        'لست محاوِرًا لهذه الجلسة.',
+        'You are not a moderator for this session.',
+      );
+  String get moderatorError => _t(
+        'تعذّر تحميل الأسئلة. حاول مرة أخرى.',
+        'Could not load the questions. Try again.',
+      );
+  String get moderatorActionFailed =>
+      _t('تعذّر تنفيذ الإجراء. حاول مرة أخرى.', 'Action failed. Try again.');
   String get statBookedSessions => _t('جلسات محفوظة', 'Booked sessions');
   String get statMeetings => _t('مقابلات مؤكدة', 'Confirmed meetings');
   String get statisticsTitle => _t('الإحصائيات', 'Statistics');

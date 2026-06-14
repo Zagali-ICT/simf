@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/router.dart';
+import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
 void main() {
   group('routePathRequiresAuth (auth gate, SIMF-MAA-001 §8)', () {
@@ -135,6 +136,55 @@ void main() {
           fullPath: '/sessions',
         ),
         isNull,
+      );
+    });
+  });
+
+  group('role gate (D-405)', () {
+    const moderate = '/sessions/:sessionId/moderate';
+
+    test('requiredRoleForPath returns moderator for the Q&A desk', () {
+      expect(requiredRoleForPath(moderate), AppRole.moderator);
+      expect(requiredRoleForPath('/badge'), isNull);
+    });
+
+    test('a visitor hitting a moderator route is sent home', () {
+      expect(
+        redirectDecision(
+          isInitial: false,
+          isSignedIn: true,
+          goingTo: '/sessions/s1/moderate',
+          fullPath: moderate,
+          appRole: AppRole.visitor,
+        ),
+        '/',
+      );
+    });
+
+    test('a moderator (or staff, higher) is allowed through', () {
+      for (final role in <AppRole>[AppRole.moderator, AppRole.staff]) {
+        expect(
+          redirectDecision(
+            isInitial: false,
+            isSignedIn: true,
+            goingTo: '/sessions/s1/moderate',
+            fullPath: moderate,
+            appRole: role,
+          ),
+          isNull,
+        );
+      }
+    });
+
+    test('signed-out on a moderator route still goes to sign-in first', () {
+      expect(
+        redirectDecision(
+          isInitial: false,
+          isSignedIn: false,
+          goingTo: '/sessions/s1/moderate',
+          fullPath: moderate,
+        ),
+        '/sign-in',
       );
     });
   });
