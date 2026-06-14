@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../localization/app_l10n.dart';
@@ -8,6 +7,7 @@ import '../theme/tokens.dart';
 import 'more_drawer.dart';
 import 'simf_bottom_nav.dart';
 import 'simf_logo.dart';
+import 'simf_svg_icon.dart';
 
 /// Shared KSA main-shell chrome for the Wave-2 in-app pages (frames
 /// 512:1492 / 203:1236 / 512:1780 / 215:767 / 221:769 / 215:562): the navy
@@ -365,12 +365,7 @@ class KsaNavTile extends StatelessWidget {
     final labelColor = enabled ? Colors.white : SimfTokens.navyDisabledText;
     final asset = iconAsset;
     final Widget top = asset != null
-        ? SvgPicture.asset(
-            asset,
-            width: 24,
-            height: 24,
-            colorFilter: ColorFilter.mode(foreground, BlendMode.srcIn),
-          )
+        ? SimfSvgIcon(asset, size: 24, color: foreground)
         : Icon(icon, size: 24, color: foreground);
     return KsaCard(
       onTap: enabled ? onTap : null,

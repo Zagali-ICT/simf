@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
@@ -14,6 +13,7 @@ import '../../app/localization/locale_controller.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_logo.dart';
+import '../../app/widgets/simf_svg_icon.dart';
 import 'post_auth_route.dart';
 
 // Screen-local shorthands for the KSA-Project design tokens. The palette was
@@ -274,14 +274,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     children: <Widget>[
                       IconButton(
                         onPressed: _busy ? null : _back,
-                        icon: SvgPicture.asset(
+                        icon: const SimfSvgIcon(
                           _icBack,
-                          width: 24,
-                          height: 24,
-                          colorFilter: const ColorFilter.mode(
-                            Colors.white,
-                            BlendMode.srcIn,
-                          ),
+                          size: 24,
+                          color: Colors.white,
                         ),
                       ),
                       const Spacer(),
@@ -297,14 +293,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                               borderRadius: _radius4,
                             ),
                           ),
-                          icon: SvgPicture.asset(
+                          icon: const SimfSvgIcon(
                             _icGlobe,
-                            width: 24,
-                            height: 24,
-                            colorFilter: const ColorFilter.mode(
-                              SimfTokens.accent,
-                              BlendMode.srcIn,
-                            ),
+                            size: 24,
+                            color: SimfTokens.accent,
                           ),
                         ),
                       ),
@@ -392,11 +384,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 tooltip: _obscure
                     ? l10n.showPasswordTooltip
                     : l10n.hidePasswordTooltip,
-                icon: SvgPicture.asset(
+                icon: SimfSvgIcon(
                   _obscure ? _icEyeOff : _icEye,
-                  width: 16,
-                  height: 16,
-                  colorFilter: const ColorFilter.mode(_grey, BlendMode.srcIn),
+                  size: 16,
+                  color: _grey,
                 ),
                 onPressed: () => setState(() => _obscure = !_obscure),
               ),
@@ -549,15 +540,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   ),
                 ),
                 const SizedBox(width: 10),
-                SvgPicture.asset(
-                  _icFaceId,
-                  width: 20,
-                  height: 20,
-                  colorFilter: const ColorFilter.mode(
-                    _goldText,
-                    BlendMode.srcIn,
-                  ),
-                ),
+                const SimfSvgIcon(_icFaceId, size: 20, color: _goldText),
               ],
             ),
           ),
