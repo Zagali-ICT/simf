@@ -110,22 +110,32 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(l10n.scanContactTitle)),
       body: SafeArea(
-        child: Column(
-          children: <Widget>[
-            // The camera preview is confined to a fixed viewfinder box, never an
-            // Expanded that fills the screen: some devices don't composite the
-            // platform-view preview (it paints blank) and an unbounded preview
-            // then covers the whole body — hiding the manual-entry fallback. A
-            // bounded box keeps the manual entry below always visible + usable.
-            SizedBox(
-              width: double.infinity,
-              height: 320,
-              child: _buildCamera(l10n),
-            ),
-            Expanded(
-              child: SingleChildScrollView(child: _buildManualEntry(l10n)),
-            ),
-          ],
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // The live viewfinder takes the bulk of the page height (responsive
+            // to rotation) with the manual-entry fallback in a compact strip
+            // below it — both reachable, no scrolling needed. The box is sized
+            // explicitly (a large fraction, NOT a full-height Expanded): some
+            // devices only composite the camera platform-view when it is
+            // bounded — a full-bleed preview paints blank and covers the body —
+            // and a bounded box also keeps the manual entry from being hidden.
+            // When the camera is off (test / web) the box is compact.
+            final cameraHeight = widget.enableCamera
+                ? (constraints.maxHeight * 0.78).clamp(240.0, constraints.maxHeight)
+                : 220.0;
+            return Column(
+              children: <Widget>[
+                SizedBox(
+                  width: double.infinity,
+                  height: cameraHeight,
+                  child: _buildCamera(l10n),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(child: _buildManualEntry(l10n)),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

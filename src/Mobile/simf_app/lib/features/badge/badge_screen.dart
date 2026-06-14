@@ -194,10 +194,20 @@ class _Badge extends StatelessWidget {
                 // stays proportional on any device.
                 padding: const EdgeInsets.all(SimfTokens.space6),
                 child: LayoutBuilder(
-                  builder: (context, constraints) => QrImageView(
+                  builder: (context, constraints) {
+                    // Keep the QR square AND fit the page: cap to ~half the
+                    // screen height so a rotated (landscape) layout doesn't blow
+                    // it up past the viewport. Portrait is unchanged — width is
+                    // the smaller dimension there (≈265 on the 343 card).
+                    final maxByHeight =
+                        MediaQuery.of(context).size.height * 0.5;
+                    final qrSize = constraints.maxWidth < maxByHeight
+                        ? constraints.maxWidth
+                        : maxByHeight;
+                    return QrImageView(
                     data: qrId,
                     version: QrVersions.auto,
-                    size: constraints.maxWidth,
+                    size: qrSize,
                     gapless: true,
                     // Frame 758:1477 — rounded finder eyes, pure-black modules.
                     eyeStyle: const QrEyeStyle(
@@ -208,7 +218,8 @@ class _Badge extends StatelessWidget {
                       dataModuleShape: QrDataModuleShape.square,
                       color: Colors.black,
                     ),
-                  ),
+                  );
+                  },
                 ),
               ),
               Text(
