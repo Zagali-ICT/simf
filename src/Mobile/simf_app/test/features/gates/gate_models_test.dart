@@ -41,30 +41,21 @@ void main() {
       expect(r.direction, ScanDirection.checkIn);
       expect(r.userProfile?.localizedName(false), 'Raed');
       expect(r.userProfile?.profileTypeName, 'VIP');
-      expect(r.denialReason, isNull);
+      expect(r.denialMessage, isNull);
     });
 
-    test('a denied scan maps the reason code + message', () {
+    test('a denied scan carries the server message', () {
       final r = GateScanResult.fromJson(<String, dynamic>{
         'scanId': 7,
         'outcome': 1,
         'direction': 1,
-        'denialReasonCode': 2, // HolderNotApproved
+        'denialReasonCode': 2, // HolderNotApproved (not surfaced as an enum)
         'denialMessage': 'Holder not approved',
       });
       expect(r.isAllowed, isFalse);
       expect(r.direction, ScanDirection.checkOut);
-      expect(r.denialReason, GateDenialReason.holderNotApproved);
       expect(r.denialMessage, 'Holder not approved');
       expect(r.userProfile, isNull);
-    });
-
-    test('an unknown reason code degrades to unknown (not a crash)', () {
-      final r = GateScanResult.fromJson(<String, dynamic>{
-        'outcome': 1,
-        'denialReasonCode': 99,
-      });
-      expect(r.denialReason, GateDenialReason.unknown);
     });
   });
 }

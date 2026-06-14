@@ -463,8 +463,9 @@ class _TappableAvatar extends StatelessWidget {
           clipBehavior: Clip.none,
           children: <Widget>[
             avatar,
-            Positioned(
-              right: -2,
+            Positioned.directional(
+              textDirection: Directionality.of(context),
+              end: -2,
               bottom: -2,
               child: Container(
                 padding: const EdgeInsets.all(SimfTokens.space1),

@@ -111,7 +111,9 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
       final result = await ref.read(gatesRepositoryProvider).recordScan(
             gateId: gate.gateId,
             qr: trimmed,
-            idempotencyKey: '${gate.gateId}-${_stamp()}',
+            // Derived from the code itself so a true rapid re-scan of the SAME
+            // badge collides server-side (idempotent replay), as documented.
+            idempotencyKey: '${gate.gateId}-$trimmed',
           );
       if (!mounted) {
         return;
@@ -128,10 +130,6 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
       _busy = false;
     }
   }
-
-  /// A monotonic-ish stamp for the idempotency key (no Date.now in the test
-  /// path — the field is only used by the server to dedupe a rapid re-scan).
-  int _stamp() => DateTime.now().microsecondsSinceEpoch;
 
   String _failureText(AppL10n l10n, int? status) {
     switch (status) {
@@ -202,6 +200,7 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
         isArabic: isArabic,
         result: result,
         gateName: _gate!.localizedName(isArabic),
+        reference: _lastQr,
         onScanAgain: _scanAgain,
       );
     }
@@ -395,8 +394,10 @@ class _GatePicker extends StatelessWidget {
           ),
       ],
       onChanged: (id) {
-        final picked = gates.firstWhere((g) => g.gateId == id);
-        onGate(picked);
+        if (id == null) {
+          return;
+        }
+        onGate(gates.firstWhere((g) => g.gateId == id, orElse: () => gate));
       },
     );
   }
@@ -408,6 +409,7 @@ class _GateResult extends StatelessWidget {
     required this.isArabic,
     required this.result,
     required this.gateName,
+    required this.reference,
     required this.onScanAgain,
   });
 
@@ -415,6 +417,9 @@ class _GateResult extends StatelessWidget {
   final bool isArabic;
   final GateScanResult result;
   final String gateName;
+
+  /// The scanned/entered badge code — shown as the frame's "الرقم المرجعي".
+  final String reference;
   final VoidCallback onScanAgain;
 
   @override
@@ -471,6 +476,10 @@ class _GateResult extends StatelessWidget {
               child: Column(
                 children: <Widget>[
                   _row(l10n.gateFieldName, name ?? l10n.gateNone),
+                  _row(
+                    l10n.gateFieldReference,
+                    reference.trim().isNotEmpty ? reference : l10n.gateNone,
+                  ),
                   _row(
                     l10n.gateFieldType,
                     (type?.trim().isNotEmpty ?? false) ? type! : '—',

@@ -7,46 +7,6 @@ enum ScanOutcome { allowed, denied }
 /// (CheckIn=0, CheckOut=1).
 enum ScanDirection { checkIn, checkOut }
 
-/// Why a scan was denied — mirrors `DenialReasonCode` (0..8); [unknown] guards a
-/// future server value (the wire is decoded by integer).
-enum GateDenialReason {
-  qrUnknown,
-  gateInactiveAtScan,
-  holderNotApproved,
-  holderDisabled,
-  holderLocked,
-  profileTypeInactive,
-  outsideTimeWindow,
-  profileTypeNotAllowed,
-  bookingRequiredMissing,
-  unknown,
-}
-
-GateDenialReason _denialFromInt(int? v) {
-  switch (v) {
-    case 0:
-      return GateDenialReason.qrUnknown;
-    case 1:
-      return GateDenialReason.gateInactiveAtScan;
-    case 2:
-      return GateDenialReason.holderNotApproved;
-    case 3:
-      return GateDenialReason.holderDisabled;
-    case 4:
-      return GateDenialReason.holderLocked;
-    case 5:
-      return GateDenialReason.profileTypeInactive;
-    case 6:
-      return GateDenialReason.outsideTimeWindow;
-    case 7:
-      return GateDenialReason.profileTypeNotAllowed;
-    case 8:
-      return GateDenialReason.bookingRequiredMissing;
-    default:
-      return GateDenialReason.unknown;
-  }
-}
-
 /// A gate the signed-in operator is assigned to — mirrors
 /// `OperatorGateAssignment` (`GET /app/gates/my-assignments`).
 @immutable
@@ -127,7 +87,6 @@ class GateScanResult {
     required this.outcome,
     required this.direction,
     this.userProfile,
-    this.denialReason,
     this.denialMessage,
   });
 
@@ -135,7 +94,9 @@ class GateScanResult {
   final ScanOutcome outcome;
   final ScanDirection direction;
   final GateScanUserProfile? userProfile;
-  final GateDenialReason? denialReason;
+
+  /// The server's already-localized denial text (the `DenialReasonCode` enum is
+  /// not surfaced — the message is what the UI shows).
   final String? denialMessage;
 
   bool get isAllowed => outcome == ScanOutcome.allowed;
@@ -149,9 +110,6 @@ class GateScanResult {
             ? ScanDirection.checkOut
             : ScanDirection.checkIn,
         userProfile: GateScanUserProfile.fromJson(json['userProfile']),
-        denialReason: json['denialReasonCode'] == null
-            ? null
-            : _denialFromInt((json['denialReasonCode'] as num?)?.toInt()),
         denialMessage: json['denialMessage'] as String?,
       );
 }
