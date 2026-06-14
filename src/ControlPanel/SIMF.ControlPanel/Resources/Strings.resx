@@ -1014,7 +1014,7 @@
   <data name="Admin.Visitors.BulkDelete.Confirm" xml:space="preserve"><value>This will disable {0} visitor account(s). Sessions are revoked and the users are notified by email.</value></data>
   <data name="Admin.Visitors.Duplicate.Title" xml:space="preserve"><value>Duplicate visitor</value></data>
   <data name="Admin.CreateVisitor.Title" xml:space="preserve"><value>Add a new visitor</value></data>
-  <data name="Admin.CreateVisitor.Supporting" xml:space="preserve"><value>The visitor receives an email invitation with a one-time code to set their password. The invitation is valid for 7 days.</value></data>
+  <data name="Admin.CreateVisitor.Supporting" xml:space="preserve"><value>Fill the visitor's details at the desk. The account is created pending approval; approve it from Pending visitors to issue the QR badge.</value></data>
   <data name="Admin.CreateVisitor.Email" xml:space="preserve"><value>Email address</value></data>
   <data name="Admin.CreateVisitor.DisplayName" xml:space="preserve"><value>Display name</value></data>
   <data name="Admin.CreateVisitor.EmailInvalid" xml:space="preserve"><value>A valid email address is required.</value></data>

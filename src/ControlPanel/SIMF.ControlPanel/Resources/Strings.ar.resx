@@ -1004,7 +1004,7 @@
   <data name="Admin.Visitors.BulkDelete.Confirm" xml:space="preserve"><value>سيؤدي ذلك إلى تعطيل {0} حساب زائر. سيتم إنهاء الجلسات وإخطار المستخدمين عبر البريد الإلكتروني.</value></data>
   <data name="Admin.Visitors.Duplicate.Title" xml:space="preserve"><value>نسخ زائر</value></data>
   <data name="Admin.CreateVisitor.Title" xml:space="preserve"><value>إضافة زائر جديد</value></data>
-  <data name="Admin.CreateVisitor.Supporting" xml:space="preserve"><value>سيتلقّى الزائر دعوة عبر البريد الإلكتروني مع رمز لتعيين كلمة المرور. الدعوة صالحة لمدة 7 أيام.</value></data>
+  <data name="Admin.CreateVisitor.Supporting" xml:space="preserve"><value>أدخل بيانات الزائر في المكتب. يُنشأ الحساب بانتظار الاعتماد؛ اعتمده من قائمة الزوار المعلّقين لإصدار شارة QR.</value></data>
   <data name="Admin.CreateVisitor.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
   <data name="Admin.CreateVisitor.DisplayName" xml:space="preserve"><value>الاسم المعروض</value></data>
   <data name="Admin.CreateVisitor.EmailInvalid" xml:space="preserve"><value>يجب إدخال بريد إلكتروني صالح.</value></data>
