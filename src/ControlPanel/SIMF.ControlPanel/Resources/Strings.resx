@@ -852,6 +852,8 @@
   <data name="Admin.WalkIn.Section.IdDocument" xml:space="preserve"><value>ID document</value></data>
   <data name="Admin.WalkIn.Section.IdDocument.Hint" xml:space="preserve"><value>Optional scan of the national ID, Iqama or passport. PNG / JPEG / WebP, up to 5 MB. Stored encrypted at rest.</value></data>
   <data name="Admin.WalkIn.Field.IdDocument.Selected" xml:space="preserve"><value>Selected: {0}</value></data>
+  <data name="Admin.WalkIn.Field.Photo" xml:space="preserve"><value>Profile photo (optional)</value></data>
+  <data name="Admin.WalkIn.Field.Photo.Hint" xml:space="preserve"><value>A photo or logo for the badge. PNG, JPEG or WebP, up to 2 MB.</value></data>
   <!-- B3 — D-221 — required organisation (الجهة) picker on the walk-in form. -->
   <data name="Admin.WalkIn.Section.Organisation" xml:space="preserve"><value>Organisation</value></data>
   <data name="Admin.WalkIn.Field.Organisation" xml:space="preserve"><value>Organisation</value></data>

@@ -437,6 +437,54 @@ internal static class AccountEndpoints
                 id, stream.ToArray(), file.ContentType, file.FileName, token));
         }).DisableAntiforgery();
 
+        // D-427 (CS-3) — admin upload of the subject's profile photo (avatar).
+        // Mirrors the ID-document upload proxy (multipart, SameSite=Lax CSRF).
+        group.MapPost("/admin/visitors/{id:guid}/avatar",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+
+            var form = await http.Request.ReadFormAsync();
+            var file = form.Files.GetFile("file");
+            if (file is null || file.Length == 0)
+            {
+                return Results.BadRequest(ApiResult<object>.Fail(new ApiError
+                {
+                    Code = ErrorCodes.AvatarFileMissing,
+                    Message = "An avatar file is required.",
+                    MessageArabic = "ملف الصورة مطلوب.",
+                }));
+            }
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+            return Forward(await api.UploadVisitorAvatarAsync(
+                id, stream.ToArray(), file.ContentType, file.FileName, token));
+        }).DisableAntiforgery();
+
+        group.MapPost("/admin/others/{id:guid}/avatar",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+
+            var form = await http.Request.ReadFormAsync();
+            var file = form.Files.GetFile("file");
+            if (file is null || file.Length == 0)
+            {
+                return Results.BadRequest(ApiResult<object>.Fail(new ApiError
+                {
+                    Code = ErrorCodes.AvatarFileMissing,
+                    Message = "An avatar file is required.",
+                    MessageArabic = "ملف الصورة مطلوب.",
+                }));
+            }
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+            return Forward(await api.UploadOtherAvatarAsync(
+                id, stream.ToArray(), file.ContentType, file.FileName, token));
+        }).DisableAntiforgery();
+
         // D-129 — admin stream-read of the subject's ID-document image. The
         // Details / View modals render this via <img src="..."> so the
         // browser refreshes it whenever the modal opens.

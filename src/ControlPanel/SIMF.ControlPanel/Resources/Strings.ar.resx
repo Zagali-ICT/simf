@@ -844,6 +844,8 @@
   <data name="Admin.WalkIn.Section.IdDocument" xml:space="preserve"><value>وثيقة الهوية</value></data>
   <data name="Admin.WalkIn.Section.IdDocument.Hint" xml:space="preserve"><value>صورة اختيارية للهوية الوطنية أو الإقامة أو جواز السفر. PNG / JPEG / WebP حتى 5 ميغابايت. تُخزَّن مشفّرة.</value></data>
   <data name="Admin.WalkIn.Field.IdDocument.Selected" xml:space="preserve"><value>تم اختيار: {0}</value></data>
+  <data name="Admin.WalkIn.Field.Photo" xml:space="preserve"><value>صورة الملف الشخصي (اختياري)</value></data>
+  <data name="Admin.WalkIn.Field.Photo.Hint" xml:space="preserve"><value>صورة أو شعار للشارة. PNG أو JPEG أو WebP، حتى 2 ميغابايت.</value></data>
   <!-- B3 — D-221 — حقل الجهة المطلوب في نموذج التسجيل الفوري. -->
   <data name="Admin.WalkIn.Section.Organisation" xml:space="preserve"><value>الجهة</value></data>
   <data name="Admin.WalkIn.Field.Organisation" xml:space="preserve"><value>الجهة</value></data>

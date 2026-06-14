@@ -24,6 +24,21 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
 {
     private const string Password = "Passw0rd!";
 
+    // A minimal valid 1x1 PNG (magic-byte + IHDR + IDAT + IEND) for the
+    // D-427 admin avatar-upload test.
+    private static readonly byte[] OnePixelPng =
+    [
+        0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+        0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+        0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+        0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4,
+        0x89, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x44, 0x41,
+        0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00,
+        0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00,
+        0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE,
+        0x42, 0x60, 0x82,
+    ];
+
     private readonly SimfApiFactory _factory;
     private readonly HttpClient _client;
 
@@ -66,6 +81,38 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
         Assert.Equal(profileTypeId, profile.ProfileTypeId);
         Assert.True(string.IsNullOrEmpty(profile.QrId));
         Assert.Equal("Walk-in Visitor", profile.Name);
+    }
+
+    [Fact]
+    public async Task Admin_uploads_visitor_avatar_sets_path()
+    {
+        // D-427 (CS-3) — the desk captures a profile photo (avatar) for the
+        // walk-in account via the new admin avatar endpoint.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var profileTypeId = await GetVisitorProfileTypeAsync();
+        var organisationId = await GetOrganisationIdAsync();
+
+        var reg = await PostAuthAsync(
+            "/api/v1/admin/visitors/register-onsite",
+            BuildRequest(profileTypeId, $"walkin-av-{Guid.NewGuid():N}@simf.test", organisationId),
+            adminToken);
+        var regBody = (await reg.Content.ReadFromJsonAsync<ApiResult<AdminWalkInRegistrationResponse>>())!;
+        var subjectId = regBody.Data!.UserId;
+
+        using var form = new MultipartFormDataContent();
+        var file = new ByteArrayContent(OnePixelPng);
+        file.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        form.Add(file, "file", "avatar.png");
+        using var request = new HttpRequestMessage(
+            HttpMethod.Post, $"/api/v1/admin/visitors/{subjectId}/avatar") { Content = form };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var user = await db.Users.SingleAsync(u => u.Id == subjectId);
+        Assert.False(string.IsNullOrEmpty(user.AvatarRelativePath));
     }
 
     [Fact]

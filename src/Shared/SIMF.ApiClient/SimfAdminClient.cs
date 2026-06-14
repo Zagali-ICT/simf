@@ -665,6 +665,34 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Post, path, multipart, accessToken, cancellationToken);
     }
 
+    /// <summary>D-427 (CS-3) — admin-side upload of a visitor's profile photo (avatar).</summary>
+    public Task<ApiCallResult<AvatarResponse>> UploadVisitorAvatarAsync(
+        Guid subjectId, byte[] content, string contentType, string fileName,
+        string accessToken, CancellationToken cancellationToken = default) =>
+        UploadAvatarAsync(
+            $"visitors/{subjectId}/avatar",
+            content, contentType, fileName, accessToken, cancellationToken);
+
+    /// <summary>D-427 (CS-3) — admin-side upload of an Other account's profile photo (avatar).</summary>
+    public Task<ApiCallResult<AvatarResponse>> UploadOtherAvatarAsync(
+        Guid subjectId, byte[] content, string contentType, string fileName,
+        string accessToken, CancellationToken cancellationToken = default) =>
+        UploadAvatarAsync(
+            $"others/{subjectId}/avatar",
+            content, contentType, fileName, accessToken, cancellationToken);
+
+    private Task<ApiCallResult<AvatarResponse>> UploadAvatarAsync(
+        string path, byte[] content, string contentType, string fileName,
+        string accessToken, CancellationToken cancellationToken)
+    {
+        var multipart = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent(content);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+        multipart.Add(fileContent, "file", fileName);
+        return SendAsync<AvatarResponse>(
+            HttpMethod.Post, path, multipart, accessToken, cancellationToken);
+    }
+
     /// <summary>D-129 — admin-side streamed read of a visitor's ID-document image.</summary>
     public Task<(int StatusCode, string? ContentType, byte[] Bytes)> FetchVisitorIdDocumentAsync(
         Guid subjectId, string accessToken, CancellationToken cancellationToken = default) =>

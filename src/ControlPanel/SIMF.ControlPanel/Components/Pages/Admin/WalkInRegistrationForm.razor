@@ -334,6 +334,21 @@
                 </div>
             }
         </div>
+        @* D-427 (CS-3) — optional profile photo (the visitor's "logo"); shown
+           next to the ID image in the approve modal. Any PNG/JPEG/WebP, up to 2 MB. *@
+        <div class="simf-field">
+            <label class="simf-field__label" for="walkin-avatar">@L["Admin.WalkIn.Field.Photo"]</label>
+            <input id="walkin-avatar" type="file" class="simf-field__input"
+                   accept="image/png,image/jpeg,image/webp"
+                   @onchange="OnAvatarChanged" />
+            <div class="simf-field__helper">@L["Admin.WalkIn.Field.Photo.Hint"]</div>
+            @if (!string.IsNullOrEmpty(_avatarName))
+            {
+                <div class="simf-field__helper">
+                    @string.Format(L["Admin.WalkIn.Field.IdDocument.Selected"], _avatarName)
+                </div>
+            }
+        </div>
     </fieldset>
 
     @* -- Section 6: Interests (visitor only) -------------------------- *@
@@ -386,6 +401,7 @@
     private InterestDto[] _interests = Array.Empty<InterestDto>();
     private string _idKind = "Iqama";
     private string? _idDocumentName;
+    private string? _avatarName;
 
     // B3 — D-221 (الجهة): the required organisation typeahead state.
     private string _orgSearch = string.Empty;
@@ -536,6 +552,14 @@
         var name = await JS.InvokeAsync<string?>(
             "eval", "document.getElementById('walkin-id-document')?.files?.[0]?.name ?? null");
         _idDocumentName = name;
+    }
+
+    // D-427 (CS-3) — optional profile photo; uploaded after register-onsite
+    // succeeds (same deferred pattern as the ID document — needs the new id).
+    private async Task OnAvatarChanged(ChangeEventArgs _)
+    {
+        _avatarName = await JS.InvokeAsync<string?>(
+            "eval", "document.getElementById('walkin-avatar')?.files?.[0]?.name ?? null");
     }
 
     private void ToggleInterest(Guid id)
@@ -758,6 +782,18 @@
                     }
                     catch (Exception) { /* surfaces as HasIdImage=false in the View modal */ }
                 }
+                // D-427 (CS-3) — optional profile photo, same deferred upload.
+                if (!string.IsNullOrEmpty(_avatarName))
+                {
+                    try
+                    {
+                        await JS.InvokeAsync<object?>(
+                            "simfAccount.uploadFile",
+                            $"{basePath}/{envelope.Data.UserId}/avatar",
+                            "walkin-avatar");
+                    }
+                    catch (Exception) { /* avatar is optional; failure is non-fatal */ }
+                }
                 await OnSuccess.InvokeAsync(envelope.Data);
                 ResetForm();
             }
@@ -806,6 +842,7 @@
         _orgError = null;
         _orgListOpen = false;
         _idDocumentName = null;
+        _avatarName = null;
         _messages.Clear();
         _editContext.NotifyValidationStateChanged();
         StateHasChanged();
