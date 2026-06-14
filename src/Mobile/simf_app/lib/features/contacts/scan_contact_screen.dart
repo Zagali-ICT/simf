@@ -67,15 +67,17 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
       if (!mounted) {
         return;
       }
-      setState(() => _processing = false);
+      // Keep _processing true through the preview so the camera doesn't re-fire
+      // while the sheet is open.
       await _showPreview(code, card);
     } on ApiFailure catch (e) {
       if (!mounted) {
         return;
       }
-      setState(() => _processing = false);
-      // Let the same code be retried after a failure (the debounce is reset).
-      _lastHandled = null;
+      // Do NOT reset _lastHandled here: the QR is still in front of the camera,
+      // and re-arming it re-resolved the same (often un-resolvable) code on the
+      // next frame — an endless error loop (D-426). The code is handled once;
+      // use the manual-entry field to look a code up again.
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -85,6 +87,10 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
           ),
         ),
       );
+    } finally {
+      if (mounted) {
+        setState(() => _processing = false);
+      }
     }
   }
 
@@ -98,12 +104,13 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppL10n.of(context).saveContactSaved)),
       );
-      // Returning closes the scanner; the caller (My Contacts) reloads its list.
-      unawaited(Navigator.of(context).maybePop());
-    } else {
-      // Sheet dismissed without saving — allow re-scanning the same code.
-      _lastHandled = null;
+      // Returning closes the scanner; the caller reloads its list.
+      _leave();
     }
+    // On dismiss without saving we intentionally keep the code debounced
+    // (_lastHandled stays set) so the scanner does NOT immediately re-open the
+    // preview for the same QR still in view — that was the scan loop (D-426).
+    // The manual-entry field looks a code up again on demand.
   }
 
   /// Leaves the scanner reliably. The screen can be reached as the root of its
