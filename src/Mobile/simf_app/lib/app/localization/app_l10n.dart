@@ -499,6 +499,17 @@ class AppL10n {
   // The official handle line — a proper noun, identical in both languages.
   String get followUsHandle => '@SIMF_RSNF · الملتقى البحري السعودي الدولي';
   String get discoverSection => _t('اكتشف', 'Discover');
+  // أحدث منشوراتنا — the latest-news teaser card on the signed-in home (frame
+  // 203:1236 node 522:2345). The engagement counts in the frame have no backend
+  // data (the news model carries no like/comment/repost counts) so they are
+  // omitted rather than faked.
+  String get latestPostsSection => _t('أحدث منشوراتنا', 'Latest posts');
+  String get postSourceName =>
+      _t('الملتقى البحري السعودي الدولي', 'Saudi Maritime Forum');
+  String get postTimeJustNow => _t('الآن', 'just now');
+  String postTimeMinutesAgo(int n) => _t('قبل $n دقيقة', '$n min ago');
+  String postTimeHoursAgo(int n) => _t('قبل $n ساعة', '$n h ago');
+  String postTimeDaysAgo(int n) => _t('قبل $n يوم', '$n d ago');
 
   // My Area — personal dashboard (Page 014).
   String get myAreaTitle => _t('منطقتي', 'My area');

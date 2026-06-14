@@ -13,6 +13,9 @@ import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../core/env/build_config.dart';
 import '../../core/external_link.dart';
+import '../news/data/news_models.dart';
+import '../news/news_article_screen.dart';
+import '../news/news_screen.dart' show newsListProvider;
 import '../notifications/data/notifications_repository.dart';
 
 /// Page 013 — الرئيسية · Home (router / landing screen #13, `path=/`),
@@ -23,11 +26,15 @@ import '../notifications/data/notifications_repository.dart';
 /// (browse banner, 2×2 public tiles, the locked بطاقتي card, the open-info
 /// rows, the gold sign-in button) and the **signed-in** layout (greeting
 /// header with bell + menu, the live banner, the three tile sections, the
-/// follow-us row, and the discover card). Home carries no data of its own
-/// beyond the best-effort unread-notification count (Page_013 L-5); the live
-/// banner stays static config (D10, L-6). The frame's "أحدث منشوراتنا"
-/// X-embed card is omitted (no API — owner-approved). Social + Visit-Saudi
-/// links are config-driven and inert while unset (the D-369 contract).
+/// follow-us row, the **أحدث منشوراتنا** latest-post teaser, and the discover
+/// card). Home carries no data of its own beyond the best-effort
+/// unread-notification count (Page_013 L-5) and the best-effort latest-news
+/// post (frame node 522:2345 — D-403, reusing `GET /app/news`); the live
+/// banner stays static config (D10, L-6). The post card shows the real latest
+/// news item (logo + source + relative time + headline + excerpt); the frame's
+/// post image + engagement counts are omitted (no servable news-image route /
+/// no engagement model — not faked). Social + Visit-Saudi links are
+/// config-driven and inert while unset (the D-369 contract).
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -46,10 +53,17 @@ class HomeScreen extends ConsumerWidget {
           data: (count) => count,
           orElse: () => 0,
         );
+    // Best-effort latest post for the أحدث منشوراتنا teaser — null while loading
+    // / on error / when there are no posts, in which case the section is hidden.
+    final latestPost = ref.watch(newsListProvider).maybeWhen(
+          data: (items) => items.isEmpty ? null : items.first,
+          orElse: () => null,
+        );
     return _VisitorHome(
       l10n: l10n,
       name: user?.displayName ?? '',
       unread: unread,
+      latestPost: latestPost,
     );
   }
 }
@@ -57,6 +71,22 @@ class HomeScreen extends ConsumerWidget {
 /// The greeting word by local time of day (the frame's "صباح الخير" row).
 String homeGreeting(AppL10n l10n, DateTime now) =>
     now.hour < 12 ? l10n.greetingMorning : l10n.greetingEvening;
+
+/// The relative "time-ago" label for the latest-post card (the frame's
+/// "قبل ساعة"). Buckets: just-now → minutes → hours → days.
+String homePostTime(AppL10n l10n, DateTime publishedUtc, DateTime nowUtc) {
+  final diff = nowUtc.difference(publishedUtc);
+  if (diff.inMinutes < 1) {
+    return l10n.postTimeJustNow;
+  }
+  if (diff.inHours < 1) {
+    return l10n.postTimeMinutesAgo(diff.inMinutes);
+  }
+  if (diff.inHours < 24) {
+    return l10n.postTimeHoursAgo(diff.inHours);
+  }
+  return l10n.postTimeDaysAgo(diff.inDays);
+}
 
 /// Opens a configured link in the external browser (best-effort, D-369).
 Future<void> _openLink(String url) =>
@@ -202,11 +232,13 @@ class _VisitorHome extends StatelessWidget {
     required this.l10n,
     required this.name,
     required this.unread,
+    this.latestPost,
   });
 
   final AppL10n l10n;
   final String name;
   final int unread;
+  final NewsListItem? latestPost;
 
   @override
   Widget build(BuildContext context) {
@@ -316,6 +348,25 @@ class _VisitorHome extends StatelessWidget {
               fontSize: SimfTokens.textSm,
             ),
           ),
+          // أحدث منشوراتنا (frame node 522:2345) — hidden until a post exists.
+          if (latestPost != null) ...<Widget>[
+            const SizedBox(height: SimfTokens.space6),
+            KsaSectionHeader(
+              title: l10n.latestPostsSection,
+              moreLabel: l10n.moreTitle,
+              onMore: () => context.pushNamed(RouteNames.news),
+            ),
+            const SizedBox(height: SimfTokens.space3),
+            _LatestPostCard(
+              l10n: l10n,
+              post: latestPost!,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => NewsArticleScreen(newsId: latestPost!.id),
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: SimfTokens.space6),
           KsaSectionHeader(title: l10n.discoverSection),
           const SizedBox(height: SimfTokens.space3),
@@ -481,6 +532,103 @@ class _LiveBanner extends StatelessWidget {
 
 /// The follow-us row (frame node 522:2215): five bordered buttons with the
 /// design's brand glyphs. A button with no configured URL is inert (D-369).
+/// The أحدث منشوراتنا teaser (frame node 522:2345): the SIMF mark, the source +
+/// relative time, the headline and a short excerpt. The frame's post image and
+/// engagement counts are intentionally omitted — there is no servable news-image
+/// route and no like/comment/repost model, so neither is faked (D-403).
+class _LatestPostCard extends StatelessWidget {
+  const _LatestPostCard({
+    required this.l10n,
+    required this.post,
+    required this.onTap,
+  });
+
+  final AppL10n l10n;
+  final NewsListItem post;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isArabic = l10n.isArabic;
+    final excerpt = post.localizedExcerpt(isArabic);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(SimfTokens.radius),
+      child: Container(
+        padding: const EdgeInsets.all(SimfTokens.space4),
+        decoration: BoxDecoration(
+          color: SimfTokens.navyDeep,
+          borderRadius: BorderRadius.circular(SimfTokens.radius),
+          border: Border.all(color: SimfTokens.accent, width: 0.2),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                const KsaAvatar(name: 'SIMF', size: 40),
+                const SizedBox(width: SimfTokens.space3),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        l10n.postSourceName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: SimfTokens.textSm,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        homePostTime(
+                          l10n,
+                          post.publishedAt,
+                          DateTime.now().toUtc(),
+                        ),
+                        style: const TextStyle(
+                          color: SimfTokens.beigeBorder,
+                          fontSize: SimfTokens.textXs,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: SimfTokens.space3),
+            Text(
+              post.localizedTitle(isArabic),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: SimfTokens.textMd,
+              ),
+            ),
+            if (excerpt != null) ...<Widget>[
+              const SizedBox(height: SimfTokens.space2),
+              Text(
+                excerpt,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: SimfTokens.beigeBorder,
+                  fontSize: SimfTokens.textSm,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _SocialRow extends StatelessWidget {
   const _SocialRow();
 

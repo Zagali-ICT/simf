@@ -166,6 +166,34 @@ Scenario: Social + Visit-Saudi links open externally
   And a button whose URL is not configured is inert (never a dead link)
 ```
 
+### E2E-MOB013-011 — أحدث منشوراتنا latest-post teaser (frame 522:2345, D-403)
+
+```gherkin
+Scenario: Signed-in home shows the latest news post
+  Given there is at least one published news item (GET /app/news)
+  And the user is signed in (visitor/moderator/staff)
+  When Home loads and the user scrolls past "تابعنا / Follow us"
+  Then the "أحدث منشوراتنا / Latest posts" section is shown
+  And the card shows the SIMF brand mark, the source name, a relative time
+      (just-now / N min / N h / N d ago), the headline and a short excerpt
+  And NO engagement counts and NO post image appear (no backend data — never faked)
+  And the "المزيد / more" link opens the full News list
+
+Scenario: Tapping the post opens the article
+  Given the latest-post card is visible
+  When the user taps it
+  Then the news article screen opens (GET /app/news/{id})
+
+Scenario: No posts hides the section
+  Given GET /app/news returns an empty list (or errors)
+  When the signed-in Home loads
+  Then the أحدث منشوراتنا section is omitted entirely (no empty placeholder)
+
+Scenario: RTL
+  Given the device locale is Arabic
+  Then the card lays out right-to-left with the brand mark at the inline start
+```
+
 ---
 
-_Last reviewed:_ `2026-06-13` by `SIMF Team`.
+_Last reviewed:_ `2026-06-14` by `SIMF Team`.

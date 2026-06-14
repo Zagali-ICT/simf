@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/home/home_screen.dart';
+import 'package:simf_app/features/news/data/news_models.dart';
+import 'package:simf_app/features/news/news_screen.dart' show newsListProvider;
 import 'package:simf_app/features/notifications/data/notification_models.dart';
 import 'package:simf_app/features/notifications/data/notifications_repository.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
@@ -58,10 +60,23 @@ class _FakeNotificationsRepository implements NotificationsRepository {
   Future<bool> markAllRead() async => true;
 }
 
+NewsListItem _post({String id = 'n1', String title = 'Forum opens 2026'}) =>
+    NewsListItem(
+      id: id,
+      title: title,
+      titleArabic: 'افتتاح الملتقى 2026',
+      category: 'News',
+      categoryArabic: 'أخبار',
+      publishedAt: DateTime.utc(2026, 1, 1, 9),
+      excerpt: 'The opening session begins now.',
+      excerptArabic: 'تبدأ الجلسة الافتتاحية الآن.',
+    );
+
 Future<void> _pump(
   WidgetTester tester, {
   required AuthController controller,
   int unread = 0,
+  List<NewsListItem> news = const <NewsListItem>[],
   Locale locale = const Locale('en'),
 }) async {
   final router = GoRouter(
@@ -106,6 +121,7 @@ Future<void> _pump(
         authControllerProvider.overrideWith(() => controller),
         notificationsRepositoryProvider
             .overrideWithValue(_FakeNotificationsRepository(unread)),
+        newsListProvider.overrideWith((ref) async => news),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -292,6 +308,61 @@ void main() {
           .where((n) => n.contains('social_'))
           .toList();
       expect(images, hasLength(5));
+    });
+
+    testWidgets('the أحدث منشوراتنا card renders the latest post '
+        '(frame 522:2345)', (tester) async {
+      await _pump(
+        tester,
+        controller: _SignedInController(),
+        news: <NewsListItem>[_post(title: 'Forum opens 2026')],
+      );
+
+      await tester.scrollUntilVisible(
+        find.text('Latest posts'),
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('Latest posts'), findsOneWidget);
+      expect(find.text('Forum opens 2026'), findsOneWidget);
+      // Source label is shown; engagement counts are NOT (no data — never faked).
+      expect(find.text('Saudi Maritime Forum'), findsOneWidget);
+      // The card is tappable (→ the article screen, same push as the news list).
+      expect(
+        find.ancestor(
+          of: find.text('Forum opens 2026'),
+          matching: find.byType(InkWell),
+        ),
+        findsWidgets,
+      );
+    });
+
+    testWidgets('no posts → the أحدث منشوراتنا section is hidden',
+        (tester) async {
+      await _pump(tester, controller: _SignedInController());
+      // Section is omitted entirely when there is no latest post.
+      expect(find.text('Latest posts'), findsNothing);
+    });
+
+    testWidgets('relative time buckets (homePostTime)', (tester) async {
+      await _pump(tester, controller: _SignedInController());
+      final l10n = AppL10n.of(
+        tester.element(find.textContaining('Ahmed Mohammed')),
+      );
+      final base = DateTime.utc(2026, 1, 1, 12);
+      expect(homePostTime(l10n, base, base), 'just now');
+      expect(
+        homePostTime(l10n, base.subtract(const Duration(minutes: 5)), base),
+        '5 min ago',
+      );
+      expect(
+        homePostTime(l10n, base.subtract(const Duration(hours: 3)), base),
+        '3 h ago',
+      );
+      expect(
+        homePostTime(l10n, base.subtract(const Duration(days: 2)), base),
+        '2 d ago',
+      );
     });
   });
 }
