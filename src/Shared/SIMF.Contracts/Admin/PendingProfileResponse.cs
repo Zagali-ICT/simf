@@ -44,7 +44,11 @@ public sealed record PendingProfileResponse(
     string? OrganisationNameArabic = null,
     string? PlateNumber = null,
     string? ReferenceNumber = null,
-    IReadOnlyList<PendingProfileInterest>? Interests = null);
+    IReadOnlyList<PendingProfileInterest>? Interests = null,
+    // CS-4 — does the account have a profile photo (avatar)? Shown alongside the
+    // ID image in the approve modal. The avatar lives on SimfUser (Identity);
+    // resolved on read (D-157), no schema change.
+    bool HasAvatar = false);
 
 /// <summary>CS-C (D-385) — a picked interest's bilingual name for the approval
 /// screen's interest list (the modal previously showed only the count).</summary>

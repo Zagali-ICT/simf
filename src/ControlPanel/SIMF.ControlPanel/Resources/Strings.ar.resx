@@ -856,6 +856,7 @@
   <data name="Admin.WalkIn.Error.OrganisationRequired" xml:space="preserve"><value>اختر الجهة.</value></data>
   <data name="Admin.Pending.View.Field.QrId" xml:space="preserve"><value>رمز QR</value></data>
   <data name="Admin.Pending.View.Field.IdImage" xml:space="preserve"><value>وثيقة الهوية</value></data>
+  <data name="Admin.Pending.View.Field.Photo" xml:space="preserve"><value>صورة الملف الشخصي</value></data>
   <data name="Admin.Pending.View.Image.ViewFull" xml:space="preserve"><value>عرض بالحجم الكامل</value></data>
   <data name="Admin.Pending.View.Image.Download" xml:space="preserve"><value>تنزيل</value></data>
 

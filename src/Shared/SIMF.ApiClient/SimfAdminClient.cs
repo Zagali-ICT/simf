@@ -703,6 +703,17 @@ public sealed class SimfAdminClient(HttpClient http)
         Guid subjectId, string accessToken, CancellationToken cancellationToken = default) =>
         FetchIdDocumentAsync($"others/{subjectId}/id-document", accessToken, cancellationToken);
 
+    /// <summary>CS-4 — admin streamed read of a visitor's profile photo (avatar).
+    /// Reuses the generic byte-fetch helper below.</summary>
+    public Task<(int StatusCode, string? ContentType, byte[] Bytes)> FetchVisitorAvatarAsync(
+        Guid subjectId, string accessToken, CancellationToken cancellationToken = default) =>
+        FetchIdDocumentAsync($"visitors/{subjectId}/avatar", accessToken, cancellationToken);
+
+    /// <summary>CS-4 — admin streamed read of an Other account's profile photo (avatar).</summary>
+    public Task<(int StatusCode, string? ContentType, byte[] Bytes)> FetchOtherAvatarAsync(
+        Guid subjectId, string accessToken, CancellationToken cancellationToken = default) =>
+        FetchIdDocumentAsync($"others/{subjectId}/avatar", accessToken, cancellationToken);
+
     private async Task<(int StatusCode, string? ContentType, byte[] Bytes)> FetchIdDocumentAsync(
         string path, string accessToken, CancellationToken cancellationToken)
     {

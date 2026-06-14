@@ -518,6 +518,38 @@ internal static class AccountEndpoints
             return Results.File(bytes, contentType);
         });
 
+        // CS-4 — admin stream-read of the subject's profile photo (avatar) for
+        // the approve modal. Mirrors the ID-document GET proxy.
+        group.MapGet("/admin/visitors/{id:guid}/avatar",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            var (status, contentType, bytes) =
+                await api.FetchVisitorAvatarAsync(id, token);
+            if (status != 200 || contentType is null || bytes.Length == 0)
+            {
+                return Results.StatusCode(status);
+            }
+            http.Response.Headers.CacheControl = "private, max-age=60";
+            return Results.File(bytes, contentType);
+        });
+
+        group.MapGet("/admin/others/{id:guid}/avatar",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            var (status, contentType, bytes) =
+                await api.FetchOtherAvatarAsync(id, token);
+            if (status != 200 || contentType is null || bytes.Length == 0)
+            {
+                return Results.StatusCode(status);
+            }
+            http.Response.Headers.CacheControl = "private, max-age=60";
+            return Results.File(bytes, contentType);
+        });
+
         // P7c — ProfileTypes picker, filtered by UserType.
         group.MapGet("/admin/profile-types",
             async (string userType, HttpContext http, SimfAdminClient api) =>

@@ -208,6 +208,7 @@ internal sealed class AdminApprovalReadService(
                 u.DisplayName,
                 u.UserType,
                 u.CreatedAt,
+                u.AvatarRelativePath,
             })
             .SingleOrDefaultAsync(cancellationToken);
         if (user is null) { return null; }
@@ -280,7 +281,9 @@ internal sealed class AdminApprovalReadService(
             string.IsNullOrEmpty(profile?.Organisation?.NameArabic) ? null : profile!.Organisation!.NameArabic,
             profile?.PlateNumber,
             profile?.ReferenceNumber,
-            profile?.Interests.Select(i => new PendingProfileInterest(i.Name, i.NameArabic)).ToList());
+            profile?.Interests.Select(i => new PendingProfileInterest(i.Name, i.NameArabic)).ToList(),
+            // CS-4 — the avatar (profile photo) lives on SimfUser (Identity).
+            HasAvatar: user.AvatarRelativePath != null);
     }
 
     // D-151 — Country lookup helper. Cross-context (Country lives in

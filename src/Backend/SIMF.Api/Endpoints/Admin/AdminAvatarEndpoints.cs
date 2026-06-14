@@ -1,7 +1,9 @@
 // Tests: SIMF.Api.Tests/WalkInRegistrationTests.cs (Admin_uploads_visitor_avatar_sets_path)
 using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Application.Abstractions;
 using SIMF.Application.IdentityAccess;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 
@@ -82,5 +84,70 @@ public sealed class UploadOtherAvatarEndpoint(IAccountService accountService)
         AllowFileUploads();
         Summary(summary => summary.Summary =
             "Admin upload of an Other account's profile photo (avatar).");
+    }
+}
+
+/// <summary>
+/// CS-4 — admin stream-read of a subject's profile photo (avatar) so the CP
+/// approve modal can render it alongside the ID image. Mirrors the self-service
+/// <c>account/avatar/{userId}</c> fetch but drops the self-only guard for an
+/// admin View permission (the avatar is the account's, on SimfUser/Identity).
+/// </summary>
+public abstract class AdminAvatarFetchEndpointBase(
+    IUserAccountRepository accounts, IAvatarStorage avatarStorage)
+    : EndpointWithoutRequest
+{
+    public abstract Guid SubjectId { get; }
+
+    public override async Task HandleAsync(CancellationToken ct)
+    {
+        var user = await accounts.FindByIdAsync(SubjectId, ct);
+        if (user?.AvatarRelativePath is not { Length: > 0 } path)
+        {
+            await Send.NotFoundAsync(ct);
+            return;
+        }
+        var read = await avatarStorage.OpenReadAsync(path, ct);
+        if (read is null)
+        {
+            await Send.NotFoundAsync(ct);
+            return;
+        }
+        HttpContext.Response.Headers.CacheControl = "private, max-age=60";
+        await Send.StreamAsync(read.Content, contentType: read.ContentType, cancellation: ct);
+    }
+}
+
+/// <summary><c>GET /api/v1/admin/visitors/{id}/avatar</c>.</summary>
+public sealed class FetchVisitorAvatarEndpoint(
+    IUserAccountRepository accounts, IAvatarStorage avatarStorage)
+    : AdminAvatarFetchEndpointBase(accounts, avatarStorage)
+{
+    public override Guid SubjectId => Route<Guid>("id");
+
+    public override void Configure()
+    {
+        Get("/admin/visitors/{id:guid}/avatar");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.View), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Tags("Admin");
+        Summary(summary => summary.Summary =
+            "Stream a visitor's profile photo (avatar).");
+    }
+}
+
+/// <summary><c>GET /api/v1/admin/others/{id}/avatar</c>.</summary>
+public sealed class FetchOtherAvatarEndpoint(
+    IUserAccountRepository accounts, IAvatarStorage avatarStorage)
+    : AdminAvatarFetchEndpointBase(accounts, avatarStorage)
+{
+    public override Guid SubjectId => Route<Guid>("id");
+
+    public override void Configure()
+    {
+        Get("/admin/others/{id:guid}/avatar");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Others.View), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Tags("Admin");
+        Summary(summary => summary.Summary =
+            "Stream an Other account's profile photo (avatar).");
     }
 }
