@@ -33,6 +33,7 @@ class SimfTokens {
   static const Color linkNavy = Color(0xFF00245E); // inline links on light surfaces
   static const Color inputInk = Color(0xCC111827); // input text on light surfaces (#111827 at 80%)
   static const Color onGoldMuted = Color(0xFFF0F0F0); // muted text on the gold identity strip (badge 758:1469)
+  static const Color neutral400 = Color(0xFF4C555F); // notification timestamp (758:2491)
 
   // KSA main-shell disabled palette (W2 frames 512:1492 / 512:1780): the
   // "بطاقتي" locked card and the disabled theme tile render on these.
