@@ -523,7 +523,8 @@ class AppL10n {
   String postTimeDaysAgo(int n) => _t('قبل $n يوم', '$n d ago');
 
   // My Area — personal dashboard (Page 014).
-  String get myAreaTitle => _t('منطقتي', 'My area');
+  // Frame 758:1283 header (matches the bottom-nav "الملف الشخصي" label).
+  String get myAreaTitle => _t('الملف الشخصي', 'Profile');
   String enrolledInSessions(int count) =>
       _t('مسجّل في $count جلسات', 'Enrolled in $count sessions');
   String get shareLabel => _t('مشاركة', 'Share');

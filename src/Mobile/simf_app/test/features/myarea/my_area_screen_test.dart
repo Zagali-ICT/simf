@@ -305,7 +305,8 @@ void main() {
         locale: const Locale('ar'),
       );
 
-      expect(find.text('منطقتي'), findsWidgets);
+      // Header matches the frame 758:1283 + the bottom-nav label.
+      expect(find.text('الملف الشخصي'), findsWidgets);
       await _scrollTo(tester, find.text('الافتتاح'));
       expect(
         Directionality.of(tester.element(find.text('الافتتاح'))),
