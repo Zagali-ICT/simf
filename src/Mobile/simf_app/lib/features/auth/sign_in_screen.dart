@@ -171,11 +171,47 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     }
   }
 
-  /// The design shows the Face-ID button unconditionally, so unlike Page 003
-  /// the button is always rendered; an unsupported device / missing plugin
-  /// falls through silently and the password path stays available.
+  /// The design shows the Face-ID button unconditionally. The button now gives
+  /// clear feedback for the two cases that previously failed silently (D-422):
+  /// (1) the device has no enrolled OS face/fingerprint; (2) face login has not
+  /// been enabled yet because the user hasn't done a password sign-in on this
+  /// device (which enrols the device key). Otherwise it runs the OS biometric
+  /// then the device-key sign-in.
   Future<void> _biometricSignIn() async {
     final l10n = AppL10n.of(context);
+    final notifier = ref.read(authControllerProvider.notifier);
+    // (1) The device must actually have a biometric enrolled.
+    try {
+      final supported = await _localAuth.isDeviceSupported();
+      final available = supported
+          ? await _localAuth.getAvailableBiometrics()
+          : const <BiometricType>[];
+      if (!supported || available.isEmpty) {
+        if (mounted) {
+          setState(() => _error = l10n.biometricUnavailable);
+        }
+        return;
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = l10n.biometricUnavailable);
+      }
+      return;
+    }
+    // (2) Face login needs a device key, enrolled on a prior password sign-in.
+    try {
+      if (!await notifier.hasEnrolledDeviceKey()) {
+        if (mounted) {
+          setState(() => _error = l10n.biometricNotEnrolled);
+        }
+        return;
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = l10n.biometricNotEnrolled);
+      }
+      return;
+    }
     try {
       final ok = await _localAuth.authenticate(
         localizedReason: l10n.biometricSignInTooltip,

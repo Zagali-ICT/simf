@@ -377,6 +377,19 @@ class AppL10n {
   String get biometricSignInTooltip =>
       _t('الدخول بالبصمة / الوجه', 'Sign in with biometrics');
 
+  /// No OS face/fingerprint is enrolled on the device (D-422).
+  String get biometricUnavailable => _t(
+        'لا توجد بصمة أو بصمة وجه مفعّلة على هذا الجهاز. سجّل الدخول بكلمة المرور.',
+        'No face or fingerprint is set up on this device. Sign in with your password.',
+      );
+
+  /// Face login needs a prior password sign-in on this device to enrol the
+  /// device key first (D-422).
+  String get biometricNotEnrolled => _t(
+        'سجّل الدخول بكلمة المرور مرة واحدة على هذا الجهاز لتفعيل الدخول بالوجه.',
+        'Sign in with your password once on this device to enable face login.',
+      );
+
   // Email-OTP second factor + reset flow (Page 003 L-5/L-6).
   String get otpTitle => _t('رمز التحقق', 'Verification code');
   String get otpBody => _t(
