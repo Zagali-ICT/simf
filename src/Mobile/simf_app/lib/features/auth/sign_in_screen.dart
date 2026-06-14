@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
@@ -29,6 +30,14 @@ const Color _linkNavy = SimfTokens.linkNavy;
 const Color _inputText = SimfTokens.inputInk;
 const Color _danger = SimfTokens.danger;
 const Color _sweepTint = SimfTokens.surfaceTint;
+
+// Exact iconify / Figma glyphs from frame 758:2555 (no 1:1 Material match):
+// the top back-chevron + gold globe, the password eye, and the Face-ID mark.
+const String _icBack = 'assets/icons/auth_back.svg'; // iconamoon:arrow-left-2
+const String _icGlobe = 'assets/icons/auth_globe.svg'; // exact Figma globe
+const String _icEyeOff = 'assets/icons/auth_eye_off.svg'; // iconamoon:eye-off
+const String _icEye = 'assets/icons/auth_eye.svg'; // iconamoon:eye
+const String _icFaceId = 'assets/icons/auth_faceid.svg'; // mingcute:faceid-line
 
 // The design's card / field / button corner radius.
 const BorderRadius _radius4 =
@@ -265,11 +274,14 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     children: <Widget>[
                       IconButton(
                         onPressed: _busy ? null : _back,
-                        icon: const Icon(
-                          Icons.arrow_back_ios_new,
-                          color: Colors.white,
-                          size: 20,
-                          textDirection: TextDirection.ltr,
+                        icon: SvgPicture.asset(
+                          _icBack,
+                          width: 24,
+                          height: 24,
+                          colorFilter: const ColorFilter.mode(
+                            Colors.white,
+                            BlendMode.srcIn,
+                          ),
                         ),
                       ),
                       const Spacer(),
@@ -285,10 +297,14 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                               borderRadius: _radius4,
                             ),
                           ),
-                          icon: const Icon(
-                            Icons.language,
-                            color: SimfTokens.accent,
-                            size: 24,
+                          icon: SvgPicture.asset(
+                            _icGlobe,
+                            width: 24,
+                            height: 24,
+                            colorFilter: const ColorFilter.mode(
+                              SimfTokens.accent,
+                              BlendMode.srcIn,
+                            ),
                           ),
                         ),
                       ),
@@ -308,7 +324,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: <Widget>[
                           _Header(title: l10n.signInForumTitle),
-                          const SizedBox(height: 40),
+                          const SizedBox(height: 24),
                           _buildCard(l10n),
                         ],
                       ),
@@ -376,12 +392,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 tooltip: _obscure
                     ? l10n.showPasswordTooltip
                     : l10n.hidePasswordTooltip,
-                icon: Icon(
-                  _obscure
-                      ? Icons.visibility_off_outlined
-                      : Icons.visibility_outlined,
-                  size: 18,
-                  color: _grey,
+                icon: SvgPicture.asset(
+                  _obscure ? _icEyeOff : _icEye,
+                  width: 16,
+                  height: 16,
+                  colorFilter: const ColorFilter.mode(_grey, BlendMode.srcIn),
                 ),
                 onPressed: () => setState(() => _obscure = !_obscure),
               ),
@@ -534,7 +549,15 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   ),
                 ),
                 const SizedBox(width: 10),
-                const Icon(Icons.face, size: 20, color: _goldText),
+                SvgPicture.asset(
+                  _icFaceId,
+                  width: 20,
+                  height: 20,
+                  colorFilter: const ColorFilter.mode(
+                    _goldText,
+                    BlendMode.srcIn,
+                  ),
+                ),
               ],
             ),
           ),
@@ -644,7 +667,8 @@ class _FieldLabel extends StatelessWidget {
         style: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w500,
-          color: _grey,
+          // Figma 758:2566 / 758:2575 — field labels are navy #01132D, not grey.
+          color: SimfTokens.navy,
         ),
       ),
     );
