@@ -112,8 +112,19 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
       body: SafeArea(
         child: Column(
           children: <Widget>[
-            Expanded(child: _buildCamera(l10n)),
-            _buildManualEntry(l10n),
+            // The camera preview is confined to a fixed viewfinder box, never an
+            // Expanded that fills the screen: some devices don't composite the
+            // platform-view preview (it paints blank) and an unbounded preview
+            // then covers the whole body — hiding the manual-entry fallback. A
+            // bounded box keeps the manual entry below always visible + usable.
+            SizedBox(
+              width: double.infinity,
+              height: 320,
+              child: _buildCamera(l10n),
+            ),
+            Expanded(
+              child: SingleChildScrollView(child: _buildManualEntry(l10n)),
+            ),
           ],
         ),
       ),
