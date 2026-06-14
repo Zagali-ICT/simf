@@ -36,6 +36,8 @@ import '../features/meet/meet_people_screen.dart';
 import '../features/more/more_screen.dart';
 import '../features/notifications/notifications_screen.dart';
 import '../features/questions/send_question_screen.dart';
+import '../features/exhibitor/my_visitors_screen.dart';
+import '../features/exhibitor/scan_visitor_screen.dart';
 import '../features/gates/gate_scan_screen.dart';
 import '../features/moderation/session_moderate_screen.dart';
 import '../features/myarea/identity_verification_screen.dart';
@@ -145,6 +147,9 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 103, name: RouteNames.identityVerification, path: '/my-area/verify-identity', labelAr: 'التحقق من الهوية', labelEn: 'Identity verification'),
   _Route(number: 104, name: RouteNames.sessionModerate, path: '/sessions/:sessionId/moderate', labelAr: 'أسئلة الجلسة', labelEn: 'Session questions'),
   _Route(number: 105, name: RouteNames.gateScanner, path: '/gates/scan', labelAr: 'مسح البوابة', labelEn: 'Gate scanner'),
+  // D-426 — exhibitor ("Other") lead capture (approved-only; server 403s visitors).
+  _Route(number: 106, name: RouteNames.scanVisitor, path: '/exhibitor/scan', labelAr: 'مسح بطاقة زائر', labelEn: 'Scan visitor badge'),
+  _Route(number: 107, name: RouteNames.myVisitors, path: '/exhibitor/visitors', labelAr: 'زواري', labelEn: 'My Visitors'),
 ];
 
 /// Auxiliary auth routes that aren't numbered in the mockup but live in
@@ -177,6 +182,8 @@ const Set<int> _authenticatedRoutes = <int>{
   103, // Identity verification — avatar liveness (D-404, from My Area)
   104, // Moderator session Q&A desk (D-405; also role-gated below)
   105, // Staff gate scanner (D-406; also role-gated below)
+  106, // Exhibitor scan visitor badge (D-426; server 403s visitor-tier callers)
+  107, // Exhibitor My Visitors (D-426)
 };
 
 /// Routes that additionally require a minimum app privilege (D-405/D-406). The
@@ -363,6 +370,12 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.gateScanner) {
     return const GateScanScreen();
+  }
+  if (r.name == RouteNames.scanVisitor) {
+    return const ScanVisitorScreen();
+  }
+  if (r.name == RouteNames.myVisitors) {
+    return const MyVisitorsScreen();
   }
   return ComingSoonScreen(
     screenNumber: r.number,

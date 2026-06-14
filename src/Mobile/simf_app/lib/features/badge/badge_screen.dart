@@ -297,33 +297,63 @@ class _Badge extends StatelessWidget {
           ),
         ),
         const SizedBox(height: SimfTokens.space4),
-        // The add-person action → the FDS-014 contact scanner.
-        OutlinedButton.icon(
-          onPressed: () => context.pushNamed(RouteNames.scanContact),
-          style: OutlinedButton.styleFrom(
-            minimumSize: const Size.fromHeight(48),
-            // Frame 758:1469 — gold 1-px border.
-            side: const BorderSide(color: SimfTokens.accent, width: 1),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-            ),
-          ),
-          icon: const SimfSvgIcon(
-            'assets/icons/badge_scan.svg',
-            size: 24,
-            color: Colors.white,
-          ),
-          label: Text(
-            l10n.badgeAddPerson,
-            // Frame 758:1469 — 16px Bold white.
-            style: const TextStyle(
+        // Role-based QR-page actions (D-426). A visitor reads another visitor's
+        // shared contact and shares their own; an exhibitor ("Other") scans
+        // visitor badges into My Visitors.
+        if (identity.isVisitor) ...<Widget>[
+          _actionButton(
+            icon: const SimfSvgIcon(
+              'assets/icons/badge_scan.svg',
+              size: 24,
               color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: SimfTokens.textLg,
             ),
+            label: l10n.badgeAddPerson,
+            onTap: () => context.pushNamed(RouteNames.scanContact),
           ),
-        ),
+          const SizedBox(height: SimfTokens.space3),
+          _actionButton(
+            icon: const Icon(Icons.qr_code_2, size: 24, color: Colors.white),
+            label: l10n.shareMyContactTitle,
+            onTap: () => context.pushNamed(RouteNames.shareMyContact),
+          ),
+        ] else
+          _actionButton(
+            icon: const SimfSvgIcon(
+              'assets/icons/badge_scan.svg',
+              size: 24,
+              color: Colors.white,
+            ),
+            label: l10n.badgeScanVisitor,
+            onTap: () => context.pushNamed(RouteNames.scanVisitor),
+          ),
       ],
+    );
+  }
+
+  /// One full-width gold-bordered QR-page action button (frame 758:1469 style).
+  Widget _actionButton({
+    required Widget icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return OutlinedButton.icon(
+      onPressed: onTap,
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size.fromHeight(48),
+        side: const BorderSide(color: SimfTokens.accent, width: 1),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        ),
+      ),
+      icon: icon,
+      label: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w700,
+          fontSize: SimfTokens.textLg,
+        ),
+      ),
     );
   }
 }

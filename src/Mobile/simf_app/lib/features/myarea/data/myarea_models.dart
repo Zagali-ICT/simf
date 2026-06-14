@@ -39,6 +39,7 @@ class MyAreaIdentity {
     this.tierNameEn,
     this.tierNameAr,
     this.pageColor,
+    this.isVisitor = true,
   });
 
   final String fullNameAr;
@@ -48,6 +49,10 @@ class MyAreaIdentity {
   final String? tierNameEn;
   final String? tierNameAr;
   final String? pageColor;
+
+  /// True for audience profile types; false for partner/exhibitor ("Other")
+  /// types — drives the QR-page actions (D-426). Defaults true.
+  final bool isVisitor;
 
   /// Name for the active locale (Arabic primary, English fallback — L-8).
   String localizedName(bool isArabic) {
@@ -72,6 +77,7 @@ class MyAreaIdentity {
         tierNameEn: json['tierNameEn'] as String?,
         tierNameAr: json['tierNameAr'] as String?,
         pageColor: json['pageColor'] as String?,
+        isVisitor: json['isVisitor'] as bool? ?? true,
       );
 }
 

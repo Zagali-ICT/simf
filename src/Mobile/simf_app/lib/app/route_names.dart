@@ -75,6 +75,9 @@ class RouteNames {
   static const String shareMyContact = 'shareMyContact';
   static const String scanContact = 'scanContact';
   static const String myContacts = 'myContacts';
+  // D-426 exhibitor ("Other") lead capture: scan a visitor badge → My Visitors.
+  static const String scanVisitor = 'scanVisitor';
+  static const String myVisitors = 'myVisitors';
   // Guided face-capture / liveness for the avatar (D-404; additive, reached from
   // My Area; signed-in + Approved).
   static const String identityVerification = 'identityVerification';

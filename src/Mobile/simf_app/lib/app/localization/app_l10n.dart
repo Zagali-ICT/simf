@@ -974,6 +974,26 @@ class AppL10n {
   String get badgeScanToEnter => _t('امسح للدخول', 'Scan to enter');
   String get badgeAddPerson => _t('امسح لإضافة شخص', 'Scan to add a contact');
 
+  // D-426 — QR-page role actions + exhibitor lead capture.
+  String get badgeScanVisitor =>
+      _t('مسح بطاقة زائر', 'Scan visitor badge');
+  String get myVisitorsTitle => _t('زواري', 'My Visitors');
+  String get myVisitorsEmpty => _t(
+        'لم تقم بمسح أي زائر بعد. امسح بطاقة زائر لإضافته هنا.',
+        'No visitors yet. Scan a visitor badge to capture them here.',
+      );
+  String get scanVisitorTitle => _t('مسح بطاقة زائر', 'Scan visitor badge');
+  String get scanVisitorCaptured =>
+      _t('تمت إضافة الزائر إلى زواري', 'Visitor added to My Visitors');
+  String get scanVisitorNotFound =>
+      _t('لا توجد بطاقة زائر مطابقة', 'No matching visitor badge');
+  String get scanVisitorForbidden => _t(
+        'مسح بطاقات الزوار متاح لحسابات العارضين فقط.',
+        'Only exhibitor accounts can scan visitor badges.',
+      );
+  String get scanVisitorError =>
+      _t('تعذر مسح البطاقة. حاول مرة أخرى.', 'Could not scan the badge. Try again.');
+
   // Live broadcast (Page 025). liveNowLabel already exists (reused for the badge).
   String get liveBroadcastTitle => _t('البث المباشر', 'Live broadcast');
   String get liveNoSessionSelected => _t(
