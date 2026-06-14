@@ -826,6 +826,12 @@
   <data name="Admin.WalkIn.Field.DisplayName.Hint" xml:space="preserve"><value>Shown on the printed badge — usually first name + family name.</value></data>
   <data name="Admin.WalkIn.Field.DateOfBirth" xml:space="preserve"><value>Date of birth</value></data>
   <data name="Admin.WalkIn.Field.PlaceOfBirth" xml:space="preserve"><value>Place of birth</value></data>
+  <data name="Admin.WalkIn.Field.Gender" xml:space="preserve"><value>Gender</value></data>
+  <data name="Admin.WalkIn.Field.Gender.Unspecified" xml:space="preserve"><value>Not specified</value></data>
+  <data name="Admin.WalkIn.Field.Gender.Male" xml:space="preserve"><value>Male</value></data>
+  <data name="Admin.WalkIn.Field.Gender.Female" xml:space="preserve"><value>Female</value></data>
+  <data name="Admin.WalkIn.Field.PlateNumber" xml:space="preserve"><value>Plate number (optional)</value></data>
+  <data name="Admin.WalkIn.Field.PlateNumber.Hint" xml:space="preserve"><value>Vehicle plate, up to 7 characters.</value></data>
   <data name="Admin.WalkIn.Field.IsSaudi" xml:space="preserve"><value>Saudi national?</value></data>
   <data name="Admin.WalkIn.IsSaudi.Yes" xml:space="preserve"><value>Saudi</value></data>
   <data name="Admin.WalkIn.IsSaudi.No" xml:space="preserve"><value>Non-Saudi</value></data>

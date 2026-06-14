@@ -114,6 +114,29 @@
                            MaxLength="128"
                            @bind-Value="_model.PlaceOfBirth" />
         </div>
+        @* D-395 — gender + optional vehicle plate share the final identity row. *@
+        <div class="simf-walkin__grid">
+            <div class="simf-field">
+                <label class="simf-field__label" for="walkin-gender">
+                    @L["Admin.WalkIn.Field.Gender"]
+                </label>
+                <div class="simf-field__control">
+                    <select id="walkin-gender" class="simf-field__input"
+                            value="@_model.Gender.ToString()"
+                            @onchange="OnGenderChanged">
+                        <option value="Unspecified">@L["Admin.WalkIn.Field.Gender.Unspecified"]</option>
+                        <option value="Male">@L["Admin.WalkIn.Field.Gender.Male"]</option>
+                        <option value="Female">@L["Admin.WalkIn.Field.Gender.Female"]</option>
+                    </select>
+                </div>
+            </div>
+            <SimfTextField Label="@L["Admin.WalkIn.Field.PlateNumber"]"
+                           Helper="@L["Admin.WalkIn.Field.PlateNumber.Hint"]"
+                           MaxLength="7"
+                           Value="@(_model.PlateNumber ?? string.Empty)"
+                           ValueChanged="@(v => _model.PlateNumber = string.IsNullOrWhiteSpace(v) ? null : v)"
+                           ValueExpression="@(() => _model.PlateNumber)" />
+        </div>
     </fieldset>
       </div>
       <div class="simf-walkin__col">
@@ -413,7 +436,15 @@
         var ptEnvelope = await profileTypesTask;
         if (ptEnvelope is { Success: true, Data: not null })
         {
-            _profileTypes = ptEnvelope.Data.OrderBy(p => p.Name).ToArray();
+            // D-395 — show only the profile types valid for this desk: audience
+            // types (IsVisitor=true) for the Visitor desk, partner types
+            // (IsVisitor=false) for the Other desk. Mirrors the server rule
+            // (expectedIsVisitor) + the approve modal's own filter, so the picker
+            // can no longer offer a type the server would reject.
+            var visitorDesk = string.Equals(Kind, "Visitor", StringComparison.OrdinalIgnoreCase);
+            _profileTypes = ptEnvelope.Data
+                .Where(p => p.IsActive && p.IsVisitor == visitorDesk)
+                .OrderBy(p => p.Name).ToArray();
         }
 
         var cEnvelope = await countriesTask;
@@ -486,6 +517,14 @@
         _model.DateOfBirth = string.IsNullOrEmpty(raw) || !DateOnly.TryParse(raw, out var parsed)
             ? null
             : parsed;
+    }
+
+    // D-395 — gender picker (native <select>); falls back to Unspecified.
+    private void OnGenderChanged(ChangeEventArgs e)
+    {
+        _model.Gender = Enum.TryParse<Gender>(e.Value?.ToString(), out var g)
+            ? g
+            : Gender.Unspecified;
     }
 
     private async Task OnIdDocumentChanged(ChangeEventArgs _)
@@ -690,6 +729,8 @@
                     NationalityCode = _model.NationalityCode.Trim().ToUpperInvariant(),
                     DateOfBirth = _model.DateOfBirth,
                     PlaceOfBirth = string.IsNullOrWhiteSpace(_model.PlaceOfBirth) ? null : _model.PlaceOfBirth.Trim(),
+                    Gender = _model.Gender,
+                    PlateNumber = string.IsNullOrWhiteSpace(_model.PlateNumber) ? null : _model.PlateNumber.Trim().ToUpperInvariant(),
                     IsSaudi = _model.IsSaudi,
                     NationalId = _model.IsSaudi ? _model.NationalId : null,
                     IqamaNumber = _model.IsSaudi ? null : _model.IqamaNumber,
@@ -787,6 +828,8 @@
         public string NationalityCode { get; set; } = "SA";
         public DateOnly? DateOfBirth { get; set; }
         public string PlaceOfBirth { get; set; } = string.Empty;
+        public Gender Gender { get; set; } = Gender.Unspecified;
+        public string? PlateNumber { get; set; }
         public bool IsSaudi { get; set; } = true;
         public string? NationalId { get; set; }
         public string? IqamaNumber { get; set; }

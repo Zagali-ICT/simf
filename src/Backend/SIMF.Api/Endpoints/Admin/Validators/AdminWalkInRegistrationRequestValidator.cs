@@ -164,5 +164,19 @@ public sealed class AdminWalkInRegistrationRequestValidator
             .LessThanOrEqualTo(10).Bilingual(
                 "You can pick up to 10 interests.",
                 "يمكنك اختيار حتى 10 اهتمامات.");
+
+        // D-395 — optional plate number; max 7 to match UserProfile.PlateNumber
+        // HasMaxLength(7) and the UI MaxLength (validation-alignment, SES §7).
+        RuleFor(request => request.PlateNumber)
+            .MaximumLength(7).When(r => !string.IsNullOrEmpty(r.PlateNumber))
+            .Bilingual(
+                "Plate number must be at most 7 characters.",
+                "يجب ألا يتجاوز رقم اللوحة 7 أحرف.");
+
+        // D-395 — gender must be a defined enum value.
+        RuleFor(request => request.Gender)
+            .IsInEnum().Bilingual(
+                "Select a valid gender.",
+                "اختر جنسًا صحيحًا.");
     }
 }

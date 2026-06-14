@@ -818,6 +818,12 @@
   <data name="Admin.WalkIn.Field.DisplayName.Hint" xml:space="preserve"><value>يظهر على الشارة المطبوعة — عادةً الاسم الأول مع اسم العائلة.</value></data>
   <data name="Admin.WalkIn.Field.DateOfBirth" xml:space="preserve"><value>تاريخ الميلاد</value></data>
   <data name="Admin.WalkIn.Field.PlaceOfBirth" xml:space="preserve"><value>مكان الميلاد</value></data>
+  <data name="Admin.WalkIn.Field.Gender" xml:space="preserve"><value>الجنس</value></data>
+  <data name="Admin.WalkIn.Field.Gender.Unspecified" xml:space="preserve"><value>غير محدد</value></data>
+  <data name="Admin.WalkIn.Field.Gender.Male" xml:space="preserve"><value>ذكر</value></data>
+  <data name="Admin.WalkIn.Field.Gender.Female" xml:space="preserve"><value>أنثى</value></data>
+  <data name="Admin.WalkIn.Field.PlateNumber" xml:space="preserve"><value>رقم اللوحة (اختياري)</value></data>
+  <data name="Admin.WalkIn.Field.PlateNumber.Hint" xml:space="preserve"><value>لوحة المركبة، حتى 7 أحرف.</value></data>
   <data name="Admin.WalkIn.Field.IsSaudi" xml:space="preserve"><value>هل هو سعودي؟</value></data>
   <data name="Admin.WalkIn.IsSaudi.Yes" xml:space="preserve"><value>سعودي</value></data>
   <data name="Admin.WalkIn.IsSaudi.No" xml:space="preserve"><value>غير سعودي</value></data>

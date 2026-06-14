@@ -446,6 +446,15 @@ public sealed class AdminWalkInRegistrationRequest
     /// <summary>International mobile (<c>+CC-local</c>).</summary>
     public string? InternationalMobile { get; set; }
 
+    /// <summary>D-395 (الجنس) — the visitor's gender, captured at the desk.
+    /// <see cref="Gender.Unspecified"/> when not picked. The column already
+    /// exists on <c>UserProfile</c>; the walk-in form just didn't capture it.</summary>
+    public Gender Gender { get; set; } = Gender.Unspecified;
+
+    /// <summary>D-395 — optional vehicle plate number (Saudi plate shape, ≤7
+    /// chars). The column already exists on <c>UserProfile</c> (D-371).</summary>
+    public string? PlateNumber { get; set; }
+
     /// <summary>B3 — D-221 (الجهة): the picked <see cref="Organisation"/> id.
     /// Required at the walk-in desk (the validator rejects null / empty); the
     /// service rejects an unknown / inactive id with <c>OrganisationInvalid</c>.</summary>

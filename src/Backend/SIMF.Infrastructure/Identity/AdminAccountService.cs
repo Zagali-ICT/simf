@@ -390,6 +390,10 @@ internal sealed partial class AdminAccountService(
             NationalityId = nationalityId.Value,
             DateOfBirth = request.DateOfBirth,
             PlaceOfBirth = (request.PlaceOfBirth ?? string.Empty).Trim(),
+            // D-395 — gender + plate captured at the walk-in desk (columns
+            // already exist on UserProfile; the form just didn't send them).
+            Gender = request.Gender,
+            PlateNumber = NormaliseOptional(request.PlateNumber),
             IsSaudi = request.IsSaudi,
             NationalId = request.IsSaudi ? request.NationalId : null,
             IqamaNumber = request.IsSaudi ? null : request.IqamaNumber,
