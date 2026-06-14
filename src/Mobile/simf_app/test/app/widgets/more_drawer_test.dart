@@ -52,6 +52,12 @@ class _FakeMyAreaRepository implements MyAreaRepository {
   Future<String> getContactCardVcf() async => '';
   @override
   Future<String> getCalendarIcs() async => 'BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n';
+  @override
+  Future<bool> uploadAvatar({
+    required List<int> bytes,
+    required String filename,
+  }) async =>
+      true;
 }
 
 Future<void> _pump(

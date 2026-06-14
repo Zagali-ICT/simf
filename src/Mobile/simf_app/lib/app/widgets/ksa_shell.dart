@@ -441,6 +441,8 @@ class KsaAvatar extends StatelessWidget {
     required this.name,
     this.imageUrl,
     this.size = 42,
+    this.initialsBackground = SimfTokens.accent,
+    this.initialsForeground = SimfTokens.navy,
     super.key,
   });
 
@@ -448,9 +450,20 @@ class KsaAvatar extends StatelessWidget {
   final String? imageUrl;
   final double size;
 
+  /// The initials-fallback box colours. The badge identity strip is gold, so it
+  /// overrides these to a white box with navy text (the default gold-on-gold
+  /// would vanish there).
+  final Color initialsBackground;
+  final Color initialsForeground;
+
   @override
   Widget build(BuildContext context) {
-    final initials = _Initials(name: name, size: size);
+    final initials = _Initials(
+      name: name,
+      size: size,
+      background: initialsBackground,
+      foreground: initialsForeground,
+    );
     return ClipRRect(
       borderRadius: const BorderRadius.all(Radius.circular(SimfTokens.radius)),
       child: SizedBox(
@@ -469,20 +482,27 @@ class KsaAvatar extends StatelessWidget {
 }
 
 class _Initials extends StatelessWidget {
-  const _Initials({required this.name, required this.size});
+  const _Initials({
+    required this.name,
+    required this.size,
+    required this.background,
+    required this.foreground,
+  });
 
   final String name;
   final double size;
+  final Color background;
+  final Color foreground;
 
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: SimfTokens.accent,
+      color: background,
       child: Center(
         child: Text(
           ksaInitials(name),
           style: TextStyle(
-            color: SimfTokens.navy,
+            color: foreground,
             fontWeight: FontWeight.w700,
             fontSize: size * 0.33,
           ),

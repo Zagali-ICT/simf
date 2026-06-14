@@ -75,6 +75,13 @@ class _FakeMyAreaRepository implements MyAreaRepository {
 
   @override
   Future<String> getCalendarIcs() async => '';
+
+  @override
+  Future<bool> uploadAvatar({
+    required List<int> bytes,
+    required String filename,
+  }) async =>
+      true;
 }
 
 Future<void> _pump(

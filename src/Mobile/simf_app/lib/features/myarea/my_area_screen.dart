@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
@@ -124,6 +125,36 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
     }
   }
 
+  /// Picks a new avatar from the gallery and uploads it (D-401). On success the
+  /// image cache is cleared (the avatar URL can be stable) and the dashboard
+  /// reloads so the new photo shows.
+  Future<void> _changeAvatar() async {
+    final l10n = AppL10n.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1024,
+      imageQuality: 85,
+    );
+    if (picked == null || !mounted) {
+      return;
+    }
+    final bytes = await picked.readAsBytes();
+    try {
+      await ref
+          .read(myAreaRepositoryProvider)
+          .uploadAvatar(bytes: bytes, filename: picked.name);
+      if (!mounted) {
+        return;
+      }
+      PaintingBinding.instance.imageCache.clear();
+      PaintingBinding.instance.imageCache.clearLiveImages();
+      await _load();
+    } on ApiFailure {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.avatarUploadFailed)));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
@@ -195,6 +226,8 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
           avatarUrl: identity.avatarUrl,
           shareLabel: l10n.shareLabel,
           onShare: () => unawaited(_shareContact()),
+          onAvatarTap: () => unawaited(_changeAvatar()),
+          avatarTooltip: l10n.avatarChangeTooltip,
         ),
         const SizedBox(height: SimfTokens.space4),
         // Frame 213:963 — the two share actions (مشاركة ملفي + مشاركة جهة اتصال).
@@ -287,6 +320,8 @@ class _IdentityCard extends StatelessWidget {
     this.avatarUrl,
     this.shareLabel,
     this.onShare,
+    this.onAvatarTap,
+    this.avatarTooltip,
   });
 
   final String name;
@@ -295,6 +330,8 @@ class _IdentityCard extends StatelessWidget {
   final String? avatarUrl;
   final String? shareLabel;
   final VoidCallback? onShare;
+  final VoidCallback? onAvatarTap;
+  final String? avatarTooltip;
 
   @override
   Widget build(BuildContext context) {
@@ -307,7 +344,12 @@ class _IdentityCard extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          KsaAvatar(name: name, imageUrl: avatarUrl, size: 64),
+          _TappableAvatar(
+            name: name,
+            imageUrl: avatarUrl,
+            onTap: onAvatarTap,
+            tooltip: avatarTooltip,
+          ),
           const SizedBox(width: SimfTokens.space3),
           Expanded(
             child: Column(
@@ -387,6 +429,62 @@ class _IdentityCard extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// The profile avatar with a tap-to-change affordance (frame 213:963): the gold
+/// rounded avatar plus a small camera badge at the corner. A null [onTap] (the
+/// limited/pending view) renders a plain avatar with no camera badge.
+class _TappableAvatar extends StatelessWidget {
+  const _TappableAvatar({
+    required this.name,
+    this.imageUrl,
+    this.onTap,
+    this.tooltip,
+  });
+
+  final String name;
+  final String? imageUrl;
+  final VoidCallback? onTap;
+  final String? tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    final avatar = KsaAvatar(name: name, imageUrl: imageUrl, size: 64);
+    if (onTap == null) {
+      return avatar;
+    }
+    return Semantics(
+      button: true,
+      label: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: <Widget>[
+            avatar,
+            Positioned(
+              right: -2,
+              bottom: -2,
+              child: Container(
+                padding: const EdgeInsets.all(SimfTokens.space1),
+                decoration: BoxDecoration(
+                  color: SimfTokens.accent,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: SimfTokens.navyDeep, width: 1.5),
+                ),
+                child: const Icon(
+                  Icons.photo_camera_outlined,
+                  size: 12,
+                  color: SimfTokens.navy,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

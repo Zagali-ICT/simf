@@ -160,21 +160,33 @@ class _Badge extends StatelessWidget {
       padding: const EdgeInsets.all(SimfTokens.space4),
       children: <Widget>[
         Container(
-          padding: const EdgeInsets.all(SimfTokens.space4),
+          padding: const EdgeInsets.all(SimfTokens.space2),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(SimfTokens.radiusLg),
-            border: Border.all(color: SimfTokens.accent, width: 1.5),
+            // Frame 221:769 — the gold card edge is a heavy 4-px stroke.
+            border: Border.all(color: SimfTokens.accent, width: 4),
           ),
           child: Column(
             children: <Widget>[
               Padding(
-                padding: const EdgeInsets.all(SimfTokens.space4),
+                // Frame 221:769 — the QR sits ~12 % inset from the card edge.
+                padding: const EdgeInsets.all(SimfTokens.space6),
                 child: QrImageView(
                   data: qrId,
                   version: QrVersions.auto,
                   size: 230,
                   gapless: true,
+                  // Frame 221:769 — the three finder eyes are rounded, not
+                  // square boxes.
+                  eyeStyle: const QrEyeStyle(
+                    eyeShape: QrEyeShape.circle,
+                    color: SimfTokens.navy,
+                  ),
+                  dataModuleStyle: const QrDataModuleStyle(
+                    dataModuleShape: QrDataModuleShape.square,
+                    color: SimfTokens.navy,
+                  ),
                 ),
               ),
               Text(
@@ -193,10 +205,15 @@ class _Badge extends StatelessWidget {
                 ),
                 child: Row(
                   children: <Widget>[
+                    // Frame 221:769 — a 64-px rounded box; the initials get a
+                    // white box (navy text) so مم stays visible on the gold
+                    // strip, replaced by the photo when present.
                     KsaAvatar(
                       name: name,
                       imageUrl: identity.avatarUrl,
-                      size: 56,
+                      size: 64,
+                      initialsBackground: Colors.white,
+                      initialsForeground: SimfTokens.navy,
                     ),
                     const SizedBox(width: SimfTokens.space3),
                     Expanded(

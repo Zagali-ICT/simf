@@ -86,6 +86,13 @@ class _FakeMyAreaRepository implements MyAreaRepository {
   @override
   Future<String> getCalendarIcs() async =>
       'BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n';
+
+  @override
+  Future<bool> uploadAvatar({
+    required List<int> bytes,
+    required String filename,
+  }) async =>
+      true;
 }
 
 Future<void> _pump(
@@ -198,6 +205,20 @@ void main() {
       expect(find.text('SHARE-MY-CONTACT'), findsOneWidget);
     });
 
+    testWidgets('the dashboard avatar shows the tap-to-change camera affordance',
+        (tester) async {
+      await _pump(
+        tester,
+        controller: _AuthController(RegistrationStatus.approved),
+        repo: _FakeMyAreaRepository(dashboard: _dashboard()),
+      );
+
+      // The identity-card avatar carries the camera badge (D-401) — the photo
+      // is changeable on tap. (The picker itself is a platform channel and is
+      // not driven here.)
+      expect(find.byIcon(Icons.photo_camera_outlined), findsOneWidget);
+    });
+
     testWidgets('empty schedule shows the no-items placeholder',
         (tester) async {
       await _pump(
@@ -226,6 +247,8 @@ void main() {
       expect(find.textContaining('under review'), findsOneWidget);
       expect(find.text('6'), findsNothing); // counters hidden
       expect(find.text('My smart badge'), findsNothing);
+      // No photo-change affordance on the limited card (onAvatarTap is null).
+      expect(find.byIcon(Icons.photo_camera_outlined), findsNothing);
     });
 
     testWidgets('a 403 for an approved user falls back to the limited card',

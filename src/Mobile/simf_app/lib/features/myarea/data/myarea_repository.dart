@@ -28,6 +28,33 @@ class MyAreaRepository {
   Future<String> getCalendarIcs() =>
       _client.getText('/app/account/calendar.ics');
 
+  /// `POST /app/account/avatar` (multipart) — uploads a new avatar image for the
+  /// signed-in user (jpeg/png/webp, server-gated to ≤ 2 MB). Returns true on
+  /// success; the new image is reflected by the next dashboard read.
+  Future<bool> uploadAvatar({
+    required List<int> bytes,
+    required String filename,
+  }) {
+    return _client.upload<bool>(
+      '/app/account/avatar',
+      bytes: bytes,
+      filename: filename,
+      contentType: _avatarMime(filename),
+      decodeData: (_) => true,
+    );
+  }
+
+  static String _avatarMime(String filename) {
+    final f = filename.toLowerCase();
+    if (f.endsWith('.png')) {
+      return 'image/png';
+    }
+    if (f.endsWith('.webp')) {
+      return 'image/webp';
+    }
+    return 'image/jpeg';
+  }
+
   static Map<String, dynamic> _asMap(Object? data) =>
       (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
 }

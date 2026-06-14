@@ -510,6 +510,11 @@ class AppL10n {
   String get shareCalendar => _t('مشاركة جدولي', 'Share my calendar');
   String get shareFailed =>
       _t('تعذّرت المشاركة. حاول مرة أخرى.', 'Could not share. Try again.');
+  String get avatarChangeTooltip => _t('تغيير الصورة', 'Change photo');
+  String get avatarUploadFailed => _t(
+        'تعذّر تحديث الصورة. حاول مرة أخرى.',
+        'Could not update the photo. Try again.',
+      );
   String get statBookedSessions => _t('جلسات محفوظة', 'Booked sessions');
   String get statMeetings => _t('مقابلات مؤكدة', 'Confirmed meetings');
   String get statisticsTitle => _t('الإحصائيات', 'Statistics');
