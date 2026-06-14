@@ -162,14 +162,16 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
         }
       },
       child: Scaffold(
-      // No AppBar leading: over the live camera platform-view the bar's back
-      // button doesn't receive taps (hybrid-composition intercepts them). The
-      // tappable back is overlaid inside the camera Stack below (composited
-      // above the platform-view) so it always works; system back is handled by
-      // the PopScope above.
       appBar: AppBar(
         title: Text(l10n.scanContactTitle),
-        automaticallyImplyLeading: false,
+        // Explicit back (the auto-leading is absent when the scanner is the
+        // navigator root); the AppBar sits above the camera box so it stays
+        // tappable. System back is handled by the PopScope above.
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+          onPressed: _leave,
+        ),
       ),
       body: SafeArea(
         child: LayoutBuilder(
@@ -190,28 +192,7 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
                 SizedBox(
                   width: double.infinity,
                   height: cameraHeight,
-                  child: Stack(
-                    children: <Widget>[
-                      Positioned.fill(child: _buildCamera(l10n)),
-                      // Overlaid back — composited above the camera platform-view
-                      // so it receives taps where an AppBar back would not.
-                      PositionedDirectional(
-                        top: SimfTokens.space2,
-                        start: SimfTokens.space2,
-                        child: Material(
-                          color: Colors.black54,
-                          shape: const CircleBorder(),
-                          clipBehavior: Clip.antiAlias,
-                          child: IconButton(
-                            tooltip:
-                                MaterialLocalizations.of(context).backButtonTooltip,
-                            icon: const Icon(Icons.arrow_back, color: Colors.white),
-                            onPressed: _leave,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                  child: _buildCamera(l10n),
                 ),
                 Expanded(
                   child: SingleChildScrollView(child: _buildManualEntry(l10n)),
