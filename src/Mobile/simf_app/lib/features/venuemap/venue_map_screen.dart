@@ -333,16 +333,17 @@ class _MapControl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Frame 758:1358 — gold square controls, 4-px radius, 20-px navy glyph.
     return Material(
       color: SimfTokens.accent,
-      borderRadius: BorderRadius.circular(SimfTokens.radius),
+      borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
         child: SizedBox(
           width: 40,
           height: 40,
-          child: Icon(icon, size: 22, color: SimfTokens.navy),
+          child: Icon(icon, size: 20, color: SimfTokens.navy),
         ),
       ),
     );
@@ -498,11 +499,25 @@ class _NodeInfoCard extends StatelessWidget {
     ];
     final code = booth?.code;
 
+    // Frame 758:1358 — white card, 8-px radius, gold 0.5 hairline + soft shadow.
     return Container(
-      padding: const EdgeInsets.all(SimfTokens.space4),
-      decoration: const BoxDecoration(
+      padding: const EdgeInsets.fromLTRB(
+        SimfTokens.space4,
+        SimfTokens.space2,
+        SimfTokens.space4,
+        SimfTokens.space4,
+      ),
+      decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radiusLg)),
+        borderRadius: BorderRadius.circular(SimfTokens.radius),
+        border: Border.all(color: SimfTokens.accent, width: 0.5),
+        boxShadow: const <BoxShadow>[
+          BoxShadow(
+            color: Color(0x29111827),
+            offset: Offset(0, 1),
+            blurRadius: 8,
+          ),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -511,24 +526,23 @@ class _NodeInfoCard extends StatelessWidget {
             children: <Widget>[
               if (code != null)
                 Container(
-                  width: 64,
-                  height: 56,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: SimfTokens.accent,
-                    borderRadius: BorderRadius.circular(SimfTokens.radius),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: SimfTokens.space3,
+                    vertical: SimfTokens.space2,
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(SimfTokens.space1),
-                    child: FittedBox(
-                      child: Text(
-                        title,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: SimfTokens.textMd,
-                        ),
-                      ),
+                  decoration: BoxDecoration(
+                    // Frame — pale-beige #FFF4DC @ 80% with a gold hairline.
+                    color: const Color(0xCCFFF4DC),
+                    borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+                    border: Border.all(color: SimfTokens.accent, width: 0.5),
+                  ),
+                  child: Text(
+                    code,
+                    textDirection: TextDirection.ltr,
+                    style: const TextStyle(
+                      color: SimfTokens.accent,
+                      fontWeight: FontWeight.w600,
+                      fontSize: SimfTokens.textMd,
                     ),
                   ),
                 ),
@@ -541,14 +555,15 @@ class _NodeInfoCard extends StatelessWidget {
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
+                      // Frame — navy #01132D, 14px SemiBold.
                       style: const TextStyle(
-                        color: SimfTokens.headlineInk,
-                        fontWeight: FontWeight.w700,
-                        fontSize: SimfTokens.textLg,
+                        color: SimfTokens.navy,
+                        fontWeight: FontWeight.w600,
+                        fontSize: SimfTokens.textMd,
                       ),
                     ),
                     if (subtitleParts.isNotEmpty) ...<Widget>[
-                      const SizedBox(height: 2),
+                      const SizedBox(height: SimfTokens.space2),
                       Text(
                         subtitleParts.join(' · '),
                         maxLines: 1,
@@ -563,35 +578,16 @@ class _NodeInfoCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: SimfTokens.space2),
-              if (code != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: SimfTokens.space3,
-                    vertical: SimfTokens.space2,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-                    border: Border.all(color: SimfTokens.accent),
-                  ),
-                  child: Text(
-                    code,
-                    textDirection: TextDirection.ltr,
-                    style: const TextStyle(
-                      color: SimfTokens.accent,
-                      fontWeight: FontWeight.w700,
-                      fontSize: SimfTokens.textSm,
-                    ),
-                  ),
-                )
-              else
-                IconButton(
-                  onPressed: onClose,
-                  icon: const Icon(
-                    Icons.close,
-                    size: 20,
-                    color: SimfTokens.greyText,
-                  ),
+              // Close affordance (the frame's 60×60 exhibitor-logo badge needs
+              // logo assets we don't have; the dismiss control is kept).
+              IconButton(
+                onPressed: onClose,
+                icon: const Icon(
+                  Icons.close,
+                  size: 20,
+                  color: SimfTokens.greyText,
                 ),
+              ),
             ],
           ),
           const SizedBox(height: SimfTokens.space3),
@@ -614,7 +610,8 @@ class _NodeInfoCard extends StatelessWidget {
                     onPressed: onDetails,
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size.fromHeight(44),
-                      side: const BorderSide(color: SimfTokens.lineLight),
+                      // Frame 758:1358 — gold 0.5 hairline, not faint navy.
+                      side: const BorderSide(color: SimfTokens.accent, width: 0.5),
                       foregroundColor: SimfTokens.accent,
                     ),
                     child: Text(l10n.venueMapViewDetails),
