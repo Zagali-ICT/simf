@@ -9,11 +9,13 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// D-127 — <c>POST /api/v1/admin/visitors/register-onsite</c>. Walk-in
-/// registration desk endpoint. Single transaction: create user + profile
-/// + interests + mint QR. The account lands directly in
-/// <see cref="AccountState.Approved"/> — staff already verified the
-/// person face-to-face, no pending queue.
+/// D-127 (amended D-425) — <c>POST /api/v1/admin/visitors/register-onsite</c>.
+/// Walk-in registration desk endpoint. Single transaction: create user +
+/// profile + interests. The account lands in
+/// <see cref="AccountState.PendingApproval"/> with no password and no QR — an
+/// admin approves it from the pending-visitors queue, which mints the QR badge
+/// (D-386). (D-127 originally auto-approved + minted the QR at the desk; D-425
+/// reversed that so every visitor passes through the approval review.)
 /// </summary>
 public sealed class RegisterVisitorOnSiteEndpoint(IAdminUserProvisioningService service)
     : Endpoint<AdminWalkInRegistrationRequest, ApiResult<AdminWalkInRegistrationResponse>>
@@ -25,7 +27,7 @@ public sealed class RegisterVisitorOnSiteEndpoint(IAdminUserProvisioningService 
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
-            "On-site walk-in visitor registration. Auto-approves; returns the minted QR id.");
+            "On-site walk-in visitor registration. Creates a PENDING account (D-425); the QR is minted on approval.");
     }
 
     public override async Task HandleAsync(

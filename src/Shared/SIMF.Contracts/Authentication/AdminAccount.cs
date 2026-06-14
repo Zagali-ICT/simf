@@ -391,10 +391,12 @@ public sealed class AdminUpdateProfileTypeRequest
 }
 
 /// <summary>
-/// D-127 — body of <c>POST /api/v1/admin/{visitors,others}/register-onsite</c>.
-/// Walk-in / desk registration shape — staff at the registration desk fills
-/// the full profile face-to-face and the user is auto-approved + a QR id
-/// is minted in the same transaction. Email is optional (walk-ins frequently
+/// D-127 (amended D-425) — body of
+/// <c>POST /api/v1/admin/{visitors,others}/register-onsite</c>. Walk-in / desk
+/// registration shape — staff at the registration desk fills the full profile
+/// face-to-face. D-425: the account is created <c>PendingApproval</c>; no QR is
+/// minted at the desk — it is issued when an admin approves from the pending
+/// queue. Email is optional (walk-ins frequently
 /// don't have one; the QR badge is the access token); when missing the API
 /// synthesizes <c>walkin-{guid}@simf.local</c> so Identity stays valid.
 /// </summary>
@@ -465,11 +467,12 @@ public sealed class AdminWalkInRegistrationRequest
 }
 
 /// <summary>
-/// D-127 — response from the walk-in endpoint. Carries the data the
-/// post-submit success modal needs to render the badge: the QR id (already
-/// minted because the user is auto-approved), the chosen profile-type
-/// name + colour, and the user id so a follow-up ID-document upload can
-/// reach the right row.
+/// D-127 (amended D-425) — response from the walk-in endpoint. Carries the data
+/// the post-submit success modal needs: the chosen profile-type name + colour
+/// and the user id (so a follow-up ID-document upload can reach the right row).
+/// D-425: <see cref="QrId"/> is now EMPTY for a freshly created walk-in — the
+/// account is PendingApproval and the QR is minted only on approval; the modal
+/// treats an empty QrId as the "pending" state and shows no badge.
 /// </summary>
 public sealed record AdminWalkInRegistrationResponse(
     Guid UserId,

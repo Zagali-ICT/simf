@@ -9,10 +9,12 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// D-127 — <c>POST /api/v1/admin/others/register-onsite</c>. Twin of
-/// <see cref="RegisterVisitorOnSiteEndpoint"/> for the Other kind
-/// (exhibitor booth staff, vendors, AV, security, …). Same shape;
-/// Interests are ignored on this path.
+/// D-127 (amended D-425) — <c>POST /api/v1/admin/others/register-onsite</c>.
+/// Twin of <see cref="RegisterVisitorOnSiteEndpoint"/> for the Other kind
+/// (exhibitor booth staff, vendors, AV, security, …). Same shape; Interests
+/// are ignored on this path. D-425: like the visitor desk, the account now
+/// lands <see cref="AccountState.PendingApproval"/> (no QR until approved from
+/// the pending-others queue), not auto-approved.
 /// </summary>
 public sealed class RegisterOtherOnSiteEndpoint(IAdminUserProvisioningService service)
     : Endpoint<AdminWalkInRegistrationRequest, ApiResult<AdminWalkInRegistrationResponse>>
@@ -24,7 +26,7 @@ public sealed class RegisterOtherOnSiteEndpoint(IAdminUserProvisioningService se
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
-            "On-site walk-in registration for an Other account. Auto-approves; returns the minted QR id.");
+            "On-site walk-in registration for an Other account. Creates a PENDING account (D-425); the QR is minted on approval.");
     }
 
     public override async Task HandleAsync(

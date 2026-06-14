@@ -888,6 +888,8 @@
 
   <data name="Admin.WalkIn.Success.Title" xml:space="preserve"><value>تم التسجيل — الشارة جاهزة</value></data>
   <data name="Admin.WalkIn.Success.Body" xml:space="preserve"><value>تم اعتماد الحساب. سلّم أو اطبع شارة QR — يمسحها الزائر عند البوابة.</value></data>
+  <data name="Admin.WalkIn.Success.PendingTitle" xml:space="preserve"><value>تم التسجيل، بانتظار الاعتماد</value></data>
+  <data name="Admin.WalkIn.Success.PendingBody" xml:space="preserve"><value>تم إنشاء الحساب وهو بانتظار الاعتماد. اعتمده من قائمة الزوار المعلّقين لإصدار شارة QR.</value></data>
   <data name="Admin.WalkIn.Success.NoEmail" xml:space="preserve"><value>بدون بريد — QR هو مفتاح الدخول</value></data>
   <data name="Admin.WalkIn.Success.Close" xml:space="preserve"><value>تم</value></data>
   <data name="Admin.WalkIn.Success.Print" xml:space="preserve"><value>طباعة الشارة</value></data>

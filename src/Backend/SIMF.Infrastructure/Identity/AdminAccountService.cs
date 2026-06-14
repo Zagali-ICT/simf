@@ -43,6 +43,8 @@ internal sealed partial class AdminAccountService(
     IEmailQueue emailQueue,
     IAuditLog auditLog,
     IUserExcelService excel,
+    // qrIdMinter is used by the approve flow (AdminAccountService.Approval.cs)
+    // to mint the QR on approval — D-425 removed the mint from create only.
     IQrIdMinter qrIdMinter,
     ITransactionRunner transactionRunner,
     SimfIdentityDbContext dbContext,
@@ -210,12 +212,14 @@ internal sealed partial class AdminAccountService(
             expectedIsVisitor: true);
 
     // ---------------------------------------------------------------------
-    // D-127 — on-site walk-in registration. The CP /admin/visitors and
-    // /admin/others pages are registration desks at the event; staff
-    // verify the person in-hand and the user is auto-approved (no pending
-    // queue, no invite email). One transaction creates the user + the
-    // profile + the interests + mints the QR; the response carries the QR
-    // so the desk can immediately show or print the badge.
+    // D-127 (amended D-425) — on-site walk-in registration. The CP
+    // /admin/visitors and /admin/others pages are registration desks at the
+    // event; staff fill the profile in-hand. One transaction creates the user
+    // + the profile + the interests. D-425 reversed the original auto-approve:
+    // the account now lands PendingApproval with NO QR — an admin approves it
+    // from the pending queue, which mints the QR badge (the approve path in
+    // AdminAccountService.Approval.cs). No password (the QR is the access key,
+    // granted on approval).
     // ---------------------------------------------------------------------
 
     public async Task<AdminWalkInRegistrationResponse> RegisterOnSiteAsync(
@@ -356,8 +360,11 @@ internal sealed partial class AdminAccountService(
             DisplayName = string.IsNullOrWhiteSpace(request.DisplayName)
                 ? (string.IsNullOrEmpty(request.EnglishName) ? "Walk-in" : request.EnglishName)
                 : request.DisplayName,
-            // Auto-approve — staff has verified the person face-to-face.
-            AccountState = AccountState.Approved,
+            // D-425 (reverses D-127): the walk-in desk now creates a PENDING
+            // account, not an auto-approved one. An admin approves it from the
+            // pending queue, which mints the QR badge (D-386). No password —
+            // the QR (minted on approval) is the access key.
+            AccountState = AccountState.PendingApproval,
             UserType = kind,
             PasswordChangeRequired = false,
             CreatedAt = now,
@@ -414,9 +421,9 @@ internal sealed partial class AdminAccountService(
         }
         appDbContext.UserProfiles.Add(profile);
 
-        // Mint the QR badge synchronously — the response carries it so
-        // the desk can render the badge before the visitor walks away.
-        await qrIdMinter.MintIfMissingAsync(profile, cancellationToken);
+        // D-425: no QR at create — the account is PendingApproval; the approve
+        // path mints the QR badge (D-386). The QR is the access key, granted on
+        // approval, not at the desk.
         // D-167: UserProfile lives on App DB now; save both contexts.
         await appDbContext.SaveChangesAsync(cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -439,8 +446,8 @@ internal sealed partial class AdminAccountService(
         }, cancellationToken);
 
         logger.LogInformation(
-            "Admin {ActorId} walk-in registered {Kind} {Email} (QR {QrId})",
-            actorUserId, kind, email, profile.QrId);
+            "Admin {ActorId} walk-in registered {Kind} {Email} (PendingApproval; QR minted on approval)",
+            actorUserId, kind, email);
 
         return new AdminWalkInRegistrationResponse(
             user.Id,

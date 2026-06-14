@@ -15,10 +15,10 @@ using Xunit;
 namespace SIMF.Api.Tests;
 
 /// <summary>
-/// D-127 integration tests for the on-site walk-in registration endpoints
-/// (<c>POST /admin/{visitors,others}/register-onsite</c>). Confirms
-/// auto-approve, QR minting in one transaction, optional-email behaviour
-/// and the type-scoped profile-type guard.
+/// D-127 (amended D-425) integration tests for the on-site walk-in registration
+/// endpoints (<c>POST /admin/{visitors,others}/register-onsite</c>). Confirms
+/// the D-425 create-as-PendingApproval behaviour (no QR until approval),
+/// optional-email behaviour and the type-scoped profile-type guard.
 /// </summary>
 public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
 {
@@ -35,7 +35,7 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Visitor_walk_in_creates_approved_user_with_qr_minted()
+    public async Task Visitor_walk_in_creates_pending_user_without_qr()
     {
         var adminToken = await CreateAdministratorAndSignInAsync();
         var profileTypeId = await GetVisitorProfileTypeAsync();
@@ -51,24 +51,25 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
         var body = (await response.Content.ReadFromJsonAsync<ApiResult<AdminWalkInRegistrationResponse>>())!;
         Assert.True(body.Success);
         Assert.NotEqual(Guid.Empty, body.Data!.UserId);
-        Assert.False(string.IsNullOrEmpty(body.Data.QrId));
+        // D-425 — a pending walk-in carries no QR until an admin approves it.
+        Assert.True(string.IsNullOrEmpty(body.Data.QrId));
         Assert.Equal(email, body.Data.Email);
 
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var user = await db.Users.SingleAsync(u => u.Id == body.Data.UserId);
-        Assert.Equal(AccountState.Approved, user.AccountState);
+        Assert.Equal(AccountState.PendingApproval, user.AccountState);
         Assert.Equal(UserType.Visitor, user.UserType);
 
         var profile = await appDb.UserProfiles.SingleAsync(p => p.UserId == user.Id);
         Assert.Equal(profileTypeId, profile.ProfileTypeId);
-        Assert.False(string.IsNullOrEmpty(profile.QrId));
+        Assert.True(string.IsNullOrEmpty(profile.QrId));
         Assert.Equal("Walk-in Visitor", profile.Name);
     }
 
     [Fact]
-    public async Task Other_walk_in_creates_approved_other_user()
+    public async Task Other_walk_in_creates_pending_other_user()
     {
         var adminToken = await CreateAdministratorAndSignInAsync();
         var profileTypeId = await GetOtherProfileTypeAsync();
@@ -89,7 +90,7 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
         // D-186: Other walk-ins are now Visitor-typed accounts; the
         // partner status lives on the linked ProfileType.IsVisitor=false.
         Assert.Equal(UserType.Visitor, user.UserType);
-        Assert.Equal(AccountState.Approved, user.AccountState);
+        Assert.Equal(AccountState.PendingApproval, user.AccountState);
     }
 
     [Fact]

@@ -897,6 +897,8 @@
 
   <data name="Admin.WalkIn.Success.Title" xml:space="preserve"><value>Registered — badge ready</value></data>
   <data name="Admin.WalkIn.Success.Body" xml:space="preserve"><value>The account is approved. Hand over or print the QR badge — the visitor scans it at the gate.</value></data>
+  <data name="Admin.WalkIn.Success.PendingTitle" xml:space="preserve"><value>Registered, pending approval</value></data>
+  <data name="Admin.WalkIn.Success.PendingBody" xml:space="preserve"><value>The account was created and is awaiting approval. Approve it from Pending visitors to issue the QR badge.</value></data>
   <data name="Admin.WalkIn.Success.NoEmail" xml:space="preserve"><value>No email — QR is the access key</value></data>
   <data name="Admin.WalkIn.Success.Close" xml:space="preserve"><value>Done</value></data>
   <data name="Admin.WalkIn.Success.Print" xml:space="preserve"><value>Print badge</value></data>

@@ -13,7 +13,7 @@
 @if (Response is not null)
 {
     <SimfModal Open="true"
-               Title="@L["Admin.WalkIn.Success.Title"]"
+               Title="@(Pending ? L["Admin.WalkIn.Success.PendingTitle"] : L["Admin.WalkIn.Success.Title"])"
                OnClose="OnClose">
         <ChildContent>
             <div class="simf-walkin-badge"
@@ -23,18 +23,34 @@
                 </div>
                 <div class="simf-walkin-badge__name">@Response.DisplayName</div>
                 <div class="simf-walkin-badge__email">@EmailLabel</div>
-                <div class="simf-walkin-badge__qr">@((MarkupString)_qrSvg)</div>
-                <div class="simf-walkin-badge__qrid">@Response.QrId</div>
+                @* D-425: a pending walk-in has no QR yet — it is minted on
+                   approval. Only show the QR badge once the account is approved. *@
+                @if (!Pending)
+                {
+                    <div class="simf-walkin-badge__qr">@((MarkupString)_qrSvg)</div>
+                    <div class="simf-walkin-badge__qrid">@Response.QrId</div>
+                }
             </div>
-            <SimfAlert Variant="success">@L["Admin.WalkIn.Success.Body"]</SimfAlert>
+            @if (Pending)
+            {
+                <SimfAlert Variant="info">@L["Admin.WalkIn.Success.PendingBody"]</SimfAlert>
+            }
+            else
+            {
+                <SimfAlert Variant="success">@L["Admin.WalkIn.Success.Body"]</SimfAlert>
+            }
         </ChildContent>
         <Footer>
             <SimfButton Type="button" Variant="secondary" OnClick="OnClose">
                 @L["Admin.WalkIn.Success.Close"]
             </SimfButton>
-            <SimfButton Type="button" Variant="secondary" OnClick="OnPrint">
-                @L["Admin.WalkIn.Success.Print"]
-            </SimfButton>
+            @* No badge to print until the QR exists (i.e. after approval). *@
+            @if (!Pending)
+            {
+                <SimfButton Type="button" Variant="secondary" OnClick="OnPrint">
+                    @L["Admin.WalkIn.Success.Print"]
+                </SimfButton>
+            }
             <SimfButton Type="button" Variant="primary" OnClick="OnRegisterAnother">
                 @L["Admin.WalkIn.Success.Another"]
             </SimfButton>
@@ -44,6 +60,9 @@
 
 @code {
     private string _qrSvg = string.Empty;
+
+    // D-425 — a pending walk-in carries no QR id yet (minted on approval).
+    private bool Pending => Response is not null && string.IsNullOrEmpty(Response.QrId);
 
     /// <summary>The walk-in response — when null the modal is hidden.</summary>
     [Parameter] public AdminWalkInRegistrationResponse? Response { get; set; }
