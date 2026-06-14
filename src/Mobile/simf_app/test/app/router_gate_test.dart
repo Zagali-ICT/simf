@@ -1,6 +1,21 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/router.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
+
+/// A toggleable auth flag used as the router's [Listenable] refresh source, so a
+/// test can flip "signed in → signed out" and re-run the redirect — exactly the
+/// `refreshListenable`-triggered path that pure `redirectDecision` tests cannot
+/// exercise.
+class _AuthFlag extends ChangeNotifier {
+  bool signedIn = true;
+  void signOut() {
+    signedIn = false;
+    notifyListeners();
+  }
+}
 
 void main() {
   group('routePathRequiresAuth (auth gate, SIMF-MAA-001 §8)', () {
@@ -137,6 +152,86 @@ void main() {
         ),
         isNull,
       );
+    });
+  });
+
+  group('StatefulShellRoute auth gate (D-422 — fixed-bar shell)', () {
+    // The 5 bottom-nav tabs moved into a StatefulShellRoute. This drives the
+    // real shell + refreshListenable + fullPath-keyed redirect to prove the
+    // gate still fires when the session ends while sitting on a gated tab
+    // (/badge) — the case the pure redirectDecision tests cannot cover, and
+    // the one flagged in review (go_router fullPath-on-refresh).
+    Future<GoRouter> pumpShell(WidgetTester tester, _AuthFlag auth) async {
+      StatefulShellBranch branch(String name, String path, String label) =>
+          StatefulShellBranch(
+            routes: <RouteBase>[
+              GoRoute(
+                name: name,
+                path: path,
+                builder: (c, s) => Center(child: Text(label)),
+              ),
+            ],
+          );
+      final router = GoRouter(
+        initialLocation: '/badge',
+        refreshListenable: auth,
+        redirect: (context, state) {
+          if (routePathRequiresAuth(state.fullPath) && !auth.signedIn) {
+            return '/sign-in';
+          }
+          return null;
+        },
+        routes: <RouteBase>[
+          StatefulShellRoute.indexedStack(
+            builder: (context, state, navigationShell) => navigationShell,
+            branches: <StatefulShellBranch>[
+              branch(RouteNames.home, '/', 'HOME'),
+              branch(RouteNames.sessions, '/sessions', 'SESSIONS'),
+              branch(RouteNames.badge, '/badge', 'BADGE'),
+              branch(RouteNames.venueMap, '/map', 'MAP'),
+              branch(RouteNames.myArea, '/my-area', 'MY-AREA'),
+            ],
+          ),
+          GoRoute(
+            name: RouteNames.signIn,
+            path: '/sign-in',
+            builder: (c, s) => const Center(child: Text('SIGN-IN')),
+          ),
+        ],
+      );
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+      return router;
+    }
+
+    testWidgets('session ends on the /badge tab → bounced to /sign-in',
+        (tester) async {
+      final auth = _AuthFlag();
+      await pumpShell(tester, auth);
+      expect(find.text('BADGE'), findsOneWidget);
+
+      auth.signOut();
+      await tester.pumpAndSettle();
+
+      expect(find.text('SIGN-IN'), findsOneWidget);
+      expect(find.text('BADGE'), findsNothing);
+    });
+
+    testWidgets('a public tab (/sessions) is NOT bounced when signed out',
+        (tester) async {
+      final auth = _AuthFlag();
+      final router = await pumpShell(tester, auth);
+      // Move to the public sessions branch first.
+      router.go('/sessions');
+      await tester.pumpAndSettle();
+      expect(find.text('SESSIONS'), findsOneWidget);
+
+      auth.signOut();
+      await tester.pumpAndSettle();
+
+      // A public branch stays put when the session ends — no over-redirect.
+      expect(find.text('SESSIONS'), findsOneWidget);
+      expect(find.text('SIGN-IN'), findsNothing);
     });
   });
 

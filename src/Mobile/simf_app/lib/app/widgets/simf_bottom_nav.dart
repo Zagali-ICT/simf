@@ -67,26 +67,26 @@ class SimfBottomNav extends StatelessWidget {
                   current: current,
                   iconAsset: 'assets/icons/nav_calendar.svg',
                   label: l10n.navAgenda,
-                  onTap: () => _push(context, RouteNames.sessions),
+                  onTap: () => context.goNamed(RouteNames.sessions),
                 ),
                 _CentreAction(
                   active: current == SimfTab.badge,
                   label: l10n.badgeTitle,
-                  onTap: () => _push(context, RouteNames.badge),
+                  onTap: () => context.goNamed(RouteNames.badge),
                 ),
                 _Item(
                   tab: SimfTab.map,
                   current: current,
                   iconAsset: 'assets/icons/nav_location.svg',
                   label: l10n.tileVenueMap,
-                  onTap: () => _push(context, RouteNames.venueMap),
+                  onTap: () => context.goNamed(RouteNames.venueMap),
                 ),
                 _Item(
                   tab: SimfTab.profile,
                   current: current,
                   iconAsset: 'assets/icons/nav_user.svg',
                   label: l10n.navProfile,
-                  onTap: () => _push(context, RouteNames.myArea),
+                  onTap: () => context.goNamed(RouteNames.myArea),
                 ),
               ],
             ),
@@ -94,10 +94,6 @@ class SimfBottomNav extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  void _push(BuildContext context, String route) {
-    context.pushNamed(route);
   }
 }
 
