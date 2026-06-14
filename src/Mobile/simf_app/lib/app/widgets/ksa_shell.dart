@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../localization/app_l10n.dart';
@@ -334,14 +335,26 @@ class KsaTileRow extends StatelessWidget {
 class KsaNavTile extends StatelessWidget {
   const KsaNavTile({
     required this.label,
-    required this.icon,
+    this.icon,
+    this.iconAsset,
     this.onTap,
     this.enabled = true,
     super.key,
-  });
+  }) : assert(
+          icon != null || iconAsset != null,
+          'KsaNavTile needs either a Material icon or an SVG iconAsset.',
+        );
 
   final String label;
-  final IconData icon;
+
+  /// A Material glyph (the default tile icon source).
+  final IconData? icon;
+
+  /// An optional bundled SVG asset path (e.g. the KSA frame's exact iconify
+  /// glyph). When set it is rendered tinted to the tile colour and takes
+  /// precedence over [icon].
+  final String? iconAsset;
+
   final VoidCallback? onTap;
   final bool enabled;
 
@@ -350,6 +363,15 @@ class KsaNavTile extends StatelessWidget {
     final foreground =
         enabled ? SimfTokens.accent : SimfTokens.navyDisabledText;
     final labelColor = enabled ? Colors.white : SimfTokens.navyDisabledText;
+    final asset = iconAsset;
+    final Widget top = asset != null
+        ? SvgPicture.asset(
+            asset,
+            width: 24,
+            height: 24,
+            colorFilter: ColorFilter.mode(foreground, BlendMode.srcIn),
+          )
+        : Icon(icon, size: 24, color: foreground);
     return KsaCard(
       onTap: enabled ? onTap : null,
       color: enabled ? SimfTokens.navyDeep : SimfTokens.navyDisabled,
@@ -358,7 +380,7 @@ class KsaNavTile extends StatelessWidget {
           : SimfTokens.navyDisabledBorder,
       borderWidth: enabled ? SimfTokens.hairline : 1,
       child: _TileBody(
-        top: Icon(icon, size: 24, color: foreground),
+        top: top,
         label: label,
         labelColor: labelColor,
       ),

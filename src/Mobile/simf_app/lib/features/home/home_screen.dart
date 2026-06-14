@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
+import 'package:simf_data_pkg/simf_data_pkg.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/localization/app_l10n.dart';
@@ -13,10 +14,39 @@ import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../core/env/build_config.dart';
 import '../../core/external_link.dart';
+import '../myarea/data/myarea_models.dart';
+import '../myarea/data/myarea_repository.dart';
 import '../news/data/news_models.dart';
 import '../news/news_article_screen.dart';
 import '../news/news_screen.dart' show newsListProvider;
 import '../notifications/data/notifications_repository.dart';
+
+/// The signed-in home tile glyphs — the exact iconify SVGs from KSA frame
+/// 758:1134 (no 1:1 Material equivalent), bundled and tinted to the tile colour.
+class _HomeIcons {
+  static const String speakers = 'assets/icons/home_speakers.svg';
+  static const String booths = 'assets/icons/home_booths.svg';
+  static const String sponsors = 'assets/icons/home_sponsors.svg';
+  static const String archive = 'assets/icons/home_archive.svg';
+  static const String bilateral = 'assets/icons/home_bilateral.svg';
+  static const String meetPeople = 'assets/icons/home_meet_people.svg';
+  static const String aiAssistant = 'assets/icons/home_ai_assistant.svg';
+  static const String sessionSummary = 'assets/icons/home_session_summary.svg';
+  static const String badge = 'assets/icons/home_badge.svg';
+}
+
+/// Best-effort signed-in profile for the greeting (the real name + avatar live
+/// App-side on the dashboard, not in the Identity-issued auth token). Resolves
+/// to null while loading / on error (e.g. a not-yet-approved 403), in which
+/// case the greeting falls back to a name-less salute (never the email).
+final homeProfileProvider =
+    FutureProvider.autoDispose<MyAreaDashboard?>((ref) async {
+  try {
+    return await ref.watch(myAreaRepositoryProvider).getDashboard();
+  } on ApiFailure {
+    return null;
+  }
+});
 
 /// Page 013 — الرئيسية · Home (router / landing screen #13, `path=/`),
 /// rebuilt to the KSA Wave-2 frames: guest = 512:1492 (2×2 option,
@@ -59,13 +89,35 @@ class HomeScreen extends ConsumerWidget {
           data: (items) => items.isEmpty ? null : items.first,
           orElse: () => null,
         );
+    // The greeting name + avatar come from the App profile (frame shows the
+    // person's name, not the email). Best-effort: null until it loads.
+    final profile = ref.watch(homeProfileProvider).maybeWhen(
+          data: (dash) => dash,
+          orElse: () => null,
+        );
     return _VisitorHome(
       l10n: l10n,
-      name: user?.displayName ?? '',
+      name: _greetingName(
+        profile?.identity.localizedName(l10n.isArabic),
+        user?.displayName,
+      ),
+      avatarUrl: profile?.identity.avatarUrl,
       unread: unread,
       latestPost: latestPost,
     );
   }
+}
+
+/// The greeting name: the App profile name when known, otherwise a name-less
+/// salute — never the email (the auth display name is the email for accounts
+/// created without a separate display name).
+String _greetingName(String? profileName, String? authName) {
+  final profile = profileName?.trim() ?? '';
+  if (profile.isNotEmpty) {
+    return profile;
+  }
+  final auth = authName?.trim() ?? '';
+  return auth.contains('@') ? '' : auth;
 }
 
 /// The greeting word by local time of day (the frame's "صباح الخير" row).
@@ -232,22 +284,35 @@ class _VisitorHome extends StatelessWidget {
     required this.l10n,
     required this.name,
     required this.unread,
+    this.avatarUrl,
     this.latestPost,
   });
 
   final AppL10n l10n;
   final String name;
   final int unread;
+  final String? avatarUrl;
   final NewsListItem? latestPost;
 
   @override
   Widget build(BuildContext context) {
     return KsaPage(
       tab: SimfTab.home,
-      header: _GreetingHeader(l10n: l10n, name: name, unread: unread),
+      header: _GreetingHeader(
+        l10n: l10n,
+        name: name,
+        unread: unread,
+        avatarUrl: avatarUrl,
+      ),
       body: ListView(
         padding: const EdgeInsets.all(SimfTokens.space4),
         children: <Widget>[
+          // The discovery hero banner (frame node 758:1203) — opens News.
+          _DiscoverHeroBanner(
+            l10n: l10n,
+            onTap: () => context.pushNamed(RouteNames.news),
+          ),
+          const SizedBox(height: SimfTokens.space4),
           _LiveBanner(
             l10n: l10n,
             onTap: () => context.pushNamed(RouteNames.liveBroadcast),
@@ -263,17 +328,17 @@ class _VisitorHome extends StatelessWidget {
             children: <Widget>[
               KsaNavTile(
                 label: l10n.tileSpeakers,
-                icon: Icons.mic_none_outlined,
+                iconAsset: _HomeIcons.speakers,
                 onTap: () => context.pushNamed(RouteNames.speakers),
               ),
               KsaNavTile(
                 label: l10n.tileBooths,
-                icon: Icons.storefront_outlined,
+                iconAsset: _HomeIcons.booths,
                 onTap: () => context.pushNamed(RouteNames.booths),
               ),
               KsaNavTile(
                 label: l10n.tileSponsors,
-                icon: Icons.workspace_premium_outlined,
+                iconAsset: _HomeIcons.sponsors,
                 onTap: () => context.pushNamed(RouteNames.sponsors),
               ),
             ],
@@ -289,12 +354,12 @@ class _VisitorHome extends StatelessWidget {
             children: <Widget>[
               KsaNavTile(
                 label: l10n.tileBilateralMeetings,
-                icon: Icons.videocam_outlined,
+                iconAsset: _HomeIcons.bilateral,
                 onTap: () => context.pushNamed(RouteNames.gallery),
               ),
               KsaNavTile(
                 label: l10n.tileArchive,
-                icon: Icons.archive_outlined,
+                iconAsset: _HomeIcons.archive,
                 onTap: () => context.pushNamed(RouteNames.archive),
               ),
             ],
@@ -310,12 +375,12 @@ class _VisitorHome extends StatelessWidget {
             children: <Widget>[
               KsaNavTile(
                 label: l10n.tileMeetPeople,
-                icon: Icons.people_outline,
+                iconAsset: _HomeIcons.meetPeople,
                 onTap: () => context.pushNamed(RouteNames.meetPeople),
               ),
               KsaNavTile(
                 label: l10n.chatbotTitle,
-                icon: Icons.chat_bubble_outline,
+                iconAsset: _HomeIcons.aiAssistant,
                 onTap: () => context.pushNamed(RouteNames.chatbot),
               ),
             ],
@@ -325,12 +390,12 @@ class _VisitorHome extends StatelessWidget {
             children: <Widget>[
               KsaNavTile(
                 label: l10n.tileSessionSummary,
-                icon: Icons.summarize_outlined,
+                iconAsset: _HomeIcons.sessionSummary,
                 onTap: () => context.pushNamed(RouteNames.aiSummary),
               ),
               KsaNavTile(
                 label: l10n.tileEntryBadge,
-                icon: Icons.credit_card_outlined,
+                iconAsset: _HomeIcons.badge,
                 onTap: () => context.pushNamed(RouteNames.badge),
               ),
             ],
@@ -384,14 +449,19 @@ class _GreetingHeader extends StatelessWidget {
     required this.l10n,
     required this.name,
     required this.unread,
+    this.avatarUrl,
   });
 
   final AppL10n l10n;
   final String name;
   final int unread;
+  final String? avatarUrl;
 
   @override
   Widget build(BuildContext context) {
+    // Name-less while the profile loads (or for a name-less account) → just the
+    // wave, never a stray leading space.
+    final nameLine = name.isEmpty ? '👋' : '$name 👋';
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: SimfTokens.space4,
@@ -399,7 +469,7 @@ class _GreetingHeader extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          KsaAvatar(name: name),
+          KsaAvatar(name: name, imageUrl: avatarUrl),
           const SizedBox(width: SimfTokens.space2),
           Expanded(
             child: Column(
@@ -414,7 +484,7 @@ class _GreetingHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '$name 👋',
+                  nameLine,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -525,6 +595,71 @@ class _LiveBanner extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// The top discovery hero banner (frame node 758:1203): the bundled event
+/// photo under a 70% black scrim, with the gold "اكتشف" title and the white
+/// sub-line right-aligned. Tapping it opens News.
+class _DiscoverHeroBanner extends StatelessWidget {
+  const _DiscoverHeroBanner({required this.l10n, required this.onTap});
+
+  final AppL10n l10n;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+      child: Stack(
+        children: <Widget>[
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/discover_hero.jpg',
+              fit: BoxFit.cover,
+            ),
+          ),
+          // The frame's 70% black scrim over the photo.
+          const Positioned.fill(child: ColoredBox(color: Color(0xB3000000))),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTap,
+              child: SizedBox(
+                height: 96,
+                width: double.infinity,
+                child: Padding(
+                  padding: const EdgeInsets.all(SimfTokens.space2),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        l10n.discoverSection,
+                        style: const TextStyle(
+                          color: SimfTokens.accent,
+                          fontWeight: FontWeight.w700,
+                          fontSize: SimfTokens.textLg,
+                        ),
+                      ),
+                      const SizedBox(height: SimfTokens.space2),
+                      Text(
+                        l10n.discoverBannerSubtitle,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w500,
+                          fontSize: SimfTokens.textSm,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

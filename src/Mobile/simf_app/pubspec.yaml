@@ -66,6 +66,10 @@ dependencies:
   # lands in the generated folders (simf-run). A manual code-entry fallback is
   # always available, so the resolve→preview→save flow works without the camera.
   mobile_scanner: ^5.2.3
+  # Renders the home tiles' exact iconify glyphs (KSA frame 758:1134) as bundled
+  # SVGs tinted to the tile colour — the design uses iconify sets (solar/ph/
+  # streamline/…) that have no 1:1 Material equivalent. Pure-Dart, no native config.
+  flutter_svg: ^2.0.10
 
   simf_data_pkg:
     path: packages/simf_data_pkg
@@ -118,6 +122,7 @@ flutter:
   assets:
     - assets/images/
     - assets/videos/
+    - assets/icons/
   # Mockup typography — IBM Plex Sans Arabic (the Mockup.html app font, OFL),
   # bundled as an asset so it renders offline + deterministically on every
   # platform incl. web (no runtime font fetch). Applied app-wide by SimfTheme

@@ -499,6 +499,11 @@ class AppL10n {
   // The official handle line — a proper noun, identical in both languages.
   String get followUsHandle => '@SIMF_RSNF · الملتقى البحري السعودي الدولي';
   String get discoverSection => _t('اكتشف', 'Discover');
+  // The top discovery hero banner on the signed-in home (frame 758:1134 node
+  // 758:1203): the gold "اكتشف" title reuses [discoverSection]; this is the
+  // white sub-line over the event photo.
+  String get discoverBannerSubtitle =>
+      _t('تعال واكتشف جديدك المفضل', 'Come discover your favourites');
   // أحدث منشوراتنا — the latest-news teaser card on the signed-in home (frame
   // 203:1236 node 522:2345). The engagement counts in the frame have no backend
   // data (the news model carries no like/comment/repost counts) so they are
