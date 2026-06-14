@@ -2,10 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
+import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import 'data/gate_models.dart';
 import 'data/gates_repository.dart';
@@ -158,17 +160,43 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
     final direction = _result == null
         ? ''
         : ' • ${_directionLabel(l10n, _result!.direction)}';
-    return Scaffold(
-      backgroundColor: SimfTokens.navy,
-      appBar: AppBar(
+    final canPop = Navigator.of(context).canPop();
+    return PopScope(
+      canPop: canPop,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          GoRouter.maybeOf(context)?.goNamed(RouteNames.home);
+        }
+      },
+      child: Scaffold(
         backgroundColor: SimfTokens.navy,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        title: Text('$gateName$direction'),
+        appBar: AppBar(
+          backgroundColor: SimfTokens.navy,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: true,
+          title: Text('$gateName$direction'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: _leave,
+          ),
+        ),
+        body: SafeArea(child: _body(l10n, isArabic)),
       ),
-      body: SafeArea(child: _body(l10n, isArabic)),
     );
+  }
+
+  /// Leaves the gate console reliably even when it is the navigator root (deep
+  /// link / route restore / a shell push that didn't stack) — pop when possible,
+  /// else go home. Without this the raw AppBar had no back and system-back exited
+  /// the app (D-423 follow-up).
+  void _leave() {
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+    } else {
+      GoRouter.maybeOf(context)?.goNamed(RouteNames.home);
+    }
   }
 
   Widget _body(AppL10n l10n, bool isArabic) {

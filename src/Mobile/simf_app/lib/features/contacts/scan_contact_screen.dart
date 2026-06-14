@@ -2,10 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
+import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import 'data/contact_models.dart';
 import 'data/contacts_repository.dart';
@@ -104,11 +106,47 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
     }
   }
 
+  /// Leaves the scanner reliably. The screen can be reached as the root of its
+  /// navigator (deep-link / route-restore / a push from the shell that didn't
+  /// stack), so the local navigator may not be able to pop — in which case the
+  /// default AppBar back is absent and a system back would exit the app. Pop the
+  /// route when possible, otherwise go back to the badge tab. Uses the Navigator
+  /// for the pop (works without a GoRouter, e.g. in widget tests) and
+  /// `GoRouter.maybeOf` for the fallback so it never throws when go_router is
+  /// absent. (D-423 follow-up: the scanner had no working back.)
+  void _leave() {
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+    } else {
+      GoRouter.maybeOf(context)?.goNamed(RouteNames.badge);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.scanContactTitle)),
+    // When the scanner is the navigator root, the system back would exit the
+    // app; intercept it and route to the badge instead. When it was pushed,
+    // canPop is true and normal pops (incl. the save-flow close) pass through.
+    final canPop = Navigator.of(context).canPop();
+    return PopScope(
+      canPop: canPop,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          GoRouter.maybeOf(context)?.goNamed(RouteNames.badge);
+        }
+      },
+      child: Scaffold(
+      // No AppBar leading: over the live camera platform-view the bar's back
+      // button doesn't receive taps (hybrid-composition intercepts them). The
+      // tappable back is overlaid inside the camera Stack below (composited
+      // above the platform-view) so it always works; system back is handled by
+      // the PopScope above.
+      appBar: AppBar(
+        title: Text(l10n.scanContactTitle),
+        automaticallyImplyLeading: false,
+      ),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -128,7 +166,28 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
                 SizedBox(
                   width: double.infinity,
                   height: cameraHeight,
-                  child: _buildCamera(l10n),
+                  child: Stack(
+                    children: <Widget>[
+                      Positioned.fill(child: _buildCamera(l10n)),
+                      // Overlaid back — composited above the camera platform-view
+                      // so it receives taps where an AppBar back would not.
+                      PositionedDirectional(
+                        top: SimfTokens.space2,
+                        start: SimfTokens.space2,
+                        child: Material(
+                          color: Colors.black54,
+                          shape: const CircleBorder(),
+                          clipBehavior: Clip.antiAlias,
+                          child: IconButton(
+                            tooltip:
+                                MaterialLocalizations.of(context).backButtonTooltip,
+                            icon: const Icon(Icons.arrow_back, color: Colors.white),
+                            onPressed: _leave,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 Expanded(
                   child: SingleChildScrollView(child: _buildManualEntry(l10n)),
@@ -137,6 +196,7 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
             );
           },
         ),
+      ),
       ),
     );
   }
