@@ -37,9 +37,26 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
   bool _processing = false;
   String? _lastHandled;
 
+  /// Explicit controller with **no-duplicate** detection so the camera reports a
+  /// code once and never re-fires it until a *different* code appears — the
+  /// camera-level guard against the re-scan loop (D-426). Created only when the
+  /// live camera is used (off in widget tests / web).
+  MobileScannerController? _scannerController;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.enableCamera) {
+      _scannerController = MobileScannerController(
+        detectionSpeed: DetectionSpeed.noDuplicates,
+      );
+    }
+  }
+
   @override
   void dispose() {
     _manualController.dispose();
+    unawaited(_scannerController?.dispose());
     super.dispose();
   }
 
@@ -216,6 +233,7 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
       fit: StackFit.expand,
       children: <Widget>[
         MobileScanner(
+          controller: _scannerController,
           onDetect: _onDetect,
           // A camera / ML-Kit / permission failure (e.g. a device with no
           // working Google Play Services) is surfaced here instead of crashing
