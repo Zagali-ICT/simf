@@ -280,7 +280,19 @@ class _Scanner extends StatelessWidget {
                   fit: StackFit.expand,
                   children: <Widget>[
                     if (enableCamera && !held)
-                      MobileScanner(onDetect: onDetect)
+                      MobileScanner(
+                        onDetect: onDetect,
+                        // A camera / ML-Kit / permission failure is surfaced
+                        // here instead of crashing the console — the operator
+                        // falls back to the manual-entry field below.
+                        errorBuilder: (context, error, child) => const Center(
+                          child: Icon(
+                            Icons.qr_code_2,
+                            size: 72,
+                            color: SimfTokens.beigeBorder,
+                          ),
+                        ),
+                      )
                     else
                       Center(
                         child: Icon(

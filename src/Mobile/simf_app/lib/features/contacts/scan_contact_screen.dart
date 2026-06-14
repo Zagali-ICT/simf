@@ -127,7 +127,14 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
     return Stack(
       fit: StackFit.expand,
       children: <Widget>[
-        MobileScanner(onDetect: _onDetect),
+        MobileScanner(
+          onDetect: _onDetect,
+          // A camera / ML-Kit / permission failure (e.g. a device with no
+          // working Google Play Services) is surfaced here instead of crashing
+          // the screen — the manual-entry field below stays the working path.
+          errorBuilder: (context, error, child) =>
+              _CameraPlaceholder(label: l10n.scanContactCameraUnavailable),
+        ),
         if (_processing)
           const ColoredBox(
             color: Color(0x66000000),
