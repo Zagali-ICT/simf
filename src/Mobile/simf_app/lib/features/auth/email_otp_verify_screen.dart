@@ -20,7 +20,9 @@ const Color _sweepTint = Color(0x0AFFFFFF);
 /// previous screen is parked in `_legacy_mockup/`). Reached after sign-in
 /// when the account has 2FA on; the controller holds the `otpToken`. The user
 /// enters the emailed code and the app calls `POST /app/auth/verify-otp`.
-/// Visitor-only (no TOTP path); no resend on this step.
+/// Visitor-only (no TOTP path). A resend countdown shows below the boxes; once
+/// it elapses, "إعادة الإرسال" returns to sign-in (a 2FA code can only be
+/// re-issued by re-authenticating — the password isn't held here). Frame 758:2616.
 class EmailOtpVerifyScreen extends ConsumerStatefulWidget {
   const EmailOtpVerifyScreen({super.key});
 
@@ -39,12 +41,15 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
   static const int _resendSeconds = 60;
   int _secondsLeft = _resendSeconds;
   Timer? _ticker;
+  // Owned once (not rebuilt each tick) so it is disposed cleanly.
+  late final TapGestureRecognizer _resendTap;
 
   @override
   void initState() {
     super.initState();
     // The focused-box highlight follows the hidden field's focus.
     _codeFocus.addListener(() => setState(() {}));
+    _resendTap = TapGestureRecognizer()..onTap = _back;
     _startCountdown();
   }
 
@@ -73,6 +78,7 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
   @override
   void dispose() {
     _ticker?.cancel();
+    _resendTap.dispose();
     _codeFocus.dispose();
     _code.dispose();
     super.dispose();
@@ -326,9 +332,7 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
                           fontWeight: FontWeight.w700,
                           decoration: TextDecoration.underline,
                         ),
-                        recognizer: _secondsLeft == 0
-                            ? (TapGestureRecognizer()..onTap = _back)
-                            : null,
+                        recognizer: _secondsLeft == 0 ? _resendTap : null,
                       ),
                     ],
                   ),

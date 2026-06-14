@@ -513,7 +513,7 @@ class _NodeInfoCard extends StatelessWidget {
         border: Border.all(color: SimfTokens.accent, width: 0.5),
         boxShadow: const <BoxShadow>[
           BoxShadow(
-            color: Color(0x29111827),
+            color: SimfTokens.cardShadow,
             offset: Offset(0, 1),
             blurRadius: 8,
           ),
@@ -531,8 +531,8 @@ class _NodeInfoCard extends StatelessWidget {
                     vertical: SimfTokens.space2,
                   ),
                   decoration: BoxDecoration(
-                    // Frame — pale-beige #FFF4DC @ 80% with a gold hairline.
-                    color: const Color(0xCCFFF4DC),
+                    // Frame — pale-beige with a gold hairline.
+                    color: SimfTokens.codeBoxBeige,
                     borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
                     border: Border.all(color: SimfTokens.accent, width: 0.5),
                   ),

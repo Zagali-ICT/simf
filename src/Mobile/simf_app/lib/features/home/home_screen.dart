@@ -673,8 +673,6 @@ class _DiscoverHeroBanner extends StatelessWidget {
   }
 }
 
-/// The follow-us row (frame node 522:2215): five bordered buttons with the
-/// design's brand glyphs. A button with no configured URL is inert (D-369).
 /// The أحدث منشوراتنا teaser (frame node 522:2345): the SIMF mark, the source +
 /// relative time, the headline and a short excerpt. The frame's post image and
 /// engagement counts are intentionally omitted — there is no servable news-image
@@ -795,6 +793,8 @@ class _LatestPostCard extends StatelessWidget {
   }
 }
 
+/// The follow-us row (frame node 522:2215): five bordered buttons with the
+/// design's brand glyphs. A button with no configured URL is inert (D-369).
 class _SocialRow extends StatelessWidget {
   const _SocialRow();
 

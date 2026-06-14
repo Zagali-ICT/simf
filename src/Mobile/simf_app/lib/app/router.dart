@@ -97,7 +97,7 @@ const List<_Route> _routes = <_Route>[
 
   // Section 2 — Core screens (8 screens)
   _Route(number: 13, name: RouteNames.home, path: '/', labelAr: 'الرئيسية', labelEn: 'Home'),
-  _Route(number: 14, name: RouteNames.myArea, path: '/my-area', labelAr: 'منطقتي', labelEn: 'My area'),
+  _Route(number: 14, name: RouteNames.myArea, path: '/my-area', labelAr: 'الملف الشخصي', labelEn: 'Profile'),
   _Route(number: 15, name: RouteNames.venueMap, path: '/map', labelAr: 'الخريطة', labelEn: 'Venue map'),
   // §9 (D-276) — mockup screen 16 renamed Agenda → Sessions (route + path + label).
   _Route(number: 16, name: RouteNames.sessions, path: '/sessions', labelAr: 'الجلسات', labelEn: 'Sessions'),

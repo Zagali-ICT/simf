@@ -490,7 +490,7 @@ class _NotificationCard extends StatelessWidget {
                           Text(
                             stamp,
                             style: const TextStyle(
-                              color: SimfTokens.neutral400,
+                              color: SimfTokens.timestampMuted,
                               fontSize: SimfTokens.textSm,
                             ),
                           ),
