@@ -12,6 +12,7 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
+import '../../app/widgets/simf_svg_icon.dart';
 import '../../core/sharing/content_sharer.dart';
 import 'data/myarea_models.dart';
 import 'data/myarea_repository.dart';
@@ -227,19 +228,25 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
           avatarTooltip: l10n.avatarChangeTooltip,
         ),
         const SizedBox(height: SimfTokens.space4),
-        // Frame 213:963 — the two share actions (مشاركة ملفي + مشاركة جهة اتصال).
-        // Language / theme moved to the shell's side drawer (D-396).
-        KsaTileRow(
+        // Frame 758:1283 — two horizontal share-action pills (h48, exact
+        // iconify glyphs), NOT the tall vertical nav tiles. Language / theme
+        // moved to the shell's side drawer (D-396).
+        Row(
           children: <Widget>[
-            KsaNavTile(
-              label: l10n.shareMyProfile,
-              icon: Icons.person_pin_outlined,
-              onTap: () => context.pushNamed(RouteNames.shareMyContact),
+            Expanded(
+              child: _ShareTile(
+                label: l10n.shareMyProfile,
+                iconAsset: 'assets/icons/share_profile.svg',
+                onTap: () => context.pushNamed(RouteNames.shareMyContact),
+              ),
             ),
-            KsaNavTile(
-              label: l10n.shareContact,
-              icon: Icons.swap_horiz,
-              onTap: () => unawaited(_shareContact()),
+            const SizedBox(width: SimfTokens.space2),
+            Expanded(
+              child: _ShareTile(
+                label: l10n.shareContact,
+                iconAsset: 'assets/icons/share_contact.svg',
+                onTap: () => unawaited(_shareContact()),
+              ),
             ),
           ],
         ),
@@ -592,9 +599,59 @@ class _MoreRow extends StatelessWidget {
                   ),
                 ),
               ),
-              const Icon(Icons.chevron_left, size: 20, color: Colors.white),
+              const SimfSvgIcon(
+                'assets/icons/ic_back.svg',
+                size: 20,
+                color: Colors.white,
+              ),
             ],
           ),
+      ),
+    );
+  }
+}
+
+/// One horizontal share-action pill (frame 758:1283): the gold iconify glyph
+/// beside its label on the shared card chrome, fixed to the frame's 48-px row.
+class _ShareTile extends StatelessWidget {
+  const _ShareTile({
+    required this.label,
+    required this.iconAsset,
+    required this.onTap,
+  });
+
+  final String label;
+  final String iconAsset;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return KsaCard(
+      onTap: onTap,
+      child: SizedBox(
+        height: 48,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space3),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              SimfSvgIcon(iconAsset, size: 20, color: SimfTokens.accent),
+              const SizedBox(width: SimfTokens.space2),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: SimfTokens.textSm,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
