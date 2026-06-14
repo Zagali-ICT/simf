@@ -25,7 +25,12 @@ public sealed record MyAreaIdentity(
     string? AvatarUrl,
     string? TierNameEn,
     string? TierNameAr,
-    string? PageColor);
+    string? PageColor,
+    // True for audience profile types, false for partner/exhibitor ("Other")
+    // types — drives the QR-page actions (visitor: read/share contact;
+    // exhibitor: scan visitor badges → My Visitors). Defaults true when no
+    // ProfileType is assigned (D-426). Additive wire field.
+    bool IsVisitor = true);
 
 /// <summary>The two stat counters (Page_014 L-2, L-3).</summary>
 public sealed record MyAreaCounters(

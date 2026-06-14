@@ -98,6 +98,10 @@ internal sealed class MyAreaService(
                 TierEn = p.ProfileType != null ? p.ProfileType.Name : null,
                 TierAr = p.ProfileType != null ? p.ProfileType.NameArabic : null,
                 Color = p.ProfileType != null ? p.ProfileType.PageColor : null,
+                // Audience types are visitors; partner/exhibitor ("Other")
+                // types are not (UserProfileType.IsForVisitor, D-186). No
+                // ProfileType → treated as a visitor (D-426).
+                IsVisitor = p.ProfileType == null || p.ProfileType.IsForVisitor,
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -111,7 +115,8 @@ internal sealed class MyAreaService(
             account.AvatarUrl,
             profile?.TierEn,
             profile?.TierAr,
-            profile?.Color);
+            profile?.Color,
+            profile?.IsVisitor ?? true);
     }
 
     /// <summary>
