@@ -81,6 +81,33 @@
         <SimfTextField Label="@L["Admin.Archive.Field.DateLabelAr"]"
                        MaxLength="128"
                        @bind-Value="_model.DateLabelAr" Disabled="_busy" />
+        @* D-432 — the rich edition lists, one row per line. Gallery rows are
+           "url | image|video | caption"; session titles "arabic | english";
+           past speakers "arabic | english | photo-path". *@
+        <label class="simf-field">
+            <span class="simf-field__label">@L["Admin.Archive.Field.Gallery"]</span>
+            <textarea class="simf-field__input" rows="4"
+                      placeholder="archive/2024/p1.jpg | image | Opening"
+                      value="@_model.GalleryText"
+                      @onchange="@(e => _model.GalleryText = e.Value?.ToString() ?? string.Empty)"
+                      disabled="@_busy"></textarea>
+        </label>
+        <label class="simf-field">
+            <span class="simf-field__label">@L["Admin.Archive.Field.SessionTitles"]</span>
+            <textarea class="simf-field__input" rows="4"
+                      placeholder="أمن الموانئ | Port security"
+                      value="@_model.SessionTitlesText"
+                      @onchange="@(e => _model.SessionTitlesText = e.Value?.ToString() ?? string.Empty)"
+                      disabled="@_busy"></textarea>
+        </label>
+        <label class="simf-field">
+            <span class="simf-field__label">@L["Admin.Archive.Field.PastSpeakers"]</span>
+            <textarea class="simf-field__input" rows="4"
+                      placeholder="راشد السبيعي | Rashed Al-Subaie | archive/2024/s1.jpg"
+                      value="@_model.PastSpeakersText"
+                      @onchange="@(e => _model.PastSpeakersText = e.Value?.ToString() ?? string.Empty)"
+                      disabled="@_busy"></textarea>
+        </label>
         @if (IsEdit)
         {
             <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">
@@ -116,8 +143,11 @@
     private EditContext _editContext = default!;
     private bool _busy;
     private string? _error;
+    // D-432 — true once the rich lists are safe to send (create, or an edit
+    // whose detail fetch succeeded). False ⇒ send null lists (keep existing).
+    private bool _listsLoaded;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         if (Initial is not null)
         {
@@ -135,10 +165,31 @@
             _model.DateLabelEn = Initial.DateLabelEn;
             _model.DateLabelAr = Initial.DateLabelAr;
             _model.IsActive = Initial.IsActive;
+
+            // D-432 — the grid summary carries no rich lists; fetch the detail to
+            // pre-populate the gallery / session-title / past-speaker textareas.
+            try
+            {
+                var env = await JS.InvokeAsync<ApiResult<AdminArchiveEditionDetail>>(
+                    "simfAccount.getJson", $"/account/api/admin/archive/{Initial.Id}");
+                if (env is { Success: true, Data: not null })
+                {
+                    _model.GalleryText = FormatGallery(env.Data.Gallery);
+                    _model.SessionTitlesText = FormatSessionTitles(env.Data.SessionTitles);
+                    _model.PastSpeakersText = FormatPastSpeakers(env.Data.PastSpeakers);
+                    _listsLoaded = true;
+                }
+            }
+            catch (Exception)
+            {
+                // Leave the textareas empty on a fetch failure; an edit that does
+                // not touch them sends null (keep) so nothing is lost.
+            }
         }
         else
         {
             _model.Year = DateTime.UtcNow.Year;
+            _listsLoaded = true; // create authors the lists from scratch
         }
         _editContext = new EditContext(_model);
     }
@@ -177,6 +228,9 @@
                         LocationAr = _model.LocationAr,
                         DateLabelEn = _model.DateLabelEn,
                         DateLabelAr = _model.DateLabelAr,
+                        Gallery = ParseGallery(_model.GalleryText),
+                        SessionTitles = ParseSessionTitles(_model.SessionTitlesText),
+                        PastSpeakers = ParsePastSpeakers(_model.PastSpeakersText),
                     });
             }
             else
@@ -198,6 +252,10 @@
                         LocationAr = _model.LocationAr,
                         DateLabelEn = _model.DateLabelEn,
                         DateLabelAr = _model.DateLabelAr,
+                        // Null when the detail fetch failed → keep existing rows.
+                        Gallery = _listsLoaded ? ParseGallery(_model.GalleryText) : null,
+                        SessionTitles = _listsLoaded ? ParseSessionTitles(_model.SessionTitlesText) : null,
+                        PastSpeakers = _listsLoaded ? ParsePastSpeakers(_model.PastSpeakersText) : null,
                         IsActive = _model.IsActive,
                     });
             }
@@ -275,6 +333,61 @@
         public string? LocationAr { get; set; }
         public string? DateLabelEn { get; set; }
         public string? DateLabelAr { get; set; }
+        // D-432 — the rich lists as line-delimited text (parsed on save).
+        public string GalleryText { get; set; } = string.Empty;
+        public string SessionTitlesText { get; set; } = string.Empty;
+        public string PastSpeakersText { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
     }
+
+    // ---- D-432 list parse / format helpers ----------------------------------
+
+    private static IEnumerable<string[]> Rows(string text) =>
+        text.Replace("\r\n", "\n").Split('\n')
+            .Select(line => line.Trim())
+            .Where(line => line.Length > 0)
+            .Select(line => line.Split('|').Select(p => p.Trim()).ToArray());
+
+    private static List<ArchiveMediaItemInput> ParseGallery(string text) =>
+        Rows(text)
+            .Where(p => p.Length > 0 && p[0].Length > 0)
+            .Select(p => new ArchiveMediaItemInput
+            {
+                Url = p[0],
+                Kind = p.Length > 1 && p[1].Equals("video", StringComparison.OrdinalIgnoreCase) ? 1 : 0,
+                CaptionAr = p.Length > 2 && p[2].Length > 0 ? p[2] : null,
+            })
+            .ToList();
+
+    private static List<ArchiveSessionTitleInput> ParseSessionTitles(string text) =>
+        Rows(text)
+            .Where(p => p.Length > 0 && p[0].Length > 0)
+            .Select(p => new ArchiveSessionTitleInput
+            {
+                TitleAr = p[0],
+                TitleEn = p.Length > 1 && p[1].Length > 0 ? p[1] : p[0],
+            })
+            .ToList();
+
+    private static List<ArchivePastSpeakerInput> ParsePastSpeakers(string text) =>
+        Rows(text)
+            .Where(p => p.Length > 0 && p[0].Length > 0)
+            .Select(p => new ArchivePastSpeakerInput
+            {
+                NameAr = p[0],
+                NameEn = p.Length > 1 && p[1].Length > 0 ? p[1] : p[0],
+                PhotoRelativePath = p.Length > 2 && p[2].Length > 0 ? p[2] : null,
+            })
+            .ToList();
+
+    private static string FormatGallery(IReadOnlyList<ArchiveMediaItemInput>? items) =>
+        items is null ? string.Empty : string.Join("\n", items.Select(i =>
+            $"{i.Url} | {(i.Kind == 1 ? "video" : "image")}{(string.IsNullOrWhiteSpace(i.CaptionAr) ? string.Empty : $" | {i.CaptionAr}")}"));
+
+    private static string FormatSessionTitles(IReadOnlyList<ArchiveSessionTitleInput>? items) =>
+        items is null ? string.Empty : string.Join("\n", items.Select(i => $"{i.TitleAr} | {i.TitleEn}"));
+
+    private static string FormatPastSpeakers(IReadOnlyList<ArchivePastSpeakerInput>? items) =>
+        items is null ? string.Empty : string.Join("\n", items.Select(i =>
+            $"{i.NameAr} | {i.NameEn}{(string.IsNullOrWhiteSpace(i.PhotoRelativePath) ? string.Empty : $" | {i.PhotoRelativePath}")}"));
 }

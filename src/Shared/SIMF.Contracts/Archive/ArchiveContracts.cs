@@ -25,12 +25,24 @@ public sealed record PublicArchiveEdition(
     string? DateLabelEn = null,
     string? DateLabelAr = null);
 
+/// <summary>D-432 — one public gallery item (Mockup 24-01 "الصور والفيديو").
+/// <c>Kind</c> is the <c>ArchiveMediaKind</c> int (0 image, 1 video).</summary>
+public sealed record PublicArchiveMediaItem(
+    int Kind, string Url, string? CaptionEn, string? CaptionAr);
+
+/// <summary>D-432 — one public session title (Mockup 24-01 "عناوين الجلسات").</summary>
+public sealed record PublicArchiveSessionTitle(string TitleEn, string TitleAr);
+
+/// <summary>D-432 — one public past speaker (Mockup 24-01 "المتحدثون السابقون").</summary>
+public sealed record PublicArchivePastSpeaker(
+    string NameEn, string NameAr, string? PhotoRelativePath);
+
 /// <summary>§9 (Mockup screen 24-01 "تفاصيل النسخة") — public detail for ONE
-/// past edition: title/summary + place + date label + counters + cover. The
-/// rich lists (gallery, session titles, past speakers, sponsors) are deferred
-/// (ArchiveEdition entity TODO). Served by <c>GET /api/v1/app/archive/{id}</c>;
-/// gated by the archive-visibility operations toggle (D-166) — 404 when the
-/// archive is hidden or the edition is missing / inactive.</summary>
+/// past edition: title/summary + place + date label + counters + cover, plus the
+/// rich lists (gallery, session titles, past speakers — D-432). Served by
+/// <c>GET /api/v1/app/archive/{id}</c>; gated by the archive-visibility
+/// operations toggle (D-166) — 404 when the archive is hidden or the edition is
+/// missing / inactive.</summary>
 public sealed record PublicArchiveEditionDetail(
     Guid Id,
     int Year,
@@ -45,7 +57,11 @@ public sealed record PublicArchiveEditionDetail(
     int Attendees,
     int Sessions,
     int Speakers,
-    string? CoverImageRelativePath);
+    string? CoverImageRelativePath,
+    // D-432 — appended (append-only wire); empty when the edition has none.
+    IReadOnlyList<PublicArchiveMediaItem>? Gallery = null,
+    IReadOnlyList<PublicArchiveSessionTitle>? SessionTitles = null,
+    IReadOnlyList<PublicArchivePastSpeaker>? PastSpeakers = null);
 
 /// <summary>D-199 — admin Archive edition CRUD contracts. Lengths mirror the
 /// EF configuration (<c>ArchiveEditionConfiguration</c>) and FluentValidation
@@ -89,7 +105,39 @@ public sealed record AdminArchiveEditionDetail(
     string? LocationEn = null,
     string? LocationAr = null,
     string? DateLabelEn = null,
-    string? DateLabelAr = null);
+    string? DateLabelAr = null,
+    // D-432 — the editable child lists, so the CP edit form pre-populates them.
+    IReadOnlyList<ArchiveMediaItemInput>? Gallery = null,
+    IReadOnlyList<ArchiveSessionTitleInput>? SessionTitles = null,
+    IReadOnlyList<ArchivePastSpeakerInput>? PastSpeakers = null);
+
+/// <summary>D-432 — an editable gallery item for the admin create/update
+/// (replace-all). <c>Kind</c> is the <c>ArchiveMediaKind</c> int.</summary>
+public sealed class ArchiveMediaItemInput
+{
+    public int Kind { get; set; }
+    public string Url { get; set; } = string.Empty;
+    public string? CaptionEn { get; set; }
+    public string? CaptionAr { get; set; }
+    public int DisplayOrder { get; set; }
+}
+
+/// <summary>D-432 — an editable session title for the admin create/update.</summary>
+public sealed class ArchiveSessionTitleInput
+{
+    public string TitleEn { get; set; } = string.Empty;
+    public string TitleAr { get; set; } = string.Empty;
+    public int DisplayOrder { get; set; }
+}
+
+/// <summary>D-432 — an editable past speaker for the admin create/update.</summary>
+public sealed class ArchivePastSpeakerInput
+{
+    public string NameEn { get; set; } = string.Empty;
+    public string NameAr { get; set; } = string.Empty;
+    public string? PhotoRelativePath { get; set; }
+    public int DisplayOrder { get; set; }
+}
 
 public sealed record CreateArchiveEditionRequest
 {
@@ -107,6 +155,12 @@ public sealed record CreateArchiveEditionRequest
     public string? LocationAr { get; set; }
     public string? DateLabelEn { get; set; }
     public string? DateLabelAr { get; set; }
+    // D-432 — the rich child lists. Null = "no lists / leave as-is"; a non-null
+    // list (even empty) replaces all rows. Lets a caller that doesn't author the
+    // lists omit them without wiping existing rows on update.
+    public List<ArchiveMediaItemInput>? Gallery { get; set; }
+    public List<ArchiveSessionTitleInput>? SessionTitles { get; set; }
+    public List<ArchivePastSpeakerInput>? PastSpeakers { get; set; }
 }
 
 // Not sealed: an endpoint binds {id}+body via a derived route class (D-199).
@@ -126,6 +180,11 @@ public record UpdateArchiveEditionRequest
     public string? LocationAr { get; set; }
     public string? DateLabelEn { get; set; }
     public string? DateLabelAr { get; set; }
+    // D-432 — the rich child lists. Null = leave existing rows untouched; a
+    // non-null list (even empty) replaces all rows for this edition.
+    public List<ArchiveMediaItemInput>? Gallery { get; set; }
+    public List<ArchiveSessionTitleInput>? SessionTitles { get; set; }
+    public List<ArchivePastSpeakerInput>? PastSpeakers { get; set; }
     public bool IsActive { get; set; } = true;
 }
 

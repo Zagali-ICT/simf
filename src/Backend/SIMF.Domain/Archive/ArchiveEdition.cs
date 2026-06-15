@@ -52,7 +52,14 @@ public class ArchiveEdition:BaseAuditEntity
     /// the numeric <see cref="Year"/>. Optional, ≤ 128 chars.</summary>
     public string? DateLabelEn { get; set; }
     public string? DateLabelAr { get; set; }
+
+    /// <summary>D-432 — the edition's gallery (الصور والفيديو). Owned snapshot
+    /// children, cascade-deleted with the edition.</summary>
+    public ICollection<ArchiveMediaItem> Media { get; set; } = new List<ArchiveMediaItem>();
+
+    /// <summary>D-432 — the edition's programme/session titles (عناوين الجلسات).</summary>
+    public ICollection<ArchiveSessionTitle> SessionTitles { get; set; } = new List<ArchiveSessionTitle>();
+
+    /// <summary>D-432 — the edition's past speakers (المتحدثون السابقون).</summary>
+    public ICollection<ArchivePastSpeaker> PastSpeakers { get; set; } = new List<ArchivePastSpeaker>();
 }
-// Deferred (entity TODO): the rich per-edition lists — gallery, programme/session
-// titles, past-speaker names, sponsors — are not yet modelled; the 24-01 detail
-// surfaces title/summary/location/date/counts/cover for now (§9 / D-273).

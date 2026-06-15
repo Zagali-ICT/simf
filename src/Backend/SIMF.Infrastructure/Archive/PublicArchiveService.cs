@@ -77,7 +77,23 @@ internal sealed class PublicArchiveService(
                 edition.Attendees,
                 edition.Sessions,
                 edition.Speakers,
-                edition.CoverImageRelativePath))
+                edition.CoverImageRelativePath,
+                // D-432 — the rich child lists, ordered; EF projects these as a
+                // single split query keyed on the FK index.
+                edition.Media
+                    .OrderBy(m => m.DisplayOrder)
+                    .Select(m => new PublicArchiveMediaItem(
+                        (int)m.Kind, m.Url, m.CaptionEn, m.CaptionAr))
+                    .ToList(),
+                edition.SessionTitles
+                    .OrderBy(s => s.DisplayOrder)
+                    .Select(s => new PublicArchiveSessionTitle(s.TitleEn, s.TitleAr))
+                    .ToList(),
+                edition.PastSpeakers
+                    .OrderBy(p => p.DisplayOrder)
+                    .Select(p => new PublicArchivePastSpeaker(
+                        p.NameEn, p.NameAr, p.PhotoRelativePath))
+                    .ToList()))
             .SingleOrDefaultAsync(cancellationToken);
     }
 }

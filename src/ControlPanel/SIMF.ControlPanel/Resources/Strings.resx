@@ -2115,6 +2115,9 @@
   <data name="Admin.Archive.Field.LocationAr" xml:space="preserve"><value>Location (Arabic)</value></data>
   <data name="Admin.Archive.Field.DateLabelEn" xml:space="preserve"><value>Date label (English)</value></data>
   <data name="Admin.Archive.Field.DateLabelAr" xml:space="preserve"><value>Date label (Arabic)</value></data>
+  <data name="Admin.Archive.Field.Gallery" xml:space="preserve"><value>Gallery — one per line: url | image|video | caption</value></data>
+  <data name="Admin.Archive.Field.SessionTitles" xml:space="preserve"><value>Session titles — one per line: arabic | english</value></data>
+  <data name="Admin.Archive.Field.PastSpeakers" xml:space="preserve"><value>Past speakers — one per line: arabic | english | photo path</value></data>
   <data name="Admin.Archive.Field.IsActive" xml:space="preserve"><value>Active (visible in public archive)</value></data>
 
   <!-- D-199 — Ratings admin read-only view. -->

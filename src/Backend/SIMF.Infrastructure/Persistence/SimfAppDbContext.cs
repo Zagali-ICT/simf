@@ -161,6 +161,11 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
     public DbSet<Booth> Booths => Set<Booth>();
     public DbSet<Sponsor> Sponsors => Set<Sponsor>();
     public DbSet<ArchiveEdition> ArchiveEditions => Set<ArchiveEdition>();
+    // D-432 — owned snapshot children of an archive edition (gallery / session
+    // titles / past speakers).
+    public DbSet<ArchiveMediaItem> ArchiveMediaItems => Set<ArchiveMediaItem>();
+    public DbSet<ArchiveSessionTitle> ArchiveSessionTitles => Set<ArchiveSessionTitle>();
+    public DbSet<ArchivePastSpeaker> ArchivePastSpeakers => Set<ArchivePastSpeaker>();
     public DbSet<SessionComment> SessionComments => Set<SessionComment>();
     // B5 — D-223: per-user likes on audience comments.
     public DbSet<SessionCommentLike> SessionCommentLikes => Set<SessionCommentLike>();

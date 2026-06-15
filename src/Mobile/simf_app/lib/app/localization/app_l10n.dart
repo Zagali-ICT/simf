@@ -839,6 +839,12 @@ class AppL10n {
   String get archiveStatAttendees => _t('الحضور', 'Attendees');
   String get archiveStatSessions => _t('الفعاليات', 'Activities');
   String archiveEditionPill(int year) => _t('ملتقى $year', 'Edition $year');
+  // D-432 — the rich archive-detail sections (Figma 925-3079 / 24-01).
+  String get archiveGalleryLabel => _t('الصور والفيديو', 'Photos & videos');
+  String get archiveSessionsLabel => _t('عناوين الجلسات', 'Session titles');
+  String get archivePastSpeakersLabel =>
+      _t('المتحدثون السابقون', 'Past speakers');
+  String archiveMoreCount(int count) => _t('+$count آخرون', '+$count more');
   String archiveStats(int attendees, int sessions, int speakers) => _t(
         '$attendees حضور · $sessions جلسة · $speakers متحدث',
         '$attendees attendees · $sessions sessions · $speakers speakers',

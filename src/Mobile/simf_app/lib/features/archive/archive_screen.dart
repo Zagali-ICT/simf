@@ -176,6 +176,201 @@ class _ArchiveBody extends ConsumerWidget {
         // Stat tiles — المتحدثون / الحضور / الفعاليات (node 926:3285).
         const SizedBox(height: SimfTokens.space6),
         _StatRow(l10n: l10n, edition: selected),
+
+        // D-432 — the rich lists, each shown only when the lazily-loaded detail
+        // provides it (node 24-01): الصور والفيديو · عناوين الجلسات ·
+        // المتحدثون السابقون.
+        if (d != null && d.gallery.isNotEmpty) ...<Widget>[
+          const SizedBox(height: SimfTokens.space6),
+          _SectionLabel(text: l10n.archiveGalleryLabel),
+          const SizedBox(height: SimfTokens.space3),
+          _GalleryRow(items: d.gallery, isArabic: isArabic),
+        ],
+        if (d != null && d.sessionTitles.isNotEmpty) ...<Widget>[
+          const SizedBox(height: SimfTokens.space6),
+          _SectionLabel(text: l10n.archiveSessionsLabel),
+          const SizedBox(height: SimfTokens.space2),
+          for (final s in d.sessionTitles) ...<Widget>[
+            _Bullet(text: s.localized(isArabic), color: SimfTokens.beigeBorder),
+            const SizedBox(height: SimfTokens.space1),
+          ],
+        ],
+        if (d != null && d.pastSpeakers.isNotEmpty) ...<Widget>[
+          const SizedBox(height: SimfTokens.space6),
+          _SectionLabel(text: l10n.archivePastSpeakersLabel),
+          const SizedBox(height: SimfTokens.space3),
+          _PastSpeakersRow(
+            speakers: d.pastSpeakers,
+            isArabic: isArabic,
+            l10n: l10n,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// The archive gallery row (node 24-01 "الصور والفيديو"): a horizontal strip of
+/// up to a few thumbnail tiles. Interim — a navy tile with a photo / play glyph
+/// + optional caption (the real media-loading pass is deferred, matching the
+/// other interim image treatments).
+class _GalleryRow extends StatelessWidget {
+  const _GalleryRow({required this.items, required this.isArabic});
+
+  final List<ArchiveMediaItem> items;
+  final bool isArabic;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 96,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: items.length,
+        separatorBuilder: (_, __) => const SizedBox(width: SimfTokens.space3),
+        itemBuilder: (context, index) {
+          final item = items[index];
+          final caption = item.localizedCaption(isArabic);
+          return Container(
+            width: 120,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: SimfTokens.navyDeep,
+              borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+              border: Border.all(
+                color: SimfTokens.beigeBorder,
+                width: SimfTokens.hairline,
+              ),
+            ),
+            padding: const EdgeInsets.all(SimfTokens.space2),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Icon(
+                  item.isVideo
+                      ? Icons.play_circle_outline
+                      : Icons.image_outlined,
+                  color: SimfTokens.accent,
+                  size: 28,
+                ),
+                if (caption != null) ...<Widget>[
+                  const SizedBox(height: SimfTokens.space1),
+                  Text(
+                    caption,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: SimfTokens.beigeBorder,
+                      fontSize: SimfTokens.textXs,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// The past-speakers row (node 24-01 "المتحدثون السابقون"): up to 4 initial
+/// avatars, then a gold "+N آخرون" overflow tile.
+class _PastSpeakersRow extends StatelessWidget {
+  const _PastSpeakersRow({
+    required this.speakers,
+    required this.isArabic,
+    required this.l10n,
+  });
+
+  final List<ArchivePastSpeaker> speakers;
+  final bool isArabic;
+  final AppL10n l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    const maxAvatars = 4;
+    final shown = speakers.take(maxAvatars).toList();
+    final overflow = speakers.length - shown.length;
+    return Wrap(
+      spacing: SimfTokens.space3,
+      runSpacing: SimfTokens.space3,
+      children: <Widget>[
+        for (final s in shown) _SpeakerChip(name: s.localized(isArabic)),
+        if (overflow > 0)
+          Container(
+            height: 40,
+            padding:
+                const EdgeInsets.symmetric(horizontal: SimfTokens.space3),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: SimfTokens.accent.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+              border: Border.all(color: SimfTokens.accent),
+            ),
+            child: Text(
+              l10n.archiveMoreCount(overflow),
+              style: const TextStyle(
+                color: SimfTokens.accent,
+                fontSize: SimfTokens.textSm,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _SpeakerChip extends StatelessWidget {
+  const _SpeakerChip({required this.name});
+
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    final initials = name.trim().isEmpty
+        ? '—'
+        : name
+            .trim()
+            .split(RegExp(r'\s+'))
+            .where((w) => w.isNotEmpty)
+            .take(2)
+            .map((w) => w.characters.first)
+            .join();
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Container(
+          width: 40,
+          height: 40,
+          alignment: Alignment.center,
+          decoration: const BoxDecoration(
+            color: SimfTokens.navyDeep,
+            shape: BoxShape.circle,
+          ),
+          child: Text(
+            initials,
+            style: const TextStyle(
+              color: SimfTokens.accent,
+              fontWeight: FontWeight.w700,
+              fontSize: SimfTokens.textSm,
+            ),
+          ),
+        ),
+        const SizedBox(width: SimfTokens.space2),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 120),
+          child: Text(
+            name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: SimfTokens.beigeBorder,
+              fontSize: SimfTokens.textSm,
+            ),
+          ),
+        ),
       ],
     );
   }
