@@ -133,16 +133,23 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
   /// `GoRouter.maybeOf` for the fallback so it never throws when go_router is
   /// absent. (D-423 follow-up: the scanner had no working back.)
   void _leave() {
-    // Navigate via go_router: raw Navigator.pop() does NOT exit a route pushed
-    // inside go_router's StatefulShellRoute — that was the "stuck" scanner where
-    // neither the on-screen nor the system back worked (D-426). goNamed lands on
-    // the badge reliably. Fall back to Navigator only when there is no GoRouter
-    // (widget tests pump the screen in a plain MaterialApp).
+    // Use go_router's own pop to remove this imperatively-pushed page (raw
+    // Navigator.pop doesn't exit it inside the StatefulShellRoute, and goNamed
+    // changes the location WITHOUT popping the pushed page — both left the
+    // scanner stuck, D-426). go_router pop() pops the page correctly; if it
+    // can't pop (deep-link root) fall back to goNamed(badge). The plain-Navigator
+    // branch is only for the GoRouter-less widget test.
     final router = GoRouter.maybeOf(context);
-    if (router != null) {
+    if (router == null) {
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+      return;
+    }
+    if (router.canPop()) {
+      router.pop();
+    } else {
       router.goNamed(RouteNames.badge);
-    } else if (Navigator.of(context).canPop()) {
-      Navigator.of(context).pop();
     }
   }
 

@@ -44,13 +44,19 @@ class _ScanVisitorScreenState extends ConsumerState<ScanVisitorScreen> {
   }
 
   void _leave() {
-    // go_router navigation (raw Navigator.pop doesn't exit a shell-pushed route,
-    // D-426). Navigator fallback only for the GoRouter-less widget test.
+    // go_router pop() removes this pushed page (goNamed only changes the URL and
+    // leaves the page on top; raw Navigator.pop desyncs the shell — D-426).
     final router = GoRouter.maybeOf(context);
-    if (router != null) {
+    if (router == null) {
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+      return;
+    }
+    if (router.canPop()) {
+      router.pop();
+    } else {
       router.goNamed(RouteNames.badge);
-    } else if (Navigator.of(context).canPop()) {
-      Navigator.of(context).pop();
     }
   }
 
