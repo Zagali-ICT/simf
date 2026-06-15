@@ -1,0 +1,3183 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>الملتقى البحري السعودي الدولي الرابع | SIMF 2026</title>
+<link rel="icon" type="image/png" href="assets/logo-simf.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="content.js"></script>
+<style>
+  /* ===== FS Albert Arabic — local font files ===== */
+  @font-face {
+    font-family: 'FS Albert Arabic';
+    src: url('assets/fonts/fs-albert-arabic-web-thin.ttf') format('truetype');
+    font-weight: 200; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: 'FS Albert Arabic';
+    src: url('assets/fonts/fs-albert-arabic-web-light.ttf') format('truetype');
+    font-weight: 300; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: 'FS Albert Arabic';
+    src: url('assets/fonts/fs-albert-arabic-web-regular.ttf') format('truetype');
+    font-weight: 400; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: 'FS Albert Arabic';
+    src: url('assets/fonts/fs-albert-arabic-web-bold.ttf') format('truetype');
+    font-weight: 700; font-style: normal; font-display: swap;
+  }
+  @font-face {
+    font-family: 'FS Albert Arabic';
+    src: url('assets/fonts/fs-albert-arabic-web-extrabold.ttf') format('truetype');
+    font-weight: 800; font-style: normal; font-display: swap;
+  }
+  :root {
+    --navy: #001640;
+    --navy-d: #001640;
+    --navy-dd: #001640;
+    --ink: #001640;
+    --gold: #E8C060;
+    --gold-d: #C9A04D;
+    --paper: #F7F9FC;
+    --line: #E4E7EC;
+    --slate: #475467;
+    --ink-soft: #001640;
+    --teal: #001640;
+    --bg: #ffffff;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'FS Albert Arabic', system-ui, sans-serif;
+    color: var(--ink-soft);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+
+  /* ===== Smooth reveal-on-scroll ===== */
+  .reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity .9s cubic-bezier(.22,.61,.36,1), transform .9s cubic-bezier(.22,.61,.36,1);
+    will-change: opacity, transform;
+  }
+  .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .reveal { opacity: 1; transform: none; transition: none; }
+  }
+  a { color: inherit; text-decoration: none; }
+  .num { font-family: 'Inter', sans-serif; font-feature-settings: 'tnum'; }
+
+  /* ======= HEADER ======= */
+  header.site {
+    position: fixed; inset: 0 0 auto 0; height: 88px; z-index: 100;
+    background: rgba(255,255,255,0.94);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line);
+  }
+  header.site .row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 96px; height: 100%;
+  }
+  .logo {
+    display: flex; align-items: center; gap: 14px;
+    font-weight: 700; color: var(--navy);
+  }
+  .logo-img img { height: 64px; width: auto; display: block; }
+  .logo-mark {
+    width: 52px; height: 52px;
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-dd) 100%);
+    color: var(--gold);
+    display: grid; place-items: center;
+    border: 1px solid var(--gold);
+    position: relative;
+  }
+  .logo-mark::before {
+    content: ""; position: absolute; inset: 4px;
+    border: 1px solid rgba(232,192,96,0.35);
+  }
+  .logo-mark svg { width: 28px; height: 28px; }
+  .logo-text { line-height: 1.15; }
+  .logo-text small {
+    font-family: 'Inter', sans-serif; font-size: 10px;
+    color: var(--slate); letter-spacing: 0.18em; display: block;
+    font-weight: 500; margin-top: 2px;
+  }
+  nav.main { display: flex; gap: 36px; }
+  nav.main a {
+    font-size: 14.4px; font-weight: 500;
+    color: var(--ink-soft); padding: 6px 0;
+    position: relative; transition: color .2s;
+  }
+  nav.main a.active, nav.main a:hover { color: var(--navy); }
+  nav.main a.active::after {
+    content: ""; position: absolute; right: 0; left: 0; bottom: -10px;
+    height: 2px; background: var(--gold);
+  }
+  .lang-btn {
+    border: 1px solid var(--line); background: white;
+    padding: 10px 16px; font-family: 'Inter', sans-serif;
+    font-weight: 700; font-size: 12px; letter-spacing: 0.18em;
+    color: var(--navy); cursor: pointer;
+    transition: border-color .2s;
+  }
+  .lang-btn:hover { border-color: var(--navy); }
+
+  /* ======= HERO ======= */
+  .hero {
+    position: relative; min-height: 100vh;
+    background: var(--navy-dd); overflow: hidden;
+    isolation: isolate;
+    display: flex; flex-direction: column;
+  }
+  .hero-bg::before {
+    content: ""; position: absolute; inset: 0; z-index: 1;
+    background:
+      linear-gradient(90deg, rgba(0,22,64,0.35) 0%, rgba(0,22,64,0.10) 40%, transparent 100%),
+      radial-gradient(ellipse 80% 60% at 50% 110%, rgba(0,22,64,0.55) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-bg {
+    position: absolute; inset: 0;
+    z-index: -1; overflow: hidden;
+  }
+  .hero-bg::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(0,22,64,0.18) 0%, rgba(0,22,64,0.3) 55%, rgba(0,22,64,0.5) 100%);
+  }
+  .hero-bg video {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%; object-fit: cover;
+  }
+  .hero-grid {
+    position: absolute; inset: 0; opacity: 0.06;
+    background-image: 
+      linear-gradient(rgba(232,192,96,0.6) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(232,192,96,0.6) 1px, transparent 1px);
+    background-size: 64px 64px;
+    z-index: -1;
+  }
+  .hero-vignette {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at center, transparent 30%, rgba(0,22,64,0.6) 100%);
+    z-index: -1;
+  }
+  .hero-content {
+    position: relative; z-index: 2;
+    display: flex; flex-direction: column; gap: 32px;
+    padding: 140px 96px 80px;
+    margin-top: auto;
+  }
+  .hero-top { display: flex; justify-content: space-between; align-items: flex-end; align-self: end; padding-bottom: 18px; }
+  .hero-mid { display: flex; flex-direction: column; justify-content: center; }
+  .hero-bot { display: flex; justify-content: space-between; align-items: flex-end; gap: 48px; margin-top: 56px; }
+  .hero-cd-strip {
+    display: flex; gap: 0; align-items: stretch;
+    border-top: 1px solid rgba(232,192,96,0.35);
+    border-bottom: 1px solid rgba(232,192,96,0.35);
+    padding: 28px 0;
+  }
+  .hero-cd-cell {
+    padding: 0 36px; text-align: center;
+    border-left: 1px solid rgba(255,255,255,0.12);
+    min-width: 120px;
+  }
+  .hero-cd-cell:first-child { border-left: none; padding-left: 0; }
+  .hero-cd-cell:last-child { padding-right: 0; }
+  .hero-cd-cell .v {
+    font-family: 'Inter', sans-serif; font-weight: 200;
+    font-size: 56px; line-height: 1; color: white;
+    letter-spacing: -0.04em; font-feature-settings: 'tnum';
+  }
+  .hero-cd-cell .l {
+    color: rgba(232,192,96,0.85); font-size: 13px;
+    letter-spacing: 0.06em; margin-top: 10px;
+    font-family: 'FS Albert Arabic', sans-serif; font-weight: 600;
+  }
+  .hero-side {
+    color: rgba(255,255,255,0.6);
+    font-family: 'FS Albert Arabic', 'Inter', sans-serif; font-size: 12px;
+    letter-spacing: 0.18em; writing-mode: vertical-rl;
+    transform: rotate(180deg);
+  }
+  .hero-top-brand {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 18px;
+  }
+  .hero-logo {
+    height: 140px; width: auto; display: block;
+    filter: drop-shadow(0 6px 24px rgba(0,0,0,0.25));
+  }
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 14px;
+    margin-bottom: 24px;
+    color: var(--gold); letter-spacing: 0.22em; font-size: 14px;
+    font-weight: 600;
+  }
+    color: rgba(255,255,255,0.85);
+    font-family: 'Inter', sans-serif; font-size: 13px; letter-spacing: 0.32em;
+    font-weight: 600;
+  }
+  .hero-eyebrow .line { width: 56px; height: 1px; background: var(--gold); }
+  .hero-eyebrow .dot { width: 6px; height: 6px; background: var(--gold); border-radius: 50%; }
+  h1.hero-title {
+    font-family: 'FS Albert Arabic', sans-serif; font-weight: 700;
+    font-size: 88px; line-height: 1.05; letter-spacing: -0.025em;
+    color: white; margin: 0 0 32px;
+    max-width: 1200px;
+    text-wrap: balance;
+  }
+  h1.hero-title .gold { color: var(--gold); }
+  .hero-tag {
+    color: rgba(255,255,255,0.78); font-size: 17px; line-height: 1.7;
+    max-width: 620px; margin: 0 0 14px; text-align: right;
+  }
+  .hero-meta {
+    display: flex; flex-direction: column; gap: 4px;
+    margin-bottom: 40px; text-align: right;
+    padding-top: 18px;
+    border-top: 1px solid rgba(232,192,96,0.35);
+    max-width: 560px;
+  }
+  .hero-meta .date {
+    font-family: 'Inter', sans-serif; font-weight: 200;
+    font-size: 34px; letter-spacing: -0.01em;
+    color: var(--gold); line-height: 1.1;
+  }
+  .hero-meta .venue {
+    color: rgba(255,255,255,0.78); font-size: 14px;
+    letter-spacing: 0.02em; font-weight: 500;
+    line-height: 1.5;
+  }
+  .hero-cta { display: flex; gap: 14px; justify-content: flex-end; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 14px 24px; font-family: 'FS Albert Arabic', sans-serif;
+    font-weight: 700; font-size: 13px; letter-spacing: 0.02em;
+    cursor: pointer; transition: all .2s ease;
+    border: 1px solid transparent;
+  }
+  .btn-gold { background: var(--gold); color: var(--navy); border-color: var(--gold); }
+  .btn-gold:hover { background: var(--gold-d); border-color: var(--gold-d); }
+  .btn-ghost { color: white; border-color: rgba(255,255,255,0.5); background: transparent; }
+  .btn-ghost:hover { background: rgba(255,255,255,0.08); border-color: white; }
+  .btn .arr { font-family: 'Inter', sans-serif; font-weight: 300; transition: transform .2s; }
+  .btn:hover .arr { transform: translateX(-4px); }
+
+  /* Scroll cue */
+  .scroll-cue {
+    position: absolute; left: 42px; top: 50%; transform: translateY(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+    color: rgba(255,255,255,0.65); font-family: 'Inter', sans-serif;
+    font-size: 10px; letter-spacing: 0.32em;
+  }
+  .scroll-cue .bar {
+    width: 1px; height: 60px;
+    background: linear-gradient(to bottom, var(--gold), transparent);
+  }
+  .scroll-cue .label { writing-mode: vertical-rl; transform: rotate(180deg); }
+
+  /* ======= SECTIONS ======= */
+  section { padding: 96px 224px; position: relative; }
+  .section-head { text-align: center; margin: 0 auto 64px; max-width: 800px; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 12px;
+    border: 1px solid rgba(232,192,96,0.45);
+    padding: 7px 16px; margin-bottom: 24px;
+    background: rgba(232,192,96,0.08);
+  }
+  .eyebrow .num { color: var(--gold); font-weight: 700; font-size: 12.5px; letter-spacing: 0.18em; }
+  .eyebrow .lbl { color: white; font-weight: 700; font-size: 13px; }
+  h2 {
+    font-family: 'FS Albert Arabic', sans-serif; font-weight: 700;
+    font-size: 46px; line-height: 1.22; letter-spacing: -0.015em;
+    color: white; margin: 0 0 20px; text-wrap: balance;
+  }
+  .section-head p {
+    color: rgba(255,255,255,0.78); font-size: 16px; line-height: 1.7;
+    margin: 0;
+  }
+  .section-head.dark h2 { color: white; }
+  .section-head.dark p { color: rgba(255,255,255,0.78); }
+  .section-head.dark .eyebrow {
+    background: transparent; border-color: rgba(255,255,255,0.18);
+  }
+  .section-head.dark .eyebrow .lbl { color: white; }
+
+  /* ======= COUNTDOWN ======= */
+  .countdown {
+    background: var(--navy-dd); padding: 56px 224px;
+    border-top: 1px solid rgba(232,192,96,0.18);
+    border-bottom: 1px solid rgba(232,192,96,0.18);
+    position: relative; overflow: hidden;
+  }
+  .countdown::before {
+    content: ""; position: absolute; inset: 0; opacity: 0.04;
+    background: radial-gradient(circle at 20% 30%, var(--gold) 0, transparent 30%),
+                radial-gradient(circle at 80% 70%, var(--teal) 0, transparent 30%);
+  }
+  .countdown-head {
+    text-align: center; color: var(--gold);
+    font-family: 'Inter', sans-serif; font-size: 12.5px;
+    letter-spacing: 0.22em; font-weight: 700;
+    margin-bottom: 32px;
+    display: flex; align-items: center; justify-content: center; gap: 16px;
+  }
+  .countdown-head .ln { width: 72px; height: 1px; background: var(--gold); opacity: 0.45; }
+  .countdown-grid {
+    display: flex; justify-content: center; align-items: center;
+    gap: 32px;
+  }
+  .cd-cell { text-align: center; min-width: 110px; }
+  .cd-cell .v {
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 60px; line-height: 1; color: var(--gold);
+    letter-spacing: -0.02em;
+  }
+  .cd-cell .l {
+    font-size: 12.8px; letter-spacing: 0.05em;
+    color: rgba(255,255,255,0.7); margin-top: 8px;
+  }
+  .cd-sep {
+    font-family: 'FS Albert Arabic', sans-serif; font-weight: 300; font-size: 40px;
+    color: var(--gold); opacity: 0.4;
+  }
+
+  /* ======= ABOUT ======= */
+  .about {
+    background: linear-gradient(180deg, #ffffff 0%, #f6f7f9 100%);
+    position: relative; overflow: hidden;
+  }
+  .about::before {
+    content: ""; position: absolute; inset: 0; opacity: 0.07;
+    background:
+      radial-gradient(ellipse 70% 60% at 0% 100%, var(--gold) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 100% 0%, var(--gold) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .about > * { position: relative; z-index: 1; }
+  .about .section-head h2 { color: var(--navy); }
+  .about .section-head p { color: rgba(0,22,64,0.7); }
+  .about .eyebrow { background: rgba(232,192,96,0.12); border-color: rgba(232,192,96,0.55); }
+  .about .eyebrow .lbl { color: var(--navy); }
+  .about .eyebrow .num { color: var(--gold-d); }
+  .about-card { max-width: 1280px; margin: 0 auto; display: flex; justify-content: center; }
+  .about-img {
+    width: 1200px; max-width: 100%; height: 620px;
+    /* On-brand asset that ships in wwwroot/assets (the previous
+       about-image.png was never added and 404'd, leaving an empty box). */
+    background: url('assets/neom.avif') center/cover no-repeat, var(--navy);
+    margin-top: 48px;
+    position: relative;
+  }
+  .about-img::after {
+    content: ""; position: absolute; inset: 0;
+    border: 1px solid rgba(0,22,64,0.12);
+    box-shadow: inset 0 0 120px rgba(0,22,64,0.18);
+  }
+
+  /* ======= STATS INSIGHTS — full-width flowing insight strip ======= */
+  .stats-slider {
+    background: var(--navy-dd); color: white;
+    position: relative; overflow: hidden;
+    padding: 112px 0 96px;
+  }
+  .stats-slider::before {
+    content: ""; position: absolute; inset: 0; opacity: 0.05;
+    pointer-events: none;
+    background: radial-gradient(circle at 18% 30%, var(--gold) 0, transparent 30%),
+                radial-gradient(circle at 82% 70%, var(--teal) 0, transparent 30%);
+  }
+  .stats-slider .section-head {
+    max-width: 920px; margin: 0 auto 64px;
+    text-align: center; padding: 0 32px;
+  }
+  .stats-slider .section-head p {
+    font-size: 17px; line-height: 1.85;
+  }
+
+  /* Marquee container */
+  .insights-marquee {
+    position: relative; z-index: 2;
+    overflow: hidden;
+    direction: ltr;
+    border-top: 1px solid rgba(232,192,96,0.25);
+    border-bottom: 1px solid rgba(232,192,96,0.25);
+    padding: 0;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 6%, black 94%, transparent 100%);
+            mask-image: linear-gradient(90deg, transparent 0%, black 6%, black 94%, transparent 100%);
+  }
+  .insights-track {
+    display: flex; gap: 0;
+    width: max-content;
+    animation: insights-marquee 60s linear infinite;
+  }
+  .insights-marquee:hover .insights-track { animation-play-state: paused; }
+  @keyframes insights-marquee {
+    from { transform: translate3d(0, 0, 0); }
+    to   { transform: translate3d(-50%, 0, 0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .insights-track { animation: none; }
+  }
+
+  /* Each insight = number + fact, in a horizontal pill row */
+  .insight {
+    flex: 0 0 auto;
+    display: flex; align-items: center; gap: 28px;
+    padding: 40px 56px;
+    border-inline-end: 1px solid rgba(232,192,96,0.20);
+    min-height: 132px;
+    direction: rtl;
+  }
+  .insight-num {
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 36px; line-height: 1; letter-spacing: -0.02em;
+    color: var(--gold);
+    white-space: nowrap;
+  }
+  .insight-divider {
+    width: 1px; height: 48px;
+    background: rgba(232,192,96,0.35);
+    flex-shrink: 0;
+  }
+  .insight-text {
+    font-family: 'FS Albert Arabic', sans-serif;
+    font-size: 15.5px; line-height: 1.6;
+    color: rgba(255,255,255,0.88); font-weight: 500;
+    max-width: 320px;
+  }
+
+  /* legacy slider classes kept hidden to avoid layout regressions if JS still references them */
+  .slider-strip, .slide, .slide-num, .slide-label, .slider-controls, .ctrl, .progress, .progress-fill, .slider-meta { display: none !important; }
+
+  /* ======= STATS BAR (numbers) — #001640 ======= */
+  .stats-bar {
+    background: #001640;
+    padding: 96px 224px;
+    border-top: 1px solid rgba(232,192,96,0.18);
+    border-bottom: 1px solid rgba(232,192,96,0.18);
+    position: relative; overflow: hidden;
+  }
+  .stats-bar::before {
+    content: ""; position: absolute; inset: 0; opacity: 0.05;
+    background:
+      radial-gradient(circle at 20% 30%, var(--gold) 0, transparent 35%),
+      radial-gradient(circle at 80% 70%, var(--teal) 0, transparent 35%);
+    pointer-events: none;
+  }
+  .stats-bar > * { position: relative; z-index: 1; }
+  .stats-bar h3 {
+    text-align: center; font-family: 'FS Albert Arabic', sans-serif;
+    font-weight: 700; font-size: 34px; color: white;
+    margin: 0 0 56px; letter-spacing: -0.015em;
+  }
+  .stats-bar-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(232,192,96,0.22);
+  }
+  .stats-bar-grid .stat-cell {
+    padding: 56px 32px; text-align: center;
+    border-left: 1px solid rgba(232,192,96,0.18);
+    transition: background .3s;
+  }
+  .stats-bar-grid .stat-cell:last-child { border-left: none; }
+  .stats-bar-grid .stat-cell:hover { background: rgba(232,192,96,0.06); }
+  .stats-bar-grid .v {
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 60px; color: var(--gold); line-height: 1;
+    letter-spacing: -0.02em; margin-bottom: 12px;
+  }
+  .stats-bar-grid .v::before { content: "+"; color: var(--gold); margin-left: 4px; opacity: 0.75; }
+  .stats-bar-grid .l { color: rgba(255,255,255,0.78); font-size: 15px; }
+
+  /* ======= PILLARS — dark grid of 6 cards ======= */
+  .pillars {
+    background: linear-gradient(180deg, #001640 0%, #0B2A5C 50%, #001640 100%);
+    position: relative; overflow: hidden;
+  }
+  .pillars::before {
+    content: ""; position: absolute; inset: 0; opacity: 0.08;
+    background:
+      radial-gradient(circle at 88% 18%, var(--gold) 0, transparent 35%),
+      radial-gradient(circle at 8% 90%, var(--gold) 0, transparent 30%);
+    pointer-events: none;
+  }
+  .pillars > * { position: relative; z-index: 1; }
+  .pillars .section-head h2 { color: white; }
+  .pillars .section-head p { color: rgba(255,255,255,0.75); }
+  .pillars .eyebrow { background: rgba(232,192,96,0.10); border-color: rgba(232,192,96,0.45); }
+  .pillars .eyebrow .lbl { color: white; }
+  .pillars .eyebrow .num { color: var(--gold); }
+  .pillars .section-head.right { text-align: right; max-width: 880px; margin: 0 0 48px auto; }
+
+  .pillars-stack {
+    max-width: 1200px; margin: 0 auto;
+    display: grid; grid-template-columns: repeat(6, 1fr);
+    gap: 0;
+    border: 1px solid rgba(232,192,96,0.25);
+    background: rgba(255,255,255,0.02);
+  }
+  .pillar-row {
+    grid-column: span 2;
+    padding: 32px 28px;
+    border-left: 1px solid rgba(232,192,96,0.18);
+    border-bottom: 1px solid rgba(232,192,96,0.18);
+    background: rgba(255,255,255,0.03);
+    transition: background .25s ease;
+    text-align: right;
+    display: flex; flex-direction: column; gap: 12px;
+    min-height: 220px;
+    position: relative;
+  }
+  /* align #4 to the right edge on the bottom row (RTL: col 1 = right) */
+  .pillar-row:nth-child(4) { grid-column: 1 / span 2; }
+  /* leftmost in top row → no extra border-left */
+  .pillar-row:nth-child(3) { border-left: none; }
+  /* bottom row → no border-bottom */
+  .pillar-row:nth-child(n+4) { border-bottom: none; }
+  /* leftmost in bottom row → no extra border-left */
+  .pillar-row:nth-child(5) { border-left: none; }
+  .pillar-row:hover { background: rgba(232,192,96,0.06); }
+  .pillar-row::before {
+    content: ""; position: absolute; top: 0; right: 0;
+    width: 0; height: 2px; background: var(--gold);
+    transition: width .35s ease;
+  }
+  .pillar-row:hover::before { width: 100%; }
+
+  .pr-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin-bottom: 4px;
+  }
+  .pr-num {
+    font-family: 'Inter', sans-serif; font-weight: 300;
+    font-size: 32px; color: var(--gold); line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .pr-icon { display: none; }
+
+  .pillar-row h3 {
+    font-family: 'FS Albert Arabic', sans-serif; font-weight: 700;
+    font-size: 19px; line-height: 1.4; letter-spacing: -0.01em;
+    color: white; margin: 0; text-wrap: balance;
+  }
+  .pillar-row p {
+    color: rgba(255,255,255,0.72); font-size: 14px; line-height: 1.75;
+    margin: 0;
+  }
+
+  /* hidden legacy */
+  .pillars-stage, .pr-tag, .pr-side, .pr-extra, .arrow-toggle, .pr-chip, .pr-cta { display: none; }
+  .pillars-rail { border-left: 1px solid var(--line); background: var(--paper); }
+  .pillar-tab {
+    display: grid; grid-template-columns: auto 1fr auto;
+    gap: 18px; align-items: center;
+    padding: 22px 28px; cursor: pointer;
+    border-bottom: 1px solid var(--line);
+    transition: all .25s ease;
+    position: relative;
+    background: transparent;
+  }
+  .pillar-tab:last-child { border-bottom: none; }
+  .pillar-tab::before {
+    content: ""; position: absolute; right: 0; top: 0; bottom: 0;
+    width: 3px; background: var(--gold);
+    transform: scaleY(0); transform-origin: top;
+    transition: transform .35s ease;
+  }
+  .pillar-tab.active::before { transform: scaleY(1); }
+  .pillar-tab.active {
+    background: white;
+    box-shadow: inset 0 0 0 1px rgba(232,192,96,0.25);
+  }
+  .pillar-tab:hover:not(.active) { background: rgba(255,255,255,0.6); }
+  .pillar-tab .pn {
+    font-family: 'Inter', sans-serif; font-weight: 800;
+    font-size: 22px; color: var(--gold-d); line-height: 1;
+    letter-spacing: -0.02em;
+    width: 44px; height: 44px;
+    display: grid; place-items: center;
+    border: 1px solid var(--line); background: white;
+    transition: all .25s;
+  }
+  .pillar-tab.active .pn {
+    background: var(--gold); color: var(--navy); border-color: var(--gold);
+  }
+  .pillar-tab .pt {
+    font-family: 'FS Albert Arabic', sans-serif; font-weight: 700;
+    font-size: 16px; color: var(--navy);
+    text-align: right; line-height: 1.4;
+  }
+  .pillar-tab .parr {
+    font-family: 'Inter', sans-serif; color: var(--slate);
+    font-size: 16px; transition: all .25s;
+  }
+  .pillar-tab.active .parr { color: var(--gold-d); transform: translateX(-4px); }
+
+  .pillar-stage {
+    padding: 56px 56px 48px;
+    position: relative;
+    min-height: 460px;
+    background:
+      radial-gradient(circle at 90% 10%, rgba(232,192,96,0.06) 0, transparent 40%),
+      radial-gradient(circle at 10% 90%, rgba(0,22,64,0.05) 0, transparent 40%),
+      white;
+  }
+  .pillar-stage::before {
+    content: ""; position: absolute; top: 56px; right: 56px;
+    width: 64px; height: 1px; background: var(--gold);
+  }
+  .pillar-stage .stage-num {
+    position: absolute; left: 56px; top: 40px;
+    font-family: 'Inter', sans-serif; font-weight: 200;
+    font-size: 144px; line-height: 0.85; letter-spacing: -0.05em;
+    color: rgba(0,22,64,0.06);
+    pointer-events: none;
+  }
+  .stage-content {
+    position: relative; max-width: 720px; margin-right: auto;
+    text-align: right;
+  }
+  .stage-eyebrow {
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 12px; letter-spacing: 0.32em; color: var(--gold-d);
+    margin-bottom: 16px;
+  }
+  .stage-content h3 {
+    font-family: 'FS Albert Arabic', sans-serif; font-weight: 700;
+    font-size: 38px; line-height: 1.25; letter-spacing: -0.018em;
+    color: var(--navy); margin: 0 0 20px; text-wrap: balance;
+  }
+  .stage-content p {
+    color: var(--slate); font-size: 16px; line-height: 1.85;
+    margin: 0 0 32px; max-width: 620px; margin-right: auto;
+  }
+  .stage-meta {
+    display: grid; grid-template-columns: repeat(3, auto);
+    gap: 0; justify-content: end; margin-bottom: 36px;
+    border-top: 1px solid var(--line); padding-top: 24px;
+  }
+  .stage-meta .mc {
+    padding: 0 28px; text-align: right;
+    border-right: 1px solid var(--line);
+  }
+  .stage-meta .mc:last-child { border-right: none; padding-right: 0; }
+  .stage-meta .mc:first-child { padding-left: 0; }
+  .stage-meta .mv {
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 28px; color: var(--navy); line-height: 1;
+    letter-spacing: -0.02em; margin-bottom: 6px;
+  }
+  .stage-meta .ml {
+    font-size: 12px; color: var(--slate); letter-spacing: 0.04em;
+  }
+  .stage-cta {
+    display: inline-flex; align-items: center; gap: 12px;
+    color: var(--navy); font-weight: 700; font-size: 14px;
+    padding: 12px 0; border-bottom: 1px solid var(--gold);
+  }
+  .stage-cta .arr { font-family: 'Inter', sans-serif; transition: transform .2s; }
+  .stage-cta:hover .arr { transform: translateX(-4px); }
+
+  .stage-icon {
+    position: absolute; left: 56px; bottom: 48px;
+    width: 88px; height: 88px;
+    display: grid; place-items: center;
+    color: var(--teal); opacity: 0.85;
+    border: 1px solid var(--line);
+    background: linear-gradient(135deg, white 0%, var(--paper) 100%);
+  }
+  .stage-icon svg { width: 48px; height: 48px; }
+
+  /* legacy classes kept for grid leftovers */
+  .pillars-grid { display: none; }
+  .pillar { display: none; }
+  .pillar h3 {
+    color: var(--navy); margin: 0 0 12px; text-align: right;
+  }
+  .pillar p {
+    color: var(--slate); font-size: 14.4px; line-height: 1.7;
+    text-align: right; margin: 0 0 24px; flex: 1;
+  }
+  .pillar-link {
+    align-self: flex-start;
+    border: 1px solid var(--gold); padding: 8px 16px;
+    font-family: 'FS Albert Arabic', sans-serif; font-weight: 700;
+    font-size: 14px; color: var(--navy);
+    transition: all .2s;
+  }
+  .pillar-link:hover { background: var(--gold); }
+
+  /* ======= SESSIONS — #001640 ======= */
+  .sessions {
+    background: #001640;
+    padding: 128px 96px;
+    position: relative; overflow: hidden;
+  }
+  .sessions .section-head h2 { color: white; }
+  .sessions .section-head .eyebrow {
+    background: rgba(232,192,96,0.10);
+    border-color: rgba(232,192,96,0.45);
+  }
+  .sessions .section-head .eyebrow .lbl { color: white; }
+  .sessions .section-head .eyebrow .num { color: var(--gold); }
+  .sessions::before {
+    content: ""; position: absolute; inset: 0; opacity: 0.05;
+    background:
+      radial-gradient(circle at 12% 40%, var(--teal) 0, transparent 35%),
+      radial-gradient(circle at 88% 70%, var(--gold) 0, transparent 35%);
+    pointer-events: none;
+  }
+  .sessions > * { position: relative; z-index: 1; }
+  .sessions-head { max-width: 1280px; margin: 0 auto 72px; }
+  .sessions-list {
+    max-width: 1320px; margin: 0 auto;
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 28px; align-items: stretch;
+  }
+  .session-row {
+    display: flex; flex-direction: column;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(232,192,96,0.22);
+    overflow: hidden;
+    text-align: right;
+    transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease;
+    position: relative;
+  }
+  .session-row:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 50px rgba(0,22,64,0.4);
+    border-color: rgba(232,192,96,0.5);
+  }
+  .session-img {
+    height: 260px; position: relative; overflow: hidden;
+    background-size: cover; background-position: center;
+    transition: transform .6s ease;
+  }
+  .session-row:hover .session-img { transform: scale(1.04); }
+  /* No public session image → an intentional branded panel (navy gradient +
+     subtle diagonal weave), not an empty box. The num badge + hall label sit
+     on top. Matches the about / speaker placeholder treatment. */
+  .session-img--brand {
+    background-color: #062253;
+    background-image:
+      repeating-linear-gradient(45deg, rgba(255,255,255,0.035) 0 2px, transparent 2px 22px),
+      radial-gradient(120% 100% at 80% 0%, rgba(232,192,96,0.10) 0%, transparent 45%),
+      linear-gradient(135deg, #062253 0%, #001640 55%, #0a2e6b 100%);
+  }
+  .session-img::before {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(0,22,64,0) 40%, rgba(0,22,64,0.85) 100%);
+  }
+  .session-img .num-badge {
+    position: absolute; top: 0; right: 0; z-index: 2;
+    background: var(--gold); color: var(--ink);
+    font-family: 'Inter', sans-serif; font-weight: 800; font-size: 14px;
+    padding: 10px 18px; letter-spacing: 0.08em;
+  }
+  .session-img .img-label {
+    position: absolute; right: 24px; bottom: 20px; z-index: 2;
+    color: white;
+    font-family: 'FS Albert Arabic', sans-serif; font-weight: 700;
+    font-size: 12px; letter-spacing: 0.18em;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--gold);
+  }
+  .session-body {
+    display: flex; flex-direction: column; flex: 1;
+    padding: 36px 32px 40px;
+  }
+  .session-tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    align-self: flex-end;
+    font-size: 11px; letter-spacing: 0.18em;
+    color: var(--gold); font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+  .session-tag::before {
+    content: ""; width: 18px; height: 1px; background: var(--gold);
+  }
+  .session-row h3 {
+    font-family: 'FS Albert Arabic', sans-serif; font-weight: 700;
+    font-size: 22px; line-height: 1.5; color: white;
+    margin: 0 0 18px; text-align: right;
+  }
+  .session-row .desc {
+    color: rgba(255,255,255,0.72); font-size: 14.5px; line-height: 1.85;
+    text-align: right; margin: 0 0 24px;
+  }
+  .session-link {
+    margin-top: auto; align-self: flex-end;
+    color: var(--gold); font-weight: 700; font-size: 13px;
+    padding-bottom: 4px; border-bottom: 1px solid var(--gold);
+    transition: gap .2s;
+  }
+
+  /* legacy session styles kept for safety */
+  .sessions-tabs, .sessions-tab, .session-time, .session-meta { display: none; }
+
+  /* ======= GOALS — numbered list ======= */
+  .goals {
+    background: linear-gradient(180deg, #ffffff 0%, #f6f7f9 100%);
+    padding: 128px 224px;
+    position: relative; overflow: hidden;
+  }
+  .goals::before {
+    content: ""; position: absolute; inset: 0; opacity: 0.07;
+    background: radial-gradient(circle at 20% 30%, var(--gold) 0, transparent 40%);
+    pointer-events: none;
+  }
+  .goals > * { position: relative; z-index: 1; }
+  .goals .section-head h2,
+  .goals-text h2 { color: var(--navy) !important; }
+  .goals-text p { color: rgba(0,22,64,0.7) !important; }
+  .goals .eyebrow { background: rgba(232,192,96,0.12); border-color: rgba(232,192,96,0.55); }
+  .goals .eyebrow .lbl { color: var(--navy); }
+  .goals .eyebrow .num { color: var(--gold-d); }
+  .goal-item { border-top: 1px solid rgba(0,22,64,0.10) !important; }
+  .goal-item:last-child { border-bottom: 1px solid rgba(0,22,64,0.10) !important; }
+  .goal-body h4 { color: var(--navy) !important; }
+  .goal-body p { color: rgba(0,22,64,0.68) !important; }
+  .goals-row {
+    display: grid; grid-template-columns: 1fr 1.4fr;
+    gap: 96px; max-width: 1280px; margin: 0 auto;
+  }
+  .goals-list { display: flex; flex-direction: column; gap: 0; }
+  .goal-item {
+    display: grid; grid-template-columns: 80px 1fr;
+    gap: 24px; padding: 28px 0;
+    border-top: 1px solid var(--line);
+  }
+  .goal-item:last-child { border-bottom: 1px solid var(--line); }
+  .goal-num {
+    font-family: 'Inter', sans-serif; font-weight: 200;
+    font-size: 44px; line-height: 0.9; color: var(--gold-d);
+    letter-spacing: -0.04em;
+  }
+  .goal-body h4 {
+    font-family: 'FS Albert Arabic', sans-serif; font-weight: 700;
+    font-size: 18px; color: var(--navy); margin: 4px 0 8px;
+    text-align: right;
+  }
+  .goal-body p {
+    color: var(--slate); font-size: 14px; line-height: 1.75;
+    margin: 0; text-align: right;
+  }
+  /* removed legacy session card styles */
+  .sessions-grid, .session, .session-visual, .session-side, .session-num, .session-content, .session-bg { all: revert; }
+
+  /* ======= SPEAKERS — infinite marquee slider ======= */
+  .speakers {
+    background: linear-gradient(180deg, #ffffff 0%, #f6f7f9 50%, #ffffff 100%);
+    padding: 128px 0; overflow: hidden;
+    position: relative;
+  }
+  .speakers::before {
+    content: ""; position: absolute; inset: 0; opacity: 0.07;
+    background:
+      radial-gradient(circle at 50% 0%, var(--gold) 0, transparent 35%),
+      radial-gradient(circle at 50% 100%, var(--gold) 0, transparent 35%);
+    pointer-events: none;
+  }
+  .speakers > * { position: relative; z-index: 1; }
+  .speakers .section-head h2 { color: var(--navy); }
+  .speakers .section-head p { color: rgba(0,22,64,0.7); }
+  .speakers .eyebrow { background: rgba(232,192,96,0.12); border-color: rgba(232,192,96,0.55); }
+  .speakers .eyebrow .lbl { color: var(--navy); }
+  .speakers .eyebrow .num { color: var(--gold-d); }
+  .speakers .section-head { padding: 0 224px; max-width: none; }
+  .speakers-track-wrap {
+    margin-top: 64px; position: relative;
+    overflow: hidden;
+    direction: ltr;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 6%, black 94%, transparent 100%);
+            mask-image: linear-gradient(90deg, transparent 0%, black 6%, black 94%, transparent 100%);
+  }
+  .speakers-track {
+    display: flex; gap: 24px; width: max-content;
+    animation: speakers-marquee 60s linear infinite;
+  }
+  .speakers-track-wrap:hover .speakers-track { animation-play-state: paused; }
+  @keyframes speakers-marquee {
+    from { transform: translate3d(0, 0, 0); }
+    to   { transform: translate3d(calc(-1 * var(--speakers-shift, 50%)), 0, 0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .speakers-track { animation: none; }
+  }
+  .speaker { width: 280px; flex-shrink: 0; background: transparent; }
+  .speaker-photo {
+    width: 100%; aspect-ratio: 282/352;
+    background: linear-gradient(180deg, rgba(232,192,96,0.10) 0%, rgba(0,22,64,0.06) 100%);
+    border: 1px solid rgba(0,22,64,0.10);
+    display: grid; place-items: center;
+    color: rgba(0,22,64,0.45);
+    margin-bottom: 16px;
+    overflow: hidden; position: relative;
+  }
+  .speaker-photo svg { width: 70%; height: 70%; opacity: 0.45; }
+  .speaker-photo img {
+    position: relative; z-index: 1;
+    width: 100%; height: 100%; object-fit: cover; display: block;
+  }
+  .speaker-photo::before {
+    content: ""; position: absolute; inset: 0;
+    background-image:
+      repeating-linear-gradient(45deg, rgba(0,22,64,0.04) 0 2px, transparent 2px 24px);
+  }
+  .speaker h4 {
+    font-family: 'FS Albert Arabic', sans-serif; font-weight: 700;
+    font-size: 17px; color: var(--navy); margin: 0 0 4px; text-align: right;
+  }
+  .speaker .role { font-size: 14px; color: rgba(0,22,64,0.68); margin: 0; text-align: right; }
+  .speaker .org {
+    font-family: 'Inter', sans-serif; font-size: 12px; color: var(--gold-d);
+    letter-spacing: 0.06em; text-align: right; margin-top: 6px;
+  }
+
+  /* ======= PARTNERS ======= */
+  .partners {
+    background: linear-gradient(180deg, #001640 0%, #062253 100%);
+    padding: 96px 0 0; overflow: hidden;
+    position: relative;
+  }
+  .partners .section-head h2 { color: white; }
+  .partners .section-head p { color: rgba(255,255,255,0.78); }
+  .partners .eyebrow { background: rgba(232,192,96,0.10); border-color: rgba(232,192,96,0.45); }
+  .partners .eyebrow .lbl { color: white; }
+  .partners .eyebrow .num { color: var(--gold); }
+  .partners-strip {
+    margin-top: 48px;
+    border-top: 1px solid rgba(232,192,96,0.25);
+    border-bottom: 1px solid rgba(232,192,96,0.25);
+    overflow: hidden;
+    position: relative;
+    direction: ltr;
+    background: #001640;
+  }
+  .partners-strip::before, .partners-strip::after {
+    content: ""; position: absolute; top: 0; bottom: 0; width: 120px; z-index: 2;
+    pointer-events: none;
+  }
+  .partners-strip::before { left: 0; background: linear-gradient(90deg, #001640, transparent); }
+  .partners-strip::after { right: 0; background: linear-gradient(270deg, #001640, transparent); }
+  .partners-track {
+    display: flex; gap: 0;
+    width: max-content;
+    will-change: transform;
+    direction: ltr;
+    animation: partners-scroll 50s linear infinite;
+  }
+  .partners-strip:hover .partners-track { animation-play-state: paused; }
+  /* Scroll the logo strip toward the inline-end (rightward on this RTL page):
+     start one full set shifted out and settle to 0 so the loop is seamless. */
+  @keyframes partners-scroll {
+    from { transform: translate3d(-50%, 0, 0); }
+    to   { transform: translate3d(0, 0, 0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .partners-track { animation: none; }
+  }
+  .partner {
+    flex: 0 0 320px; min-width: 0;
+    background: transparent;
+    display: flex; flex-direction: column;
+    border-left: 1px solid rgba(232,192,96,0.18);
+  }
+
+  .partner-logo {
+    height: 320px; padding: 44px 32px;
+    display: grid; place-items: center;
+    transition: transform .4s cubic-bezier(.22,.61,.36,1), filter .4s ease;
+    filter: opacity(0.9);
+  }
+  .partner:hover .partner-logo { transform: translateY(-6px); filter: opacity(1); }
+  .partner-logo .slot {
+    width: 220px; height: 140px;
+    display: grid; place-items: center;
+    background: #fff; border-radius: 12px; padding: 22px; overflow: hidden;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.20);
+  }
+  .partner-logo .slot img {
+    max-width: 100%; max-height: 100%; object-fit: contain; display: block;
+  }
+  .partner-logo .slot .partner-name {
+    color: var(--navy); font-weight: 800; font-size: 16px;
+    text-align: center; line-height: 1.4;
+  }
+  .partner-meta {
+    height: 80px; border-top: 1px solid rgba(232,192,96,0.22);
+    display: flex; flex-direction: row-reverse;
+    align-items: center; justify-content: space-between;
+    padding: 0 32px;
+    position: relative;
+    background: transparent;
+  }
+  .partner-meta::after {
+    content: ""; position: absolute; left: 32px; bottom: 18px;
+    height: 1px; width: 0; background: var(--gold);
+    transition: width .35s cubic-bezier(.22,.61,.36,1);
+  }
+  .partner:hover .partner-meta::after { width: calc(100% - 64px); }
+  .partner-meta .label {
+    font-family: 'FS Albert Arabic', sans-serif; font-weight: 700;
+    font-size: 17px; color: rgba(255,255,255,0.85);
+    transition: color .25s ease;
+  }
+  .partner:hover .partner-meta .label { color: var(--gold); }
+  .partner-meta .arr {
+    font-family: 'Inter', sans-serif; font-weight: 300;
+    color: rgba(255,255,255,0.5); font-size: 18px;
+    transition: color .25s ease, opacity .25s ease;
+    opacity: 0.55;
+  }
+  .partner:hover .partner-meta .arr {
+    color: var(--gold); opacity: 1;
+  }
+
+  /* ======= NEWS — simple 3-column grid ======= */
+  .news {
+    background: linear-gradient(180deg, #062253 0%, #001640 100%);
+    padding: 112px 96px;
+    position: relative; overflow: hidden;
+  }
+  .news::before {
+    content: ""; position: absolute; inset: 0; opacity: 0.07;
+    background: radial-gradient(circle at 90% 20%, var(--gold) 0, transparent 40%);
+    pointer-events: none;
+  }
+  .news > * { position: relative; z-index: 1; }
+  .news .section-head h2 { color: white; }
+  .news .section-head p { color: rgba(255,255,255,0.78); }
+  .news .eyebrow { background: rgba(232,192,96,0.10); border-color: rgba(232,192,96,0.45); }
+  .news .eyebrow .lbl { color: white; }
+  .news .eyebrow .num { color: var(--gold); }
+  .news .all-link { color: var(--gold) !important; }
+  .news-wrap { max-width: 1280px; margin: 0 auto; }
+  .news-head-row {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 32px; margin-bottom: 56px;
+  }
+  .news-head-row .section-head { text-align: right; margin: 0; max-width: none; }
+  .news-head-row .all-link {
+    font-family: 'FS Albert Arabic', sans-serif; font-weight: 700; font-size: 14px;
+    color: var(--navy); padding-bottom: 6px;
+    border-bottom: 1px solid var(--gold);
+    white-space: nowrap;
+  }
+  .all-link-mobile {
+    display: none;
+    font-family: 'FS Albert Arabic', sans-serif; font-weight: 700; font-size: 14px;
+    color: var(--navy); padding-bottom: 6px;
+    border-bottom: 1px solid var(--gold);
+    margin: 32px auto 0; width: max-content;
+  }
+  .news-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+  }
+  .news-card {
+    display: flex; flex-direction: column;
+    text-align: right;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(232,192,96,0.22);
+    transition: transform .3s, border-color .3s;
+  }
+  .news-card:hover { transform: translateY(-4px); border-color: rgba(232,192,96,0.5); }
+  .news-card .news-thumb {
+    width: 100%; aspect-ratio: 16 / 10;
+    background-size: cover; background-position: center;
+    margin-bottom: 0;
+  }
+  .news-card .news-body {
+    border-top: 2px solid var(--gold);
+    padding: 24px 24px 28px;
+    display: flex; flex-direction: column; flex: 1;
+  }
+  .news-card .date {
+    font-family: 'Inter', sans-serif; font-size: 12px;
+    letter-spacing: 0.18em; color: var(--gold); font-weight: 600;
+    margin-bottom: 14px;
+  }
+  .news-card h3 {
+    font-family: 'FS Albert Arabic', sans-serif; font-weight: 700;
+    font-size: 20px; line-height: 1.5; color: white;
+    margin: 0 0 14px;
+  }
+  .news-card p {
+    color: rgba(255,255,255,0.72); font-size: 14px; line-height: 1.75;
+    margin: 0 0 20px;
+  }
+  .news-card .more {
+    color: var(--gold); font-weight: 700; font-size: 13px;
+    margin-top: auto; padding-bottom: 2px; border-bottom: 1px solid var(--gold);
+    align-self: flex-end;
+  }
+  .news-card .more:hover { color: white; }
+
+  /* ======= GOALS ======= */
+  .goals {
+    background: linear-gradient(180deg, #ffffff 0%, #f6f7f9 100%);
+    padding: 128px 224px;
+    position: relative; overflow: hidden;
+  }
+  .goals::before {
+    content: ""; position: absolute; inset: 0; opacity: 0.07;
+    background: radial-gradient(circle at 20% 30%, var(--gold) 0, transparent 40%);
+    pointer-events: none;
+  }
+  .goals > * { position: relative; z-index: 1; }
+  .goals .section-head h2,
+  .goals-text h2 { color: var(--navy) !important; }
+  .goals-text p { color: rgba(0,22,64,0.7) !important; }
+  .goals .eyebrow { background: rgba(232,192,96,0.12); border-color: rgba(232,192,96,0.55); }
+  .goals .eyebrow .lbl { color: var(--navy); }
+  .goals .eyebrow .num { color: var(--gold-d); }
+  .goal-item { border-top: 1px solid rgba(0,22,64,0.10) !important; }
+  .goal-item:last-child { border-bottom: 1px solid rgba(0,22,64,0.10) !important; }
+  .goal-body h4 { color: var(--navy) !important; }
+  .goal-body p { color: rgba(0,22,64,0.68) !important; }
+  .goals-row {
+    display: grid; grid-template-columns: 509px 611px;
+    gap: 80px; max-width: 1280px; margin: 0 auto;
+    justify-content: center; align-items: center;
+  }
+  .goals-text { text-align: right; }
+  .goals-text .eyebrow { margin-bottom: 28px; }
+  .goals-text h2 { text-align: right; }
+  .goals-text p {
+    color: var(--ink-soft); font-size: 18px; line-height: 1.85;
+    margin: 0 0 36px;
+  }
+  .goals-img {
+    height: 458px; background: var(--navy-d);
+    background-image: url('assets/hero-aerial.jpg');
+    background-size: cover; background-position: center;
+    position: relative;
+    border: 1px solid var(--line);
+  }
+  .goals-img::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(0,22,64,0.5) 0%, rgba(0,22,64,0.8) 100%);
+  }
+  .goals-img-grid {
+    position: absolute; inset: 0; z-index: 2;
+    display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
+    gap: 1px; background: rgba(232,192,96,0.18);
+  }
+  .goals-img-cell {
+    background: rgba(0,22,64,0.6);
+    backdrop-filter: blur(2px);
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 24px;
+    color: white;
+  }
+  .goals-img-cell .v {
+    font-family: 'Inter', sans-serif; font-weight: 800; font-size: 36px;
+    color: var(--gold); line-height: 1; margin-bottom: 6px;
+  }
+  .goals-img-cell .l { font-size: 13px; opacity: 0.85; }
+
+  /* ======= ARCHIVE — interactive timeline ======= */
+  .archive {
+    background: var(--navy); color: white; padding: 128px 224px;
+    position: relative; overflow: hidden;
+  }
+  .archive-tl { max-width: 1280px; margin: 0 auto; position: relative; }
+  .archive-year-tab { cursor: pointer; }
+
+  /* Per-year archive detail — a full-screen "separate page" (mockup 24-01). */
+  .archive-page {
+    position: fixed; inset: 0; z-index: 1000;
+    background: var(--navy, #001640); color: #fff;
+    overflow-y: auto; display: none;
+  }
+  .archive-page.open { display: block; }
+  .archive-page__bar {
+    position: sticky; top: 0; z-index: 2;
+    display: flex; align-items: center; gap: 16px;
+    padding: 18px 64px; background: rgba(0,22,64,0.94);
+    border-bottom: 1px solid rgba(232,192,96,0.25);
+  }
+  .archive-page__back {
+    appearance: none; border: 1px solid rgba(232,192,96,0.5);
+    background: transparent; color: var(--gold, #e8c060);
+    border-radius: 999px; padding: 8px 18px; cursor: pointer;
+    font-family: inherit; font-size: 14px;
+  }
+  .archive-page__back:hover { background: rgba(232,192,96,0.12); }
+  .archive-page__bartitle { font-weight: 700; font-size: 18px; }
+  .archive-page__cover {
+    height: 300px; position: relative; display: grid; place-items: center;
+    background: linear-gradient(135deg, #062253 0%, #001640 60%, #0a2e6b 100%);
+    border-bottom: 1px solid rgba(232,192,96,0.25); overflow: hidden;
+  }
+  .archive-page__cover .big-year {
+    font-family: 'Inter', sans-serif; font-weight: 200;
+    font-size: clamp(80px, 16vw, 200px); color: rgba(255,255,255,0.10);
+    direction: ltr; letter-spacing: 0.02em;
+  }
+  .archive-page__body { max-width: 980px; margin: 0 auto; padding: 56px 64px 96px; }
+  .archive-page__label { color: var(--gold, #e8c060); letter-spacing: 0.18em; font-size: 12px; }
+  .archive-page__title {
+    font-family: 'FS Albert Arabic', sans-serif; font-weight: 700;
+    font-size: clamp(28px, 4vw, 44px); margin: 8px 0 20px; color: #fff;
+  }
+  .archive-page__summary {
+    font-size: 18px; line-height: 1.9; color: rgba(255,255,255,0.82); max-width: 760px;
+  }
+  .archive-page__boxes { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 40px; }
+  .archive-page__box {
+    flex: 1 1 240px; border: 1px solid rgba(232,192,96,0.25);
+    border-radius: 14px; padding: 22px 24px; background: rgba(255,255,255,0.03);
+  }
+  .archive-page__box .k { color: var(--gold, #e8c060); font-size: 12px; letter-spacing: 0.10em; margin-bottom: 8px; }
+  .archive-page__box .v { font-size: 18px; font-weight: 600; }
+  .archive-page__counters { display: flex; flex-wrap: wrap; gap: 24px; margin-top: 40px; }
+  .archive-page__counter {
+    flex: 1 1 160px; text-align: center; padding: 28px 16px; border-radius: 14px;
+    background: rgba(232,192,96,0.06); border: 1px solid rgba(232,192,96,0.20);
+  }
+  .archive-page__counter .n {
+    font-family: 'Inter', sans-serif; font-weight: 300; font-size: 48px;
+    color: var(--gold, #e8c060); direction: ltr;
+  }
+  .archive-page__counter .c { font-size: 14px; color: rgba(255,255,255,0.78); margin-top: 6px; }
+  @media (max-width: 767px) {
+    .archive-page__bar, .archive-page__body { padding-left: 20px; padding-right: 20px; }
+    .archive-page__cover { height: 200px; }
+  }
+  .archive-years {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    position: relative; padding: 24px 0;
+    border-top: 1px solid rgba(232,192,96,0.25);
+    border-bottom: 1px solid rgba(232,192,96,0.25);
+  }
+  .archive-year-tab {
+    display: flex; flex-direction: column; align-items: center; gap: 14px;
+    padding: 12px 8px; cursor: pointer;
+    background: transparent; border: none; color: inherit;
+    font-family: inherit; transition: all .3s;
+  }
+  .archive-year-tab .dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    border: 1px solid var(--gold); background: var(--navy);
+    transition: all .3s;
+  }
+  .archive-year-tab .y {
+    font-family: 'Inter', sans-serif; font-weight: 200;
+    font-size: 32px; line-height: 1; letter-spacing: -0.03em;
+    color: rgba(255,255,255,0.45); transition: color .3s;
+  }
+  .archive-year-tab.active .y { color: var(--gold); font-weight: 300; }
+  .archive-year-tab.active .dot { background: var(--gold); transform: scale(1.4); box-shadow: 0 0 0 4px rgba(232,192,96,0.15); }
+  .archive-year-tab:hover .y { color: white; }
+  .archive-detail {
+    margin-top: 64px; min-height: 240px;
+    display: grid; grid-template-columns: 1.2fr 2fr; gap: 64px;
+    align-items: start;
+    transition: opacity .35s ease, transform .45s cubic-bezier(.22,.61,.36,1);
+  }
+  .archive-detail.swap-out { opacity: 0; transform: translateY(12px); }
+  .archive-detail.swap-in  { animation: archive-fade-in .55s cubic-bezier(.22,.61,.36,1) both; }
+  @keyframes archive-fade-in {
+    from { opacity: 0; transform: translateY(-12px); }
+    to   { opacity: 1; transform: none; }
+  }
+  .archive-year-tab .y, .archive-year-tab .dot { transition: color .3s ease, background .3s ease, transform .3s ease, box-shadow .3s ease; }
+  .archive-detail .big-y {
+    font-family: 'Inter', sans-serif; font-weight: 100;
+    font-size: 200px; line-height: 0.85; letter-spacing: -0.05em;
+    color: var(--gold);
+  }
+  .archive-detail h4 {
+    font-family: 'FS Albert Arabic', sans-serif; font-weight: 700;
+    font-size: 32px; line-height: 1.35; color: white;
+    margin: 0 0 20px; text-align: right;
+  }
+  .archive-detail .date {
+    color: var(--gold); font-size: 13px; letter-spacing: 0.18em;
+    font-weight: 600; margin: 0 0 24px; text-align: right;
+  }
+  .archive-detail .desc {
+    color: rgba(255,255,255,0.78); font-size: 16px; line-height: 1.8;
+    text-align: right;
+  }
+  .stat-cell.in-view .v { animation: countup-fade .8s ease both; }
+  @keyframes countup-fade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .archive::before {
+    content: ""; position: absolute; inset: 0; opacity: 0.05;
+    background: 
+      radial-gradient(circle at 25% 30%, var(--gold) 0, transparent 30%),
+      radial-gradient(circle at 75% 70%, var(--teal) 0, transparent 30%);
+  }
+  .archive .section-head { text-align: center; margin-bottom: 64px; max-width: 800px; }
+  .archive-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 24px; max-width: 1200px; margin: 0 auto;
+  }
+  .archive-card {
+    height: 400px; background: var(--navy-d);
+    position: relative; overflow: hidden;
+    color: white; isolation: isolate;
+    transition: transform .25s;
+  }
+  .archive-card:hover { transform: translateY(-6px); }
+  .archive-card::before {
+    content: ""; position: absolute; inset: 0; z-index: -1;
+    background: linear-gradient(180deg, var(--navy-dd) 0%, rgba(20,42,77,0.7) 55%, rgba(20,42,77,0.1) 100%);
+  }
+  .archive-card .img {
+    position: absolute; inset: 0; z-index: -2;
+    background: var(--navy-dd);
+    opacity: 0.45;
+  }
+  .archive-content {
+    padding: 32px;
+    height: 100%;
+    display: flex; flex-direction: column;
+  }
+  .archive-year {
+    border: 1px solid rgba(232,192,96,0.4);
+    padding: 32px;
+    margin-bottom: auto;
+    position: relative;
+  }
+  .archive-year .y {
+    font-family: 'Inter', sans-serif; font-weight: 200;
+    font-size: 84px; line-height: 0.9; letter-spacing: -0.04em;
+    color: white;
+  }
+  .archive-year .underline {
+    position: absolute; bottom: 12px; right: 32px; left: 32px;
+    height: 1px; background: var(--gold); opacity: 0.4;
+  }
+  .archive-card h4 {
+    font-family: 'FS Albert Arabic', sans-serif; font-weight: 700;
+    font-size: 20px; line-height: 1.5; color: white;
+    margin: 0 0 12px; text-align: right;
+  }
+  .archive-card .date {
+    color: rgba(255,255,255,0.75); font-size: 13px;
+    text-align: right; margin: 0 0 20px;
+  }
+  .archive-card .more {
+    color: var(--gold); font-weight: 700; font-size: 14px;
+    align-self: flex-start;
+    border-bottom: 1px solid var(--gold); padding-bottom: 2px;
+  }
+
+  /* ======= SAUDI SPIRIT (الروح السعودي) ======= */
+  .saudi-spirit {
+    background: linear-gradient(180deg, #062253 0%, #001640 100%);
+    padding: 128px 96px;
+    position: relative; overflow: hidden;
+  }
+  .saudi-spirit::before {
+    content: ""; position: absolute; inset: 0; opacity: 0.07;
+    background:
+      radial-gradient(circle at 15% 25%, var(--gold) 0, transparent 32%),
+      radial-gradient(circle at 85% 75%, var(--gold) 0, transparent 30%);
+    pointer-events: none;
+  }
+  .saudi-spirit > * { position: relative; z-index: 1; }
+  .saudi-spirit .section-head {
+    max-width: 920px; margin: 0 auto 72px;
+    text-align: center;
+  }
+  .saudi-spirit .section-head h2 { color: white; font-size: 50px; }
+  .saudi-spirit .section-head h2 .accent { color: var(--gold); }
+  .saudi-spirit .section-head p { color: rgba(255,255,255,0.80); font-size: 17px; line-height: 1.85; }
+  .saudi-spirit .eyebrow { background: rgba(232,192,96,0.10); border-color: rgba(232,192,96,0.45); }
+  .saudi-spirit .eyebrow .lbl { color: white; }
+  .saudi-spirit .eyebrow .num { color: var(--gold); }
+
+  .spirit-grid {
+    max-width: 1280px; margin: 0 auto;
+    display: grid; grid-template-columns: 1.4fr 1fr 1fr;
+    grid-template-rows: 280px 280px;
+    gap: 20px;
+  }
+  .spirit-card {
+    position: relative; overflow: hidden;
+    background: #061F4D;
+    border: 1px solid rgba(232,192,96,0.22);
+    transition: transform .4s cubic-bezier(.22,.61,.36,1), border-color .3s;
+    isolation: isolate;
+  }
+  .spirit-card:hover { transform: translateY(-6px); border-color: rgba(232,192,96,0.55); }
+  .spirit-card:nth-child(1) { grid-row: 1 / span 2; }
+  .spirit-img {
+    position: absolute; inset: 0; z-index: -2;
+    background-size: cover; background-position: center;
+    transition: transform .6s ease;
+  }
+  .spirit-card:hover .spirit-img { transform: scale(1.06); }
+  .spirit-card::after {
+    content: ""; position: absolute; inset: 0; z-index: -1;
+    background: linear-gradient(180deg, rgba(0,22,64,0.15) 0%, rgba(0,22,64,0.5) 50%, rgba(0,22,64,0.95) 100%);
+  }
+  .spirit-content {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 28px 28px 26px;
+    color: white;
+    text-align: right;
+  }
+  .spirit-tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: 'Inter', sans-serif; font-size: 11px;
+    letter-spacing: 0.32em; color: var(--gold); font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .spirit-tag::before {
+    content: ""; width: 22px; height: 1px; background: var(--gold);
+  }
+  .spirit-card h3 {
+    font-family: 'FS Albert Arabic', sans-serif; font-weight: 700;
+    font-size: 24px; line-height: 1.3; color: white;
+    margin: 0 0 8px;
+  }
+  .spirit-card:nth-child(1) h3 { font-size: 32px; }
+  .spirit-card p {
+    color: rgba(255,255,255,0.82); font-size: 14px; line-height: 1.7;
+    margin: 0;
+  }
+  .spirit-meta {
+    display: inline-flex; align-items: center; gap: 10px;
+    margin-top: 14px;
+    font-size: 12px; color: var(--gold);
+    letter-spacing: 0.04em; font-weight: 600;
+  }
+
+  /* ======= FOOTER ======= */
+  .footer-cta {
+    background: var(--navy);
+    padding: 72px 224px;
+    border-top: 1px solid rgba(232,192,96,0.2);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .footer-cta-row {
+    max-width: 1280px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr auto;
+    gap: 48px; align-items: center;
+  }
+  .footer-cta-text { text-align: right; color: white; }
+  .footer-cta-text .eyebrow {
+    background: transparent;
+    border-color: rgba(255,255,255,0.22);
+  }
+  .footer-cta-text .eyebrow .num { color: var(--gold); }
+  .footer-cta-text .eyebrow .lbl { color: rgba(255,255,255,0.85); }
+  .footer-cta-text h3 {
+    font-family: 'FS Albert Arabic', sans-serif; font-weight: 800;
+    font-size: 36px; line-height: 1.25;
+    margin: 12px 0 12px;
+    color: white;
+  }
+  .footer-cta-text p {
+    color: rgba(255,255,255,0.65); font-size: 16px; line-height: 1.7;
+    margin: 0; max-width: 600px;
+  }
+  .footer-cta-form {
+    display: flex; align-items: stretch; gap: 0;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(232,192,96,0.3);
+    min-width: 380px;
+  }
+  .footer-cta-form input {
+    background: transparent; border: 0; outline: none;
+    padding: 18px 20px;
+    font-family: 'FS Albert Arabic', sans-serif; font-size: 15px;
+    color: white; flex: 1; text-align: right;
+  }
+  .footer-cta-form input::placeholder { color: rgba(255,255,255,0.45); }
+  .footer-cta-form button {
+    background: var(--gold); color: var(--ink);
+    border: 0; padding: 0 28px; cursor: pointer;
+    font-family: 'FS Albert Arabic', sans-serif; font-weight: 700; font-size: 14px;
+    letter-spacing: 0.04em;
+    transition: background .2s;
+  }
+  .footer-cta-form button:hover { background: var(--gold-d); }
+
+  footer.site {
+    background: #040a22; color: white;
+    padding: 96px 224px 32px;
+    position: relative; overflow: hidden;
+  }
+  footer.site::before {
+    content: ""; position: absolute; inset: 0; opacity: 0.12;
+    background:
+      radial-gradient(circle at 70% 30%, var(--gold) 0, transparent 45%),
+      radial-gradient(circle at 12% 85%, var(--gold) 0, transparent 35%);
+    pointer-events: none;
+  }
+  .footer-grid {
+    display: grid; grid-template-columns: 1.6fr 1fr 1fr 1.2fr;
+    gap: 64px;
+    max-width: 1280px; margin: 0 auto;
+    position: relative;
+  }
+  .footer-brand { order: -1; }
+  .footer-brand .row {
+    display: flex; gap: 16px; align-items: center; margin-bottom: 24px;
+  }
+  .footer-brand h4 {
+    font-family: 'FS Albert Arabic', sans-serif; font-weight: 700;
+    font-size: 15.2px; color: var(--gold); margin: 0;
+  }
+  .footer-brand small {
+    font-family: 'Inter', sans-serif; font-size: 12px;
+    color: rgba(232,192,96,0.75); letter-spacing: 0.05em;
+    display: block; margin-top: 4px;
+  }
+  .footer-brand p {
+    color: rgba(255,255,255,0.65); font-size: 14.4px; line-height: 1.75;
+    margin: 0 0 28px; text-align: right;
+  }
+  .socials { display: flex; gap: 10px; }
+  .socials a {
+    width: 40px; height: 40px;
+    border: 1px solid rgba(232,192,96,0.4);
+    display: grid; place-items: center;
+    color: var(--gold);
+    transition: all .2s;
+  }
+  .socials a:hover { border-color: var(--gold); background: rgba(232,192,96,0.15); color: var(--gold); }
+  .footer-col h5 {
+    font-family: 'FS Albert Arabic', sans-serif; font-weight: 700;
+    font-size: 12.5px; letter-spacing: 0.04em;
+    color: var(--gold); margin: 0 0 24px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(232,192,96,0.30);
+    position: relative;
+  }
+  .footer-col h5::after {
+    content: ""; position: absolute; right: 0; bottom: -2px;
+    width: 48px; height: 2px; background: var(--gold);
+  }
+  .footer-col ul { list-style: none; padding: 0; margin: 0; }
+  .footer-col li { margin-bottom: 14px; }
+  .footer-col a { color: rgba(255,255,255,0.7); font-size: 14.4px; transition: color .2s; }
+  .footer-col a:hover { color: var(--gold); }
+  .footer-contact p {
+    color: rgba(255,255,255,0.7); font-size: 14.4px; line-height: 1.85;
+    margin: 0 0 14px; text-align: right;
+  }
+  .footer-bottom {
+    max-width: 1280px; margin: 56px auto 0;
+    padding-top: 24px;
+    border-top: 1px solid rgba(232,192,96,0.28);
+    display: flex; justify-content: space-between;
+    color: rgba(255,255,255,0.55); font-size: 13.2px;
+    position: relative;
+  }
+
+  /* ======= TWEAKS-aware accents ======= */
+  body.theme-emerald { --gold: #6ECEB2; --gold-d: #4FA68A; }
+  body.theme-crimson { --gold: #D77260; --gold-d: #B25844; }
+  body.dense section { padding-top: 64px; padding-bottom: 64px; }
+
+  @media (max-width: 1280px) {
+    section, header.site .row, .stats-bar, .speakers, .news, .goals, .archive, footer.site, .countdown { padding-left: 64px; padding-right: 64px; }
+    h1.hero-title { font-size: 56px !important; }
+    .hero-content { padding-left: 0; padding-right: 48px; }
+    .footer-grid { grid-template-columns: 1fr 1fr; }
+    .speakers-grid { grid-template-columns: repeat(2, 1fr); }
+    .archive-grid { grid-template-columns: 1fr; }
+    .stats-grid, .stats-bar-grid { grid-template-columns: repeat(2, 1fr); }
+    .pillars-grid, .sessions-grid, .news-grid { grid-template-columns: 1fr; }
+    .goals-row { grid-template-columns: 1fr; }
+  }
+
+  /* ===== PAGE LOADER ===== */
+  .page-loader {
+    position: fixed; inset: 0; z-index: 99999;
+    background: var(--navy-dd, #001640);
+    display: grid; place-items: center;
+    transition: opacity .7s ease, visibility .7s ease;
+  }
+  .page-loader.gone { opacity: 0; visibility: hidden; pointer-events: none; }
+  .page-loader-inner {
+    display: flex; flex-direction: column; align-items: center; gap: 32px;
+  }
+  .page-loader-logo {
+    height: 96px; width: auto; display: block;
+    opacity: 0; animation: pl-fade .9s cubic-bezier(.22,.61,.36,1) .15s forwards;
+  }
+  .page-loader-bar {
+    width: 160px; height: 1px;
+    background: rgba(255,255,255,0.12);
+    overflow: hidden; position: relative;
+  }
+  .page-loader-bar span {
+    display: block; height: 100%; width: 40%;
+    background: #ffffff;
+    animation: pl-slide 1.4s cubic-bezier(.65,0,.35,1) infinite;
+  }
+  @keyframes pl-fade {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+  }
+  @keyframes pl-slide {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(400%); }
+  }
+  body.lang-en .page-loader-bar span { animation-name: pl-slide-en; }
+  @keyframes pl-slide-en {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(400%); }
+  }
+
+  /* ===== LANG: EN — flip every RTL-aligned text block to LTR ===== */
+  body.lang-en [style*="text-align:right"],
+  body.lang-en [style*="text-align: right"] { text-align: left !important; }
+  body.lang-en .hero-tag,
+  body.lang-en .hero-meta,
+  body.lang-en .hero-eyebrow,
+  body.lang-en .pillars .section-head.right,
+  body.lang-en .pillar-row,
+  body.lang-en .pillar-row h3,
+  body.lang-en .pillar-row p,
+  body.lang-en .session-row,
+  body.lang-en .session-row h3,
+  body.lang-en .session-row .desc,
+  body.lang-en .session-tag,
+  body.lang-en .speaker h4,
+  body.lang-en .speaker .role,
+  body.lang-en .speaker .org,
+  body.lang-en .news-head-row .section-head,
+  body.lang-en .news-card .news-body,
+  body.lang-en .news-card h3,
+  body.lang-en .news-card p,
+  body.lang-en .goals-text,
+  body.lang-en .goals-text h2,
+  body.lang-en .goal-body h4,
+  body.lang-en .goal-body p,
+  body.lang-en .archive-detail h4,
+  body.lang-en .archive-detail .date,
+  body.lang-en .archive-detail .desc,
+  body.lang-en .footer-cta-text,
+  body.lang-en .footer-cta-form input,
+  body.lang-en .footer-brand p,
+  body.lang-en .footer-col h5,
+  body.lang-en .footer-contact p,
+  body.lang-en .stats-bar h3,
+  body.lang-en .about p,
+  body.lang-en .speakers p,
+  body.lang-en .partners p,
+  body.lang-en .stats-slider .section-head p { text-align: left !important; }
+
+  /* End-aligned items in lang-en (e.g. arrows after labels, session tag dashes) */
+  body.lang-en .session-tag { align-self: flex-start; }
+  body.lang-en .session-link { align-self: flex-start; }
+  body.lang-en .footer-col h5::after { right: auto !important; left: 0; }
+
+  /* Hero layout */
+  body.lang-en .hero-content { padding-left: 96px; padding-right: 0; }
+  body.lang-en .hero-cta { justify-content: flex-end !important; flex-direction: row-reverse; }
+  body.lang-en .btn .arr { transform: scaleX(-1); display: inline-block; }
+
+  /* Pillars: align dividers correctly in LTR (no special change needed because
+     border-left already maps to "start side" visually; on RTL it was right). */
+
+  /* Section-head.right (pillars) sits on the right via margin-left: auto in RTL.
+     In LTR push it to the left. */
+  body.lang-en .pillars .section-head.right { margin: 0 auto 48px 0 !important; }
+
+  /* Session card overlays: flip badge and label to the left in LTR */
+  body.lang-en .session-img .num-badge { right: auto !important; left: 0; }
+  body.lang-en .session-img .img-label { right: auto !important; left: 24px; }
+
+  /* Progress fill should grow from the left in LTR */
+  body.lang-en .progress-fill { right: auto !important; left: 0; }
+
+  /* Footer-cta row: text + form layout — keep grid order natural */
+  body.lang-en .footer-cta-form input { text-align: left !important; }
+  body.lang-en .news-head-row { /* default flex order is fine in LTR */ }
+  body.lang-en .all-link-mobile { margin-left: 0 !important; margin-right: 0 !important; }
+
+  /* Speakers marquee: direction stays LTR (already set) */
+
+  /* ===== MOBILE NAV TOGGLE ===== */
+  .nav-toggle {
+    display: none; width: 40px; height: 40px; padding: 0;
+    border: 1px solid var(--line); background: white; cursor: pointer;
+    border-radius: 4px; align-items: center; justify-content: center;
+    flex-direction: column; gap: 5px;
+  }
+  .nav-toggle span {
+    display: block; width: 18px; height: 2px;
+    background: var(--navy); transition: transform .25s, opacity .2s;
+  }
+  .nav-toggle.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .nav-toggle.open span:nth-child(2) { opacity: 0; }
+  .nav-toggle.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  @media (max-width: 1024px) {
+    section,
+    header.site .row,
+    .about, .stats-bar, .sessions, .speakers, .partners, .news, .goals, .archive, .footer-cta,
+    footer.site, .countdown {
+      padding-left: 40px !important; padding-right: 40px !important;
+    }
+    .speakers .section-head { padding-left: 0 !important; padding-right: 0 !important; }
+    nav.main { gap: 20px; }
+    nav.main a { font-size: 13px; }
+    .hero-content { padding: 120px 40px 48px !important; }
+    h1.hero-title { font-size: 44px !important; }
+    .pillars-stack { grid-template-columns: repeat(2, 1fr); }
+    .pillar-row { grid-column: span 1 !important; border-left: 1px solid var(--line) !important; }
+    .pillar-row:nth-child(2n) { border-left: none !important; }
+    .sessions-list { grid-template-columns: 1fr 1fr !important; gap: 20px !important; }
+    .footer-grid { grid-template-columns: 1fr 1fr; gap: 40px; }
+    .footer-cta-row { grid-template-columns: 1fr !important; gap: 24px; }
+    .news-head-row { flex-wrap: wrap; gap: 16px; }
+    .archive-detail { grid-template-columns: 1fr !important; gap: 32px !important; }
+    .archive-detail .big-y { font-size: 140px !important; }
+    .slide { padding: 40px 32px !important; min-height: auto !important; grid-template-columns: minmax(140px, auto) 1fr !important; gap: 32px !important; }
+    .slide-num { font-size: 44px !important; padding-inline-end: 28px !important; }
+    .slider-controls { padding: 16px 32px !important; }
+    .spirit-grid {
+      grid-template-columns: 1fr 1fr !important;
+      grid-template-rows: 260px 260px 260px !important;
+    }
+    .spirit-card:nth-child(1) { grid-row: 1 / span 1 !important; grid-column: 1 / span 2 !important; }
+  }
+
+  @media (max-width: 768px) {
+    /* hamburger nav */
+    .nav-toggle { display: inline-flex; }
+    nav.main {
+      display: none; position: fixed; top: 72px; right: 0; left: 0;
+      background: rgba(255,255,255,0.98); backdrop-filter: blur(14px);
+      flex-direction: column !important; padding: 20px 24px; gap: 14px !important;
+      border-bottom: 1px solid var(--line); box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+      z-index: 99;
+    }
+    nav.main.open { display: flex; }
+    nav.main a.active::after { display: none; }
+
+    /* Universal section padding override */
+    section,
+    header.site .row,
+    .about, .stats-bar, .stats-slider, .sessions, .speakers, .partners, .news, .goals, .archive, .footer-cta,
+    footer.site, .countdown {
+      padding-left: 20px !important; padding-right: 20px !important;
+    }
+    .about, .pillars, .sessions, .speakers, .partners, .news, .goals, .archive, .footer-cta, .stats-slider {
+      padding-top: 64px !important; padding-bottom: 64px !important;
+    }
+    footer.site { padding-top: 48px !important; padding-bottom: 24px !important; }
+    .stats-bar { padding-top: 48px !important; padding-bottom: 48px !important; }
+    .partners { padding-bottom: 0 !important; }
+    .speakers .section-head { padding-left: 0 !important; padding-right: 0 !important; }
+
+    header.site { height: 72px; }
+    .logo-img img { height: 44px !important; }
+
+    /* Hero — stack ALL content at bottom of viewport */
+    .hero { height: auto !important; min-height: 100vh !important; }
+    .hero-content {
+      padding: 96px 20px 40px !important; min-height: 100vh; box-sizing: border-box;
+      display: flex !important; flex-direction: column !important;
+      justify-content: flex-end !important; gap: 20px;
+    }
+    .hero-top, .hero-bot { flex-wrap: wrap; gap: 16px; }
+    .hero-top { display: block !important; padding-bottom: 0 !important; }
+    .hero-top-brand {
+      display: block !important;
+      width: 100% !important;
+      gap: 12px !important;
+    }
+    .hero-logo {
+      height: 92px !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      display: block !important;
+      margin: 0 !important;
+      object-fit: contain !important;
+    }
+    html[dir="rtl"] .hero-logo { object-position: right center !important; }
+    html[dir="ltr"] .hero-logo { object-position: left center !important; }
+    .hero-eyebrow {
+      display: flex !important;
+      width: max-content !important; max-width: 100% !important;
+      margin-inline-start: 0 !important;
+      margin-inline-end: auto !important;
+      margin-bottom: 0 !important;
+    }
+    .hero-bot { flex-direction: column; align-items: stretch !important; margin-top: 16px !important; }
+    h1.hero-title { font-size: 30px !important; line-height: 1.3 !important; }
+    .hero-tag { font-size: 14px !important; max-width: 100% !important; }
+    .hero-meta { margin-bottom: 28px !important; padding-top: 14px !important; max-width: 100% !important; }
+    .hero-meta .date { font-size: 24px !important; }
+    .hero-meta .venue { font-size: 13px !important; }
+    .hero-side { display: none !important; }
+    .hero-cd-strip { flex-wrap: wrap; padding: 14px 0; gap: 0; width: 100%; }
+    .hero-cd-cell { padding: 8px 4px !important; min-width: 0 !important; flex: 1 1 20%; border-left: 1px solid rgba(255,255,255,0.12) !important; }
+    .hero-cd-cell:first-child { padding-left: 4px !important; }
+    .hero-cd-cell .v { font-size: 22px !important; }
+    .hero-cd-cell .l { font-size: 10px; }
+    .hero-cta { flex-direction: column !important; align-items: stretch !important; gap: 10px; }
+    .hero-cta .btn { width: 100%; justify-content: center; }
+
+    /* Section heads */
+    .section-head, .section-head.right { padding: 0 !important; max-width: 100% !important; margin: 0 auto 32px !important; }
+    .section-head h2, .section-head h2[style] { font-size: 24px !important; line-height: 1.35 !important; }
+    .section-head p, .section-head p[style] { font-size: 14px !important; }
+    .eyebrow { font-size: 11px !important; margin-bottom: 16px; }
+
+    /* About */
+    .about-card { padding: 0; }
+    .about-img { width: 100% !important; height: 240px !important; }
+
+    /* Pillars - 1 column */
+    .pillars-stack { grid-template-columns: 1fr !important; }
+    .pillar-row, .pillar-row:nth-child(n) { grid-column: span 1 !important; border-left: none !important; min-height: auto !important; padding: 24px 20px !important; }
+
+    /* Stats slider - reflow */
+    .slide { flex-direction: column-reverse !important; padding: 32px 20px !important; min-height: auto !important; gap: 20px; align-items: flex-start !important; }
+    .slide { grid-template-columns: 1fr !important; gap: 16px !important; padding: 32px 20px !important; }
+    .slide-num { font-size: 40px !important; padding-inline-end: 0 !important; border-inline-end: none !important; padding-bottom: 14px; border-bottom: 1px solid rgba(232,192,96,0.28); }
+    .slide-label { padding: 0 !important; max-width: 100% !important; }
+    .slide-label .txt { font-size: 16px !important; }
+    .slider-controls { padding: 14px 20px !important; flex-wrap: wrap; gap: 12px !important; }
+    .slider-strip { margin-top: 32px !important; }
+
+    /* Stats bar */
+    .stats-bar-grid { grid-template-columns: 1fr 1fr !important; gap: 16px !important; }
+    .stats-bar h3 { font-size: 18px !important; line-height: 1.5 !important; }
+    .stat-cell { padding: 24px 12px !important; }
+    .stat-cell .v { font-size: 36px !important; }
+
+    /* Sessions */
+    .sessions-list { grid-template-columns: 1fr !important; gap: 20px !important; }
+    .session-img { height: 200px !important; }
+    .session-body { padding: 24px 20px !important; }
+    .session-row h3 { font-size: 18px !important; }
+    .session-row .desc { font-size: 13.5px !important; }
+
+    /* Speakers */
+    .speakers-track-wrap { margin-top: 32px !important; }
+    .speaker { width: 220px !important; }
+
+    /* News */
+    .news-grid { grid-template-columns: 1fr !important; gap: 24px !important; }
+    .news-head-row { flex-direction: column; align-items: center !important; gap: 12px !important; margin-bottom: 32px !important; }
+    .news-head-row .section-head { text-align: center !important; }
+    .news-head-row .eyebrow { justify-content: center; margin-left: auto; margin-right: auto; }
+    .news-head-row .all-link { display: none !important; }
+    .all-link-mobile { display: block !important; }
+
+    /* Goals */
+    .goals-row { grid-template-columns: 1fr !important; gap: 32px !important; }
+    .goal-item { padding: 20px 0 !important; gap: 14px !important; }
+    .goal-body h4 { font-size: 15px !important; }
+    .goal-body p { font-size: 13px !important; }
+
+    /* Archive */
+    .archive-years { grid-template-columns: repeat(4, 1fr) !important; }
+    .archive-year-tab .y { font-size: 22px !important; }
+    .archive-detail { grid-template-columns: 1fr !important; gap: 24px !important; margin-top: 40px !important; }
+    .archive-detail .big-y { font-size: 96px !important; }
+    .archive-detail h4 { font-size: 22px !important; }
+    .archive-detail .desc { font-size: 14px !important; line-height: 1.7 !important; }
+
+    /* Footer CTA */
+    .footer-cta-row { grid-template-columns: 1fr !important; gap: 20px !important; }
+    .footer-cta-text h3 { font-size: 22px !important; }
+    .footer-cta-form { flex-direction: column !important; min-width: 0 !important; width: 100%; gap: 0; }
+    .footer-cta-form input, .footer-cta-form button { width: 100% !important; padding: 14px 16px !important; }
+
+    /* Footer */
+    .footer-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
+    .footer-bottom { flex-direction: column; gap: 8px; text-align: center; padding-top: 24px !important; }
+
+    /* Saudi Spirit */
+    .saudi-spirit { padding: 64px 20px !important; }
+    .saudi-spirit .section-head h2 { font-size: 26px !important; }
+    .spirit-grid {
+      grid-template-columns: 1fr !important;
+      grid-template-rows: repeat(5, 260px) !important;
+      gap: 16px !important;
+    }
+    .spirit-card:nth-child(1) { grid-row: auto !important; grid-column: 1 / -1 !important; }
+    .spirit-card h3 { font-size: 19px !important; }
+    .spirit-card:nth-child(1) h3 { font-size: 22px !important; }
+
+    .btn { padding: 12px 20px !important; font-size: 13.5px !important; }
+    .all-link { font-size: 13px; }
+  }
+
+  @media (max-width: 480px) {
+    h1.hero-title { font-size: 26px !important; }
+    .hero-cd-cell .v { font-size: 18px !important; }
+    .hero-cd-cell .l { font-size: 9px !important; letter-spacing: 0; }
+    .hero-eyebrow { font-size: 10px !important; }
+    .section-head h2 { font-size: 21px !important; }
+    .footer-cta-text h3 { font-size: 19px !important; }
+    .speaker { width: 200px !important; }
+    .slide-num { font-size: 32px !important; }
+    .archive-years { grid-template-columns: repeat(4, 1fr) !important; gap: 4px; }
+    .archive-year-tab .y { font-size: 18px !important; }
+    .archive-detail .big-y { font-size: 72px !important; }
+    .stat-cell .v { font-size: 30px !important; }
+  }
+
+  /* ===== Skeleton loading — shown in the dynamic sections while the
+     /content/site feed is in flight, so the page never flashes the built-in
+     sample data. Replaced by real content (or the offline fallback) once the
+     fetch resolves. ===== */
+  @keyframes simf-skeleton-shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+  .skeleton {
+    background: linear-gradient(
+      100deg,
+      rgba(140,140,150,0.12) 30%,
+      rgba(232,192,96,0.28) 50%,
+      rgba(140,140,150,0.12) 70%);
+    background-size: 200% 100%;
+    animation: simf-skeleton-shimmer 1.4s ease-in-out infinite;
+    border-radius: 8px;
+    pointer-events: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton { animation: none; }
+  }
+  .skel-line { height: 12px; margin: 9px 0; display: block; }
+  .skel-line.sm { width: 42%; }
+  .skel-line.md { width: 70%; }
+  .skel-line.lg { width: 92%; }
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div class="page-loader" id="pageLoader">
+  <div class="page-loader-inner">
+    <img class="page-loader-logo" data-cms-img="brand.loaderLogo" src="assets/logo-simf.png" alt="SIMF">
+    <div class="page-loader-bar"><span></span></div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header class="site">
+  <div class="row">
+    <a href="#" class="logo logo-img">
+      <img data-cms-img="brand.logo" data-cms-attr="alt:brand.logoAlt" src="assets/logo-simf.png" alt="الملتقى البحري السعودي الدولي" />
+    </a>
+    <nav class="main" id="navMain">
+      <a href="#" class="active" data-i18n="nav_home">الرئيسية</a>
+      <a href="#about" data-i18n="nav_about">حول</a>
+      <a href="#program" data-i18n="nav_program">البرنامج</a>
+      <a href="#speakers" data-i18n="nav_speakers">المتحدثين</a>
+      <a href="#discover" data-i18n="nav_discover">اكتشف السعودية</a>
+      <a href="#archive" data-i18n="nav_archive">الأرشيف</a>
+      <a href="#contact" data-i18n="nav_contact">تواصل معنا</a>
+    </nav>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <button class="lang-btn" id="langBtn" aria-label="تغيير اللغة">EN</button>
+      <button class="nav-toggle" id="navToggle" aria-label="القائمة" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero" style="padding:0">
+  <div class="hero-bg">
+    <video data-cms-attr="src:hero.backgroundVideo" autoplay muted loop playsinline webkit-playsinline preload="metadata" poster="assets/hero-aerial.jpg" disablepictureinpicture controlsList="nodownload nofullscreen noremoteplayback" src="assets/hero-video.mp4"></video>
+  </div>
+
+  <div class="hero-content">
+    <div class="hero-mid">
+      <img class="hero-logo" data-cms-img="brand.heroLogo" src="assets/logo-simf.png" alt="SIMF" style="margin-bottom: 28px; align-self: flex-start;">
+      <h1 class="hero-title" style="font-size: 64px"><span data-cms="hero.titleStart">مستقبل أمن</span> <span data-cms="hero.titleHighlight">قاع البحار</span><br><span data-cms="hero.titleEnd">وسلاسل الإمداد العالميّة</span></h1>
+      <p class="hero-tag" data-cms="hero.tagline">
+        منصّة سعوديّة عالميّة تجمع القادة وصنّاع القرار والخبراء لاستشراف
+        مستقبل الأمن البحري وحماية الممرّات الحيوية في ظل التحولّات الجيوسياسيّة والتقنيّة المتسارعة.
+      </p>
+      <div class="hero-meta">
+        <span class="date num" data-cms="hero.metaDate">23 — 25 نوفمبر 2026</span>
+        <span class="venue" data-cms="hero.metaVenue">فندق ومركز مؤتمرات سوفيتيل الرياض</span>
+      </div>
+      <div class="hero-cta" style="align-items: flex-start; justify-content: flex-start">
+        <button class="btn btn-ghost"><span data-cms="hero.ctaSecondary">تصفّح البرنامج</span></button>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- COUNTDOWN moved into hero -->
+
+<!-- ABOUT -->
+<section class="about" id="about">
+  <div class="section-head">
+    <div class="eyebrow"><span class="num">01 ─</span><span class="lbl" data-i18n="about_eyebrow" data-cms="about.eyebrow">حول الملتقى</span></div>
+    <h2 data-i18n="about_h2" data-cms="about.h2">منصة سعودية عالمية لدعم الحوار والتعاون في قضايا الأمن البحري</h2>
+    <p data-i18n="about_p1" data-cms="about.p1">
+      الملتقى البحري السعودي الدولي حدث رفيع المستوى يجمع القادة والمسؤولين والخبراء لتبادل التجارب والخبرات،
+      وتعزيز فهم عالمي مشترك لمستقبل الأمن البحري في ظل التحولات الجيوسياسية والتقنية المتسارعة.
+    </p>
+    <p style="font-size:15px;color:rgba(0,22,64,0.65);margin-top:16px" data-i18n="about_p2" data-cms="about.p2">
+      يعكس الملتقى الدور الاستراتيجي للمملكة العربية السعودية في ترسيخ استقرار البحار ودعم استدامة الاقتصاد العالمي،
+      عبر منظومة متكاملة لحماية قاع البحار ورفع كفاءة سلاسل إمداد الطاقة والتجارة.
+    </p>
+  </div>
+  <div class="about-card">
+    <div class="about-img"></div>
+  </div>
+</section>
+
+<!-- STATS SLIDER -->
+<section class="stats-slider">
+  <div class="section-head dark">
+    <div class="eyebrow"><span class="num">02 ─</span><span class="lbl" data-i18n="stats_eyebrow" data-cms="stats.eyebrow">المشهد العالمي</span></div>
+    <p style="color:rgba(255,255,255,0.85)" data-i18n="stats_intro" data-cms="stats.intro">
+      يشهد العالم تحولات غير مسبوقة في أمن البحار، ومع تصاعد التهديدات التي تطال سلاسل الإمداد العالمية،
+      يبرز أمن قاع البحار كأولوية دولية ملحة لتعزيز استقرار البحار وضمان استدامة الاقتصاد العالمي.
+    </p>
+  </div>
+
+  <div class="insights-marquee" id="insightsMarquee">
+    <div class="insights-track" id="insightsTrack"></div>
+  </div>
+</section>
+
+<!-- STATS BAR -->
+<section class="stats-bar">
+  <h3 data-i18n="stats_h3" data-cms="stats.h3">مسار متدرج يواكب تحولات الأمن البحري العالمي</h3>
+  <div class="stats-bar-grid">
+    <div class="stat-cell"><div class="v num" data-cms="stats.count1">500</div><div class="l" data-i18n="stats_countries" data-cms="stats.label1">دولة مشاركة</div></div>
+    <div class="stat-cell"><div class="v num" data-cms="stats.count2">220</div><div class="l" data-i18n="stats_leaders" data-cms="stats.label2">قائد ومسؤول</div></div>
+    <div class="stat-cell"><div class="v num" data-cms="stats.count3">100</div><div class="l" data-i18n="stats_speakers" data-cms="stats.label3">متحدث دولي</div></div>
+    <div class="stat-cell"><div class="v num" data-cms="stats.count4">40</div><div class="l" data-i18n="stats_sessions" data-cms="stats.label4">جلسة وحوار</div></div>
+  </div>
+</section>
+
+<!-- GOALS -->
+<section class="goals">
+  <div class="goals-row">
+    <div class="goals-text">
+      <div class="eyebrow"><span class="num">08 ─</span><span class="lbl" data-i18n="goals_eyebrow" data-cms="goals.eyebrow">أهداف الملتقى</span></div>
+      <h2 data-i18n="goals_h2" data-cms="goals.h2">أهداف طموحة</h2>
+      <p data-i18n="goals_p" data-cms="goals.p">
+        تعزيز منظومة أمن بحري متكاملة تدعم الجهود الدولية لحماية قاع البحار ورفع كفاءة سلاسل
+        الإمداد، بما يسهم في استقرار الاقتصاد العالمي ويتّسق مع مستهدفات رؤية المملكة 2030.
+      </p>
+      <button class="btn btn-gold">
+        <span data-i18n="goals_btn" data-cms="goals.btn">تصفّح الأهداف الكاملة</span>
+        <span class="arr">←</span>
+      </button>
+    </div>
+    <div class="goals-list">
+      <div class="goal-item">
+        <div class="goal-num num">01</div>
+        <div class="goal-body">
+          <h4 data-i18n="goal1_t" data-cms="goals.item1.t">تعزيز الأمن البحري الإقليمي والدولي</h4>
+          <p data-i18n="goal1_d" data-cms="goals.item1.d">توحيد الجهود لحماية الممرّات البحرية الحيويّة وضمان استقرار حركة الملاحة العالميّة.</p>
+        </div>
+      </div>
+      <div class="goal-item">
+        <div class="goal-num num">02</div>
+        <div class="goal-body">
+          <h4 data-i18n="goal2_t" data-cms="goals.item2.t">حماية البنية التحتيّة تحت السطح</h4>
+          <p data-i18n="goal2_d" data-cms="goals.item2.d">صون الكابلات وخطوط الطاقة والأنابيب التي تربط الاقتصاد العالمي تحت قاع البحار.</p>
+        </div>
+      </div>
+      <div class="goal-item">
+        <div class="goal-num num">03</div>
+        <div class="goal-body">
+          <h4 data-i18n="goal3_t" data-cms="goals.item3.t">رفع كفاءة سلاسل الإمداد</h4>
+          <p data-i18n="goal3_d" data-cms="goals.item3.d">تطوير منظومات الموانئ والممرّات وأنظمة الشحن لرفع المرونة وتقليل المخاطر.</p>
+        </div>
+      </div>
+      <div class="goal-item">
+        <div class="goal-num num">04</div>
+        <div class="goal-body">
+          <h4 data-i18n="goal4_t" data-cms="goals.item4.t">تبادل المعرفة وبناء القدرات</h4>
+          <p data-i18n="goal4_d" data-cms="goals.item4.d">توسيع منصّة المعرفة بين القادة والخبراء لصقل الكوادر الوطنيّة والدوليّة.</p>
+        </div>
+      </div>
+      <div class="goal-item">
+        <div class="goal-num num">05</div>
+        <div class="goal-body">
+          <h4 data-i18n="goal5_t" data-cms="goals.item5.t">الإسهام في تحقيق رؤية 2030</h4>
+          <p data-i18n="goal5_d" data-cms="goals.item5.d">تعزيز موقع المملكة قطبًا عالميًّا في الأمن البحري والاقتصاد الأزرق.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PILLARS -->
+<section class="pillars" id="program">
+  <div class="section-head right">
+    <div class="eyebrow"><span class="num">03 ─</span><span class="lbl" data-i18n="pillars_eyebrow" data-cms="pillars.eyebrow">المحاور الرئيسية</span></div>
+    <h2 style="text-align:right" data-i18n="pillars_h2" data-cms="pillars.h2">المحاور الرئيسية</h2>
+    <p style="text-align:right" data-i18n="pillars_p" data-cms="pillars.p">
+      لصياغة رؤية استراتيجية شاملة تعالج منظومات الطاقة والتجارة والاتصال بين السطح والأعماق
+      عبر خمسة محاور رئيسية تشكل ركائز الأمن البحري واستقرار الاقتصاد العالمي.
+    </p>
+  </div>
+  <div class="pillars-stack" id="pillarsStack"></div>
+</section>
+
+<!-- SESSIONS -->
+<section class="sessions">
+  <div class="section-head">
+    <div class="eyebrow"><span class="num">04 ─</span><span class="lbl" data-i18n="sessions_eyebrow">الجلسات الرئيسية</span></div>
+    <h2 data-i18n="sessions_h2">الجلسات الرئيسية</h2>
+  </div>
+  <div class="sessions-grid" id="sessionsGrid"></div>
+</section>
+
+<!-- SPEAKERS -->
+<section class="speakers" id="speakers">
+  <div class="section-head">
+    <div class="eyebrow"><span class="num">05 ─</span><span class="lbl" data-i18n="speakers_eyebrow">المتحدثين والمشاركين</span></div>
+    <h2 data-i18n="speakers_h2">أبرز المتحدثين والمشاركين</h2>
+    <p data-i18n="speakers_p">
+      يشارك في الملتقى نخبة من القادة السعوديين والدوليين وصنّاع القرار والخبراء،
+      بما يعكس دور المملكة الريادي في تشكيل توجهات الأمن البحري وتعزيز التعاون الدولي.
+    </p>
+  </div>
+  <div class="speakers-track-wrap">
+    <div class="speakers-track" id="speakersGrid"></div>
+  </div>
+</section>
+
+<!-- PARTNERS -->
+<section class="partners">
+  <div class="section-head">
+    <div class="eyebrow"><span class="num">06 ─</span><span class="lbl" data-i18n="partners_eyebrow">الشركاء والرعاة</span></div>
+    <h2 data-i18n="partners_h2">الشركاء والرعاة</h2>
+    <p data-i18n="partners_p">
+      يحظى الملتقى بدعم ومشاركة جهات حكومية ومؤسسات وطنية ودولية تسهم بخبراتها في تعزيز حضور المملكة
+      ضمن منظومة الأمن البحري العالمي.
+    </p>
+  </div>
+  <div class="partners-strip">
+    <div class="partners-track" id="partnersTrack"></div>
+  </div>
+</section>
+
+<!-- NEWS -->
+<section class="news" id="news">
+  <div class="news-wrap">
+    <div class="news-head-row">
+      <div class="section-head" style="margin-bottom:0">
+        <div class="eyebrow"><span class="num">07 ─</span><span class="lbl" data-i18n="news_eyebrow">المركز الإعلامي</span></div>
+        <h2 data-i18n="news_h2">آخر الأخبار</h2>
+      </div>
+      <a class="all-link" href="#" data-i18n="news_all">جميع الأخبار ←</a>
+    </div>
+    <div class="news-grid" id="newsGrid"></div>
+    <a class="all-link all-link-mobile" href="#" data-i18n="news_all">جميع الأخبار ←</a>
+  </div>
+</section>
+
+<!-- ARCHIVE -->
+<section class="archive" id="archive">
+  <div class="section-head dark">
+    <div class="eyebrow"><span class="num">09 ─</span><span class="lbl" data-i18n="archive_eyebrow">الأرشيف</span></div>
+    <h2 style="color:white" data-i18n="archive_h2">محطات مفصلية في تطور أجندة الأمن البحري العالمي</h2>
+  </div>
+  <div class="archive-tl">
+    <div class="archive-years" id="archiveYears"></div>
+    <div class="archive-detail" id="archiveDetail"></div>
+  </div>
+</section>
+
+<!-- ARCHIVE — per-year detail page (mockup 24-01) -->
+<div class="archive-page" id="archivePage" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="archive-page__bar">
+    <button type="button" class="archive-page__back" id="archivePageBack">‹ <span data-i18n="archive_back">رجوع</span></button>
+    <div class="archive-page__bartitle" id="archivePageBarTitle"></div>
+  </div>
+  <div class="archive-page__cover"><div class="big-year num" id="archivePageYear"></div></div>
+  <div class="archive-page__body" id="archivePageBody"></div>
+</div>
+
+<!-- SAUDI SPIRIT (الروح السعودي) -->
+<section class="saudi-spirit" id="discover">
+  <div class="section-head">
+    <div class="eyebrow"><span class="num">10 ─</span><span class="lbl" data-i18n="spirit_eyebrow">اكتشف السعودية</span></div>
+    <h2 data-i18n="spirit_h2">روح السعوديّة <span class="accent">في رحلتك</span></h2>
+    <p data-i18n="spirit_p">
+      تمتدّ تجربة الزائر إلى ما هو أبعد من قاعات الملتقى — تكشف لك المملكة عن أصالتها وحداثتها معًا،
+      من الواحات والتراث إلى المعالم الحديثة والمدن المستقبليّة.
+    </p>
+  </div>
+
+  <div class="spirit-grid">
+    <div class="spirit-card">
+      <div class="spirit-img" data-spirit-img="0"></div>
+      <div class="spirit-content">
+        <span class="spirit-tag" data-i18n="spirit_tag_heritage">التراث · العُلا</span>
+        <h3 data-i18n="spirit_t1">العُلا — مهد الحضارات</h3>
+        <p data-i18n="spirit_d1">مدائن صالح والممرّات الصخريّة الشهيرة، حيث يلتقي التاريخ النبطيّ بسحر الصحراء.</p>
+        <span class="spirit-meta" data-i18n="spirit_m1">شمال غرب المملكة · موقع تراث عالميّ</span>
+      </div>
+    </div>
+
+    <div class="spirit-card">
+      <div class="spirit-img" data-spirit-img="1"></div>
+      <div class="spirit-content">
+        <span class="spirit-tag" data-i18n="spirit_tag_modern">العاصمة · الرياض</span>
+        <h3 data-i18n="spirit_t2">الرياض</h3>
+        <p data-i18n="spirit_d2">عاصمة تنبض بالتطوّر — من المراكز الماليّة إلى حيّ السفارات والمناطق الترفيهيّة.</p>
+      </div>
+    </div>
+
+    <div class="spirit-card">
+      <div class="spirit-img" data-spirit-img="2"></div>
+      <div class="spirit-content">
+        <span class="spirit-tag" data-i18n="spirit_tag_history">البحر الأحمر · جدّة</span>
+        <h3 data-i18n="spirit_t3">جدّة التاريخيّة</h3>
+        <p data-i18n="spirit_d3">عروس البحر الأحمر والبوّابة التاريخيّة للحُجّاج — الواجهة البحريّة والبلد القديم.</p>
+      </div>
+    </div>
+
+    <div class="spirit-card">
+      <div class="spirit-img" data-spirit-img="3"></div>
+      <div class="spirit-content">
+        <span class="spirit-tag" data-i18n="spirit_tag_future">المستقبل · نيوم</span>
+        <h3 data-i18n="spirit_t4">نيوم</h3>
+        <p data-i18n="spirit_d4">المدينة المستقبليّة على البحر الأحمر — رؤية للعيش والتقنية بمعايير لم تُسبَق.</p>
+      </div>
+    </div>
+
+    <div class="spirit-card">
+      <div class="spirit-img" data-spirit-img="4"></div>
+      <div class="spirit-content">
+        <span class="spirit-tag" data-i18n="spirit_tag_island">الجزر · البحر الأحمر</span>
+        <h3 data-i18n="spirit_t5">جزر البحر الأحمر</h3>
+        <p data-i18n="spirit_d5">شواطئ بكر ومنتجعات فاخرة وشِعاب مرجانيّة تكشف الوجه الأزرق للمملكة.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="site">
+  <div class="footer-grid">
+    <div class="footer-col">
+      <h5 data-i18n="ft_useful">روابط تهمك</h5>
+      <ul>
+        <li><a href="#" data-i18n="ft_link1">الهيئة العامة للصناعات العسكرية</a></li>
+        <li><a href="#" data-i18n="ft_link2">الهيئة العامة للتطوير الدفاعي</a></li>
+        <li><a href="#" data-i18n="ft_link3">المحتوى المحلي والمشتريات</a></li>
+        <li><a href="#" data-i18n="ft_link4">الشركة السعودية للصناعات العسكرية</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h5 data-i18n="ft_forum">روابط الملتقى</h5>
+      <ul>
+        <li><a href="#about" data-i18n="ft_about">حول الملتقى</a></li>
+        <li><a href="#program" data-i18n="ft_program">البرنامج</a></li>
+        <li><a href="#speakers" data-i18n="ft_speakers">المتحدثون</a></li>
+        <li><a href="#partners" data-i18n="ft_partners">الشركاء</a></li>
+        <li><a href="#archive" data-i18n="ft_archive">الأرشيف</a></li>
+        <li><a href="#news" data-i18n="ft_news">المركز الإعلامي</a></li>
+        <li><a href="#discover" data-i18n="ft_discover">اكتشف السعودية</a></li>
+      </ul>
+    </div>
+    <div class="footer-col footer-contact">
+      <h5 data-i18n="ft_contact">تواصل معنا</h5>
+      <p data-i18n="ft_addr">3507 الرياض 12341<br>المملكة العربية السعودية</p>
+      <p class="num">📞 920010500</p>
+      <p class="num">✉ info@simforum.mod.gov.sa</p>
+    </div>
+    <div class="footer-brand">
+      <div class="row">
+        <img class="footer-logo-img" data-cms-img="brand.footerLogo" data-cms-attr="alt:brand.logoAlt" src="assets/logo-simf.png" alt="الملتقى البحري السعودي الدولي" style="height:80px; width:auto; display:block;" />
+      </div>
+      <p data-i18n="ft_brand_p">
+        الملتقى البحري السعودي الدولي حدث رفيع المستوى يُعنى باستشراف مستقبل الأمن البحري وحماية الممرات الحيوية
+        وسلاسل الإمداد، ويعكس الدور الاستراتيجي للمملكة في تعزيز أمن البحار وصون البنية التحتية الحيوية.
+      </p>
+      <div class="socials">
+        <a href="#" aria-label="Twitter">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18 4h3l-7 8 8 8h-6l-5-6-6 6H2l8-9L2 4h6l4 5z"/></svg>
+        </a>
+        <a href="#" aria-label="LinkedIn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM3 9h4v12H3zM9 9h4v2c1-1 2-2 4-2 3 0 4 2 4 5v8h-4v-7c0-2-1-3-2-3s-2 1-2 3v7H9z"/></svg>
+        </a>
+        <a href="#" aria-label="YouTube">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 7s-.2-1.4-.8-2c-.7-.8-1.6-.8-2-.9C16 4 12 4 12 4s-4 0-7.2.1c-.4.1-1.3.1-2 .9C2.2 5.6 2 7 2 7S1.8 8.6 1.8 10.2v1.6C1.8 13.4 2 15 2 15s.2 1.4.8 2c.7.8 1.7.8 2.1.9 1.5.1 6.1.2 7.1.2 0 0 4 0 7.2-.2.4-.1 1.3-.1 2-.9.6-.6.8-2 .8-2s.2-1.6.2-3.2v-1.6C22.2 8.6 22 7 22 7zM10 14V8l5 3-5 3z"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span data-i18n="ft_vision">يتسق مع رؤية المملكة 2030</span>
+    <span class="num" data-i18n="ft_rights">© 2026 MOD.RSNF — جميع الحقوق محفوظة</span>
+  </div>
+</footer>
+
+<script>
+  // ============ CONTENT LOADER (defaults + localStorage overrides) ============
+  const siteContent = (window.loadSiteContent && window.loadSiteContent()) || (window.SITE_DEFAULTS || {});
+  window.currentLang = localStorage.getItem('siteLang') || 'ar';
+  // i18n helper for translating leaf CMS fields.
+  // For path "a.b.c" in EN mode, tries siteContent.a.b.c_en first, then falls back to siteContent.a.b.c.
+  function getCmsValue(path) {
+    const parts = path.split('.');
+    if (window.currentLang === 'en') {
+      const last = parts[parts.length - 1];
+      const enPath = parts.slice(0, -1).concat(last + '_en');
+      const v = enPath.reduce((o, k) => (o == null ? o : o[k]), siteContent);
+      if (v != null && v !== '') return v;
+    }
+    return parts.reduce((o, k) => (o == null ? o : o[k]), siteContent);
+  }
+  // Pick an item field by lang: tries `${field}_en` when EN, falls back to field.
+  function pickLang(item, field) {
+    if (!item) return '';
+    if (window.currentLang === 'en' && item[field + '_en'] != null && item[field + '_en'] !== '') return item[field + '_en'];
+    return item[field] != null ? item[field] : '';
+  }
+  // HTML-escape any value before it is interpolated into innerHTML. The dynamic
+  // sections are fed by /content/site, i.e. admin-entered data (speaker/partner
+  // names, session + archive titles/descriptions); without this a stored
+  // "<img src=x onerror=...>" in any of those fields would execute for every
+  // public visitor (stored DOM-XSS). Used for all backend-sourced text + the
+  // user-data attributes (alt, photo src) the renderers below emit.
+  function esc(v) {
+    if (v == null) return '';
+    return String(v)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+  // Inline UI strings used inside dynamic renderers.
+  const UI_STRINGS = {
+    ar: { session_link: 'تفاصيل الجلسة ←', news_more: 'اقرأ المزيد ←' },
+    en: { session_link: 'Session details →', news_more: 'Read more →' },
+  };
+  function uiStr(key) {
+    return (UI_STRINGS[window.currentLang || 'ar'] || UI_STRINGS.ar)[key] || '';
+  }
+  function applyCmsBindings(root) {
+    (root || document).querySelectorAll('[data-cms]').forEach(el => {
+      const v = getCmsValue(el.getAttribute('data-cms'));
+      if (v != null) el.textContent = v;
+    });
+    (root || document).querySelectorAll('[data-cms-img]').forEach(el => {
+      const v = getCmsValue(el.getAttribute('data-cms-img'));
+      // Only set if changed — avoid reloading <video>/<img> on every re-render
+      if (v && el.getAttribute('src') !== v) el.setAttribute('src', v);
+    });
+    (root || document).querySelectorAll('[data-cms-attr]').forEach(el => {
+      el.getAttribute('data-cms-attr').split(',').forEach(pair => {
+        const [attr, path] = pair.split(':').map(s => s.trim());
+        const v = getCmsValue(path);
+        if (v != null && el.getAttribute(attr) !== v) el.setAttribute(attr, v);
+      });
+    });
+  }
+  applyCmsBindings();
+
+  // ============ REMOTE CONTENT — fetch live content from the API via /content/site ============
+  (async function loadRemoteContent() {
+    // Paint the real content (on success) or the built-in fallback (offline),
+    // and flip __contentReady so the gated renderers stop showing skeletons.
+    function finish() {
+      window.__contentReady = true;
+      // Render each section independently — one section throwing on edge data
+      // (e.g. an empty archive) must not abort the rest, which would leave the
+      // other sections stuck on their skeletons and leak an unhandled rejection.
+      const run = (fn) => { try { fn(); } catch (e) { console.warn('[content] render step failed:', e); } };
+      run(() => { if (typeof applyCmsBindings === 'function') applyCmsBindings(); });
+      run(() => { if (typeof renderPillars === 'function') renderPillars(); });
+      run(() => { if (typeof renderSessions === 'function') renderSessions(); });
+      run(() => { if (typeof renderNews === 'function') renderNews(); });
+      run(() => { if (typeof renderPartners === 'function') renderPartners(); });
+      run(() => { if (typeof renderSpirit === 'function') renderSpirit(); });
+      run(() => { if (typeof renderArchiveYears === 'function') renderArchiveYears(); });
+      run(() => { if (typeof paintArch === 'function' && typeof archIdx !== 'undefined' && arch[archIdx]) paintArch(archIdx); });
+      run(() => { if (typeof renderSlide === 'function' && typeof slideIdx !== 'undefined') renderSlide(slideIdx); });
+      run(() => { if (typeof __speakersBuild === 'function') __speakersBuild(); });
+    }
+
+    const remote = window.loadSiteContentRemote
+      ? await window.loadSiteContentRemote()
+      : null;
+
+    if (remote) {
+      // Replace siteContent fields (keep reference)
+      for (const k of Object.keys(remote)) {
+        siteContent[k] = remote[k];
+      }
+      // Sync derived array references (mutate in place so existing closures see updates)
+      if (Array.isArray(remote.archive))   { arch.length = 0;     remote.archive.forEach(x => arch.push(x)); }
+      if (Array.isArray(remote.speakers))  { speakers.length = 0; remote.speakers.forEach(x => speakers.push(x)); }
+      if (Array.isArray(remote.partners))  { partners.length = 0; remote.partners.forEach(x => partners.push(x)); }
+      if (Array.isArray(remote.news))      { newsData.length = 0; remote.news.forEach(x => newsData.push(x)); }
+      if (Array.isArray(remote.spirit))    { spirit.length = 0; remote.spirit.forEach(x => spirit.push(x)); }
+    }
+    // On an unreachable API (remote === null) the arrays keep their built-in
+    // SITE_DEFAULTS — the page degrades to defaults rather than spinning.
+    finish();
+  })();
+
+  // ============ HERO VIDEO — ensure autoplay (mobile-friendly) ============
+  (function ensureHeroVideoPlays() {
+    const v = document.querySelector('.hero-bg video');
+    if (!v) return;
+
+    // Mobile browsers require these properties set programmatically too.
+    v.muted = true;
+    v.defaultMuted = true;
+    v.playsInline = true;
+    v.setAttribute('muted', '');
+    v.setAttribute('playsinline', '');
+    v.setAttribute('webkit-playsinline', '');
+    v.removeAttribute('controls');
+
+    let attempts = 0;
+    const tryPlay = () => {
+      if (!v.paused) return;
+      const p = v.play();
+      if (p && p.catch) p.catch(() => {
+        // First attempt may fail before metadata loads — retry up to 5 times.
+        if (++attempts < 5) setTimeout(tryPlay, 400);
+      });
+    };
+
+    // Try as soon as enough data is available, plus several other events.
+    ['loadeddata','canplay','canplaythrough','loadedmetadata'].forEach(ev =>
+      v.addEventListener(ev, tryPlay, { once: false })
+    );
+    // Kick off load and try immediately (in case it's already cached).
+    try { v.load(); } catch (e) {}
+    tryPlay();
+
+    // Final fallback: any user interaction unlocks playback on iOS.
+    const onInteract = () => {
+      tryPlay();
+      ['touchstart','click','scroll','keydown'].forEach(t =>
+        window.removeEventListener(t, onInteract)
+      );
+    };
+    ['touchstart','click','scroll','keydown'].forEach(t =>
+      window.addEventListener(t, onInteract, { passive: true, once: true })
+    );
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && v.paused) tryPlay();
+    });
+  })();
+
+  // ============ COUNTDOWN ============
+  const target = new Date('2026-11-23T09:00:00+03:00').getTime();
+  function tick() {
+    const now = Date.now();
+    let diff = Math.max(0, target - now);
+    const sec = Math.floor(diff/1000);
+    const months = Math.floor(sec / (60*60*24*30));
+    const rem1 = sec - months*60*60*24*30;
+    const days = Math.floor(rem1 / (60*60*24));
+    const rem2 = rem1 - days*60*60*24;
+    const hours = Math.floor(rem2 / (60*60));
+    const rem3 = rem2 - hours*60*60;
+    const minutes = Math.floor(rem3 / 60);
+    const seconds = rem3 - minutes*60;
+    const map = { months, days, hours, minutes, seconds };
+    document.querySelectorAll('[data-unit]').forEach(el => {
+      const u = el.getAttribute('data-unit');
+      el.textContent = String(map[u]).padStart(2,'0');
+    });
+  }
+  tick(); setInterval(tick, 1000);
+
+  // ============ INSIGHTS MARQUEE ============
+  const slides = [
+    { num: '1.4M',  txt: 'كم من الكابلات البحرية تربط القارات', txt_en: 'kilometres of submarine cables connect the continents' },
+    { num: '95%',   txt: 'من البيانات العالمية تمر عبر الكابلات البحرية', txt_en: 'of global data traffic flows through submarine cables' },
+    { num: '$14T',  txt: 'حجم التجارة البحرية السنوية حول العالم', txt_en: 'annual global maritime trade value' },
+    { num: '12',    txt: 'ممر بحري حيوي تتركز فيه سلاسل الإمداد العالمية', txt_en: 'vital maritime corridors anchor the global supply chains' },
+    { num: '+200',  txt: 'حادث سنوي يستهدف البنية التحتية تحت سطح البحر', txt_en: 'annual incidents target subsea infrastructure' },
+    { num: '40%',   txt: 'من إمدادات الطاقة العالمية تُنقل بحراً', txt_en: 'of global energy supply is moved by sea' },
+    { num: '500K',  txt: 'سفينة تجارية تعبر الممرات البحرية كل عام', txt_en: 'commercial vessels cross maritime corridors every year' },
+    { num: '60%',   txt: 'من احتياطي النفط العالمي يصل أسواقه عبر البحار', txt_en: 'of global oil reserves reach markets via the seas' },
+    { num: '8',     txt: 'شبكات نقل بحرية رئيسية محل تركيز عالمي', txt_en: 'major maritime shipping networks under global focus' },
+    { num: '2030',  txt: 'الأفق الزمني لرؤية المملكة لتعزيز الأمن البحري', txt_en: 'the Kingdom\'s horizon for advancing maritime security' },
+    { num: '+30',   txt: 'دولة تشارك في تنسيق سياسات الأمن البحري', txt_en: 'countries collaborate on maritime-security policy' },
+    { num: '24/7',  txt: 'منظومة رصد متواصلة لحماية الممرات الحيوية', txt_en: 'continuous monitoring to protect vital corridors' },
+  ];
+  function insightCard(s) {
+    return `
+      <div class="insight">
+        <span class="insight-num num">${s.num}</span>
+        <span class="insight-divider"></span>
+        <span class="insight-text">${pickLang(s,'txt')}</span>
+      </div>`;
+  }
+  function renderInsights() {
+    const track = document.getElementById('insightsTrack');
+    if (!track) return;
+    const oneSet = slides.map(insightCard).join('');
+    track.innerHTML = oneSet + oneSet;
+  }
+  renderInsights();
+  // Re-render shim so language toggle keeps working
+  function renderSlide() { renderInsights(); }
+  let slideIdx = 0;
+
+  // ============ PILLARS ============
+  const pillarsData = [
+    { n:'01', t:'حماية قاع البحار', t_en:'Seabed protection', d:'الجهود الدولية لحماية الكابلات والأنابيب وضمان استدامة البنية التحتية تحت سطح البحر.', d_en:'International efforts to protect cables and pipelines and ensure the resilience of subsea infrastructure.', icon:'M3 17 L21 17 M5 17 L5 7 M19 17 L19 7 M9 11 L15 11' },
+    { n:'02', t:'التهديدات على سلاسل إمداد الطاقة', t_en:'Threats to energy supply chains', d:'وأثرها على الاقتصاد العالمي وأمن إمدادات النفط والغاز عبر الممرات البحرية.', d_en:'And their impact on the global economy and the security of oil and gas supplies through maritime corridors.', icon:'M4 12 L8 12 L10 6 L14 18 L16 12 L20 12' },
+    { n:'03', t:'الجهود الدولية في حوكمة أمن وقاع البحار', t_en:'International governance of maritime & seabed security', d:'مراجعة الأطر القانونية والاتفاقيات متعددة الأطراف لتنسيق السياسات البحرية.', d_en:'Reviewing legal frameworks and multilateral agreements to align maritime policies.', icon:'M12 3 L21 8 L21 16 L12 21 L3 16 L3 8 Z M12 3 L12 21' },
+    { n:'04', t:'الحوار الدولي في حوكمة أمن البحار', t_en:'International dialogue on maritime-security governance', d:'في أمن قاع البحار وسلاسل الإمداد عبر منصة جامعة لصناع القرار العالميين.', d_en:'On seabed security and supply chains through a unifying platform for global decision-makers.', icon:'M5 4 L19 4 L19 16 L13 16 L9 20 L9 16 L5 16 Z' },
+    { n:'05', t:'التقنيات الناشئة والذكاء الاصطناعي', t_en:'Emerging technologies & AI', d:'تطبيقات الذكاء الاصطناعي والأنظمة غير المأهولة في تعزيز اليقظة البحرية.', d_en:'Applications of AI and unmanned systems in enhancing maritime situational awareness.', icon:'M12 4 L12 20 M4 12 L20 12 M7 7 L17 17 M17 7 L7 17' },
+  ];
+  const stack = document.getElementById('pillarsStack');
+  function renderPillars() {
+    stack.innerHTML = pillarsData.map((p,i) => `
+      <div class="pillar-row" data-i="${i}">
+        <div class="pr-head">
+          <div class="pr-num num">${String(p.n).padStart(2,'0')}</div>
+        </div>
+        <h3>${pickLang(p,'t')}</h3>
+        <p>${pickLang(p,'d')}</p>
+      </div>`).join('');
+  }
+  renderPillars();
+
+  // ============ SESSIONS — 3 main sessions ============
+  // SVG placeholder generator — local, no network deps
+  function sessionPlaceholder(label, hue1, hue2) {
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 600' preserveAspectRatio='xMidYMid slice'>
+      <defs>
+        <linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
+          <stop offset='0' stop-color='${hue1}'/>
+          <stop offset='1' stop-color='${hue2}'/>
+        </linearGradient>
+        <pattern id='dots' x='0' y='0' width='32' height='32' patternUnits='userSpaceOnUse'>
+          <circle cx='2' cy='2' r='1' fill='rgba(232,192,96,0.25)'/>
+        </pattern>
+      </defs>
+      <rect width='800' height='600' fill='url(%23g)'/>
+      <rect width='800' height='600' fill='url(%23dots)'/>
+      <g stroke='rgba(232,192,96,0.55)' stroke-width='1.4' fill='none' stroke-linecap='round'>
+        <path d='M0 420 Q 200 380 400 420 T 800 420'/>
+        <path d='M0 470 Q 200 430 400 470 T 800 470' opacity='0.6'/>
+        <path d='M0 520 Q 200 480 400 520 T 800 520' opacity='0.4'/>
+      </g>
+      <text x='400' y='300' text-anchor='middle' font-family='Inter,sans-serif' font-weight='200' font-size='110' fill='rgba(255,255,255,0.18)' letter-spacing='4'>SIMF</text>
+    </svg>`;
+    return 'data:image/svg+xml;utf8,' + svg.replace(/#/g, '%23').replace(/\n/g, '').replace(/\s+/g, ' ');
+  }
+  // ===== Skeleton loading placeholders =====
+  // Until the /content/site fetch resolves, the dynamic sections show shimmer
+  // placeholders instead of the built-in SITE_DEFAULTS sample data. The remote
+  // loader flips window.__contentReady and re-renders with the real data (or,
+  // when the API is unreachable, the defaults).
+  window.__contentReady = false;
+  function skelLines(n) {
+    const w = ['lg', 'md', 'sm'];
+    let out = '';
+    for (let i = 0; i < n; i++) out += `<span class="skeleton skel-line ${w[i % w.length]}"></span>`;
+    return out;
+  }
+  function skeletonSessions(n) {
+    let out = '';
+    for (let i = 0; i < n; i++) out += `<div class="session-row" aria-hidden="true">`
+      + `<div class="session-img skeleton"></div>`
+      + `<div class="session-body">${skelLines(3)}</div></div>`;
+    return out;
+  }
+  function skeletonSpeakers(n) {
+    let out = '';
+    for (let i = 0; i < n; i++) out += `<div class="speaker" aria-hidden="true">`
+      + `<div class="speaker-photo skeleton"></div>`
+      + `<span class="skeleton skel-line md" style="margin-inline:auto"></span>`
+      + `<span class="skeleton skel-line sm" style="margin-inline:auto"></span></div>`;
+    return out;
+  }
+  function skeletonPartners(n) {
+    let out = '';
+    for (let i = 0; i < n; i++) out += `<div class="partner" aria-hidden="true">`
+      + `<div class="partner-logo"><div class="slot skeleton" style="width:100%;height:100%"></div></div>`
+      + `<div class="partner-meta"><span class="skeleton skel-line sm"></span></div></div>`;
+    return out;
+  }
+  function skeletonNews(n) {
+    let out = '';
+    for (let i = 0; i < n; i++) out += `<article class="news-card" aria-hidden="true">`
+      + `<div class="news-thumb skeleton"></div>`
+      + `<div class="news-body">${skelLines(3)}</div></article>`;
+    return out;
+  }
+
+  const sgRoot = document.getElementById('sessionsGrid');
+  function renderSessions() {
+    if (!sgRoot) return;
+    if (!window.__contentReady) { sgRoot.className = 'sessions-list'; sgRoot.innerHTML = skeletonSessions(3); return; }
+    const mainSessions = siteContent.sessions || [];
+    sgRoot.className = 'sessions-list';
+    sgRoot.innerHTML = mainSessions.map((s, idx) => {
+      const img = (s.img || '').trim();
+      const cls = img ? 'session-img' : 'session-img session-img--brand';
+      const style = img ? ` style="background-image:url('${img.replace(/'/g, "\\'")}')"` : '';
+      const n = s.n || String(idx + 1).padStart(2, '0');
+      const label = pickLang(s, 'label');
+      const tag = pickLang(s, 'tag');
+      const desc = pickLang(s, 'desc');
+      return `
+      <div class="session-row">
+        <div class="${cls}"${style}>
+          <span class="num-badge num">${esc(n)}</span>
+          ${label ? `<span class="img-label">${esc(label)}</span>` : ''}
+        </div>
+        <div class="session-body">
+          ${tag ? `<div class="session-tag">${esc(tag)}</div>` : ''}
+          <h3>${esc(pickLang(s, 'title'))}</h3>
+          ${desc ? `<p class="desc">${esc(desc)}</p>` : ''}
+          <a class="session-link" href="#">${uiStr('session_link')}</a>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  renderSessions();
+  /* old session grid disabled — removed */
+
+  // ============ SPEAKERS ============
+  const speakers = siteContent.speakers || [];
+  let __speakersBuild = null;
+  (function initSpeakersMarquee() {
+    const grid = document.getElementById('speakersGrid');
+    const wrap = grid.parentElement;
+    const speakerCard = s => {
+      const photo = (s.photo || '').trim();
+      const media = photo
+        ? `<img src="${esc(photo)}" alt="" loading="lazy">`
+        : `<svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="50" cy="38" r="18"/>
+            <path d="M20 88 C 20 68, 35 60, 50 60 C 65 60, 80 68, 80 88"/>
+          </svg>`;
+      return `
+      <div class="speaker">
+        <div class="speaker-photo">${media}</div>
+        <h4>${esc(pickLang(s,'name'))}</h4>
+        <p class="role">${esc(pickLang(s,'role'))}</p>
+        <p class="org num">${esc(pickLang(s,'org'))}</p>
+      </div>`;
+    };
+    if (!speakers.length) return;
+
+    function build() {
+      if (!window.__contentReady) { grid.innerHTML = skeletonSpeakers(6); return; }
+      const oneSet = speakers.map(speakerCard).join('');
+      grid.innerHTML = oneSet;
+      const oneSetWidth = grid.scrollWidth + 24;
+      const viewport = wrap.clientWidth;
+      const copies = Math.max(2, Math.ceil((viewport + oneSetWidth) / oneSetWidth) + 1);
+      grid.innerHTML = oneSet.repeat(copies);
+      const cards = grid.querySelectorAll('.speaker');
+      if (cards.length > speakers.length) {
+        const r1 = cards[0].getBoundingClientRect();
+        const r2 = cards[speakers.length].getBoundingClientRect();
+        wrap.style.setProperty('--speakers-shift', Math.abs(r2.left - r1.left) + 'px');
+      }
+    }
+    __speakersBuild = build;
+    build();
+    let rT;
+    window.addEventListener('resize', () => {
+      clearTimeout(rT);
+      rT = setTimeout(build, 200);
+    });
+  })();
+
+  // ============ PARTNERS ============
+  const partners = siteContent.partners || [];
+  function partnerCard(p) {
+    const name = pickLang(p,'name');
+    const type = pickLang(p,'type');
+    const logo = (p.logo || '').trim();
+    const inner = logo
+      ? `<img src="${esc(logo)}" alt="${esc(name)}">`
+      : `<span class="partner-name">${esc(name)}</span>`;
+    return `
+    <div class="partner">
+      <div class="partner-logo"><div class="slot">${inner}</div></div>
+      <div class="partner-meta"><span class="label">${esc(type)}</span></div>
+    </div>`;
+  }
+  function renderPartners() {
+    const track = document.getElementById('partnersTrack');
+    if (!track) return;
+    if (!window.__contentReady) { track.innerHTML = skeletonPartners(6); return; }
+    const baseHTML = partners.map(partnerCard).join('');
+    track.innerHTML = baseHTML + baseHTML;
+  }
+  renderPartners();
+
+  // ============ NEWS ============
+  const newsData = siteContent.news || [];
+  function renderNews() {
+    const grid = document.getElementById('newsGrid');
+    if (!grid) return;
+    if (!window.__contentReady) { grid.innerHTML = skeletonNews(3); return; }
+    grid.innerHTML = newsData.map(n => `
+      <article class="news-card">
+        <div class="news-thumb" style="background-image:url('${n.img}')"></div>
+        <div class="news-body">
+          <div class="date num">${esc(pickLang(n,'date'))}</div>
+          <h3>${esc(pickLang(n,'title'))}</h3>
+          <p>${esc(pickLang(n,'excerpt'))}</p>
+          <a class="more" href="#">${uiStr('news_more')}</a>
+        </div>
+      </article>
+    `).join('');
+  }
+  renderNews();
+
+  // ============ SAUDI SPIRIT — images ============
+  const spirit = siteContent.spirit || [];
+  function renderSpirit() {
+    document.querySelectorAll('[data-spirit-img]').forEach(el => {
+      const i = +el.dataset.spiritImg;
+      const img = spirit[i] && spirit[i].img;
+      el.style.backgroundImage = img ? `url('${img.replace(/'/g, "\\'")}')` : '';
+    });
+  }
+  renderSpirit();
+
+  // ============ ARCHIVE — interactive timeline ============
+  const arch = siteContent.archive || [];
+  const yearsEl = document.getElementById('archiveYears');
+  const detailEl = document.getElementById('archiveDetail');
+  function renderArchiveYears() {
+    yearsEl.innerHTML = arch.map((a,i)=>`<button class="archive-year-tab${i===archIdx?' active':''}" data-i="${i}"><span class="y num">${esc(a.year)}</span><span class="dot"></span></button>`).join('');
+  }
+  function paintArch(i){
+    const a = arch[i];
+    detailEl.innerHTML = `<div class="big-y num">${esc(a.year)}</div><div><p class="date num">${esc(pickLang(a,'date'))}</p><h4>${esc(pickLang(a,'title'))}</h4><p class="desc">${esc(pickLang(a,'desc'))}</p></div>`;
+    yearsEl.querySelectorAll('.archive-year-tab').forEach((b,j)=>b.classList.toggle('active', i===j));
+  }
+  function renderArch(i){
+    detailEl.classList.add('swap-out');
+    detailEl.classList.remove('swap-in');
+    setTimeout(() => {
+      paintArch(i);
+      detailEl.classList.remove('swap-out');
+      void detailEl.offsetWidth; // restart animation
+      detailEl.classList.add('swap-in');
+    }, 280);
+  }
+  let archIdx = arch.length - 1;
+  renderArchiveYears();
+  paintArch(archIdx);
+
+  let archTimer = null;
+  function startArchAuto() {
+    stopArchAuto();
+    archTimer = setInterval(() => {
+      archIdx = (archIdx + 1) % arch.length;
+      renderArch(archIdx);
+    }, 3000);
+  }
+  function stopArchAuto() {
+    if (archTimer) { clearInterval(archTimer); archTimer = null; }
+  }
+  startArchAuto();
+
+  yearsEl.addEventListener('click', e => {
+    const b = e.target.closest('.archive-year-tab'); if (!b) return;
+    archIdx = +b.dataset.i;
+    paintArch(archIdx);
+    openArchivePage(archIdx);
+  });
+
+  // ===== Per-year archive detail page (mockup 24-01) — a full "separate page" =====
+  const archPage = document.getElementById('archivePage');
+  function openArchivePage(i) {
+    const a = arch[i]; if (!a || !archPage) return;
+    const title = pickLang(a, 'title') || ('SIMF ' + a.year);
+    document.getElementById('archivePageYear').textContent = a.year;
+    document.getElementById('archivePageBarTitle').textContent = title;
+    const loc = pickLang(a, 'location');
+    const dl = pickLang(a, 'dateLabel');
+    const summary = pickLang(a, 'desc');
+    const box = (k, v) => v ? `<div class="archive-page__box"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>` : '';
+    const counter = (n, c) => `<div class="archive-page__counter"><div class="n">${esc(n == null ? 0 : n)}</div><div class="c">${esc(c)}</div></div>`;
+    document.getElementById('archivePageBody').innerHTML =
+      `<div class="archive-page__label">${esc(uiStr('archive_label') || 'عنوان الملتقى')}</div>`
+      + `<h3 class="archive-page__title">${esc(title)}</h3>`
+      + (summary ? `<p class="archive-page__summary">${esc(summary)}</p>` : '')
+      + `<div class="archive-page__boxes">${box(uiStr('archive_place') || 'المكان', loc)}${box(uiStr('archive_time') || 'الزمن', dl)}</div>`
+      + `<div class="archive-page__counters">`
+        + counter(a.sessions, uiStr('archive_sessions') || 'الفعاليات')
+        + counter(a.attendees, uiStr('archive_attendees') || 'الحضور')
+        + counter(a.speakers, uiStr('archive_speakers') || 'المتحدثون')
+      + `</div>`;
+    archPage.classList.add('open');
+    archPage.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    stopArchAuto();
+    if (location.hash !== '#archive-' + a.year) {
+      history.pushState({ arch: i }, '', '#archive-' + a.year);
+    }
+  }
+  function closeArchivePage() {
+    if (!archPage) return;
+    archPage.classList.remove('open');
+    archPage.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    startArchAuto();
+  }
+  const archBack = document.getElementById('archivePageBack');
+  if (archBack) {
+    archBack.addEventListener('click', () => {
+      if ((location.hash || '').indexOf('#archive-') === 0) { history.back(); }
+      else { closeArchivePage(); }
+    });
+  }
+  window.addEventListener('popstate', () => {
+    if ((location.hash || '').indexOf('#archive-') !== 0) { closeArchivePage(); }
+  });
+
+  // ============ ANIMATED STATS ============
+  const animateCount = (el, target) => {
+    const dur = 1600; const start = performance.now();
+    const step = (t) => {
+      const p = Math.min(1, (t-start)/dur);
+      const eased = 1 - Math.pow(1-p, 3);
+      el.textContent = Math.round(target * eased);
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  };
+  const statIO = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if (e.isIntersecting && !e.target.dataset.done) {
+        e.target.dataset.done = '1';
+        e.target.classList.add('in-view');
+        const v = e.target.querySelector('.v');
+        animateCount(v, parseInt(v.textContent, 10));
+      }
+    });
+  }, { threshold: 0.4 });
+  document.querySelectorAll('.stats-bar-grid .stat-cell').forEach(c => statIO.observe(c));
+
+  // ============ TWEAKS ============
+  const TWEAKS = /*EDITMODE-BEGIN*/{
+    "accent": "gold",
+    "showCountdown": true,
+    "denseSpacing": true
+  }/*EDITMODE-END*/;
+  function applyTweaks(t) {
+    document.body.classList.toggle('theme-emerald', t.accent === 'emerald');
+    document.body.classList.toggle('theme-crimson', t.accent === 'crimson');
+    document.body.classList.toggle('dense', !!t.denseSpacing);
+    const cd = document.querySelector('.countdown'); if (cd) cd.style.display = t.showCountdown ? '' : 'none';
+    const hcd = document.getElementById('heroCountdown'); if (hcd) hcd.style.display = t.showCountdown ? '' : 'none';
+  }
+  applyTweaks(TWEAKS);
+
+  // Tweaks panel
+  let tweaks = {...TWEAKS};
+  let panel = null;
+  window.addEventListener('message', e => {
+    if (!e.data || !e.data.type) return;
+    if (e.data.type === '__activate_edit_mode') showPanel();
+    if (e.data.type === '__deactivate_edit_mode') hidePanel();
+  });
+  window.parent.postMessage({type:'__edit_mode_available'}, '*');
+  function showPanel() {
+    if (panel) { panel.style.display = 'block'; return; }
+    panel = document.createElement('div');
+    panel.style.cssText = `position:fixed;bottom:24px;left:24px;width:280px;background:white;border:1px solid var(--line);box-shadow:0 12px 40px rgba(0,22,64,0.18);padding:20px;z-index:200;font-family:'FS Albert Arabic',Cairo;direction:rtl`;
+    panel.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <strong style="color:var(--navy)">Tweaks</strong>
+        <button id="tw-close" style="border:none;background:none;cursor:pointer;font-size:18px;color:var(--slate)">×</button>
+      </div>
+      <div style="font-size:12px;color:var(--slate);margin-bottom:8px">لون التمييز</div>
+      <div style="display:flex;gap:8px;margin-bottom:16px" id="tw-accents">
+        <button data-v="gold" style="width:32px;height:32px;background:#E8C060;border:2px solid transparent;cursor:pointer"></button>
+        <button data-v="emerald" style="width:32px;height:32px;background:#6ECEB2;border:2px solid transparent;cursor:pointer"></button>
+        <button data-v="crimson" style="width:32px;height:32px;background:#D77260;border:2px solid transparent;cursor:pointer"></button>
+      </div>
+      <label style="display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:10px">
+        إظهار العداد التنازلي
+        <input type="checkbox" id="tw-cd" ${tweaks.showCountdown?'checked':''}>
+      </label>
+      <label style="display:flex;justify-content:space-between;align-items:center;font-size:13px">
+        تباعد مضغوط
+        <input type="checkbox" id="tw-dense" ${tweaks.denseSpacing?'checked':''}>
+      </label>
+    `;
+    document.body.appendChild(panel);
+    panel.querySelector('#tw-close').onclick = () => {
+      hidePanel();
+      window.parent.postMessage({type:'__edit_mode_dismissed'}, '*');
+    };
+    panel.querySelectorAll('#tw-accents button').forEach(b => {
+      if (b.dataset.v === tweaks.accent) b.style.borderColor = 'var(--navy)';
+      b.onclick = () => {
+        tweaks.accent = b.dataset.v;
+        panel.querySelectorAll('#tw-accents button').forEach(x => x.style.borderColor = x.dataset.v === tweaks.accent ? 'var(--navy)' : 'transparent');
+        applyTweaks(tweaks);
+        window.parent.postMessage({type:'__edit_mode_set_keys', edits:{accent: tweaks.accent}}, '*');
+      };
+    });
+    panel.querySelector('#tw-cd').onchange = (e) => {
+      tweaks.showCountdown = e.target.checked;
+      applyTweaks(tweaks);
+      window.parent.postMessage({type:'__edit_mode_set_keys', edits:{showCountdown: tweaks.showCountdown}}, '*');
+    };
+    panel.querySelector('#tw-dense').onchange = (e) => {
+      tweaks.denseSpacing = e.target.checked;
+      applyTweaks(tweaks);
+      window.parent.postMessage({type:'__edit_mode_set_keys', edits:{denseSpacing: tweaks.denseSpacing}}, '*');
+    };
+  }
+  function hidePanel() { if (panel) panel.style.display = 'none'; }
+
+  // ============ PAGE LOADER ============
+  (function(){
+    const loader = document.getElementById('pageLoader');
+    if (!loader) return;
+    const hide = () => {
+      setTimeout(() => loader.classList.add('gone'), 2200);
+      setTimeout(() => loader.remove(), 3200);
+    };
+    if (document.readyState === 'complete') hide();
+    else window.addEventListener('load', hide);
+  })();
+
+  // ============ MOBILE NAV TOGGLE ============
+  (function(){
+    const tog = document.getElementById('navToggle');
+    const nav = document.getElementById('navMain');
+    if (!tog || !nav) return;
+    tog.addEventListener('click', () => {
+      const open = nav.classList.toggle('open');
+      tog.classList.toggle('open', open);
+      tog.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    nav.addEventListener('click', e => {
+      if (e.target.tagName === 'A') {
+        nav.classList.remove('open');
+        tog.classList.remove('open');
+        tog.setAttribute('aria-expanded', 'false');
+      }
+    });
+  })();
+
+  // ============ I18N (AR / EN) ============
+  const I18N = {
+    ar: {
+      nav_home:'الرئيسية', nav_about:'حول', nav_program:'البرنامج', nav_speakers:'المتحدثين',
+      nav_discover:'اكتشف السعودية', nav_archive:'الأرشيف', nav_contact:'تواصل معنا',
+      cd_months:'أشهر', cd_days:'أيام', cd_hours:'ساعات', cd_minutes:'دقائق', cd_seconds:'ثوانٍ',
+      hero_scroll:'اسحب للأسفل للاستكشاف',
+      about_eyebrow:'حول الملتقى',
+      about_h2:'منصة سعودية عالمية لدعم الحوار والتعاون في قضايا الأمن البحري',
+      about_p1:'الملتقى البحري السعودي الدولي حدث رفيع المستوى يجمع القادة والمسؤولين والخبراء لتبادل التجارب والخبرات، وتعزيز فهم عالمي مشترك لمستقبل الأمن البحري في ظل التحولات الجيوسياسية والتقنية المتسارعة.',
+      about_p2:'يعكس الملتقى الدور الاستراتيجي للمملكة العربية السعودية في ترسيخ استقرار البحار ودعم استدامة الاقتصاد العالمي، عبر منظومة متكاملة لحماية قاع البحار ورفع كفاءة سلاسل إمداد الطاقة والتجارة.',
+      stats_eyebrow:'المشهد العالمي',
+      stats_intro:'يشهد العالم تحولات غير مسبوقة في أمن البحار، ومع تصاعد التهديدات التي تطال سلاسل الإمداد العالمية، يبرز أمن قاع البحار كأولوية دولية ملحة لتعزيز استقرار البحار وضمان استدامة الاقتصاد العالمي.',
+      stats_h3:'مسار متدرج يواكب تحولات الأمن البحري العالمي',
+      stats_countries:'دولة مشاركة', stats_leaders:'قائد ومسؤول', stats_speakers:'متحدث دولي', stats_sessions:'جلسة وحوار',
+      pillars_eyebrow:'المحاور الرئيسية', pillars_h2:'المحاور الرئيسية',
+      pillars_p:'لصياغة رؤية استراتيجية شاملة تعالج منظومات الطاقة والتجارة والاتصال بين السطح والأعماق عبر خمسة محاور رئيسية تشكل ركائز الأمن البحري واستقرار الاقتصاد العالمي.',
+      sessions_eyebrow:'الجلسات الرئيسية', sessions_h2:'الجلسات الرئيسية',
+      speakers_eyebrow:'المتحدثين والمشاركين', speakers_h2:'أبرز المتحدثين والمشاركين',
+      speakers_p:'يشارك في الملتقى نخبة من القادة السعوديين والدوليين وصنّاع القرار والخبراء، بما يعكس دور المملكة الريادي في تشكيل توجهات الأمن البحري وتعزيز التعاون الدولي.',
+      partners_eyebrow:'الشركاء والرعاة', partners_h2:'الشركاء والرعاة',
+      partners_p:'يحظى الملتقى بدعم ومشاركة جهات حكومية ومؤسسات وطنية ودولية تسهم بخبراتها في تعزيز حضور المملكة ضمن منظومة الأمن البحري العالمي.',
+      news_eyebrow:'المركز الإعلامي', news_h2:'آخر الأخبار', news_all:'جميع الأخبار ←',
+      goals_eyebrow:'أهداف الملتقى', goals_h2:'أهداف طموحة',
+      goals_p:'تعزيز منظومة أمن بحري متكاملة تدعم الجهود الدولية لحماية قاع البحار ورفع كفاءة سلاسل الإمداد، بما يسهم في استقرار الاقتصاد العالمي ويتّسق مع مستهدفات رؤية المملكة 2030.',
+      goals_btn:'تصفّح الأهداف الكاملة',
+      goal1_t:'تعزيز الأمن البحري الإقليمي والدولي',
+      goal1_d:'توحيد الجهود لحماية الممرّات البحرية الحيويّة وضمان استقرار حركة الملاحة العالميّة.',
+      goal2_t:'حماية البنية التحتيّة تحت السطح',
+      goal2_d:'صون الكابلات وخطوط الطاقة والأنابيب التي تربط الاقتصاد العالمي تحت قاع البحار.',
+      goal3_t:'رفع كفاءة سلاسل الإمداد',
+      goal3_d:'تطوير منظومات الموانئ والممرّات وأنظمة الشحن لرفع المرونة وتقليل المخاطر.',
+      goal4_t:'تبادل المعرفة وبناء القدرات',
+      goal4_d:'توسيع منصّة المعرفة بين القادة والخبراء لصقل الكوادر الوطنيّة والدوليّة.',
+      goal5_t:'الإسهام في تحقيق رؤية 2030',
+      goal5_d:'تعزيز موقع المملكة قطبًا عالميًّا في الأمن البحري والاقتصاد الأزرق.',
+      archive_eyebrow:'الأرشيف', archive_h2:'محطات مفصلية في تطور أجندة الأمن البحري العالمي',
+      archive_back:'رجوع', archive_label:'عنوان الملتقى', archive_place:'المكان', archive_time:'الزمن',
+      archive_sessions:'الفعاليات', archive_attendees:'الحضور', archive_speakers:'المتحدثون',
+      spirit_eyebrow:'اكتشف السعودية', spirit_h2:'روح السعوديّة <span class="accent">في رحلتك</span>',
+      spirit_p:'تمتدّ تجربة الزائر إلى ما هو أبعد من قاعات الملتقى — تكشف لك المملكة عن أصالتها وحداثتها معًا، من الواحات والتراث إلى المعالم الحديثة والمدن المستقبليّة.',
+      spirit_tag_heritage:'التراث · العُلا',
+      spirit_t1:'العُلا — مهد الحضارات',
+      spirit_d1:'مدائن صالح والممرّات الصخريّة الشهيرة، حيث يلتقي التاريخ النبطيّ بسحر الصحراء.',
+      spirit_m1:'شمال غرب المملكة · موقع تراث عالميّ',
+      spirit_tag_modern:'العاصمة · الرياض', spirit_t2:'الرياض',
+      spirit_d2:'عاصمة تنبض بالتطوّر — من المراكز الماليّة إلى حيّ السفارات والمناطق الترفيهيّة.',
+      spirit_tag_history:'البحر الأحمر · جدّة', spirit_t3:'جدّة التاريخيّة',
+      spirit_d3:'عروس البحر الأحمر والبوّابة التاريخيّة للحُجّاج — الواجهة البحريّة والبلد القديم.',
+      spirit_tag_future:'المستقبل · نيوم', spirit_t4:'نيوم',
+      spirit_d4:'المدينة المستقبليّة على البحر الأحمر — رؤية للعيش والتقنية بمعايير لم تُسبَق.',
+      spirit_tag_island:'الجزر · البحر الأحمر', spirit_t5:'جزر البحر الأحمر',
+      spirit_d5:'شواطئ بكر ومنتجعات فاخرة وشِعاب مرجانيّة تكشف الوجه الأزرق للمملكة.',
+      ft_useful:'روابط تهمك',
+      ft_link1:'الهيئة العامة للصناعات العسكرية', ft_link2:'الهيئة العامة للتطوير الدفاعي',
+      ft_link3:'المحتوى المحلي والمشتريات', ft_link4:'الشركة السعودية للصناعات العسكرية',
+      ft_forum:'روابط الملتقى', ft_about:'حول الملتقى', ft_program:'البرنامج', ft_speakers:'المتحدثون',
+      ft_partners:'الشركاء', ft_archive:'الأرشيف', ft_news:'المركز الإعلامي', ft_discover:'اكتشف السعودية',
+      ft_contact:'تواصل معنا', ft_addr:'3507 الرياض 12341<br>المملكة العربية السعودية',
+      ft_brand_p:'الملتقى البحري السعودي الدولي حدث رفيع المستوى يُعنى باستشراف مستقبل الأمن البحري وحماية الممرات الحيوية وسلاسل الإمداد، ويعكس الدور الاستراتيجي للمملكة في تعزيز أمن البحار وصون البنية التحتية الحيوية.',
+      ft_vision:'يتسق مع رؤية المملكة 2030', ft_rights:'© 2026 MOD.RSNF — جميع الحقوق محفوظة',
+    },
+    en: {
+      nav_home:'Home', nav_about:'About', nav_program:'Program', nav_speakers:'Speakers',
+      nav_discover:'Discover Saudi', nav_archive:'Archive', nav_contact:'Contact',
+      cd_months:'Months', cd_days:'Days', cd_hours:'Hours', cd_minutes:'Minutes', cd_seconds:'Seconds',
+      hero_scroll:'SCROLL TO EXPLORE',
+      about_eyebrow:'About the Forum',
+      about_h2:'A Saudi global platform driving dialogue and cooperation on maritime security',
+      about_p1:'The Saudi International Maritime Forum is a high-level event that brings together leaders, officials, and experts to share experience and build a shared global understanding of the future of maritime security amid accelerating geopolitical and technological change.',
+      about_p2:'The Forum reflects the Kingdom of Saudi Arabia\'s strategic role in anchoring stability across the seas and supporting the resilience of the global economy through an integrated framework that protects the seabed and enhances the efficiency of energy and trade supply chains.',
+      stats_eyebrow:'Global Landscape',
+      stats_intro:'The world is witnessing unprecedented shifts in maritime security. As threats to global supply chains escalate, seabed security emerges as an urgent international priority for stabilising the seas and sustaining the global economy.',
+      stats_h3:'A progressive path tracking the shifts in global maritime security',
+      stats_countries:'Participating countries', stats_leaders:'Leaders & officials', stats_speakers:'International speakers', stats_sessions:'Sessions & dialogues',
+      pillars_eyebrow:'Key Pillars', pillars_h2:'Key Pillars',
+      pillars_p:'Building a comprehensive strategic vision that addresses energy systems, trade, and the link between surface and depths through five core pillars that anchor maritime security and global economic stability.',
+      sessions_eyebrow:'Main Sessions', sessions_h2:'Main Sessions',
+      speakers_eyebrow:'Speakers & Participants', speakers_h2:'Featured Speakers & Participants',
+      speakers_p:'The Forum convenes a select group of Saudi and international leaders, decision-makers, and experts, reflecting the Kingdom\'s leading role in shaping the direction of maritime security and advancing international cooperation.',
+      partners_eyebrow:'Partners & Sponsors', partners_h2:'Partners & Sponsors',
+      partners_p:'The Forum is supported by government bodies and national and international institutions whose expertise reinforces the Kingdom\'s presence within the global maritime security ecosystem.',
+      news_eyebrow:'Newsroom', news_h2:'Latest News', news_all:'All news →',
+      goals_eyebrow:'Forum Goals', goals_h2:'Ambitious Goals',
+      goals_p:'Building an integrated maritime security framework that supports international efforts to protect the seabed and enhance supply-chain efficiency, contributing to global economic stability in alignment with Saudi Vision 2030.',
+      goals_btn:'Browse all goals',
+      goal1_t:'Strengthen regional and international maritime security',
+      goal1_d:'Unifying efforts to protect vital maritime corridors and ensure the stability of global navigation.',
+      goal2_t:'Protect subsea infrastructure',
+      goal2_d:'Safeguarding cables, energy lines, and pipelines that connect the global economy beneath the sea.',
+      goal3_t:'Enhance supply-chain efficiency',
+      goal3_d:'Modernising ports, corridors, and shipping systems to increase resilience and reduce risk.',
+      goal4_t:'Exchange knowledge and build capacity',
+      goal4_d:'Expanding the knowledge platform between leaders and experts to develop national and international talent.',
+      goal5_t:'Contribute to Vision 2030',
+      goal5_d:'Strengthening the Kingdom\'s position as a global hub for maritime security and the blue economy.',
+      archive_eyebrow:'Archive', archive_h2:'Defining milestones in the evolution of the global maritime-security agenda',
+      archive_back:'Back', archive_label:'Edition', archive_place:'Location', archive_time:'When',
+      archive_sessions:'Sessions', archive_attendees:'Attendees', archive_speakers:'Speakers',
+      spirit_eyebrow:'Discover Saudi Arabia', spirit_h2:'The Saudi Spirit <span class="accent">on Your Journey</span>',
+      spirit_p:'Your experience extends well beyond the forum halls — the Kingdom unveils its heritage and modernity together, from ancient oases to futuristic cities.',
+      spirit_tag_heritage:'Heritage · AlUla', spirit_t1:'AlUla — Cradle of Civilisations',
+      spirit_d1:'Hegra and the iconic sandstone canyons, where Nabataean history meets the magic of the desert.',
+      spirit_m1:'Northwest of the Kingdom · UNESCO Heritage Site',
+      spirit_tag_modern:'Capital · Riyadh', spirit_t2:'Riyadh',
+      spirit_d2:'A capital pulsing with growth — from financial centres to the Diplomatic Quarter and entertainment districts.',
+      spirit_tag_history:'Red Sea · Jeddah', spirit_t3:'Historic Jeddah',
+      spirit_d3:'The bride of the Red Sea and the historic gateway for pilgrims — the corniche and the old town of Al-Balad.',
+      spirit_tag_future:'Future · NEOM', spirit_t4:'NEOM',
+      spirit_d4:'A futuristic city on the Red Sea — a vision for living and technology by unprecedented standards.',
+      spirit_tag_island:'Islands · Red Sea', spirit_t5:'Red Sea Islands',
+      spirit_d5:'Pristine beaches, luxury resorts, and coral reefs revealing the Kingdom\'s blue face.',
+      ft_useful:'Useful Links',
+      ft_link1:'General Authority for Military Industries', ft_link2:'General Authority for Defense Development',
+      ft_link3:'Local Content & Procurement', ft_link4:'Saudi Arabian Military Industries',
+      ft_forum:'Forum Links', ft_about:'About the Forum', ft_program:'Program', ft_speakers:'Speakers',
+      ft_partners:'Partners', ft_archive:'Archive', ft_news:'Newsroom', ft_discover:'Discover Saudi',
+      ft_contact:'Contact Us', ft_addr:'3507 Riyadh 12341<br>Kingdom of Saudi Arabia',
+      ft_brand_p:'The Saudi International Maritime Forum is a high-level event dedicated to shaping the future of maritime security, protecting vital corridors and supply chains, and reflecting the Kingdom\'s strategic role in safeguarding the seas and critical infrastructure.',
+      ft_vision:'Aligned with Saudi Vision 2030', ft_rights:'© 2026 MOD.RSNF — All rights reserved.',
+    }
+  };
+
+  function applyI18n(lang) {
+    window.currentLang = lang;
+    const dict = I18N[lang] || I18N.ar;
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    document.body.classList.toggle('lang-en', lang === 'en');
+    // Static text bound via data-i18n
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (dict[key] != null) el.innerHTML = dict[key];
+    });
+    // CMS-bound text/attrs (re-applies with EN suffix lookup)
+    if (typeof applyCmsBindings === 'function') applyCmsBindings();
+    // Re-render dynamic JS-rendered sections
+    if (typeof renderPillars === 'function') renderPillars();
+    if (typeof renderSessions === 'function') renderSessions();
+    if (typeof renderNews === 'function') renderNews();
+    if (typeof renderPartners === 'function') renderPartners();
+    if (typeof renderArchiveYears === 'function') renderArchiveYears();
+    if (typeof paintArch === 'function' && typeof archIdx !== 'undefined') paintArch(archIdx);
+    if (typeof renderSlide === 'function' && typeof slideIdx !== 'undefined') renderSlide(slideIdx);
+    if (typeof __speakersBuild === 'function') __speakersBuild();
+
+    const btn = document.getElementById('langBtn');
+    if (btn) btn.textContent = lang === 'ar' ? 'EN' : 'ع';
+    if (btn) btn.setAttribute('aria-label', lang === 'ar' ? 'Switch to English' : 'التبديل للعربية');
+    document.title = lang === 'en'
+      ? 'Saudi International Maritime Forum 2026 | SIMF 2026'
+      : 'الملتقى البحري السعودي الدولي الرابع | SIMF 2026';
+  }
+
+  (function(){
+    const btn = document.getElementById('langBtn');
+    if (!btn) return;
+    let cur = localStorage.getItem('siteLang') || 'ar';
+    applyI18n(cur);
+    btn.addEventListener('click', () => {
+      cur = cur === 'ar' ? 'en' : 'ar';
+      localStorage.setItem('siteLang', cur);
+      applyI18n(cur);
+    });
+  })();
+
+  /* ===== Smooth reveal-on-scroll ===== */
+  (function(){
+    const targets = document.querySelectorAll('section > .section-head, section > .section-head > *, .pillars-grid > *, .sessions-grid > *, .speakers-track > *, .news-grid > *, .goals-row > *, .archive-wrap > *, .about-card, .hero-content > *, .stats-bar-row > *, .saudi-spirit > *');
+    targets.forEach(el => el.classList.add('reveal'));
+
+    if (!('IntersectionObserver' in window)) {
+      targets.forEach(el => el.classList.add('is-visible'));
+      return;
+    }
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('is-visible');
+          io.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    targets.forEach(el => io.observe(el));
+  })();
+</script>
+
+</body>
+</html>

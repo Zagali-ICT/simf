@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>المتحدثون والمشاركون | الملتقى البحري السعودي الدولي</title>
+<link rel="icon" type="image/png" href="assets/logo-simf.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
+<style>
+  /* =====================================================================
+     SIMF 2026 — Public landing page
+     1:1 implementation of Figma "Home Page — Desktop AR"
+     (file 8FeP6IvzR7wO1eNOF3Cr3a). Built on the Saudi DGA design system.
+     Design tokens mirror the Figma variable collection.
+     ===================================================================== */
+  :root {
+    /* brand */
+    --navy:            #001640;  /* dark section / hero / nav background */
+    --primary:         #244a77;
+    --primary-light:   #e9edf1;
+    --secondary:       #498fbd;
+    --secondary-dark:  #376b8e;
+    --secondary-light: #edf4f8;
+    --gold:            #e8c060;
+    --gold-active:     #ba9a4d;
+    --gold-dark:       #ae9048;
+    --gold-light:      #fdf9ef;
+    --gold-darker:     #514322;
+    /* neutrals */
+    --ink:             #161616;  /* default text */
+    --ink-display:     #1f2a37;  /* display / headings on light */
+    --tag-neutral:     #1f2a37;
+    --border-neutral:  #d2d6db;
+    --bg-gray:         #f5f8fa;
+    --white:           #ffffff;
+    --card-bg:         #ffffff;
+    /* spacing scale */
+    --space-xxs: 4px;  --space-xs: 4px;  --space-sm: 12px; --space-md: 16px;
+    --space-lg:  24px; --space-xl: 32px; --space-2xl:48px; --space-3xl:56px;
+    --space-4xl: 64px; --space-5xl:40px; --space-8xl:80px;
+    --section-gutter: 80px;
+    --section-padding: 32px;
+    /* radius */
+    --radius-sm: 4px; --radius-md: 8px; --radius-lg: 12px; --radius-full: 999px;
+    /* effect */
+    --shadow-card: 0 2px 10px rgba(76,78,100,0.12);
+    /* layout */
+    --page-w: 1440px;
+    --content-w: 1280px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Almarai', system-ui, 'Segoe UI', Tahoma, sans-serif;
+    color: var(--ink);
+    background: var(--white);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+    line-height: 1.5;
+  }
+  a { color: inherit; text-decoration: none; }
+  img, svg, video { display: block; max-width: 100%; }
+  button { font-family: inherit; cursor: pointer; }
+  h1, h2, h3, h4, h5, h6, p { margin: 0; }
+
+  /* full-bleed page; each section caps its own content band at 1280px.
+     (No max-width here, otherwise the white body shows as side gutters
+     on viewports wider than 1440px.) */
+  .page { width: 100%; margin-inline: auto; background: var(--white); }
+
+  /* generic section frame: 80px side gutters, 1280 content band */
+  .section { padding-inline: var(--section-gutter); position: relative; }
+  .section__inner { max-width: var(--content-w); margin-inline: auto; }
+
+  /* reveal-on-scroll */
+  .reveal { opacity: 0; transform: translateY(26px);
+    transition: opacity .8s cubic-bezier(.22,.61,.36,1), transform .8s cubic-bezier(.22,.61,.36,1); }
+  .reveal.is-visible { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .reveal { opacity: 1; transform: none; transition: none; }
+    .marquee-track { animation: none !important; }
+  }
+
+  /* ============================ TOP CHROME ============================ */
+  .site-header { position: relative; z-index: 100; }
+
+  /* gold government "digital stamp" strip */
+  .digital-stamp {
+    background: var(--gold); height: 32px;
+    display: flex; align-items: center; justify-content: flex-start;
+    padding-inline: var(--section-padding); overflow: hidden;
+  }
+  .ds-content { display: flex; align-items: center; gap: 10px; }
+  .ds-flag { width: 20px; height: 14px; background: #006923;
+    display: inline-grid; place-items: center; overflow: hidden; flex: 0 0 auto; }
+  .ds-flag svg, .ds-flag img { width: 14px; height: auto; }
+  .ds-label { font-size: 14px; line-height: 20px; color: var(--ink); white-space: nowrap; }
+  .ds-link { display: inline-flex; align-items: center; gap: 4px; background: none; border: 0;
+    padding: 0; font-size: 14px; line-height: 20px; color: var(--gold-darker); white-space: nowrap; }
+  .ds-link svg { width: 16px; height: 16px; }
+
+  /* navy navigation header */
+  .nav-header { background: var(--navy); box-shadow: var(--shadow-card);
+    padding-inline: var(--space-xl); }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 72px; }
+  .nav-brand-menu { display: flex; align-items: center; gap: 16px; }
+  .nav-logo { height: 64px; width: 310px; }
+  .nav-menu { display: flex; align-items: center; }
+  .nav-menu > a, .nav-menu .nav-item {
+    display: inline-flex; align-items: center; gap: 4px; height: 72px;
+    padding-inline: var(--space-md); color: var(--white); font-size: 16px; line-height: 24px;
+    background: none; border: 0; border-radius: var(--radius-sm); white-space: nowrap;
+    transition: color .2s, background-color .2s; position: relative; cursor: pointer;
+    font-family: inherit; text-decoration: none;
+  }
+  .nav-menu > a:hover, .nav-menu .nav-item:hover { color: var(--gold); }
+  .nav-menu .chev { width: 20px; height: 20px; opacity: .9; transition: transform .25s ease; }
+
+  /* hover / focus dropdown mega-menus */
+  .nav-dd { position: relative; display: inline-flex; align-items: center; height: 72px; }
+  .nav-dd__panel {
+    position: absolute; top: 100%; right: 0; z-index: 60; width: max-content;
+    min-width: 320px; max-width: 420px; background: var(--white);
+    border-radius: var(--radius-md); padding: var(--space-lg);
+    box-shadow: 0 12px 16px -4px rgba(16,24,40,0.08), 0 4px 6px -2px rgba(16,24,40,0.03);
+    display: flex; flex-direction: column; gap: var(--space-sm); text-align: right;
+    opacity: 0; visibility: hidden; transform: translateY(8px);
+    transition: opacity .2s ease, transform .2s ease, visibility 0s linear .2s;
+  }
+  .nav-dd:hover > .nav-dd__panel, .nav-dd:focus-within > .nav-dd__panel {
+    opacity: 1; visibility: visible; transform: translateY(0);
+    transition: opacity .2s ease, transform .2s ease, visibility 0s;
+  }
+  .nav-dd:hover > .nav-item, .nav-dd:focus-within > .nav-item {
+    background: var(--gold); color: var(--navy); border-radius: 0;
+    box-shadow: inset 0 -3px 0 var(--gold-active);
+  }
+  .nav-dd:hover > .nav-item .chev, .nav-dd:focus-within > .nav-item .chev { transform: rotate(180deg); }
+  .nav-dd__title { font-size: 18px; font-weight: 800; line-height: 28px;
+    color: var(--gold-active); text-align: right; padding-inline: var(--space-md); margin: 0; }
+  .nav-dd__list { display: flex; flex-direction: column; gap: var(--space-xs); }
+  .nav-dd__link { display: block; padding: 8px var(--space-md); border-radius: var(--radius-md);
+    font-size: 16px; line-height: 24px; color: var(--ink-display); text-align: right;
+    text-decoration: none; white-space: nowrap; transition: background-color .15s ease, color .15s ease; }
+  .nav-dd__link:hover { background: var(--bg-gray); color: var(--gold-active); }
+
+  /* full-width search drop-panel (toggled by the search action) */
+  .searchpanel { position: absolute; top: 100%; inset-inline: 0; z-index: 90; display: none;
+    background: var(--white); border-radius: 0 0 16px 16px; padding-inline: var(--section-gutter);
+    box-shadow: 0 12px 16px -4px rgba(16,24,40,0.08), 0 4px 6px -2px rgba(16,24,40,0.03); }
+  .searchpanel.is-open { display: block; }
+  .searchpanel__inner { max-width: var(--content-w); margin-inline: auto; padding-block: 32px;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 40px; }
+  .searchpanel__close { align-self: flex-end; width: 32px; height: 32px; display: inline-grid;
+    place-items: center; background: none; border: 0; border-radius: 4px; cursor: pointer; color: var(--ink); }
+  .searchpanel__close:hover { background: var(--bg-gray); }
+  .searchpanel__close svg { width: 20px; height: 20px; }
+  .searchbar { display: flex; align-items: center; gap: 16px; width: 100%; }
+  .searchbar__field { flex: 1 1 0; min-width: 0; height: 40px; display: flex; align-items: center; gap: 8px;
+    background: var(--white); border: 1px solid #9da4ae; border-radius: 4px; padding-inline: 16px 8px; }
+  .searchbar__field input { flex: 1 1 0; min-width: 0; border: 0; outline: 0; background: none;
+    font-family: inherit; font-size: 16px; line-height: 24px; color: var(--ink-display); text-align: right; }
+  .searchbar__field input::placeholder { color: #6c737f; }
+  .searchbar__mag, .searchbar__mic { flex: 0 0 20px; width: 20px; height: 20px; color: #384250; }
+  .searchbar__mic { background: none; border: 0; padding: 0; cursor: pointer; }
+  .searchbar__submit { display: inline-flex; align-items: center; justify-content: center; height: 40px;
+    padding-inline: 16px; background: var(--primary); color: var(--white); border: 0; border-radius: 4px;
+    font-family: inherit; font-size: 16px; line-height: 24px; cursor: pointer; white-space: nowrap; }
+  .searchbar__submit:hover { background: #1d3c60; }
+  .searchsugg { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; width: 100%; }
+  .searchsugg__title { font-size: 18px; font-weight: 700; line-height: 28px; color: var(--gold-dark); text-align: right; }
+  .searchsugg__chips { display: flex; gap: 8px; }
+  .schip { display: inline-flex; align-items: center; gap: 4px; height: 32px; padding-inline: 12px;
+    background: #f3f4f6; border: 0; border-radius: 4px; font-family: inherit; font-size: 16px;
+    line-height: 24px; color: var(--ink); cursor: pointer; white-space: nowrap; }
+  .schip:hover { background: #e5e7eb; }
+  .schip svg { width: 18px; height: 18px; }
+  .nav-actions { display: flex; align-items: center; direction: ltr; }
+  .nav-action { display: inline-flex; align-items: center; gap: 4px; height: 72px; min-width: 72px;
+    justify-content: center; padding-inline: var(--space-md); color: var(--white);
+    font-size: 16px; line-height: 24px; background: none; border: 0; border-radius: var(--radius-sm);
+    transition: color .2s; }
+  .nav-action:hover { color: var(--gold); }
+  .nav-action svg { width: 24px; height: 24px; }
+
+  /* ====================== SECTION-LEVEL STYLES ====================== */
+  /* @@SECTION-STYLES@@ */
+
+  /* ============================ RESPONSIVE =========================== */
+  @media (max-width: 1100px) {
+    .nav-menu { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="site-header">
+    <!-- Government digital-stamp strip -->
+    <div class="digital-stamp">
+      <div class="ds-content">
+        <span class="ds-flag">
+          <img src="assets/figma/nav/flag-saudi.svg" alt="" />
+        </span>
+        <span class="ds-label">موقع حكومي مسجل لدى هيئة الحكومة الرقمية</span>
+        <button type="button" class="ds-link">
+          كيف تتحقق؟
+          <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Navy navigation header -->
+    <nav class="nav-header" aria-label="التنقل الرئيسي">
+      <div class="nav-inner">
+        <div class="nav-brand-menu">
+          <a href="/" aria-label="الملتقى البحري السعودي الدولي">
+            <img class="nav-logo" src="assets/figma/nav/logo-fill.svg" alt="الملتقى البحري السعودي الدولي" />
+          </a>
+          <div class="nav-menu">
+            <div class="nav-dd">
+              <button type="button" class="nav-item" aria-haspopup="true" aria-expanded="false">حول
+                <svg class="chev" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="nav-dd__panel" role="menu" aria-label="حول الملتقى البحري">
+                <p class="nav-dd__title">حول الملتقى البحري</p>
+                <div class="nav-dd__list">
+                  <a href="#about" class="nav-dd__link" role="menuitem">عن الملتقى</a>
+                  <a href="#" class="nav-dd__link" role="menuitem">الأهداف</a>
+                  <a href="#themes" class="nav-dd__link" role="menuitem">المحاور</a>
+                  <a href="#" class="nav-dd__link" role="menuitem">المنظم</a>
+                  <a href="#" class="nav-dd__link" role="menuitem">الشراكات</a>
+                  <a href="#" class="nav-dd__link" role="menuitem">المكان</a>
+                </div>
+              </div>
+            </div>
+            <div class="nav-dd">
+              <button type="button" class="nav-item" aria-haspopup="true" aria-expanded="false">البرامج
+                <svg class="chev" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="nav-dd__panel" role="menu" aria-label="البرامج">
+                <p class="nav-dd__title">البرامج</p>
+                <div class="nav-dd__list">
+                  <a href="#" class="nav-dd__link" role="menuitem">حفل الافتتاح</a>
+                  <a href="#sessions" class="nav-dd__link" role="menuitem">الجلسات العامة</a>
+                  <a href="#" class="nav-dd__link" role="menuitem">المعرض</a>
+                  <a href="#" class="nav-dd__link" role="menuitem">اجتماعات الأعمال الحكومية</a>
+                  <a href="#" class="nav-dd__link" role="menuitem">الزيارة</a>
+                </div>
+              </div>
+            </div>
+            <a href="speakers.html" class="nav-item">المتحدثين</a>
+            <div class="nav-dd">
+              <button type="button" class="nav-item" aria-haspopup="true" aria-expanded="false">أكتشف السعودية
+                <svg class="chev" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="nav-dd__panel" role="menu" aria-label="أكتشف السعودية">
+                <p class="nav-dd__title">أكتشف السعودية</p>
+                <div class="nav-dd__list">
+                  <a href="#" class="nav-dd__link" role="menuitem">عن السعودية</a>
+                  <a href="#" class="nav-dd__link" role="menuitem">استثمر في السعودية</a>
+                  <a href="#" class="nav-dd__link" role="menuitem">روح السعودية</a>
+                  <a href="#" class="nav-dd__link" role="menuitem">صنع في السعودية</a>
+                </div>
+              </div>
+            </div>
+            <div class="nav-dd">
+              <button type="button" class="nav-item" aria-haspopup="true" aria-expanded="false">الأرشيف
+                <svg class="chev" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="nav-dd__panel" role="menu" aria-label="الأرشيف">
+                <p class="nav-dd__title">الأرشيف</p>
+                <div class="nav-dd__list">
+                  <a href="#" class="nav-dd__link" role="menuitem">النسخة الأولى 2019</a>
+                  <a href="#" class="nav-dd__link" role="menuitem">النسخة الثانية 2022</a>
+                  <a href="#" class="nav-dd__link" role="menuitem">النسخة الثالثة 2024</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="nav-actions">
+          <button type="button" class="nav-action">تواصل معنا
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16v12H4z" stroke="currentColor" stroke-width="1.5"/><path d="M4 7l8 6 8-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button type="button" class="nav-action" id="search-toggle" aria-label="بحث" aria-expanded="false" aria-controls="search-panel">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6"/><path d="M16 16l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </button>
+          <button type="button" class="nav-action" aria-label="اللغة">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18" stroke="currentColor" stroke-width="1.4"/></svg>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Full-width search drop-panel -->
+    <div class="searchpanel" id="search-panel">
+      <div class="searchpanel__inner">
+        <button type="button" class="searchpanel__close" aria-label="إغلاق البحث">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+        <form class="searchbar" role="search" onsubmit="return false;">
+          <div class="searchbar__field">
+            <span class="searchbar__mag" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.7"/><path d="M16 16l4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+            <input type="search" placeholder="بحث" aria-label="بحث" />
+            <button type="button" class="searchbar__mic" aria-label="البحث الصوتي"><svg viewBox="0 0 24 24" fill="none"><rect x="9" y="3" width="6" height="11" rx="3" stroke="currentColor" stroke-width="1.6"/><path d="M6 11a6 6 0 0012 0M12 17v4M9 21h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          </div>
+          <button type="submit" class="searchbar__submit">بحث</button>
+        </form>
+        <div class="searchsugg">
+          <p class="searchsugg__title">اقتراحات</p>
+          <div class="searchsugg__chips">
+            <button type="button" class="schip">المقالات <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 6v12M6 12h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+            <button type="button" class="schip">الخدمات <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 6v12M6 12h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+            <button type="button" class="schip">التدريب <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 6v12M6 12h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+
+    <!-- ===================== SPEAKERS PAGE HERO (Partner banner) ===================== -->
+    <style>
+      .spkhero { background: #ffffff url('assets/figma/speakers-page/hero-bg.png') center / cover no-repeat;
+        border-bottom: 1px solid var(--border-neutral); padding: 56px var(--section-gutter); }
+      .spkhero__inner { max-width: var(--content-w); margin-inline: auto; display: flex;
+        align-items: center; justify-content: space-between; gap: 48px; flex-wrap: wrap; }
+      .spkhero__logo { flex: 0 0 auto; }
+      .spkhero__logo img { height: 224px; width: auto; display: block; }
+      .spkhero__info { flex: 1 1 460px; display: flex; flex-direction: column; align-items: flex-start;
+        gap: 24px; text-align: right; }
+      .spkhero__title { font-size: 36px; font-weight: 800; line-height: 1.3; color: var(--navy); width: 100%; }
+      .spkhero__meta { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; width: 100%; }
+      .shi { display: flex; align-items: center; gap: 8px; color: var(--navy); font-size: 16px; line-height: 24px; }
+      .shi svg { width: 24px; height: 24px; flex: 0 0 24px; }
+      @media (max-width: 900px){
+        .spkhero__inner { flex-direction: column-reverse; align-items: center; text-align: center; }
+        .spkhero__info { align-items: center; text-align: center; }
+        .shi { justify-content: center; }
+        .spkhero__logo img { height: 176px; }
+      }
+    </style>
+    <section class="spkhero">
+      <div class="spkhero__inner reveal">
+        <div class="spkhero__info">
+          <h1 class="spkhero__title">الموضوع: السيادة، الاقتصاد والمجتمع</h1>
+          <div class="spkhero__meta">
+            <span class="shi"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M3 9.5h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span>23–25 نوفمبر 2026</span></span>
+            <span class="shi"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>2:30 مساءً</span></span>
+            <span class="shi"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s7-5.7 7-11a7 7 0 10-14 0c0 5.3 7 11 7 11z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="10" r="2.5" stroke="currentColor" stroke-width="1.6"/></svg><span>فندق ومركز مؤتمرات سوفيتيل الرياض، المملكة العربية السعودية</span></span>
+          </div>
+        </div>
+        <div class="spkhero__logo"><img src="assets/figma/speakers-page/hero-logo.png" alt="الملتقى البحري السعودي الدولي"></div>
+      </div>
+    </section>
+
+    <!-- ===================== SPEAKERS GRIDS ===================== -->
+    <style>
+      .spk { padding: 64px var(--section-gutter); background: #ffffff; }
+      .spk--alt { background: var(--bg-gray); }
+      .spk__inner { max-width: var(--content-w); margin-inline: auto; display: flex; flex-direction: column;
+        align-items: center; gap: 48px; }
+      .spk__head { display: flex; flex-direction: column; align-items: center; gap: 16px; width: 100%; text-align: center; }
+      .spk__title { font-size: 32px; font-weight: 800; line-height: 1.2; color: var(--navy); }
+      .spk__desc { font-size: 16px; line-height: 24px; color: #545555; max-width: 964px; }
+      .spk__grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; width: 100%; }
+      .spkcard { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+      .spkcard__photo { width: 100%; aspect-ratio: 1 / 1; position: relative; overflow: hidden;
+        border: 0.5px solid #f1f2f2; border-radius: 4px; box-shadow: 0 0 0 5px #ffffff;
+        background: linear-gradient(231deg, #c7dceb 0%, #f8ebce 100%); }
+      .spkcard__photo img { position: absolute; inset: 0; width: 100%; height: 100%;
+        object-fit: cover; object-position: center top; }
+      .spkcard__name { font-size: 18px; font-weight: 800; line-height: 28px; color: var(--ink-display);
+        text-align: center; width: 100%; }
+      .spkcard__role { width: 100%; display: flex; align-items: center; justify-content: center;
+        background: var(--gold-light); border: 0.5px solid var(--gold); border-radius: 2px;
+        padding: 4px 8px; font-size: 12px; line-height: 16px; color: var(--gold-dark); }
+      .spkcard__loc { display: flex; align-items: center; gap: 4px; color: #545555;
+        font-size: 12px; font-weight: 700; line-height: 16px; }
+      .spkcard__loc svg { width: 16px; height: 16px; flex: 0 0 16px; }
+      @media (max-width: 1000px){ .spk__grid { grid-template-columns: repeat(3, 1fr); } }
+      @media (max-width: 760px){ .spk__grid { grid-template-columns: repeat(2, 1fr); } }
+      @media (max-width: 480px){ .spk__grid { grid-template-columns: 1fr; } }
+    </style>
+    <section class="spk">
+      <div class="spk__inner reveal">
+        <div class="spk__head">
+          <h2 class="spk__title">أبرز المتحدثين والمشاركين</h2>
+          <p class="spk__desc">نخبة من القادة والخبراء وصُنّاع القرار من داخل المملكة وخارجها يلتقون لمناقشة مستقبل الأمن البحري والاقتصاد العالمي.</p>
+        </div>
+        <div class="spk__grid" id="spk-grid-1"></div>
+      </div>
+    </section>
+    <section class="spk spk--alt">
+      <div class="spk__inner reveal">
+        <div class="spk__head">
+          <h2 class="spk__title">أبرز المتحدثين والمشاركين</h2>
+          <p class="spk__desc">هنا يمكنك إضافة وصف مختصر حول الغرض من البوابة.</p>
+        </div>
+        <div class="spk__grid" id="spk-grid-2-photos"></div>
+        <div class="spk__grid" id="spk-grid-2"></div>
+      </div>
+    </section>
+    <script>
+      (function () {
+        var loc = 'الرياض، المملكة العربية السعودية';
+        var pin = '<svg viewBox="0 0 17.5 21.5" fill="none" aria-hidden="true"><circle cx="8.75" cy="8.75" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M8.75 20.75C12.75 16.75 16.75 13.1683 16.75 8.75C16.75 4.33172 13.1683 0.75 8.75 0.75C4.33172 0.75 0.75 4.33172 0.75 8.75C0.75 13.1683 4.75 16.75 8.75 20.75Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        var people = [
+          { n: 'د. اللواء أحمد محمد أحمدي', r: 'قائد عسكري' },
+          { n: 'د. سارة عبدالله القحطاني', r: 'خبيرة اقتصادية' },
+          { n: 'م. خالد إبراهيم الزهراني', r: 'مهندس بحري' },
+          { n: 'أ. نورة سعد العتيبي', r: 'باحثة استراتيجية' },
+          { n: 'د. فهد ناصر الدوسري', r: 'أكاديمي' },
+          { n: 'أ. ريم محمد الشهري', r: 'مستشارة سياسات' },
+          { n: 'م. سلطان عبدالعزيز المطيري', r: 'قائد مشاريع' },
+          { n: 'د. هند علي الغامدي', r: 'خبيرة لوجستيات' },
+          { n: 'أ. عبدالرحمن يوسف الحربي', r: 'محلل أمن بحري' },
+          { n: 'د. لمى تركي السبيعي', r: 'أستاذة قانون دولي' },
+          { n: 'م. ماجد سعيد القرني', r: 'مدير عمليات' },
+          { n: 'أ. أمل فيصل العنزي', r: 'مختصة علاقات دولية' }
+        ];
+        function photo(i) { return 'assets/figma/speakers-page/speaker-' + ((i % 12) + 1) + '.jpg'; }
+        function tall(p, i) {
+          return '<article class="spkcard">' +
+            '<div class="spkcard__photo"><img src="' + photo(i) + '" alt="' + p.n + '"></div>' +
+            '<h3 class="spkcard__name">' + p.n + '</h3>' +
+            '<div class="spkcard__role">' + p.r + '</div>' +
+            '<div class="spkcard__loc">' + pin + '<span>' + loc + '</span></div>' +
+            '</article>';
+        }
+        function shortc(i) {
+          return '<article class="spkcard"><div class="spkcard__photo"><img src="' + photo(i) + '" alt=""></div></article>';
+        }
+        var g1 = document.getElementById('spk-grid-1');
+        var g2p = document.getElementById('spk-grid-2-photos');
+        var g2 = document.getElementById('spk-grid-2');
+        var i, h;
+        if (g1) { h = ''; for (i = 0; i < 12; i++) { h += tall(people[i % people.length], i); } g1.innerHTML = h; }
+        if (g2p) { h = ''; for (i = 0; i < 4; i++) { h += shortc(i + 3); } g2p.innerHTML = h; }
+        if (g2) { h = ''; for (i = 0; i < 12; i++) { h += tall(people[(i + 5) % people.length], i + 1); } g2.innerHTML = h; }
+      })();
+    </script>
+
+    <!-- ============================== FOOTER ========================== -->
+    <style>
+      .footer { background: var(--navy); color: var(--gold-light); padding-inline: var(--section-gutter); }
+      .footer__inner { max-width: var(--content-w); margin-inline: auto; padding-block: 40px 24px; }
+      .footer__top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 64px; padding-block: 16px; }
+      .ft-groups { display: flex; align-items: flex-start; gap: 24px; flex-wrap: wrap; }
+      .ft-logo { width: 399px; max-width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+      .ft-logo img { height: 64px; width: auto; }
+      .ft-logo p { font-size: 16px; line-height: 24px; color: var(--gold-light); text-align: justify; }
+      .ft-group { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; width: 256px; }
+      .ft-label { font-size: 16px; line-height: 24px; color: var(--gold); text-align: right; width: 100%;
+        padding-bottom: 8px; border-bottom: 1px solid #f8ebce; }
+      .ft-list { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; width: 100%; }
+      .ft-link { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; line-height: 20px;
+        color: var(--gold-light); text-align: right; justify-content: flex-start; }
+      .ft-link--ul { text-decoration: underline; }
+      .ft-link img { width: 16px; height: 16px; }
+      .ft-col { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; width: 256px; }
+      .ft-icons { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 8px; }
+      .ft-iconbtn { width: 32px; height: 32px; border: 1px solid #f8ebce; border-radius: var(--radius-sm);
+        display: inline-grid; place-items: center; background: transparent; }
+      .ft-iconbtn img { width: 20px; height: 20px; }
+      .footer__legal { display: flex; justify-content: space-between; align-items: center; gap: 24px;
+        padding-block: 16px; flex-wrap: wrap; }
+      .ft-legal-copy { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: right; }
+      .ft-legal-links { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+      .ft-legal-links a { font-size: 14px; line-height: 20px; color: var(--gold-light); text-decoration: underline; }
+      .ft-copy { font-size: 14px; line-height: 20px; font-weight: 700; color: var(--gold); }
+      .ft-dev { font-size: 14px; line-height: 20px; color: var(--gold-light); }
+      .ft-dev b { font-weight: 700; }
+      .ft-legal-logos { display: flex; direction: ltr; align-items: center; gap: 16px; }
+      .ft-legal-logos img { height: 76px; width: auto; }
+    </style>
+    <footer class="footer">
+      <div class="footer__inner">
+        <div class="footer__top">
+          <div class="ft-logo">
+            <img src="assets/figma/footer/logo-simf-white.svg" alt="الملتقى البحري السعودي الدولي" />
+            <p>في ظل التحولات العالمية المتسارعة، يُعدّ استشراف مستقبل أمن البحار وحماية الممرات الحيوية وسلاسل الإمداد، ويعكس الدور الاستراتيجي للمملكة العربية السعودية في تعزيز أمن البحار وصون البنية التحتية الحيوية فوق السطح وفي الأعماق.</p>
+          </div>
+          <div class="ft-groups">
+          <nav class="ft-group" aria-label="روابط مهمة">
+            <p class="ft-label">روابط مهمة</p>
+            <div class="ft-list">
+              <a class="ft-link ft-link--ul" href="https://mod.gov.sa/ar/Pages/default.aspx" target="_blank" rel="noopener">قاعدة القرار وزارة الدفاع <img src="assets/figma/footer/icon-link-04.svg" alt=""></a>
+              <a class="ft-link ft-link--ul" href="https://www.gami.gov.sa/ar" target="_blank" rel="noopener">الهيئة العامة للصناعات العسكرية <img src="assets/figma/footer/icon-link-04.svg" alt=""></a>
+              <a class="ft-link ft-link--ul" href="https://www.gadd.gov.sa/" target="_blank" rel="noopener">الهيئة العامة للتطوير الدفاعي <img src="assets/figma/footer/icon-link-04.svg" alt=""></a>
+              <a class="ft-link ft-link--ul" href="https://lcgpa.gov.sa" target="_blank" rel="noopener">المحتوى المحلي والمشتريات الحكومية <img src="assets/figma/footer/icon-link-04.svg" alt=""></a>
+              <a class="ft-link ft-link--ul" href="https://www.sami.com.sa/ar" target="_blank" rel="noopener">الشركة السعودية للصناعات العسكرية <img src="assets/figma/footer/icon-link-04.svg" alt=""></a>
+            </div>
+          </nav>
+          <div class="ft-group">
+            <p class="ft-label">روابط مهمة</p>
+            <div class="ft-list">
+              <span class="ft-link">12341 الرياض 3507، المملكة العربية السعودية <img src="assets/figma/footer/icon-location.svg" alt=""></span>
+              <a class="ft-link" href="tel:920010500">920010500 <img src="assets/figma/footer/icon-phone.svg" alt=""></a>
+              <a class="ft-link ft-link--ul" href="mailto:info@simforum.mod.gov.sa" target="_blank" rel="noopener">info@simforum.mod.gov.sa <img src="assets/figma/footer/icon-email.svg" alt=""></a>
+            </div>
+          </div>
+          <div class="ft-col">
+            <div class="ft-group">
+              <p class="ft-label">تابعنا على</p>
+              <div class="ft-icons">
+                <a class="ft-iconbtn" href="#" aria-label="إنستغرام"><img src="assets/figma/footer/icon-instagram.svg" alt=""></a>
+                <a class="ft-iconbtn" href="#" aria-label="يوتيوب"><img src="assets/figma/footer/icon-youtube.svg" alt=""></a>
+                <a class="ft-iconbtn" href="#" aria-label="إكس"><img src="assets/figma/footer/icon-x-twitter.svg" alt=""></a>
+                <a class="ft-iconbtn" href="#" aria-label="لينكدإن"><img src="assets/figma/footer/icon-linkedin.svg" alt=""></a>
+              </div>
+            </div>
+            <div class="ft-group">
+              <p class="ft-label">أدوات الاتاحة والوصول</p>
+              <div class="ft-icons">
+                <button type="button" class="ft-iconbtn" aria-label="أداة إتاحة"><img src="assets/figma/footer/icon-a11y-1.svg" alt=""></button>
+                <button type="button" class="ft-iconbtn" aria-label="تكبير"><img src="assets/figma/footer/icon-a11y-2-search.svg" alt=""></button>
+                <button type="button" class="ft-iconbtn" aria-label="عرض"><img src="assets/figma/footer/icon-a11y-3-view.svg" alt=""></button>
+              </div>
+            </div>
+          </div>
+          </div>
+        </div>
+        <div class="footer__legal">
+          <div class="ft-legal-copy">
+            <p class="ft-copy">© MOD.RSNF – All Rights Reserved</p>
+            <p class="ft-dev">تم تطويره وصيانته بواسطة <b>Startime.sa</b></p>
+            <p class="ft-dev">تاريخ آخر تعديل: 04/12/2026</p>
+          </div>
+          <div class="ft-legal-links">
+            <a href="#">خريطة الموقع</a>
+            <a href="#">RSS</a>
+            <a href="#">تطبيق الجوال</a>
+          </div>
+          <div class="ft-legal-logos">
+            <img src="assets/figma/footer/vision-2030.png" alt="رؤية السعودية 2030" />
+            <img src="assets/figma/footer/logo-mod.png" alt="وزارة الدفاع" />
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- @@SECTIONS@@ -->
+  </main>
+
+</div>
+
+<script>
+  // search drop-panel toggle
+  (function () {
+    var toggle = document.getElementById('search-toggle');
+    var panel = document.getElementById('search-panel');
+    if (!toggle || !panel) { return; }
+    var closeBtn = panel.querySelector('.searchpanel__close');
+    var input = panel.querySelector('input');
+    function open() { panel.classList.add('is-open'); toggle.setAttribute('aria-expanded', 'true'); if (input) { input.focus(); } }
+    function close() { panel.classList.remove('is-open'); toggle.setAttribute('aria-expanded', 'false'); }
+    toggle.addEventListener('click', function (e) {
+      e.preventDefault();
+      if (panel.classList.contains('is-open')) { close(); } else { open(); }
+    });
+    if (closeBtn) { closeBtn.addEventListener('click', close); }
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { close(); } });
+  })();
+
+  // reveal-on-scroll
+  (function () {
+    var els = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window) || !els.length) {
+      els.forEach(function (e) { e.classList.add('is-visible'); });
+      return;
+    }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) { en.target.classList.add('is-visible'); io.unobserve(en.target); }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+    els.forEach(function (e) { io.observe(e); });
+  })();
+
+  // المحاور الرئيسية — cycle the active theme (right→left), crossfading its background photo
+  (function () {
+    var section = document.querySelector('.themes');
+    if (!section) { return; }
+    var bg = section.querySelector('.themes__bg');
+    var cards = Array.prototype.slice.call(section.querySelectorAll('.tcard'));
+    var bgimgs = Array.prototype.slice.call(section.querySelectorAll('.themes__bgimg'));
+    if (!cards.length) { return; }
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { return; }
+
+    var current = -1, paused = false, timer = null;
+    function setActive(n) {
+      for (var i = 0; i < cards.length; i++) { cards[i].classList.toggle('is-active', i === n); }
+      for (var j = 0; j < bgimgs.length; j++) { bgimgs[j].classList.toggle('is-active', j === n); }
+      bg.classList.toggle('is-on', n >= 0);
+      current = n;
+    }
+    function advance() { if (!paused) { setActive((current + 1) % cards.length); } }
+    function start() { stop(); timer = setInterval(advance, 3200); }
+    function stop() { if (timer) { clearInterval(timer); timer = null; } }
+
+    cards.forEach(function (card, idx) {
+      card.addEventListener('mouseenter', function () { paused = true; setActive(idx); });
+      card.addEventListener('mouseleave', function () { paused = false; });
+    });
+
+    var seen = false;
+    var io2 = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting && !seen) { seen = true; setActive(0); start(); }
+      });
+    }, { threshold: 0.25 });
+    io2.observe(section);
+  })();
+</script>
+</body>
+</html>
