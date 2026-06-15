@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_zxing/flutter_zxing.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
@@ -86,14 +86,12 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
     }
   }
 
-  void _onDetect(BarcodeCapture capture) {
-    if (_held || _busy) {
+  void _onScan(Code result) {
+    if (_held || _busy || !result.isValid) {
       return;
     }
-    final code = capture.barcodes
-        .map((b) => b.rawValue)
-        .firstWhere((v) => v != null && v.isNotEmpty, orElse: () => null);
-    if (code != null) {
+    final code = result.text?.trim();
+    if (code != null && code.isNotEmpty) {
       unawaited(_scan(code));
     }
   }
@@ -243,7 +241,7 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
       enableCamera: widget.enableCamera,
       held: _held,
       manual: _manual,
-      onDetect: _onDetect,
+      onScan: _onScan,
       onManual: () => unawaited(_scan(_manual.text)),
       onToggleHold: () => setState(() => _held = !_held),
       onGate: (g) => setState(() => _gate = g),
@@ -263,7 +261,7 @@ class _Scanner extends StatelessWidget {
     required this.enableCamera,
     required this.held,
     required this.manual,
-    required this.onDetect,
+    required this.onScan,
     required this.onManual,
     required this.onToggleHold,
     required this.onGate,
@@ -276,7 +274,7 @@ class _Scanner extends StatelessWidget {
   final bool enableCamera;
   final bool held;
   final TextEditingController manual;
-  final void Function(BarcodeCapture) onDetect;
+  final void Function(Code) onScan;
   final VoidCallback onManual;
   final VoidCallback onToggleHold;
   final ValueChanged<OperatorGate> onGate;
@@ -311,12 +309,15 @@ class _Scanner extends StatelessWidget {
                   fit: StackFit.expand,
                   children: <Widget>[
                     if (enableCamera && !held)
-                      MobileScanner(
-                        onDetect: onDetect,
-                        // A camera / ML-Kit / permission failure is surfaced
-                        // here instead of crashing the console — the operator
-                        // falls back to the manual-entry field below.
-                        errorBuilder: (context, error, child) => const Center(
+                      // ZXing reader (native, no Google Play Services) — works
+                      // on Huawei/HMS where the ML-Kit camera was black (D-426).
+                      ReaderWidget(
+                        onScan: onScan,
+                        codeFormat: Format.qrCode,
+                        showGallery: false,
+                        showToggleCamera: false,
+                        tryInverted: true,
+                        loading: const Center(
                           child: Icon(
                             Icons.qr_code_2,
                             size: 72,

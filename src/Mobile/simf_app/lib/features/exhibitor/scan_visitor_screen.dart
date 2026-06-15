@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_zxing/flutter_zxing.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
@@ -13,8 +13,8 @@ import '../../app/widgets/scan_start_prompt.dart';
 import 'data/exhibitor_repository.dart';
 
 /// D-426 — مسح بطاقة زائر / scan a visitor's entry-badge QR (exhibitor "Other"
-/// lead capture). Mirrors the contact scanner's robust shell (no-duplicate
-/// controller + errorBuilder + AppBar back + handle-once, so it never loops or
+/// lead capture). Mirrors the contact scanner's robust shell (ZXing reader +
+/// camera-off-until-tap + AppBar back + handle-once, so it never loops or
 /// traps the user). On a successful scan the visitor is captured server-side and
 /// the screen routes to My Visitors. A manual-entry field is the fallback when
 /// the camera is unavailable. Approved + non-visitor only (a visitor-tier caller
@@ -36,22 +36,10 @@ class _ScanVisitorScreenState extends ConsumerState<ScanVisitorScreen> {
   // where the live camera grabs taps window-wide (Huawei/EMUI). (D-426)
   bool _cameraOn = false;
   String? _lastHandled;
-  MobileScannerController? _scannerController;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.enableCamera) {
-      _scannerController = MobileScannerController(
-        detectionSpeed: DetectionSpeed.noDuplicates,
-      );
-    }
-  }
 
   @override
   void dispose() {
     _manual.dispose();
-    unawaited(_scannerController?.dispose());
     super.dispose();
   }
 
@@ -64,11 +52,12 @@ class _ScanVisitorScreenState extends ConsumerState<ScanVisitorScreen> {
     }
   }
 
-  void _onDetect(BarcodeCapture capture) {
-    if (_processing || capture.barcodes.isEmpty) {
+  // Handle-once: the ZXing reader fires repeatedly while a code is in view.
+  void _onScan(Code code) {
+    if (_processing || !code.isValid) {
       return;
     }
-    final raw = capture.barcodes.first.rawValue?.trim() ?? '';
+    final raw = code.text?.trim() ?? '';
     if (raw.isEmpty || raw == _lastHandled) {
       return;
     }
@@ -178,11 +167,17 @@ class _ScanVisitorScreenState extends ConsumerState<ScanVisitorScreen> {
     return Stack(
       fit: StackFit.expand,
       children: <Widget>[
-        MobileScanner(
-          controller: _scannerController,
-          onDetect: _onDetect,
-          errorBuilder: (context, error, child) =>
-              _Placeholder(label: l10n.scanContactCameraUnavailable),
+        // ZXing reader (native, no Google Play Services) — works on Huawei/HMS.
+        ReaderWidget(
+          onScan: _onScan,
+          codeFormat: Format.qrCode,
+          showGallery: false,
+          showToggleCamera: false,
+          tryInverted: true,
+          loading: const ColoredBox(
+            color: SimfTokens.field,
+            child: Center(child: CircularProgressIndicator()),
+          ),
         ),
         if (_processing)
           const ColoredBox(

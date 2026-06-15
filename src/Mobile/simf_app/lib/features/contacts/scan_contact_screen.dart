@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_zxing/flutter_zxing.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
@@ -15,8 +15,9 @@ import 'data/contacts_repository.dart';
 import 'widgets/contact_card.dart';
 
 /// Scan a visitor's QR → preview → save (SIMF-FDS-014 §5.5–5.6, D-286).
-/// **Auth-gated** (Approved only). The camera (`mobile_scanner`) reads another
-/// visitor's share QR; a **manual-entry** field is the fallback when the camera
+/// **Auth-gated** (Approved only). The camera (`flutter_zxing`, native ZXing —
+/// no Google Play Services) reads another visitor's share QR; a **manual-entry**
+/// field is the fallback when the camera
 /// is denied/unavailable and is the path the widget tests drive. Either way the
 /// scanned code is resolved (`POST /app/contacts/resolve`) to a live card shown
 /// in a preview sheet, where it can be saved to *My Contacts*
@@ -42,34 +43,20 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
   bool _cameraOn = false;
   String? _lastHandled;
 
-  /// Explicit controller with **no-duplicate** detection so the camera reports a
-  /// code once and never re-fires it until a *different* code appears — the
-  /// camera-level guard against the re-scan loop (D-426). Created only when the
-  /// live camera is used (off in widget tests / web).
-  MobileScannerController? _scannerController;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.enableCamera) {
-      _scannerController = MobileScannerController(
-        detectionSpeed: DetectionSpeed.noDuplicates,
-      );
-    }
-  }
-
   @override
   void dispose() {
     _manualController.dispose();
-    unawaited(_scannerController?.dispose());
     super.dispose();
   }
 
-  void _onDetect(BarcodeCapture capture) {
-    if (_processing || capture.barcodes.isEmpty) {
+  /// Handle-once guard against the re-scan loop: the ZXing reader fires onScan
+  /// repeatedly while a code is in view, so a code is processed once and not
+  /// re-fired until a *different* code appears (D-426).
+  void _onScan(Code code) {
+    if (_processing || !code.isValid) {
       return;
     }
-    final raw = capture.barcodes.first.rawValue?.trim() ?? '';
+    final raw = code.text?.trim() ?? '';
     if (raw.isEmpty || raw == _lastHandled) {
       return;
     }
@@ -228,14 +215,18 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
     return Stack(
       fit: StackFit.expand,
       children: <Widget>[
-        MobileScanner(
-          controller: _scannerController,
-          onDetect: _onDetect,
-          // A camera / ML-Kit / permission failure (e.g. a device with no
-          // working Google Play Services) is surfaced here instead of crashing
-          // the screen — the manual-entry field below stays the working path.
-          errorBuilder: (context, error, child) =>
-              _CameraPlaceholder(label: l10n.scanContactCameraUnavailable),
+        // ZXing reader (native, no Google Play Services) — works on Huawei/HMS
+        // where the ML-Kit camera showed a black preview (D-426). QR only.
+        ReaderWidget(
+          onScan: _onScan,
+          codeFormat: Format.qrCode,
+          showGallery: false,
+          showToggleCamera: false,
+          tryInverted: true,
+          loading: const ColoredBox(
+            color: SimfTokens.field,
+            child: Center(child: CircularProgressIndicator()),
+          ),
         ),
         if (_processing)
           const ColoredBox(
