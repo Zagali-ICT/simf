@@ -9,6 +9,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/scan_start_prompt.dart';
 import 'data/exhibitor_repository.dart';
 
 /// D-426 — مسح بطاقة زائر / scan a visitor's entry-badge QR (exhibitor "Other"
@@ -31,6 +32,9 @@ class ScanVisitorScreen extends ConsumerStatefulWidget {
 class _ScanVisitorScreenState extends ConsumerState<ScanVisitorScreen> {
   final TextEditingController _manual = TextEditingController();
   bool _processing = false;
+  // Camera starts only on tap — keeps the on-screen back / manual entry usable
+  // where the live camera grabs taps window-wide (Huawei/EMUI). (D-426)
+  bool _cameraOn = false;
   String? _lastHandled;
   MobileScannerController? _scannerController;
 
@@ -164,6 +168,12 @@ class _ScanVisitorScreenState extends ConsumerState<ScanVisitorScreen> {
   Widget _buildCamera(AppL10n l10n) {
     if (!widget.enableCamera) {
       return _Placeholder(label: l10n.scanContactCameraUnavailable);
+    }
+    if (!_cameraOn) {
+      return ScanStartPrompt(
+        label: l10n.scanStartCamera,
+        onStart: () => setState(() => _cameraOn = true),
+      );
     }
     return Stack(
       fit: StackFit.expand,

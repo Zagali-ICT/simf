@@ -1063,6 +1063,11 @@ class AppL10n {
       _t('تعذر قراءة جهة الاتصال.', 'Could not read the contact.');
   String get scanContactCameraUnavailable =>
       _t('الكاميرا غير متاحة', 'Camera unavailable');
+  // Shared by all QR scanners: the camera starts only on tap so the on-screen
+  // back/cancel stays usable on devices where the live camera grabs taps (D-426).
+  String get scanStartCamera =>
+      _t('اضغط لمسح الرمز بالكاميرا', 'Tap to scan with the camera');
+  String get scanStopCamera => _t('إيقاف الكاميرا', 'Stop camera');
 
   String get contactPreviewTitle => _t('معاينة جهة الاتصال', 'Contact preview');
   String get saveContactLabel =>

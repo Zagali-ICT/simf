@@ -36,7 +36,10 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
   bool _loading = true;
   bool _forbidden = false;
   bool _error = false;
-  bool _held = false;
+  // Camera starts paused so the operator's back / gate-picker / manual entry are
+  // tappable before the live camera (which grabs taps window-wide on some
+  // devices). "Resume" starts scanning; system back also leaves. (D-426)
+  bool _held = true;
   bool _busy = false;
   String _lastQr = '';
   List<OperatorGate> _gates = const <OperatorGate>[];

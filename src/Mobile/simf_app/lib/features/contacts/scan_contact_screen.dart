@@ -9,6 +9,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/scan_start_prompt.dart';
 import 'data/contact_models.dart';
 import 'data/contacts_repository.dart';
 import 'widgets/contact_card.dart';
@@ -35,6 +36,10 @@ class ScanContactScreen extends ConsumerStatefulWidget {
 class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
   final TextEditingController _manualController = TextEditingController();
   bool _processing = false;
+  // The live camera starts only when the user taps "scan" — while it is off the
+  // on-screen back / cancel / manual entry stay tappable on devices where the
+  // live camera grabs taps window-wide (Huawei/EMUI). (D-426)
+  bool _cameraOn = false;
   String? _lastHandled;
 
   /// Explicit controller with **no-duplicate** detection so the camera reports a
@@ -211,6 +216,14 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
   Widget _buildCamera(AppL10n l10n) {
     if (!widget.enableCamera) {
       return _CameraPlaceholder(label: l10n.scanContactCameraUnavailable);
+    }
+    if (!_cameraOn) {
+      // Camera off by default — a tappable prompt starts it. Keeps the back /
+      // manual entry usable before the live camera (which can swallow taps).
+      return ScanStartPrompt(
+        label: l10n.scanStartCamera,
+        onStart: () => setState(() => _cameraOn = true),
+      );
     }
     return Stack(
       fit: StackFit.expand,
