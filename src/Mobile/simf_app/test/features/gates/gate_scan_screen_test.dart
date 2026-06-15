@@ -144,14 +144,13 @@ void main() {
       expect(find.byType(TextField), findsOneWidget); // back on the scanner
     });
 
-    testWidgets('starts paused; resume toggles to hold (D-426)', (tester) async {
+    testWidgets('hold toggles to resume', (tester) async {
       await _pump(tester, _FakeGates(gates: <OperatorGate>[_gate()]));
-      // The camera starts paused so the on-screen controls are usable before the
-      // live camera (which can swallow taps window-wide on some devices).
-      expect(find.widgetWithText(OutlinedButton, 'Resume'), findsOneWidget);
-      await tester.tap(find.widgetWithText(OutlinedButton, 'Resume'));
-      await tester.pumpAndSettle();
+      // Camera-first (D-426): runs immediately, so the control reads "Hold".
       expect(find.widgetWithText(OutlinedButton, 'Hold'), findsOneWidget);
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Hold'));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(OutlinedButton, 'Resume'), findsOneWidget);
     });
 
     testWidgets('no assignments shows the not-assigned state', (tester) async {

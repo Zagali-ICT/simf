@@ -32,9 +32,9 @@ class ScanVisitorScreen extends ConsumerStatefulWidget {
 class _ScanVisitorScreenState extends ConsumerState<ScanVisitorScreen> {
   final TextEditingController _manual = TextEditingController();
   bool _processing = false;
-  // Camera starts only on tap — keeps the on-screen back / manual entry usable
-  // where the live camera grabs taps window-wide (Huawei/EMUI). (D-426)
-  bool _cameraOn = false;
+  // Camera-first (D-426, owner choice): the ZXing camera opens immediately;
+  // exit via system/hardware back (PopScope).
+  bool _cameraOn = true;
   String? _lastHandled;
 
   @override

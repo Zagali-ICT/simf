@@ -40,7 +40,11 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
   // The live camera starts only when the user taps "scan" — while it is off the
   // on-screen back / cancel / manual entry stay tappable on devices where the
   // live camera grabs taps window-wide (Huawei/EMUI). (D-426)
-  bool _cameraOn = false;
+  // Camera-first (D-426, owner choice): the ZXing camera opens immediately and
+  // is exited via the system/hardware back (PopScope) — on EMUI the on-screen
+  // back can't sit over the live camera. The prompt path stays for the
+  // camera-failure / no-camera (test) fallback.
+  bool _cameraOn = true;
   String? _lastHandled;
 
   @override
