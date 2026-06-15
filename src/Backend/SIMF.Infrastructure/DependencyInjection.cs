@@ -426,6 +426,8 @@ public static class DependencyInjection
         services.AddSingleton<SIMF.Application.AccessControl.Abstractions.IGateFailureCircuit,
             SIMF.Infrastructure.AccessControl.GateFailureCircuit>();
         services.AddScoped<IAdminApprovalReadService, AdminApprovalReadService>();
+        // V-1 (D-429) — VVIP/VIP welcome roster read + CSV/Excel export (موج).
+        services.AddScoped<IVipRosterService, VipRosterService>();
         services.AddScoped<IQrIdMinter, QrIdMinter>();
         services.AddScoped<IUserProfileService, UserProfileService>();
         // C7 (D-371) — the offline human-face gate on the profile-image
@@ -445,6 +447,8 @@ public static class DependencyInjection
         services.AddSingleton<SIMF.Application.Excel.IGridExcelExporter, ClosedXmlGridExcelExporter>();
         services.AddSingleton<SIMF.Application.Excel.IGridExcelImporter, ClosedXmlGridExcelImporter>();
         services.AddSingleton<IAvatarStorage, FilesystemAvatarStorage>();
+        // V-1 (D-429) — VVIP/VIP welcome-photo store, separate base dir from avatars.
+        services.AddSingleton<IVipPhotoStorage, FilesystemVipPhotoStorage>();
         services.AddSingleton<IUserIdDocumentStorage, EncryptedUserIdDocumentStorage>();
         services.AddSingleton<ILogFileService, LogFileService>();
         services.AddSingleton<IJwtTokenService, JwtTokenService>();

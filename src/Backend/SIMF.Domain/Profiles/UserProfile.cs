@@ -115,7 +115,23 @@ public class UserProfile : BaseAuditEntity
     /// the QR id. Additive column (owner-authorised).</summary>
     public string? ReferenceNumber { get; set; }
 
+    // -- V-1: VVIP/VIP extras for the موج (Mawj) welcome-message integration.
+    //    Additive nullable columns (owner-authorised D-110 freeze lift); only
+    //    populated for VVIP/VIP visitors, optional everywhere else.
 
+    /// <summary>V-1 — the موج (Mawj) system identifier (المعرف في نظام موج).</summary>
+    public string? MawjId { get; set; }
+
+    /// <summary>V-1 — the honorific / title (اللقب), e.g. "Minister".</summary>
+    public string? Honorific { get; set; }
+
+    /// <summary>V-1 — preferred language as an IETF tag ("ar"/"en") for the
+    /// VIP welcome message.</summary>
+    public string? PreferredLanguage { get; set; }
+
+    /// <summary>V-1 — a separate high-resolution VIP photo (distinct from the
+    /// account avatar), stored via the VIP-photo storage; the relative path.</summary>
+    public string? VipPhotoRelativePath { get; set; }
 
     /// <summary>
     /// The user's <see cref="ProfileType"/> when one is assigned

@@ -34,6 +34,7 @@ internal sealed class UserProfileService(
     IUserAccountRepository accounts,
     IUserProfileRepository profiles,
     IUserIdDocumentStorage idStorage,
+    IVipPhotoStorage vipPhotoStorage,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     INotificationDispatcher notifications,
@@ -570,6 +571,80 @@ internal sealed class UserProfileService(
         }
         var read = await idStorage.OpenReadAsync(path, cancellationToken);
         return read is null ? null : new UserIdDocumentImage(read.Content, read.ContentType);
+    }
+
+    public async Task UploadVipPhotoForSubjectAsync(
+        Guid actorUserId,
+        Guid subjectUserId,
+        UserType expectedKind,
+        byte[] content,
+        string contentType,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await accounts.FindByIdAsync(subjectUserId, cancellationToken)
+            ?? throw new ApiException(
+                ErrorCodes.AdminUserNotFound, 404,
+                "The target account was not found.",
+                "تعذّر العثور على الحساب المستهدف.");
+        if (subject.UserType != expectedKind)
+        {
+            // Same 404-on-mismatch policy as the ID-image path — no cross-kind enumeration.
+            throw new ApiException(
+                ErrorCodes.AdminUserNotFound, 404,
+                "The target account was not found.",
+                "تعذّر العثور على الحساب المستهدف.");
+        }
+
+        var profile = await profiles.FindAsync(subjectUserId, cancellationToken);
+        if (profile is null)
+        {
+            profile = new UserProfile
+            {
+                UserId = subjectUserId,
+                CreatedAt = timeProvider.GetUtcNow(),
+            };
+            profiles.Add(profile);
+        }
+
+        var relativePath = await vipPhotoStorage.SaveAsync(
+            subjectUserId, content, contentType, cancellationToken);
+        profile.VipPhotoRelativePath = relativePath;
+        profile.UpdatedAt = timeProvider.GetUtcNow();
+        // D-167: UserProfile is on the App DB now.
+        await profiles.SaveAppChangesAsync(cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.UserProfileVipPhotoUploaded,
+            Outcome = AuditOutcome.Success,
+            SubjectUserId = subjectUserId,
+            SubjectEmail = subject.Email,
+            ActorUserId = actorUserId,
+            Detail = $"admin-upload vip-photo; {content.Length} bytes; {contentType}",
+        }, cancellationToken);
+    }
+
+    public async Task<VipPhotoImage?> ReadVipPhotoForSubjectAsync(
+        Guid subjectUserId,
+        UserType expectedKind,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await accounts.FindByIdAsync(subjectUserId, cancellationToken);
+        if (subject is null || subject.UserType != expectedKind) { return null; }
+
+        // One-column projection (no tracking) — mirrors GetIdImagePathAsync; the
+        // per-image read path doesn't need the whole tracked profile.
+        var path = await profiles.GetVipPhotoPathAsync(subjectUserId, cancellationToken);
+        if (path is null)
+        {
+            return null;
+        }
+        var read = await vipPhotoStorage.OpenReadAsync(path, cancellationToken);
+        if (read is null) { return null; }
+        using var stream = read.Content;
+        using var buffer = new MemoryStream();
+        await stream.CopyToAsync(buffer, cancellationToken);
+        return new VipPhotoImage(buffer.ToArray(), read.ContentType);
     }
 
     private static UserProfileResponse ToResponse(

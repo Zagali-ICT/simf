@@ -54,6 +54,9 @@ public static class CpNavigation
             // Access control).
             new("Module.AdminVisitors", "/admin/visitors", RequiredPermission: PermissionCatalog.Visitors.View, Icon: "user"),
             new("Module.AdminVisitorsPending", "/admin/visitors/pending", RequiredPermission: PermissionCatalog.Visitors.View, Icon: "hourglass"),
+            // V-1 (D-429) — dedicated VVIP/VIP registration + the موج welcome-data export.
+            new("Module.AdminVisitorsVip", "/admin/visitors/vip", RequiredPermission: PermissionCatalog.Visitors.RegisterOnsite, Icon: "star"),
+            new("Module.AdminVisitorsVipExport", "/admin/visitors/vip/export", RequiredPermission: PermissionCatalog.Visitors.ExportVip, Icon: "download"),
             new("Module.AdminOthers", "/admin/others", RequiredPermission: PermissionCatalog.Others.View, Icon: "id-card"),
             new("Module.AdminOthersPending", "/admin/others/pending", RequiredPermission: PermissionCatalog.Others.View, Icon: "hourglass"),
             // D-130 — print-bag station: lookup by QR id + reprint badge.

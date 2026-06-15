@@ -178,5 +178,26 @@ public sealed class AdminWalkInRegistrationRequestValidator
             .IsInEnum().Bilingual(
                 "Select a valid gender.",
                 "اختر جنسًا صحيحًا.");
+
+        // V-1 (D-429) — VVIP/VIP موج-integration extras. All optional; lengths
+        // match UserProfile (MawjId 64, Honorific 64, PreferredLanguage 16) per
+        // the validation-alignment rule (SES §7).
+        RuleFor(request => request.MawjId)
+            .MaximumLength(64).When(r => !string.IsNullOrEmpty(r.MawjId))
+            .Bilingual(
+                "Mawj ID must be at most 64 characters.",
+                "يجب ألا يتجاوز المعرف في نظام موج 64 حرفًا.");
+
+        RuleFor(request => request.Honorific)
+            .MaximumLength(64).When(r => !string.IsNullOrEmpty(r.Honorific))
+            .Bilingual(
+                "Honorific must be at most 64 characters.",
+                "يجب ألا يتجاوز اللقب 64 حرفًا.");
+
+        RuleFor(request => request.PreferredLanguage)
+            .MaximumLength(16).When(r => !string.IsNullOrEmpty(r.PreferredLanguage))
+            .Bilingual(
+                "Preferred language must be at most 16 characters.",
+                "يجب ألا تتجاوز اللغة المفضلة 16 حرفًا.");
     }
 }

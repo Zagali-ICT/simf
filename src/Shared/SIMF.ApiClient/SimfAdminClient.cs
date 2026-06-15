@@ -665,6 +665,15 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Post, path, multipart, accessToken, cancellationToken);
     }
 
+    /// <summary>V-1 (D-429) — admin-side upload of a visitor's VVIP/VIP welcome
+    /// photo (موج). Multipart "file"; the API returns a plain bool envelope.</summary>
+    public Task<ApiCallResult<bool>> UploadVisitorVipPhotoAsync(
+        Guid subjectId, byte[] content, string contentType, string fileName,
+        string accessToken, CancellationToken cancellationToken = default) =>
+        UploadIdDocumentAsync(
+            $"visitors/{subjectId}/vip-photo",
+            content, contentType, fileName, accessToken, cancellationToken);
+
     /// <summary>D-427 (CS-3) — admin-side upload of a visitor's profile photo (avatar).</summary>
     public Task<ApiCallResult<AvatarResponse>> UploadVisitorAvatarAsync(
         Guid subjectId, byte[] content, string contentType, string fileName,
@@ -713,6 +722,35 @@ public sealed class SimfAdminClient(HttpClient http)
     public Task<(int StatusCode, string? ContentType, byte[] Bytes)> FetchOtherAvatarAsync(
         Guid subjectId, string accessToken, CancellationToken cancellationToken = default) =>
         FetchIdDocumentAsync($"others/{subjectId}/avatar", accessToken, cancellationToken);
+
+    /// <summary>V-1 (D-429) — admin streamed read of a visitor's VVIP/VIP welcome
+    /// photo (موج). Reuses the generic byte-fetch helper.</summary>
+    public Task<(int StatusCode, string? ContentType, byte[] Bytes)> FetchVisitorVipPhotoAsync(
+        Guid subjectId, string accessToken, CancellationToken cancellationToken = default) =>
+        FetchIdDocumentAsync($"visitors/{subjectId}/vip-photo", accessToken, cancellationToken);
+
+    /// <summary>V-1 (D-429) — the VVIP/VIP welcome roster (موج) as JSON.</summary>
+    public Task<ApiCallResult<IReadOnlyList<VipRosterRow>>> GetVipRosterAsync(
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<IReadOnlyList<VipRosterRow>>(
+            HttpMethod.Get, "visitors/vip/roster", content: null,
+            accessToken, cancellationToken);
+
+    /// <summary>V-1 (D-429) — one page of the VVIP/VIP roster for the CP export grid.</summary>
+    public Task<ApiCallResult<GridPage<VipRosterRow>>> ListVipRosterAsync(
+        GridQuery query, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<VipRosterRow>>(
+            HttpMethod.Post, "visitors/vip/roster/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>V-1 (D-429) — download the VVIP/VIP welcome roster (موج) as a
+    /// CSV or Excel file. Reuses the generic byte-fetch helper.</summary>
+    public Task<(int StatusCode, string? ContentType, byte[] Bytes)> FetchVipRosterFileAsync(
+        string format, string accessToken, CancellationToken cancellationToken = default) =>
+        FetchIdDocumentAsync(
+            $"visitors/vip/roster/export?format={Uri.EscapeDataString(format)}",
+            accessToken, cancellationToken);
 
     private async Task<(int StatusCode, string? ContentType, byte[] Bytes)> FetchIdDocumentAsync(
         string path, string accessToken, CancellationToken cancellationToken)

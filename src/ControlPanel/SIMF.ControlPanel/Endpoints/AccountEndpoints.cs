@@ -485,6 +485,85 @@ internal static class AccountEndpoints
                 id, stream.ToArray(), file.ContentType, file.FileName, token));
         }).DisableAntiforgery();
 
+        // V-1 (D-429) — admin upload of the subject's VVIP/VIP welcome photo.
+        // Mirrors the avatar upload proxy (multipart, SameSite=Lax CSRF).
+        group.MapPost("/admin/visitors/{id:guid}/vip-photo",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+
+            var form = await http.Request.ReadFormAsync();
+            var file = form.Files.GetFile("file");
+            if (file is null || file.Length == 0)
+            {
+                return Results.BadRequest(ApiResult<object>.Fail(new ApiError
+                {
+                    Code = ErrorCodes.AvatarFileMissing,
+                    Message = "A photo file is required.",
+                    MessageArabic = "ملف الصورة مطلوب.",
+                }));
+            }
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+            return Forward(await api.UploadVisitorVipPhotoAsync(
+                id, stream.ToArray(), file.ContentType, file.FileName, token));
+        }).DisableAntiforgery();
+
+        // V-1 (D-429) — admin stream-read of the subject's VIP welcome photo for
+        // the roster / export page. Mirrors the avatar GET proxy.
+        group.MapGet("/admin/visitors/{id:guid}/vip-photo",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            var (status, contentType, bytes) =
+                await api.FetchVisitorVipPhotoAsync(id, token);
+            if (status != 200 || contentType is null || bytes.Length == 0)
+            {
+                return Results.StatusCode(status);
+            }
+            http.Response.Headers.CacheControl = "private, max-age=60";
+            return Results.File(bytes, contentType);
+        });
+
+        // V-1 (D-429) — VVIP/VIP welcome roster (موج): JSON feed for the export
+        // page + the file download. ("vip" never matches the {id:guid} routes.)
+        group.MapGet("/admin/visitors/vip/roster",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetVipRosterAsync(token));
+        });
+
+        group.MapPost("/admin/visitors/vip/roster/list",
+            async (GridQuery query, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListVipRosterAsync(query, token));
+        });
+
+        group.MapGet("/admin/visitors/vip/roster/export",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            var format = http.Request.Query["format"].ToString();
+            if (string.IsNullOrWhiteSpace(format)) { format = "csv"; }
+            var (status, contentType, bytes) =
+                await api.FetchVipRosterFileAsync(format, token);
+            if (status != 200 || contentType is null || bytes.Length == 0)
+            {
+                return Results.StatusCode(status);
+            }
+            var fileName = format.Equals("xlsx", StringComparison.OrdinalIgnoreCase)
+                ? "vip-welcome-roster.xlsx"
+                : "vip-welcome-roster.csv";
+            return Results.File(bytes, contentType, fileName);
+        });
+
         // D-129 — admin stream-read of the subject's ID-document image. The
         // Details / View modals render this via <img src="..."> so the
         // browser refreshes it whenever the modal opens.

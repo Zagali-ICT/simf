@@ -417,6 +417,19 @@ public sealed class AdminWalkInRegistrationRequest
     /// <summary>D-163 (PDF §2.6) — optional job title.</summary>
     public string? JobTitle { get; set; }
 
+    /// <summary>V-1 (D-429) — the موج (Mawj) system identifier (المعرف في نظام موج).
+    /// Optional everywhere; the dedicated VIP registration page captures it for
+    /// VVIP/VIP visitors so the welcome-message export can key on it. ≤64 chars.</summary>
+    public string? MawjId { get; set; }
+
+    /// <summary>V-1 (D-429) — honorific / title (اللقب), e.g. "Minister". Optional;
+    /// captured on the VIP page for the موج welcome message. ≤64 chars.</summary>
+    public string? Honorific { get; set; }
+
+    /// <summary>V-1 (D-429) — preferred language for the موج welcome message
+    /// (اللغة المفضلة), an IETF tag like "ar"/"en". Optional. ≤16 chars.</summary>
+    public string? PreferredLanguage { get; set; }
+
     /// <summary>Visitor tier / Other subtype — drives the badge colour.</summary>
     public Guid ProfileTypeId { get; set; }
 

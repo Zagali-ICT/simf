@@ -58,6 +58,29 @@ public interface IUserProfileService
         SIMF.Common.Enums.UserType expectedKind,
         CancellationToken cancellationToken = default);
 
+    /// <summary>V-1 (D-429): admin-side upload of the VVIP/VIP welcome photo
+    /// (صورة واضحة) for a subject. Stored in the dedicated VIP-photo store and
+    /// written to <c>UserProfile.VipPhotoRelativePath</c> — distinct from both
+    /// the account avatar and the ID image. The caller enforces the role/policy
+    /// check + the size/MIME/magic-byte gate at the endpoint; this method only
+    /// enforces the UserType match (Visitor) so an Admin row can never receive
+    /// a VIP photo.</summary>
+    Task UploadVipPhotoForSubjectAsync(
+        Guid actorUserId,
+        Guid subjectUserId,
+        SIMF.Common.Enums.UserType expectedKind,
+        byte[] content,
+        string contentType,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>V-1 (D-429): admin-side read of a subject's VIP welcome photo.
+    /// Same UserType-match guard as the upload variant; null when no photo is
+    /// set.</summary>
+    Task<VipPhotoImage?> ReadVipPhotoForSubjectAsync(
+        Guid subjectUserId,
+        SIMF.Common.Enums.UserType expectedKind,
+        CancellationToken cancellationToken = default);
+
     /// <summary>
     /// D-106: focused read for the SignInService state-banner — returns
     /// the bilingual rejection text for the user (or <c>null</c> when no
@@ -90,6 +113,10 @@ public interface IUserProfileService
 
 /// <summary>The decrypted ID-image bytes + the content type for the response.</summary>
 public sealed record UserIdDocumentImage(byte[] Content, string ContentType);
+
+/// <summary>V-1 (D-429) — the VVIP/VIP welcome-photo bytes + content type for
+/// the stream response (not encrypted; a portrait shared with the موج teams).</summary>
+public sealed record VipPhotoImage(byte[] Content, string ContentType);
 
 /// <summary>D-106: bilingual rejection text projection (EN + AR).</summary>
 public sealed record RejectionText(string? English, string? Arabic);

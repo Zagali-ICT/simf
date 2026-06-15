@@ -116,6 +116,66 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Visitor_walk_in_persists_vip_fields()
+    {
+        // V-1 (D-429) — the VIP page sends the موج extras (Mawj ID, honorific,
+        // preferred language); they must land on the profile row.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var profileTypeId = await GetVisitorProfileTypeAsync();
+        var organisationId = await GetOrganisationIdAsync();
+
+        var req = BuildRequest(profileTypeId, $"walkin-vipf-{Guid.NewGuid():N}@simf.test", organisationId);
+        req.MawjId = "MAWJ-12345";
+        req.Honorific = "Minister";
+        req.PreferredLanguage = "ar";
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/visitors/register-onsite", req, adminToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<AdminWalkInRegistrationResponse>>())!;
+
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var profile = await appDb.UserProfiles.SingleAsync(p => p.UserId == body.Data!.UserId);
+        Assert.Equal("MAWJ-12345", profile.MawjId);
+        Assert.Equal("Minister", profile.Honorific);
+        Assert.Equal("ar", profile.PreferredLanguage);
+    }
+
+    [Fact]
+    public async Task Admin_uploads_vip_photo_sets_path()
+    {
+        // V-1 (D-429) — the VIP page captures a separate welcome photo via the
+        // dedicated vip-photo endpoint; it must set VipPhotoRelativePath (a
+        // field distinct from the avatar).
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var profileTypeId = await GetVisitorProfileTypeAsync();
+        var organisationId = await GetOrganisationIdAsync();
+
+        var reg = await PostAuthAsync(
+            "/api/v1/admin/visitors/register-onsite",
+            BuildRequest(profileTypeId, $"walkin-vp-{Guid.NewGuid():N}@simf.test", organisationId),
+            adminToken);
+        var regBody = (await reg.Content.ReadFromJsonAsync<ApiResult<AdminWalkInRegistrationResponse>>())!;
+        var subjectId = regBody.Data!.UserId;
+
+        using var form = new MultipartFormDataContent();
+        var file = new ByteArrayContent(OnePixelPng);
+        file.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        form.Add(file, "file", "vip.png");
+        using var request = new HttpRequestMessage(
+            HttpMethod.Post, $"/api/v1/admin/visitors/{subjectId}/vip-photo") { Content = form };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var profile = await appDb.UserProfiles.SingleAsync(p => p.UserId == subjectId);
+        Assert.False(string.IsNullOrEmpty(profile.VipPhotoRelativePath));
+    }
+
+    [Fact]
     public async Task Other_walk_in_creates_pending_other_user()
     {
         var adminToken = await CreateAdministratorAndSignInAsync();

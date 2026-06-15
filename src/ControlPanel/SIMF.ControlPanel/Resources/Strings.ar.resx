@@ -2679,4 +2679,26 @@
   <data name="Admin.Asset.Kind.Video" xml:space="preserve"><value>فيديو</value></data>
   <data name="Admin.Asset.Kind.Document" xml:space="preserve"><value>مستند</value></data>
   <data name="Admin.Asset.SaveLink" xml:space="preserve"><value>حفظ الرابط</value></data>
+  <data name="Admin.WalkIn.Section.Vip" xml:space="preserve"><value>بيانات كبار الشخصيات (موج)</value></data>
+  <data name="Admin.WalkIn.Section.Vip.Hint" xml:space="preserve"><value>بيانات اختيارية لرسالة الترحيب تُشارك مع الفرق التقنية لضيوف كبار الشخصيات.</value></data>
+  <data name="Admin.WalkIn.Field.MawjId" xml:space="preserve"><value>المعرف في نظام موج (اختياري)</value></data>
+  <data name="Admin.WalkIn.Field.MawjId.Hint" xml:space="preserve"><value>معرّف الضيف في منصة موج. حتى 64 حرفًا.</value></data>
+  <data name="Admin.WalkIn.Field.Honorific" xml:space="preserve"><value>اللقب (اختياري)</value></data>
+  <data name="Admin.WalkIn.Field.Honorific.Hint" xml:space="preserve"><value>مثل "معالي الوزير" أو "سعادة". حتى 64 حرفًا.</value></data>
+  <data name="Admin.WalkIn.Field.PreferredLanguage" xml:space="preserve"><value>اللغة المفضلة (اختياري)</value></data>
+  <data name="Admin.WalkIn.Field.PreferredLanguage.Hint" xml:space="preserve"><value>لغة رسالة الترحيب.</value></data>
+  <data name="Admin.WalkIn.Field.PreferredLanguage.Placeholder" xml:space="preserve"><value>غير محددة</value></data>
+  <data name="Admin.WalkIn.Field.PreferredLanguage.Ar" xml:space="preserve"><value>العربية</value></data>
+  <data name="Admin.WalkIn.Field.PreferredLanguage.En" xml:space="preserve"><value>الإنجليزية</value></data>
+  <data name="Admin.WalkIn.Field.VipPhoto" xml:space="preserve"><value>صورة الترحيب لكبار الشخصيات (اختياري)</value></data>
+  <data name="Admin.WalkIn.Field.VipPhoto.Hint" xml:space="preserve"><value>صورة واضحة وعالية الدقة لرسالة الترحيب. PNG أو JPEG أو WebP، حتى 2 ميغابايت.</value></data>
+  <data name="Admin.VipRegistration.Title" xml:space="preserve"><value>تسجيل شخصية مهمة / بالغة الأهمية</value></data>
+  <data name="Admin.VipRegistration.Supporting" xml:space="preserve"><value>سجّل ضيفًا من كبار الشخصيات مع بيانات رسالة الترحيب لنظام موج. يُنشأ الحساب بانتظار الموافقة ويُعتمد من قائمة الزوار المعلّقين.</value></data>
+  <data name="Admin.VipExport.Title" xml:space="preserve"><value>تصدير ترحيب كبار الشخصيات (موج)</value></data>
+  <data name="Admin.VipExport.Supporting" xml:space="preserve"><value>قائمة ترحيب كبار الشخصيات المشتركة مع الفرق التقنية. نزّلها بصيغة CSV أو Excel، أو اقرأ واجهة JSON البرمجية.</value></data>
+  <data name="Admin.VipExport.Empty" xml:space="preserve"><value>لم يُسجَّل أي ضيف من كبار الشخصيات بعد.</value></data>
+  <data name="Admin.VipExport.Photo" xml:space="preserve"><value>الصورة</value></data>
+  <data name="Admin.VipExport.Download" xml:space="preserve"><value>تنزيل</value></data>
+  <data name="Module.AdminVisitorsVip" xml:space="preserve"><value>تسجيل كبار الشخصيات</value></data>
+  <data name="Module.AdminVisitorsVipExport" xml:space="preserve"><value>تصدير ترحيب كبار الشخصيات</value></data>
 </root>

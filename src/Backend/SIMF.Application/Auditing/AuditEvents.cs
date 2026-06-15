@@ -105,6 +105,8 @@ public static class AuditEvents
     public const string UserProfileSaved = "UserProfile.Saved";
     public const string UserProfileIdImageUploaded = "UserProfile.IdImageUploaded";
     public const string UserProfileIdImageRejected = "UserProfile.IdImageRejected";
+    // V-1 (D-429) — VVIP/VIP welcome photo (موج) upload.
+    public const string UserProfileVipPhotoUploaded = "UserProfile.VipPhotoUploaded";
 
     // Interests (P9 — D-050; الاهتمامات)
     public const string InterestCreated = "Interest.Created";
