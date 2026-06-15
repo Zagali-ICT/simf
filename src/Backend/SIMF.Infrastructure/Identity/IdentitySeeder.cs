@@ -187,11 +187,14 @@ public sealed class IdentitySeeder(
         // queue; no special mobile-app authority (MobileAppRole.None).
         // "Normal" stays the slot-0 default; these are added alongside.
         // Distinct PageColors so the tier is unmistakable on the badge.
+        // V-1 — distinct Arabic names: VIP keeps the established
+        // "كبار الشخصيات" convention; VVIP is the higher "بالغة الأهمية"
+        // tier, so the two cards never read identically in an Arabic UI.
         await EnsureProfileTypeAsync(
-            "VVIP", "كبار الشخصيات", "#B91C1C", // deep red
+            "VVIP", "شخصيات بالغة الأهمية", "#B91C1C", // deep red
             isVisitor: true, MobileAppRole.None, cancellationToken);
         await EnsureProfileTypeAsync(
-            "VIP", "شخصيات مهمة", "#0E7490", // deep teal
+            "VIP", "كبار الشخصيات", "#0E7490", // deep teal
             isVisitor: true, MobileAppRole.None, cancellationToken);
 
         // D-174 (gap doc G11, Mockup page 39) — seed the cybersecurity
