@@ -177,7 +177,9 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextField), 'مرحبا');
-      await tester.tap(find.byType(IconButton).last);
+      // Target the composer send icon specifically — the AppBar now also has a
+      // back IconButton, so byType(IconButton).last is no longer the send (D-426).
+      await tester.tap(find.byIcon(Icons.send));
       await tester.pumpAndSettle();
 
       expect(

@@ -4,6 +4,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import 'data/news_models.dart';
 import 'news_article_screen.dart';
@@ -30,7 +31,7 @@ class NewsScreen extends ConsumerWidget {
     final l10n = AppL10n.of(context);
     final news = ref.watch(newsListProvider);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.newsTitle)),
+      appBar: AppBar(leading: const SimfBackButton(), title: Text(l10n.newsTitle)),
       // News left the bottom nav in the KSA Wave-2 shell (the Profile tab
       // took its slot) — the bar stays, with no destination highlighted.
       bottomNavigationBar: const SimfBottomNav(current: null),

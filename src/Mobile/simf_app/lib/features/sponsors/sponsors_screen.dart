@@ -4,6 +4,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/ksa_shell.dart';
 import 'data/sponsor_models.dart';
 
 /// `GET /app/sponsors` → the tier-grouped sponsors (public, D-199).
@@ -28,7 +29,7 @@ class SponsorsScreen extends ConsumerWidget {
     final l10n = AppL10n.of(context);
     final groups = ref.watch(sponsorGroupsProvider);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.sponsorsTitle)),
+      appBar: AppBar(leading: const SimfBackButton(), title: Text(l10n.sponsorsTitle)),
       body: SafeArea(
         child: groups.when(
           loading: () => const Center(child: CircularProgressIndicator()),

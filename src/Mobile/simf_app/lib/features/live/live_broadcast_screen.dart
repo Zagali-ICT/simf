@@ -8,6 +8,7 @@ import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/ksa_shell.dart';
 import 'data/live_repository.dart';
 import 'youtube_url.dart';
 
@@ -95,7 +96,7 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.liveBroadcastTitle)),
+      appBar: AppBar(leading: const SimfBackButton(), title: Text(l10n.liveBroadcastTitle)),
       body: SafeArea(child: _buildBody(l10n)),
     );
   }

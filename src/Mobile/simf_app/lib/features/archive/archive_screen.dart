@@ -6,6 +6,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/ksa_shell.dart';
 import 'data/archive_models.dart';
 
 /// `GET /app/archive` → the past editions (public, D-273).
@@ -59,7 +60,7 @@ class ArchiveScreen extends ConsumerWidget {
     final l10n = AppL10n.of(context);
     final editions = ref.watch(archiveEditionsProvider);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.archiveTitle)),
+      appBar: AppBar(leading: const SimfBackButton(), title: Text(l10n.archiveTitle)),
       body: SafeArea(
         child: editions.when(
           loading: () => const Center(child: CircularProgressIndicator()),

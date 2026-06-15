@@ -8,6 +8,7 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/ksa_shell.dart';
 
 /// Page 011 — حالة التسجيل · Registration status (Page_011 docs).
 ///
@@ -82,6 +83,7 @@ class _RegistrationStatusScreenState
     final l10n = AppL10n.of(context);
     return Scaffold(
       appBar: AppBar(
+        leading: const SimfBackButton(),
         title: Text(l10n.registrationStatusTitle),
         automaticallyImplyLeading: false,
         actions: <Widget>[

@@ -6,6 +6,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/ksa_shell.dart';
 
 /// Data layer for the rating (Page_040). `POST /app/feedback/rate`
 /// (`RequireApprovedAccount`) upserts the caller's star rating + comment.
@@ -80,7 +81,7 @@ class _RateScreenState extends ConsumerState<RateScreen> {
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.rateTitle)),
+      appBar: AppBar(leading: const SimfBackButton(), title: Text(l10n.rateTitle)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(

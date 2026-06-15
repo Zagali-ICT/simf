@@ -4,6 +4,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/ksa_shell.dart';
 
 /// One media partner — mirrors `PublicMediaPartnerItem` (`name`/`nameArabic`).
 @immutable
@@ -60,7 +61,7 @@ class MediaPartnersScreen extends ConsumerWidget {
     final l10n = AppL10n.of(context);
     final partners = ref.watch(mediaPartnersProvider);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.mediaPartnersTitle)),
+      appBar: AppBar(leading: const SimfBackButton(), title: Text(l10n.mediaPartnersTitle)),
       body: SafeArea(
         child: partners.when(
           loading: () => const Center(child: CircularProgressIndicator()),

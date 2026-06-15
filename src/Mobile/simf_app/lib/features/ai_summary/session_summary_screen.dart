@@ -6,6 +6,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/ksa_shell.dart';
 import 'data/session_summary_models.dart';
 import 'data/session_summary_repository.dart';
 
@@ -77,7 +78,7 @@ class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.aiSummaryTitle)),
+      appBar: AppBar(leading: const SimfBackButton(), title: Text(l10n.aiSummaryTitle)),
       body: SafeArea(child: _buildBody(l10n)),
     );
   }

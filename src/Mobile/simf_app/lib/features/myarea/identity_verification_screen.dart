@@ -11,6 +11,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/ksa_shell.dart';
 
 /// The selfie the flow returns to the My-Area caller, which uploads it via the
 /// existing `POST /app/account/avatar`.
@@ -303,6 +304,7 @@ class _IdentityVerificationScreenState
     return Scaffold(
       backgroundColor: SimfTokens.navy,
       appBar: AppBar(
+        leading: const SimfBackButton(),
         backgroundColor: SimfTokens.navy,
         foregroundColor: Colors.white,
         elevation: 0,

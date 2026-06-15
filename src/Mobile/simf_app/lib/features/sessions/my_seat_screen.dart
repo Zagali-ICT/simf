@@ -8,6 +8,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/ksa_shell.dart';
 import 'data/seat_map_models.dart';
 import 'data/seat_map_repository.dart';
 
@@ -80,7 +81,7 @@ class _MySeatScreenState extends ConsumerState<MySeatScreen> {
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.mySeatMapTitle)),
+      appBar: AppBar(leading: const SimfBackButton(), title: Text(l10n.mySeatMapTitle)),
       body: SafeArea(child: _buildBody(l10n)),
     );
   }

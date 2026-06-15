@@ -27,6 +27,24 @@ void ksaBackOrHome(BuildContext context) {
   }
 }
 
+/// A standard AppBar leading back button for raw-`AppBar` screens. Always shows
+/// (unlike the auto-leading, which vanishes when the screen is the navigator
+/// root after a resume / deep-link, trapping the user) and always works:
+/// [ksaBackOrHome] pops when it can, else lands on home. Use as
+/// `appBar: AppBar(leading: const SimfBackButton(), ...)`. (D-426)
+class SimfBackButton extends StatelessWidget {
+  const SimfBackButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.arrow_back),
+      tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+      onPressed: () => ksaBackOrHome(context),
+    );
+  }
+}
+
 /// The navy page scaffold: background, optional decorative sweep, a
 /// forced-LTR header (circled back chevron at the left, centred title — the
 /// D-363 chrome pattern), the page [body], and the shared bottom nav.
