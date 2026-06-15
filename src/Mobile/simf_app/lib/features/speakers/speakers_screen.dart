@@ -137,7 +137,6 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
       );
     }
     final isArabic = l10n.isArabic;
-    final hostLabel = l10n.hostLabel;
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(
         SimfTokens.space4,
@@ -152,7 +151,6 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
         return _SpeakerCard(
           speaker: speaker,
           isArabic: isArabic,
-          hostLabel: hostLabel,
           onTap: () => context.pushNamed(
             RouteNames.speakerProfile,
             pathParameters: <String, String>{'speakerId': speaker.id},
@@ -165,22 +163,19 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
 
 /// One speaker card (frame 908:1999): the navy [KsaCard] chrome carrying — in
 /// RTL — a small beige caret at the inline start, the white name over the beige
-/// rank·affiliation line, and a 44×44 gold-bordered role tile at the inline end
-/// (an anchor for a speaker, a star for a host · المضيف).
+/// rank·affiliation line, and a 44×44 gold-bordered anchor tile at the inline
+/// end. D-432: the host/speaker distinction is per-session (it lives on the
+/// session↔speaker join), not a global speaker attribute, so the global list
+/// shows the anchor for everyone; the host star appears on the session detail.
 class _SpeakerCard extends StatelessWidget {
   const _SpeakerCard({
     required this.speaker,
     required this.isArabic,
-    required this.hostLabel,
     required this.onTap,
   });
 
   final SpeakerSummary speaker;
   final bool isArabic;
-
-  /// The localized "host" word (المضيف / Host) — used both to detect a host row
-  /// and to render the star tile.
-  final String hostLabel;
   final VoidCallback onTap;
 
   @override
@@ -194,10 +189,6 @@ class _SpeakerCard extends StatelessWidget {
       if (country != null) country,
     ];
     final label = labelParts.join(' · ');
-    // No role flag exists on the public summary (data gap — see report), so the
-    // host tile is driven by the affiliation text carrying the host word, the
-    // only available signal (the frame's host row reads "العميد ركن · المضيف").
-    final isHost = label.contains(hostLabel);
 
     return KsaCard(
       onTap: onTap,
@@ -247,7 +238,7 @@ class _SpeakerCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: SimfTokens.space4),
-                  _RoleTile(isHost: isHost),
+                  const _RoleTile(),
                 ],
               ),
             ),
@@ -258,13 +249,11 @@ class _SpeakerCard extends StatelessWidget {
   }
 }
 
-/// The 44×44 gold-bordered role tile (frame 908:2004): a gold-tinted square
-/// (accent @ 15%) on a solid gold hairline, holding the anchor glyph for a
-/// speaker or the star glyph for a host.
+/// The 44×44 gold-bordered anchor tile (frame 908:2004): a gold-tinted square
+/// (accent @ 15%) on a solid gold hairline. D-432 — the global speaker list
+/// uses the anchor for everyone (host is a per-session role, shown on detail).
 class _RoleTile extends StatelessWidget {
-  const _RoleTile({required this.isHost});
-
-  final bool isHost;
+  const _RoleTile();
 
   @override
   Widget build(BuildContext context) {
@@ -278,8 +267,8 @@ class _RoleTile extends StatelessWidget {
             const BorderRadius.all(Radius.circular(SimfTokens.radiusSmall)),
         border: Border.all(color: SimfTokens.accent),
       ),
-      child: Icon(
-        isHost ? Icons.star_border : Icons.anchor,
+      child: const Icon(
+        Icons.anchor,
         size: 20,
         color: SimfTokens.accent,
       ),

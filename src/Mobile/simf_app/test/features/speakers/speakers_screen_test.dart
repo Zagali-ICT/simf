@@ -115,12 +115,14 @@ void main() {
       expect(find.text('Sea captain · RSNF'), findsOneWidget);
     });
 
-    testWidgets('a speaker shows the anchor tile, a host shows the star tile',
+    testWidgets('the global list shows the anchor tile for EVERY speaker — the '
+        'host star is per-session (shown on the detail), not here (D-432)',
         (tester) async {
       await _pump(tester, repo: _FakeSpeakersRepo(list: _speakers));
-      // Two non-host speakers → two anchors; one host → one star.
-      expect(find.byIcon(Icons.anchor), findsNWidgets(2));
-      expect(find.byIcon(Icons.star_border), findsOneWidget);
+      // Anchor-for-all: host is contextual to a session (it lives on the
+      // session↔speaker join), so the global list never shows a star.
+      expect(find.byIcon(Icons.anchor), findsNWidgets(3));
+      expect(find.byIcon(Icons.star_border), findsNothing);
     });
 
     testWidgets('tapping a card opens the profile', (tester) async {

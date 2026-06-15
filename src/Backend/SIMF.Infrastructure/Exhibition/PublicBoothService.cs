@@ -38,6 +38,30 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
                 HallId = b.HallId,
                 MapX = b.MapX,
                 MapY = b.MapY,
+                // D-432 — the hall display name (entity already has it) + the
+                // booth officer resolved Contact-first (the de-duplicated D-260
+                // directory record), falling back to the legacy inline columns.
+                HallName = b.HallId == null
+                    ? null
+                    : db.Halls.Where(h => h.Id == b.HallId)
+                        .Select(h => h.Name).FirstOrDefault(),
+                HallNameArabic = b.HallId == null
+                    ? null
+                    : db.Halls.Where(h => h.Id == b.HallId)
+                        .Select(h => h.NameArabic).FirstOrDefault(),
+                OfficerName = b.ContactId == null
+                    ? b.OfficerName
+                    : db.Contacts.Where(c => c.Id == b.ContactId)
+                        .Select(c => c.NameArabic != "" ? c.NameArabic : c.Name)
+                        .FirstOrDefault(),
+                OfficerPhone = b.ContactId == null
+                    ? b.OfficerPhone
+                    : db.Contacts.Where(c => c.Id == b.ContactId)
+                        .Select(c => c.PhonePrimary).FirstOrDefault(),
+                OfficerEmail = b.ContactId == null
+                    ? b.OfficerEmail
+                    : db.Contacts.Where(c => c.Id == b.ContactId)
+                        .Select(c => c.Email).FirstOrDefault(),
             })
             .ToListAsync(cancellationToken);
 
@@ -68,6 +92,28 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
                 HallId = b.HallId,
                 MapX = b.MapX,
                 MapY = b.MapY,
+                // D-432 — hall name + Contact-first officer (see ListAsync).
+                HallName = b.HallId == null
+                    ? null
+                    : db.Halls.Where(h => h.Id == b.HallId)
+                        .Select(h => h.Name).FirstOrDefault(),
+                HallNameArabic = b.HallId == null
+                    ? null
+                    : db.Halls.Where(h => h.Id == b.HallId)
+                        .Select(h => h.NameArabic).FirstOrDefault(),
+                OfficerName = b.ContactId == null
+                    ? b.OfficerName
+                    : db.Contacts.Where(c => c.Id == b.ContactId)
+                        .Select(c => c.NameArabic != "" ? c.NameArabic : c.Name)
+                        .FirstOrDefault(),
+                OfficerPhone = b.ContactId == null
+                    ? b.OfficerPhone
+                    : db.Contacts.Where(c => c.Id == b.ContactId)
+                        .Select(c => c.PhonePrimary).FirstOrDefault(),
+                OfficerEmail = b.ContactId == null
+                    ? b.OfficerEmail
+                    : db.Contacts.Where(c => c.Id == b.ContactId)
+                        .Select(c => c.Email).FirstOrDefault(),
             })
             .FirstOrDefaultAsync(cancellationToken);
 }

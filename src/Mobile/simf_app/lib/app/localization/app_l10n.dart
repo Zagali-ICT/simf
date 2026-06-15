@@ -812,6 +812,7 @@ class AppL10n {
   String get boothsHallFallback => _t('قاعة المعرض', 'Exhibition hall');
   String boothsGuideMe(String code) =>
       _t('أرشدني إلى الجناح · $code', 'Guide me to the booth · $code');
+  String get boothsOfficerRole => _t('المسؤول في الجناح', 'Booth officer');
 
   // Sponsors (Page 023).
   String get sponsorsTitle => _t('الرعاة', 'Sponsors');

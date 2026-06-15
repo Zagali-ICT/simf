@@ -264,6 +264,21 @@ class _BoothCard extends StatelessWidget {
             _CompanyHeader(booth: booth, isArabic: isArabic),
             const SizedBox(height: SimfTokens.space4),
             _HallRow(booth: booth, l10n: l10n),
+            // D-432 — the booth-officer row + email/phone boxes (now on the
+            // wire, server resolves the officer Contact-first); shown only when
+            // the booth actually carries that contact data.
+            if ((booth.officerName ?? '').trim().isNotEmpty) ...<Widget>[
+              const SizedBox(height: SimfTokens.space4),
+              _OfficerRow(name: booth.officerName!.trim(), l10n: l10n),
+            ],
+            if ((booth.officerEmail ?? '').trim().isNotEmpty ||
+                (booth.officerPhone ?? '').trim().isNotEmpty) ...<Widget>[
+              const SizedBox(height: SimfTokens.space4),
+              _ContactBoxes(
+                email: booth.officerEmail?.trim(),
+                phone: booth.officerPhone?.trim(),
+              ),
+            ],
             if (booth.code.isNotEmpty) ...<Widget>[
               const SizedBox(height: SimfTokens.space4),
               _GuideButton(code: booth.code, l10n: l10n),
@@ -384,7 +399,11 @@ class _HallRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sector = booth.localizedSector(l10n.isArabic);
+    // D-432 — prefer the real hall display name (now on the wire), then the
+    // booth sector, then the generic fallback (D11/Page_015 L-6 — never invent).
+    final hallLabel = booth.localizedHallName(l10n.isArabic) ??
+        booth.localizedSector(l10n.isArabic) ??
+        l10n.boothsHallFallback;
     final code = booth.code;
     // Both children are a fixed 48 high; the row must NOT stretch — inside the
     // card Column (unbounded height) CrossAxisAlignment.stretch would size the
@@ -397,7 +416,7 @@ class _HallRow extends StatelessWidget {
           const SizedBox(width: SimfTokens.space4),
         ],
         Expanded(
-          child: _HallBox(label: sector ?? l10n.boothsHallFallback),
+          child: _HallBox(label: hallLabel),
         ),
       ],
     );
@@ -469,6 +488,134 @@ class _HallBox extends StatelessWidget {
           fontWeight: FontWeight.w600,
           fontSize: SimfTokens.textMd,
         ),
+      ),
+    );
+  }
+}
+
+/// The booth-officer row (frame 922:2800): the officer's gold name over the
+/// fixed beige role label, beside a gold initials tile (e.g. "RS"). D-432 — the
+/// officer contact now ships on the wire (server resolves it Contact-first).
+class _OfficerRow extends StatelessWidget {
+  const _OfficerRow({required this.name, required this.l10n});
+
+  final String name;
+  final AppL10n l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: SimfTokens.accent,
+                  fontWeight: FontWeight.w600,
+                  fontSize: SimfTokens.textSm,
+                ),
+              ),
+              const SizedBox(height: SimfTokens.space1),
+              Text(
+                l10n.boothsOfficerRole,
+                style: const TextStyle(
+                  color: SimfTokens.beigeBorder,
+                  fontSize: SimfTokens.textXs,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: SimfTokens.space2),
+        Container(
+          width: 40,
+          height: 40,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: SimfTokens.accent,
+            borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+          ),
+          child: Text(
+            _initials(name),
+            textDirection: TextDirection.ltr,
+            style: const TextStyle(
+              color: SimfTokens.navy,
+              fontWeight: FontWeight.w700,
+              fontSize: SimfTokens.textSm,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The booth-officer contact boxes (frame 922:2810): email + phone in two
+/// bordered navy boxes side by side, each with a trailing glyph. D-432 — only
+/// the boxes the wire actually carries are shown.
+class _ContactBoxes extends StatelessWidget {
+  const _ContactBoxes({this.email, this.phone});
+
+  final String? email;
+  final String? phone;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasEmail = (email ?? '').isNotEmpty;
+    final hasPhone = (phone ?? '').isNotEmpty;
+    return Row(
+      children: <Widget>[
+        if (hasEmail)
+          Expanded(child: _ContactBox(text: email!, icon: Icons.mail_outline)),
+        if (hasEmail && hasPhone) const SizedBox(width: SimfTokens.space4),
+        if (hasPhone)
+          Expanded(child: _ContactBox(text: phone!, icon: Icons.call_outlined)),
+      ],
+    );
+  }
+}
+
+class _ContactBox extends StatelessWidget {
+  const _ContactBox({required this.text, required this.icon});
+
+  final String text;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 44,
+      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space2),
+      decoration: BoxDecoration(
+        color: SimfTokens.navyDeep,
+        border: Border.all(
+          color: SimfTokens.beigeBorder,
+          width: SimfTokens.hairline,
+        ),
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+      ),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textDirection: TextDirection.ltr,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: SimfTokens.textXs,
+              ),
+            ),
+          ),
+          const SizedBox(width: SimfTokens.space2),
+          Icon(icon, size: 16, color: SimfTokens.beigeBorder),
+        ],
       ),
     );
   }

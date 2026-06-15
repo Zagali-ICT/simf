@@ -81,6 +81,8 @@ class SessionSeatMap {
     required this.hallCapacity,
     this.myCell,
     this.sessionCapacity,
+    this.sessionTitle,
+    this.sessionTitleArabic,
   });
 
   final List<String> rowLabels;
@@ -90,6 +92,22 @@ class SessionSeatMap {
   final int activeReservedCount;
   final int hallCapacity;
   final int? sessionCapacity;
+  // D-432 — the session's bilingual title now ships on the seat-map response
+  // (no second /sessions/{id} call needed for the "my seat" header).
+  final String? sessionTitle;
+  final String? sessionTitleArabic;
+
+  /// The locale-appropriate session title (null when neither is present).
+  String? localizedSessionTitle(bool isArabic) {
+    final ar = (sessionTitleArabic ?? '').trim();
+    final en = (sessionTitle ?? '').trim();
+    final primary = isArabic ? ar : en;
+    if (primary.isNotEmpty) {
+      return primary;
+    }
+    final fallback = isArabic ? en : ar;
+    return fallback.isEmpty ? null : fallback;
+  }
 
   /// False when the hall has no configured layout (L-6) — the grid can't draw.
   bool get hasLayout => rowLabels.isNotEmpty && seatsPerRow > 0;
@@ -123,6 +141,8 @@ class SessionSeatMap {
       activeReservedCount: (json['activeReservedCount'] as num?)?.toInt() ?? 0,
       hallCapacity: (json['hallCapacity'] as num?)?.toInt() ?? 0,
       sessionCapacity: (json['sessionCapacity'] as num?)?.toInt(),
+      sessionTitle: json['sessionTitle'] as String?,
+      sessionTitleArabic: json['sessionTitleArabic'] as String?,
     );
   }
 }
