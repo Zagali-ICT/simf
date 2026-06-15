@@ -51,9 +51,9 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
                         .Select(h => h.NameArabic).FirstOrDefault(),
                 OfficerName = b.ContactId == null
                     ? b.OfficerName
-                    : db.Contacts.Where(c => c.Id == b.ContactId)
+                    : (db.Contacts.Where(c => c.Id == b.ContactId)
                         .Select(c => c.NameArabic != "" ? c.NameArabic : c.Name)
-                        .FirstOrDefault(),
+                        .FirstOrDefault() ?? b.OfficerName),
                 OfficerPhone = b.ContactId == null
                     ? b.OfficerPhone
                     : db.Contacts.Where(c => c.Id == b.ContactId)
@@ -103,9 +103,9 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
                         .Select(h => h.NameArabic).FirstOrDefault(),
                 OfficerName = b.ContactId == null
                     ? b.OfficerName
-                    : db.Contacts.Where(c => c.Id == b.ContactId)
+                    : (db.Contacts.Where(c => c.Id == b.ContactId)
                         .Select(c => c.NameArabic != "" ? c.NameArabic : c.Name)
-                        .FirstOrDefault(),
+                        .FirstOrDefault() ?? b.OfficerName),
                 OfficerPhone = b.ContactId == null
                     ? b.OfficerPhone
                     : db.Contacts.Where(c => c.Id == b.ContactId)
