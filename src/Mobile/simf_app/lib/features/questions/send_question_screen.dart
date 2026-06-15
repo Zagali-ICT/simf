@@ -18,16 +18,23 @@ enum QuestionRecipient {
   int get wireIndex => index;
 }
 
-/// Page 026 — إرسال سؤال · Send a question (#26, `/live/question`).
+/// Page 026 — إرسال سؤال · Send a question (#26, `/live/question`), rebuilt to
+/// the KSA-Project Figma frame **934:3636 "Live Video"** (the ask-a-question
+/// form portion) on the shared shell.
 ///
 /// **Auth-gated** (route 26 is in `_authenticatedRoutes`). Reached from a live
 /// session with the session id in the query string. With no id it shows an
-/// "open from a live session" empty state; with an id it shows the form — a
-/// recipient choice (Speaker / Host), a multiline question field (max 500), and
-/// a Submit that `POST`s `/app/sessions/{id}/questions` (`RequireApprovedAccount`,
+/// "open from a live session" empty state; with an id it shows the form — the
+/// "الاسئلة" label, a tinted multiline question box (frame `934:3668`, max 500),
+/// the gold full-width "ارسال السؤال" submit, and the centred gold-bulleted
+/// "reviewed before air" note (frame `943:3750`).
+///
+/// The frame shows no recipient selector, so the form submits to the default
+/// recipient (Speaker = 0); the submit API + `recipient` wire field are
+/// preserved (`POST /app/sessions/{id}/questions`, `RequireApprovedAccount`,
 /// D-169/D-174). A 400 (`SESSION_NOT_LIVE_FOR_QUESTIONS`) / 404 maps to the
 /// "questions are only open around the session" toast; any other failure to a
-/// generic error toast. UI is interim — final visuals from SIMF-VID-001.
+/// generic error toast.
 class SendQuestionScreen extends ConsumerStatefulWidget {
   const SendQuestionScreen({this.sessionId, super.key});
 
@@ -40,7 +47,9 @@ class SendQuestionScreen extends ConsumerStatefulWidget {
 
 class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
   final TextEditingController _question = TextEditingController();
-  QuestionRecipient _recipient = QuestionRecipient.speaker;
+  // The frame carries no recipient selector; the question is submitted to the
+  // default recipient. The wire `recipient` field is preserved (D-169/D-174).
+  static const QuestionRecipient _recipient = QuestionRecipient.speaker;
   bool _submitting = false;
   String? _inlineError;
 
@@ -98,33 +107,17 @@ class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return Scaffold(
-      appBar: AppBar(leading: const SimfBackButton(), title: Text(l10n.sendQuestionTitle)),
-      body: SafeArea(child: _hasSession ? _form(l10n) : _empty(l10n)),
+    return KsaPage(
+      title: l10n.sendQuestionTitle,
+      onBack: () => ksaBackOrHome(context),
+      body: _hasSession ? _form(l10n) : _empty(l10n),
     );
   }
 
   Widget _empty(AppL10n l10n) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            const Icon(
-              Icons.live_help_outlined,
-              size: 56,
-              color: SimfTokens.txtTertiary,
-            ),
-            const SizedBox(height: SimfTokens.space3),
-            Text(
-              l10n.sendQuestionNoSession,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: SimfTokens.txtTertiary),
-            ),
-          ],
-        ),
-      ),
+    return KsaEmptyState(
+      icon: Icons.live_help_outlined,
+      message: l10n.sendQuestionNoSession,
     );
   }
 
@@ -132,169 +125,134 @@ class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(
         SimfTokens.space4,
-        SimfTokens.space4,
+        SimfTokens.space5,
         SimfTokens.space4,
         SimfTokens.space6,
       ),
       children: <Widget>[
-        // Mockup `.recipient-row .label` — quiet 10.5px caption above the
-        // recipient toggle.
+        // Frame 945:3756 — the "الاسئلة" section label: white, Medium, aligned
+        // to the inline end (right in RTL).
         Text(
-          l10n.sendQuestionRecipientLabel,
+          l10n.sendQuestionSectionLabel,
+          textAlign: TextAlign.end,
           style: const TextStyle(
-            color: SimfTokens.txtSecondary,
-            fontWeight: FontWeight.w600,
-            fontSize: SimfTokens.textXs,
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+            fontSize: SimfTokens.textLg,
           ),
         ),
         const SizedBox(height: SimfTokens.space2),
-        // Mockup `.recipient-row` — two equal-width radio pills.
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: _RecipientPill(
-                label: l10n.sendQuestionToSpeaker,
-                selected: _recipient == QuestionRecipient.speaker,
-                onTap: _submitting
-                    ? null
-                    : () => setState(
-                          () => _recipient = QuestionRecipient.speaker,
-                        ),
+        // Frame 934:3668 — the tinted multiline question box: navyDeep fill on
+        // the 8px radius, the placeholder beige and inline-end aligned.
+        Container(
+          decoration: BoxDecoration(
+            color: SimfTokens.navyDeep,
+            borderRadius:
+                BorderRadius.circular(SimfTokens.radius),
+          ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: SimfTokens.space2,
+            vertical: SimfTokens.space3,
+          ),
+          child: TextField(
+            controller: _question,
+            maxLength: 500,
+            minLines: 4,
+            maxLines: 6,
+            textAlign: TextAlign.right,
+            textInputAction: TextInputAction.newline,
+            style: const TextStyle(color: Colors.white, fontSize: SimfTokens.textSm),
+            cursorColor: SimfTokens.accent,
+            decoration: InputDecoration(
+              isCollapsed: true,
+              border: InputBorder.none,
+              counterText: '',
+              hintText: l10n.sendQuestionHint,
+              hintStyle: const TextStyle(
+                color: SimfTokens.beigeBorder,
+                fontSize: SimfTokens.textSm,
+              ),
+              errorText: _inlineError,
+              errorStyle: const TextStyle(color: SimfTokens.danger),
+            ),
+            onChanged: (_) {
+              if (_inlineError != null) {
+                setState(() => _inlineError = null);
+              }
+            },
+          ),
+        ),
+        const SizedBox(height: SimfTokens.space6),
+        // Frame 942:3746 — the gold full-width submit: white SemiBold label on
+        // the 4px-radius accent fill.
+        SizedBox(
+          height: 44,
+          child: FilledButton(
+            onPressed: _submitting ? null : () => unawaited(_submit(l10n)),
+            style: FilledButton.styleFrom(
+              backgroundColor: SimfTokens.accent,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius:
+                    BorderRadius.circular(SimfTokens.radiusSmall),
+              ),
+              textStyle: const TextStyle(
+                fontSize: SimfTokens.textSm,
+                fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(width: SimfTokens.space2),
-            Expanded(
-              child: _RecipientPill(
-                label: l10n.sendQuestionToHost,
-                selected: _recipient == QuestionRecipient.host,
-                onTap: _submitting
-                    ? null
-                    : () => setState(
-                          () => _recipient = QuestionRecipient.host,
-                        ),
-              ),
+            child: Text(
+              _submitting ? l10n.loadingLabel : l10n.sendQuestionSubmit,
             ),
-          ],
+          ),
         ),
         const SizedBox(height: SimfTokens.space4),
-        // Mockup `.q-box` — themed multiline field (tinted fill + hairline).
-        TextField(
-          controller: _question,
-          maxLength: 500,
-          maxLines: 5,
-          textInputAction: TextInputAction.newline,
-          decoration: InputDecoration(
-            labelText: l10n.sendQuestionFieldLabel,
-            hintText: l10n.sendQuestionHint,
-            errorText: _inlineError,
-          ),
-          onChanged: (_) {
-            if (_inlineError != null) {
-              setState(() => _inlineError = null);
-            }
-          },
-        ),
-        const SizedBox(height: SimfTokens.space4),
-        // Mockup `.q-send` — gold/navy primary action.
-        FilledButton.icon(
-          onPressed: _submitting ? null : () => unawaited(_submit(l10n)),
-          icon: const Icon(Icons.send_outlined),
-          label: Text(_submitting ? l10n.loadingLabel : l10n.sendQuestionSubmit),
-        ),
-        const SizedBox(height: SimfTokens.space3),
-        // Mockup `.q-note` — quiet "reviewed before air" footnote.
-        Text(
-          l10n.sendQuestionWindowHint,
-          textAlign: TextAlign.right,
-          style: const TextStyle(
-            color: SimfTokens.txtSecondary,
-            fontSize: SimfTokens.textXs,
-            height: 1.6,
-          ),
+        // Frame 943:3750 — the centred bulleted note: "ملاحظة" gold/SemiBold,
+        // "سيتم مراجعته قبل العرض المباشر" beige.
+        _ReviewNote(
+          label: l10n.sendQuestionNoteLabel,
+          body: l10n.sendQuestionWindowHint,
         ),
       ],
     );
   }
 }
 
-/// One recipient choice (mockup `.recipient` / `.recipient.on`): a full-width
-/// pill with a leading radio dot that fills gold when selected. Selected =
-/// accent border + accent-8% fill + white text; unselected = hairline border +
-/// tinted fill + secondary text.
-class _RecipientPill extends StatelessWidget {
-  const _RecipientPill({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
+/// The frame 943:3750 footnote — a single centred gold bullet, the bold gold
+/// "ملاحظة" word, then the muted-beige "reviewed before air" body.
+class _ReviewNote extends StatelessWidget {
+  const _ReviewNote({required this.label, required this.body});
 
   final String label;
-  final bool selected;
-  final VoidCallback? onTap;
+  final String body;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: SimfTokens.space3,
-            vertical: SimfTokens.space2,
+    return Text.rich(
+      TextSpan(
+        children: <InlineSpan>[
+          const TextSpan(
+            text: '• ',
+            style: TextStyle(color: SimfTokens.accent),
           ),
-          decoration: BoxDecoration(
-            color: selected
-                ? SimfTokens.accent.withValues(alpha: 0.08)
-                : SimfTokens.surfaceTint,
-            borderRadius: BorderRadius.circular(SimfTokens.radius),
-            border: Border.all(
-              color: selected ? SimfTokens.accent : SimfTokens.line,
+          TextSpan(
+            text: '$label ',
+            style: const TextStyle(
+              color: SimfTokens.accent,
+              fontWeight: FontWeight.w600,
+              fontSize: SimfTokens.textLg,
             ),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              _RadioDot(selected: selected),
-              const SizedBox(width: SimfTokens.space2),
-              Text(
-                label,
-                style: TextStyle(
-                  color: selected
-                      ? SimfTokens.surface
-                      : SimfTokens.txtSecondary,
-                  fontSize: SimfTokens.textXs,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                ),
-              ),
-            ],
+          TextSpan(
+            text: body,
+            style: const TextStyle(
+              color: SimfTokens.beigeBorder,
+              fontSize: SimfTokens.textMd,
+            ),
           ),
-        ),
+        ],
       ),
-    );
-  }
-}
-
-/// The mockup `.recipient::before` dot — a 10px ring that fills gold when on.
-class _RadioDot extends StatelessWidget {
-  const _RadioDot({required this.selected});
-
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 12,
-      height: 12,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: selected ? SimfTokens.accent : Colors.transparent,
-        border: Border.all(
-          color: selected ? SimfTokens.accent : SimfTokens.txtTertiary,
-          width: 1.5,
-        ),
-      ),
+      textAlign: TextAlign.center,
     );
   }
 }

@@ -51,6 +51,12 @@ Future<void> _pump(
   Locale locale = const Locale('en'),
   bool settle = true,
 }) async {
+  // Tall surface so the whole lazy scroll (player band → title → region notice →
+  // ask-question, or the not-live message) lays out in the test viewport.
+  tester.view.physicalSize = const Size(1200, 2600);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
   final router = GoRouter(
     initialLocation: '/live',
     routes: <RouteBase>[
@@ -132,6 +138,25 @@ void main() {
         find.text('This session is not broadcasting right now.'),
         findsOneWidget,
       );
+    });
+
+    testWidgets('the loaded content renders the region notice + ask-question',
+        (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeLiveRepo(session: _liveSession()),
+        sessionId: 's1',
+      );
+
+      // The static region-restriction notice card (frame 934:3619).
+      expect(
+        find.textContaining(
+          'Live broadcasting is available only inside the Riyadh region',
+        ),
+        findsOneWidget,
+      );
+      // The ask-a-question entry to Page 026.
+      expect(find.text('Ask a question'), findsOneWidget);
     });
 
     testWidgets('no stream but a recording shows the recording note',

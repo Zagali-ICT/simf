@@ -63,7 +63,25 @@ Future<void> _pump(
 }
 
 void main() {
-  group('SendQuestionScreen (Page 026)', () {
+  group('SendQuestionScreen (Page 026, Figma 934:3636)', () {
+    testWidgets('golden render — label, question box, submit, note',
+        (tester) async {
+      final repo = _FakeQuestionsRepo();
+      await _pump(tester, repo: repo, sessionId: 's1');
+
+      // The "الاسئلة" section label, the question box, the gold submit, and
+      // the "reviewed before air" note all render.
+      expect(find.byType(TextField), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Send question'), findsOneWidget);
+      expect(
+        find.textContaining('Questions are reviewed before going on air.'),
+        findsOneWidget,
+      );
+      // The frame carries no recipient selector.
+      expect(find.text('Speaker'), findsNothing);
+      expect(find.text('Host'), findsNothing);
+    });
+
     testWidgets('no session id shows the open-from-a-session empty state',
         (tester) async {
       final repo = _FakeQuestionsRepo();
@@ -73,7 +91,7 @@ void main() {
         find.text('Open this from a live session to send a question.'),
         findsOneWidget,
       );
-      expect(find.byType(SegmentedButton<QuestionRecipient>), findsNothing);
+      expect(find.byType(TextField), findsNothing);
       expect(repo.calls, 0);
     });
 
@@ -89,19 +107,18 @@ void main() {
       expect(repo.calls, 0);
     });
 
-    testWidgets('typing + Host + submit sends and shows the sent toast',
+    testWidgets('typing + submit sends to the default recipient + sent toast',
         (tester) async {
       final repo = _FakeQuestionsRepo();
       await _pump(tester, repo: repo, sessionId: 's1');
 
-      await tester.tap(find.text('Host'));
-      await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'How deep is the reef?');
       await tester.tap(find.widgetWithText(FilledButton, 'Send question'));
       await tester.pumpAndSettle();
 
       expect(repo.lastQuestionText, 'How deep is the reef?');
-      expect(repo.lastRecipientIndex, 1);
+      // The frame has no selector; the wire `recipient` stays the default (0).
+      expect(repo.lastRecipientIndex, 0);
       expect(find.text('Your question was sent'), findsOneWidget);
       // The field is cleared after a successful submit.
       expect(find.text('How deep is the reef?'), findsNothing);

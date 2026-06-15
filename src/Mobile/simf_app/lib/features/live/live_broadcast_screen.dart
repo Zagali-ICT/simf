@@ -2,17 +2,21 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 import 'package:video_player/video_player.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 import '../../app/localization/app_l10n.dart';
+import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_bottom_nav.dart';
 import 'data/live_repository.dart';
 import 'youtube_url.dart';
 
-/// Page 025 — البث المباشر · Live broadcast (#25, `/live?sessionId=`).
+/// Page 025 — البث المباشر · Live broadcast (#25, `/live?sessionId=`), rebuilt
+/// to the KSA-Project Figma frame **934:3450** on the shared navy shell.
 ///
 /// **Public** (anonymous). Takes an optional [sessionId] from the query string.
 /// With no id it shows a "pick a session" empty state and never fetches. With
@@ -25,11 +29,20 @@ import 'youtube_url.dart';
 /// * neither → a "not live / scheduled" state.
 /// 404 → not-found; any other failure → retry.
 ///
+/// **Frame mapping (934:3450):** the navy header (circled back chevron + centred
+/// title), a **black player surface** carrying the LIVE badge + the gold-bordered
+/// "AI live-caption" strip, then the **"يُبث الآن" now-broadcasting** block (the
+/// session title as a gold bullet), the gold **region-restriction notice card**,
+/// and the **ask-a-question** entry to Page 026 (`/live/question`). The frame's
+/// "القاعة الرئيسية" hall name, the speakers/participants line, the inline-caption
+/// language chip and the **"الجلسات القادمة" upcoming-sessions** cards are NOT
+/// carried by the live wire slice — see the agent report's apiGaps; this screen
+/// renders only what the contract carries and never fabricates the missing rows.
+///
 /// **Provider (D-349):** the live-video provider is **YouTube** (POC). Each feed
 /// URL is sniffed by [YoutubeUrl]: a YouTube link plays via the IFrame player,
 /// anything else (HLS/MP4) via `video_player`. The player widget owns its own
 /// controller lifecycle, so swapping the active URL just rebuilds it.
-/// UI is interim — final visuals land with SIMF-VID-001.
 class LiveBroadcastScreen extends ConsumerStatefulWidget {
   const LiveBroadcastScreen({this.sessionId, super.key});
 
@@ -92,18 +105,27 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
     }
   }
 
+  void _askQuestion() {
+    context.pushNamed(
+      RouteNames.sendQuestion,
+      queryParameters: <String, String>{'sessionId': widget.sessionId!.trim()},
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return Scaffold(
-      appBar: AppBar(leading: const SimfBackButton(), title: Text(l10n.liveBroadcastTitle)),
-      body: SafeArea(child: _buildBody(l10n)),
+    return KsaPage(
+      title: l10n.liveBroadcastTitle,
+      onBack: () => ksaBackOrHome(context),
+      tab: SimfTab.sessions,
+      body: _buildBody(l10n),
     );
   }
 
   Widget _buildBody(AppL10n l10n) {
     if (!_hasId) {
-      return _EmptyState(
+      return KsaEmptyState(
         icon: Icons.live_tv_outlined,
         message: l10n.liveNoSessionSelected,
       );
@@ -112,14 +134,15 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     if (_notFound) {
-      return _EmptyState(
+      return KsaEmptyState(
         icon: Icons.live_tv_outlined,
         message: l10n.sessionNotFound,
       );
     }
     if (_error || _session == null) {
-      return _ErrorState(
+      return KsaErrorState(
         message: l10n.liveBroadcastError,
+        retryLabel: l10n.retryLabel,
         onRetry: () => unawaited(_load()),
       );
     }
@@ -131,56 +154,182 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
     final mainUrl = session.liveStreamUrl;
     final signUrl = session.liveSignLanguageUrl;
     final hasBothFeeds = mainUrl != null && signUrl != null;
+    final isLive = mainUrl != null;
     // When the main feed is present, the active feed is the sign-language one
     // only while the toggle is on AND a sign feed exists; otherwise the main feed.
     final activeUrl = (_showSignLanguage && signUrl != null) ? signUrl : mainUrl;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        SimfTokens.space4,
-        SimfTokens.space4,
-        SimfTokens.space4,
-        SimfTokens.space6,
-      ),
+      padding: EdgeInsets.zero,
       children: <Widget>[
-        Text(
-          session.localizedTitle(isArabic),
-          style: const TextStyle(
-            color: SimfTokens.surface,
-            fontWeight: FontWeight.w700,
-            fontSize: SimfTokens.textXl,
-          ),
-        ),
-        const SizedBox(height: SimfTokens.space4),
-        if (mainUrl != null) ...<Widget>[
-          // Keyed by the active URL so swapping the feed disposes the old
-          // controller and builds a fresh player for the new one.
-          _LivePlayer(
+        // The black player surface (frame 934:3614) — full-bleed, edge to edge.
+        if (mainUrl != null)
+          _PlayerSurface(
+            // Keyed by the active URL so swapping the feed disposes the old
+            // controller and builds a fresh player for the new one.
             key: ValueKey<String>(activeUrl!),
             url: activeUrl,
             liveLabel: l10n.liveNowLabel,
-          ),
-          if (hasBothFeeds) ...<Widget>[
-            const SizedBox(height: SimfTokens.space3),
-            _FeedToggle(
-              showSignLanguage: _showSignLanguage,
-              mainLabel: l10n.liveFeedMain,
-              signLabel: l10n.liveFeedSignLanguage,
-              onChanged: (value) =>
-                  setState(() => _showSignLanguage = value),
-            ),
-          ],
-        ] else if (session.hasRecording)
-          _RecordingNote(l10n: l10n)
+            captionHint: l10n.liveCaptionHint,
+          )
+        else if (session.hasRecording)
+          _RecordingSurface(message: l10n.liveRecordingAvailable)
         else
-          _NotLiveNote(l10n: l10n),
-        // No main feed but a sign-language feed is announced → keep the note
-        // (there is nothing to toggle between).
-        if (signUrl != null && mainUrl == null) ...<Widget>[
-          const SizedBox(height: SimfTokens.space3),
-          _SignLanguageNote(label: l10n.liveSignLanguageAvailable),
-        ],
+          _NotLiveSurface(message: l10n.liveNotLiveYet),
+
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            SimfTokens.space4,
+            SimfTokens.space5,
+            SimfTokens.space4,
+            SimfTokens.space6,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              if (hasBothFeeds) ...<Widget>[
+                _FeedToggle(
+                  showSignLanguage: _showSignLanguage,
+                  mainLabel: l10n.liveFeedMain,
+                  signLabel: l10n.liveFeedSignLanguage,
+                  onChanged: (value) =>
+                      setState(() => _showSignLanguage = value),
+                ),
+                const SizedBox(height: SimfTokens.space5),
+              ],
+
+              // "يُبث الآن" now-broadcasting block (frame 934:3615 / 934:3616):
+              // the section label over the session title as a gold bullet.
+              Text(
+                isLive ? l10n.liveNowBroadcasting : l10n.liveSessionLabel,
+                textAlign: TextAlign.right,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: SimfTokens.textLg,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: SimfTokens.space4),
+              _GoldBullet(
+                text: session.localizedTitle(isArabic),
+                color: SimfTokens.accent,
+                fontWeight: FontWeight.w600,
+              ),
+
+              // Sign-language-only note (a sign feed announced with no main
+              // feed → nothing to toggle, just the note).
+              if (signUrl != null && mainUrl == null) ...<Widget>[
+                const SizedBox(height: SimfTokens.space4),
+                _SignLanguageNote(label: l10n.liveSignLanguageAvailable),
+              ],
+
+              const SizedBox(height: SimfTokens.space5),
+              // The gold region-restriction notice card (frame 934:3619).
+              _RegionNoticeCard(
+                noticeLabel: l10n.liveRegionNoticeLabel,
+                noticeBody: l10n.liveRegionNoticeBody,
+              ),
+
+              const SizedBox(height: SimfTokens.space6),
+              // Ask-a-question entry → Page 026 (the frame's L-3 Q&A affordance).
+              _AskQuestionButton(
+                label: l10n.liveAskQuestion,
+                onTap: _askQuestion,
+              ),
+            ],
+          ),
+        ),
       ],
+    );
+  }
+}
+
+/// The black live player surface (frame 934:3614): the player fills a 16:9 box
+/// over a black backdrop, with the LIVE badge pinned top-start and the
+/// gold-bordered AI live-caption strip below it.
+class _PlayerSurface extends StatelessWidget {
+  const _PlayerSurface({
+    required this.url,
+    required this.liveLabel,
+    required this.captionHint,
+    super.key,
+  });
+
+  final String url;
+  final String liveLabel;
+  final String captionHint;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: Colors.black,
+      child: Padding(
+        padding: const EdgeInsets.all(SimfTokens.space4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            _LivePlayer(url: url, liveLabel: liveLabel),
+            const SizedBox(height: SimfTokens.space4),
+            _CaptionStrip(hint: captionHint),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The gold-bordered AI live-caption strip under the player (frame 934:3613):
+/// the placeholder caption text with a small gold "AI" badge. The text is the
+/// interim placeholder — the spoken-word caption feed itself is not on the wire
+/// (see apiGaps); for a YouTube feed the player's own CC supplies captions.
+class _CaptionStrip extends StatelessWidget {
+  const _CaptionStrip({required this.hint});
+
+  final String hint;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SimfTokens.space3,
+        vertical: SimfTokens.space3,
+      ),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        border: Border.all(color: SimfTokens.beigeBorder, width: 0.2),
+      ),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: Text(
+              hint,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                color: SimfTokens.onGoldMuted,
+                fontSize: SimfTokens.textSm,
+              ),
+            ),
+          ),
+          const SizedBox(width: SimfTokens.space2),
+          Container(
+            width: 20,
+            height: 20,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: SimfTokens.accent,
+              borderRadius: BorderRadius.circular(5),
+            ),
+            child: const Text(
+              'AI',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: SimfTokens.textXs,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -190,7 +339,7 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
 /// `video_player`. The parent rebuilds this with a new `ValueKey(url)` to switch
 /// feeds, so this widget only ever binds one URL for its lifetime.
 class _LivePlayer extends StatefulWidget {
-  const _LivePlayer({required this.url, required this.liveLabel, super.key});
+  const _LivePlayer({required this.url, required this.liveLabel});
 
   final String url;
   final String liveLabel;
@@ -352,18 +501,198 @@ class _FeedToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SegmentedButton<bool>(
-      showSelectedIcon: false,
-      segments: <ButtonSegment<bool>>[
-        ButtonSegment<bool>(value: false, label: Text(mainLabel)),
-        ButtonSegment<bool>(
-          value: true,
-          label: Text(signLabel),
-          icon: const Icon(Icons.sign_language_outlined, size: 16),
+    return Container(
+      padding: const EdgeInsets.all(SimfTokens.space2),
+      decoration: BoxDecoration(
+        color: SimfTokens.navyDeep,
+        borderRadius: BorderRadius.circular(SimfTokens.radius),
+      ),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: _TogglePill(
+              label: mainLabel,
+              active: !showSignLanguage,
+              onTap: () => onChanged(false),
+            ),
+          ),
+          const SizedBox(width: SimfTokens.space2),
+          Expanded(
+            child: _TogglePill(
+              label: signLabel,
+              active: showSignLanguage,
+              icon: Icons.sign_language_outlined,
+              onTap: () => onChanged(true),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One feed-toggle pill — the gold/navy view-pill language shared with the
+/// sessions screen: active = solid gold, inactive = bordered navy card.
+class _TogglePill extends StatelessWidget {
+  const _TogglePill({
+    required this.label,
+    required this.active,
+    required this.onTap,
+    this.icon,
+  });
+
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return KsaCard(
+      onTap: active ? null : onTap,
+      color: active ? SimfTokens.accent : SimfTokens.navyDeep,
+      borderColor: active ? SimfTokens.accent : SimfTokens.beigeBorder,
+      child: SizedBox(
+        height: 44,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            if (icon != null) ...<Widget>[
+              Icon(icon, size: 16, color: Colors.white),
+              const SizedBox(width: SimfTokens.space1),
+            ],
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: SimfTokens.textSm,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A gold (or beige) right-aligned bulleted line — the frame's "·"-led list
+/// items (the session title 934:3616, the speakers line 934:3617).
+class _GoldBullet extends StatelessWidget {
+  const _GoldBullet({
+    required this.text,
+    required this.color,
+    this.fontWeight = FontWeight.w500,
+  });
+
+  final String text;
+  final Color color;
+  final FontWeight fontWeight;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Expanded(
+          child: Text(
+            text,
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              color: color,
+              fontSize: SimfTokens.textMd,
+              fontWeight: fontWeight,
+              height: 1.5,
+            ),
+          ),
+        ),
+        const SizedBox(width: SimfTokens.space2),
+        Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Container(
+            width: 5,
+            height: 5,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
         ),
       ],
-      selected: <bool>{showSignLanguage},
-      onSelectionChanged: (selection) => onChanged(selection.first),
+    );
+  }
+}
+
+/// The gold region-restriction notice card (frame 934:3619): a bold "إشعار:"
+/// label followed by the static notice body, on a solid gold card.
+class _RegionNoticeCard extends StatelessWidget {
+  const _RegionNoticeCard({required this.noticeLabel, required this.noticeBody});
+
+  final String noticeLabel;
+  final String noticeBody;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SimfTokens.space2,
+        vertical: SimfTokens.space3,
+      ),
+      decoration: BoxDecoration(
+        color: SimfTokens.accent,
+        borderRadius: BorderRadius.circular(SimfTokens.radius),
+      ),
+      child: Text.rich(
+        TextSpan(
+          children: <InlineSpan>[
+            TextSpan(
+              text: '$noticeLabel ',
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+            TextSpan(text: noticeBody),
+          ],
+        ),
+        textAlign: TextAlign.right,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: SimfTokens.textMd,
+          fontWeight: FontWeight.w500,
+          height: 1.5,
+        ),
+      ),
+    );
+  }
+}
+
+/// The ask-a-question entry (frame's L-3 Q&A affordance) → Page 026
+/// (`/live/question?sessionId=`). A full-width gold action button.
+class _AskQuestionButton extends StatelessWidget {
+  const _AskQuestionButton({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 48,
+      child: FilledButton.icon(
+        onPressed: onTap,
+        icon: const Icon(Icons.help_outline, size: 18),
+        label: Text(label),
+        style: FilledButton.styleFrom(
+          backgroundColor: SimfTokens.accent,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+          ),
+          textStyle: const TextStyle(
+            fontSize: SimfTokens.textLg,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
     );
   }
 }
@@ -386,40 +715,35 @@ class _Player extends StatelessWidget {
     final ratio = controller.value.aspectRatio == 0
         ? 16 / 9
         : controller.value.aspectRatio;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        ClipRRect(
-          borderRadius: BorderRadius.circular(SimfTokens.radius),
-          child: Stack(
-            alignment: AlignmentDirectional.bottomEnd,
-            children: <Widget>[
-              AspectRatio(
-                aspectRatio: ratio,
-                child: VideoPlayer(controller),
-              ),
-              PositionedDirectional(
-                top: SimfTokens.space2,
-                start: SimfTokens.space2,
-                child: _LiveBadge(label: liveLabel),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(SimfTokens.space3),
-                child: FloatingActionButton.small(
-                  heroTag: 'live-play',
-                  onPressed: onToggle,
-                  child: ValueListenableBuilder<VideoPlayerValue>(
-                    valueListenable: controller,
-                    builder: (_, value, __) => Icon(
-                      value.isPlaying ? Icons.pause : Icons.play_arrow,
-                    ),
-                  ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(SimfTokens.radius),
+      child: Stack(
+        alignment: AlignmentDirectional.bottomEnd,
+        children: <Widget>[
+          AspectRatio(
+            aspectRatio: ratio,
+            child: VideoPlayer(controller),
+          ),
+          PositionedDirectional(
+            top: SimfTokens.space2,
+            start: SimfTokens.space2,
+            child: _LiveBadge(label: liveLabel),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(SimfTokens.space3),
+            child: FloatingActionButton.small(
+              heroTag: 'live-play',
+              onPressed: onToggle,
+              child: ValueListenableBuilder<VideoPlayerValue>(
+                valueListenable: controller,
+                builder: (_, value, __) => Icon(
+                  value.isPlaying ? Icons.pause : Icons.play_arrow,
                 ),
               ),
-            ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -475,13 +799,13 @@ class _PlayerError extends StatelessWidget {
                 const Icon(
                   Icons.error_outline,
                   size: 36,
-                  color: SimfTokens.txtTertiary,
+                  color: SimfTokens.beigeBorder,
                 ),
                 const SizedBox(height: SimfTokens.space2),
                 Text(
                   message,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: SimfTokens.txtTertiary),
+                  style: const TextStyle(color: SimfTokens.beigeBorder),
                 ),
                 const SizedBox(height: SimfTokens.space3),
                 FilledButton(onPressed: onRetry, child: Text(retryLabel)),
@@ -494,6 +818,7 @@ class _PlayerError extends StatelessWidget {
   }
 }
 
+/// The red LIVE badge (frame 934:3609): a white pulse dot before the label.
 class _LiveBadge extends StatelessWidget {
   const _LiveBadge({required this.label});
 
@@ -533,42 +858,85 @@ class _LiveBadge extends StatelessWidget {
   }
 }
 
-/// Shown when there is no live stream but a recording exists — an interim note +
-/// link affordance (no inline playback; the recorded-Q&A read lands later).
-class _RecordingNote extends StatelessWidget {
-  const _RecordingNote({required this.l10n});
+/// The black surface shown when there is no live stream but a recording exists —
+/// keeps the frame's black player band, with a recording note instead of a feed.
+class _RecordingSurface extends StatelessWidget {
+  const _RecordingSurface({required this.message});
 
-  final AppL10n l10n;
+  final String message;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.zero,
+    return _MessageSurface(
+      icon: Icons.video_library_outlined,
+      message: message,
+    );
+  }
+}
+
+/// The black surface shown when the session is neither live nor recorded.
+class _NotLiveSurface extends StatelessWidget {
+  const _NotLiveSurface({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return _MessageSurface(
+      icon: Icons.live_tv_outlined,
+      message: message,
+    );
+  }
+}
+
+/// The black player-band placeholder for the non-live states (recording /
+/// not-live) — keeps the frame's full-bleed black band, centring an icon +
+/// message where the feed would play.
+class _MessageSurface extends StatelessWidget {
+  const _MessageSurface({required this.icon, required this.message});
+
+  final IconData icon;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: Colors.black,
       child: Padding(
         padding: const EdgeInsets.all(SimfTokens.space4),
-        child: Row(
-          children: <Widget>[
-            const Icon(
-              Icons.video_library_outlined,
-              color: SimfTokens.accent,
+        child: AspectRatio(
+          aspectRatio: 16 / 9,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(SimfTokens.radius),
+              border: Border.all(color: SimfTokens.beigeBorder, width: 0.2),
             ),
-            const SizedBox(width: SimfTokens.space3),
-            Expanded(
-              child: Text(
-                l10n.liveRecordingAvailable,
-                style: const TextStyle(
-                  color: SimfTokens.txtSecondary,
-                  fontSize: SimfTokens.textMd,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(SimfTokens.space4),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Icon(icon, size: 40, color: SimfTokens.beigeBorder),
+                    const SizedBox(height: SimfTokens.space2),
+                    Text(
+                      message,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: SimfTokens.beigeBorder),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
+/// A sign-language-available note — a gold icon + muted label (shown when a sign
+/// feed is announced with no main feed to toggle into).
 class _SignLanguageNote extends StatelessWidget {
   const _SignLanguageNote({required this.label});
 
@@ -578,105 +946,22 @@ class _SignLanguageNote extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: <Widget>[
-        const Icon(Icons.sign_language_outlined, size: 18, color: SimfTokens.accent),
+        const Icon(
+          Icons.sign_language_outlined,
+          size: 18,
+          color: SimfTokens.accent,
+        ),
         const SizedBox(width: SimfTokens.space2),
         Expanded(
           child: Text(
             label,
             style: const TextStyle(
-              color: SimfTokens.txtSecondary,
+              color: SimfTokens.beigeBorder,
               fontSize: SimfTokens.textSm,
             ),
           ),
         ),
       ],
-    );
-  }
-}
-
-/// Shown when the session is neither live nor recorded — scheduled / off-air.
-class _NotLiveNote extends StatelessWidget {
-  const _NotLiveNote({required this.l10n});
-
-  final AppL10n l10n;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(SimfTokens.space5),
-      decoration: BoxDecoration(
-        color: SimfTokens.surfaceTint,
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
-        border: Border.all(color: SimfTokens.line),
-      ),
-      child: Column(
-        children: <Widget>[
-          const Icon(
-            Icons.live_tv_outlined,
-            size: 40,
-            color: SimfTokens.txtTertiary,
-          ),
-          const SizedBox(height: SimfTokens.space2),
-          Text(
-            l10n.liveNotLiveYet,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: SimfTokens.txtTertiary),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.icon, required this.message});
-
-  final IconData icon;
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Icon(icon, size: 56, color: SimfTokens.txtTertiary),
-            const SizedBox(height: SimfTokens.space3),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: SimfTokens.txtTertiary),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.message, required this.onRetry});
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppL10n.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: SimfTokens.space4),
-            FilledButton(onPressed: onRetry, child: Text(l10n.retryLabel)),
-          ],
-        ),
-      ),
     );
   }
 }

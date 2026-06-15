@@ -1070,6 +1070,26 @@ class AppL10n {
 
   // Live broadcast (Page 025). liveNowLabel already exists (reused for the badge).
   String get liveBroadcastTitle => _t('البث المباشر', 'Live broadcast');
+  // D-433 — live broadcast + ask-question + media-coverage re-skins
+  // (Figma 934-3450 / 934-3636 / 947-3764 / 958-2246).
+  String get liveNowBroadcasting => _t('يُبث الآن', 'Now broadcasting');
+  String get liveSessionLabel => _t('الجلسة', 'Session');
+  String get liveCaptionHint => _t(
+        'الترجمة الفورية للنص المنطوق تظهر هنا...',
+        'Live captions of the spoken word appear here…',
+      );
+  String get liveRegionNoticeLabel => _t('إشعار:', 'Notice:');
+  String get liveRegionNoticeBody => _t(
+        'البث المباشر متاح داخل منطقة الرياض فقط حسب لوائح التنظيم.',
+        'Live broadcasting is available only inside the Riyadh region per the '
+            'organising regulations.',
+      );
+  String get liveAskQuestion => _t('اطرح سؤالاً', 'Ask a question');
+  String get sendQuestionSectionLabel => _t('الاسئلة', 'Questions');
+  String get sendQuestionNoteLabel => _t('ملاحظة', 'Note');
+  String get mediaCoverageTitle => _t('التغطية الإعلامية', 'Media coverage');
+  String get galleryImagesSection => _t('الصور', 'Images');
+  String get galleryVideosSection => _t('الفيديوهات', 'Videos');
   String get liveNoSessionSelected => _t(
         'لا توجد جلسة بث محددة — افتح جلسة لمشاهدتها.',
         'No live session selected — open a session to watch.',
