@@ -2005,6 +2005,8 @@
   <data name="Admin.Sponsors.Field.NameAr" xml:space="preserve"><value>الاسم (عربي)</value></data>
   <data name="Admin.Sponsors.Field.Tier" xml:space="preserve"><value>الفئة</value></data>
   <data name="Admin.Sponsors.Field.Url" xml:space="preserve"><value>الرابط</value></data>
+  <data name="Admin.Sponsors.Field.Tagline" xml:space="preserve"><value>النص التعريفي (إنجليزي)</value></data>
+  <data name="Admin.Sponsors.Field.TaglineAr" xml:space="preserve"><value>النص التعريفي (عربي)</value></data>
   <data name="Admin.Sponsors.Field.Logo" xml:space="preserve"><value>مسار الشعار</value></data>
   <data name="Admin.Sponsors.Field.DisplayOrder" xml:space="preserve"><value>ترتيب العرض</value></data>
   <data name="Admin.Sponsors.Field.IsActive" xml:space="preserve"><value>نشط</value></data>

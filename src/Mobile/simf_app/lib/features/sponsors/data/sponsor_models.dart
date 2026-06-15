@@ -15,6 +15,8 @@ class Sponsor {
     this.url,
     this.email,
     this.phonePrimary,
+    this.tagline,
+    this.taglineArabic,
   });
 
   final String id;
@@ -26,11 +28,26 @@ class Sponsor {
   final String? url;
   final String? email;
   final String? phonePrimary;
+  // D-432 — optional bilingual tagline shown under the name (Figma 922:2824).
+  final String? tagline;
+  final String? taglineArabic;
 
   String localizedName(bool isArabic) {
     final ar = nameAr.trim();
     final en = nameEn.trim();
     return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+  }
+
+  /// The locale-appropriate tagline, or null when neither language is set.
+  String? localizedTagline(bool isArabic) {
+    final ar = (taglineArabic ?? '').trim();
+    final en = (tagline ?? '').trim();
+    final primary = isArabic ? ar : en;
+    if (primary.isNotEmpty) {
+      return primary;
+    }
+    final fallback = isArabic ? en : ar;
+    return fallback.isEmpty ? null : fallback;
   }
 
   static Sponsor fromJson(Map<String, dynamic> json) => Sponsor(
@@ -43,6 +60,8 @@ class Sponsor {
         url: json['url'] as String?,
         email: json['email'] as String?,
         phonePrimary: json['phonePrimary'] as String?,
+        tagline: json['tagline'] as String?,
+        taglineArabic: json['taglineArabic'] as String?,
       );
 }
 

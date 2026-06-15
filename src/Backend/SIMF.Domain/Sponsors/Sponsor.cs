@@ -41,6 +41,15 @@ public sealed class Sponsor: BaseAuditEntity
     /// <summary>Optional outbound link to the sponsor's website (≤512 chars).</summary>
     public string? Url { get; set; }
 
+    /// <summary>D-432 — an optional short tagline / strapline shown under the
+    /// sponsor name on the public screen (≤256 chars, bilingual). The Figma
+    /// frame 922:2824 shows a line such as "الراعي الاستراتيجي · شريك التحول
+    /// الدفاعي". Optional; the public projection omits it when blank.</summary>
+    public string? Tagline { get; set; }
+
+    /// <summary>D-432 — Arabic tagline (≤256 chars). The primary surface.</summary>
+    public string? TaglineArabic { get; set; }
+
 
     /// <summary>SIMF-FDS-014 (D-260) — optional link to the shared <c>Contact</c>
     /// directory record (logo / name / phones / social / website / location /

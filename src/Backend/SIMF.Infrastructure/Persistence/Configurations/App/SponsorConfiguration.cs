@@ -29,6 +29,11 @@ internal sealed class SponsorConfiguration : IEntityTypeConfiguration<Sponsor>
         builder.Property(sponsor => sponsor.LogoRelativePath).HasMaxLength(256);
         builder.Property(sponsor => sponsor.Url).HasMaxLength(512);
 
+        // D-432 — optional bilingual tagline (≤256, mirrors the validator + CP
+        // MaxLength). Additive nullable columns (D-219 freeze-lift).
+        builder.Property(sponsor => sponsor.Tagline).HasMaxLength(256);
+        builder.Property(sponsor => sponsor.TaglineArabic).HasMaxLength(256);
+
         // SIMF-FDS-014 — D-260: optional shared Contact link. Restrict (a Contact
         // is soft-deleted, never hard-deleted under a referrer). HasForeignKey
         // creates the FK index.

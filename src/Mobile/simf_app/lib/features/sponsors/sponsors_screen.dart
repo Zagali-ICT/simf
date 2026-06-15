@@ -73,7 +73,9 @@ class SponsorsScreen extends ConsumerWidget {
                   _SponsorCard(
                     name: sponsor.localizedName(isArabic),
                     badge: _badgeText(sponsor, isArabic),
-                    url: sponsor.url,
+                    // D-432 — prefer the authored tagline (Figma's "الراعي
+                    // الاستراتيجي · …" line); fall back to the website link.
+                    secondary: sponsor.localizedTagline(isArabic) ?? sponsor.url,
                     // Frame 922:2824 — the first (strategic) tier is the gold
                     // hero card; every later tier is the navy premium card.
                     hero: i == 0,
@@ -136,13 +138,13 @@ class _SponsorCard extends StatelessWidget {
   const _SponsorCard({
     required this.name,
     required this.badge,
-    required this.url,
+    required this.secondary,
     required this.hero,
   });
 
   final String name;
   final String badge;
-  final String? url;
+  final String? secondary;
   final bool hero;
 
   @override
@@ -182,10 +184,11 @@ class _SponsorCard extends StatelessWidget {
                         height: 1.3,
                       ),
                     ),
-                    if (url != null && url!.trim().isNotEmpty) ...<Widget>[
+                    if (secondary != null &&
+                        secondary!.trim().isNotEmpty) ...<Widget>[
                       const SizedBox(height: SimfTokens.space1),
                       Text(
-                        url!,
+                        secondary!,
                         textAlign: TextAlign.right,
                         style: TextStyle(
                           color: subColor,
