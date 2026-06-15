@@ -32,9 +32,9 @@ class ScanVisitorScreen extends ConsumerStatefulWidget {
 class _ScanVisitorScreenState extends ConsumerState<ScanVisitorScreen> {
   final TextEditingController _manual = TextEditingController();
   bool _processing = false;
-  // Camera-first (D-426, owner choice): the ZXing camera opens immediately;
-  // exit via system/hardware back (PopScope).
-  bool _cameraOn = true;
+  // Camera OFF by default (D-426): opens as a normal screen so the back works;
+  // a "Scan" prompt starts the camera (EMUI swallows input over a live camera).
+  bool _cameraOn = false;
   String? _lastHandled;
 
   @override

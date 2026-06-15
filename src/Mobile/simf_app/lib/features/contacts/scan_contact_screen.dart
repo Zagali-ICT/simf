@@ -37,14 +37,12 @@ class ScanContactScreen extends ConsumerStatefulWidget {
 class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
   final TextEditingController _manualController = TextEditingController();
   bool _processing = false;
-  // The live camera starts only when the user taps "scan" — while it is off the
-  // on-screen back / cancel / manual entry stay tappable on devices where the
-  // live camera grabs taps window-wide (Huawei/EMUI). (D-426)
-  // Camera-first (D-426, owner choice): the ZXing camera opens immediately and
-  // is exited via the system/hardware back (PopScope) — on EMUI the on-screen
-  // back can't sit over the live camera. The prompt path stays for the
-  // camera-failure / no-camera (test) fallback.
-  bool _cameraOn = true;
+  // Camera OFF by default (D-426): the scanner opens as a normal screen so the
+  // back / manual entry work; a "Scan" prompt starts the camera. On EMUI the
+  // live camera swallows ALL input over it (taps AND back gestures), so opening
+  // camera-off is the only way to guarantee an escapable scanner there. A scan
+  // closes the camera on success; abort mid-scan via the device back.
+  bool _cameraOn = false;
   String? _lastHandled;
 
   @override
