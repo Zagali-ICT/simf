@@ -84,6 +84,61 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Walk_in_visitor_appears_in_pending_queue_then_approve_mints_qr()
+    {
+        // Task #6 — the full walk-in chain end-to-end through the real routes:
+        // register-onsite (PendingApproval, no QR) -> the account shows up in the
+        // pending-visitors queue -> approve -> Approved + QR minted -> it leaves
+        // the queue. This is the regression the CS-A..E reviewer asked for.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var profileTypeId = await GetVisitorProfileTypeAsync();
+        var organisationId = await GetOrganisationIdAsync();
+
+        // 1) Walk-in register -> PendingApproval, no QR at the desk (D-425).
+        var email = $"walkin-e2e-{Guid.NewGuid():N}@simf.test";
+        var reg = await PostAuthAsync(
+            "/api/v1/admin/visitors/register-onsite",
+            BuildRequest(profileTypeId, email, organisationId), adminToken);
+        Assert.Equal(HttpStatusCode.OK, reg.StatusCode);
+        var regBody = (await reg.Content.ReadFromJsonAsync<ApiResult<AdminWalkInRegistrationResponse>>())!;
+        var subjectId = regBody.Data!.UserId;
+        Assert.True(string.IsNullOrEmpty(regBody.Data.QrId));
+
+        // 2) The registrant appears in the pending-visitors queue.
+        var listResp = await PostAuthAsync(
+            "/api/v1/admin/visitors/pending/list",
+            new GridQuery { Top = 200 }, adminToken);
+        Assert.Equal(HttpStatusCode.OK, listResp.StatusCode);
+        var page = (await listResp.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminPendingUserSummary>>>())!;
+        Assert.Contains(page.Data!.Items, row => row.Id == subjectId);
+
+        // 3) Approve -> Approved + the QR is minted on the profile (D-386).
+        var approve = await PostAuthAsync(
+            $"/api/v1/admin/visitors/{subjectId}/approve", new { }, adminToken);
+        Assert.Equal(HttpStatusCode.OK, approve.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var user = await db.Users.SingleAsync(u => u.Id == subjectId);
+        Assert.Equal(AccountState.Approved, user.AccountState);
+        var qrId = await appDb.UserProfiles
+            .Where(p => p.UserId == subjectId)
+            .Select(p => p.QrId)
+            .SingleAsync();
+        Assert.False(string.IsNullOrEmpty(qrId));
+
+        // 4) The approved visitor no longer shows in the pending queue.
+        var listAfter = await PostAuthAsync(
+            "/api/v1/admin/visitors/pending/list",
+            new GridQuery { Top = 200 }, adminToken);
+        var pageAfter = (await listAfter.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminPendingUserSummary>>>())!;
+        Assert.DoesNotContain(pageAfter.Data!.Items, row => row.Id == subjectId);
+    }
+
+    [Fact]
     public async Task Admin_uploads_visitor_avatar_sets_path()
     {
         // D-427 (CS-3) — the desk captures a profile photo (avatar) for the
