@@ -133,11 +133,16 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
   /// `GoRouter.maybeOf` for the fallback so it never throws when go_router is
   /// absent. (D-423 follow-up: the scanner had no working back.)
   void _leave() {
-    final navigator = Navigator.of(context);
-    if (navigator.canPop()) {
-      navigator.pop();
-    } else {
-      GoRouter.maybeOf(context)?.goNamed(RouteNames.badge);
+    // Navigate via go_router: raw Navigator.pop() does NOT exit a route pushed
+    // inside go_router's StatefulShellRoute — that was the "stuck" scanner where
+    // neither the on-screen nor the system back worked (D-426). goNamed lands on
+    // the badge reliably. Fall back to Navigator only when there is no GoRouter
+    // (widget tests pump the screen in a plain MaterialApp).
+    final router = GoRouter.maybeOf(context);
+    if (router != null) {
+      router.goNamed(RouteNames.badge);
+    } else if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
     }
   }
 
@@ -147,12 +152,13 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
     // When the scanner is the navigator root, the system back would exit the
     // app; intercept it and route to the badge instead. When it was pushed,
     // canPop is true and normal pops (incl. the save-flow close) pass through.
-    final canPop = Navigator.of(context).canPop();
     return PopScope(
-      canPop: canPop,
+      // Always intercept the system back and route it through _leave (go_router),
+      // since raw Navigator pop doesn't exit this shell-pushed route (D-426).
+      canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) {
-          GoRouter.maybeOf(context)?.goNamed(RouteNames.badge);
+          _leave();
         }
       },
       child: Scaffold(

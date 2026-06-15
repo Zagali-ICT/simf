@@ -161,12 +161,13 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
     final direction = _result == null
         ? ''
         : ' • ${_directionLabel(l10n, _result!.direction)}';
-    final canPop = Navigator.of(context).canPop();
     return PopScope(
-      canPop: canPop,
+      // Route the system back through _leave (go_router); raw pop can't exit
+      // this shell-pushed route (D-426).
+      canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) {
-          GoRouter.maybeOf(context)?.goNamed(RouteNames.home);
+          _leave();
         }
       },
       child: Scaffold(
@@ -192,11 +193,13 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
   /// else go home. Without this the raw AppBar had no back and system-back exited
   /// the app (D-423 follow-up).
   void _leave() {
-    final navigator = Navigator.of(context);
-    if (navigator.canPop()) {
-      navigator.pop();
-    } else {
-      GoRouter.maybeOf(context)?.goNamed(RouteNames.home);
+    // go_router navigation (raw Navigator.pop doesn't exit a shell-pushed route,
+    // D-426). Navigator fallback only for the GoRouter-less widget test.
+    final router = GoRouter.maybeOf(context);
+    if (router != null) {
+      router.goNamed(RouteNames.home);
+    } else if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
     }
   }
 

@@ -44,11 +44,13 @@ class _ScanVisitorScreenState extends ConsumerState<ScanVisitorScreen> {
   }
 
   void _leave() {
-    final navigator = Navigator.of(context);
-    if (navigator.canPop()) {
-      navigator.pop();
-    } else {
-      GoRouter.maybeOf(context)?.goNamed(RouteNames.badge);
+    // go_router navigation (raw Navigator.pop doesn't exit a shell-pushed route,
+    // D-426). Navigator fallback only for the GoRouter-less widget test.
+    final router = GoRouter.maybeOf(context);
+    if (router != null) {
+      router.goNamed(RouteNames.badge);
+    } else if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
     }
   }
 
@@ -111,12 +113,13 @@ class _ScanVisitorScreenState extends ConsumerState<ScanVisitorScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    final canPop = Navigator.of(context).canPop();
     return PopScope(
-      canPop: canPop,
+      // Route the system back through _leave (go_router); raw pop can't exit
+      // this shell-pushed route (D-426).
+      canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) {
-          GoRouter.maybeOf(context)?.goNamed(RouteNames.badge);
+          _leave();
         }
       },
       child: Scaffold(
