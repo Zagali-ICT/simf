@@ -10,6 +10,18 @@ void main() {
       expect(isResumableLocation('/my-area'), isTrue);
       expect(isResumableLocation('/map'), isTrue);
       expect(isResumableLocation('/speakers/7'), isTrue);
+      // The contact / visitor list destinations stay resumable — only their
+      // one-shot scan / share actions are excluded (below).
+      expect(isResumableLocation('/contacts'), isTrue);
+      expect(isResumableLocation('/exhibitor/visitors'), isTrue);
+    });
+
+    test('transient one-shot camera / share action routes are not resumable '
+        '(D-426 — never cold-start into a live-camera screen)', () {
+      expect(isResumableLocation('/contacts/scan'), isFalse);
+      expect(isResumableLocation('/contacts/share'), isFalse);
+      expect(isResumableLocation('/exhibitor/scan'), isFalse);
+      expect(isResumableLocation('/gates/scan'), isFalse);
     });
 
     test(

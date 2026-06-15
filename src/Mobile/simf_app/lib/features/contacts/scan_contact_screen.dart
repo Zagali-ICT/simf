@@ -164,9 +164,11 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
       child: Scaffold(
       appBar: AppBar(
         title: Text(l10n.scanContactTitle),
-        // Explicit back (the auto-leading is absent when the scanner is the
-        // navigator root); the AppBar sits above the camera box so it stays
-        // tappable. System back is handled by the PopScope above.
+        // On-screen back for normal devices; the AppBar is above the camera box.
+        // While the live camera is active some devices (Huawei/EMUI) swallow all
+        // on-screen taps window-wide — there the system back (PopScope above) is
+        // the way out. The scanner is never auto-resumed into (route_resume). The
+        // scanner is reached intentionally, so canPop is normally true. (D-426)
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           tooltip: MaterialLocalizations.of(context).backButtonTooltip,
