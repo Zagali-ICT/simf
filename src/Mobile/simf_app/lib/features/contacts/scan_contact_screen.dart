@@ -223,6 +223,12 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
           showGallery: false,
           showToggleCamera: false,
           tryInverted: true,
+          // Back/close rendered INSIDE flutter_zxing's own control overlay (the
+          // layer composited over the camera, alongside the flash button) so it
+          // stays tappable over the live camera where an outer overlay / AppBar
+          // back is swallowed by the camera surface (Huawei/EMUI, D-426).
+          onActionSecondButton: _leave,
+          actionSecondButtonIcon: const Icon(Icons.arrow_back),
           loading: const ColoredBox(
             color: SimfTokens.field,
             child: Center(child: CircularProgressIndicator()),

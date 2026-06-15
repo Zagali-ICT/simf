@@ -174,6 +174,10 @@ class _ScanVisitorScreenState extends ConsumerState<ScanVisitorScreen> {
           showGallery: false,
           showToggleCamera: false,
           tryInverted: true,
+          // Back inside flutter_zxing's overlay — tappable over the live camera
+          // where the AppBar back is swallowed by the camera surface (D-426).
+          onActionSecondButton: _leave,
+          actionSecondButtonIcon: const Icon(Icons.arrow_back),
           loading: const ColoredBox(
             color: SimfTokens.field,
             child: Center(child: CircularProgressIndicator()),

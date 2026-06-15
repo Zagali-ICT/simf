@@ -242,6 +242,7 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
       held: _held,
       manual: _manual,
       onScan: _onScan,
+      onLeave: _leave,
       onManual: () => unawaited(_scan(_manual.text)),
       onToggleHold: () => setState(() => _held = !_held),
       onGate: (g) => setState(() => _gate = g),
@@ -262,6 +263,7 @@ class _Scanner extends StatelessWidget {
     required this.held,
     required this.manual,
     required this.onScan,
+    required this.onLeave,
     required this.onManual,
     required this.onToggleHold,
     required this.onGate,
@@ -275,6 +277,7 @@ class _Scanner extends StatelessWidget {
   final bool held;
   final TextEditingController manual;
   final void Function(Code) onScan;
+  final VoidCallback onLeave;
   final VoidCallback onManual;
   final VoidCallback onToggleHold;
   final ValueChanged<OperatorGate> onGate;
@@ -317,6 +320,10 @@ class _Scanner extends StatelessWidget {
                         showGallery: false,
                         showToggleCamera: false,
                         tryInverted: true,
+                        // Back inside flutter_zxing's overlay — tappable over the
+                        // live camera where the AppBar back is swallowed (D-426).
+                        onActionSecondButton: onLeave,
+                        actionSecondButtonIcon: const Icon(Icons.arrow_back),
                         loading: const Center(
                           child: Icon(
                             Icons.qr_code_2,
