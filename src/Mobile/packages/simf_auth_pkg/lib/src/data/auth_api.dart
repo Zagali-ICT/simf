@@ -1,5 +1,6 @@
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import 'dto/badge_auth_dtos.dart';
 import 'dto/current_user_dto.dart';
 import 'dto/device_key_dtos.dart';
 import 'dto/sign_in_request.dart';
@@ -151,6 +152,35 @@ class AuthApi {
   Future<Map<String, dynamic>> resetPassword(ResetPasswordRequest request) {
     return _client.post<Map<String, dynamic>>(
       '/app/auth/reset-password',
+      body: request.toJson(),
+      decodeData: (data) => (data as Map?)?.cast<String, dynamic>() ?? const {},
+    );
+  }
+
+  // Part B (D-430) — badge-QR sign-in / activation.
+  Future<Map<String, dynamic>> resolveBadge(ResolveBadgeRequest request) {
+    return _client.post<Map<String, dynamic>>(
+      '/app/auth/resolve-badge',
+      body: request.toJson(),
+      decodeData: (data) => (data as Map?)?.cast<String, dynamic>() ?? const {},
+    );
+  }
+
+  Future<Map<String, dynamic>> badgeActivationStart(
+    BadgeActivationStartRequest request,
+  ) {
+    return _client.post<Map<String, dynamic>>(
+      '/app/auth/badge-activation/start',
+      body: request.toJson(),
+      decodeData: (data) => (data as Map?)?.cast<String, dynamic>() ?? const {},
+    );
+  }
+
+  Future<Map<String, dynamic>> badgeActivationComplete(
+    BadgeActivationCompleteRequest request,
+  ) {
+    return _client.post<Map<String, dynamic>>(
+      '/app/auth/badge-activation/complete',
       body: request.toJson(),
       decodeData: (data) => (data as Map?)?.cast<String, dynamic>() ?? const {},
     );

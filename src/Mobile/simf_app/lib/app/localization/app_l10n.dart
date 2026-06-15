@@ -424,6 +424,40 @@ class AppL10n {
         'If that email is registered, a code is on its way.',
       );
 
+  // Part B (D-430) — badge-QR sign-in / activation.
+  String get badgeSignInButton =>
+      _t('الدخول بمسح الشارة', 'Sign in by scanning your badge');
+  String get badgeScanTitle => _t('امسح شارتك', 'Scan your badge');
+  String get badgeScanHint => _t(
+        'وجّه الكاميرا نحو رمز QR المطبوع على شارتك.',
+        'Point the camera at the QR code on your badge.',
+      );
+  String get badgeManualLabel =>
+      _t('أو أدخل رمز الشارة يدويًا', 'Or enter the badge code manually');
+  String get badgeManualField => _t('رمز الشارة', 'Badge code');
+  String get badgeResolveButton => _t('متابعة', 'Continue');
+  String get badgeNotRecognised =>
+      _t('تعذّر التعرّف على الشارة.', 'The badge was not recognised.');
+  String get badgeScanError =>
+      _t('تعذّرت قراءة الشارة. حاول مجددًا.', 'Could not read the badge. Try again.');
+  String get badgeActivateTitle =>
+      _t('تفعيل حسابك', 'Activate your account');
+  String get badgeActivateEmailIntro => _t(
+        'أدخل بريدك الإلكتروني لإرسال رمز التحقق.',
+        'Enter your email so we can send a verification code.',
+      );
+  String badgeActivateCodeSent(String maskedEmail) => _t(
+        'أرسلنا رمز التحقق إلى $maskedEmail.',
+        'We sent a verification code to $maskedEmail.',
+      );
+  String get badgeSendCodeButton => _t('إرسال الرمز', 'Send code');
+  String get badgeActivateButton => _t('تفعيل وتعيين كلمة المرور', 'Activate & set password');
+  String get badgeActivatedDone => _t(
+        'تم تفعيل حسابك. سجّل الدخول الآن.',
+        'Your account is activated. Sign in now.',
+      );
+  String get emailLabelGeneric => _t('البريد الإلكتروني', 'Email');
+
   // Splash branding (Page 001) — matches the mockup brand lockup.
   String get splashTagline => 'SAUDI · MOD · RSNF';
   String get splashTitle => _t(

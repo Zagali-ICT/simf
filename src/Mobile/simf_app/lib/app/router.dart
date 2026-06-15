@@ -1,13 +1,12 @@
-import 'dart:async';
-
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
-import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../core/widgets/coming_soon_screen.dart';
 import '../features/auth/email_otp_verify_screen.dart';
+import '../features/auth/badge_activation_screen.dart';
+import '../features/auth/badge_sign_in_screen.dart';
 import '../features/auth/forgot_password_screen.dart';
 import '../features/auth/reset_password_screen.dart';
 import '../features/auth/sign_in_screen.dart';
@@ -57,7 +56,6 @@ import '../features/speakers/speaker_profile_screen.dart';
 import '../features/speakers/speakers_screen.dart';
 import '../features/splash/splash_screen.dart';
 import 'route_names.dart';
-import 'route_resume.dart';
 
 /// Holds the route metadata for one screen: the path, the route name, the
 /// mockup screen number, and the Arabic + English label used by the
@@ -158,6 +156,9 @@ const List<_Route> _auxRoutes = <_Route>[
   _Route(number: 0, name: RouteNames.forgotPassword, path: '/auth/forgot-password', labelAr: 'استعادة كلمة المرور', labelEn: 'Forgot password'),
   _Route(number: 0, name: RouteNames.resetPassword, path: '/auth/reset-password', labelAr: 'تعيين كلمة مرور جديدة', labelEn: 'Reset password'),
   _Route(number: 0, name: RouteNames.verifyOtp, path: '/auth/verify-otp', labelAr: 'رمز التحقق', labelEn: 'Verify OTP'),
+  // Part B (D-430) — badge-QR sign-in / activation (anonymous, pre-login).
+  _Route(number: 0, name: RouteNames.badgeSignIn, path: '/auth/badge', labelAr: 'الدخول بالشارة', labelEn: 'Badge sign-in'),
+  _Route(number: 0, name: RouteNames.badgeActivation, path: '/auth/badge-activation', labelAr: 'تفعيل الحساب', labelEn: 'Activate account'),
 ];
 
 /// Screen numbers that need a signed-in user (Visitor or higher). Until
@@ -397,6 +398,18 @@ Widget _auxScreenFor(BuildContext context, GoRouterState state, _Route r) {
   if (r.name == RouteNames.verifyOtp) {
     return const EmailOtpVerifyScreen();
   }
+  // Part B (D-430) — badge-QR sign-in / activation.
+  if (r.name == RouteNames.badgeSignIn) {
+    return const BadgeSignInScreen();
+  }
+  if (r.name == RouteNames.badgeActivation) {
+    final q = state.uri.queryParameters;
+    return BadgeActivationScreen(
+      qrId: q['qrId'] ?? '',
+      needsEmail: q['needsEmail'] == '1',
+      maskedEmail: q['masked'],
+    );
+  }
   return ComingSoonScreen(
     screenNumber: r.number,
     screenLabelAr: r.labelAr,
@@ -413,11 +426,7 @@ _Route _routeByName(String name) => _routes.firstWhere((r) => r.name == name);
 /// router refreshes on every auth-state change ([refreshListenable]) so the
 /// gate re-runs when the cold-start restore resolves or the session ends.
 GoRouter buildRouter(Ref ref) {
-  final prefs = ref.read(simfPrefsStorageProvider);
   final authRefresh = _AuthRefreshNotifier(ref);
-  // The last location written to prefs, so the same value is not rewritten on
-  // every redirect pass.
-  String? lastRecorded;
 
   return GoRouter(
     initialLocation: '/splash',
@@ -427,14 +436,8 @@ GoRouter buildRouter(Ref ref) {
       final goingTo = state.matchedLocation;
       final isSignedIn = authState is AuthStateSignedIn;
 
-      // Remember the last signed-in content location so the next cold start can
-      // resume to it (Page_001 Logic L-5). The splash owns the read.
-      if (isSignedIn &&
-          isResumableLocation(goingTo) &&
-          goingTo != lastRecorded) {
-        lastRecorded = goingTo;
-        unawaited(prefs.setString(StorageKeys.lastRoute, goingTo));
-      }
+      // The app no longer remembers the last screen to resume to on cold start
+      // (D-427, owner request) — launch always lands on the splash → Home.
 
       return redirectDecision(
         isInitial: authState is AuthStateInitial,

@@ -580,6 +580,35 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               ],
             ),
           ),
+          const SizedBox(height: 12),
+          // Part B (D-430) — scan the printed-badge QR to sign in / activate.
+          OutlinedButton(
+            onPressed: _busy
+                ? null
+                : () => context.pushNamed(RouteNames.badgeSignIn),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: _fieldBorder),
+              minimumSize: const Size.fromHeight(48),
+              shape: const RoundedRectangleBorder(borderRadius: _radius4),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Flexible(
+                  child: Text(
+                    l10n.badgeSignInButton,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: _goldText,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                const Icon(Icons.qr_code_scanner, size: 20, color: _goldText),
+              ],
+            ),
+          ),
           // Guest entry (Figma 627:2390, D-363) — the underlined design-native
           // link; the app's only path into guest mode (Page_012).
           SizedBox(

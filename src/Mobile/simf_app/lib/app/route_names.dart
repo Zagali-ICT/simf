@@ -92,6 +92,11 @@ class RouteNames {
   static const String forgotPassword = 'forgotPassword';
   static const String resetPassword = 'resetPassword';
 
+  // Part B (D-430) — badge-QR sign-in / activation: scan the printed-badge QR
+  // at login; a passwordless account sets its first password.
+  static const String badgeSignIn = 'badgeSignIn';
+  static const String badgeActivation = 'badgeActivation';
+
   /// Visitor email-OTP second factor at sign-in (the app has no TOTP).
   static const String verifyOtp = 'verifyOtp';
 }
