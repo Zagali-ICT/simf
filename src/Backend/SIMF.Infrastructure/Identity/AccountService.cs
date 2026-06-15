@@ -31,13 +31,6 @@ internal sealed class AccountService(
 {
     private const int MaxAvatarSizeBytes = 2 * 1024 * 1024;
 
-    private static readonly HashSet<string> AllowedMimeTypes = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "image/png",
-        "image/jpeg",
-        "image/webp",
-    };
-
     public async Task<ProfileResponse> GetProfileAsync(
         Guid userId,
         CancellationToken cancellationToken = default)
@@ -129,8 +122,7 @@ internal sealed class AccountService(
         }
 
         var normalisedContentType = contentType?.Trim().ToLowerInvariant() ?? string.Empty;
-        if (!AllowedMimeTypes.Contains(normalisedContentType)
-            || !MagicBytesMatch(content, normalisedContentType))
+        if (!ImageUploadValidation.IsAllowedImage(content, normalisedContentType))
         {
             await AuditRejectedAsync(user, ErrorCodes.AvatarMimeUnsupported, cancellationToken);
             throw new ApiException(
@@ -209,31 +201,6 @@ internal sealed class AccountService(
                 ErrorCode = errorCode,
             },
             cancellationToken);
-
-    /// <summary>
-    /// Sniffs the first few bytes and confirms they match the file-format
-    /// signature the caller claimed (5-agent SEV-2.1 / IBS pattern).
-    /// PNG: <c>89 50 4E 47 0D 0A 1A 0A</c>.
-    /// JPEG: <c>FF D8 FF</c>.
-    /// WebP: <c>52 49 46 46 ?? ?? ?? ?? 57 45 42 50</c> (RIFF…WEBP).
-    /// </summary>
-    private static bool MagicBytesMatch(byte[] content, string contentType) =>
-        contentType switch
-        {
-            "image/png" => content.Length >= 8
-                && content[0] == 0x89 && content[1] == 0x50
-                && content[2] == 0x4E && content[3] == 0x47
-                && content[4] == 0x0D && content[5] == 0x0A
-                && content[6] == 0x1A && content[7] == 0x0A,
-            "image/jpeg" => content.Length >= 3
-                && content[0] == 0xFF && content[1] == 0xD8 && content[2] == 0xFF,
-            "image/webp" => content.Length >= 12
-                && content[0] == 0x52 && content[1] == 0x49
-                && content[2] == 0x46 && content[3] == 0x46
-                && content[8] == 0x57 && content[9] == 0x45
-                && content[10] == 0x42 && content[11] == 0x50,
-            _ => false,
-        };
 
     /// <summary>
     /// Builds the CP-relative URL the browser uses to fetch the avatar. The

@@ -11,6 +11,13 @@ namespace SIMF.Api.Endpoints.Admin;
 /// the VVIP/VIP welcome roster the موج (Mawj) integration / technical teams
 /// consume. Gated by the dedicated <see cref="PermissionCatalog.Visitors.ExportVip"/>
 /// permission because it exposes VIP PII for external sharing.
+///
+/// <para><b>Distinct from the PR VIP guest-list export</b>
+/// (<c>POST /admin/vips/export</c>, D-168, perm <c>Vips.Export</c>): that is the
+/// public-relations "كبار الضيوف" list (basic profile columns). This roster adds
+/// the موج welcome-message fields (Mawj id, honorific, preferred language, the
+/// welcome-photo flag) for the integration. The two are complementary, not
+/// duplicates (D-430 follow-up reconciliation).</para>
 /// </summary>
 public sealed class GetVipRosterEndpoint(IVipRosterService service)
     : EndpointWithoutRequest<ApiResult<IReadOnlyList<VipRosterRow>>>

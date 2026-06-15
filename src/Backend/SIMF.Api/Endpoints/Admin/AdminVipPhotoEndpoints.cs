@@ -23,9 +23,6 @@ public sealed class UploadVisitorVipPhotoEndpoint(IUserProfileService service)
     /// <summary>2 MB cap — same as the avatar upload.</summary>
     private const long MaxBytes = 2L * 1024 * 1024;
 
-    private static readonly string[] AllowedMimeTypes =
-        { "image/jpeg", "image/png", "image/webp" };
-
     public override void Configure()
     {
         Post("/admin/visitors/{id:guid}/vip-photo");
@@ -66,7 +63,7 @@ public sealed class UploadVisitorVipPhotoEndpoint(IUserProfileService service)
         var bytes = stream.ToArray();
         var contentType = (file.ContentType ?? string.Empty).Trim().ToLowerInvariant();
 
-        if (!AllowedMimeTypes.Contains(contentType) || !MagicBytesMatch(bytes, contentType))
+        if (!ImageUploadValidation.IsAllowedImage(bytes, contentType))
         {
             throw new ApiException(
                 ErrorCodes.AvatarMimeUnsupported, 400,
@@ -78,25 +75,6 @@ public sealed class UploadVisitorVipPhotoEndpoint(IUserProfileService service)
             actorId, Route<Guid>("id"), UserType.Visitor, bytes, contentType, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
-
-    /// <summary>Magic-byte signatures — PNG, JPEG, WebP.</summary>
-    private static bool MagicBytesMatch(byte[] content, string contentType) =>
-        contentType switch
-        {
-            "image/png" => content.Length >= 8
-                && content[0] == 0x89 && content[1] == 0x50
-                && content[2] == 0x4E && content[3] == 0x47
-                && content[4] == 0x0D && content[5] == 0x0A
-                && content[6] == 0x1A && content[7] == 0x0A,
-            "image/jpeg" => content.Length >= 3
-                && content[0] == 0xFF && content[1] == 0xD8 && content[2] == 0xFF,
-            "image/webp" => content.Length >= 12
-                && content[0] == 0x52 && content[1] == 0x49
-                && content[2] == 0x46 && content[3] == 0x46
-                && content[8] == 0x57 && content[9] == 0x45
-                && content[10] == 0x42 && content[11] == 0x50,
-            _ => false,
-        };
 }
 
 /// <summary><c>GET /api/v1/admin/visitors/{id}/vip-photo</c> — streams the VIP
