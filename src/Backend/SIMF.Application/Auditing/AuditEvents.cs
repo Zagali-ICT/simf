@@ -39,6 +39,10 @@ public static class AuditEvents
     public const string SignInSecondFactorFailed = "SignIn.SecondFactorFailed";
     public const string SignInSecondFactorRejected = "SignIn.SecondFactorRejected";
     public const string SignInSucceeded = "SignIn.Succeeded";
+    // Part B — badge-QR activation (passwordless account sets its first password).
+    public const string BadgeActivationStarted = "BadgeActivation.Started";
+    public const string BadgeActivationCompleted = "BadgeActivation.Completed";
+    public const string BadgeActivationFailed = "BadgeActivation.Failed";
     // P10 — D-051 (extended D-198): a non-approved user signed in
     // (EmailVerified, PendingApproval or Rejected). They got tokens +
     // AccountStateInfo; routed to the profile-form / state-banner page by

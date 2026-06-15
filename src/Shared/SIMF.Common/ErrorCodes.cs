@@ -40,6 +40,9 @@ public static class ErrorCodes
     public const string AuthResetCodeInvalid = "AUTH_RESET_CODE_INVALID";
     public const string AuthResetCodeExpired = "AUTH_RESET_CODE_EXPIRED";
     public const string AuthPasswordChangeRequired = "AUTH_PASSWORD_CHANGE_REQUIRED";
+    // Part B — badge-QR activation: the resolved account already has a password,
+    // so it must use the normal sign-in rather than the set-password flow.
+    public const string BadgeAlreadyActivated = "BADGE_ALREADY_ACTIVATED";
 
     // Sign-in audience gate (P2 — myComment "never any user type other than
     // super admin can access CP, and same for WEB/APP")
