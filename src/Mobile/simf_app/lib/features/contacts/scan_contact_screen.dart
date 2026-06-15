@@ -2,30 +2,27 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_zxing/flutter_zxing.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/scan_start_prompt.dart';
+import '../../app/widgets/qr_scan_view.dart';
 import 'data/contact_models.dart';
 import 'data/contacts_repository.dart';
 import 'widgets/contact_card.dart';
 
 /// Scan a visitor's QR → preview → save (SIMF-FDS-014 §5.5–5.6, D-286).
-/// **Auth-gated** (Approved only). The camera (`flutter_zxing`, native ZXing —
-/// no Google Play Services) reads another visitor's share QR; a **manual-entry**
-/// field is the fallback when the camera
-/// is denied/unavailable and is the path the widget tests drive. Either way the
-/// scanned code is resolved (`POST /app/contacts/resolve`) to a live card shown
-/// in a preview sheet, where it can be saved to *My Contacts*
-/// (`POST /app/contacts/save`, idempotent; saving yourself is a 400). UI is
-/// interim (final visuals from SIMF-VID-001).
+/// **Auth-gated** (Approved only). Uses the shared [QrScanView] (D-430): the
+/// manual-entry path always works and the bounded opt-in camera can never trap
+/// the user on EMUI (D-426). A scanned/typed code is resolved
+/// (`POST /app/contacts/resolve`) to a live card shown in a preview sheet, where
+/// it can be saved to *My Contacts* (`POST /app/contacts/save`, idempotent;
+/// saving yourself is a 400).
 class ScanContactScreen extends ConsumerStatefulWidget {
   const ScanContactScreen({super.key, this.enableCamera = true});
 
-  /// Off in widget tests (no camera in the test environment) so the manual-entry
-  /// → resolve → preview → save path can be exercised without the native plugin.
+  /// Off in widget tests (no camera) so the manual-entry → resolve → preview →
+  /// save path can be exercised without the native plugin.
   final bool enableCamera;
 
   @override
@@ -33,61 +30,30 @@ class ScanContactScreen extends ConsumerStatefulWidget {
 }
 
 class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
-  final TextEditingController _manualController = TextEditingController();
-  bool _processing = false;
-  // Camera OFF by default (D-426): the scanner opens as a normal screen so the
-  // back / manual entry work; a "Scan" prompt starts the camera. On EMUI the
-  // live camera swallows ALL input over it (taps AND back gestures), so opening
-  // camera-off is the only way to guarantee an escapable scanner there. A scan
-  // closes the camera on success; abort mid-scan via the device back.
-  bool _cameraOn = true;
-  String? _lastHandled;
-
-  @override
-  void dispose() {
-    _manualController.dispose();
-    super.dispose();
-  }
-
-  /// Handle-once guard against the re-scan loop: the ZXing reader fires onScan
-  /// repeatedly while a code is in view, so a code is processed once and not
-  /// re-fired until a *different* code appears (D-426).
-  void _onScan(Code code) {
-    if (_processing || !code.isValid) {
-      return;
+  void _leave() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
     }
-    final raw = code.text?.trim() ?? '';
-    if (raw.isEmpty || raw == _lastHandled) {
-      return;
-    }
-    _lastHandled = raw;
-    unawaited(_handleToken(raw));
   }
 
   Future<void> _handleToken(String token) async {
     final code = token.trim();
-    if (code.isEmpty || _processing) {
+    if (code.isEmpty) {
       return;
     }
     final l10n = AppL10n.of(context);
-    setState(() => _processing = true);
+    final messenger = ScaffoldMessenger.of(context);
     try {
       final card = await ref.read(contactsRepositoryProvider).resolve(code);
       if (!mounted) {
         return;
       }
-      // Keep _processing true through the preview so the camera doesn't re-fire
-      // while the sheet is open.
       await _showPreview(code, card);
     } on ApiFailure catch (e) {
       if (!mounted) {
         return;
       }
-      // Do NOT reset _lastHandled here: the QR is still in front of the camera,
-      // and re-arming it re-resolved the same (often un-resolvable) code on the
-      // next frame — an endless error loop (D-426). The code is handled once;
-      // use the manual-entry field to look a code up again.
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(
           content: Text(
             e.httpStatus == 404
@@ -96,224 +62,35 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
           ),
         ),
       );
-    } finally {
-      if (mounted) {
-        setState(() => _processing = false);
-      }
     }
   }
 
   Future<void> _showPreview(String token, VisitorCard card) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final savedLabel = AppL10n.of(context).saveContactSaved;
     final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       builder: (sheetContext) => _ContactPreviewSheet(token: token, card: card),
     );
     if (saved == true && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppL10n.of(context).saveContactSaved)),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(savedLabel)));
       // Returning closes the scanner; the caller reloads its list.
       _leave();
-    }
-    // On dismiss without saving we intentionally keep the code debounced
-    // (_lastHandled stays set) so the scanner does NOT immediately re-open the
-    // preview for the same QR still in view — that was the scan loop (D-426).
-    // The manual-entry field looks a code up again on demand.
-  }
-
-  /// Leaves the scanner reliably. The screen can be reached as the root of its
-  /// navigator (deep-link / route-restore / a push from the shell that didn't
-  /// stack), so the local navigator may not be able to pop — in which case the
-  /// default AppBar back is absent and a system back would exit the app. Pop the
-  /// route when possible, otherwise go back to the badge tab. Uses the Navigator
-  /// for the pop (works without a GoRouter, e.g. in widget tests) and
-  /// `GoRouter.maybeOf` for the fallback so it never throws when go_router is
-  /// absent. (D-423 follow-up: the scanner had no working back.)
-  void _leave() {
-    // The scanner is opened as a fullscreen modal (Navigator route, NOT a
-    // go_router route), so a plain Navigator.pop closes it reliably — this is
-    // what finally fixed the "stuck scanner" (the go_router shell pop was the
-    // bug). (D-426)
-    if (Navigator.of(context).canPop()) {
-      Navigator.of(context).pop();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    // When the scanner is the navigator root, the system back would exit the
-    // app; intercept it and route to the badge instead. When it was pushed,
-    // canPop is true and normal pops (incl. the save-flow close) pass through.
-    return PopScope(
-      // Always intercept the system back and route it through _leave (go_router),
-      // since raw Navigator pop doesn't exit this shell-pushed route (D-426).
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) {
-          _leave();
-        }
-      },
-      child: Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.scanContactTitle),
-        // On-screen back for normal devices; the AppBar is above the camera box.
-        // While the live camera is active some devices (Huawei/EMUI) swallow all
-        // on-screen taps window-wide — there the system back (PopScope above) is
-        // the way out. The scanner is never auto-resumed into (route_resume). The
-        // scanner is reached intentionally, so canPop is normally true. (D-426)
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-          onPressed: _leave,
-        ),
-      ),
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            // The live viewfinder takes the bulk of the page height (responsive
-            // to rotation) with the manual-entry fallback in a compact strip
-            // below it — both reachable, no scrolling needed. The box is sized
-            // explicitly (a large fraction, NOT a full-height Expanded): some
-            // devices only composite the camera platform-view when it is
-            // bounded — a full-bleed preview paints blank and covers the body —
-            // and a bounded box also keeps the manual entry from being hidden.
-            // When the camera is off (test / web) the box is compact.
-            final cameraHeight = widget.enableCamera
-                ? (constraints.maxHeight * 0.78).clamp(240.0, constraints.maxHeight)
-                : 220.0;
-            return Column(
-              children: <Widget>[
-                SizedBox(
-                  width: double.infinity,
-                  height: cameraHeight,
-                  child: _buildCamera(l10n),
-                ),
-                Expanded(
-                  child: SingleChildScrollView(child: _buildManualEntry(l10n)),
-                ),
-              ],
-            );
-          },
-        ),
-      ),
-      ),
-    );
-  }
-
-  Widget _buildCamera(AppL10n l10n) {
-    if (!widget.enableCamera) {
-      return _CameraPlaceholder(label: l10n.scanContactCameraUnavailable);
-    }
-    if (!_cameraOn) {
-      // Camera off by default — a tappable prompt starts it. Keeps the back /
-      // manual entry usable before the live camera (which can swallow taps).
-      return ScanStartPrompt(
-        label: l10n.scanStartCamera,
-        onStart: () => setState(() => _cameraOn = true),
-      );
-    }
-    return Stack(
-      fit: StackFit.expand,
-      children: <Widget>[
-        // ZXing reader (native, no Google Play Services) — works on Huawei/HMS
-        // where the ML-Kit camera showed a black preview (D-426). QR only.
-        ReaderWidget(
-          onScan: _onScan,
-          codeFormat: Format.qrCode,
-          showGallery: false,
-          showToggleCamera: false,
-          tryInverted: true,
-          // Back/close rendered INSIDE flutter_zxing's own control overlay (the
-          // layer composited over the camera, alongside the flash button) so it
-          // stays tappable over the live camera where an outer overlay / AppBar
-          // back is swallowed by the camera surface (Huawei/EMUI, D-426).
-          onActionSecondButton: _leave,
-          actionSecondButtonIcon: const Icon(Icons.arrow_back),
-          loading: const ColoredBox(
-            color: SimfTokens.field,
-            child: Center(child: CircularProgressIndicator()),
-          ),
-        ),
-        if (_processing)
-          const ColoredBox(
-            color: Color(0x66000000),
-            child: Center(child: CircularProgressIndicator()),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildManualEntry(AppL10n l10n) {
-    return Padding(
-      padding: const EdgeInsets.all(SimfTokens.space4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            l10n.scanContactManualLabel,
-            style: const TextStyle(
-              color: SimfTokens.inkMuted,
-              fontSize: SimfTokens.textSm,
-            ),
-          ),
-          const SizedBox(height: SimfTokens.space2),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: TextField(
-                  controller: _manualController,
-                  decoration: InputDecoration(
-                    labelText: l10n.scanContactManualField,
-                    border: const OutlineInputBorder(),
-                  ),
-                  onSubmitted: (value) => unawaited(_handleToken(value)),
-                ),
-              ),
-              const SizedBox(width: SimfTokens.space2),
-              FilledButton(
-                onPressed: _processing
-                    ? null
-                    : () => unawaited(_handleToken(_manualController.text)),
-                child: Text(l10n.scanContactResolve),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// The static placeholder shown in place of the live camera (tests / camera
-/// unavailable). The manual-entry row below stays the working path.
-class _CameraPlaceholder extends StatelessWidget {
-  const _CameraPlaceholder({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return ColoredBox(
-      color: SimfTokens.field,
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            const Icon(
-              Icons.qr_code_scanner,
-              size: 56,
-              color: SimfTokens.inkMuted,
-            ),
-            const SizedBox(height: SimfTokens.space2),
-            Text(
-              label,
-              style: const TextStyle(color: SimfTokens.inkMuted),
-            ),
-          ],
-        ),
-      ),
+    return QrScanView(
+      title: l10n.scanContactTitle,
+      fieldLabel: l10n.scanContactManualField,
+      continueLabel: l10n.scanContactResolve,
+      cameraLabel: l10n.scanStartCamera,
+      enableCamera: widget.enableCamera,
+      onCode: _handleToken,
+      onLeave: _leave,
     );
   }
 }

@@ -436,8 +436,11 @@ class AppL10n {
       _t('أو أدخل رمز الشارة يدويًا', 'Or enter the badge code manually');
   String get badgeManualField => _t('رمز الشارة', 'Badge code');
   String get badgeResolveButton => _t('متابعة', 'Continue');
-  String get badgeStopCamera => _t('إيقاف الكاميرا', 'Stop camera');
-  String get badgeCancel => _t('رجوع', 'Back');
+  // Shared QR-scanner chrome (used by the badge, contact and exhibitor scanners).
+  String get qrStopCamera => _t('إيقاف الكاميرا', 'Stop camera');
+  String get qrBack => _t('رجوع', 'Back');
+  String get qrManualLabel =>
+      _t('أو أدخل الرمز يدويًا', 'Or enter the code manually');
   String get badgeNotRecognised =>
       _t('تعذّر التعرّف على الشارة.', 'The badge was not recognised.');
   String get badgeScanError =>
