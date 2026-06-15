@@ -3,11 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_zxing/flutter_zxing.dart';
-import 'package:go_router/go_router.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
-import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/scan_start_prompt.dart';
 import 'data/contact_models.dart';
@@ -42,7 +40,7 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
   // live camera swallows ALL input over it (taps AND back gestures), so opening
   // camera-off is the only way to guarantee an escapable scanner there. A scan
   // closes the camera on success; abort mid-scan via the device back.
-  bool _cameraOn = false;
+  bool _cameraOn = true;
   String? _lastHandled;
 
   @override
@@ -133,23 +131,12 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
   /// `GoRouter.maybeOf` for the fallback so it never throws when go_router is
   /// absent. (D-423 follow-up: the scanner had no working back.)
   void _leave() {
-    // Use go_router's own pop to remove this imperatively-pushed page (raw
-    // Navigator.pop doesn't exit it inside the StatefulShellRoute, and goNamed
-    // changes the location WITHOUT popping the pushed page — both left the
-    // scanner stuck, D-426). go_router pop() pops the page correctly; if it
-    // can't pop (deep-link root) fall back to goNamed(badge). The plain-Navigator
-    // branch is only for the GoRouter-less widget test.
-    final router = GoRouter.maybeOf(context);
-    if (router == null) {
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      }
-      return;
-    }
-    if (router.canPop()) {
-      router.pop();
-    } else {
-      router.goNamed(RouteNames.badge);
+    // The scanner is opened as a fullscreen modal (Navigator route, NOT a
+    // go_router route), so a plain Navigator.pop closes it reliably — this is
+    // what finally fixed the "stuck scanner" (the go_router shell pop was the
+    // bug). (D-426)
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
     }
   }
 

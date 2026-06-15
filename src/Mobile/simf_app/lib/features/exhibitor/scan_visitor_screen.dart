@@ -44,8 +44,8 @@ class _ScanVisitorScreenState extends ConsumerState<ScanVisitorScreen> {
   }
 
   void _leave() {
-    // go_router pop() removes this pushed page (goNamed only changes the URL and
-    // leaves the page on top; raw Navigator.pop desyncs the shell — D-426).
+    // go_router pop() removes this pushed page (raw Navigator.pop / goNamed left
+    // it stuck inside the shell — D-426).
     final router = GoRouter.maybeOf(context);
     if (router == null) {
       if (Navigator.of(context).canPop()) {

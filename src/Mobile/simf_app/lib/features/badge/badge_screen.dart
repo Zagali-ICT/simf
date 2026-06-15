@@ -13,6 +13,7 @@ import '../../app/theme/tokens.dart';
 import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_svg_icon.dart';
+import '../contacts/scan_contact_screen.dart';
 import '../myarea/data/myarea_models.dart';
 import '../myarea/data/myarea_repository.dart';
 import '../profile/data/profile_repository.dart' show referenceNumberProvider;
@@ -308,7 +309,15 @@ class _Badge extends StatelessWidget {
               color: Colors.white,
             ),
             label: l10n.badgeAddPerson,
-            onTap: () => context.pushNamed(RouteNames.scanContact),
+            // Open as a self-contained fullscreen modal (NOT a go_router route):
+            // the modal closes reliably via Navigator.pop, sidestepping the
+            // shell-route pop bug that left the scanner stuck (D-426).
+            onTap: () => Navigator.of(context, rootNavigator: true).push<void>(
+              MaterialPageRoute<void>(
+                fullscreenDialog: true,
+                builder: (_) => const ScanContactScreen(),
+              ),
+            ),
           ),
           const SizedBox(height: SimfTokens.space3),
           _actionButton(
