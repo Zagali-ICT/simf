@@ -73,8 +73,8 @@ void main() {
       repo: _FakeAuthRepo((
         found: true, hasPassword: true, displayName: 'Khalid',
         needsEmail: false, maskedEmail: null,
-      )),
-    ));
+      ),),
+    ),);
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField).first, 'ABCDEFGH2345');
@@ -91,8 +91,8 @@ void main() {
       repo: _FakeAuthRepo((
         found: true, hasPassword: false, displayName: 'Khalid',
         needsEmail: true, maskedEmail: null,
-      )),
-    ));
+      ),),
+    ),);
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField).first, 'ABCDEFGH2345');
@@ -110,8 +110,8 @@ void main() {
       repo: _FakeAuthRepo((
         found: false, hasPassword: false, displayName: null,
         needsEmail: false, maskedEmail: null,
-      )),
-    ));
+      ),),
+    ),);
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField).first, 'ZZZZZZZZZZZZ');

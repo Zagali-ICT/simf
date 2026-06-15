@@ -436,6 +436,8 @@ class AppL10n {
       _t('أو أدخل رمز الشارة يدويًا', 'Or enter the badge code manually');
   String get badgeManualField => _t('رمز الشارة', 'Badge code');
   String get badgeResolveButton => _t('متابعة', 'Continue');
+  String get badgeStopCamera => _t('إيقاف الكاميرا', 'Stop camera');
+  String get badgeCancel => _t('رجوع', 'Back');
   String get badgeNotRecognised =>
       _t('تعذّر التعرّف على الشارة.', 'The badge was not recognised.');
   String get badgeScanError =>
