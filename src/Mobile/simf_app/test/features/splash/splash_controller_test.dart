@@ -193,38 +193,12 @@ void main() {
       expect(state.location, isNull);
     });
 
-    test('a signed-in user resumes the last saved content route', () async {
-      final container = _container(
-        auth: AuthStateSignedIn(_signedInSession()),
-        update: AppUpdateStatus.upToDate,
-        prefs: <String, Object>{StorageKeys.lastRoute: '/sessions'},
-      );
-      addTearDown(container.dispose);
-
-      final state = await _resolve(container);
-      expect((state as SplashReady).location, equals('/sessions'));
-    });
-
-    test('a non-resumable saved route is ignored in favour of home', () async {
-      final container = _container(
-        auth: AuthStateSignedIn(_signedInSession()),
-        update: AppUpdateStatus.upToDate,
-        prefs: <String, Object>{StorageKeys.lastRoute: '/sign-up/otp'},
-      );
-      addTearDown(container.dispose);
-
-      final state = await _resolve(container);
-      expect((state as SplashReady).routeName, equals(RouteNames.home));
-      expect(state.location, isNull);
-    });
-
     test(
         'a signed-in user with an incomplete profile is gated to the '
-        'profile form, even over a saved route (D-374)', () async {
+        'profile form (D-374)', () async {
       final container = _container(
         auth: AuthStateSignedIn(_signedInSession(profileComplete: false)),
         update: AppUpdateStatus.upToDate,
-        prefs: <String, Object>{StorageKeys.lastRoute: '/sessions'},
       );
       addTearDown(container.dispose);
 

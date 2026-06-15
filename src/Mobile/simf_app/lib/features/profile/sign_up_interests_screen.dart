@@ -121,22 +121,38 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
     });
     final repo = ref.read(profileRepositoryProvider);
     try {
+      // C7 (D-431) — the ID photo must land on the server BEFORE the profile
+      // save: the server now rejects a male profile with no stored photo, and a
+      // male whose photo never uploaded would otherwise be saved incomplete and
+      // bounced back to this form on every sign-in. Upload first; for a male a
+      // failed upload blocks (with a retry) instead of silently proceeding.
+      final bytes = draft.idImageBytes;
+      final name = draft.idImageName;
+      final isMale = draft.request.gender == AppGender.male;
+      if (bytes != null && name != null) {
+        try {
+          await repo.uploadIdImage(bytes: bytes, filename: name);
+        } on ApiFailure {
+          if (!mounted) {
+            return;
+          }
+          if (isMale) {
+            // Mandatory for men — block and let them retry the capture.
+            setState(() => _submitError = l10n.idImageUploadFailed);
+            return;
+          }
+          // Optional for non-male registrants — fall through and save.
+        }
+      }
       final saved = await repo.upsertMyProfile(
         draft.request.copyWith(interestIds: _selected.toList()),
       );
-      final imageFailed = await _uploadIdImageIfAny(repo, draft);
       if (!mounted) {
         return;
       }
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(
-              imageFailed ? l10n.idImageUploadFailed : l10n.profileSavedToast,
-            ),
-          ),
-        );
+        ..showSnackBar(SnackBar(content: Text(l10n.profileSavedToast)));
       // D-373 — the save response carries the freshly issued registration
       // reference; the success screen renders it without another fetch.
       context.goNamed(
@@ -152,26 +168,6 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
       if (mounted) {
         setState(() => _submitting = false);
       }
-    }
-  }
-
-  /// Uploads the carried ID image after the profile exists. Returns true when an
-  /// image was carried but its upload failed — the profile save still succeeded,
-  /// so this is a non-blocking warning, not an error.
-  Future<bool> _uploadIdImageIfAny(
-    ProfileRepository repo,
-    SignUpProfileDraft draft,
-  ) async {
-    final bytes = draft.idImageBytes;
-    final name = draft.idImageName;
-    if (bytes == null || name == null) {
-      return false;
-    }
-    try {
-      await repo.uploadIdImage(bytes: bytes, filename: name);
-      return false;
-    } on ApiFailure {
-      return true;
     }
   }
 

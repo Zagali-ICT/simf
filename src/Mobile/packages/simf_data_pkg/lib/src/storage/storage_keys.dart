@@ -24,10 +24,6 @@ class StorageKeys {
   static const String onboardingCompleted = 'simf.prefs.onboarding_completed';
   static const String hasAcceptedTerms = 'simf.prefs.has_accepted_terms';
 
-  /// The last resumable signed-in location, persisted as the user navigates so
-  /// the splash can resume to it on the next cold start (Page_001 Logic L-5).
-  static const String lastRoute = 'simf.prefs.last_route';
-
   /// The last successfully-used sign-in email, pre-filled on the sign-in screen
   /// when the session has lapsed (Page_003 Logic L-3).
   static const String lastEmail = 'simf.prefs.last_email';

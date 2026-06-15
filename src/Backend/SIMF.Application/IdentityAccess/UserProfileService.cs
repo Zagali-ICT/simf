@@ -162,6 +162,27 @@ internal sealed class UserProfileService(
         // already set (e.g. via /admin/others). Preserve it.
         profile ??= new UserProfile { UserId = actorUserId, CreatedAt = now };
 
+        // C7 (D-371 / D-431) — a male registrant MUST have a captured ID image.
+        // The image is a separate upload (UploadIdImageAsync, which seeds the
+        // stub row), so the client uploads it FIRST and this save then sees the
+        // stored path. Rejecting here makes "a male profile without a photo"
+        // impossible to persist *via self-service upsert* (mobile, the Website
+        // PoC, and any direct API call all funnel through here) — closing the
+        // gap where IsProfileCompleteAsync (same rule, see malePhotoSatisfied
+        // below) kept flagging the profile incomplete and the app bounced the
+        // user back to the profile form on every sign-in. The admin walk-in desk
+        // (AdminAccountService.RegisterOnSiteAsync) is a separate path that
+        // captures the ID document differently and is intentionally not gated
+        // here.
+        if (request.Gender == Gender.Male
+            && string.IsNullOrEmpty(profile.IdImageRelativePath))
+        {
+            throw new ApiException(
+                ErrorCodes.VisitorIdImageMissing, 400,
+                "A photo is required before a male registrant's profile can be saved. Capture the ID photo, then try again.",
+                "يلزم إرفاق صورة قبل حفظ ملف المسجِّل الذكر. التقط صورة الهوية ثم حاول مرة أخرى.");
+        }
+
         // D-373 — issue the human-friendly registration reference once
         // (SIMF-<year>-<8-digit sequence>); covers brand-new rows and any
         // pre-D-373 / admin-stub rows that never received one.

@@ -437,7 +437,7 @@ GoRouter buildRouter(Ref ref) {
       final isSignedIn = authState is AuthStateSignedIn;
 
       // The app no longer remembers the last screen to resume to on cold start
-      // (D-427, owner request) — launch always lands on the splash → Home.
+      // (D-431, owner request) — launch always lands on the splash → Home.
 
       return redirectDecision(
         isInitial: authState is AuthStateInitial,

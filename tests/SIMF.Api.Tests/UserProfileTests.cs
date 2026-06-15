@@ -76,11 +76,31 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Me_profileComplete_stays_false_for_a_male_profile_without_the_id_photo()
+    public async Task POST_upsert_rejects_a_male_profile_without_an_id_photo()
     {
-        // C7 (D-371) makes the camera photo mandatory for males, so a male
-        // profile with no image is still incomplete for the D-374 gate.
+        // C7 (D-371 / D-431) — the camera photo is mandatory for males, so a
+        // male profile with no stored image can no longer be saved at all: the
+        // server rejects it with VISITOR_ID_IMAGE_MISSING. (Previously the save
+        // succeeded but stayed incomplete, which bounced the user back to the
+        // profile form on every sign-in — the D-431 login loop.)
         var token = await CreateUserAndSignInAsync();
+
+        var request = await ValidSaudiRequestAsync();
+        request.Gender = Gender.Male;
+        var upsert = await PostAuthAsync(Path, request, token);
+
+        Assert.Equal(HttpStatusCode.BadRequest, upsert.StatusCode);
+        var body = (await upsert.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.VisitorIdImageMissing, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task POST_upsert_accepts_a_male_profile_once_the_id_photo_is_uploaded()
+    {
+        // C7 (D-431) — the client uploads the photo FIRST (it seeds the stub
+        // row), then the male upsert succeeds and the profile reads complete.
+        var token = await CreateUserAndSignInAsync();
+        await UploadValidIdImageAsync(token);
 
         var request = await ValidSaudiRequestAsync();
         request.Gender = Gender.Male;
@@ -89,7 +109,22 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
 
         var me = await GetAuthAsync("/api/v1/app/users/me", token);
         var body = (await me.Content.ReadFromJsonAsync<ApiResult<CurrentUserResponse>>())!;
-        Assert.False(body.Data!.ProfileComplete);
+        Assert.True(body.Data!.ProfileComplete);
+    }
+
+    [Fact]
+    public async Task POST_upsert_accepts_a_female_profile_without_an_id_photo()
+    {
+        // C7 (D-431) — the mandatory-photo rule is MALE-only: a female (or
+        // unspecified) registrant saves without one. Pins that the D-431 guard
+        // is gender-scoped and did not make the photo mandatory for everyone.
+        var token = await CreateUserAndSignInAsync();
+
+        var request = await ValidSaudiRequestAsync();
+        request.Gender = Gender.Female;
+        var upsert = await PostAuthAsync(Path, request, token);
+
+        Assert.Equal(HttpStatusCode.OK, upsert.StatusCode);
     }
 
     [Fact]
@@ -502,18 +537,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         var token = await CreateUserAndSignInAsync();
 
         // A tiny 1x1 PNG — the smallest valid PNG that passes the magic-byte gate.
-        var png = new byte[]
-        {
-            0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
-            0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
-            0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
-            0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4,
-            0x89, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x44, 0x41,
-            0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00,
-            0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00,
-            0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE,
-            0x42, 0x60, 0x82,
-        };
+        var png = TinyValidPng();
 
         using var form = new MultipartFormDataContent();
         var file = new ByteArrayContent(png);
@@ -936,6 +960,9 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         var (token, _) = await CreateEmailVerifiedVisitorAndSignInAsync();
         var organisationId = await SeedOrganisationAsync();
 
+        // C7 (D-431) — a male profile needs the photo on the server first.
+        await UploadValidIdImageAsync(token);
+
         var request = await ValidSaudiRequestAsync();
         request.OrganisationId = organisationId;
         request.Gender = Gender.Male;
@@ -1023,6 +1050,40 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     }
 
     // -- Helpers ---------------------------------------------------------------
+
+    /// <summary>A tiny 1x1 PNG — the smallest valid PNG that passes the
+    /// magic-byte gate. Shared by the id-image round-trip test and the
+    /// male-photo helper.</summary>
+    private static byte[] TinyValidPng() => new byte[]
+    {
+        0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+        0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+        0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+        0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4,
+        0x89, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x44, 0x41,
+        0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00,
+        0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00,
+        0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE,
+        0x42, 0x60, 0x82,
+    };
+
+    /// <summary>C7 (D-371 / D-431) — uploads a valid tiny PNG to the id-image
+    /// endpoint (the base factory runs with the face gate OFF) so a male
+    /// profile can satisfy the mandatory-photo rule before the upsert.</summary>
+    private async Task UploadValidIdImageAsync(string token)
+    {
+        using var form = new MultipartFormDataContent();
+        var file = new ByteArrayContent(TinyValidPng());
+        file.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        form.Add(file, "File", "id.png");
+        using var upload = new HttpRequestMessage(HttpMethod.Post, Path + "/id-image")
+        {
+            Content = form,
+        };
+        upload.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var response = await _client.SendAsync(upload);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
 
     private async Task<UpsertUserProfileRequest> ValidSaudiRequestAsync(
         string englishName = "Test User",
