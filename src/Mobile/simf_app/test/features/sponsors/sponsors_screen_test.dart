@@ -21,6 +21,19 @@ const _groups = <SponsorTierGroup>[
       ),
     ],
   ),
+  SponsorTierGroup(
+    tier: 2,
+    tierName: 'Premium',
+    sponsors: <Sponsor>[
+      Sponsor(
+        id: 's2',
+        nameEn: 'GAMI Authority',
+        nameAr: 'الهيئة العامة للصناعات العسكرية',
+        tierName: 'Premium',
+        displayOrder: 0,
+      ),
+    ],
+  ),
 ];
 
 Future<void> _pump(WidgetTester tester, List<Override> overrides) async {
@@ -45,12 +58,17 @@ Future<void> _pump(WidgetTester tester, List<Override> overrides) async {
 
 void main() {
   group('SponsorsScreen (Page 023)', () {
-    testWidgets('renders tier headers + sponsor cards', (tester) async {
+    testWidgets('renders tier headers + sponsor cards (strategic + premium)',
+        (tester) async {
       await _pump(tester, <Override>[
         sponsorGroupsProvider.overrideWith((ref) async => _groups),
       ]);
+      // Both tier section labels render, in order.
       expect(find.text('Strategic'), findsOneWidget);
+      expect(find.text('Premium'), findsOneWidget);
+      // Each tier's sponsor name + the strategic url line render.
       expect(find.text('SAMI'), findsOneWidget);
+      expect(find.text('GAMI Authority'), findsOneWidget);
       expect(find.text('https://sami.sa'), findsOneWidget);
     });
 
@@ -59,6 +77,19 @@ void main() {
         sponsorGroupsProvider.overrideWith((ref) async => const <SponsorTierGroup>[]),
       ]);
       expect(find.text('No sponsors'), findsOneWidget);
+    });
+
+    testWidgets('groups with only empty tiers show the empty state',
+        (tester) async {
+      await _pump(tester, <Override>[
+        sponsorGroupsProvider.overrideWith(
+          (ref) async => const <SponsorTierGroup>[
+            SponsorTierGroup(tier: 1, tierName: 'Empty', sponsors: <Sponsor>[]),
+          ],
+        ),
+      ]);
+      expect(find.text('No sponsors'), findsOneWidget);
+      expect(find.text('Empty'), findsNothing);
     });
 
     testWidgets('error shows the error state', (tester) async {

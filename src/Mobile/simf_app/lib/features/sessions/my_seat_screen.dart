@@ -9,18 +9,24 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_bottom_nav.dart';
 import 'data/seat_map_models.dart';
 import 'data/seat_map_repository.dart';
 
-/// Page 018 — مقعدي · خريطة الجلوس · My Seat map (#18,
-/// `/sessions/:sessionId/my-seat`, **auth-gated**, approved Visitor only).
+/// Page 018 — مقعدي · My Seat map (#18,
+/// `/sessions/:sessionId/my-seat`, **auth-gated**, approved Visitor only),
+/// rebuilt to the KSA-Project frame **898:2873 "Your seat"** on the shared
+/// navy shell.
 ///
-/// One read (`GET /app/sessions/{id}/seats`) draws the whole hall grid: every
-/// seat coloured by **derived** status — mine / reserved / available (Page_018
-/// L-2) — with the caller's own seat highlighted. Read-only as drawn; the
-/// interactive picker is a later mode over the same (existing) reserve endpoints
-/// (L-4). Navigate opens the venue map (15); share opens the native sheet (E3).
-/// UI is interim; final visuals come from SIMF-VID-001.
+/// Behaviour is unchanged from the previous build: one read
+/// (`GET /app/sessions/{id}/seats`) draws the whole hall grid, every seat
+/// coloured by **derived** status — mine / reserved / available (Page_018
+/// L-2) — with the caller's own seat highlighted gold. Read-only as drawn.
+/// Frame mapping: the circled-back shell header, a navy "الجلسة" card holding
+/// the seat (مقعد) + row (الصف) chips, the navy hall card with the gold stage
+/// band, the A–H seat grid and the محجوز/متاح/مقعدك legend, then the two gold
+/// action buttons (share location / guide me to my seat). Navigate opens the
+/// venue map (15); share opens the native sheet (E3).
 class MySeatScreen extends ConsumerStatefulWidget {
   const MySeatScreen({required this.sessionId, super.key});
 
@@ -80,27 +86,38 @@ class _MySeatScreenState extends ConsumerState<MySeatScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return Scaffold(
-      appBar: AppBar(leading: const SimfBackButton(), title: Text(l10n.mySeatMapTitle)),
-      body: SafeArea(child: _buildBody(l10n)),
+    return KsaPage(
+      title: l10n.mySeatTitle,
+      onBack: () => ksaBackOrHome(context),
+      tab: SimfTab.sessions,
+      body: _buildBody(l10n),
     );
   }
 
   Widget _buildBody(AppL10n l10n) {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(color: SimfTokens.accent),
+      );
     }
     if (_notFound) {
-      return _Message(icon: Icons.event_busy_outlined, text: l10n.sessionNotFound);
+      return KsaEmptyState(
+        icon: Icons.event_busy_outlined,
+        message: l10n.sessionNotFound,
+      );
     }
     if (_error || _map == null) {
-      return _ErrorState(message: l10n.seatMapError, onRetry: () => unawaited(_load()));
+      return KsaErrorState(
+        message: l10n.seatMapError,
+        retryLabel: l10n.retryLabel,
+        onRetry: () => unawaited(_load()),
+      );
     }
     final map = _map!;
     if (!map.hasLayout) {
-      return _Message(
+      return KsaEmptyState(
         icon: Icons.event_seat_outlined,
-        text: l10n.seatMapUnavailable,
+        message: l10n.seatMapUnavailable,
       );
     }
     return _SeatMapView(
@@ -129,67 +146,32 @@ class _SeatMapView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final reserved = map.reservedKeys();
-    return ListView(
-      padding: const EdgeInsets.all(SimfTokens.space4),
-      children: <Widget>[
-        _Banner(map: map, l10n: l10n),
-        const SizedBox(height: SimfTokens.space3),
-        // The hall card (mockup `.hall`): a navy gradient panel holding the
-        // gold stage band at the top and the seat rows below it.
-        Container(
-          padding: const EdgeInsets.fromLTRB(
-            SimfTokens.space3,
-            SimfTokens.space3,
-            SimfTokens.space3,
-            SimfTokens.space4,
-          ),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: <Color>[SimfTokens.line2, SimfTokens.surfaceTint],
-            ),
-            border: Border.all(color: SimfTokens.line2),
-            borderRadius: BorderRadius.circular(SimfTokens.radiusLarge),
-          ),
-          child: Column(
-            children: <Widget>[
-              _StageBar(label: l10n.stageLabel),
-              const SizedBox(height: SimfTokens.space3),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Directionality(
-                  // The hall plan keeps the stage at the top and seat columns in
-                  // venue order — do not mirror the grid geometry in RTL (L-7).
-                  textDirection: TextDirection.ltr,
-                  child: Column(
-                    children: <Widget>[
-                      for (final row in map.rowLabels)
-                        _SeatRow(
-                          rowLabel: row,
-                          seatsPerRow: map.seatsPerRow,
-                          reserved: reserved,
-                          map: map,
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+    // Arabic is primary; the whole page reads right-to-left (frame 898:2873).
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(
+          SimfTokens.space4,
+          SimfTokens.space2,
+          SimfTokens.space4,
+          SimfTokens.space5,
         ),
-        const SizedBox(height: SimfTokens.space4),
-        _Legend(l10n: l10n),
-        const SizedBox(height: SimfTokens.space5),
-        _Actions(l10n: l10n, onNavigate: onNavigate, onShare: onShare),
-      ],
+        children: <Widget>[
+          _SessionCard(map: map, l10n: l10n),
+          const SizedBox(height: SimfTokens.space5),
+          _HallCard(map: map, l10n: l10n),
+          const SizedBox(height: SimfTokens.space5),
+          _Actions(l10n: l10n, onNavigate: onNavigate, onShare: onShare),
+        ],
+      ),
     );
   }
 }
 
-class _Banner extends StatelessWidget {
-  const _Banner({required this.map, required this.l10n});
+/// The "الجلسة" card (frame 905:1556): the session label, its title, then the
+/// seat (مقعد) + row (الصف) chips — right-aligned on the navy `navyDeep` fill.
+class _SessionCard extends StatelessWidget {
+  const _SessionCard({required this.map, required this.l10n});
 
   final SessionSeatMap map;
   final AppL10n l10n;
@@ -197,55 +179,177 @@ class _Banner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cell = map.myCell;
-    return Card(
-      margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
+    return Container(
+      padding: const EdgeInsets.all(SimfTokens.space4),
+      decoration: BoxDecoration(
+        color: SimfTokens.navyDeep,
         borderRadius: BorderRadius.circular(SimfTokens.radius),
-        side: BorderSide(
-          color: cell != null ? SimfTokens.accent : SimfTokens.line2,
-        ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space4),
-        child: Row(
-          children: <Widget>[
-            Icon(
-              cell != null ? Icons.event_seat : Icons.event_seat_outlined,
-              color: cell != null ? SimfTokens.accent : SimfTokens.txtTertiary,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(
+            l10n.sessionLabel,
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              color: SimfTokens.beigeBorder,
+              fontSize: SimfTokens.textLg,
+              fontWeight: FontWeight.w600,
             ),
-            const SizedBox(width: SimfTokens.space3),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    cell != null
-                        ? l10n.seatLocation(cell.rowLabel, cell.seatNumber)
-                        : l10n.noSeatYet,
-                    style: const TextStyle(
-                      color: SimfTokens.surface,
-                      fontWeight: FontWeight.w700,
-                      fontSize: SimfTokens.textMd,
-                    ),
-                  ),
-                  const SizedBox(height: SimfTokens.space1),
-                  Text(
-                    l10n.seatCapacity(map.activeReservedCount, map.capacity),
-                    style: const TextStyle(
-                      color: SimfTokens.txtSecondary,
-                      fontSize: SimfTokens.textSm,
-                    ),
-                  ),
-                ],
+          ),
+          const SizedBox(height: SimfTokens.space4),
+          Text(
+            cell != null
+                ? l10n.seatLocation(cell.rowLabel, cell.seatNumber)
+                : l10n.noSeatYet,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: SimfTokens.surface,
+              fontSize: SimfTokens.textTitle,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: SimfTokens.space4),
+          Row(
+            children: <Widget>[
+              // RTL: the row (الصف) chip sits at the inline-start (right), the
+              // seat (مقعد) chip at the inline-end (left) — frame 905:1576.
+              Expanded(
+                child: _SeatChip(
+                  goldLabel: l10n.rowChipLabel,
+                  value: cell != null ? cell.rowLabel : '—',
+                  valueIsGold: false,
+                  borderColor: SimfTokens.accent,
+                  borderWidth: SimfTokens.hairlineBold,
+                ),
               ),
-            ),
-          ],
-        ),
+              const SizedBox(width: SimfTokens.space2),
+              Expanded(
+                child: _SeatChip(
+                  goldLabel: l10n.seatChipLabel,
+                  value: cell != null ? '${cell.seatNumber}' : '—',
+                  borderColor: SimfTokens.beigeBorder,
+                  borderWidth: SimfTokens.hairline,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 }
 
+/// One bordered seat/row chip (frame 905:1577 / 905:1579): a gold label word
+/// next to its value, centred on a navyDeep fill with a thin gold/beige border.
+class _SeatChip extends StatelessWidget {
+  const _SeatChip({
+    required this.goldLabel,
+    required this.value,
+    required this.borderColor,
+    required this.borderWidth,
+    this.valueIsGold = true,
+  });
+
+  final String goldLabel;
+  final String value;
+  final Color borderColor;
+  final double borderWidth;
+  final bool valueIsGold;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 34,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space2),
+      decoration: BoxDecoration(
+        color: SimfTokens.navyDeep,
+        border: Border.all(color: borderColor, width: borderWidth),
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+      ),
+      child: Text.rich(
+        TextSpan(
+          children: <InlineSpan>[
+            TextSpan(
+              text: goldLabel,
+              style: const TextStyle(
+                color: SimfTokens.accent,
+                fontSize: SimfTokens.textSm,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const TextSpan(text: ' '),
+            TextSpan(
+              text: value,
+              style: TextStyle(
+                color: valueIsGold ? SimfTokens.accent : SimfTokens.surface,
+                fontSize: SimfTokens.textMd,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        textAlign: TextAlign.center,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+}
+
+/// The hall card (frame 907:1708): the gold-bordered stage band, the A–H seat
+/// grid, and the محجوز / متاح / مقعدك legend — on the navyDeep fill.
+class _HallCard extends StatelessWidget {
+  const _HallCard({required this.map, required this.l10n});
+
+  final SessionSeatMap map;
+  final AppL10n l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final reserved = map.reservedKeys();
+    return Container(
+      padding: const EdgeInsets.all(SimfTokens.space4),
+      decoration: BoxDecoration(
+        color: SimfTokens.navyDeep,
+        borderRadius: BorderRadius.circular(SimfTokens.radius),
+      ),
+      child: Column(
+        children: <Widget>[
+          _StageBar(label: l10n.stageLabelBilingual),
+          const SizedBox(height: SimfTokens.space6),
+          // The hall plan keeps the stage at the top and seat columns in venue
+          // order — do not mirror the grid geometry in RTL (L-7).
+          Directionality(
+            textDirection: TextDirection.ltr,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Column(
+                children: <Widget>[
+                  for (final (index, row) in map.rowLabels.indexed) ...<Widget>[
+                    if (index > 0) const SizedBox(height: SimfTokens.space4),
+                    _SeatRow(
+                      rowLabel: row,
+                      seatsPerRow: map.seatsPerRow,
+                      reserved: reserved,
+                      map: map,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: SimfTokens.space6),
+          _Legend(l10n: l10n),
+        ],
+      ),
+    );
+  }
+}
+
+/// The gold-bordered "المسرح · STAGE" band at the top of the hall card
+/// (frame 905:1584): a full-width navyDeep pill, gold hairline, gold label.
 class _StageBar extends StatelessWidget {
   const _StageBar({required this.label});
 
@@ -255,29 +359,21 @@ class _StageBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: SimfTokens.space2),
+      height: 48,
+      alignment: Alignment.center,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: <Color>[
-            SimfTokens.accent.withValues(alpha: 0.20),
-            SimfTokens.accent.withValues(alpha: 0.06),
-          ],
+        color: SimfTokens.navyDeep,
+        border: Border.all(
+          color: SimfTokens.accent,
+          width: SimfTokens.hairlineBold,
         ),
-        border: Border.all(color: SimfTokens.accent),
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(SimfTokens.radiusLarge),
-          bottomRight: Radius.circular(SimfTokens.radiusLarge),
-        ),
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
       ),
       child: Text(
         label,
         textAlign: TextAlign.center,
         style: const TextStyle(
-          fontWeight: FontWeight.w700,
-          letterSpacing: 2,
-          fontSize: SimfTokens.textXs,
+          fontSize: SimfTokens.textMd,
           color: SimfTokens.accent,
         ),
       ),
@@ -300,32 +396,31 @@ class _SeatRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Row(
-        children: <Widget>[
-          SizedBox(
-            width: 22,
-            child: Text(
-              rowLabel,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: SimfTokens.textXs,
-                color: SimfTokens.txtTertiary,
-              ),
+    return Row(
+      children: <Widget>[
+        SizedBox(
+          width: 16,
+          child: Text(
+            rowLabel,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: SimfTokens.textSm,
+              color: SimfTokens.beigeBorder,
             ),
           ),
-          for (var seat = 1; seat <= seatsPerRow; seat++)
-            _SeatBox(
-              status: map.isMine(rowLabel, seat)
-                  ? _SeatStatus.mine
-                  : reserved.contains('$rowLabel:$seat')
-                      ? _SeatStatus.reserved
-                      : _SeatStatus.available,
-            ),
+        ),
+        const SizedBox(width: SimfTokens.space2),
+        for (var seat = 1; seat <= seatsPerRow; seat++) ...<Widget>[
+          if (seat > 1) const SizedBox(width: 6),
+          _SeatBox(
+            status: map.isMine(rowLabel, seat)
+                ? _SeatStatus.mine
+                : reserved.contains('$rowLabel:$seat')
+                    ? _SeatStatus.reserved
+                    : _SeatStatus.available,
+          ),
         ],
-      ),
+      ],
     );
   }
 }
@@ -339,46 +434,35 @@ class _SeatBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Mockup `.hall .r i`: plain seat squares (no number) — mine glows gold,
-    // taken is a denser fill with no border, available is a faint fill.
+    // Frame 907:1595..: plain seat squares (no number) — mine is a gold fill,
+    // reserved is the deep-navy fill (no border), available is the deep-navy
+    // fill with a beige hairline border.
     final Color fill;
     Border? border;
-    List<BoxShadow>? glow;
     switch (status) {
       case _SeatStatus.mine:
         fill = SimfTokens.accent;
-        border = Border.all(color: SimfTokens.accent);
-        glow = <BoxShadow>[
-          BoxShadow(
-            color: SimfTokens.accent.withValues(alpha: 0.30),
-            blurRadius: 0,
-            spreadRadius: 2,
-          ),
-          BoxShadow(
-            color: SimfTokens.accent.withValues(alpha: 0.55),
-            blurRadius: 8,
-          ),
-        ];
+        border = Border.all(color: SimfTokens.beigeBorder);
       case _SeatStatus.reserved:
-        fill = SimfTokens.line;
+        fill = SimfTokens.navy;
       case _SeatStatus.available:
-        fill = SimfTokens.surfaceTint;
-        border = Border.all(color: SimfTokens.line2);
+        fill = SimfTokens.navy;
+        border = Border.all(color: SimfTokens.beigeBorder);
     }
     return Container(
-      width: 14,
-      height: 14,
-      margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 3),
+      width: 20,
+      height: 20,
       decoration: BoxDecoration(
         color: fill,
         border: border,
-        boxShadow: glow,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        borderRadius: BorderRadius.circular(3),
       ),
     );
   }
 }
 
+/// The legend row (frame 907:1591): محجوز (deep-navy fill) · متاح (beige
+/// border) · مقعدك (gold fill) — each a label next to its colour swatch.
 class _Legend extends StatelessWidget {
   const _Legend({required this.l10n});
 
@@ -388,23 +472,33 @@ class _Legend extends StatelessWidget {
   Widget build(BuildContext context) {
     return Wrap(
       alignment: WrapAlignment.center,
-      spacing: SimfTokens.space4,
+      spacing: SimfTokens.space2,
       runSpacing: SimfTokens.space2,
       children: <Widget>[
-        _LegendItem(color: SimfTokens.accent, label: l10n.legendMine),
         _LegendItem(
-          color: SimfTokens.surfaceTint,
-          border: true,
-          label: l10n.legendAvailable,
+          label: l10n.legendReserved,
+          color: SimfTokens.navy,
         ),
-        _LegendItem(color: SimfTokens.line, label: l10n.legendReserved),
+        _LegendItem(
+          label: l10n.legendAvailable,
+          color: SimfTokens.navy,
+          border: true,
+        ),
+        _LegendItem(
+          label: l10n.legendMine,
+          color: SimfTokens.accent,
+        ),
       ],
     );
   }
 }
 
 class _LegendItem extends StatelessWidget {
-  const _LegendItem({required this.color, required this.label, this.border = false});
+  const _LegendItem({
+    required this.color,
+    required this.label,
+    this.border = false,
+  });
 
   final Color color;
   final String label;
@@ -415,21 +509,21 @@ class _LegendItem extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
+        Text(
+          label,
+          style: const TextStyle(
+            color: SimfTokens.beigeBorder,
+            fontSize: SimfTokens.textSm,
+          ),
+        ),
+        const SizedBox(width: SimfTokens.space2),
         Container(
           width: 14,
           height: 14,
           decoration: BoxDecoration(
             color: color,
-            border: border ? Border.all(color: SimfTokens.line2) : null,
-            borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-          ),
-        ),
-        const SizedBox(width: SimfTokens.space1),
-        Text(
-          label,
-          style: const TextStyle(
-            color: SimfTokens.txtSecondary,
-            fontSize: SimfTokens.textSm,
+            border: border ? Border.all(color: SimfTokens.beigeBorder) : null,
+            borderRadius: BorderRadius.circular(3),
           ),
         ),
       ],
@@ -437,6 +531,8 @@ class _LegendItem extends StatelessWidget {
   }
 }
 
+/// The action row (frame 908:1733 / 908:1737): a gold-outlined "share location"
+/// next to a gold-filled "guide me to my seat".
 class _Actions extends StatelessWidget {
   const _Actions({required this.l10n, required this.onNavigate, this.onShare});
 
@@ -448,66 +544,59 @@ class _Actions extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: <Widget>[
+        // RTL: the gold-filled "guide me" CTA sits at the inline-start (right),
+        // the outlined "share location" at the inline-end (left) — frame
+        // 908:1733 / 908:1737.
         Expanded(
-          child: FilledButton(
+          child: FilledButton.icon(
             onPressed: onNavigate,
-            child: Text(l10n.navigateToSeat),
+            style: FilledButton.styleFrom(
+              backgroundColor: SimfTokens.accent,
+              foregroundColor: SimfTokens.surface,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+              ),
+              padding: const EdgeInsets.symmetric(
+                horizontal: SimfTokens.space4,
+                vertical: SimfTokens.space3,
+              ),
+            ),
+            icon: const Icon(Icons.near_me_outlined, size: 18),
+            label: Text(
+              l10n.navigateToSeat,
+              style: const TextStyle(
+                fontSize: SimfTokens.textSm,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ),
         const SizedBox(width: SimfTokens.space3),
         Expanded(
-          child: OutlinedButton(
+          child: OutlinedButton.icon(
             onPressed: onShare,
-            child: Text(l10n.shareLocation),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: SimfTokens.surface,
+              side: const BorderSide(color: SimfTokens.accent),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+              ),
+              padding: const EdgeInsets.symmetric(
+                horizontal: SimfTokens.space4,
+                vertical: SimfTokens.space3,
+              ),
+            ),
+            icon: const Icon(Icons.share_outlined, size: 18),
+            label: Text(
+              l10n.shareLocation,
+              style: const TextStyle(
+                fontSize: SimfTokens.textSm,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ),
       ],
-    );
-  }
-}
-
-class _Message extends StatelessWidget {
-  const _Message({required this.icon, required this.text});
-
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Icon(icon, size: 56, color: SimfTokens.txtTertiary),
-          const SizedBox(height: SimfTokens.space3),
-          Text(text, style: const TextStyle(color: SimfTokens.txtSecondary)),
-        ],
-      ),
-    );
-  }
-}
-
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.message, required this.onRetry});
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppL10n.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: SimfTokens.space4),
-            FilledButton(onPressed: onRetry, child: Text(l10n.retryLabel)),
-          ],
-        ),
-      ),
     );
   }
 }

@@ -7,15 +7,27 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_svg_icon.dart';
 import '../venuemap/data/venue_map_models.dart';
 import '../venuemap/data/venue_map_repository.dart';
 
-/// Page 022 — الأجنحة · Booths (#22, `/booths`, Guest+).
+/// Page 022 — الأجنحة · Booths (#22, `/booths`, Guest+), rebuilt to the
+/// KSA-Project Figma frame **922:2458 "Halls"** on the shared KSA shell.
 ///
 /// **Public.** Reuses the shipped booth reads (`GET /app/booths` + `/{id}`,
 /// D-199 / D-230) already wired in [VenueMapRepository] — the list of exhibitor
 /// booths; tapping a booth opens a bottom sheet with the lazily-loaded
-/// description. UI is interim (final visuals from SIMF-VID-001).
+/// description.
+///
+/// Frame mapping: the navy scaffold + centred header (الأجنحة) and the shared
+/// bottom nav from [KsaPage]; a bordered search field (ابحث عن جناح أو شركة);
+/// then one exhibitor card per booth — a company header row (short name + full
+/// name beside a square logo-initials tile, gold-hairline divider), the
+/// gold-bordered **code pill** (A-12) beside the deep-navy **hall box**, and a
+/// **guide-me** gold CTA. The frame's booth-officer row and the email / phone
+/// contact boxes are omitted because `GET /app/booths` carries no officer or
+/// contact data and only a bare `hallId` (no hall **name**) — D11 / Page_015
+/// L-6; those fields are reported as data-layer gaps, not invented here.
 class BoothsScreen extends ConsumerStatefulWidget {
   const BoothsScreen({super.key});
 
@@ -27,6 +39,7 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
   bool _loading = true;
   bool _error = false;
   List<BoothSummary> _booths = const <BoothSummary>[];
+  String _query = '';
 
   @override
   void initState() {
@@ -72,17 +85,37 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
     final detail = _safeDetail(booth.id);
     showModalBottomSheet<void>(
       context: context,
+      backgroundColor: SimfTokens.navyDeep,
       showDragHandle: true,
       builder: (_) => _BoothSheet(l10n: l10n, booth: booth, detail: detail),
     );
   }
 
+  // The booths whose name / exhibitor / sector / code matches the query
+  // (client-side filter, mirroring the frame's local search field).
+  List<BoothSummary> _filtered(bool isArabic) {
+    final q = _query.trim().toLowerCase();
+    if (q.isEmpty) {
+      return _booths;
+    }
+    return _booths.where((booth) {
+      final haystack = <String?>[
+        booth.localizedName(isArabic),
+        booth.localizedExhibitor(isArabic),
+        booth.localizedSector(isArabic),
+        booth.code,
+      ].whereType<String>().join(' ').toLowerCase();
+      return haystack.contains(q);
+    }).toList(growable: false);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return Scaffold(
-      appBar: AppBar(leading: const SimfBackButton(), title: Text(l10n.boothsTitle)),
-      body: SafeArea(child: _buildBody(l10n)),
+    return KsaPage(
+      title: l10n.boothsTitle,
+      onBack: () => ksaBackOrHome(context),
+      body: _buildBody(l10n),
     );
   }
 
@@ -91,180 +124,221 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     if (_error) {
-      return _ErrorState(message: l10n.boothsError, onRetry: () => unawaited(_load()));
+      return KsaErrorState(
+        message: l10n.boothsError,
+        retryLabel: l10n.retryLabel,
+        onRetry: () => unawaited(_load()),
+      );
     }
-    if (_booths.isEmpty) {
-      return _EmptyState(message: l10n.boothsEmpty);
-    }
+
     final isArabic = l10n.isArabic;
-    return ListView.separated(
-      padding: const EdgeInsets.all(SimfTokens.space4),
-      itemCount: _booths.length,
-      separatorBuilder: (_, __) => const SizedBox(height: SimfTokens.space3),
-      itemBuilder: (context, index) {
-        final booth = _booths[index];
-        return _BoothCard(
-          booth: booth,
-          isArabic: isArabic,
-          onTap: () => _openBooth(booth),
-        );
-      },
-    );
-  }
-}
+    final filtered = _filtered(isArabic);
 
-/// One exhibitor card (mockup `.booth`): a top row carrying the storefront mark
-/// and the accent code pill over a hairline, then a `.co` row with a square logo
-/// tile (the booth initials) beside the company name and its grey sub-line.
-/// The mockup's hall name / officer / contacts / directions blocks are omitted
-/// — `GET /app/booths` carries only a bare `hallId` and no contact data (D11).
-class _BoothCard extends StatelessWidget {
-  const _BoothCard({
-    required this.booth,
-    required this.isArabic,
-    required this.onTap,
-  });
-
-  final BoothSummary booth;
-  final bool isArabic;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final name = booth.localizedName(isArabic);
-    final exhibitor = booth.localizedExhibitor(isArabic);
-    final sector = booth.localizedSector(isArabic);
-    final sub = <String>[
-      if (exhibitor != null) exhibitor,
-      if (sector != null) sector,
-    ];
-
-    return Card(
-      margin: EdgeInsets.zero,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(SimfTokens.space3),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              _BoothTop(code: booth.code),
-              const SizedBox(height: SimfTokens.space3),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: <Widget>[
-                  _LogoTile(initials: _initials(name)),
-                  const SizedBox(width: SimfTokens.space3),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          name,
-                          style: const TextStyle(
-                            color: SimfTokens.surface,
-                            fontWeight: FontWeight.w700,
-                            fontSize: SimfTokens.textMd,
-                            height: 1.3,
-                          ),
-                        ),
-                        if (sub.isNotEmpty) ...<Widget>[
-                          const SizedBox(height: SimfTokens.space1),
-                          Text(
-                            sub.join(' · '),
-                            style: const TextStyle(
-                              color: SimfTokens.txtSecondary,
-                              fontWeight: FontWeight.w500,
-                              fontSize: SimfTokens.textSm,
-                              height: 1.4,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: SimfTokens.space2),
-                  const Icon(
-                    Icons.chevron_left,
-                    color: SimfTokens.txtTertiary,
-                    size: 18,
-                  ),
-                ],
-              ),
-            ],
+    return Column(
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            SimfTokens.space4,
+            SimfTokens.space2,
+            SimfTokens.space4,
+            0,
+          ),
+          child: _SearchField(
+            l10n: l10n,
+            onChanged: (value) => setState(() => _query = value),
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// The card header (mockup `.booth .top`): the storefront mark sits opposite
-/// the accent code pill, with a hairline rule underneath.
-class _BoothTop extends StatelessWidget {
-  const _BoothTop({required this.code});
-
-  final String code;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Row(
-          children: <Widget>[
-            const Expanded(
-              child: Icon(
-                Icons.storefront_outlined,
-                color: SimfTokens.accent,
-                size: 18,
-              ),
-            ),
-            if (code.isNotEmpty) _CodePill(code: code),
-          ],
+        Expanded(
+          child: _booths.isEmpty
+              ? KsaEmptyState(
+                  icon: Icons.storefront_outlined,
+                  message: l10n.boothsEmpty,
+                )
+              : filtered.isEmpty
+                  ? KsaEmptyState(
+                      icon: Icons.search_off_outlined,
+                      message: l10n.boothsNoMatch,
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(
+                        SimfTokens.space4,
+                        SimfTokens.space4,
+                        SimfTokens.space4,
+                        SimfTokens.space6,
+                      ),
+                      itemCount: filtered.length,
+                      separatorBuilder: (_, __) =>
+                          const SizedBox(height: SimfTokens.space4),
+                      itemBuilder: (context, index) => _BoothCard(
+                        booth: filtered[index],
+                        l10n: l10n,
+                        isArabic: isArabic,
+                        onTap: () => _openBooth(filtered[index]),
+                      ),
+                    ),
         ),
-        const SizedBox(height: SimfTokens.space2),
-        const Divider(height: 1),
       ],
     );
   }
 }
 
-/// The accent booth-number pill (mockup `.booth .num`): an accent-tinted fill
-/// with an accent border, the code in accent, always LTR.
-class _CodePill extends StatelessWidget {
-  const _CodePill({required this.code});
+/// The bordered search field (frame node 922:2549): a navy box with the
+/// beige bold hairline, the muted hint, and a trailing search glyph.
+class _SearchField extends StatelessWidget {
+  const _SearchField({required this.l10n, required this.onChanged});
 
-  final String code;
+  final AppL10n l10n;
+  final ValueChanged<String> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SimfTokens.space2,
-        vertical: SimfTokens.space1,
-      ),
-      decoration: BoxDecoration(
-        color: SimfTokens.accent.withValues(alpha: 0.10),
-        border: Border.all(color: SimfTokens.accent),
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-      ),
-      child: Text(
-        code,
-        textDirection: TextDirection.ltr,
-        style: const TextStyle(
-          color: SimfTokens.accent,
-          fontWeight: FontWeight.w700,
-          fontSize: SimfTokens.textXs,
+    return TextField(
+      onChanged: onChanged,
+      textInputAction: TextInputAction.search,
+      style: const TextStyle(color: Colors.white, fontSize: SimfTokens.textSm),
+      decoration: InputDecoration(
+        isDense: true,
+        filled: true,
+        fillColor: SimfTokens.navyDeep,
+        hintText: l10n.boothsSearchHint,
+        hintStyle: const TextStyle(
+          color: SimfTokens.beigeBorder,
+          fontSize: SimfTokens.textSm,
+        ),
+        suffixIcon: const SimfSvgIcon(
+          'assets/icons/ic_search.svg',
+          size: 18,
+          color: Colors.white,
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: SimfTokens.space3,
+          vertical: SimfTokens.space4,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(SimfTokens.radius),
+          borderSide: const BorderSide(
+            color: SimfTokens.beigeBorder,
+            width: SimfTokens.hairlineBold,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(SimfTokens.radius),
+          borderSide: const BorderSide(color: SimfTokens.accent),
         ),
       ),
     );
   }
 }
 
-/// The square company-logo tile (mockup `.booth .co .lg`): a small white square
-/// holding the booth initials in navy.
+/// One exhibitor card (frame node 922:2554): a navy box with the beige
+/// hairline carrying — top to bottom — the company header (short name + full
+/// name beside the square logo-initials tile, over a gold hairline), the
+/// gold **code pill** beside the deep-navy **hall box**, and a full-width gold
+/// **guide-me** CTA.
+///
+/// The frame's booth-officer row and the email / phone contact boxes are
+/// omitted: `GET /app/booths` carries no officer or contact data, and only a
+/// bare `hallId` (no hall **name**) — D11 / Page_015 L-6.
+class _BoothCard extends StatelessWidget {
+  const _BoothCard({
+    required this.booth,
+    required this.l10n,
+    required this.isArabic,
+    required this.onTap,
+  });
+
+  final BoothSummary booth;
+  final AppL10n l10n;
+  final bool isArabic;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return KsaCard(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(SimfTokens.space2),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            _CompanyHeader(booth: booth, isArabic: isArabic),
+            const SizedBox(height: SimfTokens.space4),
+            _HallRow(booth: booth, l10n: l10n),
+            if (booth.code.isNotEmpty) ...<Widget>[
+              const SizedBox(height: SimfTokens.space4),
+              _GuideButton(code: booth.code, l10n: l10n),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The card header (frame node 922:2789): the company short name (gold) over
+/// its full name (beige) beside a square logo-initials tile, with a gold
+/// hairline rule underneath. Laid right-to-left so the text column sits at the
+/// inline start and the logo tile at the inline end, as the frame shows.
+class _CompanyHeader extends StatelessWidget {
+  const _CompanyHeader({required this.booth, required this.isArabic});
+
+  final BoothSummary booth;
+  final bool isArabic;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = booth.localizedName(isArabic);
+    final fullName = booth.localizedExhibitor(isArabic);
+    return Container(
+      padding: const EdgeInsets.only(bottom: SimfTokens.space2),
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: SimfTokens.accent,
+            width: SimfTokens.hairline,
+          ),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: <Widget>[
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  name,
+                  style: const TextStyle(
+                    color: SimfTokens.accent,
+                    fontWeight: FontWeight.w500,
+                    fontSize: SimfTokens.textMd,
+                  ),
+                ),
+                if (fullName != null) ...<Widget>[
+                  const SizedBox(height: SimfTokens.space2),
+                  Text(
+                    fullName,
+                    style: const TextStyle(
+                      color: SimfTokens.beigeBorder,
+                      fontWeight: FontWeight.w400,
+                      fontSize: SimfTokens.textSm,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: SimfTokens.space2),
+          _LogoTile(initials: _initials(name)),
+        ],
+      ),
+    );
+  }
+}
+
+/// The square company-logo tile (frame node 922:2793): a 48×48 navy square with
+/// a beige hairline holding the booth initials in white.
 class _LogoTile extends StatelessWidget {
   const _LogoTile({required this.initials});
 
@@ -273,20 +347,177 @@ class _LogoTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 34,
-      height: 34,
+      width: 48,
+      height: 48,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: SimfTokens.surface,
+        color: SimfTokens.navyDeep,
+        border: Border.all(
+          color: SimfTokens.beigeBorder,
+          width: SimfTokens.hairline,
+        ),
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
       ),
       child: Text(
         initials,
         textDirection: TextDirection.ltr,
         style: const TextStyle(
-          color: SimfTokens.navy,
-          fontWeight: FontWeight.w700,
-          fontSize: SimfTokens.textXs,
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+          fontSize: SimfTokens.textMd,
+        ),
+      ),
+    );
+  }
+}
+
+/// The hall row (frame node 922:2795): the gold-bordered **code pill** (A-12)
+/// beside the deep-navy **hall box**. The frame's hall box reads
+/// "HALL A · القاعة الرئيسية"; the wire carries no hall **name**, so the box
+/// shows the booth's sector when present, else a generic "exhibition hall"
+/// label — never an invented hall name (D11 / Page_015 L-6).
+class _HallRow extends StatelessWidget {
+  const _HallRow({required this.booth, required this.l10n});
+
+  final BoothSummary booth;
+  final AppL10n l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final sector = booth.localizedSector(l10n.isArabic);
+    final code = booth.code;
+    // Both children are a fixed 48 high; the row must NOT stretch — inside the
+    // card Column (unbounded height) CrossAxisAlignment.stretch would size the
+    // row to infinite height and crash layout. Centre-align the two 48px boxes.
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: <Widget>[
+        if (code.isNotEmpty) ...<Widget>[
+          _CodePill(code: code),
+          const SizedBox(width: SimfTokens.space4),
+        ],
+        Expanded(
+          child: _HallBox(label: sector ?? l10n.boothsHallFallback),
+        ),
+      ],
+    );
+  }
+}
+
+/// The accent booth-number pill (frame node 922:2796): a 109-wide navy box with
+/// a gold hairline, the code in gold, always LTR.
+class _CodePill extends StatelessWidget {
+  const _CodePill({required this.code});
+
+  final String code;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 109,
+      height: 48,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: SimfTokens.navyDeep,
+        border: Border.all(
+          color: SimfTokens.accent,
+          width: SimfTokens.hairline,
+        ),
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+      ),
+      child: Text(
+        code,
+        textDirection: TextDirection.ltr,
+        style: const TextStyle(
+          color: SimfTokens.accent,
+          fontWeight: FontWeight.w600,
+          fontSize: SimfTokens.textMd,
+        ),
+      ),
+    );
+  }
+}
+
+/// The deep-navy hall box (frame node 922:2798): a 48-high `#01132D` box with a
+/// beige hairline, the label centred in gold.
+class _HallBox extends StatelessWidget {
+  const _HallBox({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 48,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space2),
+      decoration: BoxDecoration(
+        color: SimfTokens.navy,
+        border: Border.all(
+          color: SimfTokens.beigeBorder,
+          width: SimfTokens.hairline,
+        ),
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+      ),
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: SimfTokens.accent,
+          fontWeight: FontWeight.w600,
+          fontSize: SimfTokens.textMd,
+        ),
+      ),
+    );
+  }
+}
+
+/// The full-width gold guide-me CTA (frame node 922:2820): "أرشدني إلى الجناح ·
+/// A-12" with a trailing location glyph, white text on the gold fill. Tapping it
+/// opens the same booth sheet as the card (no map deep-link is wired in this
+/// re-skin — the venue map carries the booth positions on its own page).
+class _GuideButton extends StatelessWidget {
+  const _GuideButton({required this.code, required this.l10n});
+
+  final String code;
+  final AppL10n l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: SimfTokens.accent,
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: SimfTokens.space4,
+          vertical: SimfTokens.space3,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Flexible(
+              child: Text(
+                l10n.boothsGuideMe(code),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: SimfTokens.textSm,
+                ),
+              ),
+            ),
+            const SizedBox(width: SimfTokens.space2),
+            const SimfSvgIcon(
+              'assets/icons/nav_location.svg',
+              size: 18,
+              color: Colors.white,
+            ),
+          ],
         ),
       ),
     );
@@ -302,8 +533,14 @@ String _initials(String name) {
   return trimmed.substring(0, trimmed.length >= 2 ? 2 : 1).toUpperCase();
 }
 
+/// The booth detail bottom sheet — the company name + sub-line over the
+/// lazily-loaded description paragraph, on the navy surface.
 class _BoothSheet extends StatelessWidget {
-  const _BoothSheet({required this.l10n, required this.booth, required this.detail});
+  const _BoothSheet({
+    required this.l10n,
+    required this.booth,
+    required this.detail,
+  });
 
   final AppL10n l10n;
   final BoothSummary booth;
@@ -312,6 +549,12 @@ class _BoothSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isArabic = l10n.isArabic;
+    final exhibitor = booth.localizedExhibitor(isArabic);
+    final sector = booth.localizedSector(isArabic);
+    final parts = <String>[
+      if (exhibitor != null) exhibitor,
+      if (sector != null) sector,
+    ];
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         SimfTokens.space5,
@@ -326,29 +569,18 @@ class _BoothSheet extends StatelessWidget {
           Text(
             booth.localizedName(isArabic),
             style: const TextStyle(
-              color: SimfTokens.surface,
+              color: Colors.white,
               fontWeight: FontWeight.w700,
               fontSize: SimfTokens.textLg,
             ),
           ),
-          const SizedBox(height: SimfTokens.space2),
-          Builder(
-            builder: (_) {
-              final exhibitor = booth.localizedExhibitor(isArabic);
-              final sector = booth.localizedSector(isArabic);
-              final parts = <String>[
-                if (exhibitor != null) exhibitor,
-                if (sector != null) sector,
-              ];
-              if (parts.isEmpty) {
-                return const SizedBox.shrink();
-              }
-              return Text(
-                parts.join(' · '),
-                style: const TextStyle(color: SimfTokens.txtSecondary),
-              );
-            },
-          ),
+          if (parts.isNotEmpty) ...<Widget>[
+            const SizedBox(height: SimfTokens.space2),
+            Text(
+              parts.join(' · '),
+              style: const TextStyle(color: SimfTokens.beigeBorder),
+            ),
+          ],
           const SizedBox(height: SimfTokens.space3),
           FutureBuilder<BoothDetail?>(
             future: detail,
@@ -366,62 +598,13 @@ class _BoothSheet extends StatelessWidget {
               return Text(
                 description,
                 style: const TextStyle(
-                  color: SimfTokens.txtSecondary,
+                  color: SimfTokens.beigeBorder,
                   height: 1.5,
                 ),
               );
             },
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          const Icon(
-            Icons.storefront_outlined,
-            size: 56,
-            color: SimfTokens.txtTertiary,
-          ),
-          const SizedBox(height: SimfTokens.space3),
-          Text(message, style: const TextStyle(color: SimfTokens.txtSecondary)),
-        ],
-      ),
-    );
-  }
-}
-
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.message, required this.onRetry});
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppL10n.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: SimfTokens.space4),
-            FilledButton(onPressed: onRetry, child: Text(l10n.retryLabel)),
-          ],
-        ),
       ),
     );
   }

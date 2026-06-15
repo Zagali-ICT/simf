@@ -17,13 +17,22 @@ const _speakers = <SpeakerSummary>[
     nameArabic: 'القبطان ريف',
     displayOrder: 0,
     rank: 'Sea captain',
-    countryNameEn: 'Saudi Arabia',
+    countryNameEn: 'RSNF',
   ),
   SpeakerSummary(
     id: 'sp2',
     name: 'Dr Wave',
     nameArabic: 'د. موجة',
     displayOrder: 1,
+  ),
+  // A host row — detected by the affiliation text carrying the host word
+  // ("Host" in EN / "المضيف" in AR), the only signal on the public summary.
+  SpeakerSummary(
+    id: 'sp3',
+    name: 'Brig. Anchor',
+    nameArabic: 'العميد مرساة',
+    displayOrder: 2,
+    rank: 'Brigadier · Host',
   ),
 ];
 
@@ -95,11 +104,23 @@ Future<void> _pump(WidgetTester tester, {required SpeakersRepository repo}) asyn
 
 void main() {
   group('SpeakersScreen (Page 019)', () {
-    testWidgets('renders a card per speaker', (tester) async {
+    testWidgets('renders the header title and a card per speaker',
+        (tester) async {
       await _pump(tester, repo: _FakeSpeakersRepo(list: _speakers));
+      expect(find.text('Speakers'), findsOneWidget);
       expect(find.text('Capt. Reef'), findsOneWidget);
       expect(find.text('Dr Wave'), findsOneWidget);
-      expect(find.textContaining('Sea captain'), findsOneWidget);
+      expect(find.text('Brig. Anchor'), findsOneWidget);
+      // The rank · affiliation line joins both parts.
+      expect(find.text('Sea captain · RSNF'), findsOneWidget);
+    });
+
+    testWidgets('a speaker shows the anchor tile, a host shows the star tile',
+        (tester) async {
+      await _pump(tester, repo: _FakeSpeakersRepo(list: _speakers));
+      // Two non-host speakers → two anchors; one host → one star.
+      expect(find.byIcon(Icons.anchor), findsNWidgets(2));
+      expect(find.byIcon(Icons.star_border), findsOneWidget);
     });
 
     testWidgets('tapping a card opens the profile', (tester) async {

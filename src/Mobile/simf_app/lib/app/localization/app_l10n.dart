@@ -735,6 +735,13 @@ class AppL10n {
         'Reminders arrive with notifications setup.',
       );
 
+  // My Seat (Page 018 — Figma 898-2873, D-432).
+  String get mySeatTitle => _t('مقعدي', 'My seat');
+  String get sessionLabel => _t('الجلسة', 'Session');
+  String get seatChipLabel => _t('مقعد', 'Seat');
+  String get rowChipLabel => _t('الصف', 'Row');
+  String get stageLabelBilingual => _t('المسرح · STAGE', 'Stage · STAGE');
+
   // My Seat map (Page 018).
   String get mySeatMapTitle => _t('مقعدي · خريطة الجلوس', 'My seat map');
   String get seatMapError =>
@@ -798,6 +805,13 @@ class AppL10n {
   String get boothsError =>
       _t('تعذّر تحميل الأجنحة.', 'Could not load the booths.');
   String get boothsEmpty => _t('لا توجد أجنحة', 'No booths');
+  // Booths list re-skin (Figma 922-2458, D-432).
+  String get boothsSearchHint =>
+      _t('ابحث عن جناح أو شركة', 'Search for a booth or company');
+  String get boothsNoMatch => _t('لا توجد أجنحة مطابقة', 'No matching booths');
+  String get boothsHallFallback => _t('قاعة المعرض', 'Exhibition hall');
+  String boothsGuideMe(String code) =>
+      _t('أرشدني إلى الجناح · $code', 'Guide me to the booth · $code');
 
   // Sponsors (Page 023).
   String get sponsorsTitle => _t('الرعاة', 'Sponsors');
@@ -810,6 +824,20 @@ class AppL10n {
   String get archiveError =>
       _t('تعذّر تحميل الأرشيف.', 'Could not load the archive.');
   String get archiveEmpty => _t('لا توجد نسخ سابقة', 'No past editions');
+  // Archive detail re-skin (Figma 925-3079, D-432).
+  String get archiveNotice => _t(
+        'تُعرض نسخة 2026 في الأرشيف بعد انتهاء الملتقى.',
+        'Edition 2026 appears in the archive after the forum ends.',
+      );
+  String get archivePickEdition => _t('اختار ملتقى', 'Choose a forum edition');
+  String get archiveTitleLabel => _t('عنوان الملتقى', 'Forum title');
+  String get archiveSummaryLabel => _t('نبذة', 'Overview');
+  String get archivePlaceLabel => _t('المكان', 'Place');
+  String get archiveTimeLabel => _t('الزمن', 'Time');
+  String get archiveStatSpeakers => _t('المتحدثون', 'Speakers');
+  String get archiveStatAttendees => _t('الحضور', 'Attendees');
+  String get archiveStatSessions => _t('الفعاليات', 'Activities');
+  String archiveEditionPill(int year) => _t('ملتقى $year', 'Edition $year');
   String archiveStats(int attendees, int sessions, int speakers) => _t(
         '$attendees حضور · $sessions جلسة · $speakers متحدث',
         '$attendees attendees · $sessions sessions · $speakers speakers',

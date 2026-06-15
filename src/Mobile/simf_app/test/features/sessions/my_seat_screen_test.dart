@@ -103,15 +103,15 @@ Future<void> _pump(
 
 void main() {
   group('MySeatScreen (Page 018)', () {
-    testWidgets('renders the banner + grid + legend', (tester) async {
+    testWidgets('renders the session card + grid + legend', (tester) async {
       await _pump(tester, repo: _FakeSeatRepo(map: _map()));
 
-      expect(find.text('Row B · Seat 2'), findsOneWidget); // banner (myCell)
-      expect(find.text('2 of 6 reserved'), findsOneWidget);
+      expect(find.text('Session'), findsOneWidget); // session-card label
+      expect(find.text('Row B · Seat 2'), findsOneWidget); // myCell title
       expect(find.text('Your seat'), findsOneWidget); // legend
       expect(find.text('Available'), findsOneWidget);
       expect(find.text('Reserved'), findsOneWidget);
-      expect(find.text('Stage'), findsOneWidget);
+      expect(find.text('Stage · STAGE'), findsOneWidget); // gold stage band
     });
 
     testWidgets('share sends the seat-location text', (tester) async {

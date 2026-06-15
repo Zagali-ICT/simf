@@ -147,11 +147,22 @@ Future<void> _pump(
 
 void main() {
   group('SpeakerProfileScreen (Page 020)', () {
-    testWidgets('renders the profile, CV, sessions + meeting button',
+    testWidgets('renders the header, avatar, CV tabs, bio + sessions',
         (tester) async {
+      // Tall surface so the whole lazy ListView (down to the sessions +
+      // meeting button) lays out in the test viewport.
+      tester.view.physicalSize = const Size(1200, 2600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
       await _pump(tester, repo: _FakeRepo(detail: _detail()), controller: _Guest());
+      // The frame's two-line header: white name over the beige rank.
       expect(find.text('Capt. Reef'), findsOneWidget);
+      expect(find.text('Sea captain'), findsOneWidget);
+      // The active CV tab + the bio body it reveals.
+      expect(find.text('Biography'), findsOneWidget);
       expect(find.text('A maritime leader.'), findsOneWidget);
+      // The speaker's sessions + the gated meeting action.
       expect(find.text('Opening talk'), findsOneWidget);
       expect(find.widgetWithText(FilledButton, 'Request meeting'), findsOneWidget);
     });
