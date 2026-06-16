@@ -52,17 +52,22 @@ Last updated: 2026-06-16
 | 7 | Media partners | 958-2246 | `features/media_partners/media_partners_screen.dart` | 🔨 | **rebuild** plain-AppBar page → KSA navy shell + 3-tab hub + 2-col partner grid (gold rounded-square logo container + label); **render real partner logo** (API gap) |
 | 8 | News | 948-3961 | `features/news/news_screen.dart` | 🔨 | tab bar already fixed; verify news-card styling (gold chip / title / excerpt) against 948-3961; **render thumbnail (`imageRelativePath`) + date (`publishedAt`)** which exist on the model but are not shown |
 
-### Also in the wider re-skin wave (verify to frame — confirm scope with owner)
-| Session detail 889-2450 · Booth 922-2458 · Sponsors 922-2824 · Archive/History 925-3079 | task #93/#97/#98/#99 | 🟡/❓ | parity-check each the same way (RTL-verified) |
+### Wider re-skin wave — IN SCOPE (owner confirmed 2026-06-16)
+| 9 Session detail 889-2450 · 10 Booth 922-2458 · 11 Sponsors 922-2824 · 12 Archive/History 925-3079 | task #93/#97/#98/#99 | 🟡 | parity-check each the same way (RTL-verified) — P6 |
 
 ## Backend API / field gaps to design (Figma = source of truth)
 
-| Gap | Frame | Current backend | Proposed (additive) | Decision |
+**Decisions locked (owner, 2026-06-16):** partner logo → **real uploaded logos
+(full API + CP upload)**; live AI captions → **design the API surface + stub the
+provider** (app renders captions when present; YouTube CC meanwhile); speaker
+photo → **add the photo API now**; wider-wave four pages → **all included**.
+
+| Gap | Frame | Current backend | Build (additive) | Decision |
 |-----|-------|-----------------|---------------------|----------|
-| **Media-partner logo** | 958-2246 (partner cards show a logo container) | `PublicMediaPartnerItem` already carries `logoRelativePath`; no image endpoint confirmed | add `GET /app/media-partners/{id}/logo` (bytes, like the booth/news image endpoints) + CP upload field; app renders the logo, falls back to initials | ❓ confirm: real uploaded logos, or keep the gold-icon placeholder? |
-| **News thumbnail + date** | 948-3961 (news cards) | `NewsListItem` already has `imageRelativePath` + `publishedAt`; image endpoint likely exists | render both in `_NewsCard`; add the image endpoint only if missing | ❓ confirm the card shows a thumbnail + date |
-| **Live AI captions / transcript** | 934-3450 (AI caption strip = live spoken-word text) | none — `LiveSession` has no transcript field; D-349 deferred this (YouTube CC) | this is a **feature** (real-time transcription provider + a caption stream API), not a field | ❓ build now (large) or keep YouTube CC + the static strip placeholder? |
-| **Speaker photo** | 908-2110 / 908-1744 (avatar) | no speaker photo URL field | add `Speaker.PhotoRelativePath` + `GET /app/speakers/{id}/photo` + CP upload; app renders photo, falls back to initials/anchor | ❓ in scope now, or keep initials until the SIMF-VID-001 asset pass? |
+| **Media-partner logo** | 958-2246 | `PublicMediaPartnerItem` carries `logoRelativePath`; no image endpoint confirmed | `GET /app/media-partners/{id}/logo` (bytes) + CP upload; app renders logo, falls back to initials | ✅ **real logos** |
+| **News thumbnail + date** | 948-3961 | `NewsListItem` has `imageRelativePath` + `publishedAt`; image endpoint likely exists | render both in `_NewsCard`; add the image endpoint only if missing | ✅ render |
+| **Live AI captions / transcript** | 934-3450 | none — `LiveSession` has no transcript field | add a caption/transcript field + endpoint (`GET /app/programme/sessions/{id}/captions` or a field on the live slice); app renders when present; **provider integration stubbed/later** | ✅ **API surface now, provider later** |
+| **Speaker photo** | 908-2110 / 908-1744 | no speaker photo URL field | `Speaker.PhotoRelativePath` + `GET /app/speakers/{id}/photo` + CP upload; app renders photo, falls back to initials/anchor | ✅ **add now** |
 
 ## Execution plan (sequence)
 
