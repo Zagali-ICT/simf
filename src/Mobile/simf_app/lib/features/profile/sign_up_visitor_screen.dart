@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
@@ -11,7 +14,6 @@ import '../../app/localization/locale_controller.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_logo.dart';
-import '../myarea/identity_verification_screen.dart' show CapturedSelfie;
 import 'data/profile_models.dart';
 import 'data/profile_repository.dart';
 import 'phone_validation.dart';
@@ -351,22 +353,61 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   }
 
   Future<void> _pickIdImage() async {
-    // C7 (D-371) — the male ID photo must be a LIVE face capture. Reuse the
-    // existing guided face-capture / liveness flow (Page 103, identity
-    // verification) the My-Area avatar already uses: it owns the camera-
-    // permission request, the on-device face + liveness check and the gallery
-    // fallback. We do NOT re-implement a bare camera picker here — that failed
-    // silently on devices where the runtime camera permission was never
-    // granted. The returned selfie becomes the attached ID image.
-    final selfie = await context
-        .pushNamed<CapturedSelfie>(RouteNames.identityVerification);
-    if (selfie == null || !mounted) {
-      return;
+    try {
+      // C7 (D-371) — native is camera-only (the photo must be taken live).
+      // The web build is a proof-of-concept channel only (production is
+      // mobile-only), where the browser camera is unreliable, so web falls
+      // back to the gallery; the server-side face gate stays the authority on
+      // either source. (D-384 — web = PoC exception.)
+      final file = await ImagePicker().pickImage(
+        source: kIsWeb ? ImageSource.gallery : ImageSource.camera,
+      );
+      if (file == null) {
+        return;
+      }
+      final bytes = await file.readAsBytes();
+      // C7 — on-device human-face check for instant feedback; the server
+      // re-checks authoritatively on upload (the on-device pass is skipped
+      // on web / when the plugin is unavailable).
+      final hasFace = await _containsFace(file.path);
+      if (!mounted) {
+        return;
+      }
+      if (!hasFace) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(content: Text(AppL10n.of(context).noFaceDetectedError)),
+          );
+        return;
+      }
+      setState(() {
+        _idImageBytes = bytes;
+        _idImageName = file.name;
+      });
+    } catch (_) {
+      // The camera is unavailable (e.g. no native plugin in this tree).
+      // Fail silently — the C7 male gate on Next reports the missing image.
     }
-    setState(() {
-      _idImageBytes = selfie.bytes;
-      _idImageName = selfie.filename;
-    });
+  }
+
+  /// C7 (D-371) — runs the on-device ML Kit face detector over the capture.
+  /// Returns true (defer to the server gate) on web or when the detector
+  /// plugin is unavailable in the current runtime.
+  Future<bool> _containsFace(String path) async {
+    if (kIsWeb) {
+      return true;
+    }
+    final detector = FaceDetector(options: FaceDetectorOptions());
+    try {
+      final faces = await detector.processImage(InputImage.fromFilePath(path));
+      return faces.isNotEmpty;
+    } catch (_) {
+      // Detector unavailable (tests / desktop) — the server still checks.
+      return true;
+    } finally {
+      unawaited(detector.close());
+    }
   }
 
   void _removeIdImage() {

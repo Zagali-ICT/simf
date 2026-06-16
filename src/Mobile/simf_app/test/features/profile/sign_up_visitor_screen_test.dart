@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,8 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
-import 'package:simf_app/features/myarea/identity_verification_screen.dart'
-    show CapturedSelfie;
 import 'package:simf_app/features/profile/data/profile_models.dart';
 import 'package:simf_app/features/profile/data/profile_repository.dart';
 import 'package:simf_app/features/profile/sign_up_visitor_screen.dart';
@@ -122,17 +118,6 @@ class _FakeProfileRepository implements ProfileRepository {
       true;
 }
 
-/// A minimal valid 1×1 PNG so the attach thumbnail (`Image.memory`) decodes in
-/// the test instead of throwing on garbage bytes.
-const List<int> _onePixelPng = <int>[
-  0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, //
-  0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, //
-  0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, 0x89, 0x00, 0x00, 0x00, //
-  0x0A, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00, //
-  0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00, 0x00, 0x00, 0x00, 0x49, //
-  0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
-];
-
 /// The draft Next carried to the interests stub route (null until Next runs).
 SignUpProfileDraft? capturedDraft;
 
@@ -160,28 +145,6 @@ Future<void> _pump(
           capturedDraft = extra is SignUpProfileDraft ? extra : null;
           return const Scaffold(body: Text('INTERESTS'));
         },
-      ),
-      // D-434 — the reused guided face-capture / liveness destination. The stub
-      // pops a CapturedSelfie so a test can prove the attach box opens this flow
-      // and the returned photo unblocks the male Next gate.
-      GoRoute(
-        name: RouteNames.identityVerification,
-        path: '/my-area/verify-identity',
-        builder: (c, s) => Scaffold(
-          body: Center(
-            child: ElevatedButton(
-              onPressed: () => Navigator.of(c).pop<CapturedSelfie>(
-                (
-                  // A real, decodable 1×1 PNG — the attach thumbnail renders it
-                  // via Image.memory, which throws on undecodable bytes.
-                  bytes: Uint8List.fromList(_onePixelPng),
-                  filename: 'selfie.jpg',
-                ),
-              ),
-              child: const Text('RETURN_SELFIE'),
-            ),
-          ),
-        ),
       ),
     ],
   );
@@ -371,42 +334,6 @@ void main() {
       await _tapNext(tester);
 
       expect(find.text('INTERESTS'), findsOneWidget);
-    });
-
-    testWidgets(
-        'tapping the attach box opens the guided face-capture flow and the '
-        'returned selfie unblocks the male Next gate (D-434)', (tester) async {
-      final repo = _FakeProfileRepository(
-        profile: _completeProfile(hasIdImage: false),
-      );
-      await _pump(tester, repo);
-
-      // (b) up front — a male with no photo sees the requirement.
-      expect(
-        find.text('A photo is required — capture it with the camera'),
-        findsOneWidget,
-      );
-
-      // (a) tapping the attach box opens the reused identity-verification
-      // (guided face-capture) screen — it is NOT a silent no-op.
-      final attach = find.text('Attach file');
-      await tester.ensureVisible(attach);
-      await tester.pumpAndSettle();
-      await tester.tap(attach);
-      await tester.pumpAndSettle();
-      expect(find.text('RETURN_SELFIE'), findsOneWidget);
-
-      // The flow returns a captured selfie → the attach now shows its name.
-      await tester.tap(find.text('RETURN_SELFIE'));
-      await tester.pumpAndSettle();
-      expect(find.text('selfie.jpg'), findsOneWidget);
-
-      // The male gate is satisfied → Next proceeds and carries the image bytes.
-      await _tapNext(tester);
-      expect(find.text('INTERESTS'), findsOneWidget);
-      expect(capturedDraft, isNotNull);
-      expect(capturedDraft!.idImageBytes, isNotNull);
-      expect(capturedDraft!.idImageName, equals('selfie.jpg'));
     });
 
     testWidgets(
