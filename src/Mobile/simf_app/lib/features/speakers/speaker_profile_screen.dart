@@ -238,7 +238,8 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
             activeIndex: activeCv,
             onSelect: (index) => setState(() => _activeCv = index),
           ),
-          const SizedBox(height: SimfTokens.space8 + SimfTokens.space2), // 40
+          // Frame 912:2312 → 912:2331 — the CV card sits 24px below the tabs.
+          const SizedBox(height: SimfTokens.space6), // 24
           _CvCard(body: sections[activeCv].body!),
         ],
         if (speaker.allowsMeetingRequests) ...<Widget>[
@@ -332,7 +333,9 @@ class _CvTabs extends StatelessWidget {
     return Row(
       children: <Widget>[
         for (var i = 0; i < titles.length; i++) ...<Widget>[
-          if (i > 0) const SizedBox(width: SimfTokens.space2),
+          // Frame 912:2312 — four equal pills with an ~18px gap (4×72 + 3×18 =
+          // 343); with Expanded the gap drives the pill width to the frame's 72.
+          if (i > 0) const SizedBox(width: 18),
           Expanded(
             child: _CvTab(
               label: titles[i],

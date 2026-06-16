@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 import 'package:simf_app/features/sessions/data/seat_map_repository.dart';
 import 'package:simf_app/features/sessions/my_seat_screen.dart';
@@ -44,6 +45,21 @@ class _FakeSeatRepo implements SeatMapRepository {
     }
     return map!;
   }
+}
+
+/// Flattens an [InlineSpan] tree to its non-blank text leaves (Text.rich wraps
+/// the supplied span under a default-style parent, so the real leaves are nested).
+List<TextSpan> _textLeaves(InlineSpan span) {
+  final leaves = <TextSpan>[];
+  if (span is TextSpan) {
+    if ((span.text ?? '').trim().isNotEmpty) {
+      leaves.add(span);
+    }
+    for (final child in span.children ?? const <InlineSpan>[]) {
+      leaves.addAll(_textLeaves(child));
+    }
+  }
+  return leaves;
 }
 
 class _FakeSeatShare implements SeatShare {
@@ -112,6 +128,26 @@ void main() {
       expect(find.text('Available'), findsOneWidget);
       expect(find.text('Reserved'), findsOneWidget);
       expect(find.text('Stage · STAGE'), findsOneWidget); // gold stage band
+    });
+
+    testWidgets('both chip values render white; only the label word is gold',
+        (tester) async {
+      // Frame 905:1577/1579 regression guard: each chip is a Text.rich with a
+      // [goldLabel, ' ', value] span; the value (12 / B) must be white
+      // (surface), the leading label word (مقعد / الصف) gold (accent). The two
+      // chips are the only rich texts on the page with two non-blank leaves.
+      await _pump(tester, repo: _FakeSeatRepo(map: _map()));
+
+      final chips = tester
+          .widgetList<RichText>(find.byType(RichText))
+          .map((rt) => _textLeaves(rt.text))
+          .where((leaves) => leaves.length == 2)
+          .toList();
+      expect(chips.length, 2); // the seat + row chips
+      for (final leaves in chips) {
+        expect(leaves.first.style?.color, SimfTokens.accent); // label word
+        expect(leaves.last.style?.color, SimfTokens.surface); // value
+      }
     });
 
     testWidgets('share sends the seat-location text', (tester) async {

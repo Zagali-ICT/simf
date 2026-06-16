@@ -44,8 +44,8 @@ Last updated: 2026-06-16
 | # | Page | Figma node | File | Status | Work / gaps |
 |---|------|-----------|------|--------|-------------|
 | 1 | Speaker list | 908-1744 | `features/speakers/speakers_screen.dart` | ✅ | RTL mirror fixed (anchor right / caret left) + RTL test — D-436 |
-| 2 | Speaker CV | 908-2110 | `features/speakers/speaker_profile_screen.dart` | 🟡 | verify CV-tab pill RTL order (header forces LTR); intrinsic-width pills vs equal-width; spacing/padding polish; avatar photo = initials (no photo field — see API gaps) |
-| 3 | My-seat | 898-2873 | `features/sessions/my_seat_screen.dart` | 🟡 | verify row-chip "B" value tint (gold vs white) against frame; otherwise matches |
+| 2 | Speaker CV | 908-2110 | `features/speakers/speaker_profile_screen.dart` | ✅ | **DONE (P3)** — verified CV-tab order is correct (Bio first → right-most in RTL; tabs are in the body, ambient RTL — locked by an `ar` position test); pills are equal-width per the frame (4×72), inter-pill gap set to 18px + tab→card gap to 24px. Avatar stays initials → photo is **P4**. |
+| 3 | My-seat | 898-2873 | `features/sessions/my_seat_screen.dart` | ✅ | **DONE (P3)** — frame 905:1577/1579: both chip values (مقعد 12 / الصف B) are **white** (only the label word is gold); fixed the seat-chip value that rendered gold. Otherwise matches. |
 | 4 | Session live | 934-3450 | `features/live/live_broadcast_screen.dart` | ✅ | language chip added + wired (D-436); badge already correct; **AI live-caption feed = API gap (see below)** |
 | 5 | Ask question | 934-3636 | `features/questions/send_question_screen.dart` | 🟡 | form portion matches; optional faint border on the question box; confirm whether this is a sub-screen of the live frame or its own |
 | 6 | Media gallery | 947-3764 | `features/gallery/gallery_screen.dart` | ✅ | tab bar un-mirrored + active navy text (D-436) |
@@ -118,8 +118,10 @@ additive migration + tests first, then the app render.
    rebuilt to the horizontal frame card (thumbnail via the existing D-357
    `NewsImage` route + gold `DD-MM-YYYY` date + title; excerpt dropped per the
    frame); Arabic RTL position test; E2E; PAGE-INDEX/plan docs. No backend change.
-3. **P3 — Speaker CV + My-seat polish (908-2110 / 898-2873)** — verified
-   per-element fixes only.
+3. **P3 — Speaker CV + My-seat polish (908-2110 / 898-2873)** ✅ **DONE** —
+   verified per-element fixes only: CV pill gap 8→18 (frame 72-wide pills) +
+   tab→card gap 40→24; my-seat chip values both white (frame 905:1577/1579).
+   Arabic CV-tab position test; E2E + PAGE-INDEX/plan docs. App-only, no backend.
 4. **P4 — Speaker photo API** (if owner approves) — additive field + endpoint +
    CP upload + app render across speaker list & CV.
 5. **P5 — Live AI captions** (only if owner approves building the feature).

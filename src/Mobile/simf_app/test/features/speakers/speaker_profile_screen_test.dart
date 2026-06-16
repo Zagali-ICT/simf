@@ -38,6 +38,22 @@ SpeakerDetail _detail({bool allowsMeeting = true, bool allowsData = true}) {
   );
 }
 
+/// A speaker with all four CV sections, for the tab-order test.
+SpeakerDetail _detailAllCv() => const SpeakerDetail(
+      id: 'sp1',
+      name: 'Capt. Reef',
+      nameArabic: 'القبطان ريف',
+      rank: 'Sea captain',
+      allowsMeetingRequests: false,
+      allowsDataSharing: false,
+      displayOrder: 0,
+      bio: 'Bio body',
+      qualifications: 'Quals body',
+      trainingExperience: 'Training body',
+      awards: 'Awards body',
+      sessions: <SpeakerSession>[],
+    );
+
 CurrentUser _visitor() => CurrentUser(
       id: 'u1',
       email: 'v@x.sa',
@@ -100,6 +116,7 @@ Future<void> _pump(
   WidgetTester tester, {
   required SpeakersRepository repo,
   required AuthController controller,
+  Locale locale = const Locale('en'),
 }) async {
   final router = GoRouter(
     initialLocation: '/speakers/sp1',
@@ -131,7 +148,7 @@ Future<void> _pump(
       ],
       child: MaterialApp.router(
         routerConfig: router,
-        locale: const Locale('en'),
+        locale: locale,
         supportedLocales: AppL10n.supportedLocales,
         localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
           ...AppL10n.localizationsDelegates,
@@ -204,6 +221,35 @@ void main() {
     testWidgets('a 404 shows the not-found state', (tester) async {
       await _pump(tester, repo: _FakeRepo(status: 404), controller: _Guest());
       expect(find.text('This speaker was not found'), findsOneWidget);
+    });
+
+    // D-436 verification rule: confirm the CV-tab order with a deterministic
+    // Arabic-locale position test. Frame 912:2312 places نبذة عنه (Bio, the
+    // first section) at the inline-start (RIGHT in RTL) and الجوائز (Awards, the
+    // last) at the inline-end (LEFT).
+    testWidgets('CV tabs lay out Bio (first) right-most in Arabic',
+        (tester) async {
+      tester.view.physicalSize = const Size(1200, 2600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await _pump(
+        tester,
+        repo: _FakeRepo(detail: _detailAllCv()),
+        controller: _Guest(),
+        locale: const Locale('ar'),
+      );
+      final l10n = AppL10n.of(tester.element(find.byType(SpeakerProfileScreen)));
+      final dx = <double>[
+        tester.getCenter(find.text(l10n.cvBio)).dx,
+        tester.getCenter(find.text(l10n.cvQualifications)).dx,
+        tester.getCenter(find.text(l10n.cvTraining)).dx,
+        tester.getCenter(find.text(l10n.cvAwards)).dx,
+      ];
+      // RTL: each subsequent pill (Bio→Quals→Training→Awards) sits further left.
+      for (var i = 1; i < dx.length; i++) {
+        expect(dx[i], lessThan(dx[i - 1]));
+      }
     });
   });
 }

@@ -222,7 +222,6 @@ class _SessionCard extends StatelessWidget {
                 child: _SeatChip(
                   goldLabel: l10n.rowChipLabel,
                   value: cell != null ? cell.rowLabel : '—',
-                  valueIsGold: false,
                   borderColor: SimfTokens.accent,
                   borderWidth: SimfTokens.hairlineBold,
                 ),
@@ -252,14 +251,12 @@ class _SeatChip extends StatelessWidget {
     required this.value,
     required this.borderColor,
     required this.borderWidth,
-    this.valueIsGold = true,
   });
 
   final String goldLabel;
   final String value;
   final Color borderColor;
   final double borderWidth;
-  final bool valueIsGold;
 
   @override
   Widget build(BuildContext context) {
@@ -286,8 +283,10 @@ class _SeatChip extends StatelessWidget {
             const TextSpan(text: ' '),
             TextSpan(
               text: value,
-              style: TextStyle(
-                color: valueIsGold ? SimfTokens.accent : SimfTokens.surface,
+              // Frame 905:1577/1579 — the value (12 / B) is white; only the
+              // leading label word (مقعد / الصف) is gold.
+              style: const TextStyle(
+                color: SimfTokens.surface,
                 fontSize: SimfTokens.textMd,
                 fontWeight: FontWeight.w600,
               ),

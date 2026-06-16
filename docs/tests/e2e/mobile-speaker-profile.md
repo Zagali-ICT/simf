@@ -239,6 +239,13 @@ Scenario: A speaker with no CV text shows neither the tab strip nor the bio card
 > the inline CV tab-pill row (`912:2312`, active pill gold) that swaps the navy
 > `#192B41` bio card (`912:2331`). Request-meeting, social links and the sessions
 > list keep their prior behaviour below the frame's minimal content.
+>
+> **P3 per-element polish (2026-06-16):** the CV tab-pill inter-gap was set to
+> 18px so the equal pills resolve to the frame's 72px width (4×72 + 3×18 = 343),
+> and the tab-strip→bio-card gap to 24px (frame y 353→377). The CV-tab RTL order
+> (نبذة عنه / Bio first → right-most, الجوائز / Awards → left-most) is now locked
+> by a deterministic `Locale('ar')` position test (`CV tabs lay out Bio (first)
+> right-most in Arabic`).
 
 ---
 

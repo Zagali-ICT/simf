@@ -20,6 +20,11 @@
 > gold "المسرح · STAGE" band, the A–H seat grid (mine / reserved / available),
 > the محجوز / متاح / مقعدك legend, and the two gold actions
 > (إرشادي إلى مقعدي / مشاركة الموقع). Behaviour is unchanged from the prior build.
+>
+> **P3 per-element polish (2026-06-16):** the seat/row chip **values** (مقعد 12 /
+> الصف B) are now both **white**, matching frame 905:1577/1579 — only the leading
+> label word (مقعد / الصف) is gold. (The seat-chip value previously rendered gold;
+> the `_SeatChip.valueIsGold` flag was removed as both values are white.)
 
 | | |
 |--|--|
