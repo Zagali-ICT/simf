@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
@@ -12,7 +13,10 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
+import '../../app/widgets/simf_svg_icon.dart';
 import '../../core/sharing/content_sharer.dart';
+import '../profile/data/profile_repository.dart'
+    show avatarBustProvider, profileRepositoryProvider, referenceNumberProvider;
 import 'data/myarea_models.dart';
 import 'data/myarea_repository.dart';
 import 'identity_verification_screen.dart';
@@ -126,8 +130,10 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
   }
 
   /// Runs the guided face-capture / liveness flow (D-404) and uploads the
-  /// returned selfie. On success the image cache is cleared (the avatar URL can
-  /// be stable) and the dashboard reloads so the new photo shows.
+  /// returned selfie. On success the avatar bust token is bumped so every avatar
+  /// on screen (home greeting / badge / this card) refetches the new photo
+  /// immediately — the avatar URL is stable, so the token is what forces the
+  /// refresh — and the dashboard reloads for the rest of the identity card.
   Future<void> _changeAvatar() async {
     final l10n = AppL10n.of(context);
     final messenger = ScaffoldMessenger.of(context);
@@ -144,27 +150,56 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
       if (!mounted) {
         return;
       }
-      PaintingBinding.instance.imageCache.clear();
-      PaintingBinding.instance.imageCache.clearLiveImages();
+      ref.read(avatarBustProvider.notifier).state++;
       await _load();
     } on ApiFailure {
       messenger.showSnackBar(SnackBar(content: Text(l10n.avatarUploadFailed)));
     }
   }
 
+  /// "Update ID photo" — re-pick the ID DOCUMENT from the gallery and upload it
+  /// (the document, not a selfie; the face photo is the avatar above). My Area
+  /// is photos-only — names stay set at sign-up.
+  Future<void> _uploadIdDocument() async {
+    final l10n = AppL10n.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final file = await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (file == null || !mounted) {
+        return;
+      }
+      final bytes = await file.readAsBytes();
+      await ref.read(profileRepositoryProvider).uploadIdImage(
+            bytes: bytes,
+            filename: file.name,
+          );
+      if (!mounted) {
+        return;
+      }
+      messenger.showSnackBar(SnackBar(content: Text(l10n.idImageUpdatedToast)));
+    } on ApiFailure {
+      if (!mounted) {
+        return;
+      }
+      messenger.showSnackBar(SnackBar(content: Text(l10n.idImageUpdateFailed)));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
+    // The ID line is the reference number (SIMF-2026-…), not the qrId.
+    final referenceNumber = ref.watch(referenceNumberProvider).asData?.value;
     return KsaPage(
       title: l10n.myAreaTitle,
       onBack: () => ksaBackOrHome(context),
       tab: SimfTab.profile,
       showSweep: true,
-      body: _buildBody(l10n),
+      body: _buildBody(l10n, referenceNumber),
     );
   }
 
-  Widget _buildBody(AppL10n l10n) {
+  Widget _buildBody(AppL10n l10n, String? referenceNumber) {
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -175,7 +210,7 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
     if (dashboard == null) {
       return _buildLimited(l10n);
     }
-    return _buildDashboard(l10n, dashboard);
+    return _buildDashboard(l10n, dashboard, referenceNumber);
   }
 
   Widget _buildErrorState(AppL10n l10n) {
@@ -205,13 +240,22 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
     );
   }
 
-  Widget _buildDashboard(AppL10n l10n, MyAreaDashboard dashboard) {
+  Widget _buildDashboard(
+    AppL10n l10n,
+    MyAreaDashboard dashboard,
+    String? referenceNumber,
+  ) {
     final isArabic = l10n.isArabic;
     final identity = dashboard.identity;
     final tier = identity.localizedTier(isArabic);
     final enrolled =
         l10n.enrolledInSessions(dashboard.counters.bookedSessionsCount);
     final subtitle = tier == null ? enrolled : '$tier · $enrolled';
+    // The reference number (SIMF-2026-…) is the displayed ID; fall back to the
+    // qrId only until the reference loads.
+    final reference = referenceNumber != null
+        ? '#$referenceNumber'
+        : (identity.qrId == null ? null : '#${identity.qrId}');
 
     return ListView(
       padding: const EdgeInsets.all(SimfTokens.space4),
@@ -219,27 +263,32 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
         _IdentityCard(
           name: identity.localizedName(isArabic),
           line: subtitle,
-          reference: identity.qrId == null ? null : '#${identity.qrId}',
-          avatarUrl: identity.avatarUrl,
+          reference: reference,
           shareLabel: l10n.shareLabel,
           onShare: () => unawaited(_shareContact()),
           onAvatarTap: () => unawaited(_changeAvatar()),
           avatarTooltip: l10n.avatarChangeTooltip,
         ),
         const SizedBox(height: SimfTokens.space4),
-        // Frame 213:963 — the two share actions (مشاركة ملفي + مشاركة جهة اتصال).
-        // Language / theme moved to the shell's side drawer (D-396).
-        KsaTileRow(
+        // Frame 758:1283 — two horizontal share-action pills (h48, exact
+        // iconify glyphs), NOT the tall vertical nav tiles. Language / theme
+        // moved to the shell's side drawer (D-396).
+        Row(
           children: <Widget>[
-            KsaNavTile(
-              label: l10n.shareMyProfile,
-              icon: Icons.person_pin_outlined,
-              onTap: () => context.pushNamed(RouteNames.shareMyContact),
+            Expanded(
+              child: _ShareTile(
+                label: l10n.shareMyProfile,
+                iconAsset: 'assets/icons/share_profile.svg',
+                onTap: () => context.pushNamed(RouteNames.shareMyContact),
+              ),
             ),
-            KsaNavTile(
-              label: l10n.shareContact,
-              icon: Icons.swap_horiz,
-              onTap: () => unawaited(_shareContact()),
+            const SizedBox(width: SimfTokens.space2),
+            Expanded(
+              child: _ShareTile(
+                label: l10n.shareContact,
+                iconAsset: 'assets/icons/share_contact.svg',
+                onTap: () => unawaited(_shareContact()),
+              ),
             ),
           ],
         ),
@@ -296,6 +345,13 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
           onTap: () => context.pushNamed(RouteNames.badge),
         ),
         const SizedBox(height: SimfTokens.space4),
+        // Photos-only profile edit (owner scope): re-upload the ID document
+        // from the gallery. The face photo is changed by tapping the avatar.
+        _MoreRow(
+          label: l10n.updateIdPhotoLink,
+          onTap: () => unawaited(_uploadIdDocument()),
+        ),
+        const SizedBox(height: SimfTokens.space4),
         _MoreRow(
           label: l10n.accountSettingsLink,
           onTap: () => context.pushNamed(RouteNames.more),
@@ -314,7 +370,6 @@ class _IdentityCard extends StatelessWidget {
     required this.name,
     required this.line,
     this.reference,
-    this.avatarUrl,
     this.shareLabel,
     this.onShare,
     this.onAvatarTap,
@@ -324,7 +379,6 @@ class _IdentityCard extends StatelessWidget {
   final String name;
   final String line;
   final String? reference;
-  final String? avatarUrl;
   final String? shareLabel;
   final VoidCallback? onShare;
   final VoidCallback? onAvatarTap;
@@ -343,7 +397,6 @@ class _IdentityCard extends StatelessWidget {
         children: <Widget>[
           _TappableAvatar(
             name: name,
-            imageUrl: avatarUrl,
             onTap: onAvatarTap,
             tooltip: avatarTooltip,
           ),
@@ -437,19 +490,17 @@ class _IdentityCard extends StatelessWidget {
 class _TappableAvatar extends StatelessWidget {
   const _TappableAvatar({
     required this.name,
-    this.imageUrl,
     this.onTap,
     this.tooltip,
   });
 
   final String name;
-  final String? imageUrl;
   final VoidCallback? onTap;
   final String? tooltip;
 
   @override
   Widget build(BuildContext context) {
-    final avatar = KsaAvatar(name: name, imageUrl: imageUrl, size: 64);
+    final avatar = KsaAvatar(name: name, currentUser: true, size: 64);
     if (onTap == null) {
       return avatar;
     }
@@ -592,9 +643,59 @@ class _MoreRow extends StatelessWidget {
                   ),
                 ),
               ),
-              const Icon(Icons.chevron_left, size: 20, color: Colors.white),
+              const SimfSvgIcon(
+                'assets/icons/ic_back.svg',
+                size: 20,
+                color: Colors.white,
+              ),
             ],
           ),
+      ),
+    );
+  }
+}
+
+/// One horizontal share-action pill (frame 758:1283): the gold iconify glyph
+/// beside its label on the shared card chrome, fixed to the frame's 48-px row.
+class _ShareTile extends StatelessWidget {
+  const _ShareTile({
+    required this.label,
+    required this.iconAsset,
+    required this.onTap,
+  });
+
+  final String label;
+  final String iconAsset;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return KsaCard(
+      onTap: onTap,
+      child: SizedBox(
+        height: 48,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space3),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              SimfSvgIcon(iconAsset, size: 20, color: SimfTokens.accent),
+              const SizedBox(width: SimfTokens.space2),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: SimfTokens.textSm,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

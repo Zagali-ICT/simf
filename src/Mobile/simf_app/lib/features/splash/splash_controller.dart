@@ -5,7 +5,6 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/route_names.dart';
-import '../../app/route_resume.dart';
 import '../../core/startup/app_update_checker.dart';
 
 /// Minimum time the logo is shown so the splash never flickers (Page_001 Logic
@@ -125,10 +124,10 @@ class SplashController extends Notifier<SplashState> {
           softUpdate: softUpdate,
         );
       }
-      final saved = prefs.getString(StorageKeys.lastRoute);
-      if (saved != null && isResumableLocation(saved)) {
-        return SplashReady(location: saved, softUpdate: softUpdate);
-      }
+      // Always open Home after launch — the app no longer resumes to the last
+      // screen (D-431, owner request). Cold-starting into the last visited
+      // screen could strand the user (e.g. re-opening the camera scanner with a
+      // stale error); the bottom-nav shell still keeps in-session tab state.
       return SplashReady(routeName: RouteNames.home, softUpdate: softUpdate);
     }
 

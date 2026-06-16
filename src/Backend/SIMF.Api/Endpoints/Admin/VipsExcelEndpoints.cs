@@ -17,6 +17,16 @@ namespace SIMF.Api.Endpoints.Admin;
 /// SAME service method the list endpoint uses
 /// (<see cref="IAdminInvitationService.ListVipsAsync"/>); the row id is the
 /// <c>UserProfileId</c> (the grid's row key).
+///
+/// <para><b>Distinct from the موج (Mawj) welcome roster</b>
+/// (<c>GET /admin/visitors/vip/roster</c> + <c>/export</c>, D-429, perm
+/// <c>Visitors.ExportVip</c>): that is a complementary export for the Mawj
+/// integration — the same VVIP/VIP people but the welcome-message fields (Mawj
+/// id, honorific, preferred language, the welcome photo) on the dedicated VIP
+/// page. This one is the PR team's "كبار الضيوف" guest-list export
+/// (perm <c>Vips.Export</c>, basic profile columns). They are intentionally
+/// separate — different page, permission, audience and columns — so neither
+/// replaces the other.</para>
 /// </summary>
 public sealed class ExportVipsEndpoint(IAdminInvitationService service, IGridExcelExporter exporter)
     : AdminGridExportEndpoint<AdminVipSummary>(exporter)

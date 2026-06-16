@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/ksa_shell.dart';
 import 'data/accessibility_controller.dart';
 
 /// Page 038 — إمكانية الوصول · Accessibility (#38, `/settings/accessibility`, public).
@@ -25,7 +26,7 @@ class AccessibilityScreen extends ConsumerWidget {
     final settings = ref.watch(accessibilityControllerProvider);
     final controller = ref.read(accessibilityControllerProvider.notifier);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.accessibilityTitle)),
+      appBar: AppBar(leading: const SimfBackButton(), title: Text(l10n.accessibilityTitle)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(SimfTokens.space4),

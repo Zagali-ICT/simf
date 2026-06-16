@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/home/home_screen.dart';
+import 'package:simf_app/features/myarea/data/myarea_models.dart';
 import 'package:simf_app/features/news/data/news_models.dart';
 import 'package:simf_app/features/news/news_screen.dart' show newsListProvider;
 import 'package:simf_app/features/notifications/data/notification_models.dart';
@@ -36,6 +37,27 @@ class _SignedInController extends AuthController {
 class _GuestController extends AuthController {
   @override
   AuthState build() => const AuthStateSignedOut();
+}
+
+/// A signed-in account whose auth display name IS the email (the common case
+/// for accounts created without a separate display name).
+class _SignedInEmailController extends AuthController {
+  @override
+  AuthState build() => AuthStateSignedIn(
+        Session(
+          accessToken: 'A',
+          refreshToken: 'R',
+          accessTokenExpiresAt: DateTime.now().add(const Duration(minutes: 30)),
+          user: CurrentUser(
+            id: 'u2',
+            email: 'visitor@example.sa',
+            displayName: 'visitor@example.sa',
+            appRole: AppRole.visitor,
+            preferredLanguage: PreferredLanguage.fromJson('ar'),
+            registrationStatus: RegistrationStatus.approved,
+          ),
+        ),
+      );
 }
 
 class _FakeNotificationsRepository implements NotificationsRepository {
@@ -72,11 +94,27 @@ NewsListItem _post({String id = 'n1', String title = 'Forum opens 2026'}) =>
       excerptArabic: 'تبدأ الجلسة الافتتاحية الآن.',
     );
 
+MyAreaDashboard _dashboard({
+  String nameAr = 'مهند زقالي محمد',
+  String nameEn = 'Mohaned Zagali',
+  String? avatarUrl,
+}) =>
+    MyAreaDashboard(
+      identity: MyAreaIdentity(
+        fullNameAr: nameAr,
+        fullNameEn: nameEn,
+        avatarUrl: avatarUrl,
+      ),
+      counters: const MyAreaCounters(bookedSessionsCount: 0, meetingsCount: 0),
+      todaySchedule: const <MyAreaScheduleItem>[],
+    );
+
 Future<void> _pump(
   WidgetTester tester, {
   required AuthController controller,
   int unread = 0,
   List<NewsListItem> news = const <NewsListItem>[],
+  MyAreaDashboard? profile,
   Locale locale = const Locale('en'),
 }) async {
   final router = GoRouter(
@@ -122,6 +160,7 @@ Future<void> _pump(
         notificationsRepositoryProvider
             .overrideWithValue(_FakeNotificationsRepository(unread)),
         newsListProvider.overrideWith((ref) async => news),
+        homeProfileProvider.overrideWith((ref) async => profile),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -235,21 +274,31 @@ void main() {
       expect(find.byTooltip('Notifications'), findsOneWidget);
       expect(find.text('LIVE'), findsOneWidget);
       expect(find.text('About the forum · Themes'), findsOneWidget);
-      // The lower sections mount as the list scrolls.
-      for (final below in <String>[
+      // The lower sections mount lazily; drag through the list and collect every
+      // label seen (robust to overshoot, unlike per-item scrollUntilVisible).
+      final scrollable = find.byType(Scrollable).first;
+      final seen = <String>{};
+      for (var i = 0; i < 30; i++) {
+        for (final t in tester.widgetList<Text>(find.byType(Text))) {
+          final data = t.data;
+          if (data != null) {
+            seen.add(data);
+          }
+        }
+        await tester.drag(scrollable, const Offset(0, -220));
+        await tester.pump();
+      }
+      for (final section in <String>[
         'News & coverage',
         'Bilateral meetings',
         'Smart features',
         'Session summaries',
         'Follow us',
-        'Discover',
+        // The bottom discover row (the 'Discover' header text is not unique — it
+        // also titles the top hero banner, frame 758:1203).
+        'Spirit of Saudi',
       ]) {
-        await tester.scrollUntilVisible(
-          find.text(below),
-          120,
-          scrollable: find.byType(Scrollable).first,
-        );
-        expect(find.text(below), findsOneWidget);
+        expect(seen, contains(section), reason: 'missing section: $section');
       }
       // No guest chrome.
       expect(find.widgetWithText(FilledButton, 'Sign in'), findsNothing);
@@ -264,6 +313,33 @@ void main() {
 
       expect(homeGreeting(l10n, DateTime(2026, 1, 1, 9)), 'Good morning');
       expect(homeGreeting(l10n, DateTime(2026, 1, 1, 15)), 'Good evening');
+    });
+
+    testWidgets('greeting shows the profile name, not the auth display name',
+        (tester) async {
+      await _pump(
+        tester,
+        controller: _SignedInController(),
+        profile: _dashboard(nameEn: 'Mohaned Zagali'),
+      );
+      // The App-profile name wins over the auth session display name.
+      expect(find.textContaining('Mohaned Zagali'), findsOneWidget);
+      expect(find.textContaining('Ahmed Mohammed'), findsNothing);
+    });
+
+    testWidgets('greeting never renders the email when there is no profile name',
+        (tester) async {
+      // displayName is the email and no profile loaded → name-less salute.
+      await _pump(tester, controller: _SignedInEmailController());
+      expect(find.textContaining('@'), findsNothing);
+    });
+
+    testWidgets('the discovery hero banner opens News (frame 758:1203)',
+        (tester) async {
+      await _pump(tester, controller: _SignedInController());
+      await tester.tap(find.text('Come discover your favourites'));
+      await tester.pumpAndSettle();
+      expect(find.text('NEWS'), findsOneWidget);
     });
 
     testWidgets('unread badge shows the count when greater than 0',

@@ -214,12 +214,19 @@ class AppL10n {
   // Page 007 advances to the interests screen with Next (D-332); Page 007‑01 title.
   String get nextLabel => _t('التالي', 'Next');
   String get interestsTitle => _t('اهتماماتي', 'My interests');
-  String get profileSavedToast => _t('تم حفظ الملف الشخصي', 'Profile saved');
+  String get profileSavedToast => _t('تم حفظ الملف الشخصى', 'Profile saved');
   String get idImageUploadFailed => _t(
-        'تم حفظ الملف الشخصي، لكن تعذر رفع الصورة. حاول لاحقًا.',
+        'تم حفظ الملف الشخصى، لكن تعذر رفع الصورة. حاول لاحقًا.',
         'Profile saved, but the image upload failed. Try again later.',
       );
   String get requiredField => _t('هذا الحقل مطلوب', 'This field is required');
+  // D-434 — shown as a banner when the user is routed back to complete their
+  // profile, and as a toast when Next is blocked, so the missing required
+  // items get clear attention instead of failing silently.
+  String get completeProfilePrompt => _t(
+        'يرجى إكمال الحقول المطلوبة أدناه لإنهاء ملفك الشخصي.',
+        'Please complete the required fields below to finish your profile.',
+      );
   String get nationalityRequired => _t('الجنسية مطلوبة', 'Nationality is required');
   String get nationalIdInvalid => _t(
         'رقم الهوية الوطنية غير صحيح (10 أرقام تبدأ بـ 1)',
@@ -249,6 +256,47 @@ class AppL10n {
   String get noFaceDetectedError => _t(
         'لم يتم التعرف على وجه في الصورة — أعد التقاط صورة واضحة للوجه',
         'No face was detected in the photo — retake a clear photo of the face',
+      );
+  // Two-photo split (D-431-follow-up) — the ID document (gallery, all) + the
+  // face photo (live capture → avatar; men-required, women-optional).
+  String get idImageRequired =>
+      _t('صورة الهوية مطلوبة', 'An ID image is required');
+  String get facePhotoLabel => _t('الصورة الشخصية (الوجه)', 'Face photo');
+  String get facePhotoRequiredForMen => _t(
+        'الصورة الشخصية مطلوبة — التقطها بالكاميرا',
+        'A face photo is required — capture it with the camera',
+      );
+  String get facePhotoOptionalForWomen =>
+      _t('الصورة الشخصية اختيارية', 'Face photo (optional)');
+  String get facePhotoCaptureLabel =>
+      _t('التقاط صورة الوجه', 'Capture face photo');
+  String get facePhotoCaptured =>
+      _t('تم التقاط الصورة الشخصية', 'Face photo captured');
+  String get retakeLabel => _t('إعادة الالتقاط', 'Retake');
+  String get facePhotoUploadFailed => _t(
+        'تعذّر رفع الصورة الشخصية. حاول مرة أخرى.',
+        "Couldn't upload the face photo. Try again.",
+      );
+  // Name rules — Arabic-only / English-only, full name of at least four parts.
+  String get arabicNameLettersOnly => _t(
+        'يجب أن يحتوي الاسم بالعربية على حروف عربية فقط',
+        'The Arabic name must contain Arabic letters only',
+      );
+  String get englishNameLettersOnly => _t(
+        'يجب أن يحتوي الاسم بالإنجليزية على حروف إنجليزية فقط',
+        'The English name must contain English letters only',
+      );
+  String get fullNameFourParts => _t(
+        'أدخل الاسم الكامل (4 مقاطع على الأقل)',
+        'Enter your full name (at least 4 parts)',
+      );
+  // My Area — photos-only profile edit: re-upload the ID document.
+  String get updateIdPhotoLink => _t('تحديث صورة الهوية', 'Update ID photo');
+  String get idImageUpdatedToast =>
+      _t('تم تحديث صورة الهوية', 'ID photo updated');
+  String get idImageUpdateFailed => _t(
+        'تعذّر رفع صورة الهوية. حاول مرة أخرى.',
+        "Couldn't upload the ID photo. Try again.",
       );
   // C6 (D-371) — رقم اللوحة, optional; Saudi standard when filled.
   String get plateNumberLabel =>
@@ -377,6 +425,19 @@ class AppL10n {
   String get biometricSignInTooltip =>
       _t('الدخول بالبصمة / الوجه', 'Sign in with biometrics');
 
+  /// No OS face/fingerprint is enrolled on the device (D-422).
+  String get biometricUnavailable => _t(
+        'لا توجد بصمة أو بصمة وجه مفعّلة على هذا الجهاز. سجّل الدخول بكلمة المرور.',
+        'No face or fingerprint is set up on this device. Sign in with your password.',
+      );
+
+  /// Face login needs a prior password sign-in on this device to enrol the
+  /// device key first (D-422).
+  String get biometricNotEnrolled => _t(
+        'سجّل الدخول بكلمة المرور مرة واحدة على هذا الجهاز لتفعيل الدخول بالوجه.',
+        'Sign in with your password once on this device to enable face login.',
+      );
+
   // Email-OTP second factor + reset flow (Page 003 L-5/L-6).
   String get otpTitle => _t('رمز التحقق', 'Verification code');
   String get otpBody => _t(
@@ -385,6 +446,12 @@ class AppL10n {
       );
   String get otpLabel => _t('الرمز', 'Code');
   String get verifyButton => _t('تحقّق', 'Verify');
+  // Email-OTP screen (frame 758:2616).
+  String get otpHeaderTitle => _t('التحقق بالبريد', 'Email verification');
+  String get otpSentToPrefix => _t('أرسلنا رمزاً الى', 'We sent a code to');
+  String get otpResendCountdown => _t('إعادة الإرسال خلال', 'Resend in');
+  String get otpDidntReceive => _t('لم يصلك الرمز؟', 'Didn\'t get the code?');
+  String get otpResendAction => _t('إعادة الإرسال', 'Resend');
   String get forgotPasswordTitle =>
       _t('استعادة كلمة المرور', 'Reset password');
   String get forgotPasswordBody => _t(
@@ -404,6 +471,45 @@ class AppL10n {
         'إن كان البريد مسجلاً فستصلك رسالة بالرمز.',
         'If that email is registered, a code is on its way.',
       );
+
+  // Part B (D-430) — badge-QR sign-in / activation.
+  String get badgeSignInButton =>
+      _t('الدخول بمسح الشارة', 'Sign in by scanning your badge');
+  String get badgeScanTitle => _t('امسح شارتك', 'Scan your badge');
+  String get badgeScanHint => _t(
+        'وجّه الكاميرا نحو رمز QR المطبوع على شارتك.',
+        'Point the camera at the QR code on your badge.',
+      );
+  String get badgeManualLabel =>
+      _t('أو أدخل رمز الشارة يدويًا', 'Or enter the badge code manually');
+  String get badgeManualField => _t('رمز الشارة', 'Badge code');
+  String get badgeResolveButton => _t('متابعة', 'Continue');
+  // Shared QR-scanner chrome (used by the badge, contact and exhibitor scanners).
+  String get qrStopCamera => _t('إيقاف الكاميرا', 'Stop camera');
+  String get qrBack => _t('رجوع', 'Back');
+  String get qrManualLabel =>
+      _t('أو أدخل الرمز يدويًا', 'Or enter the code manually');
+  String get badgeNotRecognised =>
+      _t('تعذّر التعرّف على الشارة.', 'The badge was not recognised.');
+  String get badgeScanError =>
+      _t('تعذّرت قراءة الشارة. حاول مجددًا.', 'Could not read the badge. Try again.');
+  String get badgeActivateTitle =>
+      _t('تفعيل حسابك', 'Activate your account');
+  String get badgeActivateEmailIntro => _t(
+        'أدخل بريدك الإلكتروني لإرسال رمز التحقق.',
+        'Enter your email so we can send a verification code.',
+      );
+  String badgeActivateCodeSent(String maskedEmail) => _t(
+        'أرسلنا رمز التحقق إلى $maskedEmail.',
+        'We sent a verification code to $maskedEmail.',
+      );
+  String get badgeSendCodeButton => _t('إرسال الرمز', 'Send code');
+  String get badgeActivateButton => _t('تفعيل وتعيين كلمة المرور', 'Activate & set password');
+  String get badgeActivatedDone => _t(
+        'تم تفعيل حسابك. سجّل الدخول الآن.',
+        'Your account is activated. Sign in now.',
+      );
+  String get emailLabelGeneric => _t('البريد الإلكتروني', 'Email');
 
   // Splash branding (Page 001) — matches the mockup brand lockup.
   String get splashTagline => 'SAUDI · MOD · RSNF';
@@ -458,7 +564,7 @@ class AppL10n {
 
   // Bottom navigation (KSA Wave-2 shell — frames 512:1492 / 213:963).
   String get navAgenda => _t('الأجندة', 'Agenda');
-  String get navProfile => _t('الملف الشخصي', 'Profile');
+  String get navProfile => _t('الملف الشخصى', 'Profile');
 
   // Home — KSA Wave-2 redesign (guest 512:1492 / signed-in 203:1236).
   String get homeGuestTitle => _t('الرئيسية • ضيف', 'Home • Guest');
@@ -499,6 +605,11 @@ class AppL10n {
   // The official handle line — a proper noun, identical in both languages.
   String get followUsHandle => '@SIMF_RSNF · الملتقى البحري السعودي الدولي';
   String get discoverSection => _t('اكتشف', 'Discover');
+  // The top discovery hero banner on the signed-in home (frame 758:1134 node
+  // 758:1203): the gold "اكتشف" title reuses [discoverSection]; this is the
+  // white sub-line over the event photo.
+  String get discoverBannerSubtitle =>
+      _t('تعال واكتشف جديدك المفضل', 'Come discover your favourites');
   // أحدث منشوراتنا — the latest-news teaser card on the signed-in home (frame
   // 203:1236 node 522:2345). The engagement counts in the frame have no backend
   // data (the news model carries no like/comment/repost counts) so they are
@@ -512,7 +623,8 @@ class AppL10n {
   String postTimeDaysAgo(int n) => _t('قبل $n يوم', '$n d ago');
 
   // My Area — personal dashboard (Page 014).
-  String get myAreaTitle => _t('منطقتي', 'My area');
+  // Frame 758:1283 header (matches the bottom-nav "الملف الشخصى" label).
+  String get myAreaTitle => _t('الملف الشخصى', 'Profile');
   String enrolledInSessions(int count) =>
       _t('مسجّل في $count جلسات', 'Enrolled in $count sessions');
   String get shareLabel => _t('مشاركة', 'Share');
@@ -671,6 +783,13 @@ class AppL10n {
         'Reminders arrive with notifications setup.',
       );
 
+  // My Seat (Page 018 — Figma 898-2873, D-432).
+  String get mySeatTitle => _t('مقعدي', 'My seat');
+  String get sessionLabel => _t('الجلسة', 'Session');
+  String get seatChipLabel => _t('مقعد', 'Seat');
+  String get rowChipLabel => _t('الصف', 'Row');
+  String get stageLabelBilingual => _t('المسرح · STAGE', 'Stage · STAGE');
+
   // My Seat map (Page 018).
   String get mySeatMapTitle => _t('مقعدي · خريطة الجلوس', 'My seat map');
   String get seatMapError =>
@@ -734,6 +853,14 @@ class AppL10n {
   String get boothsError =>
       _t('تعذّر تحميل الأجنحة.', 'Could not load the booths.');
   String get boothsEmpty => _t('لا توجد أجنحة', 'No booths');
+  // Booths list re-skin (Figma 922-2458, D-432).
+  String get boothsSearchHint =>
+      _t('ابحث عن جناح أو شركة', 'Search for a booth or company');
+  String get boothsNoMatch => _t('لا توجد أجنحة مطابقة', 'No matching booths');
+  String get boothsHallFallback => _t('قاعة المعرض', 'Exhibition hall');
+  String boothsGuideMe(String code) =>
+      _t('أرشدني إلى الجناح · $code', 'Guide me to the booth · $code');
+  String get boothsOfficerRole => _t('المسؤول في الجناح', 'Booth officer');
 
   // Sponsors (Page 023).
   String get sponsorsTitle => _t('الرعاة', 'Sponsors');
@@ -746,6 +873,26 @@ class AppL10n {
   String get archiveError =>
       _t('تعذّر تحميل الأرشيف.', 'Could not load the archive.');
   String get archiveEmpty => _t('لا توجد نسخ سابقة', 'No past editions');
+  // Archive detail re-skin (Figma 925-3079, D-432).
+  String get archiveNotice => _t(
+        'تُعرض نسخة 2026 في الأرشيف بعد انتهاء الملتقى.',
+        'Edition 2026 appears in the archive after the forum ends.',
+      );
+  String get archivePickEdition => _t('اختار ملتقى', 'Choose a forum edition');
+  String get archiveTitleLabel => _t('عنوان الملتقى', 'Forum title');
+  String get archiveSummaryLabel => _t('نبذة', 'Overview');
+  String get archivePlaceLabel => _t('المكان', 'Place');
+  String get archiveTimeLabel => _t('الزمن', 'Time');
+  String get archiveStatSpeakers => _t('المتحدثون', 'Speakers');
+  String get archiveStatAttendees => _t('الحضور', 'Attendees');
+  String get archiveStatSessions => _t('الفعاليات', 'Activities');
+  String archiveEditionPill(int year) => _t('ملتقى $year', 'Edition $year');
+  // D-432 — the rich archive-detail sections (Figma 925-3079 / 24-01).
+  String get archiveGalleryLabel => _t('الصور والفيديو', 'Photos & videos');
+  String get archiveSessionsLabel => _t('عناوين الجلسات', 'Session titles');
+  String get archivePastSpeakersLabel =>
+      _t('المتحدثون السابقون', 'Past speakers');
+  String archiveMoreCount(int count) => _t('+$count آخرون', '+$count more');
   String archiveStats(int attendees, int sessions, int speakers) => _t(
         '$attendees حضور · $sessions جلسة · $speakers متحدث',
         '$attendees attendees · $sessions sessions · $speakers speakers',
@@ -949,8 +1096,49 @@ class AppL10n {
   String get badgeScanToEnter => _t('امسح للدخول', 'Scan to enter');
   String get badgeAddPerson => _t('امسح لإضافة شخص', 'Scan to add a contact');
 
+  // D-426 — QR-page role actions + exhibitor lead capture.
+  String get badgeScanVisitor =>
+      _t('مسح بطاقة زائر', 'Scan visitor badge');
+  String get myVisitorsTitle => _t('زواري', 'My Visitors');
+  String get myVisitorsEmpty => _t(
+        'لم تقم بمسح أي زائر بعد. امسح بطاقة زائر لإضافته هنا.',
+        'No visitors yet. Scan a visitor badge to capture them here.',
+      );
+  String get scanVisitorTitle => _t('مسح بطاقة زائر', 'Scan visitor badge');
+  String get scanVisitorCaptured =>
+      _t('تمت إضافة الزائر إلى زواري', 'Visitor added to My Visitors');
+  String get scanVisitorNotFound =>
+      _t('لا توجد بطاقة زائر مطابقة', 'No matching visitor badge');
+  String get scanVisitorForbidden => _t(
+        'مسح بطاقات الزوار متاح لحسابات العارضين فقط.',
+        'Only exhibitor accounts can scan visitor badges.',
+      );
+  String get scanVisitorError =>
+      _t('تعذر مسح البطاقة. حاول مرة أخرى.', 'Could not scan the badge. Try again.');
+
   // Live broadcast (Page 025). liveNowLabel already exists (reused for the badge).
   String get liveBroadcastTitle => _t('البث المباشر', 'Live broadcast');
+  // D-433 — live broadcast + ask-question + media-coverage re-skins
+  // (Figma 934-3450 / 934-3636 / 947-3764 / 958-2246).
+  String get liveNowBroadcasting => _t('يُبث الآن', 'Now broadcasting');
+  String get liveSessionLabel => _t('الجلسة', 'Session');
+  String get liveCaptionHint => _t(
+        'الترجمة الفورية للنص المنطوق تظهر هنا...',
+        'Live captions of the spoken word appear here…',
+      );
+  String get liveRegionNoticeLabel => _t('إشعار:', 'Notice:');
+  String get liveRegionNoticeBody => _t(
+        'البث المباشر متاح داخل منطقة الرياض فقط حسب لوائح التنظيم.',
+        'Live broadcasting is available only inside the Riyadh region per the '
+            'organising regulations.',
+      );
+  String get liveAskQuestion => _t('اطرح سؤالاً', 'Ask a question');
+  String get liveUpcomingSessions => _t('الجلسات القادمة', 'Upcoming sessions');
+  String get sendQuestionSectionLabel => _t('الاسئلة', 'Questions');
+  String get sendQuestionNoteLabel => _t('ملاحظة', 'Note');
+  String get mediaCoverageTitle => _t('التغطية الإعلامية', 'Media coverage');
+  String get galleryImagesSection => _t('الصور', 'Images');
+  String get galleryVideosSection => _t('الفيديوهات', 'Videos');
   String get liveNoSessionSelected => _t(
         'لا توجد جلسة بث محددة — افتح جلسة لمشاهدتها.',
         'No live session selected — open a session to watch.',
@@ -1018,6 +1206,11 @@ class AppL10n {
       _t('تعذر قراءة جهة الاتصال.', 'Could not read the contact.');
   String get scanContactCameraUnavailable =>
       _t('الكاميرا غير متاحة', 'Camera unavailable');
+  // Shared by all QR scanners: the camera starts only on tap so the on-screen
+  // back/cancel stays usable on devices where the live camera grabs taps (D-426).
+  String get scanStartCamera =>
+      _t('اضغط لمسح الرمز بالكاميرا', 'Tap to scan with the camera');
+  String get scanStopCamera => _t('إيقاف الكاميرا', 'Stop camera');
 
   String get contactPreviewTitle => _t('معاينة جهة الاتصال', 'Contact preview');
   String get saveContactLabel =>

@@ -84,7 +84,8 @@ void main() {
       expect(find.text('Agenda'), findsNothing);
       expect(find.text('Venue map'), findsNothing);
       expect(find.text('Profile'), findsNothing);
-      expect(find.byIcon(Icons.qr_code_2_rounded), findsOneWidget);
+      // The centre QR action (exact nav_qr SVG) carries a Semantics label.
+      expect(find.bySemanticsLabel('Entry badge'), findsOneWidget);
     });
 
     testWidgets('agenda icon navigates to /sessions', (tester) async {
@@ -93,7 +94,7 @@ void main() {
         const Scaffold(bottomNavigationBar: SimfBottomNav(current: SimfTab.home)),
       );
 
-      await tester.tap(find.byIcon(Icons.calendar_today_outlined));
+      await tester.tap(find.bySemanticsLabel('Agenda'));
       await tester.pumpAndSettle();
       expect(find.text('SESSIONS'), findsOneWidget);
     });
@@ -105,7 +106,7 @@ void main() {
         const Scaffold(bottomNavigationBar: SimfBottomNav(current: SimfTab.home)),
       );
 
-      await tester.tap(find.byIcon(Icons.person_outline));
+      await tester.tap(find.bySemanticsLabel('Profile'));
       await tester.pumpAndSettle();
       expect(find.text('MY-AREA'), findsOneWidget);
     });
@@ -116,7 +117,7 @@ void main() {
         const Scaffold(bottomNavigationBar: SimfBottomNav(current: SimfTab.home)),
       );
 
-      await tester.tap(find.byIcon(Icons.qr_code_2_rounded));
+      await tester.tap(find.bySemanticsLabel('Entry badge'));
       await tester.pumpAndSettle();
       expect(find.text('BADGE'), findsOneWidget);
     });

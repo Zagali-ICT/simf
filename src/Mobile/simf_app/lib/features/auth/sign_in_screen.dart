@@ -13,6 +13,7 @@ import '../../app/localization/locale_controller.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_logo.dart';
+import '../../app/widgets/simf_svg_icon.dart';
 import 'post_auth_route.dart';
 
 // Screen-local shorthands for the KSA-Project design tokens. The palette was
@@ -29,6 +30,14 @@ const Color _linkNavy = SimfTokens.linkNavy;
 const Color _inputText = SimfTokens.inputInk;
 const Color _danger = SimfTokens.danger;
 const Color _sweepTint = SimfTokens.surfaceTint;
+
+// Exact iconify / Figma glyphs from frame 758:2555 (no 1:1 Material match):
+// the top back-chevron + gold globe, the password eye, and the Face-ID mark.
+const String _icBack = 'assets/icons/auth_back.svg'; // iconamoon:arrow-left-2
+const String _icGlobe = 'assets/icons/auth_globe.svg'; // exact Figma globe
+const String _icEyeOff = 'assets/icons/auth_eye_off.svg'; // iconamoon:eye-off
+const String _icEye = 'assets/icons/auth_eye.svg'; // iconamoon:eye
+const String _icFaceId = 'assets/icons/auth_faceid.svg'; // mingcute:faceid-line
 
 // The design's card / field / button corner radius.
 const BorderRadius _radius4 =
@@ -162,11 +171,47 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     }
   }
 
-  /// The design shows the Face-ID button unconditionally, so unlike Page 003
-  /// the button is always rendered; an unsupported device / missing plugin
-  /// falls through silently and the password path stays available.
+  /// The design shows the Face-ID button unconditionally. The button now gives
+  /// clear feedback for the two cases that previously failed silently (D-422):
+  /// (1) the device has no enrolled OS face/fingerprint; (2) face login has not
+  /// been enabled yet because the user hasn't done a password sign-in on this
+  /// device (which enrols the device key). Otherwise it runs the OS biometric
+  /// then the device-key sign-in.
   Future<void> _biometricSignIn() async {
     final l10n = AppL10n.of(context);
+    final notifier = ref.read(authControllerProvider.notifier);
+    // (1) The device must actually have a biometric enrolled.
+    try {
+      final supported = await _localAuth.isDeviceSupported();
+      final available = supported
+          ? await _localAuth.getAvailableBiometrics()
+          : const <BiometricType>[];
+      if (!supported || available.isEmpty) {
+        if (mounted) {
+          setState(() => _error = l10n.biometricUnavailable);
+        }
+        return;
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = l10n.biometricUnavailable);
+      }
+      return;
+    }
+    // (2) Face login needs a device key, enrolled on a prior password sign-in.
+    try {
+      if (!await notifier.hasEnrolledDeviceKey()) {
+        if (mounted) {
+          setState(() => _error = l10n.biometricNotEnrolled);
+        }
+        return;
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = l10n.biometricNotEnrolled);
+      }
+      return;
+    }
     try {
       final ok = await _localAuth.authenticate(
         localizedReason: l10n.biometricSignInTooltip,
@@ -265,11 +310,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     children: <Widget>[
                       IconButton(
                         onPressed: _busy ? null : _back,
-                        icon: const Icon(
-                          Icons.arrow_back_ios_new,
+                        icon: const SimfSvgIcon(
+                          _icBack,
+                          size: 24,
                           color: Colors.white,
-                          size: 20,
-                          textDirection: TextDirection.ltr,
                         ),
                       ),
                       const Spacer(),
@@ -285,10 +329,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                               borderRadius: _radius4,
                             ),
                           ),
-                          icon: const Icon(
-                            Icons.language,
-                            color: SimfTokens.accent,
+                          icon: const SimfSvgIcon(
+                            _icGlobe,
                             size: 24,
+                            color: SimfTokens.accent,
                           ),
                         ),
                       ),
@@ -308,7 +352,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: <Widget>[
                           _Header(title: l10n.signInForumTitle),
-                          const SizedBox(height: 40),
+                          const SizedBox(height: 24),
                           _buildCard(l10n),
                         ],
                       ),
@@ -376,11 +420,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 tooltip: _obscure
                     ? l10n.showPasswordTooltip
                     : l10n.hidePasswordTooltip,
-                icon: Icon(
-                  _obscure
-                      ? Icons.visibility_off_outlined
-                      : Icons.visibility_outlined,
-                  size: 18,
+                icon: SimfSvgIcon(
+                  _obscure ? _icEyeOff : _icEye,
+                  size: 16,
                   color: _grey,
                 ),
                 onPressed: () => setState(() => _obscure = !_obscure),
@@ -534,7 +576,36 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   ),
                 ),
                 const SizedBox(width: 10),
-                const Icon(Icons.face, size: 20, color: _goldText),
+                const SimfSvgIcon(_icFaceId, size: 20, color: _goldText),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Part B (D-430) — scan the printed-badge QR to sign in / activate.
+          OutlinedButton(
+            onPressed: _busy
+                ? null
+                : () => context.pushNamed(RouteNames.badgeSignIn),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: _fieldBorder),
+              minimumSize: const Size.fromHeight(48),
+              shape: const RoundedRectangleBorder(borderRadius: _radius4),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Flexible(
+                  child: Text(
+                    l10n.badgeSignInButton,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: _goldText,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                const Icon(Icons.qr_code_scanner, size: 20, color: _goldText),
               ],
             ),
           ),
@@ -644,7 +715,8 @@ class _FieldLabel extends StatelessWidget {
         style: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w500,
-          color: _grey,
+          // Figma 758:2566 / 758:2575 — field labels are navy #01132D, not grey.
+          color: SimfTokens.navy,
         ),
       ),
     );

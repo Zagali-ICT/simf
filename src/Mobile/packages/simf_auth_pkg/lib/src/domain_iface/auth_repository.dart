@@ -66,6 +66,30 @@ abstract class AuthRepository {
     required String confirmPassword,
   });
 
+  /// Part B (D-430) — resolve a scanned badge QR to its sign-in / activation
+  /// branch. `found` is false for an unknown or not-yet-approved badge;
+  /// `hasPassword` true means the app should run the normal password+OTP
+  /// sign-in; when false, `needsEmail` says whether the holder must supply an
+  /// email (no real one on file) and `maskedEmail` is the on-file address shown
+  /// when they don't.
+  Future<({bool found, bool hasPassword, String? displayName, bool needsEmail, String? maskedEmail})>
+      resolveBadge({required String qrId});
+
+  /// Part B — email a verification code to begin activating a passwordless
+  /// badge account. Returns where the code went (masked) + its lifetime.
+  Future<({String maskedEmail, int codeExpiresInSeconds})> badgeActivationStart({
+    required String qrId,
+    String? email,
+  });
+
+  /// Part B — verify the emailed code and set the account's first password.
+  Future<void> badgeActivationComplete({
+    required String qrId,
+    required String code,
+    required String newPassword,
+    required String confirmPassword,
+  });
+
   /// Register a device key (public SPKI) for biometric sign-in; returns the
   /// server-assigned device-key id. Requires a signed-in approved caller.
   Future<String> registerDeviceKey({

@@ -6,6 +6,7 @@ import '../domain/session.dart';
 import '../domain_iface/auth_repository.dart';
 import 'auth_api.dart';
 import 'device_key_client.dart';
+import 'dto/badge_auth_dtos.dart';
 import 'dto/device_key_dtos.dart';
 import 'dto/sign_in_request.dart';
 import 'dto/sign_in_response.dart';
@@ -132,6 +133,56 @@ class AuthRepositoryImpl implements AuthRepository {
       () => _api.resetPassword(
         ResetPasswordRequest(
           email: email,
+          code: code,
+          newPassword: newPassword,
+          confirmPassword: confirmPassword,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Future<({bool found, bool hasPassword, String? displayName, bool needsEmail, String? maskedEmail})>
+      resolveBadge({required String qrId}) async {
+    final data = await _guard(
+      () => _api.resolveBadge(ResolveBadgeRequest(qrId: qrId)),
+    );
+    return (
+      found: data['found'] as bool? ?? false,
+      hasPassword: data['hasPassword'] as bool? ?? false,
+      displayName: data['displayName'] as String?,
+      needsEmail: data['needsEmail'] as bool? ?? false,
+      maskedEmail: data['maskedEmail'] as String?,
+    );
+  }
+
+  @override
+  Future<({String maskedEmail, int codeExpiresInSeconds})> badgeActivationStart({
+    required String qrId,
+    String? email,
+  }) async {
+    final data = await _guard(
+      () => _api.badgeActivationStart(
+        BadgeActivationStartRequest(qrId: qrId, email: email),
+      ),
+    );
+    return (
+      maskedEmail: data['maskedEmail'] as String? ?? '',
+      codeExpiresInSeconds: (data['codeExpiresInSeconds'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  @override
+  Future<void> badgeActivationComplete({
+    required String qrId,
+    required String code,
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    await _guard(
+      () => _api.badgeActivationComplete(
+        BadgeActivationCompleteRequest(
+          qrId: qrId,
           code: code,
           newPassword: newPassword,
           confirmPassword: confirmPassword,

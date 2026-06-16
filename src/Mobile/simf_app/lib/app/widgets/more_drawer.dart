@@ -73,6 +73,22 @@ class MoreDrawer extends ConsumerWidget {
                         context.pushNamed(RouteNames.gateScanner);
                       },
                     ),
+                  // Exhibitor ("Other") only — captured-visitor list (D-426). The
+                  // server 403s a visitor-tier caller; isVisitorProvider hides it
+                  // (defaults visitor → hidden until the dashboard says Other).
+                  if (signedIn &&
+                      ref.watch(isVisitorProvider).maybeWhen(
+                            data: (isVisitor) => !isVisitor,
+                            orElse: () => false,
+                          ))
+                    _DrawerTile(
+                      icon: Icons.groups_outlined,
+                      title: l10n.myVisitorsTitle,
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        context.pushNamed(RouteNames.myVisitors);
+                      },
+                    ),
                   const Divider(color: SimfTokens.beigeBorder, height: 1),
                   // Account actions moved here from منطقتي (D-396).
                   _DrawerTile(

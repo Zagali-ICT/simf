@@ -36,6 +36,9 @@ internal sealed class PublicSponsorService(SimfAppDbContext appDbContext)
                 sponsor.Url,
                 sponsor.DisplayOrder,
                 sponsor.ContactId,
+                // D-432 — the tagline is sponsor-owned (not on Contact).
+                sponsor.Tagline,
+                sponsor.TaglineArabic,
             })
             .ToListAsync(cancellationToken);
 
@@ -79,7 +82,9 @@ internal sealed class PublicSponsorService(SimfAppDbContext appDbContext)
                     c?.LinkedInUrl,
                     c?.InstagramUrl,
                     c?.Latitude,
-                    c?.Longitude);
+                    c?.Longitude,
+                    r.Tagline,
+                    r.TaglineArabic);
             })
             .GroupBy(sponsor => new { sponsor.Tier, sponsor.TierName })
             .OrderBy(group => group.Key.Tier)

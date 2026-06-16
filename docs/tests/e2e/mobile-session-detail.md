@@ -19,6 +19,16 @@
 > notifications platform pass — the CTA shows an interim notice (the server worker
 > D-217 is the production reminder path). Speaker photo/flag render as
 > initials/text until the asset pass (SIMF-VID-001).
+>
+> **Figma re-skin (frame 889:2450 "Session detail"):** the page now matches its
+> KSA-Project Figma frame — a navy header card (gold index badge + title +
+> clock/calendar meta line + hall/category tag pills, 889:2716), the وصف الجلسة /
+> Description card (889:2719), the المتحدثون / Speakers cards whose gold-tinted
+> role box renders an **anchor for a speaker / star for the host** driven by the
+> real `SessionSpeakerRole` (889:2722/889:2757), the مقعدي / My seat card with the
+> gold marker + chevron (889:2761), and the تذكير + أضف إلى تقويمي CTA row
+> (897:2872). Scenarios E2E-MOB017-012..017 cover the new sections; the prior
+> behaviour scenarios (001–011) remain valid.
 
 | | |
 |--|--|
@@ -44,6 +54,12 @@
 | E2E-MOB017-009 | `تذكير` — interim notice (real scheduling deferred to the notifications pass) | happy | P2 | authored ✓ (screen — `Reminder shows the deferred-notice toast`, D-300) |
 | E2E-MOB017-010 | Stale tap onto a soft-deleted session → detail 404 → "not found" state | error | P1 | authored ✓ (`ProgrammeSessionsTests` 404 + screen `a 404 shows the not-found state`) |
 | E2E-MOB017-011 | RTL render; the row letter + seat number are LTR inside the Arabic line | i18n | P1 | authored (screen RTL-primary; LTR row/seat deferred to designer) |
+| E2E-MOB017-012 | Header card — gold index badge (code, LTR), title, clock/calendar meta line, hall + category tag pills | happy | P0 | authored ✓ (Figma 889:2716 re-skin) |
+| E2E-MOB017-013 | وصف الجلسة / Description card renders the localized description; hidden when null | happy | P1 | authored ✓ (Figma 889:2719 re-skin) |
+| E2E-MOB017-014 | المتحدثون speaker card → anchor role box for a speaker (`SessionSpeakerRole.speaker`) | happy | P0 | authored ✓ (Figma 889:2722 re-skin; real role) |
+| E2E-MOB017-015 | المتحدثون host card → star role box + المضيف/Host sub-line (`SessionSpeakerRole.host`) | happy | P0 | authored ✓ (Figma 889:2757 re-skin; real role) |
+| E2E-MOB017-016 | مقعدي card — row · seat line + badge hint + gold marker; chevron/marker opens seat map (18) | happy | P1 | authored ✓ (Figma 889:2761 re-skin) |
+| E2E-MOB017-017 | CTA row — تذكير (outlined) + أضف إلى تقويمي (gold) order and toasts | happy | P1 | authored ✓ (Figma 897:2872 re-skin) |
 
 ## Scenarios
 
@@ -192,6 +208,86 @@ Scenario: The session detail renders right-to-left in Arabic
   And times render in the device timezone
 ```
 
+### E2E-MOB017-012 — Header card (Figma 889:2716)
+
+```gherkin
+Scenario: The navy header card shows the index badge, title, meta line and tag pills
+  Given session code "02" titled "ابتكارات الدفاع البحري" / "Naval Defence Innovations"
+  And it runs 09:00 — 10:30 on Tuesday 16 Jun in hall "القاعة الرئيسية" / "Main Hall"
+  And its category is "تقنية" / "Technology"
+  When Session detail (17) renders the header card
+  Then a gold 40×40 index badge shows "02" left-to-right
+  And the session title "ابتكارات الدفاع البحري" reads beside the badge
+  And the meta line shows a clock "09:00 — 10:30" (LTR) · a separator dot · a calendar "الثلاثاء · 16 يونيو"
+  And a gold-accented place pill "القاعة الرئيسية" and a hairline category pill "تقنية" render below
+```
+
+### E2E-MOB017-013 — Description card (Figma 889:2719)
+
+```gherkin
+Scenario: The وصف الجلسة card renders the localized description, and is hidden when empty
+  Given the session carries a description "جلسة حول أحدث تقنيات الدفاع البحري"
+  When the detail renders in Arabic
+  Then a section heading "وصف الجلسة" (EN "Description") appears
+  And a navy card below it shows the description text "جلسة حول أحدث تقنيات الدفاع البحري"
+  And given another session whose description is null
+  Then neither the "وصف الجلسة" heading nor the description card is shown
+```
+
+### E2E-MOB017-014 — Speaker card → anchor role box (real SessionSpeakerRole)
+
+```gherkin
+Scenario: A speaker (SessionSpeakerRole.speaker) shows the gold anchor box
+  Given the session lists a speaker "د. سالم العتيبي" / "Dr. Salem Al-Otaibi"
+  And their role is SessionSpeakerRole.speaker with title "Captain" and country "السعودية" / "Saudi Arabia"
+  When the المتحدثون / Speakers section renders the speaker card
+  Then the card shows the name "د. سالم العتيبي" over the sub-line "Captain · السعودية"
+  And the gold-tinted 44×44 role box on the inline-end carries the anchor glyph (NOT a star)
+  And the sub-line does NOT contain "المضيف" / "Host"
+  When the user taps the card
+  Then Speaker profile (20) opens at /speakers/{speakerId}
+```
+
+### E2E-MOB017-015 — Host card → star role box + المضيف sub-line
+
+```gherkin
+Scenario: A host (SessionSpeakerRole.host) shows the gold star box and the Host tag
+  Given the session lists a host "أ. منى الشهري" / "Ms. Mona Al-Shehri"
+  And their role is SessionSpeakerRole.host
+  When the المتحدثون / Speakers section renders the host card
+  Then the gold-tinted role box carries the star glyph (Icons.star_outline), NOT the anchor
+  And the sub-line ends with "المضيف" (EN "Host")
+  And the anchor/star box is driven by the REAL role, not the list position
+```
+
+### E2E-MOB017-016 — My-seat card (Figma 889:2761)
+
+```gherkin
+Scenario: The مقعدي card shows row · seat, the badge hint and the gold marker
+  Given an approved visitor holds reserved seat row "B" / 4 for the session
+  When the مقعدي / My seat section renders
+  Then the heading "مقعدي" (EN "My seat") appears
+  And the card shows "الصف B · مقعد 4" (EN "Row B · Seat 4") over the hint "تأكد من إبراز بطاقتك عند الدخول" (EN "Show your badge at entry")
+  And a forward chevron sits at the inline start and a gold filled marker box (labelled "عرض" / "View") at the inline end
+  When the user taps the card
+  Then My Seat map (18) opens at /sessions/{sessionId}/my-seat
+```
+
+### E2E-MOB017-017 — CTA row (Figma 897:2872)
+
+```gherkin
+Scenario: The تذكير + أضف إلى تقويمي buttons render in order and fire the right toasts
+  Given the detail is loaded
+  When the CTA row renders in Arabic (RTL)
+  Then an outlined "تذكير" (EN "Reminder") button with a clock icon sits at the inline start (visually right)
+  And a gold filled "أضف إلى تقويمي" (EN "Add to calendar") button with a calendar icon fills the remaining width (visually left)
+  When the user taps "أضف إلى تقويمي" and the OS accepts the event
+  Then the snackbar shows "تمت إضافة الجلسة إلى تقويمك" (EN "Added to your calendar")
+  When the user taps "تذكير"
+  Then the interim snackbar shows "ستتوفر التذكيرات مع إعداد الإشعارات." (EN "Reminders arrive with notifications setup.")
+  And no network request is made by either CTA
+```
+
 ---
 
-_Last reviewed:_ `2026-06-05` by `SIMF Team`.
+_Last reviewed:_ `2026-06-16` by `SIMF Team`.

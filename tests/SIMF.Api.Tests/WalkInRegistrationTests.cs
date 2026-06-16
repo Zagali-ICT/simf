@@ -15,14 +15,29 @@ using Xunit;
 namespace SIMF.Api.Tests;
 
 /// <summary>
-/// D-127 integration tests for the on-site walk-in registration endpoints
-/// (<c>POST /admin/{visitors,others}/register-onsite</c>). Confirms
-/// auto-approve, QR minting in one transaction, optional-email behaviour
-/// and the type-scoped profile-type guard.
+/// D-127 (amended D-425) integration tests for the on-site walk-in registration
+/// endpoints (<c>POST /admin/{visitors,others}/register-onsite</c>). Confirms
+/// the D-425 create-as-PendingApproval behaviour (no QR until approval),
+/// optional-email behaviour and the type-scoped profile-type guard.
 /// </summary>
 public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
 {
     private const string Password = "Passw0rd!";
+
+    // A minimal valid 1x1 PNG (magic-byte + IHDR + IDAT + IEND) for the
+    // D-427 admin avatar-upload test.
+    private static readonly byte[] OnePixelPng =
+    [
+        0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+        0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+        0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+        0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4,
+        0x89, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x44, 0x41,
+        0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00,
+        0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00,
+        0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE,
+        0x42, 0x60, 0x82,
+    ];
 
     private readonly SimfApiFactory _factory;
     private readonly HttpClient _client;
@@ -35,7 +50,7 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Visitor_walk_in_creates_approved_user_with_qr_minted()
+    public async Task Visitor_walk_in_creates_pending_user_without_qr()
     {
         var adminToken = await CreateAdministratorAndSignInAsync();
         var profileTypeId = await GetVisitorProfileTypeAsync();
@@ -51,24 +66,172 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
         var body = (await response.Content.ReadFromJsonAsync<ApiResult<AdminWalkInRegistrationResponse>>())!;
         Assert.True(body.Success);
         Assert.NotEqual(Guid.Empty, body.Data!.UserId);
-        Assert.False(string.IsNullOrEmpty(body.Data.QrId));
+        // D-425 — a pending walk-in carries no QR until an admin approves it.
+        Assert.True(string.IsNullOrEmpty(body.Data.QrId));
         Assert.Equal(email, body.Data.Email);
 
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var user = await db.Users.SingleAsync(u => u.Id == body.Data.UserId);
-        Assert.Equal(AccountState.Approved, user.AccountState);
+        Assert.Equal(AccountState.PendingApproval, user.AccountState);
         Assert.Equal(UserType.Visitor, user.UserType);
 
         var profile = await appDb.UserProfiles.SingleAsync(p => p.UserId == user.Id);
         Assert.Equal(profileTypeId, profile.ProfileTypeId);
-        Assert.False(string.IsNullOrEmpty(profile.QrId));
+        Assert.True(string.IsNullOrEmpty(profile.QrId));
         Assert.Equal("Walk-in Visitor", profile.Name);
     }
 
     [Fact]
-    public async Task Other_walk_in_creates_approved_other_user()
+    public async Task Walk_in_visitor_appears_in_pending_queue_then_approve_mints_qr()
+    {
+        // Task #6 — the full walk-in chain end-to-end through the real routes:
+        // register-onsite (PendingApproval, no QR) -> the account shows up in the
+        // pending-visitors queue -> approve -> Approved + QR minted -> it leaves
+        // the queue. This is the regression the CS-A..E reviewer asked for.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var profileTypeId = await GetVisitorProfileTypeAsync();
+        var organisationId = await GetOrganisationIdAsync();
+
+        // 1) Walk-in register -> PendingApproval, no QR at the desk (D-425).
+        var email = $"walkin-e2e-{Guid.NewGuid():N}@simf.test";
+        var reg = await PostAuthAsync(
+            "/api/v1/admin/visitors/register-onsite",
+            BuildRequest(profileTypeId, email, organisationId), adminToken);
+        Assert.Equal(HttpStatusCode.OK, reg.StatusCode);
+        var regBody = (await reg.Content.ReadFromJsonAsync<ApiResult<AdminWalkInRegistrationResponse>>())!;
+        var subjectId = regBody.Data!.UserId;
+        Assert.True(string.IsNullOrEmpty(regBody.Data.QrId));
+
+        // 2) The registrant appears in the pending-visitors queue.
+        var listResp = await PostAuthAsync(
+            "/api/v1/admin/visitors/pending/list",
+            new GridQuery { Top = 200 }, adminToken);
+        Assert.Equal(HttpStatusCode.OK, listResp.StatusCode);
+        var page = (await listResp.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminPendingUserSummary>>>())!;
+        Assert.Contains(page.Data!.Items, row => row.Id == subjectId);
+
+        // 3) Approve -> Approved + the QR is minted on the profile (D-386).
+        var approve = await PostAuthAsync(
+            $"/api/v1/admin/visitors/{subjectId}/approve", new { }, adminToken);
+        Assert.Equal(HttpStatusCode.OK, approve.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var user = await db.Users.SingleAsync(u => u.Id == subjectId);
+        Assert.Equal(AccountState.Approved, user.AccountState);
+        var qrId = await appDb.UserProfiles
+            .Where(p => p.UserId == subjectId)
+            .Select(p => p.QrId)
+            .SingleAsync();
+        Assert.False(string.IsNullOrEmpty(qrId));
+
+        // 4) The approved visitor no longer shows in the pending queue.
+        var listAfter = await PostAuthAsync(
+            "/api/v1/admin/visitors/pending/list",
+            new GridQuery { Top = 200 }, adminToken);
+        var pageAfter = (await listAfter.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminPendingUserSummary>>>())!;
+        Assert.DoesNotContain(pageAfter.Data!.Items, row => row.Id == subjectId);
+    }
+
+    [Fact]
+    public async Task Admin_uploads_visitor_avatar_sets_path()
+    {
+        // D-427 (CS-3) — the desk captures a profile photo (avatar) for the
+        // walk-in account via the new admin avatar endpoint.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var profileTypeId = await GetVisitorProfileTypeAsync();
+        var organisationId = await GetOrganisationIdAsync();
+
+        var reg = await PostAuthAsync(
+            "/api/v1/admin/visitors/register-onsite",
+            BuildRequest(profileTypeId, $"walkin-av-{Guid.NewGuid():N}@simf.test", organisationId),
+            adminToken);
+        var regBody = (await reg.Content.ReadFromJsonAsync<ApiResult<AdminWalkInRegistrationResponse>>())!;
+        var subjectId = regBody.Data!.UserId;
+
+        using var form = new MultipartFormDataContent();
+        var file = new ByteArrayContent(OnePixelPng);
+        file.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        form.Add(file, "file", "avatar.png");
+        using var request = new HttpRequestMessage(
+            HttpMethod.Post, $"/api/v1/admin/visitors/{subjectId}/avatar") { Content = form };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var user = await db.Users.SingleAsync(u => u.Id == subjectId);
+        Assert.False(string.IsNullOrEmpty(user.AvatarRelativePath));
+    }
+
+    [Fact]
+    public async Task Visitor_walk_in_persists_vip_fields()
+    {
+        // V-1 (D-429) — the VIP page sends the موج extras (Mawj ID, honorific,
+        // preferred language); they must land on the profile row.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var profileTypeId = await GetVisitorProfileTypeAsync();
+        var organisationId = await GetOrganisationIdAsync();
+
+        var req = BuildRequest(profileTypeId, $"walkin-vipf-{Guid.NewGuid():N}@simf.test", organisationId);
+        req.MawjId = "MAWJ-12345";
+        req.Honorific = "Minister";
+        req.PreferredLanguage = "ar";
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/visitors/register-onsite", req, adminToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<AdminWalkInRegistrationResponse>>())!;
+
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var profile = await appDb.UserProfiles.SingleAsync(p => p.UserId == body.Data!.UserId);
+        Assert.Equal("MAWJ-12345", profile.MawjId);
+        Assert.Equal("Minister", profile.Honorific);
+        Assert.Equal("ar", profile.PreferredLanguage);
+    }
+
+    [Fact]
+    public async Task Admin_uploads_vip_photo_sets_path()
+    {
+        // V-1 (D-429) — the VIP page captures a separate welcome photo via the
+        // dedicated vip-photo endpoint; it must set VipPhotoRelativePath (a
+        // field distinct from the avatar).
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var profileTypeId = await GetVisitorProfileTypeAsync();
+        var organisationId = await GetOrganisationIdAsync();
+
+        var reg = await PostAuthAsync(
+            "/api/v1/admin/visitors/register-onsite",
+            BuildRequest(profileTypeId, $"walkin-vp-{Guid.NewGuid():N}@simf.test", organisationId),
+            adminToken);
+        var regBody = (await reg.Content.ReadFromJsonAsync<ApiResult<AdminWalkInRegistrationResponse>>())!;
+        var subjectId = regBody.Data!.UserId;
+
+        using var form = new MultipartFormDataContent();
+        var file = new ByteArrayContent(OnePixelPng);
+        file.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        form.Add(file, "file", "vip.png");
+        using var request = new HttpRequestMessage(
+            HttpMethod.Post, $"/api/v1/admin/visitors/{subjectId}/vip-photo") { Content = form };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var profile = await appDb.UserProfiles.SingleAsync(p => p.UserId == subjectId);
+        Assert.False(string.IsNullOrEmpty(profile.VipPhotoRelativePath));
+    }
+
+    [Fact]
+    public async Task Other_walk_in_creates_pending_other_user()
     {
         var adminToken = await CreateAdministratorAndSignInAsync();
         var profileTypeId = await GetOtherProfileTypeAsync();
@@ -89,7 +252,7 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
         // D-186: Other walk-ins are now Visitor-typed accounts; the
         // partner status lives on the linked ProfileType.IsVisitor=false.
         Assert.Equal(UserType.Visitor, user.UserType);
-        Assert.Equal(AccountState.Approved, user.AccountState);
+        Assert.Equal(AccountState.PendingApproval, user.AccountState);
     }
 
     [Fact]

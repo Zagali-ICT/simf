@@ -154,18 +154,60 @@ Future<void> _pump(
 
 void main() {
   group('SessionDetailScreen (Page 017)', () {
-    testWidgets('renders the detail (title, description, speaker)',
-        (tester) async {
+    testWidgets('renders the KSA detail (header card, description, speaker, '
+        'tags, CTAs)', (tester) async {
       await _pump(
         tester,
         repo: _FakeDetailRepo(detail: _detail()),
         controller: _GuestController(),
       );
 
+      // Header card: the centred title chrome + the title/code + meta.
+      expect(find.text('Session detail'), findsOneWidget);
       expect(find.text('Opening'), findsOneWidget);
+      expect(find.text('OP-1'), findsOneWidget); // the gold index badge
+      // Description card + heading.
+      expect(find.text('Description'), findsOneWidget);
       expect(find.text('Welcome address'), findsOneWidget);
+      // Speakers section + a speaker card.
+      expect(find.text('Speakers'), findsOneWidget);
       expect(find.text('Dr Reef'), findsOneWidget);
+      // Hall + category tag pills.
       expect(find.text('Main Hall'), findsOneWidget);
+      expect(find.text('Main Session'), findsOneWidget);
+      // The two CTAs.
+      expect(
+        find.widgetWithText(FilledButton, 'Add to calendar'),
+        findsOneWidget,
+      );
+      expect(find.widgetWithText(OutlinedButton, 'Reminder'), findsOneWidget);
+    });
+
+    testWidgets('renders the seat card with the gold marker and CTAs together',
+        (tester) async {
+      // Tall surface so the whole lazy ListView (down to the CTA row) lays out.
+      tester.view.physicalSize = const Size(1200, 2600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await _pump(
+        tester,
+        repo: _FakeDetailRepo(detail: _detail(), seat: _seat),
+        controller: _SignedInController(),
+      );
+
+      // The whole KSA structure renders in one pass: header card, description,
+      // speakers, the my-seat card and the CTA row — no overflow / exception.
+      expect(find.text('Session detail'), findsOneWidget);
+      expect(find.text('My seat'), findsOneWidget);
+      expect(find.text('Row B · Seat 12'), findsOneWidget);
+      expect(find.text('Show your badge at entry'), findsOneWidget);
+      expect(
+        find.widgetWithText(FilledButton, 'Add to calendar'),
+        findsOneWidget,
+      );
+      expect(find.widgetWithText(OutlinedButton, 'Reminder'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('a guest sees no my-seat card', (tester) async {

@@ -6,6 +6,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/ksa_shell.dart';
 import 'data/news_models.dart';
 import 'data/news_repository.dart';
 
@@ -64,7 +65,7 @@ class _NewsArticleScreenState extends ConsumerState<NewsArticleScreen> {
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.newsTitle)),
+      appBar: AppBar(leading: const SimfBackButton(), title: Text(l10n.newsTitle)),
       body: SafeArea(child: _buildBody(l10n)),
     );
   }

@@ -75,6 +75,9 @@ class RouteNames {
   static const String shareMyContact = 'shareMyContact';
   static const String scanContact = 'scanContact';
   static const String myContacts = 'myContacts';
+  // D-426 exhibitor ("Other") lead capture: scan a visitor badge → My Visitors.
+  static const String scanVisitor = 'scanVisitor';
+  static const String myVisitors = 'myVisitors';
   // Guided face-capture / liveness for the avatar (D-404; additive, reached from
   // My Area; signed-in + Approved).
   static const String identityVerification = 'identityVerification';
@@ -88,6 +91,11 @@ class RouteNames {
   // Auxiliary auth routes (not numbered in the mockup but in API-001 §12)
   static const String forgotPassword = 'forgotPassword';
   static const String resetPassword = 'resetPassword';
+
+  // Part B (D-430) — badge-QR sign-in / activation: scan the printed-badge QR
+  // at login; a passwordless account sets its first password.
+  static const String badgeSignIn = 'badgeSignIn';
+  static const String badgeActivation = 'badgeActivation';
 
   /// Visitor email-OTP second factor at sign-in (the app has no TOTP).
   static const String verifyOtp = 'verifyOtp';

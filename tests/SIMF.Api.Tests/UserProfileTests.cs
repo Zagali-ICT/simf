@@ -40,7 +40,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task GET_returns_an_empty_response_with_the_QR_when_no_profile_saved_yet()
     {
-        var token = await CreateUserAndSignInAsync();
+        var token = await CreateUserAndSignInAsync(withIdImage: false);
 
         var response = await GetAuthAsync(Path, token);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -76,14 +76,17 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Me_profileComplete_stays_false_for_a_male_profile_without_the_id_photo()
+    public async Task POST_upsert_without_an_id_document_reads_incomplete()
     {
-        // C7 (D-371) makes the camera photo mandatory for males, so a male
-        // profile with no image is still incomplete for the D-374 gate.
-        var token = await CreateUserAndSignInAsync();
+        // Two-photo split — the ID DOCUMENT is mandatory for EVERY registrant,
+        // enforced via the completeness flag (not a hard upsert reject, so the
+        // H16 rollback guarantee + the first-submit transition stay intact). A
+        // woman with names + interests but NO ID document saves but reads
+        // incomplete, so the app routes her back to finish it.
+        var token = await CreateUserAndSignInAsync(withIdImage: false);
 
         var request = await ValidSaudiRequestAsync();
-        request.Gender = Gender.Male;
+        request.Gender = Gender.Female;
         var upsert = await PostAuthAsync(Path, request, token);
         Assert.Equal(HttpStatusCode.OK, upsert.StatusCode);
 
@@ -93,24 +96,123 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task POST_upsert_rejects_a_male_profile_without_a_face_photo()
+    {
+        // Two-photo split — the FACE photo (avatar) is mandatory for men: a male
+        // with the ID document but no face photo is rejected with
+        // VISITOR_FACE_IMAGE_MISSING. (The ID is present via the helper.)
+        var token = await CreateUserAndSignInAsync();   // ID document uploaded
+
+        var request = await ValidSaudiRequestAsync();
+        request.Gender = Gender.Male;
+        var upsert = await PostAuthAsync(Path, request, token);
+
+        Assert.Equal(HttpStatusCode.BadRequest, upsert.StatusCode);
+        var body = (await upsert.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.VisitorFaceImageMissing, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task POST_upsert_accepts_a_male_profile_once_id_and_face_photos_are_uploaded()
+    {
+        // Two-photo split — the client uploads BOTH photos FIRST (each seeds /
+        // sets its path), then the male upsert succeeds and reads complete.
+        var token = await CreateUserAndSignInAsync();   // ID document uploaded
+        await UploadValidAvatarAsync(token);            // face photo
+
+        var request = await ValidSaudiRequestAsync();
+        request.Gender = Gender.Male;
+        var upsert = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, upsert.StatusCode);
+
+        var me = await GetAuthAsync("/api/v1/app/users/me", token);
+        var body = (await me.Content.ReadFromJsonAsync<ApiResult<CurrentUserResponse>>())!;
+        Assert.True(body.Data!.ProfileComplete);
+    }
+
+    [Fact]
+    public async Task POST_upsert_accepts_a_female_profile_without_a_face_photo()
+    {
+        // Two-photo split — the FACE photo is MALE-only: a woman (with the ID
+        // document) saves without one and reads complete. Pins that the face
+        // rule is gender-scoped while the ID document is required for all.
+        var token = await CreateUserAndSignInAsync();   // ID document uploaded
+
+        var request = await ValidSaudiRequestAsync();
+        request.Gender = Gender.Female;
+        var upsert = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, upsert.StatusCode);
+
+        var me = await GetAuthAsync("/api/v1/app/users/me", token);
+        var body = (await me.Content.ReadFromJsonAsync<ApiResult<CurrentUserResponse>>())!;
+        Assert.True(body.Data!.ProfileComplete);
+    }
+
+    // Name rules — Arabic-only / English-only, full name of at least four parts.
+
+    [Fact]
+    public async Task POST_rejects_an_arabic_name_with_non_arabic_characters()
+    {
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.ArabicName = "محمد Ahmed عبدالله الزهراني";   // mixed scripts
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task POST_rejects_an_arabic_name_with_fewer_than_four_parts()
+    {
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.ArabicName = "محمد عبدالله";   // two parts
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task POST_rejects_an_english_name_with_non_english_characters()
+    {
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.EnglishName = "Mohammed عبدالله Ahmed Alzahrani";   // mixed scripts
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task POST_rejects_an_english_name_with_fewer_than_four_parts()
+    {
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.EnglishName = "Mohammed Alzahrani";   // two parts
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task POST_upsert_creates_a_profile_and_a_second_call_updates_it()
     {
         var token = await CreateUserAndSignInAsync();
 
         var first = await PostAuthAsync(Path,
-            await ValidSaudiRequestAsync("Ahmad", "أحمد"), token);
+            await ValidSaudiRequestAsync("Ahmad Bin Saleh Alharbi", "أحمد بن صالح الحربي"), token);
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
         var firstBody = (await first.Content.ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!;
-        Assert.Equal("Ahmad", firstBody.Data!.EnglishName);
-        Assert.Equal("أحمد", firstBody.Data.ArabicName);
+        Assert.Equal("Ahmad Bin Saleh Alharbi", firstBody.Data!.EnglishName);
+        Assert.Equal("أحمد بن صالح الحربي", firstBody.Data.ArabicName);
         Assert.Equal("SA", firstBody.Data.NationalityCode);
 
         var second = await PostAuthAsync(Path,
-            await ValidSaudiRequestAsync("Ahmed", "أحمد محمد"), token);
+            await ValidSaudiRequestAsync("Ahmed Bin Saleh Alharbi", "أحمد بن صالح القحطاني"), token);
         Assert.Equal(HttpStatusCode.OK, second.StatusCode);
         var secondBody = (await second.Content.ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!;
-        Assert.Equal("Ahmed", secondBody.Data!.EnglishName);
-        Assert.Equal("أحمد محمد", secondBody.Data.ArabicName);
+        Assert.Equal("Ahmed Bin Saleh Alharbi", secondBody.Data!.EnglishName);
+        Assert.Equal("أحمد بن صالح القحطاني", secondBody.Data.ArabicName);
     }
 
     [Fact]
@@ -502,18 +604,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         var token = await CreateUserAndSignInAsync();
 
         // A tiny 1x1 PNG — the smallest valid PNG that passes the magic-byte gate.
-        var png = new byte[]
-        {
-            0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
-            0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
-            0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
-            0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4,
-            0x89, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x44, 0x41,
-            0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00,
-            0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00,
-            0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE,
-            0x42, 0x60, 0x82,
-        };
+        var png = TinyValidPng();
 
         using var form = new MultipartFormDataContent();
         var file = new ByteArrayContent(png);
@@ -561,7 +652,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task ID_image_GET_returns_404_when_no_image_set()
     {
-        var token = await CreateUserAndSignInAsync();
+        var token = await CreateUserAndSignInAsync(withIdImage: false);
 
         using var request = new HttpRequestMessage(HttpMethod.Get, Path + "/id-image");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -783,7 +874,8 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         }
     }
 
-    private async Task<(string Token, Guid UserId)> CreateEmailVerifiedVisitorAndSignInAsync()
+    private async Task<(string Token, Guid UserId)> CreateEmailVerifiedVisitorAndSignInAsync(
+        bool withIdImage = true)
     {
         var email = $"ev-{Guid.NewGuid():N}@simf.test";
         Guid userId;
@@ -812,7 +904,15 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
             });
         var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
         Assert.True(body.Success, "EmailVerified user should be able to sign in (D-010).");
-        return (body.Data!.Tokens!.AccessToken, userId);
+        var token = body.Data!.Tokens!.AccessToken;
+        // The ID document is mandatory for every upsert (two-photo split); the
+        // upload seeds the profile stub. Tests that seed their own stub row pass
+        // withIdImage: false and upload after seeding to avoid a duplicate row.
+        if (withIdImage)
+        {
+            await UploadValidIdImageAsync(token);
+        }
+        return (token, userId);
     }
 
     // -- D-190 — ProfileTypeId on UpsertUserProfileRequest --------------------
@@ -878,7 +978,10 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         // silently ignored. The admin's row stays. C5 (D-371): the
         // user's pick must itself be a valid self-pick (Normal) to get
         // past validation — admin-wins is then decided downstream.
-        var (token, userId) = await CreateEmailVerifiedVisitorAndSignInAsync();
+        // This test seeds its OWN stub UserProfile, so opt out of the helper's
+        // ID upload (which would seed a duplicate row) and upload after seeding.
+        var (token, userId) = await CreateEmailVerifiedVisitorAndSignInAsync(
+            withIdImage: false);
         var adminAssigned = await SeedProfileTypeAsync(isVisitor: false);
         var userPickedDifferent = await SeedProfileTypeAsync(
             "Normal", "عادي", isForVisitor: true);
@@ -896,6 +999,10 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
             });
             await appDb.SaveChangesAsync();
         }
+
+        // Two-photo split — the ID document is mandatory for the upsert; the
+        // stub now exists, so this just sets its path.
+        await UploadValidIdImageAsync(token);
 
         var request = await ValidSaudiRequestAsync();
         request.ProfileTypeId = userPickedDifferent;
@@ -935,6 +1042,10 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     {
         var (token, _) = await CreateEmailVerifiedVisitorAndSignInAsync();
         var organisationId = await SeedOrganisationAsync();
+
+        // Two-photo split — a male profile needs BOTH the ID document (uploaded
+        // by the helper) and the face photo on the server first.
+        await UploadValidAvatarAsync(token);
 
         var request = await ValidSaudiRequestAsync();
         request.OrganisationId = organisationId;
@@ -1024,9 +1135,62 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
 
     // -- Helpers ---------------------------------------------------------------
 
+    /// <summary>A tiny 1x1 PNG — the smallest valid PNG that passes the
+    /// magic-byte gate. Shared by the id-image round-trip test and the
+    /// male-photo helper.</summary>
+    private static byte[] TinyValidPng() => new byte[]
+    {
+        0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+        0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+        0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+        0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4,
+        0x89, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x44, 0x41,
+        0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00,
+        0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00,
+        0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE,
+        0x42, 0x60, 0x82,
+    };
+
+    /// <summary>C7 (D-371 / D-431) — uploads a valid tiny PNG to the id-image
+    /// endpoint (the base factory runs with the face gate OFF) so a male
+    /// profile can satisfy the mandatory-photo rule before the upsert.</summary>
+    private async Task UploadValidIdImageAsync(string token)
+    {
+        using var form = new MultipartFormDataContent();
+        var file = new ByteArrayContent(TinyValidPng());
+        file.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        form.Add(file, "File", "id.png");
+        using var upload = new HttpRequestMessage(HttpMethod.Post, Path + "/id-image")
+        {
+            Content = form,
+        };
+        upload.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var response = await _client.SendAsync(upload);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    /// <summary>Two-photo split — uploads a valid tiny PNG to the avatar
+    /// endpoint so a MALE profile satisfies the mandatory face-photo rule before
+    /// the upsert (the base factory has no server face gate on the avatar).</summary>
+    private async Task UploadValidAvatarAsync(string token)
+    {
+        using var form = new MultipartFormDataContent();
+        var file = new ByteArrayContent(TinyValidPng());
+        file.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        form.Add(file, "File", "face.png");
+        using var upload = new HttpRequestMessage(HttpMethod.Post, "/api/v1/app/account/avatar")
+        {
+            Content = form,
+        };
+        upload.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var response = await _client.SendAsync(upload);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
     private async Task<UpsertUserProfileRequest> ValidSaudiRequestAsync(
-        string englishName = "Test User",
-        string arabicName = "مستخدم اختبار")
+        // Names must be four parts in one script (Arabic-only / English-only).
+        string englishName = "Test Visitor User Account",
+        string arabicName = "محمد عبدالله أحمد الزهراني")
     {
         var interestId = await SeedInterestAsync();
         // B3 — D-221: organisation is now required, so the baseline valid
@@ -1070,7 +1234,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         return interest.Id;
     }
 
-    private async Task<string> CreateUserAndSignInAsync()
+    private async Task<string> CreateUserAndSignInAsync(bool withIdImage = true)
     {
         var email = $"up-{Guid.NewGuid():N}@simf.test";
         Guid userId;
@@ -1107,7 +1271,15 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
             "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = AuthFlow.Password });
         var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        return body.Data!.Tokens!.AccessToken;
+        var token = body.Data!.Tokens!.AccessToken;
+        // The two-photo split makes the ID document mandatory for EVERY upsert,
+        // so the happy-path tests start with one already uploaded; the few tests
+        // that assert the "no image" surface pass withIdImage: false.
+        if (withIdImage)
+        {
+            await UploadValidIdImageAsync(token);
+        }
+        return token;
     }
 
     private async Task<Guid> GetActorIdAsync(string token)

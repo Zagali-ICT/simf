@@ -11,6 +11,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/ksa_shell.dart';
 
 /// The selfie the flow returns to the My-Area caller, which uploads it via the
 /// existing `POST /app/account/avatar`.
@@ -76,7 +77,13 @@ class _IdentityVerificationScreenState
   bool _processing = false;
   bool _cameraReady = false;
   bool _cameraFailed = false;
-  LivenessStep _step = LivenessStep.smile;
+  /// The challenge order is shuffled per session (D-422) so the sequence is not
+  /// predictable — a fixed smile→right→left order is easier to defeat with a
+  /// pre-recorded clip. The forward selfie is still grabbed on the smile step,
+  /// wherever it lands in the order.
+  late final List<LivenessStep> _sequence;
+  int _stepIndex = 0;
+  LivenessStep get _step => _sequence[_stepIndex];
   Uint8List? _forwardFrame;
   String _forwardName = 'selfie.jpg';
 
@@ -91,6 +98,7 @@ class _IdentityVerificationScreenState
   @override
   void initState() {
     super.initState();
+    _sequence = List<LivenessStep>.of(LivenessStep.values)..shuffle();
     unawaited(_initCamera());
   }
 
@@ -185,14 +193,12 @@ class _IdentityVerificationScreenState
         // a null forward frame falls back to the gallery on finish.
       }
     }
-    if (_step == LivenessStep.turnLeft) {
+    if (_stepIndex >= _sequence.length - 1) {
       await _finish();
       return;
     }
     if (mounted) {
-      setState(() {
-        _step = LivenessStep.values[_step.index + 1];
-      });
+      setState(() => _stepIndex++);
     }
   }
 
@@ -298,6 +304,7 @@ class _IdentityVerificationScreenState
     return Scaffold(
       backgroundColor: SimfTokens.navy,
       appBar: AppBar(
+        leading: const SimfBackButton(),
         backgroundColor: SimfTokens.navy,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -310,6 +317,7 @@ class _IdentityVerificationScreenState
             : _LiveCapture(
                 l10n: l10n,
                 step: _step,
+                activeIndex: _stepIndex,
                 ready: _cameraReady,
                 preview: _cameraReady && _camera != null
                     ? CameraPreview(_camera!)
@@ -337,12 +345,17 @@ class _LiveCapture extends StatelessWidget {
   const _LiveCapture({
     required this.l10n,
     required this.step,
+    required this.activeIndex,
     required this.ready,
     required this.preview,
   });
 
   final AppL10n l10n;
   final LivenessStep step;
+
+  /// Position in the shuffled sequence (0-based) — drives the progress dots,
+  /// not the enum index (which no longer matches the displayed order).
+  final int activeIndex;
   final bool ready;
   final Widget? preview;
 

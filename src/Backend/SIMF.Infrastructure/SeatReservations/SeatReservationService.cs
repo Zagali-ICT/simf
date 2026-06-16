@@ -65,7 +65,9 @@ internal sealed class SeatReservationService(
         return new SessionSeatMap(
             sessionId, session.HallId, hallCapacity, session.CapacityOverride,
             rowLabels, layout?.SeatsPerRow ?? 0,
-            cells, mine, cells.Count);
+            cells, mine, cells.Count,
+            // D-432 — the session title is already loaded in the snapshot.
+            session.Title, session.TitleArabic);
     }
 
     public async Task<MySeatReservation> ReserveAsync(

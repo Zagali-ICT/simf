@@ -41,6 +41,12 @@ public interface IUserProfileRepository
     Task<string?> GetIdImagePathAsync(
         Guid userId, CancellationToken cancellationToken = default);
 
+    /// <summary>V-1 (D-429) — the relative path of the stored VVIP/VIP welcome
+    /// photo, or null when the profile has none. A one-column projection (no
+    /// tracking) for the per-image read path.</summary>
+    Task<string?> GetVipPhotoPathAsync(
+        Guid userId, CancellationToken cancellationToken = default);
+
     /// <summary>The assigned profile type's audience flag + mobile role, or
     /// null when the user has no profile type assigned.</summary>
     Task<ProfileTypeRole?> GetAssignedProfileTypeRoleAsync(

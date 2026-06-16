@@ -1,0 +1,33 @@
+@* V-1 (D-429) — Control Panel: register a VVIP / VIP visitor. Hosts the shared
+   CreateVisitorForm in VIP mode (picker restricted to VVIP / VIP, the موج (Mawj)
+   welcome fields — Mawj ID, honorific, preferred language — and a separate VIP
+   welcome photo). The account is created PendingApproval like any walk-in and is
+   approved from the existing pending-visitors queue. Gated by the same
+   on-site-registration permission as the regular walk-in desk. *@
+@page "/admin/visitors/vip"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Visitors.RegisterOnsite)]
+@inject IStringLocalizer<Strings> L
+@inject NavigationManager Nav
+
+<PageTitle>@L["Admin.VipRegistration.Title"] · SIMF</PageTitle>
+
+<SimfPageHeader Title="@L["Admin.VipRegistration.Title"]" />
+
+<section class="simf-card simf-page-card simf-page-card--wide">
+    <p>@L["Admin.VipRegistration.Supporting"]</p>
+
+    <CreateVisitorForm VipMode="true"
+                       OnSuccess="OnCreatedAsync"
+                       OnCancel="OnBackToListAsync" />
+</section>
+
+@code {
+    private Task OnCreatedAsync(AdminCreateUserResponse _) => Task.CompletedTask;
+
+    private Task OnBackToListAsync()
+    {
+        Nav.NavigateTo("/admin/visitors");
+        return Task.CompletedTask;
+    }
+}

@@ -12,6 +12,7 @@ public static class ErrorCodes
     public const string RateLimitExceeded = "RATE_LIMIT_EXCEEDED";
     public const string InternalError = "INTERNAL_ERROR";
     public const string NotFound = "NOT_FOUND";
+    public const string Forbidden = "FORBIDDEN";
 
     // Authentication (SIMF-API-001 section 12.6 and Amendment A)
     public const string AuthEmailAlreadyRegistered = "AUTH_EMAIL_ALREADY_REGISTERED";
@@ -39,6 +40,9 @@ public static class ErrorCodes
     public const string AuthResetCodeInvalid = "AUTH_RESET_CODE_INVALID";
     public const string AuthResetCodeExpired = "AUTH_RESET_CODE_EXPIRED";
     public const string AuthPasswordChangeRequired = "AUTH_PASSWORD_CHANGE_REQUIRED";
+    // Part B — badge-QR activation: the resolved account already has a password,
+    // so it must use the normal sign-in rather than the set-password flow.
+    public const string BadgeAlreadyActivated = "BADGE_ALREADY_ACTIVATED";
 
     // Sign-in audience gate (P2 — myComment "never any user type other than
     // super admin can access CP, and same for WEB/APP")
@@ -95,6 +99,9 @@ public static class ErrorCodes
     public const string VisitorIdImageNotFound = "VISITOR_ID_IMAGE_NOT_FOUND";
     // C7 (D-371) — the server-side human-face gate on the profile image.
     public const string VisitorIdImageNoFace = "VISITOR_ID_IMAGE_NO_FACE";
+    // D-431-follow-up — the face photo (avatar) is mandatory for male
+    // registrants (optional for women); the ID document is mandatory for all.
+    public const string VisitorFaceImageMissing = "VISITOR_FACE_IMAGE_MISSING";
 
     // User profile — nationality (P8 renamed from VISITOR_NATIONALITY_UNKNOWN
     // so the wire code matches the new domain vocabulary).

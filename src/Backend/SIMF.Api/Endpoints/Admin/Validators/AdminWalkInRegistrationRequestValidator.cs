@@ -164,5 +164,40 @@ public sealed class AdminWalkInRegistrationRequestValidator
             .LessThanOrEqualTo(10).Bilingual(
                 "You can pick up to 10 interests.",
                 "يمكنك اختيار حتى 10 اهتمامات.");
+
+        // D-395 — optional plate number; max 7 to match UserProfile.PlateNumber
+        // HasMaxLength(7) and the UI MaxLength (validation-alignment, SES §7).
+        RuleFor(request => request.PlateNumber)
+            .MaximumLength(7).When(r => !string.IsNullOrEmpty(r.PlateNumber))
+            .Bilingual(
+                "Plate number must be at most 7 characters.",
+                "يجب ألا يتجاوز رقم اللوحة 7 أحرف.");
+
+        // D-395 — gender must be a defined enum value.
+        RuleFor(request => request.Gender)
+            .IsInEnum().Bilingual(
+                "Select a valid gender.",
+                "اختر جنسًا صحيحًا.");
+
+        // V-1 (D-429) — VVIP/VIP موج-integration extras. All optional; lengths
+        // match UserProfile (MawjId 64, Honorific 64, PreferredLanguage 16) per
+        // the validation-alignment rule (SES §7).
+        RuleFor(request => request.MawjId)
+            .MaximumLength(64).When(r => !string.IsNullOrEmpty(r.MawjId))
+            .Bilingual(
+                "Mawj ID must be at most 64 characters.",
+                "يجب ألا يتجاوز المعرف في نظام موج 64 حرفًا.");
+
+        RuleFor(request => request.Honorific)
+            .MaximumLength(64).When(r => !string.IsNullOrEmpty(r.Honorific))
+            .Bilingual(
+                "Honorific must be at most 64 characters.",
+                "يجب ألا يتجاوز اللقب 64 حرفًا.");
+
+        RuleFor(request => request.PreferredLanguage)
+            .MaximumLength(16).When(r => !string.IsNullOrEmpty(r.PreferredLanguage))
+            .Bilingual(
+                "Preferred language must be at most 16 characters.",
+                "يجب ألا تتجاوز اللغة المفضلة 16 حرفًا.");
     }
 }

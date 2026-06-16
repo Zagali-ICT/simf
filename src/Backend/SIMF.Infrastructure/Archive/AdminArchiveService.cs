@@ -89,11 +89,16 @@ internal sealed class AdminArchiveService(
     }
 
     public async Task<AdminArchiveEditionDetail?> GetAsync(
-        Guid id, CancellationToken cancellationToken = default) =>
-        await appDbContext.ArchiveEditions.AsNoTracking()
-            .Where(edition => edition.Id == id)
-            .Select(edition => ToDetail(edition))
-            .SingleOrDefaultAsync(cancellationToken);
+        Guid id, CancellationToken cancellationToken = default)
+    {
+        // D-432 — load the rich child lists so the edit form pre-populates them.
+        var edition = await appDbContext.ArchiveEditions.AsNoTracking()
+            .Include(e => e.Media)
+            .Include(e => e.SessionTitles)
+            .Include(e => e.PastSpeakers)
+            .SingleOrDefaultAsync(e => e.Id == id, cancellationToken);
+        return edition is null ? null : ToDetail(edition);
+    }
 
     public async Task<AdminArchiveEditionDetail> CreateAsync(
         Guid actorUserId, CreateArchiveEditionRequest request,
@@ -135,6 +140,10 @@ internal sealed class AdminArchiveService(
             DateLabelAr = v.DateLabelAr,
             IsActive = true,
             CreatedAt = now,
+            // D-432 — the rich child lists (cascade-inserted with the edition).
+            Media = BuildMedia(request.Gallery),
+            SessionTitles = BuildSessionTitles(request.SessionTitles),
+            PastSpeakers = BuildPastSpeakers(request.PastSpeakers),
         };
 
         appDbContext.ArchiveEditions.Add(edition);
@@ -160,6 +169,10 @@ internal sealed class AdminArchiveService(
         CancellationToken cancellationToken = default)
     {
         var edition = await appDbContext.ArchiveEditions
+            // D-432 — load the children so replace-all can clear the orphans.
+            .Include(e => e.Media)
+            .Include(e => e.SessionTitles)
+            .Include(e => e.PastSpeakers)
             .SingleOrDefaultAsync(e => e.Id == id, cancellationToken)
             ?? throw new ApiException(ErrorCodes.ArchiveEditionNotFound, 404,
                 "The archive edition was not found.",
@@ -200,6 +213,25 @@ internal sealed class AdminArchiveService(
         edition.DateLabelAr = v.DateLabelAr;
         edition.IsActive = request.IsActive;
         edition.UpdatedAt = timeProvider.GetUtcNow();
+
+        // D-432 — replace-all the rich child lists, but only the ones the caller
+        // actually supplied (non-null). Clearing the tracked collection marks the
+        // orphans for the cascade delete; null leaves the existing rows untouched.
+        if (request.Gallery is not null)
+        {
+            edition.Media.Clear();
+            foreach (var m in BuildMedia(request.Gallery)) { edition.Media.Add(m); }
+        }
+        if (request.SessionTitles is not null)
+        {
+            edition.SessionTitles.Clear();
+            foreach (var s in BuildSessionTitles(request.SessionTitles)) { edition.SessionTitles.Add(s); }
+        }
+        if (request.PastSpeakers is not null)
+        {
+            edition.PastSpeakers.Clear();
+            foreach (var p in BuildPastSpeakers(request.PastSpeakers)) { edition.PastSpeakers.Add(p); }
+        }
 
         await appDbContext.SaveChangesAsync(cancellationToken);
 
@@ -391,5 +423,80 @@ internal sealed class AdminArchiveService(
             edition.CoverImageRelativePath, edition.IsActive,
             edition.CreatedAt, edition.UpdatedAt,
             edition.LocationEn, edition.LocationAr,
-            edition.DateLabelEn, edition.DateLabelAr);
+            edition.DateLabelEn, edition.DateLabelAr,
+            // D-432 — the rich child lists, ordered (read off the loaded nav
+            // collections — Create/Update set them, GetAsync Includes them).
+            edition.Media.OrderBy(m => m.DisplayOrder).Select(m => new ArchiveMediaItemInput
+            {
+                Kind = (int)m.Kind, Url = m.Url,
+                CaptionEn = m.CaptionEn, CaptionAr = m.CaptionAr,
+                DisplayOrder = m.DisplayOrder,
+            }).ToList(),
+            edition.SessionTitles.OrderBy(s => s.DisplayOrder).Select(s => new ArchiveSessionTitleInput
+            {
+                TitleEn = s.TitleEn, TitleAr = s.TitleAr, DisplayOrder = s.DisplayOrder,
+            }).ToList(),
+            edition.PastSpeakers.OrderBy(p => p.DisplayOrder).Select(p => new ArchivePastSpeakerInput
+            {
+                NameEn = p.NameEn, NameAr = p.NameAr,
+                PhotoRelativePath = p.PhotoRelativePath, DisplayOrder = p.DisplayOrder,
+            }).ToList());
+
+    // D-432 — build the child entities from the editable inputs, skipping blank
+    // rows and re-deriving DisplayOrder from the submitted order. Lengths are
+    // enforced by the EF columns + the CP MaxLength.
+    private static string? NullIfBlank(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private static List<ArchiveMediaItem> BuildMedia(
+        IEnumerable<ArchiveMediaItemInput>? inputs)
+    {
+        var order = 0;
+        return (inputs ?? Enumerable.Empty<ArchiveMediaItemInput>())
+            .Where(i => !string.IsNullOrWhiteSpace(i.Url))
+            .Select(i => new ArchiveMediaItem
+            {
+                Kind = Enum.IsDefined(typeof(ArchiveMediaKind), i.Kind)
+                    ? (ArchiveMediaKind)i.Kind
+                    : ArchiveMediaKind.Image,
+                Url = i.Url.Trim(),
+                CaptionEn = NullIfBlank(i.CaptionEn),
+                CaptionAr = NullIfBlank(i.CaptionAr),
+                DisplayOrder = order++,
+            })
+            .ToList();
+    }
+
+    private static List<ArchiveSessionTitle> BuildSessionTitles(
+        IEnumerable<ArchiveSessionTitleInput>? inputs)
+    {
+        var order = 0;
+        return (inputs ?? Enumerable.Empty<ArchiveSessionTitleInput>())
+            .Where(i => !string.IsNullOrWhiteSpace(i.TitleAr)
+                     || !string.IsNullOrWhiteSpace(i.TitleEn))
+            .Select(i => new ArchiveSessionTitle
+            {
+                TitleEn = (i.TitleEn ?? string.Empty).Trim(),
+                TitleAr = (i.TitleAr ?? string.Empty).Trim(),
+                DisplayOrder = order++,
+            })
+            .ToList();
+    }
+
+    private static List<ArchivePastSpeaker> BuildPastSpeakers(
+        IEnumerable<ArchivePastSpeakerInput>? inputs)
+    {
+        var order = 0;
+        return (inputs ?? Enumerable.Empty<ArchivePastSpeakerInput>())
+            .Where(i => !string.IsNullOrWhiteSpace(i.NameAr)
+                     || !string.IsNullOrWhiteSpace(i.NameEn))
+            .Select(i => new ArchivePastSpeaker
+            {
+                NameEn = (i.NameEn ?? string.Empty).Trim(),
+                NameAr = (i.NameAr ?? string.Empty).Trim(),
+                PhotoRelativePath = NullIfBlank(i.PhotoRelativePath),
+                DisplayOrder = order++,
+            })
+            .ToList();
+    }
 }

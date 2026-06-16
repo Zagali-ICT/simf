@@ -8,13 +8,22 @@ import 'package:simf_app/features/venuemap/data/venue_map_models.dart';
 import 'package:simf_app/features/venuemap/data/venue_map_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-const _booth = BoothSummary(
+const _sami = BoothSummary(
   id: 'b1',
   code: 'A-12',
   name: 'SAMI',
   nameArabic: 'سامي',
-  exhibitorName: 'SAMI Co',
+  exhibitorName: 'Saudi Arabian Military Industries',
   sector: 'Defense',
+);
+
+const _other = BoothSummary(
+  id: 'b2',
+  code: 'B-03',
+  name: 'Lockheed',
+  nameArabic: 'لوكهيد',
+  exhibitorName: 'Lockheed Martin',
+  sector: 'Aerospace',
 );
 
 const _detail = BoothDetail(
@@ -26,7 +35,11 @@ const _detail = BoothDetail(
 );
 
 class _FakeRepo implements VenueMapRepository {
-  _FakeRepo({this.booths = const <BoothSummary>[], this.detail, this.fail = false});
+  _FakeRepo({
+    this.booths = const <BoothSummary>[],
+    this.detail,
+    this.fail = false,
+  });
 
   final List<BoothSummary> booths;
   final BoothDetail? detail;
@@ -49,7 +62,10 @@ class _FakeRepo implements VenueMapRepository {
   Future<List<VenueMapNode>> getNodes() => throw UnimplementedError();
 }
 
-Future<void> _pump(WidgetTester tester, {required VenueMapRepository repo}) async {
+Future<void> _pump(
+  WidgetTester tester, {
+  required VenueMapRepository repo,
+}) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: <Override>[venueMapRepositoryProvider.overrideWithValue(repo)],
@@ -70,18 +86,49 @@ Future<void> _pump(WidgetTester tester, {required VenueMapRepository repo}) asyn
 }
 
 void main() {
-  group('BoothsScreen (Page 022)', () {
-    testWidgets('lists the booths', (tester) async {
-      await _pump(tester, repo: _FakeRepo(booths: const <BoothSummary>[_booth]));
+  group('BoothsScreen (Page 022, frame 922:2458)', () {
+    testWidgets('renders the booth card header + code pill + hall box',
+        (tester) async {
+      await _pump(tester, repo: _FakeRepo(booths: const <BoothSummary>[_sami]));
+      // Company header: short name + full name.
       expect(find.text('SAMI'), findsOneWidget);
+      expect(
+        find.text('Saudi Arabian Military Industries'),
+        findsOneWidget,
+      );
+      // The gold code pill.
       expect(find.text('A-12'), findsOneWidget);
-      expect(find.textContaining('SAMI Co'), findsOneWidget);
+      // The hall box falls back to the sector when no hall name ships.
+      expect(find.text('Defense'), findsOneWidget);
+    });
+
+    testWidgets('search filters the list client-side', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeRepo(booths: const <BoothSummary>[_sami, _other]),
+      );
+      expect(find.text('SAMI'), findsOneWidget);
+      expect(find.text('Lockheed'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'lockheed');
+      await tester.pumpAndSettle();
+
+      expect(find.text('SAMI'), findsNothing);
+      expect(find.text('Lockheed'), findsOneWidget);
+    });
+
+    testWidgets('search with no match shows the no-match state',
+        (tester) async {
+      await _pump(tester, repo: _FakeRepo(booths: const <BoothSummary>[_sami]));
+      await tester.enterText(find.byType(TextField), 'zzz-no-such-booth');
+      await tester.pumpAndSettle();
+      expect(find.text('SAMI'), findsNothing);
     });
 
     testWidgets('tapping a booth opens the detail sheet', (tester) async {
       await _pump(
         tester,
-        repo: _FakeRepo(booths: const <BoothSummary>[_booth], detail: _detail),
+        repo: _FakeRepo(booths: const <BoothSummary>[_sami], detail: _detail),
       );
       await tester.tap(find.text('SAMI'));
       await tester.pumpAndSettle();

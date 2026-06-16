@@ -818,6 +818,12 @@
   <data name="Admin.WalkIn.Field.DisplayName.Hint" xml:space="preserve"><value>يظهر على الشارة المطبوعة — عادةً الاسم الأول مع اسم العائلة.</value></data>
   <data name="Admin.WalkIn.Field.DateOfBirth" xml:space="preserve"><value>تاريخ الميلاد</value></data>
   <data name="Admin.WalkIn.Field.PlaceOfBirth" xml:space="preserve"><value>مكان الميلاد</value></data>
+  <data name="Admin.WalkIn.Field.Gender" xml:space="preserve"><value>الجنس</value></data>
+  <data name="Admin.WalkIn.Field.Gender.Unspecified" xml:space="preserve"><value>غير محدد</value></data>
+  <data name="Admin.WalkIn.Field.Gender.Male" xml:space="preserve"><value>ذكر</value></data>
+  <data name="Admin.WalkIn.Field.Gender.Female" xml:space="preserve"><value>أنثى</value></data>
+  <data name="Admin.WalkIn.Field.PlateNumber" xml:space="preserve"><value>رقم اللوحة (اختياري)</value></data>
+  <data name="Admin.WalkIn.Field.PlateNumber.Hint" xml:space="preserve"><value>لوحة المركبة، حتى 7 أحرف.</value></data>
   <data name="Admin.WalkIn.Field.IsSaudi" xml:space="preserve"><value>هل هو سعودي؟</value></data>
   <data name="Admin.WalkIn.IsSaudi.Yes" xml:space="preserve"><value>سعودي</value></data>
   <data name="Admin.WalkIn.IsSaudi.No" xml:space="preserve"><value>غير سعودي</value></data>
@@ -838,6 +844,8 @@
   <data name="Admin.WalkIn.Section.IdDocument" xml:space="preserve"><value>وثيقة الهوية</value></data>
   <data name="Admin.WalkIn.Section.IdDocument.Hint" xml:space="preserve"><value>صورة اختيارية للهوية الوطنية أو الإقامة أو جواز السفر. PNG / JPEG / WebP حتى 5 ميغابايت. تُخزَّن مشفّرة.</value></data>
   <data name="Admin.WalkIn.Field.IdDocument.Selected" xml:space="preserve"><value>تم اختيار: {0}</value></data>
+  <data name="Admin.WalkIn.Field.Photo" xml:space="preserve"><value>صورة الملف الشخصي (اختياري)</value></data>
+  <data name="Admin.WalkIn.Field.Photo.Hint" xml:space="preserve"><value>صورة أو شعار للشارة. PNG أو JPEG أو WebP، حتى 2 ميغابايت.</value></data>
   <!-- B3 — D-221 — حقل الجهة المطلوب في نموذج التسجيل الفوري. -->
   <data name="Admin.WalkIn.Section.Organisation" xml:space="preserve"><value>الجهة</value></data>
   <data name="Admin.WalkIn.Field.Organisation" xml:space="preserve"><value>الجهة</value></data>
@@ -848,6 +856,7 @@
   <data name="Admin.WalkIn.Error.OrganisationRequired" xml:space="preserve"><value>اختر الجهة.</value></data>
   <data name="Admin.Pending.View.Field.QrId" xml:space="preserve"><value>رمز QR</value></data>
   <data name="Admin.Pending.View.Field.IdImage" xml:space="preserve"><value>وثيقة الهوية</value></data>
+  <data name="Admin.Pending.View.Field.Photo" xml:space="preserve"><value>صورة الملف الشخصي</value></data>
   <data name="Admin.Pending.View.Image.ViewFull" xml:space="preserve"><value>عرض بالحجم الكامل</value></data>
   <data name="Admin.Pending.View.Image.Download" xml:space="preserve"><value>تنزيل</value></data>
 
@@ -882,6 +891,8 @@
 
   <data name="Admin.WalkIn.Success.Title" xml:space="preserve"><value>تم التسجيل — الشارة جاهزة</value></data>
   <data name="Admin.WalkIn.Success.Body" xml:space="preserve"><value>تم اعتماد الحساب. سلّم أو اطبع شارة QR — يمسحها الزائر عند البوابة.</value></data>
+  <data name="Admin.WalkIn.Success.PendingTitle" xml:space="preserve"><value>تم التسجيل، بانتظار الاعتماد</value></data>
+  <data name="Admin.WalkIn.Success.PendingBody" xml:space="preserve"><value>تم إنشاء الحساب وهو بانتظار الاعتماد. اعتمده من قائمة الزوار المعلّقين لإصدار شارة QR.</value></data>
   <data name="Admin.WalkIn.Success.NoEmail" xml:space="preserve"><value>بدون بريد — QR هو مفتاح الدخول</value></data>
   <data name="Admin.WalkIn.Success.Close" xml:space="preserve"><value>تم</value></data>
   <data name="Admin.WalkIn.Success.Print" xml:space="preserve"><value>طباعة الشارة</value></data>
@@ -993,7 +1004,7 @@
   <data name="Admin.Visitors.BulkDelete.Confirm" xml:space="preserve"><value>سيؤدي ذلك إلى تعطيل {0} حساب زائر. سيتم إنهاء الجلسات وإخطار المستخدمين عبر البريد الإلكتروني.</value></data>
   <data name="Admin.Visitors.Duplicate.Title" xml:space="preserve"><value>نسخ زائر</value></data>
   <data name="Admin.CreateVisitor.Title" xml:space="preserve"><value>إضافة زائر جديد</value></data>
-  <data name="Admin.CreateVisitor.Supporting" xml:space="preserve"><value>سيتلقّى الزائر دعوة عبر البريد الإلكتروني مع رمز لتعيين كلمة المرور. الدعوة صالحة لمدة 7 أيام.</value></data>
+  <data name="Admin.CreateVisitor.Supporting" xml:space="preserve"><value>أدخل بيانات الزائر في المكتب. يُنشأ الحساب بانتظار الاعتماد؛ اعتمده من قائمة الزوار المعلّقين لإصدار شارة QR.</value></data>
   <data name="Admin.CreateVisitor.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
   <data name="Admin.CreateVisitor.DisplayName" xml:space="preserve"><value>الاسم المعروض</value></data>
   <data name="Admin.CreateVisitor.EmailInvalid" xml:space="preserve"><value>يجب إدخال بريد إلكتروني صالح.</value></data>
@@ -1994,6 +2005,8 @@
   <data name="Admin.Sponsors.Field.NameAr" xml:space="preserve"><value>الاسم (عربي)</value></data>
   <data name="Admin.Sponsors.Field.Tier" xml:space="preserve"><value>الفئة</value></data>
   <data name="Admin.Sponsors.Field.Url" xml:space="preserve"><value>الرابط</value></data>
+  <data name="Admin.Sponsors.Field.Tagline" xml:space="preserve"><value>النص التعريفي (إنجليزي)</value></data>
+  <data name="Admin.Sponsors.Field.TaglineAr" xml:space="preserve"><value>النص التعريفي (عربي)</value></data>
   <data name="Admin.Sponsors.Field.Logo" xml:space="preserve"><value>مسار الشعار</value></data>
   <data name="Admin.Sponsors.Field.DisplayOrder" xml:space="preserve"><value>ترتيب العرض</value></data>
   <data name="Admin.Sponsors.Field.IsActive" xml:space="preserve"><value>نشط</value></data>
@@ -2095,6 +2108,9 @@
   <data name="Admin.Archive.Field.LocationAr" xml:space="preserve"><value>المكان (العربية)</value></data>
   <data name="Admin.Archive.Field.DateLabelEn" xml:space="preserve"><value>وصف التاريخ (الإنجليزية)</value></data>
   <data name="Admin.Archive.Field.DateLabelAr" xml:space="preserve"><value>وصف التاريخ (العربية)</value></data>
+  <data name="Admin.Archive.Field.Gallery" xml:space="preserve"><value>المعرض — سطر لكل عنصر: رابط | image|video | تعليق</value></data>
+  <data name="Admin.Archive.Field.SessionTitles" xml:space="preserve"><value>عناوين الجلسات — سطر لكل عنوان: عربي | إنجليزي</value></data>
+  <data name="Admin.Archive.Field.PastSpeakers" xml:space="preserve"><value>المتحدثون السابقون — سطر لكل متحدث: عربي | إنجليزي | مسار الصورة</value></data>
   <data name="Admin.Archive.Field.IsActive" xml:space="preserve"><value>مُفعّل (ظاهر في الأرشيف العام)</value></data>
 
   <!-- D-199 — Ratings admin read-only view. -->
@@ -2668,4 +2684,26 @@
   <data name="Admin.Asset.Kind.Video" xml:space="preserve"><value>فيديو</value></data>
   <data name="Admin.Asset.Kind.Document" xml:space="preserve"><value>مستند</value></data>
   <data name="Admin.Asset.SaveLink" xml:space="preserve"><value>حفظ الرابط</value></data>
+  <data name="Admin.WalkIn.Section.Vip" xml:space="preserve"><value>بيانات كبار الشخصيات (موج)</value></data>
+  <data name="Admin.WalkIn.Section.Vip.Hint" xml:space="preserve"><value>بيانات اختيارية لرسالة الترحيب تُشارك مع الفرق التقنية لضيوف كبار الشخصيات.</value></data>
+  <data name="Admin.WalkIn.Field.MawjId" xml:space="preserve"><value>المعرف في نظام موج (اختياري)</value></data>
+  <data name="Admin.WalkIn.Field.MawjId.Hint" xml:space="preserve"><value>معرّف الضيف في منصة موج. حتى 64 حرفًا.</value></data>
+  <data name="Admin.WalkIn.Field.Honorific" xml:space="preserve"><value>اللقب (اختياري)</value></data>
+  <data name="Admin.WalkIn.Field.Honorific.Hint" xml:space="preserve"><value>مثل "معالي الوزير" أو "سعادة". حتى 64 حرفًا.</value></data>
+  <data name="Admin.WalkIn.Field.PreferredLanguage" xml:space="preserve"><value>اللغة المفضلة (اختياري)</value></data>
+  <data name="Admin.WalkIn.Field.PreferredLanguage.Hint" xml:space="preserve"><value>لغة رسالة الترحيب.</value></data>
+  <data name="Admin.WalkIn.Field.PreferredLanguage.Placeholder" xml:space="preserve"><value>غير محددة</value></data>
+  <data name="Admin.WalkIn.Field.PreferredLanguage.Ar" xml:space="preserve"><value>العربية</value></data>
+  <data name="Admin.WalkIn.Field.PreferredLanguage.En" xml:space="preserve"><value>الإنجليزية</value></data>
+  <data name="Admin.WalkIn.Field.VipPhoto" xml:space="preserve"><value>صورة الترحيب لكبار الشخصيات (اختياري)</value></data>
+  <data name="Admin.WalkIn.Field.VipPhoto.Hint" xml:space="preserve"><value>صورة واضحة وعالية الدقة لرسالة الترحيب. PNG أو JPEG أو WebP، حتى 2 ميغابايت.</value></data>
+  <data name="Admin.VipRegistration.Title" xml:space="preserve"><value>تسجيل شخصية مهمة / بالغة الأهمية</value></data>
+  <data name="Admin.VipRegistration.Supporting" xml:space="preserve"><value>سجّل ضيفًا من كبار الشخصيات مع بيانات رسالة الترحيب لنظام موج. يُنشأ الحساب بانتظار الموافقة ويُعتمد من قائمة الزوار المعلّقين.</value></data>
+  <data name="Admin.VipExport.Title" xml:space="preserve"><value>تصدير ترحيب كبار الشخصيات (موج)</value></data>
+  <data name="Admin.VipExport.Supporting" xml:space="preserve"><value>قائمة ترحيب كبار الشخصيات المشتركة مع الفرق التقنية. نزّلها بصيغة CSV أو Excel، أو اقرأ واجهة JSON البرمجية.</value></data>
+  <data name="Admin.VipExport.Empty" xml:space="preserve"><value>لم يُسجَّل أي ضيف من كبار الشخصيات بعد.</value></data>
+  <data name="Admin.VipExport.Photo" xml:space="preserve"><value>الصورة</value></data>
+  <data name="Admin.VipExport.Download" xml:space="preserve"><value>تنزيل</value></data>
+  <data name="Module.AdminVisitorsVip" xml:space="preserve"><value>تسجيل كبار الشخصيات</value></data>
+  <data name="Module.AdminVisitorsVipExport" xml:space="preserve"><value>تصدير ترحيب كبار الشخصيات</value></data>
 </root>

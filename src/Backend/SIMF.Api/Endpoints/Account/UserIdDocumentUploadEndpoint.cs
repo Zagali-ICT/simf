@@ -27,13 +27,10 @@ public sealed class UserIdDocumentUploadRequest
 /// </summary>
 public sealed class UserIdDocumentUploadEndpoint(
     IUserProfileService service,
-    IFaceDetectionService faceDetection,
     IAuditLog auditLog)
     : Endpoint<UserIdDocumentUploadRequest, ApiResult<bool>>
 {
     private const long MaxBytes = 5L * 1024 * 1024;
-    private static readonly string[] AllowedMimeTypes =
-        { "image/jpeg", "image/png", "image/webp" };
 
     public override void Configure()
     {
@@ -77,8 +74,7 @@ public sealed class UserIdDocumentUploadEndpoint(
         var bytes = stream.ToArray();
 
         var normalisedContentType = req.File.ContentType?.Trim().ToLowerInvariant() ?? string.Empty;
-        if (!AllowedMimeTypes.Contains(normalisedContentType)
-            || !MagicBytesMatch(bytes, normalisedContentType))
+        if (!ImageUploadValidation.IsAllowedImage(bytes, normalisedContentType))
         {
             await AuditRejectAsync(actorId, ErrorCodes.VisitorIdImageMimeUnsupported, ct);
             throw new ApiException(
@@ -87,17 +83,13 @@ public sealed class UserIdDocumentUploadEndpoint(
                 "يجب أن تكون صورة الهوية بصيغة PNG أو JPEG أو WebP.");
         }
 
-        // C7 (D-371) — the server-side human-face gate (the authority over
-        // the client's on-device check). Runs offline (FaceAiSharp ONNX).
-        if (!await faceDetection.ContainsHumanFaceAsync(bytes, ct))
-        {
-            await AuditRejectAsync(actorId, ErrorCodes.VisitorIdImageNoFace, ct);
-            throw new ApiException(
-                ErrorCodes.VisitorIdImageNoFace, 400,
-                "No human face was detected in the photo — retake a clear photo of the face.",
-                "لم يتم التعرف على وجه بشري في الصورة — أعد التقاط صورة واضحة للوجه.");
-        }
-
+        // Two-photo split (D-431-follow-up) — the self-service ID upload is now
+        // a DOCUMENT picked from the gallery (national-ID / Iqama / passport
+        // scan), so the human-face gate that belonged to the old "ID = live
+        // selfie" model is removed here. The live face requirement now lives on
+        // the separate FACE photo (the avatar), captured through the client
+        // liveness flow. Content-type + magic-byte + size are still enforced
+        // above. The admin walk-in id-document path keeps its own face gate.
         await service.UploadIdImageAsync(actorId, bytes, normalisedContentType, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
@@ -111,25 +103,4 @@ public sealed class UserIdDocumentUploadEndpoint(
             ActorUserId = actorId,
             ErrorCode = errorCode,
         }, ct);
-
-    /// <summary>Same magic-byte signatures as the avatar gate (AccountService).
-    /// PNG <c>89 50 4E 47 0D 0A 1A 0A</c>; JPEG <c>FF D8 FF</c>;
-    /// WebP <c>52 49 46 46 ?? ?? ?? ?? 57 45 42 50</c>.</summary>
-    private static bool MagicBytesMatch(byte[] content, string contentType) =>
-        contentType switch
-        {
-            "image/png" => content.Length >= 8
-                && content[0] == 0x89 && content[1] == 0x50
-                && content[2] == 0x4E && content[3] == 0x47
-                && content[4] == 0x0D && content[5] == 0x0A
-                && content[6] == 0x1A && content[7] == 0x0A,
-            "image/jpeg" => content.Length >= 3
-                && content[0] == 0xFF && content[1] == 0xD8 && content[2] == 0xFF,
-            "image/webp" => content.Length >= 12
-                && content[0] == 0x52 && content[1] == 0x49
-                && content[2] == 0x46 && content[3] == 0x46
-                && content[8] == 0x57 && content[9] == 0x45
-                && content[10] == 0x42 && content[11] == 0x50,
-            _ => false,
-        };
 }

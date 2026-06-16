@@ -185,6 +185,9 @@ void main() {
       expect(find.text('Opening'), findsOneWidget);
       await _scrollTo(tester, find.text('My smart badge'));
       expect(find.text('My smart badge'), findsOneWidget);
+      // Photos-only profile edit (two-photo split): the Update ID photo action.
+      await _scrollTo(tester, find.text('Update ID photo'));
+      expect(find.text('Update ID photo'), findsOneWidget);
       // Language / theme / calendar export / sign-out moved to the shell's
       // side drawer (D-396) — they must NOT be on the profile page anymore.
       expect(find.text('العربية · English'), findsNothing);
@@ -305,7 +308,8 @@ void main() {
         locale: const Locale('ar'),
       );
 
-      expect(find.text('منطقتي'), findsWidgets);
+      // Header matches the frame 758:1283 + the bottom-nav label.
+      expect(find.text('الملف الشخصى'), findsWidgets);
       await _scrollTo(tester, find.text('الافتتاح'));
       expect(
         Directionality.of(tester.element(find.text('الافتتاح'))),

@@ -163,4 +163,27 @@ public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
         Assert.Equal(interestCount, database.Interests.Count());
         Assert.Equal(organisationCount, database.Organisations.Count());
     }
+
+    [Fact]
+    public async Task SeedAsync_seeds_the_VVIP_and_VIP_visitor_tiers()
+    {
+        // V-1 (D-429) — the dedicated VIP registration page + the موج (Mawj)
+        // welcome-message export rely on the VVIP and VIP audience
+        // profile-types existing on a clean install. Both must be visitor-side
+        // (IsForVisitor=true) so they flow through the standard visitor
+        // approval queue, and the seed must stay idempotent.
+        using var scope = _factory.Services.CreateScope();
+        var seeder = scope.ServiceProvider.GetRequiredService<IdentitySeeder>();
+
+        await seeder.SeedAsync();
+
+        var database = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var vvip = database.ProfileTypes.SingleOrDefault(profileType => profileType.Name == "VVIP");
+        var vip = database.ProfileTypes.SingleOrDefault(profileType => profileType.Name == "VIP");
+
+        Assert.NotNull(vvip);
+        Assert.True(vvip!.IsForVisitor, "VVIP must be a visitor-side tier");
+        Assert.NotNull(vip);
+        Assert.True(vip!.IsForVisitor, "VIP must be a visitor-side tier");
+    }
 }

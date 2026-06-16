@@ -326,7 +326,8 @@ void main() {
       final prefs = _FakePrefs();
       await _pump(tester, _Outcome.success, prefs);
 
-      await tester.tap(find.byIcon(Icons.arrow_back_ios_new));
+      // Back is the first IconButton (top row); the icon is now an exact SVG.
+      await tester.tap(find.byType(IconButton).first);
       await tester.pumpAndSettle();
 
       expect(find.text('ONBOARDING'), findsOneWidget);
@@ -350,7 +351,8 @@ void main() {
       await _pump(tester, _Outcome.success, prefs);
 
       // Empty prefs boot the controller in Arabic; the toggle flips to EN.
-      await tester.tap(find.byIcon(Icons.language));
+      // The globe is the second IconButton (top row); the icon is now an SVG.
+      await tester.tap(find.byType(IconButton).at(1));
       await tester.pumpAndSettle();
 
       expect(prefs.getString(StorageKeys.preferredLanguage), equals('en'));

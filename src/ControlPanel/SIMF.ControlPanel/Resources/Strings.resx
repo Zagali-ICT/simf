@@ -826,6 +826,12 @@
   <data name="Admin.WalkIn.Field.DisplayName.Hint" xml:space="preserve"><value>Shown on the printed badge — usually first name + family name.</value></data>
   <data name="Admin.WalkIn.Field.DateOfBirth" xml:space="preserve"><value>Date of birth</value></data>
   <data name="Admin.WalkIn.Field.PlaceOfBirth" xml:space="preserve"><value>Place of birth</value></data>
+  <data name="Admin.WalkIn.Field.Gender" xml:space="preserve"><value>Gender</value></data>
+  <data name="Admin.WalkIn.Field.Gender.Unspecified" xml:space="preserve"><value>Not specified</value></data>
+  <data name="Admin.WalkIn.Field.Gender.Male" xml:space="preserve"><value>Male</value></data>
+  <data name="Admin.WalkIn.Field.Gender.Female" xml:space="preserve"><value>Female</value></data>
+  <data name="Admin.WalkIn.Field.PlateNumber" xml:space="preserve"><value>Plate number (optional)</value></data>
+  <data name="Admin.WalkIn.Field.PlateNumber.Hint" xml:space="preserve"><value>Vehicle plate, up to 7 characters.</value></data>
   <data name="Admin.WalkIn.Field.IsSaudi" xml:space="preserve"><value>Saudi national?</value></data>
   <data name="Admin.WalkIn.IsSaudi.Yes" xml:space="preserve"><value>Saudi</value></data>
   <data name="Admin.WalkIn.IsSaudi.No" xml:space="preserve"><value>Non-Saudi</value></data>
@@ -846,6 +852,8 @@
   <data name="Admin.WalkIn.Section.IdDocument" xml:space="preserve"><value>ID document</value></data>
   <data name="Admin.WalkIn.Section.IdDocument.Hint" xml:space="preserve"><value>Optional scan of the national ID, Iqama or passport. PNG / JPEG / WebP, up to 5 MB. Stored encrypted at rest.</value></data>
   <data name="Admin.WalkIn.Field.IdDocument.Selected" xml:space="preserve"><value>Selected: {0}</value></data>
+  <data name="Admin.WalkIn.Field.Photo" xml:space="preserve"><value>Profile photo (optional)</value></data>
+  <data name="Admin.WalkIn.Field.Photo.Hint" xml:space="preserve"><value>A photo or logo for the badge. PNG, JPEG or WebP, up to 2 MB.</value></data>
   <!-- B3 — D-221 — required organisation (الجهة) picker on the walk-in form. -->
   <data name="Admin.WalkIn.Section.Organisation" xml:space="preserve"><value>Organisation</value></data>
   <data name="Admin.WalkIn.Field.Organisation" xml:space="preserve"><value>Organisation</value></data>
@@ -856,6 +864,7 @@
   <data name="Admin.WalkIn.Error.OrganisationRequired" xml:space="preserve"><value>Pick an organisation.</value></data>
   <data name="Admin.Pending.View.Field.QrId" xml:space="preserve"><value>QR id</value></data>
   <data name="Admin.Pending.View.Field.IdImage" xml:space="preserve"><value>ID document</value></data>
+  <data name="Admin.Pending.View.Field.Photo" xml:space="preserve"><value>Profile photo</value></data>
   <data name="Admin.Pending.View.Image.ViewFull" xml:space="preserve"><value>View full size</value></data>
   <data name="Admin.Pending.View.Image.Download" xml:space="preserve"><value>Download</value></data>
 
@@ -891,6 +900,8 @@
 
   <data name="Admin.WalkIn.Success.Title" xml:space="preserve"><value>Registered — badge ready</value></data>
   <data name="Admin.WalkIn.Success.Body" xml:space="preserve"><value>The account is approved. Hand over or print the QR badge — the visitor scans it at the gate.</value></data>
+  <data name="Admin.WalkIn.Success.PendingTitle" xml:space="preserve"><value>Registered, pending approval</value></data>
+  <data name="Admin.WalkIn.Success.PendingBody" xml:space="preserve"><value>The account was created and is awaiting approval. Approve it from Pending visitors to issue the QR badge.</value></data>
   <data name="Admin.WalkIn.Success.NoEmail" xml:space="preserve"><value>No email — QR is the access key</value></data>
   <data name="Admin.WalkIn.Success.Close" xml:space="preserve"><value>Done</value></data>
   <data name="Admin.WalkIn.Success.Print" xml:space="preserve"><value>Print badge</value></data>
@@ -1003,7 +1014,7 @@
   <data name="Admin.Visitors.BulkDelete.Confirm" xml:space="preserve"><value>This will disable {0} visitor account(s). Sessions are revoked and the users are notified by email.</value></data>
   <data name="Admin.Visitors.Duplicate.Title" xml:space="preserve"><value>Duplicate visitor</value></data>
   <data name="Admin.CreateVisitor.Title" xml:space="preserve"><value>Add a new visitor</value></data>
-  <data name="Admin.CreateVisitor.Supporting" xml:space="preserve"><value>The visitor receives an email invitation with a one-time code to set their password. The invitation is valid for 7 days.</value></data>
+  <data name="Admin.CreateVisitor.Supporting" xml:space="preserve"><value>Fill the visitor's details at the desk. The account is created pending approval; approve it from Pending visitors to issue the QR badge.</value></data>
   <data name="Admin.CreateVisitor.Email" xml:space="preserve"><value>Email address</value></data>
   <data name="Admin.CreateVisitor.DisplayName" xml:space="preserve"><value>Display name</value></data>
   <data name="Admin.CreateVisitor.EmailInvalid" xml:space="preserve"><value>A valid email address is required.</value></data>
@@ -2001,6 +2012,8 @@
   <data name="Admin.Sponsors.Field.NameAr" xml:space="preserve"><value>Name (Arabic)</value></data>
   <data name="Admin.Sponsors.Field.Tier" xml:space="preserve"><value>Tier</value></data>
   <data name="Admin.Sponsors.Field.Url" xml:space="preserve"><value>Link</value></data>
+  <data name="Admin.Sponsors.Field.Tagline" xml:space="preserve"><value>Tagline (English)</value></data>
+  <data name="Admin.Sponsors.Field.TaglineAr" xml:space="preserve"><value>Tagline (Arabic)</value></data>
   <data name="Admin.Sponsors.Field.Logo" xml:space="preserve"><value>Logo path</value></data>
   <data name="Admin.Sponsors.Field.DisplayOrder" xml:space="preserve"><value>Display order</value></data>
   <data name="Admin.Sponsors.Field.IsActive" xml:space="preserve"><value>Active</value></data>
@@ -2102,6 +2115,9 @@
   <data name="Admin.Archive.Field.LocationAr" xml:space="preserve"><value>Location (Arabic)</value></data>
   <data name="Admin.Archive.Field.DateLabelEn" xml:space="preserve"><value>Date label (English)</value></data>
   <data name="Admin.Archive.Field.DateLabelAr" xml:space="preserve"><value>Date label (Arabic)</value></data>
+  <data name="Admin.Archive.Field.Gallery" xml:space="preserve"><value>Gallery — one per line: url | image|video | caption</value></data>
+  <data name="Admin.Archive.Field.SessionTitles" xml:space="preserve"><value>Session titles — one per line: arabic | english</value></data>
+  <data name="Admin.Archive.Field.PastSpeakers" xml:space="preserve"><value>Past speakers — one per line: arabic | english | photo path</value></data>
   <data name="Admin.Archive.Field.IsActive" xml:space="preserve"><value>Active (visible in public archive)</value></data>
 
   <!-- D-199 — Ratings admin read-only view. -->
@@ -2675,4 +2691,26 @@
   <data name="Admin.Asset.Kind.Video" xml:space="preserve"><value>Video</value></data>
   <data name="Admin.Asset.Kind.Document" xml:space="preserve"><value>Document</value></data>
   <data name="Admin.Asset.SaveLink" xml:space="preserve"><value>Save link</value></data>
+  <data name="Admin.WalkIn.Section.Vip" xml:space="preserve"><value>VIP details (Mawj)</value></data>
+  <data name="Admin.WalkIn.Section.Vip.Hint" xml:space="preserve"><value>Optional welcome-message data shared with the technical teams for VVIP / VIP guests.</value></data>
+  <data name="Admin.WalkIn.Field.MawjId" xml:space="preserve"><value>Mawj system ID (optional)</value></data>
+  <data name="Admin.WalkIn.Field.MawjId.Hint" xml:space="preserve"><value>The guest's identifier in the Mawj platform. Up to 64 characters.</value></data>
+  <data name="Admin.WalkIn.Field.Honorific" xml:space="preserve"><value>Honorific / title (optional)</value></data>
+  <data name="Admin.WalkIn.Field.Honorific.Hint" xml:space="preserve"><value>For example, "Minister" or "His Excellency". Up to 64 characters.</value></data>
+  <data name="Admin.WalkIn.Field.PreferredLanguage" xml:space="preserve"><value>Preferred language (optional)</value></data>
+  <data name="Admin.WalkIn.Field.PreferredLanguage.Hint" xml:space="preserve"><value>The language for the welcome message.</value></data>
+  <data name="Admin.WalkIn.Field.PreferredLanguage.Placeholder" xml:space="preserve"><value>Not specified</value></data>
+  <data name="Admin.WalkIn.Field.PreferredLanguage.Ar" xml:space="preserve"><value>Arabic</value></data>
+  <data name="Admin.WalkIn.Field.PreferredLanguage.En" xml:space="preserve"><value>English</value></data>
+  <data name="Admin.WalkIn.Field.VipPhoto" xml:space="preserve"><value>VIP welcome photo (optional)</value></data>
+  <data name="Admin.WalkIn.Field.VipPhoto.Hint" xml:space="preserve"><value>A clear, high-resolution photo for the welcome message. PNG, JPEG or WebP, up to 2 MB.</value></data>
+  <data name="Admin.VipRegistration.Title" xml:space="preserve"><value>Register a VVIP / VIP</value></data>
+  <data name="Admin.VipRegistration.Supporting" xml:space="preserve"><value>Register a VVIP or VIP guest with the welcome-message data for the Mawj system. The account is created pending approval and is approved from the pending-visitors queue.</value></data>
+  <data name="Admin.VipExport.Title" xml:space="preserve"><value>VIP welcome export (Mawj)</value></data>
+  <data name="Admin.VipExport.Supporting" xml:space="preserve"><value>The VVIP / VIP welcome roster shared with the technical teams. Download as CSV or Excel, or read the JSON API.</value></data>
+  <data name="Admin.VipExport.Empty" xml:space="preserve"><value>No VVIP or VIP visitors have been registered yet.</value></data>
+  <data name="Admin.VipExport.Photo" xml:space="preserve"><value>Photo</value></data>
+  <data name="Admin.VipExport.Download" xml:space="preserve"><value>Download</value></data>
+  <data name="Module.AdminVisitorsVip" xml:space="preserve"><value>VIP registration</value></data>
+  <data name="Module.AdminVisitorsVipExport" xml:space="preserve"><value>VIP welcome export</value></data>
 </root>

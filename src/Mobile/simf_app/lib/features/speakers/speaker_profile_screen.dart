@@ -10,20 +10,27 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/ksa_shell.dart';
 import 'data/speaker_models.dart';
 import 'data/speakers_repository.dart';
 import 'speaker_initials.dart';
 
-/// Page 020 — ملف المتحدث · Speaker profile (#20, `/speakers/:speakerId`, Guest+).
+/// Page 020 — ملف المتحدث · Speaker profile (#20, `/speakers/:speakerId`,
+/// Guest+), rebuilt to the KSA-Project Figma frame **908:2110 "About Speaker"**
+/// on the shared navy shell.
 ///
-/// **Public** read (`GET /app/speakers/{id}`). Renders the navy hero (rank +
-/// name), the large gold-ringed avatar, the four CV sections as a tab strip
-/// (mockup `.sp-prof .tabs`/`.bio`), the speaker's sessions (tap → session
-/// detail 17), the opted-in social links (only when `allowsDataSharing`) and the
+/// **Public** read (`GET /app/speakers/{id}`) — behaviour unchanged. Frame
+/// mapping: the two-line header (white name over the beige rank, the circled
+/// back chevron), the 125px white circle ringed gold (avatar = initials until
+/// the SIMF-VID-001 photo pass), the four CV tab pills in one row (نبذة عنه /
+/// المؤهلات العلمية / الخبرات التدريبية / الجوائز — the active pill filled gold
+/// with white text, the rest `#192B41` with a beige hairline and beige text),
+/// then the navy `#192B41` bio card with right-aligned white body text. Below
+/// the frame's minimal content the screen keeps its full behaviour: the
 /// **Request meeting** action (only when `allowsMeetingRequests`) — login-only
 /// (`POST …/meeting-requests`, D-269): a guest is sent to sign-in, an approved
-/// visitor gets the request form. UI is interim (avatar = initials) until the
-/// SIMF-VID-001 pass.
+/// visitor gets the request form; the opted-in social links (only when
+/// `allowsDataSharing`); and the speaker's sessions (tap → session detail 17).
 class SpeakerProfileScreen extends ConsumerStatefulWidget {
   const SpeakerProfileScreen({required this.speakerId, super.key});
 
@@ -103,28 +110,100 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.speakerProfileTitle)),
-      body: SafeArea(child: _buildBody(l10n)),
+    return KsaPage(
+      onBack: () => ksaBackOrHome(context),
+      header: _buildHeader(l10n),
+      body: _buildBody(l10n),
+    );
+  }
+
+  /// The frame's two-line title (white name over the beige rank) flanked by the
+  /// circled back chevron — replaces the shell's default single-line title.
+  Widget _buildHeader(AppL10n l10n) {
+    final speaker = _speaker;
+    final isArabic = l10n.isArabic;
+    final title = speaker == null
+        ? l10n.speakerProfileTitle
+        : speaker.localizedName(isArabic);
+    final rank = (speaker?.rank != null && speaker!.rank!.trim().isNotEmpty)
+        ? speaker.rank!.trim()
+        : null;
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SimfTokens.space3,
+        vertical: SimfTokens.space2,
+      ),
+      child: Row(
+        textDirection: TextDirection.ltr,
+        children: <Widget>[
+          SizedBox(
+            width: 42,
+            height: 42,
+            child: KsaBackButton(onBack: () => ksaBackOrHome(context)),
+          ),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: SimfTokens.textTitle,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+                if (rank != null) ...<Widget>[
+                  const SizedBox(height: SimfTokens.space1),
+                  Text(
+                    rank,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: SimfTokens.textMd,
+                      fontWeight: FontWeight.w600,
+                      color: SimfTokens.beigeBorder,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          // Balances the leading back button so the two-line title stays centred.
+          const SizedBox(width: 42, height: 42),
+        ],
+      ),
     );
   }
 
   Widget _buildBody(AppL10n l10n) {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(color: SimfTokens.accent),
+      );
     }
     if (_notFound) {
-      return _Message(icon: Icons.person_off_outlined, text: l10n.speakerNotFound);
+      return KsaEmptyState(
+        icon: Icons.person_off_outlined,
+        message: l10n.speakerNotFound,
+      );
     }
     if (_error || _speaker == null) {
-      return _ErrorState(message: l10n.speakerProfileError, onRetry: () => unawaited(_load()));
+      return KsaErrorState(
+        message: l10n.speakerProfileError,
+        retryLabel: l10n.retryLabel,
+        onRetry: () => unawaited(_load()),
+      );
     }
     return _content(l10n, _speaker!);
   }
 
   Widget _content(AppL10n l10n, SpeakerDetail speaker) {
     final isArabic = l10n.isArabic;
-    final country = speaker.localizedCountry(isArabic);
     final sections = <_CvSection>[
       _CvSection(l10n.cvBio, speaker.localizedBio(isArabic)),
       _CvSection(l10n.cvQualifications, speaker.localizedQualifications(isArabic)),
@@ -144,55 +223,55 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
     ];
 
     return ListView(
-      padding: EdgeInsets.zero,
+      padding: const EdgeInsets.fromLTRB(
+        SimfTokens.space4,
+        SimfTokens.space5,
+        SimfTokens.space4,
+        SimfTokens.space6,
+      ),
       children: <Widget>[
-        _ProfileHeader(speaker: speaker, country: country, isArabic: isArabic),
-        Padding(
-          padding: const EdgeInsets.all(SimfTokens.space4),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+        _Avatar(initials: speakerInitials(speaker.localizedName(isArabic))),
+        const SizedBox(height: SimfTokens.space8 + SimfTokens.space2), // 40
+        if (sections.isNotEmpty) ...<Widget>[
+          _CvTabs(
+            titles: sections.map((s) => s.title).toList(),
+            activeIndex: activeCv,
+            onSelect: (index) => setState(() => _activeCv = index),
+          ),
+          const SizedBox(height: SimfTokens.space8 + SimfTokens.space2), // 40
+          _CvCard(body: sections[activeCv].body!),
+        ],
+        if (speaker.allowsMeetingRequests) ...<Widget>[
+          const SizedBox(height: SimfTokens.space5),
+          FilledButton.icon(
+            onPressed: () => _onRequestMeeting(speaker, l10n),
+            icon: const Icon(Icons.handshake_outlined),
+            label: Text(l10n.requestMeeting),
+          ),
+        ],
+        if (socials.isNotEmpty) ...<Widget>[
+          const SizedBox(height: SimfTokens.space4),
+          Wrap(
+            spacing: SimfTokens.space2,
             children: <Widget>[
-              if (sections.isNotEmpty) ...<Widget>[
-                _CvTabs(
-                  titles: sections.map((s) => s.title).toList(),
-                  activeIndex: activeCv,
-                  onSelect: (index) => setState(() => _activeCv = index),
+              for (final s in socials)
+                ActionChip(
+                  avatar: Icon(s.icon, size: 18),
+                  label: Text(l10n.copyLinkLabel),
+                  onPressed: () => unawaited(_copyLink(s.url, l10n)),
                 ),
-                const SizedBox(height: SimfTokens.space4),
-                _CvCard(body: sections[activeCv].body!),
-              ],
-              if (speaker.allowsMeetingRequests) ...<Widget>[
-                const SizedBox(height: SimfTokens.space5),
-                FilledButton.icon(
-                  onPressed: () => _onRequestMeeting(speaker, l10n),
-                  icon: const Icon(Icons.handshake_outlined),
-                  label: Text(l10n.requestMeeting),
-                ),
-              ],
-              if (socials.isNotEmpty) ...<Widget>[
-                const SizedBox(height: SimfTokens.space4),
-                Wrap(
-                  spacing: SimfTokens.space2,
-                  children: <Widget>[
-                    for (final s in socials)
-                      ActionChip(
-                        avatar: Icon(s.icon, size: 18),
-                        label: Text(l10n.copyLinkLabel),
-                        onPressed: () => unawaited(_copyLink(s.url, l10n)),
-                      ),
-                  ],
-                ),
-              ],
-              if (speaker.sessions.isNotEmpty) ...<Widget>[
-                const SizedBox(height: SimfTokens.space5),
-                _SectionHeading(l10n.speakerSessionsHeading),
-                const SizedBox(height: SimfTokens.space3),
-                for (final session in speaker.sessions)
-                  _SessionRow(session: session, isArabic: isArabic),
-              ],
             ],
           ),
-        ),
+        ],
+        if (speaker.sessions.isNotEmpty) ...<Widget>[
+          const SizedBox(height: SimfTokens.space5),
+          _SectionHeading(l10n.speakerSessionsHeading),
+          const SizedBox(height: SimfTokens.space3),
+          for (final session in speaker.sessions) ...<Widget>[
+            _SessionRow(session: session, isArabic: isArabic),
+            const SizedBox(height: SimfTokens.space2),
+          ],
+        ],
       ],
     );
   }
@@ -200,87 +279,43 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
 
 bool _has(String? value) => value != null && value.trim().isNotEmpty;
 
-/// The navy hero band (mockup `.sp-prof .hero` + `.av-lg`): a centred gold rank
-/// over the white name, then the large gold-ringed avatar.
-class _ProfileHeader extends StatelessWidget {
-  const _ProfileHeader({
-    required this.speaker,
-    required this.country,
-    required this.isArabic,
-  });
+/// The frame's identity avatar (908:2110 `912:2270`): a 125px white circle
+/// ringed gold (2.77px). Interim renders the speaker's initials in navy until
+/// the SIMF-VID-001 photo asset pass.
+class _Avatar extends StatelessWidget {
+  const _Avatar({required this.initials});
 
-  final SpeakerDetail speaker;
-  final String? country;
-  final bool isArabic;
+  final String initials;
 
   @override
   Widget build(BuildContext context) {
-    final sub = <String>[
-      if (_has(speaker.rank)) speaker.rank!.trim(),
-      if (country != null) country!,
-    ];
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(
-        SimfTokens.space4,
-        SimfTokens.space6,
-        SimfTokens.space4,
-        SimfTokens.space5,
-      ),
-      decoration: const BoxDecoration(
-        color: SimfTokens.navyDeep,
-        border: Border(bottom: BorderSide(color: SimfTokens.line2)),
-      ),
-      child: Column(
-        children: <Widget>[
-          if (sub.isNotEmpty) ...<Widget>[
-            Text(
-              sub.join(' · '),
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: SimfTokens.accent,
-                fontWeight: FontWeight.w600,
-                fontSize: SimfTokens.textXs,
-              ),
-            ),
-            const SizedBox(height: SimfTokens.space1),
-          ],
-          Text(
-            speaker.localizedName(isArabic),
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: SimfTokens.surface,
-              fontWeight: FontWeight.w700,
-              fontSize: SimfTokens.textLg,
-            ),
+    return Center(
+      child: Container(
+        width: 125,
+        height: 125,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: SimfTokens.surface,
+          shape: BoxShape.circle,
+          border: Border.all(color: SimfTokens.accent, width: 2.77),
+        ),
+        child: Text(
+          initials,
+          style: const TextStyle(
+            color: SimfTokens.navy,
+            fontWeight: FontWeight.w700,
+            fontSize: SimfTokens.textHero,
           ),
-          const SizedBox(height: SimfTokens.space4),
-          Container(
-            width: 84,
-            height: 84,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: SimfTokens.surface,
-              shape: BoxShape.circle,
-              border: Border.all(color: SimfTokens.accent, width: 2),
-            ),
-            child: Text(
-              speakerInitials(speaker.localizedName(isArabic)),
-              style: const TextStyle(
-                color: SimfTokens.navy,
-                fontWeight: FontWeight.w700,
-                fontSize: SimfTokens.textXl,
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
-/// The CV tab strip (mockup `.sp-prof .tabs`): bordered chips, the active one
-/// filled gold with navy text. One chip per CV section that carries content.
+/// The CV tab strip (frame 908:2110 `912:2312`): a full-width row of equal
+/// 48-high pills — the active one filled gold with white text, the rest navy
+/// `#192B41` with a beige hairline and beige text. One pill per CV section that
+/// carries content.
 class _CvTabs extends StatelessWidget {
   const _CvTabs({
     required this.titles,
@@ -297,7 +332,7 @@ class _CvTabs extends StatelessWidget {
     return Row(
       children: <Widget>[
         for (var i = 0; i < titles.length; i++) ...<Widget>[
-          if (i > 0) const SizedBox(width: SimfTokens.space1),
+          if (i > 0) const SizedBox(width: SimfTokens.space2),
           Expanded(
             child: _CvTab(
               label: titles[i],
@@ -326,18 +361,20 @@ class _CvTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+      borderRadius: BorderRadius.circular(SimfTokens.radius),
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: SimfTokens.space1,
-          vertical: SimfTokens.space2,
-        ),
+        height: 48,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.all(SimfTokens.space2),
         decoration: BoxDecoration(
-          color: selected ? SimfTokens.accent : Colors.transparent,
-          borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-          border: Border.all(
-            color: selected ? SimfTokens.accent : SimfTokens.line,
-          ),
+          color: selected ? SimfTokens.accent : SimfTokens.navyDeep,
+          borderRadius: BorderRadius.circular(SimfTokens.radius),
+          border: selected
+              ? null
+              : Border.all(
+                  color: SimfTokens.beigeBorder,
+                  width: SimfTokens.hairline,
+                ),
         ),
         child: Text(
           label,
@@ -345,9 +382,9 @@ class _CvTab extends StatelessWidget {
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            color: selected ? SimfTokens.navy : SimfTokens.txtSecondary,
-            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-            fontSize: SimfTokens.textXs,
+            color: selected ? Colors.white : SimfTokens.beigeBorder,
+            fontWeight: FontWeight.w600,
+            fontSize: SimfTokens.textSm,
             height: 1.2,
           ),
         ),
@@ -356,8 +393,8 @@ class _CvTab extends StatelessWidget {
   }
 }
 
-/// The CV body card (mockup `.sp-prof .bio .card`): white-4% fill, hairline
-/// border, generous line-height for the long-form CV text.
+/// The CV body card (frame 908:2110 `912:2331`): the navy `#192B41` fill on the
+/// 8px radius, right-aligned white body text at the frame's 21px line-height.
 class _CvCard extends StatelessWidget {
   const _CvCard({required this.body});
 
@@ -365,23 +402,31 @@ class _CvCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space4),
-        child: Text(
-          body,
-          style: const TextStyle(
-            color: SimfTokens.txtSecondary,
-            fontSize: SimfTokens.textSm,
-            height: 1.8,
-          ),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: SimfTokens.space2,
+        vertical: SimfTokens.space4,
+      ),
+      decoration: const BoxDecoration(
+        color: SimfTokens.navyDeep,
+        borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radius)),
+      ),
+      child: Text(
+        body,
+        textAlign: TextAlign.right,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: SimfTokens.textMd,
+          height: 1.5,
         ),
       ),
     );
   }
 }
 
+/// One of the speaker's sessions — kept on the navy card chrome (the frame's
+/// minimal content stops at the bio, but the screen's behaviour does not).
 class _SessionRow extends StatelessWidget {
   const _SessionRow({required this.session, required this.isArabic});
 
@@ -391,33 +436,51 @@ class _SessionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hall = session.localizedHall(isArabic);
-    return Card(
-      margin: const EdgeInsets.only(bottom: SimfTokens.space2),
-      clipBehavior: Clip.antiAlias,
-      child: ListTile(
-        onTap: () => context.pushNamed(
-          RouteNames.sessionDetail,
-          pathParameters: <String, String>{'sessionId': session.id},
-        ),
-        leading: const Icon(Icons.event_note_outlined, color: SimfTokens.accent),
-        title: Text(
-          session.localizedTitle(isArabic),
-          style: const TextStyle(
-            color: SimfTokens.surface,
-            fontWeight: FontWeight.w600,
-            fontSize: SimfTokens.textSm,
-          ),
-        ),
-        subtitle: hall == null
-            ? null
-            : Text(
-                hall,
-                style: const TextStyle(
-                  color: SimfTokens.txtSecondary,
-                  fontSize: SimfTokens.textXs,
-                ),
+    return KsaCard(
+      onTap: () => context.pushNamed(
+        RouteNames.sessionDetail,
+        pathParameters: <String, String>{'sessionId': session.id},
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(SimfTokens.space3),
+        child: Row(
+          children: <Widget>[
+            const Icon(Icons.event_note_outlined, color: SimfTokens.accent),
+            const SizedBox(width: SimfTokens.space3),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    session.localizedTitle(isArabic),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: SimfTokens.textSm,
+                    ),
+                  ),
+                  if (hall != null) ...<Widget>[
+                    const SizedBox(height: SimfTokens.space1),
+                    Text(
+                      hall,
+                      style: const TextStyle(
+                        color: SimfTokens.beigeBorder,
+                        fontSize: SimfTokens.textXs,
+                      ),
+                    ),
+                  ],
+                ],
               ),
-        trailing: const Icon(Icons.chevron_left, color: SimfTokens.txtTertiary),
+            ),
+            const SizedBox(width: SimfTokens.space2),
+            const Icon(
+              Icons.chevron_left,
+              color: SimfTokens.txtTertiary,
+              size: 18,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -447,7 +510,7 @@ class _SectionHeading extends StatelessWidget {
     return Text(
       text,
       style: const TextStyle(
-        color: SimfTokens.txtTertiary,
+        color: SimfTokens.beigeBorder,
         fontWeight: FontWeight.w700,
         fontSize: SimfTokens.textXs,
         letterSpacing: 0.8,
@@ -571,52 +634,6 @@ class _MeetingRequestSheetState extends ConsumerState<_MeetingRequestSheet> {
             child: Text(_submitting ? l10n.loadingLabel : l10n.meetingSendButton),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _Message extends StatelessWidget {
-  const _Message({required this.icon, required this.text});
-
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Icon(icon, size: 56, color: SimfTokens.txtTertiary),
-          const SizedBox(height: SimfTokens.space3),
-          Text(text, style: const TextStyle(color: SimfTokens.txtSecondary)),
-        ],
-      ),
-    );
-  }
-}
-
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.message, required this.onRetry});
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppL10n.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: SimfTokens.space4),
-            FilledButton(onPressed: onRetry, child: Text(l10n.retryLabel)),
-          ],
-        ),
       ),
     );
   }

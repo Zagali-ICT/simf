@@ -118,11 +118,22 @@ class SignUpProfileDraft {
     required this.request,
     this.idImageBytes,
     this.idImageName,
+    this.faceImageBytes,
+    this.faceImageName,
   });
 
   final UpsertUserProfileRequest request;
+
+  /// The ID-document image (picked from the gallery) — uploaded to the
+  /// id-image endpoint before the profile save. Mandatory for every
+  /// registrant.
   final Uint8List? idImageBytes;
   final String? idImageName;
+
+  /// The face photo (live capture) — uploaded as the avatar before the
+  /// profile save. Mandatory for men, optional for women.
+  final Uint8List? faceImageBytes;
+  final String? faceImageName;
 }
 
 /// Response for `GET`/`POST /app/account/user-profile` (Page_007 E1/E2). Every
@@ -139,6 +150,7 @@ class UserProfileResponse {
     required this.isSaudi,
     required this.gender,
     required this.hasIdImage,
+    required this.hasAvatar,
     this.profileTypeId,
     this.jobTitle,
     this.dateOfBirth,
@@ -176,18 +188,24 @@ class UserProfileResponse {
   final String? organisationId;
   final AppGender gender;
   final bool hasIdImage;
+
+  /// True when a face photo (avatar) is stored. Mandatory for men, optional
+  /// for women (the two-photo split). Append-only wire field (defaults false
+  /// when an older server omits it).
+  final bool hasAvatar;
   final String? qrId;
 
   /// SUPERSEDED for routing (D-374): the post-sign-in gate now reads the
   /// server-computed `profileComplete` on the session user — do NOT reuse
   /// this getter for routing; the server rule is the single authority.
-  /// Kept only for the parked `_legacy_mockup` screen; same rule shape:
-  /// names + ≥1 interest + the C7 (D-371) male-photo requirement.
+  /// Kept only for the parked `_legacy_mockup` screen; mirrors the server
+  /// rule: names + ≥1 interest + the ID document (all) + the face photo (men).
   bool get isComplete =>
       arabicName.trim().isNotEmpty &&
       englishName.trim().isNotEmpty &&
       interestIds.isNotEmpty &&
-      (gender != AppGender.male || hasIdImage);
+      hasIdImage &&
+      (gender != AppGender.male || hasAvatar);
 
   static UserProfileResponse fromJson(Map<String, dynamic> json) {
     return UserProfileResponse(
@@ -212,6 +230,7 @@ class UserProfileResponse {
       organisationId: json['organisationId'] as String?,
       gender: AppGender.fromValue((json['gender'] as num?)?.toInt()),
       hasIdImage: json['hasIdImage'] as bool? ?? false,
+      hasAvatar: json['hasAvatar'] as bool? ?? false,
       qrId: json['qrId'] as String?,
     );
   }

@@ -8,6 +8,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_svg_icon.dart';
 import 'data/notification_models.dart';
 import 'data/notifications_repository.dart';
 
@@ -258,8 +259,21 @@ class _SearchField extends StatelessWidget {
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: SimfTokens.txtSecondary),
-        prefixIcon: const Icon(Icons.search, color: SimfTokens.beigeBorder),
+        hintStyle: const TextStyle(color: Colors.white, fontSize: SimfTokens.textSm),
+        // Frame 758:2491 — magnifier at the inline start (right), a tuning/
+        // filter glyph at the inline end (left).
+        prefixIcon: const SimfSvgIcon(
+          'assets/icons/ic_search.svg',
+          size: 18,
+          color: SimfTokens.beigeBorder,
+        ),
+        prefixIconConstraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+        suffixIcon: const SimfSvgIcon(
+          'assets/icons/ic_tuning.svg',
+          size: 18,
+          color: SimfTokens.beigeBorder,
+        ),
+        suffixIconConstraints: const BoxConstraints(minWidth: 44, minHeight: 44),
         filled: true,
         fillColor: SimfTokens.navyDeep,
         contentPadding: const EdgeInsets.symmetric(vertical: 4),
@@ -294,26 +308,28 @@ class _Chip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Frame 758:2491 — gold fill when selected, beige 0.2 hairline otherwise;
+    // radius 4, 14px SemiBold, label always white.
     return Material(
       color: selected ? SimfTokens.accent : Colors.transparent,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
-        side: const BorderSide(color: SimfTokens.accent, width: 1),
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        side: const BorderSide(
+          color: SimfTokens.beigeBorder,
+          width: SimfTokens.hairline,
+        ),
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: SimfTokens.space3,
-            vertical: SimfTokens.space2,
-          ),
+          padding: const EdgeInsets.all(SimfTokens.space2),
           child: Text(
             label,
-            style: TextStyle(
-              color: selected ? SimfTokens.navy : Colors.white,
+            style: const TextStyle(
+              color: Colors.white,
               fontWeight: FontWeight.w600,
-              fontSize: SimfTokens.textSm,
+              fontSize: SimfTokens.textMd,
             ),
           ),
         ),
@@ -364,10 +380,11 @@ class _GroupedList extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: SimfTokens.space2),
               child: Text(
                 group.key,
+                // Frame 758:2491 — 16px Medium, white.
                 style: const TextStyle(
-                  color: SimfTokens.beigeBorder,
-                  fontSize: SimfTokens.textMd,
-                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                  fontSize: SimfTokens.textLg,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
@@ -424,76 +441,92 @@ class _NotificationCard extends StatelessWidget {
     final time = item.createdAt == null
         ? null
         : _timeFormat.format(item.createdAt!.toLocal());
+    // Frame 758:2491 — "{time} · {day}" order.
     final stamp = time == null
         ? null
-        : (dayLabel.isEmpty ? time : '$dayLabel · $time');
+        : (dayLabel.isEmpty ? time : '$time · $dayLabel');
     return Padding(
       padding: const EdgeInsets.only(bottom: SimfTokens.space2),
+      // Frame 758:2491 — every card is the navyDeep fill, borderless; the
+      // category mark sits at the inline start and an unread card carries a
+      // red dot at the top inline-end corner.
       child: KsaCard(
         onTap: unread ? onTap : null,
-        color: unread ? SimfTokens.navyDeep : SimfTokens.navySurface,
-        borderColor:
-            unread ? SimfTokens.accent : SimfTokens.beigeBorder,
-        borderWidth: unread ? SimfTokens.hairlineBold : SimfTokens.hairline,
-        child: Padding(
-          padding: const EdgeInsets.all(SimfTokens.space3),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              SizedBox(
-                width: 8,
-                child: unread
-                    ? Container(
-                        width: 8,
-                        height: 8,
-                        margin: const EdgeInsets.only(top: 6),
-                        decoration: const BoxDecoration(
-                          color: SimfTokens.danger,
-                          shape: BoxShape.circle,
+        color: SimfTokens.navyDeep,
+        borderColor: Colors.transparent,
+        borderWidth: 0,
+        child: Stack(
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.all(SimfTokens.space2),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  _CategoryIcon(severity: item.severity),
+                  const SizedBox(width: SimfTokens.space3),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          item.localizedTitle(isArabic),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: SimfTokens.textLg,
+                          ),
                         ),
-                      )
-                    : null,
-              ),
-              const SizedBox(width: SimfTokens.space2),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      item.localizedTitle(isArabic),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: SimfTokens.textMd,
-                      ),
-                    ),
-                    const SizedBox(height: SimfTokens.space1),
-                    Text(
-                      item.localizedBody(isArabic),
-                      style: const TextStyle(
-                        color: SimfTokens.txtSecondary,
-                        fontSize: SimfTokens.textSm,
-                        height: 1.5,
-                      ),
-                    ),
-                    if (stamp != null) ...<Widget>[
-                      const SizedBox(height: SimfTokens.space2),
-                      Text(
-                        stamp,
-                        style: const TextStyle(
-                          color: SimfTokens.beigeBorder,
-                          fontSize: SimfTokens.textXs,
+                        const SizedBox(height: 6),
+                        Text(
+                          item.localizedBody(isArabic),
+                          style: const TextStyle(
+                            color: SimfTokens.beigeBorder,
+                            fontSize: SimfTokens.textSm,
+                            height: 1.5,
+                          ),
                         ),
-                      ),
-                    ],
-                  ],
-                ),
+                        if (stamp != null) ...<Widget>[
+                          const SizedBox(height: 6),
+                          Text(
+                            stamp,
+                            style: const TextStyle(
+                              color: SimfTokens.timestampMuted,
+                              fontSize: SimfTokens.textSm,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: SimfTokens.space3),
-              _CategoryIcon(severity: item.severity),
-            ],
-          ),
+            ),
+            if (unread)
+              const PositionedDirectional(
+                top: SimfTokens.space2,
+                end: SimfTokens.space2,
+                child: _UnreadDot(),
+              ),
+          ],
         ),
+      ),
+    );
+  }
+}
+
+/// The unread marker (frame 758:2491) — a 14-px red dot at the card's top
+/// inline-end corner.
+class _UnreadDot extends StatelessWidget {
+  const _UnreadDot();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 14,
+      height: 14,
+      decoration: const BoxDecoration(
+        color: SimfTokens.danger,
+        shape: BoxShape.circle,
       ),
     );
   }

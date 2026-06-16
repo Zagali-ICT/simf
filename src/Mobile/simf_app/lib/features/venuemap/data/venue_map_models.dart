@@ -97,6 +97,11 @@ class BoothSummary {
     this.sector,
     this.sectorArabic,
     this.hallId,
+    this.hallName,
+    this.hallNameArabic,
+    this.officerName,
+    this.officerPhone,
+    this.officerEmail,
   });
 
   final String id;
@@ -108,6 +113,13 @@ class BoothSummary {
   final String? sector;
   final String? sectorArabic;
   final String? hallId;
+  // D-432 — the hall display name + booth-officer contact now ship on the wire
+  // (server resolves the officer Contact-first, falling back to inline columns).
+  final String? hallName;
+  final String? hallNameArabic;
+  final String? officerName;
+  final String? officerPhone;
+  final String? officerEmail;
 
   String localizedName(bool isArabic) {
     final ar = nameArabic.trim();
@@ -121,6 +133,9 @@ class BoothSummary {
   String? localizedSector(bool isArabic) =>
       _pick(sectorArabic, sector, isArabic);
 
+  String? localizedHallName(bool isArabic) =>
+      _pick(hallNameArabic, hallName, isArabic);
+
   static BoothSummary fromJson(Map<String, dynamic> json) => BoothSummary(
         id: json['id'] as String? ?? '',
         code: json['code'] as String? ?? '',
@@ -131,6 +146,11 @@ class BoothSummary {
         sector: json['sector'] as String?,
         sectorArabic: json['sectorArabic'] as String?,
         hallId: json['hallId'] as String?,
+        hallName: json['hallName'] as String?,
+        hallNameArabic: json['hallNameArabic'] as String?,
+        officerName: json['officerName'] as String?,
+        officerPhone: json['officerPhone'] as String?,
+        officerEmail: json['officerEmail'] as String?,
       );
 }
 
@@ -149,6 +169,11 @@ class BoothDetail {
     this.sectorArabic,
     this.description,
     this.descriptionArabic,
+    this.hallName,
+    this.hallNameArabic,
+    this.officerName,
+    this.officerPhone,
+    this.officerEmail,
   });
 
   final String id;
@@ -161,9 +186,18 @@ class BoothDetail {
   final String? sectorArabic;
   final String? description;
   final String? descriptionArabic;
+  // D-432 — see BoothSummary.
+  final String? hallName;
+  final String? hallNameArabic;
+  final String? officerName;
+  final String? officerPhone;
+  final String? officerEmail;
 
   String? localizedDescription(bool isArabic) =>
       _pick(descriptionArabic, description, isArabic);
+
+  String? localizedHallName(bool isArabic) =>
+      _pick(hallNameArabic, hallName, isArabic);
 
   static BoothDetail fromJson(Map<String, dynamic> json) => BoothDetail(
         id: json['id'] as String? ?? '',
@@ -176,6 +210,11 @@ class BoothDetail {
         sectorArabic: json['sectorArabic'] as String?,
         description: json['description'] as String?,
         descriptionArabic: json['descriptionArabic'] as String?,
+        hallName: json['hallName'] as String?,
+        hallNameArabic: json['hallNameArabic'] as String?,
+        officerName: json['officerName'] as String?,
+        officerPhone: json['officerPhone'] as String?,
+        officerEmail: json['officerEmail'] as String?,
       );
 }
 

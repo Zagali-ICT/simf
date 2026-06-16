@@ -163,6 +163,8 @@ public static class DependencyInjection
         services.AddScoped<ISignInService, SignInService>();
         services.AddScoped<ISessionService, SessionService>();
         services.AddScoped<IPasswordService, PasswordService>();
+        // Part B — badge-QR sign-in / activation.
+        services.AddScoped<IBadgeAuthService, BadgeAuthService>();
         services.AddScoped<ITotpEnrollmentService, TotpEnrollmentService>();
         services.AddScoped<IRecoveryCodeService, RecoveryCodeService>();
         services.AddScoped<IAccountService, AccountService>();
@@ -358,6 +360,9 @@ public static class DependencyInjection
         // SIMF-FDS-014 — D-284 (Track 2): visitor-to-visitor contact sharing.
         services.AddScoped<SIMF.Application.Contacts.Abstractions.IVisitorShareService,
             SIMF.Infrastructure.Contacts.VisitorShareService>();
+        // D-426 — exhibitor ("Other") lead capture: scan visitor badge → My Visitors.
+        services.AddScoped<SIMF.Application.Exhibitors.Abstractions.IExhibitorVisitorService,
+            SIMF.Infrastructure.Exhibitors.ExhibitorVisitorService>();
         // B9b — D-226: dynamic session-category lookup (FDS-004 §5.4).
         services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminSessionCategoryService,
             SIMF.Infrastructure.Programme.AdminSessionCategoryService>();
@@ -423,6 +428,8 @@ public static class DependencyInjection
         services.AddSingleton<SIMF.Application.AccessControl.Abstractions.IGateFailureCircuit,
             SIMF.Infrastructure.AccessControl.GateFailureCircuit>();
         services.AddScoped<IAdminApprovalReadService, AdminApprovalReadService>();
+        // V-1 (D-429) — VVIP/VIP welcome roster read + CSV/Excel export (موج).
+        services.AddScoped<IVipRosterService, VipRosterService>();
         services.AddScoped<IQrIdMinter, QrIdMinter>();
         services.AddScoped<IUserProfileService, UserProfileService>();
         // C7 (D-371) — the offline human-face gate on the profile-image
@@ -442,6 +449,8 @@ public static class DependencyInjection
         services.AddSingleton<SIMF.Application.Excel.IGridExcelExporter, ClosedXmlGridExcelExporter>();
         services.AddSingleton<SIMF.Application.Excel.IGridExcelImporter, ClosedXmlGridExcelImporter>();
         services.AddSingleton<IAvatarStorage, FilesystemAvatarStorage>();
+        // V-1 (D-429) — VVIP/VIP welcome-photo store, separate base dir from avatars.
+        services.AddSingleton<IVipPhotoStorage, FilesystemVipPhotoStorage>();
         services.AddSingleton<IUserIdDocumentStorage, EncryptedUserIdDocumentStorage>();
         services.AddSingleton<ILogFileService, LogFileService>();
         services.AddSingleton<IJwtTokenService, JwtTokenService>();

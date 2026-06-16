@@ -56,6 +56,12 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
             .IsUnique()
             .HasFilter("[ReferenceNumber] IS NOT NULL");
         builder.Property(profile => profile.IdImageRelativePath).HasMaxLength(256);
+        // V-1 — VVIP/VIP extras (موج welcome-message integration). Nullable,
+        // only set for VVIP/VIP. Lengths match the FluentValidation + UI.
+        builder.Property(profile => profile.MawjId).HasMaxLength(64);
+        builder.Property(profile => profile.Honorific).HasMaxLength(64);
+        builder.Property(profile => profile.PreferredLanguage).HasMaxLength(16);
+        builder.Property(profile => profile.VipPhotoRelativePath).HasMaxLength(260);
 
         // D-106: QrId on UserProfile. 12-char Crockford base32, unique
         // (only minted for Approved rows so most rows are null —

@@ -24,10 +24,11 @@ LiveSession _liveSession({
     );
 
 class _FakeLiveRepo implements LiveRepository {
-  _FakeLiveRepo({this.session, this.status});
+  _FakeLiveRepo({this.session, this.status, this.upcoming = const <UpcomingSession>[]});
 
   final LiveSession? session;
   final int? status;
+  final List<UpcomingSession> upcoming;
   int calls = 0;
 
   @override
@@ -42,6 +43,13 @@ class _FakeLiveRepo implements LiveRepository {
     }
     return session!;
   }
+
+  @override
+  Future<List<UpcomingSession>> getUpcomingSessions({
+    String? excludeSessionId,
+    int take = 3,
+  }) async =>
+      upcoming;
 }
 
 Future<void> _pump(
@@ -51,6 +59,12 @@ Future<void> _pump(
   Locale locale = const Locale('en'),
   bool settle = true,
 }) async {
+  // Tall surface so the whole lazy scroll (player band → title → region notice →
+  // ask-question, or the not-live message) lays out in the test viewport.
+  tester.view.physicalSize = const Size(1200, 2600);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
   final router = GoRouter(
     initialLocation: '/live',
     routes: <RouteBase>[
@@ -132,6 +146,25 @@ void main() {
         find.text('This session is not broadcasting right now.'),
         findsOneWidget,
       );
+    });
+
+    testWidgets('the loaded content renders the region notice + ask-question',
+        (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeLiveRepo(session: _liveSession()),
+        sessionId: 's1',
+      );
+
+      // The static region-restriction notice card (frame 934:3619).
+      expect(
+        find.textContaining(
+          'Live broadcasting is available only inside the Riyadh region',
+        ),
+        findsOneWidget,
+      );
+      // The ask-a-question entry to Page 026.
+      expect(find.text('Ask a question'), findsOneWidget);
     });
 
     testWidgets('no stream but a recording shows the recording note',
@@ -246,6 +279,44 @@ void main() {
       await tester.tap(find.widgetWithText(FilledButton, 'Retry'));
       await tester.pumpAndSettle();
       expect(repo.calls, greaterThanOrEqualTo(2));
+    });
+
+    testWidgets('renders the hall name + speakers line + upcoming sessions '
+        '(D-433)', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeLiveRepo(
+          session: const LiveSession(
+            title: 'Opening',
+            titleArabic: 'الافتتاح',
+            status: 1,
+            hasRecording: false,
+            hallName: 'Main Hall',
+            hallNameArabic: 'القاعة الرئيسية',
+            speakers: <LiveSpeaker>[
+              LiveSpeaker(name: 'Capt. Reef', nameArabic: 'القبطان'),
+            ],
+          ),
+          upcoming: <UpcomingSession>[
+            UpcomingSession(
+              id: 's2',
+              title: 'Next talk',
+              titleArabic: 'الجلسة التالية',
+              startUtc: DateTime(2030, 1, 1, 11),
+            ),
+          ],
+        ),
+        sessionId: 's1',
+      );
+
+      // Hall name completes the "Session · Main Hall" header line.
+      expect(find.textContaining('Main Hall'), findsOneWidget);
+      // The speakers / participants line.
+      expect(find.text('Capt. Reef'), findsOneWidget);
+      // The upcoming-sessions section + its card + the gold time chip.
+      expect(find.text('Upcoming sessions'), findsOneWidget);
+      expect(find.text('Next talk'), findsOneWidget);
+      expect(find.text('11:00'), findsOneWidget);
     });
 
     testWidgets('the not-live note is bilingual (Arabic)', (tester) async {

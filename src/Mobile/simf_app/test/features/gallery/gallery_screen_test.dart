@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/gallery/gallery_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -25,15 +27,48 @@ const _testConfig = SimfDataConfig(
   deviceType: SimfDeviceType.android,
 );
 
-Future<void> _pump(WidgetTester tester, List<Override> overrides) async {
+Future<void> _pump(
+  WidgetTester tester, {
+  required List<MediaItem> Function() items,
+  Locale locale = const Locale('en'),
+}) async {
+  final router = GoRouter(
+    initialLocation: '/media',
+    routes: <RouteBase>[
+      GoRoute(
+        path: '/media',
+        name: RouteNames.gallery,
+        builder: (_, __) => const GalleryScreen(),
+      ),
+      // The shell back-target + the two sibling coverage tabs the tab bar
+      // navigates to. Plus the bottom-nav destinations KsaPage renders.
+      for (final (name, path, label) in <(String, String, String)>[
+        (RouteNames.home, '/', 'HOME'),
+        (RouteNames.news, '/news', 'NEWS'),
+        (RouteNames.mediaPartners, '/media-partners', 'PARTNERS'),
+        (RouteNames.badge, '/badge', 'BADGE'),
+        (RouteNames.venueMap, '/map', 'MAP'),
+        (RouteNames.myArea, '/my-area', 'MY-AREA'),
+        (RouteNames.sessions, '/sessions', 'SESSIONS'),
+        (RouteNames.notifications, '/notifications', 'NOTIFS'),
+      ])
+        GoRoute(
+          name: name,
+          path: path,
+          builder: (c, s) => Scaffold(body: Text(label)),
+        ),
+    ],
+  );
+
   await tester.pumpWidget(
     ProviderScope(
       overrides: <Override>[
         simfDataConfigProvider.overrideWithValue(_testConfig),
-        ...overrides,
+        mediaItemsProvider.overrideWith((ref) async => items()),
       ],
-      child: MaterialApp(
-        locale: const Locale('en'),
+      child: MaterialApp.router(
+        routerConfig: router,
+        locale: locale,
         supportedLocales: AppL10n.supportedLocales,
         localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
           ...AppL10n.localizationsDelegates,
@@ -41,7 +76,6 @@ Future<void> _pump(WidgetTester tester, List<Override> overrides) async {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        home: const GalleryScreen(),
       ),
     ),
   );
@@ -49,29 +83,80 @@ Future<void> _pump(WidgetTester tester, List<Override> overrides) async {
 }
 
 void main() {
-  group('GalleryScreen (Page 030)', () {
-    testWidgets('renders the media tiles', (tester) async {
-      await _pump(tester, <Override>[
-        mediaItemsProvider.overrideWith((ref) async => _items),
-      ]);
+  group('GalleryScreen (Page 030 — KSA frame 947:3764)', () {
+    testWidgets('renders the coverage header, the three tabs and the two '
+        'media sections', (tester) async {
+      await _pump(tester, items: () => _items);
+
+      // The media-coverage header.
+      expect(find.text('Media coverage'), findsWidgets);
+      // The three coverage tabs.
+      expect(find.text('News'), findsOneWidget);
+      expect(find.text('Media partners'), findsOneWidget);
+      expect(find.text('Media gallery'), findsWidgets);
+      // The two labelled sections.
+      expect(find.text('Images'), findsOneWidget);
+      expect(find.text('Videos'), findsOneWidget);
+      // A tile per item, with its title overlaid.
       expect(find.text('Opening'), findsOneWidget);
       expect(find.text('Keynote'), findsOneWidget);
-      // The video tile shows a play icon.
-      expect(find.byIcon(Icons.play_circle_outline), findsOneWidget);
+      // The video tile shows a play glyph.
+      expect(find.byIcon(Icons.play_arrow_rounded), findsOneWidget);
     });
 
-    testWidgets('empty shows the empty state', (tester) async {
-      await _pump(tester, <Override>[
-        mediaItemsProvider.overrideWith((ref) async => const <MediaItem>[]),
-      ]);
+    testWidgets('only the images section shows when there are no videos',
+        (tester) async {
+      await _pump(
+        tester,
+        items: () => const <MediaItem>[
+          MediaItem(id: 'm1', kind: MediaKind.image, title: 'Opening'),
+        ],
+      );
+      expect(find.text('Images'), findsOneWidget);
+      expect(find.text('Videos'), findsNothing);
+      expect(find.byIcon(Icons.play_arrow_rounded), findsNothing);
+    });
+
+    testWidgets('tapping the News tab navigates to the news route',
+        (tester) async {
+      await _pump(tester, items: () => _items);
+
+      await tester.tap(find.text('News'));
+      await tester.pumpAndSettle();
+      expect(find.text('NEWS'), findsOneWidget);
+    });
+
+    testWidgets('tapping the Media-partners tab navigates to its route',
+        (tester) async {
+      await _pump(tester, items: () => _items);
+
+      await tester.tap(find.text('Media partners'));
+      await tester.pumpAndSettle();
+      expect(find.text('PARTNERS'), findsOneWidget);
+    });
+
+    testWidgets('empty media shows the empty state', (tester) async {
+      await _pump(tester, items: () => const <MediaItem>[]);
       expect(find.text('No media yet'), findsOneWidget);
     });
 
-    testWidgets('a read failure shows the error state', (tester) async {
-      await _pump(tester, <Override>[
-        mediaItemsProvider.overrideWith((ref) async => throw Exception('x')),
-      ]);
+    testWidgets('a read failure shows the error + retry', (tester) async {
+      await _pump(
+        tester,
+        items: () => throw Exception('x'),
+      );
       expect(find.text('Could not load the media.'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Retry'), findsOneWidget);
+    });
+
+    testWidgets('renders right-to-left in Arabic', (tester) async {
+      await _pump(tester, items: () => _items, locale: const Locale('ar'));
+
+      expect(find.text('التغطية الإعلامية'), findsWidgets);
+      expect(
+        Directionality.of(tester.element(find.text('الأخبار'))),
+        TextDirection.rtl,
+      );
     });
 
     test('MediaKind.fromJson decodes int / name', () {

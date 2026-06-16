@@ -64,6 +64,35 @@ public sealed class UpsertUserProfileRequestValidator
     public static bool IsStandardPlateNumber(string value)
         => PlateShape.IsMatch(NormalizePhone(value.Trim()));
 
+    // Owner rule — the Arabic name must be Arabic letters only and the
+    // English name Latin letters only (no digits, punctuation or cross-
+    // script characters), and each must be a full name of at least four
+    // parts. The char restriction guarantees every part is in the field's
+    // language, so "≥4 parts, same language" reduces to these two checks.
+    private static readonly System.Text.RegularExpressions.Regex ArabicNameShape =
+        new(@"^[ء-ي\s]+$",
+            System.Text.RegularExpressions.RegexOptions.Compiled);
+    private static readonly System.Text.RegularExpressions.Regex EnglishNameShape =
+        new(@"^[A-Za-z\s]+$",
+            System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    /// <summary>True when the value is Arabic letters + spaces only. Returns
+    /// true for empty (the NotEmpty rule owns the required message, so we
+    /// don't double-report).</summary>
+    private static bool BeArabicLettersOnly(string? value)
+        => string.IsNullOrWhiteSpace(value) || ArabicNameShape.IsMatch(value.Trim());
+
+    /// <summary>True when the value is Latin letters + spaces only (empty
+    /// defers to NotEmpty).</summary>
+    private static bool BeEnglishLettersOnly(string? value)
+        => string.IsNullOrWhiteSpace(value) || EnglishNameShape.IsMatch(value.Trim());
+
+    /// <summary>A "full name" is at least four whitespace-separated parts
+    /// (owner rule). Empty defers to the NotEmpty rule.</summary>
+    private static bool HaveAtLeastFourParts(string? value)
+        => string.IsNullOrWhiteSpace(value)
+            || value.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries).Length >= 4;
+
     public UpsertUserProfileRequestValidator()
     {
         // D-190 — ProfileTypeId is optional. Only shape-check here
@@ -113,13 +142,25 @@ public sealed class UpsertUserProfileRequestValidator
             .NotEmpty().Bilingual(
                 "The Arabic name is required.",
                 "الاسم بالعربية مطلوب.")
-            .MaximumLength(256);
+            .MaximumLength(256)
+            .Must(BeArabicLettersOnly).Bilingual(
+                "The Arabic name must contain Arabic letters only.",
+                "يجب أن يحتوي الاسم بالعربية على حروف عربية فقط.")
+            .Must(HaveAtLeastFourParts).Bilingual(
+                "Enter your full name in Arabic — at least four parts.",
+                "أدخل اسمك الكامل بالعربية — أربعة مقاطع على الأقل.");
 
         RuleFor(request => request.EnglishName)
             .NotEmpty().Bilingual(
                 "The English name is required.",
                 "الاسم بالإنجليزية مطلوب.")
-            .MaximumLength(256);
+            .MaximumLength(256)
+            .Must(BeEnglishLettersOnly).Bilingual(
+                "The English name must contain English letters only.",
+                "يجب أن يحتوي الاسم بالإنجليزية على حروف إنجليزية فقط.")
+            .Must(HaveAtLeastFourParts).Bilingual(
+                "Enter your full name in English — at least four parts.",
+                "أدخل اسمك الكامل بالإنجليزية — أربعة مقاطع على الأقل.");
 
         RuleFor(request => request.NationalityCode)
             .NotEmpty().Bilingual(

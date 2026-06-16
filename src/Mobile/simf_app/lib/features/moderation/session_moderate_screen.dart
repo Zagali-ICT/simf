@@ -112,6 +112,7 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
     return Scaffold(
       backgroundColor: SimfTokens.navy,
       appBar: AppBar(
+        leading: const SimfBackButton(),
         backgroundColor: SimfTokens.navy,
         foregroundColor: Colors.white,
         elevation: 0,

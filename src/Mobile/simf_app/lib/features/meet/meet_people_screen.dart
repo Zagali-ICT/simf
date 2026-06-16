@@ -4,6 +4,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/ksa_shell.dart';
 import 'data/meet_models.dart';
 
 /// `GET /app/account/recommendations/meet-like-you` → the visitor's "meet
@@ -32,7 +33,7 @@ class MeetPeopleScreen extends ConsumerWidget {
     final l10n = AppL10n.of(context);
     final matches = ref.watch(meetRecommendationsProvider);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.meetPeopleTitle)),
+      appBar: AppBar(leading: const SimfBackButton(), title: Text(l10n.meetPeopleTitle)),
       body: SafeArea(
         child: matches.when(
           loading: () => const Center(child: CircularProgressIndicator()),

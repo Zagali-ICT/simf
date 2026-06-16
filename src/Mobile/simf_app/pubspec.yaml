@@ -61,11 +61,16 @@ dependencies:
   # are supplied via --dart-define; native queries config (Android 11+
   # <queries> for tel/mailto) lands in the generated folders (simf-run).
   url_launcher: ^6.3.0
-  # QR scanner for visitor contact sharing (Scan QR — FDS-014, D-286). Reads
-  # another visitor's share token. Camera permission (manifest / Info.plist)
-  # lands in the generated folders (simf-run). A manual code-entry fallback is
-  # always available, so the resolve→preview→save flow works without the camera.
-  mobile_scanner: ^5.2.3
+  # QR scanner for the badge / contact / gate flows (Scan QR — FDS-014, D-286;
+  # D-426). Uses the native ZXing C++ engine via FFI (flutter_zxing) over the
+  # `camera` plugin — NO Google Play Services / ML Kit dependency, so the camera
+  # works on Huawei / HMS devices where mobile_scanner showed a black preview
+  # (D-426 research). A manual code-entry fallback stays available regardless.
+  flutter_zxing: ^2.3.0
+  # Renders the home tiles' exact iconify glyphs (KSA frame 758:1134) as bundled
+  # SVGs tinted to the tile colour — the design uses iconify sets (solar/ph/
+  # streamline/…) that have no 1:1 Material equivalent. Pure-Dart, no native config.
+  flutter_svg: ^2.0.10
 
   simf_data_pkg:
     path: packages/simf_data_pkg
@@ -118,6 +123,7 @@ flutter:
   assets:
     - assets/images/
     - assets/videos/
+    - assets/icons/
   # Mockup typography — IBM Plex Sans Arabic (the Mockup.html app font, OFL),
   # bundled as an asset so it renders offline + deterministically on every
   # platform incl. web (no runtime font fetch). Applied app-wide by SimfTheme

@@ -148,6 +148,8 @@ internal sealed class AdminSponsorService(
             Url = url,
             DisplayOrder = displayOrder,
             ContactId = request.ContactId,
+            Tagline = NormaliseTagline(request.Tagline),
+            TaglineArabic = NormaliseTagline(request.TaglineArabic),
             IsActive = true,
             CreatedAt = now,
         };
@@ -207,6 +209,8 @@ internal sealed class AdminSponsorService(
         sponsor.Url = url;
         sponsor.DisplayOrder = displayOrder;
         sponsor.ContactId = request.ContactId;
+        sponsor.Tagline = NormaliseTagline(request.Tagline);
+        sponsor.TaglineArabic = NormaliseTagline(request.TaglineArabic);
         sponsor.IsActive = request.IsActive;
         sponsor.UpdatedAt = timeProvider.GetUtcNow();
 
@@ -333,5 +337,26 @@ internal sealed class AdminSponsorService(
             sponsor.IsActive,
             sponsor.CreatedAt,
             sponsor.UpdatedAt,
-            sponsor.ContactId);
+            sponsor.ContactId,
+            sponsor.Tagline,
+            sponsor.TaglineArabic);
+
+    // D-432 — trim a tagline to null when blank; enforce the 256-char limit
+    // (mirrors SponsorConfiguration.HasMaxLength + the CP MaxLength) so a direct
+    // API call gets a clean 400 instead of a DB error.
+    private static string? NormaliseTagline(string? value)
+    {
+        var trimmed = value?.Trim();
+        if (string.IsNullOrEmpty(trimmed))
+        {
+            return null;
+        }
+        if (trimmed.Length > 256)
+        {
+            throw new ApiException(ErrorCodes.SponsorInvalid, 400,
+                "Tagline must be at most 256 characters.",
+                "يجب ألا يتجاوز النص التعريفي 256 حرفًا.");
+        }
+        return trimmed;
+    }
 }

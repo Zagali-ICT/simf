@@ -391,10 +391,12 @@ public sealed class AdminUpdateProfileTypeRequest
 }
 
 /// <summary>
-/// D-127 — body of <c>POST /api/v1/admin/{visitors,others}/register-onsite</c>.
-/// Walk-in / desk registration shape — staff at the registration desk fills
-/// the full profile face-to-face and the user is auto-approved + a QR id
-/// is minted in the same transaction. Email is optional (walk-ins frequently
+/// D-127 (amended D-425) — body of
+/// <c>POST /api/v1/admin/{visitors,others}/register-onsite</c>. Walk-in / desk
+/// registration shape — staff at the registration desk fills the full profile
+/// face-to-face. D-425: the account is created <c>PendingApproval</c>; no QR is
+/// minted at the desk — it is issued when an admin approves from the pending
+/// queue. Email is optional (walk-ins frequently
 /// don't have one; the QR badge is the access token); when missing the API
 /// synthesizes <c>walkin-{guid}@simf.local</c> so Identity stays valid.
 /// </summary>
@@ -414,6 +416,19 @@ public sealed class AdminWalkInRegistrationRequest
 
     /// <summary>D-163 (PDF §2.6) — optional job title.</summary>
     public string? JobTitle { get; set; }
+
+    /// <summary>V-1 (D-429) — the موج (Mawj) system identifier (المعرف في نظام موج).
+    /// Optional everywhere; the dedicated VIP registration page captures it for
+    /// VVIP/VIP visitors so the welcome-message export can key on it. ≤64 chars.</summary>
+    public string? MawjId { get; set; }
+
+    /// <summary>V-1 (D-429) — honorific / title (اللقب), e.g. "Minister". Optional;
+    /// captured on the VIP page for the موج welcome message. ≤64 chars.</summary>
+    public string? Honorific { get; set; }
+
+    /// <summary>V-1 (D-429) — preferred language for the موج welcome message
+    /// (اللغة المفضلة), an IETF tag like "ar"/"en". Optional. ≤16 chars.</summary>
+    public string? PreferredLanguage { get; set; }
 
     /// <summary>Visitor tier / Other subtype — drives the badge colour.</summary>
     public Guid ProfileTypeId { get; set; }
@@ -446,6 +461,15 @@ public sealed class AdminWalkInRegistrationRequest
     /// <summary>International mobile (<c>+CC-local</c>).</summary>
     public string? InternationalMobile { get; set; }
 
+    /// <summary>D-395 (الجنس) — the visitor's gender, captured at the desk.
+    /// <see cref="Gender.Unspecified"/> when not picked. The column already
+    /// exists on <c>UserProfile</c>; the walk-in form just didn't capture it.</summary>
+    public Gender Gender { get; set; } = Gender.Unspecified;
+
+    /// <summary>D-395 — optional vehicle plate number (Saudi plate shape, ≤7
+    /// chars). The column already exists on <c>UserProfile</c> (D-371).</summary>
+    public string? PlateNumber { get; set; }
+
     /// <summary>B3 — D-221 (الجهة): the picked <see cref="Organisation"/> id.
     /// Required at the walk-in desk (the validator rejects null / empty); the
     /// service rejects an unknown / inactive id with <c>OrganisationInvalid</c>.</summary>
@@ -456,11 +480,12 @@ public sealed class AdminWalkInRegistrationRequest
 }
 
 /// <summary>
-/// D-127 — response from the walk-in endpoint. Carries the data the
-/// post-submit success modal needs to render the badge: the QR id (already
-/// minted because the user is auto-approved), the chosen profile-type
-/// name + colour, and the user id so a follow-up ID-document upload can
-/// reach the right row.
+/// D-127 (amended D-425) — response from the walk-in endpoint. Carries the data
+/// the post-submit success modal needs: the chosen profile-type name + colour
+/// and the user id (so a follow-up ID-document upload can reach the right row).
+/// D-425: <see cref="QrId"/> is now EMPTY for a freshly created walk-in — the
+/// account is PendingApproval and the QR is minted only on approval; the modal
+/// treats an empty QrId as the "pending" state and shows no badge.
 /// </summary>
 public sealed record AdminWalkInRegistrationResponse(
     Guid UserId,

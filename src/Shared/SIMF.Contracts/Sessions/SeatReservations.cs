@@ -16,7 +16,12 @@ public sealed record SessionSeatMap(
     int SeatsPerRow,
     IReadOnlyList<SessionSeatCell> ReservedCells,
     SessionSeatCell? MyCell,
-    int ActiveReservedCount);
+    int ActiveReservedCount,
+    // D-432 — appended (append-only wire): the session's bilingual title so the
+    // "my seat" screen can show it without a second /sessions/{id} call. The
+    // service already loads the Session, so this adds no query.
+    string? SessionTitle = null,
+    string? SessionTitleArabic = null);
 
 /// <summary>D-175 — one occupied seat in the grid.</summary>
 public sealed record SessionSeatCell(

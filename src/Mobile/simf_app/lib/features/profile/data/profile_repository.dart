@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import 'profile_models.dart';
@@ -98,6 +99,24 @@ class ProfileRepository {
     );
   }
 
+  /// Self-service face-photo upload (multipart) — `POST /app/account/avatar`.
+  /// The face photo IS the profile avatar; it is captured live and posted here
+  /// during sign-up (mandatory for men, optional for women) so the top profile
+  /// photo shows the real face. 2 MB / jpeg|png|webp guards are server-side.
+  /// Returns true on success.
+  Future<bool> uploadAvatar({
+    required List<int> bytes,
+    required String filename,
+  }) {
+    return _client.upload<bool>(
+      '/app/account/avatar',
+      bytes: bytes,
+      filename: filename,
+      contentType: mimeForFilename(filename),
+      decodeData: (_) => true,
+    );
+  }
+
   /// Maps a filename extension to the MIME the server's gate accepts
   /// (jpeg / png / webp). Null for an unknown extension — the picker only yields
   /// these three, so a null would be a programming error, not a user path.
@@ -132,4 +151,55 @@ class ProfileRepository {
 
 final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
   return ProfileRepository(ref.watch(simfApiClientProvider));
+});
+
+/// Best-effort reference number (`SIMF-2026-…`) for the badge + profile ID line.
+/// It lives on the user-profile (the My-Area dashboard doesn't carry it), so the
+/// badge/profile read it here. Null while loading / on error.
+final referenceNumberProvider = FutureProvider.autoDispose<String?>((ref) async {
+  try {
+    final profile = await ref.watch(profileRepositoryProvider).getMyProfile();
+    final ref0 = profile.referenceNumber?.trim();
+    return (ref0 == null || ref0.isEmpty) ? null : ref0;
+  } on ApiFailure {
+    return null;
+  }
+});
+
+/// Cache-buster for the signed-in user's avatar. Bumped after a successful
+/// avatar upload so [myAvatarBytesProvider] refetches and every avatar on
+/// screen (home greeting / badge / profile) shows the new photo immediately —
+/// the avatar URL is stable, so a version token is the only thing that forces a
+/// refetch (the server also caches it `max-age=300`).
+final avatarBustProvider = StateProvider<int>((ref) => 0);
+
+/// The signed-in user's avatar image bytes, fetched **through the authenticated
+/// API client** (which attaches the bearer + `X-App-Key` and handles the
+/// self-signed TLS — none of which `Image.network` can do; the avatar endpoint
+/// is bearer-gated, so a bare network image silently 401s / fails the cert).
+///
+/// Returns null when the user is signed out, has no avatar (the server streams
+/// 404), or on any failure — the caller then falls back to the brand mark.
+/// Re-runs whenever [avatarBustProvider] changes (after an upload). Skips the
+/// fetch entirely for a user with no known avatar who hasn't uploaded this
+/// session, so a photo-less account makes no avatar request.
+final myAvatarBytesProvider =
+    FutureProvider.autoDispose<Uint8List?>((ref) async {
+  final auth = ref.watch(authControllerProvider);
+  if (auth is! AuthStateSignedIn) {
+    return null;
+  }
+  final bust = ref.watch(avatarBustProvider);
+  final user = auth.session.user;
+  final hasServerAvatar = (user.avatarUrl ?? '').trim().isNotEmpty;
+  if (!hasServerAvatar && bust == 0) {
+    return null;
+  }
+  try {
+    return await ref
+        .watch(simfApiClientProvider)
+        .getBytes('/app/account/avatar/${user.id}');
+  } on ApiFailure {
+    return null;
+  }
 });

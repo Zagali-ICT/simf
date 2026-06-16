@@ -57,6 +57,47 @@
         }
     </fieldset>
 
+    @* -- V-1 (D-429): VIP details (موج) — only on the VIP page. Optional
+       welcome-message fields the technical teams use to greet the VVIP/VIP. *@
+    @if (VipMode)
+    {
+        <fieldset class="simf-walkin__section" disabled="@(_busy ? "disabled" : null)">
+            <legend>@L["Admin.WalkIn.Section.Vip"]</legend>
+            <p class="simf-walkin__hint">@L["Admin.WalkIn.Section.Vip.Hint"]</p>
+            <div class="simf-walkin__grid">
+                <SimfTextField Label="@L["Admin.WalkIn.Field.MawjId"]"
+                               Helper="@L["Admin.WalkIn.Field.MawjId.Hint"]"
+                               MaxLength="64"
+                               Value="@(_model.MawjId ?? string.Empty)"
+                               ValueChanged="@(v => _model.MawjId = string.IsNullOrWhiteSpace(v) ? null : v)"
+                               ValueExpression="@(() => _model.MawjId)" />
+                <SimfTextField Label="@L["Admin.WalkIn.Field.Honorific"]"
+                               Helper="@L["Admin.WalkIn.Field.Honorific.Hint"]"
+                               MaxLength="64"
+                               Value="@(_model.Honorific ?? string.Empty)"
+                               ValueChanged="@(v => _model.Honorific = string.IsNullOrWhiteSpace(v) ? null : v)"
+                               ValueExpression="@(() => _model.Honorific)" />
+            </div>
+            <div class="simf-walkin__grid">
+                <div class="simf-field">
+                    <label class="simf-field__label" for="walkin-preflang">
+                        @L["Admin.WalkIn.Field.PreferredLanguage"]
+                    </label>
+                    <div class="simf-field__control">
+                        <select id="walkin-preflang" class="simf-field__input"
+                                value="@(_model.PreferredLanguage ?? string.Empty)"
+                                @onchange="OnPreferredLanguageChanged">
+                            <option value="">@L["Admin.WalkIn.Field.PreferredLanguage.Placeholder"]</option>
+                            <option value="ar">@L["Admin.WalkIn.Field.PreferredLanguage.Ar"]</option>
+                            <option value="en">@L["Admin.WalkIn.Field.PreferredLanguage.En"]</option>
+                        </select>
+                    </div>
+                    <div class="simf-field__helper">@L["Admin.WalkIn.Field.PreferredLanguage.Hint"]</div>
+                </div>
+            </div>
+        </fieldset>
+    }
+
     @* D-393 — wide single-page layout: the badge picker stays full-width on
        top; the rest of the record lays out in up to three columns so the whole
        form is visible at once (collapses to 2 then 1 column when narrow). *@
@@ -113,6 +154,29 @@
             <SimfTextField Label="@L["Admin.WalkIn.Field.PlaceOfBirth"]"
                            MaxLength="128"
                            @bind-Value="_model.PlaceOfBirth" />
+        </div>
+        @* D-395 — gender + optional vehicle plate share the final identity row. *@
+        <div class="simf-walkin__grid">
+            <div class="simf-field">
+                <label class="simf-field__label" for="walkin-gender">
+                    @L["Admin.WalkIn.Field.Gender"]
+                </label>
+                <div class="simf-field__control">
+                    <select id="walkin-gender" class="simf-field__input"
+                            value="@_model.Gender.ToString()"
+                            @onchange="OnGenderChanged">
+                        <option value="Unspecified">@L["Admin.WalkIn.Field.Gender.Unspecified"]</option>
+                        <option value="Male">@L["Admin.WalkIn.Field.Gender.Male"]</option>
+                        <option value="Female">@L["Admin.WalkIn.Field.Gender.Female"]</option>
+                    </select>
+                </div>
+            </div>
+            <SimfTextField Label="@L["Admin.WalkIn.Field.PlateNumber"]"
+                           Helper="@L["Admin.WalkIn.Field.PlateNumber.Hint"]"
+                           MaxLength="7"
+                           Value="@(_model.PlateNumber ?? string.Empty)"
+                           ValueChanged="@(v => _model.PlateNumber = string.IsNullOrWhiteSpace(v) ? null : v)"
+                           ValueExpression="@(() => _model.PlateNumber)" />
         </div>
     </fieldset>
       </div>
@@ -311,6 +375,40 @@
                 </div>
             }
         </div>
+        @* D-427 (CS-3) — optional profile photo (the visitor's "logo"); shown
+           next to the ID image in the approve modal. Any PNG/JPEG/WebP, up to 2 MB. *@
+        <div class="simf-field">
+            <label class="simf-field__label" for="walkin-avatar">@L["Admin.WalkIn.Field.Photo"]</label>
+            <input id="walkin-avatar" type="file" class="simf-field__input"
+                   accept="image/png,image/jpeg,image/webp"
+                   @onchange="OnAvatarChanged" />
+            <div class="simf-field__helper">@L["Admin.WalkIn.Field.Photo.Hint"]</div>
+            @if (!string.IsNullOrEmpty(_avatarName))
+            {
+                <div class="simf-field__helper">
+                    @string.Format(L["Admin.WalkIn.Field.IdDocument.Selected"], _avatarName)
+                </div>
+            }
+        </div>
+        @* V-1 (D-429) — separate VIP welcome photo (موج). Distinct from the
+           avatar above: a clear high-resolution portrait shared with the
+           technical teams for the welcome message. VIP page only. *@
+        @if (VipMode)
+        {
+            <div class="simf-field">
+                <label class="simf-field__label" for="walkin-vip-photo">@L["Admin.WalkIn.Field.VipPhoto"]</label>
+                <input id="walkin-vip-photo" type="file" class="simf-field__input"
+                       accept="image/png,image/jpeg,image/webp"
+                       @onchange="OnVipPhotoChanged" />
+                <div class="simf-field__helper">@L["Admin.WalkIn.Field.VipPhoto.Hint"]</div>
+                @if (!string.IsNullOrEmpty(_vipPhotoName))
+                {
+                    <div class="simf-field__helper">
+                        @string.Format(L["Admin.WalkIn.Field.IdDocument.Selected"], _vipPhotoName)
+                    </div>
+                }
+            </div>
+        }
     </fieldset>
 
     @* -- Section 6: Interests (visitor only) -------------------------- *@
@@ -363,6 +461,8 @@
     private InterestDto[] _interests = Array.Empty<InterestDto>();
     private string _idKind = "Iqama";
     private string? _idDocumentName;
+    private string? _avatarName;
+    private string? _vipPhotoName;
 
     // B3 — D-221 (الجهة): the required organisation typeahead state.
     private string _orgSearch = string.Empty;
@@ -375,6 +475,15 @@
     /// <summary>"Visitor" or "Other" — drives the profile-type picker
     /// query and the interests section visibility.</summary>
     [Parameter] public string Kind { get; set; } = "Visitor";
+
+    /// <summary>V-1 (D-429) — VIP mode: restrict the profile-type picker to the
+    /// VVIP / VIP audience tiers and surface the موج (Mawj) welcome-message
+    /// fields (Mawj ID, honorific, preferred language) + a separate VIP welcome
+    /// photo. Off by default so the regular walk-in desk is unchanged.</summary>
+    [Parameter] public bool VipMode { get; set; }
+
+    /// <summary>The audience tier names the VIP page is restricted to.</summary>
+    private static readonly string[] VipTierNames = { "VVIP", "VIP" };
 
     /// <summary>Fires after a successful register-onsite. The parent uses
     /// the response to render the post-submit success modal with the QR.</summary>
@@ -413,7 +522,23 @@
         var ptEnvelope = await profileTypesTask;
         if (ptEnvelope is { Success: true, Data: not null })
         {
-            _profileTypes = ptEnvelope.Data.OrderBy(p => p.Name).ToArray();
+            // D-395 — show only the profile types valid for this desk: audience
+            // types (IsVisitor=true) for the Visitor desk, partner types
+            // (IsVisitor=false) for the Other desk. Mirrors the server rule
+            // (expectedIsVisitor) + the approve modal's own filter, so the picker
+            // can no longer offer a type the server would reject.
+            var visitorDesk = string.Equals(Kind, "Visitor", StringComparison.OrdinalIgnoreCase);
+            _profileTypes = ptEnvelope.Data
+                .Where(p => p.IsActive && p.IsVisitor == visitorDesk)
+                // V-1 (D-429) — the VIP page only registers VVIP / VIP tiers.
+                .Where(p => !VipMode || VipTierNames.Contains(p.Name))
+                .OrderBy(p => p.Name).ToArray();
+            // V-1 — preselect the tier when the picker is down to a single choice
+            // (e.g. only VIP seeded), so the desk doesn't have to click it.
+            if (VipMode && _profileTypes.Length == 1)
+            {
+                _model.ProfileTypeId = _profileTypes[0].Id;
+            }
         }
 
         var cEnvelope = await countriesTask;
@@ -488,6 +613,14 @@
             : parsed;
     }
 
+    // D-395 — gender picker (native <select>); falls back to Unspecified.
+    private void OnGenderChanged(ChangeEventArgs e)
+    {
+        _model.Gender = Enum.TryParse<Gender>(e.Value?.ToString(), out var g)
+            ? g
+            : Gender.Unspecified;
+    }
+
     private async Task OnIdDocumentChanged(ChangeEventArgs _)
     {
         // Grab the picked file name (best-effort, browsers expose only
@@ -497,6 +630,29 @@
         var name = await JS.InvokeAsync<string?>(
             "eval", "document.getElementById('walkin-id-document')?.files?.[0]?.name ?? null");
         _idDocumentName = name;
+    }
+
+    // D-427 (CS-3) — optional profile photo; uploaded after register-onsite
+    // succeeds (same deferred pattern as the ID document — needs the new id).
+    private async Task OnAvatarChanged(ChangeEventArgs _)
+    {
+        _avatarName = await JS.InvokeAsync<string?>(
+            "eval", "document.getElementById('walkin-avatar')?.files?.[0]?.name ?? null");
+    }
+
+    // V-1 (D-429) — VIP welcome photo; same deferred-upload pattern, posted to
+    // the dedicated vip-photo endpoint after the account is created.
+    private async Task OnVipPhotoChanged(ChangeEventArgs _)
+    {
+        _vipPhotoName = await JS.InvokeAsync<string?>(
+            "eval", "document.getElementById('walkin-vip-photo')?.files?.[0]?.name ?? null");
+    }
+
+    // V-1 (D-429) — preferred-language picker (native <select>).
+    private void OnPreferredLanguageChanged(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString();
+        _model.PreferredLanguage = string.IsNullOrWhiteSpace(value) ? null : value;
     }
 
     private void ToggleInterest(Guid id)
@@ -686,10 +842,16 @@
                     ArabicName = _model.ArabicName.Trim(),
                     EnglishName = _model.EnglishName.Trim(),
                     JobTitle = string.IsNullOrWhiteSpace(_model.JobTitle) ? null : _model.JobTitle.Trim(),
+                    // V-1 (D-429) — VIP موج extras (null unless the VIP page set them).
+                    MawjId = string.IsNullOrWhiteSpace(_model.MawjId) ? null : _model.MawjId.Trim(),
+                    Honorific = string.IsNullOrWhiteSpace(_model.Honorific) ? null : _model.Honorific.Trim(),
+                    PreferredLanguage = string.IsNullOrWhiteSpace(_model.PreferredLanguage) ? null : _model.PreferredLanguage.Trim(),
                     ProfileTypeId = _model.ProfileTypeId,
                     NationalityCode = _model.NationalityCode.Trim().ToUpperInvariant(),
                     DateOfBirth = _model.DateOfBirth,
                     PlaceOfBirth = string.IsNullOrWhiteSpace(_model.PlaceOfBirth) ? null : _model.PlaceOfBirth.Trim(),
+                    Gender = _model.Gender,
+                    PlateNumber = string.IsNullOrWhiteSpace(_model.PlateNumber) ? null : _model.PlateNumber.Trim().ToUpperInvariant(),
                     IsSaudi = _model.IsSaudi,
                     NationalId = _model.IsSaudi ? _model.NationalId : null,
                     IqamaNumber = _model.IsSaudi ? null : _model.IqamaNumber,
@@ -716,6 +878,31 @@
                             "walkin-id-document");
                     }
                     catch (Exception) { /* surfaces as HasIdImage=false in the View modal */ }
+                }
+                // D-427 (CS-3) — optional profile photo, same deferred upload.
+                if (!string.IsNullOrEmpty(_avatarName))
+                {
+                    try
+                    {
+                        await JS.InvokeAsync<object?>(
+                            "simfAccount.uploadFile",
+                            $"{basePath}/{envelope.Data.UserId}/avatar",
+                            "walkin-avatar");
+                    }
+                    catch (Exception) { /* avatar is optional; failure is non-fatal */ }
+                }
+                // V-1 (D-429) — optional VIP welcome photo, same deferred upload
+                // to the dedicated vip-photo endpoint (VIP page only).
+                if (VipMode && !string.IsNullOrEmpty(_vipPhotoName))
+                {
+                    try
+                    {
+                        await JS.InvokeAsync<object?>(
+                            "simfAccount.uploadFile",
+                            $"{basePath}/{envelope.Data.UserId}/vip-photo",
+                            "walkin-vip-photo");
+                    }
+                    catch (Exception) { /* VIP photo is optional; failure is non-fatal */ }
                 }
                 await OnSuccess.InvokeAsync(envelope.Data);
                 ResetForm();
@@ -748,6 +935,10 @@
         _model.DisplayName = string.Empty;
         _model.ArabicName = string.Empty;
         _model.EnglishName = string.Empty;
+        // V-1 (D-429) — clear the VIP موج extras between desk registrations.
+        _model.MawjId = null;
+        _model.Honorific = null;
+        _model.PreferredLanguage = null;
         _model.DateOfBirth = null;
         _model.PlaceOfBirth = string.Empty;
         _model.NationalId = null;
@@ -765,6 +956,8 @@
         _orgError = null;
         _orgListOpen = false;
         _idDocumentName = null;
+        _avatarName = null;
+        _vipPhotoName = null;
         _messages.Clear();
         _editContext.NotifyValidationStateChanged();
         StateHasChanged();
@@ -783,10 +976,16 @@
         public string ArabicName { get; set; } = string.Empty;
         public string EnglishName { get; set; } = string.Empty;
         public string? JobTitle { get; set; }
+        // V-1 (D-429) — VIP موج extras.
+        public string? MawjId { get; set; }
+        public string? Honorific { get; set; }
+        public string? PreferredLanguage { get; set; }
         public Guid ProfileTypeId { get; set; }
         public string NationalityCode { get; set; } = "SA";
         public DateOnly? DateOfBirth { get; set; }
         public string PlaceOfBirth { get; set; } = string.Empty;
+        public Gender Gender { get; set; } = Gender.Unspecified;
+        public string? PlateNumber { get; set; }
         public bool IsSaudi { get; set; } = true;
         public string? NationalId { get; set; }
         public string? IqamaNumber { get; set; }

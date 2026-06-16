@@ -120,8 +120,8 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
             Content = JsonContent.Create(new UpsertUserProfileRequest
             {
                 InterestIds = new List<Guid> { interestId },
-                ArabicName = "زائر اختبار",
-                EnglishName = "Lifecycle Visitor",
+                ArabicName = "زائر دورة الحياة الكامل",
+                EnglishName = "Lifecycle Visitor Full Name",
                 NationalityCode = "SA",
                 DateOfBirth = new DateOnly(1990, 1, 1),
                 PlaceOfBirth = "Riyadh",

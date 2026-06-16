@@ -2,10 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:flutter_zxing/flutter_zxing.dart';
+import 'package:go_router/go_router.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
+import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import 'data/gate_models.dart';
 import 'data/gates_repository.dart';
@@ -34,7 +36,10 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
   bool _loading = true;
   bool _forbidden = false;
   bool _error = false;
-  bool _held = false;
+  // Camera paused by default (D-426): the operator's back / gate-picker / manual
+  // entry stay usable; "Resume" starts the camera (EMUI swallows input over a
+  // live camera, so opening paused keeps the console escapable).
+  bool _held = true;
   bool _busy = false;
   String _lastQr = '';
   List<OperatorGate> _gates = const <OperatorGate>[];
@@ -81,14 +86,12 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
     }
   }
 
-  void _onDetect(BarcodeCapture capture) {
-    if (_held || _busy) {
+  void _onScan(Code result) {
+    if (_held || _busy || !result.isValid) {
       return;
     }
-    final code = capture.barcodes
-        .map((b) => b.rawValue)
-        .firstWhere((v) => v != null && v.isNotEmpty, orElse: () => null);
-    if (code != null) {
+    final code = result.text?.trim();
+    if (code != null && code.isNotEmpty) {
       unawaited(_scan(code));
     }
   }
@@ -158,17 +161,52 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
     final direction = _result == null
         ? ''
         : ' • ${_directionLabel(l10n, _result!.direction)}';
-    return Scaffold(
-      backgroundColor: SimfTokens.navy,
-      appBar: AppBar(
+    return PopScope(
+      // Route the system back through _leave (go_router); raw pop can't exit
+      // this shell-pushed route (D-426).
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          _leave();
+        }
+      },
+      child: Scaffold(
         backgroundColor: SimfTokens.navy,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        title: Text('$gateName$direction'),
+        appBar: AppBar(
+          backgroundColor: SimfTokens.navy,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: true,
+          title: Text('$gateName$direction'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: _leave,
+          ),
+        ),
+        body: SafeArea(child: _body(l10n, isArabic)),
       ),
-      body: SafeArea(child: _body(l10n, isArabic)),
     );
+  }
+
+  /// Leaves the gate console reliably even when it is the navigator root (deep
+  /// link / route restore / a shell push that didn't stack) — pop when possible,
+  /// else go home. Without this the raw AppBar had no back and system-back exited
+  /// the app (D-423 follow-up).
+  void _leave() {
+    // go_router pop() removes this pushed page (goNamed only changes the URL and
+    // leaves the page on top; raw Navigator.pop desyncs the shell — D-426).
+    final router = GoRouter.maybeOf(context);
+    if (router == null) {
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+      return;
+    }
+    if (router.canPop()) {
+      router.pop();
+    } else {
+      router.goNamed(RouteNames.home);
+    }
   }
 
   Widget _body(AppL10n l10n, bool isArabic) {
@@ -212,7 +250,8 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
       enableCamera: widget.enableCamera,
       held: _held,
       manual: _manual,
-      onDetect: _onDetect,
+      onScan: _onScan,
+      onLeave: _leave,
       onManual: () => unawaited(_scan(_manual.text)),
       onToggleHold: () => setState(() => _held = !_held),
       onGate: (g) => setState(() => _gate = g),
@@ -232,7 +271,8 @@ class _Scanner extends StatelessWidget {
     required this.enableCamera,
     required this.held,
     required this.manual,
-    required this.onDetect,
+    required this.onScan,
+    required this.onLeave,
     required this.onManual,
     required this.onToggleHold,
     required this.onGate,
@@ -245,7 +285,8 @@ class _Scanner extends StatelessWidget {
   final bool enableCamera;
   final bool held;
   final TextEditingController manual;
-  final void Function(BarcodeCapture) onDetect;
+  final void Function(Code) onScan;
+  final VoidCallback onLeave;
   final VoidCallback onManual;
   final VoidCallback onToggleHold;
   final ValueChanged<OperatorGate> onGate;
@@ -280,7 +321,26 @@ class _Scanner extends StatelessWidget {
                   fit: StackFit.expand,
                   children: <Widget>[
                     if (enableCamera && !held)
-                      MobileScanner(onDetect: onDetect)
+                      // ZXing reader (native, no Google Play Services) — works
+                      // on Huawei/HMS where the ML-Kit camera was black (D-426).
+                      ReaderWidget(
+                        onScan: onScan,
+                        codeFormat: Format.qrCode,
+                        showGallery: false,
+                        showToggleCamera: false,
+                        tryInverted: true,
+                        // Back inside flutter_zxing's overlay — tappable over the
+                        // live camera where the AppBar back is swallowed (D-426).
+                        onActionSecondButton: onLeave,
+                        actionSecondButtonIcon: const Icon(Icons.arrow_back),
+                        loading: const Center(
+                          child: Icon(
+                            Icons.qr_code_2,
+                            size: 72,
+                            color: SimfTokens.beigeBorder,
+                          ),
+                        ),
+                      )
                     else
                       Center(
                         child: Icon(

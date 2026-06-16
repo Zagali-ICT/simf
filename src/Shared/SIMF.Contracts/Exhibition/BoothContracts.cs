@@ -15,6 +15,15 @@ public sealed class PublicBoothSummary
     public Guid? HallId { get; set; }
     public double? MapX { get; set; }
     public double? MapY { get; set; }
+
+    // D-432 — appended (append-only wire). The hall display name (the entity
+    // already carries it; only HallId was sent before) + the booth-officer
+    // contact resolved Contact-first, falling back to the inline columns.
+    public string? HallName { get; set; }
+    public string? HallNameArabic { get; set; }
+    public string? OfficerName { get; set; }
+    public string? OfficerPhone { get; set; }
+    public string? OfficerEmail { get; set; }
 }
 
 /// <summary>D-199 — public booth detail (adds the description paragraph).</summary>
@@ -33,6 +42,13 @@ public sealed class PublicBoothDetail
     public Guid? HallId { get; set; }
     public double? MapX { get; set; }
     public double? MapY { get; set; }
+
+    // D-432 — appended (append-only wire); see PublicBoothSummary.
+    public string? HallName { get; set; }
+    public string? HallNameArabic { get; set; }
+    public string? OfficerName { get; set; }
+    public string? OfficerPhone { get; set; }
+    public string? OfficerEmail { get; set; }
 }
 
 /// <summary>D-199 — admin grid row. B1 — D-222: the exhibitor is now the

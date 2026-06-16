@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,7 +17,12 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// pick → save → navigate glue is testable without HTTP. Only the three methods
 /// this screen uses are implemented; the rest throw.
 class _FakeProfileRepository implements ProfileRepository {
-  _FakeProfileRepository({this.interests = _canned, this.throwOnSave = false});
+  _FakeProfileRepository({
+    this.interests = _canned,
+    this.throwOnSave = false,
+    this.throwOnUpload = false,
+    this.throwOnAvatarUpload = false,
+  });
 
   static const List<InterestItem> _canned = <InterestItem>[
     InterestItem(
@@ -34,8 +41,11 @@ class _FakeProfileRepository implements ProfileRepository {
 
   List<InterestItem> interests;
   bool throwOnSave;
+  bool throwOnUpload;
+  bool throwOnAvatarUpload;
   UpsertUserProfileRequest? upserted;
   bool uploadCalled = false;
+  bool avatarUploadCalled = false;
 
   @override
   Future<List<InterestItem>> getInterests() async => interests;
@@ -57,6 +67,7 @@ class _FakeProfileRepository implements ProfileRepository {
       isSaudi: false,
       gender: AppGender.unspecified,
       hasIdImage: false,
+      hasAvatar: false,
     );
   }
 
@@ -66,6 +77,21 @@ class _FakeProfileRepository implements ProfileRepository {
     required String filename,
   }) async {
     uploadCalled = true;
+    if (throwOnUpload) {
+      throw const ApiFailure(code: 'X', message: 'upload-boom');
+    }
+    return true;
+  }
+
+  @override
+  Future<bool> uploadAvatar({
+    required List<int> bytes,
+    required String filename,
+  }) async {
+    avatarUploadCalled = true;
+    if (throwOnAvatarUpload) {
+      throw const ApiFailure(code: 'X', message: 'avatar-boom');
+    }
     return true;
   }
 
@@ -210,6 +236,75 @@ void main() {
       expect(find.text('boom'), findsOneWidget);
       expect(find.text('REG-SUCCESS'), findsNothing);
       expect(find.text('1 / 10 selected'), findsOneWidget);
+    });
+
+    testWidgets('a male whose photo upload fails is blocked — photo is tried '
+        'first and the profile is NOT saved without it (D-431)', (tester) async {
+      final repo = _FakeProfileRepository(throwOnUpload: true);
+      final draftWithImage = SignUpProfileDraft(
+        request: _draft.request,
+        idImageBytes: Uint8List.fromList(<int>[1, 2, 3]),
+        idImageName: 'id.jpg',
+      );
+      await _pump(tester, repo, draft: draftWithImage);
+
+      await tester.tap(find.text('Naval Defence'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Continue'));
+      await tester.pumpAndSettle();
+
+      // The photo is uploaded BEFORE the profile save, and a male whose upload
+      // failed never reaches the save → no incomplete profile, no success route.
+      expect(repo.uploadCalled, isTrue);
+      expect(repo.upserted, isNull);
+      expect(find.text('REG-SUCCESS'), findsNothing);
+      expect(find.text('1 / 10 selected'), findsOneWidget);
+    });
+
+    testWidgets('a draft with both photos uploads the ID document AND the face '
+        '(avatar) before the save (two-photo split)', (tester) async {
+      final repo = _FakeProfileRepository();
+      final draftWithBoth = SignUpProfileDraft(
+        request: _draft.request,
+        idImageBytes: Uint8List.fromList(<int>[1, 2, 3]),
+        idImageName: 'id.jpg',
+        faceImageBytes: Uint8List.fromList(<int>[4, 5, 6]),
+        faceImageName: 'face.jpg',
+      );
+      await _pump(tester, repo, draft: draftWithBoth);
+
+      await tester.tap(find.text('Naval Defence'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Continue'));
+      await tester.pumpAndSettle();
+
+      expect(repo.uploadCalled, isTrue); // ID document
+      expect(repo.avatarUploadCalled, isTrue); // face photo
+      expect(repo.upserted, isNotNull);
+      expect(find.text('REG-SUCCESS'), findsOneWidget);
+    });
+
+    testWidgets('a male whose FACE upload fails is blocked — not saved without '
+        'the face photo (two-photo split)', (tester) async {
+      final repo = _FakeProfileRepository(throwOnAvatarUpload: true);
+      final draftWithBoth = SignUpProfileDraft(
+        request: _draft.request, // male
+        idImageBytes: Uint8List.fromList(<int>[1, 2, 3]),
+        idImageName: 'id.jpg',
+        faceImageBytes: Uint8List.fromList(<int>[4, 5, 6]),
+        faceImageName: 'face.jpg',
+      );
+      await _pump(tester, repo, draft: draftWithBoth);
+
+      await tester.tap(find.text('Naval Defence'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Continue'));
+      await tester.pumpAndSettle();
+
+      expect(repo.uploadCalled, isTrue);
+      expect(repo.avatarUploadCalled, isTrue);
+      expect(repo.upserted, isNull); // male — a failed face upload blocks the save
+      expect(find.text('REG-SUCCESS'), findsNothing);
     });
 
     testWidgets('a direct open with no draft shows the recover state',

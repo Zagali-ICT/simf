@@ -70,6 +70,9 @@ class ArchiveEditionDetail {
     this.locationAr,
     this.dateLabelEn,
     this.dateLabelAr,
+    this.gallery = const <ArchiveMediaItem>[],
+    this.sessionTitles = const <ArchiveSessionTitle>[],
+    this.pastSpeakers = const <ArchivePastSpeaker>[],
   });
 
   final String id;
@@ -85,6 +88,10 @@ class ArchiveEditionDetail {
   final String? locationAr;
   final String? dateLabelEn;
   final String? dateLabelAr;
+  // D-432 — the rich per-edition lists (Mockup 24-01).
+  final List<ArchiveMediaItem> gallery;
+  final List<ArchiveSessionTitle> sessionTitles;
+  final List<ArchivePastSpeaker> pastSpeakers;
 
   String localizedTitle(bool isArabic) => _pick(titleAr, titleEn, isArabic);
   String? localizedSummary(bool isArabic) =>
@@ -93,6 +100,15 @@ class ArchiveEditionDetail {
       _pickOpt(locationAr, locationEn, isArabic);
   String? localizedDateLabel(bool isArabic) =>
       _pickOpt(dateLabelAr, dateLabelEn, isArabic);
+
+  static List<T> _list<T>(
+    Object? raw,
+    T Function(Map<String, dynamic>) fromJson,
+  ) =>
+      (raw as List? ?? const <dynamic>[])
+          .whereType<Map<dynamic, dynamic>>()
+          .map((e) => fromJson(e.cast<String, dynamic>()))
+          .toList(growable: false);
 
   static ArchiveEditionDetail fromJson(Map<String, dynamic> json) =>
       ArchiveEditionDetail(
@@ -109,6 +125,79 @@ class ArchiveEditionDetail {
         locationAr: json['locationAr'] as String?,
         dateLabelEn: json['dateLabelEn'] as String?,
         dateLabelAr: json['dateLabelAr'] as String?,
+        gallery: _list(json['gallery'], ArchiveMediaItem.fromJson),
+        sessionTitles:
+            _list(json['sessionTitles'], ArchiveSessionTitle.fromJson),
+        pastSpeakers: _list(json['pastSpeakers'], ArchivePastSpeaker.fromJson),
+      );
+}
+
+/// One gallery item — mirrors `PublicArchiveMediaItem`. `kind` is 0 image / 1
+/// video.
+@immutable
+class ArchiveMediaItem {
+  const ArchiveMediaItem({
+    required this.kind,
+    required this.url,
+    this.captionEn,
+    this.captionAr,
+  });
+
+  final int kind;
+  final String url;
+  final String? captionEn;
+  final String? captionAr;
+
+  bool get isVideo => kind == 1;
+  String? localizedCaption(bool isArabic) =>
+      _pickOpt(captionAr, captionEn, isArabic);
+
+  static ArchiveMediaItem fromJson(Map<String, dynamic> json) =>
+      ArchiveMediaItem(
+        kind: (json['kind'] as num?)?.toInt() ?? 0,
+        url: json['url'] as String? ?? '',
+        captionEn: json['captionEn'] as String?,
+        captionAr: json['captionAr'] as String?,
+      );
+}
+
+/// One past-edition session title — mirrors `PublicArchiveSessionTitle`.
+@immutable
+class ArchiveSessionTitle {
+  const ArchiveSessionTitle({required this.titleEn, required this.titleAr});
+
+  final String titleEn;
+  final String titleAr;
+
+  String localized(bool isArabic) => _pick(titleAr, titleEn, isArabic);
+
+  static ArchiveSessionTitle fromJson(Map<String, dynamic> json) =>
+      ArchiveSessionTitle(
+        titleEn: json['titleEn'] as String? ?? '',
+        titleAr: json['titleAr'] as String? ?? '',
+      );
+}
+
+/// One past speaker — mirrors `PublicArchivePastSpeaker`.
+@immutable
+class ArchivePastSpeaker {
+  const ArchivePastSpeaker({
+    required this.nameEn,
+    required this.nameAr,
+    this.photoRelativePath,
+  });
+
+  final String nameEn;
+  final String nameAr;
+  final String? photoRelativePath;
+
+  String localized(bool isArabic) => _pick(nameAr, nameEn, isArabic);
+
+  static ArchivePastSpeaker fromJson(Map<String, dynamic> json) =>
+      ArchivePastSpeaker(
+        nameEn: json['nameEn'] as String? ?? '',
+        nameAr: json['nameAr'] as String? ?? '',
+        photoRelativePath: json['photoRelativePath'] as String?,
       );
 }
 

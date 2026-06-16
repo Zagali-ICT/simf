@@ -43,6 +43,19 @@
                        ValueChanged="@(v => _model.Url = v)"
                        ValueExpression="@(() => _model.Url)"
                        Disabled="_busy" />
+        @* D-432 — optional bilingual tagline shown under the sponsor name. *@
+        <SimfTextField Label="@L["Admin.Sponsors.Field.TaglineAr"]"
+                       Value="@_model.TaglineAr"
+                       ValueChanged="@(v => _model.TaglineAr = v)"
+                       ValueExpression="@(() => _model.TaglineAr)"
+                       MaxLength="256"
+                       Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Sponsors.Field.Tagline"]"
+                       Value="@_model.Tagline"
+                       ValueChanged="@(v => _model.Tagline = v)"
+                       ValueExpression="@(() => _model.Tagline)"
+                       MaxLength="256"
+                       Disabled="_busy" />
         <SimfTextField Label="@L["Admin.Sponsors.Field.Logo"]"
                        Value="@_model.LogoRelativePath"
                        ValueChanged="@(v => _model.LogoRelativePath = v)"
@@ -121,6 +134,8 @@
             _model.Url = Initial.Url ?? string.Empty;
             _model.DisplayOrder = Initial.DisplayOrder;
             _model.ContactId = Initial.ContactId;
+            _model.Tagline = Initial.Tagline ?? string.Empty;
+            _model.TaglineAr = Initial.TaglineArabic ?? string.Empty;
             _model.IsActive = Initial.IsActive;
         }
         _editContext = new EditContext(_model);
@@ -153,6 +168,8 @@
                         Url = NullIfBlank(_model.Url),
                         DisplayOrder = _model.DisplayOrder,
                         ContactId = _model.ContactId,
+                        Tagline = NullIfBlank(_model.Tagline),
+                        TaglineArabic = NullIfBlank(_model.TaglineAr),
                     });
             }
             else
@@ -168,6 +185,8 @@
                         Url = NullIfBlank(_model.Url),
                         DisplayOrder = _model.DisplayOrder,
                         ContactId = _model.ContactId,
+                        Tagline = NullIfBlank(_model.Tagline),
+                        TaglineArabic = NullIfBlank(_model.TaglineAr),
                         IsActive = _model.IsActive,
                     });
             }
@@ -209,6 +228,8 @@
         public int Tier { get; set; } = 10;
         public string LogoRelativePath { get; set; } = string.Empty;
         public string Url { get; set; } = string.Empty;
+        public string Tagline { get; set; } = string.Empty;
+        public string TaglineAr { get; set; } = string.Empty;
         public int DisplayOrder { get; set; }
         public Guid? ContactId { get; set; }
         public bool IsActive { get; set; } = true;

@@ -12,11 +12,14 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
+import '../../app/widgets/simf_svg_icon.dart';
+import '../contacts/scan_contact_screen.dart';
 import '../myarea/data/myarea_models.dart';
 import '../myarea/data/myarea_repository.dart';
+import '../profile/data/profile_repository.dart' show referenceNumberProvider;
 
 /// Page 032 — بطاقة الدخول · Entry badge (#32, `/badge`), rebuilt to the
-/// KSA Wave-2 frame **221:769 "QR"** on the shared shell.
+/// KSA frame **758:1469 "QR"** on the shared shell.
 ///
 /// **Auth-gated** (route 32 in `_authenticatedRoutes`); data contract
 /// unchanged: the shipped My-Area layer (`GET /app/account/dashboard`,
@@ -93,16 +96,19 @@ class _BadgeScreenState extends ConsumerState<BadgeScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
+    // The displayed ID is the reference number (SIMF-2026-…), not the qrId the
+    // QR encodes. Best-effort; falls back to the qrId tail while it loads.
+    final referenceNumber = ref.watch(referenceNumberProvider).asData?.value;
     return KsaPage(
       title: l10n.badgeTitle,
       onBack: () => ksaBackOrHome(context),
       tab: SimfTab.badge,
       showSweep: true,
-      body: _buildBody(l10n),
+      body: _buildBody(l10n, referenceNumber),
     );
   }
 
-  Widget _buildBody(AppL10n l10n) {
+  Widget _buildBody(AppL10n l10n, String? referenceNumber) {
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -129,7 +135,12 @@ class _BadgeScreenState extends ConsumerState<BadgeScreen> {
         message: l10n.badgePendingBody,
       );
     }
-    return _Badge(l10n: l10n, identity: identity, qrId: qrId);
+    return _Badge(
+      l10n: l10n,
+      identity: identity,
+      qrId: qrId,
+      referenceNumber: referenceNumber,
+    );
   }
 }
 
@@ -142,14 +153,23 @@ String maskedBadgeId(String qrId) {
   return '•••• ${qrId.substring(qrId.length - 4)}';
 }
 
-/// The issued badge (frame node tree under 221:769): the gold-bordered white
+/// The issued badge (frame node tree under 758:1469): the gold-bordered white
 /// card (QR + hint + gold identity strip) and the add-person action below it.
 class _Badge extends StatelessWidget {
-  const _Badge({required this.l10n, required this.identity, required this.qrId});
+  const _Badge({
+    required this.l10n,
+    required this.identity,
+    required this.qrId,
+    this.referenceNumber,
+  });
 
   final AppL10n l10n;
   final MyAreaIdentity identity;
   final String qrId;
+
+  /// The human reference number (SIMF-2026-…) shown on the ID line; the QR still
+  /// encodes [qrId]. Falls back to the qrId tail until it loads.
+  final String? referenceNumber;
 
   @override
   Widget build(BuildContext context) {
@@ -160,40 +180,58 @@ class _Badge extends StatelessWidget {
       padding: const EdgeInsets.all(SimfTokens.space4),
       children: <Widget>[
         Container(
-          padding: const EdgeInsets.all(SimfTokens.space2),
+          padding: const EdgeInsets.all(SimfTokens.space4),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: SimfTokens.surface,
             borderRadius: BorderRadius.circular(SimfTokens.radiusLg),
-            // Frame 221:769 — the gold card edge is a heavy 4-px stroke.
-            border: Border.all(color: SimfTokens.accent, width: 4),
+            // Frame 758:1469 — the gold card edge is a thin 1-px stroke.
+            border: Border.all(color: SimfTokens.accent, width: 1),
           ),
           child: Column(
             children: <Widget>[
               Padding(
-                // Frame 221:769 — the QR sits ~12 % inset from the card edge.
+                // Frame 758:1477 — the QR (≈265 on the 343 card) sits ~24 inset
+                // inside the card padding; sized to the available width so it
+                // stays proportional on any device.
                 padding: const EdgeInsets.all(SimfTokens.space6),
-                child: QrImageView(
-                  data: qrId,
-                  version: QrVersions.auto,
-                  size: 230,
-                  gapless: true,
-                  // Frame 221:769 — the three finder eyes are rounded, not
-                  // square boxes.
-                  eyeStyle: const QrEyeStyle(
-                    eyeShape: QrEyeShape.circle,
-                    color: SimfTokens.navy,
-                  ),
-                  dataModuleStyle: const QrDataModuleStyle(
-                    dataModuleShape: QrDataModuleShape.square,
-                    color: SimfTokens.navy,
-                  ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Keep the QR square AND fit the page: cap to ~half the
+                    // screen height so a rotated (landscape) layout doesn't blow
+                    // it up past the viewport. Portrait is unchanged — width is
+                    // the smaller dimension there (≈265 on the 343 card).
+                    final maxByHeight =
+                        MediaQuery.of(context).size.height * 0.5;
+                    final qrSize = constraints.maxWidth < maxByHeight
+                        ? constraints.maxWidth
+                        : maxByHeight;
+                    return QrImageView(
+                    data: qrId,
+                    version: QrVersions.auto,
+                    size: qrSize,
+                    gapless: true,
+                    // Frame 758:1477 — rounded finder eyes, pure-black modules.
+                    eyeStyle: const QrEyeStyle(
+                      eyeShape: QrEyeShape.circle,
+                      color: Colors.black,
+                    ),
+                    dataModuleStyle: const QrDataModuleStyle(
+                      // Owner: a fully "circle" QR — circular dots, not square
+                      // modules (the finder eyes are already circular) (D-423).
+                      dataModuleShape: QrDataModuleShape.circle,
+                      color: Colors.black,
+                    ),
+                  );
+                  },
                 ),
               ),
               Text(
                 l10n.badgeScanToEnter,
+                // Frame 758:1469 — black, 16px, slight negative tracking.
                 style: const TextStyle(
-                  color: SimfTokens.greyText,
-                  fontSize: SimfTokens.textSm,
+                  color: Colors.black,
+                  fontSize: SimfTokens.textLg,
+                  letterSpacing: -0.366,
                 ),
               ),
               const SizedBox(height: SimfTokens.space4),
@@ -205,15 +243,15 @@ class _Badge extends StatelessWidget {
                 ),
                 child: Row(
                   children: <Widget>[
-                    // Frame 221:769 — a 64-px rounded box; the SIMF brand-mark
+                    // Frame 758:1469 — a 64-px rounded box; the SIMF brand-mark
                     // fallback on its navy box stays visible on the gold strip,
                     // replaced by the photo when present.
                     KsaAvatar(
                       name: name,
-                      imageUrl: identity.avatarUrl,
+                      currentUser: true,
                       size: 64,
                     ),
-                    const SizedBox(width: SimfTokens.space3),
+                    const SizedBox(width: SimfTokens.space2),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -222,30 +260,32 @@ class _Badge extends StatelessWidget {
                             name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
+                            // Frame 758:1469 — 18px SemiBold white.
                             style: const TextStyle(
                               color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                              fontSize: SimfTokens.textLg,
+                              fontWeight: FontWeight.w600,
+                              fontSize: SimfTokens.textTitle,
                             ),
                           ),
                           if (tier != null) ...<Widget>[
-                            const SizedBox(height: 2),
+                            const SizedBox(height: SimfTokens.space2),
                             Text(
                               tier,
+                              // Frame 758:1469 — 12px, muted #F0F0F0.
                               style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                                fontSize: SimfTokens.textXs,
+                                color: SimfTokens.onGoldMuted,
+                                fontSize: SimfTokens.textSm,
                               ),
                             ),
                           ],
-                          const SizedBox(height: 2),
+                          const SizedBox(height: SimfTokens.space2),
                           Text(
-                            'ID · ${maskedBadgeId(qrId)}',
+                            'ID · ${maskedBadgeId(referenceNumber ?? qrId)}',
                             textDirection: TextDirection.ltr,
+                            // Frame 758:1469 — 12px, muted #F0F0F0.
                             style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: SimfTokens.textXs,
+                              color: SimfTokens.onGoldMuted,
+                              fontSize: SimfTokens.textSm,
                             ),
                           ),
                         ],
@@ -258,34 +298,71 @@ class _Badge extends StatelessWidget {
           ),
         ),
         const SizedBox(height: SimfTokens.space4),
-        // The add-person action → the FDS-014 contact scanner.
-        OutlinedButton.icon(
-          onPressed: () => context.pushNamed(RouteNames.scanContact),
-          style: OutlinedButton.styleFrom(
-            minimumSize: const Size.fromHeight(48),
-            side: const BorderSide(
-              color: SimfTokens.beigeBorder,
-              width: SimfTokens.hairlineBold,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-            ),
-          ),
-          icon: const Icon(
-            Icons.qr_code_scanner,
-            size: 20,
-            color: Colors.white,
-          ),
-          label: Text(
-            l10n.badgeAddPerson,
-            style: const TextStyle(
+        // Role-based QR-page actions (D-426). A visitor reads another visitor's
+        // shared contact and shares their own; an exhibitor ("Other") scans
+        // visitor badges into My Visitors.
+        if (identity.isVisitor) ...<Widget>[
+          _actionButton(
+            icon: const SimfSvgIcon(
+              'assets/icons/badge_scan.svg',
+              size: 24,
               color: Colors.white,
-              fontWeight: FontWeight.w600,
-              fontSize: SimfTokens.textMd,
+            ),
+            label: l10n.badgeAddPerson,
+            // Open as a self-contained fullscreen modal (NOT a go_router route):
+            // the modal closes reliably via Navigator.pop, sidestepping the
+            // shell-route pop bug that left the scanner stuck (D-426).
+            onTap: () => Navigator.of(context, rootNavigator: true).push<void>(
+              MaterialPageRoute<void>(
+                fullscreenDialog: true,
+                builder: (_) => const ScanContactScreen(),
+              ),
             ),
           ),
-        ),
+          const SizedBox(height: SimfTokens.space3),
+          _actionButton(
+            icon: const Icon(Icons.qr_code_2, size: 24, color: Colors.white),
+            label: l10n.shareMyContactTitle,
+            onTap: () => context.pushNamed(RouteNames.shareMyContact),
+          ),
+        ] else
+          _actionButton(
+            icon: const SimfSvgIcon(
+              'assets/icons/badge_scan.svg',
+              size: 24,
+              color: Colors.white,
+            ),
+            label: l10n.badgeScanVisitor,
+            onTap: () => context.pushNamed(RouteNames.scanVisitor),
+          ),
       ],
+    );
+  }
+
+  /// One full-width gold-bordered QR-page action button (frame 758:1469 style).
+  Widget _actionButton({
+    required Widget icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return OutlinedButton.icon(
+      onPressed: onTap,
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size.fromHeight(48),
+        side: const BorderSide(color: SimfTokens.accent, width: 1),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        ),
+      ),
+      icon: icon,
+      label: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w700,
+          fontSize: SimfTokens.textLg,
+        ),
+      ),
     );
   }
 }

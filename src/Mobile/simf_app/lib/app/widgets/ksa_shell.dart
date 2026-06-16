@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/profile/data/profile_repository.dart'
+    show myAvatarBytesProvider;
 import '../localization/app_l10n.dart';
 import '../route_names.dart';
 import '../theme/tokens.dart';
 import 'more_drawer.dart';
 import 'simf_bottom_nav.dart';
 import 'simf_logo.dart';
+import 'simf_svg_icon.dart';
 
 /// Shared KSA main-shell chrome for the Wave-2 in-app pages (frames
 /// 512:1492 / 203:1236 / 512:1780 / 215:767 / 221:769 / 215:562): the navy
@@ -20,6 +24,24 @@ void ksaBackOrHome(BuildContext context) {
     context.pop();
   } else {
     context.goNamed(RouteNames.home);
+  }
+}
+
+/// A standard AppBar leading back button for raw-`AppBar` screens. Always shows
+/// (unlike the auto-leading, which vanishes when the screen is the navigator
+/// root after a resume / deep-link, trapping the user) and always works:
+/// [ksaBackOrHome] pops when it can, else lands on home. Use as
+/// `appBar: AppBar(leading: const SimfBackButton(), ...)`. (D-426)
+class SimfBackButton extends StatelessWidget {
+  const SimfBackButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.arrow_back),
+      tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+      onPressed: () => ksaBackOrHome(context),
+    );
   }
 }
 
@@ -112,9 +134,10 @@ class KsaPage extends StatelessWidget {
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
+              // Figma sub-page headers: 18px / SemiBold (was 20 / w500).
               style: const TextStyle(
-                fontSize: SimfTokens.textXl,
-                fontWeight: FontWeight.w500,
+                fontSize: SimfTokens.textTitle,
+                fontWeight: FontWeight.w600,
                 color: Colors.white,
               ),
             ),
@@ -157,11 +180,11 @@ class KsaBackButton extends StatelessWidget {
         backgroundColor: SimfTokens.navyDeep,
         shape: const CircleBorder(),
       ),
-      icon: const Icon(
-        Icons.arrow_back_ios_new,
+      // Figma frames use the iconamoon chevron, not a Material back-arrow.
+      icon: const SimfSvgIcon(
+        'assets/icons/ic_back.svg',
+        size: 24,
         color: Colors.white,
-        size: 18,
-        textDirection: TextDirection.ltr,
       ),
     );
   }
@@ -295,9 +318,11 @@ class KsaSectionHeader extends StatelessWidget {
               ),
               child: Text(
                 moreLabel!,
+                // Frame 758:1134 — the "more" link is white, Medium.
                 style: const TextStyle(
                   fontSize: SimfTokens.textSm,
-                  color: SimfTokens.txtSecondary,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
                 ),
               ),
             ),
@@ -334,14 +359,26 @@ class KsaTileRow extends StatelessWidget {
 class KsaNavTile extends StatelessWidget {
   const KsaNavTile({
     required this.label,
-    required this.icon,
+    this.icon,
+    this.iconAsset,
     this.onTap,
     this.enabled = true,
     super.key,
-  });
+  }) : assert(
+          icon != null || iconAsset != null,
+          'KsaNavTile needs either a Material icon or an SVG iconAsset.',
+        );
 
   final String label;
-  final IconData icon;
+
+  /// A Material glyph (the default tile icon source).
+  final IconData? icon;
+
+  /// An optional bundled SVG asset path (e.g. the KSA frame's exact iconify
+  /// glyph). When set it is rendered tinted to the tile colour and takes
+  /// precedence over [icon].
+  final String? iconAsset;
+
   final VoidCallback? onTap;
   final bool enabled;
 
@@ -350,6 +387,10 @@ class KsaNavTile extends StatelessWidget {
     final foreground =
         enabled ? SimfTokens.accent : SimfTokens.navyDisabledText;
     final labelColor = enabled ? Colors.white : SimfTokens.navyDisabledText;
+    final asset = iconAsset;
+    final Widget top = asset != null
+        ? SimfSvgIcon(asset, size: 24, color: foreground)
+        : Icon(icon, size: 24, color: foreground);
     return KsaCard(
       onTap: enabled ? onTap : null,
       color: enabled ? SimfTokens.navyDeep : SimfTokens.navyDisabled,
@@ -358,7 +399,7 @@ class KsaNavTile extends StatelessWidget {
           : SimfTokens.navyDisabledBorder,
       borderWidth: enabled ? SimfTokens.hairline : 1,
       child: _TileBody(
-        top: Icon(icon, size: 24, color: foreground),
+        top: top,
         label: label,
         labelColor: labelColor,
       ),
@@ -435,42 +476,50 @@ class _TileBody extends StatelessWidget {
 }
 
 /// The gold rounded-square avatar (home header 203:1238 / profile identity
-/// cards): the photo when [imageUrl] is set (falling back on error), else the
-/// name's initials on gold.
-class KsaAvatar extends StatelessWidget {
+/// cards). When [currentUser] is true it shows the **signed-in user's** photo,
+/// fetched as authenticated bytes via [myAvatarBytesProvider] (the avatar
+/// endpoint is bearer-gated and behind self-signed TLS, so a bare
+/// `Image.network` can't load it) and refreshed immediately after an upload via
+/// the avatar bust token. Otherwise — and whenever no photo is available — it
+/// renders the brand-mark fallback. [name] drives the accessibility label only.
+class KsaAvatar extends ConsumerWidget {
   const KsaAvatar({
     required this.name,
-    this.imageUrl,
+    this.currentUser = false,
     this.size = 42,
     super.key,
   });
 
-  /// Kept for the accessibility label only — the fallback is the brand mark,
-  /// not initials, so the name no longer drives the rendered glyphs.
   final String name;
-  final String? imageUrl;
+
+  /// True for the signed-in user's own avatar (home / badge / my-area). False
+  /// for any other person's avatar (e.g. a question submitter) — that always
+  /// shows the fallback, never the signed-in user's photo.
+  final bool currentUser;
   final double size;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final fallback = _AvatarFallback(size: size);
+    Widget child = fallback;
+    if (currentUser) {
+      final bytes = ref.watch(myAvatarBytesProvider).asData?.value;
+      if (bytes != null && bytes.isNotEmpty) {
+        child = Image.memory(
+          bytes,
+          fit: BoxFit.cover,
+          gaplessPlayback: true,
+          errorBuilder: (_, __, ___) => fallback,
+        );
+      }
+    }
     return Semantics(
       image: true,
       label: name.trim().isEmpty ? null : name,
       child: ClipRRect(
         borderRadius:
             const BorderRadius.all(Radius.circular(SimfTokens.radius)),
-        child: SizedBox(
-          width: size,
-          height: size,
-          child: imageUrl == null
-              ? fallback
-              : Image.network(
-                  imageUrl!,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => fallback,
-                ),
-        ),
+        child: SizedBox(width: size, height: size, child: child),
       ),
     );
   }
@@ -567,8 +616,11 @@ class KsaListRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: SimfTokens.space2),
-            const Icon(
-              Icons.arrow_left,
+            // Frame 758:1274 — a gold left-pointing caret. Material's
+            // Icons.arrow_left auto-mirrors to the right under RTL; the bundled
+            // SVG does not, so it stays pointing left as the design shows.
+            const SimfSvgIcon(
+              'assets/icons/ic_caret_left.svg',
               color: SimfTokens.accent,
               size: 24,
             ),

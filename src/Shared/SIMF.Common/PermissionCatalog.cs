@@ -100,6 +100,9 @@ public static class PermissionCatalog
         public const string Export = "Visitors.Export";
         public const string Import = "Visitors.Import";
         public const string RegisterOnsite = "Visitors.RegisterOnsite";
+        // V-1 (D-429) — export the VVIP/VIP welcome roster (موج/Mawj) as the
+        // API + CSV + Excel feed shared with the technical teams.
+        public const string ExportVip = "Visitors.ExportVip";
     }
 
     /// <summary>Attendee roster + badge printing.</summary>
@@ -624,6 +627,7 @@ public static class PermissionCatalog
         new(Visitors.Export, "Visitors", "Export", "Export visitors", AdminOnly),
         new(Visitors.Import, "Visitors", "Import", "Import visitors", AdminOnly),
         new(Visitors.RegisterOnsite, "Visitors", "RegisterOnsite", "Walk-in register a visitor", AdminOnly),
+        new(Visitors.ExportVip, "Visitors", "ExportVip", "Export the VVIP/VIP welcome roster (Mawj)", AdminOnly),
 
         new(Attendees.View, "Attendees", "View", "View the attendee roster", AdminOnly),
         new(Attendees.PrintBag, "Attendees", "PrintBag", "Print attendee badges", AdminOnly),

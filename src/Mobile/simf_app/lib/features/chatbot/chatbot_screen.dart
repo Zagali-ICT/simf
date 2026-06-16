@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/ksa_shell.dart' show SimfBackButton;
 
 /// The seam that turns a user prompt into an assistant reply.
 ///
@@ -111,7 +112,10 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.chatbotTitle)),
+      appBar: AppBar(
+        leading: const SimfBackButton(),
+        title: Text(l10n.chatbotTitle),
+      ),
       body: SafeArea(
         child: Column(
           children: <Widget>[

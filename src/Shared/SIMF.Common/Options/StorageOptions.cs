@@ -14,6 +14,13 @@ public sealed class StorageOptions
     /// <summary>Root directory the filesystem avatar storage writes into.</summary>
     public string AvatarBase { get; set; } = string.Empty;
 
+    /// <summary>V-1 (D-429) — root directory the VVIP/VIP welcome-photo storage
+    /// writes into. A store separate from <see cref="AvatarBase"/> so the VIP
+    /// photo never collides with the account avatar (both key files by user id).
+    /// Optional — when unset the storage derives a <c>vip-photos</c> sibling of
+    /// <see cref="AvatarBase"/> so a deploy that predates this key still boots.</summary>
+    public string VipPhotoBase { get; set; } = string.Empty;
+
     /// <summary>Root directory the encrypted user-ID document storage writes into.</summary>
     public string UserIdDocumentBase { get; set; } = string.Empty;
 

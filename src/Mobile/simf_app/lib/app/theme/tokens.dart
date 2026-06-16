@@ -32,6 +32,12 @@ class SimfTokens {
   static const Color greyText = Color(0xFF6C7278); // secondary text on light surfaces
   static const Color linkNavy = Color(0xFF00245E); // inline links on light surfaces
   static const Color inputInk = Color(0xCC111827); // input text on light surfaces (#111827 at 80%)
+  static const Color onGoldMuted = Color(0xFFF0F0F0); // muted text on the gold identity strip (badge 758:1469)
+  static const Color timestampMuted = Color(0xFF4C555F); // notification timestamp (758:2491)
+  static const Color codeBoxBeige = Color(0xCCFFF4DC); // pale-beige code chip fill (venue map 758:1358, #FFF4DC @ 80%)
+  static const Color cardShadow = Color(0x29111827); // soft card drop-shadow (headlineInk @ ~16%)
+  static const Color dayInactive = Color(0xFFC2C2C2); // calendar day with no sessions (758:1415)
+  static const Color navInactive = Color(0xFF5E584B); // bottom-nav inactive icon (758:1476)
 
   // KSA main-shell disabled palette (W2 frames 512:1492 / 512:1780): the
   // "بطاقتي" locked card and the disabled theme tile render on these.

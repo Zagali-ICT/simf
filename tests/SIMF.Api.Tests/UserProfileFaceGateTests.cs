@@ -57,11 +57,15 @@ public sealed class UserProfileFaceGateTests : IClassFixture<FaceGateApiFactory>
     }
 
     [Fact]
-    public async Task Upload_with_no_detectable_face_is_rejected_with_NO_FACE()
+    public async Task Self_service_id_upload_accepts_a_faceless_document()
     {
+        // Two-photo split (D-431-follow-up) — the self-service ID upload is now
+        // a DOCUMENT from the gallery (national-ID / Iqama / passport scan), so
+        // it NO LONGER face-gates: a valid faceless image is accepted even with
+        // the real ONNX detector enabled. The live face requirement moved to the
+        // separate FACE photo (avatar), captured via the client liveness flow.
         var token = await CreateUserAndSignInAsync();
 
-        // A properly valid PNG (generated, decodable) with no human face.
         var png = ValidFacelessPng();
 
         using var form = new MultipartFormDataContent();
@@ -79,15 +83,8 @@ public sealed class UserProfileFaceGateTests : IClassFixture<FaceGateApiFactory>
 
         var raw = await response.Content.ReadAsStringAsync();
         Assert.True(
-            response.StatusCode == HttpStatusCode.BadRequest,
-            $"Expected 400, got {(int)response.StatusCode}: {raw}");
-        var body = System.Text.Json.JsonSerializer.Deserialize<ApiResult<object>>(
-            raw,
-            new System.Text.Json.JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true,
-            })!;
-        Assert.Equal(ErrorCodes.VisitorIdImageNoFace, body.Error!.Code);
+            response.StatusCode == HttpStatusCode.OK,
+            $"Expected 200 (the ID document path no longer face-gates), got {(int)response.StatusCode}: {raw}");
     }
 
     [Fact]

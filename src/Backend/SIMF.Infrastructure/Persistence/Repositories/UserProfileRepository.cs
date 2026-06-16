@@ -81,6 +81,17 @@ internal sealed class UserProfileRepository(
         return string.IsNullOrEmpty(path) ? null : path;
     }
 
+    public async Task<string?> GetVipPhotoPathAsync(
+        Guid userId, CancellationToken cancellationToken = default)
+    {
+        var path = await appDbContext.UserProfiles
+            .AsNoTracking()
+            .Where(p => p.UserId == userId)
+            .Select(p => p.VipPhotoRelativePath)
+            .SingleOrDefaultAsync(cancellationToken);
+        return string.IsNullOrEmpty(path) ? null : path;
+    }
+
     public Task<ProfileCompletenessFacts?> GetCompletenessFactsAsync(
         Guid userId, CancellationToken cancellationToken = default) =>
         appDbContext.UserProfiles

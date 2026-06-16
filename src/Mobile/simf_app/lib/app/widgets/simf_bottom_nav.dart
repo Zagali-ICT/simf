@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../localization/app_l10n.dart';
 import '../route_names.dart';
 import '../theme/tokens.dart';
+import 'simf_svg_icon.dart';
 
-/// The app's bottom navigation bar, rebuilt to the KSA-Project Wave-2 frames
-/// (e.g. 512:1492 "Visitor-Home-2" nav component 206:1669): a navy bar with
-/// rounded top corners, an upward gold glow, a raised 56px gold QR centre
-/// action, and **only the active tab** showing its label. Destinations (in
-/// reading order): Home · Agenda · [QR badge] · Map · Profile — the Profile
-/// tab replaced the old News tab per the delivered frames (owner-approved,
-/// W2 batch). Tapping a destination navigates via go_router; the active tab
-/// is a no-op. [current] is null on pages that keep the bar but are not a
-/// destination themselves (e.g. News).
+/// The app's bottom navigation bar, rebuilt to the KSA-Project frame **758:1476
+/// "Nav Bar"**: a navy `#01132D` bar with rounded top corners, an upward gold
+/// glow, the exact iconify glyphs (`vuesax/linear/user`, `boxicons:location`,
+/// `boxicons:qr`, `uil:calender`, `vuesax/bold/home-2`) bundled under
+/// `assets/icons/nav_*.svg`, a raised 56px gold QR centre action, inactive
+/// icons in `#5E584B`, and the active tab in gold with its label below it.
+/// Destinations (reading order): Home · Agenda · [QR badge] · Map · Profile —
+/// the Profile tab replaced the old News tab per the delivered frames. Tapping
+/// a destination navigates via go_router; the active tab is a no-op. [current]
+/// is null on pages that keep the bar but are not a destination themselves.
 enum SimfTab { home, sessions, badge, map, profile }
 
 class SimfBottomNav extends StatelessWidget {
@@ -55,34 +58,35 @@ class SimfBottomNav extends StatelessWidget {
                 _Item(
                   tab: SimfTab.home,
                   current: current,
-                  icon: Icons.home_rounded,
+                  iconAsset: 'assets/icons/nav_home.svg',
                   label: l10n.homeTitle,
                   onTap: () => context.goNamed(RouteNames.home),
                 ),
                 _Item(
                   tab: SimfTab.sessions,
                   current: current,
-                  icon: Icons.calendar_today_outlined,
+                  iconAsset: 'assets/icons/nav_calendar.svg',
                   label: l10n.navAgenda,
-                  onTap: () => _push(context, RouteNames.sessions),
+                  onTap: () => context.goNamed(RouteNames.sessions),
                 ),
                 _CentreAction(
                   active: current == SimfTab.badge,
-                  onTap: () => _push(context, RouteNames.badge),
+                  label: l10n.badgeTitle,
+                  onTap: () => context.goNamed(RouteNames.badge),
                 ),
                 _Item(
                   tab: SimfTab.map,
                   current: current,
-                  icon: Icons.location_on_outlined,
+                  iconAsset: 'assets/icons/nav_location.svg',
                   label: l10n.tileVenueMap,
-                  onTap: () => _push(context, RouteNames.venueMap),
+                  onTap: () => context.goNamed(RouteNames.venueMap),
                 ),
                 _Item(
                   tab: SimfTab.profile,
                   current: current,
-                  icon: Icons.person_outline,
+                  iconAsset: 'assets/icons/nav_user.svg',
                   label: l10n.navProfile,
-                  onTap: () => _push(context, RouteNames.myArea),
+                  onTap: () => context.goNamed(RouteNames.myArea),
                 ),
               ],
             ),
@@ -91,33 +95,30 @@ class SimfBottomNav extends StatelessWidget {
       ),
     );
   }
-
-  void _push(BuildContext context, String route) {
-    context.pushNamed(route);
-  }
 }
 
-/// One destination: the icon, plus the label **below it only when active**
-/// (the KSA nav shows a single gold label under the current tab).
+/// One destination: the exact iconify glyph (inactive `#5E584B`, active gold),
+/// plus the gold label **below it only when active** (the KSA nav shows a single
+/// label under the current tab; frame 758:1476).
 class _Item extends StatelessWidget {
   const _Item({
     required this.tab,
     required this.current,
-    required this.icon,
+    required this.iconAsset,
     required this.label,
     required this.onTap,
   });
 
   final SimfTab tab;
   final SimfTab? current;
-  final IconData icon;
+  final String iconAsset;
   final String label;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final active = tab == current;
-    final color = active ? SimfTokens.accent : SimfTokens.txtSecondary;
+    final color = active ? SimfTokens.goldSoft : SimfTokens.navInactive;
     return Expanded(
       child: Semantics(
         button: true,
@@ -129,7 +130,7 @@ class _Item extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              Icon(icon, color: color, size: 24),
+              SimfSvgIcon(iconAsset, size: 24, color: color),
               if (active) ...<Widget>[
                 const SizedBox(height: SimfTokens.space1),
                 Text(
@@ -137,7 +138,7 @@ class _Item extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: SimfTokens.accent,
+                    color: SimfTokens.goldSoft,
                     fontSize: SimfTokens.textSm,
                   ),
                 ),
@@ -150,40 +151,34 @@ class _Item extends StatelessWidget {
   }
 }
 
-/// The raised gold QR centre action (frame component "boxicons:qr", 56px).
+/// The raised gold QR centre action (frame 758:1476 "boxicons:qr", 56px) — the
+/// bundled multi-colour SVG (gold disc, cream ring, navy glyph) rendered as-is.
 class _CentreAction extends StatelessWidget {
-  const _CentreAction({required this.active, required this.onTap});
+  const _CentreAction({
+    required this.active,
+    required this.label,
+    required this.onTap,
+  });
 
   final bool active;
+  final String label;
   final VoidCallback onTap;
-
-  static final BoxDecoration _decoration = BoxDecoration(
-    color: SimfTokens.accent,
-    shape: BoxShape.circle,
-    border: Border.all(color: SimfTokens.navy, width: 3),
-    boxShadow: <BoxShadow>[
-      BoxShadow(
-        color: SimfTokens.goldSoft.withValues(alpha: 0.35),
-        blurRadius: 10,
-      ),
-    ],
-  );
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: Center(
-        child: InkWell(
-          onTap: active ? null : onTap,
-          customBorder: const CircleBorder(),
-          child: Container(
-            width: 56,
-            height: 56,
-            decoration: _decoration,
-            child: const Icon(
-              Icons.qr_code_2_rounded,
-              color: SimfTokens.navy,
-              size: 28,
+        child: Semantics(
+          button: true,
+          selected: active,
+          label: label,
+          child: InkWell(
+            onTap: active ? null : onTap,
+            customBorder: const CircleBorder(),
+            child: SvgPicture.asset(
+              'assets/icons/nav_qr.svg',
+              width: 56,
+              height: 56,
             ),
           ),
         ),

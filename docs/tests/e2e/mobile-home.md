@@ -19,7 +19,7 @@
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
 | **Auth setup** | A signed-in visitor token (`AuthFlow.SignInVisitorWithoutTwoFactorAsync`); `AuthFlow.SetAccountState` for the approved case. **No literal secrets.** |
-| **Last reviewed** | 2026-06-05 |
+| **Last reviewed** | 2026-06-14 |
 
 ## Coverage matrix
 
@@ -35,6 +35,9 @@
 | E2E-MOB013-008 | Locked بطاقتي card is visible but inert as a guest | auth | P1 | authored ✓ (screen — disabled tile ignores taps) |
 | E2E-MOB013-009 | FAQ row opens the About page (no app FAQ endpoint yet) | happy | P2 | authored ✓ (screen) |
 | E2E-MOB013-010 | Social + Visit-Saudi links launch externally; unset URL = inert button | happy | P2 | authored ✓ (screen — 5 brand buttons render; D-369 contract) |
+| E2E-MOB013-011 | Greeting shows the App-profile name, never the email (frame 758:1134, D-408) | happy | P1 | authored ✓ (screen — profile name wins; email fallback suppressed) |
+| E2E-MOB013-012 | Discovery hero banner renders and opens News (node 758:1203, D-408) | happy | P2 | authored ✓ (screen — banner tap → News) |
+| E2E-MOB013-013 | Home tiles render the exact iconify SVG glyphs (frame 758:1134, D-408) | i18n/visual | P2 | authored ✓ (screen — `KsaNavTile.iconAsset`; live render hf-03) |
 
 ## Scenarios
 
@@ -192,6 +195,64 @@ Scenario: No posts hides the section
 Scenario: RTL
   Given the device locale is Arabic
   Then the card lays out right-to-left with the brand mark at the inline start
+```
+
+### E2E-MOB013-011 — Greeting shows the profile name, never the email (D-408)
+
+```gherkin
+Feature: Signed-in greeting (frame 758:1134)
+  As a signed-in visitor
+  I want to be greeted by my name
+  So that the home feels personal — and my email is never shown as a name
+
+Scenario: Profile name wins over the auth display name
+  Given a signed-in visitor whose App profile name is "مهند زقالي محمد"
+  And GET /app/account/dashboard returns that identity
+  When the signed-in Home loads
+  Then the greeting reads "<time-of-day> مهند زقالي محمد 👋"
+  And the auth session display name is NOT shown
+
+Scenario: The email is never rendered as the name
+  Given a signed-in visitor whose auth display name IS their email
+  And the profile name has not resolved (loading, or a 403 for a pending account)
+  When the signed-in Home loads
+  Then the greeting shows the wave only ("👋") with no name
+  And no "@"-bearing text appears in the header
+```
+
+### E2E-MOB013-012 — Discovery hero banner opens News (node 758:1203, D-408)
+
+```gherkin
+Feature: Discovery hero banner
+  As a signed-in visitor
+  I want the "اكتشف / Discover" banner under the header
+  So that I can jump into the latest content
+
+Scenario: The banner renders and opens News
+  Given the signed-in Home is shown
+  Then a hero banner shows the event image under a dark scrim
+  And the gold "اكتشف / Discover" title and the white
+      "تعال واكتشف جديدك المفضل / Come discover your favourites" sub-line
+  When the user taps the banner
+  Then the News list opens
+```
+
+### E2E-MOB013-013 — Tiles render the exact iconify glyphs (frame 758:1134, D-408)
+
+```gherkin
+Feature: Home tile icons match the design
+  As the design owner
+  I want the home tiles to use the frame's exact iconify glyphs
+  So that the app matches Figma 758:1134, not near-equivalents
+
+Scenario: Each signed-in tile shows its bundled SVG glyph
+  Given the signed-in Home is shown
+  Then المتحدثون shows the person glyph, الأجنحة the chart glyph,
+       الرعاة the target glyph
+  And الأرشيف shows the archive glyph, اللقاءات الثنائية the video glyph
+  And المساعد الذكي the message glyph, قابل أشخاص مثلك the users glyph,
+       بطاقتي الذكية the card glyph, ملخص الجلسات the new-session glyph
+  And each glyph is tinted to the tile foreground (gold when enabled)
 ```
 
 ---

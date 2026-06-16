@@ -496,6 +496,26 @@ Scenario: Arabic toggle mirrors the all-data modal, tier picker and photo lightb
   Then the stacked lightbox opens RTL with its footer Download link mirrored
 ```
 
+### E2E-VPN-025 — Full walk-in → pending → approve → QR chain (task #6)
+
+```gherkin
+Scenario: A walk-in registrant flows through the queue to an approved, QR-bearing account
+  Given an Administrator is signed in
+  When the desk registers a walk-in visitor via /admin/visitors/vip or the Add-visitor form
+  Then the account is created PendingApproval with no QR (D-425)
+  And the registrant appears in the /admin/visitors/pending queue
+  When the administrator approves that row
+  Then the account state flips to Approved
+  And a QR id is minted on the visitor's profile (D-386)
+  And the visitor no longer appears in the pending queue
+```
+
+**Covered (lower layer, no browser):** `tests/SIMF.Api.Tests/WalkInRegistrationTests.cs`
+→ `Walk_in_visitor_appears_in_pending_queue_then_approve_mints_qr` drives the
+real routes `POST /admin/visitors/register-onsite` → `POST /admin/visitors/pending/list`
+→ `POST /admin/visitors/{id}/approve` and asserts the PendingApproval→Approved
+transition, the queue membership before/after, and the minted QR id.
+
 ---
 
 ## Implementation notes
@@ -518,6 +538,9 @@ Scenario: Arabic toggle mirrors the all-data modal, tier picker and photo lightb
     per-subject skip reporting.
   - `tests/SIMF.Api.Tests/AdminBulkRejectTests.cs` — bulk-reject shared-reason
     batch + per-subject skip reporting.
+  - `tests/SIMF.Api.Tests/WalkInRegistrationTests.cs` —
+    `Walk_in_visitor_appears_in_pending_queue_then_approve_mints_qr` (E2E-VPN-025):
+    the full walk-in → pending-queue → approve → QR-minted chain.
   When E2E covers a scenario you can usually drop the matching `Api.Tests` case —
   but during the transition keep both.
 - **Doc drift note:** `docs/pages/cp/admin-visitors-pending.md` (last reviewed

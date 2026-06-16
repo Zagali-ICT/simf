@@ -24,7 +24,11 @@ public sealed record PublicSponsor(
     string? LinkedInUrl = null,
     string? InstagramUrl = null,
     double? Latitude = null,
-    double? Longitude = null);
+    double? Longitude = null,
+    // D-432 — appended (append-only wire): the optional bilingual tagline shown
+    // under the sponsor name (Figma 922:2824).
+    string? Tagline = null,
+    string? TaglineArabic = null);
 
 /// <summary>One tier section on the public sponsors screen — the heading plus
 /// the sponsors that belong to it, already ordered.</summary>

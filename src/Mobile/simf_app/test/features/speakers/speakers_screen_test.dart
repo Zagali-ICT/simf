@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 import 'package:simf_app/features/speakers/data/speaker_models.dart';
 import 'package:simf_app/features/speakers/data/speakers_repository.dart';
 import 'package:simf_app/features/speakers/speakers_screen.dart';
@@ -17,13 +18,22 @@ const _speakers = <SpeakerSummary>[
     nameArabic: 'القبطان ريف',
     displayOrder: 0,
     rank: 'Sea captain',
-    countryNameEn: 'Saudi Arabia',
+    countryNameEn: 'RSNF',
   ),
   SpeakerSummary(
     id: 'sp2',
     name: 'Dr Wave',
     nameArabic: 'د. موجة',
     displayOrder: 1,
+  ),
+  // A host row — detected by the affiliation text carrying the host word
+  // ("Host" in EN / "المضيف" in AR), the only signal on the public summary.
+  SpeakerSummary(
+    id: 'sp3',
+    name: 'Brig. Anchor',
+    nameArabic: 'العميد مرساة',
+    displayOrder: 2,
+    rank: 'Brigadier · Host',
   ),
 ];
 
@@ -55,7 +65,11 @@ class _FakeSpeakersRepo implements SpeakersRepository {
       throw UnimplementedError();
 }
 
-Future<void> _pump(WidgetTester tester, {required SpeakersRepository repo}) async {
+Future<void> _pump(
+  WidgetTester tester, {
+  required SpeakersRepository repo,
+  Locale locale = const Locale('en'),
+}) async {
   final router = GoRouter(
     initialLocation: '/speakers',
     routes: <RouteBase>[
@@ -79,7 +93,7 @@ Future<void> _pump(WidgetTester tester, {required SpeakersRepository repo}) asyn
       ],
       child: MaterialApp.router(
         routerConfig: router,
-        locale: const Locale('en'),
+        locale: locale,
         supportedLocales: AppL10n.supportedLocales,
         localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
           ...AppL10n.localizationsDelegates,
@@ -95,11 +109,57 @@ Future<void> _pump(WidgetTester tester, {required SpeakersRepository repo}) asyn
 
 void main() {
   group('SpeakersScreen (Page 019)', () {
-    testWidgets('renders a card per speaker', (tester) async {
+    testWidgets('renders the header title and a card per speaker',
+        (tester) async {
       await _pump(tester, repo: _FakeSpeakersRepo(list: _speakers));
+      expect(find.text('Speakers'), findsOneWidget);
       expect(find.text('Capt. Reef'), findsOneWidget);
       expect(find.text('Dr Wave'), findsOneWidget);
-      expect(find.textContaining('Sea captain'), findsOneWidget);
+      expect(find.text('Brig. Anchor'), findsOneWidget);
+      // The rank · affiliation line joins both parts.
+      expect(find.text('Sea captain · RSNF'), findsOneWidget);
+    });
+
+    testWidgets('the global list shows the anchor tile for EVERY speaker — the '
+        'host star is per-session (shown on the detail), not here (D-432)',
+        (tester) async {
+      await _pump(tester, repo: _FakeSpeakersRepo(list: _speakers));
+      // Anchor-for-all: host is contextual to a session (it lives on the
+      // session↔speaker join), so the global list never shows a star.
+      expect(find.byIcon(Icons.anchor), findsNWidgets(3));
+      expect(find.byIcon(Icons.star_border), findsNothing);
+    });
+
+    testWidgets('RTL card matches Figma 908:1744 — the gold anchor tile sits on '
+        'the RIGHT (next to the name), the navigation caret on the LEFT',
+        (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeSpeakersRepo(list: _speakers),
+        locale: const Locale('ar'),
+      );
+      // Reference everything to the FIRST card (sp1 = القبطان ريف) so the
+      // comparison is unambiguous (not a header/nav SVG).
+      final nameDx = tester.getCenter(find.text('القبطان ريف')).dx;
+      final anchorDx = tester.getCenter(find.byIcon(Icons.anchor).first).dx;
+      // The caret SVG that shares the first card's row (same dy as the name).
+      final nameDy = tester.getCenter(find.text('القبطان ريف')).dy;
+      final caretDx = tester
+          .getCenter(find.byWidgetPredicate((w) =>
+              w is SimfSvgIcon && w.asset.contains('caret')).first)
+          .dx;
+      final caretDy = tester
+          .getCenter(find.byWidgetPredicate((w) =>
+              w is SimfSvgIcon && w.asset.contains('caret')).first)
+          .dy;
+      // Figma (Arabic/RTL frame 908:1744): the gold anchor tile is the right-
+      // most element (right of the name), the caret is the left-most.
+      expect(anchorDx, greaterThan(nameDx),
+          reason: 'anchor tile must be right of the name (Figma 908:1744)');
+      expect(caretDx, lessThan(nameDx),
+          reason: 'caret must be left of the name (Figma 908:1744)');
+      expect((caretDy - nameDy).abs(), lessThan(60),
+          reason: 'caret shares the first card row');
     });
 
     testWidgets('tapping a card opens the profile', (tester) async {

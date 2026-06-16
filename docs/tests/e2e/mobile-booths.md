@@ -7,6 +7,18 @@
 > `src/Mobile/simf_app/test/features/booths/booths_screen_test.dart` (list,
 > tap→detail sheet, empty, error→retry). It reuses the venue-map booth models +
 > `VenueMapRepository` (same wire contract, no duplicate model).
+>
+> **Figma re-skin (D-432):** the page now matches the KSA-Project frame
+> **922:2458 "Halls"** — navy shell + centred `الأجنحة` header, a bordered
+> `الأجنحة` search field, and one exhibitor card per booth (company header +
+> gold code pill + deep-navy hall box + gold guide-me CTA). Newly wired sections,
+> all carried on `GET /app/booths` (server resolves the officer **Contact-first**):
+> the **booth-officer row** (gold name over the fixed `المسؤول في الجناح` role
+> beside a gold RS-style initials tile), the **email + phone contact boxes**, and
+> the **real hall display name** in the hall box (falls back sector → generic
+> `قاعة المعرض`). A **client-side search filter** (name/exhibitor/sector/code)
+> with a distinct no-match state was added. Officer/contact/hall rows render only
+> when the wire actually carries that data — never invented.
 
 | | |
 |--|--|
@@ -25,6 +37,11 @@
 | E2E-MOB022-003 | Empty list → empty state | edge | P1 | authored ✓ (screen `empty list shows the empty state`) |
 | E2E-MOB022-004 | A read failure → error + Retry that re-fetches | resilience | P0 | authored ✓ (screen `error shows retry, which re-fetches`) |
 | E2E-MOB022-005 | Booth detail 404 → keep the summary, drop the description | edge | P2 | covered (sheet `localizedDescription` null → omitted; mirrors venue-map L-8) |
+| E2E-MOB022-006 | Booth-officer row (gold name + `المسؤول في الجناح` + RS tile) | happy | P1 | _to author (D-432)_ |
+| E2E-MOB022-007 | Email + phone contact boxes (both / one-only / none) | happy | P1 | _to author (D-432)_ |
+| E2E-MOB022-008 | Hall box shows real hall name → sector → generic fallback | happy | P1 | _to author (D-432)_ |
+| E2E-MOB022-009 | Search filter narrows the list to the typed term | happy | P0 | _to author (D-432)_ |
+| E2E-MOB022-010 | Search with no match → `لا توجد أجنحة مطابقة` state | edge | P1 | _to author (D-432)_ |
 
 ## Scenarios
 
@@ -74,6 +91,115 @@ Scenario: A booth detail 404 keeps the summary
 **Evidence:** screen tests `empty list shows the empty state`,
 `error shows retry, which re-fetches`; the 404-keeps-summary path mirrors the
 venue-map booth sheet (D-298).
+
+### E2E-MOB022-006 — Booth-officer row (Figma 922:2800, D-432)
+
+```gherkin
+Feature: Booths — booth-officer row
+  As a guest browsing the exhibition
+  I want each booth to show its responsible officer
+  So that I know who to ask about that exhibitor
+
+Scenario: A booth carrying an officer shows the officer row
+  Given GET /api/v1/app/booths returns a booth "بحرية" whose
+    officerName is "Rana Saleh" (server resolved it Contact-first)
+  When the guest opens /booths
+  Then that booth card shows "Rana Saleh" in gold
+  And under it the fixed role label "المسؤول في الجناح" (EN: "Booth officer")
+  And a gold square initials tile reading "RS" beside the name
+
+Scenario: A booth with no officer omits the row entirely
+  Given a booth whose officerName is null/blank
+  Then no officer name, no "المسؤول في الجناح" label and no initials tile render
+  And the card still shows the company header, hall box and guide-me CTA
+```
+
+**Evidence:** card `_OfficerRow` renders only when `booth.officerName` is
+non-blank; role label = `l10n.boothsOfficerRole` (`المسؤول في الجناح` /
+`Booth officer`); initials via `_initials(name)`.
+
+### E2E-MOB022-007 — Email + phone contact boxes (Figma 922:2810, D-432)
+
+```gherkin
+Feature: Booths — officer contact boxes
+
+Scenario: Both contacts present shows two side-by-side boxes
+  Given a booth whose officerEmail is "rana@bahria.sa"
+    and officerPhone is "+966500000000"
+  When the guest opens /booths
+  Then the card shows a navy email box reading "rana@bahria.sa" (mail glyph)
+  And beside it a navy phone box reading "+966500000000" (call glyph)
+  And both texts render left-to-right even in Arabic
+
+Scenario: Only one contact present shows only that box
+  Given a booth with officerPhone but no officerEmail
+  Then only the phone box renders (no empty email box)
+
+Scenario: No contacts present omits the contact row
+  Given a booth with neither officerEmail nor officerPhone
+  Then no contact boxes render on that card
+```
+
+**Evidence:** `_ContactBoxes`/`_ContactBox` — gated on
+`officerEmail`/`officerPhone` non-blank; each box is `textDirection: ltr`.
+
+### E2E-MOB022-008 — Hall box display name + fallback chain (Figma 922:2798, D-432)
+
+```gherkin
+Feature: Booths — hall box label
+
+Scenario: Real hall name is shown when on the wire
+  Given a booth whose resolved hall display name is "HALL A"
+  When the guest opens /booths
+  Then the deep-navy hall box shows "HALL A" in gold (centred, single line)
+
+Scenario: Falls back to the sector when no hall name
+  Given a booth with no hall name but sector "الدفاع البحري"
+  Then the hall box shows "الدفاع البحري"
+
+Scenario: Falls back to the generic label when neither is present
+  Given a booth with no hall name and no sector
+  Then the hall box shows "قاعة المعرض" (EN: "Exhibition hall")
+  And never an invented hall name (D11 / Page_015 L-6)
+```
+
+**Evidence:** `_HallRow` label =
+`booth.localizedHallName(...) ?? booth.localizedSector(...) ?? l10n.boothsHallFallback`
+(`قاعة المعرض` / `Exhibition hall`).
+
+### E2E-MOB022-009 — Search filter narrows the list (Figma 922:2549, D-432)
+
+```gherkin
+Feature: Booths — client-side search
+
+Scenario: Typing a term filters the visible cards
+  Given the list shows booths "بحرية", "الدفاع الجوي" and "موانئ"
+  And the search field hint reads "ابحث عن جناح أو شركة"
+    (EN: "Search for a booth or company")
+  When the guest types "بحرية" into the search field
+  Then only the "بحرية" booth card remains
+  And the filter also matches on exhibitor, sector and booth code
+  And clearing the field restores the full list
+```
+
+**Evidence:** `_SearchField.onChanged` → `_query`; `_filtered` matches
+name/exhibitor/sector/code, case-insensitive; hint = `l10n.boothsSearchHint`.
+
+### E2E-MOB022-010 — Search with no match (Figma 922:2549, D-432)
+
+```gherkin
+Scenario: A query that matches nothing shows the no-match state
+  Given the list has booths but none match "zzzz"
+  When the guest types "zzzz"
+  Then the cards disappear and a no-match placeholder shows
+    "لا توجد أجنحة مطابقة" (EN: "No matching booths") with the search-off icon
+  And the empty-list placeholder "لا توجد أجنحة" is NOT shown
+    (that state is reserved for an actually empty booth list)
+```
+
+**Evidence:** `_buildBody` — `filtered.isEmpty` (with `_booths` non-empty) →
+`KsaEmptyState(icon: search_off_outlined, message: l10n.boothsNoMatch)`
+(`لا توجد أجنحة مطابقة` / `No matching booths`); distinct from `boothsEmpty`.
 
 ---
 

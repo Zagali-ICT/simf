@@ -5,6 +5,16 @@
 > the `Location*` / `DateLabel*` columns). API implementation lives in
 > `tests/SIMF.Api.Tests/ArchiveTests.cs` (public detail) and
 > `tests/SIMF.Api.Tests/AdminArchiveTests.cs` (admin authoring round-trip).
+>
+> **Figma parity (D-432, frame `925:3079` / detail node `24-01`):** the screen
+> now matches its Figma frame — the notice banner, "اختار ملتقى" edition pills,
+> bulleted gold title, summary, المكان / الزمن row, and the three stat tiles,
+> plus the three **new** rich lists that render only when the lazily-loaded
+> detail (`GET /app/archive/{id}`) carries them: the **الصور والفيديو** gallery
+> strip (image vs. video tile with a play glyph), the **عناوين الجلسات**
+> session-title bullets, and the **المتحدثون السابقون** past-speaker avatars
+> with a `+N آخرون` overflow chip. Each section is omitted (not faked) when its
+> list is empty.
 
 | | |
 |--|--|
@@ -13,7 +23,7 @@
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
 | **Auth setup** | **None for the read** — the detail is anonymous/public. An **Admin** token (admin TOTP via the `Get-Totp` helper, **no literal secrets**) only to seed an edition and to flip the archive-visibility toggle. |
-| **Last reviewed** | 2026-06-04 |
+| **Last reviewed** | 2026-06-16 |
 
 ## Coverage matrix
 
@@ -26,8 +36,11 @@
 | E2E-MOB024D-005 | Archive visibility OFF → detail 404 (single surface, no leak) | edge | P0 | authored ✓ (`Public_detail_is_404_when_archive_visibility_is_off`) |
 | E2E-MOB024D-006 | Soft-deleted (`IsActive == false`) edition → 404 | edge | P1 | authored ✓ (`Public_detail_is_404_for_a_soft_deleted_edition`) |
 | E2E-MOB024D-007 | Null optional scalars (summary / location / date / cover) → boxes hidden, gradient fallback | edge | P1 | authored (screen) |
-| E2E-MOB024D-008 | Deferred sections (gallery / session titles / past speakers) show "coming soon" | edge | P2 | authored (screen) |
+| E2E-MOB024D-008 | Absent rich lists (gallery / session titles / past speakers empty) → sections omitted, not faked | edge | P2 | authored (screen) |
 | E2E-MOB024D-009 | RTL render; year + counter numbers LTR | i18n | P1 | authored (screen) |
+| E2E-MOB024D-010 | الصور والفيديو gallery strip — image tile vs. video tile (play glyph) + caption | happy | P1 | authored (screen) |
+| E2E-MOB024D-011 | عناوين الجلسات — session titles render as beige bullets | happy | P1 | authored (screen) |
+| E2E-MOB024D-012 | المتحدثون السابقون — first 4 avatars + "+N آخرون" overflow chip | happy | P1 | authored (screen) |
 
 ## Scenarios
 
@@ -123,13 +136,15 @@ Scenario: Missing optional fields hide their boxes
   And the three counters still render
 ```
 
-### E2E-MOB024D-008 — Deferred sections
+### E2E-MOB024D-008 — Absent rich lists are omitted
 
 ```gherkin
-Scenario: The not-yet-modelled lists show a placeholder
-  Given the detail is shown
+Scenario: When the edition carries no rich lists the sections are not shown
+  Given a visible edition whose gallery, sessionTitles and pastSpeakers arrays are all empty
+  When the detail renders
   Then the الصور والفيديو, عناوين الجلسات and المتحدثون السابقون sections
-       render a "coming soon" placeholder (not broken/empty rows)
+       are absent entirely (omitted, not faked, not a broken/empty row)
+  And the title, summary, المكان / الزمن row and the three stat tiles still render
 ```
 
 ### E2E-MOB024D-009 — RTL render
@@ -142,6 +157,62 @@ Scenario: The detail renders right-to-left in Arabic
   And the year overlay and the counter numbers render left-to-right
 ```
 
+### E2E-MOB024D-010 — الصور والفيديو gallery strip
+
+```gherkin
+Feature: Past-edition rich lists (Figma 24-01)
+  As any app user (no login)
+  I want to see the selected edition's media, sessions and speakers
+  So that the past edition feels rich, not just counters
+
+Scenario: A gallery of one image + one video renders the right tiles
+  Given the 2024 edition detail returns gallery:
+    | kind | captionAr            | captionEn            |
+    | 0    | حفل الافتتاح         | Opening ceremony     |
+    | 1    | الكلمة الرئيسية      | Keynote highlights   |
+  When the detail renders for the selected edition
+  Then a section labelled "الصور والفيديو" ("Photos & videos") appears above the bullets
+  And it is a horizontal strip of navy tiles with the beige hairline border
+  And the kind=0 tile shows the image glyph (image_outlined) in gold
+  And the kind=1 tile shows the play glyph (play_circle_outline) in gold
+  And each tile shows its single-line caption ("حفل الافتتاح" / "الكلمة الرئيسية")
+  And switching to English shows the English captions ("Opening ceremony" / "Keynote highlights")
+```
+
+### E2E-MOB024D-011 — عناوين الجلسات session-title bullets
+
+```gherkin
+Scenario: Session titles render as a list of beige bullets
+  Given the 2024 edition detail returns sessionTitles:
+    | titleAr                              | titleEn                          |
+    | مستقبل الملاحة البحرية               | The future of maritime shipping  |
+    | الأمن البحري في البحر الأحمر         | Red Sea maritime security        |
+  When the detail renders
+  Then a section labelled "عناوين الجلسات" ("Session titles") appears
+  And each title renders as a beige disc-bulleted line in order
+  And "مستقبل الملاحة البحرية" is the first bullet and "الأمن البحري في البحر الأحمر" the second
+  And switching to English shows "The future of maritime shipping" then "Red Sea maritime security"
+```
+
+### E2E-MOB024D-012 — المتحدثون السابقون avatars + overflow
+
+```gherkin
+Scenario: Six past speakers show four avatars and a "+2 آخرون" overflow chip
+  Given the 2024 edition detail returns pastSpeakers with six names:
+    | nameAr            | nameEn            |
+    | أحمد الزهراني     | Ahmed Alzahrani   |
+    | سارة القحطاني     | Sara Alqahtani    |
+    | محمد العتيبي      | Mohammed Alotaibi |
+    | نورة الدوسري      | Noura Aldosari    |
+    | خالد الشهري       | Khalid Alshehri   |
+    | ريم الغامدي       | Reem Alghamdi     |
+  When the detail renders
+  Then a section labelled "المتحدثون السابقون" ("Past speakers") appears
+  And exactly the first four speakers render as a name + initials avatar chip
+  And a gold-bordered overflow chip reads "+2 آخرون" ("+2 more")
+  And each avatar shows the speaker's two-letter initials in gold on a navy circle
+```
+
 ---
 
-_Last reviewed:_ `2026-06-04` by `SIMF Team`.
+_Last reviewed:_ `2026-06-16` by `SIMF Team`.

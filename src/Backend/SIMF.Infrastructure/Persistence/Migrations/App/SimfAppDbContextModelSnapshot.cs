@@ -549,6 +549,103 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.ToTable("ArchiveEditions", (string)null);
                 });
 
+            modelBuilder.Entity("SIMF.Domain.Archive.ArchiveMediaItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ArchiveEditionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CaptionAr")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("CaptionEn")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArchiveEditionId", "DisplayOrder");
+
+                    b.ToTable("ArchiveMediaItems", (string)null);
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Archive.ArchivePastSpeaker", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ArchiveEditionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("NameAr")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("NameEn")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("PhotoRelativePath")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArchiveEditionId", "DisplayOrder");
+
+                    b.ToTable("ArchivePastSpeakers", (string)null);
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Archive.ArchiveSessionTitle", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ArchiveEditionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TitleAr")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("TitleEn")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArchiveEditionId", "DisplayOrder");
+
+                    b.ToTable("ArchiveSessionTitles", (string)null);
+                });
+
             modelBuilder.Entity("SIMF.Domain.Assets.Asset", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2195,6 +2292,49 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.ToTable("ExhibitorMemberships", (string)null);
                 });
 
+            modelBuilder.Entity("SIMF.Domain.Exhibitors.ExhibitorVisitorScan", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("ExhibitorUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("VisitorUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExhibitorUserId");
+
+                    b.HasIndex("ExhibitorUserId", "VisitorUserId");
+
+                    b.ToTable("ExhibitorVisitorScans", (string)null);
+                });
+
             modelBuilder.Entity("SIMF.Domain.Faq.FaqEntry", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2643,6 +2783,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("Gender")
                         .HasColumnType("int");
 
+                    b.Property<string>("Honorific")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
                     b.Property<string>("IdImageRelativePath")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -2664,6 +2808,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("JobTitle")
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("MawjId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -2698,6 +2846,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(7)
                         .HasColumnType("nvarchar(7)");
 
+                    b.Property<string>("PreferredLanguage")
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
                     b.Property<Guid?>("ProfileTypeId")
                         .HasColumnType("uniqueidentifier");
 
@@ -2729,6 +2881,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("VipPhotoRelativePath")
+                        .HasMaxLength(260)
+                        .HasColumnType("nvarchar(260)");
 
                     b.HasKey("Id");
 
@@ -3939,6 +4095,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
+                    b.Property<string>("Tagline")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("TaglineArabic")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
                     b.Property<int>("Tier")
                         .HasColumnType("int");
 
@@ -4079,6 +4243,39 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Navigation("Gate");
 
                     b.Navigation("UserProfile");
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Archive.ArchiveMediaItem", b =>
+                {
+                    b.HasOne("SIMF.Domain.Archive.ArchiveEdition", "Edition")
+                        .WithMany("Media")
+                        .HasForeignKey("ArchiveEditionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Edition");
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Archive.ArchivePastSpeaker", b =>
+                {
+                    b.HasOne("SIMF.Domain.Archive.ArchiveEdition", "Edition")
+                        .WithMany("PastSpeakers")
+                        .HasForeignKey("ArchiveEditionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Edition");
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Archive.ArchiveSessionTitle", b =>
+                {
+                    b.HasOne("SIMF.Domain.Archive.ArchiveEdition", "Edition")
+                        .WithMany("SessionTitles")
+                        .HasForeignKey("ArchiveEditionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Edition");
                 });
 
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.BusinessMeeting", b =>
@@ -4471,6 +4668,15 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Navigation("AllowedProfileTypes");
 
                     b.Navigation("Assignments");
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Archive.ArchiveEdition", b =>
+                {
+                    b.Navigation("Media");
+
+                    b.Navigation("PastSpeakers");
+
+                    b.Navigation("SessionTitles");
                 });
 
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.BusinessMeeting", b =>

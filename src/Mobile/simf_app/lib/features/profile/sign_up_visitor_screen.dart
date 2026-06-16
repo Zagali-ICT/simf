@@ -1,11 +1,9 @@
 import 'dart:async';
-import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -14,6 +12,7 @@ import '../../app/localization/locale_controller.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_logo.dart';
+import '../myarea/identity_verification_screen.dart' show CapturedSelfie;
 import 'data/profile_models.dart';
 import 'data/profile_repository.dart';
 import 'phone_validation.dart';
@@ -97,11 +96,20 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   bool _organisationSearchFailed = false;
 
   Timer? _organisationDebounce;
+
+  // The ID DOCUMENT image (picked from the gallery) — mandatory for all.
   Uint8List? _idImageBytes;
-  // C7 (D-371) — true when the server already stores an image for this
-  // profile (prefill), so a male re-entry is not forced to recapture.
-  bool _hasExistingIdImage = false;
   String? _idImageName;
+  // True when the server already stores an ID document for this profile
+  // (prefill), so a re-entry is not forced to re-pick it.
+  bool _hasExistingIdImage = false;
+
+  // The FACE photo (live capture → the avatar) — mandatory for men, optional
+  // for women. Shown at the top of the card once captured.
+  Uint8List? _faceImageBytes;
+  String? _faceImageName;
+  // True when the server already stores a face photo (avatar) for this profile.
+  bool _hasExistingAvatar = false;
 
   bool _loading = true;
   String? _loadError;
@@ -191,6 +199,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         ? AppGender.male
         : profile.gender;
     _hasExistingIdImage = profile.hasIdImage;
+    _hasExistingAvatar = profile.hasAvatar;
 
     final code = profile.nationalityCode;
     _nationalityCode = _countries.any((c) => c.code == code)
@@ -352,33 +361,18 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     }
   }
 
+  /// "Upload ID" — the ID DOCUMENT is picked from the gallery/library (a
+  /// national-ID / Iqama / passport scan), so there is no live-camera or
+  /// face-detection step here. Mandatory for every registrant; the Next gate
+  /// reports a missing image.
   Future<void> _pickIdImage() async {
     try {
-      // C7 (D-371) — native is camera-only (the photo must be taken live).
-      // The web build is a proof-of-concept channel only (production is
-      // mobile-only), where the browser camera is unreliable, so web falls
-      // back to the gallery; the server-side face gate stays the authority on
-      // either source. (D-384 — web = PoC exception.)
-      final file = await ImagePicker().pickImage(
-        source: kIsWeb ? ImageSource.gallery : ImageSource.camera,
-      );
+      final file = await ImagePicker().pickImage(source: ImageSource.gallery);
       if (file == null) {
         return;
       }
       final bytes = await file.readAsBytes();
-      // C7 — on-device human-face check for instant feedback; the server
-      // re-checks authoritatively on upload (the on-device pass is skipped
-      // on web / when the plugin is unavailable).
-      final hasFace = await _containsFace(file.path);
       if (!mounted) {
-        return;
-      }
-      if (!hasFace) {
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(content: Text(AppL10n.of(context).noFaceDetectedError)),
-          );
         return;
       }
       setState(() {
@@ -386,28 +380,28 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         _idImageName = file.name;
       });
     } catch (_) {
-      // The camera is unavailable (e.g. no native plugin in this tree).
-      // Fail silently — the C7 male gate on Next reports the missing image.
+      // The gallery is unavailable — the required-ID gate on Next reports it.
     }
   }
 
-  /// C7 (D-371) — runs the on-device ML Kit face detector over the capture.
-  /// Returns true (defer to the server gate) on web or when the detector
-  /// plugin is unavailable in the current runtime.
-  Future<bool> _containsFace(String path) async {
-    if (kIsWeb) {
-      return true;
+  /// "Face photo" — the live face capture (→ the profile avatar). Owner
+  /// directive: reuse the existing **face-detection page** (the guided
+  /// liveness screen, `identityVerification`, Page 103) the My-Area avatar
+  /// already uses and that runs reliably — NOT a direct camera picker. That
+  /// page owns the camera-permission request, the on-device face + liveness
+  /// check and the gallery fallback; the returned selfie becomes the avatar
+  /// and is shown at the top of the card immediately. Mandatory for men,
+  /// optional for women.
+  Future<void> _pickFacePhoto() async {
+    final selfie = await context
+        .pushNamed<CapturedSelfie>(RouteNames.identityVerification);
+    if (selfie == null || !mounted) {
+      return;
     }
-    final detector = FaceDetector(options: FaceDetectorOptions());
-    try {
-      final faces = await detector.processImage(InputImage.fromFilePath(path));
-      return faces.isNotEmpty;
-    } catch (_) {
-      // Detector unavailable (tests / desktop) — the server still checks.
-      return true;
-    } finally {
-      unawaited(detector.close());
-    }
+    setState(() {
+      _faceImageBytes = selfie.bytes;
+      _faceImageName = selfie.filename;
+    });
   }
 
   void _removeIdImage() {
@@ -433,23 +427,35 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     // side; the picker is not a FormField, so its inline error (line ~985)
     // must also gate Next, otherwise an empty code reaches the server (400).
     final nationalityValid = _nationalityCode != null;
-    // C7 (D-371) — the photo is mandatory for men: a camera capture must be
-    // attached (or already stored server-side) before the flow continues.
-    final imageValid = _gender != AppGender.male ||
-        _idImageBytes != null ||
-        _hasExistingIdImage;
+    // Two-photo split — the ID DOCUMENT is mandatory for every registrant; the
+    // FACE photo is mandatory for men and optional for women. Either a fresh
+    // pick or an already-stored image satisfies each.
+    final idImageValid = _idImageBytes != null || _hasExistingIdImage;
+    final faceImageValid = _gender != AppGender.male ||
+        _faceImageBytes != null ||
+        _hasExistingAvatar;
     if (!formValid ||
         !dateOfBirthValid ||
         !organisationValid ||
         !nationalityValid ||
-        !imageValid) {
+        !idImageValid ||
+        !faceImageValid) {
+      // D-434 — surface a clear message instead of failing silently, so the
+      // user notices the highlighted missing items (e.g. the male ID photo).
       setState(() {});
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text(AppL10n.of(context).completeProfilePrompt)),
+        );
       return;
     }
     final draft = SignUpProfileDraft(
       request: _buildRequest(),
       idImageBytes: _idImageBytes,
       idImageName: _idImageName,
+      faceImageBytes: _faceImageBytes,
+      faceImageName: _faceImageName,
     );
     context.pushNamed(RouteNames.signUpInterests, extra: draft);
   }
@@ -487,10 +493,40 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
 
   // ---- Validators (client mirror of UpsertUserProfileRequestValidator) -----
 
-  String? _validateRequired(String? value) {
-    return (value?.trim().isNotEmpty ?? false)
-        ? null
-        : AppL10n.of(context).requiredField;
+  // Name rules (mirror UpsertUserProfileRequestValidator): the Arabic name must
+  // be Arabic letters only, the English name Latin letters only, and a "full
+  // name" is at least four whitespace-separated parts (in that one language).
+  static final RegExp _arabicLettersOnly = RegExp(r'^[ء-ي\s]+$');
+  static final RegExp _englishLettersOnly = RegExp(r'^[A-Za-z\s]+$');
+
+  String? _validateArabicName(String? value) {
+    final l10n = AppL10n.of(context);
+    final name = value?.trim() ?? '';
+    if (name.isEmpty) {
+      return l10n.requiredField;
+    }
+    if (!_arabicLettersOnly.hasMatch(name)) {
+      return l10n.arabicNameLettersOnly;
+    }
+    if (name.split(RegExp(r'\s+')).length < 4) {
+      return l10n.fullNameFourParts;
+    }
+    return null;
+  }
+
+  String? _validateEnglishName(String? value) {
+    final l10n = AppL10n.of(context);
+    final name = value?.trim() ?? '';
+    if (name.isEmpty) {
+      return l10n.requiredField;
+    }
+    if (!_englishLettersOnly.hasMatch(name)) {
+      return l10n.englishNameLettersOnly;
+    }
+    if (name.split(RegExp(r'\s+')).length < 4) {
+      return l10n.fullNameFourParts;
+    }
+    return null;
   }
 
   String? _validateNationalId(String? value) {
@@ -704,12 +740,41 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                             ),
                           ),
                         ),
-                        const Icon(
-                          Icons.account_circle_outlined,
-                          size: 40,
-                          color: SimfTokens.headlineInk,
-                        ),
+                        // The captured face photo replaces the placeholder
+                        // person icon at the top once taken (owner follow-up).
+                        _buildHeaderAvatar(),
                       ],
+                    ),
+                    const SizedBox(height: 16),
+                    // D-434 — a clear notice that this is the complete-profile
+                    // step, so the user pays attention to the required items
+                    // (white-on-beige + gold border to stand out from the card).
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: SimfTokens.surface,
+                        border: Border.all(color: SimfTokens.accent),
+                        borderRadius: _radius4,
+                      ),
+                      child: Row(
+                        children: <Widget>[
+                          const Icon(
+                            Icons.info_outline,
+                            size: 18,
+                            color: SimfTokens.accent,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              l10n.completeProfilePrompt,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: SimfTokens.inputInk,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 24),
                     // نوع التسجيل (Visitor / Other) — beige tabs (Figma 505:1075).
@@ -732,7 +797,12 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                       maxLength: 256,
                       style: _inputStyle,
                       autovalidateMode: AutovalidateMode.onUserInteraction,
-                      validator: _validateRequired,
+                      // Arabic letters + spaces only — block other scripts at
+                      // the keystroke so the field can never hold mixed text.
+                      inputFormatters: <TextInputFormatter>[
+                        FilteringTextInputFormatter.allow(RegExp(r'[ء-ي\s]')),
+                      ],
+                      validator: _validateArabicName,
                       decoration: _fieldDecoration(counterText: ''),
                     ),
                     const SizedBox(height: 16),
@@ -744,7 +814,11 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                       textDirection: TextDirection.ltr,
                       style: _inputStyle,
                       autovalidateMode: AutovalidateMode.onUserInteraction,
-                      validator: _validateRequired,
+                      // Latin letters + spaces only.
+                      inputFormatters: <TextInputFormatter>[
+                        FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z\s]')),
+                      ],
+                      validator: _validateEnglishName,
                       decoration: _fieldDecoration(counterText: ''),
                     ),
                     const SizedBox(height: 16),
@@ -786,6 +860,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     _buildPlateField(l10n),
                     const SizedBox(height: 16),
                     _buildIdImageField(l10n),
+                    const SizedBox(height: 16),
+                    _buildFacePhotoField(l10n),
                     const SizedBox(height: 16),
                     // Underlined terms link (Figma 522:2179) — opens Page 009.
                     Center(
@@ -1171,28 +1247,74 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     );
   }
 
-  /// The attach box (Figma 505:1322): a 56 px bordered row with the plus mark;
-  /// once attached it shows the thumbnail + name + remove. C7 (D-371): the
-  /// capture is camera-only and mandatory for men — the inline error renders
-  /// after a blocked Next.
+  /// The card-head avatar: the captured face photo once taken (owner follow-up
+  /// — "show at top by replacing the icon with the real profile photo"), else
+  /// the placeholder person icon.
+  Widget _buildHeaderAvatar() {
+    final bytes = _faceImageBytes;
+    if (bytes == null) {
+      return const Icon(
+        Icons.account_circle_outlined,
+        size: 40,
+        color: SimfTokens.headlineInk,
+      );
+    }
+    return ClipOval(
+      child: Image.memory(bytes, width: 40, height: 40, fit: BoxFit.cover),
+    );
+  }
+
+  /// The empty 56 px bordered attach box (shared by the ID + face fields):
+  /// a centred label + trailing icon that triggers [onTap] when tapped.
+  Widget _attachBox({
+    required String label,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: _radius4,
+      child: Container(
+        height: 56,
+        decoration: BoxDecoration(
+          border: Border.all(color: SimfTokens.beigeBorder),
+          borderRadius: _radius4,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              label,
+              style: const TextStyle(
+                color: SimfTokens.inputInk,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(icon, size: 24, color: SimfTokens.greyText),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// "Upload ID" — the ID DOCUMENT attach box (gallery pick): a 56 px bordered
+  /// row with the plus mark; once attached it shows the thumbnail + name +
+  /// remove. Mandatory for EVERY registrant — the "required" hint shows up
+  /// front, escalating to danger after a blocked Next.
   Widget _buildIdImageField(AppL10n l10n) {
     final bytes = _idImageBytes;
-    // C7 (D-371) — the photo is mandatory for men. Surface the requirement
-    // UP FRONT (not only after a failed Next): a male with no photo attached
-    // always sees the "required" hint, escalating to the danger colour once
-    // they have actually tried to submit. The Next gate is unchanged.
-    final maleNeedsImage = _gender == AppGender.male &&
-        bytes == null &&
-        !_hasExistingIdImage;
-    final triedAndMissing = _triedSubmit && maleNeedsImage;
+    final needsImage = bytes == null && !_hasExistingIdImage;
+    final triedAndMissing = _triedSubmit && needsImage;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         _FieldLabel(l10n.attachmentsLabel),
         const SizedBox(height: 8),
-        if (maleNeedsImage) ...<Widget>[
+        if (needsImage) ...<Widget>[
           Text(
-            l10n.idImageRequiredForMen,
+            l10n.idImageRequired,
             style: TextStyle(
               color: triedAndMissing ? SimfTokens.danger : SimfTokens.greyText,
               fontSize: 12,
@@ -1201,35 +1323,10 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           const SizedBox(height: 8),
         ],
         if (bytes == null)
-          InkWell(
+          _attachBox(
+            label: l10n.attachFileLabel,
+            icon: Icons.add_circle_outline,
             onTap: () => unawaited(_pickIdImage()),
-            borderRadius: _radius4,
-            child: Container(
-              height: 56,
-              decoration: BoxDecoration(
-                border: Border.all(color: SimfTokens.beigeBorder),
-                borderRadius: _radius4,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Text(
-                    l10n.attachFileLabel,
-                    style: const TextStyle(
-                      color: SimfTokens.inputInk,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Icon(
-                    Icons.add_circle_outline,
-                    size: 24,
-                    color: SimfTokens.greyText,
-                  ),
-                ],
-              ),
-            ),
           )
         else
           Container(
@@ -1266,6 +1363,86 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     foregroundColor: SimfTokens.accent,
                   ),
                   child: Text(l10n.removeLabel),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// "Face photo" — the live face capture (→ profile avatar). Mandatory for
+  /// men, optional for women. Once captured the face shows at the top of the
+  /// card and this row confirms it with a Retake; an empty male field shows the
+  /// "required" hint (danger after a blocked Next), a woman sees the optional
+  /// hint.
+  Widget _buildFacePhotoField(AppL10n l10n) {
+    final bytes = _faceImageBytes;
+    final maleNeedsFace = _gender == AppGender.male &&
+        bytes == null &&
+        !_hasExistingAvatar;
+    final triedAndMissing = _triedSubmit && maleNeedsFace;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        _FieldLabel(l10n.facePhotoLabel),
+        const SizedBox(height: 8),
+        if (maleNeedsFace) ...<Widget>[
+          Text(
+            l10n.facePhotoRequiredForMen,
+            style: TextStyle(
+              color: triedAndMissing ? SimfTokens.danger : SimfTokens.greyText,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 8),
+        ] else if (bytes == null && !_hasExistingAvatar) ...<Widget>[
+          Text(
+            l10n.facePhotoOptionalForWomen,
+            style: const TextStyle(color: SimfTokens.greyText, fontSize: 12),
+          ),
+          const SizedBox(height: 8),
+        ],
+        if (bytes == null)
+          _attachBox(
+            label: l10n.facePhotoCaptureLabel,
+            icon: Icons.photo_camera_outlined,
+            onTap: () => unawaited(_pickFacePhoto()),
+          )
+        else
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              border: Border.all(color: SimfTokens.beigeBorder),
+              borderRadius: _radius4,
+            ),
+            child: Row(
+              children: <Widget>[
+                ClipOval(
+                  child: Image.memory(
+                    bytes,
+                    width: 40,
+                    height: 40,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    l10n.facePhotoCaptured,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: SimfTokens.inputInk,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => unawaited(_pickFacePhoto()),
+                  style: TextButton.styleFrom(
+                    foregroundColor: SimfTokens.accent,
+                  ),
+                  child: Text(l10n.retakeLabel),
                 ),
               ],
             ),

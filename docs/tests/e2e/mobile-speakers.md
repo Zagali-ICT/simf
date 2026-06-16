@@ -18,7 +18,18 @@
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
 | **Auth setup** | **None** — the list is `AllowAnonymous` (guest+). An **Admin** token is used **only** to seed the speakers (and to soft-delete one). **No literal secrets** (admin TOTP via the `Get-Totp` helper). |
-| **Last reviewed** | 2026-06-05 |
+| **Last reviewed** | 2026-06-16 |
+
+> **Figma parity (D-432):** the screen is re-skinned to the KSA-Project frame
+> **908:1744 "Speakers"** — the navy shell with a centred header `المتحدثون`
+> flanked by a circled back chevron (profile header pattern 908:2110), then a
+> vertical list of navy `#192B41` cards on the beige `0.2px` hairline ([`KsaCard`]).
+> Each card (908:1999) shows, in RTL: a small beige caret at the inline start,
+> the white name (16/SemiBold) over the beige `rank · affiliation` line
+> (12/Regular), and a **44×44 gold-bordered anchor tile** ([`_RoleTile`], 908:2004).
+> **The anchor tile renders for EVERY speaker** — the host/speaker distinction is
+> **per-session** (it lives on the session↔speaker join), so the host **star** is
+> shown only on the **session detail**, never on this global list.
 
 ## Coverage matrix
 
@@ -31,6 +42,10 @@
 | E2E-MOB019-005 | A soft-deleted speaker drops out of the list | edge | P1 | authored ✓ (`PublicSpeakersTests`) |
 | E2E-MOB019-006 | No speakers → empty `items` → list placeholder | edge | P2 | authored ✓ (screen) |
 | E2E-MOB019-007 | RTL render; rank/name right-to-left, avatar leading | i18n | P1 | authored ✓ (screen) |
+| E2E-MOB019-008 | Re-skin: navy hairline `KsaCard`, beige caret, name over `rank · affiliation`, gold anchor tile (frame 908:1999) | happy | P1 | _to author_ |
+| E2E-MOB019-009 | Anchor tile shows for EVERY speaker; no host star on this global list (D-432) | happy | P0 | _to author_ |
+| E2E-MOB019-010 | Centred header `المتحدثون` flanked by circled back chevron + balancing spacer (908:2110) | happy | P2 | _to author_ |
+| E2E-MOB019-011 | Card with no rank/affiliation drops the beige sub-line, keeps the name | edge | P2 | _to author_ |
 
 ## Scenarios
 
@@ -119,6 +134,53 @@ Scenario: The speakers grid renders right-to-left in Arabic
   And the "المزيد"/More affordance sits at the natural RTL end of the card
 ```
 
+### E2E-MOB019-008 — Re-skinned navy hairline card (frame 908:1999)
+
+```gherkin
+Scenario: A speaker card renders the Figma navy hairline chrome
+  Given the list returned a speaker named "محمد العتيبي" with rank "القبطان البحري" and country "السعودية"
+  When the المتحدثون list draws that speaker's card
+  Then the card is a navy "#192B41" KsaCard on the beige 0.2px hairline
+  And a small beige caret (ic_caret_left) sits at the inline-start edge of the card
+  And the white name "محمد العتيبي" (16/SemiBold) shows above the beige line "القبطان البحري · السعودية" (12/Regular)
+  And a 44×44 gold-bordered tile sits at the inline-end edge of the card
+```
+
+### E2E-MOB019-009 — Anchor tile for every speaker, no host star on the list (D-432)
+
+```gherkin
+Scenario: The global list shows the anchor tile for every speaker and never the host star
+  Given three active speakers are seeded, one of whom hosts a session
+  When the المتحدثون list renders all three cards
+  Then every card's role tile is the gold-bordered anchor tile (Icons.anchor, accent @ 15% fill)
+  And no card shows a host star glyph
+  And the host/المضيف star appears only on the session detail, not on this global list
+```
+
+### E2E-MOB019-010 — Centred header with circled back chevron (frame 908:2110)
+
+```gherkin
+Scenario: The header keeps the title optically centred under the navy shell
+  Given the speakers list is open on the navy KsaPage
+  When the header renders
+  Then the centred title reads "المتحدثون" (English: "Speakers")
+  And a circled back chevron (KsaBackButton) sits at the leading edge
+  And a 42×42 spacer balances it at the trailing edge so the title stays centred
+  When the back chevron is tapped
+  Then ksaBackOrHome navigates back (or home when there is no back stack)
+```
+
+### E2E-MOB019-011 — Card with no rank or affiliation
+
+```gherkin
+Scenario: A speaker with no rank and no country drops the sub-line
+  Given the list returned a speaker whose rank is null/blank and whose country is null
+  When the card renders
+  Then the white name shows on its own
+  And no beige rank·affiliation sub-line is drawn
+  And the gold anchor tile and the beige caret still render
+```
+
 ---
 
-_Last reviewed:_ `2026-06-05` by `SIMF Team`.
+_Last reviewed:_ `2026-06-16` by `SIMF Team`.

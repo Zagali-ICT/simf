@@ -1,13 +1,12 @@
-import 'dart:async';
-
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
-import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../core/widgets/coming_soon_screen.dart';
 import '../features/auth/email_otp_verify_screen.dart';
+import '../features/auth/badge_activation_screen.dart';
+import '../features/auth/badge_sign_in_screen.dart';
 import '../features/auth/forgot_password_screen.dart';
 import '../features/auth/reset_password_screen.dart';
 import '../features/auth/sign_in_screen.dart';
@@ -36,6 +35,8 @@ import '../features/meet/meet_people_screen.dart';
 import '../features/more/more_screen.dart';
 import '../features/notifications/notifications_screen.dart';
 import '../features/questions/send_question_screen.dart';
+import '../features/exhibitor/my_visitors_screen.dart';
+import '../features/exhibitor/scan_visitor_screen.dart';
 import '../features/gates/gate_scan_screen.dart';
 import '../features/moderation/session_moderate_screen.dart';
 import '../features/myarea/identity_verification_screen.dart';
@@ -55,7 +56,6 @@ import '../features/speakers/speaker_profile_screen.dart';
 import '../features/speakers/speakers_screen.dart';
 import '../features/splash/splash_screen.dart';
 import 'route_names.dart';
-import 'route_resume.dart';
 
 /// Holds the route metadata for one screen: the path, the route name, the
 /// mockup screen number, and the Arabic + English label used by the
@@ -97,7 +97,7 @@ const List<_Route> _routes = <_Route>[
 
   // Section 2 — Core screens (8 screens)
   _Route(number: 13, name: RouteNames.home, path: '/', labelAr: 'الرئيسية', labelEn: 'Home'),
-  _Route(number: 14, name: RouteNames.myArea, path: '/my-area', labelAr: 'منطقتي', labelEn: 'My area'),
+  _Route(number: 14, name: RouteNames.myArea, path: '/my-area', labelAr: 'الملف الشخصى', labelEn: 'Profile'),
   _Route(number: 15, name: RouteNames.venueMap, path: '/map', labelAr: 'الخريطة', labelEn: 'Venue map'),
   // §9 (D-276) — mockup screen 16 renamed Agenda → Sessions (route + path + label).
   _Route(number: 16, name: RouteNames.sessions, path: '/sessions', labelAr: 'الجلسات', labelEn: 'Sessions'),
@@ -145,6 +145,9 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 103, name: RouteNames.identityVerification, path: '/my-area/verify-identity', labelAr: 'التحقق من الهوية', labelEn: 'Identity verification'),
   _Route(number: 104, name: RouteNames.sessionModerate, path: '/sessions/:sessionId/moderate', labelAr: 'أسئلة الجلسة', labelEn: 'Session questions'),
   _Route(number: 105, name: RouteNames.gateScanner, path: '/gates/scan', labelAr: 'مسح البوابة', labelEn: 'Gate scanner'),
+  // D-426 — exhibitor ("Other") lead capture (approved-only; server 403s visitors).
+  _Route(number: 106, name: RouteNames.scanVisitor, path: '/exhibitor/scan', labelAr: 'مسح بطاقة زائر', labelEn: 'Scan visitor badge'),
+  _Route(number: 107, name: RouteNames.myVisitors, path: '/exhibitor/visitors', labelAr: 'زواري', labelEn: 'My Visitors'),
 ];
 
 /// Auxiliary auth routes that aren't numbered in the mockup but live in
@@ -153,6 +156,9 @@ const List<_Route> _auxRoutes = <_Route>[
   _Route(number: 0, name: RouteNames.forgotPassword, path: '/auth/forgot-password', labelAr: 'استعادة كلمة المرور', labelEn: 'Forgot password'),
   _Route(number: 0, name: RouteNames.resetPassword, path: '/auth/reset-password', labelAr: 'تعيين كلمة مرور جديدة', labelEn: 'Reset password'),
   _Route(number: 0, name: RouteNames.verifyOtp, path: '/auth/verify-otp', labelAr: 'رمز التحقق', labelEn: 'Verify OTP'),
+  // Part B (D-430) — badge-QR sign-in / activation (anonymous, pre-login).
+  _Route(number: 0, name: RouteNames.badgeSignIn, path: '/auth/badge', labelAr: 'الدخول بالشارة', labelEn: 'Badge sign-in'),
+  _Route(number: 0, name: RouteNames.badgeActivation, path: '/auth/badge-activation', labelAr: 'تفعيل الحساب', labelEn: 'Activate account'),
 ];
 
 /// Screen numbers that need a signed-in user (Visitor or higher). Until
@@ -177,6 +183,8 @@ const Set<int> _authenticatedRoutes = <int>{
   103, // Identity verification — avatar liveness (D-404, from My Area)
   104, // Moderator session Q&A desk (D-405; also role-gated below)
   105, // Staff gate scanner (D-406; also role-gated below)
+  106, // Exhibitor scan visitor badge (D-426; server 403s visitor-tier callers)
+  107, // Exhibitor My Visitors (D-426)
 };
 
 /// Routes that additionally require a minimum app privilege (D-405/D-406). The
@@ -188,6 +196,229 @@ const Map<int, AppRole> _roleGatedRoutes = <int, AppRole>{
   105: AppRole.staff, // Gate scanner — staff
 };
 
+/// The five bottom-nav destinations, in reading order. They live inside a
+/// persistent [StatefulShellRoute] (an IndexedStack) so switching between them
+/// keeps the bottom bar fixed, swaps the body with **no page transition**, and
+/// preserves each tab's state — instead of pushing a fresh page each tap (D-422,
+/// the owner's "keep the button fixed, pages render inside" requirement).
+const List<String> _tabRouteNames = <String>[
+  RouteNames.home,
+  RouteNames.sessions,
+  RouteNames.badge,
+  RouteNames.venueMap,
+  RouteNames.myArea,
+];
+
+/// The screen for a numbered mockup route. Shared by the bottom-nav shell
+/// branches and the flat (pushed) routes so both build identically.
+Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
+  // Page 001 (splash) is a real screen; every other route still renders the
+  // ComingSoonScreen placeholder until it is built (SIMF-MAA-001 §12.1).
+  if (r.name == RouteNames.splash) {
+    return const SplashScreen();
+  }
+  if (r.name == RouteNames.onboarding) {
+    return const OnboardingScreen();
+  }
+  if (r.name == RouteNames.signIn) {
+    return const SignInScreen();
+  }
+  if (r.name == RouteNames.signUpForm) {
+    return const SignUpFormScreen();
+  }
+  if (r.name == RouteNames.emailOtp) {
+    return SignUpEmailVerifyScreen(
+      email: state.uri.queryParameters['email'] ?? '',
+    );
+  }
+  if (r.name == RouteNames.signUpVisitor) {
+    return const SignUpVisitorScreen();
+  }
+  if (r.name == RouteNames.signUpInterests) {
+    final extra = state.extra;
+    return SignUpInterestsScreen(
+      draft: extra is SignUpProfileDraft ? extra : null,
+    );
+  }
+  if (r.name == RouteNames.terms) {
+    // `?consent=1` shows the in-flow accept gate; standalone reads omit it.
+    return TermsScreen(
+      requireConsent: state.uri.queryParameters['consent'] == '1',
+    );
+  }
+  if (r.name == RouteNames.registrationSuccess) {
+    // D-373 — the interests screen passes the freshly issued registration
+    // reference as the route extra.
+    final extra = state.extra;
+    return RegistrationSuccessScreen(
+      referenceNumber: extra is String ? extra : null,
+    );
+  }
+  if (r.name == RouteNames.registrationStatus) {
+    return const RegistrationStatusScreen();
+  }
+  if (r.name == RouteNames.home) {
+    return const HomeScreen();
+  }
+  if (r.name == RouteNames.myArea) {
+    return const MyAreaScreen();
+  }
+  if (r.name == RouteNames.venueMap) {
+    return const VenueMapScreen();
+  }
+  if (r.name == RouteNames.sessions) {
+    return const SessionsScreen();
+  }
+  if (r.name == RouteNames.sessionDetail) {
+    return SessionDetailScreen(
+      sessionId: state.pathParameters['sessionId'] ?? '',
+    );
+  }
+  if (r.name == RouteNames.mySeat) {
+    return MySeatScreen(
+      sessionId: state.pathParameters['sessionId'] ?? '',
+    );
+  }
+  if (r.name == RouteNames.speakers) {
+    return const SpeakersScreen();
+  }
+  if (r.name == RouteNames.speakerProfile) {
+    return SpeakerProfileScreen(
+      speakerId: state.pathParameters['speakerId'] ?? '',
+    );
+  }
+  if (r.name == RouteNames.booths) {
+    return const BoothsScreen();
+  }
+  if (r.name == RouteNames.sponsors) {
+    return const SponsorsScreen();
+  }
+  if (r.name == RouteNames.mediaPartners) {
+    return const MediaPartnersScreen();
+  }
+  if (r.name == RouteNames.archive) {
+    return const ArchiveScreen();
+  }
+  if (r.name == RouteNames.news) {
+    return const NewsScreen();
+  }
+  if (r.name == RouteNames.gallery) {
+    return const GalleryScreen();
+  }
+  if (r.name == RouteNames.aboutForum) {
+    return const AboutScreen();
+  }
+  if (r.name == RouteNames.rate) {
+    return const RateScreen();
+  }
+  if (r.name == RouteNames.notifications) {
+    return const NotificationsScreen();
+  }
+  if (r.name == RouteNames.meetPeople) {
+    return const MeetPeopleScreen();
+  }
+  if (r.name == RouteNames.accessibility) {
+    return const AccessibilityScreen();
+  }
+  if (r.name == RouteNames.more) {
+    return const MoreScreen();
+  }
+  if (r.name == RouteNames.guestMode) {
+    return const GuestModeScreen();
+  }
+  if (r.name == RouteNames.aiSummary) {
+    return AiSummaryScreen(
+      sessionId: state.uri.queryParameters['sessionId'],
+    );
+  }
+  if (r.name == RouteNames.sendQuestion) {
+    return SendQuestionScreen(
+      sessionId: state.uri.queryParameters['sessionId'],
+    );
+  }
+  if (r.name == RouteNames.audienceComments) {
+    return AudienceCommentsScreen(
+      sessionId: state.uri.queryParameters['sessionId'],
+    );
+  }
+  if (r.name == RouteNames.liveBroadcast) {
+    return LiveBroadcastScreen(
+      sessionId: state.uri.queryParameters['sessionId'],
+    );
+  }
+  if (r.name == RouteNames.badge) {
+    return const BadgeScreen();
+  }
+  if (r.name == RouteNames.chatbot) {
+    return const ChatbotScreen();
+  }
+  if (r.name == RouteNames.myContacts) {
+    return const MyContactsScreen();
+  }
+  if (r.name == RouteNames.shareMyContact) {
+    return const ShareMyContactScreen();
+  }
+  if (r.name == RouteNames.scanContact) {
+    return const ScanContactScreen();
+  }
+  if (r.name == RouteNames.identityVerification) {
+    return const IdentityVerificationScreen();
+  }
+  if (r.name == RouteNames.sessionModerate) {
+    return SessionModerateScreen(
+      sessionId: state.pathParameters['sessionId'] ?? '',
+    );
+  }
+  if (r.name == RouteNames.gateScanner) {
+    return const GateScanScreen();
+  }
+  if (r.name == RouteNames.scanVisitor) {
+    return const ScanVisitorScreen();
+  }
+  if (r.name == RouteNames.myVisitors) {
+    return const MyVisitorsScreen();
+  }
+  return ComingSoonScreen(
+    screenNumber: r.number,
+    screenLabelAr: r.labelAr,
+    screenLabelEn: r.labelEn,
+  );
+}
+
+/// The screen for an auxiliary auth route (forgot / reset / verify-OTP).
+Widget _auxScreenFor(BuildContext context, GoRouterState state, _Route r) {
+  if (r.name == RouteNames.forgotPassword) {
+    return const ForgotPasswordScreen();
+  }
+  if (r.name == RouteNames.resetPassword) {
+    return ResetPasswordScreen(
+      email: state.uri.queryParameters['email'] ?? '',
+    );
+  }
+  if (r.name == RouteNames.verifyOtp) {
+    return const EmailOtpVerifyScreen();
+  }
+  // Part B (D-430) — badge-QR sign-in / activation.
+  if (r.name == RouteNames.badgeSignIn) {
+    return const BadgeSignInScreen();
+  }
+  if (r.name == RouteNames.badgeActivation) {
+    final q = state.uri.queryParameters;
+    return BadgeActivationScreen(
+      qrId: q['qrId'] ?? '',
+      needsEmail: q['needsEmail'] == '1',
+      maskedEmail: q['masked'],
+    );
+  }
+  return ComingSoonScreen(
+    screenNumber: r.number,
+    screenLabelAr: r.labelAr,
+    screenLabelEn: r.labelEn,
+  );
+}
+
+_Route _routeByName(String name) => _routes.firstWhere((r) => r.name == name);
+
 /// Builds the go_router instance.
 ///
 /// The redirect logic implements the auth gate (SIMF-MAA-001 §8): a request
@@ -195,11 +426,7 @@ const Map<int, AppRole> _roleGatedRoutes = <int, AppRole>{
 /// router refreshes on every auth-state change ([refreshListenable]) so the
 /// gate re-runs when the cold-start restore resolves or the session ends.
 GoRouter buildRouter(Ref ref) {
-  final prefs = ref.read(simfPrefsStorageProvider);
   final authRefresh = _AuthRefreshNotifier(ref);
-  // The last location written to prefs, so the same value is not rewritten on
-  // every redirect pass.
-  String? lastRecorded;
 
   return GoRouter(
     initialLocation: '/splash',
@@ -209,14 +436,8 @@ GoRouter buildRouter(Ref ref) {
       final goingTo = state.matchedLocation;
       final isSignedIn = authState is AuthStateSignedIn;
 
-      // Remember the last signed-in content location so the next cold start can
-      // resume to it (Page_001 Logic L-5). The splash owns the read.
-      if (isSignedIn &&
-          isResumableLocation(goingTo) &&
-          goingTo != lastRecorded) {
-        lastRecorded = goingTo;
-        unawaited(prefs.setString(StorageKeys.lastRoute, goingTo));
-      }
+      // The app no longer remembers the last screen to resume to on cold start
+      // (D-431, owner request) — launch always lands on the splash → Home.
 
       return redirectDecision(
         isInitial: authState is AuthStateInitial,
@@ -229,203 +450,38 @@ GoRouter buildRouter(Ref ref) {
       );
     },
     routes: <RouteBase>[
+      // The five bottom-nav destinations share one persistent shell: an
+      // IndexedStack of branches. Switching tabs swaps the visible branch with
+      // no transition and keeps every tab's state alive — the bottom bar stays
+      // fixed (each branch renders the same bar via KsaPage, so it never
+      // animates). Sub-pages stay flat routes (pushed full-screen) below.
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) => navigationShell,
+        branches: <StatefulShellBranch>[
+          for (final r in _tabRouteNames.map(_routeByName))
+            StatefulShellBranch(
+              routes: <RouteBase>[
+                GoRoute(
+                  name: r.name,
+                  path: r.path,
+                  builder: (context, state) => _screenFor(context, state, r),
+                ),
+              ],
+            ),
+        ],
+      ),
       for (final r in _routes)
-        GoRoute(
-          name: r.name,
-          path: r.path,
-          builder: (context, state) {
-            // Page 001 (splash) is a real screen; every other route still
-            // renders the ComingSoonScreen placeholder until it is built. The
-            // state + API are wired through the packages; the visuals are
-            // explicitly a placeholder (SIMF-MAA-001 §12.1).
-            if (r.name == RouteNames.splash) {
-              return const SplashScreen();
-            }
-            if (r.name == RouteNames.onboarding) {
-              return const OnboardingScreen();
-            }
-            if (r.name == RouteNames.signIn) {
-              return const SignInScreen();
-            }
-            if (r.name == RouteNames.signUpForm) {
-              return const SignUpFormScreen();
-            }
-            if (r.name == RouteNames.emailOtp) {
-              return SignUpEmailVerifyScreen(
-                email: state.uri.queryParameters['email'] ?? '',
-              );
-            }
-            if (r.name == RouteNames.signUpVisitor) {
-              return const SignUpVisitorScreen();
-            }
-            if (r.name == RouteNames.signUpInterests) {
-              final extra = state.extra;
-              return SignUpInterestsScreen(
-                draft: extra is SignUpProfileDraft ? extra : null,
-              );
-            }
-            if (r.name == RouteNames.terms) {
-              // `?consent=1` shows the in-flow accept gate; standalone reads omit it.
-              return TermsScreen(
-                requireConsent:
-                    state.uri.queryParameters['consent'] == '1',
-              );
-            }
-            if (r.name == RouteNames.registrationSuccess) {
-              // D-373 — the interests screen passes the freshly issued
-              // registration reference as the route extra.
-              final extra = state.extra;
-              return RegistrationSuccessScreen(
-                referenceNumber: extra is String ? extra : null,
-              );
-            }
-            if (r.name == RouteNames.registrationStatus) {
-              return const RegistrationStatusScreen();
-            }
-            if (r.name == RouteNames.home) {
-              return const HomeScreen();
-            }
-            if (r.name == RouteNames.myArea) {
-              return const MyAreaScreen();
-            }
-            if (r.name == RouteNames.venueMap) {
-              return const VenueMapScreen();
-            }
-            if (r.name == RouteNames.sessions) {
-              return const SessionsScreen();
-            }
-            if (r.name == RouteNames.sessionDetail) {
-              return SessionDetailScreen(
-                sessionId: state.pathParameters['sessionId'] ?? '',
-              );
-            }
-            if (r.name == RouteNames.mySeat) {
-              return MySeatScreen(
-                sessionId: state.pathParameters['sessionId'] ?? '',
-              );
-            }
-            if (r.name == RouteNames.speakers) {
-              return const SpeakersScreen();
-            }
-            if (r.name == RouteNames.speakerProfile) {
-              return SpeakerProfileScreen(
-                speakerId: state.pathParameters['speakerId'] ?? '',
-              );
-            }
-            if (r.name == RouteNames.booths) {
-              return const BoothsScreen();
-            }
-            if (r.name == RouteNames.sponsors) {
-              return const SponsorsScreen();
-            }
-            if (r.name == RouteNames.mediaPartners) {
-              return const MediaPartnersScreen();
-            }
-            if (r.name == RouteNames.archive) {
-              return const ArchiveScreen();
-            }
-            if (r.name == RouteNames.news) {
-              return const NewsScreen();
-            }
-            if (r.name == RouteNames.gallery) {
-              return const GalleryScreen();
-            }
-            if (r.name == RouteNames.aboutForum) {
-              return const AboutScreen();
-            }
-            if (r.name == RouteNames.rate) {
-              return const RateScreen();
-            }
-            if (r.name == RouteNames.notifications) {
-              return const NotificationsScreen();
-            }
-            if (r.name == RouteNames.meetPeople) {
-              return const MeetPeopleScreen();
-            }
-            if (r.name == RouteNames.accessibility) {
-              return const AccessibilityScreen();
-            }
-            if (r.name == RouteNames.more) {
-              return const MoreScreen();
-            }
-            if (r.name == RouteNames.guestMode) {
-              return const GuestModeScreen();
-            }
-            if (r.name == RouteNames.aiSummary) {
-              return AiSummaryScreen(
-                sessionId: state.uri.queryParameters['sessionId'],
-              );
-            }
-            if (r.name == RouteNames.sendQuestion) {
-              return SendQuestionScreen(
-                sessionId: state.uri.queryParameters['sessionId'],
-              );
-            }
-            if (r.name == RouteNames.audienceComments) {
-              return AudienceCommentsScreen(
-                sessionId: state.uri.queryParameters['sessionId'],
-              );
-            }
-            if (r.name == RouteNames.liveBroadcast) {
-              return LiveBroadcastScreen(
-                sessionId: state.uri.queryParameters['sessionId'],
-              );
-            }
-            if (r.name == RouteNames.badge) {
-              return const BadgeScreen();
-            }
-            if (r.name == RouteNames.chatbot) {
-              return const ChatbotScreen();
-            }
-            if (r.name == RouteNames.myContacts) {
-              return const MyContactsScreen();
-            }
-            if (r.name == RouteNames.shareMyContact) {
-              return const ShareMyContactScreen();
-            }
-            if (r.name == RouteNames.scanContact) {
-              return const ScanContactScreen();
-            }
-            if (r.name == RouteNames.identityVerification) {
-              return const IdentityVerificationScreen();
-            }
-            if (r.name == RouteNames.sessionModerate) {
-              return SessionModerateScreen(
-                sessionId: state.pathParameters['sessionId'] ?? '',
-              );
-            }
-            if (r.name == RouteNames.gateScanner) {
-              return const GateScanScreen();
-            }
-            return ComingSoonScreen(
-              screenNumber: r.number,
-              screenLabelAr: r.labelAr,
-              screenLabelEn: r.labelEn,
-            );
-          },
-        ),
+        if (!_tabRouteNames.contains(r.name))
+          GoRoute(
+            name: r.name,
+            path: r.path,
+            builder: (context, state) => _screenFor(context, state, r),
+          ),
       for (final r in _auxRoutes)
         GoRoute(
           name: r.name,
           path: r.path,
-          builder: (context, state) {
-            if (r.name == RouteNames.forgotPassword) {
-              return const ForgotPasswordScreen();
-            }
-            if (r.name == RouteNames.resetPassword) {
-              return ResetPasswordScreen(
-                email: state.uri.queryParameters['email'] ?? '',
-              );
-            }
-            if (r.name == RouteNames.verifyOtp) {
-              return const EmailOtpVerifyScreen();
-            }
-            return ComingSoonScreen(
-              screenNumber: r.number,
-              screenLabelAr: r.labelAr,
-              screenLabelEn: r.labelEn,
-            );
-          },
+          builder: (context, state) => _auxScreenFor(context, state, r),
         ),
     ],
   );

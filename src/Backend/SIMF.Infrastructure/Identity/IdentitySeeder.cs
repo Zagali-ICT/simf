@@ -180,6 +180,22 @@ public sealed class IdentitySeeder(
         await EnsureProfileTypeAsync(
             "Sponsor", "راعي", "#8B5CF6", // purple
             isVisitor: false, MobileAppRole.None, cancellationToken);
+        // V-1 — the VVIP / VIP audience tiers used by the dedicated VIP
+        // registration page + the موج (Mawj) welcome-message export. Both
+        // are audience-side (IsForVisitor=true) so they appear in the
+        // visitor picker and flow through the standard visitor approval
+        // queue; no special mobile-app authority (MobileAppRole.None).
+        // "Normal" stays the slot-0 default; these are added alongside.
+        // Distinct PageColors so the tier is unmistakable on the badge.
+        // V-1 — distinct Arabic names: VIP keeps the established
+        // "كبار الشخصيات" convention; VVIP is the higher "بالغة الأهمية"
+        // tier, so the two cards never read identically in an Arabic UI.
+        await EnsureProfileTypeAsync(
+            "VVIP", "شخصيات بالغة الأهمية", "#B91C1C", // deep red
+            isVisitor: true, MobileAppRole.None, cancellationToken);
+        await EnsureProfileTypeAsync(
+            "VIP", "كبار الشخصيات", "#0E7490", // deep teal
+            isVisitor: true, MobileAppRole.None, cancellationToken);
 
         // D-174 (gap doc G11, Mockup page 39) — seed the cybersecurity
         // policy content blocks the Flutter "سياسات وضوابط الأمن

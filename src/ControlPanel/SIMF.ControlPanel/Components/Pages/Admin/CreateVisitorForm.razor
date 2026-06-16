@@ -6,6 +6,7 @@
 
 <WalkInRegistrationForm @ref="_form"
                         Kind="Visitor"
+                        VipMode="VipMode"
                         OnSuccess="OnRegistrationSuccessAsync"
                         OnCancel="OnCancelInternal"
                         @key="_formKey" />
@@ -30,6 +31,11 @@
 
     /// <summary>The cancel button label (kept for the legacy host page).</summary>
     [Parameter] public string? CancelLabel { get; set; }
+
+    /// <summary>V-1 (D-429) — when true, the hosted walk-in form runs in VIP
+    /// mode: the picker is restricted to VVIP / VIP and the موج welcome fields +
+    /// VIP photo are shown. Used by the dedicated VIP registration page.</summary>
+    [Parameter] public bool VipMode { get; set; }
 
     private void OnRegistrationSuccessAsync(AdminWalkInRegistrationResponse response)
     {

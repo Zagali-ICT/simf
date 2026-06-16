@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/ksa_shell.dart';
 
 /// Page 012 — وضع الضيف · Guest mode (#12, `/guest`, **public**).
 ///
@@ -26,7 +27,7 @@ class GuestModeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.guestModeTitle)),
+      appBar: AppBar(leading: const SimfBackButton(), title: Text(l10n.guestModeTitle)),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(

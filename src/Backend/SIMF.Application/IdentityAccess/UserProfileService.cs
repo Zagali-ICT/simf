@@ -34,6 +34,7 @@ internal sealed class UserProfileService(
     IUserAccountRepository accounts,
     IUserProfileRepository profiles,
     IUserIdDocumentStorage idStorage,
+    IVipPhotoStorage vipPhotoStorage,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     INotificationDispatcher notifications,
@@ -63,7 +64,8 @@ internal sealed class UserProfileService(
         }
 
         var nationalityCode = await profiles.ResolveCountryCodeAsync(profile.NationalityId, cancellationToken);
-        return ToResponse(profile, profile.QrId, nationalityCode);
+        return ToResponse(profile, profile.QrId, nationalityCode,
+            !string.IsNullOrEmpty(user.AvatarRelativePath));
     }
 
     public async Task<UserProfileResponse> UpsertMineAsync(
@@ -160,6 +162,31 @@ internal sealed class UserProfileService(
         // P8 — the admin may have created a stub row with a ProfileTypeId
         // already set (e.g. via /admin/others). Preserve it.
         profile ??= new UserProfile { UserId = actorUserId, CreatedAt = now };
+
+        // Two-photo split (D-431-follow-up) — the profile carries two distinct
+        // images, each uploaded BEFORE this save:
+        //   • The FACE photo (SimfUser.AvatarRelativePath, live capture) is HARD-
+        //     required for MALE registrants here — the direct successor of the
+        //     D-431 male-photo gate that closed the save-then-bounce login loop
+        //     (the loop the owner reported was the male photo). Avatar upload
+        //     does NOT seed a profile stub, so this gate does not interfere with
+        //     the first-submit account-state transition below.
+        //   • The ID DOCUMENT (IdImageRelativePath, gallery upload) is mandatory
+        //     for EVERY registrant but is enforced by the client form + the
+        //     server completeness flag (IsProfileCompleteAsync below), NOT a hard
+        //     reject here: the ID upload seeds the stub row, so hard-gating it
+        //     would force the upload ordering and collide with the "no profile
+        //     row" rollback guarantee (H16). The admin walk-in desk
+        //     (AdminAccountService.RegisterOnSiteAsync) is a separate capture
+        //     path and is intentionally not gated here.
+        if (request.Gender == Gender.Male
+            && string.IsNullOrEmpty(user.AvatarRelativePath))
+        {
+            throw new ApiException(
+                ErrorCodes.VisitorFaceImageMissing, 400,
+                "A face photo is required before a male registrant's profile can be saved. Capture the face photo, then try again.",
+                "يلزم التقاط صورة شخصية للوجه قبل حفظ ملف المسجِّل الذكر. التقط الصورة الشخصية ثم حاول مرة أخرى.");
+        }
 
         // D-373 — issue the human-friendly registration reference once
         // (SIMF-<year>-<8-digit sequence>); covers brand-new rows and any
@@ -260,7 +287,16 @@ internal sealed class UserProfileService(
             // we converge.
             await profiles.SaveIdentityChangesAsync(token);
 
-            if (isNew && user.AccountState == AccountState.EmailVerified)
+            // The first profile submission advances an EmailVerified account to
+            // PendingApproval. This is keyed on the account state, NOT on
+            // `isNew`: with the two-photo split the client uploads the ID (and,
+            // for men, the face) BEFORE this save, and each upload seeds the
+            // profile stub row — so by the time the upsert runs the row already
+            // exists (isNew == false). Keying on EmailVerified makes the flip
+            // fire exactly once (the first submit after email verification),
+            // regardless of whether a photo upload pre-created the row, and
+            // never re-fires once the account has left EmailVerified.
+            if (user.AccountState == AccountState.EmailVerified)
             {
                 user.AccountState = AccountState.PendingApproval;
                 user.StateChangedAt = now;
@@ -315,7 +351,8 @@ internal sealed class UserProfileService(
             await DispatchAdminPendingVisitorAsync(user, cancellationToken);
         }
 
-        return ToResponse(profile, profile.QrId, request.NationalityCode.ToUpperInvariant());
+        return ToResponse(profile, profile.QrId, request.NationalityCode.ToUpperInvariant(),
+            !string.IsNullOrEmpty(user.AvatarRelativePath));
     }
 
     /// <summary>
@@ -375,10 +412,14 @@ internal sealed class UserProfileService(
     public async Task<bool> IsProfileCompleteAsync(
         Guid userId, CancellationToken cancellationToken = default)
     {
-        // D-374 — the server-side completeness rule: both names + at least
-        // one interest (the validator demands 1–10 on every save) + the C7
-        // male-photo rule. Reads a single projected row — this runs on every
-        // /users/me hydration (sign-in + app boot).
+        // D-374 + the two-photo split (D-431-follow-up) — the server-side
+        // completeness rule: both names + at least one interest (the validator
+        // demands 1–10 on every save) + the ID document (all registrants) + the
+        // face photo (men only). The ID-document path lives on the App profile
+        // (one projected row); the face photo is the avatar on the Identity user
+        // (D-157 cross-DB), read only when the registrant is male (women are
+        // exempt, so most reads still touch one DB). Runs on every /users/me
+        // hydration (sign-in + app boot).
         var facts = await profiles.GetCompletenessFactsAsync(userId, cancellationToken);
         if (facts is null)
         {
@@ -386,9 +427,15 @@ internal sealed class UserProfileService(
         }
         var hasNames = !string.IsNullOrWhiteSpace(facts.NameArabic)
             && !string.IsNullOrWhiteSpace(facts.Name);
-        var malePhotoSatisfied = facts.Gender != Gender.Male
-            || !string.IsNullOrEmpty(facts.IdImageRelativePath);
-        return hasNames && facts.HasInterests && malePhotoSatisfied;
+        var hasIdImage = !string.IsNullOrEmpty(facts.IdImageRelativePath);
+        var maleFaceSatisfied = facts.Gender != Gender.Male;
+        if (!maleFaceSatisfied)
+        {
+            var user = await accounts.FindByIdAsync(userId, cancellationToken);
+            maleFaceSatisfied = user is not null
+                && !string.IsNullOrEmpty(user.AvatarRelativePath);
+        }
+        return hasNames && facts.HasInterests && hasIdImage && maleFaceSatisfied;
     }
 
     private async Task DispatchProfileSubmittedAsync(
@@ -572,8 +619,82 @@ internal sealed class UserProfileService(
         return read is null ? null : new UserIdDocumentImage(read.Content, read.ContentType);
     }
 
+    public async Task UploadVipPhotoForSubjectAsync(
+        Guid actorUserId,
+        Guid subjectUserId,
+        UserType expectedKind,
+        byte[] content,
+        string contentType,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await accounts.FindByIdAsync(subjectUserId, cancellationToken)
+            ?? throw new ApiException(
+                ErrorCodes.AdminUserNotFound, 404,
+                "The target account was not found.",
+                "تعذّر العثور على الحساب المستهدف.");
+        if (subject.UserType != expectedKind)
+        {
+            // Same 404-on-mismatch policy as the ID-image path — no cross-kind enumeration.
+            throw new ApiException(
+                ErrorCodes.AdminUserNotFound, 404,
+                "The target account was not found.",
+                "تعذّر العثور على الحساب المستهدف.");
+        }
+
+        var profile = await profiles.FindAsync(subjectUserId, cancellationToken);
+        if (profile is null)
+        {
+            profile = new UserProfile
+            {
+                UserId = subjectUserId,
+                CreatedAt = timeProvider.GetUtcNow(),
+            };
+            profiles.Add(profile);
+        }
+
+        var relativePath = await vipPhotoStorage.SaveAsync(
+            subjectUserId, content, contentType, cancellationToken);
+        profile.VipPhotoRelativePath = relativePath;
+        profile.UpdatedAt = timeProvider.GetUtcNow();
+        // D-167: UserProfile is on the App DB now.
+        await profiles.SaveAppChangesAsync(cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.UserProfileVipPhotoUploaded,
+            Outcome = AuditOutcome.Success,
+            SubjectUserId = subjectUserId,
+            SubjectEmail = subject.Email,
+            ActorUserId = actorUserId,
+            Detail = $"admin-upload vip-photo; {content.Length} bytes; {contentType}",
+        }, cancellationToken);
+    }
+
+    public async Task<VipPhotoImage?> ReadVipPhotoForSubjectAsync(
+        Guid subjectUserId,
+        UserType expectedKind,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await accounts.FindByIdAsync(subjectUserId, cancellationToken);
+        if (subject is null || subject.UserType != expectedKind) { return null; }
+
+        // One-column projection (no tracking) — mirrors GetIdImagePathAsync; the
+        // per-image read path doesn't need the whole tracked profile.
+        var path = await profiles.GetVipPhotoPathAsync(subjectUserId, cancellationToken);
+        if (path is null)
+        {
+            return null;
+        }
+        var read = await vipPhotoStorage.OpenReadAsync(path, cancellationToken);
+        if (read is null) { return null; }
+        using var stream = read.Content;
+        using var buffer = new MemoryStream();
+        await stream.CopyToAsync(buffer, cancellationToken);
+        return new VipPhotoImage(buffer.ToArray(), read.ContentType);
+    }
+
     private static UserProfileResponse ToResponse(
-        UserProfile profile, string? qrId, string nationalityCode) =>
+        UserProfile profile, string? qrId, string nationalityCode, bool hasAvatar) =>
         new()
         {
             ProfileTypeId = profile.ProfileTypeId,
@@ -595,6 +716,7 @@ internal sealed class UserProfileService(
             OrganisationId = profile.OrganisationId,
             Gender = profile.Gender,
             HasIdImage = !string.IsNullOrEmpty(profile.IdImageRelativePath),
+            HasAvatar = hasAvatar,
             QrId = qrId,
         };
 

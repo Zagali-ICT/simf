@@ -1,0 +1,83 @@
+namespace SIMF.Contracts.Authentication;
+
+/// <summary>
+/// Part B — the body of <c>POST /api/v1/app/auth/resolve-badge</c>. The app
+/// sends the 12-char QR id scanned from the printed badge so it can decide which
+/// path to take: an account that already has a password continues to the normal
+/// password + OTP sign-in; an account with no password yet goes through the
+/// set-password activation flow.
+/// </summary>
+public sealed class ResolveBadgeRequest
+{
+    /// <summary>The 12-char Crockford-base32 QR id printed on the badge.</summary>
+    public string QrId { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Part B — the outcome of resolving a scanned badge. Returned to the app so it
+/// can branch. Only an <b>approved</b>, active account resolves; an unknown or
+/// not-yet-approved QR returns <see cref="Found"/> = false.
+/// </summary>
+/// <param name="Found">True when the QR resolves to an approved, active account.</param>
+/// <param name="HasPassword">True when the account already has a password — the
+/// app routes to the normal sign-in (password + OTP). False routes to activation.</param>
+/// <param name="DisplayName">The holder's display name, for a greeting; null when not found.</param>
+/// <param name="NeedsEmail">Only meaningful when <see cref="HasPassword"/> is false:
+/// true when the account has no real email on file (a walk-in registered without
+/// one), so the app must ask the holder to enter one; false when the account
+/// already has a real email and the code will be sent there automatically.</param>
+/// <param name="MaskedEmail">The masked on-file email (e.g. <c>k****@gmail.com</c>)
+/// shown to the holder when <see cref="NeedsEmail"/> is false; null otherwise.</param>
+public sealed record ResolveBadgeResponse(
+    bool Found,
+    bool HasPassword,
+    string? DisplayName,
+    bool NeedsEmail,
+    string? MaskedEmail);
+
+/// <summary>
+/// Part B — the body of <c>POST /api/v1/app/auth/badge-activation/start</c>.
+/// Issues the email verification code that gates setting the first password.
+/// <see cref="Email"/> is required only when the resolved account has no real
+/// email on file (<see cref="ResolveBadgeResponse.NeedsEmail"/> = true); when the
+/// account already has one the server ignores any supplied email and sends the
+/// code to the on-file address.
+/// </summary>
+public sealed class BadgeActivationStartRequest
+{
+    /// <summary>The 12-char QR id scanned from the badge.</summary>
+    public string QrId { get; set; } = string.Empty;
+
+    /// <summary>The email to verify + attach — required only for an account that
+    /// has no real email on file. Ignored when the account already has one.</summary>
+    public string? Email { get; set; }
+}
+
+/// <summary>Part B — the result of starting activation: where the code went
+/// (masked) and how long it is valid.</summary>
+public sealed record BadgeActivationStartResponse(
+    string MaskedEmail,
+    int CodeExpiresInSeconds);
+
+/// <summary>
+/// Part B — the body of <c>POST /api/v1/app/auth/badge-activation/complete</c>.
+/// Verifies the emailed code and sets the account's first password (and confirms
+/// the email). On success the holder signs in normally with email + password.
+/// </summary>
+public sealed class BadgeActivationCompleteRequest
+{
+    /// <summary>The 12-char QR id scanned from the badge.</summary>
+    public string QrId { get; set; } = string.Empty;
+
+    /// <summary>The 6-digit code emailed by the start step.</summary>
+    public string Code { get; set; } = string.Empty;
+
+    /// <summary>The first password the holder chooses (password-policy enforced).</summary>
+    public string NewPassword { get; set; } = string.Empty;
+
+    /// <summary>Must equal <see cref="NewPassword"/>.</summary>
+    public string ConfirmPassword { get; set; } = string.Empty;
+}
+
+/// <summary>Part B — the result of completing activation.</summary>
+public sealed record BadgeActivationCompleteResponse(bool Activated);
