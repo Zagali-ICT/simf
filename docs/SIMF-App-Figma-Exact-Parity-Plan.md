@@ -50,7 +50,7 @@ Last updated: 2026-06-16
 | 5 | Ask question | 934-3636 | `features/questions/send_question_screen.dart` | 🟡 | form portion matches; optional faint border on the question box; confirm whether this is a sub-screen of the live frame or its own |
 | 6 | Media gallery | 947-3764 | `features/gallery/gallery_screen.dart` | ✅ | tab bar un-mirrored + active navy text (D-436) |
 | 7 | Media partners | 958-2246 | `features/media_partners/media_partners_screen.dart` | ✅ | **DONE (P1)** — rebuilt to KSA navy shell + shared 3-tab hub (partners active) + 2-col partner grid; renders the **real uploaded logo** via the existing anonymous D-357 route `GET /app/assets/MediaPartnerLogo/{id}/image` (no new endpoint), initials fall-back. Arabic RTL position test + E2E + docs. |
-| 8 | News | 948-3961 | `features/news/news_screen.dart` | 🔨 | tab bar already fixed; verify news-card styling (gold chip / title / excerpt) against 948-3961; **render thumbnail (`imageRelativePath`) + date (`publishedAt`)** which exist on the model but are not shown |
+| 8 | News | 948-3961 (card 957-2197) | `features/news/news_screen.dart` | ✅ | **DONE (P2)** — `_NewsCard` rebuilt to the horizontal frame card: thumbnail (the **NewsImage** asset via the existing anonymous D-357 route `/app/assets/NewsImage/{id}/image`, gold chip + gradient + icon fall-back) at the inline-end, gold **`DD-MM-YYYY` date** (LTR-forced) + title at the inline-start; **excerpt dropped** (not in the frame). Arabic RTL position test + E2E + docs. No backend/CP change. |
 
 ### Wider re-skin wave — IN SCOPE (owner confirmed 2026-06-16)
 | 9 Session detail 889-2450 · 10 Booth 922-2458 · 11 Sponsors 922-2824 · 12 Archive/History 925-3079 | task #93/#97/#98/#99 | 🟡 | parity-check each the same way (RTL-verified) — P6 |
@@ -65,7 +65,7 @@ photo → **add the photo API now**; wider-wave four pages → **all included**.
 | Gap | Frame | Current backend | Build (additive) | Decision |
 |-----|-------|-----------------|---------------------|----------|
 | **Media-partner logo** | 958-2246 | **DONE (P1)** — served by the existing anonymous D-357 route `GET /app/assets/MediaPartnerLogo/{id}/image`; CP upload already ships (`MediaPartnerAddEdit.razor` `SimfImageUpload Category="MediaPartnerLogo"`) | App renders the logo from that route, initials fall-back. **No new endpoint / DTO field / migration** — reuse the unified media-asset pipeline (the controlled doc `docs/dev/SIMF-Media-Asset-The-One-Way.md` forbids a per-entity duplicate). | ✅ **real logos (D-357 reuse)** |
-| **News thumbnail + date** | 948-3961 | `NewsListItem` has `imageRelativePath` + `publishedAt`; image endpoint likely exists | render both in `_NewsCard`; add the image endpoint only if missing | ✅ render |
+| **News thumbnail + date** | 948-3961 | **DONE (P2)** — image served by the existing anonymous D-357 route `/app/assets/NewsImage/{id}/image`; CP upload already ships (`NewsAddEdit.razor` `SimfImageUpload Category="NewsImage"`) | `_NewsCard` renders the thumbnail (icon fall-back) + the `DD-MM-YYYY` date. No new endpoint — D-357 reuse (the legacy `imageRelativePath` is not the byte source). | ✅ render (D-357 reuse) |
 | **Live AI captions / transcript** | 934-3450 | none — `LiveSession` has no transcript field | add a caption/transcript field + endpoint (`GET /app/programme/sessions/{id}/captions` or a field on the live slice); app renders when present; **provider integration stubbed/later** | ✅ **API surface now, provider later** |
 | **Speaker photo** | 908-2110 / 908-1744 | no speaker photo URL field | `Speaker.PhotoRelativePath` + `GET /app/speakers/{id}/photo` + CP upload; app renders photo, falls back to initials/anchor | ✅ **add now** |
 
@@ -114,8 +114,10 @@ additive migration + tests first, then the app render.
    - App: rebuilt to KSA shell + 3-tab hub (`[gallery, partners, news]`,
      partners active) + 2-col partner grid rendering the real logo; Arabic RTL
      position test; E2E; PAGE-INDEX/plan docs.
-2. **P2 — News cards exact (948-3961)** — render thumbnail + date; verify card
-   styling; RTL test; E2E; docs. (image endpoint only if missing.)
+2. **P2 — News cards exact (948-3961 / card 957-2197)** ✅ **DONE** — `_NewsCard`
+   rebuilt to the horizontal frame card (thumbnail via the existing D-357
+   `NewsImage` route + gold `DD-MM-YYYY` date + title; excerpt dropped per the
+   frame); Arabic RTL position test; E2E; PAGE-INDEX/plan docs. No backend change.
 3. **P3 — Speaker CV + My-seat polish (908-2110 / 898-2873)** — verified
    per-element fixes only.
 4. **P4 — Speaker photo API** (if owner approves) — additive field + endpoint +

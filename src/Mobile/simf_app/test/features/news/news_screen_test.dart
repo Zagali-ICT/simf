@@ -7,6 +7,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/news/data/news_models.dart';
 import 'package:simf_app/features/news/news_screen.dart';
+import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 final _items = <NewsListItem>[
   NewsListItem(
@@ -20,10 +21,23 @@ final _items = <NewsListItem>[
   ),
 ];
 
+// The card builds the thumbnail URL from the base; every pump supplies one (the
+// must-override config provider throws otherwise). The test HTTP client fails
+// network-image loads, so the thumbnail's errorBuilder shows the fallback.
+const _testConfig = SimfDataConfig(
+  baseUrl: 'http://test.local/api/v1',
+  appKey: 'test',
+  deviceType: SimfDeviceType.android,
+);
+
 /// Pumps the News screen inside a GoRouter, mirroring the shell: KsaPage and
 /// SimfBottomNav resolve route names, and the inactive media-coverage tabs need
 /// the media-partners + gallery destinations to exist.
-Future<void> _pump(WidgetTester tester, List<Override> overrides) async {
+Future<void> _pump(
+  WidgetTester tester,
+  List<Override> overrides, {
+  Locale locale = const Locale('en'),
+}) async {
   final router = GoRouter(
     initialLocation: '/news',
     routes: <RouteBase>[
@@ -52,10 +66,13 @@ Future<void> _pump(WidgetTester tester, List<Override> overrides) async {
 
   await tester.pumpWidget(
     ProviderScope(
-      overrides: overrides,
+      overrides: <Override>[
+        simfDataConfigProvider.overrideWithValue(_testConfig),
+        ...overrides,
+      ],
       child: MaterialApp.router(
         routerConfig: router,
-        locale: const Locale('en'),
+        locale: locale,
         supportedLocales: AppL10n.supportedLocales,
         localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
           ...AppL10n.localizationsDelegates,
@@ -82,10 +99,43 @@ void main() {
       expect(find.text('Media partners'), findsOneWidget);
       expect(find.text('Media gallery'), findsOneWidget);
 
-      // The news content (category chip · title · excerpt).
+      // The frame-948 card: title, the DD-MM-YYYY date, and the category (shown
+      // both as the on-image chip and the label above the date).
       expect(find.text('Forum opens'), findsOneWidget);
-      expect(find.text('Press'), findsOneWidget);
-      expect(find.text('The 4th edition begins.'), findsOneWidget);
+      expect(find.text('23-11-2026'), findsOneWidget);
+      expect(find.text('Press'), findsWidgets);
+    });
+
+    testWidgets('each card builds its thumbnail from the NewsImage asset route',
+        (tester) async {
+      await _pump(tester, <Override>[
+        newsListProvider.overrideWith((ref) async => _items),
+      ]);
+
+      final urls = tester
+          .widgetList<Image>(find.byType(Image))
+          .map((image) => image.image)
+          .whereType<NetworkImage>()
+          .map((provider) => provider.url)
+          .toList();
+      expect(
+        urls,
+        contains('http://test.local/api/v1/app/assets/NewsImage/n1/image'),
+      );
+      // The test HTTP client fails the load, so the thumbnail shows its
+      // article-glyph fall-back (the empty state is not rendered with data).
+      expect(find.byIcon(Icons.article_outlined), findsOneWidget);
+    });
+
+    testWidgets('renders the date left-to-right so RTL keeps DD-MM-YYYY order',
+        (tester) async {
+      await _pump(
+        tester,
+        <Override>[newsListProvider.overrideWith((ref) async => _items)],
+        locale: const Locale('ar'),
+      );
+      final date = tester.widget<Text>(find.text('23-11-2026'));
+      expect(date.textDirection, TextDirection.ltr);
     });
 
     testWidgets('tapping the gallery tab routes to the gallery screen',
@@ -112,6 +162,22 @@ void main() {
       ]);
       expect(find.text('Could not load the news.'), findsOneWidget);
       expect(find.text('Retry'), findsOneWidget);
+    });
+
+    // D-436 verification rule: confirm the card's RTL layout with a deterministic
+    // Arabic-locale position test. Frame 957:2197 places the thumbnail at the
+    // inline-end (LEFT in RTL) and the text block at the inline-start (RIGHT),
+    // so the thumbnail image sits left of the gold date.
+    testWidgets('lays the thumbnail left of the text in Arabic', (tester) async {
+      await _pump(
+        tester,
+        <Override>[newsListProvider.overrideWith((ref) async => _items)],
+        locale: const Locale('ar'),
+      );
+
+      final thumbnailDx = tester.getCenter(find.byType(Image)).dx;
+      final dateDx = tester.getCenter(find.text('23-11-2026')).dx;
+      expect(thumbnailDx, lessThan(dateDx));
     });
   });
 

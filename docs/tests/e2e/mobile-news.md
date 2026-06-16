@@ -7,9 +7,15 @@
 > **Figma parity (2026-06-16):** the screen is re-skinned to the KSA Wave-2 frame
 > **958:2246 "التغطية الإعلامية" (Media coverage)** — a three-tab hub (الأخبار ·
 > الشركاء الإعلاميون · معرض الصور والفيديوهات) on the navy KSA shell. الأخبار is
-> the active gold pill; the news list is navy cards (gold category chip · white
-> title · beige excerpt) and the two inactive pills route to media-partners (#31)
-> and gallery (#30). Header title is "التغطية الإعلامية" / "Media coverage".
+> the active gold pill; the two inactive pills route to media-partners (#31) and
+> gallery (#30). **News card rebuilt to frame 957:2197** — a borderless navy
+> radius-8 card laid out **horizontally**: in RTL the thumbnail (the article's
+> **NewsImage** asset, served by the anonymous D-357 route
+> `GET /app/assets/NewsImage/{id}/image`, with a gold category chip overlaid + a
+> navy bottom-gradient, initials/icon fall-back) sits at the inline-end (LEFT),
+> and at the inline-start (RIGHT) a muted category label, a **gold `DD-MM-YYYY`
+> date**, then the bold white title (the frame has **no excerpt**). Header title
+> is "التغطية الإعلامية" / "Media coverage".
 
 | | |
 |--|--|
@@ -22,24 +28,25 @@
 
 | ID | Scenario | Type | Priority | Status |
 |----|----------|------|----------|--------|
-| E2E-MOB029-001 | Guest loads the news list (category · title · excerpt) | happy | P0 | authored ✓ (screen `lists news with category + excerpt`) |
+| E2E-MOB029-001 | Guest loads the news list (thumbnail · date · title) | happy | P0 | authored ✓ (screen `renders the media-coverage tabs and a news card`) |
 | E2E-MOB029-002 | Tap an item → article screen loads (`/news/{id}` → body) | happy | P0 | authored (screen push + `NewsArticle.fromJson`) |
 | E2E-MOB029-003 | Article 404 → "not found" | edge | P1 | covered (article-screen 404 branch) |
 | E2E-MOB029-004 | Empty → empty state | edge | P1 | authored ✓ (screen `empty shows the empty state`) |
 | E2E-MOB029-005 | Read failure → error state | resilience | P0 | authored ✓ (screen `error shows the error state`) |
-| E2E-MOB029-006 | Media-coverage hub renders 3 tabs, الأخبار active gold | happy | P0 | _to author_ |
-| E2E-MOB029-007 | Tap "الشركاء الإعلاميون" pill → media-partners (#31) | happy | P1 | _to author_ |
-| E2E-MOB029-008 | Tap "معرض الصور والفيديوهات" pill → gallery (#30) | happy | P1 | _to author_ |
-| E2E-MOB029-009 | News card shows gold category chip · white title · beige excerpt | happy | P1 | _to author_ |
-| E2E-MOB029-010 | RTL render of the Media-coverage hub (Arabic) | i18n | P1 | _to author_ |
+| E2E-MOB029-006 | Media-coverage hub renders 3 tabs, الأخبار active gold | happy | P0 | authored ✓ (screen `renders the media-coverage tabs`) |
+| E2E-MOB029-007 | Tap "الشركاء الإعلاميون" pill → media-partners (#31) | happy | P1 | covered (mirror of the gallery-tab nav test) |
+| E2E-MOB029-008 | Tap "معرض الصور والفيديوهات" pill → gallery (#30) | happy | P1 | authored ✓ (screen `tapping the gallery tab routes…`) |
+| E2E-MOB029-009 | Card shows thumbnail (NewsImage asset) · gold date · title; no excerpt | happy | P1 | authored ✓ (screen `renders…a news card` + `…thumbnail from the NewsImage asset route`) |
+| E2E-MOB029-010 | No uploaded NewsImage / fetch fails → icon fall-back | edge | P1 | authored ✓ (thumbnail `errorBuilder` → `_NewsImageFallback`) |
+| E2E-MOB029-011 | Arabic/RTL: thumbnail at inline-end (LEFT), text at inline-start (RIGHT) | i18n | P0 | authored ✓ (screen `lays the thumbnail left of the text in Arabic`) |
 
 ## Scenarios
 
 ```gherkin
 Scenario: News render without a token
   When the app calls GET /api/v1/app/news
-  Then it returns 200 with items[] (title, category, excerpt, publishedAt)
-  And the screen lists each card with its category chip + 2-line excerpt
+  Then it returns 200 with items[] (title, category, publishedAt, imageRelativePath)
+  And the screen lists each card with its thumbnail, gold DD-MM-YYYY date and title
 
 Scenario: Tapping a card opens the article
   When the visitor taps a news card
