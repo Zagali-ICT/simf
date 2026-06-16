@@ -24,6 +24,12 @@ public sealed class PublicBoothSummary
     public string? OfficerName { get; set; }
     public string? OfficerPhone { get; set; }
     public string? OfficerEmail { get; set; }
+
+    // P6 — D-440 (append-only): the exhibitor's Contact id (Exhibitor.ContactId),
+    // the owner of the CompanyLogo asset. The app renders the real booth logo via
+    // GET /app/assets/CompanyLogo/{ExhibitorContactId}/image (D-357), falling back
+    // to initials when the exhibitor has no linked Contact / logo.
+    public Guid? ExhibitorContactId { get; set; }
 }
 
 /// <summary>D-199 — public booth detail (adds the description paragraph).</summary>
@@ -49,6 +55,10 @@ public sealed class PublicBoothDetail
     public string? OfficerName { get; set; }
     public string? OfficerPhone { get; set; }
     public string? OfficerEmail { get; set; }
+
+    // P6 — D-440 (append-only): exhibitor's Contact id (CompanyLogo owner); see
+    // PublicBoothSummary.
+    public Guid? ExhibitorContactId { get; set; }
 }
 
 /// <summary>D-199 — admin grid row. B1 — D-222: the exhibitor is now the

@@ -62,6 +62,12 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
                     ? b.OfficerEmail
                     : db.Contacts.Where(c => c.Id == b.ContactId)
                         .Select(c => c.Email).FirstOrDefault(),
+                // P6 — D-440: the exhibitor's Contact id (the CompanyLogo owner),
+                // so the app can render the real booth logo (null when unlinked).
+                ExhibitorContactId = b.ExhibitorId == null
+                    ? null
+                    : db.Exhibitors.Where(c => c.Id == b.ExhibitorId)
+                        .Select(c => c.ContactId).FirstOrDefault(),
             })
             .ToListAsync(cancellationToken);
 
@@ -114,6 +120,11 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
                     ? b.OfficerEmail
                     : db.Contacts.Where(c => c.Id == b.ContactId)
                         .Select(c => c.Email).FirstOrDefault(),
+                // P6 — D-440: exhibitor's Contact id (CompanyLogo owner); see ListAsync.
+                ExhibitorContactId = b.ExhibitorId == null
+                    ? null
+                    : db.Exhibitors.Where(c => c.Id == b.ExhibitorId)
+                        .Select(c => c.ContactId).FirstOrDefault(),
             })
             .FirstOrDefaultAsync(cancellationToken);
 }

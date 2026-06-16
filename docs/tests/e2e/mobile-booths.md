@@ -19,6 +19,13 @@
 > `قاعة المعرض`). A **client-side search filter** (name/exhibitor/sector/code)
 > with a distinct no-match state was added. Officer/contact/hall rows render only
 > when the wire actually carries that data — never invented.
+>
+> **P6 (D-440):** the company logo tile now renders the exhibitor's **real
+> `CompanyLogo`** (D-357) at `{base}/app/assets/CompanyLogo/{exhibitorContactId}/image`.
+> The booth wire gained an append-only `exhibitorContactId` (the exhibitor's
+> Contact id = the logo owner, resolved server-side via
+> `Booth.ExhibitorId → Exhibitor.ContactId`); the tile falls back to the booth
+> initials when the exhibitor has no linked Contact (or the load fails).
 
 | | |
 |--|--|
@@ -42,6 +49,7 @@
 | E2E-MOB022-008 | Hall box shows real hall name → sector → generic fallback | happy | P1 | _to author (D-432)_ |
 | E2E-MOB022-009 | Search filter narrows the list to the typed term | happy | P0 | _to author (D-432)_ |
 | E2E-MOB022-010 | Search with no match → `لا توجد أجنحة مطابقة` state | edge | P1 | _to author (D-432)_ |
+| E2E-MOB022-011 | P6 — booth logo wired to the D-357 CompanyLogo route via `exhibitorContactId`; initials when unlinked (D-440) | display | P1 | authored ✓ (screen `P6 — a booth with a linked exhibitor wires the CompanyLogo route` + `…no linked exhibitor shows no logo image`); API `PublicBoothsTests.Public_booth_carries_the_exhibitor_contact_id_for_the_logo` |
 
 ## Scenarios
 
@@ -201,6 +209,28 @@ Scenario: A query that matches nothing shows the no-match state
 `KsaEmptyState(icon: search_off_outlined, message: l10n.boothsNoMatch)`
 (`لا توجد أجنحة مطابقة` / `No matching booths`); distinct from `boothsEmpty`.
 
+### E2E-MOB022-011 — Real company logo via D-357 (Figma 922:2793, D-440)
+
+```gherkin
+Feature: Booths — real company logo
+
+Scenario: A booth whose exhibitor has a linked Contact shows the real logo
+  Given a booth whose exhibitorContactId is "c1"
+  When the guest opens /booths
+  Then the logo tile builds an Image.network for
+    {base}/app/assets/CompanyLogo/c1/image
+  And on a failed/absent load it falls back to the booth initials
+
+Scenario: A booth with no linked exhibitor shows the initials (no network image)
+  Given a booth whose exhibitorContactId is null
+  Then the logo tile renders the booth initials and no network image
+```
+
+**Evidence:** `_LogoTile` builds the CompanyLogo URL only when `exhibitorContactId`
+is non-blank, else initials; the booth wire carries `exhibitorContactId` (resolved
+server-side `Booth.ExhibitorId → Exhibitor.ContactId`). Screen tests + API
+`Public_booth_carries_the_exhibitor_contact_id_for_the_logo`.
+
 ---
 
-_Last reviewed:_ `2026-06-05` by `SIMF Team`.
+_Last reviewed:_ `2026-06-16` by `SIMF Team`.

@@ -83,11 +83,12 @@
                        @bind-Value="_model.DateLabelAr" Disabled="_busy" />
         @* D-432 — the rich edition lists, one row per line. Gallery rows are
            "url | image|video | caption"; session titles "arabic | english";
-           past speakers "arabic | english | photo-path". *@
+           past speakers "arabic | english | photo-url". P6 — D-440: the image /
+           photo URL must be a full https link the app can load directly. *@
         <label class="simf-field">
             <span class="simf-field__label">@L["Admin.Archive.Field.Gallery"]</span>
             <textarea class="simf-field__input" rows="4"
-                      placeholder="archive/2024/p1.jpg | image | Opening"
+                      placeholder="https://cdn.example.sa/2024/opening.jpg | image | Opening"
                       value="@_model.GalleryText"
                       @onchange="@(e => _model.GalleryText = e.Value?.ToString() ?? string.Empty)"
                       disabled="@_busy"></textarea>
@@ -103,7 +104,7 @@
         <label class="simf-field">
             <span class="simf-field__label">@L["Admin.Archive.Field.PastSpeakers"]</span>
             <textarea class="simf-field__input" rows="4"
-                      placeholder="راشد السبيعي | Rashed Al-Subaie | archive/2024/s1.jpg"
+                      placeholder="راشد السبيعي | Rashed Al-Subaie | https://cdn.example.sa/2024/s1.jpg"
                       value="@_model.PastSpeakersText"
                       @onchange="@(e => _model.PastSpeakersText = e.Value?.ToString() ?? string.Empty)"
                       disabled="@_busy"></textarea>

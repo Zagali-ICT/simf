@@ -9,7 +9,11 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Exhibition;
+using SIMF.Domain.Contacts;
+using SIMF.Domain.Exhibition;
+using SIMF.Domain.Exhibitors;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Infrastructure.Persistence;
 using Xunit;
 
 namespace SIMF.Api.Tests;
@@ -70,6 +74,78 @@ public sealed class PublicBoothsTests : IClassFixture<SimfApiFactory>
             .ReadFromJsonAsync<ApiResult<PublicBoothDetail>>())!.Data!;
         Assert.Equal(created.Id, detail.Id);
         Assert.Equal(3.0, detail.MapX);
+    }
+
+    // P6 — D-440: the public booth wire carries the exhibitor's Contact id (the
+    // CompanyLogo owner) so the app can render the real logo; null when the
+    // exhibitor has no linked Contact.
+    [Fact]
+    public async Task Public_booth_carries_the_exhibitor_contact_id_for_the_logo()
+    {
+        var contactId = Guid.NewGuid();
+        var exhibitorId = Guid.NewGuid();
+        var boothWithLogo = Guid.NewGuid();
+        var boothNoExhibitor = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        var code1 = NewCode();
+        var code2 = NewCode();
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            // Exhibitor.ContactId is a real FK → the Contact (the CompanyLogo
+            // owner) must exist first.
+            db.Set<Contact>().Add(new Contact
+            {
+                Id = contactId,
+                NameArabic = "سامي",
+                IsActive = true,
+                CreatedAt = now,
+            });
+            db.Set<Exhibitor>().Add(new Exhibitor
+            {
+                Id = exhibitorId,
+                Name = "SAMI",
+                NameArabic = "سامي",
+                ContactId = contactId,
+                IsActive = true,
+                CreatedAt = now,
+            });
+            db.Set<Booth>().Add(new Booth
+            {
+                Id = boothWithLogo,
+                Code = code1,
+                Name = "Booth A",
+                NameArabic = "جناح أ",
+                ExhibitorId = exhibitorId,
+                IsActive = true,
+                CreatedAt = now,
+            });
+            db.Set<Booth>().Add(new Booth
+            {
+                Id = boothNoExhibitor,
+                Code = code2,
+                Name = "Booth B",
+                NameArabic = "جناح ب",
+                IsActive = true,
+                CreatedAt = now,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var list = await _client.GetAsync("/api/v1/app/booths");
+        var rows = (await list.Content
+            .ReadFromJsonAsync<ApiResult<IReadOnlyList<PublicBoothSummary>>>())!.Data!;
+
+        var withLogo = rows.Single(b => b.Id == boothWithLogo);
+        Assert.Equal(contactId, withLogo.ExhibitorContactId);
+
+        var noExhibitor = rows.Single(b => b.Id == boothNoExhibitor);
+        Assert.Null(noExhibitor.ExhibitorContactId);
+
+        var detail = (await (await _client.GetAsync($"/api/v1/app/booths/{boothWithLogo}"))
+            .Content.ReadFromJsonAsync<ApiResult<PublicBoothDetail>>())!.Data!;
+        Assert.Equal(contactId, detail.ExhibitorContactId);
     }
 
     [Fact]

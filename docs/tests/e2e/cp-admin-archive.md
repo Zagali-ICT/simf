@@ -7,7 +7,14 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
 | **Auth setup** | `superadmin@zagali-ict.com` / `Aa@123456789` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
+| **Last reviewed** | 2026-06-16 (D-440 — gallery/past-speaker image fields now expect a full https URL) |
+
+> **P6 (D-440):** the gallery `url` and past-speaker `photo` fields are now
+> rendered as **real images in the app** when they hold an **absolute https URL**
+> (the textarea placeholders were updated to a full-URL example). The pipe format
+> is unchanged (`url | image|video | caption`, `nameAr | nameEn | photo-url`); a
+> relative path still saves fine but the app shows a glyph/initials fallback for
+> it. No behaviour/validation change in the CP — authoring stays replace-all.
 
 > **Permission gate.** The page carries `@attribute [RequirePermission(PermissionCatalog.Archive.View)]`
 > (`"Archive.View"`). The backing API endpoints are gated per action:

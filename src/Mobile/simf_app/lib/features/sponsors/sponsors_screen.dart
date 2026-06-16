@@ -23,15 +23,14 @@ final sponsorGroupsProvider =
 ///
 /// **Public.** Behaviour/data contract unchanged: one read returns the sponsors
 /// grouped by tier (`SponsorTierGroup`), and the screen renders one section per
-/// non-empty tier in the order the API returns them. Frame mapping: the navy
-/// [KsaPage] shell (forced-LTR header, centred "الرعاة", bottom nav), then per
-/// tier a right-aligned section label followed by the sponsor cards. The **first
-/// (strategic)** tier renders the gold hero card (gold fill, dark text, gold
-/// initials badge, navy chevron); every later tier renders the navy premium
-/// card (navyDeep fill, beige hairline, white text, navy initials badge with a
-/// gold edge, gold chevron). The logo is shown as initials (interim — the API
-/// returns `logoRelativePath` but the frame's logo art is not yet wired). The
-/// loading / error / empty / RTL states are preserved.
+/// non-empty tier in the order the API returns them. Frame mapping (922:2824 —
+/// three bands, position-based so it is faithful for any tier naming): the
+/// **first** tier renders the gold hero card; the **lowest** tier (the last
+/// group, when more than one) renders the compact 3-column logo grid; any tier
+/// **in between** renders the navy premium card. P6 — D-440: each sponsor logo is
+/// the real `SponsorLogo` asset (D-357) served anonymously at
+/// `{base}/app/assets/SponsorLogo/{id}/image`, with the acronym initials as the
+/// fallback. The loading / error / empty / RTL states are preserved.
 class SponsorsScreen extends ConsumerWidget {
   const SponsorsScreen({super.key});
 
@@ -62,6 +61,9 @@ class SponsorsScreen extends ConsumerWidget {
             );
           }
           final isArabic = l10n.isArabic;
+          // The logo image lives at {base}/app/assets/SponsorLogo/{id}/image (D-357).
+          final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
+          final lastIndex = visibleGroups.length - 1;
           return ListView(
             padding: const EdgeInsets.all(SimfTokens.space4),
             children: <Widget>[
@@ -69,19 +71,31 @@ class SponsorsScreen extends ConsumerWidget {
                 if (i > 0) const SizedBox(height: SimfTokens.space5),
                 _TierLabel(label: visibleGroups[i].tierName),
                 const SizedBox(height: SimfTokens.space4),
-                for (final sponsor in visibleGroups[i].sponsors) ...<Widget>[
-                  _SponsorCard(
-                    name: sponsor.localizedName(isArabic),
-                    badge: _badgeText(sponsor, isArabic),
-                    // D-432 — prefer the authored tagline (Figma's "الراعي
-                    // الاستراتيجي · …" line); fall back to the website link.
-                    secondary: sponsor.localizedTagline(isArabic) ?? sponsor.url,
-                    // Frame 922:2824 — the first (strategic) tier is the gold
-                    // hero card; every later tier is the navy premium card.
-                    hero: i == 0,
-                  ),
-                  const SizedBox(height: SimfTokens.space4),
-                ],
+                // Frame 922:2824 — three bands: the top tier is the gold hero
+                // card, the lowest tier is a compact logo-tile grid, and any tier
+                // in between is a navy premium card (position-based so it is
+                // faithful for any tier naming, not just Platinum/Gold/Silver).
+                if (i == lastIndex && visibleGroups.length > 1)
+                  _SponsorGrid(
+                    sponsors: visibleGroups[i].sponsors,
+                    baseUrl: baseUrl,
+                    isArabic: isArabic,
+                  )
+                else
+                  for (final sponsor in visibleGroups[i].sponsors) ...<Widget>[
+                    _SponsorCard(
+                      id: sponsor.id,
+                      baseUrl: baseUrl,
+                      name: sponsor.localizedName(isArabic),
+                      badge: _badgeText(sponsor, isArabic),
+                      // D-432 — prefer the authored tagline (Figma's "الراعي
+                      // الاستراتيجي · …" line); fall back to the website link.
+                      secondary:
+                          sponsor.localizedTagline(isArabic) ?? sponsor.url,
+                      hero: i == 0,
+                    ),
+                    const SizedBox(height: SimfTokens.space4),
+                  ],
               ],
             ],
           );
@@ -136,12 +150,16 @@ class _TierLabel extends StatelessWidget {
 /// edge, gold chevron).
 class _SponsorCard extends StatelessWidget {
   const _SponsorCard({
+    required this.id,
+    required this.baseUrl,
     required this.name,
     required this.badge,
     required this.secondary,
     required this.hero,
   });
 
+  final String id;
+  final String baseUrl;
   final String name;
   final String badge;
   final String? secondary;
@@ -201,7 +219,15 @@ class _SponsorCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: SimfTokens.space2),
-              _BadgeBox(text: badge, hero: hero),
+              _BadgeBox(
+                hero: hero,
+                child: _SponsorLogo(
+                  id: id,
+                  baseUrl: baseUrl,
+                  fallbackInitials: badge,
+                  hero: hero,
+                ),
+              ),
             ],
           ),
         ),
@@ -210,22 +236,23 @@ class _SponsorCard extends StatelessWidget {
   }
 }
 
-/// The square acronym chip on a sponsor card — frame's 53-wide box. On the gold
-/// hero card it is gold-filled with a navy edge and navy text; on a navy
-/// premium card it is navy-filled with a gold edge and white text.
+/// The square logo chip on a sponsor card — frame's 53×53 box. On the gold hero
+/// card it is gold-filled with a navy edge; on a navy premium card it is
+/// navy-filled with a gold edge. Hosts the real [_SponsorLogo] (clipped to fill),
+/// falling back to the acronym initials.
 class _BadgeBox extends StatelessWidget {
-  const _BadgeBox({required this.text, required this.hero});
+  const _BadgeBox({required this.child, required this.hero});
 
-  final String text;
+  final Widget child;
   final bool hero;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: 53,
-      constraints: const BoxConstraints(minHeight: 53),
+      height: 53,
+      clipBehavior: Clip.antiAlias,
       alignment: Alignment.center,
-      padding: const EdgeInsets.all(SimfTokens.space1),
       decoration: BoxDecoration(
         color: hero ? SimfTokens.accent : SimfTokens.navy,
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
@@ -234,17 +261,147 @@ class _BadgeBox extends StatelessWidget {
           width: SimfTokens.hairline,
         ),
       ),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          color: hero ? SimfTokens.navy : Colors.white,
-          fontWeight: FontWeight.w600,
-          fontSize: SimfTokens.textMd,
+      child: child,
+    );
+  }
+}
+
+/// The sponsor's real logo (D-357 `SponsorLogo` asset, served anonymously at
+/// `{base}/app/assets/SponsorLogo/{id}/image`) clipped to fill its parent box,
+/// falling back to the acronym initials while it loads or when no logo is set
+/// (the route 404s). [hero] picks the initials colour for the box it sits in.
+class _SponsorLogo extends StatelessWidget {
+  const _SponsorLogo({
+    required this.id,
+    required this.baseUrl,
+    required this.fallbackInitials,
+    required this.hero,
+  });
+
+  final String id;
+  final String baseUrl;
+  final String fallbackInitials;
+  final bool hero;
+
+  @override
+  Widget build(BuildContext context) {
+    final fallback = Center(
+      child: Padding(
+        padding: const EdgeInsets.all(SimfTokens.space1),
+        child: Text(
+          fallbackInitials,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: hero ? SimfTokens.navy : Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: SimfTokens.textMd,
+          ),
         ),
       ),
+    );
+    if (id.isEmpty) {
+      return fallback;
+    }
+    return Image.network(
+      '$baseUrl/app/assets/SponsorLogo/$id/image',
+      fit: BoxFit.cover,
+      gaplessPlayback: true,
+      loadingBuilder: (context, child, progress) =>
+          progress == null ? child : fallback,
+      errorBuilder: (context, error, stackTrace) => fallback,
+    );
+  }
+}
+
+/// The lowest-tier band rendered as the frame's compact 3-column logo grid
+/// (frame 922:2824 "رعاة ذهبيون"): each tile is the sponsor's logo over its
+/// name. Non-scrolling (it lives inside the page's ListView).
+class _SponsorGrid extends StatelessWidget {
+  const _SponsorGrid({
+    required this.sponsors,
+    required this.baseUrl,
+    required this.isArabic,
+  });
+
+  final List<Sponsor> sponsors;
+  final String baseUrl;
+  final bool isArabic;
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.count(
+      crossAxisCount: 3,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: SimfTokens.space4,
+      crossAxisSpacing: SimfTokens.space4,
+      childAspectRatio: 0.82,
+      children: <Widget>[
+        for (final sponsor in sponsors)
+          _SponsorGridTile(
+            id: sponsor.id,
+            baseUrl: baseUrl,
+            name: sponsor.localizedName(isArabic),
+            initials: SponsorsScreen._badgeText(sponsor, isArabic),
+          ),
+      ],
+    );
+  }
+}
+
+/// One gold-tier grid tile (frame 922:2824): a navy logo box (beige hairline)
+/// over the sponsor name. The logo fills the box; initials are the fallback.
+class _SponsorGridTile extends StatelessWidget {
+  const _SponsorGridTile({
+    required this.id,
+    required this.baseUrl,
+    required this.name,
+    required this.initials,
+  });
+
+  final String id;
+  final String baseUrl;
+  final String name;
+  final String initials;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Expanded(
+          child: Container(
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: SimfTokens.navyDeep,
+              borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+              border: Border.all(
+                color: SimfTokens.beigeBorder,
+                width: SimfTokens.hairline,
+              ),
+            ),
+            child: _SponsorLogo(
+              id: id,
+              baseUrl: baseUrl,
+              fallbackInitials: initials,
+              hero: false,
+            ),
+          ),
+        ),
+        const SizedBox(height: SimfTokens.space2),
+        Text(
+          name,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: SimfTokens.beigeBorder,
+            fontSize: SimfTokens.textXs,
+          ),
+        ),
+      ],
     );
   }
 }

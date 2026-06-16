@@ -22,12 +22,13 @@ import '../venuemap/data/venue_map_repository.dart';
 /// Frame mapping: the navy scaffold + centred header (الأجنحة) and the shared
 /// bottom nav from [KsaPage]; a bordered search field (ابحث عن جناح أو شركة);
 /// then one exhibitor card per booth — a company header row (short name + full
-/// name beside a square logo-initials tile, gold-hairline divider), the
-/// gold-bordered **code pill** (A-12) beside the deep-navy **hall box**, and a
-/// **guide-me** gold CTA. The frame's booth-officer row and the email / phone
-/// contact boxes are omitted because `GET /app/booths` carries no officer or
-/// contact data and only a bare `hallId` (no hall **name**) — D11 / Page_015
-/// L-6; those fields are reported as data-layer gaps, not invented here.
+/// name beside the square logo tile, gold-hairline divider), the gold-bordered
+/// **code pill** (A-12) beside the deep-navy **hall box**, the booth-officer row
+/// + email / phone contact boxes (D-432 — now on the wire, server resolves the
+/// officer Contact-first), and a **guide-me** gold CTA. P6 — D-440: the logo tile
+/// renders the exhibitor's real `CompanyLogo` asset (D-357) via
+/// `{base}/app/assets/CompanyLogo/{exhibitorContactId}/image`, falling back to
+/// initials when the exhibitor has no linked Contact.
 class BoothsScreen extends ConsumerStatefulWidget {
   const BoothsScreen({super.key});
 
@@ -133,6 +134,8 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
 
     final isArabic = l10n.isArabic;
     final filtered = _filtered(isArabic);
+    // The card builds {base}/app/assets/CompanyLogo/{exhibitorContactId}/image.
+    final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
 
     return Column(
       children: <Widget>[
@@ -173,6 +176,7 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
                         booth: filtered[index],
                         l10n: l10n,
                         isArabic: isArabic,
+                        baseUrl: baseUrl,
                         onTap: () => _openBooth(filtered[index]),
                       ),
                     ),
@@ -232,24 +236,24 @@ class _SearchField extends StatelessWidget {
 
 /// One exhibitor card (frame node 922:2554): a navy box with the beige
 /// hairline carrying — top to bottom — the company header (short name + full
-/// name beside the square logo-initials tile, over a gold hairline), the
-/// gold **code pill** beside the deep-navy **hall box**, and a full-width gold
-/// **guide-me** CTA.
-///
-/// The frame's booth-officer row and the email / phone contact boxes are
-/// omitted: `GET /app/booths` carries no officer or contact data, and only a
-/// bare `hallId` (no hall **name**) — D11 / Page_015 L-6.
+/// name beside the square logo tile, over a gold hairline), the gold **code
+/// pill** beside the deep-navy **hall box**, the booth-officer row + email /
+/// phone contact boxes (D-432, shown only when the wire carries them), and a
+/// full-width gold **guide-me** CTA. P6 — D-440: the logo tile renders the
+/// exhibitor's real CompanyLogo (D-357), initials fallback.
 class _BoothCard extends StatelessWidget {
   const _BoothCard({
     required this.booth,
     required this.l10n,
     required this.isArabic,
+    required this.baseUrl,
     required this.onTap,
   });
 
   final BoothSummary booth;
   final AppL10n l10n;
   final bool isArabic;
+  final String baseUrl;
   final VoidCallback onTap;
 
   @override
@@ -261,7 +265,7 @@ class _BoothCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            _CompanyHeader(booth: booth, isArabic: isArabic),
+            _CompanyHeader(booth: booth, isArabic: isArabic, baseUrl: baseUrl),
             const SizedBox(height: SimfTokens.space4),
             _HallRow(booth: booth, l10n: l10n),
             // D-432 — the booth-officer row + email/phone boxes (now on the
@@ -295,10 +299,15 @@ class _BoothCard extends StatelessWidget {
 /// hairline rule underneath. Laid right-to-left so the text column sits at the
 /// inline start and the logo tile at the inline end, as the frame shows.
 class _CompanyHeader extends StatelessWidget {
-  const _CompanyHeader({required this.booth, required this.isArabic});
+  const _CompanyHeader({
+    required this.booth,
+    required this.isArabic,
+    required this.baseUrl,
+  });
 
   final BoothSummary booth;
   final bool isArabic;
+  final String baseUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -345,7 +354,11 @@ class _CompanyHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(width: SimfTokens.space2),
-          _LogoTile(initials: _initials(name)),
+          _LogoTile(
+            contactId: booth.exhibitorContactId,
+            baseUrl: baseUrl,
+            initials: _initials(name),
+          ),
         ],
       ),
     );
@@ -353,18 +366,37 @@ class _CompanyHeader extends StatelessWidget {
 }
 
 /// The square company-logo tile (frame node 922:2793): a 48×48 navy square with
-/// a beige hairline holding the booth initials in white.
+/// a beige hairline. P6 — D-440: renders the exhibitor's real CompanyLogo (the
+/// D-357 asset owned by [contactId]) clipped to fill, falling back to the booth
+/// initials while it loads or when the exhibitor has no linked Contact / logo.
 class _LogoTile extends StatelessWidget {
-  const _LogoTile({required this.initials});
+  const _LogoTile({
+    required this.contactId,
+    required this.baseUrl,
+    required this.initials,
+  });
 
+  final String? contactId;
+  final String baseUrl;
   final String initials;
 
   @override
   Widget build(BuildContext context) {
+    final fallback = Text(
+      initials,
+      textDirection: TextDirection.ltr,
+      style: const TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.w600,
+        fontSize: SimfTokens.textMd,
+      ),
+    );
+    final id = contactId?.trim() ?? '';
     return Container(
       width: 48,
       height: 48,
       alignment: Alignment.center,
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: SimfTokens.navyDeep,
         border: Border.all(
@@ -373,15 +405,18 @@ class _LogoTile extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
       ),
-      child: Text(
-        initials,
-        textDirection: TextDirection.ltr,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w600,
-          fontSize: SimfTokens.textMd,
-        ),
-      ),
+      child: id.isEmpty
+          ? fallback
+          : Image.network(
+              '$baseUrl/app/assets/CompanyLogo/$id/image',
+              width: 48,
+              height: 48,
+              fit: BoxFit.cover,
+              gaplessPlayback: true,
+              loadingBuilder: (context, child, progress) =>
+                  progress == null ? child : fallback,
+              errorBuilder: (context, error, stackTrace) => fallback,
+            ),
     );
   }
 }

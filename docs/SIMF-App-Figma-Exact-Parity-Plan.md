@@ -139,8 +139,18 @@ additive migration + tests first, then the app render.
    feed URLs (regression test `Update_round_trips_all_live_fields`). Backend
    `dotnet build -c Release` 0/0; 25 API tests + 16 live widget tests green; E2E
    (`mobile-live`, `cp-admin-sessions`) + PAGE-INDEX + DECISIONS_LOG updated.
-6. **P6 — Wider wave parity-check** (session detail / booth / sponsor / archive)
-   — confirm scope, then RTL-verified fixes.
+6. **P6 — Wider wave parity-check** ✅ **DONE (D-440)** — audited the four frames:
+   **session-detail (889-2450)** + booth *text* were already faithful (the speaker
+   tiles are anchor/star glyphs in the frame too, not photos) — no change. Owner
+   then expanded scope to "all data real, from the backend." Built, **migration-free**:
+   **sponsors** (922-2824) — position-based three-band layout (hero / premium cards /
+   lowest-tier **logo grid**) + real `SponsorLogo` (D-357); **booth logo** (922-2458) —
+   appended `ExhibitorContactId` (append-only) → real `CompanyLogo` (D-357);
+   **archive** (925-3079) — real gallery + past-speaker photos via `Image.network`,
+   **URL-per-row** (owner's call — the CP authoring is replace-all, which would orphan
+   per-row D-357 uploads), `_isHttpUrl`-guarded. Release build 0/0; backend + 20 widget
+   tests green; E2E (`mobile-sponsors`/`-booths`/`-archive-detail`) + PAGE-INDEX +
+   DECISIONS_LOG updated. **The P1–P6 exact-parity program is complete.**
 
 ## Data still needed from the owner
 

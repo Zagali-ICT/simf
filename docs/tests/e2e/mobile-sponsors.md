@@ -14,6 +14,13 @@
 > secondary line now **prefers the authored bilingual tagline**
 > (`tagline`/`taglineArabic`, e.g. "الراعي الاستراتيجي · …") and falls back to the
 > website `url` only when no tagline is set.
+>
+> **P6 (D-440):** the layout is now **position-based, three bands** — group 0 → the
+> gold **hero** card, the **last** group (when >1) → the compact **3-column logo
+> grid** ("رعاة ذهبيون"), any group in between → the navy **premium** card. Each
+> sponsor logo is the **real `SponsorLogo` asset** (D-357) at
+> `{base}/app/assets/SponsorLogo/{id}/image`, with the acronym initials as the
+> fallback (network-image loads fail in tests → initials).
 
 | | |
 |--|--|
@@ -34,6 +41,8 @@
 | E2E-MOB023-006 | Secondary line falls back to the website `url` when no tagline is set | display | P1 | _to author (Figma 922:2824)_ |
 | E2E-MOB023-007 | First (strategic) tier renders the gold hero card; later tiers render navy premium cards | i18n/visual | P0 | _to author (Figma 922:2824)_ |
 | E2E-MOB023-008 | Card secondary line is omitted when both tagline and url are empty | edge | P2 | _to author (Figma 922:2824)_ |
+| E2E-MOB023-009 | P6 — lowest tier renders as the 3-col logo grid; group 0 stays the hero card (D-440) | layout | P1 | authored ✓ (screen `P6 — the lowest tier renders as a logo grid`) |
+| E2E-MOB023-010 | P6 — each sponsor logo is wired to the D-357 SponsorLogo route (hero, card + grid) (D-440) | display | P1 | authored ✓ (screen `P6 — each sponsor logo is wired to the D-357 SponsorLogo route`) |
 
 ## Scenarios
 
@@ -110,9 +119,28 @@ Scenario: A sponsor with neither tagline nor url shows only its name
   And no secondary line is rendered under the name
 ```
 
-**Evidence:** `sponsors_screen_test.dart` (3) + `SponsorsTests` (API).
-**Figma parity:** Page 023 matches KSA-Project frame **922:2824 "Shepherds"** (D-432).
+### E2E-MOB023-009 / 010 — P6 tiered layout + real logos (D-440)
+
+```gherkin
+Scenario: Three tiers render hero / cards / grid (lowest = grid)
+  Given three non-empty tiers are returned (Strategic, Premium, Gold)
+  When the sponsors screen renders
+  Then the first tier renders the gold hero card
+  And the middle tier renders navy premium cards
+  And the lowest (last) tier renders a 3-column logo grid (one GridView)
+  And every tier's sponsor name is shown
+
+Scenario: Each sponsor logo loads the real SponsorLogo asset
+  Given a sponsor with id "s1"
+  When its card / grid tile renders
+  Then it builds an Image.network for {base}/app/assets/SponsorLogo/s1/image
+  And on a failed/absent load it falls back to the acronym initials
+```
+
+**Evidence:** `sponsors_screen_test.dart` (6) + `SponsorsTests` (API).
+**Figma parity:** Page 023 matches KSA-Project frame **922:2824 "Shepherds"** (D-432);
+real logos + the lowest-tier grid added P6 (D-440).
 
 ---
 
-_Last reviewed:_ `2026-06-05` by `SIMF Team`.
+_Last reviewed:_ `2026-06-16` by `SIMF Team`.

@@ -26,14 +26,17 @@ public sealed record PublicArchiveEdition(
     string? DateLabelAr = null);
 
 /// <summary>D-432 — one public gallery item (Mockup 24-01 "الصور والفيديو").
-/// <c>Kind</c> is the <c>ArchiveMediaKind</c> int (0 image, 1 video).</summary>
+/// <c>Kind</c> is the <c>ArchiveMediaKind</c> int (0 image, 1 video). P6 — D-440:
+/// for an image, <c>Url</c> is an absolute photo URL the app renders directly.</summary>
 public sealed record PublicArchiveMediaItem(
     int Kind, string Url, string? CaptionEn, string? CaptionAr);
 
 /// <summary>D-432 — one public session title (Mockup 24-01 "عناوين الجلسات").</summary>
 public sealed record PublicArchiveSessionTitle(string TitleEn, string TitleAr);
 
-/// <summary>D-432 — one public past speaker (Mockup 24-01 "المتحدثون السابقون").</summary>
+/// <summary>D-432 — one public past speaker (Mockup 24-01 "المتحدثون السابقون").
+/// P6 — D-440: <c>PhotoRelativePath</c>, when an absolute URL, is the photo the
+/// app renders directly (else initials).</summary>
 public sealed record PublicArchivePastSpeaker(
     string NameEn, string NameAr, string? PhotoRelativePath);
 

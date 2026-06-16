@@ -211,9 +211,9 @@ class _ArchiveBody extends ConsumerWidget {
 }
 
 /// The archive gallery row (node 24-01 "الصور والفيديو"): a horizontal strip of
-/// up to a few thumbnail tiles. Interim — a navy tile with a photo / play glyph
-/// + optional caption (the real media-loading pass is deferred, matching the
-/// other interim image treatments).
+/// thumbnail tiles. P6 — D-440: an image item whose `url` is an absolute http(s)
+/// link renders the real photo (Image.network, cover-filled); a video item or a
+/// blank/relative url falls back to the photo / play glyph placeholder.
 class _GalleryRow extends StatelessWidget {
   const _GalleryRow({required this.items, required this.isArabic});
 
@@ -228,47 +228,75 @@ class _GalleryRow extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         itemCount: items.length,
         separatorBuilder: (_, __) => const SizedBox(width: SimfTokens.space3),
-        itemBuilder: (context, index) {
-          final item = items[index];
-          final caption = item.localizedCaption(isArabic);
-          return Container(
-            width: 120,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: SimfTokens.navyDeep,
-              borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-              border: Border.all(
+        itemBuilder: (context, index) =>
+            _GalleryTile(item: items[index], isArabic: isArabic),
+      ),
+    );
+  }
+}
+
+/// One gallery thumbnail — the real photo when the item is an image with an
+/// absolute url, else a glyph placeholder (with the caption).
+class _GalleryTile extends StatelessWidget {
+  const _GalleryTile({required this.item, required this.isArabic});
+
+  final ArchiveMediaItem item;
+  final bool isArabic;
+
+  @override
+  Widget build(BuildContext context) {
+    final caption = item.localizedCaption(isArabic);
+    final placeholder = _placeholder(caption);
+    final showImage = !item.isVideo && _isHttpUrl(item.url);
+    return Container(
+      width: 120,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: SimfTokens.navyDeep,
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        border: Border.all(
+          color: SimfTokens.beigeBorder,
+          width: SimfTokens.hairline,
+        ),
+      ),
+      child: showImage
+          ? Image.network(
+              item.url,
+              width: 120,
+              height: 96,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, progress) =>
+                  progress == null ? child : placeholder,
+              errorBuilder: (context, error, stackTrace) => placeholder,
+            )
+          : placeholder,
+    );
+  }
+
+  Widget _placeholder(String? caption) {
+    return Padding(
+      padding: const EdgeInsets.all(SimfTokens.space2),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Icon(
+            item.isVideo ? Icons.play_circle_outline : Icons.image_outlined,
+            color: SimfTokens.accent,
+            size: 28,
+          ),
+          if (caption != null) ...<Widget>[
+            const SizedBox(height: SimfTokens.space1),
+            Text(
+              caption,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
                 color: SimfTokens.beigeBorder,
-                width: SimfTokens.hairline,
+                fontSize: SimfTokens.textXs,
               ),
             ),
-            padding: const EdgeInsets.all(SimfTokens.space2),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Icon(
-                  item.isVideo
-                      ? Icons.play_circle_outline
-                      : Icons.image_outlined,
-                  color: SimfTokens.accent,
-                  size: 28,
-                ),
-                if (caption != null) ...<Widget>[
-                  const SizedBox(height: SimfTokens.space1),
-                  Text(
-                    caption,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: SimfTokens.beigeBorder,
-                      fontSize: SimfTokens.textXs,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          );
-        },
+          ],
+        ],
       ),
     );
   }
@@ -296,7 +324,11 @@ class _PastSpeakersRow extends StatelessWidget {
       spacing: SimfTokens.space3,
       runSpacing: SimfTokens.space3,
       children: <Widget>[
-        for (final s in shown) _SpeakerChip(name: s.localized(isArabic)),
+        for (final s in shown)
+          _SpeakerChip(
+            name: s.localized(isArabic),
+            photoUrl: s.photoRelativePath,
+          ),
         if (overflow > 0)
           Container(
             height: 40,
@@ -323,9 +355,13 @@ class _PastSpeakersRow extends StatelessWidget {
 }
 
 class _SpeakerChip extends StatelessWidget {
-  const _SpeakerChip({required this.name});
+  const _SpeakerChip({required this.name, this.photoUrl});
 
   final String name;
+
+  /// P6 — D-440: an absolute http(s) photo url renders the real avatar; a blank
+  /// or relative value falls back to the initials.
+  final String? photoUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -338,6 +374,15 @@ class _SpeakerChip extends StatelessWidget {
             .take(2)
             .map((w) => w.characters.first)
             .join();
+    final fallback = Text(
+      initials,
+      style: const TextStyle(
+        color: SimfTokens.accent,
+        fontWeight: FontWeight.w700,
+        fontSize: SimfTokens.textSm,
+      ),
+    );
+    final showPhoto = _isHttpUrl(photoUrl);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
@@ -345,18 +390,23 @@ class _SpeakerChip extends StatelessWidget {
           width: 40,
           height: 40,
           alignment: Alignment.center,
+          clipBehavior: Clip.antiAlias,
           decoration: const BoxDecoration(
             color: SimfTokens.navyDeep,
             shape: BoxShape.circle,
           ),
-          child: Text(
-            initials,
-            style: const TextStyle(
-              color: SimfTokens.accent,
-              fontWeight: FontWeight.w700,
-              fontSize: SimfTokens.textSm,
-            ),
-          ),
+          child: showPhoto
+              ? Image.network(
+                  photoUrl!,
+                  width: 40,
+                  height: 40,
+                  fit: BoxFit.cover,
+                  gaplessPlayback: true,
+                  loadingBuilder: (context, child, progress) =>
+                      progress == null ? child : fallback,
+                  errorBuilder: (context, error, stackTrace) => fallback,
+                )
+              : fallback,
         ),
         const SizedBox(width: SimfTokens.space2),
         ConstrainedBox(
@@ -704,4 +754,13 @@ class _StatTile extends StatelessWidget {
       ),
     );
   }
+}
+
+/// P6 — D-440: true when [value] is an absolute http(s) URL the app can load
+/// directly. The archive media `url` / past-speaker `photoRelativePath` hold
+/// either such a URL (rendered) or a legacy relative path (falls back to the
+/// glyph / initials), so the app never tries to load an unservable path.
+bool _isHttpUrl(String? value) {
+  final v = value?.trim().toLowerCase() ?? '';
+  return v.startsWith('http://') || v.startsWith('https://');
 }

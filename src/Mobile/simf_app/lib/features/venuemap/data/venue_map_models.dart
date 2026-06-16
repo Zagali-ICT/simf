@@ -102,6 +102,7 @@ class BoothSummary {
     this.officerName,
     this.officerPhone,
     this.officerEmail,
+    this.exhibitorContactId,
   });
 
   final String id;
@@ -120,6 +121,11 @@ class BoothSummary {
   final String? officerName;
   final String? officerPhone;
   final String? officerEmail;
+
+  // P6 — D-440: the exhibitor's Contact id, the owner of the CompanyLogo asset.
+  // The card renders the real logo via {base}/app/assets/CompanyLogo/{this}/image
+  // (D-357), falling back to initials when null (no linked exhibitor / logo).
+  final String? exhibitorContactId;
 
   String localizedName(bool isArabic) {
     final ar = nameArabic.trim();
@@ -151,6 +157,7 @@ class BoothSummary {
         officerName: json['officerName'] as String?,
         officerPhone: json['officerPhone'] as String?,
         officerEmail: json['officerEmail'] as String?,
+        exhibitorContactId: json['exhibitorContactId'] as String?,
       );
 }
 

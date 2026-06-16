@@ -15,6 +15,15 @@
 > session-title bullets, and the **المتحدثون السابقون** past-speaker avatars
 > with a `+N آخرون` overflow chip. Each section is omitted (not faked) when its
 > list is empty.
+>
+> **P6 (D-440):** the gallery + past-speaker images are now **real**. An image
+> gallery item whose `url` is an absolute http(s) link renders the real photo
+> (`Image.network`, cover-filled); a **video** item or a **legacy relative path**
+> keeps the glyph placeholder. A past-speaker whose `photoRelativePath` is an
+> absolute URL renders the real avatar, else the initials. The owner chose
+> **URL-per-row** (admin pastes a reachable image URL — the CP authoring is
+> replace-all, which would orphan per-row uploaded assets); the `_isHttpUrl` guard
+> ensures only absolute URLs are loaded, so a relative path never errors.
 
 | | |
 |--|--|
@@ -41,6 +50,8 @@
 | E2E-MOB024D-010 | الصور والفيديو gallery strip — image tile vs. video tile (play glyph) + caption | happy | P1 | authored (screen) |
 | E2E-MOB024D-011 | عناوين الجلسات — session titles render as beige bullets | happy | P1 | authored (screen) |
 | E2E-MOB024D-012 | المتحدثون السابقون — first 4 avatars + "+N آخرون" overflow chip | happy | P1 | authored (screen) |
+| E2E-MOB024D-013 | P6 — gallery image with an absolute url renders the real photo; a video / relative path do not (D-440) | display | P1 | authored ✓ (screen `P6 — gallery image + past-speaker photo render real URLs`) |
+| E2E-MOB024D-014 | P6 — past-speaker with an absolute photo url renders the real avatar; blank/relative → initials (D-440) | display | P1 | authored ✓ (screen `P6 — gallery image + past-speaker photo render real URLs`) |
 
 ## Scenarios
 
@@ -212,6 +223,33 @@ Scenario: Six past speakers show four avatars and a "+2 آخرون" overflow chi
   And a gold-bordered overflow chip reads "+2 آخرون" ("+2 more")
   And each avatar shows the speaker's two-letter initials in gold on a navy circle
 ```
+
+### E2E-MOB024D-013 / 014 — Real gallery + past-speaker photos (D-440)
+
+```gherkin
+Feature: Past-edition detail — real images (P6)
+
+Scenario: An image gallery item with an absolute url renders the real photo
+  Given a visible edition whose gallery has
+    | kind  | url                                      |
+    | image | https://cdn.example.sa/2024/opening.jpg  |
+    | video | https://youtu.be/abc123                  |
+    | image | archive/2024/legacy.jpg                  |
+  When the archive screen renders the gallery strip
+  Then the first item loads Image.network(https://cdn.example.sa/2024/opening.jpg)
+  And the video item shows the play glyph (no network image)
+  And the legacy relative path shows the image glyph (no network image)
+
+Scenario: A past speaker with an absolute photo url renders the real avatar
+  Given a past speaker whose photoRelativePath is https://cdn.example.sa/2024/s1.jpg
+  Then the avatar loads that image; a speaker with a blank/relative photo shows initials
+```
+
+**Evidence:** `_GalleryTile` / `_SpeakerChip` render `Image.network` only when
+`_isHttpUrl(url)` (absolute http/https), else the glyph / initials fallback.
+Screen test `P6 — gallery image + past-speaker photo render real URLs; a video /
+relative path do not` asserts the NetworkImage URLs present + the video/relative
+absent.
 
 ---
 

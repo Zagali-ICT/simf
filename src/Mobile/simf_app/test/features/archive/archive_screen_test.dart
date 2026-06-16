@@ -45,11 +45,50 @@ final _detail = ArchiveEditionDetail(
   dateLabelAr: 'نوفمبر 2024',
 );
 
+// P6 — D-440: an edition whose gallery + past-speakers carry real photo URLs
+// (plus a video and a legacy relative path that must NOT render as images).
+final _detailWithMedia = ArchiveEditionDetail(
+  id: 'a1',
+  year: 2024,
+  titleEn: 'Saudi International Maritime Forum 2024',
+  titleAr: 'الملتقى البحري السعودي الدولي 2024',
+  attendees: 375,
+  sessions: 30,
+  speakers: 250,
+  gallery: const <ArchiveMediaItem>[
+    ArchiveMediaItem(kind: 0, url: 'https://cdn.example.sa/2024/opening.jpg'),
+    ArchiveMediaItem(kind: 1, url: 'https://youtu.be/abc123'),
+    ArchiveMediaItem(kind: 0, url: 'archive/2024/legacy.jpg'),
+  ],
+  pastSpeakers: const <ArchivePastSpeaker>[
+    ArchivePastSpeaker(
+      nameEn: 'Rashed',
+      nameAr: 'راشد',
+      photoRelativePath: 'https://cdn.example.sa/2024/s1.jpg',
+    ),
+    ArchivePastSpeaker(nameEn: 'Khaled', nameAr: 'خالد'),
+  ],
+);
+
+/// Every NetworkImage URL currently in the tree.
+Set<String> _networkImageUrls(WidgetTester tester) => tester
+    .widgetList<Image>(find.byType(Image))
+    .map((img) => img.image)
+    .whereType<NetworkImage>()
+    .map((n) => n.url)
+    .toSet();
+
 Future<void> _pump(
   WidgetTester tester, {
   required List<Override> overrides,
   Locale locale = const Locale('en'),
 }) async {
+  // Tall surface so the whole scroll (notice → pills → detail → stats → gallery
+  // → session titles → past speakers) lays out in the test viewport.
+  tester.view.physicalSize = const Size(1200, 3200);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
   final router = GoRouter(
     initialLocation: '/archive',
     routes: <RouteBase>[
@@ -157,6 +196,25 @@ void main() {
       // The 2022 edition is now the selected detail.
       expect(find.text('2022 Edition'), findsOneWidget);
       expect(find.text('120'), findsOneWidget); // 2022 speakers
+    });
+
+    testWidgets('P6 — gallery image + past-speaker photo render real URLs; a '
+        'video / relative path do not', (tester) async {
+      await _pump(
+        tester,
+        overrides: <Override>[
+          archiveEditionsProvider.overrideWith((ref) async => _editions),
+          archiveEditionDetailProvider('a1')
+              .overrideWith((ref) async => _detailWithMedia),
+        ],
+      );
+      final urls = _networkImageUrls(tester);
+      // The image gallery item + the past-speaker photo render as real images.
+      expect(urls, contains('https://cdn.example.sa/2024/opening.jpg'));
+      expect(urls, contains('https://cdn.example.sa/2024/s1.jpg'));
+      // A video item (play glyph) and a legacy relative path do NOT.
+      expect(urls, isNot(contains('https://youtu.be/abc123')));
+      expect(urls, isNot(contains('archive/2024/legacy.jpg')));
     });
 
     testWidgets('empty shows the empty state', (tester) async {

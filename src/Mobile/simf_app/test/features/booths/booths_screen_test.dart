@@ -8,6 +8,14 @@ import 'package:simf_app/features/venuemap/data/venue_map_models.dart';
 import 'package:simf_app/features/venuemap/data/venue_map_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+// The HTTP client fails network-image loads in tests, so the booth logo's
+// errorBuilder falls back to its initials — no real bytes are needed.
+const _testConfig = SimfDataConfig(
+  baseUrl: 'http://test.local/api/v1',
+  appKey: 'test',
+  deviceType: SimfDeviceType.android,
+);
+
 const _sami = BoothSummary(
   id: 'b1',
   code: 'A-12',
@@ -16,6 +24,25 @@ const _sami = BoothSummary(
   exhibitorName: 'Saudi Arabian Military Industries',
   sector: 'Defense',
 );
+
+// A booth whose exhibitor has a linked Contact (the CompanyLogo owner).
+const _samiWithLogo = BoothSummary(
+  id: 'b1',
+  code: 'A-12',
+  name: 'SAMI',
+  nameArabic: 'سامي',
+  exhibitorName: 'Saudi Arabian Military Industries',
+  sector: 'Defense',
+  exhibitorContactId: 'c1',
+);
+
+/// Every NetworkImage URL currently in the tree.
+Set<String> _networkImageUrls(WidgetTester tester) => tester
+    .widgetList<Image>(find.byType(Image))
+    .map((img) => img.image)
+    .whereType<NetworkImage>()
+    .map((n) => n.url)
+    .toSet();
 
 const _other = BoothSummary(
   id: 'b2',
@@ -68,7 +95,10 @@ Future<void> _pump(
 }) async {
   await tester.pumpWidget(
     ProviderScope(
-      overrides: <Override>[venueMapRepositoryProvider.overrideWithValue(repo)],
+      overrides: <Override>[
+        simfDataConfigProvider.overrideWithValue(_testConfig),
+        venueMapRepositoryProvider.overrideWithValue(repo),
+      ],
       child: MaterialApp(
         locale: const Locale('en'),
         supportedLocales: AppL10n.supportedLocales,
@@ -138,6 +168,25 @@ void main() {
     testWidgets('empty list shows the empty state', (tester) async {
       await _pump(tester, repo: _FakeRepo());
       expect(find.text('No booths'), findsOneWidget);
+    });
+
+    testWidgets('P6 — a booth with a linked exhibitor wires the CompanyLogo route',
+        (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeRepo(booths: const <BoothSummary>[_samiWithLogo]),
+      );
+      expect(
+        _networkImageUrls(tester),
+        contains('http://test.local/api/v1/app/assets/CompanyLogo/c1/image'),
+      );
+    });
+
+    testWidgets('P6 — a booth with no linked exhibitor shows no logo image '
+        '(initials fallback)', (tester) async {
+      await _pump(tester, repo: _FakeRepo(booths: const <BoothSummary>[_sami]));
+      // No exhibitorContactId → the logo tile renders initials, not a network image.
+      expect(_networkImageUrls(tester), isEmpty);
     });
 
     testWidgets('error shows retry, which re-fetches', (tester) async {
