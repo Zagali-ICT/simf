@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
+import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/ksa_shell.dart';
 
@@ -14,14 +16,21 @@ class MediaPartner {
     required this.name,
     required this.nameArabic,
     this.logoRelativePath,
-    this.url,
   });
+
+  /// The D-357 asset category whose anonymous serve route carries a partner's
+  /// uploaded logo bytes.
+  static const String _logoAssetCategory = 'MediaPartnerLogo';
 
   final String id;
   final String name;
   final String nameArabic;
+
+  /// Legacy free-text path carried on the public wire — **not** the rendered
+  /// logo source. The card renders the partner's uploaded logo from the D-357
+  /// asset route (see [logoAssetUrl]); this field (which historically held an
+  /// arbitrary path / placeholder URL) is kept only to mirror the wire shape.
   final String? logoRelativePath;
-  final String? url;
 
   String localizedName(bool isArabic) {
     final ar = nameArabic.trim();
@@ -29,12 +38,19 @@ class MediaPartner {
     return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
   }
 
+  /// The public, anonymous URL that serves this partner's uploaded logo bytes
+  /// via the D-357 unified media-asset pipeline (the one place the route shape
+  /// lives). [baseUrl] already includes the `/api/v1` segment. The route 404s
+  /// when the partner has no uploaded logo, so the caller falls back to the
+  /// partner's initials.
+  String logoAssetUrl(String baseUrl) =>
+      '$baseUrl/app/assets/$_logoAssetCategory/$id/image';
+
   static MediaPartner fromJson(Map<String, dynamic> json) => MediaPartner(
         id: json['id'] as String? ?? '',
         name: json['name'] as String? ?? '',
         nameArabic: json['nameArabic'] as String? ?? '',
         logoRelativePath: json['logoRelativePath'] as String?,
-        url: json['url'] as String?,
       );
 }
 
@@ -52,7 +68,21 @@ final mediaPartnersProvider =
   );
 });
 
-/// Page 031 — الشركاء الإعلاميون · Media partners (#31, `/media-partners`, Guest+).
+/// Page 031 — الشركاء الإعلاميون · Media partners (#31, `/media-partners`,
+/// Guest+), rebuilt to the KSA-Project frame **958:2246 "Media coverage"** on
+/// the shared navy shell.
+///
+/// **Public.** The frame is the three-tab "التغطية الإعلامية" container —
+/// الأخبار · الشركاء الإعلاميون (this screen) · معرض الصور والفيديوهات. The
+/// media-partners tab is active (gold pill); the two inactive pills navigate to
+/// the news (#29) and gallery (#30) routes. The body is a two-column grid of
+/// partner cards (frame node 958:2388): a gold rounded-square logo holder over
+/// the partner name on the navy KSA card. The logo is the partner's uploaded
+/// asset, fetched from the public anonymous route
+/// `…/app/assets/MediaPartnerLogo/{id}/image` (the D-357 unified media-asset
+/// pipeline — same mechanism the CP upload writes to) with a loading spinner
+/// and a graceful fall-back to the partner's initials on a gold tile when there
+/// is no logo or the fetch fails.
 class MediaPartnersScreen extends ConsumerWidget {
   const MediaPartnersScreen({super.key});
 
@@ -60,53 +90,216 @@ class MediaPartnersScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppL10n.of(context);
     final partners = ref.watch(mediaPartnersProvider);
-    return Scaffold(
-      appBar: AppBar(leading: const SimfBackButton(), title: Text(l10n.mediaPartnersTitle)),
-      body: SafeArea(
-        child: partners.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, __) => _Error(
-            message: l10n.mediaPartnersError,
-            onRetry: () => ref.invalidate(mediaPartnersProvider),
+    // The data-package base URL already includes `/api/v1`; the card builds
+    // `{base}/app/assets/MediaPartnerLogo/{id}/image` from it.
+    final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
+    return KsaPage(
+      // Frame header — the container is "التغطية الإعلامية" (Media coverage),
+      // not the bare "الشركاء الإعلاميون" tab label.
+      title: l10n.mediaCoverageTitle,
+      onBack: () => ksaBackOrHome(context),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              SimfTokens.space4,
+              SimfTokens.space2,
+              SimfTokens.space4,
+              SimfTokens.space2,
+            ),
+            child: _MediaTabs(l10n: l10n),
           ),
-          data: (items) {
-            if (items.isEmpty) {
-              return _Empty(message: l10n.mediaPartnersEmpty);
-            }
-            final isArabic = l10n.isArabic;
-            // Mockup Page 031 `.partners` — a 2-column grid of `.partner`
-            // cards (logo box + caption).
-            return GridView.builder(
-              padding: const EdgeInsets.all(SimfTokens.space4),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: SimfTokens.space2,
-                crossAxisSpacing: SimfTokens.space2,
-                childAspectRatio: 1.6,
+          Expanded(
+            child: partners.when(
+              loading: () =>
+                  const Center(child: CircularProgressIndicator()),
+              error: (_, __) => KsaErrorState(
+                message: l10n.mediaPartnersError,
+                retryLabel: l10n.retryLabel,
+                onRetry: () => ref.invalidate(mediaPartnersProvider),
               ),
-              itemCount: items.length,
-              itemBuilder: (context, index) {
-                final partner = items[index];
-                return _PartnerCard(name: partner.localizedName(isArabic));
+              data: (items) {
+                if (items.isEmpty) {
+                  return KsaEmptyState(
+                    icon: Icons.campaign_outlined,
+                    message: l10n.mediaPartnersEmpty,
+                  );
+                }
+                final isArabic = l10n.isArabic;
+                // Frame 958:2388 — a 2-column grid of 163.5×104 partner cards
+                // with a 16px gap (≈1.57 aspect).
+                return GridView.builder(
+                  padding: const EdgeInsets.fromLTRB(
+                    SimfTokens.space4,
+                    SimfTokens.space2,
+                    SimfTokens.space4,
+                    SimfTokens.space6,
+                  ),
+                  gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: SimfTokens.space4,
+                    crossAxisSpacing: SimfTokens.space4,
+                    childAspectRatio: 163.5 / 104,
+                  ),
+                  itemCount: items.length,
+                  itemBuilder: (context, index) {
+                    final partner = items[index];
+                    return _PartnerCard(
+                      name: partner.localizedName(isArabic),
+                      logoUrl: partner.logoAssetUrl(baseUrl),
+                    );
+                  },
+                );
               },
-            );
-          },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The three media-coverage tabs (frame node 958:2256): الأخبار ·
+/// الشركاء الإعلاميون (active gold) · معرض الصور والفيديوهات. The active tab is
+/// solid gold; the inactive pills are bordered navy cards that route to their
+/// own screens. Mirrors `news_screen.dart:_MediaTabs` (same frame), with the
+/// partners tab active here.
+class _MediaTabs extends StatelessWidget {
+  const _MediaTabs({required this.l10n});
+
+  final AppL10n l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    // Figma 958 (Arabic/RTL): the shared tab bar is, right→left,
+    // معرض الصور والفيديوهات · الشركاء الإعلاميون · الأخبار. A Row lays children
+    // start→end, so the order is gallery → partners → news.
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: _MediaTab(
+            label: l10n.galleryTitle,
+            active: false,
+            onTap: () => context.pushReplacementNamed(RouteNames.gallery),
+          ),
+        ),
+        const SizedBox(width: SimfTokens.space4),
+        Expanded(
+          child: _MediaTab(label: l10n.mediaPartnersTitle, active: true),
+        ),
+        const SizedBox(width: SimfTokens.space4),
+        Expanded(
+          child: _MediaTab(
+            label: l10n.newsTitle,
+            active: false,
+            onTap: () => context.pushReplacementNamed(RouteNames.news),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// One media-coverage tab pill (frame nodes 958:2257 / 958:2259 / 958:2261):
+/// the active pill is solid gold with navy text; an inactive pill is a navy
+/// card with a beige hairline and beige text.
+class _MediaTab extends StatelessWidget {
+  const _MediaTab({required this.label, required this.active, this.onTap});
+
+  final String label;
+  final bool active;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return KsaCard(
+      onTap: active ? null : onTap,
+      color: active ? SimfTokens.accent : SimfTokens.navySurface,
+      borderColor: active ? SimfTokens.accent : SimfTokens.beigeBorder,
+      child: SizedBox(
+        height: 48,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space2),
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: SimfTokens.textSm,
+                fontWeight: FontWeight.w600,
+                // Figma — active gold pill carries dark navy text.
+                color: active ? SimfTokens.navy : SimfTokens.beigeBorder,
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-/// One partner — mockup `.partner` card (logo box · caption). The logo box
-/// renders the partner's initials (interim — no logo asset yet); the caption
-/// below carries the partner name.
+/// One partner — frame node 958:2263: the navy KSA card with a centred gold
+/// rounded-square logo holder over the partner name (white 12px SemiBold).
 class _PartnerCard extends StatelessWidget {
-  const _PartnerCard({required this.name});
+  const _PartnerCard({required this.name, required this.logoUrl});
 
   final String name;
+  final String logoUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    return KsaCard(
+      child: Padding(
+        padding: const EdgeInsets.all(SimfTokens.space2),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            _PartnerLogo(url: logoUrl, name: name),
+            const SizedBox(height: SimfTokens.space2),
+            // Flexible so a long Arabic name (or a large OS text-scale) shrinks
+            // + ellipsises inside the fixed-aspect grid cell instead of
+            // overflowing the column.
+            Flexible(
+              child: Text(
+                name,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: SimfTokens.textSm,
+                  fontWeight: FontWeight.w600,
+                  height: 1.3,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The gold rounded-square logo holder (frame node 958:2264). Renders the
+/// partner's uploaded logo from the public anonymous asset route with a spinner
+/// while it loads; falls back to the partner's initials on a gold tile when the
+/// partner has no logo (the route 404s) or the fetch fails — mirroring
+/// `gallery_screen.dart:_Thumbnail`.
+class _PartnerLogo extends StatelessWidget {
+  const _PartnerLogo({required this.url, required this.name});
+
+  final String url;
+  final String name;
+
+  static const double _size = 48;
+  static final RegExp _whitespace = RegExp(r'\s+');
 
   String get _initials {
-    final words = name.trim().split(RegExp(r'\s+'));
+    final words = name.trim().split(_whitespace);
     final letters = words
         .where((w) => w.isNotEmpty)
         .take(2)
@@ -117,87 +310,61 @@ class _PartnerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: SimfTokens.space2,
-          vertical: SimfTokens.space3,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              _initials,
-              style: const TextStyle(
-                color: SimfTokens.surface,
-                fontWeight: FontWeight.w700,
-                fontSize: SimfTokens.textMd,
-                letterSpacing: 0.5,
+    return ClipRRect(
+      borderRadius:
+          const BorderRadius.all(Radius.circular(SimfTokens.radiusSmall)),
+      child: SizedBox(
+        width: _size,
+        height: _size,
+        child: Image.network(
+          url,
+          fit: BoxFit.cover,
+          gaplessPlayback: true,
+          loadingBuilder: (context, child, progress) {
+            if (progress == null) {
+              return child;
+            }
+            return const ColoredBox(
+              color: SimfTokens.navyDeep,
+              child: Center(
+                child: SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
               ),
-            ),
-            const SizedBox(height: SimfTokens.space1),
-            Text(
-              name,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: SimfTokens.txtTertiary,
-                fontSize: SimfTokens.textXs,
-                height: 1.4,
-              ),
-            ),
-          ],
+            );
+          },
+          // Initials are computed only when the fetch fails — the common
+          // success path skips the split.
+          errorBuilder: (context, error, stackTrace) =>
+              _InitialsTile(initials: _initials),
         ),
       ),
     );
   }
 }
 
-class _Empty extends StatelessWidget {
-  const _Empty({required this.message});
+/// The no-logo / failed-fetch fall-back: the partner's initials on the frame's
+/// gold tile (navy text for contrast on gold).
+class _InitialsTile extends StatelessWidget {
+  const _InitialsTile({required this.initials});
 
-  final String message;
+  final String initials;
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          const Icon(
-            Icons.campaign_outlined,
-            size: 56,
-            color: SimfTokens.txtTertiary,
+    return ColoredBox(
+      color: SimfTokens.accent,
+      child: Center(
+        child: Text(
+          initials,
+          style: const TextStyle(
+            color: SimfTokens.navy,
+            fontWeight: FontWeight.w700,
+            fontSize: SimfTokens.textMd,
+            letterSpacing: 0.5,
           ),
-          const SizedBox(height: SimfTokens.space3),
-          Text(message, style: const TextStyle(color: SimfTokens.txtSecondary)),
-        ],
-      ),
-    );
-  }
-}
-
-class _Error extends StatelessWidget {
-  const _Error({required this.message, required this.onRetry});
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppL10n.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: SimfTokens.space4),
-            FilledButton(onPressed: onRetry, child: Text(l10n.retryLabel)),
-          ],
         ),
       ),
     );
