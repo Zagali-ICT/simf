@@ -19,6 +19,16 @@
 > and the "الجلسات القادمة" upcoming-session cards (loaded non-blocking from the
 > agenda list). The hall name, speakers line and upcoming cards render only when
 > the wire carries them; this screen never fabricates the missing rows.
+>
+> **AI live captions (P5 — D-439):** the session detail now carries optional
+> bilingual `LiveCaptions` / `LiveCaptionsArabic` text (an admin-set field — the
+> provider is stubbed, manual entry for the POC). When present the gold-bordered
+> caption strip shows the active-locale text in white; when blank it shows the
+> muted placeholder hint (and YouTube CC supplies captions for a YouTube feed).
+> The strip renders only on the live-feed branch (no stray strip on a
+> recorded/not-live session). Same change fixed a pre-existing bug where editing a
+> session via the admin PUT silently wiped its live feed URLs (regression test
+> `Update_round_trips_all_live_fields`).
 
 | | |
 |--|--|
@@ -49,6 +59,9 @@
 | E2E-MOB025-015 | Upcoming list empty / fails → strip hidden, live screen still works (D-433) | resilience | P1 | _to author_ |
 | E2E-MOB025-016 | Gold region-restriction notice card "إشعار: …" (D-433) | happy | P2 | _to author_ |
 | E2E-MOB025-017 | Ask-a-question entry "اطرح سؤالاً" → /live/question with sessionId (D-433) | happy | P0 | _to author_ |
+| E2E-MOB025-018 | P5 — session with AI caption text → the strip shows the text (white), not the placeholder hint (D-439) | happy | P1 | authored ✓ (screen `P5 — a session with caption text shows it in the caption strip (white)`) |
+| E2E-MOB025-019 | P5 — live session with no caption → the muted placeholder hint (D-439) | edge | P1 | authored ✓ (screen `P5 — a live session with no caption shows the placeholder hint`) |
+| E2E-MOB025-020 | P5 — caption locale fallback: Arabic text under `ar`, English under `en` (D-439) | i18n | P1 | authored ✓ (screen `P5 — the caption renders the Arabic text under the ar locale`) |
 
 ## Scenarios
 
@@ -265,6 +278,38 @@ Scenario: The button label is bilingual
 **Evidence:** `_AskQuestionButton` → `_askQuestion` →
 `context.pushNamed(RouteNames.sendQuestion, queryParameters: {sessionId})`;
 label `liveAskQuestion` (اطرح سؤالاً / Ask a question) — frame L-3 Q&A affordance.
+
+### E2E-MOB025-018 / 019 / 020 — AI live captions (P5 — D-439)
+
+```gherkin
+Scenario: A session with admin-set caption text shows it in the strip
+  Given a live session whose LiveCaptions = "Welcome to the opening session."
+  And the device locale is English
+  When the live screen loads
+  Then the gold-bordered caption strip shows "Welcome to the opening session."
+  And the text is rendered in the white surface colour (not the muted hint)
+  And the placeholder hint "Live captions of the spoken word appear here…" is NOT shown
+
+Scenario: A live session with no caption shows the placeholder hint
+  Given a live session with a stream URL but no LiveCaptions text
+  When the live screen loads
+  Then the caption strip shows the muted placeholder "Live captions of the spoken word appear here…"
+
+Scenario: The caption follows the active locale (fallback to the other side)
+  Given a live session with LiveCaptions = "English caption." and LiveCaptionsArabic = "الترجمة العربية."
+  And the device locale is Arabic
+  When the live screen loads
+  Then the caption strip shows "الترجمة العربية."
+  And it does NOT show "English caption."
+```
+
+**Evidence:** `LiveSession.localizedCaption(isArabic)` (active-locale value, falls
+back to the other when blank, null when both empty) → `_PlayerSurface(caption:)`
+→ `_CaptionStrip` renders `caption ?? hint`, white when a real caption is present
+and muted (`onGoldMuted`) for the placeholder. The strip is built only on the
+live-feed branch (`mainUrl != null`). Provider stubbed — the text is an admin-set
+field on the session (manual entry for the POC). Frame node 934:3613. Widget
+tests: `live_broadcast_screen_test.dart` (`P5 — …` cases).
 
 ---
 

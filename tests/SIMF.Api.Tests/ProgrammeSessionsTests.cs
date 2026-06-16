@@ -151,6 +151,9 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
             var session = await db.Sessions.SingleAsync(s => s.Id == created.Id);
             session.LiveStreamUrl = "https://live.example/stream.m3u8";
             session.LiveSignLanguageUrl = "https://live.example/sign.m3u8";
+            // P5 — D-439: the AI live-caption text is surfaced on the same wire.
+            session.LiveCaptions = "Caption text appears here.";
+            session.LiveCaptionsArabic = "يظهر نص الترجمة هنا.";
             await db.SaveChangesAsync();
         }
 
@@ -159,6 +162,8 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
             .ReadFromJsonAsync<ApiResult<PublicSessionDetail>>())!.Data!;
         Assert.Equal("https://live.example/stream.m3u8", body.LiveStreamUrl);
         Assert.Equal("https://live.example/sign.m3u8", body.LiveSignLanguageUrl);
+        Assert.Equal("Caption text appears here.", body.LiveCaptions);
+        Assert.Equal("يظهر نص الترجمة هنا.", body.LiveCaptionsArabic);
     }
 
     [Fact]

@@ -92,6 +92,15 @@ public sealed class UpdateSessionRequest
         = new List<AdminSessionSpeakerEntry>();
     public IList<Guid> ThemeIds { get; set; } = new List<Guid>();
     public bool IsActive { get; set; } = true;
+    // §8 / D-349 — live feed URLs. D-439: these were missing from this API-layer
+    // DTO, so a PUT silently dropped them and editing a session wiped its live
+    // feed. Added here (with the P5 caption fields) so the full live section
+    // round-trips on update, matching the create path.
+    public string? LiveStreamUrl { get; set; }
+    public string? LiveSignLanguageUrl { get; set; }
+    // P5 — D-439: AI live-caption text (manual stub provider, bilingual).
+    public string? LiveCaptions { get; set; }
+    public string? LiveCaptionsArabic { get; set; }
 }
 
 public sealed class UpdateSessionEndpoint(IAdminSessionService service)
@@ -130,6 +139,11 @@ public sealed class UpdateSessionEndpoint(IAdminSessionService service)
                     Speakers = req.Speakers,
                     ThemeIds = req.ThemeIds,
                     IsActive = req.IsActive,
+                    // §8 / D-349 / D-439 — the full live section round-trips.
+                    LiveStreamUrl = req.LiveStreamUrl,
+                    LiveSignLanguageUrl = req.LiveSignLanguageUrl,
+                    LiveCaptions = req.LiveCaptions,
+                    LiveCaptionsArabic = req.LiveCaptionsArabic,
                 }, ct)), ct);
     }
 }

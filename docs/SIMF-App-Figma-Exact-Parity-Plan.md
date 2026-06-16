@@ -66,7 +66,7 @@ photo → **add the photo API now**; wider-wave four pages → **all included**.
 |-----|-------|-----------------|---------------------|----------|
 | **Media-partner logo** | 958-2246 | **DONE (P1)** — served by the existing anonymous D-357 route `GET /app/assets/MediaPartnerLogo/{id}/image`; CP upload already ships (`MediaPartnerAddEdit.razor` `SimfImageUpload Category="MediaPartnerLogo"`) | App renders the logo from that route, initials fall-back. **No new endpoint / DTO field / migration** — reuse the unified media-asset pipeline (the controlled doc `docs/dev/SIMF-Media-Asset-The-One-Way.md` forbids a per-entity duplicate). | ✅ **real logos (D-357 reuse)** |
 | **News thumbnail + date** | 948-3961 | **DONE (P2)** — image served by the existing anonymous D-357 route `/app/assets/NewsImage/{id}/image`; CP upload already ships (`NewsAddEdit.razor` `SimfImageUpload Category="NewsImage"`) | `_NewsCard` renders the thumbnail (icon fall-back) + the `DD-MM-YYYY` date. No new endpoint — D-357 reuse (the legacy `imageRelativePath` is not the byte source). | ✅ render (D-357 reuse) |
-| **Live AI captions / transcript** | 934-3450 | none — `LiveSession` has no transcript field | add a caption/transcript field + endpoint (`GET /app/programme/sessions/{id}/captions` or a field on the live slice); app renders when present; **provider integration stubbed/later** | ✅ **API surface now, provider later** |
+| **Live AI captions / transcript** | 934-3450 | **DONE (P5 — D-439)** — added two additive nullable bilingual columns `Session.LiveCaptions`/`LiveCaptionsArabic` (`nvarchar(2048)`, migration `App/D439_AddSessionLiveCaptions`), surfaced on the existing `PublicSessionDetail` wire (append-only) + the admin contract; CP session form edits them (two textareas, already permission-gated) | App `_CaptionStrip` renders the active-locale caption (white) via `LiveSession.localizedCaption`, else the muted placeholder hint. **Provider stubbed** — admin-entered text for the POC (like `LiveStreamUrl`); future `ILiveCaptionProvider` STT seam fills the same columns. Same change fixed a pre-existing bug where editing a session wiped its live feed URLs (Update DTO omitted them; regression test added). | ✅ **API surface now, provider later (D-439)** |
 | **Speaker photo** | 908-2110 / 908-1744 | **DONE (P4)** — served by the existing anonymous D-357 route `/app/assets/SpeakerPhoto/{id}/image`; CP upload already ships (`SpeakersAddEdit.razor` `SimfImageUpload Category="SpeakerPhoto"`) | App renders the photo on the CV avatar (initials fall-back) + the speaker-list tile (anchor fall-back). **No new field/endpoint/migration** — D-357 reuse (the plan's `Speaker.PhotoRelativePath`/`/app/speakers/{id}/photo` would have duplicated it). | ✅ **render (D-357 reuse)** |
 
 ## P1 design notes — AS-BUILT (corrected 2026-06-16)
@@ -128,7 +128,17 @@ additive migration + tests first, then the app render.
    `/app/assets/SpeakerPhoto/{id}/image`. Photo-URL wiring tests; E2E +
    PAGE-INDEX/plan docs. (List shows the photo when present, else the frame's
    anchor/star role glyph — the star/host-in-list is a separate open item.)
-5. **P5 — Live AI captions** (only if owner approves building the feature).
+5. **P5 — Live AI captions** ✅ **DONE (D-439)** — owner-approved; built the API
+   surface end-to-end with the provider **stubbed** (admin-entered text, like
+   `LiveStreamUrl`). Two additive nullable bilingual columns
+   `Session.LiveCaptions`/`LiveCaptionsArabic` (`nvarchar(2048)`, migration
+   `App/D439_AddSessionLiveCaptions`, snapshot-diff verified), append-only on the
+   `PublicSessionDetail` wire + admin contract, CP form textareas, app
+   `_CaptionStrip` renders the localized caption (white) else the placeholder.
+   **Also fixed** a pre-existing bug where the admin Update DTO dropped the live
+   feed URLs (regression test `Update_round_trips_all_live_fields`). Backend
+   `dotnet build -c Release` 0/0; 25 API tests + 16 live widget tests green; E2E
+   (`mobile-live`, `cp-admin-sessions`) + PAGE-INDEX + DECISIONS_LOG updated.
 6. **P6 — Wider wave parity-check** (session detail / booth / sponsor / archive)
    — confirm scope, then RTL-verified fixes.
 

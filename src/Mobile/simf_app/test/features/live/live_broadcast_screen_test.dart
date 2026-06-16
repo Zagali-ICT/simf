@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/features/live/data/live_repository.dart';
 import 'package:simf_app/features/live/live_broadcast_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
@@ -13,6 +14,8 @@ LiveSession _liveSession({
   String? liveSignLanguageUrl,
   bool hasRecording = false,
   int status = 0,
+  String? liveCaptions,
+  String? liveCaptionsArabic,
 }) =>
     LiveSession(
       title: 'Opening',
@@ -21,6 +24,8 @@ LiveSession _liveSession({
       hasRecording: hasRecording,
       liveStreamUrl: liveStreamUrl,
       liveSignLanguageUrl: liveSignLanguageUrl,
+      liveCaptions: liveCaptions,
+      liveCaptionsArabic: liveCaptionsArabic,
     );
 
 class _FakeLiveRepo implements LiveRepository {
@@ -317,6 +322,73 @@ void main() {
       expect(find.text('Upcoming sessions'), findsOneWidget);
       expect(find.text('Next talk'), findsOneWidget);
       expect(find.text('11:00'), findsOneWidget);
+    });
+
+    testWidgets('P5 — a session with caption text shows it in the caption strip '
+        '(white)', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeLiveRepo(
+          session: _liveSession(
+            liveStreamUrl: 'https://live.example.sa/main.m3u8',
+            liveCaptions: 'Welcome to the opening session.',
+          ),
+        ),
+        sessionId: 's1',
+        // The HLS feed can't initialise headless — the player surfaces its error
+        // state, but the caption strip is a sibling and still renders.
+        settle: false,
+      );
+
+      final caption = find.text('Welcome to the opening session.');
+      expect(caption, findsOneWidget);
+      // The placeholder hint is NOT shown when a real caption is present.
+      expect(
+        find.text('Live captions of the spoken word appear here…'),
+        findsNothing,
+      );
+      // Real caption text reads in the surface (white) token — not the muted
+      // placeholder colour. Assert the token so a re-tint can't silently pass.
+      expect(tester.widget<Text>(caption).style!.color, SimfTokens.surface);
+    });
+
+    testWidgets('P5 — a live session with no caption shows the placeholder hint',
+        (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeLiveRepo(
+          session: _liveSession(
+            liveStreamUrl: 'https://live.example.sa/main.m3u8',
+          ),
+        ),
+        sessionId: 's1',
+        settle: false,
+      );
+
+      expect(
+        find.text('Live captions of the spoken word appear here…'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('P5 — the caption renders the Arabic text under the ar locale',
+        (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeLiveRepo(
+          session: _liveSession(
+            liveStreamUrl: 'https://live.example.sa/main.m3u8',
+            liveCaptions: 'English caption.',
+            liveCaptionsArabic: 'الترجمة العربية.',
+          ),
+        ),
+        sessionId: 's1',
+        locale: const Locale('ar'),
+        settle: false,
+      );
+
+      expect(find.text('الترجمة العربية.'), findsOneWidget);
+      expect(find.text('English caption.'), findsNothing);
     });
 
     testWidgets('the not-live note is bilingual (Arabic)', (tester) async {

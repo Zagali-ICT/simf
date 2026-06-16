@@ -269,7 +269,10 @@ internal sealed class ProgrammeSessionService(
                 && session.RecordingStoredFileName is not null,
             // §8: the live broadcast feed(s) — null when the session is not live.
             session.LiveStreamUrl,
-            session.LiveSignLanguageUrl);
+            session.LiveSignLanguageUrl,
+            // P5 — D-439: the AI live-caption text (null when none set).
+            session.LiveCaptions,
+            session.LiveCaptionsArabic);
     }
 
     public async Task<SessionRecordingRef?> GetPublishedRecordingAsync(

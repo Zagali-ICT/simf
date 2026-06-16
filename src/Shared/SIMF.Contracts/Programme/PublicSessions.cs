@@ -83,7 +83,13 @@ public sealed record PublicSessionDetail(
     // Appended (append-only, D-219). D-349: the provider is YouTube (POC) with a
     // direct HLS/MP4 URL as a fallback — validated by LiveStreamUrlPolicy.
     string? LiveStreamUrl = null,
-    string? LiveSignLanguageUrl = null);
+    string? LiveSignLanguageUrl = null,
+    // P5 — D-439 (Mockup screen 25, Figma 934:3613): the AI live-caption text
+    // shown under the player. Non-null = the app renders the caption strip with
+    // this text; null = the placeholder hint. Bilingual; provider stubbed (manual
+    // CP entry for the POC). Appended (append-only, D-219).
+    string? LiveCaptions = null,
+    string? LiveCaptionsArabic = null);
 
 /// <summary>D-199 — one theme/pillar tag on a public session. Order
 /// follows the session's theme order; the first is the primary pillar

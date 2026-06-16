@@ -268,6 +268,9 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 EndUtc = DateTimeOffset.UtcNow.AddHours(2),
                 LiveStreamUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                 LiveSignLanguageUrl = "https://youtu.be/abc123XYZ_-",
+                // P5 — D-439: AI live-caption text round-trips on create too.
+                LiveCaptions = "Welcome to the opening session.",
+                LiveCaptionsArabic = "مرحباً بكم في الجلسة الافتتاحية.",
             },
             token);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -276,6 +279,64 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(
             "https://www.youtube.com/watch?v=dQw4w9WgXcQ", detail.LiveStreamUrl);
         Assert.Equal("https://youtu.be/abc123XYZ_-", detail.LiveSignLanguageUrl);
+        Assert.Equal("Welcome to the opening session.", detail.LiveCaptions);
+        Assert.Equal("مرحباً بكم في الجلسة الافتتاحية.", detail.LiveCaptionsArabic);
+    }
+
+    // P5 — D-439 (regression): the Update API DTO previously dropped the live
+    // feed URLs (and would have dropped the new caption fields), so editing a
+    // session silently wiped its live broadcast. This proves all four live
+    // fields round-trip through a PUT — the create path always worked; this is
+    // the update path that was broken.
+    [Fact]
+    public async Task Update_round_trips_all_live_fields()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hall = await SeedHallAsync(capacity: 10);
+
+        // Create a plain session with no live broadcast.
+        var create = await PostAuthAsync(
+            "/api/v1/admin/sessions",
+            new AdminCreateSessionRequest
+            {
+                Code = NewCode(), Title = "Edit me", TitleArabic = "عدّلني",
+                HallId = hall.Id,
+                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
+                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+            },
+            token);
+        Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+        var created = (await create.Content
+            .ReadFromJsonAsync<ApiResult<AdminSessionDetail>>())!.Data!;
+        Assert.Null(created.LiveStreamUrl);
+        Assert.Null(created.LiveCaptions);
+
+        // Edit it to add the full live section.
+        var update = await PutAuthAsync(
+            $"/api/v1/admin/sessions/{created.Id}",
+            new AdminUpdateSessionRequest
+            {
+                Code = created.Code,
+                Title = created.Title,
+                TitleArabic = created.TitleArabic,
+                HallId = created.HallId,
+                StartUtc = created.StartUtc,
+                EndUtc = created.EndUtc,
+                IsActive = true,
+                LiveStreamUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                LiveSignLanguageUrl = "https://youtu.be/abc123XYZ_-",
+                LiveCaptions = "Live caption line.",
+                LiveCaptionsArabic = "سطر الترجمة المباشرة.",
+            },
+            token);
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+        var edited = (await update.Content
+            .ReadFromJsonAsync<ApiResult<AdminSessionDetail>>())!.Data!;
+        Assert.Equal(
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ", edited.LiveStreamUrl);
+        Assert.Equal("https://youtu.be/abc123XYZ_-", edited.LiveSignLanguageUrl);
+        Assert.Equal("Live caption line.", edited.LiveCaptions);
+        Assert.Equal("سطر الترجمة المباشرة.", edited.LiveCaptionsArabic);
     }
 
     // D-349 — a direct HLS stream URL is still accepted (the fallback path).
@@ -476,6 +537,17 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
         string url, TBody body, string token) where TBody : class
     {
         var request = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Content = JsonContent.Create(body),
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
+
+    private Task<HttpResponseMessage> PutAuthAsync<TBody>(
+        string url, TBody body, string token) where TBody : class
+    {
+        var request = new HttpRequestMessage(HttpMethod.Put, url)
         {
             Content = JsonContent.Create(body),
         };

@@ -58,7 +58,10 @@ public sealed record AdminSessionDetail(
     DateTimeOffset? RecordingUploadedAt = null,
     // §8 — live broadcast feed(s); null when the session is not live.
     string? LiveStreamUrl = null,
-    string? LiveSignLanguageUrl = null);
+    string? LiveSignLanguageUrl = null,
+    // P5 — D-439: AI live-caption text (manual stub provider, bilingual).
+    string? LiveCaptions = null,
+    string? LiveCaptionsArabic = null);
 
 /// <summary>D-165 — one entry in <see cref="AdminSessionDetail.Speakers"/>.
 /// Order matters: 0 = primary speaker for the session card.</summary>
@@ -91,6 +94,9 @@ public sealed class AdminCreateSessionRequest
     // shared LiveStreamUrlPolicy validates both).
     public string? LiveStreamUrl { get; set; }
     public string? LiveSignLanguageUrl { get; set; }
+    // P5 — D-439 — optional AI live-caption text (manual stub provider, bilingual).
+    public string? LiveCaptions { get; set; }
+    public string? LiveCaptionsArabic { get; set; }
 }
 
 public sealed class AdminUpdateSessionRequest
@@ -114,6 +120,9 @@ public sealed class AdminUpdateSessionRequest
     // shared LiveStreamUrlPolicy validates both).
     public string? LiveStreamUrl { get; set; }
     public string? LiveSignLanguageUrl { get; set; }
+    // P5 — D-439 — optional AI live-caption text (manual stub provider, bilingual).
+    public string? LiveCaptions { get; set; }
+    public string? LiveCaptionsArabic { get; set; }
 }
 
 /// <summary>P3.2 — D-231: the Committee's lifecycle transition. The service

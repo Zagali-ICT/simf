@@ -149,6 +149,9 @@ internal sealed class AdminSessionService(
             // §8 — live broadcast stream URLs (manual stub provider).
             LiveStreamUrl = NullIfBlank(request.LiveStreamUrl),
             LiveSignLanguageUrl = NullIfBlank(request.LiveSignLanguageUrl),
+            // P5 — D-439: AI live-caption text (manual stub provider, bilingual).
+            LiveCaptions = NullIfBlank(request.LiveCaptions),
+            LiveCaptionsArabic = NullIfBlank(request.LiveCaptionsArabic),
             IsActive = true,
             CreatedAt = now,
         };
@@ -241,6 +244,9 @@ internal sealed class AdminSessionService(
         // §8 — live broadcast stream URLs (manual stub provider).
         session.LiveStreamUrl = NullIfBlank(request.LiveStreamUrl);
         session.LiveSignLanguageUrl = NullIfBlank(request.LiveSignLanguageUrl);
+        // P5 — D-439: AI live-caption text (manual stub provider, bilingual).
+        session.LiveCaptions = NullIfBlank(request.LiveCaptions);
+        session.LiveCaptionsArabic = NullIfBlank(request.LiveCaptionsArabic);
         session.IsActive = request.IsActive;
         session.UpdatedAt = timeProvider.GetUtcNow();
 
@@ -681,6 +687,9 @@ internal sealed class AdminSessionService(
             session.RecordingSizeBytes,
             session.RecordingUploadedAt,
             session.LiveStreamUrl,
-            session.LiveSignLanguageUrl);
+            session.LiveSignLanguageUrl,
+            // P5 — D-439: AI live-caption text.
+            session.LiveCaptions,
+            session.LiveCaptionsArabic);
     }
 }

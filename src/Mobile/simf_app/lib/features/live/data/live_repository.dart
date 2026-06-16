@@ -19,6 +19,8 @@ class LiveSession {
     this.hallNameArabic,
     this.startUtc,
     this.speakers = const <LiveSpeaker>[],
+    this.liveCaptions,
+    this.liveCaptionsArabic,
   });
 
   factory LiveSession.fromJson(Map<String, dynamic> json) {
@@ -38,6 +40,9 @@ class LiveSession {
           .whereType<Map<dynamic, dynamic>>()
           .map((e) => LiveSpeaker.fromJson(e.cast<String, dynamic>()))
           .toList(growable: false),
+      // P5 — D-439: the AI live-caption text (null when none set).
+      liveCaptions: _trimToNull(json['liveCaptions'] as String?),
+      liveCaptionsArabic: _trimToNull(json['liveCaptionsArabic'] as String?),
     );
   }
 
@@ -61,6 +66,12 @@ class LiveSession {
   final DateTime? startUtc;
   final List<LiveSpeaker> speakers;
 
+  // P5 — D-439 (Figma 934:3613): the AI live-caption / running-transcript line
+  // rendered under the player. Bilingual; null when the admin has set none (the
+  // strip then shows the placeholder hint and YouTube CC supplies captions).
+  final String? liveCaptions;
+  final String? liveCaptionsArabic;
+
   String localizedTitle(bool isArabic) {
     if (isArabic) {
       return titleArabic.isNotEmpty ? titleArabic : title;
@@ -71,6 +82,16 @@ class LiveSession {
   String? localizedHall(bool isArabic) {
     final ar = (hallNameArabic ?? '').trim();
     final en = (hallName ?? '').trim();
+    final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+    return value.isEmpty ? null : value;
+  }
+
+  /// P5 — D-439: the AI live-caption text in the active locale, falling back to
+  /// the other when one side is blank. Null when neither is set (the strip then
+  /// shows the placeholder hint).
+  String? localizedCaption(bool isArabic) {
+    final ar = (liveCaptionsArabic ?? '').trim();
+    final en = (liveCaptions ?? '').trim();
     final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
     return value.isEmpty ? null : value;
   }

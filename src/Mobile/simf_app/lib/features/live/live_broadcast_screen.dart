@@ -34,11 +34,12 @@ import 'youtube_url.dart';
 /// title), a **black player surface** carrying the LIVE badge + the gold-bordered
 /// "AI live-caption" strip, then the **"يُبث الآن" now-broadcasting** block (the
 /// session title as a gold bullet), the gold **region-restriction notice card**,
-/// and the **ask-a-question** entry to Page 026 (`/live/question`). The frame's
-/// "القاعة الرئيسية" hall name, the speakers/participants line, the inline-caption
-/// language chip and the **"الجلسات القادمة" upcoming-sessions** cards are NOT
-/// carried by the live wire slice — see the agent report's apiGaps; this screen
-/// renders only what the contract carries and never fabricates the missing rows.
+/// and the **ask-a-question** entry to Page 026 (`/live/question`). The hall name
+/// and the speakers/participants line ride the wire (D-433); the **AI live-caption
+/// text** rides the wire too (P5 — D-439: an admin-set field on the session, the
+/// stubbed-provider surface), and the strip falls back to a placeholder hint when
+/// it is blank. The language chip toggles the app locale. This screen renders
+/// only what the contract carries and never fabricates the missing rows.
 ///
 /// **Provider (D-349):** the live-video provider is **YouTube** (POC). Each feed
 /// URL is sniffed by [YoutubeUrl]: a YouTube link plays via the IFrame player,
@@ -197,6 +198,9 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
             key: ValueKey<String>(activeUrl!),
             url: activeUrl,
             liveLabel: l10n.liveNowLabel,
+            // P5 — D-439: the admin-set AI caption when present, else the
+            // placeholder hint (YouTube CC supplies captions meanwhile).
+            caption: session.localizedCaption(isArabic),
             captionHint: l10n.liveCaptionHint,
           )
         else if (session.hasRecording)
@@ -381,11 +385,15 @@ class _PlayerSurface extends StatelessWidget {
     required this.url,
     required this.liveLabel,
     required this.captionHint,
+    this.caption,
     super.key,
   });
 
   final String url;
   final String liveLabel;
+
+  /// P5 — D-439: the admin-set AI caption text for this session, or null.
+  final String? caption;
   final String captionHint;
 
   @override
@@ -399,7 +407,7 @@ class _PlayerSurface extends StatelessWidget {
           children: <Widget>[
             _LivePlayer(url: url, liveLabel: liveLabel),
             const SizedBox(height: SimfTokens.space4),
-            _CaptionStrip(hint: captionHint),
+            _CaptionStrip(caption: caption, hint: captionHint),
           ],
         ),
       ),
@@ -408,16 +416,20 @@ class _PlayerSurface extends StatelessWidget {
 }
 
 /// The gold-bordered AI live-caption strip under the player (frame 934:3613):
-/// the placeholder caption text with a small gold "AI" badge. The text is the
-/// interim placeholder — the spoken-word caption feed itself is not on the wire
-/// (see apiGaps); for a YouTube feed the player's own CC supplies captions.
+/// the caption text with a small gold "AI" badge. P5 — D-439: when the session
+/// carries admin-set [caption] text (the stubbed-provider surface) it is shown
+/// in readable white; otherwise the muted placeholder [hint] is shown (and for a
+/// YouTube feed the player's own CC supplies captions meanwhile).
 class _CaptionStrip extends StatelessWidget {
-  const _CaptionStrip({required this.hint});
+  const _CaptionStrip({required this.hint, this.caption});
 
+  /// The real AI caption text, or null to show the placeholder [hint].
+  final String? caption;
   final String hint;
 
   @override
   Widget build(BuildContext context) {
+    final hasCaption = caption != null;
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: SimfTokens.space3,
@@ -431,10 +443,11 @@ class _CaptionStrip extends StatelessWidget {
         children: <Widget>[
           Expanded(
             child: Text(
-              hint,
+              caption ?? hint,
               textAlign: TextAlign.right,
-              style: const TextStyle(
-                color: SimfTokens.onGoldMuted,
+              style: TextStyle(
+                // Real caption text reads in white; the placeholder stays muted.
+                color: hasCaption ? SimfTokens.surface : SimfTokens.onGoldMuted,
                 fontSize: SimfTokens.textSm,
               ),
             ),

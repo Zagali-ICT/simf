@@ -123,6 +123,21 @@ public class Session : BaseAuditEntity
     /// feed.</summary>
     public string? LiveSignLanguageUrl { get; set; }
 
+    /// <summary>P5 — D-439 (Mockup screen 25 "البث المباشر", Figma 934:3613): the
+    /// AI live-caption / running-transcript line shown under the player ("الترجمة
+    /// الفورية للنص المنطوق"). Non-null = the app renders the caption strip with
+    /// this text; null = the strip shows the placeholder hint (and YouTube CC
+    /// supplies captions for a YouTube feed). <b>Provider stubbed (D-439):</b> like
+    /// <see cref="LiveStreamUrl"/> (a manually-entered YouTube URL, not a
+    /// streaming-infra integration), the caption text is entered by an admin in
+    /// the CP for the POC; the future <c>ILiveCaptionProvider</c> speech-to-text
+    /// seam would auto-populate this same column. English line.</summary>
+    public string? LiveCaptions { get; set; }
+
+    /// <summary>P5 — D-439: the Arabic pair of <see cref="LiveCaptions"/>. The app
+    /// renders the active locale with a fallback to the other when one is blank.</summary>
+    public string? LiveCaptionsArabic { get; set; }
+
     /// <summary>M-to-M with <see cref="Speaker"/> via the explicit join
     /// entity <see cref="SessionSpeaker"/>. Explicit because the
     /// composite key + the per-row metadata (DisplayOrder) earns the

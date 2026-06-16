@@ -61,6 +61,7 @@
 | E2E-SES-022 | Excel export: toolbar Export downloads an .xlsx of the filtered grid / selected rows (D-356) | happy | P1 | _to author_ |
 | E2E-SES-023 | Excel import: upload a workbook → rows created + result modal with per-row outcome (D-356) | happy | P1 | _to author_ |
 | E2E-SES-024 | Excel import: a non-workbook / wrong-sheet upload → bilingual rejection, nothing created (D-356) | error | P1 | _to author_ |
+| E2E-SES-025 | AI live captions field round-trips + the whole live section survives an edit (regression — D-439) | happy/regression | P1 | authored ✓ (`AdminSessionsTests.Update_round_trips_all_live_fields`) |
 
 ## Scenarios
 
@@ -417,6 +418,29 @@ Scenario: A YouTube or HLS live URL is accepted; anything else is rejected
       / "أدخل رابط يوتيوب صالحاً أو رابط بث HLS/MP4 (https)."
   And the modal stays open and no PUT fires (client guard)
   And were it to reach the API it would 400 SESSION_INVALID (shared LiveStreamUrlPolicy)
+```
+
+### E2E-SES-025 — AI live captions field + full live section round-trips on edit (P5 — D-439)
+
+```gherkin
+Scenario: An administrator sets the AI live-caption text and it round-trips
+  Given the Add/Edit modal is open with a valid Code, Title, Hall, Start and End
+  And the live section shows "AI live captions (English)" and "AI live captions (Arabic)"
+      textareas with the hint
+      "Optional caption / running-transcript text shown under the live player. …"
+  When they set AI live captions (English)="Welcome to the opening session."
+  And AI live captions (Arabic)="مرحباً بكم في الجلسة الافتتاحية."
+  And they click "Create session"
+  Then the API returns 200 and the session detail carries both caption fields
+
+Scenario: Editing a session preserves the whole live section (regression — D-439)
+  Given a session created with a Live stream URL, a sign-language URL and caption text
+  When the administrator opens it, changes the Title and clicks "Save changes"
+  Then the PUT round-trips and the Live stream URL, sign-language URL and BOTH
+      caption fields survive (they are no longer dropped by the update DTO)
+  # Before D-439 the API-layer UpdateSessionRequest omitted the live fields, so a
+  # PUT silently wiped the live broadcast. Proven by AdminSessionsTests
+  # `Update_round_trips_all_live_fields`.
 ```
 
 ### E2E-SES-019 — Presentation toggle persists (D-353)
