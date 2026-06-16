@@ -40,6 +40,7 @@ class _FakeProfileRepository implements ProfileRepository {
     isSaudi: false,
     gender: AppGender.unspecified,
     hasIdImage: false,
+    hasAvatar: false,
   );
 
   UserProfileResponse profile;
@@ -116,6 +117,13 @@ class _FakeProfileRepository implements ProfileRepository {
     required String filename,
   }) async =>
       true;
+
+  @override
+  Future<bool> uploadAvatar({
+    required List<int> bytes,
+    required String filename,
+  }) async =>
+      true;
 }
 
 /// The draft Next carried to the interests stub route (null until Next runs).
@@ -172,17 +180,20 @@ Future<void> _pump(
 
 UserProfileResponse _completeProfile({
   AppGender gender = AppGender.male,
-  bool hasIdImage = true, // C7 — a male profile needs a stored photo
+  bool hasIdImage = true, // ID document — mandatory for everyone
+  bool hasAvatar = true, // face photo — mandatory for men, optional for women
 }) =>
     UserProfileResponse(
       interestIds: const <String>['i1'],
-      arabicName: 'راكان السالم',
-      englishName: 'Rakan Alsalem',
+      // Four parts in one script (the name rules require a full name).
+      arabicName: 'راكان عبدالله أحمد السالم',
+      englishName: 'Rakan Abdullah Ahmed Alsalem',
       nationalityCode: 'SA',
       placeOfBirth: 'Riyadh',
       isSaudi: true,
       gender: gender,
       hasIdImage: hasIdImage,
+      hasAvatar: hasAvatar,
       nationalId: '1000000008', // matches ^1\d{9}$ and is Luhn-valid
       dateOfBirth: '2000-01-31',
       organisationId: 'o1', // B3 — D-221: organisation is now required
@@ -267,13 +278,14 @@ void main() {
       // gate keeps the desk on this screen with an inline error.
       const profileNoOrg = UserProfileResponse(
         interestIds: <String>['i1'],
-        arabicName: 'راكان السالم',
-        englishName: 'Rakan Alsalem',
+        arabicName: 'راكان عبدالله أحمد السالم',
+        englishName: 'Rakan Abdullah Ahmed Alsalem',
         nationalityCode: 'SA',
         placeOfBirth: 'Riyadh',
         isSaudi: true,
         gender: AppGender.male,
-        hasIdImage: false,
+        hasIdImage: true,
+        hasAvatar: true,
         nationalId: '1000000008',
         dateOfBirth: '2000-01-31',
         // organisationId intentionally null.
@@ -288,8 +300,8 @@ void main() {
     });
 
     testWidgets(
-        'a male profile without a stored photo blocks Next with the '
-        'camera-capture error (C7 — D-371)', (tester) async {
+        'a profile without an ID document blocks Next with the ID-required '
+        'hint (two-photo split — mandatory for all)', (tester) async {
       final repo = _FakeProfileRepository(
         profile: _completeProfile(hasIdImage: false),
       );
@@ -298,35 +310,42 @@ void main() {
       await _tapNext(tester);
 
       expect(find.text('INTERESTS'), findsNothing);
-      expect(
-        find.text('A photo is required — capture it with the camera'),
-        findsOneWidget,
-      );
+      expect(find.text('An ID image is required'), findsOneWidget);
     });
 
     testWidgets(
-        'a male profile shows the photo-required hint UP FRONT, before any '
-        'submit attempt (C7 — D-371)', (tester) async {
+        'a male profile without a face photo blocks Next with the face-required '
+        'hint, shown UP FRONT (two-photo split — face mandatory for men)',
+        (tester) async {
       final repo = _FakeProfileRepository(
-        profile: _completeProfile(hasIdImage: false),
+        // ID present, face missing → only the face gate blocks a male.
+        profile: _completeProfile(hasAvatar: false),
       );
       await _pump(tester, repo);
 
-      // The requirement is visible immediately for a male with no photo —
-      // not only after a failed Next — so the enforcement is unmistakable.
+      // The face requirement is visible immediately for a male with no face —
+      // not only after a failed Next.
       expect(
-        find.text('A photo is required — capture it with the camera'),
+        find.text('A face photo is required — capture it with the camera'),
+        findsOneWidget,
+      );
+
+      await _tapNext(tester);
+
+      expect(find.text('INTERESTS'), findsNothing);
+      expect(
+        find.text('A face photo is required — capture it with the camera'),
         findsOneWidget,
       );
     });
 
     testWidgets(
-        'a female profile without a photo proceeds — the image stays '
-        'optional for women (C7 — D-371)', (tester) async {
+        'a female profile without a face photo proceeds — the face photo stays '
+        'optional for women (ID document still present)', (tester) async {
       final repo = _FakeProfileRepository(
         profile: _completeProfile(
           gender: AppGender.female,
-          hasIdImage: false,
+          hasAvatar: false,
         ),
       );
       await _pump(tester, repo);
@@ -334,6 +353,30 @@ void main() {
       await _tapNext(tester);
 
       expect(find.text('INTERESTS'), findsOneWidget);
+    });
+
+    testWidgets(
+        'the Arabic-name field rejects non-Arabic characters at the keystroke '
+        'and a too-short name blocks Next', (tester) async {
+      final repo = _FakeProfileRepository(profile: _completeProfile());
+      await _pump(tester, repo);
+
+      // The Arabic field allows only Arabic letters + spaces: typing Latin
+      // text is filtered out, leaving the field unchanged.
+      final arabicField = find.byType(TextFormField).first;
+      await tester.enterText(arabicField, 'Ahmed 123');
+      await tester.pump();
+      expect(find.text('Ahmed 123'), findsNothing);
+
+      // A two-part Arabic name fails the full-name (>=4 parts) rule on Next.
+      await tester.enterText(arabicField, 'محمد عبدالله');
+      await tester.pump();
+      await _tapNext(tester);
+      expect(find.text('INTERESTS'), findsNothing);
+      expect(
+        find.text('Enter your full name (at least 4 parts)'),
+        findsWidgets,
+      );
     });
 
     testWidgets(
@@ -491,13 +534,14 @@ void main() {
       // gate, Next navigated and sent nationalityCode: '' (a server 400).
       const profileNoNationality = UserProfileResponse(
         interestIds: <String>['i1'],
-        arabicName: 'راكان السالم',
-        englishName: 'Rakan Alsalem',
+        arabicName: 'راكان عبدالله أحمد السالم',
+        englishName: 'Rakan Abdullah Ahmed Alsalem',
         nationalityCode: 'ZZ',
         placeOfBirth: 'Riyadh',
         isSaudi: false,
         gender: AppGender.female,
-        hasIdImage: false,
+        hasIdImage: true, // ID present so nationality is the sole blocker
+        hasAvatar: false, // female — face photo not required
         passportNumber: 'P1234567',
         dateOfBirth: '2000-01-31',
         organisationId: 'o1',
@@ -527,13 +571,14 @@ void main() {
       // branch) — the gate passes and Next navigates.
       const profileUnknownCode = UserProfileResponse(
         interestIds: <String>['i1'],
-        arabicName: 'راكان السالم',
-        englishName: 'Rakan Alsalem',
+        arabicName: 'راكان عبدالله أحمد السالم',
+        englishName: 'Rakan Abdullah Ahmed Alsalem',
         nationalityCode: 'ZZ',
         placeOfBirth: 'Riyadh',
         isSaudi: true,
         gender: AppGender.female,
-        hasIdImage: false,
+        hasIdImage: true, // ID present (required for all); face optional for women
+        hasAvatar: false,
         nationalId: '1000000008',
         dateOfBirth: '2000-01-31',
         organisationId: 'o1',

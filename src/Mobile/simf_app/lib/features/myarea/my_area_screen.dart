@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
@@ -15,7 +16,7 @@ import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import '../../core/sharing/content_sharer.dart';
 import '../profile/data/profile_repository.dart'
-    show avatarBustProvider, referenceNumberProvider;
+    show avatarBustProvider, profileRepositoryProvider, referenceNumberProvider;
 import 'data/myarea_models.dart';
 import 'data/myarea_repository.dart';
 import 'identity_verification_screen.dart';
@@ -153,6 +154,34 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
       await _load();
     } on ApiFailure {
       messenger.showSnackBar(SnackBar(content: Text(l10n.avatarUploadFailed)));
+    }
+  }
+
+  /// "Update ID photo" — re-pick the ID DOCUMENT from the gallery and upload it
+  /// (the document, not a selfie; the face photo is the avatar above). My Area
+  /// is photos-only — names stay set at sign-up.
+  Future<void> _uploadIdDocument() async {
+    final l10n = AppL10n.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final file = await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (file == null || !mounted) {
+        return;
+      }
+      final bytes = await file.readAsBytes();
+      await ref.read(profileRepositoryProvider).uploadIdImage(
+            bytes: bytes,
+            filename: file.name,
+          );
+      if (!mounted) {
+        return;
+      }
+      messenger.showSnackBar(SnackBar(content: Text(l10n.idImageUpdatedToast)));
+    } on ApiFailure {
+      if (!mounted) {
+        return;
+      }
+      messenger.showSnackBar(SnackBar(content: Text(l10n.idImageUpdateFailed)));
     }
   }
 
@@ -314,6 +343,13 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
         _MoreRow(
           label: l10n.smartBadgeLink,
           onTap: () => context.pushNamed(RouteNames.badge),
+        ),
+        const SizedBox(height: SimfTokens.space4),
+        // Photos-only profile edit (owner scope): re-upload the ID document
+        // from the gallery. The face photo is changed by tapping the avatar.
+        _MoreRow(
+          label: l10n.updateIdPhotoLink,
+          onTap: () => unawaited(_uploadIdDocument()),
         ),
         const SizedBox(height: SimfTokens.space4),
         _MoreRow(

@@ -257,6 +257,47 @@ class AppL10n {
         'لم يتم التعرف على وجه في الصورة — أعد التقاط صورة واضحة للوجه',
         'No face was detected in the photo — retake a clear photo of the face',
       );
+  // Two-photo split (D-431-follow-up) — the ID document (gallery, all) + the
+  // face photo (live capture → avatar; men-required, women-optional).
+  String get idImageRequired =>
+      _t('صورة الهوية مطلوبة', 'An ID image is required');
+  String get facePhotoLabel => _t('الصورة الشخصية (الوجه)', 'Face photo');
+  String get facePhotoRequiredForMen => _t(
+        'الصورة الشخصية مطلوبة — التقطها بالكاميرا',
+        'A face photo is required — capture it with the camera',
+      );
+  String get facePhotoOptionalForWomen =>
+      _t('الصورة الشخصية اختيارية', 'Face photo (optional)');
+  String get facePhotoCaptureLabel =>
+      _t('التقاط صورة الوجه', 'Capture face photo');
+  String get facePhotoCaptured =>
+      _t('تم التقاط الصورة الشخصية', 'Face photo captured');
+  String get retakeLabel => _t('إعادة الالتقاط', 'Retake');
+  String get facePhotoUploadFailed => _t(
+        'تعذّر رفع الصورة الشخصية. حاول مرة أخرى.',
+        "Couldn't upload the face photo. Try again.",
+      );
+  // Name rules — Arabic-only / English-only, full name of at least four parts.
+  String get arabicNameLettersOnly => _t(
+        'يجب أن يحتوي الاسم بالعربية على حروف عربية فقط',
+        'The Arabic name must contain Arabic letters only',
+      );
+  String get englishNameLettersOnly => _t(
+        'يجب أن يحتوي الاسم بالإنجليزية على حروف إنجليزية فقط',
+        'The English name must contain English letters only',
+      );
+  String get fullNameFourParts => _t(
+        'أدخل الاسم الكامل (4 مقاطع على الأقل)',
+        'Enter your full name (at least 4 parts)',
+      );
+  // My Area — photos-only profile edit: re-upload the ID document.
+  String get updateIdPhotoLink => _t('تحديث صورة الهوية', 'Update ID photo');
+  String get idImageUpdatedToast =>
+      _t('تم تحديث صورة الهوية', 'ID photo updated');
+  String get idImageUpdateFailed => _t(
+        'تعذّر رفع صورة الهوية. حاول مرة أخرى.',
+        "Couldn't upload the ID photo. Try again.",
+      );
   // C6 (D-371) — رقم اللوحة, optional; Saudi standard when filled.
   String get plateNumberLabel =>
       _t('رقم اللوحة (اختياري)', 'Plate number (optional)');

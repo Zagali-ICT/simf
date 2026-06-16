@@ -47,8 +47,8 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
         var request = new UpsertUserProfileRequest
         {
             InterestIds = new List<Guid> { interestId },
-            ArabicName = "اسم",
-            EnglishName = "Name",
+            ArabicName = "محمد عبدالله أحمد الزهراني",
+            EnglishName = "Notification Test User Account",
             NationalityCode = "SA",
             DateOfBirth = new DateOnly(1990, 1, 1),
             PlaceOfBirth = "Riyadh",

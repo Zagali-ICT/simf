@@ -182,8 +182,8 @@ public sealed class UserProfileRollbackTests : IClassFixture<ThrowingRefreshToke
             Content = JsonContent.Create(new UpsertUserProfileRequest
             {
                 InterestIds = new List<Guid> { interestId },
-                ArabicName = "اختبار",
-                EnglishName = "Rollback Test",
+                ArabicName = "محمد عبدالله أحمد الزهراني",
+                EnglishName = "Rollback Test User Account",
                 NationalityCode = "SA",
                 DateOfBirth = new DateOnly(1990, 1, 1),
                 PlaceOfBirth = "Riyadh",

@@ -55,6 +55,13 @@ public sealed class UserProfileResponse
     /// <c>GET /api/v1/app/account/user-profile/id-image</c>.</summary>
     public bool HasIdImage { get; set; }
 
+    /// <summary>True when a face photo (avatar) has been uploaded. The face
+    /// photo is the visible profile photo; mandatory for male registrants,
+    /// optional for women. The bytes are streamed at
+    /// <c>GET /api/v1/app/account/avatar/{userId}</c>. (Append-only field —
+    /// added with the two-photo split; D-431-follow-up.)</summary>
+    public bool HasAvatar { get; set; }
+
     /// <summary>The 12-character Crockford QR id; null when the account is
     /// not yet Approved.</summary>
     public string? QrId { get; set; }

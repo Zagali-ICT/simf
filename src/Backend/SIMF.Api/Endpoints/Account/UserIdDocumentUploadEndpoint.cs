@@ -27,7 +27,6 @@ public sealed class UserIdDocumentUploadRequest
 /// </summary>
 public sealed class UserIdDocumentUploadEndpoint(
     IUserProfileService service,
-    IFaceDetectionService faceDetection,
     IAuditLog auditLog)
     : Endpoint<UserIdDocumentUploadRequest, ApiResult<bool>>
 {
@@ -84,17 +83,13 @@ public sealed class UserIdDocumentUploadEndpoint(
                 "يجب أن تكون صورة الهوية بصيغة PNG أو JPEG أو WebP.");
         }
 
-        // C7 (D-371) — the server-side human-face gate (the authority over
-        // the client's on-device check). Runs offline (FaceAiSharp ONNX).
-        if (!await faceDetection.ContainsHumanFaceAsync(bytes, ct))
-        {
-            await AuditRejectAsync(actorId, ErrorCodes.VisitorIdImageNoFace, ct);
-            throw new ApiException(
-                ErrorCodes.VisitorIdImageNoFace, 400,
-                "No human face was detected in the photo — retake a clear photo of the face.",
-                "لم يتم التعرف على وجه بشري في الصورة — أعد التقاط صورة واضحة للوجه.");
-        }
-
+        // Two-photo split (D-431-follow-up) — the self-service ID upload is now
+        // a DOCUMENT picked from the gallery (national-ID / Iqama / passport
+        // scan), so the human-face gate that belonged to the old "ID = live
+        // selfie" model is removed here. The live face requirement now lives on
+        // the separate FACE photo (the avatar), captured through the client
+        // liveness flow. Content-type + magic-byte + size are still enforced
+        // above. The admin walk-in id-document path keeps its own face gate.
         await service.UploadIdImageAsync(actorId, bytes, normalisedContentType, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

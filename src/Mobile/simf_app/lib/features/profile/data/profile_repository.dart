@@ -99,6 +99,24 @@ class ProfileRepository {
     );
   }
 
+  /// Self-service face-photo upload (multipart) — `POST /app/account/avatar`.
+  /// The face photo IS the profile avatar; it is captured live and posted here
+  /// during sign-up (mandatory for men, optional for women) so the top profile
+  /// photo shows the real face. 2 MB / jpeg|png|webp guards are server-side.
+  /// Returns true on success.
+  Future<bool> uploadAvatar({
+    required List<int> bytes,
+    required String filename,
+  }) {
+    return _client.upload<bool>(
+      '/app/account/avatar',
+      bytes: bytes,
+      filename: filename,
+      contentType: mimeForFilename(filename),
+      decodeData: (_) => true,
+    );
+  }
+
   /// Maps a filename extension to the MIME the server's gate accepts
   /// (jpeg / png / webp). Null for an unknown extension — the picker only yields
   /// these three, so a null would be a programming error, not a user path.

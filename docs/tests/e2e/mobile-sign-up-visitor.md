@@ -53,9 +53,11 @@
 | E2E-MOB007-014 | Visitor type lock (C5, D-371): Visitor tab shows **no** profile-type picker; the draft auto-carries the seeded **"Normal" (عادي)** id; server rejects any other audience-tier self-pick with 400 | validation | P0 | authored ✓ (widget test + server C5 tests) |
 | E2E-MOB007-015 | Other tab (C5, D-371): the filtered picker is shown and a pick is **required** (inline error blocks Next); partner-side picks accepted by the server | validation | P0 | authored ✓ (widget test + server C5 test) |
 | E2E-MOB007-016 | Plate number (C6, D-371): optional — empty saves fine; `ABJ1234` / `abj 1234` / `1234-ABJ` / `أبج1234` accepted and stored normalized upper-cased; 2/4 letters, 5 digits, digits-only, symbols rejected — client inline + server 400 | validation | P0 | authored ✓ (client `plate_validation_test` + server `UserProfileTests` theories incl. stored-value round-trip) |
-| E2E-MOB007-017 | Male photo gate (C7, D-371): gender=male + no stored/attached photo → Next blocked with the camera-capture error; female without a photo proceeds (optional). **D-434:** the attach box now launches the shared guided face-capture / liveness screen (`identityVerification`), not a bare camera picker — the returned selfie becomes the attached ID image | validation | P0 | authored ✓ (widget tests; live face-capture drive shares the My-Area avatar flow — needs a real device/emulator) |
-| E2E-MOB007-018 | Face check (C7, D-371): the shared liveness capture (smile→turn→turn) verifies a live human face on-device; the server's offline FaceAiSharp gate rejects a no-face/undecodable upload with 400 `VISITOR_ID_IMAGE_NO_FACE` (audited) | validation | P0 | authored ✓ (server `UserProfileFaceGateTests` against the real ONNX model; positive real-face path → Wave-1 live run) |
+| E2E-MOB007-017 | **Two-photo split (D-437):** the form ends with **two** image actions — **"Upload ID"** (gallery pick of the ID DOCUMENT, **mandatory for everyone**, no face check) and **"Face photo"** (captured via the existing **face-detection / liveness page** `identityVerification` → the avatar, **mandatory for men, optional for women**). A missing ID blocks Next with "An ID image is required" (all genders); a male missing the face photo blocks with "A face photo is required — capture it with the camera" (shown up front); a female proceeds with the ID alone | validation | P0 | authored ✓ (widget tests; live face-capture drive shares the My-Area avatar flow — needs a real device, verified on the Huawei) |
+| E2E-MOB007-018 | **Face capture page (D-437):** the FACE photo reuses the guided face-detection / liveness screen (smile→turn→turn, with a gallery fallback) the My-Area avatar uses — it owns the camera permission + the on-device face/liveness check; the returned selfie becomes the avatar. The self-service **id-image endpoint no longer face-gates** (it is a document now); the admin walk-in id-document path keeps its server FaceAiSharp gate | validation | P0 | authored ✓ (server `UserProfileFaceGateTests` — self-service accepts a faceless document, admin paths still reject; the liveness capture is verified live on the Huawei) |
 | E2E-MOB007-019 | Missing-items feedback (D-434): a blocked Next shows the bilingual "complete the required fields" toast (not a silent no-op), and the form carries an info banner on entry so a user routed in to complete their profile knows why | validation | P0 | authored ✓ (`completeProfilePrompt` toast on every blocked-Next test path; banner renders on load) |
+| E2E-MOB007-020 | **Top avatar (D-437):** once the face photo is captured, the placeholder person icon at the top of the card is replaced by the captured face | happy | P1 | authored ✓ (widget — header avatar swaps to the captured bytes) |
+| E2E-MOB007-021 | **Name rules (D-437):** the Arabic name accepts only Arabic letters + spaces (Latin/digits filtered at the keystroke); the English name only Latin letters + spaces; each must be a **full name of ≥4 parts** or Next is blocked with "Enter your full name (at least 4 parts)". Mirrored server-side in `UpsertUserProfileRequestValidator` (400) | validation | P0 | authored ✓ (widget formatter+validator test + server name-rule tests) |
 
 ## Scenarios
 
@@ -212,19 +214,59 @@ Scenario: The form mirrors under Arabic
   And each lookup row's Arabic label is shown; switching to English flips labels without a re-fetch
 ```
 
-### E2E-MOB007-017 — Male ID photo via the shared face-capture flow (D-434)
+### E2E-MOB007-017 — Two-photo split: Upload ID (gallery) + Face photo (camera) (D-437)
 
 ```gherkin
-Scenario: The male ID photo is captured by the reused liveness screen
-  Given a signed-in male visitor on the complete-profile form with no stored photo
-  Then the إرفاق ملف box shows the "A photo is required — capture it with the camera" hint up front
-  When the visitor taps the attach box
-  Then the app opens the guided face-capture / liveness screen (identityVerification) —
-       the same flow the My-Area avatar uses (it requests the camera permission,
-       runs the smile→turn-right→turn-left liveness and has a gallery fallback)
+Feature: Two distinct profile images
+Scenario: The ID document is uploaded from the gallery (mandatory for all)
+  Given a signed-in visitor on the complete-profile form with no stored ID image
+  Then the "Upload ID" box shows the "An ID image is required" hint
+  When the visitor taps the box
+  Then the gallery opens (image_picker, ImageSource.gallery) — no camera, no face check
+  And picking a document shows its thumbnail + filename + Remove
+  And without an ID image Next is blocked for every gender
+
+Scenario: The face photo is captured via the face-detection page (mandatory for men)
+  Given a signed-in male visitor with the ID document attached but no face photo
+  Then the "Face photo" field shows "A face photo is required — capture it with the camera" up front
+  When the visitor taps the capture box
+  Then the app opens the existing face-detection / liveness page (identityVerification) —
+       the same flow the My-Area avatar uses (it owns the camera permission, the
+       on-device face + liveness check and a gallery fallback)
   When the liveness completes
-  Then the screen returns the captured selfie and the attach box shows the thumbnail + name
-  And Next then proceeds (the server still re-checks the face on upload, Page 007‑01)
+  Then the returned selfie is shown as the captured face and Next proceeds
+
+Scenario: A woman may skip the face photo
+  Given a signed-in female visitor with the ID document attached and no face photo
+  When she taps Next
+  Then the app proceeds to the interests screen (the face photo is optional for women)
+```
+
+### E2E-MOB007-020 — The face photo replaces the top placeholder icon (D-437)
+
+```gherkin
+Scenario: The captured face is shown at the top of the card
+  Given the complete-profile form is open and the card head shows the placeholder person icon
+  When the visitor captures a face photo
+  Then the placeholder icon at the top is replaced by the captured face image
+```
+
+### E2E-MOB007-021 — Arabic-only / English-only full-name (≥4 parts) (D-437)
+
+```gherkin
+Feature: Name rules
+Scenario: The Arabic field accepts only Arabic letters
+  Given the complete-profile form is open
+  When the visitor types "Ahmed 123" into the Arabic name field
+  Then the Latin letters and digits are filtered out at the keystroke (the field never holds them)
+
+Scenario: A full name needs at least four parts in one language
+  Given the Arabic name is "محمد عبدالله" (two parts) and every other field is valid
+  When the visitor taps Next
+  Then the app does not navigate
+  And the Arabic name shows "Enter your full name (at least 4 parts)"
+  And the same rule applies to the English name (Latin letters only, ≥4 parts)
+  And the server's UpsertUserProfileRequestValidator re-checks both (400 on violation)
 ```
 
 ### E2E-MOB007-019 — Blocked Next surfaces the missing items (D-434)
@@ -246,4 +288,4 @@ Scenario: The complete-profile entry shows an attention banner
 
 ---
 
-_Last reviewed:_ `2026-06-12` by `SIMF Team` — reworked under D-332 (data screen; interests + save → Page 007‑01); C4 phone-standard scenarios (012/013) added under D-371.
+_Last reviewed:_ `2026-06-16` by `SIMF Team` — D-437 two-photo split (Upload ID gallery + Face photo camera), Arabic-only/English-only ≥4-part name rules, top-avatar swap, and the self-service id-image face-gate removal (017/018/020/021). Earlier: D-332 data-screen rework; D-371 C4 phone standards.

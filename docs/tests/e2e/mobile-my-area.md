@@ -25,7 +25,7 @@
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
 | **Auth setup** | An **Approved** visitor token (sign-up → verify-email → `SetAccountState(Approved)` → sign-in); App-DB rows seeded directly. **No literal secrets.** |
-| **Last reviewed** | 2026-06-05 |
+| **Last reviewed** | 2026-06-16 (D-437 — Update ID photo action; photos-only edit) |
 
 ## Coverage matrix
 
@@ -41,8 +41,22 @@
 | E2E-MOB014-008 | RTL render of card + counters + Arabic tier/hall labels | i18n | P1 | authored ✓ (screen — Arabic RTL + pending/403 limited card + session-row nav) |
 | E2E-MOB014-009 | KSA layout: language tile toggles AR/EN; theme tile visible but disabled | happy | P1 | authored ✓ (screen — disabled palette + no tap) |
 | E2E-MOB014-010 | مشاركة ملفي opens the share-my-contact QR screen | happy | P2 | authored ✓ (screen) |
+| E2E-MOB014-011 | **Photos-only profile edit (D-437):** the المزيد section shows an **"Update ID photo"** row that re-uploads the ID document from the gallery (`POST …/user-profile/id-image`), with a success / failure toast; the **face photo (avatar)** is changed via the existing tap-the-avatar flow. Names stay set-at-sign-up (not editable here) | happy | P1 | authored ✓ (screen — the row renders; gallery upload is a platform channel, driven live) |
 
 ## Scenarios
+
+### E2E-MOB014-011 — Update ID photo (photos-only edit, D-437)
+
+```gherkin
+Scenario: An approved visitor re-uploads the ID document from My Area
+  Given an approved visitor on /my-area
+  Then the المزيد section shows an "Update ID photo" / "تحديث صورة الهوية" row
+  When they tap it
+  Then the gallery opens and a picked image is uploaded to POST /app/account/user-profile/id-image
+  And a success toast "ID photo updated" (or a failure toast) is shown
+  And the face photo is changed separately by tapping the identity-card avatar (existing flow)
+```
+
 
 ### E2E-MOB014-001 — Dashboard golden path
 

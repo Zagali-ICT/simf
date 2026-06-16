@@ -99,6 +99,9 @@ public static class ErrorCodes
     public const string VisitorIdImageNotFound = "VISITOR_ID_IMAGE_NOT_FOUND";
     // C7 (D-371) — the server-side human-face gate on the profile image.
     public const string VisitorIdImageNoFace = "VISITOR_ID_IMAGE_NO_FACE";
+    // D-431-follow-up — the face photo (avatar) is mandatory for male
+    // registrants (optional for women); the ID document is mandatory for all.
+    public const string VisitorFaceImageMissing = "VISITOR_FACE_IMAGE_MISSING";
 
     // User profile — nationality (P8 renamed from VISITOR_NATIONALITY_UNKNOWN
     // so the wire code matches the new domain vocabulary).

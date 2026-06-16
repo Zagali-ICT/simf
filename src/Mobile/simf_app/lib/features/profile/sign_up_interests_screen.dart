@@ -121,27 +121,46 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
     });
     final repo = ref.read(profileRepositoryProvider);
     try {
-      // C7 (D-431) — the ID photo must land on the server BEFORE the profile
-      // save: the server now rejects a male profile with no stored photo, and a
-      // male whose photo never uploaded would otherwise be saved incomplete and
-      // bounced back to this form on every sign-in. Upload first; for a male a
-      // failed upload blocks (with a retry) instead of silently proceeding.
-      final bytes = draft.idImageBytes;
-      final name = draft.idImageName;
+      // Two-photo split — both images must land on the server BEFORE the
+      // profile save: the server now rejects a profile with no stored ID
+      // document (all registrants) or, for a male, no stored face photo. A
+      // pre-save upload keeps the app from saving an incomplete profile that
+      // would bounce back to this form on every sign-in.
       final isMale = draft.request.gender == AppGender.male;
-      if (bytes != null && name != null) {
+
+      // 1) ID document — mandatory for EVERYONE; a failed upload blocks.
+      final idBytes = draft.idImageBytes;
+      final idName = draft.idImageName;
+      if (idBytes != null && idName != null) {
         try {
-          await repo.uploadIdImage(bytes: bytes, filename: name);
+          await repo.uploadIdImage(bytes: idBytes, filename: idName);
+        } on ApiFailure {
+          if (!mounted) {
+            return;
+          }
+          setState(() => _submitError = l10n.idImageUploadFailed);
+          return;
+        }
+      }
+
+      // 2) Face photo (avatar) — mandatory for men, optional for women. On
+      //    success bump the avatar bust so the top profile photo refreshes
+      //    everywhere; a failed upload blocks only for a male.
+      final faceBytes = draft.faceImageBytes;
+      final faceName = draft.faceImageName;
+      if (faceBytes != null && faceName != null) {
+        try {
+          await repo.uploadAvatar(bytes: faceBytes, filename: faceName);
+          ref.read(avatarBustProvider.notifier).state++;
         } on ApiFailure {
           if (!mounted) {
             return;
           }
           if (isMale) {
-            // Mandatory for men — block and let them retry the capture.
-            setState(() => _submitError = l10n.idImageUploadFailed);
+            setState(() => _submitError = l10n.facePhotoUploadFailed);
             return;
           }
-          // Optional for non-male registrants — fall through and save.
+          // Optional for women — fall through and save.
         }
       }
       final saved = await repo.upsertMyProfile(

@@ -80,6 +80,42 @@ void main() {
 
       expect(response.isComplete, isFalse);
     });
+
+    test('hasAvatar decodes and gates the male completeness rule', () {
+      // Two-photo split — a male needs BOTH the ID document and the face photo.
+      final maleNoAvatar = UserProfileResponse.fromJson(<String, dynamic>{
+        'interestIds': <dynamic>['i-1'],
+        'arabicName': 'محمد عبدالله أحمد الزهراني',
+        'englishName': 'Mohammed Abdullah Ahmed Alzahrani',
+        'gender': 1, // male
+        'hasIdImage': true,
+        'hasAvatar': false,
+      });
+      expect(maleNoAvatar.hasAvatar, isFalse);
+      expect(maleNoAvatar.isComplete, isFalse);
+
+      final maleWithBoth = UserProfileResponse.fromJson(<String, dynamic>{
+        'interestIds': <dynamic>['i-1'],
+        'arabicName': 'محمد عبدالله أحمد الزهراني',
+        'englishName': 'Mohammed Abdullah Ahmed Alzahrani',
+        'gender': 1,
+        'hasIdImage': true,
+        'hasAvatar': true,
+      });
+      expect(maleWithBoth.isComplete, isTrue);
+    });
+
+    test('a profile without the ID document is incomplete for every gender', () {
+      final femaleNoId = UserProfileResponse.fromJson(<String, dynamic>{
+        'interestIds': <dynamic>['i-1'],
+        'arabicName': 'سارة عبدالله أحمد الزهراني',
+        'englishName': 'Sara Abdullah Ahmed Alzahrani',
+        'gender': 2, // female — face optional, but the ID document is required
+        'hasIdImage': false,
+        'hasAvatar': false,
+      });
+      expect(femaleNoId.isComplete, isFalse);
+    });
   });
 
   group('AppGender.fromValue is tolerant', () {
