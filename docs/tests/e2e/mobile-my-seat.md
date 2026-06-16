@@ -11,6 +11,15 @@
 > `src/Mobile/simf_app/test/features/sessions/my_seat_screen_test.dart`
 > (banner+grid+legend, share text, navigate, no-layout, 404, error→retry) and
 > `…/seat_map_models_test.dart` (tolerant kind decode, grid + status derivation).
+>
+> **Figma parity (D-432, 2026-06-16):** the screen is rebuilt to the KSA-Project
+> frame **898:2873 "Your seat"** on the shared navy shell — circled-back header,
+> the navy "الجلسة / Session" card now showing the **real session title**
+> (`sessionTitle` / `sessionTitleArabic`, newly carried on the seat-map response)
+> with the الصف (Row) / مقعد (Seat) chips below it, the navy hall card with the
+> gold "المسرح · STAGE" band, the A–H seat grid (mine / reserved / available),
+> the محجوز / متاح / مقعدك legend, and the two gold actions
+> (إرشادي إلى مقعدي / مشاركة الموقع). Behaviour is unchanged from the prior build.
 
 | | |
 |--|--|
@@ -37,6 +46,10 @@
 | E2E-MOB018-010 | Picker: release my seat → `DELETE …/mine` → seat freed | happy | P2 | API ✓ (`Visitor_can_self_pick…`); **screen picker deferred (read-only, L-4)** |
 | E2E-MOB018-011 | Hall with no layout → empty grid → "seat map not available" | edge | P2 | authored ✓ (screen — `an unconfigured hall shows the unavailable state`) |
 | E2E-MOB018-012 | RTL render; stage stays top; row/seat are LTR | i18n | P1 | authored (screen RTL-primary; grid canvas forced LTR) |
+| E2E-MOB018-013 | Session card shows the real session title from the seat-map response | happy | P0 | authored ✓ (frame 898:2873 — `_SessionCard` title) |
+| E2E-MOB018-014 | No `sessionTitle` → card falls back to the seat location (or "no seat yet") | edge | P1 | authored ✓ (`localizedSessionTitle` null fallback) |
+| E2E-MOB018-015 | الصف / مقعد chips below the title show the seat row + number (or "—") | happy | P1 | authored ✓ (frame 905:1576 — `_SeatChip`) |
+| E2E-MOB018-016 | Stage band shows "المسرح · STAGE" above the A–H grid | happy | P2 | authored ✓ (frame 905:1584 — `_StageBar`) |
 
 ## Scenarios
 
@@ -179,6 +192,58 @@ Scenario: The seat map renders right-to-left in Arabic
   And the row letters and seat numbers render left-to-right inside the Arabic labels
 ```
 
+### E2E-MOB018-013 — Session card shows the real session title
+
+```gherkin
+Scenario: The "الجلسة / Session" card shows the title carried on the seat-map response
+  Given the seat-map response carries sessionTitle "Maritime Security Panel"
+  And sessionTitleArabic "جلسة الأمن البحري"
+  When the seat map renders for an Arabic-locale viewer
+  Then the navy session card shows the gold label "الجلسة"
+  And the card title reads "جلسة الأمن البحري" (the EN locale shows "Maritime Security Panel")
+```
+
+**Evidence:** screen `_SessionCard` (frame 905:1556) — `map.localizedSessionTitle(l10n.isArabic)`; model `seat_map_models.dart` decodes `sessionTitle` / `sessionTitleArabic`.
+
+### E2E-MOB018-014 — Title fallback when absent
+
+```gherkin
+Scenario: With no session title the card falls back to the seat location, then the no-seat hint
+  Given the seat-map response carries no sessionTitle and no sessionTitleArabic
+  When the viewer holds seat "C" / 7
+  Then the card title falls back to the seat location for C/7
+  But when the viewer holds no seat
+  Then the card title reads "لا يوجد لديك مقعد بعد" ("You have no seat yet")
+```
+
+**Evidence:** screen `_SessionCard` — `localizedSessionTitle(...) ?? (cell != null ? seatLocation : noSeatYet)`.
+
+### E2E-MOB018-015 — Row / seat chips below the title
+
+```gherkin
+Scenario: The الصف / مقعد chips below the title show the booked seat
+  Given the viewer holds seat "B" / 4
+  When the session card renders
+  Then a gold-bordered chip shows "الصف B" (Row) at the inline-start
+  And a beige-bordered chip shows "مقعد 4" (Seat) at the inline-end
+  But when the viewer holds no seat
+  Then both chips show the placeholder value "—"
+```
+
+**Evidence:** screen `_SeatChip` (frame 905:1576/1577/1579) — `rowChipLabel` "الصف", `seatChipLabel` "مقعد", value or "—".
+
+### E2E-MOB018-016 — Stage band above the grid
+
+```gherkin
+Scenario: The gold-bordered stage band sits at the top of the hall plan
+  Given the hall card renders its A–H seat grid
+  When the viewer reads the hall card
+  Then a full-width gold-bordered band shows "المسرح · STAGE"
+  And the band stays at the top above the first seat row in both RTL and LTR
+```
+
+**Evidence:** screen `_StageBar` (frame 905:1584) — `stageLabelBilingual` "المسرح · STAGE"; the grid is forced LTR so the stage stays on top (L-7).
+
 ---
 
-_Last reviewed:_ `2026-06-05` by `SIMF Team`.
+_Last reviewed:_ `2026-06-16` by `SIMF Team`.

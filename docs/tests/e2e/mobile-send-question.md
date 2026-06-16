@@ -8,6 +8,15 @@
 > (no-id empty state, empty-question inline prompt, submit success + clear,
 > 400 not-open toast, generic error toast). It reuses the shipped wire contract
 > (no new API).
+>
+> **Figma re-skin (frame `934:3636` "Live Video" — ask-a-question portion):** the
+> screen was rebuilt to the KSA-Project frame on the shared `KsaPage` shell — the
+> "الاسئلة" / Questions section label (`945:3756`), a tinted navy multiline question
+> box (`934:3668`, `اكتب سؤالك هنا…` placeholder, `maxLength=500`), a gold full-width
+> "ارسال السؤال" / Send question submit (`942:3746`), and a centred gold-bulleted
+> "ملاحظة" / Note review note (`943:3750`). The old Speaker/Host recipient selector
+> was **removed**; the form now submits to the default recipient (Speaker = 0) and
+> the `recipient` wire field is preserved.
 
 | | |
 |--|--|
@@ -15,7 +24,7 @@
 | **Route** | `POST /api/v1/app/sessions/{sessionId}/questions` · app screen #26 `/live/question?sessionId={id}` |
 | **Surface** | Mobile (Flutter) + App API |
 | **Auth setup** | **Approved account** — the route is auth-gated and the endpoint is `RequireApprovedAccount`. Auth-setup via the `Get-Totp` helper for an admin, or a visitor email-OTP session. |
-| **Last reviewed** | 2026-06-06 |
+| **Last reviewed** | 2026-06-16 |
 
 ## Coverage matrix
 
@@ -27,6 +36,9 @@
 | E2E-MOB026-004 | 400 `SESSION_NOT_LIVE_FOR_QUESTIONS` (outside window) → not-open toast | edge | P0 | authored ✓ (screen `a 400 SESSION_NOT_LIVE_FOR_QUESTIONS shows the not-open toast`) |
 | E2E-MOB026-005 | A server-500 / transport failure → generic error toast | resilience | P0 | authored ✓ (screen `a generic failure shows the generic error toast`) |
 | E2E-MOB026-006 | RTL — the screen renders right-to-left in Arabic | i18n | P2 | covered (l10n AR/EN pairs; `Directionality` from the locale) |
+| E2E-MOB026-007 | Figma form chrome — الاسئلة label + tinted box + gold submit + ملاحظة note all render | layout | P1 | _to author_ |
+| E2E-MOB026-008 | Question box accepts multiline + `اكتب سؤالك هنا…` placeholder, caps at 500 chars | layout | P1 | _to author_ |
+| E2E-MOB026-009 | No recipient selector is shown; submit still posts default recipient (Speaker=0) | edge | P0 | _to author_ |
 
 ## Scenarios
 
@@ -100,6 +112,60 @@ Scenario: Arabic renders right-to-left
 **Evidence:** the l10n getters pair AR/EN (`sendQuestion*`); `Directionality`
 follows the active locale, as on every shipped mobile screen.
 
+### E2E-MOB026-007 — Figma form chrome (frame `934:3636`)
+
+```gherkin
+Scenario: The re-skinned form renders every Figma section
+  Given the screen is opened with a live session id
+  Then the section label reads "الاسئلة" (EN "Questions"), inline-end aligned
+  And a tinted navy multiline question box is shown below it
+  And a gold full-width button reads "إرسال السؤال" (EN "Send question")
+  And a centred note reads "ملاحظة سيتم..." — "ملاحظة" (EN "Note") gold/bold,
+      then "تتم مراجعة الأسئلة قبل عرضها على الهواء."
+      (EN "Questions are reviewed before going on air.") in beige
+```
+
+**Evidence:** screen `_form` renders `sendQuestionSectionLabel`, the navy box,
+`sendQuestionSubmit`, and the `_ReviewNote` with `sendQuestionNoteLabel` +
+`sendQuestionWindowHint`. Matches Figma frame `934:3636` (sub-frames `945:3756`,
+`934:3668`, `942:3746`, `943:3750`).
+
+### E2E-MOB026-008 — Question box (multiline, placeholder, 500 cap)
+
+```gherkin
+Scenario: The tinted question box accepts a multiline question
+  Given the screen is opened with a live session id
+  And the empty box shows the placeholder "اكتب سؤالك هنا…"
+      (EN "Type your question here…")
+  When the attendee types a two-line question
+  Then both lines are kept (the field grows from 4 up to 6 lines)
+  And typing is capped at 500 characters with no visible counter
+  And the gold "إرسال السؤال" submit becomes active
+```
+
+**Evidence:** `TextField` `hintText = sendQuestionHint`, `minLines: 4`,
+`maxLines: 6`, `maxLength: 500`, `counterText: ''`.
+
+### E2E-MOB026-009 — Recipient selector removed (default still posted)
+
+```gherkin
+Scenario: No recipient picker, default recipient still submitted
+  Given the screen is opened with a live session id
+  Then no Speaker / Host recipient selector is shown
+  And the question text is "ما عمق الشعاب المرجانية؟"
+  When the attendee taps "إرسال السؤال"
+  Then the app calls POST /api/v1/app/sessions/{id}/questions
+  And the body has recipient=0 (Speaker, the default)
+  And the "تم إرسال سؤالك" (EN "Your question was sent") toast is shown
+  And the question box is cleared
+```
+
+**Evidence:** the static `_recipient = QuestionRecipient.speaker` (`wireIndex == 0`)
+is passed as `recipientIndex`; no `المتحدث`/`المضيف` pills render. Preserves the
+shipped wire contract (D-169/D-174). Note: scenario E2E-MOB026-002 above still
+describes the old Host-pill path for the pre-re-skin contract; the picker is now
+gone, so the live path is recipient=0.
+
 ---
 
-_Last reviewed:_ `2026-06-06` by `SIMF Team`.
+_Last reviewed:_ `2026-06-16` by `SIMF Team`.

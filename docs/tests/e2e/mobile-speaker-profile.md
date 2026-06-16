@@ -36,6 +36,11 @@
 | E2E-MOB020-008 | Empty subject → 400 `SPEAKER_MEETING_REQUEST_INVALID` | validation | P0 | authored ✓ (`Submit_with_empty_subject_is_invalid`) |
 | E2E-MOB020-009 | Tap a speaker session → Session detail (17) | happy | P1 | authored ✓ (screen) |
 | E2E-MOB020-010 | RTL render; hero, back chevron and tabs right-to-left | i18n | P1 | authored ✓ (screen) |
+| E2E-MOB020-011 | 125px gold-ringed avatar renders the speaker initials | happy | P1 | _to author_ |
+| E2E-MOB020-012 | Tapping a CV tab pill swaps the navy bio card content | happy | P0 | _to author_ |
+| E2E-MOB020-013 | Active tab pill is gold-filled; the rest are navy with a beige hairline | happy | P1 | _to author_ |
+| E2E-MOB020-014 | Only CV sections with content render a pill (1–4 pills) | edge | P1 | _to author_ |
+| E2E-MOB020-015 | Speaker with no CV content shows no tabs and no bio card | edge | P1 | _to author_ |
 
 ## Scenarios
 
@@ -165,6 +170,76 @@ Scenario: The speaker profile renders right-to-left in Arabic
   And the active-tab CV content renders right-to-left
 ```
 
+### E2E-MOB020-011 — Gold-ringed avatar
+
+```gherkin
+Scenario: The 125px white circle ringed gold renders the speaker initials
+  Given a seeded active speaker named "Faisal Al-Otaibi" (Arabic "فيصل العتيبي")
+  When the profile renders on the navy KSA shell (frame 908:2110)
+  Then a 125x125 white circle with a 2.77px gold ring is centred above the CV
+  And it shows the speaker's navy initials (Latin "FA" / Arabic "فا" per locale)
+  And there is no broken-image placeholder (the photo asset pass is SIMF-VID-001)
+```
+
+### E2E-MOB020-012 — CV tab pill swaps the bio card
+
+```gherkin
+Scenario: Tapping a CV tab pill swaps the navy bio card content in place
+  Given a speaker with bio, qualifications, training and awards all populated
+  And the four pills نبذة عنه / المؤهلات العلمية / الخبرات التدريبية / الجوائز render
+  And the active pill is نبذة عنه showing the bio body in the navy #192B41 card
+  When the user taps المؤهلات العلمية
+  Then the navy card now shows the qualifications body (right-aligned white text)
+  And the bio body is no longer shown
+  And no new screen is pushed (the card swaps inline)
+  When the user then taps الجوائز
+  Then the navy card shows the awards body
+```
+
+### E2E-MOB020-013 — Active vs inactive pill styling
+
+```gherkin
+Scenario: The active pill is gold-filled white-text; the rest are navy beige-text
+  Given the four CV tab pills render in one full-width row
+  When نبذة عنه is the active tab
+  Then the نبذة عنه pill is filled gold (accent) with white text
+  And the other three pills are navy #192B41 with a beige hairline and beige text
+  When the user taps الخبرات التدريبية
+  Then الخبرات التدريبية becomes the gold-filled white-text pill
+  And نبذة عنه returns to the navy beige-text style
+```
+
+### E2E-MOB020-014 — Only populated CV sections get a pill
+
+```gherkin
+Scenario: A pill renders only for a CV section that carries content
+  Given a speaker with bio and awards populated but no qualifications and no training
+  When the profile renders
+  Then exactly two pills render: نبذة عنه and الجوائز
+  And المؤهلات العلمية and الخبرات التدريبية pills are not shown
+  And the first populated section (نبذة عنه) is the active tab on first render
+```
+
+### E2E-MOB020-015 — Speaker with no CV content
+
+```gherkin
+Scenario: A speaker with no CV text shows neither the tab strip nor the bio card
+  Given a speaker whose bio, qualifications, training and awards are all empty
+  When the profile renders
+  Then no CV tab pills are shown
+  And no navy bio card is shown
+  And the avatar, the request-meeting affordance and the sessions list still render per their own rules
+```
+
 ---
 
-_Last reviewed:_ `2026-06-05` by `SIMF Team`.
+> **Figma parity (2026-06-16):** the screen was re-skinned to the KSA-Project
+> frame **908:2110 "About Speaker"** — the two-line header (white name over the
+> beige rank + circled back chevron), the 125px gold-ringed avatar (`912:2270`),
+> the inline CV tab-pill row (`912:2312`, active pill gold) that swaps the navy
+> `#192B41` bio card (`912:2331`). Request-meeting, social links and the sessions
+> list keep their prior behaviour below the frame's minimal content.
+
+---
+
+_Last reviewed:_ `2026-06-16` by `SIMF Team`.
