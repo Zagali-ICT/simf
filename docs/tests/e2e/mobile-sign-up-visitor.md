@@ -53,8 +53,9 @@
 | E2E-MOB007-014 | Visitor type lock (C5, D-371): Visitor tab shows **no** profile-type picker; the draft auto-carries the seeded **"Normal" (عادي)** id; server rejects any other audience-tier self-pick with 400 | validation | P0 | authored ✓ (widget test + server C5 tests) |
 | E2E-MOB007-015 | Other tab (C5, D-371): the filtered picker is shown and a pick is **required** (inline error blocks Next); partner-side picks accepted by the server | validation | P0 | authored ✓ (widget test + server C5 test) |
 | E2E-MOB007-016 | Plate number (C6, D-371): optional — empty saves fine; `ABJ1234` / `abj 1234` / `1234-ABJ` / `أبج1234` accepted and stored normalized upper-cased; 2/4 letters, 5 digits, digits-only, symbols rejected — client inline + server 400 | validation | P0 | authored ✓ (client `plate_validation_test` + server `UserProfileTests` theories incl. stored-value round-trip) |
-| E2E-MOB007-017 | Male photo gate (C7, D-371): gender=male + no stored/attached photo → Next blocked with the camera-capture error; female without a photo proceeds (optional); capture is **camera-only** (no gallery) | validation | P0 | authored ✓ (widget tests; camera source by code — live camera drive needs the emulator) |
-| E2E-MOB007-018 | Face check (C7, D-371): on-device ML Kit rejects a no-face capture with the retake toast; the server's offline FaceAiSharp gate rejects a no-face/undecodable upload with 400 `VISITOR_ID_IMAGE_NO_FACE` (audited) | validation | P0 | authored ✓ (server `UserProfileFaceGateTests` against the real ONNX model; positive real-face path → Wave-1 live run) |
+| E2E-MOB007-017 | Male photo gate (C7, D-371): gender=male + no stored/attached photo → Next blocked with the camera-capture error; female without a photo proceeds (optional). **D-434:** the attach box now launches the shared guided face-capture / liveness screen (`identityVerification`), not a bare camera picker — the returned selfie becomes the attached ID image | validation | P0 | authored ✓ (widget tests; live face-capture drive shares the My-Area avatar flow — needs a real device/emulator) |
+| E2E-MOB007-018 | Face check (C7, D-371): the shared liveness capture (smile→turn→turn) verifies a live human face on-device; the server's offline FaceAiSharp gate rejects a no-face/undecodable upload with 400 `VISITOR_ID_IMAGE_NO_FACE` (audited) | validation | P0 | authored ✓ (server `UserProfileFaceGateTests` against the real ONNX model; positive real-face path → Wave-1 live run) |
+| E2E-MOB007-019 | Missing-items feedback (D-434): a blocked Next shows the bilingual "complete the required fields" toast (not a silent no-op), and the form carries an info banner on entry so a user routed in to complete their profile knows why | validation | P0 | authored ✓ (`completeProfilePrompt` toast on every blocked-Next test path; banner renders on load) |
 
 ## Scenarios
 
@@ -209,6 +210,38 @@ Scenario: The form mirrors under Arabic
   Given the app language is Arabic
   Then the type chips, sections, fields and toggles mirror right-to-left
   And each lookup row's Arabic label is shown; switching to English flips labels without a re-fetch
+```
+
+### E2E-MOB007-017 — Male ID photo via the shared face-capture flow (D-434)
+
+```gherkin
+Scenario: The male ID photo is captured by the reused liveness screen
+  Given a signed-in male visitor on the complete-profile form with no stored photo
+  Then the إرفاق ملف box shows the "A photo is required — capture it with the camera" hint up front
+  When the visitor taps the attach box
+  Then the app opens the guided face-capture / liveness screen (identityVerification) —
+       the same flow the My-Area avatar uses (it requests the camera permission,
+       runs the smile→turn-right→turn-left liveness and has a gallery fallback)
+  When the liveness completes
+  Then the screen returns the captured selfie and the attach box shows the thumbnail + name
+  And Next then proceeds (the server still re-checks the face on upload, Page 007‑01)
+```
+
+### E2E-MOB007-019 — Blocked Next surfaces the missing items (D-434)
+
+```gherkin
+Scenario: A blocked Next is never silent
+  Given any required field is missing (e.g. a male with no photo, or no organisation)
+  When the visitor taps "Next"
+  Then a toast shows "Please complete the required fields below to finish your profile."
+       ("يرجى إكمال الحقول المطلوبة أدناه لإنهاء ملفك الشخصي." in Arabic)
+  And the individual field errors/hints stay shown
+  And the app does not navigate
+
+Scenario: The complete-profile entry shows an attention banner
+  Given a signed-in profile-incomplete visitor opens the form
+  Then a gold-bordered info banner at the top reads the same "complete the required
+       fields" prompt, so the user knows this is the completion step
 ```
 
 ---

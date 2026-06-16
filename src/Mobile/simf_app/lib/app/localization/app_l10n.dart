@@ -220,6 +220,13 @@ class AppL10n {
         'Profile saved, but the image upload failed. Try again later.',
       );
   String get requiredField => _t('هذا الحقل مطلوب', 'This field is required');
+  // D-434 — shown as a banner when the user is routed back to complete their
+  // profile, and as a toast when Next is blocked, so the missing required
+  // items get clear attention instead of failing silently.
+  String get completeProfilePrompt => _t(
+        'يرجى إكمال الحقول المطلوبة أدناه لإنهاء ملفك الشخصي.',
+        'Please complete the required fields below to finish your profile.',
+      );
   String get nationalityRequired => _t('الجنسية مطلوبة', 'Nationality is required');
   String get nationalIdInvalid => _t(
         'رقم الهوية الوطنية غير صحيح (10 أرقام تبدأ بـ 1)',
