@@ -8,6 +8,7 @@ import 'package:video_player/video_player.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 import '../../app/localization/app_l10n.dart';
+import '../../app/localization/locale_controller.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/ksa_shell.dart';
@@ -606,6 +607,13 @@ class _YoutubeView extends StatelessWidget {
             start: SimfTokens.space2,
             child: _LiveBadge(label: liveLabel),
           ),
+          // Figma 934:3450 — language chip pinned top-END (left in RTL),
+          // mirroring the LIVE badge; wired to the app-language toggle.
+          const PositionedDirectional(
+            top: SimfTokens.space2,
+            end: SimfTokens.space2,
+            child: _LanguageChip(),
+          ),
         ],
       ),
     );
@@ -857,6 +865,13 @@ class _Player extends StatelessWidget {
             start: SimfTokens.space2,
             child: _LiveBadge(label: liveLabel),
           ),
+          // Figma 934:3450 — language chip pinned top-END (left in RTL),
+          // mirroring the LIVE badge; wired to the app-language toggle.
+          const PositionedDirectional(
+            top: SimfTokens.space2,
+            end: SimfTokens.space2,
+            child: _LanguageChip(),
+          ),
           Padding(
             padding: const EdgeInsets.all(SimfTokens.space3),
             child: FloatingActionButton.small(
@@ -981,6 +996,48 @@ class _LiveBadge extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// The frame's caption-language chip (934:3450) on the player band, opposite the
+/// LIVE badge. Shows the current UI language's native name + a globe glyph and
+/// toggles the app language on tap (owner decision: wire to the app locale).
+class _LanguageChip extends ConsumerWidget {
+  const _LanguageChip();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isArabic = AppL10n.of(context).isArabic;
+    return Material(
+      color: SimfTokens.surface,
+      borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        onTap: () =>
+            unawaited(ref.read(localeControllerProvider.notifier).toggle()),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: SimfTokens.space2,
+            vertical: SimfTokens.space1,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                isArabic ? 'العربية' : 'English',
+                style: const TextStyle(
+                  color: SimfTokens.navy,
+                  fontWeight: FontWeight.w600,
+                  fontSize: SimfTokens.textXs,
+                ),
+              ),
+              const SizedBox(width: SimfTokens.space1),
+              const Icon(Icons.language, size: 14, color: SimfTokens.navy),
+            ],
+          ),
+        ),
       ),
     );
   }
