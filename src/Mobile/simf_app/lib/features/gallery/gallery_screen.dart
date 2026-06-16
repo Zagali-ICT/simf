@@ -172,13 +172,17 @@ class _CoverageTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Figma 947:3764 (Arabic/RTL): the active معرض الصور والفيديوهات tab is the
+    // right-most (inline-start), then الشركاء الإعلاميون, then الأخبار on the
+    // left. A Row lays children start→end, so the order is gallery → partners →
+    // news.
     return Row(
       children: <Widget>[
         Expanded(
           child: _CoverageTab(
-            label: l10n.newsTitle,
-            active: false,
-            onTap: () => context.goNamed(RouteNames.news),
+            label: l10n.galleryTitle,
+            active: true,
+            onTap: null,
           ),
         ),
         const SizedBox(width: SimfTokens.space4),
@@ -192,9 +196,9 @@ class _CoverageTabs extends StatelessWidget {
         const SizedBox(width: SimfTokens.space4),
         Expanded(
           child: _CoverageTab(
-            label: l10n.galleryTitle,
-            active: true,
-            onTap: null,
+            label: l10n.newsTitle,
+            active: false,
+            onTap: () => context.goNamed(RouteNames.news),
           ),
         ),
       ],
@@ -233,7 +237,9 @@ class _CoverageTab extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: active ? Colors.white : SimfTokens.beigeBorder,
+                // Figma 947:3764 — the active gold pill carries dark navy text;
+                // inactive pills carry beige text on navy.
+                color: active ? SimfTokens.navy : SimfTokens.beigeBorder,
                 fontSize: SimfTokens.textSm,
                 fontWeight: FontWeight.w600,
               ),

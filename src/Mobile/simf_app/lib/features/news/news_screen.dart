@@ -115,10 +115,17 @@ class _MediaTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Figma 947:3764 / 958 (Arabic/RTL): the shared tab bar is, right→left,
+    // معرض الصور والفيديوهات · الشركاء الإعلاميون · الأخبار. A Row lays children
+    // start→end, so the order is gallery → partners → news.
     return Row(
       children: <Widget>[
         Expanded(
-          child: _MediaTab(label: l10n.newsTitle, active: true),
+          child: _MediaTab(
+            label: l10n.galleryTitle,
+            active: false,
+            onTap: () => context.pushReplacementNamed(RouteNames.gallery),
+          ),
         ),
         const SizedBox(width: SimfTokens.space4),
         Expanded(
@@ -130,11 +137,7 @@ class _MediaTabs extends StatelessWidget {
         ),
         const SizedBox(width: SimfTokens.space4),
         Expanded(
-          child: _MediaTab(
-            label: l10n.galleryTitle,
-            active: false,
-            onTap: () => context.pushReplacementNamed(RouteNames.gallery),
-          ),
+          child: _MediaTab(label: l10n.newsTitle, active: true),
         ),
       ],
     );
@@ -170,7 +173,8 @@ class _MediaTab extends StatelessWidget {
               style: TextStyle(
                 fontSize: SimfTokens.textSm,
                 fontWeight: FontWeight.w600,
-                color: active ? Colors.white : SimfTokens.beigeBorder,
+                // Figma — active gold pill carries dark navy text.
+                color: active ? SimfTokens.navy : SimfTokens.beigeBorder,
               ),
             ),
           ),
