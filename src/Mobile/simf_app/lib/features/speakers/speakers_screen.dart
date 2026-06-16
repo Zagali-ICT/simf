@@ -21,9 +21,9 @@ import 'data/speakers_repository.dart';
 /// with the centred header المتحدثون + circled back chevron (the profile's
 /// header pattern, 908:2110), then a vertical list of cards — each a navy
 /// `#192B41` card on the beige `0.2px` hairline (the shared [KsaCard]) carrying,
-/// in RTL: a small beige caret at the inline start, the white name (16/SemiBold)
-/// over the beige rank·affiliation line (12/Regular), and a 44×44 gold-bordered
-/// tile holding an anchor glyph (speaker) or a star glyph (host · المضيف).
+/// in RTL: a 44×44 gold-bordered tile holding an anchor glyph at the inline
+/// start (right), the white name (16/SemiBold) over the beige rank·affiliation
+/// line (12/Regular), and a small beige caret at the inline end (left).
 ///
 /// Behaviour is unchanged from the mockup build — the avatar is rendered as the
 /// role tile and the country as text (the flag/photo asset pass is SIMF-VID-001).
@@ -162,9 +162,10 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
 }
 
 /// One speaker card (frame 908:1999): the navy [KsaCard] chrome carrying — in
-/// RTL — a small beige caret at the inline start, the white name over the beige
-/// rank·affiliation line, and a 44×44 gold-bordered anchor tile at the inline
-/// end. D-432: the host/speaker distinction is per-session (it lives on the
+/// RTL — a 44×44 gold-bordered anchor tile at the inline start (right), the
+/// white name over the beige rank·affiliation line, and a small beige caret at
+/// the inline end (left). D-432: the host/speaker distinction is per-session
+/// (it lives on the
 /// session↔speaker join), not a global speaker attribute, so the global list
 /// shows the anchor for everyone; the host star appears on the session detail.
 class _SpeakerCard extends StatelessWidget {
@@ -194,53 +195,49 @@ class _SpeakerCard extends StatelessWidget {
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.all(SimfTokens.space2),
+        // Figma 908:1744 (Arabic/RTL frame): the gold anchor tile sits at the
+        // inline-start (right) beside the name, the navigation caret at the
+        // inline-end (left). A Row lays children start→end, so the order is
+        // tile → name → caret.
         child: Row(
           children: <Widget>[
-            // Inline-start caret (frame 908:2089) — a small beige left chevron;
-            // the bundled SVG does not auto-mirror under RTL, so it always
-            // points toward the inline-leading edge as the frame shows.
+            const _RoleTile(),
+            const SizedBox(width: SimfTokens.space4),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    speaker.localizedName(isArabic),
+                    textAlign: TextAlign.start,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: SimfTokens.textLg,
+                    ),
+                  ),
+                  if (label.isNotEmpty) ...<Widget>[
+                    const SizedBox(height: SimfTokens.space2),
+                    Text(
+                      label,
+                      textAlign: TextAlign.start,
+                      style: const TextStyle(
+                        color: SimfTokens.beigeBorder,
+                        fontSize: SimfTokens.textSm,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: SimfTokens.space2),
+            // Inline-end caret (frame 908:2089) — a small beige chevron on the
+            // trailing (left, in RTL) edge.
             const SimfSvgIcon(
               'assets/icons/ic_caret_left.svg',
               size: 20,
               color: SimfTokens.beigeBorder,
-            ),
-            const SizedBox(width: SimfTokens.space2),
-            Expanded(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: <Widget>[
-                  Flexible(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Text(
-                          speaker.localizedName(isArabic),
-                          textAlign: TextAlign.end,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: SimfTokens.textLg,
-                          ),
-                        ),
-                        if (label.isNotEmpty) ...<Widget>[
-                          const SizedBox(height: SimfTokens.space2),
-                          Text(
-                            label,
-                            textAlign: TextAlign.end,
-                            style: const TextStyle(
-                              color: SimfTokens.beigeBorder,
-                              fontSize: SimfTokens.textSm,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: SimfTokens.space4),
-                  const _RoleTile(),
-                ],
-              ),
             ),
           ],
         ),
