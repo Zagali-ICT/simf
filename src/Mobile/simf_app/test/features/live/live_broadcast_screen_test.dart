@@ -24,10 +24,11 @@ LiveSession _liveSession({
     );
 
 class _FakeLiveRepo implements LiveRepository {
-  _FakeLiveRepo({this.session, this.status});
+  _FakeLiveRepo({this.session, this.status, this.upcoming = const <UpcomingSession>[]});
 
   final LiveSession? session;
   final int? status;
+  final List<UpcomingSession> upcoming;
   int calls = 0;
 
   @override
@@ -42,6 +43,13 @@ class _FakeLiveRepo implements LiveRepository {
     }
     return session!;
   }
+
+  @override
+  Future<List<UpcomingSession>> getUpcomingSessions({
+    String? excludeSessionId,
+    int take = 3,
+  }) async =>
+      upcoming;
 }
 
 Future<void> _pump(
@@ -271,6 +279,44 @@ void main() {
       await tester.tap(find.widgetWithText(FilledButton, 'Retry'));
       await tester.pumpAndSettle();
       expect(repo.calls, greaterThanOrEqualTo(2));
+    });
+
+    testWidgets('renders the hall name + speakers line + upcoming sessions '
+        '(D-433)', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeLiveRepo(
+          session: const LiveSession(
+            title: 'Opening',
+            titleArabic: 'الافتتاح',
+            status: 1,
+            hasRecording: false,
+            hallName: 'Main Hall',
+            hallNameArabic: 'القاعة الرئيسية',
+            speakers: <LiveSpeaker>[
+              LiveSpeaker(name: 'Capt. Reef', nameArabic: 'القبطان'),
+            ],
+          ),
+          upcoming: <UpcomingSession>[
+            UpcomingSession(
+              id: 's2',
+              title: 'Next talk',
+              titleArabic: 'الجلسة التالية',
+              startUtc: DateTime(2030, 1, 1, 11),
+            ),
+          ],
+        ),
+        sessionId: 's1',
+      );
+
+      // Hall name completes the "Session · Main Hall" header line.
+      expect(find.textContaining('Main Hall'), findsOneWidget);
+      // The speakers / participants line.
+      expect(find.text('Capt. Reef'), findsOneWidget);
+      // The upcoming-sessions section + its card + the gold time chip.
+      expect(find.text('Upcoming sessions'), findsOneWidget);
+      expect(find.text('Next talk'), findsOneWidget);
+      expect(find.text('11:00'), findsOneWidget);
     });
 
     testWidgets('the not-live note is bilingual (Arabic)', (tester) async {

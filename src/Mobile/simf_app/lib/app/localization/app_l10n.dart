@@ -1085,6 +1085,7 @@ class AppL10n {
             'organising regulations.',
       );
   String get liveAskQuestion => _t('اطرح سؤالاً', 'Ask a question');
+  String get liveUpcomingSessions => _t('الجلسات القادمة', 'Upcoming sessions');
   String get sendQuestionSectionLabel => _t('الاسئلة', 'Questions');
   String get sendQuestionNoteLabel => _t('ملاحظة', 'Note');
   String get mediaCoverageTitle => _t('التغطية الإعلامية', 'Media coverage');

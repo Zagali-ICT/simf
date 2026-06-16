@@ -58,6 +58,8 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
   bool _error = false;
   bool _notFound = false;
   LiveSession? _session;
+  // D-433 — the "الجلسات القادمة" strip (a non-blocking second read).
+  List<UpcomingSession> _upcoming = const <UpcomingSession>[];
 
   /// When true the player shows the sign-language feed instead of the main one.
   /// Only meaningful when the session carries both feeds (the toggle is hidden
@@ -93,6 +95,9 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
         _showSignLanguage = false;
         _loading = false;
       });
+      // The upcoming-sessions strip is optional chrome — load it after the main
+      // read, non-blocking (a list failure must not break the live screen).
+      unawaited(_loadUpcoming());
     } on ApiFailure catch (failure) {
       if (!mounted) {
         return;
@@ -105,11 +110,32 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
     }
   }
 
+  Future<void> _loadUpcoming() async {
+    try {
+      final upcoming = await ref
+          .read(liveRepositoryProvider)
+          .getUpcomingSessions(excludeSessionId: widget.sessionId?.trim());
+      if (!mounted) {
+        return;
+      }
+      setState(() => _upcoming = upcoming);
+    } on ApiFailure {
+      // Optional strip — ignore a list failure, the live screen still works.
+    }
+  }
+
   void _askQuestion() {
     context.pushNamed(
       RouteNames.sendQuestion,
       queryParameters: <String, String>{'sessionId': widget.sessionId!.trim()},
     );
+  }
+
+  /// The frame's header line — "يُبث الآن · {hall}" (or just the label when the
+  /// broadcasting hall is not known).
+  static String _broadcastLabel(AppL10n l10n, bool isLive, String? hall) {
+    final base = isLive ? l10n.liveNowBroadcasting : l10n.liveSessionLabel;
+    return hall == null ? base : '$base · $hall';
   }
 
   @override
@@ -201,7 +227,9 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
               // "يُبث الآن" now-broadcasting block (frame 934:3615 / 934:3616):
               // the section label over the session title as a gold bullet.
               Text(
-                isLive ? l10n.liveNowBroadcasting : l10n.liveSessionLabel,
+                // D-433 — the hall name (already on the wire) completes the
+                // frame's "يُبث الآن · القاعة الرئيسية" header line.
+                _broadcastLabel(l10n, isLive, session.localizedHall(isArabic)),
                 textAlign: TextAlign.right,
                 style: const TextStyle(
                   color: Colors.white,
@@ -215,6 +243,14 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
                 color: SimfTokens.accent,
                 fontWeight: FontWeight.w600,
               ),
+              // D-433 — the speakers / participants line (frame 934:3617).
+              if (session.localizedSpeakers(isArabic) != null) ...<Widget>[
+                const SizedBox(height: SimfTokens.space2),
+                _GoldBullet(
+                  text: session.localizedSpeakers(isArabic)!,
+                  color: SimfTokens.beigeBorder,
+                ),
+              ],
 
               // Sign-language-only note (a sign feed announced with no main
               // feed → nothing to toggle, just the note).
@@ -236,10 +272,102 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
                 label: l10n.liveAskQuestion,
                 onTap: _askQuestion,
               ),
+
+              // D-433 — "الجلسات القادمة" upcoming-sessions cards (frame
+              // 934:3621/3630), from the shipped agenda list (non-blocking read).
+              if (_upcoming.isNotEmpty) ...<Widget>[
+                const SizedBox(height: SimfTokens.space6),
+                Text(
+                  l10n.liveUpcomingSessions,
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: SimfTokens.textLg,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: SimfTokens.space4),
+                for (final upcoming in _upcoming) ...<Widget>[
+                  _UpcomingCard(session: upcoming, isArabic: isArabic),
+                  const SizedBox(height: SimfTokens.space3),
+                ],
+              ],
             ],
           ),
         ),
       ],
+    );
+  }
+}
+
+/// One "الجلسات القادمة" card (frame 934:3621/3630): the session title with a
+/// gold HH:mm time chip at the inline-end.
+class _UpcomingCard extends StatelessWidget {
+  const _UpcomingCard({required this.session, required this.isArabic});
+
+  final UpcomingSession session;
+  final bool isArabic;
+
+  @override
+  Widget build(BuildContext context) {
+    return KsaCard(
+      child: Padding(
+        padding: const EdgeInsets.all(SimfTokens.space3),
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: Text(
+                session.localizedTitle(isArabic),
+                textAlign: TextAlign.right,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: SimfTokens.textMd,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(width: SimfTokens.space3),
+            _TimeChip(time: session.startUtc),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A gold time chip showing the local HH:mm (frame 934:3628).
+class _TimeChip extends StatelessWidget {
+  const _TimeChip({required this.time});
+
+  final DateTime? time;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = time;
+    final label = t == null
+        ? '—'
+        : '${t.hour.toString().padLeft(2, '0')}:'
+            '${t.minute.toString().padLeft(2, '0')}';
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SimfTokens.space3,
+        vertical: SimfTokens.space1,
+      ),
+      decoration: BoxDecoration(
+        color: SimfTokens.accent,
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+      ),
+      child: Text(
+        label,
+        textDirection: TextDirection.ltr,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: SimfTokens.textSm,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     );
   }
 }
