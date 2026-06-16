@@ -69,6 +69,33 @@ photo → **add the photo API now**; wider-wave four pages → **all included**.
 | **Live AI captions / transcript** | 934-3450 | none — `LiveSession` has no transcript field | add a caption/transcript field + endpoint (`GET /app/programme/sessions/{id}/captions` or a field on the live slice); app renders when present; **provider integration stubbed/later** | ✅ **API surface now, provider later** |
 | **Speaker photo** | 908-2110 / 908-1744 | no speaker photo URL field | `Speaker.PhotoRelativePath` + `GET /app/speakers/{id}/photo` + CP upload; app renders photo, falls back to initials/anchor | ✅ **add now** |
 
+## P1 design notes (investigated 2026-06-16 — ready to build)
+
+- **No migration needed.** `MediaPartner.LogoRelativePath` already exists on the
+  entity, the public wire (`PublicMediaPartnerItem.logoRelativePath`, via
+  `PublicMediaPartnerService` which also coalesces a linked `Contact.LogoRelativePath`),
+  and the admin CRUD (`UpdateMediaPartnerRequest.LogoRelativePath`).
+- **Gap 1 — serve endpoint:** there is **no** byte-serve for the logo. Mirror the
+  media pattern: `GET /app/media-partners/{id}/logo` (anonymous, `image/*`),
+  reading the stored asset by `LogoRelativePath`. Reference impl: the media
+  item image at `SIMF.Api/Endpoints/Public/PublicMediaEndpoints.cs`
+  (`/app/media/{id}/thumbnail|image`) + the asset storage in
+  `SIMF.Api/Endpoints/Assets/AssetEndpoints.cs` (D-357). The public list DTO
+  should also expose a `logoUrl` (server-relative) like media's `imageUrl`/
+  `thumbnailUrl`, **append-only** (do not rename existing fields).
+- **Gap 2 — app render:** the app card renders **initials** (`_PartnerCard._initials`).
+  Build the logo via `{baseUrl}/app/media-partners/{id}/logo` and use
+  `Image.network` with a spinner + initials fallback — exactly like
+  `gallery_screen.dart:_Thumbnail` (lines ~381-479).
+- **Gap 3 — CP upload:** confirm the CP media-partners add/edit page has a logo
+  upload (it sends `LogoRelativePath`); if it only takes a text path, add an
+  image-upload control that stores via the Assets endpoint and sets the path.
+- **App rebuild:** replace the plain-`AppBar` `MediaPartnersScreen` with the
+  `KsaPage` navy shell + the shared 3-tab hub (`[gallery, partners, news]`,
+  partners active — reuse the now-fixed tab order) + the 2-col partner grid
+  (gold rounded-square logo container + label), per frame 958-2246. Add an
+  Arabic RTL position test + E2E file + PAGE-INDEX/per-page docs.
+
 ## Execution plan (sequence)
 
 Each item is its own plan→build→verify→commit cycle; backend gaps get an
