@@ -192,6 +192,50 @@
   /* ====================== SECTION-LEVEL STYLES ====================== */
   /* @@SECTION-STYLES@@ */
 
+  /* ============================ PAGE LOADER ========================= */
+  /* SSR-style splash shown on first paint, then fades out on window load.
+     Ported from index.legacy.html so the public site keeps the same
+     navy → logo → progress-bar intro. */
+  .page-loader {
+    position: fixed; inset: 0; z-index: 99999;
+    background: var(--navy);
+    display: grid; place-items: center;
+    transition: opacity .7s ease, visibility .7s ease;
+  }
+  .page-loader.gone { opacity: 0; visibility: hidden; pointer-events: none; }
+  .page-loader__inner {
+    display: flex; flex-direction: column; align-items: center; gap: 32px;
+  }
+  .page-loader__logo {
+    /* logo-fill.svg has preserveAspectRatio="none"; pin the box to its exact
+       viewBox ratio (309.597 × 64.0015) so it can't stretch, and stay responsive. */
+    width: min(360px, 76vw); aspect-ratio: 309.597 / 64.0015; height: auto;
+    display: block;
+    opacity: 0; animation: pl-fade .9s cubic-bezier(.22,.61,.36,1) .15s forwards;
+  }
+  .page-loader__bar {
+    width: 160px; height: 1px;
+    background: rgba(255,255,255,0.12);
+    overflow: hidden; position: relative;
+  }
+  .page-loader__bar span {
+    display: block; height: 100%; width: 40%;
+    background: #ffffff;
+    animation: pl-slide 1.4s cubic-bezier(.65,0,.35,1) infinite;
+  }
+  @keyframes pl-fade {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+  }
+  @keyframes pl-slide {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(400%); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .page-loader__logo { animation: none; opacity: 1; }
+    .page-loader__bar span { animation: none; width: 100%; }
+  }
+
   /* ============================ RESPONSIVE =========================== */
   @media (max-width: 1100px) {
     .nav-menu { display: none; }
@@ -199,6 +243,14 @@
 </style>
 </head>
 <body>
+<!-- Page loader (first-paint splash, removed on window load) -->
+<div class="page-loader" id="pageLoader" role="status" aria-live="polite" aria-label="جارٍ التحميل">
+  <div class="page-loader__inner">
+    <img class="page-loader__logo" src="assets/figma/nav/logo-fill.svg" alt="الملتقى البحري السعودي الدولي" />
+    <div class="page-loader__bar"><span></span></div>
+  </div>
+</div>
+
 <div class="page">
 
   <header class="site-header">
@@ -877,7 +929,8 @@
       .speakers__lead { font-size: 16px; line-height: 24px; font-weight: 400; }
       .speakers__btn { display: inline-flex; align-items: center; justify-content: center; height: 40px;
         padding-inline: 16px; background: rgba(255,255,255,0.2); color: var(--white); border: 0;
-        border-radius: var(--radius-sm); font-size: 16px; line-height: 24px; }
+        border-radius: var(--radius-sm); font-size: 16px; line-height: 24px;
+        text-decoration: none; cursor: pointer; transition: background-color .2s ease; }
       .speakers__btn:hover { background: rgba(255,255,255,0.32); }
       .speakers__collage { width: 100%; height: 385px; overflow: hidden; }
       .speakers__collage img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
@@ -888,7 +941,7 @@
         <div class="speakers__head">
           <h2 class="speakers__title">أبرز المتحدثين والمشاركين</h2>
           <p class="speakers__lead">يشارك في الملتقى نخبة من القادة السعوديين والدوليين وصناع القرار والخبراء، مما يعكس دور المملكة الريادي في تشكيل توجهات الأمن البحري وتعزيز التعاون الدولي في ظل التحولات التقنية والاستراتيجية المتسارعة.</p>
-          <button type="button" class="speakers__btn">عرض الكل</button>
+          <a href="speakers.html" class="speakers__btn">عرض الكل</a>
         </div>
         <div class="speakers__collage">
           <img src="assets/figma/speakers/speakers-collage.png" alt="أبرز المتحدثين والمشاركين في الملتقى" />
@@ -1015,7 +1068,7 @@
       .news__desc { font-size: 16px; line-height: 24px; color: var(--white); text-align: right; max-width: 720px; }
       .pill-outline--blue { border-color: var(--primary); color: var(--primary-light); }
       .pill-outline--blue:hover { background: rgba(36,74,119,0.4); }
-      .news__cards { display: flex; direction: ltr; gap: 16px; width: 100%; }
+      .news__cards { display: flex; direction: rtl; gap: 16px; width: 100%; }
       .ncard { flex: 1 1 0; min-width: 0; direction: rtl; display: flex; flex-direction: column; }
       .ncard__img { height: 250px; background-size: cover; background-position: center; }
       .ncard__body { flex: 1; background: var(--secondary); border: 1px solid var(--primary);
@@ -1244,6 +1297,18 @@
 </div>
 
 <script>
+  // page loader — fade out once the window (incl. hero video/poster) is ready
+  (function () {
+    var loader = document.getElementById('pageLoader');
+    if (!loader) { return; }
+    var hide = function () {
+      setTimeout(function () { loader.classList.add('gone'); }, 1400);
+      setTimeout(function () { loader.remove(); }, 2200);
+    };
+    if (document.readyState === 'complete') { hide(); }
+    else { window.addEventListener('load', hide); }
+  })();
+
   // search drop-panel toggle
   (function () {
     var toggle = document.getElementById('search-toggle');
@@ -1311,5 +1376,7 @@
     io2.observe(section);
   })();
 </script>
+<!-- live content hydration (same /content/site feed the legacy design used) -->
+<script src="js/site-content.js" defer></script>
 </body>
 </html>
