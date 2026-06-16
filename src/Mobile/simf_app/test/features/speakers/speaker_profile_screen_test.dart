@@ -11,6 +11,14 @@ import 'package:simf_app/features/speakers/speaker_profile_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+// The avatar builds the photo URL from the base; the must-override config
+// provider throws otherwise. The test HTTP client fails the load → initials.
+const _testConfig = SimfDataConfig(
+  baseUrl: 'http://test.local/api/v1',
+  appKey: 'test',
+  deviceType: SimfDeviceType.android,
+);
+
 SpeakerDetail _detail({bool allowsMeeting = true, bool allowsData = true}) {
   final start = DateTime.utc(2026, 11, 23, 6);
   return SpeakerDetail(
@@ -143,6 +151,7 @@ Future<void> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: <Override>[
+        simfDataConfigProvider.overrideWithValue(_testConfig),
         speakersRepositoryProvider.overrideWithValue(repo),
         authControllerProvider.overrideWith(() => controller),
       ],
@@ -182,6 +191,21 @@ void main() {
       // The speaker's sessions + the gated meeting action.
       expect(find.text('Opening talk'), findsOneWidget);
       expect(find.widgetWithText(FilledButton, 'Request meeting'), findsOneWidget);
+    });
+
+    testWidgets('the CV avatar builds from the SpeakerPhoto asset route',
+        (tester) async {
+      await _pump(tester, repo: _FakeRepo(detail: _detail()), controller: _Guest());
+      final urls = tester
+          .widgetList<Image>(find.byType(Image))
+          .map((image) => image.image)
+          .whereType<NetworkImage>()
+          .map((provider) => provider.url)
+          .toList();
+      expect(
+        urls,
+        contains('http://test.local/api/v1/app/assets/SpeakerPhoto/sp1/image'),
+      );
     });
 
     testWidgets('a guest tapping Request meeting is sent to sign-in',

@@ -37,6 +37,15 @@ const _speakers = <SpeakerSummary>[
   ),
 ];
 
+// The avatar builds the photo URL from the base; the must-override config
+// provider throws otherwise. The test HTTP client fails network-image loads, so
+// each avatar shows its anchor fall-back.
+const _testConfig = SimfDataConfig(
+  baseUrl: 'http://test.local/api/v1',
+  appKey: 'test',
+  deviceType: SimfDeviceType.android,
+);
+
 class _FakeSpeakersRepo implements SpeakersRepository {
   _FakeSpeakersRepo({this.list = const <SpeakerSummary>[], this.fail = false});
 
@@ -89,6 +98,7 @@ Future<void> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: <Override>[
+        simfDataConfigProvider.overrideWithValue(_testConfig),
         speakersRepositoryProvider.overrideWithValue(repo),
       ],
       child: MaterialApp.router(
@@ -120,14 +130,31 @@ void main() {
       expect(find.text('Sea captain · RSNF'), findsOneWidget);
     });
 
-    testWidgets('the global list shows the anchor tile for EVERY speaker — the '
-        'host star is per-session (shown on the detail), not here (D-432)',
+    testWidgets('each avatar falls back to the anchor when there is no photo — '
+        'the host star is per-session (shown on the detail), not here (D-432)',
         (tester) async {
       await _pump(tester, repo: _FakeSpeakersRepo(list: _speakers));
-      // Anchor-for-all: host is contextual to a session (it lives on the
-      // session↔speaker join), so the global list never shows a star.
+      // No photo uploaded (the test image load fails) → every tile shows its
+      // anchor fall-back; host is contextual to a session, so never a star here.
       expect(find.byIcon(Icons.anchor), findsNWidgets(3));
       expect(find.byIcon(Icons.star_border), findsNothing);
+    });
+
+    testWidgets('each card builds its avatar from the SpeakerPhoto asset route',
+        (tester) async {
+      await _pump(tester, repo: _FakeSpeakersRepo(list: _speakers));
+      final urls = tester
+          .widgetList<Image>(find.byType(Image))
+          .map((image) => image.image)
+          .whereType<NetworkImage>()
+          .map((provider) => provider.url)
+          .toList();
+      for (final id in <String>['sp1', 'sp2', 'sp3']) {
+        expect(
+          urls,
+          contains('http://test.local/api/v1/app/assets/SpeakerPhoto/$id/image'),
+        );
+      }
     });
 
     testWidgets('RTL card matches Figma 908:1744 — the gold anchor tile sits on '

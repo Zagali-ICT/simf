@@ -21,8 +21,9 @@ import 'speaker_initials.dart';
 ///
 /// **Public** read (`GET /app/speakers/{id}`) — behaviour unchanged. Frame
 /// mapping: the two-line header (white name over the beige rank, the circled
-/// back chevron), the 125px white circle ringed gold (avatar = initials until
-/// the SIMF-VID-001 photo pass), the four CV tab pills in one row (نبذة عنه /
+/// back chevron), the 125px white circle ringed gold (the speaker's uploaded
+/// SpeakerPhoto asset, initials fallback — D-357), the four CV tab pills in one
+/// row (نبذة عنه /
 /// المؤهلات العلمية / الخبرات التدريبية / الجوائز — the active pill filled gold
 /// with white text, the rest `#192B41` with a beige hairline and beige text),
 /// then the navy `#192B41` bio card with right-aligned white body text. Below
@@ -204,6 +205,9 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
 
   Widget _content(AppL10n l10n, SpeakerDetail speaker) {
     final isArabic = l10n.isArabic;
+    // The avatar builds `{base}/app/assets/SpeakerPhoto/{id}/image` for the
+    // uploaded photo; the base already includes `/api/v1`.
+    final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
     final sections = <_CvSection>[
       _CvSection(l10n.cvBio, speaker.localizedBio(isArabic)),
       _CvSection(l10n.cvQualifications, speaker.localizedQualifications(isArabic)),
@@ -230,7 +234,10 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
         SimfTokens.space6,
       ),
       children: <Widget>[
-        _Avatar(initials: speakerInitials(speaker.localizedName(isArabic))),
+        _Avatar(
+          imageUrl: '$baseUrl/app/assets/SpeakerPhoto/${speaker.id}/image',
+          initials: speakerInitials(speaker.localizedName(isArabic)),
+        ),
         const SizedBox(height: SimfTokens.space8 + SimfTokens.space2), // 40
         if (sections.isNotEmpty) ...<Widget>[
           _CvTabs(
@@ -281,31 +288,52 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
 bool _has(String? value) => value != null && value.trim().isNotEmpty;
 
 /// The frame's identity avatar (908:2110 `912:2270`): a 125px white circle
-/// ringed gold (2.77px). Interim renders the speaker's initials in navy until
-/// the SIMF-VID-001 photo asset pass.
+/// ringed gold (2.77px). Renders the speaker's uploaded photo (the D-357
+/// `SpeakerPhoto` asset) clipped to the circle, falling back to the speaker's
+/// navy initials while it loads or when no photo is uploaded (the route 404s).
 class _Avatar extends StatelessWidget {
-  const _Avatar({required this.initials});
+  const _Avatar({required this.imageUrl, required this.initials});
 
+  final String imageUrl;
   final String initials;
 
   @override
   Widget build(BuildContext context) {
+    final initialsContent = Center(
+      child: Text(
+        initials,
+        style: const TextStyle(
+          color: SimfTokens.navy,
+          fontWeight: FontWeight.w700,
+          fontSize: SimfTokens.textHero,
+        ),
+      ),
+    );
+    // The gold ring is the outer circle; a 2.77px pad reveals it around the
+    // clipped white inner circle, so the photo sits inside the ring on white
+    // (never painted under the gold stroke).
     return Center(
       child: Container(
         width: 125,
         height: 125,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: SimfTokens.surface,
+        padding: const EdgeInsets.all(2.77),
+        decoration: const BoxDecoration(
+          color: SimfTokens.accent,
           shape: BoxShape.circle,
-          border: Border.all(color: SimfTokens.accent, width: 2.77),
         ),
-        child: Text(
-          initials,
-          style: const TextStyle(
-            color: SimfTokens.navy,
-            fontWeight: FontWeight.w700,
-            fontSize: SimfTokens.textHero,
+        child: Container(
+          clipBehavior: Clip.antiAlias,
+          decoration: const BoxDecoration(
+            color: SimfTokens.surface,
+            shape: BoxShape.circle,
+          ),
+          child: Image.network(
+            imageUrl,
+            fit: BoxFit.cover,
+            gaplessPlayback: true,
+            loadingBuilder: (context, child, progress) =>
+                progress == null ? child : initialsContent,
+            errorBuilder: (context, error, stackTrace) => initialsContent,
           ),
         ),
       ),

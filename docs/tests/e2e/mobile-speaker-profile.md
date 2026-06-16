@@ -246,6 +246,14 @@ Scenario: A speaker with no CV text shows neither the tab strip nor the bio card
 > (نبذة عنه / Bio first → right-most, الجوائز / Awards → left-most) is now locked
 > by a deterministic `Locale('ar')` position test (`CV tabs lay out Bio (first)
 > right-most in Arabic`).
+>
+> **P4 speaker photo (2026-06-16):** the 125px gold-ringed avatar now renders the
+> speaker's uploaded photo (the D-357 **SpeakerPhoto** asset, anonymous route
+> `GET /app/assets/SpeakerPhoto/{id}/image`) clipped to the circle, falling back
+> to the navy initials while it loads or when no photo is uploaded (404). No new
+> endpoint/field/migration — D-357 reuse (the CP `SimfImageUpload
+> Category="SpeakerPhoto"` already ships). The avatar-URL wiring is covered by
+> `the CV avatar builds from the SpeakerPhoto asset route`.
 
 ---
 

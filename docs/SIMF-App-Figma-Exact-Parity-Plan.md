@@ -43,7 +43,7 @@ Last updated: 2026-06-16
 
 | # | Page | Figma node | File | Status | Work / gaps |
 |---|------|-----------|------|--------|-------------|
-| 1 | Speaker list | 908-1744 | `features/speakers/speakers_screen.dart` | ✅ | RTL mirror fixed (anchor right / caret left) + RTL test — D-436 |
+| 1 | Speaker list | 908-1744 | `features/speakers/speakers_screen.dart` | ✅ | RTL mirror fixed (anchor right / caret left) + RTL test — D-436. **P4:** the avatar tile renders the SpeakerPhoto asset, anchor fall-back when none. (Open: the frame shows a host **star** in the list; the code shows anchor-for-all — host-glyph-in-list deferred, D-432.) |
 | 2 | Speaker CV | 908-2110 | `features/speakers/speaker_profile_screen.dart` | ✅ | **DONE (P3)** — verified CV-tab order is correct (Bio first → right-most in RTL; tabs are in the body, ambient RTL — locked by an `ar` position test); pills are equal-width per the frame (4×72), inter-pill gap set to 18px + tab→card gap to 24px. Avatar stays initials → photo is **P4**. |
 | 3 | My-seat | 898-2873 | `features/sessions/my_seat_screen.dart` | ✅ | **DONE (P3)** — frame 905:1577/1579: both chip values (مقعد 12 / الصف B) are **white** (only the label word is gold); fixed the seat-chip value that rendered gold. Otherwise matches. |
 | 4 | Session live | 934-3450 | `features/live/live_broadcast_screen.dart` | ✅ | language chip added + wired (D-436); badge already correct; **AI live-caption feed = API gap (see below)** |
@@ -67,7 +67,7 @@ photo → **add the photo API now**; wider-wave four pages → **all included**.
 | **Media-partner logo** | 958-2246 | **DONE (P1)** — served by the existing anonymous D-357 route `GET /app/assets/MediaPartnerLogo/{id}/image`; CP upload already ships (`MediaPartnerAddEdit.razor` `SimfImageUpload Category="MediaPartnerLogo"`) | App renders the logo from that route, initials fall-back. **No new endpoint / DTO field / migration** — reuse the unified media-asset pipeline (the controlled doc `docs/dev/SIMF-Media-Asset-The-One-Way.md` forbids a per-entity duplicate). | ✅ **real logos (D-357 reuse)** |
 | **News thumbnail + date** | 948-3961 | **DONE (P2)** — image served by the existing anonymous D-357 route `/app/assets/NewsImage/{id}/image`; CP upload already ships (`NewsAddEdit.razor` `SimfImageUpload Category="NewsImage"`) | `_NewsCard` renders the thumbnail (icon fall-back) + the `DD-MM-YYYY` date. No new endpoint — D-357 reuse (the legacy `imageRelativePath` is not the byte source). | ✅ render (D-357 reuse) |
 | **Live AI captions / transcript** | 934-3450 | none — `LiveSession` has no transcript field | add a caption/transcript field + endpoint (`GET /app/programme/sessions/{id}/captions` or a field on the live slice); app renders when present; **provider integration stubbed/later** | ✅ **API surface now, provider later** |
-| **Speaker photo** | 908-2110 / 908-1744 | no speaker photo URL field | `Speaker.PhotoRelativePath` + `GET /app/speakers/{id}/photo` + CP upload; app renders photo, falls back to initials/anchor | ✅ **add now** |
+| **Speaker photo** | 908-2110 / 908-1744 | **DONE (P4)** — served by the existing anonymous D-357 route `/app/assets/SpeakerPhoto/{id}/image`; CP upload already ships (`SpeakersAddEdit.razor` `SimfImageUpload Category="SpeakerPhoto"`) | App renders the photo on the CV avatar (initials fall-back) + the speaker-list tile (anchor fall-back). **No new field/endpoint/migration** — D-357 reuse (the plan's `Speaker.PhotoRelativePath`/`/app/speakers/{id}/photo` would have duplicated it). | ✅ **render (D-357 reuse)** |
 
 ## P1 design notes — AS-BUILT (corrected 2026-06-16)
 
@@ -122,8 +122,12 @@ additive migration + tests first, then the app render.
    verified per-element fixes only: CV pill gap 8→18 (frame 72-wide pills) +
    tab→card gap 40→24; my-seat chip values both white (frame 905:1577/1579).
    Arabic CV-tab position test; E2E + PAGE-INDEX/plan docs. App-only, no backend.
-4. **P4 — Speaker photo API** (if owner approves) — additive field + endpoint +
-   CP upload + app render across speaker list & CV.
+4. **P4 — Speaker photo** ✅ **DONE** — D-357 reuse (no new field/endpoint/
+   migration): render the `SpeakerPhoto` asset on the CV avatar (initials
+   fall-back) + the speaker-list tile (anchor fall-back) via
+   `/app/assets/SpeakerPhoto/{id}/image`. Photo-URL wiring tests; E2E +
+   PAGE-INDEX/plan docs. (List shows the photo when present, else the frame's
+   anchor/star role glyph — the star/host-in-list is a separate open item.)
 5. **P5 — Live AI captions** (only if owner approves building the feature).
 6. **P6 — Wider wave parity-check** (session detail / booth / sponsor / archive)
    — confirm scope, then RTL-verified fixes.

@@ -8,8 +8,16 @@
 > [`tests/SIMF.Api.Tests/PublicSpeakersTests.cs`](../../../tests/SIMF.Api.Tests/PublicSpeakersTests.cs).
 > The **Flutter screen is built (D-302)** — widget tests in
 > `src/Mobile/simf_app/test/features/speakers/speakers_screen_test.dart` (cards,
-> card→profile nav, empty, error→retry) + model tests in `…/speaker_models_test.dart`.
-> Interim UI: avatar = initials, country = text (flag/photo asset pass is SIMF-VID-001).
+> card→profile nav, empty, error→retry, avatar-URL wiring) + model tests in
+> `…/speaker_models_test.dart`.
+>
+> **P4 speaker photo (2026-06-16):** the 44×44 gold-bordered avatar tile now
+> renders the speaker's uploaded photo (the D-357 **SpeakerPhoto** asset, served
+> anonymously at `GET /app/assets/SpeakerPhoto/{id}/image`), falling back to the
+> gold **anchor** glyph while it loads or when no photo is uploaded (the route
+> 404s) — so the list matches frame 908:1744 exactly in the no-photo state. No
+> new endpoint/field/migration (D-357 reuse; the legacy `photoRelativePath` is
+> not the byte source).
 
 | | |
 |--|--|

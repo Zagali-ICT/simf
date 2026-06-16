@@ -25,8 +25,8 @@ import 'data/speakers_repository.dart';
 /// start (right), the white name (16/SemiBold) over the beige rank·affiliation
 /// line (12/Regular), and a small beige caret at the inline end (left).
 ///
-/// Behaviour is unchanged from the mockup build — the avatar is rendered as the
-/// role tile and the country as text (the flag/photo asset pass is SIMF-VID-001).
+/// The avatar tile renders the speaker's uploaded SpeakerPhoto asset (D-357),
+/// falling back to the gold anchor glyph when none; the country renders as text.
 class SpeakersScreen extends ConsumerStatefulWidget {
   const SpeakersScreen({super.key});
 
@@ -137,6 +137,8 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
       );
     }
     final isArabic = l10n.isArabic;
+    // The card builds `{base}/app/assets/SpeakerPhoto/{id}/image` for the avatar.
+    final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(
         SimfTokens.space4,
@@ -151,6 +153,7 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
         return _SpeakerCard(
           speaker: speaker,
           isArabic: isArabic,
+          baseUrl: baseUrl,
           onTap: () => context.pushNamed(
             RouteNames.speakerProfile,
             pathParameters: <String, String>{'speakerId': speaker.id},
@@ -172,11 +175,13 @@ class _SpeakerCard extends StatelessWidget {
   const _SpeakerCard({
     required this.speaker,
     required this.isArabic,
+    required this.baseUrl,
     required this.onTap,
   });
 
   final SpeakerSummary speaker;
   final bool isArabic;
+  final String baseUrl;
   final VoidCallback onTap;
 
   @override
@@ -201,7 +206,9 @@ class _SpeakerCard extends StatelessWidget {
         // tile → name → caret.
         child: Row(
           children: <Widget>[
-            const _RoleTile(),
+            _SpeakerAvatar(
+              imageUrl: '$baseUrl/app/assets/SpeakerPhoto/${speaker.id}/image',
+            ),
             const SizedBox(width: SimfTokens.space4),
             Expanded(
               child: Column(
@@ -246,28 +253,40 @@ class _SpeakerCard extends StatelessWidget {
   }
 }
 
-/// The 44×44 gold-bordered anchor tile (frame 908:2004): a gold-tinted square
-/// (accent @ 15%) on a solid gold hairline. D-432 — the global speaker list
-/// uses the anchor for everyone (host is a per-session role, shown on detail).
-class _RoleTile extends StatelessWidget {
-  const _RoleTile();
+/// The 44×44 gold-bordered speaker avatar (frame 908:2004): a gold-tinted square
+/// (accent @ 15%) on a solid gold hairline. Renders the speaker's uploaded photo
+/// (the D-357 `SpeakerPhoto` asset) clipped to the tile, falling back to the
+/// gold anchor glyph while it loads or when no photo is uploaded (the route
+/// 404s). D-432 — the global list shows the anchor for everyone with no photo
+/// (host is a per-session role, shown on the session detail).
+class _SpeakerAvatar extends StatelessWidget {
+  const _SpeakerAvatar({required this.imageUrl});
+
+  final String imageUrl;
 
   @override
   Widget build(BuildContext context) {
+    const fallback = Icon(Icons.anchor, size: 20, color: SimfTokens.accent);
     return Container(
       width: 44,
       height: 44,
       alignment: Alignment.center,
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: SimfTokens.accent.withValues(alpha: 0.15),
         borderRadius:
             const BorderRadius.all(Radius.circular(SimfTokens.radiusSmall)),
         border: Border.all(color: SimfTokens.accent),
       ),
-      child: const Icon(
-        Icons.anchor,
-        size: 20,
-        color: SimfTokens.accent,
+      child: Image.network(
+        imageUrl,
+        width: 44,
+        height: 44,
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+        loadingBuilder: (context, child, progress) =>
+            progress == null ? child : fallback,
+        errorBuilder: (context, error, stackTrace) => fallback,
       ),
     );
   }
