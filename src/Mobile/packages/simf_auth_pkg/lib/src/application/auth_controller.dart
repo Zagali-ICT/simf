@@ -296,6 +296,34 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
     await reloadCurrentUser();
   }
 
+  /// Turns Face-ID sign-in off on this device: best-effort revokes the key on
+  /// the server, then clears the local id + private key so the biometric path
+  /// is disabled regardless of whether the server call succeeded.
+  Future<void> disableDeviceKey() async {
+    final id = await _secureStorage.read(StorageKeys.deviceKeyId);
+    if (id != null && id.isNotEmpty) {
+      try {
+        await _repository.revokeDeviceKey(id);
+      } catch (_) {
+        // Best-effort: clearing the local key below disables the biometric
+        // path even if the server revoke fails (the orphaned server key is
+        // unusable without the private key we are about to delete).
+      }
+    }
+    // Clear both local keys independently, so a failure on one delete does not
+    // skip the other (either left behind would keep the biometric path alive).
+    try {
+      await _secureStorage.delete(StorageKeys.deviceKeyId);
+    } catch (_) {
+      // best-effort
+    }
+    try {
+      await _secureStorage.delete(StorageKeys.deviceKeyPrivate);
+    } catch (_) {
+      // best-effort
+    }
+  }
+
   // ----- internals ---------------------------------------------------------
 
   void _setSignedIn(Session session) {

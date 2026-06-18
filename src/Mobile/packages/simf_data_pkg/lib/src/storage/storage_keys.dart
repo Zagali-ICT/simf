@@ -27,6 +27,12 @@ class StorageKeys {
   /// The last successfully-used sign-in email, pre-filled on the sign-in screen
   /// when the session has lapsed (Page_003 Logic L-3).
   static const String lastEmail = 'simf.prefs.last_email';
+
+  /// Set once the one-time "Enable Face ID?" prompt has been shown (enabled or
+  /// dismissed), so the nudge does not repeat on every sign-in. The المزيد
+  /// drawer toggle remains the way to enable/disable later.
+  static const String biometricPromptHandled =
+      'simf.prefs.biometric_prompt_handled';
   static const String lastSeenNotificationsAt =
       'simf.prefs.last_seen_notifications_at_iso';
   static const String accessibilityTextSize =

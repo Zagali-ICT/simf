@@ -10,6 +10,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_svg_icon.dart';
+import 'biometric_auth.dart';
 import 'post_auth_route.dart';
 import 'widgets/otp_code_boxes.dart';
 
@@ -102,7 +103,13 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
         return;
       }
       if (ref.read(authControllerProvider) is AuthStateSignedIn) {
-        // D-374 — an incomplete profile goes to the add-profile stage first.
+        // Offer Face-ID enrolment on the OTP path too (D-441) — closes the gap
+        // where only the direct password sign-in enrolled. D-374 — an
+        // incomplete profile goes to the add-profile stage first.
+        await maybeOfferBiometricEnrolment(context, ref);
+        if (!mounted) {
+          return;
+        }
         routeAfterAuth(context, ref);
       }
     } on AuthFailure catch (failure) {

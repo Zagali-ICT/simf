@@ -167,5 +167,55 @@ void main() {
       // A base64 IEEE-P1363 P-256 signature is 64 bytes.
       expect(base64.decode(captured).length, equals(64));
     });
+
+    test('disable revokes the server key and clears the local id + private key',
+        () async {
+      final repo = _MockAuthRepository();
+      final secure = _InMemSecureStorage();
+      await secure.write(StorageKeys.deviceKeyId, 'dk-1');
+      await secure.write(StorageKeys.deviceKeyPrivate, 'priv');
+      when(() => repo.revokeDeviceKey('dk-1')).thenAnswer((_) async {});
+
+      final container = ProviderContainer(
+        overrides: <Override>[
+          authRepositoryProvider.overrideWithValue(repo),
+          simfSecureStorageProvider.overrideWithValue(secure),
+        ],
+      );
+      addTearDown(container.dispose);
+      await _waitFor(container, (s) => s is AuthStateSignedOut);
+
+      await container.read(authControllerProvider.notifier).disableDeviceKey();
+
+      verify(() => repo.revokeDeviceKey('dk-1')).called(1);
+      expect(await secure.read(StorageKeys.deviceKeyId), isNull);
+      expect(await secure.read(StorageKeys.deviceKeyPrivate), isNull);
+    });
+
+    test('disable still clears the local key when the server revoke fails',
+        () async {
+      final repo = _MockAuthRepository();
+      final secure = _InMemSecureStorage();
+      await secure.write(StorageKeys.deviceKeyId, 'dk-1');
+      await secure.write(StorageKeys.deviceKeyPrivate, 'priv');
+      when(() => repo.revokeDeviceKey('dk-1'))
+          .thenThrow(Exception('offline'));
+
+      final container = ProviderContainer(
+        overrides: <Override>[
+          authRepositoryProvider.overrideWithValue(repo),
+          simfSecureStorageProvider.overrideWithValue(secure),
+        ],
+      );
+      addTearDown(container.dispose);
+      await _waitFor(container, (s) => s is AuthStateSignedOut);
+
+      final notifier = container.read(authControllerProvider.notifier);
+      await notifier.disableDeviceKey();
+
+      // Best-effort: the local key is gone, so the biometric path is off even
+      // though the server revoke threw.
+      expect(await notifier.hasEnrolledDeviceKey(), isFalse);
+    });
   });
 }

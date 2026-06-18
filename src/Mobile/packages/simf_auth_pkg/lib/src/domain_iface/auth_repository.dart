@@ -107,6 +107,10 @@ abstract class AuthRepository {
     required String challenge,
     required String signature,
   });
+
+  /// Revoke one of the caller's own device keys (turning Face-ID sign-in off).
+  /// Requires a signed-in approved caller.
+  Future<void> revokeDeviceKey(String deviceKeyId);
 }
 
 /// A successful sign-in either yields a [Session] outright, or an email-OTP

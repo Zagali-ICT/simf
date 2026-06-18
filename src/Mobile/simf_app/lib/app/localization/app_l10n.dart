@@ -438,6 +438,24 @@ class AppL10n {
         'Sign in with your password once on this device to enable face login.',
       );
 
+  // Face-ID activation — the side-menu toggle + the one-time post-sign-in
+  // prompt (D-441).
+  String get biometricEnableToggle => _t('الدخول ببصمة الوجه', 'Face ID sign-in');
+  String get biometricPromptTitle =>
+      _t('تفعيل الدخول بالبصمة؟', 'Enable Face ID sign-in?');
+  String get biometricPromptBody => _t(
+        'استخدم بصمتك للدخول في المرة القادمة دون كلمة المرور.',
+        'Use your face or fingerprint to sign in next time — no password needed.',
+      );
+  String get biometricPromptEnable => _t('تفعيل', 'Enable');
+  String get biometricPromptNotNow => _t('ليس الآن', 'Not now');
+  String get biometricEnabledToast =>
+      _t('تم تفعيل الدخول بالبصمة', 'Face ID sign-in enabled');
+  String get biometricEnableFailedToast =>
+      _t('تعذّر تفعيل الدخول بالبصمة', "Couldn't enable Face ID sign-in");
+  String get biometricDisabledToast =>
+      _t('تم إيقاف الدخول بالبصمة', 'Face ID sign-in turned off');
+
   // Email-OTP second factor + reset flow (Page 003 L-5/L-6).
   String get otpTitle => _t('رمز التحقق', 'Verification code');
   String get otpBody => _t(
