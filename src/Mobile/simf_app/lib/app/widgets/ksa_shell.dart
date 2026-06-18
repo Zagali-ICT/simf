@@ -120,7 +120,6 @@ class KsaPage extends StatelessWidget {
       ),
       child: Row(
         textDirection: TextDirection.ltr,
-        textDirection: TextDirection.ltr,
         children: <Widget>[
           // Leading: the back chevron on pushed pages; nothing on a tab root
           // (the ☰ in the trailing controller opens the menu instead).
