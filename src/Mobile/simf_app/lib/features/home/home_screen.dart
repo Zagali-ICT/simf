@@ -510,6 +510,9 @@ class _GreetingHeader extends StatelessWidget {
               ),
             ),
           ),
+          // The shared language + (inert) dark-mode controls, the same pair as
+          // every other shell page's header.
+          const KsaLangThemeButtons(size: 26),
           IconButton(
             tooltip: l10n.moreTitle,
             // Opens the shared side drawer (this header renders inside KsaPage's

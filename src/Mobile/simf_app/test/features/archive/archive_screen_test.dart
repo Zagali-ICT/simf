@@ -217,6 +217,24 @@ void main() {
       expect(urls, isNot(contains('archive/2024/legacy.jpg')));
     });
 
+    testWidgets('PAR-A1 — RTL: stat tiles run events → attendees → speakers '
+        '(right → left), matching the frame', (tester) async {
+      await _pump(
+        tester,
+        overrides: <Override>[
+          archiveEditionsProvider.overrideWith((ref) async => _editions),
+          archiveEditionDetailProvider('a1')
+              .overrideWith((ref) async => _detail),
+        ],
+        locale: const Locale('ar'),
+      );
+      // sessions=30 (الفعاليات) leads at the inline start (right); speakers=250
+      // (المتحدثون) is at the inline end (left).
+      final eventsDx = tester.getCenter(find.text('30')).dx;
+      final speakersDx = tester.getCenter(find.text('250')).dx;
+      expect(eventsDx, greaterThan(speakersDx));
+    });
+
     testWidgets('empty shows the empty state', (tester) async {
       await _pump(
         tester,
