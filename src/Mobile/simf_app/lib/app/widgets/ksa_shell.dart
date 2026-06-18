@@ -115,21 +115,25 @@ class KsaPage extends StatelessWidget {
   }
 
   Widget _defaultHeader(BuildContext context) {
-    final l10n = AppL10n.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: SimfTokens.space3,
         vertical: SimfTokens.space2,
       ),
       child: Row(
-        textDirection: TextDirection.ltr,
+        // Natural direction (owner 2026-06-18): the leading control sits at the
+        // inline START (physical right under RTL, left under LTR) and the
+        // trailing controls at the END — no forced LTR, so the bar mirrors with
+        // the locale.
         children: <Widget>[
           // Leading: the back chevron on pushed pages; nothing on a tab root
           // (the ☰ in the trailing controller opens the menu instead).
           SizedBox(
             width: 40,
             height: 40,
-            child: onBack == null ? null : KsaBackButton(onBack: onBack!),
+            child: onBack == null
+                ? null
+                : KsaBackButton(onBack: onBack!, mirrorInRtl: true),
           ),
           Expanded(
             child: Text(
@@ -145,18 +149,12 @@ class KsaPage extends StatelessWidget {
               ),
             ),
           ),
-          // The shared top controller — notifications + language + dark-mode +
-          // the drawer ☰, the same on every shell page. The ☰ opens the side
-          // menu via the nearest Scaffold (the Builder gives a context below it).
-          IconButton(
-            tooltip: l10n.notificationsTooltip,
-            onPressed: () => context.pushNamed(RouteNames.notifications),
-            icon: const Icon(
-              Icons.notifications_none_outlined,
-              color: Colors.white,
-              size: 22,
-            ),
-          ),
+          // The shared trailing controller — language + dark-mode + the drawer
+          // ☰, the same on every shell page. No bell here: the Figma content
+          // frames carry no notifications icon (it lives only on the signed-in
+          // home greeting header), so a guest never sees one. The ☰ opens the
+          // side menu via the nearest Scaffold (the Builder gives a context
+          // below it).
           const KsaLangThemeButtons(),
           Builder(
             builder: (ctx) => KsaMenuButton(
@@ -169,15 +167,28 @@ class KsaPage extends StatelessWidget {
   }
 }
 
-/// The circled back chevron (dark circle, white LTR chevron — frames place
-/// it at the physical left in both languages, the D-363 pattern).
+/// The circled back chevron (dark circle, white chevron). By default the glyph
+/// always points left — the D-363 forced-LTR header pattern still used by the
+/// speakers / session-detail / speaker-profile headers. In the shared
+/// natural-direction [KsaPage] header [mirrorInRtl] is set, so the chevron
+/// mirrors to point right under RTL, where the leading control sits at the
+/// inline start (physical right).
 class KsaBackButton extends StatelessWidget {
-  const KsaBackButton({required this.onBack, super.key});
+  const KsaBackButton({
+    required this.onBack,
+    this.mirrorInRtl = false,
+    super.key,
+  });
 
   final VoidCallback onBack;
 
+  /// Mirror the chevron horizontally under RTL. Only the natural-direction
+  /// shell header opts in; forced-LTR headers keep the always-left chevron.
+  final bool mirrorInRtl;
+
   @override
   Widget build(BuildContext context) {
+    final flip = mirrorInRtl && Directionality.of(context) == TextDirection.rtl;
     return IconButton(
       onPressed: onBack,
       style: IconButton.styleFrom(
@@ -185,7 +196,14 @@ class KsaBackButton extends StatelessWidget {
         shape: const CircleBorder(),
       ),
       // Figma frames use the iconamoon chevron, not a Material back-arrow.
-      icon: const SimfSvgIcon('assets/icons/ic_back.svg', size: 24, color: Colors.white),
+      icon: Transform.flip(
+        flipX: flip,
+        child: const SimfSvgIcon(
+          'assets/icons/ic_back.svg',
+          size: 24,
+          color: Colors.white,
+        ),
+      ),
     );
   }
 }
@@ -603,14 +621,21 @@ class KsaListRow extends StatelessWidget {
     required this.onTap,
     this.subtitle,
     this.badge,
+    this.badgeOutlined = false,
     super.key,
   });
 
   final String title;
   final String? subtitle;
 
-  /// The 72×64 gold box content (an icon or short text); null omits the box.
+  /// The 72×64 badge box content (an icon or short text); null omits the box.
   final Widget? badge;
+
+  /// When true the badge box is the **outlined** variant — a gold hairline over
+  /// the card fill instead of a solid gold fill (the guest-home FAQ / روح
+  /// السعودية rows, frame 758:2910). The caller colours [badge] to match
+  /// (gold content on the outlined box; white on the filled box).
+  final bool badgeOutlined;
   final VoidCallback onTap;
 
   @override
@@ -628,10 +653,14 @@ class KsaListRow extends StatelessWidget {
                 width: 72,
                 height: 64,
                 alignment: Alignment.center,
-                decoration: const BoxDecoration(
-                  color: SimfTokens.accent,
-                  borderRadius:
-                      BorderRadius.all(Radius.circular(SimfTokens.radius)),
+                decoration: BoxDecoration(
+                  color: badgeOutlined ? null : SimfTokens.accent,
+                  border: badgeOutlined
+                      ? Border.all(color: SimfTokens.accent)
+                      : null,
+                  borderRadius: const BorderRadius.all(
+                    Radius.circular(SimfTokens.radius),
+                  ),
                 ),
                 child: badge,
               ),

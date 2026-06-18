@@ -258,6 +258,34 @@ void main() {
       expect(prefs.getString(StorageKeys.preferredLanguage), 'en');
     });
 
+    testWidgets('RTL: the leading back control sits at the inline start '
+        '(physical right); the trailing ☰ at the end (left)', (tester) async {
+      await _pump(
+        tester,
+        KsaPage(
+          title: 'صفحة',
+          onBack: () {},
+          body: const Text('BODY'),
+        ),
+        locale: const Locale('ar'),
+      );
+
+      // Natural direction (no forced LTR): leading = start = right in Arabic.
+      final backDx = tester.getCenter(find.byType(KsaBackButton)).dx;
+      final menuDx = tester.getCenter(find.byType(KsaMenuButton)).dx;
+      expect(backDx, greaterThan(menuDx));
+    });
+
+    testWidgets('the standard header carries no notifications bell', (tester) async {
+      await _pump(
+        tester,
+        KsaPage(title: 'My page', onBack: () {}, body: const Text('BODY')),
+      );
+      // The bell lives only on the signed-in home greeting header (owner
+      // 2026-06-18); the shared header never shows one.
+      expect(find.byIcon(Icons.notifications_none_outlined), findsNothing);
+    });
+
     testWidgets('no onBack → no back button; custom header replaces the row',
         (tester) async {
       await _pump(
@@ -358,6 +386,48 @@ void main() {
       expect(find.byIcon(Icons.help_outline), findsOneWidget);
       await tester.tap(find.text('FAQ'));
       expect(taps, 1);
+    });
+
+    testWidgets('badgeOutlined draws a gold border instead of a gold fill',
+        (tester) async {
+      await _pump(
+        tester,
+        Scaffold(
+          body: Column(
+            children: <Widget>[
+              KsaListRow(title: 'Filled', badge: const Text('A'), onTap: () {}),
+              KsaListRow(
+                title: 'Outlined',
+                badge: const Text('B'),
+                badgeOutlined: true,
+                onTap: () {},
+              ),
+            ],
+          ),
+        ),
+      );
+
+      BoxDecoration badgeDecoration(String badgeText) => tester
+          .widget<Container>(
+            find
+                .ancestor(
+                  of: find.text(badgeText),
+                  matching: find.byType(Container),
+                )
+                .first,
+          )
+          .decoration! as BoxDecoration;
+
+      // The default badge is a solid gold fill with no border.
+      final filled = badgeDecoration('A');
+      expect(filled.color, SimfTokens.accent);
+      expect(filled.border, isNull);
+
+      // The outlined badge (guest FAQ / روح السعودية, frame 758:2910) is a gold
+      // hairline over the card — no fill.
+      final outlined = badgeDecoration('B');
+      expect(outlined.color, isNull);
+      expect(outlined.border, isNotNull);
     });
   });
 }

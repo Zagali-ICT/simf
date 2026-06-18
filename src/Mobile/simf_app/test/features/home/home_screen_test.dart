@@ -189,6 +189,12 @@ void main() {
       expect(find.text('Sessions'), findsOneWidget);
       expect(find.text('Speakers'), findsOneWidget);
       expect(find.text('Exhibition'), findsOneWidget);
+      // The guest tiles use the exact Figma SVG glyphs now (frame 758:2910),
+      // not the old Material icons.
+      expect(find.byIcon(Icons.mic_none_outlined), findsNothing);
+      expect(find.byIcon(Icons.calendar_today_outlined), findsNothing);
+      expect(find.byIcon(Icons.map_outlined), findsNothing);
+      expect(find.byIcon(Icons.grid_view_outlined), findsNothing);
       // The lower content mounts as the list scrolls.
       for (final below in <String>[
         'My badge', // the locked بطاقتي card — visible but inert
@@ -209,10 +215,14 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       expect(find.widgetWithText(FilledButton, 'Sign in'), findsOneWidget);
-      // The shared shell's top controller (notifications + ☰) is on every
-      // KsaPage including the guest home (D-395; owner: same top bar on all
-      // pages). Tapping the bell on a guest just routes through the auth gate.
-      expect(find.byTooltip('Notifications'), findsOneWidget);
+      // The guest home shows NO notifications bell (owner 2026-06-18): the
+      // Figma content/guest frames carry no bell — it lives only on the
+      // signed-in home greeting header. The shared ☰ + language + dark-mode
+      // controls remain on the guest top bar.
+      expect(find.byTooltip('Notifications'), findsNothing);
+      expect(find.byIcon(Icons.menu), findsOneWidget);
+      expect(find.byIcon(Icons.language), findsOneWidget);
+      expect(find.byIcon(Icons.dark_mode_outlined), findsOneWidget);
     });
 
     testWidgets('a public tile navigates to its route', (tester) async {

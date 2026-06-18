@@ -33,6 +33,10 @@ class _HomeIcons {
   static const String aiAssistant = 'assets/icons/home_ai_assistant.svg';
   static const String sessionSummary = 'assets/icons/home_session_summary.svg';
   static const String badge = 'assets/icons/home_badge.svg';
+  // Guest-home tile glyphs (frame 758:2910) — extracted line icons.
+  static const String sessions = 'assets/icons/home_sessions.svg';
+  static const String venueMap = 'assets/icons/home_map.svg';
+  static const String exhibition = 'assets/icons/home_exhibition.svg';
 }
 
 /// Best-effort signed-in profile for the greeting (the real name + avatar live
@@ -170,12 +174,12 @@ class _GuestHome extends StatelessWidget {
             children: <Widget>[
               KsaNavTile(
                 label: l10n.tileSessions,
-                icon: Icons.calendar_today_outlined,
+                iconAsset: _HomeIcons.sessions,
                 onTap: () => context.pushNamed(RouteNames.sessions),
               ),
               KsaNavTile(
                 label: l10n.tileSpeakers,
-                icon: Icons.mic_none_outlined,
+                iconAsset: _HomeIcons.speakers,
                 onTap: () => context.pushNamed(RouteNames.speakers),
               ),
             ],
@@ -185,12 +189,12 @@ class _GuestHome extends StatelessWidget {
             children: <Widget>[
               KsaNavTile(
                 label: l10n.tileVenueMap,
-                icon: Icons.map_outlined,
+                iconAsset: _HomeIcons.venueMap,
                 onTap: () => context.pushNamed(RouteNames.venueMap),
               ),
               KsaNavTile(
                 label: l10n.tileExhibition,
-                icon: Icons.grid_view_outlined,
+                iconAsset: _HomeIcons.exhibition,
                 onTap: () => context.pushNamed(RouteNames.booths),
               ),
             ],
@@ -200,7 +204,7 @@ class _GuestHome extends StatelessWidget {
           // unlocks it; never tappable as a guest.
           KsaNavTile(
             label: l10n.tileMyBadgeShort,
-            icon: Icons.badge_outlined,
+            iconAsset: _HomeIcons.badge,
             enabled: false,
           ),
           const SizedBox(height: SimfTokens.space6),
@@ -209,17 +213,20 @@ class _GuestHome extends StatelessWidget {
           KsaListRow(
             title: l10n.faqRowTitle,
             subtitle: l10n.faqRowSubtitle,
+            // Frame 758:2910 — the FAQ badge is the outlined (gold hairline)
+            // box with a gold "?" glyph, not a solid gold fill.
+            badgeOutlined: true,
             badge: const Icon(
               Icons.help_outline,
               size: 32,
-              color: Colors.white,
+              color: SimfTokens.accent,
             ),
             // No app FAQ endpoint exists yet — the about page carries the
             // venue/event info this row promises (tracked follow-up).
             onTap: () => context.pushNamed(RouteNames.aboutForum),
           ),
           const SizedBox(height: SimfTokens.space4),
-          _DiscoverSaudiRow(l10n: l10n),
+          _DiscoverSaudiRow(l10n: l10n, outlined: true),
           const SizedBox(height: SimfTokens.space6),
           FilledButton(
             onPressed: () => context.pushNamed(RouteNames.signIn),
@@ -846,21 +853,26 @@ class _SocialButton extends StatelessWidget {
 /// The روح السعودية discover row, shared by the guest + signed-in layouts —
 /// opens the configured Visit-Saudi link externally.
 class _DiscoverSaudiRow extends StatelessWidget {
-  const _DiscoverSaudiRow({required this.l10n});
+  const _DiscoverSaudiRow({required this.l10n, this.outlined = false});
 
   final AppL10n l10n;
+
+  /// The guest home uses the **outlined** badge (gold hairline + gold "KSA"),
+  /// matching frame 758:2910; the signed-in home keeps the filled gold badge.
+  final bool outlined;
 
   @override
   Widget build(BuildContext context) {
     return KsaListRow(
       title: l10n.discoverSaudiTitle,
       subtitle: l10n.discoverSaudiSubtitle,
-      badge: const Text(
+      badgeOutlined: outlined,
+      badge: Text(
         'KSA',
         style: TextStyle(
-          color: Colors.white,
+          color: outlined ? SimfTokens.accent : Colors.white,
           fontSize: SimfTokens.textMd,
-          fontWeight: FontWeight.w500,
+          fontWeight: outlined ? FontWeight.w800 : FontWeight.w500,
         ),
       ),
       onTap: () => unawaited(_openLink(BuildConfig.visitSaudiUrl)),
