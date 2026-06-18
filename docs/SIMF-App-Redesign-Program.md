@@ -84,7 +84,7 @@ each with its own plan→approve step before code.
 | W2-6 | Location (venue map) | `/map` | 215:562 | ✅ shipped 2026-06-13 (D-378 — Google map replaced by the venue 2D plane per owner; bottom info card + gold controls) | `cf7214e` |
 | W2-7 | Calendar (sessions) | `/sessions` | 215:767 | ✅ shipped 2026-06-13 (D-378 — white day strip, re-tap clears; pills relabelled to the frame copy) | `8a0387f` |
 | W2-8 | QR (badge) | `/badge` | 221:769 | ✅ shipped 2026-06-13 (D-378 — gold identity strip with masked id tail; امسح لإضافة شخص → `/contacts/scan`) | `f35ffe3` |
-| W2-9 | Notifications | `/notifications` | 223:4264 | pending | — |
+| W2-9 | Notifications | `/notifications` | 223:4264 | ✅ shipped 2026-06-17 (D-399 — filter chips, grouped list, search) | — |
 | W2-10 | Visitor home state 512:1659 | `/` | 512:1659 | not reviewed yet — folded under the home follow-up | — |
 
 ## Per-page gate checklist (every row above must pass all of these)

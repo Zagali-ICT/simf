@@ -120,6 +120,7 @@ class KsaPage extends StatelessWidget {
       ),
       child: Row(
         textDirection: TextDirection.ltr,
+        textDirection: TextDirection.ltr,
         children: <Widget>[
           // Leading: the back chevron on pushed pages; nothing on a tab root
           // (the ☰ in the trailing controller opens the menu instead).
@@ -181,11 +182,7 @@ class KsaBackButton extends StatelessWidget {
         shape: const CircleBorder(),
       ),
       // Figma frames use the iconamoon chevron, not a Material back-arrow.
-      icon: const SimfSvgIcon(
-        'assets/icons/ic_back.svg',
-        size: 24,
-        color: Colors.white,
-      ),
+      icon: const SimfSvgIcon('assets/icons/ic_back.svg', size: 24, color: Colors.white),
     );
   }
 }
