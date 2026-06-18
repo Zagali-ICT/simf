@@ -1,0 +1,4 @@
+ D:\SIMF\System\V1.0.0\deploy\app-web\publish-app-web.ps1 `
+      -ApiBase "https://simf_api.zagali-ict.com/api/v1" `
+      -OutDir  "D:\SIMF\Publish\simf-app-web"
+

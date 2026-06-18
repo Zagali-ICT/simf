@@ -1,4 +1,4 @@
-﻿// Tests: SIMF.Api.Tests/IdentitySeederTests.cs (super-admin, TOTP, audit,
+// Tests: SIMF.Api.Tests/IdentitySeederTests.cs (super-admin, TOTP, audit,
 //        idempotency, D-377 baseline lookups + core content,
 //        D-390 2FA-disable-persists-across-reseed)
 using Microsoft.AspNetCore.Identity;
@@ -878,19 +878,76 @@ public sealed class IdentitySeeder(
     private async Task EnsureDemoSpeakersAsync(
         Guid actorUserId, CancellationToken cancellationToken)
     {
-        // PhotoRelativePath carries a test portrait URL (D-346 — "use any photo
-        // for testing"): the field already exists (no migration), the
-        // /content/site proxy now passes it through, and the Website speaker
-        // card renders it when present. Placeholder portraits from pravatar.cc.
-        var seed = new (string Code, string Name, string NameArabic, string Rank, int Order, string Photo)[]
+        var seed = new (
+            string Code, string Name, string NameArabic, string Rank, int Order, string Photo,
+            string BioEn, string BioAr,
+            string? QualEn, string? QualAr,
+            string? TrainEn, string? TrainAr,
+            string? AwardsEn, string? AwardsAr)[]
         {
-            ("DEMO-SPK-01", "Dr. Sarah Al-Otaibi", "د. سارة العتيبي", "Maritime Security Strategist", 10, "https://i.pravatar.cc/300?img=47"),
-            ("DEMO-SPK-02", "Adm. James Whitmore", "الأدميرال جيمس ويتمور", "Former Fleet Commander", 20, "https://i.pravatar.cc/300?img=12"),
-            ("DEMO-SPK-03", "Prof. Khalid Al-Harbi", "أ.د. خالد الحربي", "Blue-Economy Researcher", 30, "https://i.pravatar.cc/300?img=33"),
-            ("DEMO-SPK-04", "Dr. Liang Chen", "د. ليانغ تشين", "Global Supply-Chain Economist", 40, "https://i.pravatar.cc/300?img=68"),
-            ("DEMO-SPK-05", "Capt. Maria Santos", "النقيب ماريا سانتوس", "Port Operations Expert", 50, "https://i.pravatar.cc/300?img=45"),
-            ("DEMO-SPK-06", "Dr. Yuki Tanaka", "د. يوكي تاناكا", "Naval Technology Advisor", 60, "https://i.pravatar.cc/300?img=60"),
-            ("DEMO-SPK-07", "Cdre. Olivier Dubois", "العميد أوليفييه دوبوا", "Coastal Defence Specialist", 70, "https://i.pravatar.cc/300?img=15"),
+            ("DEMO-SPK-01", "Dr. Sarah Al-Otaibi", "د. سارة العتيبي", "Maritime Security Strategist", 10, "https://i.pravatar.cc/300?img=47",
+             "Dr. Sarah Al-Otaibi is a leading maritime security strategist with over 20 years of experience in regional and international maritime law enforcement, threat intelligence, and naval cooperation frameworks.",
+             "تعدّ الدكتورة سارة العتيبي من أبرز المتخصصات في استراتيجيات الأمن البحري، وتتمتع بخبرة تتجاوز 20 عاماً في مجالات إنفاذ قانون البحار الإقليمي والدولي، وتحليل التهديدات الاستخباراتية، وأُطر التعاون البحري.",
+             "PhD in Maritime Law · King Abdulaziz University · MSc in Strategic Studies · Royal College of Defence Studies",
+             "دكتوراه في قانون البحار · جامعة الملك عبدالعزيز · ماجستير في الدراسات الاستراتيجية · الكلية الملكية للدراسات الدفاعية",
+             "Former Senior Advisor · Saudi Ports Authority · Lead Analyst · GCC Maritime Security Centre",
+             "المستشارة الأولى السابقة · هيئة الموانئ السعودية · كبيرة المحللين · مركز الأمن البحري لدول مجلس التعاون",
+             "King Faisal Prize for Maritime Research 2022 · IMO Award of Excellence 2019",
+             "جائزة الملك فيصل للبحوث البحرية 2022 · جائزة التميز من المنظمة البحرية الدولية 2019"),
+            ("DEMO-SPK-02", "Adm. James Whitmore", "الأدميرال جيمس ويتمور", "Former Fleet Commander", 20, "https://i.pravatar.cc/300?img=12",
+             "Admiral James Whitmore (Ret.) served as Commander of the Fifth Fleet and played a pivotal role in shaping multilateral maritime security architecture in the Arabian Gulf and Red Sea regions.",
+             "خدم الأدميرال جيمس ويتمور (متقاعد) قائداً للأسطول الخامس، وأدّى دوراً محورياً في تشكيل الهيكل الأمني البحري متعدد الأطراف في منطقة الخليج العربي والبحر الأحمر.",
+             "MA in Naval Strategy · US Naval War College · BA in International Relations · US Naval Academy",
+             "ماجستير في الاستراتيجية البحرية · كلية الحرب البحرية الأمريكية · بكالوريوس في العلاقات الدولية · الأكاديمية البحرية الأمريكية",
+             "Commander Fifth Fleet · Director of Maritime Operations · NATO Standing Naval Forces",
+             "قائد الأسطول الخامس · مدير العمليات البحرية · قوات الناتو البحرية الدائمة",
+             "Defense Superior Service Medal · Legion of Merit · Meritorious Service Medal",
+             "وسام التميز الدفاعي الرفيع · وسام الاستحقاق · وسام الخدمة الجليلة"),
+            ("DEMO-SPK-03", "Prof. Khalid Al-Harbi", "أ.د. خالد الحربي", "Blue-Economy Researcher", 30, "https://i.pravatar.cc/300?img=33",
+             "Professor Khalid Al-Harbi is a pioneering researcher in blue economy and sustainable maritime development. His work focuses on integrating ocean resource management with Vision 2030 objectives.",
+             "الأستاذ الدكتور خالد الحربي باحث رائد في الاقتصاد الأزرق والتنمية البحرية المستدامة. ينصبّ عمله على دمج إدارة الموارد البحرية مع أهداف رؤية 2030.",
+             "PhD in Ocean Economics · King Abdullah University of Science and Technology · MSc in Marine Biology · King Abdulaziz University",
+             "دكتوراه في اقتصاد المحيطات · جامعة الملك عبدالله للعلوم والتقنية · ماجستير في الأحياء البحرية · جامعة الملك عبدالعزيز",
+             "Lead Researcher · KAUST Center for Maritime Studies · Consultant · Saudi Vision 2030 Marine Economy Task Force",
+             "الباحث الرئيسي · مركز جامعة الملك عبدالله للدراسات البحرية · مستشار · فريق عمل الاقتصاد البحري لرؤية 2030",
+             "Saudi National Prize for Scientific Excellence 2023 · UNESCO Ocean Sciences Award 2021",
+             "جائزة المملكة الوطنية للتميز العلمي 2023 · جائزة علوم المحيطات من اليونسكو 2021"),
+            ("DEMO-SPK-04", "Dr. Liang Chen", "د. ليانغ تشين", "Global Supply-Chain Economist", 40, "https://i.pravatar.cc/300?img=68",
+             "Dr. Liang Chen specialises in global maritime supply chains, port economics, and the resilience of trade corridors. He advises major port authorities and international shipping organisations worldwide.",
+             "يتخصص الدكتور ليانغ تشين في سلاسل الإمداد البحرية العالمية، واقتصاديات الموانئ، ومرونة ممرات التجارة. ويقدم استشاراته لكبرى هيئات الموانئ والمنظمات الدولية للشحن حول العالم.",
+             "PhD in Port Economics · Shanghai Maritime University · MBA · CEIBS",
+             "دكتوراه في اقتصاديات الموانئ · جامعة شنغهاي البحرية · ماجستير في إدارة الأعمال · كلية CEIBS",
+             "Senior Economist · UNCTAD Maritime Division · Senior Director · Asia-Pacific Logistics Association",
+             "كبير الاقتصاديين · قسم شؤون البحار بالأونكتاد · المدير الأول · جمعية الخدمات اللوجستية آسيا-باسيفيك",
+             "World Shipping Council Research Prize 2022 · APEC Distinguished Researcher Award 2020",
+             "جائزة البحث العلمي لمجلس الشحن العالمي 2022 · جائزة الباحث المتميز من التعاون الاقتصادي لآسيا والمحيط الهادئ 2020"),
+            ("DEMO-SPK-05", "Capt. Maria Santos", "النقيب ماريا سانتوس", "Port Operations Expert", 50, "https://i.pravatar.cc/300?img=45",
+             "Captain Maria Santos has three decades of hands-on port operations experience spanning container logistics, bulk cargo management, and the implementation of smart port technologies across Latin American and Gulf ports.",
+             "قضت النقيب ماريا سانتوس ثلاثة عقود في العمليات الميدانية للموانئ، مشمولةً اللوجستيات الحاوياتية وإدارة البضائع السائبة وتطبيق تقنيات الموانئ الذكية في موانئ أمريكا اللاتينية والخليج.",
+             "Master Mariner Certificate · Brazilian Maritime Authority · Executive Certificate in Port Management · IAPH",
+             "شهادة الملاح الأول · السلطة البحرية البرازيلية · شهادة تنفيذية في إدارة الموانئ · IAPH",
+             "Operations Director · Port of Santos · Senior Advisor · International Association of Ports and Harbors",
+             "مديرة العمليات · ميناء سانتوس · المستشارة الأولى · الرابطة الدولية للموانئ والمرافئ",
+             "IAPH Excellence in Port Operations Award 2023 · Lloyd's List Top 100 in Shipping",
+             "جائزة التميز في عمليات الموانئ من IAPH 2023 · قائمة Lloyd's لأفضل 100 شخصية في الشحن"),
+            ("DEMO-SPK-06", "Dr. Yuki Tanaka", "د. يوكي تاناكا", "Naval Technology Advisor", 60, "https://i.pravatar.cc/300?img=60",
+             "Dr. Yuki Tanaka is a renowned naval technology advisor focusing on autonomous underwater vehicles (AUV), AI-driven threat detection, and next-generation sonar systems for both defence and civilian maritime sectors.",
+             "الدكتور يوكي تاناكا مستشار متخصص في تقنيات الملاحة البحرية، يركز على المركبات المائية المستقلة (AUV)، والكشف عن التهديدات بالذكاء الاصطناعي، وأنظمة السونار من الجيل التالي للقطاعين الدفاعي والمدني.",
+             "PhD in Ocean Engineering · University of Tokyo · MSc in Robotics · Osaka University",
+             "دكتوراه في هندسة المحيطات · جامعة طوكيو · ماجستير في الروبوتات · جامعة أوساكا",
+             "Chief Scientist · Japan Agency for Marine-Earth Science · Technical Director · JMSDF Innovation Lab",
+             "كبير العلماء · الوكالة اليابانية لعلوم البحار والأرض · المدير الفني · مختبر الابتكار في القوات البحرية اليابانية",
+             "IEEE Ocean Engineering Society Award 2022 · Japanese Government Science Prize",
+             "جائزة جمعية هندسة المحيطات IEEE 2022 · جائزة الحكومة اليابانية للعلوم"),
+            ("DEMO-SPK-07", "Cdre. Olivier Dubois", "العميد أوليفييه دوبوا", "Coastal Defence Specialist", 70, "https://i.pravatar.cc/300?img=15",
+             "Commodore Olivier Dubois (Ret.) is a specialist in coastal defence architecture, combined joint maritime operations, and NATO interoperability standards. He serves on the boards of several European maritime security think-tanks.",
+             "العميد أوليفييه دوبوا (متقاعد) متخصص في هندسة الدفاع الساحلي، والعمليات البحرية المشتركة، ومعايير التشغيل البيني لحلف الناتو. يشغل عضوية مجالس عدد من مراكز الفكر الأوروبية للأمن البحري.",
+             "War Studies Diploma · École de Guerre · MSc in Defence Technology · École Polytechnique",
+             "دبلوم الدراسات الحربية · مدرسة الحرب الفرنسية · ماجستير في تكنولوجيا الدفاع · المدرسة البوليتكنيكية",
+             "Commander of Coastal Defence · French Navy · NATO Maritime Security Advisor · Allied Command Operations",
+             "قائد الدفاع الساحلي · البحرية الفرنسية · مستشار الأمن البحري في الناتو · القيادة العليا للحلفاء للعمليات",
+             "Légion d'honneur · NATO Meritorious Service Medal · French National Defence Medal",
+             "وسام جوقة الشرف الفرنسي · وسام الخدمة الجليلة للناتو · وسام الدفاع الوطني الفرنسي"),
         };
 
         var now = timeProvider.GetUtcNow();
@@ -900,28 +957,42 @@ public sealed class IdentitySeeder(
             .ToDictionaryAsync(s => s.Code, cancellationToken);
 
         var inserted = 0;
-        foreach (var (code, name, nameArabic, rank, order, photo) in seed)
+        foreach (var row in seed)
         {
-            if (existing.TryGetValue(code, out var current))
+            if (existing.TryGetValue(row.Code, out var current))
             {
-                // Already seeded — backfill the test photo if it is missing so an
-                // earlier photo-less seed still ends up with a portrait.
+                // Backfill photo and bio on any earlier seed that missed them.
                 if (string.IsNullOrEmpty(current.PhotoRelativePath))
-                {
-                    current.PhotoRelativePath = photo;
-                }
+                    current.PhotoRelativePath = row.Photo;
+                current.Bio ??= row.BioEn;
+                current.BioArabic ??= row.BioAr;
+                current.Qualifications ??= row.QualEn;
+                current.QualificationsArabic ??= row.QualAr;
+                current.TrainingExperience ??= row.TrainEn;
+                current.TrainingExperienceArabic ??= row.TrainAr;
+                current.Awards ??= row.AwardsEn;
+                current.AwardsArabic ??= row.AwardsAr;
                 continue;
             }
             appDbContext.Speakers.Add(new SIMF.Domain.Programme.Speaker
             {
                 Id = Guid.NewGuid(),
-                Code = code,
-                Name = name,
-                NameArabic = nameArabic,
-                Rank = rank,
-                DisplayOrder = order,
-                PhotoRelativePath = photo,
+                Code = row.Code,
+                Name = row.Name,
+                NameArabic = row.NameArabic,
+                Rank = row.Rank,
+                DisplayOrder = row.Order,
+                PhotoRelativePath = row.Photo,
+                Bio = row.BioEn,
+                BioArabic = row.BioAr,
+                Qualifications = row.QualEn,
+                QualificationsArabic = row.QualAr,
+                TrainingExperience = row.TrainEn,
+                TrainingExperienceArabic = row.TrainAr,
+                Awards = row.AwardsEn,
+                AwardsArabic = row.AwardsAr,
                 IsActive = true,
+                AllowsMeetingRequests = true,
                 CreatedBy = actorUserId,
                 CreatedAt = now,
             });

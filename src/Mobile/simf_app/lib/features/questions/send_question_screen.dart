@@ -143,12 +143,16 @@ class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
         ),
         const SizedBox(height: SimfTokens.space2),
         // Frame 934:3668 — the tinted multiline question box: navyDeep fill on
-        // the 8px radius, the placeholder beige and inline-end aligned.
+        // the 8px radius, a faint beige 0.2 hairline border, the placeholder beige and inline-end aligned.
         Container(
           decoration: BoxDecoration(
             color: SimfTokens.navyDeep,
             borderRadius:
                 BorderRadius.circular(SimfTokens.radius),
+            border: Border.all(
+              color: SimfTokens.beigeBorder,
+              width: SimfTokens.hairline,
+            ),
           ),
           padding: const EdgeInsets.symmetric(
             horizontal: SimfTokens.space2,

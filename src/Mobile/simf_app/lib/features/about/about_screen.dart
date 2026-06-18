@@ -64,9 +64,10 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return Scaffold(
-      appBar: AppBar(leading: const SimfBackButton(), title: Text(l10n.aboutTitle)),
-      body: SafeArea(child: _buildBody(l10n)),
+    return KsaPage(
+      title: l10n.aboutTitle,
+      onBack: () => ksaBackOrHome(context),
+      body: _buildBody(l10n),
     );
   }
 
@@ -123,7 +124,7 @@ class _AboutHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return KsaCard(
       child: Padding(
         padding: const EdgeInsets.all(SimfTokens.space4),
         child: Column(
@@ -142,7 +143,7 @@ class _AboutHeroCard extends StatelessWidget {
             SelectableText(
               body,
               style: const TextStyle(
-                color: SimfTokens.txtSecondary,
+                color: Colors.white,
                 height: 1.8,
                 fontSize: SimfTokens.textMd,
               ),

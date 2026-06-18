@@ -11,6 +11,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_svg_icon.dart';
 import 'data/speaker_models.dart';
 import 'data/speakers_repository.dart';
 import 'speaker_initials.dart';
@@ -229,7 +230,7 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(
         SimfTokens.space4,
-        SimfTokens.space5,
+        SimfTokens.space8 + SimfTokens.space6, // 56px — matches Figma large gap above avatar
         SimfTokens.space4,
         SimfTokens.space6,
       ),
@@ -299,14 +300,13 @@ class _Avatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final initialsContent = Center(
-      child: Text(
-        initials,
-        style: const TextStyle(
-          color: SimfTokens.navy,
-          fontWeight: FontWeight.w700,
-          fontSize: SimfTokens.textHero,
-        ),
+    // The Figma placeholder is the gold SIMF anchor icon on white;
+    // text initials are used only when the SVG itself fails to load.
+    final placeholder = Center(
+      child: SimfSvgIcon(
+        'assets/icons/speaker_placeholder.svg',
+        size: 64,
+        color: SimfTokens.accent,
       ),
     );
     // The gold ring is the outer circle; a 2.77px pad reveals it around the
@@ -332,8 +332,8 @@ class _Avatar extends StatelessWidget {
             fit: BoxFit.cover,
             gaplessPlayback: true,
             loadingBuilder: (context, child, progress) =>
-                progress == null ? child : initialsContent,
-            errorBuilder: (context, error, stackTrace) => initialsContent,
+                progress == null ? child : placeholder,
+            errorBuilder: (context, error, stackTrace) => placeholder,
           ),
         ),
       ),
@@ -361,9 +361,8 @@ class _CvTabs extends StatelessWidget {
     return Row(
       children: <Widget>[
         for (var i = 0; i < titles.length; i++) ...<Widget>[
-          // Frame 912:2312 — four equal pills with an ~18px gap (4×72 + 3×18 =
-          // 343); with Expanded the gap drives the pill width to the frame's 72.
-          if (i > 0) const SizedBox(width: 18),
+          // Frame 912:2312 — four equal pills with an ~16px gap (SimfTokens.space4)
+          if (i > 0) const SizedBox(width: SimfTokens.space4),
           Expanded(
             child: _CvTab(
               label: titles[i],
@@ -436,7 +435,7 @@ class _CvCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(
-        horizontal: SimfTokens.space2,
+        horizontal: SimfTokens.space4,
         vertical: SimfTokens.space4,
       ),
       decoration: const BoxDecoration(
@@ -445,7 +444,7 @@ class _CvCard extends StatelessWidget {
       ),
       child: Text(
         body,
-        textAlign: TextAlign.right,
+        textAlign: TextAlign.start,
         style: const TextStyle(
           color: Colors.white,
           fontSize: SimfTokens.textMd,
@@ -505,8 +504,8 @@ class _SessionRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: SimfTokens.space2),
-            const Icon(
-              Icons.chevron_left,
+            const SimfSvgIcon(
+              'assets/icons/ic_caret_left.svg',
               color: SimfTokens.txtTertiary,
               size: 18,
             ),
