@@ -54,7 +54,11 @@ const _groups = <SponsorTierGroup>[
   ),
 ];
 
-Future<void> _pump(WidgetTester tester, List<Override> overrides) async {
+Future<void> _pump(
+  WidgetTester tester,
+  List<Override> overrides, {
+  Locale locale = const Locale('en'),
+}) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: <Override>[
@@ -62,7 +66,7 @@ Future<void> _pump(WidgetTester tester, List<Override> overrides) async {
         ...overrides,
       ],
       child: MaterialApp(
-        locale: const Locale('en'),
+        locale: locale,
         supportedLocales: AppL10n.supportedLocales,
         localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
           ...AppL10n.localizationsDelegates,
@@ -158,6 +162,35 @@ void main() {
         urls,
         contains('http://test.local/api/v1/app/assets/SponsorLogo/s2/image'),
       );
+    });
+
+    testWidgets('PAR-S2 — RTL: the logo badge leads at the inline start (right) '
+        'of the sponsor name', (tester) async {
+      await _pump(
+        tester,
+        <Override>[
+          sponsorGroupsProvider.overrideWith(
+            (ref) async => const <SponsorTierGroup>[
+              SponsorTierGroup(
+                tier: 1,
+                tierName: 'Strategic',
+                sponsors: <Sponsor>[
+                  Sponsor(
+                    id: 's1', nameEn: 'SAMI', nameAr: 'سامي',
+                    tierName: 'Strategic', displayOrder: 0,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+        locale: const Locale('ar'),
+      );
+      // Initials fallback ('س' from 'سامي') marks the logo badge; it must sit
+      // to the inline start (physical right) of the name, per frame 922:2824.
+      final badgeDx = tester.getCenter(find.text('س')).dx;
+      final nameDx = tester.getCenter(find.text('سامي')).dx;
+      expect(badgeDx, greaterThan(nameDx));
     });
 
     testWidgets('empty groups show the empty state', (tester) async {

@@ -210,6 +210,35 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('PAR-D2/D-extra — RTL: the gold CTA, the speaker role box and '
+        'the seat marker lead at the inline start (right); the chevron trails '
+        '(left)', (tester) async {
+      tester.view.physicalSize = const Size(1200, 2600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await _pump(
+        tester,
+        repo: _FakeDetailRepo(detail: _detail(), seat: _seat),
+        controller: _SignedInController(),
+        locale: const Locale('ar'),
+      );
+
+      // Speaker role box (anchor) sits to the right of the speaker name.
+      final anchorDx = tester.getCenter(find.byIcon(Icons.anchor)).dx;
+      final nameDx = tester.getCenter(find.text('د. ريف')).dx;
+      expect(anchorDx, greaterThan(nameDx));
+
+      // Gold add-to-calendar (FilledButton) sits to the right of the reminder.
+      final filledDx = tester.getCenter(find.byType(FilledButton)).dx;
+      final outlinedDx = tester.getCenter(find.byType(OutlinedButton)).dx;
+      expect(filledDx, greaterThan(outlinedDx));
+
+      // The seat-card chevron sits at the inline end (far left).
+      final chevronDx = tester.getCenter(find.byIcon(Icons.chevron_left)).dx;
+      expect(chevronDx, lessThan(anchorDx));
+    });
+
     testWidgets('a guest sees no my-seat card', (tester) async {
       await _pump(
         tester,

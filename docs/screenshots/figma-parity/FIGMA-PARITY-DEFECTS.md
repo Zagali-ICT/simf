@@ -15,32 +15,33 @@ Figma source of truth: file `PSXHhY0UVTAPSaIOf9uNKd`, page "Ready for Test".
 | ID | Severity | Class | Defect | Status |
 |----|----------|-------|--------|--------|
 | PAR-S1 | High | UI/localization | Tier band labels render the **English** `tierName` ("Platinum / Gold / Silver") in the Arabic RTL screen. Figma shows Arabic descriptors "الرعاية الاستراتيجية / رعاة بريميوم / رعاة ذهبيون". Also the tier *scheme* differs (Strategic/Premium/Gold vs Platinum/Gold/Silver). | OPEN |
-| PAR-S2 | High | RTL layout | Sponsor card internal order is **mirrored**: app = logo box at inline-END (left) + chevron at inline-START (right); Figma = logo at inline-START (right) + chevron at inline-END (left). | OPEN |
-| PAR-S3 | Low | UI/data | Hero + premium cards omit the **subtitle/description** Figma shows (e.g. "الراعي الاستراتيجي · شريك التحول الدفاعي…"). Confirm whether sponsor description is populated. | OPEN |
+| PAR-S2 | High | RTL layout | Sponsor card internal order is **mirrored**: app = logo box at inline-END (left) + chevron at inline-START (right); Figma = logo at inline-START (right) + chevron at inline-END (left). | **FIXED** (b… P6 batch) |
+| PAR-S3 | Low | UI/data | Hero + premium cards omit the **subtitle/description** Figma shows (e.g. "الراعي الاستراتيجي · شريك التحول الدفاعي…"). Code renders `localizedTagline ?? url` when present → **data gap, not code.** | NEEDS-DATA |
 
 ## P6 — Booth (frame `922:2458` Halls) · booths screen under `features/venuemap/`
 
 | ID | Severity | Class | Defect | Status |
 |----|----------|-------|--------|--------|
-| PAR-B1 | High | UI/data | Booth card omits the **officer block** (officer name + avatar + "المسؤول في الجناح") and the **email/phone contact row** Figma shows. Verify the API returns officer/contact fields. | OPEN |
-| PAR-B2 | Med | UI/data | Middle row shows **sector + booth-code**; Figma shows **booth-code + HALL name**. App drops the hall name. | OPEN |
-| PAR-B3 | High | RTL layout | Logo box mirrored to inline-END (left); Figma has it at inline-START (right). Same pattern as PAR-S2. Search icon also on the opposite side. | OPEN |
-| PAR-B4 | Low | UI/data | Card subtitle **duplicates** the company name (white name + identical gray subtitle). | OPEN |
+| PAR-B1 | High | UI/data | Booth card omits the **officer block** + **email/phone contact row** Figma shows. **Code already renders both** (`_OfficerRow`/`_ContactBoxes`) when present — prod has `officerName/Phone/Email` all null → **data gap.** | NEEDS-DATA |
+| PAR-B2 | Med | UI/data | Middle row shows sector + booth-code; Figma shows booth-code + HALL name. **Code renders `localizedHallName ?? sector`** — prod has `hallName` null (D11: never invent) → **data gap.** | NEEDS-DATA |
+| PAR-B3 | High | RTL layout | Logo box mirrored to inline-END (left); Figma has it at inline-START (right). Search icon also on the opposite side (`suffixIcon`→`prefixIcon`). | **FIXED** (P6 batch) |
+| PAR-B4 | Low | UI/data | Card subtitle duplicates the company name — prod seed has `name == exhibitorName`; code shows distinct fields when they differ → **data artifact.** | NEEDS-DATA |
 
 ## P6 — Archive (frame `925:3079`) · `features/archive/archive_screen.dart`
 
 | ID | Severity | Class | Defect | Status |
 |----|----------|-------|--------|--------|
-| PAR-A1 | Low | RTL/order | The three stat cards are in **reversed order** vs Figma — app: events \| attendees \| speakers; Figma: speakers \| attendees \| events. | OPEN |
+| PAR-A1 | Low | RTL/order | The three stat cards are in **reversed order** vs Figma — app: events \| attendees \| speakers; Figma: speakers \| attendees \| events. | **FIXED** (P6 batch) |
 | PAR-A2 | — | NOT-VERIFIABLE | Gallery / session-titles / past-speakers sections empty in prod (`gallery:[]`, `sessionTitles:[]`, `pastSpeakers:[]`) → app correctly hides them; cannot verify vs Figma. | NEEDS-DATA |
 
 ## P6 — Session detail (frame `889:2450` Choose Sessions) · session-detail screen under `features/sessions/`
 
 | ID | Severity | Class | Defect | Status |
 |----|----------|-------|--------|--------|
-| PAR-D1 | Med | UI | Code badge crams the **raw code "S-001"** into a small circular badge (text overflows/wraps); Figma shows a clean 2-digit **ordinal** ("02"). | OPEN |
-| PAR-D2 | Low | RTL/order | Bottom-button order **reversed** — gold "أضف إلى تقويمي" on left (app) vs right (Figma); "تذكير" mirrored opposite. | OPEN |
-| PAR-D3 | Low | UI/data | Missing **session-type pill** ("جلسة رئيسية"); app shows only the hall pill (session `categoryName` is null → partly data). | OPEN |
+| PAR-D1 | Med | UI | Code badge crams the **raw code "S-001"** into a small circular badge (text overflows/wraps); Figma shows a clean 2-digit ordinal ("02"). Fixed by `FittedBox(scaleDown)` — keeps real code, no overflow (no ordinal field exists). | **FIXED** (P6 batch) |
+| PAR-D2 | Low | RTL/order | Bottom-button order **reversed** — gold "أضف إلى تقويمي" on left (app) vs right (Figma); "تذكير" mirrored opposite. | **FIXED** (P6 batch) |
+| PAR-D-extra | Low | RTL layout | Same mirror in `_SpeakerCard` (role box) + `_SeatCard` (seat marker / chevron) — data/auth-hidden, verified by position tests. | **FIXED** (P6 batch) |
+| PAR-D3 | Low | UI/data | Missing **session-type pill** ("جلسة رئيسية"); code renders the category pill when present — session `categoryName` is null → **data gap.** | NEEDS-DATA |
 | PAR-D4 | — | NOT-VERIFIABLE | "المتحدثون" speaker rows + "مقعدي" seat card hidden (session has no speakers; guest has no booking). | NEEDS-DATA |
 
 ---
@@ -64,3 +65,33 @@ Figma source of truth: file `PSXHhY0UVTAPSaIOf9uNKd`, page "Ready for Test".
 | PAR-X2 | — | NOT-VERIFIABLE | **0 media assets** in prod → all logos/photos/news thumbnails are fallbacks; real-image (`Image.network` success) path unverified. Upload 1 asset per `AssetCategory` via CP to test. | NEEDS-DATA |
 | PAR-X3 | Low | UI | Sign-in adds a 2nd alt-login button "الدخول بمسح الشارة" not in frame `758:2555` (additive; real feature — likely intended). | NEEDS-DECISION |
 | PAR-X4 | — | NOT-VERIFIABLE | Signed-in **Home** (`758:1134`) unverified — audited as guest; app shows the gated guest-home layout. | NOT-VERIFIABLE |
+
+---
+
+## P6 fix batch — 2026-06-18
+
+**Code fixed (all RTL child-reorders + one overflow guard):** PAR-S2, PAR-B3,
+PAR-A1, PAR-D1, PAR-D2, PAR-D-extra. Root cause was a consistently **inverted
+RTL assumption** — under RTL a `Row`'s first child renders at the inline-start
+(physical right); the cards had put the chevron/secondary first, so the
+logo/marker/primary landed on the wrong side. Fix = reorder children so the
+leading visual leads. PAR-D1 used `FittedBox(scaleDown)` so a long code fits the
+40×40 badge (no ordinal field exists to mimic Figma's "02").
+
+**Reclassified as data, not code (code already correct):** PAR-S3, PAR-B1, PAR-B2,
+PAR-B4, PAR-D3 — each renders when the wire carries the field; prod data is null.
+Fill via the CP.
+
+**Still open / out of P6 scope:** PAR-S1 (Arabic tier labels — owner decision),
+PAR-A2 (archive children empty — data), PAR-X1 (global app-bar — owner decision),
+PAR-X2 (0 assets — data), PAR-X3 (sign-in badge button — owner decision), and all
+P1–P5 rows.
+
+**Verification:** `flutter analyze` 0 new issues (7 pre-existing infos in the
+untouched `speakers_screen_test.dart`); all 69 P6 widget tests green incl. new
+`Locale('ar')` position tests for each reorder (D-436); release web build 0 errors;
+independent code-review pass clean. **Live-data web render NOT captured** — the
+prod API CORS allowlist rejects the `localhost` build origin, the local backend is
+down, and no device/emulator is connected. The RTL order is proven by the headless
+position tests; a live visual needs a device/emulator run or a deploy to a
+CORS-allowed origin.

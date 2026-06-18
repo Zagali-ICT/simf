@@ -140,8 +140,8 @@ class _TierLabel extends StatelessWidget {
   }
 }
 
-/// One sponsor card — frame 922:2824's 72-high row. RTL puts the name +
-/// secondary line on the inline-start (right), the square initials badge next
+/// One sponsor card — frame 922:2824's 72-high row. RTL puts the square logo
+/// badge on the inline-start (physical right), the name + secondary line next
 /// to it, and the forward chevron on the far inline-end (physical left).
 ///
 /// [hero] true is the strategic gold card (gold fill, dark text, gold initials
@@ -178,13 +178,19 @@ class _SponsorCard extends StatelessWidget {
           padding: const EdgeInsets.all(SimfTokens.space2),
           child: Row(
             children: <Widget>[
-              // Frame 922:2824 — the chevron sits at the inline-end (physical
-              // left under RTL). The bundled caret does not auto-mirror, so it
-              // keeps pointing left as the design shows.
-              SimfSvgIcon(
-                'assets/icons/ic_caret_left.svg',
-                size: 20,
-                color: hero ? SimfTokens.navy : SimfTokens.accent,
+              // Frame 922:2824 — RTL order: the square logo badge sits at the
+              // inline-start (physical right), the name + secondary line next to
+              // it, and the forward chevron on the far inline-end (physical
+              // left). The bundled caret does not auto-mirror, so it keeps
+              // pointing left as the design shows.
+              _BadgeBox(
+                hero: hero,
+                child: _SponsorLogo(
+                  id: id,
+                  baseUrl: baseUrl,
+                  fallbackInitials: badge,
+                  hero: hero,
+                ),
               ),
               const SizedBox(width: SimfTokens.space2),
               Expanded(
@@ -219,14 +225,10 @@ class _SponsorCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: SimfTokens.space2),
-              _BadgeBox(
-                hero: hero,
-                child: _SponsorLogo(
-                  id: id,
-                  baseUrl: baseUrl,
-                  fallbackInitials: badge,
-                  hero: hero,
-                ),
+              SimfSvgIcon(
+                'assets/icons/ic_caret_left.svg',
+                size: 20,
+                color: hero ? SimfTokens.navy : SimfTokens.accent,
               ),
             ],
           ),

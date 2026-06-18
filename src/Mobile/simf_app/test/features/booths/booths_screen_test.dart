@@ -92,6 +92,7 @@ class _FakeRepo implements VenueMapRepository {
 Future<void> _pump(
   WidgetTester tester, {
   required VenueMapRepository repo,
+  Locale locale = const Locale('en'),
 }) async {
   await tester.pumpWidget(
     ProviderScope(
@@ -100,7 +101,7 @@ Future<void> _pump(
         venueMapRepositoryProvider.overrideWithValue(repo),
       ],
       child: MaterialApp(
-        locale: const Locale('en'),
+        locale: locale,
         supportedLocales: AppL10n.supportedLocales,
         localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
           ...AppL10n.localizationsDelegates,
@@ -187,6 +188,20 @@ void main() {
       await _pump(tester, repo: _FakeRepo(booths: const <BoothSummary>[_sami]));
       // No exhibitorContactId → the logo tile renders initials, not a network image.
       expect(_networkImageUrls(tester), isEmpty);
+    });
+
+    testWidgets('PAR-B3 — RTL: the company logo tile leads at the inline start '
+        '(right) of the company name', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeRepo(booths: const <BoothSummary>[_samiWithLogo]),
+        locale: const Locale('ar'),
+      );
+      // The logo tile (a network Image) must sit to the inline start (physical
+      // right) of the company name 'سامي', per frame 922:2789.
+      final logoDx = tester.getCenter(find.byType(Image)).dx;
+      final nameDx = tester.getCenter(find.text('سامي')).dx;
+      expect(logoDx, greaterThan(nameDx));
     });
 
     testWidgets('error shows retry, which re-fetches', (tester) async {

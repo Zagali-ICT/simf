@@ -187,7 +187,8 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
 }
 
 /// The bordered search field (frame node 922:2549): a navy box with the
-/// beige bold hairline, the muted hint, and a trailing search glyph.
+/// beige bold hairline, the muted hint, and a leading (inline-start) search
+/// glyph.
 class _SearchField extends StatelessWidget {
   const _SearchField({required this.l10n, required this.onChanged});
 
@@ -209,7 +210,9 @@ class _SearchField extends StatelessWidget {
           color: SimfTokens.beigeBorder,
           fontSize: SimfTokens.textSm,
         ),
-        suffixIcon: const SimfSvgIcon(
+        // Frame 922:2549 — the search glyph sits at the inline start (physical
+        // right under RTL), so it is a prefix, not a suffix.
+        prefixIcon: const SimfSvgIcon(
           'assets/icons/ic_search.svg',
           size: 18,
           color: Colors.white,
@@ -294,10 +297,10 @@ class _BoothCard extends StatelessWidget {
   }
 }
 
-/// The card header (frame node 922:2789): the company short name (gold) over
-/// its full name (beige) beside a square logo-initials tile, with a gold
-/// hairline rule underneath. Laid right-to-left so the text column sits at the
-/// inline start and the logo tile at the inline end, as the frame shows.
+/// The card header (frame node 922:2789): the square logo-initials tile on the
+/// inline start (physical right) with the company short name (gold) over its
+/// full name (beige) beside it, under a gold hairline rule — matching the
+/// frame's logo-right / text-left RTL layout.
 class _CompanyHeader extends StatelessWidget {
   const _CompanyHeader({
     required this.booth,
@@ -326,6 +329,12 @@ class _CompanyHeader extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
+          _LogoTile(
+            contactId: booth.exhibitorContactId,
+            baseUrl: baseUrl,
+            initials: _initials(name),
+          ),
+          const SizedBox(width: SimfTokens.space2),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -352,12 +361,6 @@ class _CompanyHeader extends StatelessWidget {
                 ],
               ],
             ),
-          ),
-          const SizedBox(width: SimfTokens.space2),
-          _LogoTile(
-            contactId: booth.exhibitorContactId,
-            baseUrl: baseUrl,
-            initials: _initials(name),
           ),
         ],
       ),

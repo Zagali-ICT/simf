@@ -394,7 +394,8 @@ class _HeaderCard extends StatelessWidget {
 }
 
 /// The gold index badge (frame 889:2604): a 40×40 gold rounded square with the
-/// session code in white extrabold, always LTR (e.g. "02").
+/// session code in white extrabold, always LTR (e.g. "02"); a longer real code
+/// scales down to fit rather than overflowing the badge.
 class _IndexBadge extends StatelessWidget {
   const _IndexBadge({required this.code});
 
@@ -410,13 +411,24 @@ class _IndexBadge extends StatelessWidget {
         color: SimfTokens.accent,
         borderRadius: BorderRadius.circular(SimfTokens.radiusLarge + 2),
       ),
-      child: Text(
-        code,
-        textDirection: TextDirection.ltr,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w800,
-          fontSize: SimfTokens.textLg,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        // A two-digit ordinal ("02") shows at full size; a longer real code
+        // ("S-001" / "S-TODAY") scales down to fit the 40×40 badge instead of
+        // overflowing or wrapping.
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            code,
+            textDirection: TextDirection.ltr,
+            maxLines: 1,
+            softWrap: false,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: SimfTokens.textLg,
+            ),
+          ),
         ),
       ),
     );
@@ -593,9 +605,9 @@ class _DescriptionCard extends StatelessWidget {
 }
 
 /// One speaker card (frame 889:2722/889:2737/889:2747): a navy box with a
-/// beige hairline; the name (white 16px) over the rank (beige 12px) on the
-/// inline-start, and a gold-tinted icon box on the inline-end — an anchor for a
-/// speaker, a star for the host. Tapping opens the speaker profile.
+/// beige hairline; a gold-tinted icon box on the inline-start (physical right)
+/// — an anchor for a speaker, a star for the host — with the name (white 16px)
+/// over the rank (beige 12px) beside it. Tapping opens the speaker profile.
 class _SpeakerCard extends StatelessWidget {
   const _SpeakerCard({
     required this.speaker,
@@ -627,6 +639,8 @@ class _SpeakerCard extends StatelessWidget {
         padding: const EdgeInsets.all(SimfTokens.space2),
         child: Row(
           children: <Widget>[
+            _RoleBox(isHost: isHost),
+            const SizedBox(width: SimfTokens.space4),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -652,8 +666,6 @@ class _SpeakerCard extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: SimfTokens.space4),
-            _RoleBox(isHost: isHost),
           ],
         ),
       ),
@@ -690,9 +702,10 @@ class _RoleBox extends StatelessWidget {
 }
 
 /// The my-seat card (frame 889:2761): a navy box with the beige hairline,
-/// holding the row · seat line over the badge hint on the inline-start, a gold
-/// filled marker box, and a forward chevron opening the seat map (18). There is
-/// no column axis (Page_017 L-3.1).
+/// holding a gold filled marker box on the inline-start (physical right), the
+/// row · seat line over the badge hint beside it, and a forward chevron on the
+/// inline-end (left) opening the seat map (18). There is no column axis
+/// (Page_017 L-3.1).
 class _SeatCard extends StatelessWidget {
   const _SeatCard({
     required this.seat,
@@ -712,13 +725,15 @@ class _SeatCard extends StatelessWidget {
         padding: const EdgeInsets.all(SimfTokens.space2),
         child: Row(
           children: <Widget>[
-            // Frame 889:2762 — a forward chevron at the inline start (RTL).
-            const Icon(
-              Icons.chevron_left,
-              size: 20,
-              color: SimfTokens.beigeBorder,
+            // Frame 894:2779 — a gold filled marker box at the inline start
+            // (physical right); the "View" affordance for the seat map.
+            // Labelled for screen readers.
+            Semantics(
+              button: true,
+              label: l10n.seatViewLink,
+              child: const _SeatMarker(),
             ),
-            const SizedBox(width: SimfTokens.space2),
+            const SizedBox(width: SimfTokens.space4),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -742,13 +757,13 @@ class _SeatCard extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: SimfTokens.space4),
-            // Frame 894:2779 — a gold filled marker box; the "View" affordance
-            // for the seat map. Labelled for screen readers.
-            Semantics(
-              button: true,
-              label: l10n.seatViewLink,
-              child: const _SeatMarker(),
+            const SizedBox(width: SimfTokens.space2),
+            // Frame 889:2762 — a forward chevron at the inline end (physical
+            // left under RTL).
+            const Icon(
+              Icons.chevron_left,
+              size: 20,
+              color: SimfTokens.beigeBorder,
             ),
           ],
         ),
@@ -785,9 +800,9 @@ class _SeatMarker extends StatelessWidget {
   }
 }
 
-/// The two CTAs (frame 897:2872): تذكير (outlined, clock icon) at the inline
-/// start, أضف إلى تقويمي (gold filled, calendar icon) filling the rest. RTL
-/// places تذكير on the right and the gold button on the left.
+/// The two CTAs (frame 897:2872): أضف إلى تقويمي (gold filled, calendar icon)
+/// fills the inline start, تذكير (outlined, clock icon) trails it. RTL places
+/// the gold button on the right and تذكير on the left, as the frame shows.
 class _CtaRow extends StatelessWidget {
   const _CtaRow({
     required this.l10n,
@@ -801,33 +816,11 @@ class _CtaRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // RTL: the first child is at the inline start (physical right). The frame
+    // puts أضف إلى تقويمي (gold) on the right and تذكير (outlined) on the left,
+    // so the gold Expanded button leads and the reminder button trails.
     return Row(
       children: <Widget>[
-        OutlinedButton.icon(
-          onPressed: onRemind,
-          style: OutlinedButton.styleFrom(
-            // Height 48, width sized to content — this is a non-Expanded child
-            // of the Row, so Size.fromHeight (width = infinity) would force an
-            // infinite width and crash layout. The calendar button below takes
-            // the remaining width via Expanded.
-            minimumSize: const Size(0, 48),
-            padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space6),
-            side: const BorderSide(color: SimfTokens.accent),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-            ),
-          ),
-          icon: const Icon(Icons.schedule_outlined, size: 24),
-          label: Text(
-            l10n.reminder,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: SimfTokens.textLg,
-            ),
-          ),
-        ),
-        const SizedBox(width: SimfTokens.space4),
         Expanded(
           child: FilledButton.icon(
             onPressed: onAddToCalendar,
@@ -846,6 +839,31 @@ class _CtaRow extends StatelessWidget {
                 fontWeight: FontWeight.w700,
                 fontSize: SimfTokens.textLg,
               ),
+            ),
+          ),
+        ),
+        const SizedBox(width: SimfTokens.space4),
+        OutlinedButton.icon(
+          onPressed: onRemind,
+          style: OutlinedButton.styleFrom(
+            // Height 48, width sized to content — this is a non-Expanded child
+            // of the Row, so Size.fromHeight (width = infinity) would force an
+            // infinite width and crash layout. The calendar button beside it
+            // takes the remaining width via Expanded.
+            minimumSize: const Size(0, 48),
+            padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space6),
+            side: const BorderSide(color: SimfTokens.accent),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+            ),
+          ),
+          icon: const Icon(Icons.schedule_outlined, size: 24),
+          label: Text(
+            l10n.reminder,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+              fontSize: SimfTokens.textLg,
             ),
           ),
         ),

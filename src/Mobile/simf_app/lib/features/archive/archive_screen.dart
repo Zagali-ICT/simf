@@ -674,7 +674,8 @@ class _LabelledBullet extends StatelessWidget {
 }
 
 /// The three stat tiles (node 926:3285): a big gold number over its label, in
-/// a bordered navy box. Order matches the frame: المتحدثون / الحضور / الفعاليات.
+/// a bordered navy box. The frame reads (left → right) المتحدثون / الحضور /
+/// الفعاليات, so under RTL the children run events → attendees → speakers.
 class _StatRow extends StatelessWidget {
   const _StatRow({required this.l10n, required this.edition});
 
@@ -683,12 +684,15 @@ class _StatRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // RTL: the first child is at the inline start (physical right). The frame
+    // reads (left → right) المتحدثون · الحضور · الفعاليات, so events sits at the
+    // inline start (right) and speakers at the inline end (left).
     return Row(
       children: <Widget>[
         Expanded(
           child: _StatTile(
-            value: edition.speakers,
-            label: l10n.archiveStatSpeakers,
+            value: edition.sessions,
+            label: l10n.archiveStatSessions,
           ),
         ),
         const SizedBox(width: SimfTokens.space4),
@@ -701,8 +705,8 @@ class _StatRow extends StatelessWidget {
         const SizedBox(width: SimfTokens.space4),
         Expanded(
           child: _StatTile(
-            value: edition.sessions,
-            label: l10n.archiveStatSessions,
+            value: edition.speakers,
+            label: l10n.archiveStatSpeakers,
           ),
         ),
       ],
