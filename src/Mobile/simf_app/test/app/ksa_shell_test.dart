@@ -1,12 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/localization/locale_controller.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/ksa_shell.dart';
 import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
+import 'package:simf_data_pkg/simf_data_pkg.dart';
+
+/// Minimal in-memory prefs so a real [LocaleController] can back the
+/// language-toggle test without touching the platform store.
+class _FakePrefs implements SimfPrefsStorage {
+  final Map<String, Object> _store = <String, Object>{};
+
+  @override
+  String? getString(String key) {
+    final v = _store[key];
+    return v is String ? v : null;
+  }
+
+  @override
+  Future<bool> setString(String key, String value) async {
+    _store[key] = value;
+    return true;
+  }
+
+  @override
+  bool? getBool(String key) => null;
+  @override
+  Future<bool> setBool(String key, bool value) async => true;
+  @override
+  double? getDouble(String key) => null;
+  @override
+  Future<bool> setDouble(String key, double value) async => true;
+  @override
+  int? getInt(String key) => null;
+  @override
+  Future<bool> setInt(String key, int value) async => true;
+  @override
+  Future<bool> remove(String key) async {
+    _store.remove(key);
+    return true;
+  }
+}
 
 /// Pumps [home] as the `/` route with stub pages for every bottom-nav
 /// destination, so taps can assert real navigation.
@@ -14,6 +53,7 @@ Future<void> _pump(
   WidgetTester tester,
   Widget home, {
   Locale locale = const Locale('en'),
+  List<Override> overrides = const <Override>[],
 }) async {
   final router = GoRouter(
     initialLocation: '/',
@@ -43,16 +83,21 @@ Future<void> _pump(
   );
 
   await tester.pumpWidget(
-    MaterialApp.router(
-      routerConfig: router,
-      locale: locale,
-      supportedLocales: AppL10n.supportedLocales,
-      localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
-        ...AppL10n.localizationsDelegates,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
+    // The shared header now carries [KsaLangThemeButtons] (a ConsumerWidget),
+    // so the shell needs a ProviderScope just like the running app (main.dart).
+    ProviderScope(
+      overrides: overrides,
+      child: MaterialApp.router(
+        routerConfig: router,
+        locale: locale,
+        supportedLocales: AppL10n.supportedLocales,
+        localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+          ...AppL10n.localizationsDelegates,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+      ),
     ),
   );
   await tester.pumpAndSettle();
@@ -145,6 +190,72 @@ void main() {
 
       await tester.tap(find.byType(KsaBackButton));
       expect(backs, 1);
+    });
+
+    testWidgets('the standard header carries the language + inert dark-mode '
+        'controls', (tester) async {
+      await _pump(
+        tester,
+        KsaPage(
+          title: 'My page',
+          onBack: () {},
+          body: const Text('BODY'),
+        ),
+      );
+
+      // Both shared controls render on every shell page's header.
+      expect(find.byIcon(Icons.language), findsOneWidget);
+      expect(find.byIcon(Icons.dark_mode_outlined), findsOneWidget);
+
+      // The language globe is enabled (toggles AR ↔ EN via LocaleController).
+      final langButton = tester.widget<IconButton>(
+        find.ancestor(
+          of: find.byIcon(Icons.language),
+          matching: find.byType(IconButton),
+        ),
+      );
+      expect(langButton.onPressed, isNotNull);
+
+      // Dark mode is intentionally inert — navy-always (owner decision); the
+      // icon is shown for parity but is not tappable until a light theme exists.
+      final darkButton = tester.widget<IconButton>(
+        find.ancestor(
+          of: find.byIcon(Icons.dark_mode_outlined),
+          matching: find.byType(IconButton),
+        ),
+      );
+      expect(darkButton.onPressed, isNull);
+    });
+
+    testWidgets('tapping the language globe flips the locale AR → EN and '
+        'persists it', (tester) async {
+      final prefs = _FakePrefs();
+      await _pump(
+        tester,
+        KsaPage(
+          title: 'My page',
+          onBack: () {},
+          body: const Text('BODY'),
+        ),
+        overrides: <Override>[
+          localeControllerProvider.overrideWith(
+            () => LocaleController(prefs: prefs),
+          ),
+        ],
+      );
+
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(MaterialApp)),
+      );
+      // Arabic is the default when nothing is stored (SIMF-MAA-001 §10).
+      expect(container.read(localeControllerProvider).languageCode, 'ar');
+
+      await tester.tap(find.byIcon(Icons.language));
+      await tester.pumpAndSettle();
+
+      // The globe toggled the locale and persisted the new choice.
+      expect(container.read(localeControllerProvider).languageCode, 'en');
+      expect(prefs.getString(StorageKeys.preferredLanguage), 'en');
     });
 
     testWidgets('no onBack → no back button; custom header replaces the row',

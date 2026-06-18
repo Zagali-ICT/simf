@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/profile/data/profile_repository.dart'
     show myAvatarBytesProvider;
 import '../localization/app_l10n.dart';
+import '../localization/locale_controller.dart';
 import '../route_names.dart';
 import '../theme/tokens.dart';
 import 'more_drawer.dart';
@@ -142,9 +145,9 @@ class KsaPage extends StatelessWidget {
               ),
             ),
           ),
-          // The shared top controller — notifications + the drawer ☰, the same
-          // on every shell page. The ☰ opens the side menu via the nearest
-          // Scaffold (the Builder gives a context below it).
+          // The shared top controller — notifications + language + dark-mode +
+          // the drawer ☰, the same on every shell page. The ☰ opens the side
+          // menu via the nearest Scaffold (the Builder gives a context below it).
           IconButton(
             tooltip: l10n.notificationsTooltip,
             onPressed: () => context.pushNamed(RouteNames.notifications),
@@ -154,6 +157,7 @@ class KsaPage extends StatelessWidget {
               size: 22,
             ),
           ),
+          const KsaLangThemeButtons(),
           Builder(
             builder: (ctx) => KsaMenuButton(
               onTap: () => Scaffold.of(ctx).openDrawer(),
@@ -203,6 +207,53 @@ class KsaMenuButton extends StatelessWidget {
         shape: const CircleBorder(),
       ),
       icon: const Icon(Icons.menu, color: Colors.white, size: 20),
+    );
+  }
+}
+
+/// The shared header actions added to every in-app app-bar — the standard
+/// [KsaPage] header and the home greeting header: the language globe (toggles
+/// AR ↔ EN, persisted via [LocaleController]) and the dark-mode icon.
+///
+/// Dark mode is intentionally **inert** for now: the app is navy-always (the
+/// owner's design decision) and has no light theme yet, so the icon is shown
+/// for parity but disabled — mirroring the side-drawer's inert theme tile. The
+/// bell + drawer ☰ stay owned by each header.
+///
+/// The locale notifier is read **only in the onPressed callback** (never
+/// `watch`ed at build), so this control adds no build-time dependency on
+/// [localeControllerProvider]: screens render without overriding it in tests.
+/// (Tapping the globe does resolve the provider, so a test that exercises the
+/// toggle must still override it — see ksa_shell_test.)
+class KsaLangThemeButtons extends ConsumerWidget {
+  const KsaLangThemeButtons({this.size = 22, super.key});
+
+  /// The glyph size — 22 in the standard header, 26 in the larger home header.
+  final double size;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppL10n.of(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        IconButton(
+          tooltip: l10n.languageToggleLabel,
+          onPressed: () =>
+              unawaited(ref.read(localeControllerProvider.notifier).toggle()),
+          icon: Icon(Icons.language, color: Colors.white, size: size),
+        ),
+        IconButton(
+          tooltip: l10n.themeToggleTooltip,
+          // Inert — navy-always (owner decision); no light theme yet.
+          onPressed: null,
+          icon: Icon(
+            Icons.dark_mode_outlined,
+            color: SimfTokens.navyDisabledText,
+            size: size,
+          ),
+        ),
+      ],
     );
   }
 }
