@@ -163,6 +163,32 @@ public sealed class RecommendationServiceTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Two_shared_sessions_report_count_two_and_the_dual_reason()
+    {
+        var interest = await SeedInterestAsync("Naval Operations");
+        var (callerToken, callerUserId) =
+            await SeedApprovedVisitorWithSpecificInterestsAsync(new[] { interest.Id });
+        var (_, candidateUserId) =
+            await SeedApprovedVisitorWithSpecificInterestsAsync(new[] { interest.Id });
+
+        // Two distinct shared sessions (each helper makes its own session) →
+        // exercises the dual-session branch + the distinct-session de-dup.
+        await SeedSharedSessionAsync(callerUserId, candidateUserId);
+        await SeedSharedSessionAsync(callerUserId, candidateUserId);
+
+        var response = await GetAuthAsync(
+            "/api/v1/app/account/recommendations/meet-like-you", callerToken);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<RecommendationsResponse>>())!.Data!;
+
+        Assert.Single(body.Matches);
+        var match = body.Matches[0];
+        Assert.Equal(2, match.SharedSessionCount);
+        Assert.Contains("2 shared sessions", match.MatchReason);
+        Assert.Contains("نفس جلستين", match.MatchReasonArabic);
+    }
+
+    [Fact]
     public async Task No_shared_session_yields_zero_count_and_interest_only_reason()
     {
         var interest = await SeedInterestAsync("Port Logistics");

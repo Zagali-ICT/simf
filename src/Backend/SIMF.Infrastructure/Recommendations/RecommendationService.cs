@@ -202,6 +202,8 @@ internal sealed class RecommendationService(
         else if (sharedSessions == 2)
         {
             en.Add("2 shared sessions");
+            // "نفس جلستين" is the Figma-exact Arabic dual (frame 1072:13409);
+            // keep this wording — do not "normalise" it to the numeric form.
             ar.Add("نفس جلستين");
         }
         else if (sharedSessions > 2)
