@@ -112,7 +112,7 @@ class MoreDrawer extends ConsumerWidget {
                   // Face-ID sign-in toggle (D-441) — self-hides when the device
                   // has no usable biometric; enabling enrols a device key,
                   // disabling revokes it. Account action, so signed-in only.
-                  if (signedIn) const _FaceIdToggleTile(),
+                  if (signedIn) const FaceIdToggleTile(),
                   if (signedIn)
                     _DrawerTile(
                       icon: Icons.calendar_today_outlined,
@@ -229,65 +229,3 @@ class _DrawerTile extends StatelessWidget {
   }
 }
 
-/// The Face-ID sign-in toggle (D-441). Self-hides when the device has no usable
-/// biometric. Enabling enrols a device key (so the sign-in screen's Face-ID
-/// button works next time); disabling revokes it. Toasts the outcome.
-class _FaceIdToggleTile extends ConsumerStatefulWidget {
-  const _FaceIdToggleTile();
-
-  @override
-  ConsumerState<_FaceIdToggleTile> createState() => _FaceIdToggleTileState();
-}
-
-class _FaceIdToggleTileState extends ConsumerState<_FaceIdToggleTile> {
-  bool _busy = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final available =
-        ref.watch(biometricAvailableProvider).valueOrNull ?? false;
-    if (!available) {
-      return const SizedBox.shrink();
-    }
-    final enabled = ref.watch(biometricEnabledProvider).valueOrNull ?? false;
-    final l10n = AppL10n.of(context);
-    return SwitchListTile(
-      secondary: const Icon(Icons.fingerprint, color: SimfTokens.accent),
-      title: Text(
-        l10n.biometricEnableToggle,
-        style: const TextStyle(color: Colors.white),
-      ),
-      value: enabled,
-      activeThumbColor: SimfTokens.accent,
-      // Ignore taps while a toggle is in flight, so a double-tap can't register
-      // (or revoke) two device keys and desync the local/server state.
-      onChanged: _busy ? null : (turnOn) => unawaited(_toggle(l10n, turnOn)),
-    );
-  }
-
-  Future<void> _toggle(AppL10n l10n, bool turnOn) async {
-    // The drawer's nearest ScaffoldMessenger is the root MaterialApp one, so the
-    // toast survives the drawer being dismissed mid-call.
-    final messenger = ScaffoldMessenger.of(context);
-    final biometric = ref.read(biometricAuthProvider);
-    setState(() => _busy = true);
-    try {
-      final String message;
-      if (turnOn) {
-        message = biometricEnableMessage(l10n, await biometric.enable());
-      } else {
-        await biometric.disable();
-        message = l10n.biometricDisabledToast;
-      }
-      if (!mounted) {
-        return;
-      }
-      ref.invalidate(biometricEnabledProvider);
-      messenger.showSnackBar(SnackBar(content: Text(message)));
-    } finally {
-      if (mounted) {
-        setState(() => _busy = false);
-      }
-    }
-  }
-}

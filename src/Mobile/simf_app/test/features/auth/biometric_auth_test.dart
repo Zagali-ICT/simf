@@ -1,14 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/features/auth/biometric_auth.dart';
-import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// A controllable [BiometricAuth] — `implements` ignores the real constructor
-/// (which needs a Ref + local_auth), so the prompt can be driven without the
-/// device plugin.
+/// (which needs a Ref + local_auth), so the nudge and the toggle can be driven
+/// without the device plugin. `enable`/`disable` flip [enabled] so the
+/// auto-disposed providers reflect the new state after invalidation.
 class _FakeBiometricAuth implements BiometricAuth {
   _FakeBiometricAuth({this.available = true, this.enabled = false});
 
@@ -25,58 +27,30 @@ class _FakeBiometricAuth implements BiometricAuth {
   @override
   Future<BiometricEnableResult> enable() async {
     enableCalls++;
+    if (enableResult == BiometricEnableResult.ok) {
+      enabled = true;
+    }
     return enableResult;
   }
 
   @override
   Future<void> disable() async {
     disableCalls++;
+    enabled = false;
   }
 }
 
-class _FakePrefs implements SimfPrefsStorage {
-  final Map<String, Object> _store = <String, Object>{};
-
-  @override
-  bool? getBool(String key) => _store[key] as bool?;
-  @override
-  Future<bool> setBool(String key, bool value) async {
-    _store[key] = value;
-    return true;
-  }
-
-  @override
-  String? getString(String key) => _store[key] as String?;
-  @override
-  Future<bool> setString(String key, String value) async {
-    _store[key] = value;
-    return true;
-  }
-
-  @override
-  double? getDouble(String key) => null;
-  @override
-  Future<bool> setDouble(String key, double value) async => true;
-  @override
-  int? getInt(String key) => null;
-  @override
-  Future<bool> setInt(String key, int value) async => true;
-  @override
-  Future<bool> remove(String key) async {
-    _store.remove(key);
-    return true;
-  }
-}
+const String _nudgeBody =
+    'Use your face or fingerprint to sign in next time — no password needed.';
 
 Future<void> _pump(
-  WidgetTester tester, {
+  WidgetTester tester,
+  Widget home, {
   required _FakeBiometricAuth biometric,
-  required _FakePrefs prefs,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: <Override>[
-        simfPrefsStorageProvider.overrideWithValue(prefs),
         biometricAuthProvider.overrideWithValue(biometric),
       ],
       child: MaterialApp(
@@ -88,110 +62,161 @@ Future<void> _pump(
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        home: Consumer(
-          builder: (context, ref, _) => Scaffold(
-            body: Center(
-              child: ElevatedButton(
-                onPressed: () => maybeOfferBiometricEnrolment(context, ref),
-                child: const Text('GO'),
-              ),
-            ),
-          ),
-        ),
+        home: home,
       ),
     ),
   );
   await tester.pumpAndSettle();
 }
 
+/// A host with a button that fires the post-sign-in nudge.
+Widget _nudgeHost() => Consumer(
+      builder: (context, ref, _) => Scaffold(
+        body: Center(
+          child: ElevatedButton(
+            onPressed: () => maybeOfferBiometricEnrolment(context, ref),
+            child: const Text('GO'),
+          ),
+        ),
+      ),
+    );
+
 void main() {
-  group('maybeOfferBiometricEnrolment (D-441)', () {
-    testWidgets('available + not enabled + not handled → offers, then enables '
-        'on Enable and marks handled', (tester) async {
+  group('maybeOfferBiometricEnrolment nudge (D-441 / D-445)', () {
+    testWidgets('available + not enabled → shows the notification nudge; '
+        'tapping Enable enrols', (tester) async {
       final biometric = _FakeBiometricAuth(available: true, enabled: false);
-      final prefs = _FakePrefs();
-      await _pump(tester, biometric: biometric, prefs: prefs);
+      await _pump(tester, _nudgeHost(), biometric: biometric);
 
       await tester.tap(find.text('GO'));
       await tester.pumpAndSettle();
+      // The notification-style nudge (a SnackBar with an Enable action).
+      expect(find.text(_nudgeBody), findsOneWidget);
 
-      // The one-time nudge dialog appears.
-      expect(find.text('Enable Face ID sign-in?'), findsOneWidget);
-
-      await tester.tap(find.widgetWithText(FilledButton, 'Enable'));
+      await tester.tap(find.text('Enable'));
       await tester.pumpAndSettle();
-
       expect(biometric.enableCalls, 1);
-      expect(prefs.getBool(StorageKeys.biometricPromptHandled), isTrue);
       expect(find.text('Face ID sign-in enabled'), findsOneWidget);
+      // Flush the SnackBar auto-dismiss timers.
+      await tester.pump(const Duration(seconds: 9));
     });
 
-    testWidgets('Enable that fails leaves the prompt armed (self-heal) and '
-        'toasts the failure', (tester) async {
-      final biometric = _FakeBiometricAuth(available: true, enabled: false)
-        ..enableResult = BiometricEnableResult.failed;
-      final prefs = _FakePrefs();
-      await _pump(tester, biometric: biometric, prefs: prefs);
+    testWidgets('Enable still enrols after the originating screen is gone',
+        (tester) async {
+      // Regression for the deferred action capturing the screen's WidgetRef:
+      // the SnackBar outlives the sign-in/OTP screen (route change), so the
+      // Enable callback must enrol via the lifetime-safe ProviderContainer.
+      final biometric = _FakeBiometricAuth(available: true, enabled: false);
+      final navKey = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: <Override>[
+            biometricAuthProvider.overrideWithValue(biometric),
+          ],
+          child: MaterialApp(
+            navigatorKey: navKey,
+            locale: const Locale('en'),
+            supportedLocales: AppL10n.supportedLocales,
+            localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+              ...AppL10n.localizationsDelegates,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            home: _nudgeHost(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
 
       await tester.tap(find.text('GO'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilledButton, 'Enable'));
+      expect(find.text(_nudgeBody), findsOneWidget);
+
+      // Replace the screen that fired the nudge — disposes its Consumer/ref.
+      unawaited(
+        navKey.currentState!.pushReplacement(
+          MaterialPageRoute<void>(
+            builder: (_) => const Scaffold(body: Text('NEXT')),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
 
+      // The SnackBar persists on the root messenger; Enable must still enrol.
+      await tester.tap(find.text('Enable'));
+      await tester.pumpAndSettle();
       expect(biometric.enableCalls, 1);
-      // Not burned → the next sign-in re-offers.
-      expect(prefs.getBool(StorageKeys.biometricPromptHandled), isNot(true));
-      expect(find.text("Couldn't enable Face ID sign-in"), findsOneWidget);
+      await tester.pump(const Duration(seconds: 9));
     });
 
-    testWidgets('Not now → no enrol, but still marked handled (one-time)',
+    testWidgets('already enabled → no nudge', (tester) async {
+      final biometric = _FakeBiometricAuth(available: true, enabled: true);
+      await _pump(tester, _nudgeHost(), biometric: biometric);
+
+      await tester.tap(find.text('GO'));
+      await tester.pumpAndSettle();
+      expect(find.text(_nudgeBody), findsNothing);
+    });
+
+    testWidgets('biometrics unavailable → no nudge', (tester) async {
+      final biometric = _FakeBiometricAuth(available: false, enabled: false);
+      await _pump(tester, _nudgeHost(), biometric: biometric);
+
+      await tester.tap(find.text('GO'));
+      await tester.pumpAndSettle();
+      expect(find.text(_nudgeBody), findsNothing);
+    });
+  });
+
+  group('FaceIdToggleTile (D-445)', () {
+    testWidgets('hidden when the device has no usable biometric',
+        (tester) async {
+      final biometric = _FakeBiometricAuth(available: false, enabled: false);
+      await _pump(
+        tester,
+        const Scaffold(body: FaceIdToggleTile()),
+        biometric: biometric,
+      );
+      expect(find.byType(SwitchListTile), findsNothing);
+    });
+
+    testWidgets('shows when available; toggling on enrols and flips on',
         (tester) async {
       final biometric = _FakeBiometricAuth(available: true, enabled: false);
-      final prefs = _FakePrefs();
-      await _pump(tester, biometric: biometric, prefs: prefs);
+      await _pump(
+        tester,
+        const Scaffold(body: FaceIdToggleTile()),
+        biometric: biometric,
+      );
 
-      await tester.tap(find.text('GO'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(TextButton, 'Not now'));
-      await tester.pumpAndSettle();
+      final tile = find.byType(SwitchListTile);
+      expect(tile, findsOneWidget);
+      expect(tester.widget<SwitchListTile>(tile).value, isFalse);
 
-      expect(biometric.enableCalls, 0);
-      expect(prefs.getBool(StorageKeys.biometricPromptHandled), isTrue);
+      await tester.tap(tile);
+      await tester.pumpAndSettle();
+      expect(biometric.enableCalls, 1);
+      expect(tester.widget<SwitchListTile>(tile).value, isTrue);
+      await tester.pump(const Duration(seconds: 5));
     });
 
-    testWidgets('already handled → no dialog', (tester) async {
-      final biometric = _FakeBiometricAuth(available: true, enabled: false);
-      final prefs = _FakePrefs();
-      await prefs.setBool(StorageKeys.biometricPromptHandled, true);
-      await _pump(tester, biometric: biometric, prefs: prefs);
-
-      await tester.tap(find.text('GO'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Enable Face ID sign-in?'), findsNothing);
-      expect(biometric.enableCalls, 0);
-    });
-
-    testWidgets('already enabled → no dialog', (tester) async {
+    testWidgets('toggling off revokes the device key', (tester) async {
       final biometric = _FakeBiometricAuth(available: true, enabled: true);
-      final prefs = _FakePrefs();
-      await _pump(tester, biometric: biometric, prefs: prefs);
+      await _pump(
+        tester,
+        const Scaffold(body: FaceIdToggleTile()),
+        biometric: biometric,
+      );
 
-      await tester.tap(find.text('GO'));
+      final tile = find.byType(SwitchListTile);
+      expect(tester.widget<SwitchListTile>(tile).value, isTrue);
+
+      await tester.tap(tile);
       await tester.pumpAndSettle();
-
-      expect(find.text('Enable Face ID sign-in?'), findsNothing);
-    });
-
-    testWidgets('biometrics unavailable → no dialog', (tester) async {
-      final biometric = _FakeBiometricAuth(available: false, enabled: false);
-      final prefs = _FakePrefs();
-      await _pump(tester, biometric: biometric, prefs: prefs);
-
-      await tester.tap(find.text('GO'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Enable Face ID sign-in?'), findsNothing);
+      expect(biometric.disableCalls, 1);
+      expect(tester.widget<SwitchListTile>(tile).value, isFalse);
+      await tester.pump(const Duration(seconds: 5));
     });
   });
 }
