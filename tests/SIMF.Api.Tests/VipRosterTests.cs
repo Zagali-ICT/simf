@@ -114,7 +114,7 @@ public sealed class VipRosterTests : IClassFixture<SimfApiFactory>
             ProfileTypeId = profileTypeId,
             NationalityCode = "SA",
             IsSaudi = true,
-            NationalId = "1234567890",
+            NationalId = "1101798278",   // D-459 — Luhn-valid Saudi national id
             SaudiMobile = "+966500000001",
             OrganisationId = organisationId,
         };

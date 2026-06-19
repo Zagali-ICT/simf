@@ -392,7 +392,7 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
             DateOfBirth = new DateOnly(1990, 1, 1),
             PlaceOfBirth = "Riyadh",
             IsSaudi = true,
-            NationalId = "1234567890",
+            NationalId = "1101798278",   // D-459 — Luhn-valid Saudi national id
             SaudiMobile = "+966500000001",
             // B3 — D-221: organisation is required at the desk.
             OrganisationId = organisationId,

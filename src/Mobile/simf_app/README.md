@@ -52,6 +52,20 @@ re-added to the regenerated native projects (or by the build/`simf-run` step):
 **does**. Without the permission the avatar liveness screen degrades to its
 gallery fallback (D-404).
 
+### Biometric host activity (re-apply after `flutter create`)
+
+`flutter create` writes `MainActivity` extending `FlutterActivity`. **Change it
+to `FlutterFragmentActivity`** — `local_auth`'s `BiometricPrompt` attaches to a
+`FragmentActivity`, so with a plain `FlutterActivity` `authenticate()` throws
+`no_fragment_activity` and Face-ID / fingerprint sign-in silently fails (no
+prompt, falls back to password). File:
+`android/app/src/main/kotlin/com/example/simf_app/MainActivity.kt`:
+
+```kotlin
+import io.flutter.embedding.android.FlutterFragmentActivity
+class MainActivity : FlutterFragmentActivity()
+```
+
 ## Environment configuration
 
 The app reads its base URL, app key, and device type from

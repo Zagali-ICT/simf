@@ -368,13 +368,13 @@ void main() {
       await tester.pump();
       expect(find.text('Ahmed 123'), findsNothing);
 
-      // A two-part Arabic name fails the full-name (>=4 parts) rule on Next.
-      await tester.enterText(arabicField, 'محمد عبدالله');
+      // A one-part Arabic name fails the full-name (2–4 parts) rule on Next.
+      await tester.enterText(arabicField, 'محمد');
       await tester.pump();
       await _tapNext(tester);
       expect(find.text('INTERESTS'), findsNothing);
       expect(
-        find.text('Enter your full name (at least 4 parts)'),
+        find.text('Enter your full name (2 to 4 parts)'),
         findsWidgets,
       );
     });

@@ -19,6 +19,7 @@
 *@
 @using SIMF.Contracts.UserProfile
 @using SIMF.Contracts.Organisations
+@using SIMF.Common
 @implements IDisposable
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
@@ -171,12 +172,35 @@
                     </select>
                 </div>
             </div>
-            <SimfTextField Label="@L["Admin.WalkIn.Field.PlateNumber"]"
-                           Helper="@L["Admin.WalkIn.Field.PlateNumber.Hint"]"
-                           MaxLength="7"
-                           Value="@(_model.PlateNumber ?? string.Empty)"
-                           ValueChanged="@(v => _model.PlateNumber = string.IsNullOrWhiteSpace(v) ? null : v)"
-                           ValueExpression="@(() => _model.PlateNumber)" />
+            @* C6 (D-459) — رقم اللوحة: standard Saudi-plate entry, the same shape
+               as the app — three 17-letter dropdowns (Arabic · Latin) + a 1–4
+               digit field. The picks assemble into _model.PlateNumber; the server
+               validates SaudiPlate.IsValid and stores the canonical code. *@
+            <div class="simf-field">
+                <label class="simf-field__label">@L["Admin.WalkIn.Field.PlateNumber"]</label>
+                <div class="simf-field__control simf-walkin__plate">
+                    @for (var i = 0; i < _plateLetters.Length; i++)
+                    {
+                        var idx = i;
+                        <select class="simf-field__input simf-walkin__plate-letter"
+                                value="@_plateLetters[idx]"
+                                @onchange="@(e => OnPlateLetterChanged(idx, e))"
+                                aria-label="@L["Admin.WalkIn.Field.Plate.Letter"]">
+                            <option value="">@L["Admin.WalkIn.Field.Plate.Letter"]</option>
+                            @foreach (var letter in SaudiPlate.Letters)
+                            {
+                                <option value="@letter.Code">@($"{letter.Arabic} · {letter.English}")</option>
+                            }
+                        </select>
+                    }
+                    <input class="simf-field__input simf-walkin__plate-digits"
+                           inputmode="numeric" maxlength="4"
+                           placeholder="@L["Admin.WalkIn.Field.Plate.Digits"]"
+                           value="@_plateDigits" @oninput="OnPlateDigitsChanged"
+                           aria-label="@L["Admin.WalkIn.Field.Plate.Digits"]" />
+                </div>
+                <div class="simf-field__helper">@L["Admin.WalkIn.Field.PlateNumber.Hint"]</div>
+            </div>
         </div>
     </fieldset>
       </div>
@@ -464,6 +488,11 @@
     private string? _avatarName;
     private string? _vipPhotoName;
 
+    // C6 (D-459) — standard plate entry: three 17-letter picks (Latin codes) + a
+    // digit field, assembled into _model.PlateNumber.
+    private readonly string[] _plateLetters = { string.Empty, string.Empty, string.Empty };
+    private string _plateDigits = string.Empty;
+
     // B3 — D-221 (الجهة): the required organisation typeahead state.
     private string _orgSearch = string.Empty;
     private string? _orgSelectedLabel;
@@ -619,6 +648,29 @@
         _model.Gender = Enum.TryParse<Gender>(e.Value?.ToString(), out var g)
             ? g
             : Gender.Unspecified;
+    }
+
+    // C6 (D-459) — plate letter dropdowns + digit field assemble into the model;
+    // the server validates SaudiPlate.IsValid and stores the canonical code.
+    private void OnPlateLetterChanged(int index, ChangeEventArgs e)
+    {
+        _plateLetters[index] = e.Value?.ToString() ?? string.Empty;
+        SyncPlate();
+    }
+
+    private void OnPlateDigitsChanged(ChangeEventArgs e)
+    {
+        _plateDigits = new string((e.Value?.ToString() ?? string.Empty)
+            .Where(char.IsAsciiDigit).Take(4).ToArray());
+        SyncPlate();
+    }
+
+    private void SyncPlate()
+    {
+        var letters = string.Concat(_plateLetters);
+        _model.PlateNumber = letters.Length == 0 && _plateDigits.Length == 0
+            ? null
+            : $"{letters}{_plateDigits}";
     }
 
     private async Task OnIdDocumentChanged(ChangeEventArgs _)
@@ -958,6 +1010,9 @@
         _idDocumentName = null;
         _avatarName = null;
         _vipPhotoName = null;
+        _plateLetters[0] = _plateLetters[1] = _plateLetters[2] = string.Empty;
+        _plateDigits = string.Empty;
+        _model.PlateNumber = null;
         _messages.Clear();
         _editContext.NotifyValidationStateChanged();
         StateHasChanged();

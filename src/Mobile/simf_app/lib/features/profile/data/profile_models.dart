@@ -160,6 +160,8 @@ class UserProfileResponse {
     this.saudiMobile,
     this.internationalMobile,
     this.plateNumber,
+    this.plateNumberAr,
+    this.plateNumberEn,
     this.referenceNumber,
     this.organisationId,
     this.qrId,
@@ -179,8 +181,16 @@ class UserProfileResponse {
   final String? passportNumber;
   final String? saudiMobile;
   final String? internationalMobile;
-  /// C6 (D-371) — رقم اللوحة, optional Saudi vehicle plate.
+  /// C6 (D-371/D-459) — رقم اللوحة, optional Saudi vehicle plate, stored as the
+  /// canonical Latin code.
   final String? plateNumber;
+
+  /// C6 (D-459) — the plate rendered in Arabic (Arabic letters + Arabic-Indic
+  /// digits), derived server-side from [plateNumber].
+  final String? plateNumberAr;
+
+  /// C6 (D-459) — the plate rendered in English/Latin (the canonical code).
+  final String? plateNumberEn;
 
   /// D-373 — the registration reference (SIMF-2026-00000001), issued once
   /// at profile creation. Customer-facing lookup key; NOT the QR id.
@@ -226,6 +236,8 @@ class UserProfileResponse {
       saudiMobile: json['saudiMobile'] as String?,
       internationalMobile: json['internationalMobile'] as String?,
       plateNumber: json['plateNumber'] as String?,
+      plateNumberAr: json['plateNumberAr'] as String?,
+      plateNumberEn: json['plateNumberEn'] as String?,
       referenceNumber: json['referenceNumber'] as String?,
       organisationId: json['organisationId'] as String?,
       gender: AppGender.fromValue((json['gender'] as num?)?.toInt()),

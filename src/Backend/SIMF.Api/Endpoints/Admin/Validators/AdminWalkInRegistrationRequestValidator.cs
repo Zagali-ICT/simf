@@ -2,6 +2,7 @@ using FastEndpoints;
 using FluentValidation;
 using SIMF.Api.Endpoints.Account.Validators;
 using SIMF.Api.Endpoints.Auth.Validators;
+using SIMF.Common;
 using SIMF.Contracts.Authentication;
 
 namespace SIMF.Api.Endpoints.Admin.Validators;
@@ -88,7 +89,14 @@ public sealed class AdminWalkInRegistrationRequestValidator
                     "الهوية الوطنية مطلوبة للمواطنين السعوديين.")
                 .Matches("^1[0-9]{9}$").Bilingual(
                     "The Saudi national ID is 10 digits and starts with 1.",
-                    "الهوية الوطنية السعودية مكوّنة من 10 أرقام وتبدأ بالرقم 1.");
+                    "الهوية الوطنية السعودية مكوّنة من 10 أرقام وتبدأ بالرقم 1.")
+                // D-459 — apply the same Luhn checksum the self-service path
+                // uses, so a malformed ID is rejected at the desk too.
+                .Must(id => string.IsNullOrEmpty(id)
+                    || UpsertUserProfileRequestValidator.IsValidLuhn(id))
+                .Bilingual(
+                    "The Saudi national ID is not a valid number.",
+                    "رقم الهوية الوطنية غير صحيح.");
         }).Otherwise(() =>
         {
             // Non-Saudi: either Iqama OR Passport must be supplied. When the
@@ -105,7 +113,12 @@ public sealed class AdminWalkInRegistrationRequestValidator
                 RuleFor(request => request.IqamaNumber!)
                     .Matches("^2[0-9]{9}$").Bilingual(
                         "The Iqama number is 10 digits and starts with 2.",
-                        "رقم الإقامة مكوّن من 10 أرقام ويبدأ بالرقم 2.");
+                        "رقم الإقامة مكوّن من 10 أرقام ويبدأ بالرقم 2.")
+                    // D-459 — Luhn checksum, mirroring the self-service path.
+                    .Must(UpsertUserProfileRequestValidator.IsValidLuhn)
+                    .Bilingual(
+                        "The Iqama number is not a valid number.",
+                        "رقم الإقامة غير صحيح.");
             });
             When(request => !string.IsNullOrWhiteSpace(request.PassportNumber), () =>
             {
@@ -165,13 +178,14 @@ public sealed class AdminWalkInRegistrationRequestValidator
                 "You can pick up to 10 interests.",
                 "يمكنك اختيار حتى 10 اهتمامات.");
 
-        // D-395 — optional plate number; max 7 to match UserProfile.PlateNumber
-        // HasMaxLength(7) and the UI MaxLength (validation-alignment, SES §7).
+        // C6 (D-459) — optional plate; when present it must match the Saudi
+        // standard (17-letter set + 1–4 digits), the same rule as the
+        // self-service profile upsert (no longer just a length cap).
         RuleFor(request => request.PlateNumber)
-            .MaximumLength(7).When(r => !string.IsNullOrEmpty(r.PlateNumber))
+            .Must(value => string.IsNullOrEmpty(value) || SaudiPlate.IsValid(value))
             .Bilingual(
-                "Plate number must be at most 7 characters.",
-                "يجب ألا يتجاوز رقم اللوحة 7 أحرف.");
+                "The plate number must be 3 letters (Saudi plate set) and up to 4 digits.",
+                "يجب أن يتكوّن رقم اللوحة من 3 أحرف (من حروف اللوحات السعودية) وحتى 4 أرقام.");
 
         // D-395 — gender must be a defined enum value.
         RuleFor(request => request.Gender)

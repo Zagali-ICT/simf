@@ -37,3 +37,22 @@
     color: var(--color-text-muted);
     font-size: 0.875rem;
 }
+
+/* C6 — D-459 — standard Saudi-plate entry: three letter dropdowns + a digit
+   field laid out in one row. Tokens only (no hardcoded values), per the CSS
+   rules; scoped to this component. */
+.simf-walkin__plate {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+}
+
+.simf-walkin__plate-letter {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.simf-walkin__plate-digits {
+    flex: 1.4 1 0;
+    min-width: 0;
+}

@@ -1,6 +1,7 @@
 using FastEndpoints;
 using FluentValidation;
 using SIMF.Api.Endpoints.Auth.Validators;
+using SIMF.Common;
 using SIMF.Contracts.UserProfile;
 
 namespace SIMF.Api.Endpoints.Account.Validators;
@@ -52,23 +53,18 @@ public sealed class UpsertUserProfileRequestValidator
     public static bool IsStandardInternationalMobile(string value)
         => E164Shape.IsMatch(NormalizePhone(value.Trim()));
 
-    // C6 (D-371) — the Saudi plate standard: exactly 3 letters (Arabic or
-    // Latin) + 1–4 digits, either order, ≤ 7 chars once separators are
-    // stripped. The Arabic range covers the letter block used on plates.
-    private static readonly System.Text.RegularExpressions.Regex PlateShape =
-        new(@"^([A-Za-zء-ي]{3}\d{1,4}|\d{1,4}[A-Za-zء-ي]{3})$",
-            System.Text.RegularExpressions.RegexOptions.Compiled);
-
-    /// <summary>C6 (D-371) Saudi vehicle-plate standard check (separators
-    /// stripped first).</summary>
+    /// <summary>C6 (D-459) Saudi vehicle-plate standard check — restricted to
+    /// the official 17-letter set (Arabic or Latin), 3 letters + 1–4 digits,
+    /// either order. Delegates to the shared <see cref="SaudiPlate"/> (one
+    /// source of truth, mirrored by the client's <c>plate_validation.dart</c>).</summary>
     public static bool IsStandardPlateNumber(string value)
-        => PlateShape.IsMatch(NormalizePhone(value.Trim()));
+        => SaudiPlate.IsValid(value);
 
     // Owner rule — the Arabic name must be Arabic letters only and the
     // English name Latin letters only (no digits, punctuation or cross-
-    // script characters), and each must be a full name of at least four
-    // parts. The char restriction guarantees every part is in the field's
-    // language, so "≥4 parts, same language" reduces to these two checks.
+    // script characters), and each must be a full name of 2 to 4 parts
+    // (D-459, was ≥4). The char restriction guarantees every part is in the
+    // field's language, so "2–4 parts, same language" reduces to these checks.
     private static readonly System.Text.RegularExpressions.Regex ArabicNameShape =
         new(@"^[ء-ي\s]+$",
             System.Text.RegularExpressions.RegexOptions.Compiled);
@@ -78,20 +74,23 @@ public sealed class UpsertUserProfileRequestValidator
 
     /// <summary>True when the value is Arabic letters + spaces only. Returns
     /// true for empty (the NotEmpty rule owns the required message, so we
-    /// don't double-report).</summary>
-    private static bool BeArabicLettersOnly(string? value)
+    /// don't double-report). Public so the walk-in validator reuses the rule.</summary>
+    public static bool BeArabicLettersOnly(string? value)
         => string.IsNullOrWhiteSpace(value) || ArabicNameShape.IsMatch(value.Trim());
 
     /// <summary>True when the value is Latin letters + spaces only (empty
-    /// defers to NotEmpty).</summary>
-    private static bool BeEnglishLettersOnly(string? value)
+    /// defers to NotEmpty). Public so the walk-in validator reuses the rule.</summary>
+    public static bool BeEnglishLettersOnly(string? value)
         => string.IsNullOrWhiteSpace(value) || EnglishNameShape.IsMatch(value.Trim());
 
-    /// <summary>A "full name" is at least four whitespace-separated parts
-    /// (owner rule). Empty defers to the NotEmpty rule.</summary>
-    private static bool HaveAtLeastFourParts(string? value)
+    /// <summary>Owner rule (D-459) — a "full name" is 2 to 4 whitespace-
+    /// separated parts (was "at least 4"). Splits on any whitespace (matching
+    /// the name regex's <c>\s</c> and the client's <c>\s+</c>) so a tab- or
+    /// NBSP-separated name counts its parts the same way everywhere. Empty
+    /// defers to the NotEmpty rule.</summary>
+    public static bool HaveTwoToFourParts(string? value)
         => string.IsNullOrWhiteSpace(value)
-            || value.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries).Length >= 4;
+            || value.Trim().Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length is >= 2 and <= 4;
 
     public UpsertUserProfileRequestValidator()
     {
@@ -146,9 +145,9 @@ public sealed class UpsertUserProfileRequestValidator
             .Must(BeArabicLettersOnly).Bilingual(
                 "The Arabic name must contain Arabic letters only.",
                 "يجب أن يحتوي الاسم بالعربية على حروف عربية فقط.")
-            .Must(HaveAtLeastFourParts).Bilingual(
-                "Enter your full name in Arabic — at least four parts.",
-                "أدخل اسمك الكامل بالعربية — أربعة مقاطع على الأقل.");
+            .Must(HaveTwoToFourParts).Bilingual(
+                "Enter your full name in Arabic — 2 to 4 parts.",
+                "أدخل اسمك الكامل بالعربية — من مقطعين إلى أربعة مقاطع.");
 
         RuleFor(request => request.EnglishName)
             .NotEmpty().Bilingual(
@@ -158,9 +157,9 @@ public sealed class UpsertUserProfileRequestValidator
             .Must(BeEnglishLettersOnly).Bilingual(
                 "The English name must contain English letters only.",
                 "يجب أن يحتوي الاسم بالإنجليزية على حروف إنجليزية فقط.")
-            .Must(HaveAtLeastFourParts).Bilingual(
-                "Enter your full name in English — at least four parts.",
-                "أدخل اسمك الكامل بالإنجليزية — أربعة مقاطع على الأقل.");
+            .Must(HaveTwoToFourParts).Bilingual(
+                "Enter your full name in English — 2 to 4 parts.",
+                "أدخل اسمك الكامل بالإنجليزية — من مقطعين إلى أربعة مقاطع.");
 
         RuleFor(request => request.NationalityCode)
             .NotEmpty().Bilingual(
@@ -253,13 +252,14 @@ public sealed class UpsertUserProfileRequestValidator
                 "The international mobile must be in the +<country code><number> (E.164) format.",
                 "يجب أن يكون رقم الجوال الدولي بالصيغة الدولية ‎+‎ يليها رمز الدولة والرقم (E.164).");
 
-        // C6 (D-371) — رقم اللوحة: optional, but when present it must match
-        // the Saudi standard (3 letters + 1–4 digits, ≤ 7 chars).
+        // C6 (D-459) — رقم اللوحة: optional, but when present it must match
+        // the Saudi standard — 3 letters from the official 17-letter set
+        // (Arabic or Latin) + 1–4 digits.
         RuleFor(request => request.PlateNumber)
             .Must(value => string.IsNullOrEmpty(value) || IsStandardPlateNumber(value))
             .Bilingual(
-                "The plate number must be 3 letters and up to 4 digits (Saudi standard).",
-                "يجب أن يتكوّن رقم اللوحة من 3 أحرف وحتى 4 أرقام (المعيار السعودي).");
+                "The plate number must be 3 letters (Saudi plate set) and up to 4 digits.",
+                "يجب أن يتكوّن رقم اللوحة من 3 أحرف (من حروف اللوحات السعودية) وحتى 4 أرقام.");
     }
 
     // D-197 — the registrant must be at least 18. Uses UtcNow date-only;
@@ -275,8 +275,9 @@ public sealed class UpsertUserProfileRequestValidator
     // D-197 — standard Luhn mod-10 over all digits (the last is the check
     // digit). Saudi national ids and Iqama numbers are Luhn-valid; this is
     // the real check on top of the prefix/length regex. Assumes the input
-    // has already passed the digits-only regex but stays defensive.
-    private static bool IsValidLuhn(string number)
+    // has already passed the digits-only regex but stays defensive. Public
+    // so the walk-in validator reuses the same check (D-459).
+    public static bool IsValidLuhn(string number)
     {
         var sum = 0;
         var doubleDigit = false;

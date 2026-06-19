@@ -10,7 +10,7 @@
 > banner + 2×2 tiles + locked بطاقتي card + sign-in CTA + FAQ→About row; the
 > signed-in greeting header + discover hero + live banner; the three **bordered
 > section bars** (عن الملتقى / الرعاة / الأخبار والتغطية, `KsaLinkRow`); the tile
-> groups (المتحدثون·الأجنحة·جلسات + اسأل المحاور; اللقاءات الثنائية·الأرشيف; the
+> groups (المتحدثون·المعرض·جلسات + اسأل المحاور; اللقاءات الثنائية·الأرشيف; the
 > smart 2×2); the latest-post card (source row + lead paragraph + the NewsImage
 > via the D-357 route); the social row + discover row; the unread badge; and the
 > **D-436 RTL `getCenter().dx` order assertions**. The unread-count provider's
@@ -137,7 +137,7 @@ Scenario: A signed-in visitor gets the greeting home (frame 758:1134)
        dark-mode controls and the menu
   And the discover hero banner and the red LIVE banner render
   And three bordered section bars render — عن الملتقى, الرعاة, الأخبار والتغطية
-  And the "عن الملتقى" tile group is المتحدثون · الأجنحة · جلسات plus the
+  And the "عن الملتقى" tile group is المتحدثون · المعرض · جلسات plus the
       full-width اسأل المحاور tile
   And the news tiles render اللقاءات الثنائية · الأرشيف
   And the "الميزات الذكية" group renders قابل أشخاص مثلك · المساعد الذكي ·
@@ -264,7 +264,7 @@ Feature: Home tile icons match the design
 
 Scenario: Each signed-in tile shows its bundled SVG glyph
   Given the signed-in Home is shown
-  Then المتحدثون shows the people glyph (bi:people), الأجنحة the chart glyph,
+  Then المتحدثون shows the people glyph (bi:people), المعرض the chart glyph,
        جلسات the target glyph (streamline:target-3)
   And اسأل المحاور shows the user glyph (solar:user-outline)
   And الأرشيف shows the archive glyph, اللقاءات الثنائية the video glyph
@@ -304,7 +304,7 @@ Scenario: The full-width اسأل المحاور tile opens the send-question sc
 ```gherkin
 Feature: RTL order is proven by position, not by eye (D-436)
   Given the device locale is Arabic and the signed-in Home is shown
-  Then in the "عن الملتقى" row, المتحدثون is right of الأجنحة right of جلسات
+  Then in the "عن الملتقى" row, المتحدثون is right of المعرض right of جلسات
   And in the news row, اللقاءات الثنائية is right of الأرشيف
   And in the smart row 2, ملخص الجلسات is right of بطاقتي الذكية
 ```

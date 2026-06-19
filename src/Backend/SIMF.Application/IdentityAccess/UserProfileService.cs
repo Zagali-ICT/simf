@@ -712,6 +712,9 @@ internal sealed class UserProfileService(
             SaudiMobile = profile.SaudiMobile,
             InternationalMobile = profile.InternationalMobile,
             PlateNumber = profile.PlateNumber,
+            // C6 — D-459: surface both renderings of the stored canonical code.
+            PlateNumberAr = SaudiPlate.ToArabic(profile.PlateNumber),
+            PlateNumberEn = SaudiPlate.ToEnglish(profile.PlateNumber),
             ReferenceNumber = profile.ReferenceNumber,
             OrganisationId = profile.OrganisationId,
             Gender = profile.Gender,
@@ -723,14 +726,9 @@ internal sealed class UserProfileService(
     private static string? NormaliseOptional(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    /// <summary>C6 — D-371: the plate is stored canonical — trimmed,
-    /// upper-cased, separators (spaces/dashes) stripped — so the 7-char
-    /// column always holds the same shape the validator checked.</summary>
-    private static string? NormalisePlate(string? value) =>
-        string.IsNullOrWhiteSpace(value)
-            ? null
-            : value.Trim()
-                .Replace(" ", string.Empty)
-                .Replace("-", string.Empty)
-                .ToUpperInvariant();
+    /// <summary>C6 — D-459: the plate is stored as the canonical Latin "code"
+    /// (Latin letters + Western digits, separators stripped) via the shared
+    /// <see cref="SaudiPlate"/>. The Arabic and English renderings are derived
+    /// on read (no duplicated persistence) — see <see cref="ToResponse"/>.</summary>
+    private static string? NormalisePlate(string? value) => SaudiPlate.Normalize(value);
 }

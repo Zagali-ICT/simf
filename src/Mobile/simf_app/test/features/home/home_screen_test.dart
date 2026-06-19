@@ -527,11 +527,11 @@ void main() {
       );
     }
 
-    testWidgets('about tiles: المتحدثون (right) · الأجنحة · الجلسات (left)',
+    testWidgets('about tiles: المتحدثون (right) · المعرض · الجلسات (left)',
         (tester) async {
       await pumpTall(tester);
       final speakers = tester.getCenter(find.text('المتحدثون')).dx;
-      final booths = tester.getCenter(find.text('الأجنحة')).dx;
+      final booths = tester.getCenter(find.text('المعرض')).dx;
       final sessions = tester.getCenter(find.text('الجلسات')).dx;
       expect(speakers, greaterThan(booths));
       expect(booths, greaterThan(sessions));

@@ -205,12 +205,21 @@ class _SponsorCard extends StatelessWidget {
               const SizedBox(width: SimfTokens.space2),
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                  // Figma 925:2978 — items-end / text-right. In RTL,
+                  // CrossAxisAlignment.start is the physical RIGHT edge, so the
+                  // name + tagline hug the badge. The tagline is capped to the
+                  // frame's ~215px (ConstrainedBox) so its box has a definite
+                  // width and textAlign.right keeps EVERY wrapped line flush to
+                  // the badge (a free-width Text left short last lines centred).
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Text(
                       name,
                       textAlign: TextAlign.right,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: nameColor,
                         fontWeight: FontWeight.w700,
@@ -221,13 +230,16 @@ class _SponsorCard extends StatelessWidget {
                     if (secondary != null &&
                         secondary!.trim().isNotEmpty) ...<Widget>[
                       const SizedBox(height: SimfTokens.space1),
-                      Text(
-                        secondary!,
-                        textAlign: TextAlign.right,
-                        style: TextStyle(
-                          color: subColor,
-                          fontSize: SimfTokens.textSm,
-                          height: 1.4,
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 215),
+                        child: Text(
+                          secondary!,
+                          textAlign: TextAlign.right,
+                          style: TextStyle(
+                            color: subColor,
+                            fontSize: SimfTokens.textSm,
+                            height: 1.4,
+                          ),
                         ),
                       ),
                     ],

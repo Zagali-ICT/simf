@@ -287,8 +287,8 @@ class AppL10n {
         'The English name must contain English letters only',
       );
   String get fullNameFourParts => _t(
-        'أدخل الاسم الكامل (4 مقاطع على الأقل)',
-        'Enter your full name (at least 4 parts)',
+        'أدخل الاسم الكامل (من مقطعين إلى 4 مقاطع)',
+        'Enter your full name (2 to 4 parts)',
       );
   // My Area — photos-only profile edit: re-upload the ID document.
   String get updateIdPhotoLink => _t('تحديث صورة الهوية', 'Update ID photo');
@@ -298,13 +298,17 @@ class AppL10n {
         'تعذّر رفع صورة الهوية. حاول مرة أخرى.',
         "Couldn't upload the ID photo. Try again.",
       );
-  // C6 (D-371) — رقم اللوحة, optional; Saudi standard when filled.
+  // C6 (D-371/D-459) — رقم اللوحة, optional; Saudi 17-letter set when filled.
   String get plateNumberLabel =>
       _t('رقم اللوحة (اختياري)', 'Plate number (optional)');
   String get plateNumberInvalid => _t(
-        'يجب أن يتكوّن رقم اللوحة من 3 أحرف وحتى 4 أرقام (المعيار السعودي)',
-        'The plate number must be 3 letters and up to 4 digits (Saudi standard)',
+        'يجب أن يتكوّن رقم اللوحة من 3 أحرف (من حروف اللوحات السعودية) وحتى 4 أرقام',
+        'The plate must be 3 letters (Saudi plate set) and up to 4 digits',
       );
+  // C6 (D-459) — the plate letter dropdowns + the digits field.
+  String get plateLetterHint => _t('حرف', 'Letter');
+  String get plateDigitsLabel => _t('الأرقام', 'Digits');
+  String get plateDigitsHint => _t('١-٤ أرقام', '1–4 digits');
   // C5 (D-371) — under "Other" the profile-type pick is required.
   String get profileTypeRequired =>
       _t('يجب اختيار التصنيف', 'A profile type selection is required');

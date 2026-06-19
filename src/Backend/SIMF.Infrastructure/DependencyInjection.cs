@@ -206,6 +206,10 @@ public static class DependencyInjection
         // P2.4 — D-229 (FDS-012 §5.5): System Configuration settings store.
         services.AddScoped<SIMF.Application.Configuration.Abstractions.IAdminSystemSettingService,
             SIMF.Infrastructure.Configuration.AdminSystemSettingService>();
+        // D-461 — public read-path over the whitelisted site-settings keys
+        // (registration welcome message + social links).
+        services.AddScoped<SIMF.Application.Configuration.Abstractions.ISiteSettingsService,
+            SIMF.Infrastructure.Configuration.SiteSettingsService>();
         // P2.5 — D-230 (FR-605): 2D venue map (admin CRUD + public read).
         services.AddScoped<SIMF.Application.Venue.Abstractions.IVenueMapService,
             SIMF.Infrastructure.Venue.VenueMapService>();
