@@ -236,6 +236,59 @@ void main() {
       expect(find.text('No items today'), findsOneWidget);
     });
 
+    testWidgets('جدولي اليوم splits into جلسات then مقابلات groups (758:1283)',
+        (tester) async {
+      tester.view.physicalSize = const Size(412, 1800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await _pump(
+        tester,
+        controller: _AuthController(RegistrationStatus.approved),
+        repo: _FakeMyAreaRepository(
+          dashboard: _dashboard(
+            schedule: <MyAreaScheduleItem>[
+              MyAreaScheduleItem(
+                kind: 'Session',
+                startUtc: DateTime.utc(2026, 9, 13, 8),
+                titleEn: 'Opening',
+                titleAr: 'الافتتاح',
+                status: 'Approved',
+                sessionId: 's1',
+              ),
+              MyAreaScheduleItem(
+                kind: 'Meeting',
+                startUtc: DateTime.utc(2026, 9, 13, 10),
+                titleEn: 'Dr Ibrahim',
+                titleAr: 'مقابلة د. ابراهيم',
+                status: 'Approved',
+              ),
+            ],
+          ),
+        ),
+        locale: const Locale('ar'),
+      );
+      // The gold "جلسات" sub-header (the stat tile is "جلسات محفوظة", distinct).
+      expect(find.text('جلسات'), findsOneWidget);
+      expect(find.text('مقابلة د. ابراهيم'), findsOneWidget);
+      // The sessions group sits above the meetings group.
+      final session = tester.getCenter(find.text('الافتتاح')).dy;
+      final meeting = tester.getCenter(find.text('مقابلة د. ابراهيم')).dy;
+      expect(session, lessThan(meeting));
+    });
+
+    testWidgets('share pills: مشاركة جهة اتصال (right) · مشاركة ملفي (left) '
+        '(758:1305)', (tester) async {
+      await _pump(
+        tester,
+        controller: _AuthController(RegistrationStatus.approved),
+        repo: _FakeMyAreaRepository(dashboard: _dashboard()),
+        locale: const Locale('ar'),
+      );
+      final contact = tester.getCenter(find.text('مشاركة جهة اتصال')).dx;
+      final profile = tester.getCenter(find.text('مشاركة ملفي')).dx;
+      expect(contact, greaterThan(profile));
+    });
+
     testWidgets('pending account shows the limited card, no dashboard call',
         (tester) async {
       final repo = _FakeMyAreaRepository(dashboard: _dashboard());

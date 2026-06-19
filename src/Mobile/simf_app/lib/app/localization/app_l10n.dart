@@ -738,9 +738,13 @@ class AppL10n {
   String get gateRateLimited =>
       _t('محاولات كثيرة. انتظر قليلاً.', 'Too many attempts. Wait a moment.');
   String get statBookedSessions => _t('جلسات محفوظة', 'Booked sessions');
-  String get statMeetings => _t('مقابلات مؤكدة', 'Confirmed meetings');
+  String get statMeetings => _t('مقابلات', 'Meetings');
   String get statisticsTitle => _t('الإحصائيات', 'Statistics');
   String get todayScheduleTitle => _t('جدولي اليوم', "Today's schedule");
+  // جدولي اليوم sub-group headers (frame 758:1283, nodes 1041:2042 / 1041:2044)
+  // — gold, above the session rows and the meeting rows respectively.
+  String get scheduleSessionsGroup => _t('جلسات', 'Sessions');
+  String get scheduleMeetingsGroup => _t('مقابلات', 'Meetings');
   String get scheduleEmpty =>
       _t('لا يوجد لديك مواعيد اليوم', 'No items today');
   String get smartBadgeLink => _t('بطاقتي الذكية', 'My smart badge');

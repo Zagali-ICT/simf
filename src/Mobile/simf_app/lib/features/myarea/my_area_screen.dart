@@ -257,6 +257,12 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
     final reference = referenceNumber != null
         ? '#$referenceNumber'
         : (identity.qrId == null ? null : '#${identity.qrId}');
+    // Frame 758:1283 — جدولي اليوم splits into a "جلسات" group and a "مقابلات"
+    // group, each under its own gold sub-header.
+    final sessions =
+        dashboard.todaySchedule.where((i) => i.isSession).toList();
+    final meetings =
+        dashboard.todaySchedule.where((i) => !i.isSession).toList();
 
     return ListView(
       padding: const EdgeInsets.all(SimfTokens.space4),
@@ -274,21 +280,23 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
         // Frame 758:1283 — two horizontal share-action pills (h48, exact
         // iconify glyphs), NOT the tall vertical nav tiles. Language / theme
         // moved to the shell's side drawer (D-396).
+        // Frame 758:1283 — مشاركة جهة اتصال at the inline-start (right), مشاركة
+        // ملفي at the end (left).
         Row(
           children: <Widget>[
-            Expanded(
-              child: _ShareTile(
-                label: l10n.shareMyProfile,
-                iconAsset: 'assets/icons/share_profile.svg',
-                onTap: () => context.pushNamed(RouteNames.shareMyContact),
-              ),
-            ),
-            const SizedBox(width: SimfTokens.space2),
             Expanded(
               child: _ShareTile(
                 label: l10n.shareContact,
                 iconAsset: 'assets/icons/share_contact.svg',
                 onTap: () => unawaited(_shareContact()),
+              ),
+            ),
+            const SizedBox(width: SimfTokens.space2),
+            Expanded(
+              child: _ShareTile(
+                label: l10n.shareMyProfile,
+                iconAsset: 'assets/icons/share_profile.svg',
+                onTap: () => context.pushNamed(RouteNames.shareMyContact),
               ),
             ),
           ],
@@ -313,7 +321,7 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
         const SizedBox(height: SimfTokens.space6),
         KsaSectionHeader(title: l10n.todayScheduleTitle),
         const SizedBox(height: SimfTokens.space3),
-        if (dashboard.todaySchedule.isEmpty)
+        if (sessions.isEmpty && meetings.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: SimfTokens.space4),
             child: Text(
@@ -322,22 +330,31 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
             ),
           )
         else
-          for (final item in dashboard.todaySchedule)
-            Padding(
-              padding: const EdgeInsets.only(bottom: SimfTokens.space3),
-              child: _ScheduleRow(
-                item: item,
-                isArabic: isArabic,
-                onTap: item.isSession && item.sessionId != null
-                    ? () => context.pushNamed(
-                          RouteNames.sessionDetail,
-                          pathParameters: <String, String>{
-                            'sessionId': item.sessionId!,
-                          },
-                        )
-                    : null,
-              ),
-            ),
+          for (final (groupLabel, items)
+              in <(String, List<MyAreaScheduleItem>)>[
+            (l10n.scheduleSessionsGroup, sessions),
+            (l10n.scheduleMeetingsGroup, meetings),
+          ])
+            if (items.isNotEmpty) ...<Widget>[
+              _ScheduleGroupHeader(label: groupLabel),
+              const SizedBox(height: SimfTokens.space3),
+              for (final item in items)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: SimfTokens.space3),
+                  child: _ScheduleRow(
+                    item: item,
+                    isArabic: isArabic,
+                    onTap: item.isSession && item.sessionId != null
+                        ? () => context.pushNamed(
+                              RouteNames.sessionDetail,
+                              pathParameters: <String, String>{
+                                'sessionId': item.sessionId!,
+                              },
+                            )
+                        : null,
+                  ),
+                ),
+            ],
         const SizedBox(height: SimfTokens.space3),
         KsaSectionHeader(title: l10n.moreTitle),
         const SizedBox(height: SimfTokens.space3),
@@ -613,6 +630,29 @@ class _ScheduleRow extends StatelessWidget {
               ),
             ],
           ),
+      ),
+    );
+  }
+}
+
+/// A جدولي اليوم sub-group header (frame nodes 1041:2042 / 1041:2044): the gold
+/// "جلسات" / "مقابلات" label, at the inline start, above each group of rows.
+class _ScheduleGroupHeader extends StatelessWidget {
+  const _ScheduleGroupHeader({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: SimfTokens.accent,
+          fontSize: SimfTokens.textSm,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
