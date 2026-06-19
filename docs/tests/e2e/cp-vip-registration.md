@@ -42,7 +42,7 @@ Scenario: Register a VVIP guest
   When I select the "VVIP" tier
   And I enter English name "Khalid Al Otaibi" and Arabic name "خالد العتيبي"
   And I enter Mawj ID "MAWJ-10293", honorific "Minister", preferred language "Arabic"
-  And I pick a Saudi nationality with national id "1234567890"
+  And I pick a Saudi nationality with national id "1101798278"
   And I pick an organisation and enter mobile "+966500000001"
   And I attach a clear VIP welcome photo (JPEG, < 2 MB)
   And I submit
@@ -50,9 +50,19 @@ Scenario: Register a VVIP guest
   And the UserProfile row carries MawjId, Honorific, PreferredLanguage
   And UserProfile.VipPhotoRelativePath is set
   And the account state is PendingApproval
+
+Scenario: The desk enforces the Saudi-ID Luhn checksum and the plate set (D-459)
+  Given I am on "/admin/visitors/vip"
+  When I enter a Saudi national id "1234567890" (correct prefix/length but fails Luhn)
+  And I submit
+  Then the request is rejected (400) with the bilingual "national id is not valid" error
+  And a national id "1101798278" (Luhn-valid) is accepted
+  And an optional plate is restricted to the 17 Saudi plate letters + 1–4 digits
+    (e.g. "ABJ1234" / "ابح1234" accepted; "ABC1234", "ABJ12345" rejected),
+    matching the self-service profile rule
 ```
 
-**Evidence captured:** screenshot before/after; console 0 errors; network 0 failed; `OperationLog` rows `UserProfile.VipPhotoUploaded` + walk-in register.
+**Evidence captured:** screenshot before/after; console 0 errors; network 0 failed; `OperationLog` rows `UserProfile.VipPhotoUploaded` + walk-in register. Server validation backed by `WalkInRegistrationTests` + `SaudiPlateTests` (D-459).
 
 ### E2E-VIPR-002 — Picker restricted to VVIP / VIP only
 

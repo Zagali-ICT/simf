@@ -33,9 +33,19 @@ public sealed class UserProfileResponse
     public string? SaudiMobile { get; set; }
     public string? InternationalMobile { get; set; }
 
-    /// <summary>C6 — D-371 (رقم اللوحة): the optional Saudi vehicle plate,
-    /// stored normalized (3 letters + 1–4 digits, ≤ 7 chars, no separators).</summary>
+    /// <summary>C6 — D-371/D-459 (رقم اللوحة): the optional Saudi vehicle plate,
+    /// stored as the canonical Latin "code" (Latin letters + Western digits,
+    /// no separators). See <see cref="PlateNumberAr"/> / <see cref="PlateNumberEn"/>
+    /// for the per-script renderings.</summary>
     public string? PlateNumber { get; set; }
+
+    /// <summary>C6 — D-459: the plate rendered in Arabic (Arabic letters +
+    /// Arabic-Indic digits), derived from <see cref="PlateNumber"/>.</summary>
+    public string? PlateNumberAr { get; set; }
+
+    /// <summary>C6 — D-459: the plate rendered in English/Latin (the canonical
+    /// code); same value as <see cref="PlateNumber"/>.</summary>
+    public string? PlateNumberEn { get; set; }
 
     /// <summary>D-373 — the registration reference (<c>SIMF-2026-00000001</c>),
     /// issued once at profile creation. Customer-facing lookup key; NOT the

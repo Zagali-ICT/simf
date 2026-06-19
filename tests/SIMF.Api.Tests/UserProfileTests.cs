@@ -148,7 +148,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         Assert.True(body.Data!.ProfileComplete);
     }
 
-    // Name rules — Arabic-only / English-only, full name of at least four parts.
+    // Name rules — Arabic-only / English-only, full name of 2 to 4 parts (D-459).
 
     [Fact]
     public async Task POST_rejects_an_arabic_name_with_non_arabic_characters()
@@ -162,14 +162,36 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task POST_rejects_an_arabic_name_with_fewer_than_four_parts()
+    public async Task POST_rejects_an_arabic_name_with_fewer_than_two_parts()
     {
         var token = await CreateUserAndSignInAsync();
         var request = await ValidSaudiRequestAsync();
-        request.ArabicName = "محمد عبدالله";   // two parts
+        request.ArabicName = "محمد";   // one part — D-459 floor is 2
 
         var response = await PostAuthAsync(Path, request, token);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task POST_rejects_an_arabic_name_with_more_than_four_parts()
+    {
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.ArabicName = "محمد عبدالله أحمد سعيد الزهراني";   // five parts
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task POST_accepts_a_two_part_name()
+    {
+        // D-459 — the floor dropped from 4 to 2 parts.
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync("Ahmad Alharbi", "أحمد الحربي");
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
@@ -184,11 +206,22 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task POST_rejects_an_english_name_with_fewer_than_four_parts()
+    public async Task POST_rejects_an_english_name_with_fewer_than_two_parts()
     {
         var token = await CreateUserAndSignInAsync();
         var request = await ValidSaudiRequestAsync();
-        request.EnglishName = "Mohammed Alzahrani";   // two parts
+        request.EnglishName = "Mohammed";   // one part — D-459 floor is 2
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task POST_rejects_an_english_name_with_more_than_four_parts()
+    {
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.EnglishName = "Mohammed Bin Saleh Ahmed Alzahrani";   // five parts
 
         var response = await PostAuthAsync(Path, request, token);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -439,7 +472,8 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     [InlineData("ABJ1234", "ABJ1234")]
     [InlineData("abj 1234", "ABJ1234")]   // separators stripped + upper-cased
     [InlineData("1234-ABJ", "1234ABJ")]   // digits-first order
-    [InlineData("أبج1234", "أبج1234")]    // Arabic letters
+    [InlineData("ابح1234", "ABJ1234")]    // Arabic letters → canonical Latin code
+    [InlineData("ابح١٢٣٤", "ABJ1234")]    // Arabic letters + Arabic-Indic digits
     [InlineData("ABJ1", "ABJ1")]          // single digit
     public async Task POST_accepts_a_standard_plate_and_stores_it_normalized(
         string plate, string stored)
@@ -462,6 +496,8 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     [InlineData("ABJ")]       // no digits
     [InlineData("1234567")]   // digits only
     [InlineData("AB!1234")]   // symbol
+    [InlineData("ABC1234")]   // C is not one of the 17 Saudi plate letters
+    [InlineData("ابج1234")]   // ج (jeem) is not a Saudi plate letter
     public async Task POST_rejects_a_non_standard_plate(string plate)
     {
         var token = await CreateUserAndSignInAsync();
@@ -486,6 +522,24 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         var fetched = (await get.Content
             .ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!.Data!;
         Assert.Null(fetched.PlateNumber);
+    }
+
+    [Fact]
+    public async Task POST_returns_the_plate_in_both_scripts()
+    {
+        // C6 — D-459: the stored value is the canonical Latin code; the response
+        // also carries the Arabic and English renderings derived from it.
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.PlateNumber = "ابح1234";   // Arabic-script input
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var saved = (await response.Content
+            .ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!.Data!;
+        Assert.Equal("ABJ1234", saved.PlateNumber);
+        Assert.Equal("ABJ1234", saved.PlateNumberEn);
+        Assert.Equal("ابح١٢٣٤", saved.PlateNumberAr);
     }
 
     // D-373 — the registration reference: SIMF-<year>-<8-digit sequence>,

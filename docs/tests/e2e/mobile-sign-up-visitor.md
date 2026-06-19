@@ -27,7 +27,8 @@
 > tabs, gender is two radio pills, the attach control is the bordered
 > إرفاق ملف box, and an underlined terms link opens Page 009. **The
 > lookups/prefill/typeahead/validation/draft contract is unchanged.** Deltas:
-> the frame's "رقم اللوحة (اختياري)" has no backend field and is not rendered;
+> the plate field "رقم اللوحة (اختياري)" is rendered as three 17-letter Saudi
+> plate dropdowns (Arabic · Latin) + a 1–4 digit field (D-459);
 > DOB, place of birth and the Saudi switch + national-ID path are kept
 > (API-required) though the frame omits them. Old screen parked in
 > `lib/features/_legacy_mockup/`. Live browser check N/A (auth-gated);
@@ -52,12 +53,12 @@
 | E2E-MOB007-013 | International mobile E.164 (C4, D-371): `+447700900123` accepted (dash ok); `0044…`, `+0…`, too-short rejected — client inline + server 400 | validation | P0 | authored ✓ (client `phone_validation_test` + server `UserProfileTests` theories) |
 | E2E-MOB007-014 | Visitor type lock (C5, D-371): Visitor tab shows **no** profile-type picker; the draft auto-carries the seeded **"Normal" (عادي)** id; server rejects any other audience-tier self-pick with 400 | validation | P0 | authored ✓ (widget test + server C5 tests) |
 | E2E-MOB007-015 | Other tab (C5, D-371): the filtered picker is shown and a pick is **required** (inline error blocks Next); partner-side picks accepted by the server | validation | P0 | authored ✓ (widget test + server C5 test) |
-| E2E-MOB007-016 | Plate number (C6, D-371): optional — empty saves fine; `ABJ1234` / `abj 1234` / `1234-ABJ` / `أبج1234` accepted and stored normalized upper-cased; 2/4 letters, 5 digits, digits-only, symbols rejected — client inline + server 400 | validation | P0 | authored ✓ (client `plate_validation_test` + server `UserProfileTests` theories incl. stored-value round-trip) |
+| E2E-MOB007-016 | Plate number (C6, D-371/D-459): optional — empty saves fine; restricted to the **official 17 Saudi plate letters** (Arabic or Latin), 3 letters + 1–4 digits, either order; `ABJ1234` / `abj 1234` / `1234-ABJ` / `ابح1234` / `ابح١٢٣٤` accepted and stored as the canonical Latin **code**; the response returns both `plateNumberAr` (ابح١٢٣٤) and `plateNumberEn` (ABJ1234); 2/4 letters, 5 digits, digits-only, symbols, and out-of-set letters (C, ج) rejected — app uses 17-letter dropdowns; client inline + server 400 | validation | P0 | authored ✓ (client `plate_validation_test` + `SaudiPlateTests` + server `UserProfileTests` theories incl. AR/EN round-trip) |
 | E2E-MOB007-017 | **Two-photo split (D-437):** the form ends with **two** image actions — **"Upload ID"** (gallery pick of the ID DOCUMENT, **mandatory for everyone**, no face check) and **"Face photo"** (captured via the existing **face-detection / liveness page** `identityVerification` → the avatar, **mandatory for men, optional for women**). A missing ID blocks Next with "An ID image is required" (all genders); a male missing the face photo blocks with "A face photo is required — capture it with the camera" (shown up front); a female proceeds with the ID alone | validation | P0 | authored ✓ (widget tests; live face-capture drive shares the My-Area avatar flow — needs a real device, verified on the Huawei) |
 | E2E-MOB007-018 | **Face capture page (D-437):** the FACE photo reuses the guided face-detection / liveness screen (smile→turn→turn, with a gallery fallback) the My-Area avatar uses — it owns the camera permission + the on-device face/liveness check; the returned selfie becomes the avatar. The self-service **id-image endpoint no longer face-gates** (it is a document now); the admin walk-in id-document path keeps its server FaceAiSharp gate | validation | P0 | authored ✓ (server `UserProfileFaceGateTests` — self-service accepts a faceless document, admin paths still reject; the liveness capture is verified live on the Huawei) |
 | E2E-MOB007-019 | Missing-items feedback (D-434): a blocked Next shows the bilingual "complete the required fields" toast (not a silent no-op), and the form carries an info banner on entry so a user routed in to complete their profile knows why | validation | P0 | authored ✓ (`completeProfilePrompt` toast on every blocked-Next test path; banner renders on load) |
 | E2E-MOB007-020 | **Top avatar (D-437):** once the face photo is captured, the placeholder person icon at the top of the card is replaced by the captured face | happy | P1 | authored ✓ (widget — header avatar swaps to the captured bytes) |
-| E2E-MOB007-021 | **Name rules (D-437):** the Arabic name accepts only Arabic letters + spaces (Latin/digits filtered at the keystroke); the English name only Latin letters + spaces; each must be a **full name of ≥4 parts** or Next is blocked with "Enter your full name (at least 4 parts)". Mirrored server-side in `UpsertUserProfileRequestValidator` (400) | validation | P0 | authored ✓ (widget formatter+validator test + server name-rule tests) |
+| E2E-MOB007-021 | **Name rules (D-437/D-459):** the Arabic name accepts only Arabic letters + spaces (Latin/digits filtered at the keystroke); the English name only Latin letters + spaces; each must be a **full name of 2 to 4 parts** or Next is blocked with "Enter your full name (2 to 4 parts)". Mirrored server-side in `UpsertUserProfileRequestValidator` (400) | validation | P0 | authored ✓ (widget formatter+validator test + server name-rule tests) |
 
 ## Scenarios
 
@@ -251,7 +252,7 @@ Scenario: The captured face is shown at the top of the card
   Then the placeholder icon at the top is replaced by the captured face image
 ```
 
-### E2E-MOB007-021 — Arabic-only / English-only full-name (≥4 parts) (D-437)
+### E2E-MOB007-021 — Arabic-only / English-only full-name (2–4 parts) (D-437/D-459)
 
 ```gherkin
 Feature: Name rules
@@ -260,12 +261,13 @@ Scenario: The Arabic field accepts only Arabic letters
   When the visitor types "Ahmed 123" into the Arabic name field
   Then the Latin letters and digits are filtered out at the keystroke (the field never holds them)
 
-Scenario: A full name needs at least four parts in one language
-  Given the Arabic name is "محمد عبدالله" (two parts) and every other field is valid
+Scenario: A full name needs 2 to 4 parts in one language
+  Given the Arabic name is "محمد" (one part) and every other field is valid
   When the visitor taps Next
   Then the app does not navigate
-  And the Arabic name shows "Enter your full name (at least 4 parts)"
-  And the same rule applies to the English name (Latin letters only, ≥4 parts)
+  And the Arabic name shows "Enter your full name (2 to 4 parts)"
+  And a 5-part name is likewise rejected (the ceiling is 4)
+  And the same rule applies to the English name (Latin letters only, 2–4 parts)
   And the server's UpsertUserProfileRequestValidator re-checks both (400 on violation)
 ```
 
@@ -288,4 +290,4 @@ Scenario: The complete-profile entry shows an attention banner
 
 ---
 
-_Last reviewed:_ `2026-06-16` by `SIMF Team` — D-437 two-photo split (Upload ID gallery + Face photo camera), Arabic-only/English-only ≥4-part name rules, top-avatar swap, and the self-service id-image face-gate removal (017/018/020/021). Earlier: D-332 data-screen rework; D-371 C4 phone standards.
+_Last reviewed:_ `2026-06-19` by `SIMF Team` — D-459 name 2–4 parts + the 17-letter Saudi plate dropdowns (canonical code + AR/EN renderings) (016/021). Earlier: D-437 two-photo split (Upload ID gallery + Face photo camera), Arabic-only/English-only name rules, top-avatar swap, and the self-service id-image face-gate removal (017/018/020/021); D-332 data-screen rework; D-371 C4 phone standards.

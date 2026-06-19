@@ -63,6 +63,13 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   final TextEditingController _saudiMobile = TextEditingController();
   final TextEditingController _internationalMobile = TextEditingController();
   final TextEditingController _plate = TextEditingController();
+  // C6 (D-459) — the plate letter picks (Latin codes) + the digits field. The
+  // assembled value is mirrored into [_plate] so the submit/prefill path that
+  // reads `_plate.text` is unchanged.
+  String? _plateLetter1;
+  String? _plateLetter2;
+  String? _plateLetter3;
+  final TextEditingController _plateDigits = TextEditingController();
   final TextEditingController _organisationSearch = TextEditingController();
 
   /// نوع التسجيل: Visitor (true) / Other (false) — the `ProfileType.IsForVisitor`
@@ -133,6 +140,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     _saudiMobile.dispose();
     _internationalMobile.dispose();
     _plate.dispose();
+    _plateDigits.dispose();
     _organisationSearch.dispose();
     super.dispose();
   }
@@ -192,7 +200,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     }
     _saudiMobile.text = profile.saudiMobile ?? '';
     _internationalMobile.text = profile.internationalMobile ?? '';
-    _plate.text = profile.plateNumber ?? '';
+    _setPlateFromCode(profile.plateNumber);
     // D-373 defaults — Male and Saudi Arabia pre-selected on a first-time
     // (empty) profile; a saved profile keeps its own values.
     _gender = profile.gender == AppGender.unspecified
@@ -495,39 +503,39 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
 
   // Name rules (mirror UpsertUserProfileRequestValidator): the Arabic name must
   // be Arabic letters only, the English name Latin letters only, and a "full
-  // name" is at least four whitespace-separated parts (in that one language).
+  // name" is 2 to 4 whitespace-separated parts (in that one language).
   static final RegExp _arabicLettersOnly = RegExp(r'^[ء-ي\s]+$');
   static final RegExp _englishLettersOnly = RegExp(r'^[A-Za-z\s]+$');
 
-  String? _validateArabicName(String? value) {
+  /// Shared name rule for both scripts: required, [lettersOnly] only, and 2–4
+  /// whitespace-separated parts. [lettersOnlyMsg] is the per-script message.
+  String? _validateName(String? value, RegExp lettersOnly, String lettersOnlyMsg) {
     final l10n = AppL10n.of(context);
     final name = value?.trim() ?? '';
     if (name.isEmpty) {
       return l10n.requiredField;
     }
-    if (!_arabicLettersOnly.hasMatch(name)) {
-      return l10n.arabicNameLettersOnly;
+    if (!lettersOnly.hasMatch(name)) {
+      return lettersOnlyMsg;
     }
-    if (name.split(RegExp(r'\s+')).length < 4) {
+    final parts = name.split(RegExp(r'\s+')).length;
+    if (parts < 2 || parts > 4) {
       return l10n.fullNameFourParts;
     }
     return null;
   }
 
-  String? _validateEnglishName(String? value) {
-    final l10n = AppL10n.of(context);
-    final name = value?.trim() ?? '';
-    if (name.isEmpty) {
-      return l10n.requiredField;
-    }
-    if (!_englishLettersOnly.hasMatch(name)) {
-      return l10n.englishNameLettersOnly;
-    }
-    if (name.split(RegExp(r'\s+')).length < 4) {
-      return l10n.fullNameFourParts;
-    }
-    return null;
-  }
+  String? _validateArabicName(String? value) => _validateName(
+        value,
+        _arabicLettersOnly,
+        AppL10n.of(context).arabicNameLettersOnly,
+      );
+
+  String? _validateEnglishName(String? value) => _validateName(
+        value,
+        _englishLettersOnly,
+        AppL10n.of(context).englishNameLettersOnly,
+      );
 
   String? _validateNationalId(String? value) {
     final id = value?.trim() ?? '';
@@ -1173,26 +1181,133 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     ];
   }
 
-  /// C6 (D-371) — رقم اللوحة: optional; validated to the Saudi standard
-  /// when filled (3 letters + 1–4 digits; separators ignored). The frame
-  /// (Figma 168:2972) draws it as "رقم اللوحة (اختياري)".
+  /// C6 (D-371/D-459) — رقم اللوحة: optional. Rendered as three letter
+  /// dropdowns (the official 17 Saudi plate letters, shown "Arabic · Latin")
+  /// plus a 1–4 digit field; the picks are assembled into [_plate] and
+  /// validated against the shared `isStandardPlateNumber`.
   Widget _buildPlateField(AppL10n l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         _FieldLabel(l10n.plateNumberLabel),
         const SizedBox(height: 8),
-        TextFormField(
-          controller: _plate,
+        Row(
           textDirection: TextDirection.ltr,
-          maxLength: 9,
-          style: _inputStyle,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          validator: _validatePlate,
-          decoration: _fieldDecoration(),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Expanded(
+              child: _plateLetterDropdown(
+                l10n,
+                _plateLetter1,
+                (String? v) => _plateLetter1 = v,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _plateLetterDropdown(
+                l10n,
+                _plateLetter2,
+                (String? v) => _plateLetter2 = v,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _plateLetterDropdown(
+                l10n,
+                _plateLetter3,
+                (String? v) => _plateLetter3 = v,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              flex: 2,
+              child: TextFormField(
+                controller: _plateDigits,
+                textDirection: TextDirection.ltr,
+                maxLength: 4,
+                keyboardType: TextInputType.number,
+                inputFormatters: <TextInputFormatter>[
+                  FilteringTextInputFormatter.digitsOnly,
+                ],
+                style: _inputStyle,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                onChanged: (_) => setState(_syncPlate),
+                validator: (_) => _validatePlate(_plate.text),
+                decoration: _fieldDecoration(
+                  counterText: '',
+                  hintText: l10n.plateDigitsHint,
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );
+  }
+
+  /// One of the three plate-letter dropdowns: the 17 letters, each shown as
+  /// "Arabic · Latin", stored by its Latin [SaudiPlateLetter.code].
+  Widget _plateLetterDropdown(
+    AppL10n l10n,
+    String? value,
+    ValueChanged<String?> onPicked,
+  ) {
+    return DropdownButtonFormField<String>(
+      initialValue: value,
+      isExpanded: true,
+      style: _inputStyle,
+      hint: Text(l10n.plateLetterHint, style: _inputStyle),
+      decoration: _fieldDecoration(),
+      items: <DropdownMenuItem<String>>[
+        for (final SaudiPlateLetter letter in saudiPlateLetters)
+          DropdownMenuItem<String>(
+            value: letter.code,
+            child: Text('${letter.arabic} · ${letter.english}'),
+          ),
+      ],
+      onChanged: (String? picked) => setState(() {
+        onPicked(picked);
+        _syncPlate();
+      }),
+    );
+  }
+
+  /// Re-assembles [_plate] from the dropdown picks + digits (letters then
+  /// digits). Empty when nothing is picked — the plate is optional.
+  void _syncPlate() {
+    final String letters =
+        '${_plateLetter1 ?? ''}${_plateLetter2 ?? ''}${_plateLetter3 ?? ''}';
+    final String digits = _plateDigits.text.trim();
+    _plate.text = (letters.isEmpty && digits.isEmpty) ? '' : '$letters$digits';
+  }
+
+  /// Splits a stored canonical plate code (e.g. "ABJ1234") back into the three
+  /// letter dropdowns + the digits field, then refreshes [_plate].
+  void _setPlateFromCode(String? code) {
+    _plateLetter1 = null;
+    _plateLetter2 = null;
+    _plateLetter3 = null;
+    _plateDigits.text = '';
+    if (code != null && code.trim().isNotEmpty) {
+      final List<String> letters = <String>[];
+      final StringBuffer digits = StringBuffer();
+      for (final int rune in code.trim().runes) {
+        if (rune >= 0x30 && rune <= 0x39) {
+          digits.writeCharCode(rune);
+        } else {
+          letters.add(String.fromCharCode(rune).toUpperCase());
+        }
+      }
+      final Set<String> codes =
+          saudiPlateLetters.map((SaudiPlateLetter l) => l.code).toSet();
+      if (letters.length == 3 && letters.every(codes.contains)) {
+        _plateLetter1 = letters[0];
+        _plateLetter2 = letters[1];
+        _plateLetter3 = letters[2];
+        _plateDigits.text = digits.toString();
+      }
+    }
+    _syncPlate();
   }
 
   Widget _buildMobileField(AppL10n l10n) {
