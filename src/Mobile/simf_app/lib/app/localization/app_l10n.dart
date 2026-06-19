@@ -881,6 +881,9 @@ class AppL10n {
 
   // Booths (Page 022).
   String get boothsTitle => _t('الأجنحة', 'Booths');
+  // The screen header per Figma frame 922:2458 node 922:2464 ("المعرض" — the
+  // exhibition); distinct from the nav-tile/route label (boothsTitle).
+  String get boothsExhibitionTitle => _t('المعرض', 'Exhibition');
   String get boothsError =>
       _t('تعذّر تحميل الأجنحة.', 'Could not load the booths.');
   String get boothsEmpty => _t('لا توجد أجنحة', 'No booths');
@@ -924,6 +927,8 @@ class AppL10n {
   String get archivePastSpeakersLabel =>
       _t('المتحدثون السابقون', 'Past speakers');
   String archiveMoreCount(int count) => _t('+$count آخرون', '+$count more');
+  // Frame 927:3343 — the past-speakers overflow card shows "+N" over "آخرون".
+  String get archiveOthersLabel => _t('آخرون', 'Others');
   String archiveStats(int attendees, int sessions, int speakers) => _t(
         '$attendees حضور · $sessions جلسة · $speakers متحدث',
         '$attendees attendees · $sessions sessions · $speakers speakers',

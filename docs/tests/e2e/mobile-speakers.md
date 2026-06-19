@@ -1,5 +1,9 @@
 # E2E test catalogue — `Speakers list` (`speakers`)
 
+> **D-453 frame re-verify (908:1744):** matched the frame's card pitch — the
+> inter-card gap is now **16px** (card 60 + 16 = 76 pitch). Card structure
+> (anchor/photo tile + name over rank + beige caret) unchanged.
+
 > **Authority:** SIMF E2E test catalogue template (D-133). Mobile catalogue — the
 > public speakers list is an **already-built, anonymous** read (D-199): the list
 > endpoint `GET /api/v1/app/speakers` returns the active speakers ordered for the

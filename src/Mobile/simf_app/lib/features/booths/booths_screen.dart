@@ -114,7 +114,8 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     return KsaPage(
-      title: l10n.boothsTitle,
+      // Frame 922:2464 titles the screen "المعرض" (the nav tile/route stay "الأجنحة").
+      title: l10n.boothsExhibitionTitle,
       onBack: () => ksaBackOrHome(context),
       body: _buildBody(l10n),
     );

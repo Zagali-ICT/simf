@@ -1,5 +1,10 @@
 # E2E test catalogue — `Sponsors` (`sponsors`)
 
+> **D-453 frame re-verify (922:2824):** the sponsor name now renders **white on
+> the gold hero card** too (was navy), and the gold-tier grid was rebuilt to the
+> frame — each tile is a single **72-high navy card** holding the logo above a
+> **12px SemiBold white** name, with an **8px** column gap. Data binding unchanged.
+
 > **Authority:** SIMF E2E template (D-133). The sponsors read is built + anonymous
 > (D-199; API `tests/SIMF.Api.Tests/SponsorsTests.cs`). **Flutter screen built
 > (D-305)** — widget tests in `src/Mobile/simf_app/test/features/sponsors/sponsors_screen_test.dart`.

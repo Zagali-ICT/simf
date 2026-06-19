@@ -4,6 +4,14 @@
 > API `tests/SIMF.Api.Tests/ArchiveTests.cs`). **Flutter screen built (D-307)** —
 > widget tests in `src/Mobile/simf_app/test/features/archive/archive_screen_test.dart`.
 > The detail-endpoint catalogue is [`mobile-archive-detail.md`](mobile-archive-detail.md).
+>
+> **D-453 frame re-verify (925:3079):** re-diffed against the current frame and
+> tightened to exact parity — the stat row now shows **two** tiles (الفعاليات /
+> المتحدثون; the الحضور/attendees tile was dropped to match the frame), the
+> edition pills are **equal-width** (fill the row, no scroll), عناوين الجلسات are
+> **bordered navy cards** (h48/r4, not bare bullets), the الصور والفيديو gallery
+> uses **104×104 scrim tiles**, and المتحدثون السابقون is a **72×72 photo-card
+> grid** with a bordered "+N / آخرون" overflow card. Data binding unchanged.
 
 | | |
 |--|--|

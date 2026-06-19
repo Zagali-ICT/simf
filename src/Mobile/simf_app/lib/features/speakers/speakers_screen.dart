@@ -147,7 +147,8 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
         SimfTokens.space6,
       ),
       itemCount: _speakers.length,
-      separatorBuilder: (_, __) => const SizedBox(height: SimfTokens.space5),
+      // Frame 908:1744 — cards pitch 76px (card 60 + 16 gap).
+      separatorBuilder: (_, __) => const SizedBox(height: SimfTokens.space4),
       itemBuilder: (context, index) {
         final speaker = _speakers[index];
         return _SpeakerCard(
