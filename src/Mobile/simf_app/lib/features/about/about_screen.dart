@@ -12,9 +12,13 @@ import '../content/data/content_repository.dart';
 
 /// Page 037 — عن الملتقى · About the forum (#37, `/about`, Guest+).
 ///
-/// **Public.** Reuses the CMS content layer (`GET /app/content/{key}`, D-173)
-/// with key `about` — renders the localized body as selectable text. A 404
-/// (key not seeded yet) shows the "coming soon" empty state.
+/// **Public.** Pixel-parity to KSA Figma frame `1082:15307`: the navy [KsaPage]
+/// shell, an intro card (the `SIMF · 2026` kicker, the gold heading and the
+/// forum paragraph) and the "المحاور الرئيسية" list of the four fixed forum
+/// themes. The paragraph is hydrated from the CMS content layer
+/// (`GET /app/content/{key}`, key `about`, D-173) when present and falls back to
+/// the static bilingual copy otherwise; the heading and the four themes are
+/// static (the forum's fixed framing — no structured CMS block exists for them).
 class AboutScreen extends ConsumerStatefulWidget {
   const AboutScreen({super.key});
 
@@ -23,8 +27,6 @@ class AboutScreen extends ConsumerStatefulWidget {
 }
 
 class _AboutScreenState extends ConsumerState<AboutScreen> {
-  bool _loading = true;
-  bool _error = false;
   ContentBlock? _block;
 
   @override
@@ -33,119 +35,170 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
     unawaited(_load());
   }
 
+  /// Best-effort hydrate of the intro paragraph from the CMS. Any failure (incl.
+  /// a 404 = key not seeded) leaves [_block] null and the screen renders the
+  /// static fallback paragraph — the page always shows the forum content.
   Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = false;
-    });
     try {
       final block =
           await ref.read(contentRepositoryProvider).getContentBlock('about');
       if (!mounted) {
         return;
       }
-      setState(() {
-        _block = block;
-        _loading = false;
-      });
-    } on ApiFailure catch (failure) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        // 404 = the block is not seeded yet → empty (not an error).
-        _block = failure.httpStatus == 404 ? null : _block;
-        _error = failure.httpStatus != 404;
-        _loading = false;
-      });
+      setState(() => _block = block);
+    } on ApiFailure {
+      // Static fallback already covers this — nothing to surface.
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
+    final block = _block;
+    final paragraph = (block != null && block.hasBody)
+        ? block.localizedBody(l10n.isArabic)
+        : l10n.aboutHeroBody;
+
+    final themes = <(String, String, String)>[
+      ('01', l10n.aboutTheme1Title, l10n.aboutTheme1Body),
+      ('02', l10n.aboutTheme2Title, l10n.aboutTheme2Body),
+      ('03', l10n.aboutTheme3Title, l10n.aboutTheme3Body),
+      ('04', l10n.aboutTheme4Title, l10n.aboutTheme4Body),
+    ];
+
     return KsaPage(
       title: l10n.aboutTitle,
       onBack: () => ksaBackOrHome(context),
-      body: _buildBody(l10n),
-    );
-  }
-
-  Widget _buildBody(AppL10n l10n) {
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (_error) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(SimfTokens.space6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(
-                l10n.aboutError,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: SimfTokens.txtSecondary),
-              ),
-              const SizedBox(height: SimfTokens.space4),
-              FilledButton(
-                onPressed: () => unawaited(_load()),
-                child: Text(l10n.retryLabel),
-              ),
-            ],
+      body: ListView(
+        padding: const EdgeInsets.all(SimfTokens.space4),
+        children: <Widget>[
+          _AboutHeroCard(heading: l10n.aboutHeroHeading, body: paragraph),
+          const SizedBox(height: SimfTokens.space5),
+          Text(
+            l10n.aboutThemesTitle,
+            style: const TextStyle(
+              fontSize: SimfTokens.textLg,
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
+            ),
           ),
-        ),
-      );
-    }
-    final block = _block;
-    if (block == null || !block.hasBody) {
-      return Center(
-        child: Text(
-          l10n.aboutEmpty,
-          style: const TextStyle(color: SimfTokens.txtSecondary),
-        ),
-      );
-    }
-    return ListView(
-      padding: const EdgeInsets.all(SimfTokens.space4),
-      children: <Widget>[
-        _AboutHeroCard(body: block.localizedBody(l10n.isArabic)),
-      ],
+          const SizedBox(height: SimfTokens.space4),
+          for (final (number, title, sub) in themes) ...<Widget>[
+            _ThemeCard(number: number, title: title, subtitle: sub),
+            const SizedBox(height: SimfTokens.space4),
+          ],
+        ],
+      ),
     );
   }
 }
 
-/// The "about the forum" hero card (mockup `.content-hero`): a navy-surface
-/// card with a code-style accent kicker above the localized CMS body.
+/// The intro card (frame `1082:15566`): a borderless navy-deep card, radius 8,
+/// with the gold `SIMF · 2026` kicker, the white SemiBold heading and the
+/// beige forum paragraph.
 class _AboutHeroCard extends StatelessWidget {
-  const _AboutHeroCard({required this.body});
+  const _AboutHeroCard({required this.heading, required this.body});
 
+  final String heading;
   final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SimfTokens.space4,
+        vertical: SimfTokens.space2,
+      ),
+      decoration: BoxDecoration(
+        color: SimfTokens.navyDeep,
+        borderRadius: BorderRadius.circular(SimfTokens.radius),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          const Text(
+            'SIMF · 2026',
+            style: TextStyle(
+              color: SimfTokens.accent,
+              fontSize: SimfTokens.textSm,
+            ),
+          ),
+          const SizedBox(height: SimfTokens.space4),
+          Text(
+            heading,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: SimfTokens.textMd,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: SimfTokens.space2),
+          Text(
+            body,
+            style: const TextStyle(
+              color: SimfTokens.beigeBorder,
+              fontSize: SimfTokens.textSm,
+              height: 18 / 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One "المحاور الرئيسية" theme card (frames `1082:15578`…`15620`): the standard
+/// navy-deep + beige-hairline [KsaCard], the gold number at the inline end and
+/// the white bold title over the beige subtitle.
+class _ThemeCard extends StatelessWidget {
+  const _ThemeCard({
+    required this.number,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final String number;
+  final String title;
+  final String subtitle;
 
   @override
   Widget build(BuildContext context) {
     return KsaCard(
       child: Padding(
         padding: const EdgeInsets.all(SimfTokens.space4),
-        child: Column(
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            const Text(
-              'SIMF · 2026',
-              style: TextStyle(
+            Text(
+              number,
+              style: const TextStyle(
                 color: SimfTokens.accent,
+                fontSize: SimfTokens.textLg,
                 fontWeight: FontWeight.w700,
-                fontSize: SimfTokens.textXs,
-                letterSpacing: 1.8,
               ),
             ),
-            const SizedBox(height: SimfTokens.space2),
-            SelectableText(
-              body,
-              style: const TextStyle(
-                color: Colors.white,
-                height: 1.8,
-                fontSize: SimfTokens.textMd,
+            const SizedBox(width: SimfTokens.space2),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: SimfTokens.textMd,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: SimfTokens.space2),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: SimfTokens.beigeBorder,
+                      fontSize: SimfTokens.textSm,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

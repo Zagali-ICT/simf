@@ -938,12 +938,53 @@ class AppL10n {
       _t('تعذّر تحميل الوسائط.', 'Could not load the media.');
   String get galleryEmpty => _t('لا توجد وسائط', 'No media yet');
 
-  // About the forum (Page 037).
+  // About the forum (Page 037 · عن الملتقى) — KSA frame 1082:15307.
   String get aboutTitle => _t('عن الملتقى', 'About the forum');
   String get aboutError =>
       _t('تعذّر تحميل المحتوى.', 'Could not load the content.');
   String get aboutEmpty =>
       _t('المحتوى قيد الإعداد', 'Content coming soon');
+  String get aboutHeroHeading => _t(
+        'منصة سعودية عالمية لدعم الحوار في قضايا الأمن البحري',
+        'A Saudi global platform advancing dialogue on maritime-security issues',
+      );
+  // Static fallback for the intro paragraph when the CMS `about` block is empty.
+  String get aboutHeroBody => _t(
+        'الملتقى البحري السعودي الدولي حدث دولي رفيع المستوى، يجمع القادة '
+            'والمسؤولين والخبراء لتبادل التجارب وتعزيز فهم عالمي مشترك لمستقبل '
+            'الأمن البحري.',
+        'The Saudi International Maritime Forum is a high-level international '
+            'event that brings together leaders, officials and experts to share '
+            'experience and build a shared global understanding of the future of '
+            'maritime security.',
+      );
+  // المحاور الرئيسية — the four fixed forum themes (frames 1082:15578…15620).
+  String get aboutThemesTitle => _t('المحاور الرئيسية', 'Main themes');
+  String get aboutTheme1Title => _t(
+        'المتغيرات في البيئة الاستراتيجية العالمية',
+        'Shifts in the global strategic environment',
+      );
+  String get aboutTheme1Body => _t(
+        'وتأثيرها على أمن سلاسل الإمداد البحرية',
+        'and their impact on maritime supply-chain security',
+      );
+  String get aboutTheme2Title => _t(
+        'التهديدات على سلاسل إمداد الطاقة',
+        'Threats to energy supply chains',
+      );
+  String get aboutTheme2Body => _t(
+        'وأثرها على الاقتصاد العالمي',
+        'and their impact on the global economy',
+      );
+  String get aboutTheme3Title => _t('حماية قاع البحار', 'Protecting the seabed');
+  String get aboutTheme3Body =>
+      _t('وأثره على الأمن الدولي', 'and its impact on international security');
+  String get aboutTheme4Title => _t(
+        'الأمن السيبراني للنقل البحري',
+        'Cybersecurity for maritime transport',
+      );
+  String get aboutTheme4Body =>
+      _t('التحديات والحلول', 'Challenges and solutions');
 
   // Rate / feedback (Page 040).
   String get rateTitle => _t('تقييم', 'Rate');
@@ -982,13 +1023,29 @@ class AppL10n {
   String get dayToday => _t('اليوم', 'Today');
   String get dayYesterday => _t('أمس', 'Yesterday');
 
-  // Meet people (Page 035).
+  // Meet people (Page 035 · قابل أشخاص مثلك) — KSA frame 1072:13409.
   String get meetPeopleTitle => _t('قابل أشخاص مثلك', 'Meet people');
   String get meetPeopleEmpty => _t('لا توجد تطابقات بعد', 'No matches yet');
   String get meetPeopleError =>
       _t('تعذّر تحميل التطابقات الخاصة بك.', 'Could not load your matches.');
   String meetPeopleSharedInterests(int count) =>
       _t('$count اهتمامات مشتركة', '$count shared interests');
+  // The smart-suggestions header card (frame 1082:15269).
+  String get meetPeopleSmartTitle => _t(
+        'مقترحات ذكية بناءً على اهتماماتك',
+        'Smart suggestions based on your interests',
+      );
+  String get meetPeopleSmartSubtitle => _t(
+        'تم تحديد هذه المقترحات وفقاً للجلسات التي حضرتها والمحاور التي اخترتها.',
+        'These suggestions are chosen from the sessions you attended and the '
+            'themes you picked.',
+      );
+  String get meetPeopleMatchLabel => _t('تطابق', 'match');
+  // The three topic chips in the header (frame 1082:15268).
+  String get meetPeopleFilterAi =>
+      _t('الذكاء الاصطناعي', 'Artificial intelligence');
+  String get meetPeopleFilterSupply => _t('سلاسل الإمداد', 'Supply chains');
+  String get meetPeopleFilterSeabed => _t('أمن قاع البحار', 'Seabed security');
 
   // Accessibility (Page 038 — client-local settings, no API).
   String get accessibilityTitle => _t('إمكانية الوصول', 'Accessibility');
@@ -1038,7 +1095,7 @@ class AppL10n {
       _t('المتابعة كضيف', 'Continue as guest');
   String get guestModeSignInButton => _t('تسجيل الدخول', 'Sign in');
 
-  // AI session summary (Page 034).
+  // AI session summary (Page 034 · ملخص الجلسة) — KSA frame 1072:13518.
   String get aiSummaryTitle => _t('ملخص الجلسة', 'AI session summary');
   String get aiSummaryOpenFromSession => _t(
         'افتح ملخص جلسة من صفحة الجلسة.',
@@ -1048,13 +1105,20 @@ class AppL10n {
       _t('لا يوجد ملخص منشور بعد.', 'No published summary yet.');
   String get aiSummaryError =>
       _t('تعذر تحميل الملخص.', 'Could not load the summary.');
+  String get aiSummaryChooseSession => _t('اختر الجلسة', 'Choose the session');
+  // Figma banner copy (frame 1072:14633): "an automatic summary was generated".
   String get aiSummaryGeneratedBanner =>
-      _t('تم إنشاؤه بواسطة الذكاء الاصطناعي', 'Generated by AI');
+      _t('تم توليد ملخص تلقائي', 'Auto-generated summary');
   String get aiSummaryKeyPointsHeading => _t('أبرز النقاط', 'Key points');
   String get aiSummaryRecommendationsHeading =>
       _t('التوصيات', 'Recommendations');
   String get aiSummarySpeakersHeading => _t('المتحدثون', 'Speakers');
   String get aiSummaryFullTextHeading => _t('النص الكامل', 'Full text');
+  String get aiSummaryShare => _t('مشاركة', 'Share');
+  String get aiSummarySave => _t('حفظ', 'Save');
+  String get aiSummarySaved => _t('تم الحفظ', 'Saved');
+  String get aiSummaryNoSessions =>
+      _t('لا توجد جلسات متاحة بعد.', 'No sessions available yet.');
 
   // Send a question (Page 026 — live Q&A composer).
   String get sendQuestionTitle => _t('إرسال سؤال', 'Send a question');
@@ -1193,16 +1257,37 @@ class AppL10n {
         'Could not play this feed. Try again.',
       );
 
-  // AI assistant (Page 036) — interim shell; no backend chatbot endpoint.
+  // AI assistant (Page 036 · المساعد الذكي) — KSA frame 1064:13066. No backend
+  // chatbot endpoint exists (verified); the transcript below is the scripted
+  // demo the Figma shows, and any new prompt gets a canned bilingual reply.
   String get chatbotTitle => _t('المساعد الذكي', 'AI assistant');
-  String get chatbotPreviewBanner => _t(
-        'المساعد الذكي في وضع المعاينة — الردود مؤقتة.',
-        'The AI assistant is in preview — replies are interim.',
-      );
-  String get chatbotEmpty =>
-      _t('اسأل المساعد للبدء.', 'Ask the assistant to get started.');
-  String get chatbotInputHint => _t('اكتب رسالتك…', 'Type your message…');
+  String get chatbotInputHint => _t('اكتب رسالتك...', 'Type your message…');
   String get chatbotSendTooltip => _t('إرسال', 'Send');
+  String get chatbotGreeting => _t(
+        'مرحباً 🤝 أنا مساعدك الذكي. كيف يمكنني المساعدة اليوم؟',
+        'Hello 🤝 I’m your smart assistant. How can I help today?',
+      );
+  String get chatbotSeedQ1 =>
+      _t('متى تبدأ جلسة الافتتاح؟', 'When does the opening session start?');
+  String get chatbotSeedA1 => _t(
+        'جلسة الافتتاح والترحيب تبدأ الساعة 8:00 صباحاً في القاعة الرئيسية. '
+            'هل تريدني أن أضيفها لأجندتك؟',
+        'The opening & welcome session starts at 8:00 AM in the Main Hall. '
+            'Want me to add it to your agenda?',
+      );
+  String get chatbotSeedQ2 =>
+      _t('أين القاعة الرئيسية؟', 'Where is the Main Hall?');
+  String get chatbotSeedA2 => _t(
+        'القاعة الرئيسية (HALL A) في الطابق الأول. أفضل مسار من المدخل '
+            'يستغرق دقيقتين تقريباً – هل تريدني أن أفتح الخريطة ثلاثية الأبعاد؟',
+        'The Main Hall (HALL A) is on the first floor. The best route from the '
+            'entrance takes about two minutes — want me to open the 3D map?',
+      );
+  // The four quick-reply chips under the transcript (frame 1070:13389).
+  String get chatbotChipMeeting => _t('طلب لقاء', 'Request a meeting');
+  String get chatbotChipUpcoming => _t('الجلسات القادمة', 'Upcoming sessions');
+  String get chatbotChipSami => _t('مكان جناح SAMI', 'SAMI booth location');
+  String get chatbotChipToday => _t('جلسات اليوم', 'Today’s sessions');
 
   // Visitor contact sharing — FDS-014 (Share my contact / Scan / My Contacts).
   String get shareMyContactTitle => _t('شارك جهة اتصالي', 'Share my contact');
