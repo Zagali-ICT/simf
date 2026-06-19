@@ -13,9 +13,14 @@ import 'tokens.dart';
 class SimfTheme {
   SimfTheme._();
 
-  /// The bundled mockup type family (assets/fonts, OFL) — set as each theme's
-  /// `fontFamily` so every text style renders in IBM Plex Sans Arabic.
-  static const String fontFamily = 'IBMPlexSansArabic';
+  /// KSA-Project Figma type (D-454): **Inter** for Latin with **Cairo** as the
+  /// fallback so Arabic glyphs (which Inter lacks) render in Cairo — matching
+  /// the frames (Inter labels, Cairo Arabic). Both are bundled variable fonts
+  /// (assets/fonts, OFL). Set as each theme's `fontFamily` + `fontFamilyFallback`
+  /// so every inherited text style picks up the pair. (Superseded the D-329 IBM
+  /// Plex Sans Arabic default, still bundled.)
+  static const String fontFamily = 'Inter';
+  static const List<String> fontFamilyFallback = <String>['Cairo'];
 
   static AppBarTheme _appBar(Color bg, Color fg) => AppBarTheme(
         backgroundColor: bg,
@@ -24,6 +29,7 @@ class SimfTheme {
         centerTitle: true,
         titleTextStyle: TextStyle(
           fontFamily: fontFamily,
+          fontFamilyFallback: fontFamilyFallback,
           color: fg,
           fontSize: SimfTokens.textLg,
           fontWeight: FontWeight.w700,
@@ -52,6 +58,7 @@ class SimfTheme {
       brightness: Brightness.light,
       useMaterial3: true,
       fontFamily: fontFamily,
+      fontFamilyFallback: fontFamilyFallback,
       colorScheme: const ColorScheme.light(
         primary: SimfTokens.navy,
         onPrimary: SimfTokens.surface,
@@ -93,6 +100,7 @@ class SimfTheme {
       brightness: Brightness.dark,
       useMaterial3: true,
       fontFamily: fontFamily,
+      fontFamilyFallback: fontFamilyFallback,
       colorScheme: const ColorScheme.dark(
         primary: SimfTokens.accent,
         onPrimary: SimfTokens.navy,
@@ -196,6 +204,7 @@ class SimfTheme {
       brightness: Brightness.light,
       useMaterial3: true,
       fontFamily: fontFamily,
+      fontFamilyFallback: fontFamilyFallback,
       colorScheme: const ColorScheme.light(
         primary: SimfTokens.hcLightInk,
         onPrimary: SimfTokens.hcLightSurface,
@@ -241,6 +250,7 @@ class SimfTheme {
       brightness: Brightness.dark,
       useMaterial3: true,
       fontFamily: fontFamily,
+      fontFamilyFallback: fontFamilyFallback,
       colorScheme: const ColorScheme.dark(
         primary: SimfTokens.hcDarkInk,
         onPrimary: SimfTokens.hcDarkSurface,

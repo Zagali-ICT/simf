@@ -139,3 +139,13 @@ flutter:
           weight: 600
         - asset: assets/fonts/IBMPlexSansArabic-Bold.ttf
           weight: 700
+    # KSA-Project Figma type (D-454): Inter for Latin, Cairo for Arabic. Both
+    # are variable fonts (the wght axis) — Flutter maps fontWeight onto it.
+    # SimfTheme uses Inter with Cairo as the fallback so Arabic glyphs (absent
+    # from Inter) render in Cairo automatically.
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter.ttf
+    - family: Cairo
+      fonts:
+        - asset: assets/fonts/Cairo.ttf
