@@ -350,7 +350,8 @@ class _VisitorHome extends StatelessWidget {
                 onTap: () => context.pushNamed(RouteNames.speakers),
               ),
               KsaNavTile(
-                label: l10n.tileBooths,
+                // Home button title matches the screen header ("المعرض").
+                label: l10n.tileExhibition,
                 iconAsset: _HomeIcons.booths,
                 onTap: () => context.pushNamed(RouteNames.booths),
               ),
