@@ -4,6 +4,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/country_flag_badge.dart';
 import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import 'data/sponsor_models.dart';
@@ -93,6 +94,7 @@ class SponsorsScreen extends ConsumerWidget {
                       secondary:
                           sponsor.localizedTagline(isArabic) ?? sponsor.url,
                       hero: i == 0,
+                      countryId: sponsor.countryId,
                     ),
                     const SizedBox(height: SimfTokens.space4),
                   ],
@@ -156,6 +158,7 @@ class _SponsorCard extends StatelessWidget {
     required this.badge,
     required this.secondary,
     required this.hero,
+    required this.countryId,
   });
 
   final String id;
@@ -164,6 +167,7 @@ class _SponsorCard extends StatelessWidget {
   final String badge;
   final String? secondary;
   final bool hero;
+  final int? countryId;
 
   @override
   Widget build(BuildContext context) {
@@ -186,13 +190,16 @@ class _SponsorCard extends StatelessWidget {
               // it, and the forward chevron on the far inline-end (physical
               // left). The bundled caret does not auto-mirror, so it keeps
               // pointing left as the design shows.
-              _BadgeBox(
-                hero: hero,
-                child: _SponsorLogo(
-                  id: id,
-                  baseUrl: baseUrl,
-                  fallbackInitials: badge,
+              CountryFlagBadge(
+                countryId: countryId,
+                child: _BadgeBox(
                   hero: hero,
+                  child: _SponsorLogo(
+                    id: id,
+                    baseUrl: baseUrl,
+                    fallbackInitials: badge,
+                    hero: hero,
+                  ),
                 ),
               ),
               const SizedBox(width: SimfTokens.space2),
@@ -354,6 +361,7 @@ class _SponsorGrid extends StatelessWidget {
         baseUrl: baseUrl,
         name: sponsors[i].localizedName(isArabic),
         initials: SponsorsScreen._badgeText(sponsors[i], isArabic),
+        countryId: sponsors[i].countryId,
       ),
     );
   }
@@ -368,16 +376,20 @@ class _SponsorGridTile extends StatelessWidget {
     required this.baseUrl,
     required this.name,
     required this.initials,
+    required this.countryId,
   });
 
   final String id;
   final String baseUrl;
   final String name;
   final String initials;
+  final int? countryId;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return CountryFlagBadge(
+      countryId: countryId,
+      child: Container(
       clipBehavior: Clip.antiAlias,
       padding: const EdgeInsets.all(SimfTokens.space2),
       decoration: BoxDecoration(
@@ -412,6 +424,7 @@ class _SponsorGridTile extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }

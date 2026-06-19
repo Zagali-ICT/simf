@@ -17,6 +17,7 @@ class Sponsor {
     this.phonePrimary,
     this.tagline,
     this.taglineArabic,
+    this.countryId,
   });
 
   final String id;
@@ -31,6 +32,9 @@ class Sponsor {
   // D-432 — optional bilingual tagline shown under the name (Figma 922:2824).
   final String? tagline;
   final String? taglineArabic;
+  // D-456 — the sponsor's country (from the linked Contact), ISO 3166-1 numeric,
+  // for the corner flag on the logo. Null when unset.
+  final int? countryId;
 
   String localizedName(bool isArabic) {
     final ar = nameAr.trim();
@@ -62,6 +66,7 @@ class Sponsor {
         phonePrimary: json['phonePrimary'] as String?,
         tagline: json['tagline'] as String?,
         taglineArabic: json['taglineArabic'] as String?,
+        countryId: (json['countryId'] as num?)?.toInt(),
       );
 }
 

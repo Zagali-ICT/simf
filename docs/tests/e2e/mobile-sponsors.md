@@ -1,5 +1,10 @@
 # E2E test catalogue — `Sponsors` (`sponsors`)
 
+> **D-456 country flag:** each sponsor logo (card badge + gold-tier grid tile) now
+> shows the **country flag on the top-left corner** (shared `CountryFlagBadge`).
+> The country is the linked **Contact's** `CountryId`, surfaced on `PublicSponsor`
+> (`CountryId/CountryNameEn/CountryNameAr`) — no schema change. Absent until set.
+
 > **D-453 frame re-verify (922:2824):** the sponsor name now renders **white on
 > the gold hero card** too (was navy), and the gold-tier grid was rebuilt to the
 > frame — each tile is a single **72-high navy card** holding the logo above a

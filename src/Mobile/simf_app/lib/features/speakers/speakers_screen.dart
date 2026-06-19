@@ -8,9 +8,9 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/country_flag_badge.dart';
 import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_svg_icon.dart';
-import '../../core/country_flag.dart';
 import 'data/speaker_models.dart';
 import 'data/speakers_repository.dart';
 
@@ -193,7 +193,6 @@ class _SpeakerCard extends StatelessWidget {
     final label = (speaker.rank != null && speaker.rank!.trim().isNotEmpty)
         ? speaker.rank!.trim()
         : '';
-    final flag = countryFlagEmoji(speaker.countryId);
 
     return KsaCard(
       onTap: onTap,
@@ -207,7 +206,7 @@ class _SpeakerCard extends StatelessWidget {
           children: <Widget>[
             _SpeakerAvatar(
               imageUrl: '$baseUrl/app/assets/SpeakerPhoto/${speaker.id}/image',
-              flag: flag,
+              countryId: speaker.countryId,
             ),
             const SizedBox(width: SimfTokens.space4),
             Expanded(
@@ -257,14 +256,14 @@ class _SpeakerCard extends StatelessWidget {
 /// on a solid gold hairline showing the speaker's uploaded **photo** (the D-357
 /// `SpeakerPhoto` asset) clipped to the tile, falling back to the design's gold
 /// **anchor** glyph while it loads or when no photo is set (the asset route
-/// 204s). The speaker's **country flag** ([flag]) renders as a small badge on
-/// the **top-left corner** (owner request); absent when the speaker has no
-/// recorded country.
+/// 204s). The speaker's **country flag** (from [countryId]) renders as a small
+/// badge on the **top-left corner** (owner request); absent when the speaker has
+/// no recorded country.
 class _SpeakerAvatar extends StatelessWidget {
-  const _SpeakerAvatar({required this.imageUrl, this.flag});
+  const _SpeakerAvatar({required this.imageUrl, this.countryId});
 
   final String imageUrl;
-  final String? flag;
+  final int? countryId;
 
   @override
   Widget build(BuildContext context) {
@@ -291,36 +290,7 @@ class _SpeakerAvatar extends StatelessWidget {
         errorBuilder: (context, error, stackTrace) => fallback,
       ),
     );
-    if (flag == null) {
-      return avatar;
-    }
-    // The country flag as a small badge on the avatar's top-left corner.
-    return SizedBox(
-      width: 44,
-      height: 44,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: <Widget>[
-          avatar,
-          Positioned(
-            top: -2,
-            left: -2,
-            child: Container(
-              padding: const EdgeInsets.all(1),
-              decoration: BoxDecoration(
-                color: SimfTokens.navy,
-                shape: BoxShape.circle,
-                border: Border.all(color: SimfTokens.navyDeep, width: 0.5),
-              ),
-              child: Text(
-                flag!,
-                textDirection: TextDirection.ltr,
-                style: const TextStyle(fontSize: 12, height: 1),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+    // The country flag renders as a small badge on the avatar's top-left corner.
+    return CountryFlagBadge(countryId: countryId, child: avatar);
   }
 }

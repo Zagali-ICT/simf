@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.Archive;
+using SIMF.Domain.Common;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
@@ -70,6 +71,13 @@ internal sealed class ArchivePastSpeakerConfiguration
             .WithMany(edition => edition.PastSpeakers)
             .HasForeignKey(speaker => speaker.ArchiveEditionId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // D-456 — logical FK to the Country lookup (no nav, Restrict), mirroring
+        // the live Speaker's country FK; the FK auto-creates the index.
+        builder.HasOne<Country>()
+            .WithMany()
+            .HasForeignKey(speaker => speaker.CountryId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(speaker => new { speaker.ArchiveEditionId, speaker.DisplayOrder });
     }

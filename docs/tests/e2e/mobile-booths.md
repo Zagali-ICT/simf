@@ -1,5 +1,10 @@
 # E2E test catalogue — `Booths` (`booths`)
 
+> **D-456 country flag:** the company logo now shows the **country flag on the
+> top-left corner** (shared `CountryFlagBadge`). The country is the exhibitor's
+> linked **Contact** (`Booth → Exhibitor → Contact.CountryId`), surfaced as
+> `PublicBoothSummary/Detail.CountryId` — no schema change. Absent until set.
+
 > **D-453 frame re-verify (922:2458):** the screen header now reads **"المعرض"**
 > per the frame's title node 922:2464 (the nav tile/route stay "الأجنحة"). The
 > card chrome is unchanged; the frame's per-company country flag is **not**

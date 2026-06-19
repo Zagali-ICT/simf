@@ -103,6 +103,7 @@ class BoothSummary {
     this.officerPhone,
     this.officerEmail,
     this.exhibitorContactId,
+    this.countryId,
   });
 
   final String id;
@@ -126,6 +127,10 @@ class BoothSummary {
   // The card renders the real logo via {base}/app/assets/CompanyLogo/{this}/image
   // (D-357), falling back to initials when null (no linked exhibitor / logo).
   final String? exhibitorContactId;
+
+  // D-456 — the exhibitor company's country (ISO 3166-1 numeric) for the corner
+  // flag on the booth logo. Null when the exhibitor has no linked Contact/country.
+  final int? countryId;
 
   String localizedName(bool isArabic) {
     final ar = nameArabic.trim();
@@ -158,6 +163,7 @@ class BoothSummary {
         officerPhone: json['officerPhone'] as String?,
         officerEmail: json['officerEmail'] as String?,
         exhibitorContactId: json['exhibitorContactId'] as String?,
+        countryId: (json['countryId'] as num?)?.toInt(),
       );
 }
 

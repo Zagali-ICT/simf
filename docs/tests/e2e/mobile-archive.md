@@ -1,5 +1,11 @@
 # E2E test catalogue — `Archive` (`archive`)
 
+> **D-456 country flag:** past-speaker tiles now show the **country flag on the
+> top-left corner** (shared `CountryFlagBadge`). New nullable **`ArchivePastSpeaker.CountryId`**
+> (additive migration `App/D456`, FK→Country, Restrict) + `PublicArchivePastSpeaker.CountryId`;
+> set in the CP via the past-speakers textarea's 4th field
+> `name-ar | name-en | photo-url | countryId`. Absent until set.
+
 > **Authority:** SIMF E2E template (D-133). Archive reads built + anonymous (D-273;
 > API `tests/SIMF.Api.Tests/ArchiveTests.cs`). **Flutter screen built (D-307)** —
 > widget tests in `src/Mobile/simf_app/test/features/archive/archive_screen_test.dart`.

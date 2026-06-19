@@ -439,7 +439,8 @@ internal sealed class AdminArchiveService(
             edition.PastSpeakers.OrderBy(p => p.DisplayOrder).Select(p => new ArchivePastSpeakerInput
             {
                 NameEn = p.NameEn, NameAr = p.NameAr,
-                PhotoRelativePath = p.PhotoRelativePath, DisplayOrder = p.DisplayOrder,
+                PhotoRelativePath = p.PhotoRelativePath, CountryId = p.CountryId,
+                DisplayOrder = p.DisplayOrder,
             }).ToList());
 
     // D-432 — build the child entities from the editable inputs, skipping blank
@@ -495,6 +496,7 @@ internal sealed class AdminArchiveService(
                 NameEn = (i.NameEn ?? string.Empty).Trim(),
                 NameAr = (i.NameAr ?? string.Empty).Trim(),
                 PhotoRelativePath = NullIfBlank(i.PhotoRelativePath),
+                CountryId = i.CountryId,
                 DisplayOrder = order++,
             })
             .ToList();

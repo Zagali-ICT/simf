@@ -83,7 +83,9 @@
                        @bind-Value="_model.DateLabelAr" Disabled="_busy" />
         @* D-432 — the rich edition lists, one row per line. Gallery rows are
            "url | image|video | caption"; session titles "arabic | english";
-           past speakers "arabic | english | photo-url". P6 — D-440: the image /
+           past speakers "arabic | english | photo-url | countryId" (D-456 — the
+           optional 4th field is the ISO 3166-1 numeric country code, e.g. 682
+           for Saudi Arabia, driving the app's flag). P6 — D-440: the image /
            photo URL must be a full https link the app can load directly. *@
         <label class="simf-field">
             <span class="simf-field__label">@L["Admin.Archive.Field.Gallery"]</span>
@@ -104,7 +106,7 @@
         <label class="simf-field">
             <span class="simf-field__label">@L["Admin.Archive.Field.PastSpeakers"]</span>
             <textarea class="simf-field__input" rows="4"
-                      placeholder="راشد السبيعي | Rashed Al-Subaie | https://cdn.example.sa/2024/s1.jpg"
+                      placeholder="راشد السبيعي | Rashed Al-Subaie | https://cdn.example.sa/2024/s1.jpg | 682"
                       value="@_model.PastSpeakersText"
                       @onchange="@(e => _model.PastSpeakersText = e.Value?.ToString() ?? string.Empty)"
                       disabled="@_busy"></textarea>
@@ -378,6 +380,10 @@
                 NameAr = p[0],
                 NameEn = p.Length > 1 && p[1].Length > 0 ? p[1] : p[0],
                 PhotoRelativePath = p.Length > 2 && p[2].Length > 0 ? p[2] : null,
+                // D-456 — 4th field: the ISO 3166-1 numeric country code (e.g. 682).
+                CountryId = p.Length > 3 && int.TryParse(p[3], out var cid)
+                    ? cid
+                    : (int?)null,
             })
             .ToList();
 
@@ -389,6 +395,23 @@
         items is null ? string.Empty : string.Join("\n", items.Select(i => $"{i.TitleAr} | {i.TitleEn}"));
 
     private static string FormatPastSpeakers(IReadOnlyList<ArchivePastSpeakerInput>? items) =>
-        items is null ? string.Empty : string.Join("\n", items.Select(i =>
-            $"{i.NameAr} | {i.NameEn}{(string.IsNullOrWhiteSpace(i.PhotoRelativePath) ? string.Empty : $" | {i.PhotoRelativePath}")}"));
+        items is null ? string.Empty : string.Join("\n", items.Select(FormatPastSpeaker));
+
+    // D-456 — grammar: "name-ar | name-en | photo-url | countryId". The photo
+    // slot is emitted (possibly empty) whenever a country follows it, so the
+    // country always lands in the 4th position on re-parse.
+    private static string FormatPastSpeaker(ArchivePastSpeakerInput i)
+    {
+        var line = $"{i.NameAr} | {i.NameEn}";
+        var hasPhoto = !string.IsNullOrWhiteSpace(i.PhotoRelativePath);
+        if (hasPhoto || i.CountryId.HasValue)
+        {
+            line += $" | {(hasPhoto ? i.PhotoRelativePath : string.Empty)}";
+        }
+        if (i.CountryId.HasValue)
+        {
+            line += $" | {i.CountryId.Value}";
+        }
+        return line;
+    }
 }

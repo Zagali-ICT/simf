@@ -22,6 +22,11 @@ public sealed class ArchivePastSpeaker
     /// <summary>Optional relative path to the speaker's photo (≤ 256 chars).</summary>
     public string? PhotoRelativePath { get; set; }
 
+    /// <summary>D-456 — optional country (ISO 3166-1 numeric, a logical FK to
+    /// <c>Country.Id</c>) for the app's corner flag. No nav property — names are
+    /// resolved on read, mirroring the live <c>Speaker</c>.</summary>
+    public int? CountryId { get; set; }
+
     /// <summary>Sort key within the edition's past-speaker row — ascending.</summary>
     public int DisplayOrder { get; set; }
 }

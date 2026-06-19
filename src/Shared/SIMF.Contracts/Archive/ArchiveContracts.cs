@@ -38,7 +38,10 @@ public sealed record PublicArchiveSessionTitle(string TitleEn, string TitleAr);
 /// P6 — D-440: <c>PhotoRelativePath</c>, when an absolute URL, is the photo the
 /// app renders directly (else initials).</summary>
 public sealed record PublicArchivePastSpeaker(
-    string NameEn, string NameAr, string? PhotoRelativePath);
+    string NameEn, string NameAr, string? PhotoRelativePath,
+    // D-456 — the past speaker's country (ISO 3166-1 numeric) for the app's
+    // corner flag; null when unset. Appended (append-only wire).
+    int? CountryId = null);
 
 /// <summary>§9 (Mockup screen 24-01 "تفاصيل النسخة") — public detail for ONE
 /// past edition: title/summary + place + date label + counters + cover, plus the
@@ -139,6 +142,8 @@ public sealed class ArchivePastSpeakerInput
     public string NameEn { get; set; } = string.Empty;
     public string NameAr { get; set; } = string.Empty;
     public string? PhotoRelativePath { get; set; }
+    // D-456 — optional country (ISO 3166-1 numeric) set via the CP editor.
+    public int? CountryId { get; set; }
     public int DisplayOrder { get; set; }
 }
 

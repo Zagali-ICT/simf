@@ -59,13 +59,33 @@ internal sealed class PublicSponsorService(SimfAppDbContext appDbContext)
                     contact.LogoRelativePath, contact.Website,
                     contact.PhonePrimary, contact.Email,
                     contact.FacebookUrl, contact.XUrl, contact.LinkedInUrl, contact.InstagramUrl,
-                    contact.Latitude, contact.Longitude))
+                    contact.Latitude, contact.Longitude, contact.CountryId))
                 .ToDictionaryAsync(card => card.Id, cancellationToken);
+
+        // D-456 — batch-resolve the linked Contacts' country names in one query
+        // (the Country lookup has no nav property — mirror the Speaker pattern).
+        var countryIds = contactsById.Values
+            .Where(c => c.CountryId.HasValue)
+            .Select(c => c.CountryId!.Value)
+            .Distinct()
+            .ToList();
+        var countriesById = countryIds.Count == 0
+            ? new Dictionary<int, (string En, string Ar)>()
+            : await appDbContext.Countries.AsNoTracking()
+                .Where(country => countryIds.Contains(country.Id))
+                .Select(country => new { country.Id, country.Name, country.NameArabic })
+                .ToDictionaryAsync(
+                    country => country.Id,
+                    country => (En: country.Name, Ar: country.NameArabic),
+                    cancellationToken);
 
         var groups = rows
             .Select(r =>
             {
                 var c = r.ContactId is { } cid ? contactsById.GetValueOrDefault(cid) : null;
+                var country = c?.CountryId is { } cnid
+                    ? countriesById.GetValueOrDefault(cnid)
+                    : default;
                 return new PublicSponsor(
                     r.Id,
                     c?.Name ?? r.Name,
@@ -84,7 +104,10 @@ internal sealed class PublicSponsorService(SimfAppDbContext appDbContext)
                     c?.Latitude,
                     c?.Longitude,
                     r.Tagline,
-                    r.TaglineArabic);
+                    r.TaglineArabic,
+                    c?.CountryId,
+                    country.En,
+                    country.Ar);
             })
             .GroupBy(sponsor => new { sponsor.Tier, sponsor.TierName })
             .OrderBy(group => group.Key.Tier)
@@ -104,5 +127,5 @@ internal sealed class PublicSponsorService(SimfAppDbContext appDbContext)
         string? LogoRelativePath, string? Website,
         string? PhonePrimary, string? Email,
         string? FacebookUrl, string? XUrl, string? LinkedInUrl, string? InstagramUrl,
-        double? Latitude, double? Longitude);
+        double? Latitude, double? Longitude, int? CountryId);
 }
