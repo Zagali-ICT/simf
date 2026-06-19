@@ -25,6 +25,17 @@
 > الصف B) are now both **white**, matching frame 905:1577/1579 — only the leading
 > label word (مقعد / الصف) is gold. (The seat-chip value previously rendered gold;
 > the `_SeatChip.valueIsGold` flag was removed as both values are white.)
+>
+> **Full 898:2873 parity (2026-06-19, commit `60458a5`; device-verified on
+> TXZ W09):** the hall grid now draws **square** seats (≤20px) sized to the row
+> width and centred — they fill a phone (frame width) but never stretch into wide
+> rectangles on a tablet, with **no horizontal scroll**. **Available** seats are a
+> transparent square with a beige hairline (the navyDeep card shows through),
+> **reserved** a darker filled square, **mine** gold. The **legend is forced LTR**
+> so it reads محجوز · متاح · مقعدك (label-then-swatch) like the frame instead of
+> mirroring with the RTL page. The "إرشادي إلى مقعدي" button uses the exact
+> `iconamoon:location` glyph (`assets/icons/ic_location.svg` via `SimfSvgIcon`).
+> Behaviour is unchanged.
 
 | | |
 |--|--|
@@ -33,7 +44,7 @@
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
 | **Auth setup** | An **approved Visitor** token (the page is login-only); an **Admin** token only to seed the session, the seat layout and a blocked row. **No literal secrets** (admin TOTP via the `Get-Totp` helper). |
-| **Last reviewed** | 2026-06-05 |
+| **Last reviewed** | 2026-06-19 |
 
 ## Coverage matrix
 
@@ -55,6 +66,7 @@
 | E2E-MOB018-014 | No `sessionTitle` → card falls back to the seat location (or "no seat yet") | edge | P1 | authored ✓ (`localizedSessionTitle` null fallback) |
 | E2E-MOB018-015 | الصف / مقعد chips below the title show the seat row + number (or "—") | happy | P1 | authored ✓ (frame 905:1576 — `_SeatChip`) |
 | E2E-MOB018-016 | Stage band shows "المسرح · STAGE" above the A–H grid | happy | P2 | authored ✓ (frame 905:1584 — `_StageBar`) |
+| E2E-MOB018-017 | Legend reads محجوز · متاح · مقعدك (LTR, not mirrored); seat fills — available = beige-outline transparent, reserved = darker filled, mine = gold; seats are squares with no h-scroll | i18n/visual | P2 | authored ✓ (frame 907:1591 — `_Legend` forced LTR; `_SeatBox` fills; `_SeatRow` square clamp) |
 
 ## Scenarios
 
@@ -249,6 +261,21 @@ Scenario: The gold-bordered stage band sits at the top of the hall plan
 
 **Evidence:** screen `_StageBar` (frame 905:1584) — `stageLabelBilingual` "المسرح · STAGE"; the grid is forced LTR so the stage stays on top (L-7).
 
+### E2E-MOB018-017 — Legend order + seat-state colours (frame 907:1591)
+
+```gherkin
+Scenario: The legend reads left-to-right and the seats carry the frame colours
+  Given the seat map renders for an Arabic-locale (RTL) viewer
+  Then the legend reads, left-to-right, "محجوز" (a darker filled swatch),
+    then "متاح" (a beige-outline transparent swatch), then "مقعدك" (a gold swatch)
+  And the legend does NOT mirror with the RTL page (its region is forced LTR)
+  And in the grid an available seat is a transparent beige-outline square,
+    a reserved seat a darker filled square, and my seat a gold square
+  And every seat is a square that fits the row width with no horizontal scroll
+```
+
+**Evidence:** screen `_Legend` (frame 907:1591, forced `Directionality.ltr`, children محجوز/متاح/مقعدك) + `_SeatBox` (available `Colors.transparent` + beige border, reserved `navy` fill, mine `accent`); square sizing in `_SeatRow` (`LayoutBuilder` clamp ≤20, centred). Device-verified on TXZ W09 (commit `60458a5`).
+
 ---
 
-_Last reviewed:_ `2026-06-16` by `SIMF Team`.
+_Last reviewed:_ `2026-06-19` by `SIMF Team`.
