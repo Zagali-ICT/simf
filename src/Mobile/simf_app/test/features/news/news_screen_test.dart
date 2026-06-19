@@ -87,19 +87,21 @@ Future<void> _pump(
 }
 
 void main() {
-  group('NewsScreen (Page 029 — KSA frame 958:2246)', () {
-    testWidgets('renders the media-coverage tabs and a news card',
+  group('NewsScreen (Page 029 — KSA frame 1049:12629)', () {
+    testWidgets('renders the media-center tabs and a news card',
         (tester) async {
       await _pump(tester, <Override>[
         newsListProvider.overrideWith((ref) async => _items),
       ]);
 
-      // The three media-coverage tabs.
-      expect(find.text('News'), findsWidgets);
+      // The media-center header + the two tabs (the Gallery tab was dropped —
+      // Figma 947/1049).
+      expect(find.text('Media center'), findsWidgets);
+      expect(find.text('Latest updates'), findsOneWidget);
       expect(find.text('Media partners'), findsOneWidget);
-      expect(find.text('Media gallery'), findsOneWidget);
+      expect(find.text('Media gallery'), findsNothing);
 
-      // The frame-948 card: title, the DD-MM-YYYY date, and the category (shown
+      // The frame-1049 card: title, the DD-MM-YYYY date, and the category (shown
       // both as the on-image chip and the label above the date).
       expect(find.text('Forum opens'), findsOneWidget);
       expect(find.text('23-11-2026'), findsOneWidget);
@@ -138,15 +140,15 @@ void main() {
       expect(date.textDirection, TextDirection.ltr);
     });
 
-    testWidgets('tapping the gallery tab routes to the gallery screen',
+    testWidgets('tapping the Media-partners tab routes to the partners screen',
         (tester) async {
       await _pump(tester, <Override>[
         newsListProvider.overrideWith((ref) async => _items),
       ]);
 
-      await tester.tap(find.text('Media gallery'));
+      await tester.tap(find.text('Media partners'));
       await tester.pumpAndSettle();
-      expect(find.text('GALLERY'), findsOneWidget);
+      expect(find.text('PARTNERS'), findsOneWidget);
     });
 
     testWidgets('empty shows the empty state', (tester) async {

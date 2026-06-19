@@ -1125,6 +1125,13 @@ class AppL10n {
       _t('لا توجد جلسات متاحة بعد.', 'No sessions available yet.');
 
   // Send a question (Page 026 — live Q&A composer).
+  // Figma 934:3636 retitled the screen to "معلومات عن الجلسة" (Session
+  // information) — the session-data block sits above the question composer.
+  String get sessionInfoTitle =>
+      _t('معلومات عن الجلسة', 'Session information');
+  // The session-data section header above the question composer (Figma
+  // 1049:12590).
+  String get sessionDataLabel => _t('بيانات الجلسة', 'Session details');
   String get sendQuestionTitle => _t('إرسال سؤال', 'Send a question');
   String get sendQuestionNoSession => _t(
         'افتح هذه الشاشة من جلسة مباشرة لإرسال سؤال.',
@@ -1231,7 +1238,12 @@ class AppL10n {
   String get liveUpcomingSessions => _t('الجلسات القادمة', 'Upcoming sessions');
   String get sendQuestionSectionLabel => _t('الاسئلة', 'Questions');
   String get sendQuestionNoteLabel => _t('ملاحظة', 'Note');
-  String get mediaCoverageTitle => _t('التغطية الإعلامية', 'Media coverage');
+  // Media-center hub header — Figma 947:3764 / 1049:12629 renamed the container
+  // from "التغطية الإعلامية" to "المركز الاعلامي".
+  String get mediaCoverageTitle => _t('المركز الاعلامي', 'Media center');
+  // The news tab label inside the media center — Figma calls it "احدث المستجدات"
+  // (Latest updates), not the bare "الأخبار" screen name.
+  String get latestUpdatesTitle => _t('احدث المستجدات', 'Latest updates');
   String get galleryImagesSection => _t('الصور', 'Images');
   String get galleryVideosSection => _t('الفيديوهات', 'Videos');
   String get liveNoSessionSelected => _t(

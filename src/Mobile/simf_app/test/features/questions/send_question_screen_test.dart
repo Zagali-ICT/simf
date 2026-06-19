@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/features/questions/data/questions_repository.dart';
 import 'package:simf_app/features/questions/send_question_screen.dart';
+import 'package:simf_app/features/sessions/data/session_detail_repository.dart';
+import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 class _FakeQuestionsRepo implements QuestionsRepository {
@@ -35,9 +37,51 @@ class _FakeQuestionsRepo implements QuestionsRepository {
   }
 }
 
+/// Feeds the optional "بيانات الجلسة" block. [detail] null → the block stays
+/// hidden (the composer-only path); [fail] → an [ApiFailure] (also hidden).
+class _FakeSessionDetailRepo implements SessionDetailRepository {
+  _FakeSessionDetailRepo({this.detail, this.fail = false});
+
+  final SessionDetail? detail;
+  final bool fail;
+
+  @override
+  Future<SessionDetail> getDetail(String sessionId) async {
+    if (fail) {
+      throw ApiFailure(
+        code: ApiErrorCodes.clientNetwork,
+        message: 'x',
+        httpStatus: 500,
+      );
+    }
+    return detail ?? _detail();
+  }
+
+  @override
+  Future<MySeat?> getMySeat(String sessionId) async => null;
+}
+
+/// A minimal session detail; [description] fills the data block (one numbered
+/// line per non-blank line).
+SessionDetail _detail({String? description}) => SessionDetail(
+      id: 's1',
+      code: 'S1',
+      title: 'Opening session',
+      titleArabic: 'الجلسة الافتتاحية',
+      hallId: 'h1',
+      hallName: 'Main Hall',
+      hallNameArabic: 'القاعة الرئيسية',
+      startUtc: DateTime.utc(2026, 1, 1, 9),
+      endUtc: DateTime.utc(2026, 1, 1, 10),
+      speakers: const <SessionSpeaker>[],
+      description: description,
+      descriptionArabic: description,
+    );
+
 Future<void> _pump(
   WidgetTester tester, {
   required QuestionsRepository repo,
+  SessionDetailRepository? detailRepo,
   String? sessionId,
   Locale locale = const Locale('en'),
 }) async {
@@ -45,6 +89,11 @@ Future<void> _pump(
     ProviderScope(
       overrides: <Override>[
         questionsRepositoryProvider.overrideWithValue(repo),
+        // Default: a detail with no description → the data block stays hidden,
+        // so the composer-focused tests are unaffected.
+        sessionDetailRepositoryProvider.overrideWithValue(
+          detailRepo ?? _FakeSessionDetailRepo(detail: _detail()),
+        ),
       ],
       child: MaterialApp(
         locale: locale,
@@ -80,6 +129,42 @@ void main() {
       // The frame carries no recipient selector.
       expect(find.text('Speaker'), findsNothing);
       expect(find.text('Host'), findsNothing);
+    });
+
+    testWidgets('renders the بيانات الجلسة block as a numbered list',
+        (tester) async {
+      final repo = _FakeQuestionsRepo();
+      await _pump(
+        tester,
+        repo: repo,
+        sessionId: 's1',
+        detailRepo: _FakeSessionDetailRepo(
+          detail: _detail(description: 'First point\nSecond point'),
+        ),
+      );
+
+      // The section header + a numbered entry per description line.
+      expect(find.text('Session details'), findsOneWidget);
+      expect(find.text('1.'), findsOneWidget);
+      expect(find.text('First point'), findsOneWidget);
+      expect(find.text('2.'), findsOneWidget);
+      expect(find.text('Second point'), findsOneWidget);
+    });
+
+    testWidgets('hides the بيانات الجلسة block when the detail read fails',
+        (tester) async {
+      final repo = _FakeQuestionsRepo();
+      await _pump(
+        tester,
+        repo: repo,
+        sessionId: 's1',
+        detailRepo: _FakeSessionDetailRepo(fail: true),
+      );
+
+      // The block is optional context — a failed read leaves the composer alone.
+      expect(find.text('Session details'), findsNothing);
+      expect(find.byType(TextField), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Send question'), findsOneWidget);
     });
 
     testWidgets('no session id shows the open-from-a-session empty state',

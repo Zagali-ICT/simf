@@ -79,17 +79,17 @@ Future<void> _pump(
 }
 
 void main() {
-  group('MediaPartnersScreen (Page 031 — KSA frame 958:2246)', () {
-    testWidgets('renders the coverage header, the three tabs and the partners',
+  group('MediaPartnersScreen (Page 031 — KSA frame 947:3764)', () {
+    testWidgets('renders the media-center header, the two tabs and the partners',
         (tester) async {
       await _pump(tester, partners: () => _partners);
 
-      // The media-coverage header (the container, not the bare tab label).
-      expect(find.text('Media coverage'), findsWidgets);
-      // The three coverage tabs.
-      expect(find.text('News'), findsOneWidget);
+      // The media-center header (the container, not the bare tab label).
+      expect(find.text('Media center'), findsWidgets);
+      // The two media-center tabs (the Gallery tab was dropped — Figma 947/1049).
+      expect(find.text('Latest updates'), findsOneWidget);
       expect(find.text('Media partners'), findsWidgets);
-      expect(find.text('Media gallery'), findsOneWidget);
+      expect(find.text('Media gallery'), findsNothing);
       // A card per partner, captioned with its name.
       expect(find.text('Al Arabiya'), findsOneWidget);
       expect(find.text('SPA'), findsOneWidget);
@@ -130,22 +130,13 @@ void main() {
       expect(find.byType(MediaPartnersScreen), findsOneWidget);
     });
 
-    testWidgets('tapping the News tab navigates to the news route',
+    testWidgets('tapping the Latest-updates tab navigates to the news route',
         (tester) async {
       await _pump(tester, partners: () => _partners);
 
-      await tester.tap(find.text('News'));
+      await tester.tap(find.text('Latest updates'));
       await tester.pumpAndSettle();
       expect(find.text('NEWS'), findsOneWidget);
-    });
-
-    testWidgets('tapping the Gallery tab navigates to the gallery route',
-        (tester) async {
-      await _pump(tester, partners: () => _partners);
-
-      await tester.tap(find.text('Media gallery'));
-      await tester.pumpAndSettle();
-      expect(find.text('GALLERY'), findsOneWidget);
     });
 
     testWidgets('empty shows the empty state', (tester) async {
@@ -161,29 +152,27 @@ void main() {
 
     // D-436 verification rule: confirm RTL placement with a deterministic
     // Arabic-locale position test, not a visual claim. In RTL a Row lays its
-    // children inline-start→end = right→left, so the first tab (gallery) sits
-    // right-most and the last (news) left-most — matching frame 958:2256.
-    testWidgets('lays the tabs gallery→partners→news right-to-left in Arabic',
+    // children inline-start→end = right→left, so the first tab (partners) sits
+    // right-most and the second (latest-updates) left — matching frame 947:3764.
+    testWidgets('lays the tabs partners→latest right-to-left in Arabic',
         (tester) async {
       await _pump(tester, partners: () => _partners, locale: const Locale('ar'));
 
       final l10n = AppL10n.of(tester.element(find.byType(MediaPartnersScreen)));
 
-      // The coverage header renders.
-      expect(find.text('التغطية الإعلامية'), findsWidgets);
+      // The media-center header renders.
+      expect(find.text('المركز الاعلامي'), findsWidgets);
       // The whole screen is RTL.
       expect(
         Directionality.of(tester.element(find.text(l10n.mediaPartnersTitle))),
         TextDirection.rtl,
       );
 
-      final galleryDx = tester.getCenter(find.text(l10n.galleryTitle)).dx;
       final partnersDx = tester.getCenter(find.text(l10n.mediaPartnersTitle)).dx;
-      final newsDx = tester.getCenter(find.text(l10n.newsTitle)).dx;
+      final latestDx = tester.getCenter(find.text(l10n.latestUpdatesTitle)).dx;
 
-      // gallery right-most → partners centre → news left-most.
-      expect(galleryDx, greaterThan(partnersDx));
-      expect(partnersDx, greaterThan(newsDx));
+      // partners right-most → latest-updates left.
+      expect(partnersDx, greaterThan(latestDx));
     });
 
     test('MediaPartner.fromJson reads the wire fields', () {

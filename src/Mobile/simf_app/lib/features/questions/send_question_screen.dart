@@ -7,6 +7,8 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/ksa_shell.dart';
+import '../sessions/data/session_detail_repository.dart';
+import '../sessions/data/session_models.dart';
 import 'data/questions_repository.dart';
 
 /// The question recipient — maps to the wire int the API decodes
@@ -18,16 +20,23 @@ enum QuestionRecipient {
   int get wireIndex => index;
 }
 
-/// Page 026 — إرسال سؤال · Send a question (#26, `/live/question`), rebuilt to
-/// the KSA-Project Figma frame **934:3636 "Live Video"** (the ask-a-question
-/// form portion) on the shared shell.
+/// Page 026 — معلومات عن الجلسة · Session information + ask a question (#26,
+/// `/live/question`), rebuilt to the KSA-Project Figma frame **934:3636** on the
+/// shared shell.
 ///
 /// **Auth-gated** (route 26 is in `_authenticatedRoutes`). Reached from a live
 /// session with the session id in the query string. With no id it shows an
-/// "open from a live session" empty state; with an id it shows the form — the
-/// "الاسئلة" label, a tinted multiline question box (frame `934:3668`, max 500),
-/// the gold full-width "ارسال السؤال" submit, and the centred gold-bulleted
-/// "reviewed before air" note (frame `943:3750`).
+/// "open from a live session" empty state; with an id it shows the frame: the
+/// **"بيانات الجلسة"** session-data block (the session description rendered as a
+/// numbered list, frame `1049:12590`) over the **"الاسئلة"** composer — a tinted
+/// borderless multiline question box (frame `934:3668`, max 500), the gold
+/// full-width submit, and the centred gold-bulleted "reviewed before air" note
+/// (frame `943:3750`).
+///
+/// The session-data block reads the **anonymous** detail
+/// (`GET /app/programme/sessions/{id}` — the same shipped endpoint the session
+/// detail / live screens use, no new API). It is **non-blocking context**: a
+/// fetch failure just hides the block and the composer still works.
 ///
 /// The frame shows no recipient selector, so the form submits to the default
 /// recipient (Speaker = 0); the submit API + `recipient` wire field are
@@ -53,8 +62,52 @@ class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
   bool _submitting = false;
   String? _inlineError;
 
+  /// The session whose data fills the "بيانات الجلسة" block, or null while it
+  /// loads / when the optional read fails (the composer is unaffected).
+  SessionDetail? _detail;
+
   bool get _hasSession =>
       widget.sessionId != null && widget.sessionId!.trim().isNotEmpty;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_hasSession) {
+      unawaited(_loadDetail());
+    }
+  }
+
+  /// Loads the session detail for the "بيانات الجلسة" block. Non-blocking
+  /// context: an [ApiFailure] just leaves the block hidden — the composer below
+  /// still works.
+  Future<void> _loadDetail() async {
+    try {
+      final detail = await ref
+          .read(sessionDetailRepositoryProvider)
+          .getDetail(widget.sessionId!.trim());
+      if (!mounted) {
+        return;
+      }
+      setState(() => _detail = detail);
+    } on ApiFailure {
+      // Optional block — ignore; the question form is the primary function.
+    }
+  }
+
+  /// Splits the session description into the frame's numbered data lines
+  /// (frame 1049:12591-12594): one entry per non-blank line, in order. A single
+  /// paragraph renders as one numbered item; a blank description hides the block.
+  static List<String> _dataLines(String? description) {
+    final text = description?.trim() ?? '';
+    if (text.isEmpty) {
+      return const <String>[];
+    }
+    return text
+        .split('\n')
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList(growable: false);
+  }
 
   @override
   void dispose() {
@@ -108,7 +161,7 @@ class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     return KsaPage(
-      title: l10n.sendQuestionTitle,
+      title: l10n.sessionInfoTitle,
       onBack: () => ksaBackOrHome(context),
       body: _hasSession ? _form(l10n) : _empty(l10n),
     );
@@ -122,6 +175,10 @@ class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
   }
 
   Widget _form(AppL10n l10n) {
+    final detail = _detail;
+    final dataLines = detail == null
+        ? const <String>[]
+        : _dataLines(detail.localizedDescription(l10n.isArabic));
     return ListView(
       padding: const EdgeInsets.fromLTRB(
         SimfTokens.space4,
@@ -130,6 +187,12 @@ class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
         SimfTokens.space6,
       ),
       children: <Widget>[
+        // Frame 1049:12590 — the "بيانات الجلسة" session-data block over the
+        // composer. Hidden until the optional detail read lands with a body.
+        if (dataLines.isNotEmpty) ...<Widget>[
+          _SessionDataBlock(label: l10n.sessionDataLabel, lines: dataLines),
+          const SizedBox(height: SimfTokens.space6),
+        ],
         // Frame 945:3756 — the "الاسئلة" section label: white, Medium, aligned
         // to the inline end (right in RTL).
         Text(
@@ -143,16 +206,12 @@ class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
         ),
         const SizedBox(height: SimfTokens.space2),
         // Frame 934:3668 — the tinted multiline question box: navyDeep fill on
-        // the 8px radius, a faint beige 0.2 hairline border, the placeholder beige and inline-end aligned.
+        // the 8px radius (no border in the frame), the placeholder beige and
+        // inline-end aligned.
         Container(
           decoration: BoxDecoration(
             color: SimfTokens.navyDeep,
-            borderRadius:
-                BorderRadius.circular(SimfTokens.radius),
-            border: Border.all(
-              color: SimfTokens.beigeBorder,
-              width: SimfTokens.hairline,
-            ),
+            borderRadius: BorderRadius.circular(SimfTokens.radius),
           ),
           padding: const EdgeInsets.symmetric(
             horizontal: SimfTokens.space2,
@@ -257,6 +316,70 @@ class _ReviewNote extends StatelessWidget {
         ],
       ),
       textAlign: TextAlign.center,
+    );
+  }
+}
+
+/// The frame 1049:12590 "بيانات الجلسة" block: the white Medium section header
+/// over the session-data lines rendered as a right-aligned numbered list
+/// (frame 1049:12591-12594), each line `#C2B8A2` 14px Medium.
+class _SessionDataBlock extends StatelessWidget {
+  const _SessionDataBlock({required this.label, required this.lines});
+
+  final String label;
+  final List<String> lines;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Text(
+          label,
+          textAlign: TextAlign.end,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+            fontSize: SimfTokens.textLg,
+          ),
+        ),
+        const SizedBox(height: SimfTokens.space3),
+        for (var i = 0; i < lines.length; i++) ...<Widget>[
+          if (i != 0) const SizedBox(height: SimfTokens.space3),
+          _NumberedLine(index: i + 1, text: lines[i]),
+        ],
+      ],
+    );
+  }
+}
+
+/// One numbered session-data line — the index sits at the inline start (right
+/// in RTL) before the right-aligned beige body, matching the frame's
+/// `list-decimal` marker.
+class _NumberedLine extends StatelessWidget {
+  const _NumberedLine({required this.index, required this.text});
+
+  final int index;
+  final String text;
+
+  static const TextStyle _style = TextStyle(
+    color: SimfTokens.beigeBorder,
+    fontSize: SimfTokens.textMd,
+    fontWeight: FontWeight.w500,
+    height: 1.5,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text('$index.', textDirection: TextDirection.ltr, style: _style),
+        const SizedBox(width: SimfTokens.space2),
+        Expanded(
+          child: Text(text, textAlign: TextAlign.right, style: _style),
+        ),
+      ],
     );
   }
 }

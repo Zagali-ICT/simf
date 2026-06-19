@@ -317,7 +317,11 @@ class _UpcomingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return KsaCard(
       child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space3),
+        // Frame 934:3621 — px8 / py16 on the radius-4 navy card.
+        padding: const EdgeInsets.symmetric(
+          horizontal: SimfTokens.space2,
+          vertical: SimfTokens.space4,
+        ),
         child: Row(
           children: <Widget>[
             Expanded(
@@ -356,10 +360,10 @@ class _TimeChip extends StatelessWidget {
         : '${t.hour.toString().padLeft(2, '0')}:'
             '${t.minute.toString().padLeft(2, '0')}';
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SimfTokens.space3,
-        vertical: SimfTokens.space1,
-      ),
+      // Frame 934:3628 — a fixed 53-wide gold chip, p-4, radius-4.
+      width: 53,
+      padding: const EdgeInsets.all(SimfTokens.space1),
+      alignment: Alignment.center,
       decoration: BoxDecoration(
         color: SimfTokens.accent,
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
@@ -367,10 +371,11 @@ class _TimeChip extends StatelessWidget {
       child: Text(
         label,
         textDirection: TextDirection.ltr,
+        textAlign: TextAlign.center,
         style: const TextStyle(
           color: Colors.white,
-          fontSize: SimfTokens.textSm,
-          fontWeight: FontWeight.w700,
+          fontSize: SimfTokens.textMd,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
@@ -446,8 +451,9 @@ class _CaptionStrip extends StatelessWidget {
               caption ?? hint,
               textAlign: TextAlign.right,
               style: TextStyle(
-                // Real caption text reads in white; the placeholder stays muted.
-                color: hasCaption ? SimfTokens.surface : SimfTokens.onGoldMuted,
+                // Real caption text reads in white; the placeholder is the
+                // frame's soft caption colour (#DDE4F0, 934:3613).
+                color: hasCaption ? SimfTokens.surface : SimfTokens.captionText,
                 fontSize: SimfTokens.textSm,
               ),
             ),
@@ -465,7 +471,8 @@ class _CaptionStrip extends StatelessWidget {
               'AI',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: SimfTokens.textXs,
+                // Frame 934:3602 — 12px SemiBold.
+                fontSize: SimfTokens.textSm,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -1005,7 +1012,8 @@ class _LiveBadge extends StatelessWidget {
             style: const TextStyle(
               color: SimfTokens.surface,
               fontWeight: FontWeight.w700,
-              fontSize: SimfTokens.textXs,
+              // Frame 934:3611 — 12px Bold.
+              fontSize: SimfTokens.textSm,
             ),
           ),
         ],
