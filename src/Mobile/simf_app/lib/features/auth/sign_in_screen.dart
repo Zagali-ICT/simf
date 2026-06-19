@@ -215,12 +215,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         _error = null;
       });
       await ref.read(authControllerProvider.notifier).signInWithDeviceKey();
-      if (!mounted) {
-        return;
-      }
-      if (ref.read(authControllerProvider) is AuthStateSignedIn) {
-        routeAfterAuth(context, ref);
-      }
     } on AuthFailure catch (failure) {
       if (mounted) {
         setState(() {
@@ -235,6 +229,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       if (mounted) {
         setState(() => _busy = false);
       }
+    }
+    // Route on the resulting auth state, OUTSIDE the try: signInWithDeviceKey
+    // establishes the session before its trailing profile reload, so a
+    // non-AuthFailure thrown there (swallowed above) must not skip the
+    // navigation home — the biometric path now mirrors the password path (D-441).
+    if (mounted && ref.read(authControllerProvider) is AuthStateSignedIn) {
+      routeAfterAuth(context, ref);
     }
   }
 
