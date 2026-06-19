@@ -324,9 +324,12 @@ class _PastSpeakersRow extends StatelessWidget {
     final shown =
         (hasOverflow ? speakers.take(3) : speakers.take(4)).toList();
     final overflow = speakers.length - shown.length;
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.start,
+    // Wrap (not Row) so the four fixed-72 tiles spread like the frame on a
+    // normal width but wrap to a second line instead of overflowing on a very
+    // narrow (~320px) device.
+    return Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      runSpacing: SimfTokens.space3,
       children: <Widget>[
         for (final s in shown)
           _PastSpeakerCard(
