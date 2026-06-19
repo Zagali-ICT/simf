@@ -82,6 +82,20 @@ public sealed class SiteSettingsAdminTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    [Fact]
+    public async Task PUT_rejects_a_non_http_social_url()
+    {
+        // D-467 (security) — the dedicated page validates social links are
+        // absolute http(s) URLs and 400s a javascript:/data:/arbitrary scheme.
+        var token = await CreateAdministratorAndSignInAsync();
+        var put = await PutAuthAsync(
+            "/api/v1/admin/site-settings",
+            new AdminUpdateSiteSettingsRequest { LinkedIn = "javascript:alert(1)" },
+            token);
+
+        Assert.Equal(HttpStatusCode.BadRequest, put.StatusCode);
+    }
+
     // -- Helpers (mirror SystemSettingsTests) ---------------------------------
 
     private async Task<string> CreateAdministratorAndSignInAsync()

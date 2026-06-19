@@ -2441,8 +2441,13 @@
       const social = remote.social || {};
       document.querySelectorAll('.socials a[data-social]').forEach(a => {
         const url = social[a.getAttribute('data-social')];
-        if (url) { a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.style.display = ''; }
-        else { a.style.display = 'none'; }
+        // Only set an http(s) link (defence-in-depth vs a javascript:/data: href);
+        // the server already drops non-http(s) social URLs, this is belt-and-braces.
+        if (url && /^https?:\/\//i.test(url)) {
+          a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.style.display = '';
+        } else {
+          a.style.display = 'none';
+        }
       });
     }
     // On an unreachable API (remote === null) the arrays keep their built-in

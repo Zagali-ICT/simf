@@ -900,30 +900,36 @@ class _SocialRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final social = ref.watch(siteSettingsProvider).valueOrNull?.social;
-    final links = <(String, String)>[
-      ('assets/images/social_x.png', social?.x ?? BuildConfig.socialXUrl),
+    // (asset, url, accessible label) — the label names the icon-only button for
+    // screen readers (a11y review).
+    final links = <(String, String, String)>[
+      ('assets/images/social_x.png', social?.x ?? BuildConfig.socialXUrl, 'X'),
       (
         'assets/images/social_instagram.png',
         social?.instagram ?? BuildConfig.socialInstagramUrl,
+        'Instagram',
       ),
       (
         'assets/images/social_linkedin.png',
         social?.linkedin ?? BuildConfig.socialLinkedInUrl,
+        'LinkedIn',
       ),
       (
         'assets/images/social_youtube.png',
         social?.youtube ?? BuildConfig.socialYouTubeUrl,
+        'YouTube',
       ),
       (
         'assets/images/social_tiktok.png',
         social?.tiktok ?? BuildConfig.socialTikTokUrl,
+        'TikTok',
       ),
     ];
     return Row(
       children: <Widget>[
-        for (final (index, (asset, url)) in links.indexed) ...<Widget>[
+        for (final (index, (asset, url, label)) in links.indexed) ...<Widget>[
           if (index > 0) const SizedBox(width: SimfTokens.space4),
-          Expanded(child: _SocialButton(asset: asset, url: url)),
+          Expanded(child: _SocialButton(asset: asset, url: url, label: label)),
         ],
       ],
     );
@@ -931,10 +937,18 @@ class _SocialRow extends ConsumerWidget {
 }
 
 class _SocialButton extends StatelessWidget {
-  const _SocialButton({required this.asset, required this.url});
+  const _SocialButton({
+    required this.asset,
+    required this.url,
+    required this.label,
+  });
 
   final String asset;
   final String url;
+
+  /// The platform name, exposed to screen readers via the image's semantic
+  /// label (the button is otherwise icon-only).
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -950,7 +964,7 @@ class _SocialButton extends StatelessWidget {
         child: SizedBox(
           height: 48,
           child: Center(
-            child: Image.asset(asset, width: 20, height: 20),
+            child: Image.asset(asset, width: 20, height: 20, semanticLabel: label),
           ),
         ),
       ),

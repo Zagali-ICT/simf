@@ -202,7 +202,7 @@ internal sealed class AdminSystemSettingService(
         };
         var desired = provided
             .Where(kv => kv.Value is not null)
-            .ToDictionary(kv => kv.Key, kv => Clean(kv.Value));
+            .ToDictionary(kv => kv.Key, kv => CleanSettingValue(kv.Key, kv.Value));
         if (desired.Count == 0) { return; }
         var keys = desired.Keys.ToArray();
         var existing = await db.SystemSettings
@@ -247,6 +247,35 @@ internal sealed class AdminSystemSettingService(
     {
         var v = (value ?? string.Empty).Trim();
         return v.Length > 2048 ? v[..2048] : v;
+    }
+
+    // D-467 (security review) — the social-link keys must be absolute http(s)
+    // URLs (they are rendered as link targets on the app + website). Messages
+    // stay plain text. A blank value (cleared link) is allowed.
+    private static readonly HashSet<string> SocialKeys = new(StringComparer.Ordinal)
+    {
+        SiteSettingKeys.SocialFacebook, SiteSettingKeys.SocialX,
+        SiteSettingKeys.SocialInstagram, SiteSettingKeys.SocialLinkedIn,
+        SiteSettingKeys.SocialYouTube, SiteSettingKeys.SocialTikTok,
+        SiteSettingKeys.SocialSnapchat,
+    };
+
+    private static string CleanSettingValue(string key, string? value)
+    {
+        var v = Clean(value);
+        if (v.Length == 0 || !SocialKeys.Contains(key))
+        {
+            return v;
+        }
+        if (!Uri.TryCreate(v, UriKind.Absolute, out var uri)
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            throw new ApiException(
+                ErrorCodes.SystemSettingInvalid, 400,
+                "A social link must be an absolute http(s) URL.",
+                "يجب أن يكون رابط التواصل رابط http(s) مطلقاً.");
+        }
+        return v;
     }
 
     private static string ValidateKey(string raw)

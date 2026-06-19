@@ -185,7 +185,7 @@
                         <select class="simf-field__input simf-walkin__plate-letter"
                                 value="@_plateLetters[idx]"
                                 @onchange="@(e => OnPlateLetterChanged(idx, e))"
-                                aria-label="@L["Admin.WalkIn.Field.Plate.Letter"]">
+                                aria-label="@($"{L["Admin.WalkIn.Field.Plate.Letter"]} {idx + 1}")">
                             <option value="">@L["Admin.WalkIn.Field.Plate.Letter"]</option>
                             @foreach (var letter in SaudiPlate.Letters)
                             {

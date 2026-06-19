@@ -8,7 +8,10 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/core/site_settings/site_settings.dart';
 import 'package:simf_app/features/registration/registration_success_screen.dart';
 
-Future<void> _pump(WidgetTester tester) async {
+Future<void> _pump(
+  WidgetTester tester, {
+  String messageEn = 'Congratulations, welcome',
+}) async {
   final router = GoRouter(
     initialLocation: '/registration/success',
     routes: <RouteBase>[
@@ -35,10 +38,10 @@ Future<void> _pump(WidgetTester tester) async {
       overrides: <Override>[
         // D-461 — fixed site-settings so the screen never fires a real fetch.
         siteSettingsProvider.overrideWith(
-          (ref) => const SiteSettings(
+          (ref) => SiteSettings(
             registrationMessageAr: 'تهانينا، مرحباً بكم',
-            registrationMessageEn: 'Congratulations, welcome',
-            social: SiteSocialLinks(),
+            registrationMessageEn: messageEn,
+            social: const SiteSocialLinks(),
           ),
         ),
       ],
@@ -93,6 +96,20 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('HOME'), findsOneWidget);
+    });
+
+    testWidgets('shows the CP-configured welcome message (D-461)', (tester) async {
+      await _pump(tester, messageEn: 'Welcome to the Fourth Saudi Forum!');
+      expect(find.text('Welcome to the Fourth Saudi Forum!'), findsOneWidget);
+    });
+
+    testWidgets('falls back to the bundled message when the CP value is empty',
+        (tester) async {
+      await _pump(tester, messageEn: '');
+      // The (now-empty) configured value is not shown; the screen still renders
+      // via the bundled l10n fallback.
+      expect(find.text('Welcome to the Fourth Saudi Forum!'), findsNothing);
+      expect(find.text('Registration success'), findsOneWidget);
     });
   });
 }
