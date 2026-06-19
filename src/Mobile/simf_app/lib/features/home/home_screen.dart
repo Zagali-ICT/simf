@@ -14,6 +14,7 @@ import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../core/env/build_config.dart';
 import '../../core/external_link.dart';
+import '../../core/site_settings/site_settings.dart';
 import '../myarea/data/myarea_models.dart';
 import '../myarea/data/myarea_repository.dart';
 import '../news/data/news_models.dart';
@@ -890,18 +891,33 @@ class _PostImage extends StatelessWidget {
 }
 
 /// The follow-us row (frame node 522:2215): five bordered buttons with the
-/// design's brand glyphs. A button with no configured URL is inert (D-369).
-class _SocialRow extends StatelessWidget {
+/// design's brand glyphs. The URLs come from the CP-editable site-settings
+/// (D-461), falling back to the build-time config; a button with no URL is
+/// inert (D-369).
+class _SocialRow extends ConsumerWidget {
   const _SocialRow();
 
   @override
-  Widget build(BuildContext context) {
-    const links = <(String, String)>[
-      ('assets/images/social_x.png', BuildConfig.socialXUrl),
-      ('assets/images/social_instagram.png', BuildConfig.socialInstagramUrl),
-      ('assets/images/social_linkedin.png', BuildConfig.socialLinkedInUrl),
-      ('assets/images/social_youtube.png', BuildConfig.socialYouTubeUrl),
-      ('assets/images/social_tiktok.png', BuildConfig.socialTikTokUrl),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final social = ref.watch(siteSettingsProvider).valueOrNull?.social;
+    final links = <(String, String)>[
+      ('assets/images/social_x.png', social?.x ?? BuildConfig.socialXUrl),
+      (
+        'assets/images/social_instagram.png',
+        social?.instagram ?? BuildConfig.socialInstagramUrl,
+      ),
+      (
+        'assets/images/social_linkedin.png',
+        social?.linkedin ?? BuildConfig.socialLinkedInUrl,
+      ),
+      (
+        'assets/images/social_youtube.png',
+        social?.youtube ?? BuildConfig.socialYouTubeUrl,
+      ),
+      (
+        'assets/images/social_tiktok.png',
+        social?.tiktok ?? BuildConfig.socialTikTokUrl,
+      ),
     ];
     return Row(
       children: <Widget>[
