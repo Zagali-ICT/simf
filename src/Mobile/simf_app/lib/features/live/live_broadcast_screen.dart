@@ -13,6 +13,7 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
+import '../accessibility/data/accessibility_controller.dart';
 import 'data/live_repository.dart';
 import 'youtube_url.dart';
 
@@ -425,7 +426,7 @@ class _PlayerSurface extends StatelessWidget {
 /// carries admin-set [caption] text (the stubbed-provider surface) it is shown
 /// in readable white; otherwise the muted placeholder [hint] is shown (and for a
 /// YouTube feed the player's own CC supplies captions meanwhile).
-class _CaptionStrip extends StatelessWidget {
+class _CaptionStrip extends ConsumerWidget {
   const _CaptionStrip({required this.hint, this.caption});
 
   /// The real AI caption text, or null to show the placeholder [hint].
@@ -433,7 +434,19 @@ class _CaptionStrip extends StatelessWidget {
   final String hint;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Page-038 captions toggle: when the user turns captions off, hide the
+    // strip entirely (the YouTube player's own CC stays user-controlled).
+    // Defaults to shown when the accessibility DI isn't wired (widget tests).
+    bool captionsEnabled;
+    try {
+      captionsEnabled = ref.watch(accessibilityControllerProvider).captions;
+    } catch (_) {
+      captionsEnabled = true;
+    }
+    if (!captionsEnabled) {
+      return const SizedBox.shrink();
+    }
     final hasCaption = caption != null;
     return Container(
       padding: const EdgeInsets.symmetric(

@@ -17,6 +17,13 @@ public sealed class RatingConfiguration : IEntityTypeConfiguration<Rating>
         builder.Property(x => x.UserId).IsRequired();
         builder.Property(x => x.Stars).IsRequired();
 
+        // Per-element scores (Figma "قيّم العناصر") — additive nullable columns;
+        // no IsRequired so existing rows backfill as NULL.
+        builder.Property(x => x.OrganizationStars);
+        builder.Property(x => x.ContentStars);
+        builder.Property(x => x.AppStars);
+        builder.Property(x => x.VenueStars);
+
         // Comment max length MUST stay aligned with the FluentValidation
         // MaximumLength(2000) on RateRequest and any UI MaxLength.
         builder.Property(x => x.Comment).HasMaxLength(2000);

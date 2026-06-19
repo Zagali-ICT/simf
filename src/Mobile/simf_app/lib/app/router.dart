@@ -148,6 +148,13 @@ const List<_Route> _routes = <_Route>[
   // D-426 — exhibitor ("Other") lead capture (approved-only; server 403s visitors).
   _Route(number: 106, name: RouteNames.scanVisitor, path: '/exhibitor/scan', labelAr: 'مسح بطاقة زائر', labelEn: 'Scan visitor badge'),
   _Route(number: 107, name: RouteNames.myVisitors, path: '/exhibitor/visitors', labelAr: 'زواري', labelEn: 'My Visitors'),
+
+  // D-464 — المزيد hub entries with no screen yet (Figma 1129:17224). Public;
+  // they fall through to ComingSoonScreen (sentinel numbers 200+).
+  _Route(number: 200, name: RouteNames.forumGuide, path: '/forum-guide', labelAr: 'دليل الملتقى', labelEn: 'Forum guide'),
+  _Route(number: 201, name: RouteNames.faq, path: '/faq', labelAr: 'الأسئلة الشائعة', labelEn: 'FAQ'),
+  _Route(number: 202, name: RouteNames.sessionPresentations, path: '/session-presentations', labelAr: 'عروض الجلسات', labelEn: 'Session presentations'),
+  _Route(number: 203, name: RouteNames.contactUs, path: '/contact-us', labelAr: 'تواصل معنا', labelEn: 'Contact us'),
 ];
 
 /// Auxiliary auth routes that aren't numbered in the mockup but live in

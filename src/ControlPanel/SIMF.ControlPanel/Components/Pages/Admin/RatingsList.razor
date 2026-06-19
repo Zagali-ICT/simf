@@ -64,6 +64,22 @@
                                     Sortable="true">
                     <CellTemplate>@(context.Stars) / 5</CellTemplate>
                 </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminRatingSummary" Key="organizationStars"
+                                    Header="@L["Admin.Ratings.Col.Organization"]">
+                    <CellTemplate>@FormatScore(context.OrganizationStars)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminRatingSummary" Key="contentStars"
+                                    Header="@L["Admin.Ratings.Col.Content"]">
+                    <CellTemplate>@FormatScore(context.ContentStars)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminRatingSummary" Key="appStars"
+                                    Header="@L["Admin.Ratings.Col.App"]">
+                    <CellTemplate>@FormatScore(context.AppStars)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminRatingSummary" Key="venueStars"
+                                    Header="@L["Admin.Ratings.Col.Venue"]">
+                    <CellTemplate>@FormatScore(context.VenueStars)</CellTemplate>
+                </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminRatingSummary" Key="comment"
                                     Header="@L["Admin.Ratings.Col.Comment"]"
                                     Filterable="true">
@@ -122,6 +138,11 @@
 
     private string FormatPage(int current, int total) =>
         string.Format(L["Grid.Page"], current, total);
+
+    // Per-element score cell: "N / 5", or an em dash when the attendee skipped
+    // that element (the column is an additive nullable — D-463).
+    private static string FormatScore(int? stars) =>
+        stars is null ? "—" : $"{stars} / 5";
 
     // D-356 — Excel export (selected rows, or the current filtered set). Direct
     // download via the generic /export proxy. Export only — ratings are owned by

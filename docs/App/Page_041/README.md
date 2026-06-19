@@ -9,37 +9,34 @@ Per-page documentation folder (App screen 41).
 | Route | `RouteNames.more` → `/more` (**public, anonymous**) |
 | Titles | AR **المزيد** · EN **More** |
 | Section | 8 — Settings & legal |
-| Nature | **Navigation hub** — a list of tiles routing to the secondary screens; a static app-version line at the bottom |
-| App privilege | **Guest+ (anonymous).** No API; pure in-app navigation. |
-| Status | **No API** (navigation hub); **Flutter screen BUILT** |
+| Nature | **Navigation hub** — a منطقتي profile card + three grouped sections of nav rows + a static version line |
+| App privilege | **Guest+ (anonymous).** No API of its own; the منطقتي card resolves the signed-in dashboard. |
+| Status | **No API** (navigation hub); **Flutter screen BUILT; grouped re-skin Figma `1129:17224` (D-465)** |
 
 ## API (authoritative contract)
-None. The screen makes **no network calls** — it is a list of `ListTile`s that
-`context.pushNamed` to already-built routes.
+None of its own. The منطقتي header card (signed-in only) reuses
+`GET /app/account/dashboard` (best-effort) for the name · tier; everything else is
+in-app navigation (`context.pushNamed`) or the locale toggle.
 
 ## Behaviour
-A `ListView` of tiles (leading icon + title + trailing chevron). Each tile
-routes to:
+On the navy `KsaPage` shell (Figma `1129:17224`): a **منطقتي profile card**
+(signed-in only — avatar + name · tier, taps to `/my-area`), three grouped
+sections of nav rows, a **تسجيل الخروج** link (signed-in only — confirm dialog →
+sign-out → `/sign-in`, shared `features/auth/sign_out.dart`), and the
+`SIMF 2026 · v1.0.0` version line.
 
-| Tile | Route |
-|------|-------|
-| About the forum | `RouteNames.aboutForum` → `/about` |
-| Accessibility | `RouteNames.accessibility` → `/settings/accessibility` |
-| Terms & conditions | `RouteNames.terms` → `/terms` |
-| Rate | `RouteNames.rate` → `/rate` |
-| Notifications | `RouteNames.notifications` → `/notifications` |
-| Share my contact | `RouteNames.shareMyContact` → `/contacts/share` |
-| My Contacts | `RouteNames.myContacts` → `/contacts` |
-| Media partners | `RouteNames.mediaPartners` → `/media-partners` |
+| Section | Rows → destination |
+|---------|--------------------|
+| معلومات الملتقى | عن الملتقى → `/about` · دليل الملتقى → ComingSoon `/forum-guide` · الأسئلة الشائعة → ComingSoon `/faq` · عروض الجلسات → ComingSoon `/session-presentations` · استكشف الرياض · VisitSaudi → external |
+| الإعدادات | اللغة (shows current value, toggles) · إمكانية الوصول → `/settings/accessibility` · الإشعارات → `/notifications` |
+| قانوني | الشروط والأحكام → `/terms` · تواصل معنا → ComingSoon `/contact-us` · تقييم التطبيق → `/rate` |
 
-The **Share my contact** + **My Contacts** tiles are the FDS-014 visitor
-contact-sharing entry points, added with the contact UI (D-324). A static
-`SIMF v0.1.0` version line is centred at the bottom. The auth gate on
-the **destination** routes (e.g. Notifications #33, Rate #40) still applies —
-tapping while signed-out bounces to sign-in (router redirect). UI is interim
-(final visuals from SIMF-VID-001).
+The four ComingSoon entries route to the standard placeholder (owner choice
+"parity now, ComingSoon for unbuilt" — D-465); the destination routes keep their
+own auth gate (e.g. Notifications #33 bounces a signed-out user to sign-in).
 
 ## Tests
 - Widget: `src/Mobile/simf_app/test/features/more/more_screen_test.dart`
-  (renders the tiles, version line, tap About → navigates).
+  (grouped rows; version line; guest hides card+sign-out; signed-in shows
+  card+sign-out; tap About → navigates).
 - E2E: [`docs/tests/e2e/mobile-more.md`](../../tests/e2e/mobile-more.md).

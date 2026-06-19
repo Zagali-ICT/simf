@@ -12,13 +12,14 @@ import '../content/data/content_repository.dart';
 
 /// Page 037 — عن الملتقى · About the forum (#37, `/about`, Guest+).
 ///
-/// **Public.** Pixel-parity to KSA Figma frame `1082:15307`: the navy [KsaPage]
-/// shell, an intro card (the `SIMF · 2026` kicker, the gold heading and the
-/// forum paragraph) and the "المحاور الرئيسية" list of the four fixed forum
-/// themes. The paragraph is hydrated from the CMS content layer
+/// **Public.** Pixel-parity to the restructured KSA Figma frame `1116:16448`:
+/// the navy [KsaPage] shell, the anchor-mark header, the **الرسالة** (mission)
+/// and **الرؤية** (vision) cards, the **تفاصيل الملتقى** details card
+/// (year / date / location) and the **المحاور الرئيسية** themes card with the
+/// four fixed forum themes. The vision paragraph is hydrated from the CMS
 /// (`GET /app/content/{key}`, key `about`, D-173) when present and falls back to
-/// the static bilingual copy otherwise; the heading and the four themes are
-/// static (the forum's fixed framing — no structured CMS block exists for them).
+/// the static bilingual copy otherwise; the mission line, the details and the
+/// themes are the forum's fixed framing (static — no structured CMS block).
 class AboutScreen extends ConsumerStatefulWidget {
   const AboutScreen({super.key});
 
@@ -35,7 +36,7 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
     unawaited(_load());
   }
 
-  /// Best-effort hydrate of the intro paragraph from the CMS. Any failure (incl.
+  /// Best-effort hydrate of the vision paragraph from the CMS. Any failure (incl.
   /// a 404 = key not seeded) leaves [_block] null and the screen renders the
   /// static fallback paragraph — the page always shows the forum content.
   Future<void> _load() async {
@@ -55,7 +56,7 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     final block = _block;
-    final paragraph = (block != null && block.hasBody)
+    final visionBody = (block != null && block.hasBody)
         ? block.localizedBody(l10n.isArabic)
         : l10n.aboutHeroBody;
 
@@ -72,73 +73,68 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
       body: ListView(
         padding: const EdgeInsets.all(SimfTokens.space4),
         children: <Widget>[
-          _AboutHeroCard(heading: l10n.aboutHeroHeading, body: paragraph),
+          // Anchor-mark header (frame 1116:16448).
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              const Icon(Icons.anchor, color: SimfTokens.accent, size: 22),
+              const SizedBox(width: SimfTokens.space2),
+              Flexible(
+                child: Text(
+                  l10n.aboutForumName,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: SimfTokens.accent,
+                    fontSize: SimfTokens.textLg,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: SimfTokens.space5),
-          Text(
-            l10n.aboutThemesTitle,
-            style: const TextStyle(
-              fontSize: SimfTokens.textLg,
-              fontWeight: FontWeight.w500,
-              color: Colors.white,
-            ),
+          _AboutCard(title: l10n.aboutMissionTitle, body: l10n.aboutHeroHeading),
+          const SizedBox(height: SimfTokens.space4),
+          _AboutCard(title: l10n.aboutVisionTitle, body: visionBody),
+          const SizedBox(height: SimfTokens.space4),
+          _DetailsCard(
+            title: l10n.aboutDetailsTitle,
+            rows: <(String, String)>[
+              (l10n.aboutDetailYearLabel, l10n.aboutDetailYearValue),
+              (l10n.aboutDetailDateLabel, l10n.aboutDetailDateValue),
+              (l10n.aboutDetailLocationLabel, l10n.aboutDetailLocationValue),
+            ],
           ),
           const SizedBox(height: SimfTokens.space4),
-          for (final (number, title, sub) in themes) ...<Widget>[
-            _ThemeCard(number: number, title: title, subtitle: sub),
-            const SizedBox(height: SimfTokens.space4),
-          ],
+          _ThemesCard(title: l10n.aboutThemesTitle, themes: themes),
         ],
       ),
     );
   }
 }
 
-/// The intro card (frame `1082:15566`): a borderless navy-deep card, radius 8,
-/// with the gold `SIMF · 2026` kicker, the white SemiBold heading and the
-/// beige forum paragraph.
-class _AboutHeroCard extends StatelessWidget {
-  const _AboutHeroCard({required this.heading, required this.body});
+/// A titled navy-deep text card (الرسالة / الرؤية): the white heading over the
+/// beige body paragraph.
+class _AboutCard extends StatelessWidget {
+  const _AboutCard({required this.title, required this.body});
 
-  final String heading;
+  final String title;
   final String body;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SimfTokens.space4,
-        vertical: SimfTokens.space2,
-      ),
-      decoration: BoxDecoration(
-        color: SimfTokens.navyDeep,
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
-      ),
+    return _Card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          const Text(
-            'SIMF · 2026',
-            style: TextStyle(
-              color: SimfTokens.accent,
-              fontSize: SimfTokens.textSm,
-            ),
-          ),
-          const SizedBox(height: SimfTokens.space4),
-          Text(
-            heading,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: SimfTokens.textMd,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          _CardHeading(title),
           const SizedBox(height: SimfTokens.space2),
           Text(
             body,
             style: const TextStyle(
               color: SimfTokens.beigeBorder,
               fontSize: SimfTokens.textSm,
-              height: 18 / 12,
+              height: 1.6,
             ),
           ),
         ],
@@ -147,62 +143,151 @@ class _AboutHeroCard extends StatelessWidget {
   }
 }
 
-/// One "المحاور الرئيسية" theme card (frames `1082:15578`…`15620`): the standard
-/// navy-deep + beige-hairline [KsaCard], the gold number at the inline end and
-/// the white bold title over the beige subtitle.
-class _ThemeCard extends StatelessWidget {
-  const _ThemeCard({
-    required this.number,
-    required this.title,
-    required this.subtitle,
-  });
+/// The تفاصيل الملتقى card: the heading over "label : value" rows.
+class _DetailsCard extends StatelessWidget {
+  const _DetailsCard({required this.title, required this.rows});
 
-  final String number;
   final String title;
-  final String subtitle;
+  final List<(String, String)> rows;
 
   @override
   Widget build(BuildContext context) {
-    return KsaCard(
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space4),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              number,
-              style: const TextStyle(
-                color: SimfTokens.accent,
-                fontSize: SimfTokens.textLg,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(width: SimfTokens.space2),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: SimfTokens.textMd,
-                      fontWeight: FontWeight.w700,
-                    ),
+    return _Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          _CardHeading(title),
+          const SizedBox(height: SimfTokens.space3),
+          for (final (index, (label, value)) in rows.indexed) ...<Widget>[
+            if (index > 0) const SizedBox(height: SimfTokens.space2),
+            Row(
+              children: <Widget>[
+                Text(
+                  '$label :',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: SimfTokens.textSm,
+                    fontWeight: FontWeight.w600,
                   ),
-                  const SizedBox(height: SimfTokens.space2),
-                  Text(
-                    subtitle,
+                ),
+                const SizedBox(width: SimfTokens.space2),
+                Expanded(
+                  child: Text(
+                    value,
+                    textDirection: TextDirection.ltr,
+                    textAlign: TextAlign.start,
                     style: const TextStyle(
                       color: SimfTokens.beigeBorder,
                       fontSize: SimfTokens.textSm,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ],
-        ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The المحاور الرئيسية card: the heading over the numbered theme entries.
+class _ThemesCard extends StatelessWidget {
+  const _ThemesCard({required this.title, required this.themes});
+
+  final String title;
+  final List<(String, String, String)> themes;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          _CardHeading(title),
+          const SizedBox(height: SimfTokens.space3),
+          for (final (index, (number, themeTitle, body)) in themes.indexed)
+            ...<Widget>[
+            if (index > 0) const SizedBox(height: SimfTokens.space4),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  number,
+                  style: const TextStyle(
+                    color: SimfTokens.accent,
+                    fontSize: SimfTokens.textLg,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(width: SimfTokens.space3),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        themeTitle,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: SimfTokens.textMd,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: SimfTokens.space1),
+                      Text(
+                        body,
+                        style: const TextStyle(
+                          color: SimfTokens.beigeBorder,
+                          fontSize: SimfTokens.textSm,
+                          height: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// The shared navy-deep card chrome for the About sections.
+class _Card extends StatelessWidget {
+  const _Card({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(SimfTokens.space4),
+      decoration: BoxDecoration(
+        color: SimfTokens.navyDeep,
+        borderRadius: BorderRadius.circular(SimfTokens.radius),
+      ),
+      child: child,
+    );
+  }
+}
+
+class _CardHeading extends StatelessWidget {
+  const _CardHeading(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      textAlign: TextAlign.start,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: SimfTokens.textMd,
+        fontWeight: FontWeight.w700,
       ),
     );
   }

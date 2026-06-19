@@ -8,21 +8,24 @@ Per-page documentation folder (App screen 37).
 | Route | `RouteNames.aboutForum` → `/about` (**guest+, anonymous**) |
 | Titles | AR **عن الملتقى** · EN **About the forum** |
 | Section | 7 — Smart features / info |
-| Nature | **Static CMS content** (the forum's about / themes) |
-| Status | API **BUILT** (`GET /app/content/{key}`, D-173); **Flutter screen BUILT (D-311)** |
+| Nature | **Forum framing** — mission / vision / details / main themes (vision CMS-hydrated) |
+| Status | API **BUILT** (`GET /app/content/{key}`, D-173); **Flutter screen BUILT (D-311); restructured Figma `1116:16448` (D-465)** |
 
 ## API
 `GET /api/v1/app/content/{key}` (`AllowAnonymous`) → `PublicContentBlock`
-`{ key, content, contentArabic, lastUpdatedAt }`. This screen reads key **`about`**.
-404 when the key is not seeded yet.
+`{ key, content, contentArabic, lastUpdatedAt }`. This screen reads key **`about`**
+to hydrate the **الرؤية (vision)** paragraph; 404/empty → the static fallback.
 
 ## Behaviour
-Reuses the shipped content layer (`ContentRepository`, from Page 9 terms) — renders
-the localized body as **selectable text**. A 404 (key not seeded) shows the
-"content coming soon" empty state; a server error shows error+retry. Rich
-HTML/markdown rendering deferred to the design pass (interim plain text).
+On the navy `KsaPage` shell (Figma `1116:16448`): an anchor-mark header
+(`الملتقى الدولي البحري`), the **الرسالة (mission)** card (static line), the
+**الرؤية (vision)** card (CMS `about` body, falling back to static copy on
+404/500 — the page is always content-complete, no error screen), the **تفاصيل
+الملتقى** card (السنة / الزمن / المكان — values mirror the mock; real event date is
+an OI), and the **المحاور الرئيسية** card listing the four fixed numbered themes.
 
 ## Tests
 Widget `src/Mobile/simf_app/test/features/about/about_screen_test.dart`
-(body, 404→empty, error→retry). API `tests/SIMF.Api.Tests/ContentBlocksTests.cs`.
+(mission/vision/themes render; 404→static fallback; 500→static; RTL theme number
+sits inline-start of its title). API `tests/SIMF.Api.Tests/ContentBlocksTests.cs`.
 E2E: [`mobile-about.md`](../../tests/e2e/mobile-about.md).
