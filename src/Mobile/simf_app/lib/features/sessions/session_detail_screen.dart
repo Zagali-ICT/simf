@@ -909,10 +909,13 @@ class _SeatCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: SimfTokens.space2),
-            // Frame 889:2762 — a forward chevron at the inline end (physical
-            // left under RTL).
-            const Icon(
-              Icons.chevron_left,
+            // Frame 889:2762 — a forward chevron at the inline end. Direction-
+            // aware so it points "into" the seat map in both locales (physical
+            // left under RTL, right under LTR).
+            Icon(
+              Directionality.of(context) == TextDirection.rtl
+                  ? Icons.chevron_left
+                  : Icons.chevron_right,
               size: 20,
               color: SimfTokens.beigeBorder,
             ),
