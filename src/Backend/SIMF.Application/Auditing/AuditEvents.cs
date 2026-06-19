@@ -247,6 +247,11 @@ public static class AuditEvents
     public const string SessionCategoryUpdated = "SessionCategory.Updated";
     public const string SessionCategoryDeactivated = "SessionCategory.Deactivated";
 
+    // D-452 — programme days (date + title + logo).
+    public const string ProgrammeDayCreated = "ProgrammeDay.Created";
+    public const string ProgrammeDayUpdated = "ProgrammeDay.Updated";
+    public const string ProgrammeDayDeactivated = "ProgrammeDay.Deactivated";
+
     // Device keys / biometric sign-in (D-172, gap doc G10 — PDF §2.5)
     public const string DeviceKeyRegistered = "DeviceKey.Registered";
     public const string DeviceKeyRevoked = "DeviceKey.Revoked";

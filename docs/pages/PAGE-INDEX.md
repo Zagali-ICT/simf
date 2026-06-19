@@ -66,6 +66,7 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/sessions` | ✅ Real (D-199) | Administrator | [cp/admin-sessions.md](cp/admin-sessions.md) | [e2e/cp-admin-sessions.md](../tests/e2e/cp-admin-sessions.md) |
 | `/admin/sessions/seat-plans` | ✅ Real | Administrator | — | [e2e/cp-admin-sessions-seat-plans.md](../tests/e2e/cp-admin-sessions-seat-plans.md) |
 | `/admin/session-categories` | ✅ Real (D-226) | Administrator  | [cp/admin-session-categories.md](cp/admin-session-categories.md) | [e2e/cp-admin-session-categories.md](../tests/e2e/cp-admin-session-categories.md) |
+| `/admin/programme-days` | ✅ Real (D-452) | Administrator  | [cp/admin-programme-days.md](cp/admin-programme-days.md) | [e2e/cp-admin-programme-days.md](../tests/e2e/cp-admin-programme-days.md) |
 | `/admin/session-moderators` | ✅ Real | Administrator  | [cp/admin-session-moderators.md](cp/admin-session-moderators.md) | [e2e/cp-admin-session-moderators.md](../tests/e2e/cp-admin-session-moderators.md) |
 | `/admin/programme/timeline` | ✅ Real | Administrator | — | [e2e/cp-admin-programme-timeline.md](../tests/e2e/cp-admin-programme-timeline.md) |
 | `/admin/bookings` | ✅ Real (D-227) | Administrator  | [cp/admin-bookings.md](cp/admin-bookings.md) | [e2e/cp-admin-bookings.md](../tests/e2e/cp-admin-bookings.md) |

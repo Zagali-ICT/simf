@@ -82,6 +82,18 @@
                     ValueChanged="@(v => _categoryIdInput = v ?? string.Empty)"
                     Disabled="_busy" />
 
+        @* D-452 — optional session type (Workshop / Session / Event) that drives
+           the app's Sessions type tabs; empty selection = unset. *@
+        <SimfSelect TValue="string"
+                    Label="@L["Admin.Sessions.Field.Type"]"
+                    Placeholder="@L["Admin.Sessions.Field.TypeNone"]"
+                    Items="_typeOptions"
+                    ValueFor="@(id => id)"
+                    LabelFor="@(id => TypeLabel(id))"
+                    Value="@_typeInput"
+                    ValueChanged="@(v => _typeInput = v ?? string.Empty)"
+                    Disabled="_busy" />
+
         <SimfTextField Label="@L["Admin.Sessions.Field.StartUtc"]"
                        Type="datetime-local"
                        Value="@_startInput"
@@ -209,6 +221,7 @@
     private readonly Model _model = new();
     private string _hallIdInput = string.Empty;
     private string _categoryIdInput = string.Empty;
+    private string _typeInput = string.Empty;
     private string _startInput = string.Empty;
     private string _endInput = string.Empty;
     private string _capacityInput = string.Empty;
@@ -226,6 +239,9 @@
     private Dictionary<string, AdminThemeSummary> _themesById = new();
     private string[] _categoryIds = Array.Empty<string>();
     private Dictionary<string, AdminSessionCategorySummary> _categoriesById = new();
+
+    // D-452 — fixed session-type options (Workshop=0 / Session=1 / Event=2).
+    private static readonly string[] _typeOptions = { "0", "1", "2" };
 
     private readonly List<AdminSessionSpeakerEntry> _selectedSpeakers = new();
     private readonly List<Guid> _selectedThemes = new();
@@ -246,6 +262,9 @@
             _model.IsActive = Initial.IsActive;
             _hallIdInput = Initial.HallId.ToString();
             _categoryIdInput = Initial.CategoryId?.ToString() ?? string.Empty;
+            _typeInput = Initial.Type.HasValue
+                ? ((int)Initial.Type.Value).ToString()
+                : string.Empty;
             _startInput = Initial.StartUtc.UtcDateTime.ToString("yyyy-MM-ddTHH:mm");
             _endInput = Initial.EndUtc.UtcDateTime.ToString("yyyy-MM-ddTHH:mm");
             _capacityInput = Initial.CapacityOverride?.ToString() ?? string.Empty;
@@ -342,6 +361,21 @@
             ? c.NameArabic
             : c.Name;
     }
+
+    // D-452 — localized label for a session-type option id ("0"/"1"/"2").
+    private string TypeLabel(string id) => id switch
+    {
+        "0" => L["Admin.Sessions.Type.Workshop"],
+        "1" => L["Admin.Sessions.Type.Session"],
+        "2" => L["Admin.Sessions.Type.Event"],
+        _ => id,
+    };
+
+    // D-452 — empty selection = unset; otherwise the parsed SessionType.
+    private static SessionType? ParseType(string raw) =>
+        int.TryParse(raw, out var n) && Enum.IsDefined(typeof(SessionType), n)
+            ? (SessionType)n
+            : null;
 
     private void RefreshSpeakerOptions()
     {
@@ -539,6 +573,7 @@
                         DescriptionArabic = NullIfBlank(_model.DescriptionArabic),
                         HallId = hallId,
                         CategoryId = categoryId,
+                        Type = ParseType(_typeInput),
                         StartUtc = start,
                         EndUtc = end,
                         CapacityOverride = capacityOverride,
@@ -563,6 +598,7 @@
                         DescriptionArabic = NullIfBlank(_model.DescriptionArabic),
                         HallId = hallId,
                         CategoryId = categoryId,
+                        Type = ParseType(_typeInput),
                         StartUtc = start,
                         EndUtc = end,
                         CapacityOverride = capacityOverride,

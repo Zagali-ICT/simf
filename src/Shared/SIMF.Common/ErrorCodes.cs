@@ -355,4 +355,7 @@ public static class ErrorCodes
     // Session categories (B9b / D-226 — dynamic lookup, FDS-004 §5.4).
     public const string SessionCategoryInvalid = "SESSION_CATEGORY_INVALID";
     public const string SessionCategoryNotFound = "SESSION_CATEGORY_NOT_FOUND";
+    // D-452 — programme days (date + title + logo) admin CRUD.
+    public const string ProgrammeDayInvalid = "PROGRAMME_DAY_INVALID";
+    public const string ProgrammeDayNotFound = "PROGRAMME_DAY_NOT_FOUND";
 }
