@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
@@ -13,6 +14,13 @@ import 'features/accessibility/data/accessibility_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Portrait-only: the SIMF app is designed for vertical use, so lock out
+  // landscape / auto-rotate app-wide. The native android/ios folders are
+  // generated (simf-run), so this Flutter-side lock is the source of truth.
+  await SystemChrome.setPreferredOrientations(
+    const <DeviceOrientation>[DeviceOrientation.portraitUp],
+  );
 
   // D-394 (PoC): the SIMF API is served over a self-signed certificate, so the
   // native HttpClient would reject it. Accept it for the configured API host
