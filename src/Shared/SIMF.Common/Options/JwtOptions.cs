@@ -16,8 +16,17 @@ public sealed class JwtOptions
     /// <summary>The HMAC-SHA256 signing key — at least 32 bytes.</summary>
     public string SigningKey { get; set; } = string.Empty;
 
-    /// <summary>The access-token lifetime, in minutes.</summary>
-    public int AccessTokenMinutes { get; set; } = 30;
+    /// <summary>The access-token lifetime, in minutes. D-443 (NCA finding):
+    /// capped at 5 minutes — short-lived and silently rotated in the
+    /// background before it lapses, so an active user is never interrupted.</summary>
+    public int AccessTokenMinutes { get; set; } = 5;
+
+    /// <summary>D-443 (NCA finding): the absolute session lifetime, in hours.
+    /// The refresh token issued at sign-in expires at <c>sign-in + this</c>,
+    /// and rotation carries that same deadline forward (it does NOT slide a
+    /// fresh window), so a session can never outlive the cap — re-login is
+    /// required after it even for an active user. Capped at 24 hours (1 day).</summary>
+    public int SessionLifetimeHours { get; set; } = 24;
 
     /// <summary>P3.2b — D-232 (D-213): the distinct audience for short-lived
     /// session-recording streaming tokens. A token minted for streaming

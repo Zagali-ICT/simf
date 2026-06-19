@@ -33,6 +33,8 @@
     @* D-353 — per-page UI preference store (CRUD dialog/full-page choice). *@
     <script src="@Assets["_content/SIMF.Components/js/simf-prefs.js"]"></script>
     <script src="@Assets["js/simf-account.js"]"></script>
+    @* D-443 — token-driven session-expiry guard (started by SessionTimeoutGuard). *@
+    <script src="@Assets["js/session-timeout.js"]"></script>
     @* D-123: the underlying cropperjs global MUST load before the Cropper.Blazor
        JS interop bridge — V10 ERP App.razor lines 32-33 do the same. Without
        cropper.min.js the bridge throws "Could not find 'cropper.destroy'

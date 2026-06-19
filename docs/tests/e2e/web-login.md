@@ -28,6 +28,7 @@
 | E2E-WLG-005 | Account-state route — pending visitor → `/account/pending` | auth | P1 | _to author_ |
 | E2E-WLG-006 | Account-state route — rejected visitor → `/account/rejected` with bilingual reason | auth | P1 | _to author_ |
 | E2E-WLG-007 | Client validation — empty email + empty password → inline field errors, no POST | error | P1 | _to author_ |
+| E2E-WLG-008 | D-443 session guard (authenticated area) — idle visitor sees the "Stay signed in / Sign out" countdown modal; "Stay" silently refreshes via `GET /session/status`, ignore → auto sign-out to `/login`; an active visitor is never interrupted; the session is still capped at an absolute 24h. Mirrors CP `E2E-AUTH-011/012`. | auth | P1 | _to author_ |
 | E2E-WLG-008 | Client validation — email without `@` → "Enter a valid email address." | error | P2 | _to author_ |
 | E2E-WLG-009 | Bad credentials — wrong password → 401 `AUTH_INVALID_CREDENTIALS` bilingual banner | error | P0 | _to author_ |
 | E2E-WLG-010 | Unverified account — `Registered` state → `AUTH_EMAIL_NOT_VERIFIED` banner | error | P1 | _to author_ |

@@ -42,7 +42,6 @@ public sealed class SignInService(
 {
     private static readonly TimeSpan TicketLifetime = TimeSpan.FromMinutes(5);
     private static readonly TimeSpan OtpLifetime = TimeSpan.FromMinutes(10);
-    private static readonly TimeSpan RefreshTokenLifetime = TimeSpan.FromDays(30);
     private static readonly TimeSpan OtpRequestWindow = TimeSpan.FromHours(1);
     private const int MaxSecondFactorAttempts = 5;
     private const int MaxOtpRequestsPerWindow = 5;
@@ -584,7 +583,11 @@ public sealed class SignInService(
                 UserId = user.Id,
                 TokenHash = OpaqueToken.Hash(refreshValue),
                 CreatedAt = now,
-                ExpiresAt = now.Add(RefreshTokenLifetime),
+                // D-443 (NCA finding): stamp the absolute session deadline
+                // (sign-in + Jwt:SessionLifetimeHours). Rotation carries this
+                // deadline forward instead of sliding, so the session is
+                // capped at 24h from sign-in.
+                ExpiresAt = now.Add(jwtTokenService.RefreshTokenLifetime),
             },
             cancellationToken);
 

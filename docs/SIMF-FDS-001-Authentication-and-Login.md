@@ -203,9 +203,11 @@ SIMF-FDS-002; this feature assumes the secret exists for an internal user.
 On a successful sign-in, the API issues (SIMF-API-001 section 12.2):
 
 - an **access token** — a JWT carrying the user id, the account state, the user
-  type and the granted permissions, expiring 30 minutes after issue;
-- a **refresh token** — opaque to the client, stored as a hash, with a 30-day
-  life that defines the session length.
+  type and the granted permissions, expiring 5 minutes after issue (D-443);
+- a **refresh token** — opaque to the client, stored as a hash, defining the
+  session length: an **absolute 24-hour** life from sign-in. Rotation carries
+  the original deadline forward (it does not slide), so the session is capped at
+  24 hours even for a continuously active user (D-443).
 
 ### 5.8 Token refresh
 
@@ -214,7 +216,7 @@ On a successful sign-in, the API issues (SIMF-API-001 section 12.2):
   unexpired and not revoked; revoke it; issue a new access token and a new
   refresh token (rotation); record the new token's `RotatedFromId`.
 - **Result:** HTTP 200, a fresh token pair.
-- **Failure:** invalid → `AUTH_REFRESH_TOKEN_INVALID` (401); expired (the 30-day
+- **Failure:** invalid → `AUTH_REFRESH_TOKEN_INVALID` (401); expired (the 24-hour
   session has ended) → `AUTH_REFRESH_TOKEN_EXPIRED` (401) — the user signs in
   again.
 
@@ -403,7 +405,7 @@ A seeded or admin-created account holding a temporary password is in a
 ### A.6 Sessions and revocation
 Concurrent sessions are allowed (web, app, Control Panel); sign-out is
 per-device. An admin can **force-sign-out a user** — revoke all of that user's
-refresh tokens. Because an access token is valid for 30 minutes, the token
+refresh tokens. Because an access token is valid for only 5 minutes (D-443), the token
 carries a **per-user security stamp**; sensitive Control Panel endpoints check
 it server-side so that disabling an account or revoking a Control Panel role
 takes effect immediately rather than after the token expires.

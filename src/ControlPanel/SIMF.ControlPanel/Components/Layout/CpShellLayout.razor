@@ -86,6 +86,9 @@
     </ChildContent>
 </SimfAppShell>
 
+@* D-443 — token-driven session-expiry guard (signed-in shell only). *@
+<SessionTimeoutGuard />
+
 @code {
     // Issue-1 — the signed-in user's permission codes (copied from the JWT into
     // the cookie at sign-in). The side menu hides items the user lacks; an

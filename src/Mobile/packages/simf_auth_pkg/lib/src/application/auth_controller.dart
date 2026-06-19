@@ -66,6 +66,10 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
   String? _accessToken;
   String? _refreshToken;
 
+  // Single-flight guard for [refresh] — the in-flight refresh Future shared by
+  // every concurrent 401 caller. See [refresh].
+  Future<bool>? _refreshInFlight;
+
   final DeviceKeyClient _deviceKeyClient = const DeviceKeyClient();
 
   @override
@@ -92,7 +96,21 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
   String? currentAccessToken() => _accessToken;
 
   @override
-  Future<bool> refresh() async {
+  Future<bool> refresh() {
+    // Single-flight (D-443): when several requests 401 at the same moment —
+    // e.g. the home screen's parallel loads right after the 5-min access token
+    // lapses — they must share ONE refresh, not each rotate the same refresh
+    // token. Without this the second rotation presents an already-rotated token
+    // and the server's reuse-detection revokes the whole session, signing an
+    // active user out mid-use. Serialising the refresh is the standard
+    // OAuth / MSAL guidance for concurrent 401s. The shared Future is cleared
+    // when it settles so the next genuine expiry refreshes again.
+    return _refreshInFlight ??= _refreshOnce().whenComplete(() {
+      _refreshInFlight = null;
+    });
+  }
+
+  Future<bool> _refreshOnce() async {
     final refreshToken = _refreshToken;
     if (refreshToken == null || refreshToken.isEmpty) {
       return false;

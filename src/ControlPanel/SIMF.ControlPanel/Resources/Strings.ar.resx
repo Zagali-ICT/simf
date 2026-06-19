@@ -17,6 +17,11 @@
   <data name="Shell.Notifications" xml:space="preserve"><value>الإشعارات</value></data>
   <data name="Shell.Account" xml:space="preserve"><value>الحساب</value></data>
   <data name="Shell.SignOut" xml:space="preserve"><value>تسجيل الخروج</value></data>
+  <data name="Session.Timeout.Title" xml:space="preserve"><value>جلستك على وشك الانتهاء</value></data>
+  <data name="Session.Timeout.Body" xml:space="preserve"><value>لم تقم بأي نشاط. لحماية حسابك سيتم تسجيل خروجك خلال</value></data>
+  <data name="Session.Timeout.Seconds" xml:space="preserve"><value>ثانية.</value></data>
+  <data name="Session.Timeout.Stay" xml:space="preserve"><value>البقاء مسجّلاً للدخول</value></data>
+  <data name="Session.Timeout.SignOut" xml:space="preserve"><value>تسجيل الخروج الآن</value></data>
   <data name="Shell.ToggleNav" xml:space="preserve"><value>إظهار القائمة</value></data>
   <data name="Shell.NavSearch" xml:space="preserve"><value>البحث في القائمة</value></data>
   <data name="Shell.NavSearchPlaceholder" xml:space="preserve"><value>ابحث في القائمة…</value></data>

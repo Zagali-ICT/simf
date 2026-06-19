@@ -124,6 +124,20 @@ internal static class AuthEndpoints
             logger.LogInformation("Website sign-out for {UserId}.", userId);
             return Results.Redirect("/login");
         }).RequireAuthorization().DisableAntiforgery();
+
+        // D-443 — token-driven session guard. Mirrors the Control Panel: any
+        // authenticated request runs the cookie-validate hook
+        // (SimfCookieRefreshHandler) which silently rotates the API token when
+        // near expiry; this endpoint returns the (possibly refreshed)
+        // access-token expiry so the client guard can silently keep an active
+        // user signed in or warn an idle one. A failed refresh rejects the
+        // principal, so the request is unauthenticated and the client is sent
+        // to sign-in (this is also how the absolute 24h cap surfaces).
+        routes.MapGet("/session/status", async (HttpContext http) =>
+        {
+            var expiresAt = await http.GetTokenAsync(SimfCookieRefreshHandler.ExpiresAtTokenName);
+            return Results.Json(new { expiresAt });
+        }).RequireAuthorization();
     }
 
     /// <summary>

@@ -36,8 +36,12 @@ $vars = [ordered]@{
 
     # --- JWT ---
     "SIMF_Jwt__SigningKey"                         = ""  # [REQUIRED][SECRET] openssl rand -base64 48
-    # SIMF_Jwt__Issuer / __Audience / __AccessTokenMinutes / __StreamAudience /
-    # __StreamTokenMinutes have appsettings defaults - override only if needed.
+    # SIMF_Jwt__Issuer / __Audience / __StreamAudience / __StreamTokenMinutes and
+    # the two token-lifetime caps below all have appsettings defaults - override
+    # only if needed. The lifetimes are the D-443 NCA caps; do NOT raise them
+    # past the review limits (access <= 5 min, session <= 1 day):
+    #   SIMF_Jwt__AccessTokenMinutes   default 5   (NCA cap: not more than 5 minutes)
+    #   SIMF_Jwt__SessionLifetimeHours default 24  (NCA cap: not more than 1 day)
 
     # --- Email / SMTP ---
     "SIMF_Email__Host"                             = ""  # [REQUIRED]

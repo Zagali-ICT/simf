@@ -27,8 +27,6 @@ public sealed class SessionService(
     TimeProvider timeProvider,
     ILogger<SessionService> logger) : ISessionService
 {
-    private static readonly TimeSpan RefreshTokenLifetime = TimeSpan.FromDays(30);
-
     public async Task<AuthTokens> RefreshAsync(
         RefreshRequest request,
         CancellationToken cancellationToken = default)
@@ -132,7 +130,13 @@ public sealed class SessionService(
                         UserId = user.Id,
                         TokenHash = OpaqueToken.Hash(refreshValue),
                         CreatedAt = now,
-                        ExpiresAt = now.Add(RefreshTokenLifetime),
+                        // D-443 (NCA finding): absolute 24h session cap. The
+                        // replacement inherits the chain's original deadline
+                        // (sign-in + Jwt:SessionLifetimeHours) instead of
+                        // sliding a fresh window, so rotation can never push a
+                        // session past the cap — once now >= ExpiresAt the
+                        // guard above rejects the refresh and forces re-login.
+                        ExpiresAt = presented.ExpiresAt,
                         RotatedFromId = presented.Id,
                     },
                     token);
