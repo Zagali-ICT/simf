@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/localization/locale_controller.dart';
 import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/features/auth/biometric_auth.dart';
 import 'package:simf_app/features/auth/sign_in_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
@@ -100,6 +101,7 @@ Future<void> _pump(
   _Outcome outcome,
   _FakePrefs prefs, {
   bool profileComplete = true,
+  bool biometricAvailable = false,
 }) async {
   final router = GoRouter(
     initialLocation: '/sign-in',
@@ -157,6 +159,10 @@ Future<void> _pump(
         localeControllerProvider.overrideWith(
           () => LocaleController(prefs: prefs),
         ),
+        // The Face-ID button is gated on real device biometric availability;
+        // pin it so the button's visibility is deterministic in the test.
+        biometricAvailableProvider
+            .overrideWith((ref) async => biometricAvailable),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -196,6 +202,25 @@ void main() {
         prefs.getString(StorageKeys.lastEmail),
         equals('visitor@example.sa'),
       );
+    });
+
+    testWidgets('the Face-ID button is hidden when the device has no biometric',
+        (tester) async {
+      await _pump(tester, _Outcome.success, _FakePrefs());
+      // No usable biometric (sensorless device) → the Face-ID sign-in button
+      // is not rendered at all (it can do nothing there).
+      expect(find.text('Sign in with Face ID'), findsNothing);
+    });
+
+    testWidgets('the Face-ID button shows when a biometric is available',
+        (tester) async {
+      await _pump(
+        tester,
+        _Outcome.success,
+        _FakePrefs(),
+        biometricAvailable: true,
+      );
+      expect(find.text('Sign in with Face ID'), findsOneWidget);
     });
 
     testWidgets('unchecking remember-me skips storing the email',
