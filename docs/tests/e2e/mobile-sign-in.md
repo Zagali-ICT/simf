@@ -47,6 +47,7 @@
 | E2E-MOB003-014 | "Browse without signing in" → guest landing (Page 012) → public Home, no token (D-325) | happy | P1 | authored ✓ (widget test) |
 | E2E-MOB003-015 | Remember-me unchecked → the email is NOT stored for the next prefill (D-360) | edge | P1 | authored ✓ (widget test) |
 | E2E-MOB003-016 | Globe button toggles AR ↔ EN and persists the preference (D-363) | happy | P1 | authored ✓ (widget test) |
+| E2E-MOB003-017 | **Post-sign-in Face-ID enrol nudge (D-442/D-445):** when the device has a usable biometric and Face-ID is not yet enabled, a notification-style SnackBar with an "Enable" action appears after **every** sign-in (both the password and OTP paths); tapping Enable enrols a device key; never shows when already-enabled or unavailable; the Enable action still enrols after the screen routes away (lifetime-safe container) | happy | P1 | authored ✓ (`biometric_auth_test` — show / no-show branches + post-navigation Enable regression) |
 
 ## Scenarios
 
@@ -221,6 +222,30 @@ Scenario: The globe button switches the app language
 **Evidence:** `sign_in_screen_test` — "the globe button toggles and persists
 the language".
 
+### E2E-MOB003-017 — Post-sign-in Face-ID enrol nudge (D-442/D-445)
+
+```gherkin
+Scenario: Every sign-in nudges an un-enrolled biometric device to enable Face-ID
+  Given a device with a usable biometric and Face-ID NOT yet enabled
+  When the user completes sign-in (password OR the 2FA email-OTP path)
+  Then a notification-style SnackBar appears with an "Enable / تفعيل" action
+  When the user taps Enable
+  Then a device key is enrolled and a "Face ID sign-in enabled" toast is shown
+  And tapping Enable still enrols even after the app has routed to Home
+       (the action holds the lifetime-safe ProviderContainer, not the disposed screen)
+
+Scenario: The nudge stays silent when it should
+  Given Face-ID is already enabled OR the device has no usable biometric
+  When the user completes sign-in
+  Then no enrol nudge is shown
+```
+
+**Evidence:** `biometric_auth_test.dart` — "available + not enabled → shows the
+notification nudge; tapping Enable enrols", "already enabled → no nudge",
+"biometrics unavailable → no nudge", and "Enable still enrols after the
+originating screen is gone" (the post-navigation regression). The on-device OS
+biometric prompt is the owner's device test.
+
 ---
 
-_Last reviewed:_ `2026-06-11` by `SIMF Team`.
+_Last reviewed:_ `2026-06-19` by `SIMF Team`.
