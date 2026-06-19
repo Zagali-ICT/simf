@@ -20,15 +20,21 @@
 > D-217 is the production reminder path). Speaker photo/flag render as
 > initials/text until the asset pass (SIMF-VID-001).
 >
-> **Figma re-skin (frame 889:2450 "Session detail"):** the page now matches its
-> KSA-Project Figma frame — a navy header card (gold index badge + title +
-> clock/calendar meta line + hall/category tag pills, 889:2716), the وصف الجلسة /
-> Description card (889:2719), the المتحدثون / Speakers cards whose gold-tinted
-> role box renders an **anchor for a speaker / star for the host** driven by the
-> real `SessionSpeakerRole` (889:2722/889:2757), the مقعدي / My seat card with the
-> gold marker + chevron (889:2761), and the تذكير + أضف إلى تقويمي CTA row
-> (897:2872). Scenarios E2E-MOB017-012..017 cover the new sections; the prior
-> behaviour scenarios (001–011) remain valid.
+> **Figma re-skin (frame 889:2450 "Session detail", restructured — D-449):** the
+> page now matches the updated KSA-Project frame — a navy header card (gold index
+> badge + title + clock/calendar meta line, 889:2716) whose action row carries
+> **رابط الجلسة / Session link** (beige hairline; shown only when the session has a
+> live feed — `liveStreamUrl` non-null — opening Live 25) and **ملخص الجلسة /
+> Session summary** (gold hairline; opens AI summary 34) — the prior hall/category
+> tag pills are **removed** (889:2715); the وصف الجلسة / Description card (889:2719);
+> the المتحدثون / Speakers cards now showing a **40×40 photo + the country flag
+> emoji** beside the name (889:2722/1060:12892), the role driving only the host
+> sub-label; the **اسأل المحاور / Ask the host** card (centred user glyph → Send
+> question 26, 1056:12876); the مقعدي / My seat card with the gold marker + chevron
+> (889:2761); and the تذكير + أضف إلى تقويمي CTA row (897:2872). Scenarios
+> E2E-MOB017-012..021 cover the new sections; the prior behaviour scenarios (001–011)
+> remain valid. The flag renders from `PublicSessionSpeaker.CountryId` via the new
+> `core/country_flag.dart` ISO-3166 numeric→emoji helper.
 
 | | |
 |--|--|
@@ -54,12 +60,16 @@
 | E2E-MOB017-009 | `تذكير` — interim notice (real scheduling deferred to the notifications pass) | happy | P2 | authored ✓ (screen — `Reminder shows the deferred-notice toast`, D-300) |
 | E2E-MOB017-010 | Stale tap onto a soft-deleted session → detail 404 → "not found" state | error | P1 | authored ✓ (`ProgrammeSessionsTests` 404 + screen `a 404 shows the not-found state`) |
 | E2E-MOB017-011 | RTL render; the row letter + seat number are LTR inside the Arabic line | i18n | P1 | authored (screen RTL-primary; LTR row/seat deferred to designer) |
-| E2E-MOB017-012 | Header card — gold index badge (code, LTR), title, clock/calendar meta line, hall + category tag pills | happy | P0 | authored ✓ (Figma 889:2716 re-skin) |
+| E2E-MOB017-012 | Header card — gold index badge (code, LTR), title, clock/calendar meta line, action buttons (no tag pills) | happy | P0 | authored ✓ (Figma 889:2716 re-skin) |
 | E2E-MOB017-013 | وصف الجلسة / Description card renders the localized description; hidden when null | happy | P1 | authored ✓ (Figma 889:2719 re-skin) |
-| E2E-MOB017-014 | المتحدثون speaker card → anchor role box for a speaker (`SessionSpeakerRole.speaker`) | happy | P0 | authored ✓ (Figma 889:2722 re-skin; real role) |
-| E2E-MOB017-015 | المتحدثون host card → star role box + المضيف/Host sub-line (`SessionSpeakerRole.host`) | happy | P0 | authored ✓ (Figma 889:2757 re-skin; real role) |
+| E2E-MOB017-014 | المتحدثون speaker card → 40×40 photo + country flag beside the name | happy | P0 | authored ✓ (Figma 889:2722 re-skin; photo+flag) |
+| E2E-MOB017-015 | المتحدثون host card → المضيف/Host sub-line (`SessionSpeakerRole.host`) | happy | P0 | authored ✓ (Figma 889:2737 re-skin; real role) |
 | E2E-MOB017-016 | مقعدي card — row · seat line + badge hint + gold marker; chevron/marker opens seat map (18) | happy | P1 | authored ✓ (Figma 889:2761 re-skin) |
 | E2E-MOB017-017 | CTA row — تذكير (outlined) + أضف إلى تقويمي (gold) order and toasts | happy | P1 | authored ✓ (Figma 897:2872 re-skin) |
+| E2E-MOB017-018 | رابط الجلسة — shown only when `liveStreamUrl` present; opens Live (25) | happy | P1 | authored ✓ (Figma 889:2715; `…live link shows only when…opens the live screen`) |
+| E2E-MOB017-019 | ملخص الجلسة — always shown; opens AI summary (34) | happy | P1 | authored ✓ (Figma 889:2715; `…summary button opens the AI session summary`) |
+| E2E-MOB017-020 | اسأل المحاور card — shown to everyone; opens Send question (26) | happy | P1 | authored ✓ (Figma 1056:12876; `…ask-host card opens send-question`) |
+| E2E-MOB017-021 | Speaker country flag — `CountryId` 682 → 🇸🇦 emoji beside the name | happy | P2 | authored ✓ (`…renders its flag emoji`; `core/country_flag.dart`) |
 
 ## Scenarios
 
@@ -208,18 +218,18 @@ Scenario: The session detail renders right-to-left in Arabic
   And times render in the device timezone
 ```
 
-### E2E-MOB017-012 — Header card (Figma 889:2716)
+### E2E-MOB017-012 — Header card (Figma 889:2716/889:2715)
 
 ```gherkin
-Scenario: The navy header card shows the index badge, title, meta line and tag pills
+Scenario: The navy header card shows the index badge, title, meta line and action buttons
   Given session code "02" titled "ابتكارات الدفاع البحري" / "Naval Defence Innovations"
   And it runs 09:00 — 10:30 on Tuesday 16 Jun in hall "القاعة الرئيسية" / "Main Hall"
-  And its category is "تقنية" / "Technology"
   When Session detail (17) renders the header card
   Then a gold 40×40 index badge shows "02" left-to-right
   And the session title "ابتكارات الدفاع البحري" reads beside the badge
   And the meta line shows a clock "09:00 — 10:30" (LTR) · a separator dot · a calendar "الثلاثاء · 16 يونيو"
-  And a gold-accented place pill "القاعة الرئيسية" and a hairline category pill "تقنية" render below
+  And an action row shows "ملخص الجلسة" (gold hairline) — and "رابط الجلسة" (beige hairline) only when the session has a live feed
+  And the prior hall/category tag pills are NOT rendered (removed in the restructure)
 ```
 
 ### E2E-MOB017-013 — Description card (Figma 889:2719)
@@ -234,30 +244,30 @@ Scenario: The وصف الجلسة card renders the localized description, and is
   Then neither the "وصف الجلسة" heading nor the description card is shown
 ```
 
-### E2E-MOB017-014 — Speaker card → anchor role box (real SessionSpeakerRole)
+### E2E-MOB017-014 — Speaker card → photo + country flag
 
 ```gherkin
-Scenario: A speaker (SessionSpeakerRole.speaker) shows the gold anchor box
+Scenario: A speaker shows a 40×40 photo and the country flag beside the name
   Given the session lists a speaker "د. سالم العتيبي" / "Dr. Salem Al-Otaibi"
-  And their role is SessionSpeakerRole.speaker with title "Captain" and country "السعودية" / "Saudi Arabia"
+  And their role is SessionSpeakerRole.speaker with title "Captain" and CountryId 682 (Saudi Arabia)
   When the المتحدثون / Speakers section renders the speaker card
-  Then the card shows the name "د. سالم العتيبي" over the sub-line "Captain · السعودية"
-  And the gold-tinted 44×44 role box on the inline-end carries the anchor glyph (NOT a star)
-  And the sub-line does NOT contain "المضيف" / "Host"
+  Then a 40×40 rounded photo (SpeakerPhoto asset, beige hairline) sits at the inline-start (physical right under RTL)
+  And the name line shows "د. سالم العتيبي" followed by the flag "🇸🇦"
+  And the sub-line shows "Captain" and does NOT contain "المضيف" / "Host"
+  And the sub-line no longer carries the country name (the flag carries the country)
   When the user taps the card
   Then Speaker profile (20) opens at /speakers/{speakerId}
 ```
 
-### E2E-MOB017-015 — Host card → star role box + المضيف sub-line
+### E2E-MOB017-015 — Host card → المضيف sub-line (real SessionSpeakerRole)
 
 ```gherkin
-Scenario: A host (SessionSpeakerRole.host) shows the gold star box and the Host tag
+Scenario: A host (SessionSpeakerRole.host) shows the Host sub-label
   Given the session lists a host "أ. منى الشهري" / "Ms. Mona Al-Shehri"
   And their role is SessionSpeakerRole.host
   When the المتحدثون / Speakers section renders the host card
-  Then the gold-tinted role box carries the star glyph (Icons.star_outline), NOT the anchor
-  And the sub-line ends with "المضيف" (EN "Host")
-  And the anchor/star box is driven by the REAL role, not the list position
+  Then the sub-line ends with "المضيف" (EN "Host")
+  And the host marker is driven by the REAL role, not the list position
 ```
 
 ### E2E-MOB017-016 — My-seat card (Figma 889:2761)
@@ -288,6 +298,54 @@ Scenario: The تذكير + أضف إلى تقويمي buttons render in order an
   And no network request is made by either CTA
 ```
 
+### E2E-MOB017-018 — رابط الجلسة → Live (Figma 889:2715)
+
+```gherkin
+Scenario: The session-link button is conditional and opens the live screen
+  Given a session whose detail carries a non-null liveStreamUrl
+  When Session detail (17) renders the header card
+  Then a "رابط الجلسة" (EN "Session link") button is shown
+  When the user taps it
+  Then Live broadcast (25) opens at /live?sessionId={id}
+  And given another session whose liveStreamUrl is null
+  Then the "رابط الجلسة" button is NOT shown
+```
+
+### E2E-MOB017-019 — ملخص الجلسة → AI summary (Figma 889:2715)
+
+```gherkin
+Scenario: The session-summary button always shows and opens the AI summary
+  Given any loaded session detail
+  When the header card renders
+  Then a gold-hairline "ملخص الجلسة" (EN "Session summary") button is shown
+  When the user taps it
+  Then AI session summary (34) opens at /ai-summary?sessionId={id}
+  And the summary screen 404s gracefully until the Committee publishes the summary
+```
+
+### E2E-MOB017-020 — اسأل المحاور → Send question (Figma 1056:12876)
+
+```gherkin
+Scenario: The ask-the-host card opens send-question for everyone
+  Given any loaded session detail
+  When the body renders between the speakers and the my-seat sections
+  Then a navy card with a centred user glyph over "اسأل المحاور" (EN "Ask the host") is shown
+  When the user taps it
+  Then Send question (26) opens at /live/question?sessionId={id}
+  And a guest tapping it is routed to sign-in by the auth gate (the route is login-only)
+```
+
+### E2E-MOB017-021 — Speaker country flag (core/country_flag.dart)
+
+```gherkin
+Scenario: A speaker's ISO 3166-1 numeric country code renders as a flag emoji
+  Given a speaker whose CountryId is 682 (Saudi Arabia)
+  When the speaker card renders
+  Then the flag "🇸🇦" (U+1F1F8 U+1F1E6) appears beside the name
+  And given a speaker whose CountryId is null or unassigned
+  Then no flag (and no tofu box / wrong flag) is rendered
+```
+
 ---
 
-_Last reviewed:_ `2026-06-16` by `SIMF Team`.
+_Last reviewed:_ `2026-06-19` by `SIMF Team`.

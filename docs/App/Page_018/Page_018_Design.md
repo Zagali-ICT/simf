@@ -3,6 +3,15 @@
 Flutter screen design. Grounded in `Mockup.html` screen 18 (line ~1284). RTL,
 Arabic-primary.
 
+> **As built — Figma 898:2873 "Your seat" (2026-06-19, commit `60458a5`,
+> device-verified TXZ W09).** Deltas from the Mockup.html design below: the legend
+> is forced LTR and reads محجوز · متاح · مقعدك; available seats are transparent
+> with a beige outline (not a surface fill), reserved a darker fill, mine gold;
+> seats are squares sized to the row width and centred (no horizontal scroll); the
+> "إرشادي إلى مقعدي" button uses the exact `iconamoon:location` SVG. The header
+> back chevron + app-bar controls follow the shared natural-direction shell
+> (owner 2026-06-18), not this frame's left-side chevron.
+
 ## Layout (top → bottom, from the mockup)
 1. **App bar** — back chevron + title `مقعدي`.
 2. **Banner** (`seat-banner`) —
@@ -16,8 +25,9 @@ Arabic-primary.
      - default = **available**,
      - `tk` = **taken / reserved**,
      - `me` = **mine** (brass + glow).
-4. **Legend** (`seat-leg`) — `مقعدك` (swatch `me`) · `متاح` (swatch default) ·
-   `محجوز` (swatch `tk`).
+4. **Legend** (`seat-leg`) — as built to frame 907:1591 the legend is forced LTR,
+   reading `محجوز` (reserved swatch) · `متاح` (available, beige-outline) ·
+   `مقعدك` (mine, gold) — label then swatch, not mirrored with the RTL page.
 5. **Actions** (`seat-actions`) —
    - a filled primary **`إرشادي إلى مقعدي`** → Map (15),
    - a secondary **`مشاركة الموقع`** → native share sheet.
@@ -56,5 +66,7 @@ Arabic-primary.
 - The **stage stays at the top**; the rows mirror RTL but row letters + seat
   numbers render `dir="ltr"` inside the Arabic labels (`صف B · مقعد 12`).
 - Legend + action labels are bilingual per the active locale.
-- The mine seat uses the **brass** accent + glow; taken = muted; available =
-  surface — all via theme tokens (no raw colours).
+- The mine seat uses the **gold** accent (beige hairline); reserved = a darker
+  navy fill (no border); available = **transparent** with a beige hairline (the
+  navyDeep card shows through) — all via theme tokens (no raw colours). Seats are
+  squares (≤20px) sized to the row width and centred; no horizontal scroll.

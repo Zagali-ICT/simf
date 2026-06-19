@@ -17,6 +17,10 @@ namespace SIMF.Infrastructure.Identity;
 /// <summary>Issues HMAC-SHA256-signed JWT access tokens (SIMF-API-001 section 12.2).</summary>
 internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider timeProvider)    : IJwtTokenService
 {
+    /// <summary>D-443 — the absolute session lifetime read from
+    /// <c>Jwt:SessionLifetimeHours</c> (default 24h).</summary>
+    public TimeSpan RefreshTokenLifetime => TimeSpan.FromHours(options.Value.SessionLifetimeHours);
+
     public AccessToken CreateAccessToken(
         SimfUser user, IEnumerable<string> roles, IEnumerable<string> permissions,
         MobileAppRole mobileAppRole)

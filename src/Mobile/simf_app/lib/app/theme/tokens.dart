@@ -38,6 +38,8 @@ class SimfTokens {
   static const Color cardShadow = Color(0x29111827); // soft card drop-shadow (headlineInk @ ~16%)
   static const Color dayInactive = Color(0xFFC2C2C2); // calendar day with no sessions (758:1415)
   static const Color navInactive = Color(0xFF5E584B); // bottom-nav inactive icon (758:1476)
+  static const Color chatBubbleText = Color(0xFFF0F4FF); // assistant chat-bubble text (1064:13278)
+  static const Color captionText = Color(0xFFDDE4F0); // live AI-caption placeholder text (934:3613)
 
   // KSA main-shell disabled palette (W2 frames 512:1492 / 512:1780): the
   // "بطاقتي" locked card and the disabled theme tile render on these.

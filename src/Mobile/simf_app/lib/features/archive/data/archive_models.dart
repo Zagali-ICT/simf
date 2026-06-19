@@ -185,11 +185,14 @@ class ArchivePastSpeaker {
     required this.nameEn,
     required this.nameAr,
     this.photoRelativePath,
+    this.countryId,
   });
 
   final String nameEn;
   final String nameAr;
   final String? photoRelativePath;
+  // D-456 — optional country (ISO 3166-1 numeric) for the corner flag.
+  final int? countryId;
 
   String localized(bool isArabic) => _pick(nameAr, nameEn, isArabic);
 
@@ -198,6 +201,7 @@ class ArchivePastSpeaker {
         nameEn: json['nameEn'] as String? ?? '',
         nameAr: json['nameAr'] as String? ?? '',
         photoRelativePath: json['photoRelativePath'] as String?,
+        countryId: (json['countryId'] as num?)?.toInt(),
       );
 }
 

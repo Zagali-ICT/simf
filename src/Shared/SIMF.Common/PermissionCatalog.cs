@@ -220,6 +220,18 @@ public static class PermissionCatalog
         public const string Import = "Sessions.Import";
     }
 
+    /// <summary>D-452 — the programme-days manager (date + bilingual title +
+    /// logo) backing the app's "تفاصيل اليوم" day banner (Figma 883:2308).</summary>
+    public static class ProgrammeDays
+    {
+        public const string View = "ProgrammeDays.View";
+        public const string Create = "ProgrammeDays.Create";
+        public const string Edit = "ProgrammeDays.Edit";
+        public const string Delete = "ProgrammeDays.Delete";
+        public const string Export = "ProgrammeDays.Export";
+        public const string Import = "ProgrammeDays.Import";
+    }
+
     public static class ProgrammeTimeline
     {
         public const string View = "ProgrammeTimeline.View";
@@ -697,6 +709,14 @@ public static class PermissionCatalog
         new(Sessions.Publish, "Sessions", "Publish", "Publish sessions & manage their lifecycle", AdminOnly),
         new(Sessions.Export, "Sessions", "Export", "Export sessions", AdminOnly),
         new(Sessions.Import, "Sessions", "Import", "Import sessions", AdminOnly),
+
+        // D-452 — programme days (date + bilingual title + logo).
+        new(ProgrammeDays.View, "ProgrammeDays", "View", "View programme days", AdminOnly),
+        new(ProgrammeDays.Create, "ProgrammeDays", "Create", "Create programme days", AdminOnly),
+        new(ProgrammeDays.Edit, "ProgrammeDays", "Edit", "Edit programme days", AdminOnly),
+        new(ProgrammeDays.Delete, "ProgrammeDays", "Delete", "Delete programme days", AdminOnly),
+        new(ProgrammeDays.Export, "ProgrammeDays", "Export", "Export programme days", AdminOnly),
+        new(ProgrammeDays.Import, "ProgrammeDays", "Import", "Import programme days", AdminOnly),
 
         new(ProgrammeTimeline.View, "ProgrammeTimeline", "View", "View the programme timeline", AdminOnly),
 

@@ -36,7 +36,6 @@ internal sealed class DeviceKeyService(
     ILogger<DeviceKeyService> logger) : IDeviceKeyService
 {
     private static readonly TimeSpan ChallengeLifetime = TimeSpan.FromMinutes(5);
-    private static readonly TimeSpan RefreshTokenLifetime = TimeSpan.FromDays(30);
 
     public async Task<DeviceKeyEntry> RegisterAsync(
         Guid callerUserId,
@@ -307,7 +306,9 @@ internal sealed class DeviceKeyService(
                 UserId = user.Id,
                 TokenHash = OpaqueToken.Hash(refreshValue),
                 CreatedAt = now,
-                ExpiresAt = now.Add(RefreshTokenLifetime),
+                // D-443 (NCA finding): absolute 24h session cap from sign-in
+                // (Jwt:SessionLifetimeHours); rotation carries it forward.
+                ExpiresAt = now.Add(jwtTokenService.RefreshTokenLifetime),
             },
             cancellationToken);
 

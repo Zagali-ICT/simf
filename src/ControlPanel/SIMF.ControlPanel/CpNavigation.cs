@@ -80,6 +80,8 @@ public static class CpNavigation
             new("Module.Sessions", "/admin/sessions", RequiredPermission: PermissionCatalog.Sessions.View, Icon: "calendar"),
             // B9b (D-226) — dynamic session-category lookup (SIMF-FDS-004 §5.4).
             new("Module.SessionCategories", "/admin/session-categories", RequiredPermission: PermissionCatalog.SessionCategories.View, Icon: "folder"),
+            // D-452 — programme days (date + bilingual title + logo) for the app's Sessions screen.
+            new("Module.ProgrammeDays", "/admin/programme-days", RequiredPermission: PermissionCatalog.ProgrammeDays.View, Icon: "calendar"),
             // Read-only run-of-show timeline over the existing sessions list.
             new("Module.ProgrammeTimeline", "/admin/programme/timeline", RequiredPermission: PermissionCatalog.ProgrammeTimeline.View, Icon: "clock"),
             // D-134 Sprint B (D-135) — venue halls (SIMF-FDS-004 §5.2).

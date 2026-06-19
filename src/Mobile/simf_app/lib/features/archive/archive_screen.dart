@@ -4,6 +4,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/country_flag_badge.dart';
 import '../../app/widgets/ksa_shell.dart';
 import 'data/archive_models.dart';
 
@@ -41,12 +42,13 @@ final archiveEditionDetailProvider = FutureProvider.autoDispose
 /// fetched once (`GET /app/archive`), and the fuller detail of the *selected*
 /// edition (location + date label) is lazily loaded (`GET /app/archive/{id}`).
 /// Frame mapping: a beige-bordered notice banner, an "اختار ملتقى" row of
-/// edition-selector pills (active pill is solid gold), then the selected
-/// edition's detail — bulleted gold title (عنوان الملتقى), summary (نبذة), a
-/// two-column المكان / الزمن row, and three stat tiles (المتحدثون / الحضور /
-/// الفعاليات). The frame's media-gallery, session-titles and past-speakers
-/// sections are not backed by the current model (see blockers) and are omitted
-/// rather than faked.
+/// equal-width edition-selector pills (active pill is solid gold), then the
+/// selected edition's detail — bulleted gold title (عنوان الملتقى), summary
+/// (نبذة), a two-column المكان / الزمن row, and **two** stat tiles (الفعاليات /
+/// المتحدثون — the frame omits الحضور). When the lazily-loaded detail carries
+/// them, the rich sections render to the frame: the الصور والفيديو gallery
+/// (104×104 scrim tiles), عناوين الجلسات (bordered cards) and المتحدثون
+/// السابقون (72×72 photo tiles + a "+N / آخرون" overflow card).
 class ArchiveScreen extends ConsumerStatefulWidget {
   const ArchiveScreen({super.key});
 
@@ -189,10 +191,10 @@ class _ArchiveBody extends ConsumerWidget {
         if (d != null && d.sessionTitles.isNotEmpty) ...<Widget>[
           const SizedBox(height: SimfTokens.space6),
           _SectionLabel(text: l10n.archiveSessionsLabel),
-          const SizedBox(height: SimfTokens.space2),
-          for (final s in d.sessionTitles) ...<Widget>[
-            _Bullet(text: s.localized(isArabic), color: SimfTokens.beigeBorder),
-            const SizedBox(height: SimfTokens.space1),
+          const SizedBox(height: SimfTokens.space4),
+          for (var i = 0; i < d.sessionTitles.length; i++) ...<Widget>[
+            if (i > 0) const SizedBox(height: SimfTokens.space2),
+            _SessionTitleCard(text: d.sessionTitles[i].localized(isArabic)),
           ],
         ],
         if (d != null && d.pastSpeakers.isNotEmpty) ...<Widget>[
@@ -223,11 +225,11 @@ class _GalleryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 96,
+      height: 104,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: items.length,
-        separatorBuilder: (_, __) => const SizedBox(width: SimfTokens.space3),
+        separatorBuilder: (_, __) => const SizedBox(width: SimfTokens.space2),
         itemBuilder: (context, index) =>
             _GalleryTile(item: items[index], isArabic: isArabic),
       ),
@@ -235,8 +237,10 @@ class _GalleryRow extends StatelessWidget {
   }
 }
 
-/// One gallery thumbnail — the real photo when the item is an image with an
-/// absolute url, else a glyph placeholder (with the caption).
+/// One gallery thumbnail (frame node 926:3299): a 104×104 rounded square — the
+/// real photo (cover-filled) under a bottom-to-navy gradient scrim, or a navy
+/// glyph placeholder for a video / non-servable url. No border, no caption
+/// (matches the frame).
 class _GalleryTile extends StatelessWidget {
   const _GalleryTile({required this.item, required this.isArabic});
 
@@ -245,65 +249,65 @@ class _GalleryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final caption = item.localizedCaption(isArabic);
-    final placeholder = _placeholder(caption);
     final showImage = !item.isVideo && _isHttpUrl(item.url);
     return Container(
-      width: 120,
+      width: 104,
+      height: 104,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: SimfTokens.navyDeep,
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        border: Border.all(
-          color: SimfTokens.beigeBorder,
-          width: SimfTokens.hairline,
-        ),
       ),
-      child: showImage
-          ? Image.network(
+      child: Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          if (showImage)
+            Image.network(
               item.url,
-              width: 120,
-              height: 96,
               fit: BoxFit.cover,
               loadingBuilder: (context, child, progress) =>
-                  progress == null ? child : placeholder,
-              errorBuilder: (context, error, stackTrace) => placeholder,
+                  progress == null ? child : _placeholder,
+              errorBuilder: (context, error, stackTrace) => _placeholder,
             )
-          : placeholder,
-    );
-  }
-
-  Widget _placeholder(String? caption) {
-    return Padding(
-      padding: const EdgeInsets.all(SimfTokens.space2),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          Icon(
-            item.isVideo ? Icons.play_circle_outline : Icons.image_outlined,
-            color: SimfTokens.accent,
-            size: 28,
-          ),
-          if (caption != null) ...<Widget>[
-            const SizedBox(height: SimfTokens.space1),
-            Text(
-              caption,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: SimfTokens.beigeBorder,
-                fontSize: SimfTokens.textXs,
+          else
+            _placeholder,
+          // Frame's bottom-to-rgba(0,16,48,0.8) scrim.
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: 40,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                  colors: <Color>[
+                    SimfTokens.navy.withValues(alpha: 0.8),
+                    SimfTokens.navy.withValues(alpha: 0),
+                  ],
+                ),
               ),
             ),
-          ],
+          ),
         ],
       ),
     );
   }
+
+  Widget get _placeholder => Center(
+        child: Icon(
+          item.isVideo ? Icons.play_circle_outline : Icons.image_outlined,
+          color: SimfTokens.accent,
+          size: 28,
+        ),
+      );
 }
 
-/// The past-speakers row (node 24-01 "المتحدثون السابقون"): up to 4 initial
-/// avatars, then a gold "+N آخرون" overflow tile.
+/// The past-speakers row (frame node 927:3347): up to four 72-wide tiles spread
+/// across the width — each a 72×72 rounded-rect photo over a centred name. With
+/// more than four speakers, the first three show + a bordered "+N / آخرون"
+/// overflow card.
 class _PastSpeakersRow extends StatelessWidget {
   const _PastSpeakersRow({
     required this.speakers,
@@ -317,113 +321,170 @@ class _PastSpeakersRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const maxAvatars = 4;
-    final shown = speakers.take(maxAvatars).toList();
+    final hasOverflow = speakers.length > 4;
+    final shown =
+        (hasOverflow ? speakers.take(3) : speakers.take(4)).toList();
     final overflow = speakers.length - shown.length;
+    // Wrap (not Row) so the four fixed-72 tiles spread like the frame on a
+    // normal width but wrap to a second line instead of overflowing on a very
+    // narrow (~320px) device.
     return Wrap(
-      spacing: SimfTokens.space3,
+      alignment: WrapAlignment.spaceBetween,
       runSpacing: SimfTokens.space3,
       children: <Widget>[
         for (final s in shown)
-          _SpeakerChip(
+          _PastSpeakerCard(
             name: s.localized(isArabic),
             photoUrl: s.photoRelativePath,
+            countryId: s.countryId,
           ),
         if (overflow > 0)
-          Container(
-            height: 40,
-            padding:
-                const EdgeInsets.symmetric(horizontal: SimfTokens.space3),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: SimfTokens.accent.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-              border: Border.all(color: SimfTokens.accent),
-            ),
-            child: Text(
-              l10n.archiveMoreCount(overflow),
-              style: const TextStyle(
-                color: SimfTokens.accent,
-                fontSize: SimfTokens.textSm,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
+          _PastSpeakerOverflow(count: overflow, label: l10n.archiveOthersLabel),
       ],
     );
   }
 }
 
-class _SpeakerChip extends StatelessWidget {
-  const _SpeakerChip({required this.name, this.photoUrl});
+/// One past-speaker tile (frame node 927:3346): a 72×72 rounded-rect (r8) photo
+/// — the real avatar when [photoUrl] is an absolute http(s) url, else the gold
+/// initials — over a centred white 12px SemiBold name.
+class _PastSpeakerCard extends StatelessWidget {
+  const _PastSpeakerCard({required this.name, this.photoUrl, this.countryId});
 
   final String name;
-
-  /// P6 — D-440: an absolute http(s) photo url renders the real avatar; a blank
-  /// or relative value falls back to the initials.
   final String? photoUrl;
+  final int? countryId;
 
   @override
   Widget build(BuildContext context) {
-    final initials = name.trim().isEmpty
-        ? '—'
-        : name
-            .trim()
-            .split(RegExp(r'\s+'))
-            .where((w) => w.isNotEmpty)
-            .take(2)
-            .map((w) => w.characters.first)
-            .join();
-    final fallback = Text(
-      initials,
-      style: const TextStyle(
-        color: SimfTokens.accent,
-        fontWeight: FontWeight.w700,
-        fontSize: SimfTokens.textSm,
+    final initials = _speakerInitials(name);
+    final fallback = Center(
+      child: Text(
+        initials,
+        style: const TextStyle(
+          color: SimfTokens.accent,
+          fontWeight: FontWeight.w700,
+          fontSize: SimfTokens.textLg,
+        ),
       ),
     );
     final showPhoto = _isHttpUrl(photoUrl);
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Container(
-          width: 40,
-          height: 40,
-          alignment: Alignment.center,
-          clipBehavior: Clip.antiAlias,
-          decoration: const BoxDecoration(
-            color: SimfTokens.navyDeep,
-            shape: BoxShape.circle,
-          ),
-          child: showPhoto
-              ? Image.network(
-                  photoUrl!,
-                  width: 40,
-                  height: 40,
-                  fit: BoxFit.cover,
-                  gaplessPlayback: true,
-                  loadingBuilder: (context, child, progress) =>
-                      progress == null ? child : fallback,
-                  errorBuilder: (context, error, stackTrace) => fallback,
-                )
-              : fallback,
-        ),
-        const SizedBox(width: SimfTokens.space2),
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 120),
-          child: Text(
-            name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textSm,
+    return SizedBox(
+      width: 72,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          CountryFlagBadge(
+            countryId: countryId,
+            child: Container(
+              width: 72,
+              height: 72,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: SimfTokens.navyDeep,
+                borderRadius: BorderRadius.circular(SimfTokens.radius),
+              ),
+              child: showPhoto
+                  ? Image.network(
+                      photoUrl!,
+                      width: 72,
+                      height: 72,
+                      fit: BoxFit.cover,
+                      gaplessPlayback: true,
+                      loadingBuilder: (context, child, progress) =>
+                          progress == null ? child : fallback,
+                      errorBuilder: (context, error, stackTrace) => fallback,
+                    )
+                  : fallback,
             ),
           ),
-        ),
-      ],
+          const SizedBox(height: SimfTokens.space2),
+          Text(
+            name,
+            maxLines: 2,
+            textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: SimfTokens.textSm,
+              fontWeight: FontWeight.w600,
+              height: 1.2,
+            ),
+          ),
+        ],
+      ),
     );
   }
+}
+
+/// The past-speakers overflow tile (frame node 927:3343): a 72×72 beige-bordered
+/// rounded-rect (r8) with a big gold "+N" over the white "آخرون" label.
+class _PastSpeakerOverflow extends StatelessWidget {
+  const _PastSpeakerOverflow({required this.count, required this.label});
+
+  final int count;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 72,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Container(
+            width: 72,
+            height: 72,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: SimfTokens.navyDeep,
+              borderRadius: BorderRadius.circular(SimfTokens.radius),
+              border: Border.all(
+                color: SimfTokens.beigeBorder,
+                width: SimfTokens.hairline,
+              ),
+            ),
+            child: Text(
+              '+$count',
+              textDirection: TextDirection.ltr,
+              style: const TextStyle(
+                color: SimfTokens.accent,
+                fontSize: SimfTokens.textTitle,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(height: SimfTokens.space2),
+          Text(
+            label,
+            maxLines: 1,
+            textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: SimfTokens.textSm,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The first letters of up to two words of a speaker name, for the avatar
+/// fallback.
+String _speakerInitials(String name) {
+  final trimmed = name.trim();
+  if (trimmed.isEmpty) {
+    return '—';
+  }
+  return trimmed
+      .split(RegExp(r'\s+'))
+      .where((w) => w.isNotEmpty)
+      .take(2)
+      .map((w) => w.characters.first)
+      .join();
 }
 
 /// The beige-bordered notice banner (node 925:3222): centred beige text in a
@@ -479,9 +540,49 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-/// The edition-selector pills (node 925:3248): one pill per edition. The
-/// selected pill is solid gold (white text); the rest are bordered navy
-/// cards with beige text. Horizontally scrollable when the editions overflow.
+/// One session-title card (frame node 927:3308): a 48-high navy box on the beige
+/// 0.2px hairline, the title right-aligned in beige 14px SemiBold (frame's
+/// bordered card, not a bare bullet).
+class _SessionTitleCard extends StatelessWidget {
+  const _SessionTitleCard({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 48,
+      width: double.infinity,
+      alignment: Alignment.centerRight,
+      padding: const EdgeInsets.all(SimfTokens.space2),
+      decoration: BoxDecoration(
+        color: SimfTokens.navyDeep,
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        border: Border.all(
+          color: SimfTokens.beigeBorder,
+          width: SimfTokens.hairline,
+        ),
+      ),
+      child: Text(
+        text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.right,
+        style: const TextStyle(
+          color: SimfTokens.beigeBorder,
+          fontWeight: FontWeight.w600,
+          fontSize: SimfTokens.textMd,
+        ),
+      ),
+    );
+  }
+}
+
+/// The edition-selector pills (frame node 925:3248): one pill per edition,
+/// **equal-width** and filling the row (frame `flex-1`, 16px gap). The selected
+/// pill is solid gold (white text); the rest are bordered navy cards with beige
+/// text. Equal-flex means N pills always fit (they share the width); the frame
+/// shows three.
 class _EditionPills extends StatelessWidget {
   const _EditionPills({
     required this.editions,
@@ -496,22 +597,19 @@ class _EditionPills extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return SizedBox(
-      height: 48,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: editions.length,
-        separatorBuilder: (_, __) => const SizedBox(width: SimfTokens.space4),
-        itemBuilder: (context, index) {
-          final edition = editions[index];
-          final active = edition.id == selectedId;
-          return _EditionPill(
-            label: l10n.archiveEditionPill(edition.year),
-            active: active,
-            onTap: () => onSelect(edition.id),
-          );
-        },
-      ),
+    return Row(
+      children: <Widget>[
+        for (var i = 0; i < editions.length; i++) ...<Widget>[
+          if (i > 0) const SizedBox(width: SimfTokens.space4),
+          Expanded(
+            child: _EditionPill(
+              label: l10n.archiveEditionPill(editions[i].year),
+              active: editions[i].id == selectedId,
+              onTap: () => onSelect(editions[i].id),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
@@ -545,11 +643,12 @@ class _EditionPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(SimfTokens.radius),
         child: Container(
           height: 48,
-          constraints: const BoxConstraints(minWidth: 96),
           alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
+          padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space2),
           child: Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: active ? Colors.white : SimfTokens.beigeBorder,
               fontSize: SimfTokens.textSm,
@@ -673,9 +772,10 @@ class _LabelledBullet extends StatelessWidget {
   }
 }
 
-/// The three stat tiles (node 926:3285): a big gold number over its label, in
-/// a bordered navy box. The frame reads (left → right) المتحدثون / الحضور /
-/// الفعاليات, so under RTL the children run events → attendees → speakers.
+/// The two stat tiles (frame node 926:3285): a big gold number over its label,
+/// in a bordered navy box. The current frame shows exactly **two** tiles —
+/// الفعاليات (activities/sessions) and المتحدثون (speakers); it omits the
+/// الحضور (attendees) tile the earlier mock carried (owner: match the frame).
 class _StatRow extends StatelessWidget {
   const _StatRow({required this.l10n, required this.edition});
 
@@ -684,22 +784,14 @@ class _StatRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // RTL: the first child is at the inline start (physical right). The frame
-    // reads (left → right) المتحدثون · الحضور · الفعاليات, so events sits at the
-    // inline start (right) and speakers at the inline end (left).
+    // RTL: the first child is at the inline start (physical right) — الفعاليات,
+    // then المتحدثون at the inline end (left), mirroring the frame's two tiles.
     return Row(
       children: <Widget>[
         Expanded(
           child: _StatTile(
             value: edition.sessions,
             label: l10n.archiveStatSessions,
-          ),
-        ),
-        const SizedBox(width: SimfTokens.space4),
-        Expanded(
-          child: _StatTile(
-            value: edition.attendees,
-            label: l10n.archiveStatAttendees,
           ),
         ),
         const SizedBox(width: SimfTokens.space4),

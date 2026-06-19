@@ -36,10 +36,30 @@ public sealed record PublicSessionListItem(
     // carries the "main session"/type tag). Appended (D-219 append-only).
     string? Description = null,
     string? DescriptionArabic = null,
-    IReadOnlyList<PublicSessionSpeaker>? Speakers = null);
+    IReadOnlyList<PublicSessionSpeaker>? Speakers = null,
+    // D-452 (Figma 883:2308 type tabs): the session's kind (Workshop / Session /
+    // Event). Null = untyped. Appended (append-only, D-219).
+    SessionType? Type = null);
 
 /// <summary>D-199 — envelope for the public agenda list.</summary>
 public sealed record PublicSessions(IReadOnlyList<PublicSessionListItem> Items);
+
+/// <summary>D-452 (Figma 883:2308 "تفاصيل اليوم") — one programme day on the
+/// public agenda: a calendar date with its own bilingual title and logo banner
+/// (<see cref="HasImage"/> = a <c>ProgrammeDayImage</c> asset is linked, served
+/// by the anonymous route <c>/app/assets/ProgrammeDayImage/{Id}/image</c>), plus
+/// the day's sessions. Served by <c>GET /app/programme/days</c>.</summary>
+public sealed record PublicProgrammeDay(
+    Guid Id,
+    DateOnly Date,
+    string Title,
+    string TitleArabic,
+    int DisplayOrder,
+    bool HasImage,
+    IReadOnlyList<PublicSessionListItem> Sessions);
+
+/// <summary>D-452 — envelope for the day-grouped public agenda.</summary>
+public sealed record PublicProgrammeDays(IReadOnlyList<PublicProgrammeDay> Days);
 
 /// <summary>D-199 (Mockup page 17 "Session detail") — full public view
 /// of one session: bilingual title + abstract, hall EN/AR, the time

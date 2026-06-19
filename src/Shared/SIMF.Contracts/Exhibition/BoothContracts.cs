@@ -30,6 +30,11 @@ public sealed class PublicBoothSummary
     // GET /app/assets/CompanyLogo/{ExhibitorContactId}/image (D-357), falling back
     // to initials when the exhibitor has no linked Contact / logo.
     public Guid? ExhibitorContactId { get; set; }
+
+    // D-456 (append-only): the exhibitor company's country (Exhibitor → Contact →
+    // CountryId), ISO 3166-1 numeric, for the app's corner flag on the logo. Null
+    // when the exhibitor has no linked Contact / country.
+    public int? CountryId { get; set; }
 }
 
 /// <summary>D-199 — public booth detail (adds the description paragraph).</summary>
@@ -59,6 +64,10 @@ public sealed class PublicBoothDetail
     // P6 — D-440 (append-only): exhibitor's Contact id (CompanyLogo owner); see
     // PublicBoothSummary.
     public Guid? ExhibitorContactId { get; set; }
+
+    // D-456 (append-only): the exhibitor company's country (Exhibitor → Contact
+    // → CountryId) for the app's corner flag; see PublicBoothSummary.
+    public int? CountryId { get; set; }
 }
 
 /// <summary>D-199 — admin grid row. B1 — D-222: the exhibitor is now the

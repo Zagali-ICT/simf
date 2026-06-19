@@ -140,6 +140,16 @@ class AuthApi {
     );
   }
 
+  /// Revoke (delete) one of the caller's own device keys — backend
+  /// `DELETE /app/auth/device-keys/{id}`. Used when the user turns Face-ID
+  /// sign-in off. Requires a signed-in approved caller.
+  Future<void> revokeDeviceKey(String deviceKeyId) {
+    return _client.delete<void>(
+      '/app/auth/device-keys/$deviceKeyId',
+      decodeData: (_) {},
+    );
+  }
+
   // Password reset — planned, SIMF-API-001 OI-3.
   Future<Map<String, dynamic>> forgotPassword(ForgotPasswordRequest request) {
     return _client.post<Map<String, dynamic>>(

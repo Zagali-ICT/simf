@@ -11,6 +11,7 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
+import '../../core/country_flag.dart';
 import 'data/session_calendar.dart';
 import 'data/session_detail_repository.dart';
 import 'data/session_models.dart';
@@ -118,6 +119,28 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     );
   }
 
+  /// رابط الجلسة (Figma 889:2715) — opens the live screen (25) for this session;
+  /// only offered when the detail carries a live feed (`hasLiveStream`).
+  void _openLive() => context.pushNamed(
+        RouteNames.liveBroadcast,
+        queryParameters: <String, String>{'sessionId': widget.sessionId},
+      );
+
+  /// ملخص الجلسة (Figma 889:2715) — opens the AI session summary (34). The
+  /// summary screen 404s gracefully until the Committee publishes it.
+  void _openSummary() => context.pushNamed(
+        RouteNames.aiSummary,
+        queryParameters: <String, String>{'sessionId': widget.sessionId},
+      );
+
+  /// اسأل المحاور (Figma 1056:12876) — opens send-question (26). Auth-gated: a
+  /// guest is routed to sign-in by the router's gate, like other login-only
+  /// actions.
+  void _askHost() => context.pushNamed(
+        RouteNames.sendQuestion,
+        queryParameters: <String, String>{'sessionId': widget.sessionId},
+      );
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
@@ -166,12 +189,19 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
         onRetry: () => unawaited(_load()),
       );
     }
+    // The speaker avatars resolve `{base}/app/assets/SpeakerPhoto/{id}/image`
+    // (the D-357 SpeakerPhoto asset); the base already includes `/api/v1`.
+    final baseUrl = ref.read(simfDataConfigProvider).baseUrl;
     return _Content(
       detail: _detail!,
       mySeat: _mySeat,
       l10n: l10n,
+      baseUrl: baseUrl,
       onAddToCalendar: () => unawaited(_addToCalendar(_detail!, l10n)),
       onRemind: () => _remind(l10n),
+      onSessionLink: _openLive,
+      onSessionSummary: _openSummary,
+      onAskHost: _askHost,
       onViewSeat: () => context.pushNamed(
         RouteNames.mySeat,
         pathParameters: <String, String>{'sessionId': widget.sessionId},
@@ -258,8 +288,12 @@ class _Content extends StatelessWidget {
     required this.detail,
     required this.mySeat,
     required this.l10n,
+    required this.baseUrl,
     required this.onAddToCalendar,
     required this.onRemind,
+    required this.onSessionLink,
+    required this.onSessionSummary,
+    required this.onAskHost,
     required this.onViewSeat,
     required this.onSpeaker,
   });
@@ -267,8 +301,12 @@ class _Content extends StatelessWidget {
   final SessionDetail detail;
   final MySeat? mySeat;
   final AppL10n l10n;
+  final String baseUrl;
   final VoidCallback onAddToCalendar;
   final VoidCallback onRemind;
+  final VoidCallback onSessionLink;
+  final VoidCallback onSessionSummary;
+  final VoidCallback onAskHost;
   final VoidCallback onViewSeat;
   final void Function(SessionSpeaker speaker) onSpeaker;
 
@@ -285,7 +323,13 @@ class _Content extends StatelessWidget {
         SimfTokens.space6,
       ),
       children: <Widget>[
-        _HeaderCard(detail: detail, isArabic: isArabic),
+        _HeaderCard(
+          detail: detail,
+          isArabic: isArabic,
+          l10n: l10n,
+          onSessionLink: onSessionLink,
+          onSessionSummary: onSessionSummary,
+        ),
         if (description != null) ...<Widget>[
           const SizedBox(height: SimfTokens.space5),
           _SectionHeading(l10n.descriptionHeading),
@@ -301,13 +345,19 @@ class _Content extends StatelessWidget {
               speaker: speaker,
               isArabic: isArabic,
               hostLabel: l10n.hostLabel,
+              baseUrl: baseUrl,
               onTap: () => onSpeaker(speaker),
             ),
             const SizedBox(height: SimfTokens.space4),
           ],
         ],
+        // اسأل المحاور (Figma 1056:12876) — sits between the speakers and the
+        // my-seat card, shown to everyone (the send-question route is auth-gated
+        // downstream).
+        const SizedBox(height: SimfTokens.space5),
+        _AskHostCard(label: l10n.askHost, onTap: onAskHost),
         if (mySeat != null) ...<Widget>[
-          const SizedBox(height: SimfTokens.space1),
+          const SizedBox(height: SimfTokens.space5),
           _SectionHeading(l10n.mySeatHeading),
           const SizedBox(height: SimfTokens.space4),
           _SeatCard(seat: mySeat!, l10n: l10n, onView: onViewSeat),
@@ -323,19 +373,26 @@ class _Content extends StatelessWidget {
   }
 }
 
-/// The session header card (frame 889:2716): a navy box holding the ordinal +
-/// gold index badge, the clock/calendar meta line, the title, and the hall +
-/// category tag pills — all right-aligned for RTL.
+/// The session header card (frame 889:2716): a navy box holding the title +
+/// gold index badge, the clock/calendar meta line, and the رابط الجلسة /
+/// ملخص الجلسة action buttons — all right-aligned for RTL.
 class _HeaderCard extends StatelessWidget {
-  const _HeaderCard({required this.detail, required this.isArabic});
+  const _HeaderCard({
+    required this.detail,
+    required this.isArabic,
+    required this.l10n,
+    required this.onSessionLink,
+    required this.onSessionSummary,
+  });
 
   final SessionDetail detail;
   final bool isArabic;
+  final AppL10n l10n;
+  final VoidCallback onSessionLink;
+  final VoidCallback onSessionSummary;
 
   @override
   Widget build(BuildContext context) {
-    final hall = detail.localizedHall(isArabic);
-    final category = detail.localizedCategory(isArabic);
     return Container(
       padding: const EdgeInsets.all(SimfTokens.space4),
       decoration: BoxDecoration(
@@ -374,20 +431,83 @@ class _HeaderCard extends StatelessWidget {
           const SizedBox(height: SimfTokens.space4),
           _MetaRow(detail: detail, isArabic: isArabic),
           const SizedBox(height: SimfTokens.space4),
-          Wrap(
-            alignment: WrapAlignment.start,
-            spacing: SimfTokens.space2,
-            runSpacing: SimfTokens.space2,
+          // Frame 889:2715 — the two action buttons. رابط الجلسة (live link,
+          // beige hairline) only appears when the session has a live feed; it
+          // leads (inline-start / physical right under RTL) so ملخص الجلسة
+          // (gold hairline) trails, matching the frame.
+          Row(
             children: <Widget>[
-              _TagPill(
-                label: hall,
-                accented: true,
-                icon: Icons.place_outlined,
+              if (detail.hasLiveStream) ...<Widget>[
+                Expanded(
+                  child: _HeaderActionButton(
+                    label: l10n.sessionLink,
+                    accented: false,
+                    onTap: onSessionLink,
+                  ),
+                ),
+                const SizedBox(width: SimfTokens.space2),
+              ],
+              Expanded(
+                child: _HeaderActionButton(
+                  label: l10n.sessionSummary,
+                  accented: true,
+                  onTap: onSessionSummary,
+                ),
               ),
-              if (category != null) _TagPill(label: category, accented: false),
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// One header-card action button (frame 889:2708/889:2709): a 34-high navy chip
+/// on the 4px radius with a centred 12px SemiBold label. The accented variant
+/// (ملخص الجلسة) carries the 0.5px gold hairline + gold text; the plain variant
+/// (رابط الجلسة) the 0.2px beige hairline + white text.
+class _HeaderActionButton extends StatelessWidget {
+  const _HeaderActionButton({
+    required this.label,
+    required this.accented,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool accented;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = accented ? SimfTokens.accent : Colors.white;
+    return Material(
+      color: SimfTokens.navyDeep,
+      borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        child: Container(
+          height: 34,
+          alignment: Alignment.center,
+          padding: const EdgeInsets.all(SimfTokens.space2),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+            border: Border.all(
+              color: accented ? SimfTokens.accent : SimfTokens.beigeBorder,
+              width: accented ? SimfTokens.hairlineBold : SimfTokens.hairline,
+            ),
+          ),
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: fg,
+              fontSize: SimfTokens.textSm,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -511,51 +631,6 @@ class _MetaItem extends StatelessWidget {
   }
 }
 
-/// A hall / category tag pill (frame 889:2708/889:2709): a navy bordered chip.
-/// The hall (location) pill is gold-accented with a place icon; the category
-/// pill uses the beige hairline border with white text.
-class _TagPill extends StatelessWidget {
-  const _TagPill({required this.label, required this.accented, this.icon});
-
-  final String label;
-  final bool accented;
-  final IconData? icon;
-
-  @override
-  Widget build(BuildContext context) {
-    final fg = accented ? SimfTokens.accent : Colors.white;
-    return Container(
-      height: 34,
-      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space2),
-      decoration: BoxDecoration(
-        color: SimfTokens.navyDeep,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        border: Border.all(
-          color: accented ? SimfTokens.accent : SimfTokens.beigeBorder,
-          width: accented ? SimfTokens.hairlineBold : SimfTokens.hairline,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Text(
-            label,
-            style: TextStyle(
-              color: fg,
-              fontSize: SimfTokens.textSm,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          if (icon != null) ...<Widget>[
-            const SizedBox(width: SimfTokens.space2),
-            Icon(icon, size: 14, color: fg),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
 /// A section heading (frame 889:2717/889:2720/889:2770): white, 16px Medium,
 /// right-aligned for RTL.
 class _SectionHeading extends StatelessWidget {
@@ -604,32 +679,35 @@ class _DescriptionCard extends StatelessWidget {
   }
 }
 
-/// One speaker card (frame 889:2722/889:2737/889:2747): a navy box with a
-/// beige hairline; a gold-tinted icon box on the inline-start (physical right)
-/// — an anchor for a speaker, a star for the host — with the name (white 16px)
-/// over the rank (beige 12px) beside it. Tapping opens the speaker profile.
+/// One speaker card (frame 889:2722/889:2737/889:2747): a navy box with a beige
+/// hairline; a 40×40 rounded photo on the inline-start (physical right), with
+/// the name (white 16px) + the country flag over the rank (beige 12px) beside
+/// it. Tapping opens the speaker profile.
 class _SpeakerCard extends StatelessWidget {
   const _SpeakerCard({
     required this.speaker,
     required this.isArabic,
     required this.hostLabel,
+    required this.baseUrl,
     required this.onTap,
   });
 
   final SessionSpeaker speaker;
   final bool isArabic;
   final String hostLabel;
+  final String baseUrl;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final name = speaker.localizedName(isArabic);
-    final country = speaker.localizedCountry(isArabic);
+    final flag = countryFlagEmoji(speaker.countryId);
     final isHost = speaker.role == SessionSpeakerRole.host;
+    // The country is now carried by the flag (Figma 889:2726), so the second
+    // line is the rank + the host marker only.
     final subParts = <String>[
       if (speaker.title != null && speaker.title!.trim().isNotEmpty)
         speaker.title!.trim(),
-      if (country != null) country,
       if (isHost) hostLabel,
     ];
 
@@ -639,19 +717,40 @@ class _SpeakerCard extends StatelessWidget {
         padding: const EdgeInsets.all(SimfTokens.space2),
         child: Row(
           children: <Widget>[
-            _RoleBox(isHost: isHost),
+            _SpeakerAvatar(
+              imageUrl: '$baseUrl/app/assets/SpeakerPhoto/${speaker.id}/image',
+            ),
             const SizedBox(width: SimfTokens.space4),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text(
-                    name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: SimfTokens.textLg,
-                    ),
+                  // Name + flag, hugging the inline-start (physical right under
+                  // RTL); the name shrinks before the flag so a long name never
+                  // pushes the flag off the card.
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Flexible(
+                        child: Text(
+                          name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: SimfTokens.textLg,
+                          ),
+                        ),
+                      ),
+                      if (flag != null) ...<Widget>[
+                        const SizedBox(width: SimfTokens.space2),
+                        Text(
+                          flag,
+                          style: const TextStyle(fontSize: SimfTokens.textMd),
+                        ),
+                      ],
+                    ],
                   ),
                   if (subParts.isNotEmpty) ...<Widget>[
                     const SizedBox(height: SimfTokens.space2),
@@ -673,29 +772,81 @@ class _SpeakerCard extends StatelessWidget {
   }
 }
 
-/// The gold-tinted role box on a speaker card (frame 889:2731/889:2757): a 44×44
-/// rounded square with a gold border and a gold glyph — an anchor for a speaker,
-/// a star for the host.
-class _RoleBox extends StatelessWidget {
-  const _RoleBox({required this.isHost});
+/// The speaker's photo on a speaker card (frame 1060:12892): a 40×40 rounded
+/// square with a beige hairline. Renders the uploaded SpeakerPhoto asset
+/// (D-357), falling back to a navy person glyph while it loads or when the
+/// speaker has no photo (the asset route 404s).
+class _SpeakerAvatar extends StatelessWidget {
+  const _SpeakerAvatar({required this.imageUrl});
 
-  final bool isHost;
+  final String imageUrl;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 44,
-      height: 44,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: SimfTokens.accent.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        border: Border.all(color: SimfTokens.accent),
+    const placeholder = ColoredBox(
+      color: SimfTokens.navy,
+      child: Center(
+        child: Icon(Icons.person, size: 20, color: SimfTokens.beigeBorder),
       ),
-      child: Icon(
-        isHost ? Icons.star_outline : Icons.anchor,
-        size: 20,
-        color: SimfTokens.accent,
+    );
+    return Container(
+      width: 40,
+      height: 40,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: SimfTokens.navy,
+        borderRadius: BorderRadius.circular(SimfTokens.radius),
+        border: Border.all(
+          color: SimfTokens.beigeBorder,
+          width: SimfTokens.hairline,
+        ),
+      ),
+      child: Image.network(
+        imageUrl,
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+        loadingBuilder: (context, child, progress) =>
+            progress == null ? child : placeholder,
+        errorBuilder: (context, error, stackTrace) => placeholder,
+      ),
+    );
+  }
+}
+
+/// The اسأل المحاور card (frame 1056:12876): a full-width navy box with a beige
+/// hairline holding a centred user glyph over the 12px SemiBold label. Opens
+/// send-question (26) for this session.
+class _AskHostCard extends StatelessWidget {
+  const _AskHostCard({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return KsaCard(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(SimfTokens.space2),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            const Icon(
+              Icons.person_outline,
+              size: 24,
+              color: Colors.white,
+            ),
+            const SizedBox(height: SimfTokens.space2),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: SimfTokens.textSm,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -758,10 +909,13 @@ class _SeatCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: SimfTokens.space2),
-            // Frame 889:2762 — a forward chevron at the inline end (physical
-            // left under RTL).
-            const Icon(
-              Icons.chevron_left,
+            // Frame 889:2762 — a forward chevron at the inline end. Direction-
+            // aware so it points "into" the seat map in both locales (physical
+            // left under RTL, right under LTR).
+            Icon(
+              Directionality.of(context) == TextDirection.rtl
+                  ? Icons.chevron_left
+                  : Icons.chevron_right,
               size: 20,
               color: SimfTokens.beigeBorder,
             ),

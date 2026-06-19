@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/chatbot/chatbot_screen.dart';
+import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 class _FakeResponder implements ChatbotResponder {
   _FakeResponder(this.answer);
@@ -20,9 +21,20 @@ class _FakeResponder implements ChatbotResponder {
   }
 }
 
+// KsaPage renders the bottom nav + the المزيد drawer, which read the data
+// config; the destinations are stubbed so the shell builds.
+const _testConfig = SimfDataConfig(
+  baseUrl: 'http://test.local/api/v1',
+  appKey: 'test',
+  deviceType: SimfDeviceType.android,
+);
+
+const _greetingEn = 'Hello 🤝 I’m your smart assistant. How can I help today?';
+const _seedQ1En = 'When does the opening session start?';
+
 Future<void> _pump(
   WidgetTester tester, {
-  required ChatbotResponder responder,
+  ChatbotResponder? responder,
   Locale locale = const Locale('en'),
 }) async {
   final router = GoRouter(
@@ -33,13 +45,27 @@ Future<void> _pump(
         name: RouteNames.chatbot,
         builder: (_, __) => const ChatbotScreen(),
       ),
+      for (final (name, path, label) in <(String, String, String)>[
+        (RouteNames.home, '/', 'HOME'),
+        (RouteNames.sessions, '/sessions', 'SESSIONS'),
+        (RouteNames.badge, '/badge', 'BADGE'),
+        (RouteNames.venueMap, '/map', 'MAP'),
+        (RouteNames.myArea, '/my-area', 'MY-AREA'),
+      ])
+        GoRoute(
+          name: name,
+          path: path,
+          builder: (c, s) => Scaffold(body: Text(label)),
+        ),
     ],
   );
 
   await tester.pumpWidget(
     ProviderScope(
       overrides: <Override>[
-        chatbotResponderProvider.overrideWithValue(responder),
+        simfDataConfigProvider.overrideWithValue(_testConfig),
+        if (responder != null)
+          chatbotResponderProvider.overrideWithValue(responder),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -58,15 +84,16 @@ Future<void> _pump(
 }
 
 void main() {
-  group('ChatbotScreen (Page 036)', () {
-    testWidgets('starts empty with the preview banner', (tester) async {
+  group('ChatbotScreen (Page 036 — KSA frame 1064:13066)', () {
+    testWidgets('opens with the scripted Figma transcript', (tester) async {
       await _pump(tester, responder: _FakeResponder('hi'));
 
-      expect(
-        find.text('The AI assistant is in preview — replies are interim.'),
-        findsOneWidget,
-      );
-      expect(find.text('Ask the assistant to get started.'), findsOneWidget);
+      expect(find.text('AI assistant'), findsOneWidget); // header title
+      expect(find.text(_greetingEn), findsOneWidget);
+      expect(find.text(_seedQ1En), findsOneWidget);
+      // The four quick-reply chips.
+      expect(find.text('Request a meeting'), findsOneWidget);
+      expect(find.text('Today’s sessions'), findsOneWidget);
     });
 
     testWidgets('typing + send appends the user message and the reply',
@@ -74,47 +101,44 @@ void main() {
       final responder = _FakeResponder('Canned reply');
       await _pump(tester, responder: responder);
 
-      await tester.enterText(find.byType(TextField), 'When does it start?');
-      await tester.tap(find.byTooltip('Send'));
+      await tester.enterText(find.byType(TextField), 'Custom question?');
+      await tester.tap(find.byIcon(Icons.send));
       await tester.pumpAndSettle();
 
-      expect(responder.lastPrompt, 'When does it start?');
-      expect(find.text('When does it start?'), findsOneWidget);
+      expect(responder.lastPrompt, 'Custom question?');
+      expect(find.text('Custom question?'), findsOneWidget);
       expect(find.text('Canned reply'), findsOneWidget);
+    });
+
+    testWidgets('tapping a quick-reply chip sends it as the next prompt',
+        (tester) async {
+      final responder = _FakeResponder('Chip reply');
+      await _pump(tester, responder: responder);
+
+      await tester.tap(find.text('Request a meeting'));
+      await tester.pumpAndSettle();
+
+      expect(responder.lastPrompt, 'Request a meeting');
+      expect(find.text('Chip reply'), findsOneWidget);
+    });
+
+    testWidgets('an empty prompt does not append a bubble', (tester) async {
+      await _pump(tester, responder: _FakeResponder('reply'));
+
+      await tester.enterText(find.byType(TextField), '   ');
+      await tester.tap(find.byIcon(Icons.send));
+      await tester.pumpAndSettle();
+
+      expect(find.text('reply'), findsNothing);
     });
 
     testWidgets('the default responder returns the canned interim notice',
         (tester) async {
-      // No override here — exercise the real CannedChatbotResponder.
-      final router = GoRouter(
-        initialLocation: '/chatbot',
-        routes: <RouteBase>[
-          GoRoute(
-            path: '/chatbot',
-            name: RouteNames.chatbot,
-            builder: (_, __) => const ChatbotScreen(),
-          ),
-        ],
-      );
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp.router(
-            routerConfig: router,
-            locale: const Locale('en'),
-            supportedLocales: AppL10n.supportedLocales,
-            localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
-              ...AppL10n.localizationsDelegates,
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
+      // No responder override — exercise the real CannedChatbotResponder.
+      await _pump(tester);
 
       await tester.enterText(find.byType(TextField), 'hello');
-      await tester.tap(find.byTooltip('Send'));
+      await tester.tap(find.byIcon(Icons.send));
       await tester.pumpAndSettle();
 
       expect(
@@ -125,67 +149,24 @@ void main() {
       );
     });
 
-    testWidgets('an empty prompt does not append a bubble', (tester) async {
-      await _pump(tester, responder: _FakeResponder('reply'));
-
-      await tester.enterText(find.byType(TextField), '   ');
-      await tester.tap(find.byTooltip('Send'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('reply'), findsNothing);
-      expect(find.text('Ask the assistant to get started.'), findsOneWidget);
-    });
-
-    testWidgets('dismissing the preview banner hides it', (tester) async {
-      await _pump(tester, responder: _FakeResponder('reply'));
-
-      await tester.tap(find.byIcon(Icons.close));
-      await tester.pumpAndSettle();
+    testWidgets('Arabic: seeds the Arabic transcript and replies RTL',
+        (tester) async {
+      await _pump(tester, locale: const Locale('ar'));
 
       expect(
-        find.text('The AI assistant is in preview — replies are interim.'),
-        findsNothing,
-      );
-    });
-
-    testWidgets('renders the Arabic canned notice in Arabic', (tester) async {
-      final router = GoRouter(
-        initialLocation: '/chatbot',
-        routes: <RouteBase>[
-          GoRoute(
-            path: '/chatbot',
-            name: RouteNames.chatbot,
-            builder: (_, __) => const ChatbotScreen(),
-          ),
-        ],
-      );
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp.router(
-            routerConfig: router,
-            locale: const Locale('ar'),
-            supportedLocales: AppL10n.supportedLocales,
-            localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
-              ...AppL10n.localizationsDelegates,
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.enterText(find.byType(TextField), 'مرحبا');
-      // Target the composer send icon specifically — the AppBar now also has a
-      // back IconButton, so byType(IconButton).last is no longer the send (D-426).
-      await tester.tap(find.byIcon(Icons.send));
-      await tester.pumpAndSettle();
-
-      expect(
-        find.text('المساعد الذكي قيد التفعيل — سيتوفر الرد التلقائي قريباً.'),
+        find.text('مرحباً 🤝 أنا مساعدك الذكي. كيف يمكنني المساعدة اليوم؟'),
         findsOneWidget,
       );
+
+      // Position: the user bubble (seed Q1) sits to the right of the assistant
+      // greeting under RTL — the Figma pins user-right / assistant-left (D-436).
+      final assistantX = tester
+          .getCenter(
+            find.text('مرحباً 🤝 أنا مساعدك الذكي. كيف يمكنني المساعدة اليوم؟'),
+          )
+          .dx;
+      final userX = tester.getCenter(find.text('متى تبدأ جلسة الافتتاح؟')).dx;
+      expect(userX, greaterThan(assistantX));
     });
   });
 }

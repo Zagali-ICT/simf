@@ -50,6 +50,11 @@ public class Session : BaseAuditEntity
     public Guid? CategoryId { get; set; }
     public SessionCategory? Category { get; set; }
 
+    /// <summary>D-452 (Figma 883:2308 filter tabs) — the session's kind
+    /// (Workshop / Session / Event), driving the app's "ورش العمل / جلسات /
+    /// احداث" type tabs. Null = untyped (only the "الكل / All" tab shows it).</summary>
+    public SessionType? Type { get; set; }
+
     /// <summary>Session start (UTC). The Flutter agenda renders local-
     /// time per the user's tz.</summary>
     public DateTimeOffset StartUtc { get; set; }

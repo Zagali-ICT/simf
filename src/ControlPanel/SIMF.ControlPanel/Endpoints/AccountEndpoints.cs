@@ -2622,6 +2622,44 @@ internal static class AccountEndpoints
             return Forward(await api.DeactivateSessionCategoryAsync(id, token));
         });
 
+        // D-452 — programme-days admin CRUD passthroughs (date + bilingual
+        // title; the logo rides the generic asset endpoints).
+        group.MapPost("/admin/programme-days/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListProgrammeDaysAsync(body, token));
+        });
+        group.MapGet("/admin/programme-days/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetProgrammeDayAsync(id, token));
+        });
+        group.MapPost("/admin/programme-days",
+            async (AdminCreateProgrammeDayRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateProgrammeDayAsync(body, token));
+        });
+        group.MapPut("/admin/programme-days/{id:guid}",
+            async (Guid id, AdminUpdateProgrammeDayRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateProgrammeDayAsync(id, body, token));
+        });
+        group.MapDelete("/admin/programme-days/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeactivateProgrammeDayAsync(id, token));
+        });
+
         // P2.4 (D-229) — System Configuration settings passthroughs.
         group.MapPost("/admin/system-settings/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>

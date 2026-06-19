@@ -234,6 +234,11 @@ class AuthRepositoryImpl implements AuthRepository {
     return payload.toSession(issuedAt: _now());
   }
 
+  @override
+  Future<void> revokeDeviceKey(String deviceKeyId) {
+    return _guard(() => _api.revokeDeviceKey(deviceKeyId));
+  }
+
   /// Runs [call]. If it throws an [ApiFailure], rethrows the corresponding
   /// [AuthFailure]. Other exceptions are not caught — they indicate a bug,
   /// not a backend failure.

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:simf_auth_pkg/simf_auth_pkg.dart';
+
 import '../features/accessibility/data/accessibility_controller.dart';
 import 'localization/app_l10n.dart';
 import 'localization/locale_controller.dart';
@@ -19,6 +21,18 @@ class SimfApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
     final locale = ref.watch(localeControllerProvider);
     final a11y = ref.watch(accessibilityControllerProvider);
+
+    // D-443 — when a signed-in session ENDS (refresh failed at the 24h cap /
+    // revoked / signed out), land on sign-in. The router's route-gate already
+    // bounces protected screens, but a session can also die while the user is
+    // on a public screen (e.g. Home with its sponsors strip) — there the gate
+    // does not fire and the user would otherwise sit on stale content after a
+    // 401. Guests never transition from SignedIn, so they are unaffected.
+    ref.listen<AuthState>(authControllerProvider, (previous, next) {
+      if (previous is AuthStateSignedIn && next is AuthStateSignedOut) {
+        router.go('/sign-in');
+      }
+    });
 
     return MaterialApp.router(
       title: 'SIMF',

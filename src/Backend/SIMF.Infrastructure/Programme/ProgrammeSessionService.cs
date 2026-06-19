@@ -3,6 +3,7 @@
 // Tests: SIMF.Api.Tests/SessionRecordingTests.cs (P3.2b — D-232 published-recording gate)
 // Tests: SIMF.Api.Tests/RecordedQuestionsTests.cs (P3.4 — D-235 recorded Q&A archive)
 // Tests: SIMF.Api.Tests/SessionSummaryTests.cs (P4.1a — D-237 published-summary read)
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common.Enums;
@@ -63,6 +64,8 @@ internal sealed class ProgrammeSessionService(
                 session.EndUtc,
                 // P3.2 — D-231: broadcast lifecycle status.
                 session.Status,
+                // D-452 (Figma 883:2308): the session's type for the app's tabs.
+                session.Type,
                 // B9b — D-226: the session's category (dynamic lookup), if set.
                 session.CategoryId,
                 CategoryName = session.Category != null ? session.Category.Name : null,
@@ -160,12 +163,90 @@ internal sealed class ProgrammeSessionService(
                     row.Status,
                     row.Description,
                     row.DescriptionArabic,
-                    speakers);
+                    speakers,
+                    // D-452: the session's type (Workshop / Session / Event).
+                    row.Type);
             })
             .ToList();
 
         return new PublicSessions(items);
     }
+
+    /// <summary>The event's local-day boundary (KSA, UTC+3). Sessions are stored
+    /// as true UTC; a "programme day" is a Riyadh calendar day, so sessions are
+    /// bucketed by their start in this zone (a 02:00-KSA session belongs to that
+    /// KSA day, not the previous UTC day).</summary>
+    private static readonly TimeSpan EventOffset = TimeSpan.FromHours(3);
+
+    public async Task<PublicProgrammeDays> ListDaysAsync(
+        CancellationToken cancellationToken = default)
+    {
+        // D-452 (Figma 883:2308 "تفاصيل اليوم"): the day-grouped agenda. Pull the
+        // whole programme once and bucket sessions by their EVENT-LOCAL date
+        // (ProgrammeDay.Date is a Riyadh calendar date), then attach each bucket
+        // to its authored day. No per-day query (no N+1).
+        var allSessions = (await ListAsync(null, cancellationToken)).Items;
+        var byDate = allSessions
+            .GroupBy(s => DateOnly.FromDateTime(s.StartUtc.ToOffset(EventOffset).DateTime))
+            .ToDictionary(
+                g => g.Key,
+                g => (IReadOnlyList<PublicSessionListItem>)g.ToList());
+
+        var days = await dbContext.ProgrammeDays
+            .AsNoTracking()
+            .Where(d => d.IsActive)
+            .OrderBy(d => d.DisplayOrder).ThenBy(d => d.Date)
+            .Select(d => new { d.Id, d.Date, d.Title, d.TitleArabic, d.DisplayOrder })
+            .ToListAsync(cancellationToken);
+
+        // Fallback: no authored ProgrammeDay rows yet (the CP day-manager is a
+        // later phase) → synthesize one day per distinct session date so the
+        // agenda still renders the whole programme — a strict superset of the old
+        // /programme/sessions screen, so a deploy never blanks the screen.
+        if (days.Count == 0)
+        {
+            var synthesized = byDate.Keys
+                .OrderBy(date => date)
+                .Select((date, i) =>
+                {
+                    var label = date.ToString("d MMM", CultureInfo.InvariantCulture);
+                    return new PublicProgrammeDay(
+                        SyntheticDayId(date), date, label, label, i, false,
+                        byDate[date]);
+                })
+                .ToList();
+            return new PublicProgrammeDays(synthesized);
+        }
+
+        // Which authored days have a linked logo (one query against the Asset table).
+        var dayIds = days.Select(d => d.Id).ToList();
+        var withImage = (await dbContext.Assets
+                .AsNoTracking()
+                .Where(a => a.IsActive
+                    && a.Category == AssetCategory.ProgrammeDayImage
+                    && dayIds.Contains(a.OwnerId))
+                .Select(a => a.OwnerId)
+                .Distinct()
+                .ToListAsync(cancellationToken))
+            .ToHashSet();
+
+        var result = days
+            .Select(d => new PublicProgrammeDay(
+                d.Id, d.Date, d.Title, d.TitleArabic, d.DisplayOrder,
+                withImage.Contains(d.Id),
+                byDate.TryGetValue(d.Date, out var sessions)
+                    ? sessions
+                    : Array.Empty<PublicSessionListItem>()))
+            .ToList();
+
+        return new PublicProgrammeDays(result);
+    }
+
+    /// <summary>A deterministic, per-date GUID for a synthesized (un-authored)
+    /// programme day, so the day-strip selection key is stable + distinct per
+    /// date (the real authored days carry their own row Id).</summary>
+    private static Guid SyntheticDayId(DateOnly date) =>
+        new($"{date.Year:D4}{date.Month:D2}{date.Day:D2}-0000-0000-0000-000000000000");
 
     public async Task<PublicSessionDetail?> GetAsync(
         Guid id, CancellationToken cancellationToken = default)

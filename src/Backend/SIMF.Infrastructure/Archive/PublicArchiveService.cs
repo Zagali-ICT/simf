@@ -92,7 +92,7 @@ internal sealed class PublicArchiveService(
                 edition.PastSpeakers
                     .OrderBy(p => p.DisplayOrder)
                     .Select(p => new PublicArchivePastSpeaker(
-                        p.NameEn, p.NameAr, p.PhotoRelativePath))
+                        p.NameEn, p.NameAr, p.PhotoRelativePath, p.CountryId))
                     .ToList()))
             .SingleOrDefaultAsync(cancellationToken);
     }

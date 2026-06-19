@@ -2495,6 +2495,48 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Delete, $"session-categories/{id}", content: null,
             accessToken, cancellationToken);
 
+    // -- D-452 — Programme-days admin CRUD (SIMF.Contracts.Admin). Date +
+    //    bilingual title; the logo rides the generic asset endpoints
+    //    (AssetCategory.ProgrammeDayImage). Mirrors the session-category shape.
+
+    public Task<ApiCallResult<GridPage<AdminProgrammeDaySummary>>> ListProgrammeDaysAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminProgrammeDaySummary>>(
+            HttpMethod.Post, "programme-days/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminProgrammeDayDetail>> GetProgrammeDayAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminProgrammeDayDetail>(
+            HttpMethod.Get, $"programme-days/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminProgrammeDayDetail>> CreateProgrammeDayAsync(
+        AdminCreateProgrammeDayRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminProgrammeDayDetail>(
+            HttpMethod.Post, "programme-days",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminProgrammeDayDetail>> UpdateProgrammeDayAsync(
+        Guid id, AdminUpdateProgrammeDayRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminProgrammeDayDetail>(
+            HttpMethod.Put, $"programme-days/{id}",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> DeactivateProgrammeDayAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"programme-days/{id}", content: null,
+            accessToken, cancellationToken);
+
     // -- P2.2 (D-227) — Booking approval queue (SIMF.Contracts.Sessions) -----
 
     public Task<ApiCallResult<GridPage<BookingQueueRow>>> ListPendingBookingsAsync(

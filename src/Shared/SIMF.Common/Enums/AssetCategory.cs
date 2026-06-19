@@ -12,4 +12,5 @@ public enum AssetCategory
     SponsorLogo = 3,
     ArchiveCover = 4,
     NewsImage = 5,
+    ProgrammeDayImage = 6,
 }

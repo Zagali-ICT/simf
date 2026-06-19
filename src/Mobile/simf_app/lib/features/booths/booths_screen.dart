@@ -6,6 +6,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/country_flag_badge.dart';
 import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import '../venuemap/data/venue_map_models.dart';
@@ -114,7 +115,8 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     return KsaPage(
-      title: l10n.boothsTitle,
+      // Frame 922:2464 titles the screen "المعرض" (the nav tile/route stay "الأجنحة").
+      title: l10n.boothsExhibitionTitle,
       onBack: () => ksaBackOrHome(context),
       body: _buildBody(l10n),
     );
@@ -329,10 +331,13 @@ class _CompanyHeader extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
-          _LogoTile(
-            contactId: booth.exhibitorContactId,
-            baseUrl: baseUrl,
-            initials: _initials(name),
+          CountryFlagBadge(
+            countryId: booth.countryId,
+            child: _LogoTile(
+              contactId: booth.exhibitorContactId,
+              baseUrl: baseUrl,
+              initials: _initials(name),
+            ),
           ),
           const SizedBox(width: SimfTokens.space2),
           Expanded(

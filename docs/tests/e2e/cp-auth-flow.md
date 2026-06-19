@@ -18,8 +18,10 @@
 | E2E-AUTH-006 | Pending admin sign-in → /auth/pending | login + auth-pending | P0 |
 | E2E-AUTH-007 | Rejected admin sign-in → /auth/rejected with reason | login + auth-rejected | P0 |
 | E2E-AUTH-008 | Forgot password → email code → /reset-password → sign-in | forgot-password + reset-password + login | P1 |
-| E2E-AUTH-009 | D-121 cookie refresh: session stays alive past 30 min | (CP shell) | P1 |
+| E2E-AUTH-009 | D-121 cookie refresh: session stays alive past the 5-min access token | (CP shell) | P1 |
 | E2E-AUTH-010 | RTL toggle on login page works | login | P2 |
+| E2E-AUTH-011 | D-443 idle warning: modal → "Stay signed in" silently refreshes; ignore → auto sign-out | (CP shell) | P1 |
+| E2E-AUTH-012 | D-443 absolute 24h cap: a continuously active session is still forced to re-sign-in after 24h | (CP shell) | P1 |
 
 ## Scenarios
 
@@ -152,8 +154,8 @@ Scenario: Forgot password → reset → sign in
 ### E2E-AUTH-009 — D-121 cookie refresh
 
 ```gherkin
-Scenario: Session stays alive past 30 min via the refresh hook
-  Given the administrator has been signed in for >28 minutes (access-token nears expiry)
+Scenario: Session stays alive past the 5-min access token via the refresh hook
+  Given the administrator has been signed in for >3 minutes (access-token nears expiry)
   When they click any nav item that fires an /account/api/* request
   Then the SimfCookieRefreshHandler reads expires_at from the cookie
   And calls SimfAuthClient.RefreshAsync with the refresh token
@@ -175,6 +177,45 @@ Scenario: Arabic toggle on the login page mirrors layout
   And the brand panel + form swap sides
 ```
 
+### E2E-AUTH-011 — D-443 idle session-timeout warning (token-driven)
+
+```gherkin
+Scenario: Idle admin is warned, then "Stay signed in" silently refreshes
+  Given the administrator is signed in on the CP shell
+  And they stop interacting (no mouse, keyboard, scroll or touch activity)
+  When the 5-minute access token is ~1 minute from expiry
+  Then a session-timeout modal appears
+  And the title reads "Session about to expire" / "جلستك على وشك الانتهاء"
+  And it shows a live seconds countdown plus "Stay signed in" and "Sign out now"
+  When they click "Stay signed in" before the countdown reaches zero
+  Then GET /session/status refreshes the token silently (no full reload)
+  And the modal closes and they remain on the same page
+
+Scenario: Idle admin who ignores the warning is auto-signed-out
+  Given the session-timeout modal is showing with the countdown running
+  When the administrator does nothing until the countdown reaches zero
+  Then the guard POSTs /auth/sign-out
+  And the browser lands on /login
+
+Scenario: Active admin is never shown the modal
+  Given the administrator keeps moving the mouse / typing
+  When the access token nears expiry
+  Then the guard silently calls GET /session/status and rotates the token
+  And no modal is ever shown
+```
+
+### E2E-AUTH-012 — D-443 absolute 24h session cap
+
+```gherkin
+Scenario: A continuously active session is still capped at 24 hours
+  Given the administrator signed in at T0
+  And they keep working so the token is silently refreshed throughout
+  When 24 hours have elapsed since T0
+  Then the next silent refresh (GET /session/status) fails with AUTH_REFRESH_TOKEN_EXPIRED
+  And the guard signs them out to /login
+  And they must sign in again (activity does not slide the absolute cap)
+```
+
 ---
 
-_Last reviewed:_ 2026-05-28 by Claude (D-133 slice 7).
+_Last reviewed:_ 2026-06-19 by Claude (D-443 — token caps + session-timeout guard).

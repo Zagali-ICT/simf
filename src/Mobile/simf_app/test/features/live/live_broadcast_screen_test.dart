@@ -365,10 +365,11 @@ void main() {
         settle: false,
       );
 
-      expect(
-        find.text('Live captions of the spoken word appear here…'),
-        findsOneWidget,
-      );
+      final hint = find.text('Live captions of the spoken word appear here…');
+      expect(hint, findsOneWidget);
+      // The placeholder reads in the frame's soft caption colour (#DDE4F0,
+      // 934:3613) — assert the token so a re-tint can't silently pass.
+      expect(tester.widget<Text>(hint).style!.color, SimfTokens.captionText);
     });
 
     testWidgets('P5 — the caption renders the Arabic text under the ar locale',

@@ -88,8 +88,8 @@ void main() {
         'media sections', (tester) async {
       await _pump(tester, items: () => _items);
 
-      // The media-coverage header.
-      expect(find.text('Media coverage'), findsWidgets);
+      // The media-center header (shared hub title — renamed in Figma 947/1049).
+      expect(find.text('Media center'), findsWidgets);
       // The three coverage tabs.
       expect(find.text('News'), findsOneWidget);
       expect(find.text('Media partners'), findsOneWidget);
@@ -152,7 +152,7 @@ void main() {
     testWidgets('renders right-to-left in Arabic', (tester) async {
       await _pump(tester, items: () => _items, locale: const Locale('ar'));
 
-      expect(find.text('التغطية الإعلامية'), findsWidgets);
+      expect(find.text('المركز الاعلامي'), findsWidgets);
       expect(
         Directionality.of(tester.element(find.text('الأخبار'))),
         TextDirection.rtl,

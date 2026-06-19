@@ -43,6 +43,9 @@ class Recommendation {
     this.jobTitle,
     this.profileTypeName,
     this.profileTypeNameArabic,
+    this.sharedSessionCount = 0,
+    this.matchReason,
+    this.matchReasonArabic,
   });
 
   final String userProfileId;
@@ -55,6 +58,15 @@ class Recommendation {
   final int sharedInterestCount;
   final double score;
 
+  /// D-451 — the number of sessions the visitor and this match both hold an
+  /// approved seat in (drives the "same N sessions" part of the reason).
+  final int sharedSessionCount;
+
+  /// D-451 — the backend-generated bilingual "why this match" line
+  /// (sessions + shared interests). Null on older payloads.
+  final String? matchReason;
+  final String? matchReasonArabic;
+
   String localizedName(bool isArabic) {
     final ar = arabicName.trim();
     final en = englishName.trim();
@@ -65,6 +77,17 @@ class Recommendation {
   String? localizedProfileType(bool isArabic) {
     final ar = profileTypeNameArabic?.trim() ?? '';
     final en = profileTypeName?.trim() ?? '';
+    final picked = isArabic
+        ? (ar.isNotEmpty ? ar : en)
+        : (en.isNotEmpty ? en : ar);
+    return picked.isEmpty ? null : picked;
+  }
+
+  /// D-451 — the backend match reason in the active language, or `null` when
+  /// the payload carries none (older builds) so the screen composes a fallback.
+  String? localizedMatchReason(bool isArabic) {
+    final ar = matchReasonArabic?.trim() ?? '';
+    final en = matchReason?.trim() ?? '';
     final picked = isArabic
         ? (ar.isNotEmpty ? ar : en)
         : (en.isNotEmpty ? en : ar);
@@ -85,6 +108,10 @@ class Recommendation {
         sharedInterestCount:
             (json['sharedInterestCount'] as num?)?.toInt() ?? 0,
         score: (json['score'] as num?)?.toDouble() ?? 0,
+        sharedSessionCount:
+            (json['sharedSessionCount'] as num?)?.toInt() ?? 0,
+        matchReason: json['matchReason'] as String?,
+        matchReasonArabic: json['matchReasonArabic'] as String?,
       );
 
   /// Reads `RecommendationsResponse = { matches: [...] }` into the entries.

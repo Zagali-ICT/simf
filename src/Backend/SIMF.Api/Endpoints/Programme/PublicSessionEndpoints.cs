@@ -56,6 +56,26 @@ public sealed class ListProgrammeSessionsEndpoint(IProgrammeSessionService servi
     }
 }
 
+/// <summary>D-452 (Figma 883:2308 "تفاصيل اليوم") — the day-grouped public
+/// agenda: the active programme days (date + bilingual title + a has-logo flag),
+/// each with its sessions. Anonymous; drives the app's day banner + day strip.</summary>
+public sealed class ListProgrammeDaysEndpoint(IProgrammeSessionService service)
+    : EndpointWithoutRequest<ApiResult<PublicProgrammeDays>>
+{
+    public override void Configure()
+    {
+        Get("/app/programme/days");
+        AllowAnonymous();
+        Tags("Public");
+    }
+
+    public override async Task HandleAsync(CancellationToken ct)
+    {
+        await Send.OkAsync(ApiResult<PublicProgrammeDays>.Ok(
+            await service.ListDaysAsync(ct)), ct);
+    }
+}
+
 /// <summary>D-199 (gap doc G3, Mockup page 17 "Session detail") — public,
 /// anonymous full detail for one active session: bilingual title +
 /// abstract, hall, time window, ordered themes + speakers, and a cheap

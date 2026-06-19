@@ -68,6 +68,13 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
                     ? null
                     : db.Exhibitors.Where(c => c.Id == b.ExhibitorId)
                         .Select(c => c.ContactId).FirstOrDefault(),
+                // D-456: the exhibitor company's country (Exhibitor → Contact →
+                // CountryId) for the app's corner flag on the booth logo.
+                CountryId = b.ExhibitorId == null
+                    ? null
+                    : db.Exhibitors.Where(e => e.Id == b.ExhibitorId)
+                        .Select(e => e.Contact != null ? e.Contact.CountryId : null)
+                        .FirstOrDefault(),
             })
             .ToListAsync(cancellationToken);
 
@@ -125,6 +132,13 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
                     ? null
                     : db.Exhibitors.Where(c => c.Id == b.ExhibitorId)
                         .Select(c => c.ContactId).FirstOrDefault(),
+                // D-456: the exhibitor company's country (Exhibitor → Contact →
+                // CountryId) for the app's corner flag on the booth logo.
+                CountryId = b.ExhibitorId == null
+                    ? null
+                    : db.Exhibitors.Where(e => e.Id == b.ExhibitorId)
+                        .Select(e => e.Contact != null ? e.Contact.CountryId : null)
+                        .FirstOrDefault(),
             })
             .FirstOrDefaultAsync(cancellationToken);
 }

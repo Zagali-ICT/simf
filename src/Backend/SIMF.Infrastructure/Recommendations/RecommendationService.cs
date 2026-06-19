@@ -75,6 +75,7 @@ internal sealed class RecommendationService(
             .Select(p => new
             {
                 p.Id,
+                p.UserId,
                 p.Name,
                 p.NameArabic,
                 p.JobTitle,
@@ -87,6 +88,29 @@ internal sealed class RecommendationService(
                 }).ToList(),
             })
             .ToListAsync(cancellationToken);
+
+        // 3b) Shared-session overlap (D-451): the approved, un-released seats
+        //     the caller and the candidate pool hold. SeatReservation owners are
+        //     Identity user ids (like the pool), so the overlap is keyed on user
+        //     id; one query covers the whole pool + the caller.
+        var poolUserIds = approvedIds.ToHashSet();
+        poolUserIds.Add(callerUserId);
+        var reservations = await appDbContext.SeatReservations
+            .AsNoTracking()
+            .Where(r => r.ReservedForUserId != null
+                && poolUserIds.Contains(r.ReservedForUserId.Value)
+                && r.ReleasedAt == null
+                && r.Status == BookingStatus.Approved)
+            .Select(r => new { UserId = r.ReservedForUserId!.Value, r.SessionId })
+            .ToListAsync(cancellationToken);
+        var callerSessions = reservations
+            .Where(r => r.UserId == callerUserId)
+            .Select(r => r.SessionId)
+            .ToHashSet();
+        var sessionsByUser = reservations
+            .Where(r => r.UserId != callerUserId)
+            .GroupBy(r => r.UserId)
+            .ToDictionary(g => g.Key, g => g.Select(r => r.SessionId).ToHashSet());
 
         // 4) Score each candidate by Jaccard over the interest sets;
         //    add the same-ProfileType bonus when applicable.
@@ -117,6 +141,17 @@ internal sealed class RecommendationService(
                 score += SameProfileTypeBonus;
             }
 
+            var sharedSessionCount = 0;
+            if (callerSessions.Count > 0
+                && sessionsByUser.TryGetValue(candidate.UserId, out var candidateSessions))
+            {
+                foreach (var sessionId in candidateSessions)
+                {
+                    if (callerSessions.Contains(sessionId)) { sharedSessionCount++; }
+                }
+            }
+            var (reasonEn, reasonAr) = BuildMatchReason(sharedSessionCount, sharedSet);
+
             ranked.Add(new RecommendationEntry(
                 candidate.Id,
                 candidate.Name,
@@ -126,7 +161,10 @@ internal sealed class RecommendationService(
                 candidate.ProfileTypeNameArabic,
                 sharedSet,
                 sharedSet.Count,
-                score));
+                score,
+                sharedSessionCount,
+                reasonEn,
+                reasonAr));
         }
 
         var top = ranked
@@ -141,5 +179,55 @@ internal sealed class RecommendationService(
             callerUserId, ranked.Count, top.Count);
 
         return new RecommendationsResponse(top);
+    }
+
+    /// <summary>D-451 — the bilingual "why this match" line (KSA frame
+    /// 1072:13409): the session-overlap segment (when any) then the
+    /// shared-interest summary, joined by " · ". A single shared interest names
+    /// it ("shared interest in X"); two or more are summarised by count.
+    /// Candidates with zero shared interests are skipped before this runs, so
+    /// the interest segment is always present and the reason is never blank.</summary>
+    private static (string En, string Ar) BuildMatchReason(
+        int sharedSessions,
+        IReadOnlyList<MatchedInterest> sharedInterests)
+    {
+        var en = new List<string>();
+        var ar = new List<string>();
+
+        if (sharedSessions == 1)
+        {
+            en.Add("attended a shared session");
+            ar.Add("حضر نفس الجلسة");
+        }
+        else if (sharedSessions == 2)
+        {
+            en.Add("2 shared sessions");
+            // "نفس جلستين" is the Figma-exact Arabic dual (frame 1072:13409);
+            // keep this wording — do not "normalise" it to the numeric form.
+            ar.Add("نفس جلستين");
+        }
+        else if (sharedSessions > 2)
+        {
+            en.Add($"{sharedSessions} shared sessions");
+            ar.Add($"نفس {sharedSessions} جلسات");
+        }
+
+        if (sharedInterests.Count == 1)
+        {
+            var interest = sharedInterests[0];
+            var enName = string.IsNullOrWhiteSpace(interest.Name)
+                ? interest.NameArabic : interest.Name;
+            var arName = string.IsNullOrWhiteSpace(interest.NameArabic)
+                ? interest.Name : interest.NameArabic;
+            en.Add($"shared interest in {enName}");
+            ar.Add($"اهتمام مشترك في {arName}");
+        }
+        else if (sharedInterests.Count > 1)
+        {
+            en.Add($"{sharedInterests.Count} shared interests");
+            ar.Add($"{sharedInterests.Count} اهتمامات مشتركة");
+        }
+
+        return (string.Join(" · ", en), string.Join(" · ", ar));
     }
 }

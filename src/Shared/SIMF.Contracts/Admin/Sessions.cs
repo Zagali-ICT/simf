@@ -21,7 +21,9 @@ public sealed record AdminSessionSummary(
     // B9b — D-226: appended (default) — the CP grid resolves the name client-side.
     Guid? CategoryId = null,
     // P3.2 — D-231: broadcast lifecycle status (appended, default Scheduled).
-    SessionStatus Status = SessionStatus.Scheduled);
+    SessionStatus Status = SessionStatus.Scheduled,
+    // D-452 — session type (Workshop/Session/Event) for the app type tabs.
+    SessionType? Type = null);
 
 /// <summary>D-165 — full session detail (Details + Edit modals).
 /// Includes the speaker and theme join sets so the editor can
@@ -61,7 +63,9 @@ public sealed record AdminSessionDetail(
     string? LiveSignLanguageUrl = null,
     // P5 — D-439: AI live-caption text (manual stub provider, bilingual).
     string? LiveCaptions = null,
-    string? LiveCaptionsArabic = null);
+    string? LiveCaptionsArabic = null,
+    // D-452 — session type (Workshop/Session/Event) for the app type tabs.
+    SessionType? Type = null);
 
 /// <summary>D-165 — one entry in <see cref="AdminSessionDetail.Speakers"/>.
 /// Order matters: 0 = primary speaker for the session card.</summary>
@@ -97,6 +101,8 @@ public sealed class AdminCreateSessionRequest
     // P5 — D-439 — optional AI live-caption text (manual stub provider, bilingual).
     public string? LiveCaptions { get; set; }
     public string? LiveCaptionsArabic { get; set; }
+    // D-452 — session type (Workshop/Session/Event) for the app type tabs.
+    public SessionType? Type { get; set; }
 }
 
 public sealed class AdminUpdateSessionRequest
@@ -123,6 +129,8 @@ public sealed class AdminUpdateSessionRequest
     // P5 — D-439 — optional AI live-caption text (manual stub provider, bilingual).
     public string? LiveCaptions { get; set; }
     public string? LiveCaptionsArabic { get; set; }
+    // D-452 — session type (Workshop/Session/Event) for the app type tabs.
+    public SessionType? Type { get; set; }
 }
 
 /// <summary>P3.2 — D-231: the Committee's lifecycle transition. The service

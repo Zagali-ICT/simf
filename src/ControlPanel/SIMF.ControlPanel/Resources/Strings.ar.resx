@@ -17,6 +17,11 @@
   <data name="Shell.Notifications" xml:space="preserve"><value>الإشعارات</value></data>
   <data name="Shell.Account" xml:space="preserve"><value>الحساب</value></data>
   <data name="Shell.SignOut" xml:space="preserve"><value>تسجيل الخروج</value></data>
+  <data name="Session.Timeout.Title" xml:space="preserve"><value>جلستك على وشك الانتهاء</value></data>
+  <data name="Session.Timeout.Body" xml:space="preserve"><value>لم تقم بأي نشاط. لحماية حسابك سيتم تسجيل خروجك خلال</value></data>
+  <data name="Session.Timeout.Seconds" xml:space="preserve"><value>ثانية.</value></data>
+  <data name="Session.Timeout.Stay" xml:space="preserve"><value>البقاء مسجّلاً للدخول</value></data>
+  <data name="Session.Timeout.SignOut" xml:space="preserve"><value>تسجيل الخروج الآن</value></data>
   <data name="Shell.ToggleNav" xml:space="preserve"><value>إظهار القائمة</value></data>
   <data name="Shell.NavSearch" xml:space="preserve"><value>البحث في القائمة</value></data>
   <data name="Shell.NavSearchPlaceholder" xml:space="preserve"><value>ابحث في القائمة…</value></data>
@@ -1369,6 +1374,44 @@
   <data name="Admin.Sessions.Field.CategoryNone" xml:space="preserve"><value>— بدون تصنيف —</value></data>
   <data name="Module.SessionCategories" xml:space="preserve"><value>تصنيفات الجلسات</value></data>
   <data name="Admin.SessionCategories.Title" xml:space="preserve"><value>تصنيفات الجلسات</value></data>
+  <data name="Admin.Sessions.Field.Type" xml:space="preserve"><value>النوع</value></data>
+  <data name="Admin.Sessions.Field.TypeNone" xml:space="preserve"><value>— بدون نوع —</value></data>
+  <data name="Admin.Sessions.Type.Workshop" xml:space="preserve"><value>ورشة عمل</value></data>
+  <data name="Admin.Sessions.Type.Session" xml:space="preserve"><value>جلسة</value></data>
+  <data name="Admin.Sessions.Type.Event" xml:space="preserve"><value>حدث</value></data>
+  <data name="Module.ProgrammeDays" xml:space="preserve"><value>أيام البرنامج</value></data>
+  <data name="Admin.ProgrammeDays.Title" xml:space="preserve"><value>أيام البرنامج</value></data>
+  <data name="Admin.ProgrammeDays.Loading" xml:space="preserve"><value>جارٍ تحميل أيام البرنامج…</value></data>
+  <data name="Admin.ProgrammeDays.LoadFailed" xml:space="preserve"><value>تعذّر إكمال العملية. يرجى المحاولة مرة أخرى.</value></data>
+  <data name="Admin.ProgrammeDays.None" xml:space="preserve"><value>لم تتم إضافة أي أيام للبرنامج بعد.</value></data>
+  <data name="Admin.ProgrammeDays.Saved" xml:space="preserve"><value>تم حفظ يوم البرنامج.</value></data>
+  <data name="Admin.ProgrammeDays.Deleted" xml:space="preserve"><value>تم تعطيل يوم البرنامج.</value></data>
+  <data name="Admin.ProgrammeDays.Required" xml:space="preserve"><value>العنوان بالإنجليزية والعربية (من 1 إلى 128 حرفاً) مطلوب.</value></data>
+  <data name="Admin.ProgrammeDays.DateRequired" xml:space="preserve"><value>التاريخ مطلوب.</value></data>
+  <data name="Admin.ProgrammeDays.Save" xml:space="preserve"><value>حفظ</value></data>
+  <data name="Admin.ProgrammeDays.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.ProgrammeDays.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Admin.ProgrammeDays.Add.Title" xml:space="preserve"><value>إضافة يوم برنامج</value></data>
+  <data name="Admin.ProgrammeDays.Edit.Title" xml:space="preserve"><value>تعديل يوم البرنامج</value></data>
+  <data name="Admin.ProgrammeDays.Delete.Title" xml:space="preserve"><value>تعطيل يوم البرنامج</value></data>
+  <data name="Admin.ProgrammeDays.Delete.Message" xml:space="preserve"><value>هل تريد تعطيل يوم البرنامج ”{0}“؟ لن يظهر بعد ذلك في التطبيق.</value></data>
+  <data name="Admin.ProgrammeDays.Details.Title" xml:space="preserve"><value>تفاصيل يوم البرنامج</value></data>
+  <data name="Admin.ProgrammeDays.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.ProgrammeDays.Action.Deactivate" xml:space="preserve"><value>تعطيل</value></data>
+  <data name="Admin.ProgrammeDays.Col.Date" xml:space="preserve"><value>التاريخ</value></data>
+  <data name="Admin.ProgrammeDays.Col.TitleEn" xml:space="preserve"><value>العنوان (إنجليزي)</value></data>
+  <data name="Admin.ProgrammeDays.Col.TitleAr" xml:space="preserve"><value>العنوان (عربي)</value></data>
+  <data name="Admin.ProgrammeDays.Col.Order" xml:space="preserve"><value>الترتيب</value></data>
+  <data name="Admin.ProgrammeDays.Col.Image" xml:space="preserve"><value>الشعار</value></data>
+  <data name="Admin.ProgrammeDays.Col.Active" xml:space="preserve"><value>نشط</value></data>
+  <data name="Admin.ProgrammeDays.Image.Set" xml:space="preserve"><value>مُحدّد</value></data>
+  <data name="Admin.ProgrammeDays.Image.None" xml:space="preserve"><value>لا يوجد</value></data>
+  <data name="Admin.ProgrammeDays.Field.Date" xml:space="preserve"><value>التاريخ</value></data>
+  <data name="Admin.ProgrammeDays.Field.TitleEn" xml:space="preserve"><value>العنوان (بالإنجليزية)</value></data>
+  <data name="Admin.ProgrammeDays.Field.TitleAr" xml:space="preserve"><value>العنوان (بالعربية)</value></data>
+  <data name="Admin.ProgrammeDays.Field.DisplayOrder" xml:space="preserve"><value>ترتيب العرض</value></data>
+  <data name="Admin.ProgrammeDays.Field.IsActive" xml:space="preserve"><value>نشط</value></data>
+  <data name="Admin.ProgrammeDays.Field.Logo" xml:space="preserve"><value>شعار اليوم</value></data>
   <data name="Admin.Bookings.Title" xml:space="preserve"><value>اعتماد الحجوزات</value></data>
   <data name="Admin.Bookings.Loading" xml:space="preserve"><value>جارٍ تحميل الحجوزات…</value></data>
   <data name="Admin.Bookings.None" xml:space="preserve"><value>لا توجد حجوزات بانتظار الاعتماد.</value></data>

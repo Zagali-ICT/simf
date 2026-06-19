@@ -12,7 +12,7 @@ import 'package:simf_app/features/sessions/session_detail_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
-SessionDetail _detail() => SessionDetail(
+SessionDetail _detail({String? liveStreamUrl, int? countryId}) => SessionDetail(
       id: 's1',
       code: 'OP-1',
       title: 'Opening',
@@ -22,7 +22,7 @@ SessionDetail _detail() => SessionDetail(
       hallNameArabic: 'القاعة الرئيسية',
       startUtc: DateTime.utc(2026, 11, 23, 6),
       endUtc: DateTime.utc(2026, 11, 23, 7),
-      speakers: const <SessionSpeaker>[
+      speakers: <SessionSpeaker>[
         SessionSpeaker(
           id: 'sp1',
           name: 'Dr Reef',
@@ -31,12 +31,22 @@ SessionDetail _detail() => SessionDetail(
           role: SessionSpeakerRole.speaker,
           title: 'Chief Scientist',
           countryNameEn: 'Saudi Arabia',
+          countryId: countryId,
         ),
       ],
       description: 'Welcome address',
       categoryName: 'Main Session',
       categoryNameArabic: 'جلسة رئيسية',
+      liveStreamUrl: liveStreamUrl,
     );
+
+// The avatar builds the photo URL from the base; the must-override data config
+// provider throws otherwise. The test HTTP client fails the load → placeholder.
+const _testConfig = SimfDataConfig(
+  baseUrl: 'http://test.local/api/v1',
+  appKey: 'test',
+  deviceType: SimfDeviceType.android,
+);
 
 const _seat = MySeat(reservationId: 'r1', rowLabel: 'B', seatNumber: 12);
 
@@ -104,6 +114,13 @@ Future<void> _pump(
   SessionCalendar? calendar,
   Locale locale = const Locale('en'),
 }) async {
+  // A tall surface so the whole lazy ListView (down to the CTA row) lays out —
+  // the restructured frame (header buttons + ask-host card) pushes the lower
+  // sections past the default 800×600 viewport otherwise.
+  tester.view.physicalSize = const Size(1200, 2600);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
   final router = GoRouter(
     initialLocation: '/sessions/s1',
     routes: <RouteBase>[
@@ -125,12 +142,28 @@ Future<void> _pump(
         name: RouteNames.mySeat,
         builder: (_, __) => const Scaffold(body: Text('MY-SEAT')),
       ),
+      GoRoute(
+        path: '/live',
+        name: RouteNames.liveBroadcast,
+        builder: (_, __) => const Scaffold(body: Text('LIVE')),
+      ),
+      GoRoute(
+        path: '/ai-summary',
+        name: RouteNames.aiSummary,
+        builder: (_, __) => const Scaffold(body: Text('AI-SUMMARY')),
+      ),
+      GoRoute(
+        path: '/live/question',
+        name: RouteNames.sendQuestion,
+        builder: (_, __) => const Scaffold(body: Text('SEND-Q')),
+      ),
     ],
   );
 
   await tester.pumpWidget(
     ProviderScope(
       overrides: <Override>[
+        simfDataConfigProvider.overrideWithValue(_testConfig),
         sessionDetailRepositoryProvider.overrideWithValue(repo),
         sessionCalendarProvider
             .overrideWithValue(calendar ?? _FakeCalendar()),
@@ -154,8 +187,8 @@ Future<void> _pump(
 
 void main() {
   group('SessionDetailScreen (Page 017)', () {
-    testWidgets('renders the KSA detail (header card, description, speaker, '
-        'tags, CTAs)', (tester) async {
+    testWidgets('renders the KSA detail (header card, summary button, '
+        'description, speaker, ask-host, CTAs)', (tester) async {
       await _pump(
         tester,
         repo: _FakeDetailRepo(detail: _detail()),
@@ -166,21 +199,77 @@ void main() {
       expect(find.text('Session detail'), findsOneWidget);
       expect(find.text('Opening'), findsOneWidget);
       expect(find.text('OP-1'), findsOneWidget); // the gold index badge
+      // Header action buttons: the summary button always shows; the live link
+      // is hidden because this detail has no liveStreamUrl (Figma 889:2715).
+      expect(find.text('Session summary'), findsOneWidget);
+      expect(find.text('Session link'), findsNothing);
       // Description card + heading.
       expect(find.text('Description'), findsOneWidget);
       expect(find.text('Welcome address'), findsOneWidget);
       // Speakers section + a speaker card.
       expect(find.text('Speakers'), findsOneWidget);
       expect(find.text('Dr Reef'), findsOneWidget);
-      // Hall + category tag pills.
-      expect(find.text('Main Hall'), findsOneWidget);
-      expect(find.text('Main Session'), findsOneWidget);
+      // The ask-the-host card (shown to everyone — Figma 1056:12876).
+      expect(find.text('Ask the host'), findsOneWidget);
       // The two CTAs.
       expect(
         find.widgetWithText(FilledButton, 'Add to calendar'),
         findsOneWidget,
       );
       expect(find.widgetWithText(OutlinedButton, 'Reminder'), findsOneWidget);
+    });
+
+    testWidgets('the live link shows only when the session has a feed, and '
+        'opens the live screen', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeDetailRepo(
+          detail: _detail(liveStreamUrl: 'https://youtu.be/abcdefghijk'),
+        ),
+        controller: _GuestController(),
+      );
+
+      expect(find.text('Session link'), findsOneWidget);
+      await tester.tap(find.text('Session link'));
+      await tester.pumpAndSettle();
+      expect(find.text('LIVE'), findsOneWidget);
+    });
+
+    testWidgets('the summary button opens the AI session summary',
+        (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeDetailRepo(detail: _detail()),
+        controller: _GuestController(),
+      );
+
+      await tester.tap(find.text('Session summary'));
+      await tester.pumpAndSettle();
+      expect(find.text('AI-SUMMARY'), findsOneWidget);
+    });
+
+    testWidgets('the ask-host card opens send-question', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeDetailRepo(detail: _detail()),
+        controller: _GuestController(),
+      );
+
+      await tester.tap(find.text('Ask the host'));
+      await tester.pumpAndSettle();
+      expect(find.text('SEND-Q'), findsOneWidget);
+    });
+
+    testWidgets('a speaker with a country code renders its flag emoji',
+        (tester) async {
+      // 682 = Saudi Arabia → 🇸🇦 (U+1F1F8 U+1F1E6).
+      await _pump(
+        tester,
+        repo: _FakeDetailRepo(detail: _detail(countryId: 682)),
+        controller: _GuestController(),
+      );
+
+      expect(find.text('\u{1F1F8}\u{1F1E6}'), findsOneWidget);
     });
 
     testWidgets('renders the seat card with the gold marker and CTAs together',
@@ -210,9 +299,9 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('PAR-D2/D-extra — RTL: the gold CTA, the speaker role box and '
-        'the seat marker lead at the inline start (right); the chevron trails '
-        '(left)', (tester) async {
+    testWidgets('PAR-D2/D-extra — RTL: the gold CTA and the speaker photo lead '
+        'at the inline start (right); the seat chevron trails (left)',
+        (tester) async {
       tester.view.physicalSize = const Size(1200, 2600);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -224,10 +313,10 @@ void main() {
         locale: const Locale('ar'),
       );
 
-      // Speaker role box (anchor) sits to the right of the speaker name.
-      final anchorDx = tester.getCenter(find.byIcon(Icons.anchor)).dx;
+      // The speaker photo (the only Image) sits to the right of the name.
+      final photoDx = tester.getCenter(find.byType(Image)).dx;
       final nameDx = tester.getCenter(find.text('د. ريف')).dx;
-      expect(anchorDx, greaterThan(nameDx));
+      expect(photoDx, greaterThan(nameDx));
 
       // Gold add-to-calendar (FilledButton) sits to the right of the reminder.
       final filledDx = tester.getCenter(find.byType(FilledButton)).dx;
@@ -236,7 +325,7 @@ void main() {
 
       // The seat-card chevron sits at the inline end (far left).
       final chevronDx = tester.getCenter(find.byIcon(Icons.chevron_left)).dx;
-      expect(chevronDx, lessThan(anchorDx));
+      expect(chevronDx, lessThan(nameDx));
     });
 
     testWidgets('a guest sees no my-seat card', (tester) async {

@@ -20,17 +20,17 @@ final newsListProvider =
   );
 });
 
-/// Page 029 — الأخبار · News (#29, `/news`, Guest+), rebuilt to the KSA
-/// Wave-2 frame **958:2246 "Media coverage"** on the shared navy shell.
+/// Page 029 — الأخبار · News (#29, `/news`, Guest+), rebuilt to the KSA-Project
+/// frame **1049:12629 "Media coverage"** on the shared navy shell.
 ///
-/// **Public.** The frame is the three-tab "التغطية الإعلامية" container —
-/// الأخبار (this screen) · الشركاء الإعلاميون · معرض الصور والفيديوهات. The
-/// News tab is active (gold pill); the two inactive pills navigate to the
-/// existing media-partners (#31) and gallery (#30) routes. The body is the
-/// news list — each row the horizontal frame-957:2197 card (thumbnail + gold
-/// date + title; no excerpt) — and tapping a row pushes the article screen
-/// (`GET /app/news/{id}`). The data contract (`newsListProvider` + tap →
-/// [NewsArticleScreen]) is unchanged.
+/// **Public.** The frame is the two-tab "المركز الاعلامي" (Media center)
+/// container — احدث المستجدات (this screen, active gold) · الشركاء الإعلاميون.
+/// The inactive pill navigates to the media-partners (#31) route. (Figma
+/// 947/1049 dropped the معرض الصور tab; the gallery screen #30 stays in the
+/// app, reached elsewhere.) The body is the news list — each row the horizontal
+/// frame-1049:12736 card (thumbnail + gold date + title; no excerpt) — and
+/// tapping a row pushes the article screen (`GET /app/news/{id}`). The data
+/// contract (`newsListProvider` + tap → [NewsArticleScreen]) is unchanged.
 class NewsScreen extends ConsumerWidget {
   const NewsScreen({super.key});
 
@@ -110,9 +110,10 @@ class NewsScreen extends ConsumerWidget {
   }
 }
 
-/// The three media-coverage tabs (frame node 958:2256): الأخبار (active gold) ·
-/// الشركاء الإعلاميون · معرض الصور والفيديوهات. The active tab is solid gold;
-/// the inactive pills are bordered navy cards that route to their own screens.
+/// The two media-center tabs (Figma 1049:12629): الشركاء الإعلاميون (inactive,
+/// routes to the partners screen) · احدث المستجدات (active gold, this screen).
+/// Shared, identical to `media_partners_screen.dart:_MediaTabs` (the Gallery tab
+/// was dropped from the strip — Figma 947/1049 show two tabs only).
 class _MediaTabs extends StatelessWidget {
   const _MediaTabs({required this.l10n});
 
@@ -120,19 +121,11 @@ class _MediaTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Figma 947:3764 / 958 (Arabic/RTL): the shared tab bar is, right→left,
-    // معرض الصور والفيديوهات · الشركاء الإعلاميون · الأخبار. A Row lays children
-    // start→end, so the order is gallery → partners → news.
+    // Figma 1049:12629 (Arabic/RTL): right→left الشركاء الإعلاميون · احدث المستجدات.
+    // A Row lays children start→end, so under RTL the first child is the
+    // right-most: partners (inactive) then latest-updates (active here).
     return Row(
       children: <Widget>[
-        Expanded(
-          child: _MediaTab(
-            label: l10n.galleryTitle,
-            active: false,
-            onTap: () => context.pushReplacementNamed(RouteNames.gallery),
-          ),
-        ),
-        const SizedBox(width: SimfTokens.space4),
         Expanded(
           child: _MediaTab(
             label: l10n.mediaPartnersTitle,
@@ -142,16 +135,16 @@ class _MediaTabs extends StatelessWidget {
         ),
         const SizedBox(width: SimfTokens.space4),
         Expanded(
-          child: _MediaTab(label: l10n.newsTitle, active: true),
+          child: _MediaTab(label: l10n.latestUpdatesTitle, active: true),
         ),
       ],
     );
   }
 }
 
-/// One media-coverage tab pill (frame nodes 958:2257 / 958:2259 / 958:2261):
-/// the active pill is solid gold with white text; an inactive pill is a navy
-/// card with a beige hairline and beige text.
+/// One media-center tab pill (frame node 1049:12640 / 1049:12642): a 48-high,
+/// 8px-radius pill — active is solid gold with **white** text; inactive is a
+/// transparent pill with a beige 0.2 hairline and beige text.
 class _MediaTab extends StatelessWidget {
   const _MediaTab({required this.label, required this.active, this.onTap});
 
@@ -161,25 +154,37 @@ class _MediaTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return KsaCard(
-      onTap: active ? null : onTap,
-      color: active ? SimfTokens.accent : SimfTokens.navySurface,
-      borderColor: active ? SimfTokens.accent : SimfTokens.beigeBorder,
-      child: SizedBox(
-        height: 48,
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space2),
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: SimfTokens.textSm,
-                fontWeight: FontWeight.w600,
-                // Figma — active gold pill carries dark navy text.
-                color: active ? SimfTokens.navy : SimfTokens.beigeBorder,
+    return Material(
+      color: active ? SimfTokens.accent : Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(SimfTokens.radius),
+        side: active
+            ? BorderSide.none
+            : const BorderSide(
+                color: SimfTokens.beigeBorder,
+                width: SimfTokens.hairline,
+              ),
+      ),
+      child: InkWell(
+        onTap: active ? null : onTap,
+        borderRadius: BorderRadius.circular(SimfTokens.radius),
+        child: SizedBox(
+          height: 48,
+          child: Center(
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: SimfTokens.space2),
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: SimfTokens.textSm,
+                  fontWeight: FontWeight.w600,
+                  // Figma 1049 — the active gold pill carries white text.
+                  color: active ? Colors.white : SimfTokens.beigeBorder,
+                ),
               ),
             ),
           ),

@@ -17,6 +17,12 @@
 > error→retry→refetch, session-row→detail, RTL); the dashboard parser is
 > covered in `src/Mobile/simf_app/test/features/myarea/myarea_models_test.dart`.
 > The old mockup screen + test are parked in `_legacy_mockup/`.
+> **Exact-parity to the LIVE frame 758:1283 (D-447):** جدولي اليوم now splits
+> into a **جلسات** group and a **مقابلات** group, each under its gold
+> sub-header; the two share pills were re-ordered to مشاركة جهة اتصال (right) ·
+> مشاركة ملفي (left); the stat label is **مقابلات** (was "مقابلات مؤكدة"). The
+> owner extras (تحديث صورة الهوية, the Face-ID toggle) and the shell header
+> chrome are kept (beyond the frame, per the owner invariants).
 
 | | |
 |--|--|
@@ -25,7 +31,7 @@
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
 | **Auth setup** | An **Approved** visitor token (sign-up → verify-email → `SetAccountState(Approved)` → sign-in); App-DB rows seeded directly. **No literal secrets.** |
-| **Last reviewed** | 2026-06-16 (D-437 — Update ID photo action; photos-only edit) |
+| **Last reviewed** | 2026-06-19 (D-447 — exact-parity to live frame 758:1283) |
 
 ## Coverage matrix
 
@@ -42,8 +48,47 @@
 | E2E-MOB014-009 | KSA layout: language tile toggles AR/EN; theme tile visible but disabled | happy | P1 | authored ✓ (screen — disabled palette + no tap) |
 | E2E-MOB014-010 | مشاركة ملفي opens the share-my-contact QR screen | happy | P2 | authored ✓ (screen) |
 | E2E-MOB014-011 | **Photos-only profile edit (D-437):** the المزيد section shows an **"Update ID photo"** row that re-uploads the ID document from the gallery (`POST …/user-profile/id-image`), with a success / failure toast; the **face photo (avatar)** is changed via the existing tap-the-avatar flow. Names stay set-at-sign-up (not editable here) | happy | P1 | authored ✓ (screen — the row renders; gallery upload is a platform channel, driven live) |
+| E2E-MOB014-012 | **Face-ID toggle (D-445):** the المزيد section shows an enable/disable **"Face ID sign-in"** switch that **self-hides when the device has no usable biometric**; turning it on enrols a device key (+ success toast), off revokes it (+ toast). Mirrored in the side menu. | happy | P1 | authored ✓ (widget — `FaceIdToggleTile` hidden-when-unavailable / on→enrol+flip / off→revoke+flip) |
+| E2E-MOB014-013 | **جدولي اليوم grouping (758:1283, D-447):** the schedule splits into a "جلسات" group then a "مقابلات" group, each under its gold sub-header; both empty → the no-items placeholder | i18n/visual | P1 | authored ✓ (screen — groups + RTL `dy` order: sessions above meetings) |
+| E2E-MOB014-014 | **Share pills order (758:1305, D-447):** مشاركة جهة اتصال at the inline-start (right), مشاركة ملفي at the end (left) | i18n | P2 | authored ✓ (screen — RTL `getCenter().dx`) |
 
 ## Scenarios
+
+### E2E-MOB014-013 — جدولي اليوم splits into جلسات + مقابلات (758:1283, D-447)
+
+```gherkin
+Scenario: Today's schedule groups sessions and meetings
+  Given an approved visitor whose today's schedule has a session and a meeting
+  When the My-Area screen renders جدولي اليوم
+  Then a gold "جلسات" sub-header sits above the session rows
+  And a gold "مقابلات" sub-header sits above the meeting rows
+  And the جلسات group renders above the مقابلات group
+  And when both groups are empty the "No items today" placeholder is shown instead
+```
+
+### E2E-MOB014-014 — Share pills order (758:1305, D-447)
+
+```gherkin
+Scenario: The two share pills follow the frame order under RTL
+  Given an approved visitor on /my-area in Arabic
+  Then "مشاركة جهة اتصال" is at the inline-start (physical right)
+  And "مشاركة ملفي" is at the end (physical left)
+```
+
+### E2E-MOB014-012 — Face-ID toggle (D-445)
+
+```gherkin
+Scenario: An approved visitor enables/disables Face-ID sign-in from My Area
+  Given an approved visitor on /my-area on a device with a usable biometric
+  Then the المزيد section shows a "Face ID sign-in" / "الدخول ببصمة الوجه" switch, off
+  When they turn it on
+  Then a device key is enrolled and a success toast "Face ID sign-in enabled" is shown
+  When they turn it off
+  Then the device key is revoked and the switch returns to off
+  And on a device with NO usable biometric the switch is not rendered at all
+```
+
+**Evidence:** `biometric_auth_test.dart` — `FaceIdToggleTile` hidden-when-unavailable / toggle-on enrols + flips on / toggle-off revokes + flips off (green). The OS biometric prompt itself is the owner's on-device test.
 
 ### E2E-MOB014-011 — Update ID photo (photos-only edit, D-437)
 
@@ -171,4 +216,4 @@ Scenario: Arabic card renders right-to-left
 
 ---
 
-_Last reviewed:_ `2026-06-05` by `SIMF Team`.
+_Last reviewed:_ `2026-06-19` by `SIMF Team` (D-447).

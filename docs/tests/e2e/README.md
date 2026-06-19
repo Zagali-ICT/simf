@@ -77,6 +77,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/sessions` | [`cp-admin-sessions.md`](cp-admin-sessions.md) | E2E-SES-001..024 |
 | `/admin/sessions/seat-plans` | [`cp-admin-sessions-seat-plans.md`](cp-admin-sessions-seat-plans.md) | E2E-SSP-001..014 |
 | `/admin/session-categories` | [`cp-admin-session-categories.md`](cp-admin-session-categories.md) | E2E-SCT-001..021 |
+| `/admin/programme-days` | [`cp-admin-programme-days.md`](cp-admin-programme-days.md) | E2E-PGD-001..018 |
 | `/admin/session-moderators` | [`cp-admin-session-moderators.md`](cp-admin-session-moderators.md) | E2E-SMD-001..018 |
 | `/admin/programme/timeline` | [`cp-admin-programme-timeline.md`](cp-admin-programme-timeline.md) | E2E-PTL-001..011 |
 | `/admin/bookings` | [`cp-admin-bookings.md`](cp-admin-bookings.md) | E2E-BKG-001..013 |
@@ -174,7 +175,7 @@ API endpoints land (D-249). The per-screen design docs live under
 |------------|------|-----------|
 | #1 `splash` (`POST /app/auth/refresh` + `GET /app/users/me`) | [`mobile-splash.md`](mobile-splash.md) | E2E-MOB001-001..013 |
 | #2 `onboarding` (no API) | [`mobile-onboarding.md`](mobile-onboarding.md) | E2E-MOB002-001..008 |
-| #3 `signIn` (+ verify-otp / forgot / reset) | [`mobile-sign-in.md`](mobile-sign-in.md) | E2E-MOB003-001..013 |
+| #3 `signIn` (+ verify-otp / forgot / reset) | [`mobile-sign-in.md`](mobile-sign-in.md) | E2E-MOB003-001..017 |
 | ~~#4 `signUpType`~~ **REMOVED (D-332)** — invented; not in the mockup | [`mobile-sign-up-type.md`](mobile-sign-up-type.md) | _(retired — E2E-MOB004-* removed)_ |
 | #5 `signUpForm` (`POST /app/auth/sign-up`) | [`mobile-sign-up-form.md`](mobile-sign-up-form.md) | E2E-MOB005-001..008 |
 | #6 `emailOtp` (`verify-email` + `resend-code`) | [`mobile-email-otp.md`](mobile-email-otp.md) | E2E-MOB006-001..008 |
@@ -184,14 +185,14 @@ API endpoints land (D-249). The per-screen design docs live under
 | #10 `registrationSuccess` (no API — static confirmation) | [`mobile-registration-success.md`](mobile-registration-success.md) | E2E-MOB010-001..007 |
 | #11 `registrationStatus` (`GET /app/users/me`) | [`mobile-registration-status.md`](mobile-registration-status.md) | E2E-MOB011-001..007 |
 | #13 `home` (`GET /app/bootstrap`) | [`mobile-home.md`](mobile-home.md) | E2E-MOB013-001..007 |
-| #14 `myArea` (`GET /app/account/dashboard` + `.ics` + `.vcf`) | [`mobile-my-area.md`](mobile-my-area.md) | E2E-MOB014-001..008 |
+| #14 `myArea` (`GET /app/account/dashboard` + `.ics` + `.vcf`) | [`mobile-my-area.md`](mobile-my-area.md) | E2E-MOB014-001..012 |
 | #103 `identityVerification` (`POST /app/account/avatar`) | [`mobile-identity-verification.md`](mobile-identity-verification.md) | E2E-MOBIDV-001..004 |
 | #104 `sessionModerate` (`GET/PUT /app/sessions/{id}/questions/moderate·push·hide`) | [`mobile-session-moderate.md`](mobile-session-moderate.md) | E2E-MOBMOD-001..004 |
 | #105 `gateScanner` (`GET /app/gates/my-assignments` · `POST /app/gates/{id}/scans`) | [`mobile-gate-scan.md`](mobile-gate-scan.md) | E2E-MOBGATE-001..004 |
 | #15 `venueMap` (`GET /app/venue-map` + `/app/booths` + `/{id}`) | [`mobile-venue-map.md`](mobile-venue-map.md) | E2E-MOB015-001..008 |
 | #16 `sessions` (`GET /app/programme/sessions`) | [`mobile-agenda.md`](mobile-agenda.md) | E2E-MOB016-001..013 |
 | #17 `sessionDetail` (`GET /app/programme/sessions/{id}` + `…/sessions/{id}/seats`) | [`mobile-session-detail.md`](mobile-session-detail.md) | E2E-MOB017-001..011 |
-| #18 `mySeat` (`GET /app/sessions/{id}/seats` + reserve/release) | [`mobile-my-seat.md`](mobile-my-seat.md) | E2E-MOB018-001..012 |
+| #18 `mySeat` (`GET /app/sessions/{id}/seats` + reserve/release) | [`mobile-my-seat.md`](mobile-my-seat.md) | E2E-MOB018-001..017 |
 | #19 `speakers` (`GET /app/speakers`) | [`mobile-speakers.md`](mobile-speakers.md) | E2E-MOB019-001..007 |
 | #20 `speakerProfile` (`GET /app/speakers/{id}` + meeting-request) | [`mobile-speaker-profile.md`](mobile-speaker-profile.md) | E2E-MOB020-001..010 |
 | #22 `booths` (`GET /app/booths` + `/{id}`) | [`mobile-booths.md`](mobile-booths.md) | E2E-MOB022-001..005 |

@@ -3,14 +3,23 @@
 > **Authority:** SIMF E2E test catalogue template (D-133 slice 7). Mobile
 > catalogue — Home's on-login bundle (`GET /app/bootstrap`) is built (D-251);
 > the API implementation lives in `tests/SIMF.Api.Tests/AppBootstrapTests.cs`.
-> The **Flutter screen is built** (D-296) and was **rebuilt to the KSA Wave-2
-> frames** (guest = 512:1492, signed-in = 203:1236 — W2 batch): widget tests in
-> `src/Mobile/simf_app/test/features/home/home_screen_test.dart` (guest banner +
-> 2×2 tiles + locked بطاقتي card + sign-in CTA + FAQ→About row, signed-in
-> greeting header + live banner + three tile sections + social row + discover
-> card, unread badge, RTL); the unread-count provider's gating is covered in
+> The **Flutter screen is built** (D-296), and the signed-in layout was
+> **re-laid out to the LIVE Figma frame `758:1134` (exact-parity, D-446)** — the
+> guest layout stays on `512:1492`. Widget tests in
+> `src/Mobile/simf_app/test/features/home/home_screen_test.dart` cover: guest
+> banner + 2×2 tiles + locked بطاقتي card + sign-in CTA + FAQ→About row; the
+> signed-in greeting header + discover hero + live banner; the three **bordered
+> section bars** (عن الملتقى / الرعاة / الأخبار والتغطية, `KsaLinkRow`); the tile
+> groups (المتحدثون·الأجنحة·جلسات + اسأل المحاور; اللقاءات الثنائية·الأرشيف; the
+> smart 2×2); the latest-post card (source row + lead paragraph + the NewsImage
+> via the D-357 route); the social row + discover row; the unread badge; and the
+> **D-436 RTL `getCenter().dx` order assertions**. The unread-count provider's
+> gating is covered in
 > `src/Mobile/simf_app/test/features/notifications/notifications_repository_test.dart`.
-> The old mockup screen + test are parked in `_legacy_mockup/`.
+> The old mockup screen + test are parked in `_legacy_mockup/`. **Phase 2 (not
+> yet built):** the post-card engagement counts (58/340/1.2k, node `758:1252`)
+> need admin-entered count columns on `News` + API/CP — the row stays hidden
+> until the wire carries them (never faked).
 
 | | |
 |--|--|
@@ -19,7 +28,7 @@
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
 | **Auth setup** | A signed-in visitor token (`AuthFlow.SignInVisitorWithoutTwoFactorAsync`); `AuthFlow.SetAccountState` for the approved case. **No literal secrets.** |
-| **Last reviewed** | 2026-06-14 |
+| **Last reviewed** | 2026-06-19 |
 
 ## Coverage matrix
 
@@ -30,14 +39,19 @@
 | E2E-MOB013-003 | Bootstrap reflects an approved account (pending → approved routing) | happy | P0 | authored ✓ (`Bootstrap_reflects_an_approved_account`) |
 | E2E-MOB013-004 | No token → 401 | auth | P0 | authored ✓ (`Bootstrap_without_a_token_returns_401`) |
 | E2E-MOB013-005 | Guest (no token) renders the KSA guest layout, no bootstrap call | happy | P1 | authored ✓ (screen — guest banner + 2×2 tiles + sign-in CTA, no bell) |
-| E2E-MOB013-006 | Privilege from the cached auth session picks the layout | auth | P1 | authored ✓ (screen — signed-in greeting header + tile sections) |
+| E2E-MOB013-006 | Privilege from the cached auth session picks the layout | auth | P1 | authored ✓ (screen — signed-in greeting + 3 section bars + tile groups) |
 | E2E-MOB013-007 | RTL render of Home tiles + bell badge | i18n | P1 | authored ✓ (screen — Arabic RTL + badge hidden/shown) |
 | E2E-MOB013-008 | Locked بطاقتي card is visible but inert as a guest | auth | P1 | authored ✓ (screen — disabled tile ignores taps) |
 | E2E-MOB013-009 | FAQ row opens the About page (no app FAQ endpoint yet) | happy | P2 | authored ✓ (screen) |
 | E2E-MOB013-010 | Social + Visit-Saudi links launch externally; unset URL = inert button | happy | P2 | authored ✓ (screen — 5 brand buttons render; D-369 contract) |
 | E2E-MOB013-011 | Greeting shows the App-profile name, never the email (frame 758:1134, D-408) | happy | P1 | authored ✓ (screen — profile name wins; email fallback suppressed) |
 | E2E-MOB013-012 | Discovery hero banner renders and opens News (node 758:1203, D-408) | happy | P2 | authored ✓ (screen — banner tap → News) |
-| E2E-MOB013-013 | Home tiles render the exact iconify SVG glyphs (frame 758:1134, D-408) | i18n/visual | P2 | authored ✓ (screen — `KsaNavTile.iconAsset`; live render hf-03) |
+| E2E-MOB013-013 | Home tiles render the exact iconify SVG glyphs (frame 758:1134, D-446) | i18n/visual | P2 | authored ✓ (screen — `KsaNavTile.iconAsset`) |
+| E2E-MOB013-014 | أحدث منشوراتنا card: source row + lead paragraph + post image (758:1240, D-446) | happy | P1 | authored ✓ (screen — image via D-357 NewsImage; counts deferred Phase 2) |
+| E2E-MOB013-015 | Section bars open their routes (عن الملتقى→About, الرعاة→Sponsors, الأخبار والتغطية→News) | happy | P1 | authored ✓ (screen — `KsaLinkRow` ×3) |
+| E2E-MOB013-016 | The full-width اسأل المحاور tile opens send-question (1052:12856, D-446) | happy | P1 | authored ✓ (screen — tile → `sendQuestion`) |
+| E2E-MOB013-017 | RTL tile/row order matches the frame (D-436 position assertions) | i18n | P1 | authored ✓ (screen — `getCenter().dx` about/news/smart-row-2) |
+| E2E-MOB013-018 | Discover badge is the filled "السعودية" (signed-in), not "KSA" (758:1280, D-446) | i18n/visual | P2 | authored ✓ (screen) |
 
 ## Scenarios
 
@@ -115,16 +129,20 @@ Scenario: A guest sees the KSA guest home without bootstrapping
 ### E2E-MOB013-006 — Privilege picks the layout
 
 ```gherkin
-Scenario: A signed-in visitor gets the greeting home
+Scenario: A signed-in visitor gets the greeting home (frame 758:1134)
   Given a signed-in user whose cached appRole is "Visitor"
   When Home renders
   Then the greeting header shows the avatar, "صباح الخير/مساء الخير", the
-       user's name, the bell (with the unread badge) and the menu
-  And the red LIVE banner opens the live broadcast
-  And the three tile sections render: عن الملتقى · المحاور (المتحدثون،
-      الأجنحة، الرعاة) / الأخبار والتغطية (اللقاءات الثنائية، الأرشيف) /
-      الميزات الذكية (قابل أشخاص مثلك، المساعد الذكي، ملخص الجلسات،
-      بطاقتي الذكية)
+       user's name, the bell (with the unread badge), the language + inert
+       dark-mode controls and the menu
+  And the discover hero banner and the red LIVE banner render
+  And three bordered section bars render — عن الملتقى, الرعاة, الأخبار والتغطية
+  And the "عن الملتقى" tile group is المتحدثون · الأجنحة · جلسات plus the
+      full-width اسأل المحاور tile
+  And the news tiles render اللقاءات الثنائية · الأرشيف
+  And the "الميزات الذكية" group renders قابل أشخاص مثلك · المساعد الذكي ·
+      ملخص الجلسات · بطاقتي الذكية
+  And the follow-us row and the روح السعودية discover row render
 ```
 
 ### E2E-MOB013-007 — RTL render
@@ -169,18 +187,21 @@ Scenario: Social + Visit-Saudi links open externally
   And a button whose URL is not configured is inert (never a dead link)
 ```
 
-### E2E-MOB013-011 — أحدث منشوراتنا latest-post teaser (frame 522:2345, D-403)
+### E2E-MOB013-014 — أحدث منشوراتنا latest-post teaser (frame 758:1240, D-446)
 
 ```gherkin
 Scenario: Signed-in home shows the latest news post
   Given there is at least one published news item (GET /app/news)
   And the user is signed in (visitor/moderator/staff)
-  When Home loads and the user scrolls past "تابعنا / Follow us"
-  Then the "أحدث منشوراتنا / Latest posts" section is shown
-  And the card shows the SIMF brand mark, the source name, a relative time
-      (just-now / N min / N h / N d ago), the headline and a short excerpt
-  And NO engagement counts and NO post image appear (no backend data — never faked)
-  And the "المزيد / more" link opens the full News list
+  When Home loads and the user scrolls to "أحدث منشوراتنا / Latest posts"
+  Then the section header is shown (no "المزيد" link — the frame omits it)
+  And the card shows, at the inline-end, the gold "SIMF" chip + the source
+      name; at the inline-start the "@SIMF · <relative time>" line
+      (just-now / N min / N h / N d ago)
+  And the lead paragraph (the excerpt, else the title) is shown
+  And the post image is the article's NewsImage asset (D-357 anon route),
+      with a navy image-glyph fallback when none is uploaded
+  And NO engagement counts appear yet (Phase 2 admin-entered data — never faked)
 
 Scenario: Tapping the post opens the article
   Given the latest-post card is visible
@@ -191,10 +212,6 @@ Scenario: No posts hides the section
   Given GET /app/news returns an empty list (or errors)
   When the signed-in Home loads
   Then the أحدث منشوراتنا section is omitted entirely (no empty placeholder)
-
-Scenario: RTL
-  Given the device locale is Arabic
-  Then the card lays out right-to-left with the brand mark at the inline start
 ```
 
 ### E2E-MOB013-011 — Greeting shows the profile name, never the email (D-408)
@@ -237,7 +254,7 @@ Scenario: The banner renders and opens News
   Then the News list opens
 ```
 
-### E2E-MOB013-013 — Tiles render the exact iconify glyphs (frame 758:1134, D-408)
+### E2E-MOB013-013 — Tiles render the exact iconify glyphs (frame 758:1134, D-446)
 
 ```gherkin
 Feature: Home tile icons match the design
@@ -247,14 +264,60 @@ Feature: Home tile icons match the design
 
 Scenario: Each signed-in tile shows its bundled SVG glyph
   Given the signed-in Home is shown
-  Then المتحدثون shows the person glyph, الأجنحة the chart glyph,
-       الرعاة the target glyph
+  Then المتحدثون shows the people glyph (bi:people), الأجنحة the chart glyph,
+       جلسات the target glyph (streamline:target-3)
+  And اسأل المحاور shows the user glyph (solar:user-outline)
   And الأرشيف shows the archive glyph, اللقاءات الثنائية the video glyph
   And المساعد الذكي the message glyph, قابل أشخاص مثلك the users glyph,
        بطاقتي الذكية the card glyph, ملخص الجلسات the new-session glyph
   And each glyph is tinted to the tile foreground (gold when enabled)
 ```
 
+### E2E-MOB013-015 — Section bars open their routes (frame 758:1207/1049:12844/758:1211)
+
+```gherkin
+Feature: The signed-in home section bars are navigable
+  As a signed-in visitor
+  I want the bordered section bars to take me to their pages
+
+Scenario: Each bar opens its destination
+  Given the signed-in Home is shown
+  When the user taps the "عن الملتقى" bar
+  Then the About-the-forum page opens
+  When the user taps the "الرعاة" bar
+  Then the Sponsors page opens
+  When the user taps the "الأخبار والتغطية" bar
+  Then the News list opens
+```
+
+### E2E-MOB013-016 — اسأل المحاور opens send-question (node 1052:12856, D-446)
+
+```gherkin
+Scenario: The full-width اسأل المحاور tile opens the send-question screen
+  Given the signed-in Home is shown
+  When the user taps the full-width "اسأل المحاور" tile
+  Then the send-a-question screen opens (RouteNames.sendQuestion)
+```
+
+### E2E-MOB013-017 — RTL tile/row order matches the frame (D-436)
+
+```gherkin
+Feature: RTL order is proven by position, not by eye (D-436)
+  Given the device locale is Arabic and the signed-in Home is shown
+  Then in the "عن الملتقى" row, المتحدثون is right of الأجنحة right of جلسات
+  And in the news row, اللقاءات الثنائية is right of الأرشيف
+  And in the smart row 2, ملخص الجلسات is right of بطاقتي الذكية
+```
+
+### E2E-MOB013-018 — Discover badge is the filled "السعودية" (node 758:1280, D-446)
+
+```gherkin
+Scenario: Signed-in discover row uses the Arabic filled badge
+  Given the signed-in Home is shown
+  Then the روح السعودية row's gold badge reads "السعودية" (not "KSA")
+  # The guest home keeps the outlined "KSA" badge (frame 758:2910).
+```
+
 ---
 
-_Last reviewed:_ `2026-06-14` by `SIMF Team`.
+_Last reviewed:_ `2026-06-19` by `SIMF Team`.

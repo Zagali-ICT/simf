@@ -366,6 +366,9 @@ public static class DependencyInjection
         // B9b — D-226: dynamic session-category lookup (FDS-004 §5.4).
         services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminSessionCategoryService,
             SIMF.Infrastructure.Programme.AdminSessionCategoryService>();
+        // D-452: programme days (date + title + logo).
+        services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminProgrammeDayService,
+            SIMF.Infrastructure.Programme.AdminProgrammeDayService>();
         // D-202 — Track-2: Statistics dashboard (read-only aggregate) +
         // Exhibitor provisioning.
         services.AddScoped<SIMF.Application.Statistics.Abstractions.IStatisticsService,

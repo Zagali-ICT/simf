@@ -36,7 +36,7 @@
 | **Route** | `GET /api/v1/app/programme/sessions/{id}` · app screen #25 `/live?sessionId=` |
 | **Surface** | Mobile (Flutter) + App API |
 | **Auth setup** | **None** — the read is `AllowAnonymous` (a guest can watch). |
-| **Last reviewed** | 2026-06-16 |
+| **Last reviewed** | 2026-06-19 |
 
 ## Coverage matrix
 
@@ -306,11 +306,11 @@ Scenario: The caption follows the active locale (fallback to the other side)
 **Evidence:** `LiveSession.localizedCaption(isArabic)` (active-locale value, falls
 back to the other when blank, null when both empty) → `_PlayerSurface(caption:)`
 → `_CaptionStrip` renders `caption ?? hint`, white when a real caption is present
-and muted (`onGoldMuted`) for the placeholder. The strip is built only on the
-live-feed branch (`mainUrl != null`). Provider stubbed — the text is an admin-set
-field on the session (manual entry for the POC). Frame node 934:3613. Widget
-tests: `live_broadcast_screen_test.dart` (`P5 — …` cases).
+and the frame's soft caption colour (`captionText` = #DDE4F0) for the placeholder.
+The strip is built only on the live-feed branch (`mainUrl != null`). Provider
+stubbed — the text is an admin-set field on the session (manual entry for the POC).
+Frame node 934:3613. Widget tests: `live_broadcast_screen_test.dart` (`P5 — …` cases).
 
 ---
 
-_Last reviewed:_ `2026-06-16` by `SIMF Team`.
+_Last reviewed:_ `2026-06-19` by `SIMF Team`.

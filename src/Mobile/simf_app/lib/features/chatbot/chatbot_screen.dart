@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart' show SimfBackButton;
+import '../../app/widgets/ksa_shell.dart';
 
 /// The seam that turns a user prompt into an assistant reply.
 ///
@@ -48,13 +48,15 @@ class _ChatMessage {
 
 /// Page 036 — المساعد الذكي · AI assistant (#36, `/chatbot`, Guest+).
 ///
-/// **Public.** Honest **interim** chat shell: a scrolling transcript (user
-/// bubbles right, assistant bubbles left) + a bottom input row. On send the
-/// user message is appended, then an assistant reply from the overridable
-/// [chatbotResponderProvider] seam — whose default returns a fixed bilingual
-/// canned notice. There is **no backend chatbot endpoint** (verified), so this
-/// screen makes **no API call**. A one-time preview banner sits at the top. UI
-/// is interim (final visuals from SIMF-VID-001).
+/// **Public.** Pixel-parity to KSA Figma frame `1064:13066`: the navy
+/// [KsaPage] shell, a scrolling transcript (assistant bubbles left + gold "AI"
+/// badge, user bubbles right + gold fill), the horizontal quick-reply chips
+/// (frame `1070:13389`) and the bottom input bar (frame `1070:13398`). The
+/// opening transcript is the scripted demo the Figma shows — there is **no
+/// backend chatbot endpoint** (verified), so a new prompt (typed or a chip) is
+/// echoed as a user bubble and answered by the overridable
+/// [chatbotResponderProvider] seam, whose default returns a canned bilingual
+/// notice. The screen makes **no API call**.
 class ChatbotScreen extends ConsumerStatefulWidget {
   const ChatbotScreen({super.key});
 
@@ -65,9 +67,10 @@ class ChatbotScreen extends ConsumerStatefulWidget {
 class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
   final TextEditingController _input = TextEditingController();
   final ScrollController _scroll = ScrollController();
-  final List<_ChatMessage> _messages = <_ChatMessage>[];
+
+  /// User/assistant lines added after the scripted opening transcript.
+  final List<_ChatMessage> _added = <_ChatMessage>[];
   bool _sending = false;
-  bool _bannerVisible = true;
 
   @override
   void dispose() {
@@ -76,25 +79,35 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
     super.dispose();
   }
 
-  Future<void> _send(bool isArabic) async {
-    final prompt = _input.text.trim();
-    if (prompt.isEmpty || _sending) {
+  /// The scripted opening transcript (frame `1064:13066`). Built from l10n each
+  /// render so it re-translates on an AR↔EN toggle.
+  List<_ChatMessage> _seed(AppL10n l10n) => <_ChatMessage>[
+        _ChatMessage(_ChatAuthor.assistant, l10n.chatbotGreeting),
+        _ChatMessage(_ChatAuthor.user, l10n.chatbotSeedQ1),
+        _ChatMessage(_ChatAuthor.assistant, l10n.chatbotSeedA1),
+        _ChatMessage(_ChatAuthor.user, l10n.chatbotSeedQ2),
+        _ChatMessage(_ChatAuthor.assistant, l10n.chatbotSeedA2),
+      ];
+
+  Future<void> _send(String prompt, bool isArabic) async {
+    final text = prompt.trim();
+    if (text.isEmpty || _sending) {
       return;
     }
     final responder = ref.read(chatbotResponderProvider);
     setState(() {
-      _messages.add(_ChatMessage(_ChatAuthor.user, prompt));
+      _added.add(_ChatMessage(_ChatAuthor.user, text));
       _input.clear();
       _sending = true;
     });
     _scrollToEnd();
 
-    final answer = await responder.reply(prompt, isArabic: isArabic);
+    final answer = await responder.reply(text, isArabic: isArabic);
     if (!mounted) {
       return;
     }
     setState(() {
-      _messages.add(_ChatMessage(_ChatAuthor.assistant, answer));
+      _added.add(_ChatMessage(_ChatAuthor.assistant, answer));
       _sending = false;
     });
     _scrollToEnd();
@@ -111,85 +124,45 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return Scaffold(
-      appBar: AppBar(
-        leading: const SimfBackButton(),
-        title: Text(l10n.chatbotTitle),
-      ),
-      body: SafeArea(
-        child: Column(
-          children: <Widget>[
-            if (_bannerVisible)
-              _PreviewBanner(
-                message: l10n.chatbotPreviewBanner,
-                onDismiss: () => setState(() => _bannerVisible = false),
-              ),
-            Expanded(
-              child: _messages.isEmpty
-                  ? _Empty(message: l10n.chatbotEmpty)
-                  : ListView.builder(
-                      controller: _scroll,
-                      padding: const EdgeInsets.all(SimfTokens.space4),
-                      itemCount: _messages.length,
-                      itemBuilder: (_, index) =>
-                          _Bubble(message: _messages[index]),
-                    ),
+    final messages = <_ChatMessage>[..._seed(l10n), ..._added];
+    return KsaPage(
+      title: l10n.chatbotTitle,
+      onBack: () => ksaBackOrHome(context),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Expanded(
+            child: ListView.builder(
+              controller: _scroll,
+              padding: const EdgeInsets.all(SimfTokens.space4),
+              itemCount: messages.length,
+              itemBuilder: (_, index) => _Bubble(message: messages[index]),
             ),
-            _Composer(
+          ),
+          _QuickReplies(
+            labels: <String>[
+              l10n.chatbotChipMeeting,
+              l10n.chatbotChipUpcoming,
+              l10n.chatbotChipSami,
+              l10n.chatbotChipToday,
+            ],
+            onTap: (label) => unawaited(_send(label, l10n.isArabic)),
+          ),
+          const SizedBox(height: SimfTokens.space3),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              SimfTokens.space4,
+              0,
+              SimfTokens.space4,
+              SimfTokens.space3,
+            ),
+            child: _Composer(
               controller: _input,
               hint: l10n.chatbotInputHint,
               sendTooltip: l10n.chatbotSendTooltip,
               sending: _sending,
-              onSend: () => unawaited(_send(l10n.isArabic)),
+              onSend: () => unawaited(_send(_input.text, l10n.isArabic)),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// The dismissible one-time notice that the assistant is in preview.
-class _PreviewBanner extends StatelessWidget {
-  const _PreviewBanner({required this.message, required this.onDismiss});
-
-  final String message;
-  final VoidCallback onDismiss;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        color: SimfTokens.surfaceTint,
-        border: Border(bottom: BorderSide(color: SimfTokens.line2)),
-      ),
-      padding: const EdgeInsets.symmetric(
-        horizontal: SimfTokens.space4,
-        vertical: SimfTokens.space3,
-      ),
-      child: Row(
-        children: <Widget>[
-          const Icon(
-            Icons.info_outline,
-            size: 18,
-            color: SimfTokens.accent,
-          ),
-          const SizedBox(width: SimfTokens.space2),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(
-                color: SimfTokens.txtSecondary,
-                fontSize: SimfTokens.textSm,
-              ),
-            ),
-          ),
-          IconButton(
-            onPressed: onDismiss,
-            icon: const Icon(Icons.close, size: 18),
-            color: SimfTokens.txtTertiary,
-            visualDensity: VisualDensity.compact,
           ),
         ],
       ),
@@ -197,12 +170,17 @@ class _PreviewBanner extends StatelessWidget {
   }
 }
 
-/// One chat bubble: user → right + accent + navy text, assistant → left +
-/// navy-surface fill + line2 hairline + surface text, prefixed by an "AI" pill.
+/// One chat bubble — pinned to match the Figma regardless of locale: assistant
+/// bubbles to the left (navy-deep fill + a top-end gold "AI" badge, frame
+/// `1064:13275`), user bubbles to the right (gold fill, frame `1064:13280`).
+/// The small 2px corner is the inner-bottom tail in each case.
 class _Bubble extends StatelessWidget {
   const _Bubble({required this.message});
 
   final _ChatMessage message;
+
+  static const Radius _r = Radius.circular(SimfTokens.radius); // 8 — large corners
+  static const Radius _tail = Radius.circular(2); // Figma bubble tail
 
   @override
   Widget build(BuildContext context) {
@@ -210,35 +188,28 @@ class _Bubble extends StatelessWidget {
     final text = Text(
       message.text,
       style: TextStyle(
-        color: isUser ? SimfTokens.navy : SimfTokens.surface,
-        fontSize: SimfTokens.textSm,
-        height: 1.55,
+        color: isUser ? Colors.white : SimfTokens.chatBubbleText,
+        fontSize: SimfTokens.textMd,
+        height: 1.5,
         fontWeight: isUser ? FontWeight.w600 : FontWeight.w400,
       ),
     );
     return Align(
-      alignment: isUser
-          ? AlignmentDirectional.centerEnd
-          : AlignmentDirectional.centerStart,
+      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.only(bottom: SimfTokens.space2),
+        margin: const EdgeInsets.only(bottom: SimfTokens.space3),
         padding: const EdgeInsets.symmetric(
-          horizontal: SimfTokens.space3,
-          vertical: SimfTokens.space2,
+          horizontal: SimfTokens.space3 + 3, // ≈15 (frame text inset)
+          vertical: SimfTokens.space3,
         ),
-        constraints: const BoxConstraints(maxWidth: 280),
+        constraints: const BoxConstraints(maxWidth: 288),
         decoration: BoxDecoration(
-          color: isUser ? SimfTokens.accent : SimfTokens.surfaceTint,
-          border: isUser ? null : Border.all(color: SimfTokens.line2),
-          borderRadius: BorderRadiusDirectional.only(
-            topStart: const Radius.circular(SimfTokens.radiusLarge),
-            topEnd: const Radius.circular(SimfTokens.radiusLarge),
-            bottomStart: Radius.circular(
-              isUser ? SimfTokens.radiusSmall : SimfTokens.radiusLarge,
-            ),
-            bottomEnd: Radius.circular(
-              isUser ? SimfTokens.radiusLarge : SimfTokens.radiusSmall,
-            ),
+          color: isUser ? SimfTokens.accent : SimfTokens.navyDeep,
+          borderRadius: BorderRadius.only(
+            topLeft: _r,
+            topRight: _r,
+            bottomLeft: isUser ? _tail : _r,
+            bottomRight: isUser ? _r : _tail,
           ),
         ),
         child: isUser
@@ -247,7 +218,7 @@ class _Bubble extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  const _AiPill(),
+                  const _AiBadge(),
                   const SizedBox(width: SimfTokens.space2),
                   Flexible(child: text),
                 ],
@@ -257,16 +228,17 @@ class _Bubble extends StatelessWidget {
   }
 }
 
-/// The small "AI" tag the mockup prefixes every assistant bubble with.
-class _AiPill extends StatelessWidget {
-  const _AiPill();
+/// The gold "AI" tag prefixing every assistant bubble (frame `1064:13276`):
+/// a gold pill, white bold "AI" at 12px.
+class _AiBadge extends StatelessWidget {
+  const _AiBadge();
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: SimfTokens.space1,
-        vertical: 1,
+        horizontal: SimfTokens.space2,
+        vertical: 2,
       ),
       decoration: BoxDecoration(
         color: SimfTokens.accent,
@@ -275,17 +247,81 @@ class _AiPill extends StatelessWidget {
       child: const Text(
         'AI',
         style: TextStyle(
-          color: SimfTokens.navy,
-          fontSize: 8.5,
+          color: Colors.white,
+          fontSize: SimfTokens.textSm,
+          height: 16 / 12,
           fontWeight: FontWeight.w700,
-          letterSpacing: 0.4,
         ),
       ),
     );
   }
 }
 
-/// The bottom input row: a text field + a send button (spinner while sending).
+/// The horizontal quick-reply chip strip (frame `1070:13389`): beige-hairline
+/// pills, beige 12px SemiBold text, scrolls past the screen edge. Tapping one
+/// sends it as the next prompt.
+class _QuickReplies extends StatelessWidget {
+  const _QuickReplies({required this.labels, required this.onTap});
+
+  final List<String> labels;
+  final ValueChanged<String> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 34,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
+        itemCount: labels.length,
+        separatorBuilder: (_, __) => const SizedBox(width: SimfTokens.space2),
+        itemBuilder: (_, index) => _QuickReplyChip(
+          label: labels[index],
+          onTap: () => onTap(labels[index]),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickReplyChip extends StatelessWidget {
+  const _QuickReplyChip({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(SimfTokens.radius),
+      child: Container(
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space3),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: SimfTokens.beigeBorder,
+            width: SimfTokens.hairline,
+          ),
+          borderRadius: BorderRadius.circular(SimfTokens.radius),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            color: SimfTokens.beigeBorder,
+            fontSize: SimfTokens.textSm,
+            height: 18 / 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The bottom input bar (frame `1070:13398`): a navy-deep bar with the beige
+/// hairline, the placeholder at the inline end and the gold send square at the
+/// inline start (a spinner replaces the glyph while sending).
 class _Composer extends StatelessWidget {
   const _Composer({
     required this.controller,
@@ -303,83 +339,76 @@ class _Composer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(SimfTokens.space3),
-      child: Container(
-        decoration: BoxDecoration(
-          color: SimfTokens.surfaceTint,
-          border: Border.all(color: SimfTokens.line2),
-          borderRadius: BorderRadius.circular(999),
+    return Container(
+      constraints: const BoxConstraints(minHeight: 48),
+      padding: const EdgeInsets.symmetric(
+        horizontal: SimfTokens.space4,
+        vertical: SimfTokens.space2,
+      ),
+      decoration: BoxDecoration(
+        color: SimfTokens.navyDeep,
+        border: Border.all(
+          color: SimfTokens.beigeBorder,
+          width: SimfTokens.hairline,
         ),
-        padding: const EdgeInsetsDirectional.only(
-          start: SimfTokens.space4,
-          end: SimfTokens.space1,
-        ),
-        child: Row(
-          children: <Widget>[
-            Expanded(
-              child: TextField(
-                controller: controller,
-                minLines: 1,
-                maxLines: 4,
-                textInputAction: TextInputAction.send,
-                style: const TextStyle(
-                  color: SimfTokens.surface,
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+      ),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: TextField(
+              controller: controller,
+              minLines: 1,
+              maxLines: 4,
+              textInputAction: TextInputAction.send,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: SimfTokens.textSm,
+              ),
+              onSubmitted: (_) => onSend(),
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: const TextStyle(
+                  color: Colors.white,
                   fontSize: SimfTokens.textSm,
                 ),
-                onSubmitted: (_) => onSend(),
-                decoration: InputDecoration(
-                  hintText: hint,
-                  hintStyle: const TextStyle(
-                    color: SimfTokens.txtTertiary,
-                    fontSize: SimfTokens.textSm,
-                  ),
-                  isCollapsed: true,
-                  filled: false,
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(
-                    vertical: SimfTokens.space2,
-                  ),
+                isCollapsed: true,
+                filled: false,
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: SimfTokens.space2,
                 ),
               ),
             ),
-            const SizedBox(width: SimfTokens.space2),
-            IconButton.filled(
-              tooltip: sendTooltip,
-              onPressed: sending ? null : onSend,
-              icon: sending
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.send, size: 18),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _Empty extends StatelessWidget {
-  const _Empty({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          const Icon(
-            Icons.smart_toy_outlined,
-            size: 56,
-            color: SimfTokens.txtTertiary,
           ),
-          const SizedBox(height: SimfTokens.space3),
-          Text(message, style: const TextStyle(color: SimfTokens.txtTertiary)),
+          const SizedBox(width: SimfTokens.space2),
+          Semantics(
+            button: true,
+            label: sendTooltip,
+            child: InkWell(
+              onTap: sending ? null : onSend,
+              borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+              child: Container(
+                width: 24,
+                height: 24,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: SimfTokens.accent,
+                  borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+                ),
+                child: sending
+                    ? const SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.send, size: 14, color: Colors.white),
+              ),
+            ),
+          ),
         ],
       ),
     );

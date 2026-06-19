@@ -4,6 +4,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/country_flag_badge.dart';
 import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import 'data/sponsor_models.dart';
@@ -93,6 +94,7 @@ class SponsorsScreen extends ConsumerWidget {
                       secondary:
                           sponsor.localizedTagline(isArabic) ?? sponsor.url,
                       hero: i == 0,
+                      countryId: sponsor.countryId,
                     ),
                     const SizedBox(height: SimfTokens.space4),
                   ],
@@ -156,6 +158,7 @@ class _SponsorCard extends StatelessWidget {
     required this.badge,
     required this.secondary,
     required this.hero,
+    required this.countryId,
   });
 
   final String id;
@@ -164,10 +167,14 @@ class _SponsorCard extends StatelessWidget {
   final String badge;
   final String? secondary;
   final bool hero;
+  final int? countryId;
 
   @override
   Widget build(BuildContext context) {
-    final Color nameColor = hero ? SimfTokens.navy : Colors.white;
+    // Frame 922:2824 — the sponsor name is white on BOTH the gold hero card
+    // (925:2979 `text-white`) and the navy premium card; only the secondary
+    // line changes colour with the card.
+    const Color nameColor = Colors.white;
     final Color subColor = hero ? SimfTokens.navyDeep : SimfTokens.beigeBorder;
     return KsaCard(
       color: hero ? SimfTokens.accent : SimfTokens.navyDeep,
@@ -183,13 +190,16 @@ class _SponsorCard extends StatelessWidget {
               // it, and the forward chevron on the far inline-end (physical
               // left). The bundled caret does not auto-mirror, so it keeps
               // pointing left as the design shows.
-              _BadgeBox(
-                hero: hero,
-                child: _SponsorLogo(
-                  id: id,
-                  baseUrl: baseUrl,
-                  fallbackInitials: badge,
+              CountryFlagBadge(
+                countryId: countryId,
+                child: _BadgeBox(
                   hero: hero,
+                  child: _SponsorLogo(
+                    id: id,
+                    baseUrl: baseUrl,
+                    fallbackInitials: badge,
+                    hero: hero,
+                  ),
                 ),
               ),
               const SizedBox(width: SimfTokens.space2),
@@ -333,57 +343,67 @@ class _SponsorGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.count(
-      crossAxisCount: 3,
+    // Frame 922:2824 (925:3030..) — 3 columns, 16px row gap, 8px column gap,
+    // each tile a fixed 72-high card.
+    return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: SimfTokens.space4,
-      crossAxisSpacing: SimfTokens.space4,
-      childAspectRatio: 0.82,
-      children: <Widget>[
-        for (final sponsor in sponsors)
-          _SponsorGridTile(
-            id: sponsor.id,
-            baseUrl: baseUrl,
-            name: sponsor.localizedName(isArabic),
-            initials: SponsorsScreen._badgeText(sponsor, isArabic),
-          ),
-      ],
+      padding: EdgeInsets.zero,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisSpacing: SimfTokens.space4,
+        crossAxisSpacing: SimfTokens.space2,
+        mainAxisExtent: 72,
+      ),
+      itemCount: sponsors.length,
+      itemBuilder: (context, i) => _SponsorGridTile(
+        id: sponsors[i].id,
+        baseUrl: baseUrl,
+        name: sponsors[i].localizedName(isArabic),
+        initials: SponsorsScreen._badgeText(sponsors[i], isArabic),
+        countryId: sponsors[i].countryId,
+      ),
     );
   }
 }
 
-/// One gold-tier grid tile (frame 922:2824): a navy logo box (beige hairline)
-/// over the sponsor name. The logo fills the box; initials are the fallback.
+/// One gold-tier grid tile (frame 925:3031): a single 72-high navy card on the
+/// beige hairline holding the sponsor logo above its name (12px SemiBold white,
+/// centred). The logo fills the area above the name; initials are the fallback.
 class _SponsorGridTile extends StatelessWidget {
   const _SponsorGridTile({
     required this.id,
     required this.baseUrl,
     required this.name,
     required this.initials,
+    required this.countryId,
   });
 
   final String id;
   final String baseUrl;
   final String name;
   final String initials;
+  final int? countryId;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        Expanded(
-          child: Container(
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              color: SimfTokens.navyDeep,
-              borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-              border: Border.all(
-                color: SimfTokens.beigeBorder,
-                width: SimfTokens.hairline,
-              ),
-            ),
+    return CountryFlagBadge(
+      countryId: countryId,
+      child: Container(
+      clipBehavior: Clip.antiAlias,
+      padding: const EdgeInsets.all(SimfTokens.space2),
+      decoration: BoxDecoration(
+        color: SimfTokens.navyDeep,
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        border: Border.all(
+          color: SimfTokens.beigeBorder,
+          width: SimfTokens.hairline,
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Expanded(
             child: _SponsorLogo(
               id: id,
               baseUrl: baseUrl,
@@ -391,19 +411,21 @@ class _SponsorGridTile extends StatelessWidget {
               hero: false,
             ),
           ),
-        ),
-        const SizedBox(height: SimfTokens.space2),
-        Text(
-          name,
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: SimfTokens.beigeBorder,
-            fontSize: SimfTokens.textXs,
+          const SizedBox(height: SimfTokens.space2),
+          Text(
+            name,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              fontSize: SimfTokens.textSm,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
+      ),
     );
   }
 }

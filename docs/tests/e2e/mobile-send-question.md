@@ -9,14 +9,20 @@
 > 400 not-open toast, generic error toast). It reuses the shipped wire contract
 > (no new API).
 >
-> **Figma re-skin (frame `934:3636` "Live Video" — ask-a-question portion):** the
-> screen was rebuilt to the KSA-Project frame on the shared `KsaPage` shell — the
-> "الاسئلة" / Questions section label (`945:3756`), a tinted navy multiline question
-> box (`934:3668`, `اكتب سؤالك هنا…` placeholder, `maxLength=500`), a gold full-width
-> "ارسال السؤال" / Send question submit (`942:3746`), and a centred gold-bulleted
-> "ملاحظة" / Note review note (`943:3750`). The old Speaker/Host recipient selector
-> was **removed**; the form now submits to the default recipient (Speaker = 0) and
-> the `recipient` wire field is preserved.
+> **Figma re-skin (frame `934:3636` "معلومات عن الجلسة"):** the screen was rebuilt
+> to the KSA-Project frame on the shared `KsaPage` shell. The page is now titled
+> **"معلومات عن الجلسة" / "Session information"** and shows a **"بيانات الجلسة" /
+> "Session details" block** (`1049:12590`) — the session description rendered as a
+> right-aligned **numbered list** (one entry per non-blank description line) — above
+> the question composer: the "الاسئلة" / Questions section label (`945:3756`), a
+> tinted **borderless** navy multiline question box (`934:3668`, `اكتب سؤالك هنا…`
+> placeholder, `maxLength=500`), a gold full-width submit (`942:3746`), and a centred
+> gold-bulleted "ملاحظة" / Note review note (`943:3750`). The session-data block
+> reads the **anonymous** detail (`GET /app/programme/sessions/{id}` — the shipped
+> endpoint, **no new API**) and is **non-blocking context**: a failed read just hides
+> the block and the composer still works. The old Speaker/Host recipient selector was
+> **removed**; the form submits to the default recipient (Speaker = 0) and the
+> `recipient` wire field is preserved.
 
 | | |
 |--|--|
@@ -24,7 +30,7 @@
 | **Route** | `POST /api/v1/app/sessions/{sessionId}/questions` · app screen #26 `/live/question?sessionId={id}` |
 | **Surface** | Mobile (Flutter) + App API |
 | **Auth setup** | **Approved account** — the route is auth-gated and the endpoint is `RequireApprovedAccount`. Auth-setup via the `Get-Totp` helper for an admin, or a visitor email-OTP session. |
-| **Last reviewed** | 2026-06-16 |
+| **Last reviewed** | 2026-06-19 |
 
 ## Coverage matrix
 
@@ -39,6 +45,8 @@
 | E2E-MOB026-007 | Figma form chrome — الاسئلة label + tinted box + gold submit + ملاحظة note all render | layout | P1 | _to author_ |
 | E2E-MOB026-008 | Question box accepts multiline + `اكتب سؤالك هنا…` placeholder, caps at 500 chars | layout | P1 | _to author_ |
 | E2E-MOB026-009 | No recipient selector is shown; submit still posts default recipient (Speaker=0) | edge | P0 | _to author_ |
+| E2E-MOB026-010 | بيانات الجلسة block renders the session description as a numbered list | layout | P1 | authored ✓ (screen `renders the بيانات الجلسة block as a numbered list`) |
+| E2E-MOB026-011 | Session-detail read fails → block hidden, composer still works | resilience | P1 | authored ✓ (screen `hides the بيانات الجلسة block when the detail read fails`) |
 
 ## Scenarios
 
@@ -104,9 +112,9 @@ not-open toast as the 400 (the screen treats both as "not currently open").
 ```gherkin
 Scenario: Arabic renders right-to-left
   Given the app locale is Arabic
-  Then the title shows "إرسال سؤال"
-  And the recipient pills show المتحدث / المضيف
-  And the layout is right-to-left
+  Then the title shows "معلومات عن الجلسة"
+  And the "بيانات الجلسة" section header + the "الاسئلة" composer lay out right-to-left
+  And there is no recipient selector
 ```
 
 **Evidence:** the l10n getters pair AR/EN (`sendQuestion*`); `Directionality`
@@ -166,6 +174,34 @@ shipped wire contract (D-169/D-174). Note: scenario E2E-MOB026-002 above still
 describes the old Host-pill path for the pre-re-skin contract; the picker is now
 gone, so the live path is recipient=0.
 
+### E2E-MOB026-010 — بيانات الجلسة block (numbered session data)
+
+```gherkin
+Scenario: The session-data block renders the description as a numbered list
+  Given the screen is opened with a live session id
+  And GET /api/v1/app/programme/sessions/{id} returns a description with
+    two non-blank lines ("First point", "Second point")
+  Then a "بيانات الجلسة" (EN "Session details") header is shown above the composer
+  And the lines render as a right-aligned numbered list: "1." First point, "2." Second point
+  And the "الاسئلة" composer renders below the block
+```
+
+**Evidence:** screen test `renders the بيانات الجلسة block as a numbered list`
+(`_SessionDataBlock` + `_NumberedLine`, fed by `SessionDetail.localizedDescription`).
+
+### E2E-MOB026-011 — Session-detail read fails → block hidden, composer works
+
+```gherkin
+Scenario: A failed session-detail read hides the block, not the composer
+  Given the screen is opened with a live session id
+  And GET /api/v1/app/programme/sessions/{id} fails (e.g. 500 / transport)
+  Then no "بيانات الجلسة" block is shown
+  And the question composer (field + gold submit + note) still renders and works
+```
+
+**Evidence:** screen test `hides the بيانات الجلسة block when the detail read fails`;
+`_loadDetail` swallows `ApiFailure` (the block is optional context).
+
 ---
 
-_Last reviewed:_ `2026-06-16` by `SIMF Team`.
+_Last reviewed:_ `2026-06-19` by `SIMF Team`.

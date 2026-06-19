@@ -86,7 +86,8 @@ internal sealed class AdminSessionService(
                 session.IsActive,
                 session.CreatedAt,
                 session.CategoryId,
-                session.Status))
+                session.Status,
+                session.Type))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminSessionSummary>.Of(page, total,
@@ -143,6 +144,8 @@ internal sealed class AdminSessionService(
             DescriptionArabic = NullIfBlank(request.DescriptionArabic),
             HallId = hall.Id,
             CategoryId = request.CategoryId,
+            // D-452 — session type for the app's type tabs.
+            Type = request.Type,
             StartUtc = request.StartUtc,
             EndUtc = request.EndUtc,
             CapacityOverride = request.CapacityOverride,
@@ -238,6 +241,7 @@ internal sealed class AdminSessionService(
         session.DescriptionArabic = NullIfBlank(request.DescriptionArabic);
         session.HallId = hall.Id;
         session.CategoryId = request.CategoryId;
+        session.Type = request.Type; // D-452
         session.StartUtc = request.StartUtc;
         session.EndUtc = request.EndUtc;
         session.CapacityOverride = request.CapacityOverride;
@@ -690,6 +694,8 @@ internal sealed class AdminSessionService(
             session.LiveSignLanguageUrl,
             // P5 — D-439: AI live-caption text.
             session.LiveCaptions,
-            session.LiveCaptionsArabic);
+            session.LiveCaptionsArabic,
+            // D-452 — session type for the app's type tabs.
+            session.Type);
     }
 }

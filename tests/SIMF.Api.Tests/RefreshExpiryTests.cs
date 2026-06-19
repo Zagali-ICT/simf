@@ -28,8 +28,8 @@ public sealed class RefreshExpiryTests : IClassFixture<SimfApiFactory>
     {
         var tokens = await AuthFlow.SignInVisitorAsync(_client, _factory);
 
-        // The refresh token lives 30 days — move past it.
-        _factory.Time.Advance(TimeSpan.FromDays(31));
+        // D-443 — the refresh token now lives an absolute 24h; move past it.
+        _factory.Time.Advance(TimeSpan.FromHours(25));
 
         var response = await _client.PostAsJsonAsync(
             "/api/v1/app/auth/refresh",

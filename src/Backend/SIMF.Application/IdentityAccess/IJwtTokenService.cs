@@ -26,4 +26,11 @@ public interface IJwtTokenService
     /// carries no roles / permissions / security-stamp, so it cannot be replayed
     /// against any other endpoint. Lifetime is <c>Jwt:StreamTokenMinutes</c>.</summary>
     AccessToken CreateRecordingStreamToken(Guid sessionId);
+
+    /// <summary>D-443 (NCA finding): the absolute session lifetime
+    /// (<c>Jwt:SessionLifetimeHours</c>, default 24h) — how long after sign-in
+    /// the refresh-token chain stays valid. The issue sites stamp a new token's
+    /// <c>ExpiresAt</c> from this; rotation carries that deadline forward rather
+    /// than extending it, so the session is capped at this span from sign-in.</summary>
+    TimeSpan RefreshTokenLifetime { get; }
 }

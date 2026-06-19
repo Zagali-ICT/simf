@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/widgets/ksa_shell.dart';
 import 'package:simf_app/features/home/home_screen.dart';
 import 'package:simf_app/features/myarea/data/myarea_models.dart';
 import 'package:simf_app/features/news/data/news_models.dart';
@@ -12,6 +13,15 @@ import 'package:simf_app/features/news/news_screen.dart' show newsListProvider;
 import 'package:simf_app/features/notifications/data/notification_models.dart';
 import 'package:simf_app/features/notifications/data/notifications_repository.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
+import 'package:simf_data_pkg/simf_data_pkg.dart';
+
+// The post card builds `{base}/app/assets/NewsImage/{id}/image`; the test
+// network-image loads fail, so the image's errorBuilder shows the fallback.
+const _testConfig = SimfDataConfig(
+  baseUrl: 'http://test.local/api/v1',
+  appKey: 'test',
+  deviceType: SimfDeviceType.android,
+);
 
 CurrentUser _visitor() => CurrentUser(
       id: 'u1',
@@ -140,6 +150,7 @@ Future<void> _pump(
         (RouteNames.badge, '/badge', 'BADGE'),
         (RouteNames.news, '/news', 'NEWS'),
         (RouteNames.more, '/more', 'MORE'),
+        (RouteNames.sendQuestion, '/send-question', 'SEND-QUESTION'),
         (RouteNames.notifications, '/notifications', 'NOTIFICATIONS'),
         (RouteNames.liveBroadcast, '/live', 'LIVE'),
         (RouteNames.signIn, '/sign-in', 'SIGN-IN'),
@@ -157,6 +168,7 @@ Future<void> _pump(
     ProviderScope(
       overrides: <Override>[
         authControllerProvider.overrideWith(() => controller),
+        simfDataConfigProvider.overrideWithValue(_testConfig),
         notificationsRepositoryProvider
             .overrideWithValue(_FakeNotificationsRepository(unread)),
         newsListProvider.overrideWith((ref) async => news),
@@ -189,6 +201,12 @@ void main() {
       expect(find.text('Sessions'), findsOneWidget);
       expect(find.text('Speakers'), findsOneWidget);
       expect(find.text('Exhibition'), findsOneWidget);
+      // The guest tiles use the exact Figma SVG glyphs now (frame 758:2910),
+      // not the old Material icons.
+      expect(find.byIcon(Icons.mic_none_outlined), findsNothing);
+      expect(find.byIcon(Icons.calendar_today_outlined), findsNothing);
+      expect(find.byIcon(Icons.map_outlined), findsNothing);
+      expect(find.byIcon(Icons.grid_view_outlined), findsNothing);
       // The lower content mounts as the list scrolls.
       for (final below in <String>[
         'My badge', // the locked بطاقتي card — visible but inert
@@ -209,10 +227,14 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       expect(find.widgetWithText(FilledButton, 'Sign in'), findsOneWidget);
-      // The shared shell's top controller (notifications + ☰) is on every
-      // KsaPage including the guest home (D-395; owner: same top bar on all
-      // pages). Tapping the bell on a guest just routes through the auth gate.
-      expect(find.byTooltip('Notifications'), findsOneWidget);
+      // The guest home shows NO notifications bell (owner 2026-06-18): the
+      // Figma content/guest frames carry no bell — it lives only on the
+      // signed-in home greeting header. The shared ☰ + language + dark-mode
+      // controls remain on the guest top bar.
+      expect(find.byTooltip('Notifications'), findsNothing);
+      expect(find.byIcon(Icons.menu), findsOneWidget);
+      expect(find.byIcon(Icons.language), findsOneWidget);
+      expect(find.byIcon(Icons.dark_mode_outlined), findsOneWidget);
     });
 
     testWidgets('a public tile navigates to its route', (tester) async {
@@ -265,15 +287,18 @@ void main() {
     });
   });
 
-  group('HomeScreen — signed-in layout (frame 203:1236)', () {
-    testWidgets('shows the greeting header, live banner and all three tile '
-        'sections', (tester) async {
+  group('HomeScreen — signed-in layout (frame 758:1134)', () {
+    testWidgets('shows the greeting header, live banner, the section bars and '
+        'every tile section', (tester) async {
       await _pump(tester, controller: _SignedInController());
 
       expect(find.textContaining('Ahmed Mohammed'), findsOneWidget);
       expect(find.byTooltip('Notifications'), findsOneWidget);
       expect(find.text('LIVE'), findsOneWidget);
-      expect(find.text('About the forum · Themes'), findsOneWidget);
+      // "عن الملتقى" is now a bordered nav row (KsaLinkRow), not a text header.
+      // (The full three-bar count is asserted on a tall surface in the RTL
+      // group, where every off-screen bar is built.)
+      expect(find.text('About the forum'), findsOneWidget);
       // The lower sections mount lazily; drag through the list and collect every
       // label seen (robust to overshoot, unlike per-item scrollUntilVisible).
       final scrollable = find.byType(Scrollable).first;
@@ -289,13 +314,14 @@ void main() {
         await tester.pump();
       }
       for (final section in <String>[
-        'News & coverage',
+        'Sessions', // جلسات (new about tile)
+        'Ask the moderator', // اسأل المحاور (new full-width tile)
+        'News & coverage', // الأخبار والتغطية bar
+        'Sponsors', // الرعاة bar
         'Bilateral meetings',
         'Smart features',
         'Session summaries',
         'Follow us',
-        // The bottom discover row (the 'Discover' header text is not unique — it
-        // also titles the top hero banner, frame 758:1203).
         'Spirit of Saudi',
       ]) {
         expect(seen, contains(section), reason: 'missing section: $section');
@@ -342,6 +368,49 @@ void main() {
       expect(find.text('NEWS'), findsOneWidget);
     });
 
+    testWidgets('the "عن الملتقى" bar opens the About page (758:1207)',
+        (tester) async {
+      await _pump(tester, controller: _SignedInController());
+      await tester.tap(find.text('About the forum'));
+      await tester.pumpAndSettle();
+      expect(find.text('ABOUT'), findsOneWidget);
+    });
+
+    testWidgets('the full-width "اسأل المحاور" tile opens send-question '
+        '(1052:12856)', (tester) async {
+      // A tall surface renders the full-width tile fully on-screen (a scrolled
+      // tile can land under the bottom nav bar and miss the hit test).
+      tester.view.physicalSize = const Size(412, 2800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await _pump(tester, controller: _SignedInController());
+      await tester.tap(find.text('Ask the moderator'));
+      await tester.pumpAndSettle();
+      expect(find.text('SEND-QUESTION'), findsOneWidget);
+    });
+
+    testWidgets('the "الرعاة" section bar opens Sponsors (1049:12844)',
+        (tester) async {
+      tester.view.physicalSize = const Size(412, 2800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await _pump(tester, controller: _SignedInController());
+      await tester.tap(find.text('Sponsors'));
+      await tester.pumpAndSettle();
+      expect(find.text('SPONSORS'), findsOneWidget);
+    });
+
+    testWidgets('the "الأخبار والتغطية" section bar opens News (758:1211)',
+        (tester) async {
+      tester.view.physicalSize = const Size(412, 2800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await _pump(tester, controller: _SignedInController());
+      await tester.tap(find.text('News & coverage'));
+      await tester.pumpAndSettle();
+      expect(find.text('NEWS'), findsOneWidget);
+    });
+
     testWidgets('unread badge shows the count when greater than 0',
         (tester) async {
       await _pump(tester, controller: _SignedInController(), unread: 3);
@@ -350,8 +419,7 @@ void main() {
       expect((badge.label! as Text).data, '3');
     });
 
-    testWidgets('bell opens notifications; a smart tile opens its route',
-        (tester) async {
+    testWidgets('bell opens notifications', (tester) async {
       await _pump(tester, controller: _SignedInController());
 
       await tester.tap(find.byTooltip('Notifications'));
@@ -387,11 +455,11 @@ void main() {
     });
 
     testWidgets('the أحدث منشوراتنا card renders the latest post '
-        '(frame 522:2345)', (tester) async {
+        '(frame 758:1240)', (tester) async {
       await _pump(
         tester,
         controller: _SignedInController(),
-        news: <NewsListItem>[_post(title: 'Forum opens 2026')],
+        news: <NewsListItem>[_post()],
       );
 
       await tester.scrollUntilVisible(
@@ -400,13 +468,14 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       expect(find.text('Latest posts'), findsOneWidget);
-      expect(find.text('Forum opens 2026'), findsOneWidget);
-      // Source label is shown; engagement counts are NOT (no data — never faked).
-      expect(find.text('Saudi Maritime Forum'), findsOneWidget);
+      // The frame's lead paragraph is the excerpt (not the title); the bold line
+      // is the source name. Engagement counts are NOT shown (Phase 2 data).
+      expect(find.text('The opening session begins now.'), findsOneWidget);
+      expect(find.text('The Maritime Forum'), findsOneWidget);
       // The card is tappable (→ the article screen, same push as the news list).
       expect(
         find.ancestor(
-          of: find.text('Forum opens 2026'),
+          of: find.text('The opening session begins now.'),
           matching: find.byType(InkWell),
         ),
         findsWidgets,
@@ -439,6 +508,62 @@ void main() {
         homePostTime(l10n, base.subtract(const Duration(days: 2)), base),
         '2 d ago',
       );
+    });
+  });
+
+  // D-436 — every RTL ordering claim is proven with a getCenter().dx position
+  // test, never by eye. A tall surface renders the whole list so every tile is
+  // laid out without scrolling.
+  group('HomeScreen — RTL tile/row order (Arabic, frame 758:1134)', () {
+    Future<void> pumpTall(WidgetTester tester) async {
+      tester.view.physicalSize = const Size(412, 2800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await _pump(
+        tester,
+        controller: _SignedInController(),
+        news: <NewsListItem>[_post()],
+        locale: const Locale('ar'),
+      );
+    }
+
+    testWidgets('about tiles: المتحدثون (right) · الأجنحة · الجلسات (left)',
+        (tester) async {
+      await pumpTall(tester);
+      final speakers = tester.getCenter(find.text('المتحدثون')).dx;
+      final booths = tester.getCenter(find.text('الأجنحة')).dx;
+      final sessions = tester.getCenter(find.text('الجلسات')).dx;
+      expect(speakers, greaterThan(booths));
+      expect(booths, greaterThan(sessions));
+    });
+
+    testWidgets('news tiles: اللقاءات الثنائية (right) · الأرشيف (left)',
+        (tester) async {
+      await pumpTall(tester);
+      final bilateral = tester.getCenter(find.text('اللقاءات الثنائية')).dx;
+      final archive = tester.getCenter(find.text('الأرشيف')).dx;
+      expect(bilateral, greaterThan(archive));
+    });
+
+    testWidgets('smart row 2: بطاقتي الذكية (left) · ملخص الجلسات (right)',
+        (tester) async {
+      await pumpTall(tester);
+      final badge = tester.getCenter(find.text('بطاقتي الذكية')).dx;
+      final summary = tester.getCenter(find.text('ملخص الجلسات')).dx;
+      expect(summary, greaterThan(badge));
+    });
+
+    testWidgets('section bars render with the title at the start (right)',
+        (tester) async {
+      await pumpTall(tester);
+      // The three bordered bars exist with the correct Arabic titles.
+      expect(find.byType(KsaLinkRow), findsNWidgets(3));
+      expect(find.text('عن الملتقى'), findsOneWidget);
+      expect(find.text('الرعاة'), findsOneWidget);
+      expect(find.text('الأخبار والتغطية'), findsOneWidget);
+      // The discover badge is the filled "السعودية", not "KSA" (758:1280).
+      expect(find.text('السعودية'), findsOneWidget);
+      expect(find.text('KSA'), findsNothing);
     });
   });
 }

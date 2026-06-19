@@ -14,6 +14,7 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_logo.dart';
 import '../../app/widgets/simf_svg_icon.dart';
+import 'biometric_auth.dart';
 import 'post_auth_route.dart';
 
 // Screen-local shorthands for the KSA-Project design tokens. The palette was
@@ -126,7 +127,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       if (state is AuthStateAwaitingOtp) {
         context.goNamed(RouteNames.verifyOtp);
       } else if (state is AuthStateSignedIn) {
-        _onSignedIn();
+        await _onSignedIn();
       }
     } on AuthFailure catch (failure) {
       if (!mounted) {
@@ -145,29 +146,15 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     }
   }
 
-  void _onSignedIn() {
-    // Best-effort enrolment for future Face-ID sign-in; uses the
-    // container-level controller so it survives this screen's disposal.
-    unawaited(
-      _maybeEnrolBiometric(ref.read(authControllerProvider.notifier)),
-    );
-    // D-374 — the profileComplete flag rides the sign-in hydration, so the
-    // shared post-auth rule routes directly (the old getMyProfile probe is
-    // gone); the same rule runs after the 2FA OTP step and the splash restore.
-    routeAfterAuth(context, ref);
-  }
-
-  Future<void> _maybeEnrolBiometric(AuthController notifier) async {
-    try {
-      if (await notifier.hasEnrolledDeviceKey()) {
-        return;
-      }
-      if (!await _localAuth.isDeviceSupported()) {
-        return;
-      }
-      await notifier.enrolDeviceKey();
-    } catch (_) {
-      // Enrolment is best-effort; never block sign-in on it.
+  Future<void> _onSignedIn() async {
+    // One-time offer to enable Face-ID for next time (D-441) — runs on both the
+    // direct sign-in (here) and the 2FA OTP completion, so every path can
+    // activate it. Then route: D-374 — the profileComplete flag rides the
+    // sign-in hydration, so the shared post-auth rule routes directly (the same
+    // rule runs after the OTP step and the splash restore).
+    await maybeOfferBiometricEnrolment(context, ref);
+    if (mounted) {
+      routeAfterAuth(context, ref);
     }
   }
 

@@ -66,6 +66,10 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
   String? _accessToken;
   String? _refreshToken;
 
+  // Single-flight guard for [refresh] — the in-flight refresh Future shared by
+  // every concurrent 401 caller. See [refresh].
+  Future<bool>? _refreshInFlight;
+
   final DeviceKeyClient _deviceKeyClient = const DeviceKeyClient();
 
   @override
@@ -92,7 +96,21 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
   String? currentAccessToken() => _accessToken;
 
   @override
-  Future<bool> refresh() async {
+  Future<bool> refresh() {
+    // Single-flight (D-443): when several requests 401 at the same moment —
+    // e.g. the home screen's parallel loads right after the 5-min access token
+    // lapses — they must share ONE refresh, not each rotate the same refresh
+    // token. Without this the second rotation presents an already-rotated token
+    // and the server's reuse-detection revokes the whole session, signing an
+    // active user out mid-use. Serialising the refresh is the standard
+    // OAuth / MSAL guidance for concurrent 401s. The shared Future is cleared
+    // when it settles so the next genuine expiry refreshes again.
+    return _refreshInFlight ??= _refreshOnce().whenComplete(() {
+      _refreshInFlight = null;
+    });
+  }
+
+  Future<bool> _refreshOnce() async {
     final refreshToken = _refreshToken;
     if (refreshToken == null || refreshToken.isEmpty) {
       return false;
@@ -294,6 +312,34 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
     await _persistSession(session);
     _setSignedIn(session);
     await reloadCurrentUser();
+  }
+
+  /// Turns Face-ID sign-in off on this device: best-effort revokes the key on
+  /// the server, then clears the local id + private key so the biometric path
+  /// is disabled regardless of whether the server call succeeded.
+  Future<void> disableDeviceKey() async {
+    final id = await _secureStorage.read(StorageKeys.deviceKeyId);
+    if (id != null && id.isNotEmpty) {
+      try {
+        await _repository.revokeDeviceKey(id);
+      } catch (_) {
+        // Best-effort: clearing the local key below disables the biometric
+        // path even if the server revoke fails (the orphaned server key is
+        // unusable without the private key we are about to delete).
+      }
+    }
+    // Clear both local keys independently, so a failure on one delete does not
+    // skip the other (either left behind would keep the biometric path alive).
+    try {
+      await _secureStorage.delete(StorageKeys.deviceKeyId);
+    } catch (_) {
+      // best-effort
+    }
+    try {
+      await _secureStorage.delete(StorageKeys.deviceKeyPrivate);
+    } catch (_) {
+      // best-effort
+    }
   }
 
   // ----- internals ---------------------------------------------------------

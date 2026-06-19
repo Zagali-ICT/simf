@@ -21,6 +21,17 @@ class SessionsRepository {
       decodeData: (data) => SessionsPage.fromJson(data).items,
     );
   }
+
+  /// `GET /app/programme/days` (D-452) → the day-grouped programme (envelope
+  /// `PublicProgrammeDays = { days: [...] }`): each day with its bilingual
+  /// title, a has-logo flag, and the day's sessions. Drives the Sessions
+  /// screen's day banner ("تفاصيل اليوم"), the day strip and the type tabs.
+  Future<List<ProgrammeDay>> getDays() {
+    return _client.get<List<ProgrammeDay>>(
+      '/app/programme/days',
+      decodeData: (data) => ProgrammeDaysPage.fromJson(data).days,
+    );
+  }
 }
 
 final sessionsRepositoryProvider = Provider<SessionsRepository>((ref) {

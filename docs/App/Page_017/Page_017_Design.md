@@ -5,20 +5,25 @@ Arabic-primary.
 
 ## Layout (top → bottom, from the mockup)
 1. **App bar** — back chevron + title `تفاصيل الجلسة`.
-2. **Header band** (`ag-d-head`) —
-   - **index** chip (`02`),
-   - **meta** line: weekday · date (`الإثنين · 03 نوفمبر`) `·` time window
-     (`09:00 — 10:30`),
-   - **title** (`h2`),
-   - **tags row** (`ag-d-tags`): a **hall** pill with a pin glyph
-     (`القاعة الرئيسية · HALL A`) + a **category** pill (`جلسة رئيسية`).
+2. **Header card** (frame 889:2716, navy `#192B41`) —
+   - **title** (`h2`) + a gold 40×40 **index** badge (`02`, LTR) on the same row,
+   - **meta** line: time window (`09:00 — 10:30`, LTR) `·` weekday · date
+     (`الإثنين · 03 نوفمبر`),
+   - **action row** (frame 889:2715): **`رابط الجلسة`** (beige hairline, white —
+     shown **only when `liveStreamUrl` is non-null**, opens Live 25) + **`ملخص
+     الجلسة`** (gold hairline, gold text — always shown, opens AI summary 34). The
+     prior hall/category tag pills are **removed** in the restructured frame.
 3. **Body** (`ag-d-body`), stacked sections (`ag-d-sec`):
-   - **وصف الجلسة** — heading + description paragraph.
-   - **المتحدثون** — heading + speaker cards (`ag-d-spk` → `sp`): round avatar +
-     name (`b`) + rank/role (`small`, e.g. `القبطان البحري · RSNF`, host = `المضيف`).
-     The avatar is the speaker **photo** (`photoRelativePath`); a small **country
-     flag** (from `countryId`) sits on the card with the country name as
-     tooltip / fallback (D-271). Each card is tappable → Speaker profile (20).
+   - **وصف الجلسة** — heading + description paragraph (hidden when null).
+   - **المتحدثون** — heading + speaker cards (frame 889:2722): a 40×40 rounded
+     **photo** (`photoRelativePath` via the `SpeakerPhoto` asset, beige hairline,
+     person-glyph fallback) at the inline-end, with the name (`b`) + the **country
+     flag** emoji (from `countryId`, D-271 — rendered by `core/country_flag.dart`)
+     over the rank (`small`, e.g. `القبطان البحري`, host = `المضيف`). Each card is
+     tappable → Speaker profile (20).
+   - **اسأل المحاور** (frame 1056:12876) — a full-width navy card (centred user
+     glyph over the label) shown to everyone → Send question (26); a guest tapping
+     it is routed to sign-in by the auth gate.
    - **مقعدي** *(login + reservation only)* — a **brass-bordered** card
      (`ag-d-seat`): a small seat glyph + `الصف <span dir="ltr">B</span> · مقعد
      <span dir="ltr">12</span>` + a sub-line (`تأكد من إبراز بطاقتك عند الدخول`) +
@@ -35,8 +40,12 @@ Arabic-primary.
   `seatNumber` → `مقعد …`. **Render the card only when `myCell != null`** (and the
   caller is an approved signed-in account). The `عرض ←` link routes to
   `/sessions/:sessionId/my-seat`, reusing the same seat-map payload.
-- **Category pill** renders only when `categoryName` is present (the "main
-  session" / type tag).
+- **Action buttons** — **`رابط الجلسة`** renders only when `liveStreamUrl` is
+  non-null → `/live?sessionId={id}` (Live 25); **`ملخص الجلسة`** always renders →
+  `/ai-summary?sessionId={id}` (AI summary 34). The prior category/hall tag pills
+  are gone (restructured frame).
+- **`اسأل المحاور`** card → `/live/question?sessionId={id}` (Send question 26);
+  always rendered, the route's own auth gate routes a guest to sign-in.
 - **Speaker card** binds to the cached `speakers[]`: **avatar** ←
   `photoRelativePath` (placeholder when null), **flag** ← `countryId` (the client
   maps the id → a flag asset; hide when null), **country label / tooltip** ←

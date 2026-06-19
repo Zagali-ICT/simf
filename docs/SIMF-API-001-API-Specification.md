@@ -286,15 +286,19 @@ Sign-in is email and password. There is no Nafath and no Face ID (confirmed
 On a successful sign-in the API returns an access token and a refresh token.
 
 - The **access token** is a JWT. It carries the user id, the user type and the
-  granted permissions, and it expires 30 minutes after issue.
+  granted permissions, and it expires 5 minutes after issue (D-443).
 - The **refresh token** is opaque to the client. It is exchanged for a new
   access token. Refresh tokens rotate: each refresh issues a new refresh token
   and invalidates the one used.
-- A **session** stays valid for 30 days. After that the user signs in again.
+- A **session** stays valid for an **absolute 24 hours** from sign-in (D-443).
+  Rotation carries the original deadline forward — it does not slide — so the
+  session is capped at 24 hours even for a continuously active user; after that
+  the user signs in again.
 
-These three values come from the technology proposal. They are treated as
-confirmed; if the owner wants different values, they change here and nowhere
-else.
+These values were tightened from the technology proposal (30 min / 30 days) to
+the security-review caps (D-443: access ≤ 5 min, session ≤ 1 day). They are
+configurable via `Jwt:AccessTokenMinutes` and `Jwt:SessionLifetimeHours`; if the
+owner wants different values, they change there and nowhere else.
 
 ### 12.3 Administrative sign-in and TOTP
 
@@ -415,7 +419,7 @@ Success for a standard user — 200:
     "accessToken": "<jwt>",
     "refreshToken": "<opaque>",
     "tokenType": "Bearer",
-    "accessTokenExpiresInSeconds": 1800,
+    "accessTokenExpiresInSeconds": 300,
     "user": {
       "id": "8a3f...",
       "email": "r.alsalem@example.sa",
@@ -479,7 +483,7 @@ Success — 200: the same token payload as sign-in. The refresh token in the
 response is new; the one in the request is now invalid.
 
 Failure: `AUTH_REFRESH_TOKEN_INVALID` (401);
-`AUTH_REFRESH_TOKEN_EXPIRED` (401) — the 30-day session has ended; the user
+`AUTH_REFRESH_TOKEN_EXPIRED` (401) — the 24-hour session has ended; the user
 signs in again.
 
 #### POST /auth/sign-out
@@ -522,7 +526,7 @@ item OI-2.
 | `AUTH_MFA_TOKEN_EXPIRED` | 400 | The MFA continuation token has expired. |
 | `AUTH_TOTP_INVALID` | 400 | The TOTP code is wrong. |
 | `AUTH_REFRESH_TOKEN_INVALID` | 401 | The refresh token is not valid. |
-| `AUTH_REFRESH_TOKEN_EXPIRED` | 401 | The 30-day session has ended. |
+| `AUTH_REFRESH_TOKEN_EXPIRED` | 401 | The 24-hour session has ended. |
 | `RATE_LIMIT_EXCEEDED` | 429 | Too many requests. |
 
 ### 12.7 Password reset

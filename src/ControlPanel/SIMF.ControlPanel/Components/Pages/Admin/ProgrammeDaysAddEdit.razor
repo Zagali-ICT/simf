@@ -1,0 +1,189 @@
+@* D-452 — reusable programme-day Add/Edit form, hosted by CrudShell (popup or
+   full page) from ProgrammeDaysList. Inherits CrudAddEditFormBase so it exposes
+   the standard CRUD-form surface (IsEdit / Initial / OnSuccess / OnCancel).
+   IsEdit=false runs Create (POST); IsEdit=true runs Edit (PUT against Initial),
+   shows the IsActive checkbox, and exposes the logo upload (the day row must
+   exist before bytes can be attached — D-357 ProgrammeDayImage owned by Id). *@
+@inherits CrudAddEditFormBase<AdminProgrammeDayDetail>
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+<div class="simf-form">
+    <div class="simf-form__fields">
+        <label class="simf-field">
+            <span class="simf-field__label">@L["Admin.ProgrammeDays.Field.Date"]</span>
+            <input class="simf-field__input" type="date"
+                   value="@_dateText"
+                   @onchange="OnDateChanged"
+                   disabled="@_busy" />
+        </label>
+        <SimfTextField Label="@L["Admin.ProgrammeDays.Field.TitleEn"]"
+                       MaxLength="128"
+                       Value="@_model.Title"
+                       ValueChanged="@(v => _model.Title = v)"
+                       ValueExpression="@(() => _model.Title)"
+                       Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.ProgrammeDays.Field.TitleAr"]"
+                       MaxLength="128"
+                       Value="@_model.TitleArabic"
+                       ValueChanged="@(v => _model.TitleArabic = v)"
+                       ValueExpression="@(() => _model.TitleArabic)"
+                       Disabled="_busy" />
+        <label class="simf-field">
+            <span class="simf-field__label">@L["Admin.ProgrammeDays.Field.DisplayOrder"]</span>
+            <input class="simf-field__input" type="number" min="0" max="99999"
+                   value="@_model.DisplayOrder"
+                   @onchange="OnDisplayOrderChanged"
+                   disabled="@_busy" />
+        </label>
+        @if (IsEdit)
+        {
+            <SimfCheckbox Value="_model.IsActive"
+                          ValueChanged="@(v => _model.IsActive = v)"
+                          Disabled="_busy">
+                @L["Admin.ProgrammeDays.Field.IsActive"]
+            </SimfCheckbox>
+        }
+        @* D-357 — logo via the unified media-asset pipeline (edit only; the row
+           must exist before bytes can be attached). *@
+        @if (IsEdit && Initial is not null)
+        {
+            <div class="simf-field">
+                <span class="simf-field__label">@L["Admin.ProgrammeDays.Field.Logo"]</span>
+                <SimfImageUpload Category="ProgrammeDayImage" OwnerId="@Initial.Id" Alt="@_model.Title" />
+            </div>
+        }
+    </div>
+    <div class="simf-form__actions">
+        <SimfButton Type="button" OnClick="HandleSubmitAsync"
+                    Loading="_busy" LoadingLabel="@L["Admin.ProgrammeDays.Save"]">
+            @L["Admin.ProgrammeDays.Save"]
+        </SimfButton>
+        @if (OnCancel.HasDelegate)
+        {
+            <SimfButton Type="button" Variant="secondary"
+                        Disabled="_busy" OnClick="OnCancel">
+                @L["Admin.ProgrammeDays.Cancel"]
+            </SimfButton>
+        }
+    </div>
+</div>
+
+@code {
+    private readonly Model _model = new();
+    private bool _busy;
+    private string? _error;
+
+    // The <input type="date"> value mirror — the yyyy-MM-dd text the browser
+    // exchanges, round-tripped against the DateOnly on the form model.
+    private string _dateText = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        if (Initial is not null)
+        {
+            _model.Date = Initial.Date;
+            _model.Title = Initial.Title;
+            _model.TitleArabic = Initial.TitleArabic;
+            _model.DisplayOrder = Initial.DisplayOrder;
+            _model.IsActive = Initial.IsActive;
+        }
+        _dateText = _model.Date == default
+            ? string.Empty
+            : _model.Date.ToString("yyyy-MM-dd");
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (_busy) return;
+        _error = null;
+
+        if (string.IsNullOrWhiteSpace(_model.Title) || _model.Title.Length > 128
+            || string.IsNullOrWhiteSpace(_model.TitleArabic) || _model.TitleArabic.Length > 128)
+        {
+            _error = L["Admin.ProgrammeDays.Required"]; return;
+        }
+        if (_model.Date == default)
+        {
+            _error = L["Admin.ProgrammeDays.DateRequired"]; return;
+        }
+
+        _busy = true;
+        try
+        {
+            ApiResult<AdminProgrammeDayDetail>? envelope;
+            if (!IsEdit)
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminProgrammeDayDetail>>(
+                    "simfAccount.postJson", "/account/api/admin/programme-days",
+                    new AdminCreateProgrammeDayRequest
+                    {
+                        Date = _model.Date,
+                        Title = _model.Title.Trim(),
+                        TitleArabic = _model.TitleArabic.Trim(),
+                        DisplayOrder = _model.DisplayOrder,
+                    });
+            }
+            else
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminProgrammeDayDetail>>(
+                    "simfAccount.putJson", $"/account/api/admin/programme-days/{Initial!.Id}",
+                    new AdminUpdateProgrammeDayRequest
+                    {
+                        Date = _model.Date,
+                        Title = _model.Title.Trim(),
+                        TitleArabic = _model.TitleArabic.Trim(),
+                        DisplayOrder = _model.DisplayOrder,
+                        IsActive = _model.IsActive,
+                    });
+            }
+
+            if (envelope is { Success: true, Data: not null })
+            {
+                await OnSuccess.InvokeAsync(envelope.Data);
+            }
+            else
+            {
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.ProgrammeDays.LoadFailed"];
+            }
+        }
+        catch (Exception)
+        {
+            _error = L["Admin.ProgrammeDays.LoadFailed"];
+        }
+        finally { _busy = false; }
+    }
+
+    private void OnDateChanged(ChangeEventArgs e)
+    {
+        var raw = e.Value?.ToString();
+        if (string.IsNullOrWhiteSpace(raw)
+            || !DateOnly.TryParse(raw, CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out var parsed))
+        {
+            return;
+        }
+        _model.Date = parsed;
+        _dateText = parsed.ToString("yyyy-MM-dd");
+    }
+
+    private void OnDisplayOrderChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var n) && n >= 0) _model.DisplayOrder = n;
+    }
+
+    private sealed class Model
+    {
+        public DateOnly Date { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string TitleArabic { get; set; } = string.Empty;
+        public int DisplayOrder { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+}

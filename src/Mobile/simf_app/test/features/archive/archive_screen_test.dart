@@ -164,13 +164,14 @@ void main() {
       expect(find.text('Riyadh'), findsOneWidget);
       expect(find.text('November 2024'), findsOneWidget);
 
-      // Stat tiles: speakers / attendees / sessions of the selected edition.
+      // Stat tiles: the frame shows TWO — speakers (250) + activities (30).
+      // The الحضور/attendees tile (375) was dropped to match the frame (D-453).
       expect(find.text('250'), findsOneWidget);
-      expect(find.text('375'), findsOneWidget);
       expect(find.text('30'), findsOneWidget);
       expect(find.text('Speakers'), findsOneWidget);
-      expect(find.text('Attendees'), findsOneWidget);
       expect(find.text('Activities'), findsOneWidget);
+      expect(find.text('Attendees'), findsNothing);
+      expect(find.text('375'), findsNothing);
     });
 
     testWidgets('tapping another edition pill switches the shown detail',
@@ -217,7 +218,7 @@ void main() {
       expect(urls, isNot(contains('archive/2024/legacy.jpg')));
     });
 
-    testWidgets('PAR-A1 — RTL: stat tiles run events → attendees → speakers '
+    testWidgets('PAR-A1 — RTL: the two stat tiles run activities → speakers '
         '(right → left), matching the frame', (tester) async {
       await _pump(
         tester,

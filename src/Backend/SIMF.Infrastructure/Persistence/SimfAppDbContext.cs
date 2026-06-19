@@ -54,6 +54,9 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
     /// <summary>P2.3 — D-228 (FR-407): speaker presentation files.</summary>
     public DbSet<SpeakerPresentation> SpeakerPresentations => Set<SpeakerPresentation>();
 
+    /// <summary>D-452 — forum programme days (date + bilingual title + logo).</summary>
+    public DbSet<ProgrammeDay> ProgrammeDays => Set<ProgrammeDay>();
+
     /// <summary>D-165 (gap doc G3, PDF §2.9) — scheduled run-of-show talks.</summary>
     public DbSet<Session> Sessions => Set<Session>();
     public DbSet<SessionSpeaker> SessionSpeakers => Set<SessionSpeaker>();

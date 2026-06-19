@@ -438,6 +438,21 @@ class AppL10n {
         'Sign in with your password once on this device to enable face login.',
       );
 
+  // Face-ID activation — the side-menu toggle + the one-time post-sign-in
+  // prompt (D-441).
+  String get biometricEnableToggle => _t('الدخول ببصمة الوجه', 'Face ID sign-in');
+  String get biometricPromptBody => _t(
+        'استخدم بصمتك للدخول في المرة القادمة دون كلمة المرور.',
+        'Use your face or fingerprint to sign in next time — no password needed.',
+      );
+  String get biometricPromptEnable => _t('تفعيل', 'Enable');
+  String get biometricEnabledToast =>
+      _t('تم تفعيل الدخول بالبصمة', 'Face ID sign-in enabled');
+  String get biometricEnableFailedToast =>
+      _t('تعذّر تفعيل الدخول بالبصمة', "Couldn't enable Face ID sign-in");
+  String get biometricDisabledToast =>
+      _t('تم إيقاف الدخول بالبصمة', 'Face ID sign-in turned off');
+
   // Email-OTP second factor + reset flow (Page 003 L-5/L-6).
   String get otpTitle => _t('رمز التحقق', 'Verification code');
   String get otpBody => _t(
@@ -561,6 +576,9 @@ class AppL10n {
   String get tileMyArea => _t('منطقتي', 'My area');
   String get tileEntryBadge => _t('بطاقتي الذكية', 'My smart badge');
   String get tileMeetPeople => _t('قابل أشخاص مثلك', 'Meet people like you');
+  // Signed-in home "عن الملتقى" group (frame 758:1134, node 1052:12856) — the
+  // full-width tile that opens the send-a-question (ask the moderator) screen.
+  String get tileAskModerator => _t('اسأل المحاور', 'Ask the moderator');
 
   // Bottom navigation (KSA Wave-2 shell — frames 512:1492 / 213:963).
   String get navAgenda => _t('الأجندة', 'Agenda');
@@ -586,7 +604,10 @@ class AppL10n {
       _t('FAQ • معلومات الموقع والفعالية', 'FAQ • Venue & event info');
   String get discoverSaudiTitle => _t('روح السعودية', 'Spirit of Saudi');
   String get discoverSaudiSubtitle =>
-      _t('Visit Saudi · استكشف الرياض', 'Visit Saudi · Discover Riyadh');
+      _t('زر السعودية · استكشف الرياض', 'Visit Saudi · Discover Riyadh');
+  // The signed-in home's filled gold discover badge (frame 758:1280); the guest
+  // home keeps the outlined "KSA" badge (frame 758:2910).
+  String get discoverSaudiBadge => _t('السعودية', 'Saudi');
   String get greetingMorning => _t('صباح الخير', 'Good morning');
   String get greetingEvening => _t('مساء الخير', 'Good evening');
   String get homeLiveTitle => _t(
@@ -595,8 +616,9 @@ class AppL10n {
       );
   String get homeLiveSubtitle =>
       _t('شاهد البث المباشر', 'Watch the live stream');
-  String get homeAboutSection =>
-      _t('عن الملتقى · المحاور', 'About the forum · Themes');
+  // The signed-in home's "عن الملتقى" section bar (frame 758:1207) — a bordered
+  // nav row that opens the About-the-forum page.
+  String get homeAboutSection => _t('عن الملتقى', 'About the forum');
   String get homeSmartSection => _t('الميزات الذكية', 'Smart features');
   String get tileBilateralMeetings =>
       _t('اللقاءات الثنائية', 'Bilateral meetings');
@@ -611,12 +633,13 @@ class AppL10n {
   String get discoverBannerSubtitle =>
       _t('تعال واكتشف جديدك المفضل', 'Come discover your favourites');
   // أحدث منشوراتنا — the latest-news teaser card on the signed-in home (frame
-  // 203:1236 node 522:2345). The engagement counts in the frame have no backend
-  // data (the news model carries no like/comment/repost counts) so they are
-  // omitted rather than faked.
+  // 758:1134 node 758:1240). The post image now rides the D-357 NewsImage asset
+  // route (Phase 1); the engagement counts (758:1252) are admin-entered data
+  // landing in Phase 2 — the row stays hidden until the wire carries them.
   String get latestPostsSection => _t('أحدث منشوراتنا', 'Latest posts');
-  String get postSourceName =>
-      _t('الملتقى البحري السعودي الدولي', 'Saudi Maritime Forum');
+  // The post-card source name + handle (frame 758:1246 / 758:1244).
+  String get postSourceName => _t('الملتقى البحري', 'The Maritime Forum');
+  String get postSourceHandle => '@SIMF';
   String get postTimeJustNow => _t('الآن', 'just now');
   String postTimeMinutesAgo(int n) => _t('قبل $n دقيقة', '$n min ago');
   String postTimeHoursAgo(int n) => _t('قبل $n ساعة', '$n h ago');
@@ -715,9 +738,13 @@ class AppL10n {
   String get gateRateLimited =>
       _t('محاولات كثيرة. انتظر قليلاً.', 'Too many attempts. Wait a moment.');
   String get statBookedSessions => _t('جلسات محفوظة', 'Booked sessions');
-  String get statMeetings => _t('مقابلات مؤكدة', 'Confirmed meetings');
+  String get statMeetings => _t('مقابلات', 'Meetings');
   String get statisticsTitle => _t('الإحصائيات', 'Statistics');
   String get todayScheduleTitle => _t('جدولي اليوم', "Today's schedule");
+  // جدولي اليوم sub-group headers (frame 758:1283, nodes 1041:2042 / 1041:2044)
+  // — gold, above the session rows and the meeting rows respectively.
+  String get scheduleSessionsGroup => _t('جلسات', 'Sessions');
+  String get scheduleMeetingsGroup => _t('مقابلات', 'Meetings');
   String get scheduleEmpty =>
       _t('لا يوجد لديك مواعيد اليوم', 'No items today');
   String get smartBadgeLink => _t('بطاقتي الذكية', 'My smart badge');
@@ -751,6 +778,14 @@ class AppL10n {
   String get sessionsAllDays => _t('كل الأيام', 'All days');
   String get sessionsSearchHint => _t('البحث', 'Search');
   String get sessionsScheduleSection => _t('المواعيد', 'Schedule');
+  // The Sessions screen header (frame 883:2308 node 883:2314 "برنامج الملتقي" —
+  // corrected spelling الملتقى); distinct from the bottom-nav label (navAgenda).
+  String get sessionsProgrammeTitle => _t('برنامج الملتقى', 'Forum programme');
+  // D-452 (Figma 883:2320) — the session type tabs.
+  String get sessionTypeAll => _t('الكل', 'All');
+  String get sessionTypeWorkshop => _t('ورش العمل', 'Workshops');
+  String get sessionTypeSession => _t('جلسات', 'Sessions');
+  String get sessionTypeEvent => _t('احداث', 'Events');
   String get sessionsEmpty => _t('لا توجد جلسات', 'No sessions');
   String get sessionsError =>
       _t('تعذّر تحميل الجلسات.', 'Could not load the sessions.');
@@ -761,6 +796,10 @@ class AppL10n {
       _t('تعذّر تحميل الجلسة.', 'Could not load the session.');
   String get sessionNotFound =>
       _t('الجلسة غير موجودة أو تمت إزالتها', 'This session was not found');
+  // Header-card action buttons + the ask-the-host card (Figma 889:2450).
+  String get sessionLink => _t('رابط الجلسة', 'Session link');
+  String get sessionSummary => _t('ملخص الجلسة', 'Session summary');
+  String get askHost => _t('اسأل المحاور', 'Ask the host');
   String get descriptionHeading => _t('وصف الجلسة', 'Description');
   String get speakersHeading => _t('المتحدثون', 'Speakers');
   String get hostLabel => _t('المضيف', 'Host');
@@ -850,6 +889,9 @@ class AppL10n {
 
   // Booths (Page 022).
   String get boothsTitle => _t('الأجنحة', 'Booths');
+  // The screen header per Figma frame 922:2458 node 922:2464 ("المعرض" — the
+  // exhibition); distinct from the nav-tile/route label (boothsTitle).
+  String get boothsExhibitionTitle => _t('المعرض', 'Exhibition');
   String get boothsError =>
       _t('تعذّر تحميل الأجنحة.', 'Could not load the booths.');
   String get boothsEmpty => _t('لا توجد أجنحة', 'No booths');
@@ -893,6 +935,8 @@ class AppL10n {
   String get archivePastSpeakersLabel =>
       _t('المتحدثون السابقون', 'Past speakers');
   String archiveMoreCount(int count) => _t('+$count آخرون', '+$count more');
+  // Frame 927:3343 — the past-speakers overflow card shows "+N" over "آخرون".
+  String get archiveOthersLabel => _t('آخرون', 'Others');
   String archiveStats(int attendees, int sessions, int speakers) => _t(
         '$attendees حضور · $sessions جلسة · $speakers متحدث',
         '$attendees attendees · $sessions sessions · $speakers speakers',
@@ -911,12 +955,53 @@ class AppL10n {
       _t('تعذّر تحميل الوسائط.', 'Could not load the media.');
   String get galleryEmpty => _t('لا توجد وسائط', 'No media yet');
 
-  // About the forum (Page 037).
+  // About the forum (Page 037 · عن الملتقى) — KSA frame 1082:15307.
   String get aboutTitle => _t('عن الملتقى', 'About the forum');
   String get aboutError =>
       _t('تعذّر تحميل المحتوى.', 'Could not load the content.');
   String get aboutEmpty =>
       _t('المحتوى قيد الإعداد', 'Content coming soon');
+  String get aboutHeroHeading => _t(
+        'منصة سعودية عالمية لدعم الحوار في قضايا الأمن البحري',
+        'A Saudi global platform advancing dialogue on maritime-security issues',
+      );
+  // Static fallback for the intro paragraph when the CMS `about` block is empty.
+  String get aboutHeroBody => _t(
+        'الملتقى البحري السعودي الدولي حدث دولي رفيع المستوى، يجمع القادة '
+            'والمسؤولين والخبراء لتبادل التجارب وتعزيز فهم عالمي مشترك لمستقبل '
+            'الأمن البحري.',
+        'The Saudi International Maritime Forum is a high-level international '
+            'event that brings together leaders, officials and experts to share '
+            'experience and build a shared global understanding of the future of '
+            'maritime security.',
+      );
+  // المحاور الرئيسية — the four fixed forum themes (frames 1082:15578…15620).
+  String get aboutThemesTitle => _t('المحاور الرئيسية', 'Main themes');
+  String get aboutTheme1Title => _t(
+        'المتغيرات في البيئة الاستراتيجية العالمية',
+        'Shifts in the global strategic environment',
+      );
+  String get aboutTheme1Body => _t(
+        'وتأثيرها على أمن سلاسل الإمداد البحرية',
+        'and their impact on maritime supply-chain security',
+      );
+  String get aboutTheme2Title => _t(
+        'التهديدات على سلاسل إمداد الطاقة',
+        'Threats to energy supply chains',
+      );
+  String get aboutTheme2Body => _t(
+        'وأثرها على الاقتصاد العالمي',
+        'and their impact on the global economy',
+      );
+  String get aboutTheme3Title => _t('حماية قاع البحار', 'Protecting the seabed');
+  String get aboutTheme3Body =>
+      _t('وأثره على الأمن الدولي', 'and its impact on international security');
+  String get aboutTheme4Title => _t(
+        'الأمن السيبراني للنقل البحري',
+        'Cybersecurity for maritime transport',
+      );
+  String get aboutTheme4Body =>
+      _t('التحديات والحلول', 'Challenges and solutions');
 
   // Rate / feedback (Page 040).
   String get rateTitle => _t('تقييم', 'Rate');
@@ -955,13 +1040,29 @@ class AppL10n {
   String get dayToday => _t('اليوم', 'Today');
   String get dayYesterday => _t('أمس', 'Yesterday');
 
-  // Meet people (Page 035).
+  // Meet people (Page 035 · قابل أشخاص مثلك) — KSA frame 1072:13409.
   String get meetPeopleTitle => _t('قابل أشخاص مثلك', 'Meet people');
   String get meetPeopleEmpty => _t('لا توجد تطابقات بعد', 'No matches yet');
   String get meetPeopleError =>
       _t('تعذّر تحميل التطابقات الخاصة بك.', 'Could not load your matches.');
   String meetPeopleSharedInterests(int count) =>
       _t('$count اهتمامات مشتركة', '$count shared interests');
+  // The smart-suggestions header card (frame 1082:15269).
+  String get meetPeopleSmartTitle => _t(
+        'مقترحات ذكية بناءً على اهتماماتك',
+        'Smart suggestions based on your interests',
+      );
+  String get meetPeopleSmartSubtitle => _t(
+        'تم تحديد هذه المقترحات وفقاً للجلسات التي حضرتها والمحاور التي اخترتها.',
+        'These suggestions are chosen from the sessions you attended and the '
+            'themes you picked.',
+      );
+  String get meetPeopleMatchLabel => _t('تطابق', 'match');
+  // The three topic chips in the header (frame 1082:15268).
+  String get meetPeopleFilterAi =>
+      _t('الذكاء الاصطناعي', 'Artificial intelligence');
+  String get meetPeopleFilterSupply => _t('سلاسل الإمداد', 'Supply chains');
+  String get meetPeopleFilterSeabed => _t('أمن قاع البحار', 'Seabed security');
 
   // Accessibility (Page 038 — client-local settings, no API).
   String get accessibilityTitle => _t('إمكانية الوصول', 'Accessibility');
@@ -1011,7 +1112,7 @@ class AppL10n {
       _t('المتابعة كضيف', 'Continue as guest');
   String get guestModeSignInButton => _t('تسجيل الدخول', 'Sign in');
 
-  // AI session summary (Page 034).
+  // AI session summary (Page 034 · ملخص الجلسة) — KSA frame 1072:13518.
   String get aiSummaryTitle => _t('ملخص الجلسة', 'AI session summary');
   String get aiSummaryOpenFromSession => _t(
         'افتح ملخص جلسة من صفحة الجلسة.',
@@ -1021,15 +1122,29 @@ class AppL10n {
       _t('لا يوجد ملخص منشور بعد.', 'No published summary yet.');
   String get aiSummaryError =>
       _t('تعذر تحميل الملخص.', 'Could not load the summary.');
+  String get aiSummaryChooseSession => _t('اختر الجلسة', 'Choose the session');
+  // Figma banner copy (frame 1072:14633): "an automatic summary was generated".
   String get aiSummaryGeneratedBanner =>
-      _t('تم إنشاؤه بواسطة الذكاء الاصطناعي', 'Generated by AI');
+      _t('تم توليد ملخص تلقائي', 'Auto-generated summary');
   String get aiSummaryKeyPointsHeading => _t('أبرز النقاط', 'Key points');
   String get aiSummaryRecommendationsHeading =>
       _t('التوصيات', 'Recommendations');
   String get aiSummarySpeakersHeading => _t('المتحدثون', 'Speakers');
   String get aiSummaryFullTextHeading => _t('النص الكامل', 'Full text');
+  String get aiSummaryShare => _t('مشاركة', 'Share');
+  String get aiSummarySave => _t('حفظ', 'Save');
+  String get aiSummarySaved => _t('تم الحفظ', 'Saved');
+  String get aiSummaryNoSessions =>
+      _t('لا توجد جلسات متاحة بعد.', 'No sessions available yet.');
 
   // Send a question (Page 026 — live Q&A composer).
+  // Figma 934:3636 retitled the screen to "معلومات عن الجلسة" (Session
+  // information) — the session-data block sits above the question composer.
+  String get sessionInfoTitle =>
+      _t('معلومات عن الجلسة', 'Session information');
+  // The session-data section header above the question composer (Figma
+  // 1049:12590).
+  String get sessionDataLabel => _t('بيانات الجلسة', 'Session details');
   String get sendQuestionTitle => _t('إرسال سؤال', 'Send a question');
   String get sendQuestionNoSession => _t(
         'افتح هذه الشاشة من جلسة مباشرة لإرسال سؤال.',
@@ -1136,7 +1251,12 @@ class AppL10n {
   String get liveUpcomingSessions => _t('الجلسات القادمة', 'Upcoming sessions');
   String get sendQuestionSectionLabel => _t('الاسئلة', 'Questions');
   String get sendQuestionNoteLabel => _t('ملاحظة', 'Note');
-  String get mediaCoverageTitle => _t('التغطية الإعلامية', 'Media coverage');
+  // Media-center hub header — Figma 947:3764 / 1049:12629 renamed the container
+  // from "التغطية الإعلامية" to "المركز الاعلامي".
+  String get mediaCoverageTitle => _t('المركز الاعلامي', 'Media center');
+  // The news tab label inside the media center — Figma calls it "احدث المستجدات"
+  // (Latest updates), not the bare "الأخبار" screen name.
+  String get latestUpdatesTitle => _t('احدث المستجدات', 'Latest updates');
   String get galleryImagesSection => _t('الصور', 'Images');
   String get galleryVideosSection => _t('الفيديوهات', 'Videos');
   String get liveNoSessionSelected => _t(
@@ -1166,16 +1286,37 @@ class AppL10n {
         'Could not play this feed. Try again.',
       );
 
-  // AI assistant (Page 036) — interim shell; no backend chatbot endpoint.
+  // AI assistant (Page 036 · المساعد الذكي) — KSA frame 1064:13066. No backend
+  // chatbot endpoint exists (verified); the transcript below is the scripted
+  // demo the Figma shows, and any new prompt gets a canned bilingual reply.
   String get chatbotTitle => _t('المساعد الذكي', 'AI assistant');
-  String get chatbotPreviewBanner => _t(
-        'المساعد الذكي في وضع المعاينة — الردود مؤقتة.',
-        'The AI assistant is in preview — replies are interim.',
-      );
-  String get chatbotEmpty =>
-      _t('اسأل المساعد للبدء.', 'Ask the assistant to get started.');
-  String get chatbotInputHint => _t('اكتب رسالتك…', 'Type your message…');
+  String get chatbotInputHint => _t('اكتب رسالتك...', 'Type your message…');
   String get chatbotSendTooltip => _t('إرسال', 'Send');
+  String get chatbotGreeting => _t(
+        'مرحباً 🤝 أنا مساعدك الذكي. كيف يمكنني المساعدة اليوم؟',
+        'Hello 🤝 I’m your smart assistant. How can I help today?',
+      );
+  String get chatbotSeedQ1 =>
+      _t('متى تبدأ جلسة الافتتاح؟', 'When does the opening session start?');
+  String get chatbotSeedA1 => _t(
+        'جلسة الافتتاح والترحيب تبدأ الساعة 8:00 صباحاً في القاعة الرئيسية. '
+            'هل تريدني أن أضيفها لأجندتك؟',
+        'The opening & welcome session starts at 8:00 AM in the Main Hall. '
+            'Want me to add it to your agenda?',
+      );
+  String get chatbotSeedQ2 =>
+      _t('أين القاعة الرئيسية؟', 'Where is the Main Hall?');
+  String get chatbotSeedA2 => _t(
+        'القاعة الرئيسية (HALL A) في الطابق الأول. أفضل مسار من المدخل '
+            'يستغرق دقيقتين تقريباً – هل تريدني أن أفتح الخريطة ثلاثية الأبعاد؟',
+        'The Main Hall (HALL A) is on the first floor. The best route from the '
+            'entrance takes about two minutes — want me to open the 3D map?',
+      );
+  // The four quick-reply chips under the transcript (frame 1070:13389).
+  String get chatbotChipMeeting => _t('طلب لقاء', 'Request a meeting');
+  String get chatbotChipUpcoming => _t('الجلسات القادمة', 'Upcoming sessions');
+  String get chatbotChipSami => _t('مكان جناح SAMI', 'SAMI booth location');
+  String get chatbotChipToday => _t('جلسات اليوم', 'Today’s sessions');
 
   // Visitor contact sharing — FDS-014 (Share my contact / Scan / My Contacts).
   String get shareMyContactTitle => _t('شارك جهة اتصالي', 'Share my contact');

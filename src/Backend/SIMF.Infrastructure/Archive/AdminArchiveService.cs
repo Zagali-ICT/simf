@@ -121,6 +121,7 @@ internal sealed class AdminArchiveService(
         }
 
         var now = timeProvider.GetUtcNow();
+        var knownCountryIds = await LoadCountryIdsAsync(cancellationToken);
         var edition = new ArchiveEdition
         {
             Id = Guid.NewGuid(),
@@ -143,7 +144,7 @@ internal sealed class AdminArchiveService(
             // D-432 — the rich child lists (cascade-inserted with the edition).
             Media = BuildMedia(request.Gallery),
             SessionTitles = BuildSessionTitles(request.SessionTitles),
-            PastSpeakers = BuildPastSpeakers(request.PastSpeakers),
+            PastSpeakers = BuildPastSpeakers(request.PastSpeakers, knownCountryIds),
         };
 
         appDbContext.ArchiveEditions.Add(edition);
@@ -229,8 +230,9 @@ internal sealed class AdminArchiveService(
         }
         if (request.PastSpeakers is not null)
         {
+            var knownCountryIds = await LoadCountryIdsAsync(cancellationToken);
             edition.PastSpeakers.Clear();
-            foreach (var p in BuildPastSpeakers(request.PastSpeakers)) { edition.PastSpeakers.Add(p); }
+            foreach (var p in BuildPastSpeakers(request.PastSpeakers, knownCountryIds)) { edition.PastSpeakers.Add(p); }
         }
 
         await appDbContext.SaveChangesAsync(cancellationToken);
@@ -439,7 +441,8 @@ internal sealed class AdminArchiveService(
             edition.PastSpeakers.OrderBy(p => p.DisplayOrder).Select(p => new ArchivePastSpeakerInput
             {
                 NameEn = p.NameEn, NameAr = p.NameAr,
-                PhotoRelativePath = p.PhotoRelativePath, DisplayOrder = p.DisplayOrder,
+                PhotoRelativePath = p.PhotoRelativePath, CountryId = p.CountryId,
+                DisplayOrder = p.DisplayOrder,
             }).ToList());
 
     // D-432 — build the child entities from the editable inputs, skipping blank
@@ -484,7 +487,8 @@ internal sealed class AdminArchiveService(
     }
 
     private static List<ArchivePastSpeaker> BuildPastSpeakers(
-        IEnumerable<ArchivePastSpeakerInput>? inputs)
+        IEnumerable<ArchivePastSpeakerInput>? inputs,
+        IReadOnlySet<int> knownCountryIds)
     {
         var order = 0;
         return (inputs ?? Enumerable.Empty<ArchivePastSpeakerInput>())
@@ -495,8 +499,22 @@ internal sealed class AdminArchiveService(
                 NameEn = (i.NameEn ?? string.Empty).Trim(),
                 NameAr = (i.NameAr ?? string.Empty).Trim(),
                 PhotoRelativePath = NullIfBlank(i.PhotoRelativePath),
+                // D-456 — drop an unknown/typo'd country code to null (the CP
+                // editor is free-text; an unmatched id would otherwise hit the
+                // Country FK as a 500). Matches the app's "unknown code = no flag".
+                CountryId = i.CountryId is { } cid && knownCountryIds.Contains(cid)
+                    ? cid
+                    : null,
                 DisplayOrder = order++,
             })
             .ToList();
     }
+
+    /// <summary>D-456 — the valid Country lookup ids, used to reject a typo'd
+    /// country code in the free-text past-speakers editor (drop to null).</summary>
+    private async Task<HashSet<int>> LoadCountryIdsAsync(CancellationToken ct) =>
+        (await appDbContext.Countries.AsNoTracking()
+            .Select(country => country.Id)
+            .ToListAsync(ct))
+            .ToHashSet();
 }

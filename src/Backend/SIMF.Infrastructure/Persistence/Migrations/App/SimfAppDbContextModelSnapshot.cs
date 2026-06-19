@@ -593,6 +593,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid>("ArchiveEditionId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int?>("CountryId")
+                        .HasColumnType("int");
+
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
 
@@ -611,6 +614,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CountryId");
 
                     b.HasIndex("ArchiveEditionId", "DisplayOrder");
 
@@ -3079,6 +3084,53 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.ToTable("HallAttendances", (string)null);
                 });
 
+            modelBuilder.Entity("SIMF.Domain.Programme.ProgrammeDay", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("TitleArabic")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsActive", "DisplayOrder", "Date");
+
+                    b.ToTable("ProgrammeDays", (string)null);
+                });
+
             modelBuilder.Entity("SIMF.Domain.Programme.Session", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3180,6 +3232,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
+
+                    b.Property<int?>("Type")
+                        .HasColumnType("int");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
@@ -4271,6 +4326,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasForeignKey("ArchiveEditionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("SIMF.Domain.Common.Country", null)
+                        .WithMany()
+                        .HasForeignKey("CountryId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Edition");
                 });
