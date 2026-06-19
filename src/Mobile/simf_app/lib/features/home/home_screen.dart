@@ -24,9 +24,14 @@ import '../notifications/data/notifications_repository.dart';
 /// The signed-in home tile glyphs — the exact iconify SVGs from KSA frame
 /// 758:1134 (no 1:1 Material equivalent), bundled and tinted to the tile colour.
 class _HomeIcons {
-  static const String speakers = 'assets/icons/home_speakers.svg';
-  static const String booths = 'assets/icons/home_booths.svg';
-  static const String sponsors = 'assets/icons/home_sponsors.svg';
+  // "عن الملتقى" group (758:1216/1220/1224 + 1052:12856).
+  static const String aboutSessions =
+      'assets/icons/home_about_sessions.svg'; // streamline:target-3
+  static const String booths = 'assets/icons/home_booths.svg'; // solar:chart
+  static const String people = 'assets/icons/home_people.svg'; // bi:people
+  static const String askModerator =
+      'assets/icons/home_ask_moderator.svg'; // solar:user-outline
+  // News + smart-feature tiles (758:1230/1234 + 758:1164/1170/1175/1179).
   static const String archive = 'assets/icons/home_archive.svg';
   static const String bilateral = 'assets/icons/home_bilateral.svg';
   static const String meetPeople = 'assets/icons/home_meet_people.svg';
@@ -34,6 +39,7 @@ class _HomeIcons {
   static const String sessionSummary = 'assets/icons/home_session_summary.svg';
   static const String badge = 'assets/icons/home_badge.svg';
   // Guest-home tile glyphs (frame 758:2910) — extracted line icons.
+  static const String speakers = 'assets/icons/home_speakers.svg';
   static const String sessions = 'assets/icons/home_sessions.svg';
   static const String venueMap = 'assets/icons/home_map.svg';
   static const String exhibition = 'assets/icons/home_exhibition.svg';
@@ -53,22 +59,23 @@ final homeProfileProvider =
 });
 
 /// Page 013 — الرئيسية · Home (router / landing screen #13, `path=/`),
-/// rebuilt to the KSA Wave-2 frames: guest = 512:1492 (2×2 option,
-/// owner-picked), signed-in = 203:1236.
+/// rebuilt to the KSA frames: guest = 512:1492 (2×2 option, owner-picked),
+/// signed-in = **758:1134** (the live exact-parity frame).
 ///
 /// One route, two states off the cached auth privilege: the **guest** layout
 /// (browse banner, 2×2 public tiles, the locked بطاقتي card, the open-info
 /// rows, the gold sign-in button) and the **signed-in** layout (greeting
-/// header with bell + menu, the live banner, the three tile sections, the
-/// follow-us row, the **أحدث منشوراتنا** latest-post teaser, and the discover
-/// card). Home carries no data of its own beyond the best-effort
-/// unread-notification count (Page_013 L-5) and the best-effort latest-news
-/// post (frame node 522:2345 — D-403, reusing `GET /app/news`); the live
+/// header, discover hero, live banner, the "عن الملتقى" section bar + its tile
+/// group, the "الميزات الذكية" smart tiles, the "الرعاة" + "الأخبار والتغطية"
+/// section bars, the **أحدث منشوراتنا** latest-post teaser, the discover row,
+/// and the follow-us row). Home carries no data of its own beyond the
+/// best-effort unread-notification count (Page_013 L-5) and the best-effort
+/// latest-news post (frame node 758:1240, reusing `GET /app/news`); the live
 /// banner stays static config (D10, L-6). The post card shows the real latest
-/// news item (logo + source + relative time + headline + excerpt); the frame's
-/// post image + engagement counts are omitted (no servable news-image route /
-/// no engagement model — not faked). Social + Visit-Saudi links are
-/// config-driven and inert while unset (the D-369 contract).
+/// news item (source + relative time + body + the **NewsImage** asset via the
+/// D-357 route); the frame's engagement counts are admin-entered data deferred
+/// to Phase 2 (the row stays hidden until the wire carries them — not faked).
+/// Social + Visit-Saudi links are config-driven and inert while unset (D-369).
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -99,6 +106,9 @@ class HomeScreen extends ConsumerWidget {
           data: (dash) => dash,
           orElse: () => null,
         );
+    // The post card builds `{base}/app/assets/NewsImage/{id}/image`; the base
+    // already includes `/api/v1` (same anonymous D-357 route as the news list).
+    final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
     return _VisitorHome(
       l10n: l10n,
       name: _greetingName(
@@ -107,6 +117,7 @@ class HomeScreen extends ConsumerWidget {
       ),
       unread: unread,
       latestPost: latestPost,
+      baseUrl: baseUrl,
     );
   }
 }
@@ -282,7 +293,7 @@ class _GuestBanner extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Signed-in layout (frame 203:1236 — greeting home)
+// Signed-in layout (frame 758:1134 — greeting home, exact parity)
 // ---------------------------------------------------------------------------
 
 class _VisitorHome extends StatelessWidget {
@@ -290,12 +301,14 @@ class _VisitorHome extends StatelessWidget {
     required this.l10n,
     required this.name,
     required this.unread,
+    required this.baseUrl,
     this.latestPost,
   });
 
   final AppL10n l10n;
   final String name;
   final int unread;
+  final String baseUrl;
   final NewsListItem? latestPost;
 
   @override
@@ -315,23 +328,25 @@ class _VisitorHome extends StatelessWidget {
             l10n: l10n,
             onTap: () => context.pushNamed(RouteNames.news),
           ),
-          const SizedBox(height: SimfTokens.space4),
+          const SizedBox(height: SimfTokens.space6),
+          // The live banner (frame node 758:1150) — opens the live view.
           _LiveBanner(
             l10n: l10n,
             onTap: () => context.pushNamed(RouteNames.liveBroadcast),
           ),
           const SizedBox(height: SimfTokens.space6),
-          KsaSectionHeader(
+          // "عن الملتقى" section bar (758:1207) — opens About the forum.
+          KsaLinkRow(
             title: l10n.homeAboutSection,
-            moreLabel: l10n.moreTitle,
-            onMore: () => context.pushNamed(RouteNames.aboutForum),
+            onTap: () => context.pushNamed(RouteNames.aboutForum),
           ),
-          const SizedBox(height: SimfTokens.space3),
+          const SizedBox(height: SimfTokens.space6),
+          // About tiles (758:1215, h72): right→left المتحدثون · الأجنحة · الجلسات.
           KsaTileRow(
             children: <Widget>[
               KsaNavTile(
                 label: l10n.tileSpeakers,
-                iconAsset: _HomeIcons.speakers,
+                iconAsset: _HomeIcons.people,
                 onTap: () => context.pushNamed(RouteNames.speakers),
               ),
               KsaNavTile(
@@ -340,50 +355,57 @@ class _VisitorHome extends StatelessWidget {
                 onTap: () => context.pushNamed(RouteNames.booths),
               ),
               KsaNavTile(
-                label: l10n.tileSponsors,
-                iconAsset: _HomeIcons.sponsors,
-                onTap: () => context.pushNamed(RouteNames.sponsors),
+                label: l10n.tileSessions,
+                iconAsset: _HomeIcons.aboutSessions,
+                onTap: () => context.pushNamed(RouteNames.sessions),
               ),
             ],
           ),
           const SizedBox(height: SimfTokens.space6),
-          KsaSectionHeader(
-            title: l10n.tileNews,
-            moreLabel: l10n.moreTitle,
-            onMore: () => context.pushNamed(RouteNames.news),
+          // The full-width "اسأل المحاور" tile (1052:12856) — send a question.
+          KsaNavTile(
+            label: l10n.tileAskModerator,
+            iconAsset: _HomeIcons.askModerator,
+            onTap: () => context.pushNamed(RouteNames.sendQuestion),
           ),
-          const SizedBox(height: SimfTokens.space3),
+          const SizedBox(height: SimfTokens.space2),
+          // News tiles (758:1228, h80): right→left اللقاءات الثنائية · الأرشيف.
           KsaTileRow(
             children: <Widget>[
               KsaNavTile(
                 label: l10n.tileBilateralMeetings,
                 iconAsset: _HomeIcons.bilateral,
+                minHeight: 80,
                 onTap: () => context.pushNamed(RouteNames.gallery),
               ),
               KsaNavTile(
                 label: l10n.tileArchive,
                 iconAsset: _HomeIcons.archive,
+                minHeight: 80,
                 onTap: () => context.pushNamed(RouteNames.archive),
               ),
             ],
           ),
           const SizedBox(height: SimfTokens.space6),
+          // "الميزات الذكية" (758:1158) — header + the المزيد link → More.
           KsaSectionHeader(
             title: l10n.homeSmartSection,
             moreLabel: l10n.moreTitle,
             onMore: () => context.pushNamed(RouteNames.more),
           ),
-          const SizedBox(height: SimfTokens.space3),
+          const SizedBox(height: SimfTokens.space4),
           KsaTileRow(
             children: <Widget>[
               KsaNavTile(
                 label: l10n.tileMeetPeople,
                 iconAsset: _HomeIcons.meetPeople,
+                minHeight: 80,
                 onTap: () => context.pushNamed(RouteNames.meetPeople),
               ),
               KsaNavTile(
                 label: l10n.chatbotTitle,
                 iconAsset: _HomeIcons.aiAssistant,
+                minHeight: 80,
                 onTap: () => context.pushNamed(RouteNames.chatbot),
               ),
             ],
@@ -394,47 +416,38 @@ class _VisitorHome extends StatelessWidget {
               KsaNavTile(
                 label: l10n.tileSessionSummary,
                 iconAsset: _HomeIcons.sessionSummary,
+                minHeight: 80,
                 onTap: () => context.pushNamed(RouteNames.aiSummary),
               ),
               KsaNavTile(
                 label: l10n.tileEntryBadge,
                 iconAsset: _HomeIcons.badge,
+                minHeight: 80,
                 onTap: () => context.pushNamed(RouteNames.badge),
               ),
             ],
           ),
           const SizedBox(height: SimfTokens.space6),
-          KsaSectionHeader(title: l10n.followUsSection),
-          const SizedBox(height: SimfTokens.space3),
-          // Frame 758:1134 — brand row stays LTR (X · Instagram · LinkedIn ·
-          // YouTube · TikTok) regardless of locale.
-          const Directionality(
-            textDirection: TextDirection.ltr,
-            child: _SocialRow(),
+          // "الرعاة" section bar (1049:12844) — opens Sponsors.
+          KsaLinkRow(
+            title: l10n.tileSponsors,
+            onTap: () => context.pushNamed(RouteNames.sponsors),
           ),
-          const SizedBox(height: SimfTokens.space3),
-          Text(
-            l10n.followUsHandle,
-            textAlign: TextAlign.center,
-            // Frame 758:1134 — handle line is Medium.
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textSm,
-              fontWeight: FontWeight.w500,
-            ),
+          const SizedBox(height: SimfTokens.space6),
+          // "الأخبار والتغطية" section bar (758:1211) — opens News.
+          KsaLinkRow(
+            title: l10n.tileNews,
+            onTap: () => context.pushNamed(RouteNames.news),
           ),
-          // أحدث منشوراتنا (frame node 522:2345) — hidden until a post exists.
+          // أحدث منشوراتنا (frame node 758:1238) — hidden until a post exists.
           if (latestPost != null) ...<Widget>[
             const SizedBox(height: SimfTokens.space6),
-            KsaSectionHeader(
-              title: l10n.latestPostsSection,
-              moreLabel: l10n.moreTitle,
-              onMore: () => context.pushNamed(RouteNames.news),
-            ),
-            const SizedBox(height: SimfTokens.space3),
+            KsaSectionHeader(title: l10n.latestPostsSection),
+            const SizedBox(height: SimfTokens.space4),
             _LatestPostCard(
               l10n: l10n,
               post: latestPost!,
+              baseUrl: baseUrl,
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (_) => NewsArticleScreen(newsId: latestPost!.id),
@@ -443,9 +456,31 @@ class _VisitorHome extends StatelessWidget {
             ),
           ],
           const SizedBox(height: SimfTokens.space6),
+          // "اكتشف" (758:1270) — header + the روح السعودية discover row.
           KsaSectionHeader(title: l10n.discoverSection),
-          const SizedBox(height: SimfTokens.space3),
+          const SizedBox(height: SimfTokens.space4),
           _DiscoverSaudiRow(l10n: l10n),
+          const SizedBox(height: SimfTokens.space6),
+          // "تابعنا" (758:1183) — header + the brand row + the handle line. The
+          // brand row stays LTR (X · Instagram · LinkedIn · YouTube · TikTok)
+          // regardless of locale.
+          KsaSectionHeader(title: l10n.followUsSection),
+          const SizedBox(height: SimfTokens.space4),
+          const Directionality(
+            textDirection: TextDirection.ltr,
+            child: _SocialRow(),
+          ),
+          const SizedBox(height: SimfTokens.space2),
+          Text(
+            l10n.followUsHandle,
+            textAlign: TextAlign.center,
+            // Frame 758:1202 — handle line is Medium, beige.
+            style: const TextStyle(
+              color: SimfTokens.beigeBorder,
+              fontSize: SimfTokens.textSm,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );
@@ -569,7 +604,8 @@ class _LiveBanner extends StatelessWidget {
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: SimfTokens.textMd,
-                    fontWeight: FontWeight.w500,
+                    // Frame 758:1157 — the "مباشر" badge is SemiBold.
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -677,30 +713,37 @@ class _DiscoverHeroBanner extends StatelessWidget {
   }
 }
 
-/// The أحدث منشوراتنا teaser (frame node 522:2345): the SIMF mark, the source +
-/// relative time, the headline and a short excerpt. The frame's post image and
-/// engagement counts are intentionally omitted — there is no servable news-image
-/// route and no like/comment/repost model, so neither is faked (D-403).
+/// The أحدث منشوراتنا teaser (frame node 758:1240): the source row (the gold
+/// SIMF chip + the source name at the inline end, the @handle + relative time at
+/// the inline start), the lead paragraph, and the post image. The image rides
+/// the article's `NewsImage` asset via the D-357 anonymous route (navy fallback
+/// when none). The frame's engagement counts (758:1252) are admin-entered data
+/// deferred to Phase 2 — not faked here.
 class _LatestPostCard extends StatelessWidget {
   const _LatestPostCard({
     required this.l10n,
     required this.post,
+    required this.baseUrl,
     required this.onTap,
   });
 
   final AppL10n l10n;
   final NewsListItem post;
+  final String baseUrl;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final isArabic = l10n.isArabic;
-    final excerpt = post.localizedExcerpt(isArabic);
+    // The frame shows one lead paragraph (the bold line is the source name, not
+    // the article title); prefer the excerpt, fall back to the title.
+    final body =
+        post.localizedExcerpt(isArabic) ?? post.localizedTitle(isArabic);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(SimfTokens.radius),
       child: Container(
-        // Frame 758:1134 — px16 / py8, borderless.
+        // Frame 758:1240 — px16 / py8, borderless navy card.
         padding: const EdgeInsets.symmetric(
           horizontal: SimfTokens.space4,
           vertical: SimfTokens.space2,
@@ -712,85 +755,133 @@ class _LatestPostCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
+            const SizedBox(height: SimfTokens.space2),
+            // Source row (758:1243): the gold chip + source name at the inline
+            // end (right under RTL); the @handle + relative time at the start.
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                // Frame 758:1134 — a round gold chip with white "SIMF", not the
-                // navy logo-square avatar.
-                Container(
-                  width: 44,
-                  height: 44,
-                  alignment: Alignment.center,
-                  decoration: const BoxDecoration(
-                    color: SimfTokens.accent,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Text(
-                    'SIMF',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    // The round gold chip with white "SIMF" (758:1247).
+                    Container(
+                      width: 44,
+                      height: 44,
+                      alignment: Alignment.center,
+                      decoration: const BoxDecoration(
+                        color: SimfTokens.accent,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Text(
+                        'SIMF',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: SimfTokens.textMd,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: SimfTokens.space2),
+                    // Source name 14px Bold (758:1246).
+                    Text(
+                      l10n.postSourceName,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: SimfTokens.textMd,
+                      ),
+                    ),
+                  ],
+                ),
+                // @handle · relative time (758:1244) — beige 12px.
+                Flexible(
+                  child: Text(
+                    '${l10n.postSourceHandle} · '
+                    '${homePostTime(l10n, post.publishedAt, DateTime.now().toUtc())}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: SimfTokens.beigeBorder,
                       fontSize: SimfTokens.textSm,
                     ),
                   ),
                 ),
-                const SizedBox(width: SimfTokens.space3),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        l10n.postSourceName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        // Frame 758:1134 — source name 14px Bold.
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: SimfTokens.textMd,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        homePostTime(
-                          l10n,
-                          post.publishedAt,
-                          DateTime.now().toUtc(),
-                        ),
-                        style: const TextStyle(
-                          color: SimfTokens.beigeBorder,
-                          fontSize: SimfTokens.textXs,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               ],
             ),
-            const SizedBox(height: SimfTokens.space3),
+            const SizedBox(height: SimfTokens.space4),
+            // Lead paragraph (758:1249) — beige 14px, up to 3 lines.
             Text(
-              post.localizedTitle(isArabic),
-              maxLines: 2,
+              body,
+              maxLines: 3,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
+                color: SimfTokens.beigeBorder,
                 fontSize: SimfTokens.textMd,
+                height: 1.5,
               ),
             ),
-            if (excerpt != null) ...<Widget>[
-              const SizedBox(height: SimfTokens.space2),
-              Text(
-                excerpt,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                // Frame 758:1134 — post body 14px.
-                style: const TextStyle(
-                  color: SimfTokens.beigeBorder,
-                  fontSize: SimfTokens.textMd,
-                ),
-              ),
-            ],
+            const SizedBox(height: SimfTokens.space4),
+            // The post image (758:1250) — the NewsImage asset, navy fallback.
+            _PostImage(
+              imageUrl: '$baseUrl/app/assets/NewsImage/${post.id}/image',
+            ),
+            const SizedBox(height: SimfTokens.space2),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The latest-post image (frame node 758:1250): the article's `NewsImage` asset
+/// (public anonymous D-357 route) in a 120-high navy box with a faint white
+/// hairline and the frame's 4-radius corners. A spinner shows while it loads; a
+/// navy image-glyph box is the no-image / fetch-failure fall-back (prod has no
+/// uploaded news images yet, so the fall-back is the designed empty state).
+class _PostImage extends StatelessWidget {
+  const _PostImage({required this.imageUrl});
+
+  final String imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 120,
+      clipBehavior: Clip.antiAlias,
+      decoration: const BoxDecoration(
+        color: SimfTokens.navy,
+        borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radiusSmall)),
+      ),
+      foregroundDecoration: BoxDecoration(
+        border: Border.all(color: SimfTokens.line2),
+        borderRadius: const BorderRadius.all(
+          Radius.circular(SimfTokens.radiusSmall),
+        ),
+      ),
+      child: Image.network(
+        imageUrl,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        gaplessPlayback: true,
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) {
+            return child;
+          }
+          return const Center(
+            child: SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) => const Center(
+          child: Icon(
+            Icons.image_outlined,
+            size: 28,
+            color: SimfTokens.beigeBorder,
+          ),
         ),
       ),
     );
@@ -867,12 +958,15 @@ class _DiscoverSaudiRow extends StatelessWidget {
       title: l10n.discoverSaudiTitle,
       subtitle: l10n.discoverSaudiSubtitle,
       badgeOutlined: outlined,
+      // Guest = outlined gold "KSA" (758:2910); signed-in = filled gold
+      // "السعودية" SemiBold (758:1280/1281).
       badge: Text(
-        'KSA',
+        outlined ? 'KSA' : l10n.discoverSaudiBadge,
+        textAlign: TextAlign.center,
         style: TextStyle(
           color: outlined ? SimfTokens.accent : Colors.white,
           fontSize: SimfTokens.textMd,
-          fontWeight: outlined ? FontWeight.w800 : FontWeight.w500,
+          fontWeight: outlined ? FontWeight.w800 : FontWeight.w600,
         ),
       ),
       onTap: () => unawaited(_openLink(BuildConfig.visitSaudiUrl)),

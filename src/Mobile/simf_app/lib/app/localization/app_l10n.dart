@@ -576,6 +576,9 @@ class AppL10n {
   String get tileMyArea => _t('منطقتي', 'My area');
   String get tileEntryBadge => _t('بطاقتي الذكية', 'My smart badge');
   String get tileMeetPeople => _t('قابل أشخاص مثلك', 'Meet people like you');
+  // Signed-in home "عن الملتقى" group (frame 758:1134, node 1052:12856) — the
+  // full-width tile that opens the send-a-question (ask the moderator) screen.
+  String get tileAskModerator => _t('اسأل المحاور', 'Ask the moderator');
 
   // Bottom navigation (KSA Wave-2 shell — frames 512:1492 / 213:963).
   String get navAgenda => _t('الأجندة', 'Agenda');
@@ -601,7 +604,10 @@ class AppL10n {
       _t('FAQ • معلومات الموقع والفعالية', 'FAQ • Venue & event info');
   String get discoverSaudiTitle => _t('روح السعودية', 'Spirit of Saudi');
   String get discoverSaudiSubtitle =>
-      _t('Visit Saudi · استكشف الرياض', 'Visit Saudi · Discover Riyadh');
+      _t('زر السعودية · استكشف الرياض', 'Visit Saudi · Discover Riyadh');
+  // The signed-in home's filled gold discover badge (frame 758:1280); the guest
+  // home keeps the outlined "KSA" badge (frame 758:2910).
+  String get discoverSaudiBadge => _t('السعودية', 'Saudi');
   String get greetingMorning => _t('صباح الخير', 'Good morning');
   String get greetingEvening => _t('مساء الخير', 'Good evening');
   String get homeLiveTitle => _t(
@@ -610,8 +616,9 @@ class AppL10n {
       );
   String get homeLiveSubtitle =>
       _t('شاهد البث المباشر', 'Watch the live stream');
-  String get homeAboutSection =>
-      _t('عن الملتقى · المحاور', 'About the forum · Themes');
+  // The signed-in home's "عن الملتقى" section bar (frame 758:1207) — a bordered
+  // nav row that opens the About-the-forum page.
+  String get homeAboutSection => _t('عن الملتقى', 'About the forum');
   String get homeSmartSection => _t('الميزات الذكية', 'Smart features');
   String get tileBilateralMeetings =>
       _t('اللقاءات الثنائية', 'Bilateral meetings');
@@ -626,12 +633,13 @@ class AppL10n {
   String get discoverBannerSubtitle =>
       _t('تعال واكتشف جديدك المفضل', 'Come discover your favourites');
   // أحدث منشوراتنا — the latest-news teaser card on the signed-in home (frame
-  // 203:1236 node 522:2345). The engagement counts in the frame have no backend
-  // data (the news model carries no like/comment/repost counts) so they are
-  // omitted rather than faked.
+  // 758:1134 node 758:1240). The post image now rides the D-357 NewsImage asset
+  // route (Phase 1); the engagement counts (758:1252) are admin-entered data
+  // landing in Phase 2 — the row stays hidden until the wire carries them.
   String get latestPostsSection => _t('أحدث منشوراتنا', 'Latest posts');
-  String get postSourceName =>
-      _t('الملتقى البحري السعودي الدولي', 'Saudi Maritime Forum');
+  // The post-card source name + handle (frame 758:1246 / 758:1244).
+  String get postSourceName => _t('الملتقى البحري', 'The Maritime Forum');
+  String get postSourceHandle => '@SIMF';
   String get postTimeJustNow => _t('الآن', 'just now');
   String postTimeMinutesAgo(int n) => _t('قبل $n دقيقة', '$n min ago');
   String postTimeHoursAgo(int n) => _t('قبل $n ساعة', '$n h ago');

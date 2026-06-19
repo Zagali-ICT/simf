@@ -397,6 +397,61 @@ class KsaSectionHeader extends StatelessWidget {
   }
 }
 
+/// A bordered single-line link row — the signed-in home's section bars
+/// (frames 758:1207 / 1049:12844 / 758:1211 "عن الملتقى" / "الرعاة" /
+/// "الأخبار والتغطية"): a transparent 48-high box with the beige hairline, the
+/// title at the inline end (physical right under RTL) and a gold caret at the
+/// inline start. Tappable. Distinct from [KsaSectionHeader] (a plain text label)
+/// and [KsaListRow] (which carries a gold badge box + subtitle).
+class KsaLinkRow extends StatelessWidget {
+  const KsaLinkRow({required this.title, required this.onTap, super.key});
+
+  final String title;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return KsaCard(
+      onTap: onTap,
+      color: Colors.transparent,
+      borderColor: SimfTokens.beigeBorder,
+      borderWidth: SimfTokens.hairline,
+      child: SizedBox(
+        height: 48,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space2),
+          child: Row(
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  title,
+                  textAlign: TextAlign.start,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: SimfTokens.textLg,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(width: SimfTokens.space2),
+              // The frame's gold left-caret (eva:arrow-up-fill rotated). The
+              // bundled SVG does not auto-mirror under RTL, so it stays pointing
+              // left as the design shows (same as [KsaListRow]).
+              const SimfSvgIcon(
+                'assets/icons/ic_caret_left.svg',
+                color: SimfTokens.accent,
+                size: 24,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// A row of equally sized tiles with the standard gap between them — the
 /// frames' 2- and 3-up tile rows (home sections, profile grid).
 class KsaTileRow extends StatelessWidget {
@@ -428,6 +483,7 @@ class KsaNavTile extends StatelessWidget {
     this.iconAsset,
     this.onTap,
     this.enabled = true,
+    this.minHeight = 72,
     super.key,
   }) : assert(
           icon != null || iconAsset != null,
@@ -446,6 +502,10 @@ class KsaNavTile extends StatelessWidget {
 
   final VoidCallback? onTap;
   final bool enabled;
+
+  /// The tile's minimum height. The frame uses 72 for the "عن الملتقى" row and
+  /// 80 for the news + smart-feature rows (758:1216 vs 758:1164).
+  final double minHeight;
 
   @override
   Widget build(BuildContext context) {
@@ -467,6 +527,7 @@ class KsaNavTile extends StatelessWidget {
         top: top,
         label: label,
         labelColor: labelColor,
+        minHeight: minHeight,
       ),
     );
   }
@@ -505,16 +566,18 @@ class _TileBody extends StatelessWidget {
     required this.top,
     required this.label,
     required this.labelColor,
+    this.minHeight = 72,
   });
 
   final Widget top;
   final String label;
   final Color labelColor;
+  final double minHeight;
 
   @override
   Widget build(BuildContext context) {
     return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 72),
+      constraints: BoxConstraints(minHeight: minHeight),
       child: Padding(
         padding: const EdgeInsets.all(SimfTokens.space2),
         child: Column(
