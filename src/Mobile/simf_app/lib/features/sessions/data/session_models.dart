@@ -226,11 +226,13 @@ class SessionsPage {
 
 /// The full detail for one session — mirrors
 /// `SIMF.Contracts.Programme.PublicSessionDetail` (`GET /app/programme/sessions/{id}`,
-/// anonymous). Page_017 renders the header (code/time/title), the hall + category
-/// tags, the description and the ordered speaker cards (each with the D-271
-/// country flag + photo, reusing [SessionSpeaker]). The wider detail fields
-/// (themes, the seat-availability summary, recording / live-stream URLs) belong
-/// to the seat / live screens (18 / 25) and are intentionally not decoded here.
+/// anonymous). Page_017 renders the header (code/time/title), the description,
+/// the ordered speaker cards (each with the D-271 country flag + photo, reusing
+/// [SessionSpeaker]), and — per Figma 889:2450 — a **رابط الجلسة** button when
+/// the session has a live feed ([liveStreamUrl] non-null) that opens the live
+/// screen (25). The remaining detail fields (themes, the seat-availability
+/// summary, the recording URL) belong to the seat / live screens and are not
+/// decoded here.
 @immutable
 class SessionDetail {
   const SessionDetail({
@@ -249,6 +251,7 @@ class SessionDetail {
     this.categoryId,
     this.categoryName,
     this.categoryNameArabic,
+    this.liveStreamUrl,
   });
 
   final String id;
@@ -266,6 +269,16 @@ class SessionDetail {
   final String? categoryId;
   final String? categoryName;
   final String? categoryNameArabic;
+
+  /// The live-broadcast feed URL (YouTube / direct HLS·MP4 — D-349), or null
+  /// when the session has no live feed. Drives the Figma 889:2450 **رابط
+  /// الجلسة** button: shown only when non-null, opening the live screen (25).
+  final String? liveStreamUrl;
+
+  /// True when the session has a live feed the app can open (the رابط الجلسة
+  /// button's visibility gate).
+  bool get hasLiveStream =>
+      liveStreamUrl != null && liveStreamUrl!.trim().isNotEmpty;
 
   DateTime get startLocal => startUtc.toLocal();
   DateTime get endLocal => endUtc.toLocal();
@@ -298,6 +311,7 @@ class SessionDetail {
         categoryId: json['categoryId'] as String?,
         categoryName: json['categoryName'] as String?,
         categoryNameArabic: json['categoryNameArabic'] as String?,
+        liveStreamUrl: json['liveStreamUrl'] as String?,
       );
 }
 

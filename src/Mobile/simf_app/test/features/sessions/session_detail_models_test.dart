@@ -18,6 +18,7 @@ void main() {
         'descriptionArabic': 'أهلاً',
         'categoryName': 'Main Session',
         'categoryNameArabic': 'جلسة رئيسية',
+        'liveStreamUrl': 'https://youtu.be/abcdefghijk',
         'speakers': <dynamic>[
           <String, dynamic>{
             'id': 'sp1',
@@ -38,6 +39,8 @@ void main() {
       expect(detail.localizedHall(false), 'Main Hall');
       expect(detail.localizedDescription(false), 'Welcome');
       expect(detail.localizedCategory(true), 'جلسة رئيسية');
+      expect(detail.liveStreamUrl, 'https://youtu.be/abcdefghijk');
+      expect(detail.hasLiveStream, isTrue);
       expect(detail.startUtc.isUtc, isTrue);
 
       expect(detail.speakers, hasLength(1));
@@ -58,6 +61,8 @@ void main() {
       });
       expect(detail.localizedDescription(false), isNull);
       expect(detail.localizedCategory(false), isNull);
+      expect(detail.liveStreamUrl, isNull);
+      expect(detail.hasLiveStream, isFalse);
       expect(detail.speakers, isEmpty);
     });
   });

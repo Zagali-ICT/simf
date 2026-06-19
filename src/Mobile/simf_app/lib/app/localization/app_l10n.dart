@@ -788,6 +788,10 @@ class AppL10n {
       _t('تعذّر تحميل الجلسة.', 'Could not load the session.');
   String get sessionNotFound =>
       _t('الجلسة غير موجودة أو تمت إزالتها', 'This session was not found');
+  // Header-card action buttons + the ask-the-host card (Figma 889:2450).
+  String get sessionLink => _t('رابط الجلسة', 'Session link');
+  String get sessionSummary => _t('ملخص الجلسة', 'Session summary');
+  String get askHost => _t('اسأل المحاور', 'Ask the host');
   String get descriptionHeading => _t('وصف الجلسة', 'Description');
   String get speakersHeading => _t('المتحدثون', 'Speakers');
   String get hostLabel => _t('المضيف', 'Host');
