@@ -45,12 +45,12 @@ plan of record, not a substitute for the per-wave §11 change plan.
   `ProfileCountriesEndpoint`); Saudi → dropdown, non-Saudi → free text "as in passport".
   Needs the controlled city/region list from the client.
 
-### Group C — CP-configurable content (medium; one shared read-path) — **read-path SHIPPED (D-461)**
-> Read-path foundation done: `SiteSettingKeys` + `ISiteSettingsService` + anonymous
-> `GET /api/v1/app/site-settings` (defaults + admin override; `SiteSettingsPublicTests` 2/2).
-> App consumers SHIPPED (D-462: registration message + home social). CP "Site Settings"
-> page SHIPPED (D-464: GET/PUT /admin/site-settings + labelled page). Remaining: the
-> public **website footer** social links (static-site + cross-origin/CORS — deferred).
+### Group C — CP-configurable content — **COMPLETE (D-461, D-462, D-464, D-466)**
+> Read-path `GET /api/v1/app/site-settings` (D-461) + app consumers — registration
+> welcome message + home social row (D-462) + CP "Site Settings" page `GET/PUT
+> /admin/site-settings` (D-464) + website footer social links via the `/content/site`
+> feed (D-466). #6 + #7 are CP-editable and consumed on API, app, CP, and website.
+> (Optional follow-up: broaden the website footer icon set to all 7 platforms.)
 - **#6 Registration success message** + **#7 social links**. `SystemSettings` store +
   CRUD + `/admin/configuration` page exist (D-229) but ship empty with **no read-path**.
   Build `GetByKeyAsync` + a public settings endpoint once, then drive the registration

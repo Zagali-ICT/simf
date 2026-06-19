@@ -2317,13 +2317,13 @@
         وسلاسل الإمداد، ويعكس الدور الاستراتيجي للمملكة في تعزيز أمن البحار وصون البنية التحتية الحيوية.
       </p>
       <div class="socials">
-        <a href="#" aria-label="Twitter">
+        <a href="#" aria-label="Twitter" data-social="x">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18 4h3l-7 8 8 8h-6l-5-6-6 6H2l8-9L2 4h6l4 5z"/></svg>
         </a>
-        <a href="#" aria-label="LinkedIn">
+        <a href="#" aria-label="LinkedIn" data-social="linkedin">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM3 9h4v12H3zM9 9h4v2c1-1 2-2 4-2 3 0 4 2 4 5v8h-4v-7c0-2-1-3-2-3s-2 1-2 3v7H9z"/></svg>
         </a>
-        <a href="#" aria-label="YouTube">
+        <a href="#" aria-label="YouTube" data-social="youtube">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 7s-.2-1.4-.8-2c-.7-.8-1.6-.8-2-.9C16 4 12 4 12 4s-4 0-7.2.1c-.4.1-1.3.1-2 .9C2.2 5.6 2 7 2 7S1.8 8.6 1.8 10.2v1.6C1.8 13.4 2 15 2 15s.2 1.4.8 2c.7.8 1.7.8 2.1.9 1.5.1 6.1.2 7.1.2 0 0 4 0 7.2-.2.4-.1 1.3-.1 2-.9.6-.6.8-2 .8-2s.2-1.6.2-3.2v-1.6C22.2 8.6 22 7 22 7zM10 14V8l5 3-5 3z"/></svg>
         </a>
       </div>
@@ -2437,6 +2437,13 @@
       if (Array.isArray(remote.partners))  { partners.length = 0; remote.partners.forEach(x => partners.push(x)); }
       if (Array.isArray(remote.news))      { newsData.length = 0; remote.news.forEach(x => newsData.push(x)); }
       if (Array.isArray(remote.spirit))    { spirit.length = 0; remote.spirit.forEach(x => spirit.push(x)); }
+      // D-466 — CP-editable footer social links; hide any platform with no URL.
+      const social = remote.social || {};
+      document.querySelectorAll('.socials a[data-social]').forEach(a => {
+        const url = social[a.getAttribute('data-social')];
+        if (url) { a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.style.display = ''; }
+        else { a.style.display = 'none'; }
+      });
     }
     // On an unreachable API (remote === null) the arrays keep their built-in
     // SITE_DEFAULTS — the page degrades to defaults rather than spinning.
