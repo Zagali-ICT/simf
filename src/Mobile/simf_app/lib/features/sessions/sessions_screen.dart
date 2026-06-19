@@ -16,8 +16,10 @@ import 'data/session_models.dart';
 import 'data/sessions_repository.dart';
 
 // The time-chip's two lines, formatted once (hoisted off the build path).
-final DateFormat _chipHourFormat = DateFormat('hh:mm');
-final DateFormat _chipPeriodFormat = DateFormat('a');
+// Pinned to 'en' so the chip shows Western digits + Latin AM/PM in both locales
+// (frame 1064:13230 — "08:00 / PM", not Arabic-Indic digits or ص/م).
+final DateFormat _chipHourFormat = DateFormat('hh:mm', 'en');
+final DateFormat _chipPeriodFormat = DateFormat('a', 'en');
 
 /// Page 016 — برنامج الملتقى · Sessions (#16, `/sessions`), rebuilt to the LIVE
 /// KSA frame **883:2308** (D-452).
