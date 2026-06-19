@@ -778,6 +778,14 @@ class AppL10n {
   String get sessionsAllDays => _t('كل الأيام', 'All days');
   String get sessionsSearchHint => _t('البحث', 'Search');
   String get sessionsScheduleSection => _t('المواعيد', 'Schedule');
+  // The Sessions screen header (frame 883:2308 node 883:2314 "برنامج الملتقي" —
+  // corrected spelling الملتقى); distinct from the bottom-nav label (navAgenda).
+  String get sessionsProgrammeTitle => _t('برنامج الملتقى', 'Forum programme');
+  // D-452 (Figma 883:2320) — the session type tabs.
+  String get sessionTypeAll => _t('الكل', 'All');
+  String get sessionTypeWorkshop => _t('ورش العمل', 'Workshops');
+  String get sessionTypeSession => _t('جلسات', 'Sessions');
+  String get sessionTypeEvent => _t('احداث', 'Events');
   String get sessionsEmpty => _t('لا توجد جلسات', 'No sessions');
   String get sessionsError =>
       _t('تعذّر تحميل الجلسات.', 'Could not load the sessions.');

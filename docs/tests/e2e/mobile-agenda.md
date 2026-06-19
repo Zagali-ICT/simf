@@ -19,6 +19,19 @@
 > the client-side filter + day-strip helpers). The old mockup screen + test
 > are parked in `_legacy_mockup/`.
 >
+> **Re-laid out to the LIVE frame 883:2308 (D-452, app phase):** the screen now
+> reads the **day-grouped** programme (`GET /app/programme/days`) and renders
+> the header **برنامج الملتقى**, the day strip (the programme days), the selected
+> day's **own title + logo banner** ("تفاصيل اليوم" carries the day title — owner:
+> not a static label), the **type tabs** (الكل / ورش العمل / جلسات / احداث —
+> client-side filter on the new `SessionType`), then the **المواعيد** list with the
+> first session **featured** (expanded with the day banner). Widget tests cover:
+> header + day title + tabs + numbered rows; search filter; **type-tab filter**;
+> day-strip day switch; selected-cell inversion; row→detail; empty; error→retry;
+> RTL. Backed by D-452 phase 1 (`ProgrammeDay` + `Session.Type` + the days
+> endpoint). The CP admin to author days/types/logos is the D-452 CP phase. The
+> old view pills (أجندة الفعالية / الأجندة القادمة) were replaced by the type tabs.
+>
 > **Filename note:** this catalogue keeps its legacy `mobile-agenda.md` name; the
 > screen/route is renamed **Sessions** (D-276). A rename to `mobile-sessions.md`
 > is deferred (needs owner sign-off — it is referenced from PAGE-INDEX + the

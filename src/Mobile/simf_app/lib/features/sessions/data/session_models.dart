@@ -68,6 +68,40 @@ enum SessionSpeakerRole {
   }
 }
 
+/// D-452 (Figma 883:2308 type tabs) — the kind of a session, driving the app's
+/// "ورش العمل / جلسات / احداث" tabs. Int on the wire (mirrors
+/// `SIMF.Common.Enums.SessionType`); [fromJson] is tolerant (int OR name); a
+/// null / absent / unknown value decodes to null (an untyped session shows only
+/// under the "الكل / All" tab).
+enum SessionType {
+  workshop(0, 'Workshop'),
+  session(1, 'Session'),
+  event(2, 'Event');
+
+  const SessionType(this.wireValue, this.wireName);
+
+  final int wireValue;
+  final String wireName;
+
+  static SessionType? fromJson(Object? value) {
+    if (value is String) {
+      for (final t in values) {
+        if (t.wireName == value) {
+          return t;
+        }
+      }
+    } else if (value is num) {
+      final asInt = value.toInt();
+      for (final t in values) {
+        if (t.wireValue == asInt) {
+          return t;
+        }
+      }
+    }
+    return null;
+  }
+}
+
 /// One speaker card carried on a cached session — mirrors
 /// `SIMF.Contracts.Programme.PublicSessionSpeaker`. The country **flag** is
 /// rendered from [countryId] (the names are the label/fallback) and the
@@ -149,6 +183,7 @@ class SessionListItem {
     this.categoryName,
     this.categoryNameArabic,
     this.primaryThemeColor,
+    this.type,
   });
 
   final String id;
@@ -162,6 +197,8 @@ class SessionListItem {
   final DateTime endUtc;
   final SessionStatus status;
   final List<SessionSpeaker> speakers;
+  // D-452 (Figma 883:2308): the session's type, driving the type tabs.
+  final SessionType? type;
   final String? description;
   final String? descriptionArabic;
   final String? categoryId;
@@ -202,6 +239,7 @@ class SessionListItem {
         categoryName: json['categoryName'] as String?,
         categoryNameArabic: json['categoryNameArabic'] as String?,
         primaryThemeColor: json['primaryThemeColor'] as String?,
+        type: SessionType.fromJson(json['type']),
       );
 }
 
@@ -221,6 +259,70 @@ class SessionsPage {
         .map((e) => SessionListItem.fromJson(e.cast<String, dynamic>()))
         .toList(growable: false);
     return SessionsPage(items);
+  }
+}
+
+/// D-452 (Figma 883:2308 "تفاصيل اليوم") — one programme day: a calendar date
+/// with its own bilingual title, a [hasImage] flag (the `ProgrammeDayImage`
+/// asset, served by the anonymous route), and the day's sessions. From
+/// `GET /app/programme/days` (`PublicProgrammeDays = { days: [...] }`).
+@immutable
+class ProgrammeDay {
+  const ProgrammeDay({
+    required this.id,
+    required this.date,
+    required this.title,
+    required this.titleArabic,
+    required this.displayOrder,
+    required this.hasImage,
+    required this.sessions,
+  });
+
+  final String id;
+
+  /// The day's calendar date (local midnight — the wire sends a date-only).
+  final DateTime date;
+  final String title;
+  final String titleArabic;
+  final int displayOrder;
+
+  /// True when a logo/banner is uploaded for this day (drives the banner image
+  /// vs the fallback).
+  final bool hasImage;
+  final List<SessionListItem> sessions;
+
+  String localizedTitle(bool isArabic) =>
+      _pickRequired(titleArabic, title, isArabic);
+
+  static ProgrammeDay fromJson(Map<String, dynamic> json) => ProgrammeDay(
+        id: json['id'] as String? ?? '',
+        date: _parseDate(json['date']),
+        title: json['title'] as String? ?? '',
+        titleArabic: json['titleArabic'] as String? ?? '',
+        displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
+        hasImage: json['hasImage'] as bool? ?? false,
+        sessions: (json['sessions'] as List? ?? const <dynamic>[])
+            .whereType<Map<dynamic, dynamic>>()
+            .map((e) => SessionListItem.fromJson(e.cast<String, dynamic>()))
+            .toList(growable: false),
+      );
+}
+
+/// The envelope for the day-grouped programme (`PublicProgrammeDays`).
+@immutable
+class ProgrammeDaysPage {
+  const ProgrammeDaysPage(this.days);
+
+  final List<ProgrammeDay> days;
+
+  static ProgrammeDaysPage fromJson(Object? data) {
+    final list = (data is Map ? data['days'] : null) as List? ??
+        const <dynamic>[];
+    final days = list
+        .whereType<Map<dynamic, dynamic>>()
+        .map((e) => ProgrammeDay.fromJson(e.cast<String, dynamic>()))
+        .toList(growable: false);
+    return ProgrammeDaysPage(days);
   }
 }
 
@@ -422,6 +524,18 @@ DateTime _parseUtc(Object? value) {
     }
   }
   return DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+}
+
+/// Parses a date-only wire value (`yyyy-MM-dd`, the .NET `DateOnly`
+/// serialisation) into a local-midnight [DateTime] for the day strip / banner.
+DateTime _parseDate(Object? value) {
+  if (value is String && value.isNotEmpty) {
+    final parsed = DateTime.tryParse(value);
+    if (parsed != null) {
+      return DateTime(parsed.year, parsed.month, parsed.day);
+    }
+  }
+  return DateTime.fromMillisecondsSinceEpoch(0);
 }
 
 /// Picks the locale value of a required bilingual pair, falling back to the
