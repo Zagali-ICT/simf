@@ -10,6 +10,7 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_svg_icon.dart';
+import '../../core/country_flag.dart';
 import 'data/speaker_models.dart';
 import 'data/speakers_repository.dart';
 
@@ -187,28 +188,26 @@ class _SpeakerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final country = speaker.localizedCountry(isArabic);
-    final rank = (speaker.rank != null && speaker.rank!.trim().isNotEmpty)
+    // The country now shows as a small flag badge on the avatar's top-left
+    // corner (owner, ref node 889:2722), so the sub-line carries only the rank.
+    final label = (speaker.rank != null && speaker.rank!.trim().isNotEmpty)
         ? speaker.rank!.trim()
-        : null;
-    final labelParts = <String>[
-      if (rank != null) rank,
-      if (country != null) country,
-    ];
-    final label = labelParts.join(' · ');
+        : '';
+    final flag = countryFlagEmoji(speaker.countryId);
 
     return KsaCard(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.all(SimfTokens.space2),
-        // Figma 908:1744 (Arabic/RTL frame): the gold anchor tile sits at the
+        // Figma 908:1744 (Arabic/RTL frame): the photo tile sits at the
         // inline-start (right) beside the name, the navigation caret at the
         // inline-end (left). A Row lays children start→end, so the order is
-        // tile → name → caret.
+        // avatar → name → caret.
         child: Row(
           children: <Widget>[
             _SpeakerAvatar(
               imageUrl: '$baseUrl/app/assets/SpeakerPhoto/${speaker.id}/image',
+              flag: flag,
             ),
             const SizedBox(width: SimfTokens.space4),
             Expanded(
@@ -254,21 +253,23 @@ class _SpeakerCard extends StatelessWidget {
   }
 }
 
-/// The 44×44 gold-bordered speaker avatar (frame 908:2004): a gold-tinted square
-/// (accent @ 15%) on a solid gold hairline. Renders the speaker's uploaded photo
-/// (the D-357 `SpeakerPhoto` asset) clipped to the tile, falling back to the
-/// gold anchor glyph while it loads or when no photo is uploaded (the route
-/// 404s). D-432 — the global list shows the anchor for everyone with no photo
-/// (host is a per-session role, shown on the session detail).
+/// The 44×44 speaker avatar (frame 908:2004): a gold-tinted square (accent @ 15%)
+/// on a solid gold hairline showing the speaker's uploaded **photo** (the D-357
+/// `SpeakerPhoto` asset) clipped to the tile, falling back to the design's gold
+/// **anchor** glyph while it loads or when no photo is set (the asset route
+/// 204s). The speaker's **country flag** ([flag]) renders as a small badge on
+/// the **top-left corner** (owner request); absent when the speaker has no
+/// recorded country.
 class _SpeakerAvatar extends StatelessWidget {
-  const _SpeakerAvatar({required this.imageUrl});
+  const _SpeakerAvatar({required this.imageUrl, this.flag});
 
   final String imageUrl;
+  final String? flag;
 
   @override
   Widget build(BuildContext context) {
     const fallback = Icon(Icons.anchor, size: 20, color: SimfTokens.accent);
-    return Container(
+    final avatar = Container(
       width: 44,
       height: 44,
       alignment: Alignment.center,
@@ -288,6 +289,37 @@ class _SpeakerAvatar extends StatelessWidget {
         loadingBuilder: (context, child, progress) =>
             progress == null ? child : fallback,
         errorBuilder: (context, error, stackTrace) => fallback,
+      ),
+    );
+    if (flag == null) {
+      return avatar;
+    }
+    // The country flag as a small badge on the avatar's top-left corner.
+    return SizedBox(
+      width: 44,
+      height: 44,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: <Widget>[
+          avatar,
+          Positioned(
+            top: -2,
+            left: -2,
+            child: Container(
+              padding: const EdgeInsets.all(1),
+              decoration: BoxDecoration(
+                color: SimfTokens.navy,
+                shape: BoxShape.circle,
+                border: Border.all(color: SimfTokens.navyDeep, width: 0.5),
+              ),
+              child: Text(
+                flag!,
+                textDirection: TextDirection.ltr,
+                style: const TextStyle(fontSize: 12, height: 1),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

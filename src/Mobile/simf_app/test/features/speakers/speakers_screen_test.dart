@@ -18,6 +18,7 @@ const _speakers = <SpeakerSummary>[
     nameArabic: 'القبطان ريف',
     displayOrder: 0,
     rank: 'Sea captain',
+    countryId: 682, // Saudi Arabia → 🇸🇦 flag badge on the avatar corner
     countryNameEn: 'RSNF',
   ),
   SpeakerSummary(
@@ -126,8 +127,12 @@ void main() {
       expect(find.text('Capt. Reef'), findsOneWidget);
       expect(find.text('Dr Wave'), findsOneWidget);
       expect(find.text('Brig. Anchor'), findsOneWidget);
-      // The rank · affiliation line joins both parts.
-      expect(find.text('Sea captain · RSNF'), findsOneWidget);
+      // The sub-line is now the rank only — the country shows as a flag badge on
+      // the avatar's top-left corner (D-453 follow-up), not as text.
+      expect(find.text('Sea captain'), findsOneWidget);
+      expect(find.text('Sea captain · RSNF'), findsNothing);
+      // The country flag badge (sp1 = Saudi Arabia, countryId 682 → 🇸🇦).
+      expect(find.text('\u{1F1F8}\u{1F1E6}'), findsOneWidget);
     });
 
     testWidgets('each avatar falls back to the anchor when there is no photo — '
