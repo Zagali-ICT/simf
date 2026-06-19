@@ -107,6 +107,33 @@ void main() {
       expect(find.text('match'), findsOneWidget);
     });
 
+    testWidgets('uses the backend matchReason when the payload carries one',
+        (tester) async {
+      const withReason = Recommendation(
+        userProfileId: 'u2',
+        englishName: 'Cmdr Tide',
+        arabicName: 'العميد تايد',
+        profileTypeName: 'Admiral',
+        profileTypeNameArabic: 'الأدميرال',
+        sharedInterests: <MatchedInterest>[],
+        sharedInterestCount: 2,
+        score: 0.9,
+        sharedSessionCount: 2,
+        matchReason: '2 shared sessions · 2 shared interests',
+        matchReasonArabic: 'نفس جلستين · 2 اهتمامات مشتركة',
+      );
+      await _pump(tester, <Override>[
+        meetRecommendationsProvider
+            .overrideWith((ref) async => <Recommendation>[withReason]),
+      ]);
+      // The backend reason wins over the composed "N shared interests".
+      expect(
+        find.text('2 shared sessions · 2 shared interests'),
+        findsOneWidget,
+      );
+      expect(find.text('2 shared interests'), findsNothing);
+    });
+
     testWidgets('empty list keeps the header and shows the empty notice',
         (tester) async {
       await _pump(tester, <Override>[

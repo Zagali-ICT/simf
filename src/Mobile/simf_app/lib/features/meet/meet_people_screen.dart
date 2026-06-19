@@ -25,9 +25,9 @@ final meetRecommendationsProvider =
 /// three topic chips, frame `1082:15269`) and a per-match card (frame
 /// `1082:15273`) — the gold **% match** (from the scorer's `score`) over the
 /// `تطابق` label, the name, the profile-type line, the match reason and a gold
-/// initials avatar. The reason is composed from the shared-interest count today;
-/// when the recommendation contract gains a generated `matchReason` field the
-/// [_reason] helper is the single swap point (see DECISIONS_LOG).
+/// initials avatar. The reason prefers the backend-generated bilingual
+/// `matchReason` (D-451 — sessions + shared interests) and falls back to the
+/// shared-interest count for older payloads ([_reason]).
 class MeetPeopleScreen extends ConsumerWidget {
   const MeetPeopleScreen({super.key});
 
@@ -71,12 +71,18 @@ class MeetPeopleScreen extends ConsumerWidget {
 int _percent(double score) =>
     (score <= 1 ? score * 100 : score).round().clamp(0, 100);
 
-/// The match-reason line. Composed from the shared-interest count today; swap to
-/// the generated `matchReason` field here when the contract gains it.
-String _reason(Recommendation m, AppL10n l10n) =>
-    m.sharedInterestCount > 0
-        ? l10n.meetPeopleSharedInterests(m.sharedInterestCount)
-        : '';
+/// The match-reason line. Prefers the backend-generated bilingual `matchReason`
+/// (D-451 — sessions + shared interests); falls back to the shared-interest
+/// count for older payloads that don't carry it.
+String _reason(Recommendation m, AppL10n l10n) {
+  final fromApi = m.localizedMatchReason(l10n.isArabic);
+  if (fromApi != null && fromApi.isNotEmpty) {
+    return fromApi;
+  }
+  return m.sharedInterestCount > 0
+      ? l10n.meetPeopleSharedInterests(m.sharedInterestCount)
+      : '';
+}
 
 /// First letters of the first two name words, dot-joined (frame `1082:15157`,
 /// "س.أ") — a single letter for a one-word name.

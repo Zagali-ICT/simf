@@ -11,6 +11,8 @@ using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Recommendations;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Profiles;
+using SIMF.Domain.Programme;
+using SIMF.Domain.SeatReservations;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -131,6 +133,53 @@ public sealed class RecommendationServiceTests : IClassFixture<SimfApiFactory>
         var body = (await response.Content
             .ReadFromJsonAsync<ApiResult<RecommendationsResponse>>())!.Data!;
         Assert.True(body.Matches.Count <= 3);
+    }
+
+    [Fact]
+    public async Task Shared_session_and_interest_yield_the_count_and_bilingual_reason()
+    {
+        var interest = await SeedInterestAsync("Subsea Security");
+        var (callerToken, callerUserId) =
+            await SeedApprovedVisitorWithSpecificInterestsAsync(new[] { interest.Id });
+        var (_, candidateUserId) =
+            await SeedApprovedVisitorWithSpecificInterestsAsync(new[] { interest.Id });
+
+        // Both hold an approved seat in the same session → one shared session.
+        await SeedSharedSessionAsync(callerUserId, candidateUserId);
+
+        var response = await GetAuthAsync(
+            "/api/v1/app/account/recommendations/meet-like-you", callerToken);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<RecommendationsResponse>>())!.Data!;
+
+        Assert.Single(body.Matches);
+        var match = body.Matches[0];
+        Assert.Equal(1, match.SharedSessionCount);
+        Assert.Equal(1, match.SharedInterestCount);
+        Assert.Contains("attended a shared session", match.MatchReason);
+        Assert.Contains("shared interest in", match.MatchReason);
+        Assert.Contains("حضر نفس الجلسة", match.MatchReasonArabic);
+        Assert.Contains("اهتمام مشترك", match.MatchReasonArabic);
+    }
+
+    [Fact]
+    public async Task No_shared_session_yields_zero_count_and_interest_only_reason()
+    {
+        var interest = await SeedInterestAsync("Port Logistics");
+        var (callerToken, _) =
+            await SeedApprovedVisitorWithSpecificInterestsAsync(new[] { interest.Id });
+        await SeedApprovedVisitorWithSpecificInterestsAsync(new[] { interest.Id });
+
+        var response = await GetAuthAsync(
+            "/api/v1/app/account/recommendations/meet-like-you", callerToken);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<RecommendationsResponse>>())!.Data!;
+
+        Assert.Single(body.Matches);
+        var match = body.Matches[0];
+        Assert.Equal(0, match.SharedSessionCount);
+        Assert.DoesNotContain("session", match.MatchReason);
+        Assert.Contains("shared interest in", match.MatchReason);
     }
 
     // -- Helpers --------------------------------------------------------------
@@ -258,6 +307,50 @@ public sealed class RecommendationServiceTests : IClassFixture<SimfApiFactory>
             await appDb.SaveChangesAsync();
         }
         return (string.Empty, userId);
+    }
+
+    /// <summary>D-451 — seat both users in one approved, un-released session so
+    /// the recommender reports a shared-session overlap of 1.</summary>
+    private async Task SeedSharedSessionAsync(Guid userIdA, Guid userIdB)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var app = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var now = DateTimeOffset.UtcNow;
+        var hall = new Hall
+        {
+            Id = Guid.NewGuid(),
+            Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+            Name = "Main Hall", NameArabic = "القاعة الرئيسية",
+            Capacity = 100, IsActive = true, CreatedAt = now,
+        };
+        app.Halls.Add(hall);
+        var session = new Session
+        {
+            Id = Guid.NewGuid(),
+            Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+            Title = "Subsea Panel", TitleArabic = "جلسة قاع البحار",
+            HallId = hall.Id,
+            StartUtc = now, EndUtc = now.AddHours(1),
+            IsActive = true, CreatedAt = now,
+        };
+        app.Sessions.Add(session);
+        app.SeatReservations.Add(new SeatReservation
+        {
+            Id = Guid.NewGuid(), SessionId = session.Id,
+            RowLabel = "A", SeatNumber = 1,
+            Kind = SeatReservationKind.UserBooking,
+            ReservedForUserId = userIdA, CreatedByUserId = userIdA,
+            Status = BookingStatus.Approved, ReleasedAt = null, CreatedAt = now,
+        });
+        app.SeatReservations.Add(new SeatReservation
+        {
+            Id = Guid.NewGuid(), SessionId = session.Id,
+            RowLabel = "A", SeatNumber = 2,
+            Kind = SeatReservationKind.UserBooking,
+            ReservedForUserId = userIdB, CreatedByUserId = userIdB,
+            Status = BookingStatus.Approved, ReleasedAt = null, CreatedAt = now,
+        });
+        await app.SaveChangesAsync();
     }
 
     private Guid GetProfileIdForUser(Guid userId)
