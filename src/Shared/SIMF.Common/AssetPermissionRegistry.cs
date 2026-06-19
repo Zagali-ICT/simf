@@ -29,6 +29,8 @@ public static class AssetPermissionRegistry
                 new(PermissionCatalog.Archive.View, PermissionCatalog.Archive.Edit),
             [AssetCategory.NewsImage] =
                 new(PermissionCatalog.News.View, PermissionCatalog.News.Edit),
+            [AssetCategory.ProgrammeDayImage] =
+                new(PermissionCatalog.ProgrammeDays.View, PermissionCatalog.ProgrammeDays.Edit),
         };
 
     /// <summary>The view + write permission codes for a category. Throws if the

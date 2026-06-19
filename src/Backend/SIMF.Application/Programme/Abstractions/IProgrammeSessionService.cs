@@ -15,6 +15,12 @@ public interface IProgrammeSessionService
     Task<PublicSessions> ListAsync(
         DateOnly? day, CancellationToken cancellationToken = default);
 
+    /// <summary>D-452 (Figma 883:2308 "تفاصيل اليوم") — the day-grouped agenda:
+    /// the active programme days (date + bilingual title + has-logo flag), each
+    /// with its sessions. Drives the app's day banner + day strip.</summary>
+    Task<PublicProgrammeDays> ListDaysAsync(
+        CancellationToken cancellationToken = default);
+
     /// <summary>Full public detail for one active session, or null when
     /// the session does not exist or has been soft-deleted.</summary>
     Task<PublicSessionDetail?> GetAsync(

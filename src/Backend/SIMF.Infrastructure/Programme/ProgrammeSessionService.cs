@@ -63,6 +63,8 @@ internal sealed class ProgrammeSessionService(
                 session.EndUtc,
                 // P3.2 — D-231: broadcast lifecycle status.
                 session.Status,
+                // D-452 (Figma 883:2308): the session's type for the app's tabs.
+                session.Type,
                 // B9b — D-226: the session's category (dynamic lookup), if set.
                 session.CategoryId,
                 CategoryName = session.Category != null ? session.Category.Name : null,
@@ -160,11 +162,55 @@ internal sealed class ProgrammeSessionService(
                     row.Status,
                     row.Description,
                     row.DescriptionArabic,
-                    speakers);
+                    speakers,
+                    // D-452: the session's type (Workshop / Session / Event).
+                    row.Type);
             })
             .ToList();
 
         return new PublicSessions(items);
+    }
+
+    public async Task<PublicProgrammeDays> ListDaysAsync(
+        CancellationToken cancellationToken = default)
+    {
+        // D-452 (Figma 883:2308 "تفاصيل اليوم"): the day-grouped agenda — each
+        // programme day with its bilingual title, a has-logo flag, and the day's
+        // sessions (matched by the same half-open UTC date range ListAsync uses).
+        var days = await dbContext.ProgrammeDays
+            .AsNoTracking()
+            .Where(d => d.IsActive)
+            .OrderBy(d => d.DisplayOrder).ThenBy(d => d.Date)
+            .Select(d => new { d.Id, d.Date, d.Title, d.TitleArabic, d.DisplayOrder })
+            .ToListAsync(cancellationToken);
+
+        if (days.Count == 0)
+        {
+            return new PublicProgrammeDays(Array.Empty<PublicProgrammeDay>());
+        }
+
+        // Which days have a linked logo (one query against the unified Asset table).
+        var dayIds = days.Select(d => d.Id).ToList();
+        var withImage = (await dbContext.Assets
+                .AsNoTracking()
+                .Where(a => a.IsActive
+                    && a.Category == AssetCategory.ProgrammeDayImage
+                    && dayIds.Contains(a.OwnerId))
+                .Select(a => a.OwnerId)
+                .Distinct()
+                .ToListAsync(cancellationToken))
+            .ToHashSet();
+
+        var result = new List<PublicProgrammeDay>(days.Count);
+        foreach (var d in days)
+        {
+            var sessions = (await ListAsync(d.Date, cancellationToken)).Items;
+            result.Add(new PublicProgrammeDay(
+                d.Id, d.Date, d.Title, d.TitleArabic, d.DisplayOrder,
+                withImage.Contains(d.Id), sessions));
+        }
+
+        return new PublicProgrammeDays(result);
     }
 
     public async Task<PublicSessionDetail?> GetAsync(
