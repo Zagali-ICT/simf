@@ -177,6 +177,78 @@ internal sealed class AdminSystemSettingService(
         }, cancellationToken);
     }
 
+    public async Task SaveSiteSettingsAsync(
+        Guid actorUserId, AdminUpdateSiteSettingsRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        // D-464 — upsert the whitelisted site-settings keys (registration welcome
+        // message + social links). A blank value is stored as empty (the public
+        // read treats blank as null), so clearing a field is supported.
+        // null = leave the key unchanged; a provided value (including an empty
+        // string) is applied — an empty string clears the setting. The CP page
+        // sends every field (a full overwrite); the API also supports partial
+        // updates (used by tests + future callers).
+        var provided = new Dictionary<string, string?>
+        {
+            [SiteSettingKeys.RegistrationSuccessMessageAr] = request.RegistrationMessageAr,
+            [SiteSettingKeys.RegistrationSuccessMessageEn] = request.RegistrationMessageEn,
+            [SiteSettingKeys.SocialFacebook] = request.Facebook,
+            [SiteSettingKeys.SocialX] = request.X,
+            [SiteSettingKeys.SocialInstagram] = request.Instagram,
+            [SiteSettingKeys.SocialLinkedIn] = request.LinkedIn,
+            [SiteSettingKeys.SocialYouTube] = request.YouTube,
+            [SiteSettingKeys.SocialTikTok] = request.TikTok,
+            [SiteSettingKeys.SocialSnapchat] = request.Snapchat,
+        };
+        var desired = provided
+            .Where(kv => kv.Value is not null)
+            .ToDictionary(kv => kv.Key, kv => Clean(kv.Value));
+        if (desired.Count == 0) { return; }
+        var keys = desired.Keys.ToArray();
+        var existing = await db.SystemSettings
+            .Where(s => s.IsActive && keys.Contains(s.Key))
+            .ToListAsync(cancellationToken);
+        var now = timeProvider.GetUtcNow();
+        foreach (var (key, value) in desired)
+        {
+            var row = existing.FirstOrDefault(s => s.Key == key);
+            if (row is null)
+            {
+                db.SystemSettings.Add(new SystemSetting
+                {
+                    Id = Guid.NewGuid(),
+                    Key = key,
+                    Value = value,
+                    IsActive = true,
+                    CreatedAt = now,
+                });
+            }
+            else
+            {
+                row.Value = value;
+                row.UpdatedAt = now;
+            }
+        }
+        await db.SaveChangesAsync(cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.SystemSettingUpdated,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = "site-settings saved (registration message + social links)",
+        }, cancellationToken);
+
+        logger.LogInformation(
+            "Admin {ActorId} saved site settings ({Count} keys)", actorUserId, desired.Count);
+    }
+
+    private static string Clean(string? value)
+    {
+        var v = (value ?? string.Empty).Trim();
+        return v.Length > 2048 ? v[..2048] : v;
+    }
+
     private static string ValidateKey(string raw)
     {
         var key = (raw ?? string.Empty).Trim();

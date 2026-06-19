@@ -831,6 +831,20 @@
   <data name="Admin.WalkIn.Field.PlateNumber.Hint" xml:space="preserve"><value>اختر أحرف اللوحة الثلاثة ثم أدخل من 1 إلى 4 أرقام.</value></data>
   <data name="Admin.WalkIn.Field.Plate.Letter" xml:space="preserve"><value>حرف</value></data>
   <data name="Admin.WalkIn.Field.Plate.Digits" xml:space="preserve"><value>الأرقام</value></data>
+  <data name="Module.SiteSettings" xml:space="preserve"><value>إعدادات الموقع</value></data>
+  <data name="Admin.SiteSettings.Title" xml:space="preserve"><value>إعدادات الموقع</value></data>
+  <data name="Admin.SiteSettings.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
+  <data name="Admin.SiteSettings.Section.Registration" xml:space="preserve"><value>رسالة التسجيل</value></data>
+  <data name="Admin.SiteSettings.Section.Registration.Hint" xml:space="preserve"><value>تُعرض للزائر عند اكتمال التسجيل.</value></data>
+  <data name="Admin.SiteSettings.Field.RegMessageAr" xml:space="preserve"><value>رسالة الترحيب (عربي)</value></data>
+  <data name="Admin.SiteSettings.Field.RegMessageEn" xml:space="preserve"><value>رسالة الترحيب (إنجليزي)</value></data>
+  <data name="Admin.SiteSettings.Section.Social" xml:space="preserve"><value>روابط التواصل</value></data>
+  <data name="Admin.SiteSettings.Section.Social.Hint" xml:space="preserve"><value>روابط مواقع التواصل العامة المعروضة في التطبيق والموقع. اترك الحقل فارغاً لإخفاء الرابط.</value></data>
+  <data name="Admin.SiteSettings.Save" xml:space="preserve"><value>حفظ</value></data>
+  <data name="Admin.SiteSettings.Saving" xml:space="preserve"><value>جارٍ الحفظ…</value></data>
+  <data name="Admin.SiteSettings.Saved" xml:space="preserve"><value>تم حفظ إعدادات الموقع.</value></data>
+  <data name="Admin.SiteSettings.SaveFailed" xml:space="preserve"><value>تعذّر حفظ إعدادات الموقع. حاول مرة أخرى.</value></data>
+  <data name="Admin.SiteSettings.LoadFailed" xml:space="preserve"><value>تعذّر تحميل إعدادات الموقع.</value></data>
   <data name="Admin.WalkIn.Field.IsSaudi" xml:space="preserve"><value>هل هو سعودي؟</value></data>
   <data name="Admin.WalkIn.IsSaudi.Yes" xml:space="preserve"><value>سعودي</value></data>
   <data name="Admin.WalkIn.IsSaudi.No" xml:space="preserve"><value>غير سعودي</value></data>
@@ -2173,6 +2187,10 @@
   <data name="Admin.Ratings.Col.Comment" xml:space="preserve"><value>التعليق</value></data>
   <data name="Admin.Ratings.Col.Active" xml:space="preserve"><value>مُفعّل</value></data>
   <data name="Admin.Ratings.Col.CreatedAt" xml:space="preserve"><value>تاريخ الإرسال</value></data>
+  <data name="Admin.Ratings.Col.Organization" xml:space="preserve"><value>التنظيم</value></data>
+  <data name="Admin.Ratings.Col.Content" xml:space="preserve"><value>المحتوى</value></data>
+  <data name="Admin.Ratings.Col.App" xml:space="preserve"><value>التطبيق</value></data>
+  <data name="Admin.Ratings.Col.Venue" xml:space="preserve"><value>المكان والمرافق</value></data>
 
   <!-- D-199 — Audience-comments moderation. -->
   <data name="Admin.Comments.Title" xml:space="preserve"><value>تعليقات الجمهور</value></data>

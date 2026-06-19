@@ -48,8 +48,9 @@ plan of record, not a substitute for the per-wave §11 change plan.
 ### Group C — CP-configurable content (medium; one shared read-path) — **read-path SHIPPED (D-461)**
 > Read-path foundation done: `SiteSettingKeys` + `ISiteSettingsService` + anonymous
 > `GET /api/v1/app/site-settings` (defaults + admin override; `SiteSettingsPublicTests` 2/2).
-> Remaining consumers: app registration-success message, app home + website social links,
-> and a friendlier labelled CP "Site Settings" page.
+> App consumers SHIPPED (D-462: registration message + home social). CP "Site Settings"
+> page SHIPPED (D-464: GET/PUT /admin/site-settings + labelled page). Remaining: the
+> public **website footer** social links (static-site + cross-origin/CORS — deferred).
 - **#6 Registration success message** + **#7 social links**. `SystemSettings` store +
   CRUD + `/admin/configuration` page exist (D-229) but ship empty with **no read-path**.
   Build `GetByKeyAsync` + a public settings endpoint once, then drive the registration
