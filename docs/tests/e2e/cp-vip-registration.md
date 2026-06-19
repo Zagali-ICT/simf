@@ -57,8 +57,9 @@ Scenario: The desk enforces the Saudi-ID Luhn checksum and the plate set (D-459)
   And I submit
   Then the request is rejected (400) with the bilingual "national id is not valid" error
   And a national id "1101798278" (Luhn-valid) is accepted
-  And an optional plate is restricted to the 17 Saudi plate letters + 1–4 digits
-    (e.g. "ABJ1234" / "ابح1234" accepted; "ABC1234", "ABJ12345" rejected),
+  And the optional plate is entered via three 17-letter dropdowns (Arabic · Latin)
+    + a 1–4 digit field (D-460) that assemble into the canonical code
+    (e.g. ا/ب/ح + 1234 → "ABJ1234"); the server rejects out-of-set picks,
     matching the self-service profile rule
 ```
 

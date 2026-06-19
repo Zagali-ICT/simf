@@ -828,7 +828,9 @@
   <data name="Admin.WalkIn.Field.Gender.Male" xml:space="preserve"><value>ذكر</value></data>
   <data name="Admin.WalkIn.Field.Gender.Female" xml:space="preserve"><value>أنثى</value></data>
   <data name="Admin.WalkIn.Field.PlateNumber" xml:space="preserve"><value>رقم اللوحة (اختياري)</value></data>
-  <data name="Admin.WalkIn.Field.PlateNumber.Hint" xml:space="preserve"><value>لوحة المركبة، حتى 7 أحرف.</value></data>
+  <data name="Admin.WalkIn.Field.PlateNumber.Hint" xml:space="preserve"><value>اختر أحرف اللوحة الثلاثة ثم أدخل من 1 إلى 4 أرقام.</value></data>
+  <data name="Admin.WalkIn.Field.Plate.Letter" xml:space="preserve"><value>حرف</value></data>
+  <data name="Admin.WalkIn.Field.Plate.Digits" xml:space="preserve"><value>الأرقام</value></data>
   <data name="Admin.WalkIn.Field.IsSaudi" xml:space="preserve"><value>هل هو سعودي؟</value></data>
   <data name="Admin.WalkIn.IsSaudi.Yes" xml:space="preserve"><value>سعودي</value></data>
   <data name="Admin.WalkIn.IsSaudi.No" xml:space="preserve"><value>غير سعودي</value></data>

@@ -836,7 +836,9 @@
   <data name="Admin.WalkIn.Field.Gender.Male" xml:space="preserve"><value>Male</value></data>
   <data name="Admin.WalkIn.Field.Gender.Female" xml:space="preserve"><value>Female</value></data>
   <data name="Admin.WalkIn.Field.PlateNumber" xml:space="preserve"><value>Plate number (optional)</value></data>
-  <data name="Admin.WalkIn.Field.PlateNumber.Hint" xml:space="preserve"><value>Vehicle plate, up to 7 characters.</value></data>
+  <data name="Admin.WalkIn.Field.PlateNumber.Hint" xml:space="preserve"><value>Pick the 3 plate letters, then enter 1–4 digits.</value></data>
+  <data name="Admin.WalkIn.Field.Plate.Letter" xml:space="preserve"><value>Letter</value></data>
+  <data name="Admin.WalkIn.Field.Plate.Digits" xml:space="preserve"><value>Digits</value></data>
   <data name="Admin.WalkIn.Field.IsSaudi" xml:space="preserve"><value>Saudi national?</value></data>
   <data name="Admin.WalkIn.IsSaudi.Yes" xml:space="preserve"><value>Saudi</value></data>
   <data name="Admin.WalkIn.IsSaudi.No" xml:space="preserve"><value>Non-Saudi</value></data>
