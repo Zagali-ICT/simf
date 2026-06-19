@@ -182,10 +182,11 @@ UserProfileResponse _completeProfile({
   AppGender gender = AppGender.male,
   bool hasIdImage = true, // ID document — mandatory for everyone
   bool hasAvatar = true, // face photo — mandatory for men, optional for women
+  String? plateNumber,
 }) =>
     UserProfileResponse(
       interestIds: const <String>['i1'],
-      // Four parts in one script (the name rules require a full name).
+      // 2–4 parts in one script (the name rules require a full name).
       arabicName: 'راكان عبدالله أحمد السالم',
       englishName: 'Rakan Abdullah Ahmed Alsalem',
       nationalityCode: 'SA',
@@ -197,6 +198,7 @@ UserProfileResponse _completeProfile({
       nationalId: '1000000008', // matches ^1\d{9}$ and is Luhn-valid
       dateOfBirth: '2000-01-31',
       organisationId: 'o1', // B3 — D-221: organisation is now required
+      plateNumber: plateNumber,
     );
 
 Future<void> _tapNext(WidgetTester tester) async {
@@ -270,6 +272,22 @@ void main() {
       // Navigated to the interests screen; this screen did NOT upsert.
       expect(find.text('INTERESTS'), findsOneWidget);
       expect(repo.upserted, isNull);
+    });
+
+    testWidgets('prefills the plate dropdowns from a stored code and carries it '
+        'to the draft (D-459)', (tester) async {
+      final repo = _FakeProfileRepository(
+        profile: _completeProfile(plateNumber: 'ABJ1234'),
+      );
+      await _pump(tester, repo);
+
+      await _tapNext(tester);
+
+      // _setPlateFromCode populated the 3 dropdowns + digits; _syncPlate
+      // reassembled them, so the draft carries the same plate.
+      expect(find.text('INTERESTS'), findsOneWidget);
+      expect(capturedDraft, isNotNull);
+      expect(capturedDraft!.request.plateNumber, 'ABJ1234');
     });
 
     testWidgets('a profile missing only the organisation blocks Next (B3 — D-221)',

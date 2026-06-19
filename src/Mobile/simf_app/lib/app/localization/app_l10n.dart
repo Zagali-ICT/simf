@@ -277,7 +277,7 @@ class AppL10n {
         'تعذّر رفع الصورة الشخصية. حاول مرة أخرى.',
         "Couldn't upload the face photo. Try again.",
       );
-  // Name rules — Arabic-only / English-only, full name of at least four parts.
+  // Name rules — Arabic-only / English-only, full name of 2 to 4 parts (D-459).
   String get arabicNameLettersOnly => _t(
         'يجب أن يحتوي الاسم بالعربية على حروف عربية فقط',
         'The Arabic name must contain Arabic letters only',

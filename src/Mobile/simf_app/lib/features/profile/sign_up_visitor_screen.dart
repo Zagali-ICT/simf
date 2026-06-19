@@ -1200,6 +1200,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                 l10n,
                 _plateLetter1,
                 (String? v) => _plateLetter1 = v,
+                position: 1,
               ),
             ),
             const SizedBox(width: 8),
@@ -1208,6 +1209,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                 l10n,
                 _plateLetter2,
                 (String? v) => _plateLetter2 = v,
+                position: 2,
               ),
             ),
             const SizedBox(width: 8),
@@ -1216,26 +1218,32 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                 l10n,
                 _plateLetter3,
                 (String? v) => _plateLetter3 = v,
+                position: 3,
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               flex: 2,
-              child: TextFormField(
-                controller: _plateDigits,
-                textDirection: TextDirection.ltr,
-                maxLength: 4,
-                keyboardType: TextInputType.number,
-                inputFormatters: <TextInputFormatter>[
-                  FilteringTextInputFormatter.digitsOnly,
-                ],
-                style: _inputStyle,
-                autovalidateMode: AutovalidateMode.onUserInteraction,
-                onChanged: (_) => setState(_syncPlate),
-                validator: (_) => _validatePlate(_plate.text),
-                decoration: _fieldDecoration(
-                  counterText: '',
-                  hintText: l10n.plateDigitsHint,
+              // a11y: name the digit field (its hint vanishes on input).
+              child: Semantics(
+                label: l10n.plateDigitsLabel,
+                textField: true,
+                child: TextFormField(
+                  controller: _plateDigits,
+                  textDirection: TextDirection.ltr,
+                  maxLength: 4,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: <TextInputFormatter>[
+                    FilteringTextInputFormatter.digitsOnly,
+                  ],
+                  style: _inputStyle,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  onChanged: (_) => setState(_syncPlate),
+                  validator: (_) => _validatePlate(_plate.text),
+                  decoration: _fieldDecoration(
+                    counterText: '',
+                    hintText: l10n.plateDigitsHint,
+                  ),
                 ),
               ),
             ),
@@ -1246,29 +1254,35 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   }
 
   /// One of the three plate-letter dropdowns: the 17 letters, each shown as
-  /// "Arabic · Latin", stored by its Latin [SaudiPlateLetter.code].
+  /// "Arabic · Latin", stored by its Latin [SaudiPlateLetter.code]. [position]
+  /// (1–3) gives each dropdown a distinct accessible name ("Letter 1/2/3") so a
+  /// screen reader can tell them apart (a11y).
   Widget _plateLetterDropdown(
     AppL10n l10n,
     String? value,
-    ValueChanged<String?> onPicked,
-  ) {
-    return DropdownButtonFormField<String>(
-      initialValue: value,
-      isExpanded: true,
-      style: _inputStyle,
-      hint: Text(l10n.plateLetterHint, style: _inputStyle),
-      decoration: _fieldDecoration(),
-      items: <DropdownMenuItem<String>>[
-        for (final SaudiPlateLetter letter in saudiPlateLetters)
-          DropdownMenuItem<String>(
-            value: letter.code,
-            child: Text('${letter.arabic} · ${letter.english}'),
-          ),
-      ],
-      onChanged: (String? picked) => setState(() {
-        onPicked(picked);
-        _syncPlate();
-      }),
+    ValueChanged<String?> onPicked, {
+    required int position,
+  }) {
+    return Semantics(
+      label: '${l10n.plateLetterHint} $position',
+      child: DropdownButtonFormField<String>(
+        initialValue: value,
+        isExpanded: true,
+        style: _inputStyle,
+        hint: Text(l10n.plateLetterHint, style: _inputStyle),
+        decoration: _fieldDecoration(),
+        items: <DropdownMenuItem<String>>[
+          for (final SaudiPlateLetter letter in saudiPlateLetters)
+            DropdownMenuItem<String>(
+              value: letter.code,
+              child: Text('${letter.arabic} · ${letter.english}'),
+            ),
+        ],
+        onChanged: (String? picked) => setState(() {
+          onPicked(picked);
+          _syncPlate();
+        }),
+      ),
     );
   }
 
@@ -1281,33 +1295,44 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     _plate.text = (letters.isEmpty && digits.isEmpty) ? '' : '$letters$digits';
   }
 
-  /// Splits a stored canonical plate code (e.g. "ABJ1234") back into the three
-  /// letter dropdowns + the digits field, then refreshes [_plate].
+  /// Splits a stored plate code into the three letter dropdowns + the digits
+  /// field, then refreshes [_plate]. The stored value is first normalised to the
+  /// canonical Latin code (so an Arabic-script or pre-D-459 plate still parses);
+  /// a value the 17-letter dropdowns can't represent is kept verbatim in [_plate]
+  /// so an unrelated profile edit never silently erases it (D-468 review).
   void _setPlateFromCode(String? code) {
     _plateLetter1 = null;
     _plateLetter2 = null;
     _plateLetter3 = null;
     _plateDigits.text = '';
-    if (code != null && code.trim().isNotEmpty) {
-      final List<String> letters = <String>[];
-      final StringBuffer digits = StringBuffer();
-      for (final int rune in code.trim().runes) {
-        if (rune >= 0x30 && rune <= 0x39) {
-          digits.writeCharCode(rune);
-        } else {
-          letters.add(String.fromCharCode(rune).toUpperCase());
-        }
-      }
-      final Set<String> codes =
-          saudiPlateLetters.map((SaudiPlateLetter l) => l.code).toSet();
-      if (letters.length == 3 && letters.every(codes.contains)) {
-        _plateLetter1 = letters[0];
-        _plateLetter2 = letters[1];
-        _plateLetter3 = letters[2];
-        _plateDigits.text = digits.toString();
+    final raw = code?.trim() ?? '';
+    if (raw.isEmpty) {
+      _plate.text = '';
+      return;
+    }
+    final canonical = normalizePlate(raw) ?? raw;
+    final List<String> letters = <String>[];
+    final StringBuffer digits = StringBuffer();
+    for (final int rune in canonical.runes) {
+      if (rune >= 0x30 && rune <= 0x39) {
+        digits.writeCharCode(rune);
+      } else {
+        letters.add(String.fromCharCode(rune).toUpperCase());
       }
     }
-    _syncPlate();
+    final Set<String> codes =
+        saudiPlateLetters.map((SaudiPlateLetter l) => l.code).toSet();
+    if (letters.length == 3 && letters.every(codes.contains)) {
+      _plateLetter1 = letters[0];
+      _plateLetter2 = letters[1];
+      _plateLetter3 = letters[2];
+      _plateDigits.text = digits.toString();
+      _syncPlate();
+    } else {
+      // Legacy / non-conforming code the dropdowns can't represent — keep it so
+      // an unrelated edit doesn't wipe it (the server re-validates on save).
+      _plate.text = canonical;
+    }
   }
 
   Widget _buildMobileField(AppL10n l10n) {

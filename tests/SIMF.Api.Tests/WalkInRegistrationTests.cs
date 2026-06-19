@@ -377,6 +377,48 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Walk_in_with_a_non_luhn_national_id_returns_400()
+    {
+        // D-459 (review) — the desk enforces the Luhn checksum. Negative case:
+        // the happy path uses a Luhn-valid id, so without this a broken Luhn rule
+        // would go unnoticed.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var profileTypeId = await GetVisitorProfileTypeAsync();
+        var organisationId = await GetOrganisationIdAsync();
+
+        var req = BuildRequest(profileTypeId, $"walkin-luhn-{Guid.NewGuid():N}@simf.test", organisationId);
+        req.NationalId = "1234567890"; // valid prefix + length, fails Luhn
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/visitors/register-onsite", req, adminToken);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Walk_in_arabic_plate_is_stored_as_the_canonical_latin_code()
+    {
+        // D-468 (review) — the desk stores the canonical Latin plate code, like
+        // the self-service path, so an Arabic-script entry persists as Latin.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var profileTypeId = await GetVisitorProfileTypeAsync();
+        var organisationId = await GetOrganisationIdAsync();
+
+        var req = BuildRequest(profileTypeId, $"walkin-plate-{Guid.NewGuid():N}@simf.test", organisationId);
+        req.PlateNumber = "ابح1234"; // Arabic A/B/J + digits
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/visitors/register-onsite", req, adminToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminWalkInRegistrationResponse>>())!;
+
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var profile = await appDb.UserProfiles.SingleAsync(p => p.UserId == body.Data!.UserId);
+        Assert.Equal("ABJ1234", profile.PlateNumber);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     private static AdminWalkInRegistrationRequest BuildRequest(
