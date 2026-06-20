@@ -287,5 +287,23 @@ Committed `fd0a30e` (verified: SIMF.Api + SIMF.Infrastructure build 0/0 with aud
 - **M4** — `DependencyInjection.EnsureAiPromptHashSecretConfigured` boot guard (Production refuses to start on the publicly-derivable dev HMAC key); dead `AiAssistant` config block deleted.
 - **L5** — OpenAI provider error body redacted (`AiAuditDetail.RedactValue`) + length-capped before logging.
 
-**Still open (Group B — need a per-item decision):** M1/M2 (upload magic-byte validation), M3 (hash OTP at rest — D-110-frozen Identity), M5 (JWT version + central packages — `.csproj`), M6 (CP moderation permission — full playbook), L1 (stream-token lifetime), L2 (central approval gate), L3 (asset open-redirect), L4 (shared path-traversal guard), L6 (`/admin/logs` redaction), L10 (Website CSS-URL escaping), and CSP for Web/CP (report-only first).
+### Non-critical batch — Group B progress (2026-06-20)
+
+Each item below was verified in an **isolated git worktree pinned to a clean commit** — a concurrent worker kept the main test tree mid-migration throughout, so live-tree runs were unreliable; the worktree gives a trustworthy green.
+
+Committed + verified:
+- **M5** — JWT lib version aligned (Web `8.2.1` → `8.18.0`) — `e0dd62d` (Web tests 39/39).
+- **M1** — magic-byte validation on asset image upload — `e0dd62d` (Api tests 1135/1135).
+- **L10** — Website landing image-URL escaping (`cssBgImage` scheme allow-list) — `5732471` (JS `node --check` + build).
+- **M2** — speaker-presentation upload PDF/Office magic-byte allow-list + tests — `af9cb35c`.
+- **L3** — external-link assets restricted to https + non-internal hosts — `af9cb35c` (Api tests 1135 + presentation 7/7).
+- **L1** — recording-stream token bound to the user (`sub`) + `Cache-Control: no-store` — `bea5a9df` (SessionRecording 11/11).
+- **M3** — OTP/account codes hashed at rest: keyed-HMAC `AccountCodeHasher` (truncated to the frozen 16-char column, D-110-safe); all four OTP services (`SignIn`, `Registration`, `Password`, `Badge`) store the hash, email the plaintext, and hash-then-compare on verify; test helpers recover the plaintext by brute-forcing the hash. *Full verification in progress.*
+
+Still open:
+- **L2** — centralize the `RequireApprovedAccount` gate into the dynamic `perm:` policy (defense-in-depth).
+- **L6** — `/admin/logs` download redaction — under review: redacting emails would harm legitimate admin debugging, so the leaning is to keep `Logs.View` narrowly assigned (already audited) rather than redact.
+- **M6** — CP `SessionModerationDesk` permission (full permission playbook; sits in the concurrent worker's active CP area).
+- **L4** (shared path-traversal guard — latent), CSP for Web/CP (report-only first).
+
 **Group C (ops/CI/device):** INFO-1 (IIS header suppression), INFO-4 (SBOM + vulnerable-package CI gate), L7 (`AllowedHosts` — tied to held H2), L8/L9 (Flutter — device-verified, with held C2).
