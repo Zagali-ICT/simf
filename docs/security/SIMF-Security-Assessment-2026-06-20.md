@@ -300,10 +300,11 @@ Committed + verified:
 - **L1** — recording-stream token bound to the user (`sub`) + `Cache-Control: no-store` — `bea5a9df` (SessionRecording 11/11).
 - **M3** — OTP/account codes hashed at rest: keyed-HMAC `AccountCodeHasher` (truncated to the frozen 16-char column, D-110-safe); all four OTP services (`SignIn`, `Registration`, `Password`, `Badge`) store the hash, email the plaintext, and hash-then-compare on verify; test helpers recover the plaintext by brute-forcing the hash. *Full verification in progress.*
 
-Still open:
-- **L2** — centralize the `RequireApprovedAccount` gate into the dynamic `perm:` policy (defense-in-depth).
-- **L6** — `/admin/logs` download redaction — under review: redacting emails would harm legitimate admin debugging, so the leaning is to keep `Logs.View` narrowly assigned (already audited) rather than redact.
-- **M6** — CP `SessionModerationDesk` permission (full permission playbook; sits in the concurrent worker's active CP area).
-- **L4** (shared path-traversal guard — latent), CSP for Web/CP (report-only first).
+- **L2** — **committed `d4a461da`**: every dynamic `perm:` policy now also requires `account_state="Approved"` (defense-in-depth), so an admin endpoint can't be reached by a non-approved account even if it forgets the explicit `RequireApprovedAccount` chain. (Admin + PublicRelations perm-holders are already Approved; gate endpoints use role policies — unaffected. Confirmed: full SIMF.Api.Tests 1143/1143.)
+
+Closed by decision / deferred:
+- **L6** — `/admin/logs` redaction: **accepted, not implemented.** Redacting emails from log downloads harms legitimate admin debugging; the logs are verified clean of secrets and the endpoint is already permission-gated (`Logs.View`) + audited. Control = keep `Logs.View` narrowly assigned (current state).
+- **M6** — CP `SessionModerationDesk` permission: **deferred to a focused follow-up.** It's the full permission playbook (catalog code + seed + API gate + CP `[RequirePermission]` + `AuthorizedAction` + nav + enforcement test + E2E doc) inside the CP area the concurrent worker is actively editing — doing it now risks collision. The API already enforces per-session moderator/Administrator, so the live gap is the CP-side convention only.
+- **L4** (shared path-traversal guard — latent, no current exploit) and CSP for Web/CP (needs report-only + live-browser tuning) — deferred.
 
 **Group C (ops/CI/device):** INFO-1 (IIS header suppression), INFO-4 (SBOM + vulnerable-package CI gate), L7 (`AllowedHosts` — tied to held H2), L8/L9 (Flutter — device-verified, with held C2).
