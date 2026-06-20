@@ -304,7 +304,7 @@ Committed + verified:
 
 Closed by decision / deferred:
 - **L6** — `/admin/logs` redaction: **accepted, not implemented.** Redacting emails from log downloads harms legitimate admin debugging; the logs are verified clean of secrets and the endpoint is already permission-gated (`Logs.View`) + audited. Control = keep `Logs.View` narrowly assigned (current state).
-- **M6** — CP `SessionModerationDesk` permission: **deferred to a focused follow-up.** It's the full permission playbook (catalog code + seed + API gate + CP `[RequirePermission]` + `AuthorizedAction` + nav + enforcement test + E2E doc) inside the CP area the concurrent worker is actively editing — doing it now risks collision. The API already enforces per-session moderator/Administrator, so the live gap is the CP-side convention only.
+- **M6** — CP `SessionModerationDesk` permission: **committed `0cd796b6`.** The page now carries `[RequirePermission(PermissionCatalog.Questions.Moderate)]` and the Hide/Unhide/Push buttons are wrapped in `<AuthorizedAction Permission="…Questions.Moderate">` (the code already existed + is seeded — no migration). Verified: SIMF.ControlPanel.Tests 180/180. The API's per-session moderator/Administrator enforcement is unchanged (the stronger gate).
 - **L4** (shared path-traversal guard — latent, no current exploit) and CSP for Web/CP (needs report-only + live-browser tuning) — deferred.
 
 **Group C (ops/CI/device):** INFO-1 (IIS header suppression), INFO-4 (SBOM + vulnerable-package CI gate), L7 (`AllowedHosts` — tied to held H2), L8/L9 (Flutter — device-verified, with held C2).
