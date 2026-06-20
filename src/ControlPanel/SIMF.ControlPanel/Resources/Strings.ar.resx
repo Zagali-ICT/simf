@@ -73,6 +73,22 @@
   <data name="Module.HallSeatLayouts" xml:space="preserve"><value>مخططات مقاعد القاعات</value></data>
   <data name="Module.SessionSeatPlans" xml:space="preserve"><value>مخطط مقاعد الجلسات</value></data>
   <data name="Module.SpeakerMeetingRequests" xml:space="preserve"><value>طلبات مقابلة المتحدثين</value></data>
+  <data name="Module.AdminSpeakerAvailability" xml:space="preserve"><value>توفّر المتحدثين</value></data>
+  <data name="Admin.SpeakerAvailability.Title" xml:space="preserve"><value>توفّر المتحدثين</value></data>
+  <data name="Admin.SpeakerAvailability.Speaker" xml:space="preserve"><value>المتحدّث</value></data>
+  <data name="Admin.SpeakerAvailability.PickSpeaker" xml:space="preserve"><value>اختر متحدّثاً…</value></data>
+  <data name="Admin.SpeakerAvailability.AddWindow" xml:space="preserve"><value>إضافة فترة توفّر</value></data>
+  <data name="Admin.SpeakerAvailability.Start" xml:space="preserve"><value>البداية (UTC)</value></data>
+  <data name="Admin.SpeakerAvailability.End" xml:space="preserve"><value>النهاية (UTC)</value></data>
+  <data name="Admin.SpeakerAvailability.SlotMinutes" xml:space="preserve"><value>مدة الفترة (دقائق)</value></data>
+  <data name="Admin.SpeakerAvailability.Add" xml:space="preserve"><value>إضافة الفترة</value></data>
+  <data name="Admin.SpeakerAvailability.Windows" xml:space="preserve"><value>الفترات</value></data>
+  <data name="Admin.SpeakerAvailability.None" xml:space="preserve"><value>لا توجد فترات توفّر بعد.</value></data>
+  <data name="Admin.SpeakerAvailability.Min" xml:space="preserve"><value>دقيقة/فترة</value></data>
+  <data name="Admin.SpeakerAvailability.Added" xml:space="preserve"><value>تمت إضافة الفترة.</value></data>
+  <data name="Admin.SpeakerAvailability.Failed" xml:space="preserve"><value>فشلت العملية.</value></data>
+  <data name="Admin.SpeakerAvailability.BadDates" xml:space="preserve"><value>أدخل بداية ونهاية صحيحتين.</value></data>
+  <data name="Admin.SpeakerAvailability.BadSlot" xml:space="preserve"><value>أدخل مدة فترة موجبة.</value></data>
   <data name="Module.Gates" xml:space="preserve"><value>البوابات</value></data>
   <data name="Module.GatesOperator" xml:space="preserve"><value>مشغل البوابة</value></data>
   <data name="Module.Speakers" xml:space="preserve"><value>المتحدثون</value></data>

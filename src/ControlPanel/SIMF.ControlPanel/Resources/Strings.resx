@@ -73,6 +73,22 @@
   <data name="Module.HallSeatLayouts" xml:space="preserve"><value>Hall seat layouts</value></data>
   <data name="Module.SessionSeatPlans" xml:space="preserve"><value>Session seat plans</value></data>
   <data name="Module.SpeakerMeetingRequests" xml:space="preserve"><value>Speaker meeting requests</value></data>
+  <data name="Module.AdminSpeakerAvailability" xml:space="preserve"><value>Speaker availability</value></data>
+  <data name="Admin.SpeakerAvailability.Title" xml:space="preserve"><value>Speaker availability</value></data>
+  <data name="Admin.SpeakerAvailability.Speaker" xml:space="preserve"><value>Speaker</value></data>
+  <data name="Admin.SpeakerAvailability.PickSpeaker" xml:space="preserve"><value>Select a speaker…</value></data>
+  <data name="Admin.SpeakerAvailability.AddWindow" xml:space="preserve"><value>Add an availability window</value></data>
+  <data name="Admin.SpeakerAvailability.Start" xml:space="preserve"><value>Start (UTC)</value></data>
+  <data name="Admin.SpeakerAvailability.End" xml:space="preserve"><value>End (UTC)</value></data>
+  <data name="Admin.SpeakerAvailability.SlotMinutes" xml:space="preserve"><value>Slot length (minutes)</value></data>
+  <data name="Admin.SpeakerAvailability.Add" xml:space="preserve"><value>Add window</value></data>
+  <data name="Admin.SpeakerAvailability.Windows" xml:space="preserve"><value>Windows</value></data>
+  <data name="Admin.SpeakerAvailability.None" xml:space="preserve"><value>No availability windows yet.</value></data>
+  <data name="Admin.SpeakerAvailability.Min" xml:space="preserve"><value>min slots</value></data>
+  <data name="Admin.SpeakerAvailability.Added" xml:space="preserve"><value>Window added.</value></data>
+  <data name="Admin.SpeakerAvailability.Failed" xml:space="preserve"><value>The operation failed.</value></data>
+  <data name="Admin.SpeakerAvailability.BadDates" xml:space="preserve"><value>Enter a valid start and end.</value></data>
+  <data name="Admin.SpeakerAvailability.BadSlot" xml:space="preserve"><value>Enter a positive slot length.</value></data>
   <data name="Module.Gates" xml:space="preserve"><value>Gates</value></data>
   <data name="Module.GatesOperator" xml:space="preserve"><value>Gate operator</value></data>
   <data name="Module.Speakers" xml:space="preserve"><value>Speakers</value></data>

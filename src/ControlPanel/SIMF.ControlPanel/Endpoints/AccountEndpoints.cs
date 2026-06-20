@@ -2186,6 +2186,30 @@ internal static class AccountEndpoints
                 id, body, token));
         });
 
+        // D-474 (#11) — speaker availability windows passthroughs.
+        group.MapGet("/admin/speakers/{speakerId:guid}/availability-windows",
+            async (Guid speakerId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListSpeakerAvailabilityWindowsAsync(speakerId, token));
+        });
+        group.MapPost("/admin/speakers/{speakerId:guid}/availability-windows",
+            async (Guid speakerId, CreateSpeakerAvailabilityWindowRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateSpeakerAvailabilityWindowAsync(speakerId, body, token));
+        });
+        group.MapDelete("/admin/speaker-availability-windows/{windowId:guid}",
+            async (Guid windowId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeleteSpeakerAvailabilityWindowAsync(windowId, token));
+        });
+
         // D-199 — News admin CRUD BFF passthroughs.
         group.MapPost("/admin/news/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>

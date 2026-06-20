@@ -2083,6 +2083,30 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
+    // D-474 (#11) — speaker availability windows.
+    public Task<ApiCallResult<IReadOnlyList<AdminSpeakerAvailabilityWindow>>>
+        ListSpeakerAvailabilityWindowsAsync(Guid speakerId, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<IReadOnlyList<AdminSpeakerAvailabilityWindow>>(
+            HttpMethod.Get, $"speakers/{speakerId}/availability-windows", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminSpeakerAvailabilityWindow>>
+        CreateSpeakerAvailabilityWindowAsync(Guid speakerId,
+            CreateSpeakerAvailabilityWindowRequest request, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSpeakerAvailabilityWindow>(
+            HttpMethod.Post, $"speakers/{speakerId}/availability-windows",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>>
+        DeleteSpeakerAvailabilityWindowAsync(Guid windowId, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"speaker-availability-windows/{windowId}", content: null,
+            accessToken, cancellationToken);
+
     // -- D-199 — News admin CRUD (SIMF.Contracts.PublicRelations) -----------
 
     public Task<ApiCallResult<GridPage<AdminNewsSummary>>> ListNewsAsync(

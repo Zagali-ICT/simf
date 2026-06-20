@@ -1,0 +1,195 @@
+@* D-474/D-475 (#11, Group G) — the team defines a speaker's availability windows;
+   the VIP-meeting flow offers their free slots. Gated by SpeakerMeetingRequests.Manage. *@
+@page "/admin/speaker-availability"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.SpeakerMeetingRequests.Manage)]
+@using System.Globalization
+@using SIMF.Contracts.Programme
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.SpeakerAvailability.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.SpeakerAvailability.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <div class="simf-field">
+            <label class="simf-field__label" for="spk-pick">@L["Admin.SpeakerAvailability.Speaker"]</label>
+            <div class="simf-field__control">
+                <select id="spk-pick" class="simf-field__input"
+                        value="@_speakerId" @onchange="OnSpeakerChanged">
+                    <option value="">@L["Admin.SpeakerAvailability.PickSpeaker"]</option>
+                    @foreach (var s in _speakers)
+                    {
+                        <option value="@s.Id">@s.Name</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        @if (_speakerId is not null)
+        {
+            <h3 class="simf-section-title">@L["Admin.SpeakerAvailability.AddWindow"]</h3>
+            <div class="simf-form__fields">
+                <SimfTextField Label="@L["Admin.SpeakerAvailability.Start"]" Type="datetime-local"
+                               @bind-Value="_start" Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.SpeakerAvailability.End"]" Type="datetime-local"
+                               @bind-Value="_end" Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.SpeakerAvailability.SlotMinutes"]" Type="number"
+                               @bind-Value="_slotMinutes" Disabled="_busy" />
+            </div>
+            <div class="simf-form__actions">
+                <SimfButton Type="button" Loading="_busy" OnClick="AddWindowAsync">
+                    @L["Admin.SpeakerAvailability.Add"]
+                </SimfButton>
+            </div>
+
+            <h3 class="simf-section-title">@L["Admin.SpeakerAvailability.Windows"]</h3>
+            @if (_windows.Count == 0)
+            {
+                <SimfEmptyState Title="@L["Admin.SpeakerAvailability.None"]" />
+            }
+            else
+            {
+                <ul class="simf-plain-list">
+                    @foreach (var w in _windows)
+                    {
+                        <li>
+                            @w.StartUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm")
+                            – @w.EndUtc.UtcDateTime.ToString("HH:mm") UTC
+                            · @w.SlotMinutes @L["Admin.SpeakerAvailability.Min"]
+                            <AuthorizedAction Permission="@PermissionCatalog.SpeakerMeetingRequests.Manage">
+                                <SimfToolbarButton Icon="trash" Title="@L["Grid.Delete"]"
+                                                   Disabled="_busy"
+                                                   OnClick="@(() => DeleteWindowAsync(w.Id))" />
+                            </AuthorizedAction>
+                        </li>
+                    }
+                </ul>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private List<AdminSpeakerSummary> _speakers = new();
+    private List<AdminSpeakerAvailabilityWindow> _windows = new();
+    private Guid? _speakerId;
+    private string _start = string.Empty;
+    private string _end = string.Empty;
+    private string _slotMinutes = "30";
+    private bool _busy;
+    private Toast? _toast;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminSpeakerSummary>>>(
+            "simfAccount.postJson", "/account/api/admin/speakers/list",
+            new GridQuery { Top = 500 });
+        if (envelope is { Success: true, Data: not null })
+        {
+            _speakers = envelope.Data.Items.OrderBy(s => s.Name).ToList();
+        }
+    }
+
+    private async Task OnSpeakerChanged(ChangeEventArgs e)
+    {
+        _toast = null;
+        _speakerId = Guid.TryParse(e.Value?.ToString(), out var id) ? id : null;
+        await LoadWindowsAsync();
+    }
+
+    private async Task LoadWindowsAsync()
+    {
+        if (_speakerId is not { } id) { _windows = new(); return; }
+        var envelope = await JS.InvokeAsync<ApiResult<IReadOnlyList<AdminSpeakerAvailabilityWindow>>>(
+            "simfAccount.getJson", $"/account/api/admin/speakers/{id}/availability-windows");
+        _windows = envelope is { Success: true, Data: not null }
+            ? envelope.Data.ToList()
+            : new();
+    }
+
+    private async Task AddWindowAsync()
+    {
+        if (_speakerId is not { } id) { return; }
+        if (!TryParseUtc(_start, out var start) || !TryParseUtc(_end, out var end))
+        {
+            _toast = new Toast("error", L["Admin.SpeakerAvailability.BadDates"]);
+            return;
+        }
+        if (!int.TryParse(_slotMinutes, out var slot) || slot <= 0)
+        {
+            _toast = new Toast("error", L["Admin.SpeakerAvailability.BadSlot"]);
+            return;
+        }
+
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<AdminSpeakerAvailabilityWindow>>(
+                "simfAccount.postJson",
+                $"/account/api/admin/speakers/{id}/availability-windows",
+                new CreateSpeakerAvailabilityWindowRequest
+                {
+                    StartUtc = start, EndUtc = end, SlotMinutes = slot,
+                });
+            if (envelope is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.SpeakerAvailability.Added"]);
+                _start = _end = string.Empty;
+                await LoadWindowsAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SpeakerAvailability.Failed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task DeleteWindowAsync(Guid windowId)
+    {
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson",
+                $"/account/api/admin/speaker-availability-windows/{windowId}");
+            if (envelope is { Success: true })
+            {
+                await LoadWindowsAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SpeakerAvailability.Failed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private static bool TryParseUtc(string value, out DateTimeOffset result)
+    {
+        if (DateTime.TryParse(value, CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out var dt))
+        {
+            result = new DateTimeOffset(DateTime.SpecifyKind(dt, DateTimeKind.Utc));
+            return true;
+        }
+        result = default;
+        return false;
+    }
+}
