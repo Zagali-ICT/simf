@@ -34,22 +34,55 @@ class SpeakersRepository {
     );
   }
 
+  /// `GET /app/speakers/{id}/available-slots` (approved-only, D-474) → the free
+  /// meeting slots derived from the speaker's availability windows.
+  Future<List<SpeakerSlot>> getAvailableSlots(String speakerId) {
+    return _client.get<List<SpeakerSlot>>(
+      '/app/speakers/$speakerId/available-slots',
+      decodeData: (data) => (data as List? ?? const <dynamic>[])
+          .whereType<Map<dynamic, dynamic>>()
+          .map((e) => SpeakerSlot.fromJson(e.cast<String, dynamic>()))
+          .toList(growable: false),
+    );
+  }
+
   /// `POST /app/speakers/{id}/meeting-requests` (approved-only, E2). The body is
-  /// `{ requesterName, subject }`; the response is discarded (success is enough).
+  /// `{ requesterName, subject }` plus an optional picked slot (D-474/D-475 — the
+  /// VIP slot flow; the server requires VIP + a free slot when one is sent). The
+  /// response is discarded (success is enough).
   Future<void> submitMeetingRequest(
     String speakerId, {
     required String requesterName,
     required String subject,
+    DateTime? slotStartUtc,
+    DateTime? slotEndUtc,
   }) {
     return _client.post<bool>(
       '/app/speakers/$speakerId/meeting-requests',
       body: <String, dynamic>{
         'requesterName': requesterName,
         'subject': subject,
+        if (slotStartUtc != null)
+          'slotStartUtc': slotStartUtc.toUtc().toIso8601String(),
+        if (slotEndUtc != null)
+          'slotEndUtc': slotEndUtc.toUtc().toIso8601String(),
       },
       decodeData: (_) => true,
     );
   }
+}
+
+/// D-474 (#11) — one bookable meeting slot offered by a speaker.
+class SpeakerSlot {
+  const SpeakerSlot({required this.startUtc, required this.endUtc});
+
+  factory SpeakerSlot.fromJson(Map<String, dynamic> json) => SpeakerSlot(
+        startUtc: DateTime.parse(json['startUtc'] as String).toUtc(),
+        endUtc: DateTime.parse(json['endUtc'] as String).toUtc(),
+      );
+
+  final DateTime startUtc;
+  final DateTime endUtc;
 }
 
 final speakersRepositoryProvider = Provider<SpeakersRepository>((ref) {

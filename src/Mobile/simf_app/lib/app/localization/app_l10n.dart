@@ -880,6 +880,12 @@ class AppL10n {
   String get meetingNameLabel => _t('الاسم', 'Your name');
   String get meetingSubjectLabel => _t('الموضوع', 'Subject');
   String get meetingSendButton => _t('إرسال الطلب', 'Send request');
+  // D-474/D-475 (#11) — the VIP availability-slot picker.
+  String get meetingSlotLabel => _t('فترة الاجتماع (لكبار الشخصيات)', 'Meeting slot (VIP)');
+  String get meetingSlotNone =>
+      _t('لا توجد فترات متاحة حالياً', 'No meeting slots available right now');
+  String get meetingVipOnly =>
+      _t('حجز فترة اجتماع متاح لضيوف كبار الشخصيات فقط', 'Booking a meeting slot is for VIP guests only');
   String get meetingRequestSent =>
       _t('تم إرسال طلب المقابلة', 'Meeting request sent');
   String get meetingRequestInvalid => _t(

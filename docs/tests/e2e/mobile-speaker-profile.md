@@ -37,6 +37,7 @@
 | E2E-MOB020-009 | Tap a speaker session → Session detail (17) | happy | P1 | authored ✓ (screen) |
 | E2E-MOB020-010 | RTL render; hero, back chevron and tabs right-to-left | i18n | P1 | authored ✓ (screen) |
 | E2E-MOB020-011 | 125px gold-ringed avatar renders the speaker initials | happy | P1 | _to author_ |
+| E2E-MOB020-012 | **VIP slot picker (D-474/D-477):** when the speaker has availability windows, the meeting sheet shows a free-slot dropdown (from `GET …/available-slots`); picking a slot sends it. VIP-only is server-enforced (403 → "VIP guests only"); no slots / none picked = the legacy topic-only request | happy | P0 | authored ✓ (`speaker_profile_screen_test` slot-picker + API `SpeakerMeetingVipSlotTests`) |
 | E2E-MOB020-012 | Tapping a CV tab pill swaps the navy bio card content | happy | P0 | _to author_ |
 | E2E-MOB020-013 | Active tab pill is gold-filled; the rest are navy with a beige hairline | happy | P1 | _to author_ |
 | E2E-MOB020-014 | Only CV sections with content render a pill (1–4 pills) | edge | P1 | _to author_ |
