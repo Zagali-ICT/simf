@@ -462,6 +462,15 @@ class AppL10n {
       _t('تعذّر تفعيل الدخول بالبصمة', "Couldn't enable Face ID sign-in");
   String get biometricDisabledToast =>
       _t('تم إيقاف الدخول بالبصمة', 'Face ID sign-in turned off');
+  // Disabling revokes the device key and wipes the local biometric credential —
+  // confirm the destructive action first (owner 2026-06-21).
+  String get biometricDisableConfirmTitle =>
+      _t('إيقاف الدخول بالبصمة', 'Turn off Face ID sign-in');
+  String get biometricDisableConfirmBody => _t(
+        'سيتم حذف بيانات الدخول بالبصمة من هذا الجهاز نهائياً.',
+        'Your Face ID sign-in data will be permanently deleted from this device.',
+      );
+  String get biometricDisableConfirmAction => _t('حذف', 'Delete');
 
   // Email-OTP second factor + reset flow (Page 003 L-5/L-6).
   String get otpTitle => _t('رمز التحقق', 'Verification code');

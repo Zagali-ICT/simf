@@ -52,6 +52,7 @@
 | E2E-MOB013-016 | The full-width اسأل المحاور tile opens send-question (1052:12856, D-446) | happy | P1 | authored ✓ (screen — tile → `sendQuestion`) |
 | E2E-MOB013-017 | RTL tile/row order matches the frame (D-436 position assertions) | i18n | P1 | authored ✓ (screen — `getCenter().dx` about/news/smart-row-2) |
 | E2E-MOB013-018 | Discover badge is the filled "السعودية" (signed-in), not "KSA" (758:1280, D-446) | i18n/visual | P2 | authored ✓ (screen) |
+| E2E-MOB013-019 | **اللقاءات الثنائية → Coming soon (owner 2026-06-21):** the bilateral-meetings news tile opens the **ComingSoon** placeholder (the feature is not designed yet), not the media gallery | happy | P2 | authored ✓ (screen — tile → `bilateralMeetings` ComingSoon route) |
 
 ## Scenarios
 
@@ -297,6 +298,16 @@ Scenario: The full-width اسأل المحاور tile opens the send-question sc
   Given the signed-in Home is shown
   When the user taps the full-width "اسأل المحاور" tile
   Then the send-a-question screen opens (RouteNames.sendQuestion)
+```
+
+### E2E-MOB013-019 — اللقاءات الثنائية opens Coming soon (owner 2026-06-21)
+
+```gherkin
+Scenario: The bilateral-meetings tile lands on the Coming-soon placeholder
+  Given the signed-in Home is shown
+  When the user taps the "اللقاءات الثنائية" news tile
+  Then the ComingSoon placeholder opens (RouteNames.bilateralMeetings)
+  And the media gallery does NOT open (the feature is not designed yet)
 ```
 
 ### E2E-MOB013-017 — RTL tile/row order matches the frame (D-436)

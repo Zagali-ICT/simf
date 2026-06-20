@@ -201,7 +201,9 @@ void main() {
       await tester.pump(const Duration(seconds: 5));
     });
 
-    testWidgets('toggling off revokes the device key', (tester) async {
+    testWidgets(
+        'toggling off asks to confirm the permanent delete; confirming revokes',
+        (tester) async {
       final biometric = _FakeBiometricAuth(available: true, enabled: true);
       await _pump(
         tester,
@@ -214,9 +216,39 @@ void main() {
 
       await tester.tap(tile);
       await tester.pumpAndSettle();
+      // The destructive-action confirm — nothing is revoked until the user agrees.
+      expect(
+        find.text('Your Face ID sign-in data will be permanently deleted '
+            'from this device.'),
+        findsOneWidget,
+      );
+      expect(biometric.disableCalls, 0);
+
+      await tester.tap(find.text('Delete'));
+      await tester.pumpAndSettle();
       expect(biometric.disableCalls, 1);
       expect(tester.widget<SwitchListTile>(tile).value, isFalse);
       await tester.pump(const Duration(seconds: 5));
+    });
+
+    testWidgets('cancelling the disable confirm keeps the device key',
+        (tester) async {
+      final biometric = _FakeBiometricAuth(available: true, enabled: true);
+      await _pump(
+        tester,
+        const Scaffold(body: FaceIdToggleTile()),
+        biometric: biometric,
+      );
+
+      final tile = find.byType(SwitchListTile);
+      await tester.tap(tile);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      // No revoke, and the switch stays on (the key was never touched).
+      expect(biometric.disableCalls, 0);
+      expect(tester.widget<SwitchListTile>(tile).value, isTrue);
     });
   });
 }

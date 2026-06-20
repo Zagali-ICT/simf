@@ -158,6 +158,12 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 201, name: RouteNames.faq, path: '/faq', labelAr: 'الأسئلة الشائعة', labelEn: 'FAQ'),
   _Route(number: 202, name: RouteNames.sessionPresentations, path: '/session-presentations', labelAr: 'عروض الجلسات', labelEn: 'Session presentations'),
   _Route(number: 203, name: RouteNames.contactUs, path: '/contact-us', labelAr: 'تواصل معنا', labelEn: 'Contact us'),
+  // Owner batch (2026-06-21) — entry points for features not yet designed/built;
+  // they fall through to ComingSoonScreen (sentinel numbers 200+). #5 bilateral
+  // meetings (home tile, undesigned); #8 saved sessions/meetings (My Area stats).
+  _Route(number: 204, name: RouteNames.bilateralMeetings, path: '/bilateral-meetings', labelAr: 'اللقاءات الثنائية', labelEn: 'Bilateral meetings'),
+  _Route(number: 205, name: RouteNames.savedSessions, path: '/saved-sessions', labelAr: 'الجلسات المحفوظة', labelEn: 'Saved sessions'),
+  _Route(number: 206, name: RouteNames.savedMeetings, path: '/saved-meetings', labelAr: 'المقابلات المحفوظة', labelEn: 'Saved meetings'),
 ];
 
 /// Auxiliary auth routes that aren't numbered in the mockup but live in

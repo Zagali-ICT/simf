@@ -308,13 +308,18 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
         const SizedBox(height: SimfTokens.space3),
         KsaTileRow(
           children: <Widget>[
+            // Saved meetings / saved sessions are not built yet (owner
+            // 2026-06-21) — the tiles still show the live count but tap through
+            // to the ComingSoon placeholder.
             KsaStatTile(
               value: dashboard.counters.meetingsCount,
               label: l10n.statMeetings,
+              onTap: () => context.pushNamed(RouteNames.savedMeetings),
             ),
             KsaStatTile(
               value: dashboard.counters.bookedSessionsCount,
               label: l10n.statBookedSessions,
+              onTap: () => context.pushNamed(RouteNames.savedSessions),
             ),
           ],
         ),

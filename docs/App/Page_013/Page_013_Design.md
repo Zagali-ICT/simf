@@ -48,7 +48,7 @@ scrolling `ListView`:
 3. **Section «عن الملتقى · المحاور»** with a trailing **المزيد** action →
    About; a 3-up `KsaTileRow`: **المتحدثون** · **الأجنحة** · **الرعاة**.
 4. **Section «الأخبار والتغطية»** with **المزيد** → News; a 2-up row:
-   **اللقاءات الثنائية** (videocam icon → gallery) · **الأرشيف**.
+   **اللقاءات الثنائية** (videocam icon → **Coming soon**, not designed yet) · **الأرشيف**.
 5. **Section «الميزات الذكية»** with **المزيد** → More; two 2-up rows:
    **قابل أشخاص مثلك** · **المساعد الذكي**, then **ملخص الجلسات** ·
    **بطاقتي الذكية**.

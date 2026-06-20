@@ -82,6 +82,14 @@ class RouteNames {
   // My Area; Approved account). Delegation meetings are managed on the CP.
   static const String myMeetings = 'myMeetings';
 
+  // Owner batch (2026-06-21) — entry points whose feature is not designed/built
+  // yet, so they render the ComingSoon placeholder (sentinel numbers 200+):
+  //   • bilateralMeetings (اللقاءات الثنائية) — home tile, not designed yet (#5).
+  //   • savedSessions / savedMeetings — My Area stat tiles, not built yet (#8).
+  static const String bilateralMeetings = 'bilateralMeetings';
+  static const String savedSessions = 'savedSessions';
+  static const String savedMeetings = 'savedMeetings';
+
   // FDS-014 visitor contact sharing (D-286 API; additive, not mockup-numbered).
   // Reached from More / My Area; all three require an Approved account.
   static const String shareMyContact = 'shareMyContact';

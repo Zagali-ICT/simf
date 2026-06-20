@@ -199,6 +199,15 @@ class _FaceIdToggleTileState extends ConsumerState<FaceIdToggleTile> {
   }
 
   Future<void> _toggle(AppL10n l10n, bool turnOn) async {
+    // Disabling permanently deletes the device key — confirm before revoking it
+    // (owner 2026-06-21). Enabling stays a one-tap action here (the confirm +
+    // OTP step-up is a separate, backend-backed change).
+    if (!turnOn && !await _confirmDisable(l10n)) {
+      return;
+    }
+    if (!mounted) {
+      return;
+    }
     final messenger = ScaffoldMessenger.of(context);
     final biometric = ref.read(biometricAuthProvider);
     setState(() => _busy = true);
@@ -220,5 +229,29 @@ class _FaceIdToggleTileState extends ConsumerState<FaceIdToggleTile> {
         setState(() => _busy = false);
       }
     }
+  }
+
+  /// Confirms the destructive disable: revoking the device key deletes the local
+  /// biometric credential permanently (it can only be re-enrolled, not restored).
+  /// Returns true only when the user explicitly taps Delete.
+  Future<bool> _confirmDisable(AppL10n l10n) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.biometricDisableConfirmTitle),
+        content: Text(l10n.biometricDisableConfirmBody),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.cancelLabel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.biometricDisableConfirmAction),
+          ),
+        ],
+      ),
+    );
+    return confirmed ?? false;
   }
 }

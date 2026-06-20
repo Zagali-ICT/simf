@@ -19,7 +19,7 @@ As-built: `features/myarea/my_area_screen.dart` on the shared KSA shell
 4. **Tile row 2** — **مشاركة ملفي** (→ `/contacts/share` QR screen) · **مشاركة جهة
    اتصال** (.vcf native share).
 5. **Tile row 3 (stats)** — `{meetingsCount}` مقابلات مؤكدة · `{bookedSessionsCount}`
-   جلسات محفوظة (gold number over white label; display-only).
+   جلسات محفوظة (gold number over white label; tap → **Coming soon**, owner 2026-06-21).
 6. **جدولي اليوم** (`KsaSectionHeader`) — rows (frame node 512:2116): bold 12-hour
    time (`hh:mm a`, LTR-pinned) at the inline start, title (+ hall when present)
    end-aligned, gold star at the inline end. Session rows tappable; empty list →

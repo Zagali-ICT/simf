@@ -366,6 +366,20 @@ void main() {
       expect(find.text('Booked'), findsOneWidget);
     });
 
+    testWidgets('stat tile fires onTap when given one', (tester) async {
+      var taps = 0;
+      await _pump(
+        tester,
+        Scaffold(
+          body: KsaStatTile(value: 6, label: 'Booked', onTap: () => taps++),
+        ),
+      );
+
+      await tester.tap(find.text('Booked'));
+      await tester.pumpAndSettle();
+      expect(taps, 1);
+    });
+
     testWidgets('list row shows title + subtitle + badge and fires onTap',
         (tester) async {
       var taps = 0;
