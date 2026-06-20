@@ -51,8 +51,10 @@ seat comes from Bookings (SIMF-FDS-005).
 | FR-604 sponsors and their tiers | UC-18 |
 | FR-605 the interactive 3D venue map and navigation | UC-18 |
 
-Delegations are not part of this feature; they were removed from scope
-(SIMF-CON-001 section 14).
+Delegations are not part of this feature; the original module was removed from
+scope (SIMF-CON-001 section 14) and deleted (D-277). It was re-introduced
+2026-06-20 as a light additive flag on visitors/countries (D-473, req #10) —
+managed from the `/admin/delegates` desk, not here.
 
 ## 4. Feature overview
 

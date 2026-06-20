@@ -539,6 +539,10 @@
     /// photo. Off by default so the regular walk-in desk is unchanged.</summary>
     [Parameter] public bool VipMode { get; set; }
 
+    /// <summary>D-473 (#10) — when true (the delegates desk), the created visitor
+    /// is flagged as a delegation member and the API requires an invited country.</summary>
+    [Parameter] public bool IsDelegate { get; set; }
+
     /// <summary>The audience tier names the VIP page is restricted to.</summary>
     private static readonly string[] VipTierNames = { "VVIP", "VIP" };
 
@@ -955,6 +959,10 @@
                     InternationalMobile = string.IsNullOrWhiteSpace(_model.InternationalMobile) ? null : _model.InternationalMobile.Trim(),
                     OrganisationId = _model.OrganisationId,
                     InterestIds = _model.InterestIds.ToList(),
+                    // D-473 (#10) — when hosted by the delegates page, mark the
+                    // visitor as a delegation member (the API then requires an
+                    // invited nationality).
+                    IsDelegate = IsDelegate,
                 });
 
             if (envelope is { Success: true, Data: not null })

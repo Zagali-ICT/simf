@@ -258,7 +258,7 @@ flowchart LR
 | Registration & Approval | Registration requests, attendee profiles, the vetting and approval workflow, attachments | Registration types are dynamic; approval sets the final user type and permissions |
 | Badge & Access Control | Badges, QR codes, entry verification, on-site registration, attendance records | |
 | Forum Programme | Themes/pillars, sessions, halls, seating and seat assignment, speakers, presentations | Sessions may be live or non-live; hall capacity is configurable |
-| Exhibition | Booths, exhibitors, sponsors and tiers, the venue map | Delegations are out of scope (removed 2026-05-20) |
+| Exhibition | Booths, exhibitors, sponsors and tiers, the venue map | Delegations: original module removed 2026-05-20 (D-277); re-introduced 2026-06-20 as a light additive flag (D-473, req #10) — a delegate is a visitor with `IsDelegate` + an invited `Country`, no standalone module |
 | Engagement & Live | Live broadcast state, session questions, comments and the two-stage moderation | Question availability is time- and location-gated |
 | Networking | Interests, one-to-one meeting requests, "meet people like you" matchmaking | Matchmaking is interest- and session-based |
 | Content & Media | Media coverage, social posts, news, previous editions (archive) | Content is Control-Panel managed |

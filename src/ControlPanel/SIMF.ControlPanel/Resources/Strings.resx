@@ -599,6 +599,7 @@
   <data name="Admin.Countries.Field.DisplayOrderHint" xml:space="preserve"><value>Sort key in the nationality picker (zero or more; ascending).</value></data>
   <data name="Admin.Countries.Field.DisplayOrderInvalid" xml:space="preserve"><value>Display order must be zero or a positive integer.</value></data>
   <data name="Admin.Countries.Field.IsActive" xml:space="preserve"><value>Active — show in the nationality picker</value></data>
+  <data name="Admin.Countries.Field.IsInvited" xml:space="preserve"><value>Invited to send a delegation (وفد)</value></data>
   <data name="Admin.Countries.Add.Title" xml:space="preserve"><value>Add country</value></data>
   <data name="Admin.Countries.Edit.Title" xml:space="preserve"><value>Edit country</value></data>
   <data name="Admin.Countries.Details.Title" xml:space="preserve"><value>Country details</value></data>
@@ -2788,5 +2789,19 @@
   <data name="Admin.VipExport.Photo" xml:space="preserve"><value>Photo</value></data>
   <data name="Admin.VipExport.Download" xml:space="preserve"><value>Download</value></data>
   <data name="Module.AdminVisitorsVip" xml:space="preserve"><value>VIP registration</value></data>
+  <data name="Module.AdminDelegates" xml:space="preserve"><value>Delegates</value></data>
+  <data name="Admin.Delegates.Title" xml:space="preserve"><value>Delegates</value></data>
+  <data name="Admin.Delegates.Single.Title" xml:space="preserve"><value>Register a delegate</value></data>
+  <data name="Admin.Delegates.Single.Hint" xml:space="preserve"><value>A delegate is a normal visitor flagged as a delegation member; their nationality must be a country invited to send a delegation.</value></data>
+  <data name="Admin.Delegates.Bulk.Title" xml:space="preserve"><value>Bulk-generate badges</value></data>
+  <data name="Admin.Delegates.Bulk.Hint" xml:space="preserve"><value>Generate placeholder badges by profile type and count (e.g. 10 VIP, 500 Normal). Each badge carries default data and a ready QR.</value></data>
+  <data name="Admin.Delegates.Bulk.Count" xml:space="preserve"><value>Count</value></data>
+  <data name="Admin.Delegates.Bulk.IsDelegate" xml:space="preserve"><value>Flag the generated badges as delegates</value></data>
+  <data name="Admin.Delegates.Bulk.Generate" xml:space="preserve"><value>Generate badges</value></data>
+  <data name="Admin.Delegates.Bulk.Generating" xml:space="preserve"><value>Generating…</value></data>
+  <data name="Admin.Delegates.Bulk.Result" xml:space="preserve"><value>{0} badge(s) generated.</value></data>
+  <data name="Admin.Delegates.Bulk.Failed" xml:space="preserve"><value>Could not generate the badges.</value></data>
+  <data name="Admin.Delegates.Bulk.NoTypes" xml:space="preserve"><value>No active profile types to generate badges for.</value></data>
+  <data name="Admin.Delegates.Bulk.PickCount" xml:space="preserve"><value>Enter a count for at least one profile type.</value></data>
   <data name="Module.AdminVisitorsVipExport" xml:space="preserve"><value>VIP welcome export</value></data>
 </root>

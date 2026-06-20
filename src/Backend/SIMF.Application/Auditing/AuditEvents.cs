@@ -125,6 +125,8 @@ public static class AuditEvents
     // D-127 — on-site walk-in registration desk
     public const string AdminWalkInRegistered = "Admin.WalkInRegistered";
     public const string AdminWalkInRegisterFailed = "Admin.WalkInRegisterFailed";
+    // D-473 (#10): bulk-generate placeholder badges (by profile type + count).
+    public const string AdminBulkBadgesGenerated = "Admin.BulkBadgesGenerated";
 
     // Logs (P6 — per-project log files + CP viewer)
     public const string AdminLogViewed = "Admin.LogViewed";

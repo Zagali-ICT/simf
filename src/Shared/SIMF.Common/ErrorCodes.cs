@@ -106,6 +106,9 @@ public static class ErrorCodes
     // User profile — nationality (P8 renamed from VISITOR_NATIONALITY_UNKNOWN
     // so the wire code matches the new domain vocabulary).
     public const string ProfileNationalityUnknown = "PROFILE_NATIONALITY_UNKNOWN";
+    /// <summary>D-473 (#10) — a delegate's nationality is not a country invited
+    /// to send a delegation (وفد).</summary>
+    public const string DelegateCountryNotInvited = "DELEGATE_COUNTRY_NOT_INVITED";
 
     // Interests (P9 — D-050; الاهتمامات)
     public const string InterestInvalid = "INTEREST_INVALID";

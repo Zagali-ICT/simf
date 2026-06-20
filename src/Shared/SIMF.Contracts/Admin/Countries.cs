@@ -9,7 +9,9 @@ public sealed record AdminCountrySummary(
     string? PhonePrefix,
     int DisplayOrder,
     bool IsActive,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    // D-473 (#10) — invited to send a delegation (وفد).
+    bool IsInvited = false);
 
 /// <summary>Full country detail (Details + Edit modals).</summary>
 public sealed record AdminCountryDetail(
@@ -21,7 +23,9 @@ public sealed record AdminCountryDetail(
     int DisplayOrder,
     bool IsActive,
     DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTimeOffset? UpdatedAt,
+    // D-473 (#10) — invited to send a delegation (وفد).
+    bool IsInvited = false);
 
 public sealed class AdminCreateCountryRequest
 {
@@ -32,6 +36,9 @@ public sealed class AdminCreateCountryRequest
     public string NameArabic { get; set; } = string.Empty;
     public string? PhonePrefix { get; set; }
     public int DisplayOrder { get; set; }
+
+    /// <summary>D-473 (#10) — true for a country invited to send a delegation (وفد).</summary>
+    public bool IsInvited { get; set; }
 }
 
 public sealed class AdminUpdateCountryRequest
@@ -42,4 +49,7 @@ public sealed class AdminUpdateCountryRequest
     public string? PhonePrefix { get; set; }
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; } = true;
+
+    /// <summary>D-473 (#10) — true for a country invited to send a delegation (وفد).</summary>
+    public bool IsInvited { get; set; }
 }

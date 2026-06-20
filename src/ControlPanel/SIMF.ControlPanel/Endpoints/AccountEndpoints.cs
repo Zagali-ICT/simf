@@ -327,6 +327,15 @@ internal static class AccountEndpoints
             return Forward(await api.RegisterVisitorOnSiteAsync(body, token));
         });
 
+        // D-473 (#10) — bulk-generate placeholder badges (visitors / delegates).
+        group.MapPost("/admin/visitors/bulk-generate",
+            async (AdminBulkGenerateBadgesRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.BulkGenerateBadgesAsync(body, token));
+        });
+
         group.MapPost("/admin/others/register-onsite",
             async (AdminWalkInRegistrationRequest body, HttpContext http, SimfAdminClient api) =>
         {

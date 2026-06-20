@@ -103,6 +103,10 @@ public static class PermissionCatalog
         // V-1 (D-429) — export the VVIP/VIP welcome roster (موج/Mawj) as the
         // API + CSV + Excel feed shared with the technical teams.
         public const string ExportVip = "Visitors.ExportVip";
+
+        /// <summary>D-473 (#10) — bulk-generate placeholder badges by profile
+        /// type + count (visitors or delegates).</summary>
+        public const string BulkGenerate = "Visitors.BulkGenerate";
     }
 
     /// <summary>Attendee roster + badge printing.</summary>
@@ -643,6 +647,7 @@ public static class PermissionCatalog
         new(Visitors.Export, "Visitors", "Export", "Export visitors", AdminOnly),
         new(Visitors.Import, "Visitors", "Import", "Import visitors", AdminOnly),
         new(Visitors.RegisterOnsite, "Visitors", "RegisterOnsite", "Walk-in register a visitor", AdminOnly),
+        new(Visitors.BulkGenerate, "Visitors", "BulkGenerate", "Bulk-generate placeholder badges (visitors / delegates)", AdminOnly),
         new(Visitors.ExportVip, "Visitors", "ExportVip", "Export the VVIP/VIP welcome roster (Mawj)", AdminOnly),
 
         new(Attendees.View, "Attendees", "View", "View the attendee roster", AdminOnly),

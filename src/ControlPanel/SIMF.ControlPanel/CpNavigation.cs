@@ -57,6 +57,8 @@ public static class CpNavigation
             // V-1 (D-429) — dedicated VVIP/VIP registration + the موج welcome-data export.
             new("Module.AdminVisitorsVip", "/admin/visitors/vip", RequiredPermission: PermissionCatalog.Visitors.RegisterOnsite, Icon: "star"),
             new("Module.AdminVisitorsVipExport", "/admin/visitors/vip/export", RequiredPermission: PermissionCatalog.Visitors.ExportVip, Icon: "download"),
+            // D-473 (#10) — delegates (وفد): a separate desk for delegate registration + bulk badges.
+            new("Module.AdminDelegates", "/admin/delegates", RequiredPermission: PermissionCatalog.Visitors.RegisterOnsite, Icon: "users"),
             new("Module.AdminOthers", "/admin/others", RequiredPermission: PermissionCatalog.Others.View, Icon: "id-card"),
             new("Module.AdminOthersPending", "/admin/others/pending", RequiredPermission: PermissionCatalog.Others.View, Icon: "hourglass"),
             // D-130 — print-bag station: lookup by QR id + reprint badge.

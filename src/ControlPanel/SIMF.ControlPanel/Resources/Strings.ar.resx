@@ -596,6 +596,7 @@
   <data name="Admin.Countries.Field.DisplayOrderHint" xml:space="preserve"><value>مفتاح الترتيب في قائمة الجنسيات (صفر أو أكبر؛ تصاعدياً).</value></data>
   <data name="Admin.Countries.Field.DisplayOrderInvalid" xml:space="preserve"><value>يجب أن يكون ترتيب العرض صفراً أو عدداً صحيحاً موجباً.</value></data>
   <data name="Admin.Countries.Field.IsActive" xml:space="preserve"><value>مفعّل — عرضه في قائمة الجنسيات</value></data>
+  <data name="Admin.Countries.Field.IsInvited" xml:space="preserve"><value>مدعوّة لإرسال وفد</value></data>
   <data name="Admin.Countries.Add.Title" xml:space="preserve"><value>إضافة بلد</value></data>
   <data name="Admin.Countries.Edit.Title" xml:space="preserve"><value>تعديل البلد</value></data>
   <data name="Admin.Countries.Details.Title" xml:space="preserve"><value>تفاصيل البلد</value></data>
@@ -2781,5 +2782,19 @@
   <data name="Admin.VipExport.Photo" xml:space="preserve"><value>الصورة</value></data>
   <data name="Admin.VipExport.Download" xml:space="preserve"><value>تنزيل</value></data>
   <data name="Module.AdminVisitorsVip" xml:space="preserve"><value>تسجيل كبار الشخصيات</value></data>
+  <data name="Module.AdminDelegates" xml:space="preserve"><value>الوفود</value></data>
+  <data name="Admin.Delegates.Title" xml:space="preserve"><value>الوفود</value></data>
+  <data name="Admin.Delegates.Single.Title" xml:space="preserve"><value>تسجيل عضو وفد</value></data>
+  <data name="Admin.Delegates.Single.Hint" xml:space="preserve"><value>عضو الوفد زائر عادي مميَّز كعضو في وفد؛ ويجب أن تكون جنسيته من دولة مدعوّة لإرسال وفد.</value></data>
+  <data name="Admin.Delegates.Bulk.Title" xml:space="preserve"><value>توليد شارات بالجملة</value></data>
+  <data name="Admin.Delegates.Bulk.Hint" xml:space="preserve"><value>وَلِّد شارات افتراضية حسب نوع الملف والعدد (مثل 10 كبار شخصيات، 500 عادي). تحمل كل شارة بيانات افتراضية ورمز QR جاهز.</value></data>
+  <data name="Admin.Delegates.Bulk.Count" xml:space="preserve"><value>العدد</value></data>
+  <data name="Admin.Delegates.Bulk.IsDelegate" xml:space="preserve"><value>تمييز الشارات المولّدة كوفود</value></data>
+  <data name="Admin.Delegates.Bulk.Generate" xml:space="preserve"><value>توليد الشارات</value></data>
+  <data name="Admin.Delegates.Bulk.Generating" xml:space="preserve"><value>جارٍ التوليد…</value></data>
+  <data name="Admin.Delegates.Bulk.Result" xml:space="preserve"><value>تم توليد {0} شارة.</value></data>
+  <data name="Admin.Delegates.Bulk.Failed" xml:space="preserve"><value>تعذّر توليد الشارات.</value></data>
+  <data name="Admin.Delegates.Bulk.NoTypes" xml:space="preserve"><value>لا توجد أنواع ملفات نشطة لتوليد شارات لها.</value></data>
+  <data name="Admin.Delegates.Bulk.PickCount" xml:space="preserve"><value>أدخل عدداً لنوع ملف واحد على الأقل.</value></data>
   <data name="Module.AdminVisitorsVipExport" xml:space="preserve"><value>تصدير ترحيب كبار الشخصيات</value></data>
 </root>

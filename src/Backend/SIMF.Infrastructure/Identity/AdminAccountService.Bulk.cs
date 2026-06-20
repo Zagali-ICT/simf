@@ -7,6 +7,7 @@ using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Common.Enums;
 
 namespace SIMF.Infrastructure.Identity;
@@ -841,5 +842,120 @@ internal sealed partial class AdminAccountService
             "Admin {ActorId} imported {Created} {Kind} from XLSX (skipped {Skipped})",
             actorUserId, created, kind, skipped);
         return new AdminImportUsersResponse(created, skipped, errors);
+    }
+
+    public async Task<AdminBulkGenerateBadgesResponse> BulkGenerateBadgesAsync(
+        Guid actorUserId, UserType kind, AdminBulkGenerateBadgesRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        // D-473 (#10) — bounded so a typo can't generate a runaway number of rows.
+        const int MaxPerRequest = 1000;
+
+        var batches = (request.Batches ?? new List<BulkBadgeBatch>())
+            .Where(b => b.Count > 0)
+            .ToList();
+        if (batches.Count == 0)
+        {
+            throw new ApiException(
+                ErrorCodes.ValidationFailed, 400,
+                "Provide at least one batch with a positive count.",
+                "أدخل دفعة واحدة على الأقل بعدد موجب.");
+        }
+        if (batches.Sum(b => (long)b.Count) > MaxPerRequest)
+        {
+            throw new ApiException(
+                ErrorCodes.ValidationFailed, 400,
+                $"At most {MaxPerRequest} badges can be generated per request.",
+                $"يمكن توليد {MaxPerRequest} شارة كحدّ أقصى في الطلب الواحد.");
+        }
+
+        var now = timeProvider.GetUtcNow();
+        var created = 0;
+        foreach (var batch in batches)
+        {
+            var profileType = await appDbContext.ProfileTypes
+                .AsNoTracking()
+                .SingleOrDefaultAsync(p => p.Id == batch.ProfileTypeId && p.IsActive, cancellationToken)
+                ?? throw new ApiException(
+                    ErrorCodes.AdminProfileTypeInvalid, 400,
+                    "The selected profile type is not valid.",
+                    "نوع الملف الشخصي المحدّد غير صالح.");
+
+            // Bulk badges are audience tiers (VIP / Normal / …). Refuse partner /
+            // elevated-role types — a bulk Approved badge of an elevated MobileAppRole
+            // would hand out QR-accessible elevated authority (least-privilege).
+            if (!profileType.IsForVisitor)
+            {
+                throw new ApiException(
+                    ErrorCodes.AdminProfileTypeInvalid, 400,
+                    "Bulk-generate is only available for audience (visitor) profile types.",
+                    "توليد الشارات بالجملة متاح فقط لأنواع ملفات الجمهور (الزوار).");
+            }
+
+            // NOTE: each badge writes a SimfUser (Identity DB) then its UserProfile
+            // (App DB) with no distributed transaction (D-157). A mid-loop failure
+            // can leave the last user without a profile — the established walk-in
+            // trade-off; the already-created badges stay valid.
+            for (var i = 0; i < batch.Count; i++)
+            {
+                // Synthesized login (no real email / password) — the QR is the
+                // access key, exactly like the walk-in desk's no-email path.
+                var email = $"badge-{Guid.NewGuid():N}@simf.local";
+                var displayName = $"{profileType.Name} #{created + 1}";
+                var user = new SimfUser
+                {
+                    UserName = email,
+                    Email = email,
+                    EmailConfirmed = true,
+                    DisplayName = displayName,
+                    // A pre-generated badge is ready to hand out — Approved with a QR.
+                    AccountState = AccountState.Approved,
+                    UserType = kind,
+                    PasswordChangeRequired = false,
+                    CreatedAt = now,
+                    StateChangedAt = now,
+                    StateChangedByUserId = actorUserId,
+                };
+                var createResult = await accounts.CreateAsync(user);
+                if (!createResult.Succeeded)
+                {
+                    throw new ApiException(
+                        ErrorCodes.InternalError, 500,
+                        "A badge account could not be created.",
+                        "تعذّر إنشاء حساب الشارة.");
+                }
+
+                var profile = new UserProfile
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = user.Id,
+                    ProfileTypeId = profileType.Id,
+                    Name = displayName,
+                    NameArabic = profileType.NameArabic,
+                    // Placeholder default data — filled in when the badge is assigned.
+                    NationalityId = 0,
+                    IsDelegate = request.IsDelegate,
+                    CreatedAt = now,
+                };
+                // Mint + save per badge so the QR-uniqueness check sees prior rows.
+                await qrIdMinter.MintIfMissingAsync(profile, cancellationToken);
+                appDbContext.UserProfiles.Add(profile);
+                await appDbContext.SaveChangesAsync(cancellationToken);
+                created++;
+            }
+        }
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.AdminBulkBadgesGenerated,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = $"created={created}; isDelegate={request.IsDelegate}",
+        }, cancellationToken);
+        logger.LogInformation(
+            "Admin {ActorId} bulk-generated {Created} badges (isDelegate={IsDelegate}).",
+            actorUserId, created, request.IsDelegate);
+
+        return new AdminBulkGenerateBadgesResponse(created);
     }
 }

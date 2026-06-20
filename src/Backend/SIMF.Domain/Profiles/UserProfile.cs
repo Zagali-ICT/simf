@@ -133,6 +133,12 @@ public class UserProfile : BaseAuditEntity
     /// account avatar), stored via the VIP-photo storage; the relative path.</summary>
     public string? VipPhotoRelativePath { get; set; }
 
+    /// <summary>D-473 (#10) — true when this profile belongs to a delegation
+    /// member (وفد). A delegate is an ordinary visitor with this flag set; their
+    /// nationality must be an invited country (<see cref="Common.Country.IsInvited"/>).
+    /// Additive column (owner-authorised freeze lift), defaults false.</summary>
+    public bool IsDelegate { get; set; }
+
     /// <summary>
     /// The user's <see cref="ProfileType"/> when one is assigned
     /// (P8 — D-049). Null until the admin assigns one. The lookup row's

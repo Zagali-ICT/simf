@@ -1,0 +1,155 @@
+@* D-473 (#10) — Delegates (وفد) desk. A delegate is an ordinary visitor with the
+   IsDelegate flag + an invited nationality. This is a SEPARATE page (a copy of the
+   visitor walk-in) so the visitor flow is untouched. It also hosts the bulk-generate
+   panel (profile type + count → default-data badges) usable for visitors OR delegates. *@
+@page "/admin/delegates"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Visitors.RegisterOnsite)]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.Delegates.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Delegates.Title"]" />
+
+<div class="simf-page-wide">
+    @* Single delegate registration — reuses the visitor walk-in form with the
+       delegate flag set; the API enforces the invited-country rule. *@
+    <div class="simf-surface">
+        <h2 class="simf-section-title">@L["Admin.Delegates.Single.Title"]</h2>
+        <p class="simf-section-hint">@L["Admin.Delegates.Single.Hint"]</p>
+        <WalkInRegistrationForm Kind="Visitor"
+                                IsDelegate="true"
+                                OnSuccess="OnSingleSuccess"
+                                @key="_formKey" />
+    </div>
+
+    <WalkInSuccessModal Response="_lastResponse"
+                        OnClose="OnSuccessModalClose"
+                        OnPrint="OnPrintAsync"
+                        OnRegisterAnother="OnRegisterAnother" />
+
+    @* Bulk-generate placeholder badges by profile type + count (e.g. 10 VIP, 500 Normal). *@
+    <AuthorizedAction Permission="@PermissionCatalog.Visitors.BulkGenerate">
+        <div class="simf-surface">
+            <h2 class="simf-section-title">@L["Admin.Delegates.Bulk.Title"]</h2>
+            <p class="simf-section-hint">@L["Admin.Delegates.Bulk.Hint"]</p>
+
+            @if (_bulkToast is not null)
+            {
+                <SimfAlert Variant="@_bulkToast.Variant">@_bulkToast.Message</SimfAlert>
+            }
+
+            @if (_profileTypes.Count == 0)
+            {
+                <SimfEmptyState Title="@L["Admin.Delegates.Bulk.NoTypes"]" />
+            }
+            else
+            {
+                <div class="simf-form__fields">
+                    @foreach (var pt in _profileTypes)
+                    {
+                        <div class="simf-bulk-row">
+                            <span class="simf-bulk-row__name">@pt.Name</span>
+                            <SimfTextField Label="@L["Admin.Delegates.Bulk.Count"]"
+                                           Type="number"
+                                           Value="@CountFor(pt.Id)"
+                                           ValueChanged="@(v => SetCount(pt.Id, v))"
+                                           Disabled="_busy" />
+                        </div>
+                    }
+                    <SimfCheckbox @bind-Value="_bulkIsDelegate" Disabled="_busy">
+                        @L["Admin.Delegates.Bulk.IsDelegate"]
+                    </SimfCheckbox>
+                </div>
+                <div class="simf-form__actions">
+                    <SimfButton Type="button" Loading="_busy"
+                                LoadingLabel="@L["Admin.Delegates.Bulk.Generating"]"
+                                OnClick="GenerateBulkAsync">
+                        @L["Admin.Delegates.Bulk.Generate"]
+                    </SimfButton>
+                </div>
+            }
+        </div>
+    </AuthorizedAction>
+</div>
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private AdminWalkInRegistrationResponse? _lastResponse;
+    private Guid _formKey = Guid.NewGuid();
+
+    private List<AdminProfileTypeSummary> _profileTypes = new();
+    private readonly Dictionary<Guid, int> _counts = new();
+    private bool _bulkIsDelegate = true;
+    private bool _busy;
+    private Toast? _bulkToast;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var envelope = await JS.InvokeAsync<ApiResult<IReadOnlyList<AdminProfileTypeSummary>>>(
+            "simfAccount.getJson", "/account/api/admin/profile-types?userType=Visitor");
+        if (envelope is { Success: true, Data: not null })
+        {
+            // Bulk-generate is for audience tiers only (mirrors the API guard).
+            _profileTypes = envelope.Data.Where(p => p.IsActive && p.IsVisitor).ToList();
+        }
+    }
+
+    private string CountFor(Guid id) => _counts.TryGetValue(id, out var n) ? n.ToString() : "0";
+
+    private void SetCount(Guid id, string value) =>
+        _counts[id] = int.TryParse(value, out var n) && n > 0 ? n : 0;
+
+    private async Task GenerateBulkAsync()
+    {
+        var batches = _counts
+            .Where(c => c.Value > 0)
+            .Select(c => new BulkBadgeBatch { ProfileTypeId = c.Key, Count = c.Value })
+            .ToList();
+        if (batches.Count == 0)
+        {
+            _bulkToast = new Toast("error", L["Admin.Delegates.Bulk.PickCount"]);
+            return;
+        }
+
+        _busy = true;
+        _bulkToast = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<AdminBulkGenerateBadgesResponse>>(
+                "simfAccount.postJson", "/account/api/admin/visitors/bulk-generate",
+                new AdminBulkGenerateBadgesRequest
+                {
+                    IsDelegate = _bulkIsDelegate,
+                    Batches = batches,
+                });
+            if (envelope is { Success: true, Data: not null })
+            {
+                _bulkToast = new Toast("success",
+                    string.Format(L["Admin.Delegates.Bulk.Result"], envelope.Data.Created));
+                _counts.Clear();
+            }
+            else
+            {
+                _bulkToast = new Toast("error",
+                    envelope?.Error?.MessageForCurrentCulture() ?? L["Admin.Delegates.Bulk.Failed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private void OnSingleSuccess(AdminWalkInRegistrationResponse response) => _lastResponse = response;
+
+    private void OnSuccessModalClose() => _lastResponse = null;
+
+    private async Task OnPrintAsync() => await JS.InvokeVoidAsync("window.print");
+
+    private void OnRegisterAnother()
+    {
+        _lastResponse = null;
+        _formKey = Guid.NewGuid();
+        StateHasChanged();
+    }
+}

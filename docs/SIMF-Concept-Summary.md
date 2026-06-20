@@ -43,7 +43,7 @@ The following items from the 15-04-2024 document set are **overridden**:
 | 2 | Login = email + Face ID + Nafath + OTP | **Email + password + email code only** — no Nafath, no Face ID |
 | 3 | Phone number validated | **No phone-number validation** |
 | 4 | User types: Visitor / Media / Sponsor / Speaker / VIP | **Restructured** — see §6 (Staff added; Moderator is an app user) |
-| 5 | Delegations (الوفود) — full feature + Screen 21 | **Removed** |
+| 5 | Delegations (الوفود) — full feature + Screen 21 | **Removed** (full module, D-277); a light additive form re-introduced 2026-06-20 (D-473, #10) — delegate = visitor + IsDelegate + invited country |
 | 6 | Cybersecurity page (Screen 39) | **Removed**; replaced by Policies + Terms & Conditions |
 | 7 | Audience-comments / interview-request screens (26, 27) | **Removed as screens**; question & comment remain as features |
 | 8 | AI provider = Google Gemini | **"Cognitive AI", CP-managed, 2 setting levels; provider not yet approved** |
@@ -195,7 +195,7 @@ last forum day, manual toggle — from the Control Panel.
 | Speakers (المتحدثون) | Profile: bio, qualifications, training experience, awards; rank; **photo**; **country flag**; linked to sessions and presentations |
 | Booths / Exhibitors (الأجنحة) | Booth directory: hall + booth number, logo, descriptor, contact, phone, email, map directions |
 | Sponsors (الرعاة) | Tiered: Strategic, Premium, Gold |
-| ~~Delegations (الوفود)~~ | **Removed** (2026-05-20) |
+| Delegations (الوفود) | Module **removed** 2026-05-20 (D-277); a **light** form re-introduced 2026-06-20 (D-473, #10) — a delegate is a visitor with `IsDelegate` + an invited country, no standalone module |
 
 ### 7.4 Venue Map & Navigation
 - Interactive **3D isometric map** of halls, exhibition zones and booths.
@@ -419,7 +419,7 @@ security policy.
 
 ## 14. Scope Exclusions & Removed Items
 
-- **Delegations (الوفود)** — removed (feature + Screen 21).
+- **Delegations (الوفود)** — original module + Screen 21 removed (D-277); re-introduced 2026-06-20 as a light additive flag (D-473, #10): delegate = visitor with `IsDelegate` + an invited country, managed from `/admin/delegates`.
 - **Cybersecurity page (Screen 39)** — removed from the app; replaced by
   **Policies** and **Terms & Conditions for registration**.
 - **Audience-comments / interview-request screens (26, 27)** — removed as

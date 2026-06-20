@@ -597,6 +597,16 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
+    /// <summary>D-473 (#10) — bulk-generate placeholder badges by profile type + count.</summary>
+    public Task<ApiCallResult<AdminBulkGenerateBadgesResponse>> BulkGenerateBadgesAsync(
+        AdminBulkGenerateBadgesRequest request,
+        string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminBulkGenerateBadgesResponse>(
+            HttpMethod.Post, "visitors/bulk-generate",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
     /// <summary>D-127 — on-site walk-in Other registration.</summary>
     public Task<ApiCallResult<AdminWalkInRegistrationResponse>> RegisterOtherOnSiteAsync(
         AdminWalkInRegistrationRequest request,

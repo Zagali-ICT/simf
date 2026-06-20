@@ -114,4 +114,18 @@ public interface IAdminUserBulkService
         bool partnerScope,
         byte[] xlsx,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// D-473 (#10) — bulk-generate placeholder badges by profile type + count
+    /// (e.g. 10 VIP + 500 Normal). Each badge is an Approved visitor with default
+    /// data (no real personal details) and a freshly minted QR; when
+    /// <see cref="AdminBulkGenerateBadgesRequest.IsDelegate"/> is set the badges
+    /// carry the delegation (وفد) flag. Bounded per request; throws 400 on an
+    /// invalid profile type / count.
+    /// </summary>
+    Task<AdminBulkGenerateBadgesResponse> BulkGenerateBadgesAsync(
+        Guid actorUserId,
+        UserType kind,
+        AdminBulkGenerateBadgesRequest request,
+        CancellationToken cancellationToken = default);
 }

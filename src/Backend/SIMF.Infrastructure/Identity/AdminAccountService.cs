@@ -317,17 +317,26 @@ internal sealed partial class AdminAccountService(
         // Rejected here (400) before any Identity row is created so we
         // never leak a dangling SimfUser for a stranger nationality.
         var nationalityCode = (request.NationalityCode ?? string.Empty).Trim().ToUpperInvariant();
-        var nationalityId = await appDbContext.Countries
+        var nationality = await appDbContext.Countries
             .AsNoTracking()
             .Where(country => country.Code == nationalityCode && country.IsActive)
-            .Select(country => (int?)country.Id)
+            .Select(country => new { country.Id, country.IsInvited })
             .SingleOrDefaultAsync(cancellationToken);
-        if (nationalityId is null)
+        if (nationality is null)
         {
             throw new ApiException(
                 ErrorCodes.ProfileNationalityUnknown, 400,
                 $"Nationality code '{nationalityCode}' is not supported.",
                 $"الجنسية '{nationalityCode}' غير مدعومة.");
+        }
+        // D-473 (#10) — a delegate's nationality must be a country invited to
+        // send a delegation (وفد).
+        if (request.IsDelegate && !nationality.IsInvited)
+        {
+            throw new ApiException(
+                ErrorCodes.DelegateCountryNotInvited, 400,
+                "A delegate's nationality must be a country invited to send a delegation.",
+                "يجب أن تكون جنسية عضو الوفد من دولة مدعوّة لإرسال وفد.");
         }
 
         // B3 — D-221 (الجهة): the validator requires a non-empty id; confirm it
@@ -400,7 +409,7 @@ internal sealed partial class AdminAccountService(
             MawjId = NormaliseOptional(request.MawjId),
             Honorific = NormaliseOptional(request.Honorific),
             PreferredLanguage = NormaliseOptional(request.PreferredLanguage),
-            NationalityId = nationalityId.Value,
+            NationalityId = nationality.Id,
             DateOfBirth = request.DateOfBirth,
             PlaceOfBirth = (request.PlaceOfBirth ?? string.Empty).Trim(),
             // D-395 — gender + plate captured at the walk-in desk (columns
@@ -420,6 +429,8 @@ internal sealed partial class AdminAccountService(
             InternationalMobile = NormaliseOptional(request.InternationalMobile),
             // B3 — D-221 (الجهة): the desk-required organisation pick.
             OrganisationId = organisationId,
+            // D-473 (#10) — delegation-member flag (a delegate is a normal visitor).
+            IsDelegate = request.IsDelegate,
             CreatedAt = now,
         };
         // Visitor kind owns interests; Other kind ignores them per the prompt.
