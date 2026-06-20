@@ -78,6 +78,10 @@ class RouteNames {
   static const String sessionPresentations = 'sessionPresentations';
   static const String contactUs = 'contactUs';
 
+  // D-479 (#11 follow-up) — read-only "My meetings" list (additive, reached from
+  // My Area; Approved account). Delegation meetings are managed on the CP.
+  static const String myMeetings = 'myMeetings';
+
   // FDS-014 visitor contact sharing (D-286 API; additive, not mockup-numbered).
   // Reached from More / My Area; all three require an Approved account.
   static const String shareMyContact = 'shareMyContact';

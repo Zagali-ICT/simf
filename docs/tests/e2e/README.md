@@ -220,6 +220,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #36 `chatbot` (interim shell — no API) | [`mobile-chatbot.md`](mobile-chatbot.md) | E2E-MOB036-001..006 |
 | #24-01 `archiveDetail` (`GET /app/archive/{id}`) | [`mobile-archive-detail.md`](mobile-archive-detail.md) | E2E-MOB024D-001..009 |
 | `My Contacts` / `Share my contact` (`/app/account/share-token` + `/app/contacts/*`) | [`mobile-my-contacts.md`](mobile-my-contacts.md) | E2E-MMC-001..011 |
+| `My meetings` (`GET /app/my-meetings`) — D-479, additive read-only | [`mobile-my-meetings.md`](mobile-my-meetings.md) | E2E-MMM-001..006 |
 
 ## How to add a new catalogue file
 

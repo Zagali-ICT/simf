@@ -901,6 +901,19 @@ class AppL10n {
         'Could not send the request. Try again.',
       );
 
+  // D-479 (#11 follow-up) — the read-only "My meetings" screen.
+  String get myMeetingsTitle => _t('اجتماعاتي', 'My meetings');
+  String get myMeetingsLink => _t('اجتماعاتي', 'My meetings');
+  String get myMeetingsEmpty =>
+      _t('لا توجد اجتماعات بعد', 'You have no meetings yet');
+  String get myMeetingsError =>
+      _t('تعذّر تحميل اجتماعاتك', 'Could not load your meetings');
+  String get myMeetingKindSpeaker => _t('اجتماع متحدث', 'Speaker meeting');
+  String get myMeetingKindDelegation => _t('اجتماع وفد', 'Delegation meeting');
+  String get myMeetingStatusPending => _t('قيد الانتظار', 'Pending');
+  String get myMeetingStatusAccepted => _t('مقبول', 'Accepted');
+  String get myMeetingStatusRejected => _t('مرفوض', 'Rejected');
+
   // Booths (Page 022).
   String get boothsTitle => _t('الأجنحة', 'Booths');
   // The screen header per Figma frame 922:2458 node 922:2464 ("المعرض" — the
