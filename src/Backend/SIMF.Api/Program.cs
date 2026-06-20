@@ -318,6 +318,12 @@ var swaggerOptions =
     builder.Configuration.GetSection(SwaggerOptions.SectionName).Get<SwaggerOptions>()
     ?? new SwaggerOptions();
 
+// Bound for the Production boot guard below (security finding H1) — the
+// committed default super-admin password must never be the live credential.
+var superAdminOptions =
+    builder.Configuration.GetSection(SuperAdminOptions.SectionName).Get<SuperAdminOptions>()
+    ?? new SuperAdminOptions();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment()
@@ -340,6 +346,17 @@ if (app.Environment.IsProduction()
         "Swagger:Username and Swagger:Password must be configured when "
         + "Swagger:AllowSwagger is true in Production — the OpenAPI UI must not "
         + "be served without the Basic-auth gate.");
+}
+
+// Refuse to start in Production with the committed default super-admin
+// password — it must be overridden via SIMF_SuperAdmin__TempPassword
+// (docs/security/SIMF-Security-Assessment-2026-06-20.md, finding H1).
+if (app.Environment.IsProduction()
+    && superAdminOptions.TempPassword == "Aa@123456789")
+{
+    throw new InvalidOperationException(
+        "SuperAdmin:TempPassword is the committed default — configure a real "
+        + "SIMF_SuperAdmin__TempPassword before starting in Production.");
 }
 
 // Apply the migrations and seed the super-admin. Skipped under the test host,
