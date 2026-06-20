@@ -22,7 +22,7 @@ namespace SIMF.Api.Tests;
 /// </summary>
 public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
 {
-    private const string Password = "Passw0rd!";
+    private const string Password = "Zx9#mKp2!";
 
     // A minimal valid 1x1 PNG (magic-byte + IHDR + IDAT + IEND) for the
     // D-427 admin avatar-upload test.

@@ -69,7 +69,7 @@ public sealed class EmailEnqueueFailureTests : IClassFixture<ThrowingEmailQueueA
                     UserName = email, Email = email, EmailConfirmed = true,
                     DisplayName = "Enqueue Test", AccountState = AccountState.Approved,
                 },
-                "Passw0rd!");
+                "Zx9#mKp2!");
         }
 
         // The endpoint must NOT throw to the caller; the always-200 contract
@@ -101,7 +101,7 @@ public sealed class EmailEnqueueFailureTests : IClassFixture<ThrowingEmailQueueA
             "/api/v1/app/auth/sign-up",
             new SignUpRequest
             {
-                Email = email, Password = "Passw0rd!", ConfirmPassword = "Passw0rd!",
+                Email = email, Password = "Zx9#mKp2!", ConfirmPassword = "Zx9#mKp2!",
             });
         // The endpoint still reports success — the user IS created.
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);

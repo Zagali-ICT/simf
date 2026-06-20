@@ -12,7 +12,7 @@ namespace SIMF.Api.Tests;
 /// <summary>Shared helpers that drive the full authentication flow in integration tests.</summary>
 internal static class AuthFlow
 {
-    public const string Password = "Passw0rd!";
+    public const string Password = "Zx9#mKp2!";
 
     /// <summary>
     /// Signs a brand-new visitor up, verifies the email, and ensures two-factor

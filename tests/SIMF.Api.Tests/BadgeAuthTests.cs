@@ -22,7 +22,7 @@ namespace SIMF.Api.Tests;
 /// </summary>
 public sealed class BadgeAuthTests : IClassFixture<SimfApiFactory>
 {
-    private const string Password = "Passw0rd!";
+    private const string Password = "Zx9#mKp2!";
     private const string Alphabet = "23456789ABCDEFGHJKMNPQRSTVWXYZ";
 
     private readonly SimfApiFactory _factory;

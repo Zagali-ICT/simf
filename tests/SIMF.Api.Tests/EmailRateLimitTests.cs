@@ -68,5 +68,5 @@ public sealed class EmailRateLimitTests : IClassFixture<EmailRateLimitedApiFacto
     private Task<HttpResponseMessage> SignInAsync(string email) =>
         _client.PostAsJsonAsync(
             "/api/v1/app/auth/sign-in",
-            new SignInRequest { Email = email, Password = "Passw0rd!" });
+            new SignInRequest { Email = email, Password = "Zx9#mKp2!" });
 }

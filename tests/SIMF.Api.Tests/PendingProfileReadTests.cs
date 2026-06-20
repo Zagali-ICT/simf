@@ -25,7 +25,7 @@ namespace SIMF.Api.Tests;
 /// </summary>
 public sealed class PendingProfileReadTests : IClassFixture<SimfApiFactory>
 {
-    private const string Password = "Passw0rd!";
+    private const string Password = "Zx9#mKp2!";
 
     private readonly SimfApiFactory _factory;
     private readonly HttpClient _client;

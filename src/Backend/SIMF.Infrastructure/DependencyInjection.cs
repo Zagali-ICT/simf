@@ -98,14 +98,19 @@ public static class DependencyInjection
                 sp.GetRequiredService<RowAuditingSaveChangesInterceptor>()));
 
         // ASP.NET Core Identity — UserManager / RoleManager over the EF stores.
-        // Identity enforces the SIMF-API-001 §12.5 baseline (length and a digit)
-        // so every credential path is covered, including the seeder; the request
-        // validators add the remaining rules (a letter, not equal to the email)
-        // with field-level messages.
+        // The built-in validator enforces the SIMF-API-001 §12.5 length baseline;
+        // the content rules (NCA A7-29 — complexity classes, no repeats/sequences,
+        // no common passwords, not equal to the identifier) live in the central
+        // SimfPasswordValidator so every credential path — sign-up, admin-create,
+        // reset, change, the seeder — is covered identically, and the request
+        // validators surface the same rules with bilingual field-level messages.
         services.AddIdentityCore<SimfUser>(options =>
             {
                 options.Password.RequiredLength = 8;
-                options.Password.RequireDigit = true;
+                // The built-in character requirements are owned by
+                // SimfPasswordValidator (so the policy is defined once); leave the
+                // built-in flags off to avoid duplicate generic error entries.
+                options.Password.RequireDigit = false;
                 options.Password.RequireLowercase = false;
                 options.Password.RequireUppercase = false;
                 options.Password.RequireNonAlphanumeric = false;
@@ -117,7 +122,9 @@ public static class DependencyInjection
                 options.Lockout.AllowedForNewUsers = true;
             })
             .AddRoles<SimfRole>()
-            .AddEntityFrameworkStores<SimfIdentityDbContext>();
+            .AddEntityFrameworkStores<SimfIdentityDbContext>()
+            // NCA A7-21 — central password validator (see SimfPasswordValidator).
+            .AddPasswordValidator<SimfPasswordValidator>();
 
         services.Configure<EmailOptions>(
             configuration.GetSection(EmailOptions.SectionName));
