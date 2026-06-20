@@ -76,6 +76,59 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Open_seating_join_appears_in_the_schedule_and_count()
+    {
+        // D-485 regression — a general-admission (OpenSeating) join must show in
+        // the user's booked-sessions count + today's schedule, like a seat booking.
+        var (token, userId) = await CreateApprovedVisitorAsync();
+        var now = DateTimeOffset.UtcNow;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var app = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var hall = new Hall
+            {
+                Id = Guid.NewGuid(),
+                Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+                Name = "Open Hall", NameArabic = "قاعة مفتوحة",
+                Capacity = 100,
+                SeatSelectionMode = SeatSelectionMode.OpenSeating,
+                IsActive = true, CreatedAt = now,
+            };
+            app.Halls.Add(hall);
+            var session = new Session
+            {
+                Id = Guid.NewGuid(),
+                Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+                Title = "Plenary", TitleArabic = "الجلسة العامة",
+                HallId = hall.Id,
+                StartUtc = now, EndUtc = now.AddHours(1),
+                IsActive = true, CreatedAt = now,
+            };
+            app.Sessions.Add(session);
+            app.SeatReservations.Add(new SeatReservation
+            {
+                Id = Guid.NewGuid(),
+                SessionId = session.Id,
+                RowLabel = null, SeatNumber = null,
+                Kind = SeatReservationKind.OpenSeating,
+                ReservedForUserId = userId,
+                CreatedByUserId = userId,
+                Status = BookingStatus.Pending,
+                ReleasedAt = null,
+                CreatedAt = now,
+            });
+            await app.SaveChangesAsync();
+        }
+
+        var response = await GetAuthAsync("/api/v1/app/account/dashboard", token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var data = (await response.Content.ReadFromJsonAsync<ApiResult<MyAreaDashboard>>())!.Data!;
+
+        Assert.Equal(1, data.Counters.BookedSessionsCount);
+        Assert.Single(data.TodaySchedule, i => i.Kind == "Session");
+    }
+
+    [Fact]
     public async Task Calendar_ics_returns_an_RFC5545_document_with_an_event_per_item()
     {
         var (token, userId) = await CreateApprovedVisitorAsync();

@@ -241,6 +241,10 @@ public static class ErrorCodes
     public const string SeatReservationNotFound = "SEAT_RESERVATION_NOT_FOUND";
     public const string SeatCapacityExceeded = "SEAT_CAPACITY_EXCEEDED";
     public const string SeatSessionFull = "SEAT_SESSION_FULL";
+    // D-485 — seat-selection-mode mismatch between the request and the session's
+    // effective mode (Session.SeatSelectionModeOverride ?? Hall.SeatSelectionMode).
+    public const string SeatSelectionRequired = "SEAT_SELECTION_REQUIRED";
+    public const string OpenSeatingOnly = "OPEN_SEATING_ONLY";
 
     // Booking approval workflow (P2.2 / D-227 — FDS-005 §5).
     public const string BookingOverlap = "BOOKING_OVERLAP";

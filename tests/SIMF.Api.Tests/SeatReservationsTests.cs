@@ -136,7 +136,7 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             .ReadFromJsonAsync<ApiResult<MySeatReservation>>())!.Data!;
         Assert.Equal(SeatReservationKind.RandomAssignment, mine.Kind);
         Assert.Equal("A", mine.RowLabel);
-        Assert.InRange(mine.SeatNumber, 1, 2);
+        Assert.InRange(mine.SeatNumber!.Value, 1, 2);
     }
 
     [Fact]
@@ -308,10 +308,81 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         Assert.Null(seatMap.MyCell);
     }
 
+    [Fact]
+    public async Task Visitor_can_join_an_open_seating_session_without_a_seat()
+    {
+        // D-485 — an open-seating (general-admission) session has no seat grid;
+        // the visitor just joins and gets a Pending reservation with no seat.
+        var session = await SeedOpenSeatingSessionAsync(capacity: 50);
+        var visitor = await SignInApprovedVisitorAsync();
+
+        var join = await PostAuthAsync<object>(
+            $"/api/v1/app/sessions/{session.Id}/seats/join", new { }, visitor);
+        Assert.Equal(HttpStatusCode.OK, join.StatusCode);
+        var mine = (await join.Content
+            .ReadFromJsonAsync<ApiResult<MySeatReservation>>())!.Data!;
+        Assert.Equal(SeatReservationKind.OpenSeating, mine.Kind);
+        Assert.Null(mine.RowLabel);
+        Assert.Null(mine.SeatNumber);
+        Assert.Equal(BookingStatus.Pending, mine.Status);
+    }
+
+    [Fact]
+    public async Task Open_seating_join_is_one_per_session()
+    {
+        var session = await SeedOpenSeatingSessionAsync(capacity: 50);
+        var visitor = await SignInApprovedVisitorAsync();
+
+        var first = await PostAuthAsync<object>(
+            $"/api/v1/app/sessions/{session.Id}/seats/join", new { }, visitor);
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+
+        var second = await PostAuthAsync<object>(
+            $"/api/v1/app/sessions/{session.Id}/seats/join", new { }, visitor);
+        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
+        var body = (await second.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SeatAlreadyOwnedBySession, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Joining_an_assigned_seat_session_is_rejected()
+    {
+        // D-485 — /join is only for open-seating sessions; an assigned-seat session
+        // tells the app to show the seat picker instead (SEAT_SELECTION_REQUIRED).
+        var (session, _) = await SeedSessionWithLayoutAsync(new[] { "A" }, seatsPerRow: 3);
+        var visitor = await SignInApprovedVisitorAsync();
+
+        var join = await PostAuthAsync<object>(
+            $"/api/v1/app/sessions/{session.Id}/seats/join", new { }, visitor);
+        Assert.Equal(HttpStatusCode.Conflict, join.StatusCode);
+        var body = (await join.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SeatSelectionRequired, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Picking_a_seat_when_the_session_overrides_to_open_seating_is_rejected()
+    {
+        // D-485 — a session can override its assigned-seat hall to open seating;
+        // a seat-pick on it is then rejected with OPEN_SEATING_ONLY.
+        var (session, _) = await SeedSessionWithLayoutAsync(
+            new[] { "A" }, seatsPerRow: 3,
+            sessionModeOverride: SeatSelectionMode.OpenSeating);
+        var visitor = await SignInApprovedVisitorAsync();
+
+        var pick = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 1 }, visitor);
+        Assert.Equal(HttpStatusCode.Conflict, pick.StatusCode);
+        var body = (await pick.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.OpenSeatingOnly, body.Error!.Code);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     private async Task<(Session Session, Hall Hall)> SeedSessionWithLayoutAsync(
-        string[] rowLabels, int seatsPerRow)
+        string[] rowLabels, int seatsPerRow,
+        SeatSelectionMode hallMode = SeatSelectionMode.AssignedSeat,
+        SeatSelectionMode? sessionModeOverride = null)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -321,6 +392,7 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Hall", NameArabic = "قاعة",
             Capacity = rowLabels.Length * seatsPerRow,
+            SeatSelectionMode = hallMode,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };
@@ -339,6 +411,7 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Live", TitleArabic = "مباشر",
             HallId = hall.Id,
+            SeatSelectionModeOverride = sessionModeOverride,
             // P2.2 — D-227: a FUTURE window so bookings can be cancelled before
             // the session starts (the new cancel-before-start guard, FR-504).
             StartUtc = DateTimeOffset.UtcNow.AddHours(1),
@@ -349,6 +422,39 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         db.Sessions.Add(session);
         await db.SaveChangesAsync();
         return (session, hall);
+    }
+
+    private async Task<Session> SeedOpenSeatingSessionAsync(int capacity)
+    {
+        // D-485 — an open-seating hall has NO seat layout; the session is joined
+        // in bulk (general admission), capacity-bounded by Hall.Capacity.
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var hall = new Hall
+        {
+            Id = Guid.NewGuid(),
+            Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+            Name = "Hall", NameArabic = "قاعة",
+            Capacity = capacity,
+            SeatSelectionMode = SeatSelectionMode.OpenSeating,
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        db.Halls.Add(hall);
+        var session = new Session
+        {
+            Id = Guid.NewGuid(),
+            Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+            Title = "Live", TitleArabic = "مباشر",
+            HallId = hall.Id,
+            StartUtc = DateTimeOffset.UtcNow.AddHours(1),
+            EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        db.Sessions.Add(session);
+        await db.SaveChangesAsync();
+        return session;
     }
 
     private async Task<Hall> SeedHallAsync(int capacity)

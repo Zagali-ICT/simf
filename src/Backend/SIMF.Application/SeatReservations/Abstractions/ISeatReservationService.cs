@@ -21,6 +21,14 @@ public interface ISeatReservationService
         Guid sessionId, Guid actorUserId,
         CancellationToken cancellationToken = default);
 
+    /// <summary>D-485 — join an OPEN-SEATING session (general admission): no seat
+    /// is chosen, the reservation carries a null row/seat and is created Pending,
+    /// just like a seat booking. Rejected with <c>SEAT_SELECTION_REQUIRED</c> if
+    /// the session's effective mode is AssignedSeat.</summary>
+    Task<MySeatReservation> JoinOpenSeatingAsync(
+        Guid sessionId, Guid actorUserId,
+        CancellationToken cancellationToken = default);
+
     Task ReleaseMineAsync(
         Guid sessionId, Guid actorUserId,
         CancellationToken cancellationToken = default);

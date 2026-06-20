@@ -22,7 +22,9 @@ internal sealed class SeatReservationConfiguration : IEntityTypeConfiguration<Se
         builder.ToTable("SeatReservations");
         builder.HasKey(x => x.Id);
 
-        builder.Property(x => x.RowLabel).HasMaxLength(8).IsRequired();
+        // D-485 — RowLabel/SeatNumber are now optional: an OpenSeating join
+        // carries null for both (general admission, no specific seat).
+        builder.Property(x => x.RowLabel).HasMaxLength(8);
 
         // P2.2 — D-227: booking-approval state. NO model-level default: with
         // Pending = 0 = the CLR default, HasDefaultValue would make EF treat
@@ -38,8 +40,10 @@ internal sealed class SeatReservationConfiguration : IEntityTypeConfiguration<Se
             .OnDelete(DeleteBehavior.Cascade);
 
         // Active-seat uniqueness — a seat can be re-reserved after release.
+        // D-485: only seat-specific rows participate (RowLabel IS NOT NULL), so
+        // multiple OpenSeating joins (null row/seat) don't collide on the NULLs.
         builder.HasIndex(x => new { x.SessionId, x.RowLabel, x.SeatNumber })
-            .HasFilter("[ReleasedAt] IS NULL")
+            .HasFilter("[ReleasedAt] IS NULL AND [RowLabel] IS NOT NULL")
             .IsUnique();
 
         // One active seat per visitor per session.

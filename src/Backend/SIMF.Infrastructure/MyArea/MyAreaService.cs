@@ -131,7 +131,13 @@ internal sealed class MyAreaService(
     {
         var sessions = await appDbContext.SeatReservations.AsNoTracking()
             .Where(r => r.ReservedForUserId == userId
-                && (r.Kind == SeatReservationKind.UserBooking || r.Kind == SeatReservationKind.RandomAssignment)
+                // D-485 — include OpenSeating joins (general admission) alongside
+                // the seat-specific kinds so a joined session shows in the user's
+                // schedule + booked-sessions count. AdminReservedRow has a null
+                // ReservedForUserId, so it is already excluded.
+                && (r.Kind == SeatReservationKind.UserBooking
+                    || r.Kind == SeatReservationKind.RandomAssignment
+                    || r.Kind == SeatReservationKind.OpenSeating)
                 && r.ReleasedAt == null
                 && r.Session!.IsActive)
             .Select(r => new

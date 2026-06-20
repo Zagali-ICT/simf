@@ -21,13 +21,18 @@ public sealed record SessionSeatMap(
     // "my seat" screen can show it without a second /sessions/{id} call. The
     // service already loads the Session, so this adds no query.
     string? SessionTitle = null,
-    string? SessionTitleArabic = null);
+    string? SessionTitleArabic = null,
+    // D-485 — appended (append-only wire): the session's EFFECTIVE seat-selection
+    // mode (Session override ?? Hall default). The app branches the "Join" CTA on
+    // this — AssignedSeat shows the seat picker, OpenSeating a one-tap join.
+    SeatSelectionMode Mode = SeatSelectionMode.AssignedSeat);
 
-/// <summary>D-175 — one occupied seat in the grid.</summary>
+/// <summary>D-175 — one occupied seat in the grid. D-485: <see cref="RowLabel"/>
+/// and <see cref="SeatNumber"/> are null for an OpenSeating join.</summary>
 public sealed record SessionSeatCell(
     Guid ReservationId,
-    string RowLabel,
-    int SeatNumber,
+    string? RowLabel,
+    int? SeatNumber,
     SeatReservationKind Kind);
 
 /// <summary>D-175 — visitor self-pick request. Pass row+seat from
@@ -77,8 +82,9 @@ public sealed record HallSeatLayoutSnapshot(
 public sealed record MySeatReservation(
     Guid ReservationId,
     Guid SessionId,
-    string RowLabel,
-    int SeatNumber,
+    // D-485: null for an OpenSeating join (general admission — no specific seat).
+    string? RowLabel,
+    int? SeatNumber,
     SeatReservationKind Kind,
     DateTimeOffset CreatedAt,
     BookingStatus Status = BookingStatus.Pending);
@@ -93,8 +99,9 @@ public sealed record BookingQueueRow(
     string SessionTitle,
     string SessionTitleArabic,
     DateTimeOffset SessionStartUtc,
-    string RowLabel,
-    int SeatNumber,
+    // D-485: null for an OpenSeating join — the CP renders it as "general admission".
+    string? RowLabel,
+    int? SeatNumber,
     SeatReservationKind Kind,
     Guid? AttendeeUserId,
     string AttendeeName,

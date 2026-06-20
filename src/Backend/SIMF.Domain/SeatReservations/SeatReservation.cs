@@ -27,12 +27,16 @@ public sealed class SeatReservation
     public Session? Session { get; set; }
 
     /// <summary>Row label from <see cref="HallSeatLayout.RowLabels"/>
-    /// (1–8 chars, e.g. "A", "VIP").</summary>
-    public string RowLabel { get; set; } = string.Empty;
+    /// (1–8 chars, e.g. "A", "VIP"). D-485: <b>null</b> for an
+    /// <see cref="SeatReservationKind.OpenSeating"/> join (general admission —
+    /// no specific seat); always set for the seat-specific kinds.</summary>
+    public string? RowLabel { get; set; }
 
     /// <summary>1-based seat number within the row
-    /// (1 .. <see cref="HallSeatLayout.SeatsPerRow"/>).</summary>
-    public int SeatNumber { get; set; }
+    /// (1 .. <see cref="HallSeatLayout.SeatsPerRow"/>). D-485: <b>null</b> for an
+    /// <see cref="SeatReservationKind.OpenSeating"/> join; paired with
+    /// <see cref="RowLabel"/> (both null together, or both set together).</summary>
+    public int? SeatNumber { get; set; }
 
     public SeatReservationKind Kind { get; set; }
 
