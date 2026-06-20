@@ -24,8 +24,10 @@ public interface IJwtTokenService
     /// session recording, for the range-streaming endpoint. Distinct audience
     /// (<c>Jwt:StreamAudience</c>) + a <c>recording_session_id</c> claim — it
     /// carries no roles / permissions / security-stamp, so it cannot be replayed
-    /// against any other endpoint. Lifetime is <c>Jwt:StreamTokenMinutes</c>.</summary>
-    AccessToken CreateRecordingStreamToken(Guid sessionId);
+    /// against any other endpoint. L1 (security): also carries the requesting
+    /// user's <c>sub</c> so a leaked token is attributable. Lifetime is
+    /// <c>Jwt:StreamTokenMinutes</c>.</summary>
+    AccessToken CreateRecordingStreamToken(Guid sessionId, Guid userId);
 
     /// <summary>D-443 (NCA finding): the absolute session lifetime
     /// (<c>Jwt:SessionLifetimeHours</c>, default 24h) — how long after sign-in
