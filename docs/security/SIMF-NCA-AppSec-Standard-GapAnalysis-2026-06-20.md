@@ -71,6 +71,41 @@ catalogue (~250 typed events).
 
 ---
 
+## 1a. Remediation status (updated 2026-06-21)
+
+Owner approved Groups A + B + C (TLS bypass held; freeze area unlocked). Implemented
+and committed on `feature/app-cp-api-split` (each verified — builds 0/0 + tests green,
+several in an isolated worktree to avoid a concurrent worker's broken-tree windows):
+
+| Wave | Controls closed / improved | Commit |
+|---|---|---|
+| 1 | A1-12 audit 403 denials · A5-12 charset · A2-14 no-store on ID docs | `8f991fc8` |
+| 2 | A7-10/28/29 password policy (classes + repeat/sequence + leet blocklist + central validator) | `96e3209b` |
+| 3 | A2-11/A2-20 autocomplete-off on PII · A3-14 Unicode-normalise filenames | `ba50122d` |
+| 4 | A3-4/A5-13/A6-21 CSP (enforced on API; report-only on CP/Web) | `c0cd95ca` |
+| 5 | A11-3 shared-PII temp purge (A11-6 FLAG_SECURE + A11-16 signing applied to git-ignored `android/` → owner) | `ef86f93a` |
+| 8 | §3-20 re-enabled test gate · A6-13 SCA + NuGetAudit · A6-2 SBOM · §1-2/§3-2 SAST/DAST scaffold | `9d9c1a4b` |
+| 9 | A4-13 threat model (`SIMF-Threat-Model-2026-06-21.md`) + `SecurityResponseTests` regression | (this) |
+
+**Deferred to a follow-up (owner decision):**
+- **Wave 6 (freeze-gated schema)** — A2-10 PII-at-rest, A7-13 expiry, A7-20 history,
+  A7-31 last-login, A1-19 dormant-disable, A1-14/A4-10 export governor — **paused until
+  the concurrent worker's uncommitted App-schema (SeatReservation) refactor is committed**,
+  so the `SimfAppDbContext` migration serialises cleanly (avoids snapshot/ordering conflict).
+- **Wave 7 (A6-18 upload AV)** — pluggable scanner; paused with Wave 6 (same Infrastructure).
+- **A7-8** IP-lockout tier (partial; would lock the shared-loopback test suite).
+- **Mobile** A11-7 root/JB, A11-26 anti-debug, A11-11 Dart obfuscate, A11-14 field
+  autocorrect, A11-19 CSRF (need a pub package + owner policy + device test).
+- **A9-15** crypto-/TLS-failure audit events.
+
+**Owner / ops actions (cannot be code — Groups D & E):** rotate the 4 git-history secrets
++ purge history (C1); verify `SIMF_SuperAdmin__*` env (H1); CA cert then remove the Flutter
+TLS bypass + add pinning (C2/H2); SQL/host hardening; WAF; independent pentest/risk
+assessment; key-management policy (A2-7); SIEM forwarding/log archival; persist the
+`android/` FLAG_SECURE + release-signing (or start tracking `android/`).
+
+---
+
 ## 2. Headline open findings (carried from the platform assessment)
 
 These are the highest‑risk items and they map directly onto NCA controls.
