@@ -36,7 +36,7 @@ public sealed class SpeakerPresentationsTests : IClassFixture<SimfApiFactory>
     {
         var (speakerId, sessionId) = await SeedSpeakerAndSessionAsync();
         var admin = await CreateAdministratorAndSignInAsync();
-        var payload = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        var payload = new byte[] { 0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34 }; // "%PDF-1.4"
 
         var uploaded = await UploadAsync(speakerId, sessionId, "deck.pdf", "application/pdf", payload, admin);
         Assert.Equal(HttpStatusCode.OK, uploaded.StatusCode);
@@ -67,7 +67,7 @@ public sealed class SpeakerPresentationsTests : IClassFixture<SimfApiFactory>
         var uploaded = await UploadAsync(
             speakerId, sessionId, "slides.pptx",
             "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-            new byte[] { 9, 9, 9 }, admin);
+            new byte[] { 0x50, 0x4B, 0x03, 0x04 }, admin); // ZIP/OOXML magic
         var row = (await uploaded.Content
             .ReadFromJsonAsync<ApiResult<AdminSpeakerPresentationRow>>())!.Data!;
 
@@ -90,7 +90,7 @@ public sealed class SpeakerPresentationsTests : IClassFixture<SimfApiFactory>
 
         var uploaded = await UploadAsync(
             speakerId, Guid.NewGuid(), "deck.pdf", "application/pdf",
-            new byte[] { 1 }, admin);
+            new byte[] { 0x25, 0x50, 0x44, 0x46 }, admin); // "%PDF"
         Assert.Equal(HttpStatusCode.NotFound, uploaded.StatusCode);
         var body = (await uploaded.Content.ReadFromJsonAsync<ApiResult<object>>())!;
         Assert.Equal(ErrorCodes.SessionNotFound, body.Error!.Code);
@@ -106,6 +106,22 @@ public sealed class SpeakerPresentationsTests : IClassFixture<SimfApiFactory>
             speakerId, sessionId, "deck.pdf", "application/pdf",
             new byte[] { 1 }, tokens.AccessToken);
         Assert.Equal(HttpStatusCode.Forbidden, uploaded.StatusCode);
+    }
+
+    [Fact]
+    public async Task Upload_with_a_mismatched_or_disallowed_type_is_400()
+    {
+        var (speakerId, sessionId) = await SeedSpeakerAndSessionAsync();
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        // M2 — a .pdf name but the bytes are not a PDF (nor any allowed
+        // container) is rejected by the magic-byte allow-list.
+        var uploaded = await UploadAsync(
+            speakerId, sessionId, "evil.pdf", "application/pdf",
+            "not-a-pdf"u8.ToArray(), admin);
+        Assert.Equal(HttpStatusCode.BadRequest, uploaded.StatusCode);
+        var body = (await uploaded.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SpeakerPresentationInvalid, body.Error!.Code);
     }
 
     // -- Helpers --------------------------------------------------------------

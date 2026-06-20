@@ -382,14 +382,38 @@ internal sealed class AssetService(
     private static string ValidateLink(string url)
     {
         var trimmed = (url ?? string.Empty).Trim();
+        // L3 (security) — external links are served to anonymous visitors via a
+        // 302, so the target must be a real, public https host. Require https
+        // (no cleartext) and reject literal IPs / localhost / internal TLDs, so
+        // the trusted SIMF domain can't be turned into an open redirect to an
+        // internal service or an attacker-chosen plain-http endpoint.
         if (trimmed.Length is 0 or > 1024
             || !Uri.TryCreate(trimmed, UriKind.Absolute, out var uri)
-            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+            || uri.Scheme != Uri.UriSchemeHttps
+            || !IsPublicHost(uri))
         {
             throw new ApiException(ErrorCodes.ValidationFailed, 400,
-                "Provide a valid http(s) URL (max 1024 characters).",
-                "يرجى إدخال رابط صحيح يبدأ بـ http(s) ولا يتجاوز 1024 حرفاً.");
+                "Provide a valid public https URL (max 1024 characters).",
+                "يرجى إدخال رابط https عام صحيح لا يتجاوز 1024 حرفاً.");
         }
         return trimmed;
+    }
+
+    /// <summary>L3 (security) — reject non-public link hosts: localhost, the
+    /// *.localhost / *.local / *.internal TLDs, and any literal IP (which would
+    /// also cover the private / loopback / link-local / cloud-metadata ranges).
+    /// A legitimate external media link is always a named public host.</summary>
+    private static bool IsPublicHost(Uri uri)
+    {
+        var host = uri.Host;
+        if (string.IsNullOrEmpty(host)
+            || host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+            || host.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase)
+            || host.EndsWith(".local", StringComparison.OrdinalIgnoreCase)
+            || host.EndsWith(".internal", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+        return !System.Net.IPAddress.TryParse(host, out _);
     }
 }

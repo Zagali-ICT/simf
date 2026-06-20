@@ -42,7 +42,7 @@ public sealed class SpeakerPresentationsExcelTests : IClassFixture<SimfApiFactor
         // Seed one presentation row so the workbook has a data row.
         var uploaded = await UploadAsync(
             speakerId, sessionId, "deck.pdf", "application/pdf",
-            new byte[] { 1, 2, 3, 4 }, adminToken);
+            new byte[] { 0x25, 0x50, 0x44, 0x46 }, adminToken); // "%PDF"
         Assert.Equal(HttpStatusCode.OK, uploaded.StatusCode);
 
         var response = await PostAuthAsync(
