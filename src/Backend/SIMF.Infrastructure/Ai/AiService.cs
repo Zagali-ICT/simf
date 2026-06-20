@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SIMF.Application.Ai.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Common;
@@ -26,6 +27,7 @@ namespace SIMF.Infrastructure.Ai;
 internal sealed class AiService(
     SimfAppDbContext appDbContext,
     IReadOnlyDictionary<AiProvider, IAiProvider> providers,
+    IOptions<AiOptions> aiOptions,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<AiService> logger) : IAiService
@@ -87,15 +89,20 @@ internal sealed class AiService(
         var systemPrompt = Substitute(prompt.SystemPrompt, inputs);
         var userPrompt = Substitute(prompt.UserPromptTemplate, inputs);
 
-        if (!providers.TryGetValue(prompt.Provider, out var provider))
+        // D-484 — an Echo-default prompt is redirected to the operator's
+        // configured DefaultProvider (e.g. Anthropic) when one is set; a prompt
+        // pinned to a concrete provider is honoured as-is.
+        var effectiveProvider = AiProviderRouting.Effective(
+            prompt.Provider, aiOptions.Value.DefaultProvider);
+        if (!providers.TryGetValue(effectiveProvider, out var provider))
         {
             await PersistFailureAsync(prompt, inputs, caller,
                 ErrorCodes.AiProviderNotConfigured, latencyMs: 0,
                 cancellationToken);
             throw new ApiException(
                 ErrorCodes.AiProviderNotConfigured, 503,
-                $"AI provider '{prompt.Provider}' is not registered.",
-                $"موفّر الذكاء الاصطناعي '{prompt.Provider}' غير مسجَّل.");
+                $"AI provider '{effectiveProvider}' is not registered.",
+                $"موفّر الذكاء الاصطناعي '{effectiveProvider}' غير مسجَّل.");
         }
 
         var stopwatch = Stopwatch.StartNew();

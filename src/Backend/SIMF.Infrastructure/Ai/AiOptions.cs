@@ -19,8 +19,34 @@ public sealed class AiOptions
 
     public OpenAiOptions OpenAi { get; set; } = new();
 
+    /// <summary>D-484 — the Anthropic (Claude) Messages-API provider settings.</summary>
+    public AnthropicOptions Anthropic { get; set; } = new();
+
     /// <summary>D-181 — HMAC key for prompt-content drift hashes.</summary>
     public AiPromptHashOptions PromptHash { get; set; } = new();
+}
+
+/// <summary>D-484 — Anthropic (Claude) provider settings. Bound to
+/// <c>Ai:Anthropic</c>; the API key is supplied via env var
+/// <c>SIMF_Ai__Anthropic__ApiKey</c> in production — never committed.</summary>
+public sealed class AnthropicOptions
+{
+    /// <summary>API key (<c>sk-ant-…</c>). Empty ⇒ the provider throws
+    /// <c>AI_PROVIDER_NOT_CONFIGURED</c> (503).</summary>
+    public string? ApiKey { get; set; }
+
+    /// <summary>Messages-API base URL. Defaults to the public Anthropic endpoint.</summary>
+    public string BaseUrl { get; set; } = "https://api.anthropic.com";
+
+    /// <summary>Model fallback when a prompt omits its own Model.</summary>
+    public string DefaultModel { get; set; } = "claude-haiku-4-5-20251001";
+
+    /// <summary>The required <c>anthropic-version</c> request header.</summary>
+    public string AnthropicVersion { get; set; } = "2023-06-01";
+
+    /// <summary><c>max_tokens</c> fallback (Anthropic requires it on every
+    /// request) when a prompt/call does not specify one.</summary>
+    public int DefaultMaxTokens { get; set; } = 2048;
 }
 
 public sealed class OpenAiOptions

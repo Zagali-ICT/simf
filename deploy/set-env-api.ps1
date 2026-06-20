@@ -62,9 +62,18 @@ $vars = [ordered]@{
     "SIMF_Storage__UserIdDocumentEncryptionKey"    = ""  # [REQUIRED][SECRET] openssl rand -base64 32
     "SIMF_Storage__LogDirectory"                   = ""  # optional (default logs)
 
-    # --- AI provider ---
-    "SIMF_Ai__DefaultProvider"                     = ""  # optional (default Echo; production should set OpenAi)
-    "SIMF_Ai__OpenAi__ApiKey"                      = ""  # [SECRET] required if any prompt uses OpenAi
+    # --- AI provider (D-484: this deployment uses Anthropic/Claude) ---
+    # DefaultProvider redirects every Echo-default prompt to a real backend
+    # without editing each prompt; "Anthropic" is the chosen provider (non-secret).
+    "SIMF_Ai__DefaultProvider"                     = "Anthropic"  # Echo | OpenAi | AzureOpenAi | Anthropic
+    # Claude (Anthropic Messages API). BaseUrl + AnthropicVersion have code
+    # defaults (https://api.anthropic.com / 2023-06-01); only the key is required.
+    "SIMF_Ai__Anthropic__ApiKey"                   = ""  # [REQUIRED for Anthropic][SECRET] sk-ant-…  (set on server / set-env-api.local.ps1)
+    "SIMF_Ai__Anthropic__DefaultModel"             = "claude-haiku-4-5-20251001"  # non-secret model id
+    "SIMF_Ai__Anthropic__BaseUrl"                  = ""  # optional (default https://api.anthropic.com)
+    "SIMF_Ai__Anthropic__AnthropicVersion"         = ""  # optional (default 2023-06-01)
+    # OpenAI kept available (only used by a prompt explicitly pinned to OpenAi).
+    "SIMF_Ai__OpenAi__ApiKey"                      = ""  # [SECRET] required only if a prompt uses OpenAi
     "SIMF_Ai__OpenAi__BaseUrl"                     = ""  # optional (default https://api.openai.com/v1)
     "SIMF_Ai__OpenAi__DefaultModel"                = ""  # optional (default gpt-4o-mini)
     "SIMF_Ai__PromptHash__Secret"                  = ""  # [REQUIRED for prod][SECRET] openssl rand -base64 32

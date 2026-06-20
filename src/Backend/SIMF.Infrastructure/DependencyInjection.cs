@@ -439,6 +439,10 @@ public static class DependencyInjection
         services.AddSingleton<SIMF.Infrastructure.Ai.OpenAiProvider>();
         services.AddSingleton<SIMF.Application.Ai.Abstractions.IAiProvider>(sp =>
             sp.GetRequiredService<SIMF.Infrastructure.Ai.OpenAiProvider>());
+        // D-484 — Anthropic (Claude) Messages-API provider (shares the singleton HttpClient).
+        services.AddSingleton<SIMF.Infrastructure.Ai.AnthropicAiProvider>();
+        services.AddSingleton<SIMF.Application.Ai.Abstractions.IAiProvider>(sp =>
+            sp.GetRequiredService<SIMF.Infrastructure.Ai.AnthropicAiProvider>());
         services.AddSingleton<IReadOnlyDictionary<SIMF.Common.Enums.AiProvider,
                 SIMF.Application.Ai.Abstractions.IAiProvider>>(sp =>
             sp.GetServices<SIMF.Application.Ai.Abstractions.IAiProvider>()
