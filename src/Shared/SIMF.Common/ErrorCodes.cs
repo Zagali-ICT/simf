@@ -223,6 +223,8 @@ public static class ErrorCodes
     // Speaker meeting requests (D-269 — Mockup page 20 "Speaker profile").
     public const string SpeakerMeetingRequestInvalid = "SPEAKER_MEETING_REQUEST_INVALID";
     public const string SpeakerMeetingRequestNotFound = "SPEAKER_MEETING_REQUEST_NOT_FOUND";
+    /// <summary>D-474 (#11) — the speaker availability window was not found.</summary>
+    public const string SpeakerAvailabilityWindowNotFound = "SPEAKER_AVAILABILITY_WINDOW_NOT_FOUND";
     public const string SpeakerMeetingRequestsNotAllowed = "SPEAKER_MEETING_REQUESTS_NOT_ALLOWED";
     public const string SpeakerMeetingRequestStatusInvalid = "SPEAKER_MEETING_REQUEST_STATUS_INVALID";
 

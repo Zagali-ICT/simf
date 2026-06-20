@@ -275,6 +275,9 @@ public static class DependencyInjection
         // D-269 (Mockup page 20) — attendee meeting requests to a speaker.
         services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.ISpeakerMeetingRequestService,
             SIMF.Infrastructure.MeetingRequests.SpeakerMeetingRequestService>();
+        // D-474 (#11, Group G) — speaker availability windows + free-slot derivation.
+        services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.ISpeakerAvailabilityService,
+            SIMF.Infrastructure.MeetingRequests.SpeakerAvailabilityService>();
         // D-175 (gap doc G11, Mockup page 7) — per-session seat
         // reservations (visitor self-pick + random + admin row blocks).
         services.AddScoped<SIMF.Application.SeatReservations.Abstractions.ISeatReservationService,

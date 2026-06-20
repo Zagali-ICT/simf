@@ -276,6 +276,9 @@ public static class AuditEvents
     // per-record detail/respond reveals the requester email.
     public const string SpeakerMeetingRequestSubmitted = "SpeakerMeetingRequest.Submitted";
     public const string SpeakerMeetingRequestResponded = "SpeakerMeetingRequest.Responded";
+    // D-474 (#11, Group G) — speaker availability windows for the VIP-meeting slots.
+    public const string SpeakerAvailabilityWindowCreated = "SpeakerAvailabilityWindow.Created";
+    public const string SpeakerAvailabilityWindowDeleted = "SpeakerAvailabilityWindow.Deleted";
     public const string AdminSpeakerMeetingRequestsListed = "Admin.SpeakerMeetingRequestsListed";
     public const string AdminSpeakerMeetingRequestViewed = "Admin.SpeakerMeetingRequestViewed";
 

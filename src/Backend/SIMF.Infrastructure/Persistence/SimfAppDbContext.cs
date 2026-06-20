@@ -134,6 +134,9 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
     /// feature (D-174) was removed in D-278.</summary>
     public DbSet<SpeakerMeetingRequest> SpeakerMeetingRequests => Set<SpeakerMeetingRequest>();
 
+    // D-474 (#11, Group G) — speaker availability windows for the VIP-meeting slots.
+    public DbSet<SpeakerAvailabilityWindow> SpeakerAvailabilityWindows => Set<SpeakerAvailabilityWindow>();
+
     /// <summary>D-175 (gap doc G11, Mockup page 7) — per-hall seat
     /// grid layout (rows + seats-per-row). Optional 1:1 with Hall.</summary>
     public DbSet<HallSeatLayout> HallSeatLayouts => Set<HallSeatLayout>();
