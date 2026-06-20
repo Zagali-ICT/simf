@@ -674,6 +674,9 @@
   <data name="Admin.Halls.Field.Capacity" xml:space="preserve"><value>Capacity</value></data>
   <data name="Admin.Halls.Field.CapacityHint" xml:space="preserve"><value>Seating + standing capacity (zero or more). Drives the Sessions booking cap.</value></data>
   <data name="Admin.Halls.Field.CapacityInvalid" xml:space="preserve"><value>Capacity must be zero or a positive integer.</value></data>
+  <data name="Admin.Halls.Field.SeatMode" xml:space="preserve"><value>Seat selection</value></data>
+  <data name="Admin.Halls.SeatMode.Assigned" xml:space="preserve"><value>Assigned seat (attendees pick a seat)</value></data>
+  <data name="Admin.Halls.SeatMode.Open" xml:space="preserve"><value>Open seating (general admission)</value></data>
   <data name="Admin.Halls.Field.Floor" xml:space="preserve"><value>Floor</value></data>
   <data name="Admin.Halls.Field.FloorHint" xml:space="preserve"><value>Optional. Up to 32 characters (e.g. "Ground", "Level 2").</value></data>
   <data name="Admin.Halls.Field.EquipmentNotes" xml:space="preserve"><value>Equipment + accessibility notes</value></data>
@@ -1422,6 +1425,10 @@
   <data name="Admin.Sessions.Type.Workshop" xml:space="preserve"><value>Workshop</value></data>
   <data name="Admin.Sessions.Type.Session" xml:space="preserve"><value>Session</value></data>
   <data name="Admin.Sessions.Type.Event" xml:space="preserve"><value>Event</value></data>
+  <data name="Admin.Sessions.Field.SeatMode" xml:space="preserve"><value>Seat selection (override)</value></data>
+  <data name="Admin.Sessions.SeatMode.Inherit" xml:space="preserve"><value>— Inherit from hall —</value></data>
+  <data name="Admin.Sessions.SeatMode.Assigned" xml:space="preserve"><value>Assigned seat</value></data>
+  <data name="Admin.Sessions.SeatMode.Open" xml:space="preserve"><value>Open seating (general admission)</value></data>
   <data name="Module.ProgrammeDays" xml:space="preserve"><value>Programme days</value></data>
   <data name="Admin.ProgrammeDays.Title" xml:space="preserve"><value>Programme days</value></data>
   <data name="Admin.ProgrammeDays.Loading" xml:space="preserve"><value>Loading programme days…</value></data>
@@ -1461,6 +1468,7 @@
   <data name="Admin.Bookings.Col.Session" xml:space="preserve"><value>Session</value></data>
   <data name="Admin.Bookings.Col.Start" xml:space="preserve"><value>Starts (UTC)</value></data>
   <data name="Admin.Bookings.Col.Seat" xml:space="preserve"><value>Seat</value></data>
+  <data name="Admin.Bookings.GeneralAdmission" xml:space="preserve"><value>General admission</value></data>
   <data name="Admin.Bookings.Col.Attendee" xml:space="preserve"><value>Attendee</value></data>
   <data name="Admin.Bookings.Col.BookedAt" xml:space="preserve"><value>Booked (UTC)</value></data>
   <data name="Admin.Bookings.Approve" xml:space="preserve"><value>Approve</value></data>

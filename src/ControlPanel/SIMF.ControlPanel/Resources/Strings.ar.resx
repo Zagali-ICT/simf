@@ -671,6 +671,9 @@
   <data name="Admin.Halls.Field.Capacity" xml:space="preserve"><value>السعة</value></data>
   <data name="Admin.Halls.Field.CapacityHint" xml:space="preserve"><value>السعة (جلوس + وقوف؛ صفر أو أكثر). تحكم السعة القصوى لحجوزات الجلسات.</value></data>
   <data name="Admin.Halls.Field.CapacityInvalid" xml:space="preserve"><value>يجب أن تكون السعة صفراً أو عدداً صحيحاً موجباً.</value></data>
+  <data name="Admin.Halls.Field.SeatMode" xml:space="preserve"><value>اختيار المقاعد</value></data>
+  <data name="Admin.Halls.SeatMode.Assigned" xml:space="preserve"><value>مقعد محدد (يختار الحاضر مقعده)</value></data>
+  <data name="Admin.Halls.SeatMode.Open" xml:space="preserve"><value>مقاعد مفتوحة (دخول عام)</value></data>
   <data name="Admin.Halls.Field.Floor" xml:space="preserve"><value>الطابق</value></data>
   <data name="Admin.Halls.Field.FloorHint" xml:space="preserve"><value>اختياري. حتى 32 حرفاً (مثل "الأرضي" أو "الطابق 2").</value></data>
   <data name="Admin.Halls.Field.EquipmentNotes" xml:space="preserve"><value>ملاحظات المعدات وإمكانية الوصول</value></data>
@@ -1415,6 +1418,10 @@
   <data name="Admin.Sessions.Type.Workshop" xml:space="preserve"><value>ورشة عمل</value></data>
   <data name="Admin.Sessions.Type.Session" xml:space="preserve"><value>جلسة</value></data>
   <data name="Admin.Sessions.Type.Event" xml:space="preserve"><value>حدث</value></data>
+  <data name="Admin.Sessions.Field.SeatMode" xml:space="preserve"><value>اختيار المقاعد (تجاوز)</value></data>
+  <data name="Admin.Sessions.SeatMode.Inherit" xml:space="preserve"><value>— حسب القاعة —</value></data>
+  <data name="Admin.Sessions.SeatMode.Assigned" xml:space="preserve"><value>مقعد محدد</value></data>
+  <data name="Admin.Sessions.SeatMode.Open" xml:space="preserve"><value>مقاعد مفتوحة (دخول عام)</value></data>
   <data name="Module.ProgrammeDays" xml:space="preserve"><value>أيام البرنامج</value></data>
   <data name="Admin.ProgrammeDays.Title" xml:space="preserve"><value>أيام البرنامج</value></data>
   <data name="Admin.ProgrammeDays.Loading" xml:space="preserve"><value>جارٍ تحميل أيام البرنامج…</value></data>
@@ -1454,6 +1461,7 @@
   <data name="Admin.Bookings.Col.Session" xml:space="preserve"><value>الجلسة</value></data>
   <data name="Admin.Bookings.Col.Start" xml:space="preserve"><value>تبدأ (UTC)</value></data>
   <data name="Admin.Bookings.Col.Seat" xml:space="preserve"><value>المقعد</value></data>
+  <data name="Admin.Bookings.GeneralAdmission" xml:space="preserve"><value>دخول عام</value></data>
   <data name="Admin.Bookings.Col.Attendee" xml:space="preserve"><value>الحاضر</value></data>
   <data name="Admin.Bookings.Col.BookedAt" xml:space="preserve"><value>تاريخ الحجز (UTC)</value></data>
   <data name="Admin.Bookings.Approve" xml:space="preserve"><value>اعتماد</value></data>

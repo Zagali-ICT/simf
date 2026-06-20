@@ -34,6 +34,16 @@
                        ValueChanged="@(v => _capacityInput = v)"
                        ValueExpression="@(() => _capacityInput)"
                        Disabled="_busy" />
+        @* D-485 — how attendees join sessions in this hall (assigned seat vs
+           open/general admission). A session can override this per-session. *@
+        <SimfSelect TValue="string"
+                    Label="@L["Admin.Halls.Field.SeatMode"]"
+                    Items="_seatModeOptions"
+                    ValueFor="@(id => id)"
+                    LabelFor="@(id => SeatModeLabel(id))"
+                    Value="@_seatModeInput"
+                    ValueChanged="@(v => _seatModeInput = v ?? "0")"
+                    Disabled="_busy" />
         <SimfTextField Label="@L["Admin.Halls.Field.Floor"]"
                        Helper="@L["Admin.Halls.Field.FloorHint"]"
                        MaxLength="32"
@@ -86,6 +96,9 @@
 @code {
     private readonly Model _model = new();
     private string _capacityInput = "0";
+    // D-485 — seat-selection mode ("0" = AssignedSeat, "1" = OpenSeating).
+    private string _seatModeInput = "0";
+    private static readonly string[] _seatModeOptions = { "0", "1" };
     private string _geoLatInput = string.Empty;
     private string _geoLonInput = string.Empty;
     private string _geoRadiusInput = string.Empty;
@@ -104,6 +117,7 @@
             _model.EquipmentNotes = Initial.EquipmentNotes ?? string.Empty;
             _model.IsActive = Initial.IsActive;
             _capacityInput = Initial.Capacity.ToString();
+            _seatModeInput = Initial.SeatSelectionMode.ToString();
             _geoLatInput = Initial.GeofenceCenterLat?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
             _geoLonInput = Initial.GeofenceCenterLon?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
             _geoRadiusInput = Initial.GeofenceRadiusMeters?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
@@ -146,6 +160,7 @@
                         GeofenceCenterLat = geoLat,
                         GeofenceCenterLon = geoLon,
                         GeofenceRadiusMeters = geoRadius,
+                        SeatSelectionMode = SeatModeValue(),
                     });
             }
             else
@@ -164,6 +179,7 @@
                         GeofenceCenterLat = geoLat,
                         GeofenceCenterLon = geoLon,
                         GeofenceRadiusMeters = geoRadius,
+                        SeatSelectionMode = SeatModeValue(),
                     });
             }
 
@@ -214,6 +230,15 @@
         lat = latV; lon = lonV; radius = radiusV;
         return true;
     }
+
+    // D-485 — the hall's seat-selection mode select ("0" = assigned, "1" = open).
+    private string SeatModeLabel(string id) => id switch
+    {
+        "1" => L["Admin.Halls.SeatMode.Open"],
+        _ => L["Admin.Halls.SeatMode.Assigned"],
+    };
+
+    private int SeatModeValue() => int.TryParse(_seatModeInput, out var m) ? m : 0;
 
     private sealed class Model
     {

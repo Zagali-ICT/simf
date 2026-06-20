@@ -40,7 +40,8 @@ to `Status == Pending && ReleasedAt == null && ReservedForUserId != null`.
   `BookingQueueRow` inside `simf-page-wide` / `simf-surface`.
 - **Grid columns** (keys in parentheses): Session (`session`), Starts UTC
   (`start`, rendered `yyyy-MM-dd HH:mm`), Seat (`seat`, rendered `{RowLabel}{SeatNumber}`,
-  e.g. `A1`), Attendee (`attendee`), Booked UTC (`bookedAt`, rendered
+  e.g. `A1`, or **General admission** for an open-seating join with no seat — D-485),
+  Attendee (`attendee`), Booked UTC (`bookedAt`, rendered
   `yyyy-MM-dd HH:mm`).
 - **Sortable:** Session, Starts, Seat, Booked UTC. **Filterable** (per-column quiet
   input): Session and Seat only. The **Attendee** column is neither sortable nor

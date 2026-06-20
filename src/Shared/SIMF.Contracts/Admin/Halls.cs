@@ -31,7 +31,10 @@ public sealed record AdminHallDetail(
     DateTimeOffset? UpdatedAt,
     double? GeofenceCenterLat = null,
     double? GeofenceCenterLon = null,
-    double? GeofenceRadiusMeters = null);
+    double? GeofenceRadiusMeters = null,
+    // D-485: the hall's seat-selection mode (SeatSelectionMode; 0 = AssignedSeat,
+    // 1 = OpenSeating). Appended (defaulted) so the wire stays append-only (D-219).
+    int SeatSelectionMode = 0);
 
 public sealed class AdminCreateHallRequest
 {
@@ -45,6 +48,8 @@ public sealed class AdminCreateHallRequest
     public double? GeofenceCenterLat { get; set; }
     public double? GeofenceCenterLon { get; set; }
     public double? GeofenceRadiusMeters { get; set; }
+    // D-485: 0 = AssignedSeat (pick a seat), 1 = OpenSeating (general admission).
+    public int SeatSelectionMode { get; set; }
 }
 
 public sealed class AdminUpdateHallRequest
@@ -60,4 +65,6 @@ public sealed class AdminUpdateHallRequest
     public double? GeofenceCenterLat { get; set; }
     public double? GeofenceCenterLon { get; set; }
     public double? GeofenceRadiusMeters { get; set; }
+    // D-485: 0 = AssignedSeat (pick a seat), 1 = OpenSeating (general admission).
+    public int SeatSelectionMode { get; set; }
 }

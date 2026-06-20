@@ -107,6 +107,7 @@ internal sealed class AdminHallService(
             request.Capacity);
         var (geoLat, geoLon, geoRadius) = ValidateGeofence(
             request.GeofenceCenterLat, request.GeofenceCenterLon, request.GeofenceRadiusMeters);
+        var mode = ParseSeatSelectionMode(request.SeatSelectionMode);
 
         var clash = await dbContext.Halls.AsNoTracking()
             .AnyAsync(hall => hall.Code == code, cancellationToken);
@@ -125,6 +126,7 @@ internal sealed class AdminHallService(
             Capacity = request.Capacity,
             Floor = floor, EquipmentNotes = equipmentNotes,
             GeofenceCenterLat = geoLat, GeofenceCenterLon = geoLon, GeofenceRadiusMeters = geoRadius,
+            SeatSelectionMode = mode,
             IsActive = true,
             CreatedAt = now,
         };
@@ -178,6 +180,7 @@ internal sealed class AdminHallService(
         hall.Floor = floor; hall.EquipmentNotes = equipmentNotes;
         hall.GeofenceCenterLat = geoLat; hall.GeofenceCenterLon = geoLon;
         hall.GeofenceRadiusMeters = geoRadius;
+        hall.SeatSelectionMode = ParseSeatSelectionMode(request.SeatSelectionMode);
         hall.IsActive = request.IsActive;
         hall.UpdatedAt = timeProvider.GetUtcNow();
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -270,7 +273,22 @@ internal sealed class AdminHallService(
         new(hall.Id, hall.Code, hall.Name, hall.NameArabic,
             hall.Capacity, hall.Floor, hall.EquipmentNotes,
             hall.IsActive, hall.CreatedAt, hall.UpdatedAt,
-            hall.GeofenceCenterLat, hall.GeofenceCenterLon, hall.GeofenceRadiusMeters);
+            hall.GeofenceCenterLat, hall.GeofenceCenterLon, hall.GeofenceRadiusMeters,
+            (int)hall.SeatSelectionMode);
+
+    /// <summary>D-485 — validate the incoming seat-selection mode int against the
+    /// defined <see cref="SeatSelectionMode"/> values (the CP dropdown only offers
+    /// 0/1, but a hand-crafted request must not store an undefined value).</summary>
+    private static SeatSelectionMode ParseSeatSelectionMode(int raw)
+    {
+        if (!Enum.IsDefined(typeof(SeatSelectionMode), raw))
+        {
+            throw new ApiException(ErrorCodes.HallInvalid, 400,
+                "Invalid seat-selection mode.",
+                "وضع اختيار المقاعد غير صالح.");
+        }
+        return (SeatSelectionMode)raw;
+    }
 
     /// <summary>P5.1 — D-240 (FDS-003 §5.4): validate the optional hall geofence.
     /// All three values are set together or all null (a partial geofence is

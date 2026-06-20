@@ -4,6 +4,7 @@ using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
+using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Admin;
@@ -101,6 +102,9 @@ public sealed class UpdateSessionRequest
     // P5 — D-439: AI live-caption text (manual stub provider, bilingual).
     public string? LiveCaptions { get; set; }
     public string? LiveCaptionsArabic { get; set; }
+    // D-485 — optional per-session seat-selection-mode override (null = inherit
+    // the hall). Carried on the update route DTO so a PUT round-trips it.
+    public SeatSelectionMode? SeatSelectionModeOverride { get; set; }
 }
 
 public sealed class UpdateSessionEndpoint(IAdminSessionService service)
@@ -144,6 +148,7 @@ public sealed class UpdateSessionEndpoint(IAdminSessionService service)
                     LiveSignLanguageUrl = req.LiveSignLanguageUrl,
                     LiveCaptions = req.LiveCaptions,
                     LiveCaptionsArabic = req.LiveCaptionsArabic,
+                    SeatSelectionModeOverride = req.SeatSelectionModeOverride,
                 }, ct)), ct);
     }
 }
