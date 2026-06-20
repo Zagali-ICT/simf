@@ -67,10 +67,16 @@ class _FakeSpeakersRepo implements SpeakersRepository {
   Future<SpeakerDetail> getSpeaker(String id) => throw UnimplementedError();
 
   @override
+  Future<List<SpeakerSlot>> getAvailableSlots(String speakerId) =>
+      throw UnimplementedError();
+
+  @override
   Future<void> submitMeetingRequest(
     String speakerId, {
     required String requesterName,
     required String subject,
+    DateTime? slotStartUtc,
+    DateTime? slotEndUtc,
   }) =>
       throw UnimplementedError();
 }

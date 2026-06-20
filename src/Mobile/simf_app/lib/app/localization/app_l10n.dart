@@ -184,6 +184,8 @@ class AppL10n {
   String get organisationRequired =>
       _t('اختر جهتك من القائمة', 'Pick your organisation from the list');
   String get profileTypeLabel => _t('التصنيف', 'Profile type');
+  // D-471 — hint for the profile-type searchable picker sheet.
+  String get profileTypeSearchHint => _t('ابحث عن التصنيف', 'Search profile type');
   // Page 007 — نوع التسجيل (Visitor/Other) filter (D-332). Visitor reuses
   // [signUpTypeVisitor]; Other is new.
   String get registrationTypeLabel => _t('نوع التسجيل', 'Registration type');

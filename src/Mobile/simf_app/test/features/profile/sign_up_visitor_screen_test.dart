@@ -291,6 +291,23 @@ void main() {
       expect(capturedDraft!.request.plateNumber, 'ABJ1234');
     });
 
+    testWidgets('a digits-first stored plate keeps its order on prefill — it is '
+        'not silently reordered to letters-first (D-471)', (tester) async {
+      // A plate is valid in either order; the canonical code preserves it. A
+      // stored "1234ABJ" (digits-first) must round-trip unchanged, not become
+      // "ABJ1234" (the pre-fix reorder bug).
+      final repo = _FakeProfileRepository(
+        profile: _completeProfile(plateNumber: '1234ABJ'),
+      );
+      await _pump(tester, repo);
+
+      await _tapNext(tester);
+
+      expect(find.text('INTERESTS'), findsOneWidget);
+      expect(capturedDraft, isNotNull);
+      expect(capturedDraft!.request.plateNumber, '1234ABJ');
+    });
+
     testWidgets('a Saudi profile shows the birth-location region dropdown with '
         'the stored region selected (D-469)', (tester) async {
       // _completeProfile is Saudi with placeOfBirth "Riyadh" (a region name), so

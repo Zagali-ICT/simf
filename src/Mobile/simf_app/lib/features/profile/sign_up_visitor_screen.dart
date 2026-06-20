@@ -73,6 +73,11 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   String? _plateLetter1;
   String? _plateLetter2;
   String? _plateLetter3;
+  // D-471 fix — a plate is valid in either order (letters-then-digits or
+  // digits-then-letters) and the canonical code PRESERVES that order. Remember a
+  // digits-first stored plate so prefill→re-sync doesn't silently reorder it
+  // (e.g. "1234ABJ" must not be rewritten to "ABJ1234").
+  bool _plateDigitsFirst = false;
   final TextEditingController _plateDigits = TextEditingController();
   final TextEditingController _organisationSearch = TextEditingController();
 
@@ -440,6 +445,14 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     // side; the picker is not a FormField, so its inline error (line ~985)
     // must also gate Next, otherwise an empty code reaches the server (400).
     final nationalityValid = _nationalityCode != null;
+    // D-471 — the profile-type picker is now a searchable field, not a FormField,
+    // so its required gate (only when the "Other" picker is actually shown — never
+    // when Visitor-locked, loading, failed or empty, per L-6) lives here.
+    final profileTypePickerShown = !_isVisitorType &&
+        !_profileTypesLoading &&
+        !_profileTypesFailed &&
+        _profileTypes.isNotEmpty;
+    final profileTypeValid = !profileTypePickerShown || _profileTypeId != null;
     // Two-photo split — the ID DOCUMENT is mandatory for every registrant; the
     // FACE photo is mandatory for men and optional for women. Either a fresh
     // pick or an already-stored image satisfies each.
@@ -451,6 +464,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         !dateOfBirthValid ||
         !organisationValid ||
         !nationalityValid ||
+        !profileTypeValid ||
         !idImageValid ||
         !faceImageValid) {
       // D-434 — surface a clear message instead of failing silently, so the
@@ -1005,39 +1019,28 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         ],
       );
     }
+    // D-471 — the same searchable bottom-sheet picker as nationality / birth-
+    // region / plate, so every lookup field on the form is identical. Under
+    // "Other" a pick is required (the empty-lookup case returns above per L-6);
+    // the picker is not a FormField, so the required gate lives in _next().
+    final selected =
+        _profileTypes.where((ProfileTypeItem t) => t.id == _profileTypeId).toList();
+    final hasValue = selected.isNotEmpty;
+    final label = hasValue
+        ? (l10n.isArabic ? selected.first.nameArabic : selected.first.name)
+        : l10n.profileTypeLabel;
+    final showError = _triedSubmit && _profileTypeId == null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         _FieldLabel(l10n.profileTypeLabel),
         const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
-          key: const ValueKey<String>('profileTypePicker'),
-          initialValue: _profileTypeId,
-          isExpanded: true,
-          style: _inputStyle,
-          dropdownColor: SimfTokens.cardBeige,
-          icon: const Icon(
-            Icons.keyboard_arrow_down,
-            color: SimfTokens.greyText,
-          ),
-          decoration: _fieldDecoration(),
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          // C5 (D-371) — under "Other" a pick is required (the empty-lookup
-          // case is excluded above per L-6: never block on missing data).
-          validator: (value) =>
-              value == null ? l10n.profileTypeRequired : null,
-          items: _profileTypes
-              .map(
-                (type) => DropdownMenuItem<String>(
-                  value: type.id,
-                  child: Text(
-                    l10n.isArabic ? type.nameArabic : type.name,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              )
-              .toList(),
-          onChanged: (value) => setState(() => _profileTypeId = value),
+        _searchPickerField(
+          fieldKey: 'profileTypePicker',
+          displayText: label,
+          isPlaceholder: !hasValue,
+          onTap: () => unawaited(_pickProfileType(l10n)),
+          errorText: showError ? l10n.profileTypeRequired : null,
         ),
       ],
     );
@@ -1215,6 +1218,28 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       _birthRegionCode = pickedCode;
       _placeOfBirth.text = regionByCode(pickedCode)?.name(isArabic: isArabic) ?? '';
     });
+  }
+
+  /// D-471 — opens the shared searchable sheet over the loaded "Other" profile
+  /// types and stores the picked id. Mirrors the nationality / birth-region
+  /// pickers so every lookup field uses the identical sheet.
+  Future<void> _pickProfileType(AppL10n l10n) async {
+    final picked = await _openLookupSheet(
+      options: <_PickerOption>[
+        for (final ProfileTypeItem t in _profileTypes)
+          _PickerOption(
+            value: t.id,
+            label: l10n.isArabic ? t.nameArabic : t.name,
+            search: '${t.name} ${t.nameArabic}',
+          ),
+      ],
+      searchHint: l10n.profileTypeSearchHint,
+      searchFieldKey: const ValueKey<String>('profileTypeSearchField'),
+    );
+    if (picked == null || !mounted) {
+      return;
+    }
+    setState(() => _profileTypeId = picked);
   }
 
   List<Widget> _buildDocumentFields(AppL10n l10n) {
@@ -1440,13 +1465,19 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     });
   }
 
-  /// Re-assembles [_plate] from the dropdown picks + digits (letters then
-  /// digits). Empty when nothing is picked — the plate is optional.
+  /// Re-assembles [_plate] from the dropdown picks + digits, preserving the
+  /// stored order ([_plateDigitsFirst]) so a digits-first plate round-trips
+  /// unchanged (D-471 fix). Letters-then-digits is the default for fresh entry.
+  /// Empty when nothing is picked — the plate is optional.
   void _syncPlate() {
     final String letters =
         '${_plateLetter1 ?? ''}${_plateLetter2 ?? ''}${_plateLetter3 ?? ''}';
     final String digits = _plateDigits.text.trim();
-    _plate.text = (letters.isEmpty && digits.isEmpty) ? '' : '$letters$digits';
+    if (letters.isEmpty && digits.isEmpty) {
+      _plate.text = '';
+    } else {
+      _plate.text = _plateDigitsFirst ? '$digits$letters' : '$letters$digits';
+    }
   }
 
   /// Splits a stored plate code into the three letter dropdowns + the digits
@@ -1459,6 +1490,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     _plateLetter2 = null;
     _plateLetter3 = null;
     _plateDigits.text = '';
+    _plateDigitsFirst = false;
     final raw = code?.trim() ?? '';
     if (raw.isEmpty) {
       _plate.text = '';
@@ -1481,6 +1513,10 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       _plateLetter2 = letters[1];
       _plateLetter3 = letters[2];
       _plateDigits.text = digits.toString();
+      // Preserve the stored order: a leading digit means digits-then-letters
+      // (e.g. "1234ABJ"); _syncPlate re-emits in that same order (D-471 fix).
+      final int firstRune = canonical.runes.first;
+      _plateDigitsFirst = firstRune >= 0x30 && firstRune <= 0x39;
       _syncPlate();
     } else {
       // Legacy / non-conforming code the dropdowns can't represent — keep it so
