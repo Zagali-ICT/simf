@@ -316,6 +316,45 @@ void main() {
       expect(find.text('Select region'), findsNothing);
     });
 
+    testWidgets('the birth-region field opens the shared searchable sheet and '
+        'picks a region (D-470)', (tester) async {
+      // Saudi profile with no stored region → the picker shows the placeholder.
+      final repo = _FakeProfileRepository(profile: _completeProfile(placeOfBirth: ''));
+      await _pump(tester, repo);
+
+      const picker = ValueKey<String>('birthRegionPicker');
+      await tester.ensureVisible(find.byKey(picker));
+      await tester.tap(find.byKey(picker));
+      await tester.pumpAndSettle();
+
+      // Same searchable sheet as the country picker (type-to-filter).
+      final search = find.byKey(const ValueKey<String>('birthRegionSearchField'));
+      expect(search, findsOneWidget);
+      await tester.enterText(search, 'Eastern');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Eastern Province'));
+      await tester.pumpAndSettle();
+
+      // The field now shows the picked region.
+      expect(find.text('Eastern Province'), findsOneWidget);
+    });
+
+    testWidgets('a plate-letter field opens the shared searchable sheet (D-470)',
+        (tester) async {
+      await _pump(tester, _FakeProfileRepository());
+
+      const picker = ValueKey<String>('plateLetter1');
+      await tester.ensureVisible(find.byKey(picker));
+      await tester.tap(find.byKey(picker));
+      await tester.pumpAndSettle();
+
+      // The shared search sheet is up over the 17 plate letters.
+      expect(
+        find.byKey(const ValueKey<String>('plateLetterSearch1')),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('a profile missing only the organisation blocks Next (B3 — D-221)',
         (tester) async {
       // Every field valid except the organisation → the required-organisation

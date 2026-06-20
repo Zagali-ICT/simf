@@ -80,7 +80,9 @@ internal sealed class MyAreaService(
                 p.NameArabic,
                 p.JobTitle,
                 p.Organisation != null ? (p.Organisation.Name ?? p.Organisation.NameArabic) : null,
-                p.QrId))
+                p.QrId,
+                p.SaudiMobile,
+                p.InternationalMobile))
             .FirstOrDefaultAsync(cancellationToken);
 
         return card ?? new MyAreaContactCard(string.Empty, string.Empty, null, null, null);

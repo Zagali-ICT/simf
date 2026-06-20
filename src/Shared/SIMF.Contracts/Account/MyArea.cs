@@ -76,12 +76,17 @@ public sealed record MyAreaCalendarEvent(
     string? Location);
 
 /// <summary>
-/// The vCard data for the <c>contact-card.vcf</c> export (Page_014 E3). The
-/// <see cref="QrId"/> is the badge's unique key (the same value the QR encodes).
+/// The vCard data for the <c>contact-card.vcf</c> export (Page_014 E3) and the
+/// share-my-contact QR (D-470). <see cref="QrId"/> is the badge's gate key and
+/// is deliberately NOT emitted into the camera-readable vCard. The mobile
+/// numbers feed the vCard <c>TEL</c> lines (D-470, requirement #8 "Name ar,
+/// phones").
 /// </summary>
 public sealed record MyAreaContactCard(
     string FullNameEn,
     string FullNameAr,
     string? JobTitle,
     string? Organisation,
-    string? QrId);
+    string? QrId,
+    string? SaudiMobile = null,
+    string? InternationalMobile = null);
