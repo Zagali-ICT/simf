@@ -362,6 +362,16 @@ internal sealed class AssetService(
             throw new ApiException(ErrorCodes.ValidationFailed, 400,
                 "Image must be PNG, JPEG or WebP.", "يجب أن تكون الصورة بصيغة PNG أو JPEG أو WebP.");
         }
+        // M1 (security) — the bytes must also carry the matching magic-byte
+        // signature, not just the client-declared content type, so a polyglot or
+        // renamed file can't be served as an image by the anonymous asset
+        // endpoint (parity with the avatar / ID-document uploads).
+        if (!ImageUploadValidation.MagicBytesMatch(content, contentType))
+        {
+            throw new ApiException(ErrorCodes.ValidationFailed, 400,
+                "Image content does not match its declared type.",
+                "محتوى الصورة لا يطابق النوع المحدّد.");
+        }
         if (content.LongLength > MaxImageBytes)
         {
             throw new ApiException(ErrorCodes.ValidationFailed, 400,
