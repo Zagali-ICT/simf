@@ -45,6 +45,26 @@ class _FakeSeatRepo implements SeatMapRepository {
     }
     return map!;
   }
+
+  // D-485 — the My-Seat screen is read-only; the write methods are unused here.
+  @override
+  Future<MyReservation> reserveSeat(
+    String sessionId, {
+    required String rowLabel,
+    required int seatNumber,
+  }) =>
+      throw UnimplementedError();
+
+  @override
+  Future<MyReservation> reserveRandom(String sessionId) =>
+      throw UnimplementedError();
+
+  @override
+  Future<MyReservation> joinOpenSeating(String sessionId) =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> releaseMine(String sessionId) => throw UnimplementedError();
 }
 
 /// Flattens an [InlineSpan] tree to its non-blank text leaves (Text.rich wraps
