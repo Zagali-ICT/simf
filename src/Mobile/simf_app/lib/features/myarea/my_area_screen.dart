@@ -233,7 +233,7 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
         _IdentityCard(name: name, line: l10n.myAreaPendingNote),
         const SizedBox(height: SimfTokens.space4),
         _MoreRow(
-          label: l10n.accountSettingsLink,
+          label: l10n.moreTitle,
           onTap: () => context.pushNamed(RouteNames.more),
         ),
         // Sign-out lives in the shell's side drawer now (D-396).
@@ -356,7 +356,7 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
                 ),
             ],
         const SizedBox(height: SimfTokens.space3),
-        KsaSectionHeader(title: l10n.moreTitle),
+        KsaSectionHeader(title: l10n.moreSectionSettings),
         const SizedBox(height: SimfTokens.space3),
         _MoreRow(
           label: l10n.smartBadgeLink,
@@ -371,7 +371,7 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
         ),
         const SizedBox(height: SimfTokens.space4),
         _MoreRow(
-          label: l10n.accountSettingsLink,
+          label: l10n.moreTitle,
           onTap: () => context.pushNamed(RouteNames.more),
         ),
         // Face-ID sign-in enable/disable (D-445) — self-hides when the device

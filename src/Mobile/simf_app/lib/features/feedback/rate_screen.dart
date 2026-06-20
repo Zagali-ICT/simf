@@ -256,10 +256,13 @@ class _RateScreenState extends ConsumerState<RateScreen> {
             ),
           ),
           const SizedBox(height: SimfTokens.space5),
-          // Gold "إرسال التقييم" button (frame 1116:17220).
+          // Gold "إرسال التقييم" button (frame 1116:17220). Stays gold while
+          // submitting (a white spinner replaces the label) instead of turning
+          // into an unreadable dark box.
           _GoldButton(
-            label: _submitting ? l10n.loadingLabel : l10n.rateSubmit,
-            onTap: _submitting ? null : () => unawaited(_submit(l10n)),
+            label: l10n.rateSubmit,
+            loading: _submitting,
+            onTap: () => unawaited(_submit(l10n)),
           ),
         ],
       ),
@@ -364,33 +367,48 @@ class _StarRow extends StatelessWidget {
 }
 
 /// The full-width gold action button (frame 1116:17220): radius-4 gold fill with
-/// the centred white label. [onTap] null renders the disabled (submitting) state.
+/// the centred white label. Stays gold while [loading] (taps disabled, a white
+/// spinner replaces the label) so the button never turns into an unreadable
+/// dark box on the navy surface.
 class _GoldButton extends StatelessWidget {
-  const _GoldButton({required this.label, required this.onTap});
+  const _GoldButton({
+    required this.label,
+    required this.onTap,
+    this.loading = false,
+  });
 
   final String label;
+  final bool loading;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final enabled = onTap != null;
     return Material(
-      color: enabled ? SimfTokens.accent : SimfTokens.navyDisabled,
+      color: SimfTokens.accent,
       borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
       child: InkWell(
-        onTap: onTap,
+        onTap: loading ? null : onTap,
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
         child: SizedBox(
           height: 48,
           child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: enabled ? Colors.white : SimfTokens.navyDisabledText,
-                fontSize: SimfTokens.textLg,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            child: loading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : Text(
+                    label,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: SimfTokens.textLg,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
           ),
         ),
       ),
