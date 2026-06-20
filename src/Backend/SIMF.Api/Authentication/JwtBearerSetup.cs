@@ -43,6 +43,7 @@ internal static class JwtBearerSetup
             OnTokenValidated = OnTokenValidatedAsync,
             OnAuthenticationFailed = OnAuthenticationFailedAsync,
             OnChallenge = OnChallengeAsync,
+            OnForbidden = OnForbiddenAsync,
         };
     }
 
@@ -83,6 +84,7 @@ internal static class JwtBearerSetup
             },
             OnAuthenticationFailed = OnAuthenticationFailedAsync,
             OnChallenge = OnChallengeAsync,
+            OnForbidden = OnForbiddenAsync,
         };
     }
 
@@ -156,6 +158,31 @@ internal static class JwtBearerSetup
     }
 
     /// <summary>
+    /// A1-12 (NCA Secure Application-Development Standard) — an authenticated
+    /// request that failed authorization (a 403: a missing permission, or a
+    /// non-Approved account state on a <c>perm:</c> policy). The framework's
+    /// default is an empty 403 with no audit trail; this hook records the
+    /// denied decision (NCA requires all failed access-control decisions to be
+    /// logged) and returns the standard <c>ApiResult</c> 403 envelope.
+    /// </summary>
+    private static async Task OnForbiddenAsync(ForbiddenContext context)
+    {
+        await AuditForbiddenAsync(context.HttpContext);
+
+        if (!context.Response.HasStarted)
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            await context.Response.WriteAsJsonAsync(
+                ApiResult<object>.Fail(new ApiError
+                {
+                    Code = ErrorCodes.Forbidden,
+                    Message = "You do not have permission to perform this action.",
+                    MessageArabic = "ليس لديك صلاحية لتنفيذ هذا الإجراء.",
+                }));
+        }
+    }
+
+    /// <summary>
     /// H26 — D-086: per-IP cap on bearer-rejection audit DB writes (the
     /// rest of the world reaches the API past UseRouting — pre-routing,
     /// the rate limiter is not in scope). An attacker flooding
@@ -215,6 +242,56 @@ internal static class JwtBearerSetup
                 EventType = AuditEvents.AccessTokenRejected,
                 Outcome = AuditOutcome.Failure,
                 ErrorCode = ErrorCodes.AuthInvalidCredentials,
+                Detail = detail,
+            });
+    }
+
+    /// <summary>
+    /// A1-12 — audits a 403 (authenticated-but-not-authorized). Mirrors the
+    /// per-IP throttle of <see cref="AuditRejectionAsync"/> so a forbidden-storm
+    /// from one source cannot flood the audit table; the structured log line
+    /// always fires so SOC still sees every denial. Records the acting user
+    /// (from the <c>sub</c> claim) plus the method + path that was denied.
+    /// </summary>
+    private static async Task AuditForbiddenAsync(HttpContext httpContext)
+    {
+        var services = httpContext.RequestServices;
+        var logger = services.GetRequiredService<ILogger<JwtBearerOptions>>();
+        var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        var sub = httpContext.User.FindFirst("sub")?.Value;
+        var detail = $"{httpContext.Request.Method} {httpContext.Request.Path.Value}";
+
+        logger.LogWarning(
+            "Authorization denied for user {Sub} from {Ip}: {Detail}",
+            sub ?? "anonymous", ip, detail);
+
+        var cache = services.GetService<IMemoryCache>();
+        if (cache is not null)
+        {
+            var cacheKey = "simf-authz-denied:" + ip;
+            var count = cache.GetOrCreate(cacheKey, entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = AuditWindow;
+                return 0;
+            });
+            count++;
+            cache.Set(cacheKey, count, AuditWindow);
+            if (count > MaxAuditWritesPerWindow)
+            {
+                logger.LogWarning(
+                    "Authorization-denied audit suppressed from {Ip} — already wrote {Cap} rows in {Window}s.",
+                    ip, MaxAuditWritesPerWindow, (int)AuditWindow.TotalSeconds);
+                return;
+            }
+        }
+
+        await services.GetRequiredService<IAuditLog>().WriteAsync(
+            new AuditEntry
+            {
+                EventType = AuditEvents.AuthorizationDenied,
+                Outcome = AuditOutcome.Failure,
+                ActorUserId = Guid.TryParse(sub, out var actorId) ? actorId : null,
+                ErrorCode = ErrorCodes.Forbidden,
                 Detail = detail,
             });
     }

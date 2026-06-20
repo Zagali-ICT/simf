@@ -53,6 +53,12 @@ public static class AuditEvents
     public const string RefreshTokenReused = "RefreshToken.Reused";
     public const string RefreshTokenRejected = "RefreshToken.Rejected";
     public const string AccessTokenRejected = "AccessToken.Rejected";
+    // A1-12 (NCA Secure Application-Development Standard) — an authenticated
+    // request failed authorization (a 403: missing permission, or a
+    // non-Approved account state). NCA requires every failed access-control
+    // decision to be logged; without this the 401 path was audited but a
+    // denied permission left no trail.
+    public const string AuthorizationDenied = "Authorization.Denied";
     public const string SignOutSucceeded = "SignOut.Succeeded";
     public const string ForgotPasswordRequested = "ForgotPassword.Requested";
     public const string PasswordResetCompleted = "PasswordReset.Completed";

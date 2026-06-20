@@ -23,6 +23,24 @@ public sealed class SecurityHeadersMiddleware(RequestDelegate next)
             headers["Strict-Transport-Security"] = "max-age=31536000";
         }
 
+        // A5-12 (NCA App-Sec Standard) — declare an explicit charset on JSON
+        // responses. FastEndpoints / WriteAsJsonAsync may emit a bare
+        // "application/json"; append "; charset=utf-8" once the content type is
+        // known (OnStarting runs just before headers flush, so it cannot miss
+        // the type set by the endpoint).
+        context.Response.OnStarting(static state =>
+        {
+            var response = (HttpResponse)state;
+            var contentType = response.ContentType;
+            if (contentType is not null
+                && contentType.StartsWith("application/json", StringComparison.OrdinalIgnoreCase)
+                && !contentType.Contains("charset", StringComparison.OrdinalIgnoreCase))
+            {
+                response.ContentType = "application/json; charset=utf-8";
+            }
+            return Task.CompletedTask;
+        }, context.Response);
+
         await next(context);
     }
 }

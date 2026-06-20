@@ -71,7 +71,8 @@ public sealed class ErrorHandlingMiddleware(
     {
         context.Response.Clear();
         context.Response.StatusCode = statusCode;
-        context.Response.ContentType = "application/json";
+        // A5-12 (NCA App-Sec Standard) — declare the charset explicitly.
+        context.Response.ContentType = "application/json; charset=utf-8";
         await context.Response.WriteAsync(
             JsonSerializer.Serialize(ApiResult<object>.Fail(error), JsonOptions));
     }

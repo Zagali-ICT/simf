@@ -587,7 +587,8 @@ internal static class AccountEndpoints
             {
                 return Results.StatusCode(status);
             }
-            http.Response.Headers.CacheControl = "private, max-age=60";
+            // A2-14 (NCA App-Sec Standard) — ID document is high-value PII; never cache.
+            http.Response.Headers.CacheControl = "no-store";
             return Results.File(bytes, contentType);
         });
 
@@ -602,7 +603,8 @@ internal static class AccountEndpoints
             {
                 return Results.StatusCode(status);
             }
-            http.Response.Headers.CacheControl = "private, max-age=60";
+            // A2-14 (NCA App-Sec Standard) — ID document is high-value PII; never cache.
+            http.Response.Headers.CacheControl = "no-store";
             return Results.File(bytes, contentType);
         });
 
