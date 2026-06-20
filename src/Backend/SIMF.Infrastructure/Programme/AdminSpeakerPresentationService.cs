@@ -1,4 +1,5 @@
 // Tests: SIMF.Api.Tests/SpeakerPresentationsTests.cs
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -216,7 +217,10 @@ internal sealed class AdminSpeakerPresentationService(
 
     private static string SanitiseFileName(string fileName)
     {
-        var name = Path.GetFileName(fileName ?? string.Empty).Trim();
+        // A3-14 (NCA App-Sec Standard) — Unicode-normalise the untrusted name
+        // before stripping the path, so visually-identical but differently-encoded
+        // sequences canonicalise to one form.
+        var name = Path.GetFileName((fileName ?? string.Empty).Normalize(NormalizationForm.FormC)).Trim();
         if (string.IsNullOrEmpty(name))
         {
             name = "presentation";
