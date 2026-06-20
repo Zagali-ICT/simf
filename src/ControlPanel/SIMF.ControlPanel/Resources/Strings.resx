@@ -831,6 +831,8 @@
   <data name="Admin.WalkIn.Field.DisplayName.Hint" xml:space="preserve"><value>Shown on the printed badge — usually first name + family name.</value></data>
   <data name="Admin.WalkIn.Field.DateOfBirth" xml:space="preserve"><value>Date of birth</value></data>
   <data name="Admin.WalkIn.Field.PlaceOfBirth" xml:space="preserve"><value>Place of birth</value></data>
+  <data name="Admin.WalkIn.Field.PlaceOfBirth.Select" xml:space="preserve"><value>Select region</value></data>
+  <data name="Admin.WalkIn.Field.PlaceOfBirth.PassportHint" xml:space="preserve"><value>As in the passport.</value></data>
   <data name="Admin.WalkIn.Field.Gender" xml:space="preserve"><value>Gender</value></data>
   <data name="Admin.WalkIn.Field.Gender.Unspecified" xml:space="preserve"><value>Not specified</value></data>
   <data name="Admin.WalkIn.Field.Gender.Male" xml:space="preserve"><value>Male</value></data>

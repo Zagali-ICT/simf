@@ -166,6 +166,10 @@ class AppL10n {
       _t('رقم الجوال الدولي (اختياري)', 'International mobile (optional)');
   String get dateOfBirthLabel => _t('تاريخ الميلاد', 'Date of birth');
   String get placeOfBirthLabel => _t('مكان الميلاد (اختياري)', 'Place of birth (optional)');
+  // D-469 — Saudi → region dropdown; others → free text "as in passport".
+  String get placeOfBirthRegionHint => _t('اختر المنطقة', 'Select region');
+  String get placeOfBirthPassportHint =>
+      _t('كما في جواز السفر', 'As in your passport');
   String get genderLabel => _t('الجنس', 'Gender');
   String get genderUnspecified => _t('غير محدد', 'Prefer not to say');
   String get genderMale => _t('ذكر', 'Male');

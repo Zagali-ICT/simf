@@ -59,6 +59,7 @@
 | E2E-MOB007-019 | Missing-items feedback (D-434): a blocked Next shows the bilingual "complete the required fields" toast (not a silent no-op), and the form carries an info banner on entry so a user routed in to complete their profile knows why | validation | P0 | authored ✓ (`completeProfilePrompt` toast on every blocked-Next test path; banner renders on load) |
 | E2E-MOB007-020 | **Top avatar (D-437):** once the face photo is captured, the placeholder person icon at the top of the card is replaced by the captured face | happy | P1 | authored ✓ (widget — header avatar swaps to the captured bytes) |
 | E2E-MOB007-021 | **Name rules (D-437/D-459):** the Arabic name accepts only Arabic letters + spaces (Latin/digits filtered at the keystroke); the English name only Latin letters + spaces; each must be a **full name of 2 to 4 parts** or Next is blocked with "Enter your full name (2 to 4 parts)". Mirrored server-side in `UpsertUserProfileRequestValidator` (400) | validation | P0 | authored ✓ (widget formatter+validator test + server name-rule tests) |
+| E2E-MOB007-022 | **Birth location (D-469):** a Saudi registrant's "place of birth" is a **region dropdown** over the 13 official Saudi regions (stored as the region's localized name); a non-Saudi gets the free-text field with an "as in passport" hint. The dropdown is **code-keyed**, so a region stored in the other language still preselects, and a stored value that is not a region (legacy free text) is kept, not erased. Switching nationality Saudi↔non-Saudi reconciles the field | validation | P1 | authored ✓ (widget — Saudi dropdown prefill + cross-locale select; `SaudiRegionsTests` ByName/ByCode) |
 
 ## Scenarios
 
@@ -271,6 +272,45 @@ Scenario: A full name needs 2 to 4 parts in one language
   And the server's UpsertUserProfileRequestValidator re-checks both (400 on violation)
 ```
 
+### E2E-MOB007-022 — Birth location: Saudi region dropdown / non-Saudi free text (D-469)
+
+```gherkin
+Feature: Birth location
+Scenario: A Saudi registrant picks a region from the dropdown
+  Given the "Saudi national" branch is active
+  Then the "place of birth" field is a dropdown over the 13 official Saudi regions
+       (Riyadh, Makkah, Al Madinah, Eastern Province, Asir, Tabuk, Hail,
+        Northern Borders, Jazan, Najran, Al Bahah, Al Jawf, Al Qassim)
+  When a region is picked
+  Then its localized name is stored in the existing place-of-birth field (no schema change)
+
+Scenario: A stored region preselects regardless of the language it was saved in
+  Given a Saudi profile whose stored place of birth is "منطقة الرياض" (Arabic)
+  When the form is opened under an English UI
+  Then the dropdown preselects "Riyadh" (it is keyed on the region code, not the name)
+
+Scenario: A non-region stored value is kept, not erased
+  Given a Saudi profile whose stored place of birth is a free-text city ("Jeddah City")
+  Then the dropdown shows the "Select region" placeholder
+  And the stored value is preserved unless the registrant actively picks a region
+
+Scenario: A non-Saudi registrant types the place of birth
+  Given the "Saudi national" branch is off
+  Then the place-of-birth field is a free-text input with the hint "As in your passport"
+
+Scenario: Switching nationality reconciles the field
+  Given a Saudi registrant has picked "Riyadh"
+  When they switch to a non-Saudi nationality
+  Then the field becomes free text carrying the prior value
+  When they switch back to Saudi
+  Then the value reselects the region if it maps to one, else the field clears
+```
+
+**Evidence:** `sign_up_visitor_screen_test` — "a Saudi profile shows the
+birth-location region dropdown with the stored region selected (D-469)" and "a
+region stored in Arabic still selects under an English UI". Shared constant +
+either-language lookup: `SaudiRegionsTests` (ByName/ByCode).
+
 ### E2E-MOB007-019 — Blocked Next surfaces the missing items (D-434)
 
 ```gherkin
@@ -290,4 +330,4 @@ Scenario: The complete-profile entry shows an attention banner
 
 ---
 
-_Last reviewed:_ `2026-06-19` by `SIMF Team` — D-459 name 2–4 parts + the 17-letter Saudi plate dropdowns (canonical code + AR/EN renderings) (016/021). Earlier: D-437 two-photo split (Upload ID gallery + Face photo camera), Arabic-only/English-only name rules, top-avatar swap, and the self-service id-image face-gate removal (017/018/020/021); D-332 data-screen rework; D-371 C4 phone standards.
+_Last reviewed:_ `2026-06-20` by `SIMF Team` — D-469 Saudi birth-location region dropdown (code-keyed, cross-locale, non-region values preserved) (022). Earlier: D-459 name 2–4 parts + the 17-letter Saudi plate dropdowns (canonical code + AR/EN renderings) (016/021); D-437 two-photo split (Upload ID gallery + Face photo camera), Arabic-only/English-only name rules, top-avatar swap, and the self-service id-image face-gate removal (017/018/020/021); D-332 data-screen rework; D-371 C4 phone standards.

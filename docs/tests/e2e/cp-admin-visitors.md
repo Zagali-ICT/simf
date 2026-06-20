@@ -46,6 +46,7 @@
 | E2E-VIS-022 | Numeric ID fields reject letters + inline field validation (D-354) | error | P1 | _to author_ |
 | E2E-VIS-023 | Presentation toggle: switch Add/Edit/Details to full-page + persists across reload (D-353) | happy | P1 | _to author_ |
 | E2E-VIS-024 | Full-page mode: Add/Edit/Details take over the content area, save/close returns to grid (D-353) | happy | P1 | _to author_ |
+| E2E-VIS-025 | Walk-in birth location (D-469) — Saudi → region `<select>` over the 13 official regions (code-keyed, cross-locale preselect); non-Saudi → free-text "as in passport" | validation | P1 | _to author_ |
 
 ## Scenarios
 
@@ -449,6 +450,33 @@ Scenario: Add/Edit/Details take over the content area; save or close returns to 
 - Console errors: 0 expected
 - Network: register-onsite / PUT / profile / list calls all return 200; no modal backdrop element is present in the DOM while a full-page frame is open
 
+### E2E-VIS-025 — Walk-in birth location: Saudi region dropdown / non-Saudi free text (D-469)
+
+```gherkin
+Scenario: A Saudi walk-in's place of birth is a region dropdown
+  Given the administrator is on the walk-in Add wizard with the "Saudi" toggle on
+  Then section 2 "Identity" renders "Place of birth" as a <select> over the 13
+       official Saudi regions, defaulting to the "Select region" placeholder
+  When they pick a region
+  Then the localized region name is submitted in AdminWalkInRegistrationRequest.PlaceOfBirth
+       (the existing free-text column — no schema change)
+
+Scenario: A previously-stored region preselects regardless of UI language
+  Given a record whose stored place of birth is "Riyadh" (saved in English)
+  When the form is rendered with the CP UI culture set to Arabic
+  Then the <select> still preselects the Riyadh option (it is keyed on the region
+       code via SaudiRegions.ByName, not on the stored name string)
+
+Scenario: A non-Saudi walk-in types the place of birth
+  Given the administrator turns the "Saudi" toggle off
+  Then "Place of birth" becomes a free-text field with the "As in the passport." helper
+```
+
+**Evidence:** shared-constant lookups covered by `tests/SIMF.Api.Tests/SaudiRegionsTests.cs`
+(ByName maps either language → code; ByCode → localized name). Live browser drive of
+the auth-gated walk-in wizard is pending the broader E2E-VIS authoring pass (all
+E2E-VIS rows are `_to author_`).
+
 ---
 
 ## Implementation notes
@@ -481,4 +509,4 @@ Scenario: Add/Edit/Details take over the content area; save or close returns to 
 
 ---
 
-_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle; added E2E-VIS-023/024 for the D-353 Page↔Popup presentation toggle).
+_Last reviewed:_ 2026-06-20 by SIMF Team (D-469 — added E2E-VIS-025 for the Saudi birth-location region dropdown in the walk-in wizard). Earlier: 2026-06-10 (D-356 Phase 5 — Excel + toggle; E2E-VIS-023/024 for the D-353 Page↔Popup presentation toggle).

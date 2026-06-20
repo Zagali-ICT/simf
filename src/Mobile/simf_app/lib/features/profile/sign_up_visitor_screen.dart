@@ -17,6 +17,7 @@ import 'data/profile_models.dart';
 import 'data/profile_repository.dart';
 import 'phone_validation.dart';
 import 'plate_validation.dart';
+import 'saudi_regions.dart';
 
 const Color _sweepTint = Color(0x0AFFFFFF);
 const BorderRadius _radius4 =
@@ -58,6 +59,9 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   final TextEditingController _englishName = TextEditingController();
   final TextEditingController _jobTitle = TextEditingController();
   final TextEditingController _placeOfBirth = TextEditingController();
+  // D-469 — the selected Saudi region code (birth-location dropdown); null for a
+  // non-Saudi (free-text place of birth) or an unmatched stored value.
+  String? _birthRegionCode;
   final TextEditingController _nationalId = TextEditingController();
   final TextEditingController _documentNumber = TextEditingController();
   final TextEditingController _saudiMobile = TextEditingController();
@@ -190,6 +194,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     _englishName.text = profile.englishName;
     _jobTitle.text = profile.jobTitle ?? '';
     _placeOfBirth.text = profile.placeOfBirth;
+    _birthRegionCode = regionByName(profile.placeOfBirth)?.code;
     _nationalId.text = profile.nationalId ?? '';
     if ((profile.iqamaNumber ?? '').isNotEmpty) {
       _docType = _DocType.iqama;
@@ -855,14 +860,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     const SizedBox(height: 16),
                     _buildDateOfBirthField(l10n),
                     const SizedBox(height: 16),
-                    _FieldLabel(l10n.placeOfBirthLabel),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _placeOfBirth,
-                      maxLength: 128,
-                      style: _inputStyle,
-                      decoration: _fieldDecoration(counterText: ''),
-                    ),
+                    _buildPlaceOfBirthField(l10n),
                     const SizedBox(height: 16),
                     // D-373 — the plate is the last input before the attach.
                     _buildPlateField(l10n),
@@ -1136,6 +1134,15 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       if (wasSaudi != _isSaudi) {
         _nationalId.clear();
         _documentNumber.clear();
+        // D-469 — the birth-location control flips with nationality: becoming
+        // Saudi keeps the value only if it matches a region (else the dropdown
+        // starts empty); leaving Saudi keeps it as free text.
+        if (_isSaudi) {
+          _birthRegionCode = regionByName(_placeOfBirth.text)?.code;
+          if (_birthRegionCode == null) {
+            _placeOfBirth.clear();
+          }
+        }
       }
     });
   }
@@ -1179,6 +1186,60 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         decoration: _fieldDecoration(counterText: ''),
       ),
     ];
+  }
+
+  /// D-469 — birth location: a Saudi registrant picks one of the 13 official
+  /// regions from a dropdown; everyone else types it free-form "as in passport".
+  /// The selection's localized name is kept in [_placeOfBirth] (the submitted
+  /// value), so storage stays the existing free-text field.
+  Widget _buildPlaceOfBirthField(AppL10n l10n) {
+    final bool isArabic = l10n.isArabic;
+    // Keep the stored name in the active locale when a region is selected, so a
+    // language toggle re-syncs the submitted value (the dropdown is code-keyed).
+    if (_isSaudi && _birthRegionCode != null) {
+      final String name =
+          regionByCode(_birthRegionCode)?.name(isArabic: isArabic) ?? '';
+      if (_placeOfBirth.text != name) {
+        _placeOfBirth.text = name;
+      }
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        _FieldLabel(l10n.placeOfBirthLabel),
+        const SizedBox(height: 8),
+        if (_isSaudi)
+          DropdownButtonFormField<String>(
+            initialValue: _birthRegionCode,
+            isExpanded: true,
+            style: _inputStyle,
+            hint: Text(l10n.placeOfBirthRegionHint, style: _inputStyle),
+            decoration: _fieldDecoration(),
+            items: <DropdownMenuItem<String>>[
+              for (final SaudiRegion r in saudiRegions)
+                DropdownMenuItem<String>(
+                  value: r.code,
+                  child: Text(r.name(isArabic: isArabic)),
+                ),
+            ],
+            onChanged: (String? code) => setState(() {
+              _birthRegionCode = code;
+              _placeOfBirth.text =
+                  regionByCode(code)?.name(isArabic: isArabic) ?? '';
+            }),
+          )
+        else
+          TextFormField(
+            controller: _placeOfBirth,
+            maxLength: 128,
+            style: _inputStyle,
+            decoration: _fieldDecoration(
+              counterText: '',
+              hintText: l10n.placeOfBirthPassportHint,
+            ),
+          ),
+      ],
+    );
   }
 
   /// C6 (D-371/D-459) — رقم اللوحة: optional. Rendered as three letter

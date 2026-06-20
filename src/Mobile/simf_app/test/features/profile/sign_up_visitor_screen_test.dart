@@ -183,6 +183,7 @@ UserProfileResponse _completeProfile({
   bool hasIdImage = true, // ID document — mandatory for everyone
   bool hasAvatar = true, // face photo — mandatory for men, optional for women
   String? plateNumber,
+  String placeOfBirth = 'Riyadh',
 }) =>
     UserProfileResponse(
       interestIds: const <String>['i1'],
@@ -190,7 +191,7 @@ UserProfileResponse _completeProfile({
       arabicName: 'راكان عبدالله أحمد السالم',
       englishName: 'Rakan Abdullah Ahmed Alsalem',
       nationalityCode: 'SA',
-      placeOfBirth: 'Riyadh',
+      placeOfBirth: placeOfBirth,
       isSaudi: true,
       gender: gender,
       hasIdImage: hasIdImage,
@@ -288,6 +289,31 @@ void main() {
       expect(find.text('INTERESTS'), findsOneWidget);
       expect(capturedDraft, isNotNull);
       expect(capturedDraft!.request.plateNumber, 'ABJ1234');
+    });
+
+    testWidgets('a Saudi profile shows the birth-location region dropdown with '
+        'the stored region selected (D-469)', (tester) async {
+      // _completeProfile is Saudi with placeOfBirth "Riyadh" (a region name), so
+      // the region dropdown is prefilled (matched from the stored name).
+      final repo = _FakeProfileRepository(profile: _completeProfile());
+      await _pump(tester, repo);
+
+      expect(find.text('Riyadh'), findsWidgets);
+    });
+
+    testWidgets('a region stored in Arabic still selects under an English UI — '
+        'the dropdown is code-keyed (D-469)', (tester) async {
+      // A visitor registered under an Arabic session stored "منطقة الرياض"; the
+      // English-locale render must still resolve it to the Riyadh option.
+      final repo = _FakeProfileRepository(
+        profile: _completeProfile(placeOfBirth: 'منطقة الرياض'),
+      );
+      await _pump(tester, repo);
+
+      // regionByName matched the Arabic name to the riyadh code, so the
+      // English-locale dropdown shows "Riyadh" (not the empty placeholder).
+      expect(find.text('Riyadh'), findsWidgets);
+      expect(find.text('Select region'), findsNothing);
     });
 
     testWidgets('a profile missing only the organisation blocks Next (B3 — D-221)',

@@ -823,6 +823,8 @@
   <data name="Admin.WalkIn.Field.DisplayName.Hint" xml:space="preserve"><value>يظهر على الشارة المطبوعة — عادةً الاسم الأول مع اسم العائلة.</value></data>
   <data name="Admin.WalkIn.Field.DateOfBirth" xml:space="preserve"><value>تاريخ الميلاد</value></data>
   <data name="Admin.WalkIn.Field.PlaceOfBirth" xml:space="preserve"><value>مكان الميلاد</value></data>
+  <data name="Admin.WalkIn.Field.PlaceOfBirth.Select" xml:space="preserve"><value>اختر المنطقة</value></data>
+  <data name="Admin.WalkIn.Field.PlaceOfBirth.PassportHint" xml:space="preserve"><value>كما في جواز السفر.</value></data>
   <data name="Admin.WalkIn.Field.Gender" xml:space="preserve"><value>الجنس</value></data>
   <data name="Admin.WalkIn.Field.Gender.Unspecified" xml:space="preserve"><value>غير محدد</value></data>
   <data name="Admin.WalkIn.Field.Gender.Male" xml:space="preserve"><value>ذكر</value></data>
