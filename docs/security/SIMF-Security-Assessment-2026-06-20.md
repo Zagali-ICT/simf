@@ -278,3 +278,14 @@ Production does **not** load `appsettings.Development.json` (ASPNETCORE_ENVIRONM
 - **OWASP** A06 Vulnerable & Outdated Components · **NCA ECC** 2-10 Vulnerability Management.
 - **Remediation:** Add an explicit `SQLitePCLRaw.bundle_e_sqlite3` (or `…lib.e_sqlite3`) PackageReference pinned to a patched version (≥ the advisory's fixed release), or bump the EF Core SQLite test package that pulls it. Requires a `.csproj`/package edit (owner-gated per project rule §1.7).
 - **Confidence:** High (reproduced in the build).
+- **Status (2026-06-20):** **Fixed** in `ed1c05c` — pinned `SQLitePCLRaw.bundle_e_sqlite3 3.0.3` (native `e_sqlite3 3.50.3`, SQLite ≥ 3.50.2) in `SIMF.Api.Tests`. Release build passes with NuGet audit enabled.
+
+### Non-critical batch — Group A (owner-approved subset: M7, M4, L5, L11)
+
+Committed `fd0a30e` (verified: SIMF.Api + SIMF.Infrastructure build 0/0 with audit on; SIMF.Api.Tests 1135/1135):
+- **M7 + L11** — new `SecurityHeadersMiddleware` on the API (`X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`, HSTS over HTTPS) on every response.
+- **M4** — `DependencyInjection.EnsureAiPromptHashSecretConfigured` boot guard (Production refuses to start on the publicly-derivable dev HMAC key); dead `AiAssistant` config block deleted.
+- **L5** — OpenAI provider error body redacted (`AiAuditDetail.RedactValue`) + length-capped before logging.
+
+**Still open (Group B — need a per-item decision):** M1/M2 (upload magic-byte validation), M3 (hash OTP at rest — D-110-frozen Identity), M5 (JWT version + central packages — `.csproj`), M6 (CP moderation permission — full playbook), L1 (stream-token lifetime), L2 (central approval gate), L3 (asset open-redirect), L4 (shared path-traversal guard), L6 (`/admin/logs` redaction), L10 (Website CSS-URL escaping), and CSP for Web/CP (report-only first).
+**Group C (ops/CI/device):** INFO-1 (IIS header suppression), INFO-4 (SBOM + vulnerable-package CI gate), L7 (`AllowedHosts` — tied to held H2), L8/L9 (Flutter — device-verified, with held C2).
