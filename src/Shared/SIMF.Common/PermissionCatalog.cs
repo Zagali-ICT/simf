@@ -307,6 +307,14 @@ public static class PermissionCatalog
         public const string Export = "SpeakerMeetingRequests.Export";
     }
 
+    /// <summary>D-478 (#11, Group G phase 2) — delegation↔delegation meeting
+    /// requests review desk. <c>View</c> lists/opens; <c>Manage</c> accepts/rejects.</summary>
+    public static class DelegationMeetings
+    {
+        public const string View = "DelegationMeetings.View";
+        public const string Manage = "DelegationMeetings.Manage";
+    }
+
     public static class Speakers
     {
         public const string View = "Speakers.View";
@@ -762,6 +770,9 @@ public static class PermissionCatalog
         new(SpeakerMeetingRequests.View, "SpeakerMeetingRequests", "View", "View speaker meeting requests", AdminOnly),
         new(SpeakerMeetingRequests.Manage, "SpeakerMeetingRequests", "Manage", "Manage speaker meeting requests", AdminOnly),
         new(SpeakerMeetingRequests.Export, "SpeakerMeetingRequests", "Export", "Export speaker meeting requests", AdminOnly),
+
+        new(DelegationMeetings.View, "DelegationMeetings", "View", "View delegation meeting requests", AdminOnly),
+        new(DelegationMeetings.Manage, "DelegationMeetings", "Manage", "Manage delegation meeting requests", AdminOnly),
 
         new(Speakers.View, "Speakers", "View", "View speakers", AdminOnly),
         new(Speakers.Create, "Speakers", "Create", "Create speakers", AdminOnly),

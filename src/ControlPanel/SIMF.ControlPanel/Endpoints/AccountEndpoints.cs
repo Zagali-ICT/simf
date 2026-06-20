@@ -2210,6 +2210,31 @@ internal static class AccountEndpoints
             return Forward(await api.DeleteSpeakerAvailabilityWindowAsync(windowId, token));
         });
 
+        // D-478 (#11) — delegation meeting requests BFF passthroughs.
+        group.MapPost("/admin/delegation-meeting-requests/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListAdminDelegationMeetingRequestsAsync(body, token));
+        });
+        group.MapGet("/admin/delegation-meeting-requests/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetAdminDelegationMeetingRequestAsync(id, token));
+        });
+        group.MapPut("/admin/delegation-meeting-requests/{id:guid}/respond",
+            async (Guid id, RespondToDelegationMeetingRequestRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.RespondToAdminDelegationMeetingRequestAsync(
+                id, body, token));
+        });
+
         // D-199 — News admin CRUD BFF passthroughs.
         group.MapPost("/admin/news/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>

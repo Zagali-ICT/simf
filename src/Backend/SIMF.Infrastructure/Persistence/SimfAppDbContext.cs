@@ -137,6 +137,9 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
     // D-474 (#11, Group G) — speaker availability windows for the VIP-meeting slots.
     public DbSet<SpeakerAvailabilityWindow> SpeakerAvailabilityWindows => Set<SpeakerAvailabilityWindow>();
 
+    // D-478 (#11, Group G phase 2) — delegation↔delegation (G2G) meeting requests.
+    public DbSet<DelegationMeetingRequest> DelegationMeetingRequests => Set<DelegationMeetingRequest>();
+
     /// <summary>D-175 (gap doc G11, Mockup page 7) — per-hall seat
     /// grid layout (rows + seats-per-row). Optional 1:1 with Hall.</summary>
     public DbSet<HallSeatLayout> HallSeatLayouts => Set<HallSeatLayout>();

@@ -2107,6 +2107,32 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Delete, $"speaker-availability-windows/{windowId}", content: null,
             accessToken, cancellationToken);
 
+    // -- D-478 (#11) — delegation meeting requests (SIMF.Contracts.Programme) -
+
+    public Task<ApiCallResult<GridPage<AdminDelegationMeetingRequestRow>>>
+        ListAdminDelegationMeetingRequestsAsync(GridQuery query, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminDelegationMeetingRequestRow>>(
+            HttpMethod.Post, "delegation-meeting-requests/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminDelegationMeetingRequestDetail>>
+        GetAdminDelegationMeetingRequestAsync(Guid id, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<AdminDelegationMeetingRequestDetail>(
+            HttpMethod.Get, $"delegation-meeting-requests/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminDelegationMeetingRequestDetail>>
+        RespondToAdminDelegationMeetingRequestAsync(
+            Guid id, RespondToDelegationMeetingRequestRequest request, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<AdminDelegationMeetingRequestDetail>(
+            HttpMethod.Put, $"delegation-meeting-requests/{id}/respond",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
     // -- D-199 — News admin CRUD (SIMF.Contracts.PublicRelations) -----------
 
     public Task<ApiCallResult<GridPage<AdminNewsSummary>>> ListNewsAsync(

@@ -1,0 +1,295 @@
+@* D-478 (#11, Group G phase 2) — admin review desk for delegation↔delegation
+   (G2G) meeting requests: a delegate of one invited country asks to meet another
+   invited country's delegation ("count X meets country Y"). The team Accepts /
+   Rejects with an optional note; on accept the requester is notified + emailed.
+   Pending → Pending is rejected server-side (DELEGATION_MEETING_REQUEST_INVALID).
+   SimfDataGrid (server-paged, status-filterable); the Respond action is a quiet
+   reply button shown only for Pending rows. Mirrors SpeakerMeetingRequestsList. *@
+@page "/admin/delegation-meetings"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.DelegationMeetings.View)]
+@using SIMF.Contracts.Programme
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.DelegationMeetings.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.DelegationMeetings.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <SimfDataGrid TItem="AdminDelegationMeetingRequestRow"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="false"
+                      RowKey="@(r => r.Id.ToString())"
+                      RowLabel="@(r => r.TargetCountry)"
+                      Caption="@L["Admin.DelegationMeetings.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.DelegationMeetings.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      ActionsHeader="@L["Grid.Actions"]"
+                      SelectAllLabel="@L["Grid.SelectAll"]"
+                      SelectRowLabel="@L["Grid.SelectRow"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminDelegationMeetingRequestRow" Key="requestingCountry"
+                                    Header="@L["Admin.DelegationMeetings.Col.From"]">
+                    <CellTemplate>@context.RequestingCountry</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminDelegationMeetingRequestRow" Key="targetCountry"
+                                    Header="@L["Admin.DelegationMeetings.Col.To"]">
+                    <CellTemplate>@context.TargetCountry</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminDelegationMeetingRequestRow" Key="attendeeCount"
+                                    Header="@L["Admin.DelegationMeetings.Col.Attendees"]">
+                    <CellTemplate>@context.AttendeeCount</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminDelegationMeetingRequestRow" Key="subject"
+                                    Header="@L["Admin.DelegationMeetings.Col.Subject"]">
+                    <CellTemplate>@context.Subject</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminDelegationMeetingRequestRow" Key="status"
+                                    Header="@L["Admin.DelegationMeetings.Col.Status"]"
+                                    Filterable="true">
+                    <CellTemplate>
+                        @switch (context.Status)
+                        {
+                            case MeetingRequestStatus.Pending:
+                                <SimfPill Variant="warn">@L["Admin.DelegationMeetings.Filter.Pending"]</SimfPill>
+                                break;
+                            case MeetingRequestStatus.Accepted:
+                                <SimfPill Variant="on">@L["Admin.DelegationMeetings.Filter.Accepted"]</SimfPill>
+                                break;
+                            case MeetingRequestStatus.Rejected:
+                                <SimfPill Variant="off">@L["Admin.DelegationMeetings.Filter.Rejected"]</SimfPill>
+                                break;
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminDelegationMeetingRequestRow" Key="createdAt"
+                                    Header="@L["Admin.DelegationMeetings.Col.CreatedAt"]" Sortable="true">
+                    <CellTemplate>@context.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <RowActions>
+                @* Page-specific quiet action: respond (accept / reject) to a
+                   Pending request. Only Pending rows can transition. *@
+                @if (context.Status == MeetingRequestStatus.Pending)
+                {
+                    <AuthorizedAction Permission="@PermissionCatalog.DelegationMeetings.Manage">
+                        <SimfToolbarButton Icon="reply" Title="@L["Admin.DelegationMeetings.Respond"]"
+                                           OnClick="@(() => OnRespondAsync(context))" />
+                    </AuthorizedAction>
+                }
+            </RowActions>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.DelegationMeetings.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>
+
+@if (_respondOpen && _respondTarget is not null)
+{
+    <SimfModal Open="true" Title="@L["Admin.DelegationMeetings.Respond.Title"]"
+               OnClose="@(() => _respondOpen = false)">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <dl class="simf-dl">
+                    <dt>@L["Admin.DelegationMeetings.Col.From"]</dt>
+                    <dd>@_respondTarget.RequestingCountry</dd>
+                    <dt>@L["Admin.DelegationMeetings.Col.To"]</dt>
+                    <dd>@_respondTarget.TargetCountry</dd>
+                    <dt>@L["Admin.DelegationMeetings.Col.Attendees"]</dt>
+                    <dd>@_respondTarget.AttendeeCount</dd>
+                    <dt>@L["Admin.DelegationMeetings.Requester"]</dt>
+                    <dd>
+                        @if (_loadingDetail)
+                        {
+                            <div class="simf-table__sub">@L["Admin.DelegationMeetings.LoadingDetail"]</div>
+                        }
+                        else if (!string.IsNullOrEmpty(_respondTarget.RequesterEmail))
+                        {
+                            <div class="simf-table__sub">@_respondTarget.RequesterEmail</div>
+                        }
+                        else
+                        {
+                            <div class="simf-table__sub">—</div>
+                        }
+                    </dd>
+                    <dt>@L["Admin.DelegationMeetings.Col.Subject"]</dt>
+                    <dd>@_respondTarget.Subject</dd>
+                </dl>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.DelegationMeetings.Respond.Status"]</span>
+                    <select class="simf-field__input" value="@((int)_respondStatus)"
+                            @onchange="OnRespondStatusChanged" disabled="@_busy">
+                        <option value="@((int)MeetingRequestStatus.Accepted)">
+                            @L["Admin.DelegationMeetings.Respond.Accept"]
+                        </option>
+                        <option value="@((int)MeetingRequestStatus.Rejected)">
+                            @L["Admin.DelegationMeetings.Respond.Reject"]
+                        </option>
+                    </select>
+                </label>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.DelegationMeetings.Respond.Note"]</span>
+                    <textarea class="simf-field__input" rows="4"
+                              value="@_respondNote"
+                              @onchange="OnRespondNoteChanged"
+                              disabled="@_busy"></textarea>
+                </label>
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Variant="secondary" Disabled="_busy"
+                        OnClick="@(() => _respondOpen = false)">
+                @L["Admin.DelegationMeetings.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="SendResponseAsync" Loading="_busy">
+                @L["Admin.DelegationMeetings.Respond.Submit"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private GridQuery _query = new() { Top = 20 };
+    private GridPage<AdminDelegationMeetingRequestRow> _page = new();
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+
+    private bool _respondOpen;
+    // PII (requester email) is fetched on demand into the detail shape; list
+    // rows do not carry email (the D-185 pattern).
+    private AdminDelegationMeetingRequestDetail? _respondTarget;
+    private bool _loadingDetail;
+    private MeetingRequestStatus _respondStatus = MeetingRequestStatus.Accepted;
+    private string _respondNote = string.Empty;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminDelegationMeetingRequestRow>>>(
+                "simfAccount.postJson",
+                "/account/api/admin/delegation-meeting-requests/list", _query);
+            if (env is { Success: true, Data: not null })
+            {
+                _page = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.DelegationMeetings.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task OnRespondAsync(AdminDelegationMeetingRequestRow row)
+    {
+        // Open the modal with what the row carries (no email yet), then fetch
+        // the detail (with email) in the background — one audited Viewed event
+        // per click (D-185 pattern).
+        _respondTarget = new AdminDelegationMeetingRequestDetail(
+            row.Id, row.RequestingCountry, row.TargetCountry,
+            row.RequestedByUserId, RequesterEmail: null,
+            row.AttendeeCount, row.Subject, row.Status,
+            row.SlotStartUtc, SlotEndUtc: null, row.ResponseNote,
+            row.CreatedAt, row.RespondedAt);
+        _respondStatus = MeetingRequestStatus.Accepted;
+        _respondNote = string.Empty;
+        _respondOpen = true;
+        _loadingDetail = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminDelegationMeetingRequestDetail>>(
+                "simfAccount.getJson",
+                $"/account/api/admin/delegation-meeting-requests/{row.Id}");
+            if (env is { Success: true, Data: not null } && _respondOpen
+                && _respondTarget?.Id == row.Id)
+            {
+                _respondTarget = env.Data;
+            }
+        }
+        finally { _loadingDetail = false; }
+    }
+
+    private void OnRespondStatusChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var v))
+        {
+            _respondStatus = (MeetingRequestStatus)v;
+        }
+    }
+
+    private void OnRespondNoteChanged(ChangeEventArgs e) =>
+        _respondNote = e.Value?.ToString() ?? string.Empty;
+
+    private async Task SendResponseAsync()
+    {
+        if (_respondTarget is null || _busy) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminDelegationMeetingRequestDetail>>(
+                "simfAccount.putJson",
+                $"/account/api/admin/delegation-meeting-requests/{_respondTarget.Id}/respond",
+                new RespondToDelegationMeetingRequestRequest
+                {
+                    Status = _respondStatus,
+                    ResponseNote = string.IsNullOrWhiteSpace(_respondNote)
+                        ? null : _respondNote.Trim(),
+                });
+            if (env is { Success: true })
+            {
+                _respondOpen = false;
+                _toast = new Toast("success", L["Admin.DelegationMeetings.Respond.Done"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.DelegationMeetings.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+}

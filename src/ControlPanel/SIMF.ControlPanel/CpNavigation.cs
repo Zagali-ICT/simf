@@ -96,6 +96,8 @@ public static class CpNavigation
             new("Module.SpeakerMeetingRequests", "/admin/speaker-meeting-requests", RequiredPermission: PermissionCatalog.SpeakerMeetingRequests.View, Icon: "inbox"),
             // D-474 (#11, Group G) — the team defines speaker availability windows for VIP meeting slots.
             new("Module.AdminSpeakerAvailability", "/admin/speaker-availability", RequiredPermission: PermissionCatalog.SpeakerMeetingRequests.Manage, Icon: "calendar"),
+            // D-478 (#11, Group G phase 2) — delegation↔delegation meeting requests review desk.
+            new("Module.AdminDelegationMeetings", "/admin/delegation-meetings", RequiredPermission: PermissionCatalog.DelegationMeetings.View, Icon: "inbox"),
             // D-153 — programme speakers (SIMF-DAT-001 §5.4).
             new("Module.Speakers", "/admin/speakers", RequiredPermission: PermissionCatalog.Speakers.View, Icon: "mic"),
             // P2.3 (D-228) — speaker presentation files (FR-407). Reuses Speakers.*.

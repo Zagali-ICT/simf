@@ -74,6 +74,7 @@
   <data name="Module.SessionSeatPlans" xml:space="preserve"><value>Session seat plans</value></data>
   <data name="Module.SpeakerMeetingRequests" xml:space="preserve"><value>Speaker meeting requests</value></data>
   <data name="Module.AdminSpeakerAvailability" xml:space="preserve"><value>Speaker availability</value></data>
+  <data name="Module.AdminDelegationMeetings" xml:space="preserve"><value>Delegation meetings</value></data>
   <data name="Admin.SpeakerAvailability.Title" xml:space="preserve"><value>Speaker availability</value></data>
   <data name="Admin.SpeakerAvailability.Speaker" xml:space="preserve"><value>Speaker</value></data>
   <data name="Admin.SpeakerAvailability.PickSpeaker" xml:space="preserve"><value>Select a speaker…</value></data>
@@ -1964,6 +1965,32 @@
   <data name="Admin.SpeakerMeetingRequests.Respond.Submit" xml:space="preserve"><value>Send response</value></data>
   <data name="Admin.SpeakerMeetingRequests.Respond.Done" xml:space="preserve"><value>Response sent.</value></data>
   <data name="Admin.SpeakerMeetingRequests.Cancel" xml:space="preserve"><value>Cancel</value></data>
+
+  <!-- D-478 (#11, Group G phase 2) — delegation↔delegation meeting requests desk. -->
+  <data name="Admin.DelegationMeetings.Title" xml:space="preserve"><value>Delegation meetings</value></data>
+  <data name="Admin.DelegationMeetings.None" xml:space="preserve"><value>No delegation meeting requests yet.</value></data>
+  <data name="Admin.DelegationMeetings.Loading" xml:space="preserve"><value>Loading…</value></data>
+  <data name="Admin.DelegationMeetings.LoadFailed" xml:space="preserve"><value>Could not load delegation meeting requests.</value></data>
+  <data name="Admin.DelegationMeetings.LoadingDetail" xml:space="preserve"><value>Loading requester details…</value></data>
+  <data name="Admin.DelegationMeetings.Requester" xml:space="preserve"><value>Requester</value></data>
+  <data name="Admin.DelegationMeetings.Filter.Pending" xml:space="preserve"><value>Pending</value></data>
+  <data name="Admin.DelegationMeetings.Filter.Accepted" xml:space="preserve"><value>Accepted</value></data>
+  <data name="Admin.DelegationMeetings.Filter.Rejected" xml:space="preserve"><value>Rejected</value></data>
+  <data name="Admin.DelegationMeetings.Col.From" xml:space="preserve"><value>From delegation</value></data>
+  <data name="Admin.DelegationMeetings.Col.To" xml:space="preserve"><value>To delegation</value></data>
+  <data name="Admin.DelegationMeetings.Col.Attendees" xml:space="preserve"><value>Attendees</value></data>
+  <data name="Admin.DelegationMeetings.Col.Subject" xml:space="preserve"><value>Subject</value></data>
+  <data name="Admin.DelegationMeetings.Col.Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Admin.DelegationMeetings.Col.CreatedAt" xml:space="preserve"><value>Submitted</value></data>
+  <data name="Admin.DelegationMeetings.Respond" xml:space="preserve"><value>Respond</value></data>
+  <data name="Admin.DelegationMeetings.Respond.Title" xml:space="preserve"><value>Respond to delegation meeting request</value></data>
+  <data name="Admin.DelegationMeetings.Respond.Status" xml:space="preserve"><value>Decision</value></data>
+  <data name="Admin.DelegationMeetings.Respond.Accept" xml:space="preserve"><value>Accept</value></data>
+  <data name="Admin.DelegationMeetings.Respond.Reject" xml:space="preserve"><value>Reject</value></data>
+  <data name="Admin.DelegationMeetings.Respond.Note" xml:space="preserve"><value>Response note (optional, ≤2000 chars)</value></data>
+  <data name="Admin.DelegationMeetings.Respond.Submit" xml:space="preserve"><value>Send response</value></data>
+  <data name="Admin.DelegationMeetings.Respond.Done" xml:space="preserve"><value>Response sent.</value></data>
+  <data name="Admin.DelegationMeetings.Cancel" xml:space="preserve"><value>Cancel</value></data>
 
   <!-- D-199 — new nav labels (Module.Media/News/Sponsors/Booths/Moderation/PreviousEditions already exist). -->
   <data name="Module.MediaPartners" xml:space="preserve"><value>Media Partners</value></data>

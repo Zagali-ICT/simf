@@ -279,6 +279,11 @@ public static class AuditEvents
     // D-474 (#11, Group G) — speaker availability windows for the VIP-meeting slots.
     public const string SpeakerAvailabilityWindowCreated = "SpeakerAvailabilityWindow.Created";
     public const string SpeakerAvailabilityWindowDeleted = "SpeakerAvailabilityWindow.Deleted";
+    // D-478 (#11, Group G phase 2) — delegation↔delegation (G2G) meeting requests.
+    public const string DelegationMeetingRequestSubmitted = "DelegationMeetingRequest.Submitted";
+    public const string DelegationMeetingRequestResponded = "DelegationMeetingRequest.Responded";
+    public const string AdminDelegationMeetingRequestsListed = "Admin.DelegationMeetingRequestsListed";
+    public const string AdminDelegationMeetingRequestViewed = "Admin.DelegationMeetingRequestViewed";
     public const string AdminSpeakerMeetingRequestsListed = "Admin.SpeakerMeetingRequestsListed";
     public const string AdminSpeakerMeetingRequestViewed = "Admin.SpeakerMeetingRequestViewed";
 

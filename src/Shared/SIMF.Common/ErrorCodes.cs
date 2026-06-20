@@ -225,6 +225,10 @@ public static class ErrorCodes
     public const string SpeakerMeetingRequestNotFound = "SPEAKER_MEETING_REQUEST_NOT_FOUND";
     /// <summary>D-474 (#11) — the speaker availability window was not found.</summary>
     public const string SpeakerAvailabilityWindowNotFound = "SPEAKER_AVAILABILITY_WINDOW_NOT_FOUND";
+    /// <summary>D-478 (#11) — invalid delegation meeting request (subject/count/self).</summary>
+    public const string DelegationMeetingRequestInvalid = "DELEGATION_MEETING_REQUEST_INVALID";
+    /// <summary>D-478 (#11) — the delegation meeting request was not found.</summary>
+    public const string DelegationMeetingRequestNotFound = "DELEGATION_MEETING_REQUEST_NOT_FOUND";
     public const string SpeakerMeetingRequestsNotAllowed = "SPEAKER_MEETING_REQUESTS_NOT_ALLOWED";
     public const string SpeakerMeetingRequestStatusInvalid = "SPEAKER_MEETING_REQUEST_STATUS_INVALID";
 
