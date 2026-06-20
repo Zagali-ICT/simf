@@ -166,13 +166,14 @@ public sealed class BadgeAuthTests : IClassFixture<SimfApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var idDb = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
-        return await idDb.AccountCodes
+        var hash = await idDb.AccountCodes
             .Where(c => c.UserId == userId
                 && c.Purpose == AccountCodePurpose.BadgeActivationOtp
                 && c.ConsumedAt == null)
             .OrderByDescending(c => c.CreatedAt)
             .Select(c => c.Code)
             .FirstOrDefaultAsync();
+        return hash is null ? null : AuthFlow.RecoverPlaintextCode(hash);
     }
 
     /// <summary>Creates an Approved visitor with a minted QR id, optionally with

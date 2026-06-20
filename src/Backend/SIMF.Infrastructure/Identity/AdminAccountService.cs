@@ -611,17 +611,19 @@ internal sealed partial class AdminAccountService(
 
         // 7-day invite (D-042).
         var inviteLifetime = TimeSpan.FromDays(7);
+        // M3 (security) — store only the keyed hash; email the plaintext invite.
+        var plaintext = VerificationCodeGenerator.Generate();
         var code = new AccountCode
         {
             Id = Guid.NewGuid(),
             UserId = user.Id,
             Purpose = AccountCodePurpose.PasswordReset,
-            Code = VerificationCodeGenerator.Generate(),
+            Code = AccountCodeHasher.Hash(plaintext),
             CreatedAt = now,
             ExpiresAt = now.Add(inviteLifetime),
         };
         await accountCodeRepository.AddAsync(code, cancellationToken);
-        EnqueueInviteEmail(user.Email!, user.DisplayName, code.Code, inviteLifetime);
+        EnqueueInviteEmail(user.Email!, user.DisplayName, plaintext, inviteLifetime);
 
         await auditLog.WriteAsync(
             new AuditEntry

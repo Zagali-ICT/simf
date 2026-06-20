@@ -146,7 +146,7 @@ public sealed class PasswordService(
                 "انتهت صلاحية رمز إعادة التعيين. اطلب رمزًا جديدًا.");
         }
 
-        if (!CodesMatch(code.Code, request.Code))
+        if (!CodesMatch(code.Code, AccountCodeHasher.Hash(request.Code)))
         {
             code.AttemptCount++;
             await accountCodeRepository.UpdateAsync(code, cancellationToken);
@@ -414,17 +414,19 @@ public sealed class PasswordService(
             await accountCodeRepository.UpdateAsync(previous, cancellationToken);
         }
 
+        // M3 (security) — store only the keyed hash; the plaintext is emailed.
+        var plaintext = VerificationCodeGenerator.Generate();
         var code = new AccountCode
         {
             Id = Guid.NewGuid(),
             UserId = user.Id,
             Purpose = AccountCodePurpose.PasswordReset,
-            Code = VerificationCodeGenerator.Generate(),
+            Code = AccountCodeHasher.Hash(plaintext),
             CreatedAt = now,
             ExpiresAt = now.Add(ResetCodeLifetime),
         };
         await accountCodeRepository.AddAsync(code, cancellationToken);
-        return code.Code;
+        return plaintext;
     }
 
     /// <summary>

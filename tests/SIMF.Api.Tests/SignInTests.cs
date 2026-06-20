@@ -842,13 +842,13 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var database = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var user = database.Users.Single(candidate => candidate.Email == email);
-        return database.AccountCodes
+        return AuthFlow.RecoverPlaintextCode(database.AccountCodes
             .Where(code => code.UserId == user.Id
                 && code.Purpose == purpose
                 && code.ConsumedAt == null)
             .OrderByDescending(code => code.CreatedAt)
             .First()
-            .Code;
+            .Code);
     }
 
     private void SetAccountState(string email, AccountState state)

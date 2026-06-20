@@ -125,13 +125,34 @@ internal static class AuthFlow
         using var scope = factory.Services.CreateScope();
         var database = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var user = database.Users.Single(candidate => candidate.Email == email);
-        return database.AccountCodes
+        var storedHash = database.AccountCodes
             .Where(code => code.UserId == user.Id
                 && code.Purpose == purpose
                 && code.ConsumedAt == null)
             .OrderByDescending(code => code.CreatedAt)
             .First()
             .Code;
+        return RecoverPlaintextCode(storedHash);
+    }
+
+    /// <summary>M3 — recover the six-digit plaintext of a stored AccountCode
+    /// hash by brute-forcing it against the configured HMAC key (the test
+    /// process shares the same key as the host that stored it). ~10^6 keyed
+    /// hashes is about a second. Call this anywhere a test reads
+    /// AccountCode.Code to obtain a usable OTP / verification code.</summary>
+    public static string RecoverPlaintextCode(string storedHash)
+    {
+        for (var i = 0; i < 1_000_000; i++)
+        {
+            var candidate = i.ToString(
+                "D6", System.Globalization.CultureInfo.InvariantCulture);
+            if (SIMF.Application.IdentityAccess.AccountCodeHasher.Hash(candidate) == storedHash)
+            {
+                return candidate;
+            }
+        }
+        throw new InvalidOperationException(
+            "Could not recover the plaintext code from its hash (test HMAC key mismatch).");
     }
 
     /// <summary>Forces an account into a given lifecycle state, directly in the database.</summary>

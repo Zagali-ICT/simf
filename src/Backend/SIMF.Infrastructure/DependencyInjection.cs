@@ -429,6 +429,10 @@ public static class DependencyInjection
         SIMF.Infrastructure.Ai.AiAuditDetail.ConfigureHmacKey(
             configuration.GetValue<string?>(
                 $"{SIMF.Infrastructure.Ai.AiOptions.SectionName}:PromptHash:Secret"));
+        // M3 (security) — install the keyed-HMAC key for AccountCode (OTP)
+        // hashing; reuses the JWT signing key (a required, boot-validated secret).
+        SIMF.Application.IdentityAccess.AccountCodeHasher.ConfigureKey(
+            configuration[$"{SIMF.Common.Options.JwtOptions.SectionName}:SigningKey"]);
         services.AddSingleton<SIMF.Application.Ai.Abstractions.IAiProvider,
             SIMF.Infrastructure.Ai.EchoAiProvider>();
         services.AddSingleton(_ => new HttpClient { Timeout = TimeSpan.FromSeconds(30) });
