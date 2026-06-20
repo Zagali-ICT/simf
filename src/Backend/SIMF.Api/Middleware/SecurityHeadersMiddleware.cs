@@ -23,6 +23,15 @@ public sealed class SecurityHeadersMiddleware(RequestDelegate next)
             headers["Strict-Transport-Security"] = "max-age=31536000";
         }
 
+        // A3-4 / A5-13 / A6-21 (NCA App-Sec Standard) — the API serves JSON and is
+        // never a document source, so lock the CSP down hard. Swagger UI (when
+        // enabled, prod-gated behind Basic auth) renders HTML/JS, so it is exempt.
+        if (!context.Request.Path.StartsWithSegments("/swagger"))
+        {
+            headers["Content-Security-Policy"] =
+                "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";
+        }
+
         // A5-12 (NCA App-Sec Standard) — declare an explicit charset on JSON
         // responses. FastEndpoints / WriteAsJsonAsync may emit a bare
         // "application/json"; append "; charset=utf-8" once the content type is

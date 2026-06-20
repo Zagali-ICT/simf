@@ -130,13 +130,26 @@ if (!app.Environment.IsDevelopment())
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
 
-// Baseline security response headers (mirrors the CP).
+// Baseline security response headers (mirrors the CP; NCA App-Sec Standard
+// A3-4 / A5-13 / A6-21). frame-ancestors 'none' is enforced; the full content
+// policy ships Report-Only first so the owner can confirm in-browser before
+// enforcing (see the gap report Wave 4).
 app.Use(async (context, next) =>
 {
     var headers = context.Response.Headers;
     headers["X-Content-Type-Options"] = "nosniff";
     headers["X-Frame-Options"] = "DENY";
     headers["Referrer-Policy"] = "no-referrer";
+    headers["Content-Security-Policy"] = "frame-ancestors 'none'";
+    headers["Content-Security-Policy-Report-Only"] =
+        "default-src 'self'; "
+        + "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+        + "style-src 'self' 'unsafe-inline'; "
+        + "img-src 'self' data: blob: https:; "
+        + "font-src 'self' data:; "
+        + "connect-src 'self' ws: wss: https:; "
+        + "object-src 'none'; base-uri 'self'; form-action 'self'; "
+        + "frame-ancestors 'none'";
     await next();
 });
 
