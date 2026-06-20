@@ -57,6 +57,12 @@ public sealed class PermissionPolicyProvider : IAuthorizationPolicyProvider
         {
             var policy = new AuthorizationPolicyBuilder()
                 .RequireAuthenticatedUser()
+                // L2 (security) — every perm: policy is approval-gated by
+                // construction (mirrors AuthorizationPolicies.RequireApprovedAccount,
+                // the account_state="Approved" claim minted by JwtTokenService), so
+                // an admin endpoint cannot be reached by a non-approved account even
+                // if it forgets to also chain RequireApprovedAccount.
+                .RequireClaim("account_state", "Approved")
                 .AddRequirements(new PermissionRequirement(PermissionCatalog.CodeFromPolicy(policyName)))
                 .Build();
             return Task.FromResult<AuthorizationPolicy?>(policy);
