@@ -2372,6 +2372,17 @@
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
   }
+  // L10 (security) — safe CSS `url(...)` for a backend-sourced background image.
+  // Whitelists the scheme (relative / http(s) / data:image) and rejects any
+  // character that could break out of the url('...') or the style="..."
+  // attribute it sits in. Returns '' for an empty or unsafe value.
+  function cssBgImage(v) {
+    if (!v) return '';
+    const s = String(v).trim();
+    if (!/^(https?:\/\/|\/|assets\/|data:image\/)/i.test(s)) return '';
+    if (/['"()<>\s\\]/.test(s)) return '';
+    return "url('" + s + "')";
+  }
   // Inline UI strings used inside dynamic renderers.
   const UI_STRINGS = {
     ar: { session_link: 'تفاصيل الجلسة ←', news_more: 'اقرأ المزيد ←' },
@@ -2655,7 +2666,8 @@
     sgRoot.innerHTML = mainSessions.map((s, idx) => {
       const img = (s.img || '').trim();
       const cls = img ? 'session-img' : 'session-img session-img--brand';
-      const style = img ? ` style="background-image:url('${img.replace(/'/g, "\\'")}')"` : '';
+      const bg = cssBgImage(img);
+      const style = bg ? ` style="background-image:${bg}"` : '';
       const n = s.n || String(idx + 1).padStart(2, '0');
       const label = pickLang(s, 'label');
       const tag = pickLang(s, 'tag');
@@ -2758,7 +2770,7 @@
     if (!window.__contentReady) { grid.innerHTML = skeletonNews(3); return; }
     grid.innerHTML = newsData.map(n => `
       <article class="news-card">
-        <div class="news-thumb" style="background-image:url('${n.img}')"></div>
+        <div class="news-thumb"${cssBgImage(n.img) ? ` style="background-image:${cssBgImage(n.img)}"` : ''}></div>
         <div class="news-body">
           <div class="date num">${esc(pickLang(n,'date'))}</div>
           <h3>${esc(pickLang(n,'title'))}</h3>
@@ -2776,7 +2788,7 @@
     document.querySelectorAll('[data-spirit-img]').forEach(el => {
       const i = +el.dataset.spiritImg;
       const img = spirit[i] && spirit[i].img;
-      el.style.backgroundImage = img ? `url('${img.replace(/'/g, "\\'")}')` : '';
+      el.style.backgroundImage = cssBgImage(img);
     });
   }
   renderSpirit();
