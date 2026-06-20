@@ -86,12 +86,17 @@ class SimfApiClient {
     );
   }
 
+  /// [skipAuthRefresh] marks the request so a 401 on it does NOT trigger the
+  /// token-refresh-and-retry path. Set it for the refresh call itself — otherwise
+  /// a 401 on `/app/auth/refresh` re-enters the single-flight [AuthTokenSource.refresh]
+  /// (the same in-flight future the refresh is running inside) and deadlocks.
   Future<T> post<T>(
     String path, {
     Object? body,
     Map<String, dynamic>? queryParameters,
     required T Function(Object? data) decodeData,
     CancelToken? cancelToken,
+    bool skipAuthRefresh = false,
   }) {
     return _send<T>(
       (options) => _dio.post<dynamic>(
@@ -99,7 +104,7 @@ class SimfApiClient {
         data: body,
         queryParameters: queryParameters,
         cancelToken: cancelToken,
-        options: options,
+        options: _maybeSkipRefresh(options, skipAuthRefresh),
       ),
       decodeData,
     );
@@ -300,8 +305,12 @@ class SimfApiClient {
     }
 
     // Refresh + retry on a single 401. The token source serialises
-    // concurrent refresh attempts on its end.
-    if (response.statusCode == 401) {
+    // concurrent refresh attempts on its end. Requests marked skip-refresh
+    // (the refresh call itself, and the post-refresh retry) do NOT re-enter the
+    // refresh path — that re-entry would deadlock the single-flight refresh
+    // against itself / loop the retry.
+    if (response.statusCode == 401 &&
+        response.requestOptions.extra[_extraSkipRefresh] != true) {
       final refreshed = await _refreshBounded();
       if (refreshed) {
         try {
@@ -380,6 +389,19 @@ class SimfApiClient {
   Options _skipRefreshOptions() {
     return Options(
       extra: <String, dynamic>{_extraSkipRefresh: true},
+    );
+  }
+
+  /// Returns [options] with the skip-refresh marker merged in when [skip] is set
+  /// (else unchanged). Lets [post] tag the refresh call so its own 401 surfaces
+  /// as a normal failure instead of re-entering the single-flight refresh.
+  Options? _maybeSkipRefresh(Options? options, bool skip) {
+    if (!skip) {
+      return options;
+    }
+    final base = options ?? Options();
+    return base.copyWith(
+      extra: <String, dynamic>{...?base.extra, _extraSkipRefresh: true},
     );
   }
 
