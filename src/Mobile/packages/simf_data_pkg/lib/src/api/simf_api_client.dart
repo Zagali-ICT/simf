@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
@@ -301,7 +302,7 @@ class SimfApiClient {
     // Refresh + retry on a single 401. The token source serialises
     // concurrent refresh attempts on its end.
     if (response.statusCode == 401) {
-      final refreshed = await _tokenSource.refresh();
+      final refreshed = await _refreshBounded();
       if (refreshed) {
         try {
           response = await call(_skipRefreshOptions());
@@ -314,6 +315,22 @@ class SimfApiClient {
     }
 
     return response;
+  }
+
+  /// A refresh-attempt timeout. The Dio HTTP timeouts cover the network call,
+  /// but a stalled single-flight refresh future (e.g. one wedged awaiting a
+  /// never-completed Completer) would otherwise hang the request forever and
+  /// spin the UI indefinitely. Bound it so a stuck refresh is treated as
+  /// "not refreshed" — the original 401 then surfaces as a normal ApiFailure
+  /// (the screen shows its error toast) instead of an endless spinner.
+  static const Duration _refreshTimeout = Duration(seconds: 20);
+
+  Future<bool> _refreshBounded() async {
+    try {
+      return await _tokenSource.refresh().timeout(_refreshTimeout);
+    } on TimeoutException {
+      return false;
+    }
   }
 
   T _parseEnvelope<T>(
