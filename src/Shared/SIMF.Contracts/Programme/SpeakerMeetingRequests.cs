@@ -10,6 +10,13 @@ public sealed class SubmitSpeakerMeetingRequestRequest
 {
     public string RequesterName { get; set; } = string.Empty;
     public string Subject { get; set; } = string.Empty;
+
+    /// <summary>D-474 (#11, Group G phase 1b) — the availability slot the requester
+    /// picked (from <c>GET /app/speakers/{id}/available-slots</c>). When set, this is
+    /// the VIP slot flow: the requester must be a VIP/VVIP and the slot must still be
+    /// free. When null it is the legacy topic-only request (any approved attendee).</summary>
+    public DateTimeOffset? SlotStartUtc { get; set; }
+    public DateTimeOffset? SlotEndUtc { get; set; }
 }
 
 /// <summary>D-269 — response after a successful speaker meeting-request
