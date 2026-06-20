@@ -1077,6 +1077,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     required bool isPlaceholder,
     required VoidCallback onTap,
     String? errorText,
+    bool showChevron = true,
   }) {
     return InkWell(
       key: ValueKey<String>(fieldKey),
@@ -1085,10 +1086,14 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       child: InputDecorator(
         decoration: _fieldDecoration(
           errorText: errorText,
-          suffixIcon: const Icon(
-            Icons.keyboard_arrow_down,
-            color: SimfTokens.greyText,
-          ),
+          // The narrow plate-letter boxes drop the arrow so the picked
+          // "Arabic · Latin" letter has the full width to show (D-459).
+          suffixIcon: showChevron
+              ? const Icon(
+                  Icons.keyboard_arrow_down,
+                  color: SimfTokens.greyText,
+                )
+              : null,
         ),
         child: Text(
           displayText,
@@ -1338,8 +1343,10 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
               ),
             ),
             const SizedBox(width: 8),
-            Expanded(
-              flex: 2,
+            SizedBox(
+              // Sized for exactly the 4 digits, so the three letter pickers
+              // (Expanded) absorb the freed width and show the picked letter.
+              width: 92,
               // a11y: name the digit field (its hint vanishes on input).
               child: Semantics(
                 label: l10n.plateDigitsLabel,
@@ -1390,6 +1397,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
             : '${letter.arabic} · ${letter.english}',
         isPlaceholder: letter == null,
         onTap: () => unawaited(_pickPlateLetter(l10n, position, onPicked)),
+        showChevron: false,
       ),
     );
   }
