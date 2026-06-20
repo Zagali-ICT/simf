@@ -1707,6 +1707,11 @@
   <data name="Admin.SessionSummaries.Col.Source" xml:space="preserve"><value>Source</value></data>
   <data name="Admin.SessionSummaries.Status.None" xml:space="preserve"><value>No summary</value></data>
   <data name="Admin.SessionSummaries.Status.Draft" xml:space="preserve"><value>Draft</value></data>
+  <data name="Admin.SessionSummaries.Status.InReview" xml:space="preserve"><value>In review</value></data>
+  <data name="Admin.SessionSummaries.Status.Approved" xml:space="preserve"><value>Approved</value></data>
+  <data name="Admin.SessionSummaries.Action.SubmitReview" xml:space="preserve"><value>Submit for review</value></data>
+  <data name="Admin.SessionSummaries.Action.Approve" xml:space="preserve"><value>Approve (ready for the host)</value></data>
+  <data name="Admin.SessionSummaries.Action.ReturnToDraft" xml:space="preserve"><value>Return to draft</value></data>
   <data name="Admin.SessionSummaries.Status.Published" xml:space="preserve"><value>Published</value></data>
   <data name="Admin.SessionSummaries.Source.Ai" xml:space="preserve"><value>AI-drafted</value></data>
   <data name="Admin.SessionSummaries.Source.Manual" xml:space="preserve"><value>Hand-written</value></data>
@@ -1728,6 +1733,9 @@
   <data name="Admin.SessionSummaries.Generated" xml:space="preserve"><value>AI draft generated.</value></data>
   <data name="Admin.SessionSummaries.Saved" xml:space="preserve"><value>Summary saved.</value></data>
   <data name="Admin.SessionSummaries.Published" xml:space="preserve"><value>Summary published.</value></data>
+  <data name="Admin.SessionSummaries.Submitted" xml:space="preserve"><value>Summary submitted for review.</value></data>
+  <data name="Admin.SessionSummaries.Approved" xml:space="preserve"><value>Summary approved — ready for the host.</value></data>
+  <data name="Admin.SessionSummaries.ReturnedToDraft" xml:space="preserve"><value>Summary returned to draft.</value></data>
   <data name="Admin.SessionSummaries.Unpublished" xml:space="preserve"><value>Summary unpublished.</value></data>
   <data name="Module.HallArrivals" xml:space="preserve"><value>Hall arrivals</value></data>
   <data name="Admin.HallArrivals.Title" xml:space="preserve"><value>Hall arrivals (door scan)</value></data>

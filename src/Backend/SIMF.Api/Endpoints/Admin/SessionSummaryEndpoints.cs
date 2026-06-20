@@ -149,3 +149,82 @@ public sealed class UnpublishSessionSummaryEndpoint(IAdminSessionSummaryService 
             await service.UnpublishAsync(actorId, sessionId, ct)), ct);
     }
 }
+
+// -- D-472 (#9) — the team review/approval workflow ---------------------------
+// Submit (the editing team, .Edit) → Approve / Return-to-draft (the approving
+// team, .Approve). The approved محضر becomes readable by the host/moderator.
+
+public sealed class SubmitSessionSummaryForReviewEndpoint(IAdminSessionSummaryService service)
+    : EndpointWithoutRequest<ApiResult<AdminSessionSummaryDetail>>
+{
+    public override void Configure()
+    {
+        Put("/admin/session-summaries/{sessionId:guid}/submit-review");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.SessionSummaries.Edit),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Admin");
+    }
+
+    public override async Task HandleAsync(CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        var sessionId = Route<Guid>("sessionId");
+        await Send.OkAsync(ApiResult<AdminSessionSummaryDetail>.Ok(
+            await service.SubmitForReviewAsync(actorId, sessionId, ct)), ct);
+    }
+}
+
+public sealed class ApproveSessionSummaryEndpoint(IAdminSessionSummaryService service)
+    : EndpointWithoutRequest<ApiResult<AdminSessionSummaryDetail>>
+{
+    public override void Configure()
+    {
+        Put("/admin/session-summaries/{sessionId:guid}/approve");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.SessionSummaries.Approve),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Admin");
+    }
+
+    public override async Task HandleAsync(CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        var sessionId = Route<Guid>("sessionId");
+        await Send.OkAsync(ApiResult<AdminSessionSummaryDetail>.Ok(
+            await service.ApproveAsync(actorId, sessionId, ct)), ct);
+    }
+}
+
+public sealed class ReturnSessionSummaryToDraftEndpoint(IAdminSessionSummaryService service)
+    : EndpointWithoutRequest<ApiResult<AdminSessionSummaryDetail>>
+{
+    public override void Configure()
+    {
+        Put("/admin/session-summaries/{sessionId:guid}/return-to-draft");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.SessionSummaries.Approve),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Admin");
+    }
+
+    public override async Task HandleAsync(CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        var sessionId = Route<Guid>("sessionId");
+        await Send.OkAsync(ApiResult<AdminSessionSummaryDetail>.Ok(
+            await service.ReturnToDraftAsync(actorId, sessionId, ct)), ct);
+    }
+}

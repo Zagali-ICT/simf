@@ -210,6 +210,10 @@ public static class AuditEvents
     public const string SessionSummarySaved = "SessionSummary.Saved";
     public const string SessionSummaryPublished = "SessionSummary.Published";
     public const string SessionSummaryUnpublished = "SessionSummary.Unpublished";
+    // D-472 (#9): the team review/approval workflow on the محضر.
+    public const string SessionSummarySubmittedForReview = "SessionSummary.SubmittedForReview";
+    public const string SessionSummaryApproved = "SessionSummary.Approved";
+    public const string SessionSummaryReturnedToDraft = "SessionSummary.ReturnedToDraft";
 
     // Session questions + moderator grants (D-169, gap doc G6 — PDF §2.7.2)
     public const string SessionQuestionSubmitted = "SessionQuestion.Submitted";

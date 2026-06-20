@@ -359,6 +359,10 @@ public static class PermissionCatalog
         public const string Edit = "SessionSummaries.Edit";
         public const string Publish = "SessionSummaries.Publish";
         public const string Export = "SessionSummaries.Export";
+
+        /// <summary>D-472 (#9) — approve a submitted محضر (and send one back to
+        /// draft); the approved محضر becomes readable by the session host/moderator.</summary>
+        public const string Approve = "SessionSummaries.Approve";
     }
 
     /// <summary>P5.1d — D-244 (FDS-003 §5.4): the hall-door arrival console — an
@@ -778,6 +782,7 @@ public static class PermissionCatalog
         new(SessionSummaries.View, "SessionSummaries", "View", "View session summaries", AdminOnly),
         new(SessionSummaries.Edit, "SessionSummaries", "Edit", "Generate / edit session summaries", AdminOnly),
         new(SessionSummaries.Publish, "SessionSummaries", "Publish", "Publish / un-publish session summaries", AdminOnly),
+        new(SessionSummaries.Approve, "SessionSummaries", "Approve", "Approve session summaries (ready for the host/moderator)", AdminOnly),
         new(SessionSummaries.Export, "SessionSummaries", "Export", "Export session summaries", AdminOnly),
 
         // P5.1d — D-244: hall-door arrival console (operator QR scan).

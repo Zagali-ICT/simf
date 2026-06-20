@@ -6,6 +6,7 @@
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Programme.Abstractions;
+using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Programme;
 using SIMF.Infrastructure.Persistence;
@@ -463,6 +464,68 @@ internal sealed class ProgrammeSessionService(
                 summary.FullTextArabic,
                 summary.AiModel != null,
                 summary.PublishedAt!.Value))
+            .SingleOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<HostSessionSummary?> GetApprovedSummaryForHostAsync(
+        Guid callerUserId, Guid sessionId, CancellationToken cancellationToken = default)
+    {
+        // Authz (D-472): only the session's moderator (the SessionModerator grant)
+        // or its host (a speaker with Role=Host mapped to this user) may read the
+        // approved-but-maybe-unpublished محضر — "ready for المحاور".
+        var isModerator = await dbContext.SessionModerators
+            .AsNoTracking()
+            .AnyAsync(m => m.SessionId == sessionId && m.UserId == callerUserId, cancellationToken);
+
+        var isHost = false;
+        if (!isModerator)
+        {
+            var profileId = await dbContext.UserProfiles
+                .AsNoTracking()
+                .Where(p => p.UserId == callerUserId)
+                .Select(p => (Guid?)p.Id)
+                .SingleOrDefaultAsync(cancellationToken);
+            if (profileId is not null)
+            {
+                isHost = await dbContext.SessionSpeakers
+                    .AsNoTracking()
+                    .AnyAsync(
+                        ss => ss.SessionId == sessionId
+                            && ss.Role == SessionSpeakerRole.Host
+                            && ss.Speaker!.IsActive
+                            && ss.Speaker!.UserProfileId == profileId,
+                        cancellationToken);
+            }
+        }
+
+        if (!isModerator && !isHost)
+        {
+            throw new ApiException(
+                ErrorCodes.Forbidden, 403,
+                "Only the session host or a session moderator can view the approved summary.",
+                "يمكن لمحاور الجلسة أو منسّق الجلسة فقط عرض الملخّص المعتمد.");
+        }
+
+        // Gated on the team approval stamp (not the public publish): the host /
+        // moderator sees the approved محضر even before a public release.
+        return await dbContext.SessionSummaries
+            .AsNoTracking()
+            .Where(summary => summary.SessionId == sessionId
+                && summary.IsActive
+                && summary.ApprovedAt != null
+                && summary.Session!.IsActive)
+            .Select(summary => new HostSessionSummary(
+                summary.SessionId,
+                summary.KeyPoints,
+                summary.KeyPointsArabic,
+                summary.Recommendations,
+                summary.RecommendationsArabic,
+                summary.Speakers,
+                summary.SpeakersArabic,
+                summary.FullText,
+                summary.FullTextArabic,
+                summary.AiModel != null,
+                summary.ApprovedAt!.Value))
             .SingleOrDefaultAsync(cancellationToken);
     }
 

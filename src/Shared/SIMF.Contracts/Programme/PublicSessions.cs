@@ -190,6 +190,26 @@ public sealed record PublicSessionSummary(
     bool GeneratedByAi,
     DateTimeOffset PublishedAt);
 
+/// <summary>D-472 (#9) — the approved محضر served to the session host / moderator
+/// ("ready for المحاور"). Same content as <see cref="PublicSessionSummary"/> but
+/// gated on the team <c>ApprovedAt</c> stamp rather than the public publish, so a
+/// host / moderator can read it before (or instead of) a public release. Served by
+/// <c>GET /api/v1/app/programme/sessions/{id}/summary/approved</c> (403 if the
+/// caller is neither the session host nor a session moderator; 404 if not yet
+/// approved).</summary>
+public sealed record HostSessionSummary(
+    Guid SessionId,
+    string KeyPoints,
+    string KeyPointsArabic,
+    string Recommendations,
+    string RecommendationsArabic,
+    string Speakers,
+    string SpeakersArabic,
+    string FullText,
+    string FullTextArabic,
+    bool GeneratedByAi,
+    DateTimeOffset ApprovedAt);
+
 /// <summary>P3.2b — D-232 (D-213): the response from the recording stream-token
 /// endpoint. <see cref="Token"/> is a short-lived JWT scoped to one recording;
 /// the player appends it to <see cref="StreamUrl"/> on the query string

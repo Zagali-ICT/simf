@@ -1602,6 +1602,28 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Put, $"session-summaries/{sessionId}/unpublish", content: null,
             accessToken, cancellationToken);
 
+    // D-472 (#9) — the team review/approval workflow.
+    public Task<ApiCallResult<AdminSessionSummaryDetail>>
+        SubmitSessionSummaryForReviewAsync(Guid sessionId, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSessionSummaryDetail>(
+            HttpMethod.Put, $"session-summaries/{sessionId}/submit-review", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminSessionSummaryDetail>>
+        ApproveSessionSummaryAsync(Guid sessionId, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSessionSummaryDetail>(
+            HttpMethod.Put, $"session-summaries/{sessionId}/approve", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminSessionSummaryDetail>>
+        ReturnSessionSummaryToDraftAsync(Guid sessionId, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSessionSummaryDetail>(
+            HttpMethod.Put, $"session-summaries/{sessionId}/return-to-draft", content: null,
+            accessToken, cancellationToken);
+
     // P5.1d — D-244: operator hall-door QR arrival (/admin/sessions/{id}/arrivals).
     public Task<ApiCallResult<SIMF.Contracts.Sessions.QrArrivalResult>>
         RecordQrArrivalAsync(Guid sessionId, SIMF.Contracts.Sessions.RecordQrArrivalRequest request,

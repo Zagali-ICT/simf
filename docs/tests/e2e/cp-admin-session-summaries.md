@@ -24,6 +24,15 @@
 > - **Publish / Unpublish** (only shown when `HasSummary`) — PUTs `…/{sessionId}/publish`
 >   or `…/{sessionId}/unpublish`; this is the gate the public app read honours.
 >   Gated by `SessionSummaries.Publish`.
+> - **Submit for review → Approve → Return to draft (D-472, req #9)** — the team
+>   review/approval workflow on top of publish: **Submit for review** PUTs
+>   `…/{sessionId}/submit-review` (`.Edit`, Draft → In review); **Approve** PUTs
+>   `…/{sessionId}/approve` (`.Approve`, In review → Approved = "ready for المحاور");
+>   **Return to draft** PUTs `…/{sessionId}/return-to-draft` (`.Approve`). Any content
+>   edit (Save / Generate) returns the summary to Draft. Once **Approved**, the
+>   session's **moderator or host** can read it via
+>   `GET /app/programme/sessions/{id}/summary/approved` (gated on the team approval,
+>   independent of the public publish).
 >
 > **RequiredPermission for the page (`@attribute [RequirePermission]`):**
 > `PermissionCatalog.SessionSummaries.View` (`"SessionSummaries.View"`). Nav item
@@ -61,6 +70,10 @@
 | E2E-SUM-016 | Per-column filter on Session narrows the grid (client-side, Skip→0) | happy | P1 | _to author_ |
 | E2E-SUM-017 | Column sort on Session toggles ascending / descending | happy | P2 | _to author_ |
 | E2E-SUM-018 | Excel export — toolbar Export downloads an .xlsx of the active-session set (D-356) | happy | P1 | _to author_ |
+| E2E-SUM-019 | **Submit for review (D-472)** — a Draft summary → "Submit for review" (`.Edit`) → Status "In review"; the Submit action hides | happy | P0 | authored ✓ (SessionSummaryCommitteeTests) |
+| E2E-SUM-020 | **Approve (D-472)** — an In-review summary → "Approve" (`.Approve`) → Status "Approved" (ready for المحاور), `ApprovedAt` stamped; approving without submitting → 400 | happy | P0 | authored ✓ (SessionSummaryCommitteeTests) |
+| E2E-SUM-021 | **Return to draft (D-472)** — an In-review / Approved summary → "Return to draft" (`.Approve`) clears the review + approval; any content edit also returns it to Draft | happy | P1 | authored ✓ (SessionSummaryCommitteeTests) |
+| E2E-SUM-022 | **Ready for المحاور read (D-472)** — `GET /app/programme/sessions/{id}/summary/approved`: the session **moderator OR host** → 200 (when approved); neither → 403; authorized but not yet approved → 404 | validation | P0 | authored ✓ (SessionSummaryCommitteeTests) |
 
 ## Scenarios
 
@@ -405,9 +418,17 @@ Scenario: Export the active-session set to an XLSX workbook
   active Session set; the summary is a 1:1 child created lazily by AI draft or Save.
 - **Permission gates (HARD RULE).** Page: `[RequirePermission(SessionSummaries.View)]`.
   API: list/get policy `SessionSummaries.View`, generate/save `SessionSummaries.Edit`,
-  publish/unpublish `SessionSummaries.Publish` — all on
-  `RequireApprovedAccount`. Generate/save/publish/unpublish also carry the `"auth"`
-  rate-limiter. Action buttons are wrapped in `<AuthorizedAction>` for Edit / Publish.
+  publish/unpublish `SessionSummaries.Publish`, submit-review `SessionSummaries.Edit`,
+  approve/return-to-draft `SessionSummaries.Approve` (D-472) — all on
+  `RequireApprovedAccount`. Generate/save/publish/unpublish/submit/approve/return also
+  carry the `"auth"` rate-limiter. Action buttons are wrapped in `<AuthorizedAction>`
+  for Edit / Approve / Publish.
+- **D-472 workflow + host read (authored at the API layer).** The Submit → Approve →
+  Return transitions and the moderator/host approved read are covered by
+  `tests/SIMF.Api.Tests/SessionSummaryCommitteeTests.cs` (submit→approve marks the
+  desk row Approved; approve-without-submit 400; edit returns to draft; return clears
+  approval; a session moderator and a session host each read
+  `…/summary/approved` 200; a non-moderator non-host gets 403; not-yet-approved 404).
 - **Manual smoke as canonical run today.** Until Playwright is adopted, the
   canonical run is a Chrome DevTools MCP session signed in per the Auth setup,
   walking each scenario and capturing screenshots into
@@ -417,4 +438,4 @@ Scenario: Export the active-session set to an XLSX workbook
 
 ---
 
-_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle; added E2E-SUM-018 Excel export, export-only). Earlier: 2026-06-03 (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-06-20 by SIMF Team (D-472 #9 — added the team review/approval workflow Submit→Approve→Return + the moderator/host "ready for المحاور" approved read; E2E-SUM-019..022, authored at the API layer). Earlier: 2026-06-10 (D-356 Phase 5 — Excel + toggle; E2E-SUM-018); 2026-06-03 (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

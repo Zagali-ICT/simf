@@ -1700,6 +1700,11 @@
   <data name="Admin.SessionSummaries.Col.Source" xml:space="preserve"><value>المصدر</value></data>
   <data name="Admin.SessionSummaries.Status.None" xml:space="preserve"><value>لا يوجد ملخص</value></data>
   <data name="Admin.SessionSummaries.Status.Draft" xml:space="preserve"><value>مسودة</value></data>
+  <data name="Admin.SessionSummaries.Status.InReview" xml:space="preserve"><value>قيد المراجعة</value></data>
+  <data name="Admin.SessionSummaries.Status.Approved" xml:space="preserve"><value>معتمد</value></data>
+  <data name="Admin.SessionSummaries.Action.SubmitReview" xml:space="preserve"><value>إرسال للمراجعة</value></data>
+  <data name="Admin.SessionSummaries.Action.Approve" xml:space="preserve"><value>اعتماد (جاهز للمحاور)</value></data>
+  <data name="Admin.SessionSummaries.Action.ReturnToDraft" xml:space="preserve"><value>إعادة إلى المسودة</value></data>
   <data name="Admin.SessionSummaries.Status.Published" xml:space="preserve"><value>منشور</value></data>
   <data name="Admin.SessionSummaries.Source.Ai" xml:space="preserve"><value>مُولّد بالذكاء الاصطناعي</value></data>
   <data name="Admin.SessionSummaries.Source.Manual" xml:space="preserve"><value>مُدخل يدويًا</value></data>
@@ -1721,6 +1726,9 @@
   <data name="Admin.SessionSummaries.Generated" xml:space="preserve"><value>تم توليد مسودة بالذكاء الاصطناعي.</value></data>
   <data name="Admin.SessionSummaries.Saved" xml:space="preserve"><value>تم حفظ الملخص.</value></data>
   <data name="Admin.SessionSummaries.Published" xml:space="preserve"><value>تم نشر الملخص.</value></data>
+  <data name="Admin.SessionSummaries.Submitted" xml:space="preserve"><value>تم إرسال الملخص للمراجعة.</value></data>
+  <data name="Admin.SessionSummaries.Approved" xml:space="preserve"><value>تم اعتماد الملخص — جاهز للمحاور.</value></data>
+  <data name="Admin.SessionSummaries.ReturnedToDraft" xml:space="preserve"><value>تمت إعادة الملخص إلى المسودة.</value></data>
   <data name="Admin.SessionSummaries.Unpublished" xml:space="preserve"><value>تم إلغاء نشر الملخص.</value></data>
   <data name="Module.HallArrivals" xml:space="preserve"><value>الوصول إلى القاعات</value></data>
   <data name="Admin.HallArrivals.Title" xml:space="preserve"><value>الوصول إلى القاعات (مسح الباب)</value></data>

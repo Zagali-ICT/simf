@@ -55,7 +55,14 @@ internal sealed class AdminSessionSummaryService(
                 session.StartUtc,
                 Summary = appDbContext.SessionSummaries
                     .Where(s => s.SessionId == session.Id && s.IsActive)
-                    .Select(s => new { s.AiModel, s.PublishedAt, s.UpdatedAt })
+                    .Select(s => new
+                    {
+                        s.AiModel,
+                        s.PublishedAt,
+                        s.UpdatedAt,
+                        s.ReviewSubmittedAt,
+                        s.ApprovedAt,
+                    })
                     .FirstOrDefault(),
             })
             .ToListAsync(cancellationToken);
@@ -70,7 +77,10 @@ internal sealed class AdminSessionSummaryService(
             GeneratedByAi: row.Summary?.AiModel is not null,
             IsPublished: row.Summary?.PublishedAt is not null,
             PublishedAt: row.Summary?.PublishedAt,
-            UpdatedAt: row.Summary?.UpdatedAt)).ToList();
+            UpdatedAt: row.Summary?.UpdatedAt,
+            IsInReview: row.Summary?.ReviewSubmittedAt is not null && row.Summary?.ApprovedAt is null,
+            IsApproved: row.Summary?.ApprovedAt is not null,
+            ApprovedAt: row.Summary?.ApprovedAt)).ToList();
     }
 
     public async Task<AdminSessionSummaryDetail?> GetAsync(
@@ -154,6 +164,9 @@ internal sealed class AdminSessionSummaryService(
             summary.UpdatedAt = now;
             summary.UpdatedByUserId = actorUserId;
         }
+        // A (re)generated draft changes the content, so it returns to the review
+        // workflow's Draft state — any prior submit/approval is cleared (D-472).
+        ResetReviewState(summary);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await WriteAuditAsync(
@@ -210,6 +223,8 @@ internal sealed class AdminSessionSummaryService(
         summary.IsActive = true;
         summary.UpdatedAt = now;
         summary.UpdatedByUserId = actorUserId;
+        // An edit invalidates any prior review/approval — back to Draft (D-472).
+        ResetReviewState(summary);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await WriteAuditAsync(
@@ -231,14 +246,7 @@ internal sealed class AdminSessionSummaryService(
         Guid actorUserId, Guid sessionId, bool publish, CancellationToken cancellationToken)
     {
         var session = await LoadSessionForDraftAsync(sessionId, cancellationToken);
-
-        var summary = await appDbContext.SessionSummaries
-            .SingleOrDefaultAsync(
-                s => s.SessionId == sessionId && s.IsActive, cancellationToken)
-            ?? throw new ApiException(
-                ErrorCodes.SessionSummaryNotFound, 404,
-                "No summary exists for this session yet.",
-                "لا يوجد ملخّص لهذه الجلسة بعد.");
+        var summary = await LoadSummaryAsync(sessionId, cancellationToken);
 
         var now = timeProvider.GetUtcNow();
         summary.PublishedAt = publish ? now : null;
@@ -252,6 +260,101 @@ internal sealed class AdminSessionSummaryService(
             actorUserId, sessionId, $"summaryId={summary.Id}", cancellationToken);
 
         return ToDetail(session.Code, session.Title, session.TitleArabic, summary);
+    }
+
+    public async Task<AdminSessionSummaryDetail> SubmitForReviewAsync(
+        Guid actorUserId, Guid sessionId, CancellationToken cancellationToken = default)
+    {
+        var session = await LoadSessionForDraftAsync(sessionId, cancellationToken);
+        var summary = await LoadSummaryAsync(sessionId, cancellationToken);
+
+        if (summary.ApprovedAt is not null)
+        {
+            throw new ApiException(
+                ErrorCodes.SessionSummaryInvalid, 400,
+                "This summary is already approved — return it to draft before resubmitting.",
+                "تمت الموافقة على هذا الملخّص بالفعل — أعده إلى المسودة قبل إعادة الإرسال.");
+        }
+
+        var now = timeProvider.GetUtcNow();
+        summary.ReviewSubmittedAt = now;
+        summary.ReviewSubmittedByUserId = actorUserId;
+        summary.UpdatedAt = now;
+        summary.UpdatedByUserId = actorUserId;
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        await WriteAuditAsync(
+            AuditEvents.SessionSummarySubmittedForReview, actorUserId, sessionId,
+            $"summaryId={summary.Id}", cancellationToken);
+
+        return ToDetail(session.Code, session.Title, session.TitleArabic, summary);
+    }
+
+    public async Task<AdminSessionSummaryDetail> ApproveAsync(
+        Guid actorUserId, Guid sessionId, CancellationToken cancellationToken = default)
+    {
+        var session = await LoadSessionForDraftAsync(sessionId, cancellationToken);
+        var summary = await LoadSummaryAsync(sessionId, cancellationToken);
+
+        if (summary.ReviewSubmittedAt is null)
+        {
+            throw new ApiException(
+                ErrorCodes.SessionSummaryInvalid, 400,
+                "Submit the summary for review before approving it.",
+                "أرسل الملخّص للمراجعة قبل الموافقة عليه.");
+        }
+
+        var now = timeProvider.GetUtcNow();
+        summary.ApprovedAt = now;
+        summary.ApprovedByUserId = actorUserId;
+        summary.UpdatedAt = now;
+        summary.UpdatedByUserId = actorUserId;
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        await WriteAuditAsync(
+            AuditEvents.SessionSummaryApproved, actorUserId, sessionId,
+            $"summaryId={summary.Id}", cancellationToken);
+
+        return ToDetail(session.Code, session.Title, session.TitleArabic, summary);
+    }
+
+    public async Task<AdminSessionSummaryDetail> ReturnToDraftAsync(
+        Guid actorUserId, Guid sessionId, CancellationToken cancellationToken = default)
+    {
+        var session = await LoadSessionForDraftAsync(sessionId, cancellationToken);
+        var summary = await LoadSummaryAsync(sessionId, cancellationToken);
+
+        var now = timeProvider.GetUtcNow();
+        ResetReviewState(summary);
+        summary.UpdatedAt = now;
+        summary.UpdatedByUserId = actorUserId;
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        await WriteAuditAsync(
+            AuditEvents.SessionSummaryReturnedToDraft, actorUserId, sessionId,
+            $"summaryId={summary.Id}", cancellationToken);
+
+        return ToDetail(session.Code, session.Title, session.TitleArabic, summary);
+    }
+
+    private async Task<SessionSummary> LoadSummaryAsync(
+        Guid sessionId, CancellationToken cancellationToken) =>
+        await appDbContext.SessionSummaries
+            .SingleOrDefaultAsync(
+                s => s.SessionId == sessionId && s.IsActive, cancellationToken)
+        ?? throw new ApiException(
+            ErrorCodes.SessionSummaryNotFound, 404,
+            "No summary exists for this session yet.",
+            "لا يوجد ملخّص لهذه الجلسة بعد.");
+
+    /// <summary>Clears the review + approval stamps (back to Draft). Called on
+    /// every content edit and by the explicit return-to-draft (D-472).</summary>
+    private static void ResetReviewState(SessionSummary summary)
+    {
+        summary.ReviewSubmittedAt = null;
+        summary.ReviewSubmittedByUserId = null;
+        summary.ApprovedAt = null;
+        summary.ApprovedByUserId = null;
     }
 
     private async Task<Session> LoadSessionForDraftAsync(
@@ -310,5 +413,8 @@ internal sealed class AdminSessionSummaryService(
             IsPublished: s.PublishedAt is not null,
             s.PublishedAt,
             s.CreatedAt,
-            s.UpdatedAt);
+            s.UpdatedAt,
+            IsInReview: s.ReviewSubmittedAt is not null && s.ApprovedAt is null,
+            IsApproved: s.ApprovedAt is not null,
+            s.ApprovedAt);
 }

@@ -1778,6 +1778,28 @@ internal static class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.UnpublishSessionSummaryAsync(sessionId, token));
         });
+        // D-472 (#9) — the team review/approval workflow passthroughs.
+        group.MapPut("/admin/session-summaries/{sessionId:guid}/submit-review",
+            async (Guid sessionId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.SubmitSessionSummaryForReviewAsync(sessionId, token));
+        });
+        group.MapPut("/admin/session-summaries/{sessionId:guid}/approve",
+            async (Guid sessionId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ApproveSessionSummaryAsync(sessionId, token));
+        });
+        group.MapPut("/admin/session-summaries/{sessionId:guid}/return-to-draft",
+            async (Guid sessionId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ReturnSessionSummaryToDraftAsync(sessionId, token));
+        });
 
         // P5.1d — D-244: operator hall-door QR arrival passthrough.
         group.MapPost("/admin/sessions/{sessionId:guid}/arrivals",
