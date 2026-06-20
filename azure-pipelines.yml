@@ -98,14 +98,63 @@ stages:
         projects: '$(Build.SourcesDirectory)/src/Website/SIMF.Web/SIMF.Web.csproj'
         arguments: '--configuration $(buildConfiguration) --no-restore'
 
-    # --- Test — TEMPORARILY DISABLED (owner request, 2026-06-05). The suite is
-    #     green (919 tests pass) but SIMF.Api.Tests runs ~11 min; disabled to keep
-    #     the pipeline fast for now. RE-ENABLE by removing the `condition: false`
-    #     line below. (SIMF-OPS-001 section 5 expects a failing test to stop the
-    #     pipeline, so restore this before go-live.) ---
+    # --- Software Composition Analysis (NCA §1-13 / A6-13). Fails the build if any
+    #     direct or transitive package has a known advisory. Complements the
+    #     in-build NuGetAudit (Directory.Build.props). Uses stock `dotnet`. ---
+    - powershell: |
+        $projects = @(
+          'src/Backend/SIMF.Api/SIMF.Api.csproj',
+          'src/ControlPanel/SIMF.ControlPanel/SIMF.ControlPanel.csproj',
+          'src/Website/SIMF.Web/SIMF.Web.csproj'
+        )
+        $vulnerable = $false
+        foreach ($p in $projects) {
+          Write-Host "Scanning $p"
+          $out = dotnet list "$(Build.SourcesDirectory)/$p" package --vulnerable --include-transitive 2>&1 | Out-String
+          Write-Host $out
+          if ($out -match 'has the following vulnerable packages') { $vulnerable = $true }
+        }
+        if ($vulnerable) { throw 'Vulnerable NuGet packages found - see the log above (NCA A6-13).' }
+      displayName: 'Dependency vulnerability scan (dotnet list --vulnerable)'
+
+    # --- SBOM (CycloneDX; NCA A6-2/A6-13). Generates a CycloneDX SBOM per app for
+    #     the handover package. Best-effort (continueOnError) so a transient tool
+    #     install does not block a release. ---
+    - powershell: |
+        dotnet tool install --global CycloneDX 2>&1 | Out-String | Write-Host
+        $env:PATH += ";$($env:USERPROFILE)\.dotnet\tools"
+        $sbom = "$(Build.ArtifactStagingDirectory)/sbom"
+        New-Item -ItemType Directory -Force -Path $sbom | Out-Null
+        dotnet CycloneDX "$(Build.SourcesDirectory)/src/Backend/SIMF.Api/SIMF.Api.csproj" -o "$sbom/api"
+        dotnet CycloneDX "$(Build.SourcesDirectory)/src/ControlPanel/SIMF.ControlPanel/SIMF.ControlPanel.csproj" -o "$sbom/cp"
+        dotnet CycloneDX "$(Build.SourcesDirectory)/src/Website/SIMF.Web/SIMF.Web.csproj" -o "$sbom/web"
+      displayName: 'Generate CycloneDX SBOM'
+      continueOnError: true
+
+    # --- SAST / DAST (NCA §1-2 / §3-2 / A5-20) — these need Azure DevOps
+    #     Marketplace extensions, so they are provided as a ready-to-enable
+    #     scaffold rather than active tasks (referencing an uninstalled task would
+    #     break the pipeline). A DevOps admin installs the extension, then
+    #     uncomments the matching block:
+    #
+    #     SAST — install "Microsoft Security DevOps":
+    #     - task: MicrosoftSecurityDevOps@1
+    #       displayName: 'SAST (Microsoft Security DevOps)'
+    #       inputs:
+    #         categories: 'code,artifacts'
+    #
+    #     DAST — install "OWASP ZAP Scan", run against the deployed staging URL:
+    #     - task: owaspzap@1
+    #       displayName: 'DAST (OWASP ZAP baseline)'
+    #       inputs:
+    #         scantype: 'targetedScan'
+    #         url: 'https://simf-staging.zagali-ict.com'
+
+    # --- Test gate (NCA Secure App-Dev Standard §3-20; SIMF-OPS-001 §5) — a
+    #     failing test stops the pipeline. RE-ENABLED 2026-06-21 (had been
+    #     temporarily disabled 2026-06-05 for speed). SIMF.Api.Tests runs ~13 min. ---
     - task: DotNetCoreCLI@2
-      displayName: 'Run all tests (TEMPORARILY DISABLED)'
-      condition: false
+      displayName: 'Run all tests'
       inputs:
         command: 'test'
         projects: '$(Build.SourcesDirectory)/tests/**/*.csproj'

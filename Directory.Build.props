@@ -10,6 +10,17 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <LangVersion>latest</LangVersion>
+    <!--
+      NCA Secure App-Dev Standard A6-13 / §1-13 — restore-time dependency
+      auditing for every project. NuGetAudit raises a build warning (which
+      TreatWarningsAsErrors turns into an error) for any direct OR transitive
+      package with a known advisory. Pinned explicitly so the gate does not
+      depend on the SDK default. The CI pipeline runs a second, explicit
+      `dotnet list package` vulnerability scan as well.
+    -->
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditMode>all</NuGetAuditMode>
+    <NuGetAuditLevel>low</NuGetAuditLevel>
   </PropertyGroup>
 
 </Project>
