@@ -3,7 +3,10 @@
    grant (or Administrator bypass). *@
 @page "/sessions/{SessionId:guid}/moderate"
 @layout CpShellLayout
-@attribute [Authorize]
+@* M6 (security) — per-page permission gate (was [Authorize] only). The API also
+   enforces the per-session moderator / Administrator check; this keeps the CP
+   convention (only Questions.Moderate holders reach the desk + see the actions). *@
+@attribute [RequirePermission(PermissionCatalog.Questions.Moderate)]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 
@@ -66,27 +69,29 @@
                                 }
                             </td>
                             <td>
-                                @if (!row.IsHidden)
-                                {
-                                    <SimfButton Type="button"
-                                                OnClick="@(() => SetHiddenAsync(row, true))">
-                                        @L["Admin.SessionModeration.Hide"]
-                                    </SimfButton>
-                                }
-                                else
-                                {
-                                    <SimfButton Type="button"
-                                                OnClick="@(() => SetHiddenAsync(row, false))">
-                                        @L["Admin.SessionModeration.Unhide"]
-                                    </SimfButton>
-                                }
-                                @if (!row.IsPushed && !row.IsHidden)
-                                {
-                                    <SimfButton Type="button"
-                                                OnClick="@(() => PushAsync(row))">
-                                        @L["Admin.SessionModeration.Push"]
-                                    </SimfButton>
-                                }
+                                <AuthorizedAction Permission="@PermissionCatalog.Questions.Moderate">
+                                    @if (!row.IsHidden)
+                                    {
+                                        <SimfButton Type="button"
+                                                    OnClick="@(() => SetHiddenAsync(row, true))">
+                                            @L["Admin.SessionModeration.Hide"]
+                                        </SimfButton>
+                                    }
+                                    else
+                                    {
+                                        <SimfButton Type="button"
+                                                    OnClick="@(() => SetHiddenAsync(row, false))">
+                                            @L["Admin.SessionModeration.Unhide"]
+                                        </SimfButton>
+                                    }
+                                    @if (!row.IsPushed && !row.IsHidden)
+                                    {
+                                        <SimfButton Type="button"
+                                                    OnClick="@(() => PushAsync(row))">
+                                            @L["Admin.SessionModeration.Push"]
+                                        </SimfButton>
+                                    }
+                                </AuthorizedAction>
                             </td>
                         </tr>
                     }
