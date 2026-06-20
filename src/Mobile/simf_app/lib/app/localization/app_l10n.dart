@@ -830,6 +830,48 @@ class AppL10n {
         'Show your badge at entry',
       );
   String get seatViewLink => _t('عرض', 'View');
+  // D-485 — the in-app session join flow (Join CTA / seat picker / hub).
+  String get joinSectionHeading => _t('الانضمام للجلسة', 'Join this session');
+  String get joinSeatCta => _t('اختر مقعدي', 'Select my seat');
+  String get joinOpenCta => _t('انضم إلى الجلسة', 'Join this session');
+  String get joinSeatHint =>
+      _t('اختر مقعدك ثم انتظر موافقة الإدارة', 'Pick your seat, then await approval');
+  String get joinOpenHint =>
+      _t('دخول عام — بدون مقعد محدد', 'General admission — no specific seat');
+  String get joinConfirmTitle => _t('تأكيد الانضمام', 'Join this session?');
+  String get joinConfirmBody => _t(
+        'سيتم إرسال طلب انضمامك إلى الإدارة للموافقة.',
+        'Your request to join will be sent to the organisers for approval.',
+      );
+  String get joinConfirmAction => _t('انضمام', 'Join');
+  String get joinPendingToast =>
+      _t('تم إرسال طلبك — بانتظار موافقة الإدارة', 'Request sent — pending approval');
+  String get joinFailed => _t('تعذّر إرسال الطلب', "Couldn't send your request");
+  String get joinSessionFull => _t('لا توجد أماكن متبقية', 'No places remain');
+  String get generalAdmissionLabel => _t('دخول عام', 'General admission');
+  String get reservationPendingHint =>
+      _t('بانتظار موافقة الإدارة', 'Pending approval');
+  String get cancelBookingCta => _t('إلغاء الحجز', 'Cancel booking');
+  String get cancelBookingConfirmTitle => _t('إلغاء الحجز', 'Cancel booking?');
+  String get cancelBookingConfirmBody => _t(
+        'سيتم إلغاء حجزك لهذه الجلسة.',
+        'Your booking for this session will be cancelled.',
+      );
+  String get bookingCancelledToast => _t('تم إلغاء الحجز', 'Booking cancelled');
+  String get bookingCancelFailed =>
+      _t('تعذّر إلغاء الحجز', "Couldn't cancel the booking");
+  // Seat picker (Page — select a seat).
+  String get seatPickerTitle => _t('اختر مقعدك', 'Select your seat');
+  String get seatPickerHint =>
+      _t('اضغط على مقعد متاح لحجزه', 'Tap an available seat to reserve it');
+  String get seatPickerRandomCta => _t('اختيار تلقائي', 'Auto-pick a seat');
+  String get seatReservedToast =>
+      _t('تم الحجز — بانتظار الموافقة', 'Reserved — pending approval');
+  String get seatReserveFailed => _t('تعذّر حجز المقعد', "Couldn't reserve that seat");
+  // Join-a-session hub.
+  String get joinHubTitle => _t('احجز مقعداً', 'Book a seat');
+  String get joinHubHint =>
+      _t('اختر جلسة للانضمام إليها', 'Choose a session to join');
   String get addToCalendar => _t('أضف إلى تقويمي', 'Add to calendar');
   String get reminder => _t('تذكير', 'Reminder');
   String get calendarAdded =>

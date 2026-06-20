@@ -107,6 +107,11 @@ class RouteNames {
   // Staff gate-operator scanner (D-406; additive, drawer entry; role-gated to
   // Staff, server enforces the Gates.Operate grant).
   static const String gateScanner = 'gateScanner';
+  // D-485 — the in-app session-join flow (additive, approved Visitor): the seat
+  // picker (assigned-seat sessions) + the standalone "Join a session" hub (the
+  // owner's "both" entry — the other is the Join CTA on the session page).
+  static const String seatPicker = 'seatPicker';
+  static const String joinSessionHub = 'joinSessionHub';
 
   // Auxiliary auth routes (not numbered in the mockup but in API-001 §12)
   static const String forgotPassword = 'forgotPassword';

@@ -49,7 +49,9 @@ import '../features/profile/sign_up_interests_screen.dart';
 import '../features/profile/sign_up_visitor_screen.dart';
 import '../features/registration/registration_status_screen.dart';
 import '../features/registration/registration_success_screen.dart';
+import '../features/sessions/join_session_hub_screen.dart';
 import '../features/sessions/my_seat_screen.dart';
+import '../features/sessions/seat_picker_screen.dart';
 import '../features/sessions/session_detail_screen.dart';
 import '../features/sessions/sessions_screen.dart';
 import '../features/sponsors/sponsors_screen.dart';
@@ -151,6 +153,9 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 107, name: RouteNames.myVisitors, path: '/exhibitor/visitors', labelAr: 'زواري', labelEn: 'My Visitors'),
   // D-479 (#11 follow-up) — read-only "My meetings" list (approved-only).
   _Route(number: 108, name: RouteNames.myMeetings, path: '/my-meetings', labelAr: 'اجتماعاتي', labelEn: 'My meetings'),
+  // D-485 — the session-join flow (approved-only): the seat picker + the hub.
+  _Route(number: 109, name: RouteNames.seatPicker, path: '/sessions/:sessionId/pick-seat', labelAr: 'اختر مقعدك', labelEn: 'Select your seat'),
+  _Route(number: 110, name: RouteNames.joinSessionHub, path: '/sessions/join', labelAr: 'احجز مقعداً', labelEn: 'Book a seat'),
 
   // D-464 — المزيد hub entries with no screen yet (Figma 1129:17224). Public;
   // they fall through to ComingSoonScreen (sentinel numbers 200+).
@@ -201,6 +206,8 @@ const Set<int> _authenticatedRoutes = <int>{
   105, // Staff gate scanner (D-406; also role-gated below)
   106, // Exhibitor scan visitor badge (D-426; server 403s visitor-tier callers)
   107, // Exhibitor My Visitors (D-426)
+  109, // Seat picker (D-485; approved-only — the seat endpoints 401/403 a guest)
+  110, // Join-a-session hub (D-485; approved-only)
 };
 
 /// Routes that additionally require a minimum app privilege (D-405/D-406). The
@@ -294,6 +301,14 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
     return MySeatScreen(
       sessionId: state.pathParameters['sessionId'] ?? '',
     );
+  }
+  if (r.name == RouteNames.seatPicker) {
+    return SeatPickerScreen(
+      sessionId: state.pathParameters['sessionId'] ?? '',
+    );
+  }
+  if (r.name == RouteNames.joinSessionHub) {
+    return const JoinSessionHubScreen();
   }
   if (r.name == RouteNames.speakers) {
     return const SpeakersScreen();

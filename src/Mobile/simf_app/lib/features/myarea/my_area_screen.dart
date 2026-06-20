@@ -374,6 +374,13 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
           onTap: () => context.pushNamed(RouteNames.myMeetings),
         ),
         const SizedBox(height: SimfTokens.space4),
+        // D-485 — the standalone Join-a-session hub (the seat-booking flow; the
+        // other entry is the Join CTA on each session page).
+        _MoreRow(
+          label: l10n.joinHubTitle,
+          onTap: () => context.pushNamed(RouteNames.joinSessionHub),
+        ),
+        const SizedBox(height: SimfTokens.space4),
         // Photos-only profile edit (owner scope): re-upload the ID document
         // from the gallery. The face photo is changed by tapping the avatar.
         _MoreRow(

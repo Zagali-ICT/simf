@@ -64,12 +64,15 @@
 | E2E-MOB017-013 | وصف الجلسة / Description card renders the localized description; hidden when null | happy | P1 | authored ✓ (Figma 889:2719 re-skin) |
 | E2E-MOB017-014 | المتحدثون speaker card → 40×40 photo + country flag beside the name | happy | P0 | authored ✓ (Figma 889:2722 re-skin; photo+flag) |
 | E2E-MOB017-015 | المتحدثون host card → المضيف/Host sub-line (`SessionSpeakerRole.host`) | happy | P0 | authored ✓ (Figma 889:2737 re-skin; real role) |
-| E2E-MOB017-016 | مقعدي card — row · seat line + badge hint + gold marker; chevron/marker opens seat map (18) | happy | P1 | authored ✓ (Figma 889:2761 re-skin) |
+| E2E-MOB017-016 | **Reservation card (D-485)** — a held booking shows الصف · مقعد (or "general admission" for an open-seating join) + a "pending approval" hint + a Cancel action; a seat booking's chevron/marker opens the seat map (18), an open-seating join has no map link | happy | P1 | authored ✓ (widget — reservation card: seat/general-admission + pending + cancel) |
 | E2E-MOB017-017 | CTA row — تذكير (outlined) + أضف إلى تقويمي (gold) order and toasts | happy | P1 | authored ✓ (Figma 897:2872 re-skin) |
 | E2E-MOB017-018 | رابط الجلسة — shown only when `liveStreamUrl` present; opens Live (25) | happy | P1 | authored ✓ (Figma 889:2715; `…live link shows only when…opens the live screen`) |
 | E2E-MOB017-019 | ملخص الجلسة — always shown; opens AI summary (34) | happy | P1 | authored ✓ (Figma 889:2715; `…summary button opens the AI session summary`) |
 | E2E-MOB017-020 | اسأل المحاور card — shown to everyone; opens Send question (26) | happy | P1 | authored ✓ (Figma 1056:12876; `…ask-host card opens send-question`) |
 | E2E-MOB017-021 | Speaker country flag — `CountryId` 682 → 🇸🇦 emoji beside the name | happy | P2 | authored ✓ (`…renders its flag emoji`; `core/country_flag.dart`) |
+| E2E-MOB017-022 | **Join CTA (D-485)** — an approved user with no reservation sees a "Join this session" section, branched by the session's effective mode: assigned-seat → "Select my seat" opens the seat picker; open-seating → "Join this session" confirms then joins (Pending) with a "Request sent — pending approval" toast | happy | P1 | authored ✓ (widget — assigned→picker / open→confirm→join+toast) |
+| E2E-MOB017-023 | **Cancel booking (D-485)** — the reservation card's Cancel confirms, then releases the held seat (`DELETE …/seats/mine`) and the section returns to the Join CTA | happy | P2 | authored ✓ (widget — `releaseMine`) |
+| E2E-MOB017-024 | **Join is approved-only (D-485)** — a guest / pending account sees no join section (the seat endpoint 401/403s → null) | auth | P1 | authored ✓ (`…a guest sees no join section`) |
 
 ## Scenarios
 
@@ -346,6 +349,34 @@ Scenario: A speaker's ISO 3166-1 numeric country code renders as a flag emoji
   Then no flag (and no tofu box / wrong flag) is rendered
 ```
 
+### E2E-MOB017-022 — Join this session (D-485)
+
+```gherkin
+Scenario: An approved attendee with no reservation joins, branched by mode
+  Given an approved visitor on a session detail page holding no reservation
+  When the session's effective seat-selection mode is AssignedSeat
+  Then a "Join this session" section shows a "Select my seat" button
+  And tapping it opens the seat picker
+  When the mode is OpenSeating (general admission)
+  Then the button reads "Join this session"
+  And tapping it shows a "Join this session?" confirm dialog
+  And confirming sends the join (created Pending) with a
+    "Request sent — pending approval" toast
+  And on the Control Panel's approval the attendee receives a BookingConfirmed
+    in-app notification (existing inbox), or BookingRejected on rejection
+  # A guest / pending account sees no join section (the seat endpoint 401/403s).
+```
+
+### E2E-MOB017-023 — Cancel a held booking (D-485)
+
+```gherkin
+Scenario: Cancelling a held reservation from the session page
+  Given an approved visitor whose session detail shows a held reservation card
+  When they tap "Cancel booking" and confirm
+  Then the held seat is released (DELETE /app/sessions/{id}/seats/mine)
+  And the section returns to the Join CTA
+```
+
 ---
 
-_Last reviewed:_ `2026-06-19` by `SIMF Team`.
+_Last reviewed:_ `2026-06-21` by `SIMF Team`.
