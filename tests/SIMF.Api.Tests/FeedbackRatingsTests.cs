@@ -46,6 +46,59 @@ public sealed class FeedbackRatingsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Visitor_can_submit_per_element_scores()
+    {
+        // D-463 (Figma 1116:16894 "قيّم العناصر") — the four optional element
+        // scores persist and echo back on the view.
+        var visitor = await SignInApprovedVisitorAsync();
+
+        var response = await PostAuthAsync(
+            "/api/v1/app/feedback/rate",
+            new RateRequest(4, "great",
+                OrganizationStars: 5, ContentStars: 4,
+                AppStars: 3, VenueStars: 2),
+            visitor);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var view = (await response.Content
+            .ReadFromJsonAsync<ApiResult<RatingView>>())!.Data!;
+        Assert.Equal(4, view.Stars);
+        Assert.Equal(5, view.OrganizationStars);
+        Assert.Equal(4, view.ContentStars);
+        Assert.Equal(3, view.AppStars);
+        Assert.Equal(2, view.VenueStars);
+    }
+
+    [Fact]
+    public async Task Element_scores_are_optional_and_default_to_null()
+    {
+        var visitor = await SignInApprovedVisitorAsync();
+
+        var response = await PostAuthAsync(
+            "/api/v1/app/feedback/rate",
+            new RateRequest(5, null), visitor);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var view = (await response.Content
+            .ReadFromJsonAsync<ApiResult<RatingView>>())!.Data!;
+        Assert.Null(view.OrganizationStars);
+        Assert.Null(view.ContentStars);
+        Assert.Null(view.AppStars);
+        Assert.Null(view.VenueStars);
+    }
+
+    [Fact]
+    public async Task Out_of_range_element_score_is_rejected_with_400()
+    {
+        var visitor = await SignInApprovedVisitorAsync();
+
+        var response = await PostAuthAsync(
+            "/api/v1/app/feedback/rate",
+            new RateRequest(4, null, OrganizationStars: 6), visitor);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Rating_twice_upserts_the_single_row_for_the_user()
     {
         var visitor = await SignInApprovedVisitorAsync();

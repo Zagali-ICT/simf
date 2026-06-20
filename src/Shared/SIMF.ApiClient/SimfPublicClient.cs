@@ -4,6 +4,7 @@ using System.Text.Json;
 using SIMF.Common;
 using SIMF.Contracts.Archive;
 using SIMF.Contracts.Cms;
+using SIMF.Contracts.Configuration;
 using SIMF.Contracts.Media;
 using SIMF.Contracts.Programme;
 using SIMF.Contracts.PublicRelations;
@@ -52,6 +53,13 @@ public sealed class SimfPublicClient(HttpClient http)
     /// service.</summary>
     public Task<PublicSpeakers?> GetSpeakersAsync(CancellationToken cancellationToken = default) =>
         GetAsync<PublicSpeakers>("speakers", cancellationToken);
+
+    /// <summary>D-466 — the public, CP-editable site settings
+    /// (<c>GET /api/v1/app/site-settings</c>): the registration welcome message +
+    /// the social links. Returns <c>null</c> on a failed envelope or an
+    /// unreachable service.</summary>
+    public Task<SiteSettingsResponse?> GetSiteSettingsAsync(CancellationToken cancellationToken = default) =>
+        GetAsync<SiteSettingsResponse>("site-settings", cancellationToken);
 
     /// <summary>One page of the public News feed
     /// (<c>GET /api/v1/app/news</c>). Returns <c>null</c> on a failed envelope

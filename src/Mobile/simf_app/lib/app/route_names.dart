@@ -70,6 +70,14 @@ class RouteNames {
   static const String rate = 'rate';
   static const String more = 'more';
 
+  // المزيد hub entries that have no screen yet (D-464; Figma 1129:17224) — they
+  // render the ComingSoon placeholder until built. FAQ + presentations have
+  // backend (D-218 / D-228); owner chose "parity now, ComingSoon for unbuilt".
+  static const String forumGuide = 'forumGuide';
+  static const String faq = 'faq';
+  static const String sessionPresentations = 'sessionPresentations';
+  static const String contactUs = 'contactUs';
+
   // FDS-014 visitor contact sharing (D-286 API; additive, not mockup-numbered).
   // Reached from More / My Area; all three require an Approved account.
   static const String shareMyContact = 'shareMyContact';

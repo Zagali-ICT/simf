@@ -1,6 +1,7 @@
 using SIMF.Common;
 using SIMF.Contracts.Archive;
 using SIMF.Contracts.Cms;
+using SIMF.Contracts.Configuration;
 using SIMF.Contracts.Media;
 using SIMF.Contracts.Programme;
 using SIMF.Contracts.PublicRelations;
@@ -225,6 +226,45 @@ public sealed class SiteContentMapperTests
         Assert.False(result.ContainsKey("goals"));
         Assert.False(result.ContainsKey("pillars"));
         Assert.False(result.ContainsKey("hero"));
+    }
+
+    [Fact]
+    public void Social_links_emit_only_the_configured_platforms()
+    {
+        // D-466 — only non-blank social URLs reach the feed; the footer renderer
+        // hides any platform that is absent.
+        var settings = new SiteSettingsResponse(
+            "مرحبا", "Welcome",
+            new SiteSocialLinks(
+                Facebook: null,
+                X: "https://x.com/simf",
+                Instagram: "   ", // blank → omitted
+                LinkedIn: "https://linkedin.com/company/simf",
+                YouTube: null,
+                TikTok: null,
+                Snapchat: null));
+
+        var result = SiteContentEndpoints.Compose(
+            null, null, null, null, null, null, null, null, settings);
+
+        var social = Assert.IsType<Dictionary<string, object?>>(result["social"]);
+        Assert.Equal("https://x.com/simf", social["x"]);
+        Assert.Equal("https://linkedin.com/company/simf", social["linkedin"]);
+        Assert.False(social.ContainsKey("facebook")); // null omitted
+        Assert.False(social.ContainsKey("instagram")); // blank omitted
+    }
+
+    [Fact]
+    public void Social_section_is_absent_when_no_links_are_configured()
+    {
+        var settings = new SiteSettingsResponse(
+            "م", "W",
+            new SiteSocialLinks(null, null, null, null, null, null, null));
+
+        var result = SiteContentEndpoints.Compose(
+            null, null, null, null, null, null, null, null, settings);
+
+        Assert.False(result.ContainsKey("social"));
     }
 
     private static List<object> Rows(Dictionary<string, object?> result, string key) =>

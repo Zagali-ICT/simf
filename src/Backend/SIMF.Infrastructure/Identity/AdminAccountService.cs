@@ -406,7 +406,12 @@ internal sealed partial class AdminAccountService(
             // D-395 — gender + plate captured at the walk-in desk (columns
             // already exist on UserProfile; the form just didn't send them).
             Gender = request.Gender,
-            PlateNumber = NormaliseOptional(request.PlateNumber),
+            // D-468 (review) — store the canonical Latin plate code, exactly like
+            // the self-service path (UserProfileService.NormalisePlate). A plain
+            // trim left an Arabic-script / spaced desk-entered plate stored
+            // un-canonicalized, breaking the "one canonical code, both renderings
+            // derived on read" invariant + the badge/gate/export key.
+            PlateNumber = SaudiPlate.Normalize(request.PlateNumber),
             IsSaudi = request.IsSaudi,
             NationalId = request.IsSaudi ? request.NationalId : null,
             IqamaNumber = request.IsSaudi ? null : request.IqamaNumber,

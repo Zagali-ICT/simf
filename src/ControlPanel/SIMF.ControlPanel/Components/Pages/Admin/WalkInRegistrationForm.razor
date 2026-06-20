@@ -152,9 +152,37 @@
                            Value="@(_model.JobTitle ?? string.Empty)"
                            ValueChanged="@(v => _model.JobTitle = string.IsNullOrWhiteSpace(v) ? null : v)"
                            ValueExpression="@(() => _model.JobTitle)" />
-            <SimfTextField Label="@L["Admin.WalkIn.Field.PlaceOfBirth"]"
-                           MaxLength="128"
-                           @bind-Value="_model.PlaceOfBirth" />
+            @* D-469 — birth location: a Saudi walk-in picks one of the 13 official
+               regions; a non-Saudi gets the free-text field "as in passport". *@
+            @if (_model.IsSaudi)
+            {
+                <div class="simf-field">
+                    <label class="simf-field__label" for="walkin-birth-region">
+                        @L["Admin.WalkIn.Field.PlaceOfBirth"]
+                    </label>
+                    <div class="simf-field__control">
+                        @* Keyed on the stable region code (not the localized name) so a
+                           record stored in the other language still selects correctly
+                           when the CP UI culture differs. *@
+                        <select id="walkin-birth-region" class="simf-field__input"
+                                value="@(SaudiRegions.ByName(_model.PlaceOfBirth)?.Code ?? string.Empty)"
+                                @onchange="OnBirthRegionChanged">
+                            <option value="">@L["Admin.WalkIn.Field.PlaceOfBirth.Select"]</option>
+                            @foreach (var region in SaudiRegions.All)
+                            {
+                                <option value="@region.Code">@RegionName(region)</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <SimfTextField Label="@L["Admin.WalkIn.Field.PlaceOfBirth"]"
+                               Helper="@L["Admin.WalkIn.Field.PlaceOfBirth.PassportHint"]"
+                               MaxLength="128"
+                               @bind-Value="_model.PlaceOfBirth" />
+            }
         </div>
         @* D-395 — gender + optional vehicle plate share the final identity row. *@
         <div class="simf-walkin__grid">
@@ -185,7 +213,7 @@
                         <select class="simf-field__input simf-walkin__plate-letter"
                                 value="@_plateLetters[idx]"
                                 @onchange="@(e => OnPlateLetterChanged(idx, e))"
-                                aria-label="@L["Admin.WalkIn.Field.Plate.Letter"]">
+                                aria-label="@($"{L["Admin.WalkIn.Field.Plate.Letter"]} {idx + 1}")">
                             <option value="">@L["Admin.WalkIn.Field.Plate.Letter"]</option>
                             @foreach (var letter in SaudiPlate.Letters)
                             {
@@ -671,6 +699,21 @@
         _model.PlateNumber = letters.Length == 0 && _plateDigits.Length == 0
             ? null
             : $"{letters}{_plateDigits}";
+    }
+
+    // D-469 — birth-location region (Saudi only). The stored value is the
+    // region's localized name (the existing free-text PlaceOfBirth column).
+    private static string RegionName(SaudiRegions.Region region) =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
+            ? region.Arabic
+            : region.English;
+
+    private void OnBirthRegionChanged(ChangeEventArgs e)
+    {
+        // The <option> values are region codes; store the localized name back into
+        // the free-text column so it round-trips identically to the app.
+        var region = SaudiRegions.ByCode(e.Value?.ToString());
+        _model.PlaceOfBirth = region is null ? string.Empty : RegionName(region);
     }
 
     private async Task OnIdDocumentChanged(ChangeEventArgs _)

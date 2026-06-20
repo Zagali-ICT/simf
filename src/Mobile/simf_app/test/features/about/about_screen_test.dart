@@ -40,9 +40,10 @@ Future<void> _pump(
   ContentRepository repo, {
   Locale locale = const Locale('en'),
 }) async {
-  // A tall surface so the whole scroll content (hero + four theme cards) is laid
-  // out — the lazy ListView would otherwise not build the off-screen cards.
-  tester.view.physicalSize = const Size(375, 1600);
+  // A tall surface so the whole scroll content (header + mission + vision +
+  // details + the four themes) lays out — the lazy ListView would otherwise not
+  // build the off-screen cards (frame 1116:16448).
+  tester.view.physicalSize = const Size(375, 2400);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);

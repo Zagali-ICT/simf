@@ -1,70 +1,74 @@
 # E2E test catalogue — `More` (`more`)
 
 > **Authority:** SIMF E2E test catalogue template (D-133). Mobile catalogue — the
-> More screen is a **navigation hub with no API** (a list of tiles routing to the
-> already-built secondary screens, plus a static app-version line). The **Flutter
-> screen is built** and widget-tested in
-> `src/Mobile/simf_app/test/features/more/more_screen_test.dart` (renders the
-> tiles, version line, tap About → navigates).
+> More screen is a **navigation hub with no API of its own** (a منطقتي profile
+> header card + three grouped sections of nav rows + a version line).
+> **Re-skinned to Figma `1129:17224` (D-465).** Widget-tested in
+> `src/Mobile/simf_app/test/features/more/more_screen_test.dart`.
 
 | | |
 |--|--|
 | **Page** | [`Page_041`](../../App/Page_041/README.md) |
 | **Route** | app screen #41 `/more` (no API) |
 | **Surface** | Mobile (Flutter) |
-| **Auth setup** | **None** — the hub is anonymous; the destination routes keep their own auth gate. |
-| **Last reviewed** | 2026-06-06 |
+| **Figma** | `1129:17224` |
+| **Auth setup** | **None** to browse the sections; the منطقتي card + تسجيل الخروج show only when signed in. Destination routes keep their own auth gate. |
+| **Last reviewed** | 2026-06-20 |
+
+## Layout (D-465)
+
+- **منطقتي profile card** (signed-in only) — avatar + name · tier (from `MyAreaDashboard`), taps to `/my-area`.
+- **معلومات الملتقى**: عن الملتقى → `/about`; دليل الملتقى → ComingSoon (`/forum-guide`); الأسئلة الشائعة → ComingSoon (`/faq`); عروض الجلسات → ComingSoon (`/session-presentations`); استكشف الرياض · VisitSaudi → external `VisitSaudiUrl`.
+- **الإعدادات**: اللغة (shows the current language, taps to toggle); إمكانية الوصول → `/settings/accessibility`; الإشعارات → `/notifications`.
+- **قانوني**: الشروط والأحكام → `/terms`; تواصل معنا → ComingSoon (`/contact-us`); تقييم التطبيق → `/rate`.
+- **تسجيل الخروج** (signed-in only) → confirm dialog → sign-out → `/sign-in`.
+- Version line `SIMF 2026 · v1.0.0`.
 
 ## Coverage matrix
 
 | ID | Scenario | Type | Priority | Status |
 |----|----------|------|----------|--------|
-| E2E-MOB041-001 | Guest opens More → sees the six tiles + version line | happy | P0 | authored ✓ (screen `renders the navigation tiles`, `shows the app-version line`) |
-| E2E-MOB041-002 | Tapping About routes to the About screen | happy | P0 | authored ✓ (screen `tapping About navigates to the About route`) |
-| E2E-MOB041-003 | Tapping a gated tile (Notifications) while signed-out bounces to sign-in | edge | P1 | covered (router auth gate, destination #33; `redirectDecision` test) |
+| E2E-MOB041-001 | The three grouped sections + their rows render | happy | P0 | authored ✓ (screen `renders the three grouped sections and their rows`) |
+| E2E-MOB041-002 | The version line shows `SIMF 2026 · v1.0.0` | happy | P1 | authored ✓ (screen `shows the app-version line`) |
+| E2E-MOB041-003 | Guest hides the منطقتي card + sign-out | auth | P0 | authored ✓ (screen `guest hides the profile card and sign-out`) |
+| E2E-MOB041-004 | Signed-in shows the منطقتي card (name · tier) + sign-out | happy | P0 | authored ✓ (screen `signed-in shows the منطقتي profile card + sign-out`) |
+| E2E-MOB041-005 | Tapping About routes to the About screen | happy | P0 | authored ✓ (screen `tapping About navigates to the About route`) |
+| E2E-MOB041-006 | An unbuilt entry (Forum guide/FAQ/PPT/Contact us) opens ComingSoon | edge | P1 | covered (routes 200–203 fall through to `ComingSoonScreen`) |
+| E2E-MOB041-007 | Tapping a gated destination (Notifications) while signed-out bounces to sign-in | edge | P1 | covered (router auth gate, destination #33) |
 
 ## Scenarios
 
-### E2E-MOB041-001 — More hub renders
-
 ```gherkin
-Feature: More (navigation hub)
-  As a guest (signed out)
-  I want a hub of secondary screens
-  So that I can reach About, Accessibility, Terms, Rate, Notifications and Media partners
+Feature: More (navigation hub, Figma 1129:17224)
 
-Scenario: The More screen lists every tile and the version
-  When the guest opens /more
-  Then a tile is shown for About, Accessibility, Terms, Rate, Notifications and Media partners
-  And each tile shows a leading icon and a trailing chevron
-  And a static "SIMF v0.1.0" line is shown at the bottom
+Scenario: The grouped sections render
+  When a user opens /more
+  Then the section headers معلومات الملتقى, الإعدادات and قانوني are shown
+  And rows are shown for عن الملتقى, دليل الملتقى, الأسئلة الشائعة, عروض الجلسات,
+      استكشف الرياض, اللغة, إمكانية الوصول, الإشعارات, الشروط والأحكام,
+      تواصل معنا and تقييم التطبيق
+  And the اللغة row shows the current language value
+  And a static "SIMF 2026 · v1.0.0" line is shown at the bottom
+
+Scenario: The profile card and sign-out are signed-in only
+  Given a guest (signed out) opens /more
+  Then no منطقتي card and no تسجيل الخروج link are shown
+  Given an approved visitor opens /more
+  Then the منطقتي card shows their name · tier
+  And a تسجيل الخروج link is shown
+
+Scenario: Tapping About routes to its screen
+  When the user taps "عن الملتقى"
+  Then the app navigates to /about
+
+Scenario: An unbuilt entry opens the ComingSoon placeholder
+  When the user taps "دليل الملتقى"
+  Then the ComingSoon screen for /forum-guide is shown (no dead-end)
 ```
 
-**Evidence:** screen tests `renders the navigation tiles`, `shows the app-version line`.
-
-### E2E-MOB041-002 — Tile navigation
-
-```gherkin
-Scenario: Tapping a tile routes to its screen
-  When the guest taps the "About the forum" tile
-  Then the app navigates to the About route (/about)
-```
-
-**Evidence:** screen test `tapping About navigates to the About route`.
-
-### E2E-MOB041-003 — Gated destination
-
-```gherkin
-Scenario: A gated destination still enforces auth
-  Given the guest is signed out
-  When the guest taps the "Notifications" tile
-  Then the router redirects to /sign-in
-```
-
-**Evidence:** the More tile only navigates; the auth gate lives on the
-destination route (#33 Notifications, #40 Rate) — covered by the router
-`redirectDecision` / `routePathRequiresAuth` tests.
+**Evidence:** screen tests (5: grouped rows, version, guest-hides-card, signed-in-card, About-nav).
+ComingSoon routing covered by the router's fall-through for routes 200–203.
 
 ---
 
-_Last reviewed:_ `2026-06-06` by `SIMF Team`.
+_Last reviewed:_ `2026-06-20` by `SIMF Team`.

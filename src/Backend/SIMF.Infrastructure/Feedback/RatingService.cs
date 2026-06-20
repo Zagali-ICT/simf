@@ -61,6 +61,10 @@ internal sealed class RatingService(
         if (existing is not null)
         {
             existing.Stars = request.Stars;
+            existing.OrganizationStars = request.OrganizationStars;
+            existing.ContentStars = request.ContentStars;
+            existing.AppStars = request.AppStars;
+            existing.VenueStars = request.VenueStars;
             existing.Comment = comment;
             existing.IsActive = true;
             existing.UpdatedAt = now;
@@ -71,7 +75,7 @@ internal sealed class RatingService(
                 EventType = AuditEvents.RatingRevised,
                 Outcome = AuditOutcome.Success,
                 ActorUserId = userId,
-                Detail = $"ratingId={existing.Id}; stars={existing.Stars}",
+                Detail = DetailFor(existing),
             }, cancellationToken);
 
             logger.LogInformation(
@@ -86,6 +90,10 @@ internal sealed class RatingService(
             Id = Guid.NewGuid(),
             UserId = userId,
             Stars = request.Stars,
+            OrganizationStars = request.OrganizationStars,
+            ContentStars = request.ContentStars,
+            AppStars = request.AppStars,
+            VenueStars = request.VenueStars,
             Comment = comment,
             CreatedAt = now,
             IsActive = true,
@@ -98,7 +106,7 @@ internal sealed class RatingService(
             EventType = AuditEvents.RatingSubmitted,
             Outcome = AuditOutcome.Success,
             ActorUserId = userId,
-            Detail = $"ratingId={rating.Id}; stars={rating.Stars}",
+            Detail = DetailFor(rating),
         }, cancellationToken);
 
         logger.LogInformation(
@@ -160,7 +168,9 @@ internal sealed class RatingService(
             .Take(top)
             .Select(rating => new AdminRatingSummary(
                 rating.Id, rating.UserId, rating.Stars, rating.Comment,
-                rating.IsActive, rating.CreatedAt, rating.UpdatedAt))
+                rating.IsActive, rating.CreatedAt, rating.UpdatedAt,
+                rating.OrganizationStars, rating.ContentStars,
+                rating.AppStars, rating.VenueStars))
             .ToListAsync(cancellationToken);
 
         var grid = GridPage<AdminRatingSummary>.Of(page, total,
@@ -171,7 +181,15 @@ internal sealed class RatingService(
     private static string? NullIfBlank(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
+    // Self-contained audit detail: the overall + the four per-element scores
+    // (D-463), so the audit trail records exactly what was submitted/revised.
+    private static string DetailFor(Rating r) =>
+        $"ratingId={r.Id}; stars={r.Stars}; org={r.OrganizationStars}; " +
+        $"content={r.ContentStars}; app={r.AppStars}; venue={r.VenueStars}";
+
     private static RatingView ToView(Rating rating) =>
         new(rating.Id, rating.Stars, rating.Comment,
-            rating.CreatedAt, rating.UpdatedAt);
+            rating.CreatedAt, rating.UpdatedAt,
+            rating.OrganizationStars, rating.ContentStars,
+            rating.AppStars, rating.VenueStars);
 }

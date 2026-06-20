@@ -35,4 +35,8 @@ class StorageKeys {
       'simf.prefs.accessibility_high_contrast';
   static const String accessibilityReduceMotion =
       'simf.prefs.accessibility_reduce_motion';
+  static const String accessibilityScreenReader =
+      'simf.prefs.accessibility_screen_reader';
+  static const String accessibilityCaptions =
+      'simf.prefs.accessibility_captions';
 }

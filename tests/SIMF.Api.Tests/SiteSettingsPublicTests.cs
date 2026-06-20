@@ -76,4 +76,31 @@ public sealed class SiteSettingsPublicTests : IClassFixture<SimfApiFactory>
         Assert.Equal("https://x.com/simf", body.Data!.Social.X);
         Assert.Equal("Welcome aboard the Forum!", body.Data.RegistrationSuccessMessageEn);
     }
+
+    [Fact]
+    public async Task GET_drops_a_non_http_social_url()
+    {
+        // D-467 (security) — a non-http(s) social value (e.g. one stored via the
+        // generic /admin/configuration page, bypassing the dedicated page's
+        // validation) must be dropped to null on read so it can never become an
+        // `a.href` / launched link. Uses YouTube (untouched by the other cases).
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            db.SystemSettings.Add(new SystemSetting
+            {
+                Id = Guid.NewGuid(),
+                Key = SiteSettingKeys.SocialYouTube,
+                Value = "javascript:alert(document.cookie)",
+                IsActive = true,
+                CreatedAt = DateTimeOffset.UtcNow,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var response = await _client.GetAsync("/api/v1/app/site-settings");
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<SiteSettingsResponse>>())!;
+        Assert.Null(body.Data!.Social.YouTube);
+    }
 }

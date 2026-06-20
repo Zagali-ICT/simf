@@ -5,9 +5,10 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 ///
 /// Values come from `--dart-define` at compile time so the same binary can
 /// point at different environments without code changes (SIMF-MAA-001 §13).
-/// Defaults are conservative — the app simply will not boot if the values
-/// are missing in production builds, because `SimfDataConfig` requires
-/// non-empty fields.
+/// The API base URL defaults to the **production** host
+/// (`https://simf_api.zagali-ict.com`), so a build with no overrides always
+/// runs against prod — a device build can never silently fall back to a
+/// dev/LAN host (the stale-`--dart-define` trap). Override only for local dev.
 class BuildConfig {
   BuildConfig._();
 
@@ -15,9 +16,12 @@ class BuildConfig {
   static const String build =
       String.fromEnvironment('SIMF_BUILD', defaultValue: 'dev');
 
+  // The app targets the PRODUCTION API by default, so any build — including a
+  // plain `flutter build apk` with no `--dart-define` — runs against prod and
+  // can never fall back to a non-prod host. Override only for local dev.
   static const String apiBaseUrl = String.fromEnvironment(
     'SIMF_API_BASE',
-    defaultValue: 'https://api.dev.simf.local/api/v1',
+    defaultValue: 'https://simf_api.zagali-ict.com/api/v1',
   );
 
   /// Base URL used only for a dev-diagnostics web run (`flutter run -d chrome`).

@@ -130,8 +130,9 @@ Future<void> _pump(
 
 void main() {
   group('AiSummaryScreen (Page 034 — KSA frame 1072:13518)', () {
-    testWidgets('renders the picker, AI banner and the key-points tab',
-        (tester) async {
+    testWidgets(
+        'renders the picker, AI banner and the stacked summary cards '
+        '(frame 1078:14952 — no tabs)', (tester) async {
       final repo = _FakeSummaryRepo(summary: _summary());
       await _pump(tester, repo: repo, sessions: _sessions, sessionId: 's1');
 
@@ -139,44 +140,19 @@ void main() {
       // Picker + banner.
       expect(find.text('Choose the session'), findsOneWidget);
       expect(find.text('Auto-generated summary'), findsOneWidget);
-      // The three tabs + the action row.
-      expect(find.text('Speakers'), findsOneWidget);
+      // The three section headings now stack as cards (no tabs).
+      expect(find.text('Key points'), findsOneWidget);
       expect(find.text('Recommendations'), findsOneWidget);
+      expect(find.text('Speakers'), findsOneWidget);
+      // The action row.
       expect(find.text('Full text'), findsOneWidget);
       expect(find.text('Share'), findsOneWidget);
       expect(find.text('Save'), findsOneWidget);
-      // The active tab = key points → the two bullets.
+      // All sections' content is shown at once (no tab gating).
       expect(find.text('Coral cover rising'), findsOneWidget);
       expect(find.text('New survey method'), findsOneWidget);
-      // Other tabs' content is not shown until selected.
-      expect(find.text('Scale the reef programme'), findsNothing);
-      expect(find.text('Dr Reef, Cmdr Tide'), findsNothing);
-    });
-
-    testWidgets('switching to the Recommendations tab shows its content',
-        (tester) async {
-      await _pump(
-        tester,
-        repo: _FakeSummaryRepo(summary: _summary()),
-        sessions: _sessions,
-        sessionId: 's1',
-      );
-      await tester.tap(find.text('Recommendations'));
-      await tester.pumpAndSettle();
       expect(find.text('Scale the reef programme'), findsOneWidget);
-      expect(find.text('Coral cover rising'), findsNothing);
-    });
-
-    testWidgets('switching to the Speakers tab shows the speakers',
-        (tester) async {
-      await _pump(
-        tester,
-        repo: _FakeSummaryRepo(summary: _summary()),
-        sessions: _sessions,
-        sessionId: 's1',
-      );
-      await tester.tap(find.text('Speakers'));
-      await tester.pumpAndSettle();
+      // Speakers render as a single "·"-joined line.
       expect(find.text('Dr Reef, Cmdr Tide'), findsOneWidget);
     });
 

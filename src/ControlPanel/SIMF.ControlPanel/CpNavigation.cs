@@ -206,6 +206,8 @@ public static class CpNavigation
             // P2.4 (D-229) — System Configuration (FDS-012 §5.5). Collapses the
             // former /m/configuration + /m/settings stubs into one real page.
             new("Module.Configuration", "/admin/configuration", RequiredPermission: PermissionCatalog.Configuration.View, Icon: "settings"),
+            // D-464 — labelled Site Settings page (registration message + social links).
+            new("Module.SiteSettings", "/admin/site-settings", RequiredPermission: PermissionCatalog.Configuration.View, Icon: "globe"),
             new("Module.AdminLogs", "/admin/logs", RequiredPermission: PermissionCatalog.Logs.View, Icon: "file-text"),
             // D-134 Sprint A — Operation log viewer over the existing
             // OperationLogEntry table (no migration).

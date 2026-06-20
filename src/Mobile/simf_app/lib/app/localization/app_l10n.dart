@@ -166,6 +166,10 @@ class AppL10n {
       _t('رقم الجوال الدولي (اختياري)', 'International mobile (optional)');
   String get dateOfBirthLabel => _t('تاريخ الميلاد', 'Date of birth');
   String get placeOfBirthLabel => _t('مكان الميلاد (اختياري)', 'Place of birth (optional)');
+  // D-469 — Saudi → region dropdown; others → free text "as in passport".
+  String get placeOfBirthRegionHint => _t('اختر المنطقة', 'Select region');
+  String get placeOfBirthPassportHint =>
+      _t('كما في جواز السفر', 'As in your passport');
   String get genderLabel => _t('الجنس', 'Gender');
   String get genderUnspecified => _t('غير محدد', 'Prefer not to say');
   String get genderMale => _t('ذكر', 'Male');
@@ -277,7 +281,7 @@ class AppL10n {
         'تعذّر رفع الصورة الشخصية. حاول مرة أخرى.',
         "Couldn't upload the face photo. Try again.",
       );
-  // Name rules — Arabic-only / English-only, full name of at least four parts.
+  // Name rules — Arabic-only / English-only, full name of 2 to 4 parts (D-459).
   String get arabicNameLettersOnly => _t(
         'يجب أن يحتوي الاسم بالعربية على حروف عربية فقط',
         'The Arabic name must contain Arabic letters only',
@@ -959,12 +963,28 @@ class AppL10n {
       _t('تعذّر تحميل الوسائط.', 'Could not load the media.');
   String get galleryEmpty => _t('لا توجد وسائط', 'No media yet');
 
-  // About the forum (Page 037 · عن الملتقى) — KSA frame 1082:15307.
+  // About the forum (Page 037 · عن الملتقى) — KSA frame 1116:16448
+  // (restructured: header + الرسالة + الرؤية + تفاصيل الملتقى + المحاور).
   String get aboutTitle => _t('عن الملتقى', 'About the forum');
   String get aboutError =>
       _t('تعذّر تحميل المحتوى.', 'Could not load the content.');
   String get aboutEmpty =>
       _t('المحتوى قيد الإعداد', 'Content coming soon');
+  // Header (frame 1116:16448) — the anchor mark + the forum name.
+  String get aboutForumName =>
+      _t('الملتقى الدولي البحري', 'The International Maritime Forum');
+  // Section titles.
+  String get aboutMissionTitle => _t('الرسالة', 'Mission');
+  String get aboutVisionTitle => _t('الرؤية', 'Vision');
+  String get aboutDetailsTitle => _t('تفاصيل الملتقى', 'Forum details');
+  // تفاصيل الملتقى rows. Values mirror the Figma mock (1116:16448); the exact
+  // event date is an open item — confirm with the client before publish.
+  String get aboutDetailYearLabel => _t('السنة', 'Year');
+  String get aboutDetailYearValue => '2026';
+  String get aboutDetailDateLabel => _t('الزمن', 'Date');
+  String get aboutDetailDateValue => '01-2026 — 04-2026';
+  String get aboutDetailLocationLabel => _t('المكان', 'Location');
+  String get aboutDetailLocationValue => _t('السعودية', 'Saudi Arabia');
   String get aboutHeroHeading => _t(
         'منصة سعودية عالمية لدعم الحوار في قضايا الأمن البحري',
         'A Saudi global platform advancing dialogue on maritime-security issues',
@@ -1007,13 +1027,48 @@ class AppL10n {
   String get aboutTheme4Body =>
       _t('التحديات والحلول', 'Challenges and solutions');
 
-  // Rate / feedback (Page 040).
-  String get rateTitle => _t('تقييم', 'Rate');
+  // Rate / feedback (Page 040; Figma 1116:16894).
+  String get rateTitle => _t('تقييم الملتقى', 'Rate the forum');
+  String get rateKicker => _t('شارك تجربتك', 'Share your experience');
   String get rateLead =>
       _t('كيف كانت تجربتك في الملتقى؟', 'How was your forum experience?');
   String get rateStarsRequired =>
       _t('يرجى اختيار عدد النجوم', 'Please pick a star rating');
-  String get rateCommentLabel => _t('ملاحظاتك (اختياري)', 'Your comments (optional)');
+
+  /// The one-word descriptor for an overall score (Figma "جيد جداً").
+  String rateScoreWord(int stars) => switch (stars) {
+        1 => _t('ضعيف جداً', 'Very poor'),
+        2 => _t('ضعيف', 'Poor'),
+        3 => _t('متوسط', 'Average'),
+        4 => _t('جيد جداً', 'Very good'),
+        _ => _t('ممتاز', 'Excellent'),
+      };
+
+  /// The "{n} من 5 · {word}" summary line under the overall stars. The leading
+  /// count is wrapped in a Unicode LTR isolate (FSI/PDI) so the Western digit
+  /// doesn't bidi-reorder against the Arabic text.
+  String rateScoreSummary(int stars) {
+    // FSI (U+2066) … PDI (U+2069) isolate the Western digit so it doesn't
+    // bidi-reorder against the Arabic text (built via char codes to keep the
+    // source free of invisible direction marks).
+    final count =
+        '${String.fromCharCode(0x2066)}$stars${String.fromCharCode(0x2069)}';
+    return _t(
+      '$count من 5 · ${rateScoreWord(stars)}',
+      '$stars of 5 · ${rateScoreWord(stars)}',
+    );
+  }
+
+  // "قيّم العناصر" — the per-element scores (Figma 1116:17143).
+  String get rateElementsTitle => _t('قيّم العناصر', 'Rate the elements');
+  String get rateCatOrganization => _t('التنظيم', 'Organization');
+  String get rateCatContent => _t('المحتوى', 'Content');
+  String get rateCatApp => _t('التطبيق', 'App');
+  String get rateCatVenue => _t('المكان والمرافق', 'Venue & facilities');
+
+  String get rateCommentLabel => _t('ملاحظاتك', 'Your notes');
+  String get rateCommentHint =>
+      _t('اكتب ملاحظاتك هنا...', 'Write your notes here...');
   String get rateSubmit => _t('إرسال التقييم', 'Submit rating');
   String get rateThanks => _t('شكراً لتقييمك', 'Thanks for your rating');
   String get rateFailed =>
@@ -1068,16 +1123,21 @@ class AppL10n {
   String get meetPeopleFilterSupply => _t('سلاسل الإمداد', 'Supply chains');
   String get meetPeopleFilterSeabed => _t('أمن قاع البحار', 'Seabed security');
 
-  // Accessibility (Page 038 — client-local settings, no API).
+  // Accessibility (Page 038; Figma 1116:16630 — client-local settings, no API).
   String get accessibilityTitle => _t('إمكانية الوصول', 'Accessibility');
   String get accessibilityIntro => _t(
         'اضبط تجربة العرض بما يناسبك. هذه الإعدادات محلية على جهازك.',
         'Adjust the display to suit you. These settings are local to your device.',
       );
-  String get accessibilityTextSizeLabel => _t('حجم النص', 'Text size');
+  // Section headers (Figma العرض / الصوت والقراءة).
+  String get accessibilitySectionDisplay => _t('العرض', 'Display');
+  String get accessibilitySectionSound =>
+      _t('الصوت والقراءة', 'Sound & reading');
+  String get accessibilityTextSizeLabel => _t('حجم الخط', 'Font size');
   String get accessibilityTextSizeSmall => _t('صغير', 'Small');
-  String get accessibilityTextSizeDefault => _t('افتراضي', 'Default');
+  String get accessibilityTextSizeDefault => _t('متوسط', 'Medium');
   String get accessibilityTextSizeLarge => _t('كبير', 'Large');
+  String get accessibilityTextSizeExtraLarge => _t('أكبر', 'Extra large');
   String get accessibilityHighContrastTitle =>
       _t('تباين عالٍ', 'High contrast');
   String get accessibilityHighContrastSubtitle => _t(
@@ -1090,8 +1150,23 @@ class AppL10n {
         'يقلل الرسوم المتحركة والانتقالات في التطبيق.',
         'Reduces animations and transitions across the app.',
       );
+  String get accessibilityScreenReaderTitle =>
+      _t('قارئ الشاشة', 'Screen reader');
+  String get accessibilityScreenReaderSubtitle => _t(
+        'يُعلن اسم كل شاشة عند الانتقال إليها لمساعدة قارئ الشاشة.',
+        'Announces each screen as you navigate, to assist your screen reader.',
+      );
+  String get accessibilityCaptionsTitle =>
+      _t('الترجمة النصية (للجلسات)', 'Captions (for sessions)');
+  String get accessibilityCaptionsSubtitle => _t(
+        'يعرض شريط الترجمة النصية أثناء البث المباشر للجلسات.',
+        'Shows the live caption strip during session broadcasts.',
+      );
+  /// Announced by the screen-reader assist when a screen opens.
+  String accessibilityScreenAnnouncement(String screen) =>
+      _t('فتح $screen', 'Opened $screen');
 
-  // More hub (Page 041) — navigation tiles + static version line.
+  // More hub (Page 041; Figma 1129:17224) — grouped sections + version line.
   String get moreTitle => _t('المزيد', 'More');
   String get moreAbout => _t('عن الملتقى', 'About the forum');
   String get moreAccessibility => _t('إمكانية الوصول', 'Accessibility');
@@ -1099,7 +1174,22 @@ class AppL10n {
   String get moreRate => _t('تقييم', 'Rate');
   String get moreNotifications => _t('الإشعارات', 'Notifications');
   String get moreMediaPartners => _t('الشركاء الإعلاميون', 'Media partners');
-  String get moreVersion => _t('الملتقى البحري v0.1.0', 'SIMF v0.1.0');
+
+  // Section headers (Figma 1129:17224).
+  String get moreSectionForumInfo => _t('معلومات الملتقى', 'Forum information');
+  String get moreSectionSettings => _t('الإعدادات', 'Settings');
+  String get moreSectionLegal => _t('قانوني', 'Legal');
+  // Items new to the redesigned hub.
+  String get moreForumGuide => _t('دليل الملتقى', 'Forum guide');
+  String get morePresentations => _t('عروض الجلسات', 'Session presentations');
+  String get moreVisitSaudi => _t('استكشف الرياض · VisitSaudi', 'Explore Riyadh · VisitSaudi');
+  String get moreLanguage => _t('اللغة', 'Language');
+  String get moreRateApp => _t('تقييم التطبيق', 'Rate the app');
+  String get moreMyAreaCardTitle => _t('منطقتي', 'My area');
+  /// The display name of the currently active language (shown on the اللغة row).
+  String get languageCurrentName => _t('العربية', 'English');
+
+  String get moreVersion => _t('SIMF 2026 · v1.0.0', 'SIMF 2026 · v1.0.0');
 
   // Guest mode (Page 012 — informational entry).
   String get guestModeTitle => _t('وضع الضيف', 'Guest mode');

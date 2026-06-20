@@ -831,6 +831,8 @@
   <data name="Admin.WalkIn.Field.DisplayName.Hint" xml:space="preserve"><value>Shown on the printed badge — usually first name + family name.</value></data>
   <data name="Admin.WalkIn.Field.DateOfBirth" xml:space="preserve"><value>Date of birth</value></data>
   <data name="Admin.WalkIn.Field.PlaceOfBirth" xml:space="preserve"><value>Place of birth</value></data>
+  <data name="Admin.WalkIn.Field.PlaceOfBirth.Select" xml:space="preserve"><value>Select region</value></data>
+  <data name="Admin.WalkIn.Field.PlaceOfBirth.PassportHint" xml:space="preserve"><value>As in the passport.</value></data>
   <data name="Admin.WalkIn.Field.Gender" xml:space="preserve"><value>Gender</value></data>
   <data name="Admin.WalkIn.Field.Gender.Unspecified" xml:space="preserve"><value>Not specified</value></data>
   <data name="Admin.WalkIn.Field.Gender.Male" xml:space="preserve"><value>Male</value></data>
@@ -839,6 +841,20 @@
   <data name="Admin.WalkIn.Field.PlateNumber.Hint" xml:space="preserve"><value>Pick the 3 plate letters, then enter 1–4 digits.</value></data>
   <data name="Admin.WalkIn.Field.Plate.Letter" xml:space="preserve"><value>Letter</value></data>
   <data name="Admin.WalkIn.Field.Plate.Digits" xml:space="preserve"><value>Digits</value></data>
+  <data name="Module.SiteSettings" xml:space="preserve"><value>Site Settings</value></data>
+  <data name="Admin.SiteSettings.Title" xml:space="preserve"><value>Site Settings</value></data>
+  <data name="Admin.SiteSettings.Loading" xml:space="preserve"><value>Loading…</value></data>
+  <data name="Admin.SiteSettings.Section.Registration" xml:space="preserve"><value>Registration message</value></data>
+  <data name="Admin.SiteSettings.Section.Registration.Hint" xml:space="preserve"><value>Shown to a visitor when registration completes.</value></data>
+  <data name="Admin.SiteSettings.Field.RegMessageAr" xml:space="preserve"><value>Welcome message (Arabic)</value></data>
+  <data name="Admin.SiteSettings.Field.RegMessageEn" xml:space="preserve"><value>Welcome message (English)</value></data>
+  <data name="Admin.SiteSettings.Section.Social" xml:space="preserve"><value>Social links</value></data>
+  <data name="Admin.SiteSettings.Section.Social.Hint" xml:space="preserve"><value>Public social-media URLs shown on the app and website. Leave a field blank to hide that link.</value></data>
+  <data name="Admin.SiteSettings.Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Admin.SiteSettings.Saving" xml:space="preserve"><value>Saving…</value></data>
+  <data name="Admin.SiteSettings.Saved" xml:space="preserve"><value>Site settings saved.</value></data>
+  <data name="Admin.SiteSettings.SaveFailed" xml:space="preserve"><value>Couldn't save the site settings. Try again.</value></data>
+  <data name="Admin.SiteSettings.LoadFailed" xml:space="preserve"><value>Couldn't load the site settings.</value></data>
   <data name="Admin.WalkIn.Field.IsSaudi" xml:space="preserve"><value>Saudi national?</value></data>
   <data name="Admin.WalkIn.IsSaudi.Yes" xml:space="preserve"><value>Saudi</value></data>
   <data name="Admin.WalkIn.IsSaudi.No" xml:space="preserve"><value>Non-Saudi</value></data>
@@ -2180,6 +2196,10 @@
   <data name="Admin.Ratings.Col.Comment" xml:space="preserve"><value>Comment</value></data>
   <data name="Admin.Ratings.Col.Active" xml:space="preserve"><value>Active</value></data>
   <data name="Admin.Ratings.Col.CreatedAt" xml:space="preserve"><value>Submitted at</value></data>
+  <data name="Admin.Ratings.Col.Organization" xml:space="preserve"><value>Organization</value></data>
+  <data name="Admin.Ratings.Col.Content" xml:space="preserve"><value>Content</value></data>
+  <data name="Admin.Ratings.Col.App" xml:space="preserve"><value>App</value></data>
+  <data name="Admin.Ratings.Col.Venue" xml:space="preserve"><value>Venue</value></data>
 
   <!-- D-199 — Audience-comments moderation. -->
   <data name="Admin.Comments.Title" xml:space="preserve"><value>Audience comments</value></data>

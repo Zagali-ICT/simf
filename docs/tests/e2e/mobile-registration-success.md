@@ -20,6 +20,12 @@
 > home buttons, visual-only contact tiles + `@SIMF_RSNF` footer. The old
 > screen is parked in `lib/features/_legacy_mockup/`. Live browser check N/A
 > (auth-gated); widget tests cover render + both routes.
+>
+> **D-461/D-462:** the message is now the **CP-editable** registration welcome
+> message from `GET /app/site-settings` ("تهانينا، مرحباً بكم في الملتقى السعودي
+> الرابع"), falling back to the bundled `l10n.registrationSuccessMessage` while
+> the settings load or when offline — so the offline-safe contract holds and the
+> only network call is best-effort.
 
 ## Coverage matrix
 
@@ -29,9 +35,10 @@
 | E2E-MOB010-002 | Primary "Registration status" → Page_011 | happy | P0 | authored ✓ (widget test) |
 | E2E-MOB010-003 | Ghost "Go to home" → home | happy | P0 | authored ✓ (widget test) |
 | E2E-MOB010-004 | Reached as a replacement — Back does not reopen the sign-up form | edge | P1 | authored (no app-bar back; `goNamed` replacement) |
-| E2E-MOB010-005 | Offline-safe — renders with no network (no API call) | resilience | P1 | authored (no repository dependency) |
+| E2E-MOB010-005 | Offline-safe — renders with no network; the welcome message falls back to the bundled copy (the site-settings call is best-effort) | resilience | P1 | authored (graceful fallback) |
 | E2E-MOB010-006 | Auth gate — a signed-out open redirects to sign-in | auth | P1 | authored (route 10 in the auth gate) |
 | E2E-MOB010-007 | RTL render (Arabic) mirrors | i18n | P1 | authored (screen) |
+| E2E-MOB010-008 | The welcome message is the CP-configured value (D-461/D-462); falls back to the bundled copy while loading / offline | validation | P1 | authored ✓ (widget test overrides `siteSettingsProvider`) |
 
 ## Scenarios
 
@@ -109,4 +116,5 @@ Scenario: The confirmation mirrors under Arabic
 
 ---
 
-_Last reviewed:_ `2026-06-11` by `SIMF Team`.
+_Last reviewed:_ `2026-06-19` by `SIMF Team` — D-461/D-462: the welcome message
+is now the CP-editable site-setting (offline-safe fallback) (008/005).

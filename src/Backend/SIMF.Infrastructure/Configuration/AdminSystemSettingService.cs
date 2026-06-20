@@ -177,6 +177,107 @@ internal sealed class AdminSystemSettingService(
         }, cancellationToken);
     }
 
+    public async Task SaveSiteSettingsAsync(
+        Guid actorUserId, AdminUpdateSiteSettingsRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        // D-464 — upsert the whitelisted site-settings keys (registration welcome
+        // message + social links). A blank value is stored as empty (the public
+        // read treats blank as null), so clearing a field is supported.
+        // null = leave the key unchanged; a provided value (including an empty
+        // string) is applied — an empty string clears the setting. The CP page
+        // sends every field (a full overwrite); the API also supports partial
+        // updates (used by tests + future callers).
+        var provided = new Dictionary<string, string?>
+        {
+            [SiteSettingKeys.RegistrationSuccessMessageAr] = request.RegistrationMessageAr,
+            [SiteSettingKeys.RegistrationSuccessMessageEn] = request.RegistrationMessageEn,
+            [SiteSettingKeys.SocialFacebook] = request.Facebook,
+            [SiteSettingKeys.SocialX] = request.X,
+            [SiteSettingKeys.SocialInstagram] = request.Instagram,
+            [SiteSettingKeys.SocialLinkedIn] = request.LinkedIn,
+            [SiteSettingKeys.SocialYouTube] = request.YouTube,
+            [SiteSettingKeys.SocialTikTok] = request.TikTok,
+            [SiteSettingKeys.SocialSnapchat] = request.Snapchat,
+        };
+        var desired = provided
+            .Where(kv => kv.Value is not null)
+            .ToDictionary(kv => kv.Key, kv => CleanSettingValue(kv.Key, kv.Value));
+        if (desired.Count == 0) { return; }
+        var keys = desired.Keys.ToArray();
+        var existing = await db.SystemSettings
+            .Where(s => s.IsActive && keys.Contains(s.Key))
+            .ToListAsync(cancellationToken);
+        var now = timeProvider.GetUtcNow();
+        foreach (var (key, value) in desired)
+        {
+            var row = existing.FirstOrDefault(s => s.Key == key);
+            if (row is null)
+            {
+                db.SystemSettings.Add(new SystemSetting
+                {
+                    Id = Guid.NewGuid(),
+                    Key = key,
+                    Value = value,
+                    IsActive = true,
+                    CreatedAt = now,
+                });
+            }
+            else
+            {
+                row.Value = value;
+                row.UpdatedAt = now;
+            }
+        }
+        await db.SaveChangesAsync(cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.SystemSettingUpdated,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = "site-settings saved (registration message + social links)",
+        }, cancellationToken);
+
+        logger.LogInformation(
+            "Admin {ActorId} saved site settings ({Count} keys)", actorUserId, desired.Count);
+    }
+
+    private static string Clean(string? value)
+    {
+        var v = (value ?? string.Empty).Trim();
+        return v.Length > 2048 ? v[..2048] : v;
+    }
+
+    // D-467 (security review) — the social-link keys must be absolute http(s)
+    // URLs (they are rendered as link targets on the app + website). Messages
+    // stay plain text. A blank value (cleared link) is allowed.
+    private static readonly HashSet<string> SocialKeys = new(StringComparer.Ordinal)
+    {
+        SiteSettingKeys.SocialFacebook, SiteSettingKeys.SocialX,
+        SiteSettingKeys.SocialInstagram, SiteSettingKeys.SocialLinkedIn,
+        SiteSettingKeys.SocialYouTube, SiteSettingKeys.SocialTikTok,
+        SiteSettingKeys.SocialSnapchat,
+    };
+
+    private static string CleanSettingValue(string key, string? value)
+    {
+        var v = Clean(value);
+        if (v.Length == 0 || !SocialKeys.Contains(key))
+        {
+            return v;
+        }
+        if (!Uri.TryCreate(v, UriKind.Absolute, out var uri)
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            throw new ApiException(
+                ErrorCodes.SystemSettingInvalid, 400,
+                "A social link must be an absolute http(s) URL.",
+                "يجب أن يكون رابط التواصل رابط http(s) مطلقاً.");
+        }
+        return v;
+    }
+
     private static string ValidateKey(string raw)
     {
         var key = (raw ?? string.Empty).Trim();

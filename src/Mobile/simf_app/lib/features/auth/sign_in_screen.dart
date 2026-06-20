@@ -356,6 +356,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   }
 
   Widget _buildCard(AppL10n l10n) {
+    // Only show the Face-ID sign-in button on a device with a usable biometric
+    // (hardware + an OS-enrolled face/finger); hidden entirely on sensorless
+    // devices (loading / unsupported → hidden) rather than shown then erroring.
+    final biometricAvailable = ref.watch(biometricAvailableProvider).maybeWhen(
+          data: (available) => available,
+          orElse: () => false,
+        );
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: const BoxDecoration(
@@ -543,32 +550,36 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             ],
           ),
           const SizedBox(height: 24),
-          OutlinedButton(
-            onPressed: _busy ? null : () => unawaited(_biometricSignIn()),
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: _fieldBorder),
-              minimumSize: const Size.fromHeight(48),
-              shape: const RoundedRectangleBorder(borderRadius: _radius4),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Flexible(
-                  child: Text(
-                    l10n.faceIdSignInButton,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: _goldText,
+          // Face-ID sign-in — rendered only on devices with a usable biometric
+          // (see biometricAvailable above); hidden entirely on sensorless ones.
+          if (biometricAvailable) ...<Widget>[
+            OutlinedButton(
+              onPressed: _busy ? null : () => unawaited(_biometricSignIn()),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: _fieldBorder),
+                minimumSize: const Size.fromHeight(48),
+                shape: const RoundedRectangleBorder(borderRadius: _radius4),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Flexible(
+                    child: Text(
+                      l10n.faceIdSignInButton,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: _goldText,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                const SimfSvgIcon(_icFaceId, size: 20, color: _goldText),
-              ],
+                  const SizedBox(width: 10),
+                  const SimfSvgIcon(_icFaceId, size: 20, color: _goldText),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
+            const SizedBox(height: 12),
+          ],
           // Part B (D-430) — scan the printed-badge QR to sign in / activate.
           OutlinedButton(
             onPressed: _busy

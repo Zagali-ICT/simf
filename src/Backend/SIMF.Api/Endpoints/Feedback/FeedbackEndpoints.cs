@@ -21,6 +21,21 @@ public sealed class RateRequestValidator : Validator<RateRequest>
             .InclusiveBetween(1, 5)
             .WithMessage("Stars must be between 1 and 5.");
 
+        // Per-element scores (Figma "قيّم العناصر") — each optional, but when
+        // present must be a valid 1–5, exactly like the overall stars.
+        RuleFor(x => x.OrganizationStars!.Value)
+            .InclusiveBetween(1, 5).When(x => x.OrganizationStars is not null)
+            .WithMessage("Organization stars must be between 1 and 5.");
+        RuleFor(x => x.ContentStars!.Value)
+            .InclusiveBetween(1, 5).When(x => x.ContentStars is not null)
+            .WithMessage("Content stars must be between 1 and 5.");
+        RuleFor(x => x.AppStars!.Value)
+            .InclusiveBetween(1, 5).When(x => x.AppStars is not null)
+            .WithMessage("App stars must be between 1 and 5.");
+        RuleFor(x => x.VenueStars!.Value)
+            .InclusiveBetween(1, 5).When(x => x.VenueStars is not null)
+            .WithMessage("Venue stars must be between 1 and 5.");
+
         // MaximumLength MUST stay aligned with EF HasMaxLength(2000) on Rating.Comment.
         RuleFor(x => x.Comment)
             .MaximumLength(2000)

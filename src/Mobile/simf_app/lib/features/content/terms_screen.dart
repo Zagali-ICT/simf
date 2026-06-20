@@ -195,31 +195,30 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  const SizedBox(height: 16),
-                  Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: Text(
-                      l10n.termsImportantInfoTitle,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
+            // Full-width content (owner 2026-06-20): the cards stretch to the
+            // page width instead of the old 400-wide centred column.
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                const SizedBox(height: 16),
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(
+                    l10n.termsImportantInfoTitle,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
+                ),
+                const SizedBox(height: 16),
+                for (final item in items) ...<Widget>[
+                  _BulletCard(text: item),
                   const SizedBox(height: 16),
-                  for (final item in items) ...<Widget>[
-                    _BulletCard(text: item),
-                    const SizedBox(height: 16),
-                  ],
-                  const SizedBox(height: 8),
                 ],
-              ),
+                const SizedBox(height: 8),
+              ],
             ),
           ),
         ),

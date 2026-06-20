@@ -16,6 +16,7 @@ using SIMF.ApiClient;
 using SIMF.Common;
 using SIMF.Contracts.Archive;
 using SIMF.Contracts.Cms;
+using SIMF.Contracts.Configuration;
 using SIMF.Contracts.Media;
 using SIMF.Contracts.Programme;
 using SIMF.Contracts.PublicRelations;
@@ -136,15 +137,16 @@ internal static class SiteContentEndpoints
         var archiveTask = api.GetArchiveAsync(ct);
         var mediaTask = api.GetMediaAsync(null, 0, 24, ct);
         var cmsTask = api.GetContentBatchAsync(LandingCmsKeys, ct);
+        var siteSettingsTask = api.GetSiteSettingsAsync(ct);
 
         await Task.WhenAll(
             sessionsTask, speakersTask, newsTask, mediaPartnersTask,
-            sponsorsTask, archiveTask, mediaTask, cmsTask);
+            sponsorsTask, archiveTask, mediaTask, cmsTask, siteSettingsTask);
 
         return Compose(
             sessionsTask.Result, speakersTask.Result, sponsorsTask.Result,
             mediaPartnersTask.Result, newsTask.Result, archiveTask.Result,
-            mediaTask.Result, cmsTask.Result);
+            mediaTask.Result, cmsTask.Result, siteSettingsTask.Result);
     }
 
     // The pure reshape from the API contracts to the landing's content model —
@@ -152,7 +154,8 @@ internal static class SiteContentEndpoints
     internal static Dictionary<string, object?> Compose(
         PublicSessions? sessions, PublicSpeakers? speakers, PublicSponsors? sponsors,
         PublicMediaPartners? mediaPartners, PublicNewsPage? news, PublicArchive? archive,
-        PublicMediaPage? media, PublicContentBlockBatch? cms)
+        PublicMediaPage? media, PublicContentBlockBatch? cms,
+        SiteSettingsResponse? siteSettings = null)
     {
         var result = new Dictionary<string, object?>();
 
@@ -162,6 +165,13 @@ internal static class SiteContentEndpoints
         AddIfAny(result, "news", MapNews(news));
         AddIfAny(result, "archive", MapArchive(archive));
         AddIfAny(result, "spirit", MapSpirit(media));
+
+        // D-466 — CP-editable footer social links (only configured URLs).
+        var social = MapSocial(siteSettings);
+        if (social.Count > 0)
+        {
+            result["social"] = social;
+        }
 
         var hero = MapHero(cms);
         if (hero is not null)
@@ -313,6 +323,29 @@ internal static class SiteContentEndpoints
             rows.Add(item);
         }
         return rows;
+    }
+
+    // D-466 — the CP-editable footer social links. Only non-empty URLs are
+    // emitted; the landing's footer renderer hides any platform that is absent.
+    private static Dictionary<string, object?> MapSocial(SiteSettingsResponse? settings)
+    {
+        var social = new Dictionary<string, object?>();
+        if (settings is null)
+        {
+            return social;
+        }
+        void Put(string key, string? url)
+        {
+            if (!string.IsNullOrWhiteSpace(url)) { social[key] = url.Trim(); }
+        }
+        Put("facebook", settings.Social.Facebook);
+        Put("x", settings.Social.X);
+        Put("instagram", settings.Social.Instagram);
+        Put("linkedin", settings.Social.LinkedIn);
+        Put("youtube", settings.Social.YouTube);
+        Put("tiktok", settings.Social.TikTok);
+        Put("snapchat", settings.Social.Snapchat);
+        return social;
     }
 
     private static List<object> MapSpirit(PublicMediaPage? media)

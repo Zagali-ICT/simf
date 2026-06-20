@@ -1,22 +1,24 @@
 # E2E test catalogue — `About the forum` (`about`)
 
 > **Authority:** SIMF E2E template (D-133). The content read is built + anonymous
-> (D-173). Pixel-parity to KSA Figma frame `1082:15307` (D-448): the navy
-> `KsaPage` shell, an **intro card** (`SIMF · 2026` kicker + gold heading + the
-> forum paragraph, frame `1082:15566`) and the **"المحاور الرئيسية"** list of the
-> **four fixed forum themes** (frames `1082:15578`…`15620`). The paragraph is
-> hydrated from the CMS content layer (`GET /app/content/about`) when present and
-> **falls back to static bilingual copy** otherwise; the heading + the four themes
-> are static (no structured CMS block exists for them — the page always shows the
-> forum content). Widget-tested in
-> `src/Mobile/simf_app/test/features/about/about_screen_test.dart`.
+> (D-173). **Re-skinned to the restructured KSA Figma frame `1116:16448` (D-465):**
+> the navy `KsaPage` shell, an anchor-mark header (`الملتقى الدولي البحري`), the
+> **الرسالة** (mission) card, the **الرؤية** (vision) card, the **تفاصيل الملتقى**
+> details card (السنة / الزمن / المكان) and the **"المحاور الرئيسية"** list of the
+> **four fixed forum themes**. The vision paragraph is hydrated from the CMS
+> content layer (`GET /app/content/about`) when present and **falls back to static
+> bilingual copy** otherwise; the mission line, the details and the four themes are
+> static (no structured CMS block — the page always shows the forum content). The
+> تفاصيل date value mirrors the mock (the real event date is an OI). Widget-tested
+> in `src/Mobile/simf_app/test/features/about/about_screen_test.dart`.
 
 | | |
 |--|--|
 | **Page** | [`Page_037`](../../App/Page_037/README.md) |
 | **Route** | `GET /api/v1/app/content/about` · app screen #37 `/about` |
+| **Figma** | `1116:16448` |
 | **Auth setup** | **None** — `AllowAnonymous`. |
-| **Last reviewed** | 2026-06-19 (D-448 — Figma `1082:15307` parity) |
+| **Last reviewed** | 2026-06-20 (D-465 — Figma `1116:16448` restructure) |
 
 ## Coverage matrix
 
@@ -37,10 +39,11 @@ Feature: About the forum
   I want the forum intro and its main themes
   So that I understand what SIMF is about
 
-Scenario: The intro card and the four themes render
+Scenario: The mission/vision cards and the four themes render
   Given the CMS "about" block returns a body
   When the /about screen renders
-  Then the intro card shows "SIMF · 2026", the gold heading and the CMS paragraph
+  Then the الرسالة card shows the mission line and the الرؤية card shows the CMS paragraph
+  And the تفاصيل الملتقى card shows the year / date / location rows
   And the "Main themes" section lists the four numbered themes 01–04 with their titles
 ```
 

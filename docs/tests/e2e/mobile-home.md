@@ -320,4 +320,7 @@ Scenario: Signed-in discover row uses the Arabic filled badge
 
 ---
 
-_Last reviewed:_ `2026-06-19` by `SIMF Team`.
+_Last reviewed:_ `2026-06-19` by `SIMF Team` — D-462: the "تابعنا" social row URLs
+now come from the CP-editable site-settings (`GET /app/site-settings`), falling
+back to the build-time config then inert (D-369); the five brand buttons render
+unchanged (covered by the existing social-row widget test).

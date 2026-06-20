@@ -17,6 +17,7 @@ import 'data/profile_models.dart';
 import 'data/profile_repository.dart';
 import 'phone_validation.dart';
 import 'plate_validation.dart';
+import 'saudi_regions.dart';
 
 const Color _sweepTint = Color(0x0AFFFFFF);
 const BorderRadius _radius4 =
@@ -58,6 +59,9 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   final TextEditingController _englishName = TextEditingController();
   final TextEditingController _jobTitle = TextEditingController();
   final TextEditingController _placeOfBirth = TextEditingController();
+  // D-469 — the selected Saudi region code (birth-location dropdown); null for a
+  // non-Saudi (free-text place of birth) or an unmatched stored value.
+  String? _birthRegionCode;
   final TextEditingController _nationalId = TextEditingController();
   final TextEditingController _documentNumber = TextEditingController();
   final TextEditingController _saudiMobile = TextEditingController();
@@ -190,6 +194,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     _englishName.text = profile.englishName;
     _jobTitle.text = profile.jobTitle ?? '';
     _placeOfBirth.text = profile.placeOfBirth;
+    _birthRegionCode = regionByName(profile.placeOfBirth)?.code;
     _nationalId.text = profile.nationalId ?? '';
     if ((profile.iqamaNumber ?? '').isNotEmpty) {
       _docType = _DocType.iqama;
@@ -855,14 +860,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     const SizedBox(height: 16),
                     _buildDateOfBirthField(l10n),
                     const SizedBox(height: 16),
-                    _FieldLabel(l10n.placeOfBirthLabel),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _placeOfBirth,
-                      maxLength: 128,
-                      style: _inputStyle,
-                      decoration: _fieldDecoration(counterText: ''),
-                    ),
+                    _buildPlaceOfBirthField(l10n),
                     const SizedBox(height: 16),
                     // D-373 — the plate is the last input before the attach.
                     _buildPlateField(l10n),
@@ -1136,6 +1134,15 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       if (wasSaudi != _isSaudi) {
         _nationalId.clear();
         _documentNumber.clear();
+        // D-469 — the birth-location control flips with nationality: becoming
+        // Saudi keeps the value only if it matches a region (else the dropdown
+        // starts empty); leaving Saudi keeps it as free text.
+        if (_isSaudi) {
+          _birthRegionCode = regionByName(_placeOfBirth.text)?.code;
+          if (_birthRegionCode == null) {
+            _placeOfBirth.clear();
+          }
+        }
       }
     });
   }
@@ -1181,6 +1188,60 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     ];
   }
 
+  /// D-469 — birth location: a Saudi registrant picks one of the 13 official
+  /// regions from a dropdown; everyone else types it free-form "as in passport".
+  /// The selection's localized name is kept in [_placeOfBirth] (the submitted
+  /// value), so storage stays the existing free-text field.
+  Widget _buildPlaceOfBirthField(AppL10n l10n) {
+    final bool isArabic = l10n.isArabic;
+    // Keep the stored name in the active locale when a region is selected, so a
+    // language toggle re-syncs the submitted value (the dropdown is code-keyed).
+    if (_isSaudi && _birthRegionCode != null) {
+      final String name =
+          regionByCode(_birthRegionCode)?.name(isArabic: isArabic) ?? '';
+      if (_placeOfBirth.text != name) {
+        _placeOfBirth.text = name;
+      }
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        _FieldLabel(l10n.placeOfBirthLabel),
+        const SizedBox(height: 8),
+        if (_isSaudi)
+          DropdownButtonFormField<String>(
+            initialValue: _birthRegionCode,
+            isExpanded: true,
+            style: _inputStyle,
+            hint: Text(l10n.placeOfBirthRegionHint, style: _inputStyle),
+            decoration: _fieldDecoration(),
+            items: <DropdownMenuItem<String>>[
+              for (final SaudiRegion r in saudiRegions)
+                DropdownMenuItem<String>(
+                  value: r.code,
+                  child: Text(r.name(isArabic: isArabic)),
+                ),
+            ],
+            onChanged: (String? code) => setState(() {
+              _birthRegionCode = code;
+              _placeOfBirth.text =
+                  regionByCode(code)?.name(isArabic: isArabic) ?? '';
+            }),
+          )
+        else
+          TextFormField(
+            controller: _placeOfBirth,
+            maxLength: 128,
+            style: _inputStyle,
+            decoration: _fieldDecoration(
+              counterText: '',
+              hintText: l10n.placeOfBirthPassportHint,
+            ),
+          ),
+      ],
+    );
+  }
+
   /// C6 (D-371/D-459) — رقم اللوحة: optional. Rendered as three letter
   /// dropdowns (the official 17 Saudi plate letters, shown "Arabic · Latin")
   /// plus a 1–4 digit field; the picks are assembled into [_plate] and
@@ -1200,6 +1261,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                 l10n,
                 _plateLetter1,
                 (String? v) => _plateLetter1 = v,
+                position: 1,
               ),
             ),
             const SizedBox(width: 8),
@@ -1208,6 +1270,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                 l10n,
                 _plateLetter2,
                 (String? v) => _plateLetter2 = v,
+                position: 2,
               ),
             ),
             const SizedBox(width: 8),
@@ -1216,26 +1279,32 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                 l10n,
                 _plateLetter3,
                 (String? v) => _plateLetter3 = v,
+                position: 3,
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               flex: 2,
-              child: TextFormField(
-                controller: _plateDigits,
-                textDirection: TextDirection.ltr,
-                maxLength: 4,
-                keyboardType: TextInputType.number,
-                inputFormatters: <TextInputFormatter>[
-                  FilteringTextInputFormatter.digitsOnly,
-                ],
-                style: _inputStyle,
-                autovalidateMode: AutovalidateMode.onUserInteraction,
-                onChanged: (_) => setState(_syncPlate),
-                validator: (_) => _validatePlate(_plate.text),
-                decoration: _fieldDecoration(
-                  counterText: '',
-                  hintText: l10n.plateDigitsHint,
+              // a11y: name the digit field (its hint vanishes on input).
+              child: Semantics(
+                label: l10n.plateDigitsLabel,
+                textField: true,
+                child: TextFormField(
+                  controller: _plateDigits,
+                  textDirection: TextDirection.ltr,
+                  maxLength: 4,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: <TextInputFormatter>[
+                    FilteringTextInputFormatter.digitsOnly,
+                  ],
+                  style: _inputStyle,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  onChanged: (_) => setState(_syncPlate),
+                  validator: (_) => _validatePlate(_plate.text),
+                  decoration: _fieldDecoration(
+                    counterText: '',
+                    hintText: l10n.plateDigitsHint,
+                  ),
                 ),
               ),
             ),
@@ -1246,29 +1315,35 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   }
 
   /// One of the three plate-letter dropdowns: the 17 letters, each shown as
-  /// "Arabic · Latin", stored by its Latin [SaudiPlateLetter.code].
+  /// "Arabic · Latin", stored by its Latin [SaudiPlateLetter.code]. [position]
+  /// (1–3) gives each dropdown a distinct accessible name ("Letter 1/2/3") so a
+  /// screen reader can tell them apart (a11y).
   Widget _plateLetterDropdown(
     AppL10n l10n,
     String? value,
-    ValueChanged<String?> onPicked,
-  ) {
-    return DropdownButtonFormField<String>(
-      initialValue: value,
-      isExpanded: true,
-      style: _inputStyle,
-      hint: Text(l10n.plateLetterHint, style: _inputStyle),
-      decoration: _fieldDecoration(),
-      items: <DropdownMenuItem<String>>[
-        for (final SaudiPlateLetter letter in saudiPlateLetters)
-          DropdownMenuItem<String>(
-            value: letter.code,
-            child: Text('${letter.arabic} · ${letter.english}'),
-          ),
-      ],
-      onChanged: (String? picked) => setState(() {
-        onPicked(picked);
-        _syncPlate();
-      }),
+    ValueChanged<String?> onPicked, {
+    required int position,
+  }) {
+    return Semantics(
+      label: '${l10n.plateLetterHint} $position',
+      child: DropdownButtonFormField<String>(
+        initialValue: value,
+        isExpanded: true,
+        style: _inputStyle,
+        hint: Text(l10n.plateLetterHint, style: _inputStyle),
+        decoration: _fieldDecoration(),
+        items: <DropdownMenuItem<String>>[
+          for (final SaudiPlateLetter letter in saudiPlateLetters)
+            DropdownMenuItem<String>(
+              value: letter.code,
+              child: Text('${letter.arabic} · ${letter.english}'),
+            ),
+        ],
+        onChanged: (String? picked) => setState(() {
+          onPicked(picked);
+          _syncPlate();
+        }),
+      ),
     );
   }
 
@@ -1281,33 +1356,44 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     _plate.text = (letters.isEmpty && digits.isEmpty) ? '' : '$letters$digits';
   }
 
-  /// Splits a stored canonical plate code (e.g. "ABJ1234") back into the three
-  /// letter dropdowns + the digits field, then refreshes [_plate].
+  /// Splits a stored plate code into the three letter dropdowns + the digits
+  /// field, then refreshes [_plate]. The stored value is first normalised to the
+  /// canonical Latin code (so an Arabic-script or pre-D-459 plate still parses);
+  /// a value the 17-letter dropdowns can't represent is kept verbatim in [_plate]
+  /// so an unrelated profile edit never silently erases it (D-468 review).
   void _setPlateFromCode(String? code) {
     _plateLetter1 = null;
     _plateLetter2 = null;
     _plateLetter3 = null;
     _plateDigits.text = '';
-    if (code != null && code.trim().isNotEmpty) {
-      final List<String> letters = <String>[];
-      final StringBuffer digits = StringBuffer();
-      for (final int rune in code.trim().runes) {
-        if (rune >= 0x30 && rune <= 0x39) {
-          digits.writeCharCode(rune);
-        } else {
-          letters.add(String.fromCharCode(rune).toUpperCase());
-        }
-      }
-      final Set<String> codes =
-          saudiPlateLetters.map((SaudiPlateLetter l) => l.code).toSet();
-      if (letters.length == 3 && letters.every(codes.contains)) {
-        _plateLetter1 = letters[0];
-        _plateLetter2 = letters[1];
-        _plateLetter3 = letters[2];
-        _plateDigits.text = digits.toString();
+    final raw = code?.trim() ?? '';
+    if (raw.isEmpty) {
+      _plate.text = '';
+      return;
+    }
+    final canonical = normalizePlate(raw) ?? raw;
+    final List<String> letters = <String>[];
+    final StringBuffer digits = StringBuffer();
+    for (final int rune in canonical.runes) {
+      if (rune >= 0x30 && rune <= 0x39) {
+        digits.writeCharCode(rune);
+      } else {
+        letters.add(String.fromCharCode(rune).toUpperCase());
       }
     }
-    _syncPlate();
+    final Set<String> codes =
+        saudiPlateLetters.map((SaudiPlateLetter l) => l.code).toSet();
+    if (letters.length == 3 && letters.every(codes.contains)) {
+      _plateLetter1 = letters[0];
+      _plateLetter2 = letters[1];
+      _plateLetter3 = letters[2];
+      _plateDigits.text = digits.toString();
+      _syncPlate();
+    } else {
+      // Legacy / non-conforming code the dropdowns can't represent — keep it so
+      // an unrelated edit doesn't wipe it (the server re-validates on save).
+      _plate.text = canonical;
+    }
   }
 
   Widget _buildMobileField(AppL10n l10n) {

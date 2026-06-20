@@ -26,6 +26,23 @@ internal sealed class SiteSettingsService(SimfAppDbContext db) : ISiteSettingsSe
                 ? v.Trim()
                 : null;
 
+        // D-467 (security review) — a social URL is rendered as a link target
+        // (the website footer sets `a.href`, the app launches it externally), so
+        // only an absolute http(s) URL is surfaced. Anything else (a
+        // `javascript:` / `data:` / arbitrary-scheme value that could have been
+        // stored via the generic /admin/configuration page, bypassing the
+        // dedicated page's validation) is dropped to null → an inert link.
+        // Sanitising on read protects every consumer regardless of write path.
+        string? SocialUrl(string key)
+        {
+            var v = Value(key);
+            return v is not null
+                && Uri.TryCreate(v, UriKind.Absolute, out var uri)
+                && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps)
+                ? v
+                : null;
+        }
+
         return new SiteSettingsResponse(
             RegistrationSuccessMessageAr:
                 Value(SiteSettingKeys.RegistrationSuccessMessageAr)
@@ -34,12 +51,12 @@ internal sealed class SiteSettingsService(SimfAppDbContext db) : ISiteSettingsSe
                 Value(SiteSettingKeys.RegistrationSuccessMessageEn)
                     ?? SiteSettingKeys.DefaultRegistrationMessageEn,
             Social: new SiteSocialLinks(
-                Facebook: Value(SiteSettingKeys.SocialFacebook),
-                X: Value(SiteSettingKeys.SocialX),
-                Instagram: Value(SiteSettingKeys.SocialInstagram),
-                LinkedIn: Value(SiteSettingKeys.SocialLinkedIn),
-                YouTube: Value(SiteSettingKeys.SocialYouTube),
-                TikTok: Value(SiteSettingKeys.SocialTikTok),
-                Snapchat: Value(SiteSettingKeys.SocialSnapchat)));
+                Facebook: SocialUrl(SiteSettingKeys.SocialFacebook),
+                X: SocialUrl(SiteSettingKeys.SocialX),
+                Instagram: SocialUrl(SiteSettingKeys.SocialInstagram),
+                LinkedIn: SocialUrl(SiteSettingKeys.SocialLinkedIn),
+                YouTube: SocialUrl(SiteSettingKeys.SocialYouTube),
+                TikTok: SocialUrl(SiteSettingKeys.SocialTikTok),
+                Snapchat: SocialUrl(SiteSettingKeys.SocialSnapchat)));
     }
 }

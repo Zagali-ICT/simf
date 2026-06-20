@@ -23,4 +23,11 @@ public interface IAdminSystemSettingService
 
     Task DeactivateAsync(
         Guid actorUserId, Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>D-464 — upsert the CP "Site Settings" page values (registration
+    /// welcome message + social links) into their <c>SiteSettingKeys</c> keys.
+    /// Creates a key if absent, updates it otherwise; blank clears a value.</summary>
+    Task SaveSiteSettingsAsync(
+        Guid actorUserId, AdminUpdateSiteSettingsRequest request,
+        CancellationToken cancellationToken = default);
 }
