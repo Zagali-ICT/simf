@@ -61,8 +61,17 @@ internal sealed class OpenAiProvider(
             if (!response.IsSuccessStatusCode)
             {
                 var body = await response.Content.ReadAsStringAsync(cancellationToken);
+                // L5 (security) — never log the raw provider error body verbatim;
+                // it can echo request content / secrets. Redact known secret/PII
+                // patterns and cap the length.
+                var safeBody = AiAuditDetail.RedactValue(body);
+                if (safeBody.Length > 500)
+                {
+                    safeBody = safeBody[..500] + "…";
+                }
+
                 logger.LogWarning(
-                    "OpenAI call failed: {Status} {Body}", response.StatusCode, body);
+                    "OpenAI call failed: {Status} {Body}", response.StatusCode, safeBody);
                 throw new ApiException(
                     ErrorCodes.AiProviderFailed,
                     (int)response.StatusCode,

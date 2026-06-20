@@ -359,6 +359,11 @@ if (app.Environment.IsProduction()
         + "SIMF_SuperAdmin__TempPassword before starting in Production.");
 }
 
+// M4 (security) — refuse to start in Production when the AI prompt-hash HMAC
+// secret is unconfigured; the dev-fallback key is publicly derivable.
+SIMF.Infrastructure.DependencyInjection.EnsureAiPromptHashSecretConfigured(
+    app.Environment.IsProduction());
+
 // Apply the migrations and seed the super-admin. Skipped under the test host,
 // which prepares its own database.
 if (!app.Environment.IsEnvironment("Testing"))
@@ -409,6 +414,9 @@ app.UseForwardedHeaders(forwardedHeaders);
 // The correlation id is established next, so every log line for the request —
 // including a failure — carries it.
 app.UseMiddleware<CorrelationIdMiddleware>();
+
+// M7 (security) — baseline security headers on every API response.
+app.UseMiddleware<SecurityHeadersMiddleware>();
 
 // Error handling wraps the rest of the pipeline (SIMF-Sprint1 plan section 7).
 app.UseMiddleware<ErrorHandlingMiddleware>();

@@ -28,6 +28,22 @@ namespace SIMF.Infrastructure;
 /// </summary>
 public static class DependencyInjection
 {
+    /// <summary>M4 (security) — refuse to start in Production when the AI
+    /// prompt-hash HMAC secret was never configured. The dev-fallback key is
+    /// derived from a public constant string, so a dev-fallback hash leaking
+    /// into a production audit trail is trivially recomputable. Call from the
+    /// host after <see cref="AddInfrastructure"/>, which installs the key.</summary>
+    public static void EnsureAiPromptHashSecretConfigured(bool isProduction)
+    {
+        if (isProduction && SIMF.Infrastructure.Ai.AiAuditDetail.IsHmacKeyDevFallback)
+        {
+            throw new InvalidOperationException(
+                "Ai:PromptHash:Secret must be configured in Production — the "
+                + "dev-fallback HMAC key is publicly derivable. Set "
+                + "SIMF_Ai__PromptHash__Secret before starting.");
+        }
+    }
+
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
         IConfiguration configuration)
