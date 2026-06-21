@@ -58,6 +58,9 @@ builder.Host.UseSerilog((context, configuration) =>
 // Database contexts, ASP.NET Core Identity, repositories, email, the audit log.
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// A1-19 (NCA) — daily dormant-account disable sweep (no-op until configured).
+builder.Services.AddHostedService<SIMF.Api.HostedServices.DormantAccountSweepService>();
+
 // The audit log reads the request context; the API supplies it from HttpContext.
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IRequestContext, HttpRequestContext>();

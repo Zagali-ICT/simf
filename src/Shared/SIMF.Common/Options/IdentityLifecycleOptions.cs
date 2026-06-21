@@ -25,5 +25,16 @@ public sealed class IdentityLifecycleOptions
     /// recording), so the feature is admin-configurable per NCA A7-20.
     /// </summary>
     public int PasswordHistoryCount { get; set; }
+
+    /// <summary>
+    /// A1-19 — after how many days of inactivity an Approved account is
+    /// automatically disabled by the daily sweep. Inactivity is measured from the
+    /// last successful sign-in (or the account creation time if it never signed
+    /// in). <c>0</c> (the default) disables the sweep, so the control is
+    /// admin-configurable per NCA A1-19 without disabling accounts until the owner
+    /// sets a value.
+    /// </summary>
+    public int DormantAccountDisableDays { get; set; }
 }
+
 

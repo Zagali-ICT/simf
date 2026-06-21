@@ -73,6 +73,9 @@ public static class AuditEvents
     public const string PasswordChanged = "PasswordChange.Succeeded";
     public const string PasswordChangeFailed = "PasswordChange.Failed";
     public const string SuperAdminSeeded = "Admin.SuperAdminSeeded";
+    // A1-19 (NCA) — the daily sweep disabled an account for inactivity beyond the
+    // configured threshold. A system action (no actor).
+    public const string AccountDormantDisabled = "Account.DormantDisabled";
 
     // H10 — D-065: an email-enqueue failure that lands AFTER the matching
     // code row is already persisted to the DB. The success audit was

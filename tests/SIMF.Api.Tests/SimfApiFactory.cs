@@ -82,6 +82,9 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         // A7-20 — password history OFF by default for the general suite (reset the
         // process-wide var so a prior PasswordHistoryApiFactory cannot leak its count).
         Environment.SetEnvironmentVariable("IdentityLifecycle__PasswordHistoryCount", "0");
+        // A1-19 — dormant-account auto-disable OFF by default (reset the process-wide
+        // var so a prior DormantAccountApiFactory cannot leak its threshold).
+        Environment.SetEnvironmentVariable("IdentityLifecycle__DormantAccountDisableDays", "0");
         Environment.SetEnvironmentVariable(
             "Jwt__SigningKey", "ytlV1+ke14Pw900IRtH8zT4uIKBeaqjcj6aFfiLozS5jKgSs");
         Environment.SetEnvironmentVariable("Storage__AvatarBase", AvatarStorageDirectory);

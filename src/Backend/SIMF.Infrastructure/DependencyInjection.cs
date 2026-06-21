@@ -187,6 +187,8 @@ public static class DependencyInjection
         services.AddScoped<IAccountCodeRepository, AccountCodeRepository>();
         // A7-20 (NCA) — retired-password-hash store for reuse prevention.
         services.AddScoped<IPasswordHistoryRepository, PasswordHistoryRepository>();
+        // A1-19 (NCA) — dormant-account auto-disable (driven by the daily sweep host).
+        services.AddScoped<IDormantAccountService, DormantAccountService>();
         services.AddScoped<IPermissionRepository, PermissionRepository>();
         services.AddScoped<ISecondFactorTokenRepository, SecondFactorTokenRepository>();
         services.AddScoped<ITotpRecoveryCodeRepository, TotpRecoveryCodeRepository>();
