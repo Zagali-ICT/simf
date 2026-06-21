@@ -95,4 +95,12 @@ public class SimfUser : IdentityUser<Guid>
     /// enforce an admin-configured maximum password age.
     /// </summary>
     public DateTimeOffset? PasswordChangedAtUtc { get; set; }
+
+    /// <summary>
+    /// A7-31 / A1-19 (NCA) — when the account last completed a sign-in (UTC). Set
+    /// when tokens are issued. Surfaced to the client as the "previous sign-in"
+    /// notice (A7-31) and used as the activity signal for dormant-account
+    /// auto-disable (A1-19). Null until the first sign-in after this column shipped.
+    /// </summary>
+    public DateTimeOffset? LastSuccessfulSignInAtUtc { get; set; }
 }

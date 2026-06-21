@@ -624,6 +624,14 @@ public sealed class SignInService(
             },
             cancellationToken);
 
+        // A7-31 / A1-19 (NCA) — record this successful sign-in (the activity signal
+        // for dormant-account disable) and surface the PRIOR sign-in time to the
+        // client for the "last signed in …" notice. UpdateAsync does not roll the
+        // security stamp, so the access token just minted stays valid.
+        var previousSignInAtUtc = user.LastSuccessfulSignInAtUtc;
+        user.LastSuccessfulSignInAtUtc = now;
+        await accounts.UpdateAsync(user).EnsureSuccessAsync();
+
         await AuditAsync(AuditEvents.RefreshTokenIssued, AuditOutcome.Success,
             user.Email!, user.Id, cancellationToken: cancellationToken);
         await AuditAsync(AuditEvents.SignInSucceeded, AuditOutcome.Success,
@@ -635,7 +643,8 @@ public sealed class SignInService(
             refreshValue,
             "Bearer",
             accessToken.ExpiresInSeconds,
-            new AuthUser(user.Id, user.Email!, user.DisplayName));
+            new AuthUser(user.Id, user.Email!, user.DisplayName),
+            previousSignInAtUtc);
     }
 
     private async Task<string> IssueSignInOtpAsync(

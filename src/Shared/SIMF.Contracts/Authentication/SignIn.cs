@@ -61,12 +61,17 @@ public sealed record AccountStateInfo(
     DateTimeOffset? StateChangedAt);
 
 /// <summary>The token payload returned once a sign-in is fully completed.</summary>
+/// <remarks>A7-31 (NCA): <see cref="PreviousSignInAtUtc"/> carries the time of the
+/// account's prior successful sign-in (null on the very first one, and on token
+/// refresh) so the client can show a "last signed in …" notice. Additive trailing
+/// field — the mobile/web wire contract stays backward-compatible.</remarks>
 public sealed record AuthTokens(
     string AccessToken,
     string RefreshToken,
     string TokenType,
     int AccessTokenExpiresInSeconds,
-    AuthUser User);
+    AuthUser User,
+    DateTimeOffset? PreviousSignInAtUtc = null);
 
 /// <summary>The signed-in user, as carried in <see cref="AuthTokens"/>.</summary>
 public sealed record AuthUser(Guid Id, string Email, string DisplayName);
