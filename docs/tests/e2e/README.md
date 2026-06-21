@@ -201,7 +201,8 @@ API endpoints land (D-249). The per-screen design docs live under
 | `joinSessionHub` (`GET /app/programme/sessions`) — D-485 | [`mobile-join-hub.md`](mobile-join-hub.md) | E2E-MOBHUB-001..005 |
 | #19 `speakers` (`GET /app/speakers`) | [`mobile-speakers.md`](mobile-speakers.md) | E2E-MOB019-001..007 |
 | #20 `speakerProfile` (`GET /app/speakers/{id}` + meeting-request) | [`mobile-speaker-profile.md`](mobile-speaker-profile.md) | E2E-MOB020-001..010 |
-| #22 `booths` (`GET /app/booths` + `/{id}`) | [`mobile-booths.md`](mobile-booths.md) | E2E-MOB022-001..005 |
+| #22 `booths` (`GET /app/booths` + `/{id}`) — #9: country name + أرشدني→map | [`mobile-booths.md`](mobile-booths.md) | E2E-MOB022-001..013 |
+| `boothMap` (`/booths/:id/map` → venue map focused on the booth) — #9 | [`mobile-booths.md`](mobile-booths.md) | E2E-MOB022-013 |
 | #23 `sponsors` (`GET /app/sponsors`) | [`mobile-sponsors.md`](mobile-sponsors.md) | E2E-MOB023-001..004 |
 | #24 `archive` (`GET /app/archive` + `/{id}`) | [`mobile-archive.md`](mobile-archive.md) | E2E-MOB024-001..005 |
 | #29 `news` (`GET /app/news` + `/{id}`) | [`mobile-news.md`](mobile-news.md) | E2E-MOB029-001..005 |

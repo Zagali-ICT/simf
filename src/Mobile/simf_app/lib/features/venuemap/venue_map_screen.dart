@@ -28,7 +28,11 @@ import 'data/venue_map_repository.dart';
 /// coordinates, L-3). The old legend strip gave way to the frame's info
 /// card (the card names the selection).
 class VenueMapScreen extends ConsumerStatefulWidget {
-  const VenueMapScreen({super.key});
+  const VenueMapScreen({this.targetBoothId, super.key});
+
+  /// #9 — when set (the booth card's "أرشدني" CTA pushes the map with a booth
+  /// id), the map selects + centres the node for that booth once loaded.
+  final String? targetBoothId;
 
   @override
   ConsumerState<VenueMapScreen> createState() => _VenueMapScreenState();
@@ -89,6 +93,7 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
         };
         _loading = false;
       });
+      _focusTargetBooth();
     } on ApiFailure {
       if (!mounted) {
         return;
@@ -150,6 +155,33 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
         1,
       )
       ..scaleByDouble(scale, scale, 1, 1);
+  }
+
+  /// #9 — select + centre the map on the target booth's node once the nodes
+  /// have loaded and (via the post-frame callback) the plane has laid out so the
+  /// viewport size is available. A no-op when no target / no matching node.
+  void _focusTargetBooth() {
+    final target = widget.targetBoothId?.trim();
+    if (target == null || target.isEmpty) {
+      return;
+    }
+    VenueMapNode? match;
+    for (final node in _nodes) {
+      if (node.boothId == target) {
+        match = node;
+        break;
+      }
+    }
+    if (match == null) {
+      return;
+    }
+    final node = match;
+    setState(() => _selected = node);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _centreOn(node);
+      }
+    });
   }
 
   void _resetView() {

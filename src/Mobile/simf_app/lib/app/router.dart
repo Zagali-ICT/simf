@@ -159,6 +159,8 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 110, name: RouteNames.joinSessionHub, path: '/sessions/join', labelAr: 'احجز مقعداً', labelEn: 'Book a seat'),
   // #1/#6 — session-summaries list (public; home tile → list → aiSummary details).
   _Route(number: 111, name: RouteNames.sessionSummaryList, path: '/session-summaries', labelAr: 'ملخص الجلسات', labelEn: 'Session summaries'),
+  // #9 — venue map focused on a booth (booth "أرشدني" CTA; public, pushed).
+  _Route(number: 112, name: RouteNames.boothMap, path: '/booths/:boothId/map', labelAr: 'الخريطة', labelEn: 'Venue map'),
 
   // D-464 — المزيد hub entries with no screen yet (Figma 1129:17224). Public;
   // they fall through to ComingSoonScreen (sentinel numbers 200+).
@@ -291,6 +293,11 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.venueMap) {
     return const VenueMapScreen();
+  }
+  if (r.name == RouteNames.boothMap) {
+    return VenueMapScreen(
+      targetBoothId: state.pathParameters['boothId'],
+    );
   }
   if (r.name == RouteNames.sessions) {
     return const SessionsScreen();

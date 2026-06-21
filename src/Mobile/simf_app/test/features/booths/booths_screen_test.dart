@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/booths/booths_screen.dart';
 import 'package:simf_app/features/venuemap/data/venue_map_models.dart';
 import 'package:simf_app/features/venuemap/data/venue_map_repository.dart';
@@ -34,6 +36,19 @@ const _samiWithLogo = BoothSummary(
   exhibitorName: 'Saudi Arabian Military Industries',
   sector: 'Defense',
   exhibitorContactId: 'c1',
+);
+
+// #9 — a booth carrying the resolved country (numeric + bilingual name).
+const _samiWithCountry = BoothSummary(
+  id: 'b1',
+  code: 'A-12',
+  name: 'SAMI',
+  nameArabic: 'سامي',
+  exhibitorName: 'Saudi Arabian Military Industries',
+  sector: 'Defense',
+  countryId: 682, // SA
+  countryName: 'Saudi Arabia',
+  countryNameArabic: 'السعودية',
 );
 
 /// Every NetworkImage URL currently in the tree.
@@ -202,6 +217,59 @@ void main() {
       final logoDx = tester.getCenter(find.byType(Image)).dx;
       final nameDx = tester.getCenter(find.text('سامي')).dx;
       expect(logoDx, greaterThan(nameDx));
+    });
+
+    testWidgets('#9 — shows the booth country (flag + name)', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeRepo(booths: const <BoothSummary>[_samiWithCountry]),
+      );
+      // The country name renders on the card (under the company name).
+      expect(find.text('Saudi Arabia'), findsOneWidget);
+      // The SA flag emoji appears (the logo corner badge + the country line).
+      expect(find.text('\u{1F1F8}\u{1F1E6}'), findsWidgets);
+    });
+
+    testWidgets('#9 — tapping أرشدني opens the venue map for that booth',
+        (tester) async {
+      final router = GoRouter(
+        initialLocation: '/booths',
+        routes: <RouteBase>[
+          GoRoute(path: '/booths', builder: (_, __) => const BoothsScreen()),
+          GoRoute(
+            path: '/booths/:boothId/map',
+            name: RouteNames.boothMap,
+            builder: (_, s) =>
+                Scaffold(body: Text('MAP ${s.pathParameters['boothId']}')),
+          ),
+        ],
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: <Override>[
+            simfDataConfigProvider.overrideWithValue(_testConfig),
+            venueMapRepositoryProvider.overrideWithValue(
+              _FakeRepo(booths: const <BoothSummary>[_samiWithCountry]),
+            ),
+          ],
+          child: MaterialApp.router(
+            routerConfig: router,
+            supportedLocales: AppL10n.supportedLocales,
+            localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+              ...AppL10n.localizationsDelegates,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.textContaining('Guide me to the booth'));
+      await tester.pumpAndSettle();
+      // Navigated to the booth-focused map (not the detail sheet).
+      expect(find.text('MAP b1'), findsOneWidget);
     });
 
     testWidgets('error shows retry, which re-fetches', (tester) async {

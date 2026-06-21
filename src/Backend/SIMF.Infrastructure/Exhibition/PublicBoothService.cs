@@ -75,6 +75,16 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
                     : db.Exhibitors.Where(e => e.Id == b.ExhibitorId)
                         .Select(e => e.Contact != null ? e.Contact.CountryId : null)
                         .FirstOrDefault(),
+                // #9: the country NAME from the Country lookup on that numeric id
+                // (so the app shows the country name, not only the corner flag).
+                CountryName = db.Countries
+                    .Where(c => db.Exhibitors.Any(e => e.Id == b.ExhibitorId
+                        && e.Contact != null && e.Contact.CountryId == c.Id))
+                    .Select(c => c.Name).FirstOrDefault(),
+                CountryNameArabic = db.Countries
+                    .Where(c => db.Exhibitors.Any(e => e.Id == b.ExhibitorId
+                        && e.Contact != null && e.Contact.CountryId == c.Id))
+                    .Select(c => c.NameArabic).FirstOrDefault(),
             })
             .ToListAsync(cancellationToken);
 
@@ -139,6 +149,15 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
                     : db.Exhibitors.Where(e => e.Id == b.ExhibitorId)
                         .Select(e => e.Contact != null ? e.Contact.CountryId : null)
                         .FirstOrDefault(),
+                // #9: the country NAME from the Country lookup (see ListAsync).
+                CountryName = db.Countries
+                    .Where(c => db.Exhibitors.Any(e => e.Id == b.ExhibitorId
+                        && e.Contact != null && e.Contact.CountryId == c.Id))
+                    .Select(c => c.Name).FirstOrDefault(),
+                CountryNameArabic = db.Countries
+                    .Where(c => db.Exhibitors.Any(e => e.Id == b.ExhibitorId
+                        && e.Contact != null && e.Contact.CountryId == c.Id))
+                    .Select(c => c.NameArabic).FirstOrDefault(),
             })
             .FirstOrDefaultAsync(cancellationToken);
 }

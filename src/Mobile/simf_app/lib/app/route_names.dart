@@ -33,6 +33,10 @@ class RouteNames {
   static const String home = 'home';
   static const String myArea = 'myArea';
   static const String venueMap = 'venueMap';
+  // #9 — the venue map opened focused on a specific booth (the booth card's
+  // "أرشدني" CTA). A pushed route (not the kept-alive map tab) so it loads a
+  // fresh map that selects + centres the booth's node.
+  static const String boothMap = 'boothMap';
   // §9 (D-276) — mockup screen 16 renamed Agenda → Sessions.
   static const String sessions = 'sessions';
   static const String sessionDetail = 'sessionDetail';
