@@ -22,6 +22,7 @@ internal sealed class AdminSpeakerPresentationService(
     SimfAppDbContext db,
     ISpeakerPresentationStorage storage,
     IAuditLog auditLog,
+    SIMF.Application.Abstractions.IUploadScanner uploadScanner,
     TimeProvider timeProvider,
     ILogger<AdminSpeakerPresentationService> logger) : IAdminSpeakerPresentationService
 {
@@ -70,6 +71,9 @@ internal sealed class AdminSpeakerPresentationService(
                 "The presentation must be a PDF, PowerPoint, or Word document.",
                 "يجب أن يكون ملف العرض بصيغة PDF أو PowerPoint أو Word.");
         }
+        // A6-18 (NCA) — malware-scan the 50 MB upload before storing it.
+        await SIMF.Application.Abstractions.UploadScannerExtensions.EnsureCleanAsync(
+            uploadScanner, content, fileName, cancellationToken);
 
         var speakerExists = await db.Speakers.AsNoTracking()
             .AnyAsync(s => s.Id == speakerId && s.IsActive, cancellationToken);

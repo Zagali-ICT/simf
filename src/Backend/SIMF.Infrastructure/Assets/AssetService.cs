@@ -21,6 +21,7 @@ internal sealed class AssetService(
     SimfAppDbContext dbContext,
     IImageAssetStorage storage,
     IAuditLog auditLog,
+    IUploadScanner uploadScanner,
     TimeProvider timeProvider,
     ILogger<AssetService> logger) : IAssetService
 {
@@ -36,6 +37,8 @@ internal sealed class AssetService(
         CancellationToken cancellationToken = default)
     {
         ValidateUpload(kind, content, contentType);
+        // A6-18 (NCA) — malware-scan the untrusted bytes before storing them.
+        await uploadScanner.EnsureCleanAsync(content, originalFileName ?? "asset", cancellationToken);
 
         var asset = await GetActiveAsync(category, ownerId, cancellationToken);
         var now = timeProvider.GetUtcNow();

@@ -152,6 +152,9 @@ public static class DependencyInjection
         // A7-13 (NCA) — credential-lifecycle settings (password max age).
         services.Configure<IdentityLifecycleOptions>(
             configuration.GetSection(IdentityLifecycleOptions.SectionName));
+        // A6-18 (NCA) — upload malware-scanning settings.
+        services.Configure<UploadScanningOptions>(
+            configuration.GetSection(UploadScanningOptions.SectionName));
         // #7a — biometric device-key enrolment step-up toggle (default on).
         services.Configure<DeviceKeyOptions>(
             configuration.GetSection(DeviceKeyOptions.SectionName));
@@ -529,6 +532,8 @@ public static class DependencyInjection
         // A2-10 — AES-GCM encryptor for PII identifier columns; applied by an EF
         // value converter on UserProfile (SimfAppDbContext.OnModelCreating).
         services.AddSingleton<SIMF.Application.Abstractions.IPiiEncryptor, AesGcmPiiEncryptor>();
+        // A6-18 — upload malware scanner (EICAR default; swap for ClamAV/Defender).
+        services.AddSingleton<SIMF.Application.Abstractions.IUploadScanner, DefaultUploadScanner>();
         services.AddSingleton<ILogFileService, LogFileService>();
         services.AddSingleton<IJwtTokenService, JwtTokenService>();
         services.AddSingleton<ITotpVerifier, TotpVerifier>();
