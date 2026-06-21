@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SIMF.Application.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.Email;
@@ -8,6 +9,7 @@ using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Application.Notifications;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Options;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
@@ -25,10 +27,12 @@ public sealed class PasswordService(
     IAccountCodeRepository accountCodeRepository,
     IRefreshTokenRepository refreshTokenRepository,
     ISecondFactorTokenRepository secondFactorTokenRepository,
+    IPasswordHistoryRepository passwordHistory,
     ITransactionRunner transactionRunner,
     IEmailQueue emailQueue,
     INotificationDispatcher notifications,
     IAuditLog auditLog,
+    IOptions<IdentityLifecycleOptions> lifecycleOptions,
     TimeProvider timeProvider,
     ILogger<PasswordService> logger) : IPasswordService
 {
@@ -209,6 +213,10 @@ public sealed class PasswordService(
         await transactionRunner.ExecuteAsync(
             async token =>
             {
+                // A7-20 — reject reuse before the change (no-op when disabled).
+                var retiredHash = user.PasswordHash;
+                await EnforceNoPasswordReuseAsync(user, retiredHash, request.NewPassword);
+
                 var result = await accounts.ChangePasswordAsync(
                     user, request.CurrentPassword, request.NewPassword);
                 if (!result.Succeeded)
@@ -242,6 +250,7 @@ public sealed class PasswordService(
                     throw PasswordRejected(result);
                 }
 
+                await RecordPasswordHistoryAsync(user.Id, retiredHash);
                 await ClearChangeFlagAndEndSessionsAsync(
                     user, timeProvider.GetUtcNow(), token);
             },
@@ -340,6 +349,11 @@ public sealed class PasswordService(
     /// </summary>
     private async Task SetPasswordAsync(SimfUser user, string newPassword)
     {
+        // A7-20 — reject a password that matches the current one or a recent
+        // retired one (no-op when history is disabled).
+        var retiredHash = user.PasswordHash;
+        await EnforceNoPasswordReuseAsync(user, retiredHash, newPassword);
+
         var removeResult = await accounts.RemovePasswordAsync(user);
         if (!removeResult.Succeeded)
         {
@@ -353,7 +367,50 @@ public sealed class PasswordService(
         {
             throw PasswordRejected(addResult);
         }
+
+        await RecordPasswordHistoryAsync(user.Id, retiredHash);
     }
+
+    /// <summary>A7-20 — throws when the new password matches the current password or
+    /// one of the most recent <c>PasswordHistoryCount</c> retired passwords. No-op
+    /// when history is disabled (count &lt;= 0).</summary>
+    private async Task EnforceNoPasswordReuseAsync(SimfUser user, string? currentHash, string newPassword)
+    {
+        var count = lifecycleOptions.Value.PasswordHistoryCount;
+        if (count <= 0)
+        {
+            return;
+        }
+        if (!string.IsNullOrEmpty(currentHash)
+            && accounts.PasswordHashMatches(user, currentHash, newPassword))
+        {
+            throw PasswordReused();
+        }
+        foreach (var hash in await passwordHistory.GetRecentHashesAsync(user.Id, count))
+        {
+            if (accounts.PasswordHashMatches(user, hash, newPassword))
+            {
+                throw PasswordReused();
+            }
+        }
+    }
+
+    /// <summary>A7-20 — records the retired hash and prunes to the configured depth.
+    /// No-op when history is disabled or there was no prior password.</summary>
+    private Task RecordPasswordHistoryAsync(Guid userId, string? retiredHash)
+    {
+        var count = lifecycleOptions.Value.PasswordHistoryCount;
+        if (count <= 0 || string.IsNullOrEmpty(retiredHash))
+        {
+            return Task.CompletedTask;
+        }
+        return passwordHistory.RecordAsync(userId, retiredHash, count);
+    }
+
+    private static ApiException PasswordReused() =>
+        new(ErrorCodes.AuthPasswordPolicy, 400,
+            "This password was used recently. Choose a password you have not used before.",
+            "تم استخدام كلمة المرور هذه مؤخراً. اختر كلمة مرور لم تستخدمها من قبل.");
 
     /// <summary>
     /// Clears the forced-change flag and ends every session — a new password

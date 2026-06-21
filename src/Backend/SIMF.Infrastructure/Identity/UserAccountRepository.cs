@@ -76,6 +76,10 @@ internal sealed class UserAccountRepository(UserManager<SimfUser> userManager)
         return Translate(await userManager.RemovePasswordAsync(user));
     }
 
+    public bool PasswordHashMatches(SimfUser user, string hashedPassword, string providedPassword) =>
+        userManager.PasswordHasher.VerifyHashedPassword(user, hashedPassword, providedPassword)
+            != PasswordVerificationResult.Failed;
+
     public async Task<UserOperationResult> ChangePasswordAsync(SimfUser user, string currentPassword, string newPassword, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();

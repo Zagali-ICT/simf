@@ -185,6 +185,8 @@ public static class DependencyInjection
         services.AddScoped<IUserTwoFactorStore>(sp => sp.GetRequiredService<UserAccountRepository>());
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IAccountCodeRepository, AccountCodeRepository>();
+        // A7-20 (NCA) — retired-password-hash store for reuse prevention.
+        services.AddScoped<IPasswordHistoryRepository, PasswordHistoryRepository>();
         services.AddScoped<IPermissionRepository, PermissionRepository>();
         services.AddScoped<ISecondFactorTokenRepository, SecondFactorTokenRepository>();
         services.AddScoped<ITotpRecoveryCodeRepository, TotpRecoveryCodeRepository>();

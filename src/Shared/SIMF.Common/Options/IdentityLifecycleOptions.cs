@@ -16,4 +16,14 @@ public sealed class IdentityLifecycleOptions
     /// a fleet-wide reset until the owner sets a value.
     /// </summary>
     public int PasswordMaxAgeDays { get; set; }
+
+    /// <summary>
+    /// A7-20 — how many previous passwords are disallowed on a change / reset.
+    /// When greater than zero, the new password is rejected if it matches the
+    /// current password or any of the most recent <c>PasswordHistoryCount</c>
+    /// retired passwords. <c>0</c> (the default) disables the check (and the
+    /// recording), so the feature is admin-configurable per NCA A7-20.
+    /// </summary>
+    public int PasswordHistoryCount { get; set; }
 }
+

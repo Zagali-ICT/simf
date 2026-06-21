@@ -79,6 +79,9 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         // class cannot leak MaxAgeDays=30 into later classes — which would expire
         // any user created with a default CreatedAt and break their sign-in.
         Environment.SetEnvironmentVariable("IdentityLifecycle__PasswordMaxAgeDays", "0");
+        // A7-20 — password history OFF by default for the general suite (reset the
+        // process-wide var so a prior PasswordHistoryApiFactory cannot leak its count).
+        Environment.SetEnvironmentVariable("IdentityLifecycle__PasswordHistoryCount", "0");
         Environment.SetEnvironmentVariable(
             "Jwt__SigningKey", "ytlV1+ke14Pw900IRtH8zT4uIKBeaqjcj6aFfiLozS5jKgSs");
         Environment.SetEnvironmentVariable("Storage__AvatarBase", AvatarStorageDirectory);
