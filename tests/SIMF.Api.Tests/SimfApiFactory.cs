@@ -74,6 +74,11 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         // here; dedicated rate-limit-test factories can tighten as
         // needed in future.
         Environment.SetEnvironmentVariable("RateLimit__GlobalPermitLimit", "1000000");
+        // A7-13 — password expiry OFF by default for the general suite. Reset here
+        // (these env vars are process-wide) so a prior PasswordExpiryApiFactory
+        // class cannot leak MaxAgeDays=30 into later classes — which would expire
+        // any user created with a default CreatedAt and break their sign-in.
+        Environment.SetEnvironmentVariable("IdentityLifecycle__PasswordMaxAgeDays", "0");
         Environment.SetEnvironmentVariable(
             "Jwt__SigningKey", "ytlV1+ke14Pw900IRtH8zT4uIKBeaqjcj6aFfiLozS5jKgSs");
         Environment.SetEnvironmentVariable("Storage__AvatarBase", AvatarStorageDirectory);

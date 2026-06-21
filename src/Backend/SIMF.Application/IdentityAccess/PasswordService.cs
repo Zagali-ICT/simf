@@ -367,6 +367,10 @@ public sealed class PasswordService(
     {
         user.PasswordChangeRequired = false;
         user.UpdatedAt = now;
+        // A7-13 (NCA) — stamp the password age so the expiry clock restarts. This
+        // is the single point every change / reset / forced-complete path passes
+        // through, so the timestamp stays accurate without touching each set site.
+        user.PasswordChangedAtUtc = now;
         await accounts.UpdateAsync(user).EnsureSuccessAsync();
         await refreshTokenRepository.RevokeAllForUserAsync(user.Id, now, cancellationToken);
     }

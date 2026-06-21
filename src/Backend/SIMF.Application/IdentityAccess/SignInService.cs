@@ -3,12 +3,14 @@
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SIMF.Application.Auditing;
 using SIMF.Application.Email;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Application.Notifications;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Options;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
@@ -37,6 +39,7 @@ public sealed class SignInService(
     ITotpVerifier totpVerifier,
     IRecoveryCodeService recoveryCodes,
     IAuditLog auditLog,
+    IOptions<IdentityLifecycleOptions> lifecycleOptions,
     TimeProvider timeProvider,
     ILogger<SignInService> logger) : ISignInService
 {
@@ -119,6 +122,21 @@ public sealed class SignInService(
         // RequirePasswordChangeNotRequired (VerifyTotpAsync /
         // VerifyRecoveryCodeAsync / VerifyOtpAsync / SessionService.RefreshAsync),
         // so no session can be minted until the password is actually changed.
+        // A7-13 (NCA) — enforce the admin-configured maximum password age. When the
+        // password is older than the limit, persist the forced-change flag so the
+        // change-ticket completion (which requires the flag in the DB) works and so
+        // the gate survives a retry; the existing forced-change branch below then
+        // drives the change (CP ticket / app 403). A completed change resets the
+        // clock via PasswordService.ClearChangeFlagAndEndSessionsAsync.
+        if (!user.PasswordChangeRequired && IsPasswordExpired(user, now))
+        {
+            user.PasswordChangeRequired = true;
+            user.UpdatedAt = now;
+            await accounts.UpdateAsync(user).EnsureSuccessAsync();
+            await AuditAsync(AuditEvents.SignInPasswordExpired, AuditOutcome.Success,
+                user.Email!, user.Id, cancellationToken: cancellationToken);
+        }
+
         if (user.PasswordChangeRequired)
         {
             if (request.Audience != SignInAudience.Cp)
@@ -433,6 +451,21 @@ public sealed class SignInService(
     /// <c>Approved</c> may always sign in (D-010 — auth and authz are
     /// separate concerns).
     /// </summary>
+    /// <summary>A7-13 (NCA) — true when password expiry is configured
+    /// (<see cref="IdentityLifecycleOptions.PasswordMaxAgeDays"/> &gt; 0) and the
+    /// password is older than the limit. The baseline is the last set time, or the
+    /// account's creation time for accounts whose password predates the column.</summary>
+    private bool IsPasswordExpired(SimfUser user, DateTimeOffset now)
+    {
+        var maxAgeDays = lifecycleOptions.Value.PasswordMaxAgeDays;
+        if (maxAgeDays <= 0)
+        {
+            return false;
+        }
+        var baseline = user.PasswordChangedAtUtc ?? user.CreatedAt;
+        return now - baseline > TimeSpan.FromDays(maxAgeDays);
+    }
+
     private static (string? Code, string? Message, string? MessageArabic) CheckAccountState(
         SimfUser user) =>
         user.AccountState switch

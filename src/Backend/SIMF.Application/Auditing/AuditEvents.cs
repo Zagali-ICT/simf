@@ -30,6 +30,10 @@ public static class AuditEvents
     public const string SignInAccountLockedOut = "SignIn.AccountLockedOut";
     public const string SignInStateBlocked = "SignIn.StateBlocked";
     public const string SignInPasswordChangeRequired = "SignIn.PasswordChangeRequired";
+    // A7-13 (NCA) — sign-in found the password older than the configured max age
+    // and forced a change. Distinct from a seeded/admin-rotated forced change so
+    // SOC can see expiry-driven rotations.
+    public const string SignInPasswordExpired = "SignIn.PasswordExpired";
     // D-206: a Control Panel sign-in with a forced-change credential was handed a
     // single-use password-change ticket (in place of the 403). The completion is
     // audited as PasswordChanged, like any other password change.

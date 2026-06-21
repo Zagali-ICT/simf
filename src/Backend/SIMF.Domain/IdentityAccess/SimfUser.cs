@@ -86,4 +86,13 @@ public class SimfUser : IdentityUser<Guid>
     /// email verification) stay valid.
     /// </summary>
     public Guid? StateChangedByUserId { get; set; }
+
+    /// <summary>
+    /// A7-13 (NCA) — when the password was last set (UTC). Set on every
+    /// change / reset (see <c>PasswordService</c>). Null for accounts whose
+    /// password was never changed since this column was added; the expiry check
+    /// falls back to <see cref="CreatedAt"/> as the baseline. Lets sign-in
+    /// enforce an admin-configured maximum password age.
+    /// </summary>
+    public DateTimeOffset? PasswordChangedAtUtc { get; set; }
 }

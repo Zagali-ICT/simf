@@ -149,6 +149,9 @@ public static class DependencyInjection
             configuration.GetSection(SuperAdminOptions.SectionName));
         services.Configure<JwtOptions>(
             configuration.GetSection(JwtOptions.SectionName));
+        // A7-13 (NCA) — credential-lifecycle settings (password max age).
+        services.Configure<IdentityLifecycleOptions>(
+            configuration.GetSection(IdentityLifecycleOptions.SectionName));
         // #7a — biometric device-key enrolment step-up toggle (default on).
         services.Configure<DeviceKeyOptions>(
             configuration.GetSection(DeviceKeyOptions.SectionName));
