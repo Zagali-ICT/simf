@@ -1,12 +1,16 @@
 // Tests: SIMF.Api.Tests/DeviceKeySignInTests.cs
 using System.Security.Cryptography;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SIMF.Application.Auditing;
+using SIMF.Application.Email;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Common.Options;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Infrastructure.Persistence;
@@ -31,11 +35,20 @@ internal sealed class DeviceKeyService(
     IUserProfileService userProfiles,
     IJwtTokenService jwtTokenService,
     IPermissionResolver permissionResolver,
+    IAccountCodeRepository accountCodes,
+    IEmailQueue emailQueue,
+    IOptions<DeviceKeyOptions> deviceKeyOptions,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<DeviceKeyService> logger) : IDeviceKeyService
 {
     private static readonly TimeSpan ChallengeLifetime = TimeSpan.FromMinutes(5);
+
+    // #7a — emailed-OTP step-up, mirroring the sign-in OTP budget.
+    private static readonly TimeSpan StepUpLifetime = TimeSpan.FromMinutes(10);
+    private static readonly TimeSpan StepUpRequestWindow = TimeSpan.FromHours(1);
+    private const int MaxStepUpRequestsPerWindow = 5;
+    private const int MaxStepUpAttempts = 5;
 
     public async Task<DeviceKeyEntry> RegisterAsync(
         Guid callerUserId,
@@ -85,6 +98,18 @@ internal sealed class DeviceKeyService(
         }
 
         var now = timeProvider.GetUtcNow();
+
+        // #7a — emailed-OTP step-up: confirm the user actually intends to enable
+        // biometric sign-in before binding a credential, so a borrowed-but-
+        // unlocked phone can't silently enrol without also holding the account's
+        // email. Validate (throws on a missing / wrong / expired code) but do NOT
+        // consume yet — the code is single-used only AFTER the key is persisted
+        // (below), so a failed key-save never burns a still-valid code and leaves
+        // the user a dead code + a misleading "incorrect" on retry. Returns null
+        // when the gate is configured off (registration crypto tests).
+        var stepUpCode = await ValidateEnrolStepUpAsync(
+            callerUserId, request.StepUpCode, now, cancellationToken);
+
         var deviceKey = new DeviceKey
         {
             Id = Guid.NewGuid(),
@@ -96,6 +121,13 @@ internal sealed class DeviceKeyService(
         };
         identityDbContext.DeviceKeys.Add(deviceKey);
         await identityDbContext.SaveChangesAsync(cancellationToken);
+
+        // Single-use: consume the step-up code now that the key is committed.
+        if (stepUpCode is not null)
+        {
+            stepUpCode.ConsumedAt = now;
+            await accountCodes.UpdateAsync(stepUpCode, cancellationToken);
+        }
 
         await auditLog.WriteAsync(new AuditEntry
         {
@@ -111,6 +143,80 @@ internal sealed class DeviceKeyService(
             deviceKey.Id, callerUserId);
 
         return ToEntry(deviceKey);
+    }
+
+    public async Task<SendBiometricStepUpResponse> IssueEnrolStepUpAsync(
+        Guid callerUserId,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await accounts.FindByIdAsync(callerUserId, cancellationToken);
+        if (user is null || string.IsNullOrEmpty(user.Email)
+            || user.AccountState == AccountState.Disabled)
+        {
+            throw new ApiException(
+                ErrorCodes.DeviceKeyOwnerUnavailable, 401,
+                "Account unavailable.",
+                "الحساب غير متاح.");
+        }
+
+        var now = timeProvider.GetUtcNow();
+
+        // Cap how many step-up codes one account may request per window, so a
+        // signed-in session can't be used to spam the address with emails.
+        var recent = await accountCodes.CountCreatedSinceAsync(
+            callerUserId, AccountCodePurpose.BiometricEnrolStepUp,
+            now - StepUpRequestWindow, cancellationToken);
+        if (recent >= MaxStepUpRequestsPerWindow)
+        {
+            await AuditStepUpRejectedAsync(callerUserId,
+                ErrorCodes.RateLimitExceeded, "rate_limited", cancellationToken);
+            throw new ApiException(
+                ErrorCodes.RateLimitExceeded, 429,
+                "Too many verification codes have been requested. Try again later.",
+                "تم طلب رموز تحقق كثيرة. حاول مرة أخرى لاحقًا.");
+        }
+
+        // Only the newest code stays valid — consume any prior unconsumed one.
+        var previous = await accountCodes.GetLatestUnconsumedAsync(
+            callerUserId, AccountCodePurpose.BiometricEnrolStepUp, cancellationToken);
+        if (previous is not null)
+        {
+            previous.ConsumedAt = now;
+            await accountCodes.UpdateAsync(previous, cancellationToken);
+        }
+
+        // Store only the keyed hash; the plaintext is emailed and never persisted.
+        var plaintext = VerificationCodeGenerator.Generate();
+        await accountCodes.AddAsync(new AccountCode
+        {
+            Id = Guid.NewGuid(),
+            UserId = callerUserId,
+            Purpose = AccountCodePurpose.BiometricEnrolStepUp,
+            Code = AccountCodeHasher.Hash(plaintext),
+            CreatedAt = now,
+            ExpiresAt = now.Add(StepUpLifetime),
+        }, cancellationToken);
+
+        await emailQueue.TryEnqueueAsync(
+            BuildBiometricStepUpEmail(user.Email!, plaintext),
+            purpose: "BiometricEnrolStepUp",
+            subjectEmail: user.Email!,
+            subjectUserId: callerUserId,
+            auditLog: auditLog,
+            logger: logger,
+            cancellationToken: cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.DeviceKeyStepUpIssued,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = callerUserId,
+            SubjectUserId = callerUserId,
+            SubjectEmail = user.Email,
+        }, cancellationToken);
+
+        return new SendBiometricStepUpResponse(
+            MaskEmail(user.Email!), (int)StepUpLifetime.TotalSeconds);
     }
 
     public async Task<IReadOnlyList<DeviceKeyEntry>> ListMineAsync(
@@ -350,6 +456,120 @@ internal sealed class DeviceKeyService(
             Detail = $"deviceKeyId={deviceKeyId}; reason={detail}",
         }, cancellationToken);
     }
+
+    /// <summary>#7a — validates the emailed step-up code that must accompany a
+    /// biometric enrolment and returns it (the caller consumes it only after the
+    /// key is persisted). Returns null when the gate is disabled
+    /// (<c>DeviceKey:RequireStepUpForEnrol=false</c>). Mirrors the sign-in OTP
+    /// redemption: constant-time hash compare, expiry, and a per-code attempt
+    /// cap that burns the code once the budget is spent. Single-use is
+    /// best-effort (the frozen <c>AccountCode</c> has no concurrency token, so
+    /// two simultaneous register calls with the same code could both pass — a
+    /// pre-existing property of the whole AccountCode path, low blast radius
+    /// since every key binds to the caller's own account and is revocable).</summary>
+    private async Task<AccountCode?> ValidateEnrolStepUpAsync(
+        Guid callerUserId, string? suppliedCode, DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        if (!deviceKeyOptions.Value.RequireStepUpForEnrol)
+        {
+            return null;
+        }
+
+        var code = await accountCodes.GetLatestUnconsumedAsync(
+            callerUserId, AccountCodePurpose.BiometricEnrolStepUp, cancellationToken);
+        if (code is null || string.IsNullOrWhiteSpace(suppliedCode))
+        {
+            await AuditStepUpRejectedAsync(callerUserId,
+                ErrorCodes.BiometricStepUpRequired, "missing", cancellationToken);
+            throw new ApiException(
+                ErrorCodes.BiometricStepUpRequired, 401,
+                "A verification code is required to enable biometric sign-in.",
+                "يلزم رمز تحقق لتفعيل تسجيل الدخول ببصمة الوجه.");
+        }
+
+        if (code.ExpiresAt <= now)
+        {
+            code.ConsumedAt = now;
+            await accountCodes.UpdateAsync(code, cancellationToken);
+            await AuditStepUpRejectedAsync(callerUserId,
+                ErrorCodes.BiometricStepUpInvalid, "expired", cancellationToken);
+            throw new ApiException(
+                ErrorCodes.BiometricStepUpInvalid, 401,
+                "The verification code has expired. Request a new one.",
+                "انتهت صلاحية رمز التحقق. اطلب رمزاً جديداً.");
+        }
+
+        if (!CodesMatch(code.Code, AccountCodeHasher.Hash(suppliedCode.Trim())))
+        {
+            code.AttemptCount += 1;
+            // Burn the code once the attempt budget is spent so the 10^6 code
+            // space can't be ground down across repeated register calls.
+            if (code.AttemptCount >= MaxStepUpAttempts)
+            {
+                code.ConsumedAt = now;
+            }
+            await accountCodes.UpdateAsync(code, cancellationToken);
+            await AuditStepUpRejectedAsync(callerUserId,
+                ErrorCodes.BiometricStepUpInvalid, "mismatch", cancellationToken);
+            throw new ApiException(
+                ErrorCodes.BiometricStepUpInvalid, 401,
+                "The verification code is incorrect.",
+                "رمز التحقق غير صحيح.");
+        }
+
+        // Valid — the caller consumes it after the key is committed.
+        return code;
+    }
+
+    private Task AuditStepUpRejectedAsync(
+        Guid callerUserId, string errorCode, string reason,
+        CancellationToken cancellationToken) =>
+        auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.DeviceKeyStepUpRejected,
+            Outcome = AuditOutcome.Failure,
+            ActorUserId = callerUserId,
+            SubjectUserId = callerUserId,
+            ErrorCode = errorCode,
+            Detail = $"reason={reason}",
+        }, cancellationToken);
+
+    /// <summary>Builds the bilingual step-up email; caller pairs it with
+    /// <c>IEmailQueue.TryEnqueueAsync</c>.</summary>
+    private static EmailMessage BuildBiometricStepUpEmail(string email, string code)
+    {
+        var minutes = (int)StepUpLifetime.TotalMinutes;
+        var body =
+            $"<p>Your SIMF biometric sign-in confirmation code is <strong>{code}</strong>.</p>" +
+            $"<p>The code expires in {minutes} minutes. If you did not request to " +
+            "enable Face-ID sign-in, ignore this email.</p>" +
+            $"<hr/><p dir=\"rtl\">رمز تأكيد تفعيل تسجيل الدخول ببصمة الوجه هو " +
+            $"<strong>{code}</strong>.</p>" +
+            $"<p dir=\"rtl\">ينتهي الرمز خلال {minutes} دقائق. إذا لم تطلب تفعيل " +
+            "تسجيل الدخول ببصمة الوجه فتجاهل هذه الرسالة.</p>";
+        return new EmailMessage(email, "SIMF biometric sign-in code", body);
+    }
+
+    /// <summary>Masks an email for the "we sent a code to a***@x.com" line —
+    /// keeps the first character + the full domain and stars the rest of the
+    /// local part. Never returns the full address.</summary>
+    private static string MaskEmail(string email)
+    {
+        var at = email.IndexOf('@');
+        if (at <= 0)
+        {
+            return "***";
+        }
+        return $"{email[..1]}***{email[at..]}";
+    }
+
+    /// <summary>Compares the stored + supplied code hashes in constant time,
+    /// so no timing side channel leaks.</summary>
+    private static bool CodesMatch(string stored, string supplied) =>
+        CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(stored),
+            Encoding.UTF8.GetBytes(supplied));
 
     private static DeviceKeyEntry ToEntry(DeviceKey deviceKey) =>
         new(deviceKey.Id, deviceKey.UserId, deviceKey.Algorithm,

@@ -42,6 +42,14 @@ public class Hall : BaseAuditEntity
     /// hall.</summary>
     public HallPurpose Purpose { get; set; } = HallPurpose.General;
 
+    /// <summary>D-485 (owner batch 2026-06-21) — how attendees join sessions held
+    /// in this hall: <see cref="SeatSelectionMode.AssignedSeat"/> (pick a specific
+    /// seat from the layout — the pre-existing behaviour, value 0 so every existing
+    /// hall is unchanged) or <see cref="SeatSelectionMode.OpenSeating"/> (bulk join,
+    /// no seat). A <c>Session</c> may override this per-session via
+    /// <c>Session.SeatSelectionModeOverride</c>.</summary>
+    public SeatSelectionMode SeatSelectionMode { get; set; } = SeatSelectionMode.AssignedSeat;
+
     /// <summary>P5.1 — D-240 (FDS-003 §5.4 + OI-2): the hall's optional GPS
     /// geofence centre latitude (WGS-84 degrees, −90..90). All three geofence
     /// columns are null together when no geofence is configured — the hall then

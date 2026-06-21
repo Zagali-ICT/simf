@@ -36,6 +36,13 @@ public sealed class SpeakerMeetingRequest
     /// <summary>The meeting topic — free text up to 1000 chars.</summary>
     public string Subject { get; set; } = string.Empty;
 
+    /// <summary>D-474 (#11) — the slot the requester picked from the speaker's
+    /// availability windows. Null for a legacy topic-only request (D-269); set
+    /// for a VIP slot request. The pair is validated to fall inside an active
+    /// window and to be free at submit time.</summary>
+    public DateTimeOffset? SlotStartUtc { get; set; }
+    public DateTimeOffset? SlotEndUtc { get; set; }
+
     /// <summary>Lifecycle state. Pending on create; Accepted or Rejected
     /// after an admin reviews.</summary>
     public MeetingRequestStatus Status { get; set; } = MeetingRequestStatus.Pending;

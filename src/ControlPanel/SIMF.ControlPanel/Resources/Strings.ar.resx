@@ -73,6 +73,23 @@
   <data name="Module.HallSeatLayouts" xml:space="preserve"><value>مخططات مقاعد القاعات</value></data>
   <data name="Module.SessionSeatPlans" xml:space="preserve"><value>مخطط مقاعد الجلسات</value></data>
   <data name="Module.SpeakerMeetingRequests" xml:space="preserve"><value>طلبات مقابلة المتحدثين</value></data>
+  <data name="Module.AdminSpeakerAvailability" xml:space="preserve"><value>توفّر المتحدثين</value></data>
+  <data name="Module.AdminDelegationMeetings" xml:space="preserve"><value>اجتماعات الوفود</value></data>
+  <data name="Admin.SpeakerAvailability.Title" xml:space="preserve"><value>توفّر المتحدثين</value></data>
+  <data name="Admin.SpeakerAvailability.Speaker" xml:space="preserve"><value>المتحدّث</value></data>
+  <data name="Admin.SpeakerAvailability.PickSpeaker" xml:space="preserve"><value>اختر متحدّثاً…</value></data>
+  <data name="Admin.SpeakerAvailability.AddWindow" xml:space="preserve"><value>إضافة فترة توفّر</value></data>
+  <data name="Admin.SpeakerAvailability.Start" xml:space="preserve"><value>البداية (UTC)</value></data>
+  <data name="Admin.SpeakerAvailability.End" xml:space="preserve"><value>النهاية (UTC)</value></data>
+  <data name="Admin.SpeakerAvailability.SlotMinutes" xml:space="preserve"><value>مدة الفترة (دقائق)</value></data>
+  <data name="Admin.SpeakerAvailability.Add" xml:space="preserve"><value>إضافة الفترة</value></data>
+  <data name="Admin.SpeakerAvailability.Windows" xml:space="preserve"><value>الفترات</value></data>
+  <data name="Admin.SpeakerAvailability.None" xml:space="preserve"><value>لا توجد فترات توفّر بعد.</value></data>
+  <data name="Admin.SpeakerAvailability.Min" xml:space="preserve"><value>دقيقة/فترة</value></data>
+  <data name="Admin.SpeakerAvailability.Added" xml:space="preserve"><value>تمت إضافة الفترة.</value></data>
+  <data name="Admin.SpeakerAvailability.Failed" xml:space="preserve"><value>فشلت العملية.</value></data>
+  <data name="Admin.SpeakerAvailability.BadDates" xml:space="preserve"><value>أدخل بداية ونهاية صحيحتين.</value></data>
+  <data name="Admin.SpeakerAvailability.BadSlot" xml:space="preserve"><value>أدخل مدة فترة موجبة.</value></data>
   <data name="Module.Gates" xml:space="preserve"><value>البوابات</value></data>
   <data name="Module.GatesOperator" xml:space="preserve"><value>مشغل البوابة</value></data>
   <data name="Module.Speakers" xml:space="preserve"><value>المتحدثون</value></data>
@@ -596,6 +613,7 @@
   <data name="Admin.Countries.Field.DisplayOrderHint" xml:space="preserve"><value>مفتاح الترتيب في قائمة الجنسيات (صفر أو أكبر؛ تصاعدياً).</value></data>
   <data name="Admin.Countries.Field.DisplayOrderInvalid" xml:space="preserve"><value>يجب أن يكون ترتيب العرض صفراً أو عدداً صحيحاً موجباً.</value></data>
   <data name="Admin.Countries.Field.IsActive" xml:space="preserve"><value>مفعّل — عرضه في قائمة الجنسيات</value></data>
+  <data name="Admin.Countries.Field.IsInvited" xml:space="preserve"><value>مدعوّة لإرسال وفد</value></data>
   <data name="Admin.Countries.Add.Title" xml:space="preserve"><value>إضافة بلد</value></data>
   <data name="Admin.Countries.Edit.Title" xml:space="preserve"><value>تعديل البلد</value></data>
   <data name="Admin.Countries.Details.Title" xml:space="preserve"><value>تفاصيل البلد</value></data>
@@ -653,6 +671,9 @@
   <data name="Admin.Halls.Field.Capacity" xml:space="preserve"><value>السعة</value></data>
   <data name="Admin.Halls.Field.CapacityHint" xml:space="preserve"><value>السعة (جلوس + وقوف؛ صفر أو أكثر). تحكم السعة القصوى لحجوزات الجلسات.</value></data>
   <data name="Admin.Halls.Field.CapacityInvalid" xml:space="preserve"><value>يجب أن تكون السعة صفراً أو عدداً صحيحاً موجباً.</value></data>
+  <data name="Admin.Halls.Field.SeatMode" xml:space="preserve"><value>اختيار المقاعد</value></data>
+  <data name="Admin.Halls.SeatMode.Assigned" xml:space="preserve"><value>مقعد محدد (يختار الحاضر مقعده)</value></data>
+  <data name="Admin.Halls.SeatMode.Open" xml:space="preserve"><value>مقاعد مفتوحة (دخول عام)</value></data>
   <data name="Admin.Halls.Field.Floor" xml:space="preserve"><value>الطابق</value></data>
   <data name="Admin.Halls.Field.FloorHint" xml:space="preserve"><value>اختياري. حتى 32 حرفاً (مثل "الأرضي" أو "الطابق 2").</value></data>
   <data name="Admin.Halls.Field.EquipmentNotes" xml:space="preserve"><value>ملاحظات المعدات وإمكانية الوصول</value></data>
@@ -1397,6 +1418,10 @@
   <data name="Admin.Sessions.Type.Workshop" xml:space="preserve"><value>ورشة عمل</value></data>
   <data name="Admin.Sessions.Type.Session" xml:space="preserve"><value>جلسة</value></data>
   <data name="Admin.Sessions.Type.Event" xml:space="preserve"><value>حدث</value></data>
+  <data name="Admin.Sessions.Field.SeatMode" xml:space="preserve"><value>اختيار المقاعد (تجاوز)</value></data>
+  <data name="Admin.Sessions.SeatMode.Inherit" xml:space="preserve"><value>— حسب القاعة —</value></data>
+  <data name="Admin.Sessions.SeatMode.Assigned" xml:space="preserve"><value>مقعد محدد</value></data>
+  <data name="Admin.Sessions.SeatMode.Open" xml:space="preserve"><value>مقاعد مفتوحة (دخول عام)</value></data>
   <data name="Module.ProgrammeDays" xml:space="preserve"><value>أيام البرنامج</value></data>
   <data name="Admin.ProgrammeDays.Title" xml:space="preserve"><value>أيام البرنامج</value></data>
   <data name="Admin.ProgrammeDays.Loading" xml:space="preserve"><value>جارٍ تحميل أيام البرنامج…</value></data>
@@ -1436,6 +1461,7 @@
   <data name="Admin.Bookings.Col.Session" xml:space="preserve"><value>الجلسة</value></data>
   <data name="Admin.Bookings.Col.Start" xml:space="preserve"><value>تبدأ (UTC)</value></data>
   <data name="Admin.Bookings.Col.Seat" xml:space="preserve"><value>المقعد</value></data>
+  <data name="Admin.Bookings.GeneralAdmission" xml:space="preserve"><value>دخول عام</value></data>
   <data name="Admin.Bookings.Col.Attendee" xml:space="preserve"><value>الحاضر</value></data>
   <data name="Admin.Bookings.Col.BookedAt" xml:space="preserve"><value>تاريخ الحجز (UTC)</value></data>
   <data name="Admin.Bookings.Approve" xml:space="preserve"><value>اعتماد</value></data>
@@ -1700,6 +1726,11 @@
   <data name="Admin.SessionSummaries.Col.Source" xml:space="preserve"><value>المصدر</value></data>
   <data name="Admin.SessionSummaries.Status.None" xml:space="preserve"><value>لا يوجد ملخص</value></data>
   <data name="Admin.SessionSummaries.Status.Draft" xml:space="preserve"><value>مسودة</value></data>
+  <data name="Admin.SessionSummaries.Status.InReview" xml:space="preserve"><value>قيد المراجعة</value></data>
+  <data name="Admin.SessionSummaries.Status.Approved" xml:space="preserve"><value>معتمد</value></data>
+  <data name="Admin.SessionSummaries.Action.SubmitReview" xml:space="preserve"><value>إرسال للمراجعة</value></data>
+  <data name="Admin.SessionSummaries.Action.Approve" xml:space="preserve"><value>اعتماد (جاهز للمحاور)</value></data>
+  <data name="Admin.SessionSummaries.Action.ReturnToDraft" xml:space="preserve"><value>إعادة إلى المسودة</value></data>
   <data name="Admin.SessionSummaries.Status.Published" xml:space="preserve"><value>منشور</value></data>
   <data name="Admin.SessionSummaries.Source.Ai" xml:space="preserve"><value>مُولّد بالذكاء الاصطناعي</value></data>
   <data name="Admin.SessionSummaries.Source.Manual" xml:space="preserve"><value>مُدخل يدويًا</value></data>
@@ -1721,6 +1752,9 @@
   <data name="Admin.SessionSummaries.Generated" xml:space="preserve"><value>تم توليد مسودة بالذكاء الاصطناعي.</value></data>
   <data name="Admin.SessionSummaries.Saved" xml:space="preserve"><value>تم حفظ الملخص.</value></data>
   <data name="Admin.SessionSummaries.Published" xml:space="preserve"><value>تم نشر الملخص.</value></data>
+  <data name="Admin.SessionSummaries.Submitted" xml:space="preserve"><value>تم إرسال الملخص للمراجعة.</value></data>
+  <data name="Admin.SessionSummaries.Approved" xml:space="preserve"><value>تم اعتماد الملخص — جاهز للمحاور.</value></data>
+  <data name="Admin.SessionSummaries.ReturnedToDraft" xml:space="preserve"><value>تمت إعادة الملخص إلى المسودة.</value></data>
   <data name="Admin.SessionSummaries.Unpublished" xml:space="preserve"><value>تم إلغاء نشر الملخص.</value></data>
   <data name="Module.HallArrivals" xml:space="preserve"><value>الوصول إلى القاعات</value></data>
   <data name="Admin.HallArrivals.Title" xml:space="preserve"><value>الوصول إلى القاعات (مسح الباب)</value></data>
@@ -1932,6 +1966,32 @@
   <data name="Admin.SpeakerMeetingRequests.Respond.Submit" xml:space="preserve"><value>إرسال الردّ</value></data>
   <data name="Admin.SpeakerMeetingRequests.Respond.Done" xml:space="preserve"><value>تم إرسال الردّ.</value></data>
   <data name="Admin.SpeakerMeetingRequests.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+
+  <!-- D-478 (#11, Group G phase 2) — delegation↔delegation meeting requests desk. -->
+  <data name="Admin.DelegationMeetings.Title" xml:space="preserve"><value>اجتماعات الوفود</value></data>
+  <data name="Admin.DelegationMeetings.None" xml:space="preserve"><value>لا توجد طلبات اجتماعات وفود بعد.</value></data>
+  <data name="Admin.DelegationMeetings.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
+  <data name="Admin.DelegationMeetings.LoadFailed" xml:space="preserve"><value>تعذّر تحميل طلبات اجتماعات الوفود.</value></data>
+  <data name="Admin.DelegationMeetings.LoadingDetail" xml:space="preserve"><value>جارٍ تحميل بيانات مقدّم الطلب…</value></data>
+  <data name="Admin.DelegationMeetings.Requester" xml:space="preserve"><value>مقدّم الطلب</value></data>
+  <data name="Admin.DelegationMeetings.Filter.Pending" xml:space="preserve"><value>قيد الانتظار</value></data>
+  <data name="Admin.DelegationMeetings.Filter.Accepted" xml:space="preserve"><value>مقبول</value></data>
+  <data name="Admin.DelegationMeetings.Filter.Rejected" xml:space="preserve"><value>مرفوض</value></data>
+  <data name="Admin.DelegationMeetings.Col.From" xml:space="preserve"><value>وفد الطالب</value></data>
+  <data name="Admin.DelegationMeetings.Col.To" xml:space="preserve"><value>الوفد المستهدف</value></data>
+  <data name="Admin.DelegationMeetings.Col.Attendees" xml:space="preserve"><value>عدد الحضور</value></data>
+  <data name="Admin.DelegationMeetings.Col.Subject" xml:space="preserve"><value>الموضوع</value></data>
+  <data name="Admin.DelegationMeetings.Col.Status" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.DelegationMeetings.Col.CreatedAt" xml:space="preserve"><value>تاريخ الإرسال</value></data>
+  <data name="Admin.DelegationMeetings.Respond" xml:space="preserve"><value>الردّ</value></data>
+  <data name="Admin.DelegationMeetings.Respond.Title" xml:space="preserve"><value>الردّ على طلب اجتماع وفد</value></data>
+  <data name="Admin.DelegationMeetings.Respond.Status" xml:space="preserve"><value>القرار</value></data>
+  <data name="Admin.DelegationMeetings.Respond.Accept" xml:space="preserve"><value>قبول</value></data>
+  <data name="Admin.DelegationMeetings.Respond.Reject" xml:space="preserve"><value>رفض</value></data>
+  <data name="Admin.DelegationMeetings.Respond.Note" xml:space="preserve"><value>ملاحظة الردّ (اختياري، ≤2000 حرف)</value></data>
+  <data name="Admin.DelegationMeetings.Respond.Submit" xml:space="preserve"><value>إرسال الردّ</value></data>
+  <data name="Admin.DelegationMeetings.Respond.Done" xml:space="preserve"><value>تم إرسال الردّ.</value></data>
+  <data name="Admin.DelegationMeetings.Cancel" xml:space="preserve"><value>إلغاء</value></data>
 
   <!-- D-199 — new nav labels (Module.Media/News/Sponsors/Booths/Moderation/PreviousEditions already exist). -->
   <data name="Module.MediaPartners" xml:space="preserve"><value>شركاء النجاح</value></data>
@@ -2773,5 +2833,19 @@
   <data name="Admin.VipExport.Photo" xml:space="preserve"><value>الصورة</value></data>
   <data name="Admin.VipExport.Download" xml:space="preserve"><value>تنزيل</value></data>
   <data name="Module.AdminVisitorsVip" xml:space="preserve"><value>تسجيل كبار الشخصيات</value></data>
+  <data name="Module.AdminDelegates" xml:space="preserve"><value>الوفود</value></data>
+  <data name="Admin.Delegates.Title" xml:space="preserve"><value>الوفود</value></data>
+  <data name="Admin.Delegates.Single.Title" xml:space="preserve"><value>تسجيل عضو وفد</value></data>
+  <data name="Admin.Delegates.Single.Hint" xml:space="preserve"><value>عضو الوفد زائر عادي مميَّز كعضو في وفد؛ ويجب أن تكون جنسيته من دولة مدعوّة لإرسال وفد.</value></data>
+  <data name="Admin.Delegates.Bulk.Title" xml:space="preserve"><value>توليد شارات بالجملة</value></data>
+  <data name="Admin.Delegates.Bulk.Hint" xml:space="preserve"><value>وَلِّد شارات افتراضية حسب نوع الملف والعدد (مثل 10 كبار شخصيات، 500 عادي). تحمل كل شارة بيانات افتراضية ورمز QR جاهز.</value></data>
+  <data name="Admin.Delegates.Bulk.Count" xml:space="preserve"><value>العدد</value></data>
+  <data name="Admin.Delegates.Bulk.IsDelegate" xml:space="preserve"><value>تمييز الشارات المولّدة كوفود</value></data>
+  <data name="Admin.Delegates.Bulk.Generate" xml:space="preserve"><value>توليد الشارات</value></data>
+  <data name="Admin.Delegates.Bulk.Generating" xml:space="preserve"><value>جارٍ التوليد…</value></data>
+  <data name="Admin.Delegates.Bulk.Result" xml:space="preserve"><value>تم توليد {0} شارة.</value></data>
+  <data name="Admin.Delegates.Bulk.Failed" xml:space="preserve"><value>تعذّر توليد الشارات.</value></data>
+  <data name="Admin.Delegates.Bulk.NoTypes" xml:space="preserve"><value>لا توجد أنواع ملفات نشطة لتوليد شارات لها.</value></data>
+  <data name="Admin.Delegates.Bulk.PickCount" xml:space="preserve"><value>أدخل عدداً لنوع ملف واحد على الأقل.</value></data>
   <data name="Module.AdminVisitorsVipExport" xml:space="preserve"><value>تصدير ترحيب كبار الشخصيات</value></data>
 </root>

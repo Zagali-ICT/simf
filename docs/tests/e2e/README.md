@@ -51,6 +51,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/visitors/pending` | [`cp-admin-visitors-pending.md`](cp-admin-visitors-pending.md) | E2E-VPN-001..025 |
 | `/admin/visitors/vip` | [`cp-vip-registration.md`](cp-vip-registration.md) | E2E-VIPR-001..007 |
 | `/admin/visitors/vip/export` | [`cp-vip-export.md`](cp-vip-export.md) | E2E-VIPX-001..008 |
+| `/admin/delegates` | [`cp-admin-delegates.md`](cp-admin-delegates.md) | E2E-DLG-001..009 |
 | `/admin/attendees` | [`cp-admin-attendees.md`](cp-admin-attendees.md) | E2E-ATT-001..016 |
 | `/admin/print-bag` | [`cp-admin-print-bag.md`](cp-admin-print-bag.md) | E2E-PRT-001..011 |
 | `/admin/interests` | [`cp-admin-interests.md`](cp-admin-interests.md) | E2E-INT-001..013 |
@@ -82,6 +83,8 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/programme/timeline` | [`cp-admin-programme-timeline.md`](cp-admin-programme-timeline.md) | E2E-PTL-001..011 |
 | `/admin/bookings` | [`cp-admin-bookings.md`](cp-admin-bookings.md) | E2E-BKG-001..013 |
 | `/admin/speaker-meeting-requests` | [`cp-admin-speaker-meeting-requests.md`](cp-admin-speaker-meeting-requests.md) | E2E-SMR-001..015 |
+| `/admin/speaker-availability` | [`cp-admin-speaker-availability.md`](cp-admin-speaker-availability.md) | E2E-SAV-001..006 |
+| `/admin/delegation-meetings` | [`cp-admin-delegation-meetings.md`](cp-admin-delegation-meetings.md) | E2E-DLM-001..006 |
 | `/admin/meeting-tables` | [`cp-meeting-tables.md`](cp-meeting-tables.md) | E2E-MHT-001..013 |
 | `/admin/business-meetings` | [`cp-business-meetings.md`](cp-business-meetings.md) | E2E-BMT-001..016 |
 
@@ -93,7 +96,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/sessions/{id}/moderate` | [`cp-session-moderate.md`](cp-session-moderate.md) | E2E-MOD-001..012 |
 | `/admin/comments-moderation` | [`cp-admin-comments-moderation.md`](cp-admin-comments-moderation.md) | E2E-CMT-001..018 |
 | `/admin/ratings` | [`cp-admin-ratings.md`](cp-admin-ratings.md) | E2E-RAT-001..013 |
-| `/admin/session-summaries` | [`cp-admin-session-summaries.md`](cp-admin-session-summaries.md) | E2E-SUM-001..018 |
+| `/admin/session-summaries` | [`cp-admin-session-summaries.md`](cp-admin-session-summaries.md) | E2E-SUM-001..022 |
 | `/admin/hall-arrivals` | [`cp-admin-hall-arrivals.md`](cp-admin-hall-arrivals.md) | E2E-HAR-001..014 |
 
 ### Control Panel — Exhibition
@@ -194,9 +197,12 @@ API endpoints land (D-249). The per-screen design docs live under
 | #16 `sessions` (`GET /app/programme/sessions`) | [`mobile-agenda.md`](mobile-agenda.md) | E2E-MOB016-001..013 |
 | #17 `sessionDetail` (`GET /app/programme/sessions/{id}` + `…/sessions/{id}/seats`) | [`mobile-session-detail.md`](mobile-session-detail.md) | E2E-MOB017-001..011 |
 | #18 `mySeat` (`GET /app/sessions/{id}/seats` + reserve/release) | [`mobile-my-seat.md`](mobile-my-seat.md) | E2E-MOB018-001..017 |
+| `seatPicker` (`GET …/seats` + `POST …/seats/reserve` / `reserve-random`) — D-485 | [`mobile-seat-picker.md`](mobile-seat-picker.md) | E2E-MOBPICK-001..007 |
+| `joinSessionHub` (`GET /app/programme/sessions`) — D-485 | [`mobile-join-hub.md`](mobile-join-hub.md) | E2E-MOBHUB-001..005 |
 | #19 `speakers` (`GET /app/speakers`) | [`mobile-speakers.md`](mobile-speakers.md) | E2E-MOB019-001..007 |
 | #20 `speakerProfile` (`GET /app/speakers/{id}` + meeting-request) | [`mobile-speaker-profile.md`](mobile-speaker-profile.md) | E2E-MOB020-001..010 |
-| #22 `booths` (`GET /app/booths` + `/{id}`) | [`mobile-booths.md`](mobile-booths.md) | E2E-MOB022-001..005 |
+| #22 `booths` (`GET /app/booths` + `/{id}`) — #9: country name + أرشدني→map | [`mobile-booths.md`](mobile-booths.md) | E2E-MOB022-001..013 |
+| `boothMap` (`/booths/:id/map` → venue map focused on the booth) — #9 | [`mobile-booths.md`](mobile-booths.md) | E2E-MOB022-013 |
 | #23 `sponsors` (`GET /app/sponsors`) | [`mobile-sponsors.md`](mobile-sponsors.md) | E2E-MOB023-001..004 |
 | #24 `archive` (`GET /app/archive` + `/{id}`) | [`mobile-archive.md`](mobile-archive.md) | E2E-MOB024-001..005 |
 | #29 `news` (`GET /app/news` + `/{id}`) | [`mobile-news.md`](mobile-news.md) | E2E-MOB029-001..005 |
@@ -210,6 +216,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #38 `accessibility` (no API) | [`mobile-accessibility.md`](mobile-accessibility.md) | E2E-MOB038-001..004 |
 | #41 `more` (no API) | [`mobile-more.md`](mobile-more.md) | E2E-MOB041-001..003 |
 | #34 `aiSummary` (`GET /app/programme/sessions/{id}/summary`) | [`mobile-ai-summary.md`](mobile-ai-summary.md) | E2E-MOB034-001..006 |
+| `sessionSummaryList` (`GET /app/programme/sessions`) — #1/#6 (home tile → list → #34 details) | [`mobile-ai-summary.md`](mobile-ai-summary.md) | E2E-MOB034-006 |
 | #26 `sendQuestion` (`POST /app/sessions/{id}/questions`) | [`mobile-send-question.md`](mobile-send-question.md) | E2E-MOB026-001..006 |
 | #28 `audienceComments` (`GET/POST /app/sessions/{id}/comments` + like) | [`mobile-audience-comments.md`](mobile-audience-comments.md) | E2E-MOB028-001..007 |
 | #32 `badge` (`GET /app/account/dashboard`) | [`mobile-badge.md`](mobile-badge.md) | E2E-MOB032-001..004 |
@@ -217,6 +224,8 @@ API endpoints land (D-249). The per-screen design docs live under
 | #36 `chatbot` (interim shell — no API) | [`mobile-chatbot.md`](mobile-chatbot.md) | E2E-MOB036-001..006 |
 | #24-01 `archiveDetail` (`GET /app/archive/{id}`) | [`mobile-archive-detail.md`](mobile-archive-detail.md) | E2E-MOB024D-001..009 |
 | `My Contacts` / `Share my contact` (`/app/account/share-token` + `/app/contacts/*`) | [`mobile-my-contacts.md`](mobile-my-contacts.md) | E2E-MMC-001..011 |
+| `My meetings` (`GET /app/my-meetings`) — D-479, additive read-only | [`mobile-my-meetings.md`](mobile-my-meetings.md) | E2E-MMM-001..006 |
+| `Confirm Face ID` step-up (`POST /app/auth/device-keys/step-up` + gated register) — #7a biometric-enable | [`mobile-biometric-step-up.md`](mobile-biometric-step-up.md) | E2E-MBSU-001..011 |
 
 ## How to add a new catalogue file
 

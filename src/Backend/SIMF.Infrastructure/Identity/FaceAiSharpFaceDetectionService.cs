@@ -40,6 +40,19 @@ public sealed class FaceAiSharpFaceDetectionService(
     private readonly Lock _gate = new();
     private IFaceDetector? _detector;
 
+    // Security finding H3 — reject decompression-bomb uploads before they
+    // allocate. A small file can declare an enormous canvas that decodes to
+    // multiple GB of Rgb24; Image.Identify reads only the header (no pixel
+    // allocation), so an over-large image is rejected before Image.Load
+    // commits the memory. _decodeLimiter bounds concurrent decodes so a burst
+    // of large-but-valid uploads cannot pile up buffers ahead of the
+    // serialised inference lock.
+    // ~60 MP — above any mainstream phone/camera sensor (so a legitimate
+    // full-res ID photo is never rejected) yet far below the hundreds-of-
+    // megapixels / gigapixel canvases a decompression bomb declares.
+    private const long MaxDecodePixels = 60_000_000;
+    private readonly SemaphoreSlim _decodeLimiter = new(2);
+
     public Task<bool> ContainsHumanFaceAsync(
         byte[] imageBytes, CancellationToken cancellationToken = default)
     {
@@ -51,39 +64,69 @@ public sealed class FaceAiSharpFaceDetectionService(
         }
 
         // CPU-bound ONNX inference — run off the request thread.
-        return Task.Run(() => Detect(imageBytes), cancellationToken);
+        return Task.Run(() => Detect(imageBytes, cancellationToken), cancellationToken);
     }
 
-    private bool Detect(byte[] imageBytes)
+    private bool Detect(byte[] imageBytes, CancellationToken cancellationToken)
     {
-        Image<Rgb24> image;
+        // Header-only inspection (no pixel allocation) — reject an over-large
+        // canvas before the full decode commits memory (security finding H3).
         try
         {
-            image = Image.Load<Rgb24>(imageBytes);
+            var info = Image.Identify(imageBytes);
+            if ((long)info.Width * info.Height > MaxDecodePixels)
+            {
+                logger.LogWarning(
+                    "Face detection: image {Width}x{Height} exceeds the {Cap}px decode cap — rejected as no-face.",
+                    info.Width, info.Height, MaxDecodePixels);
+                return false;
+            }
         }
         catch (ImageFormatException ex)
         {
-            // An image the decoder cannot even parse certainly shows no
-            // detectable face — reject as no-face (400) instead of failing
-            // the request with a 500. Also hardens the endpoint against
-            // crafted files that pass the magic-byte gate but are corrupt.
             logger.LogWarning(
-                ex, "Face detection: the uploaded image could not be decoded.");
+                ex, "Face detection: the uploaded image header could not be identified.");
             return false;
         }
 
-        using (image)
-        lock (_gate)
+        // Bound concurrent decodes so a burst of valid uploads cannot allocate
+        // unboundedly ahead of the serialised inference lock.
+        _decodeLimiter.Wait(cancellationToken);
+        try
         {
-            _detector ??= FaceAiSharpBundleFactory.CreateFaceDetector();
-            var faces = _detector.DetectFaces(image);
-            var hit = faces.Any(face =>
-                face.Confidence is null
-                || face.Confidence.Value >= options.Value.MinConfidence);
-            logger.LogInformation(
-                "Face detection ran: {FaceCount} candidate(s), accepted={Accepted}.",
-                faces.Count, hit);
-            return hit;
+            Image<Rgb24> image;
+            try
+            {
+                image = Image.Load<Rgb24>(imageBytes);
+            }
+            catch (ImageFormatException ex)
+            {
+                // An image the decoder cannot even parse certainly shows no
+                // detectable face — reject as no-face (400) instead of failing
+                // the request with a 500. Also hardens the endpoint against
+                // crafted files that pass the magic-byte gate but are corrupt.
+                logger.LogWarning(
+                    ex, "Face detection: the uploaded image could not be decoded.");
+                return false;
+            }
+
+            using (image)
+            lock (_gate)
+            {
+                _detector ??= FaceAiSharpBundleFactory.CreateFaceDetector();
+                var faces = _detector.DetectFaces(image);
+                var hit = faces.Any(face =>
+                    face.Confidence is null
+                    || face.Confidence.Value >= options.Value.MinConfidence);
+                logger.LogInformation(
+                    "Face detection ran: {FaceCount} candidate(s), accepted={Accepted}.",
+                    faces.Count, hit);
+                return hit;
+            }
+        }
+        finally
+        {
+            _decodeLimiter.Release();
         }
     }
 }

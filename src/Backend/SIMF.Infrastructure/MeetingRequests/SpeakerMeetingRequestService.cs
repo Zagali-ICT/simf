@@ -3,11 +3,14 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
+using SIMF.Application.Email;
 using SIMF.Application.MeetingRequests.Abstractions;
+using SIMF.Application.Notifications;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Programme;
 using SIMF.Domain.BusinessMeetings;
+using SIMF.Domain.Notifications;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.MeetingRequests;
@@ -20,6 +23,9 @@ namespace SIMF.Infrastructure.MeetingRequests;
 internal sealed class SpeakerMeetingRequestService(
     SimfAppDbContext appDbContext,
     SimfIdentityDbContext identityDbContext,
+    ISpeakerAvailabilityService availability,
+    INotificationDispatcher notifications,
+    IEmailQueue emailQueue,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<SpeakerMeetingRequestService> logger) : ISpeakerMeetingRequestService
@@ -77,6 +83,39 @@ internal sealed class SpeakerMeetingRequestService(
                 "هذا المتحدّث لا يقبل طلبات المقابلة.");
         }
 
+        // D-474 (#11) — the VIP slot flow: when the requester picked a slot, they
+        // must be a VIP/VVIP and the slot must still be free. A null slot is the
+        // legacy topic-only request (any approved attendee).
+        DateTimeOffset? slotStart = null;
+        DateTimeOffset? slotEnd = null;
+        if (request.SlotStartUtc is { } pickedStart)
+        {
+            if (request.SlotEndUtc is not { } pickedEnd || pickedEnd <= pickedStart)
+            {
+                throw new ApiException(
+                    ErrorCodes.SpeakerMeetingRequestInvalid, 400,
+                    "A valid meeting slot (start and end) is required.",
+                    "يلزم اختيار فترة اجتماع صحيحة (بداية ونهاية).");
+            }
+            if (!await IsVipAsync(requesterUserId, cancellationToken))
+            {
+                throw new ApiException(
+                    ErrorCodes.Forbidden, 403,
+                    "Booking a meeting slot is available to VIP guests only.",
+                    "حجز فترة اجتماع متاح لضيوف كبار الشخصيات فقط.");
+            }
+            var slots = await availability.GetAvailableSlotsAsync(speakerId, cancellationToken);
+            if (!slots.Any(s => s.StartUtc == pickedStart && s.EndUtc == pickedEnd))
+            {
+                throw new ApiException(
+                    ErrorCodes.SpeakerMeetingRequestInvalid, 409,
+                    "That slot is no longer available.",
+                    "لم تعد هذه الفترة متاحة.");
+            }
+            slotStart = pickedStart;
+            slotEnd = pickedEnd;
+        }
+
         var now = timeProvider.GetUtcNow();
         var req = new SpeakerMeetingRequest
         {
@@ -85,6 +124,8 @@ internal sealed class SpeakerMeetingRequestService(
             RequestedByUserId = requesterUserId,
             RequesterName = name,
             Subject = subject,
+            SlotStartUtc = slotStart,
+            SlotEndUtc = slotEnd,
             Status = MeetingRequestStatus.Pending,
             CreatedAt = now,
         };
@@ -266,7 +307,76 @@ internal sealed class SpeakerMeetingRequestService(
             Detail = DetailJson(new { speakerMeetingRequestId = req.Id }),
         }, cancellationToken);
 
+        // D-474 (#11) — notify the requester in-app, and on Accept email the speaker.
+        await NotifyOutcomeAsync(req, cancellationToken);
+
         return await LoadDetailAsync(id, cancellationToken);
+    }
+
+    // D-474 — VIP gate: the requester's profile-type name is VIP/VVIP.
+    private async Task<bool> IsVipAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var typeName = await appDbContext.UserProfiles.AsNoTracking()
+            .Where(p => p.UserId == userId && p.ProfileTypeId != null)
+            .Select(p => p.ProfileType!.Name)
+            .SingleOrDefaultAsync(cancellationToken);
+        return typeName is not null
+            && typeName.ToUpperInvariant().Contains("VIP");
+    }
+
+    // D-474 — in-app notify the requester of the decision; on Accept also email the
+    // speaker (resolved via their Contact). Both best-effort (swallow-and-log) so a
+    // notification/email failure never undoes the committed response.
+    private async Task NotifyOutcomeAsync(
+        SpeakerMeetingRequest req, CancellationToken cancellationToken)
+    {
+        var accepted = req.Status == MeetingRequestStatus.Accepted;
+        var speaker = await appDbContext.Speakers.AsNoTracking()
+            .Where(s => s.Id == req.SpeakerId)
+            .Select(s => new { s.Name, s.ContactId })
+            .SingleOrDefaultAsync(cancellationToken);
+        var speakerName = speaker?.Name ?? "the speaker";
+
+        await notifications.TryDispatchAsync(new NotificationRequest
+        {
+            UserId = req.RequestedByUserId,
+            Kind = accepted ? NotificationKind.MeetingScheduled : NotificationKind.MeetingCancelled,
+            Title = accepted ? "Meeting request accepted" : "Meeting request declined",
+            TitleArabic = accepted ? "تم قبول طلب المقابلة" : "تم رفض طلب المقابلة",
+            Body = accepted
+                ? $"Your meeting request with {speakerName} was accepted."
+                : $"Your meeting request with {speakerName} was declined.",
+            BodyArabic = accepted
+                ? $"تم قبول طلب مقابلتك مع {speakerName}."
+                : $"تم رفض طلب مقابلتك مع {speakerName}.",
+            Severity = NotificationSeverity.Info,
+            RelatedEntityType = nameof(SpeakerMeetingRequest),
+            RelatedEntityId = req.Id,
+            SendEmail = false,
+        }, logger, cancellationToken);
+
+        if (accepted && speaker?.ContactId is { } contactId)
+        {
+            var contactEmail = await appDbContext.Contacts.AsNoTracking()
+                .Where(c => c.Id == contactId)
+                .Select(c => c.Email)
+                .SingleOrDefaultAsync(cancellationToken);
+            if (!string.IsNullOrWhiteSpace(contactEmail))
+            {
+                var slot = req.SlotStartUtc is { } s
+                    ? $" Proposed slot: {s:yyyy-MM-dd HH:mm} UTC."
+                    : string.Empty;
+                var html =
+                    $"<p>A meeting request from <strong>{System.Net.WebUtility.HtmlEncode(req.RequesterName)}</strong> has been accepted.{slot}</p>"
+                    + $"<p>Topic: {System.Net.WebUtility.HtmlEncode(req.Subject)}</p>";
+                await emailQueue.TryEnqueueAsync(
+                    new EmailMessage(contactEmail!, "SIMF — a meeting request was accepted", html),
+                    purpose: "SpeakerMeetingAccepted",
+                    subjectEmail: contactEmail!,
+                    subjectUserId: Guid.Empty,
+                    auditLog, logger, cancellationToken);
+            }
+        }
     }
 
     // Loads the admin detail (speaker name from the App DB + requester email

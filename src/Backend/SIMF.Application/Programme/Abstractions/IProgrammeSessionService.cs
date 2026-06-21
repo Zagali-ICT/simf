@@ -50,6 +50,15 @@ public interface IProgrammeSessionService
     /// <c>Session.Status</c>.</summary>
     Task<PublicSessionSummary?> GetSessionSummaryAsync(
         Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>D-472 (#9) — the team-approved محضر for the session's host /
+    /// moderator ("ready for المحاور"), gated on <c>ApprovedAt</c> rather than the
+    /// public publish. Throws 403 when <paramref name="callerUserId"/> is neither
+    /// a moderator of the session (the <c>SessionModerator</c> grant) nor its host
+    /// (a speaker with <c>Role = Host</c> mapped to this user); returns null when
+    /// the session is soft-deleted or has no approved summary yet.</summary>
+    Task<HostSessionSummary?> GetApprovedSummaryForHostAsync(
+        Guid callerUserId, Guid sessionId, CancellationToken cancellationToken = default);
 }
 
 /// <summary>P3.2b — D-232: a pointer to a published session's recording on

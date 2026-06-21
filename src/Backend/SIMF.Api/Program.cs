@@ -58,6 +58,9 @@ builder.Host.UseSerilog((context, configuration) =>
 // Database contexts, ASP.NET Core Identity, repositories, email, the audit log.
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// A1-19 (NCA) — daily dormant-account disable sweep (no-op until configured).
+builder.Services.AddHostedService<SIMF.Api.HostedServices.DormantAccountSweepService>();
+
 // The audit log reads the request context; the API supplies it from HttpContext.
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IRequestContext, HttpRequestContext>();
@@ -318,6 +321,12 @@ var swaggerOptions =
     builder.Configuration.GetSection(SwaggerOptions.SectionName).Get<SwaggerOptions>()
     ?? new SwaggerOptions();
 
+// Bound for the Production boot guard below (security finding H1) — the
+// committed default super-admin password must never be the live credential.
+var superAdminOptions =
+    builder.Configuration.GetSection(SuperAdminOptions.SectionName).Get<SuperAdminOptions>()
+    ?? new SuperAdminOptions();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment()
@@ -341,6 +350,27 @@ if (app.Environment.IsProduction()
         + "Swagger:AllowSwagger is true in Production — the OpenAPI UI must not "
         + "be served without the Basic-auth gate.");
 }
+
+// Refuse to start in Production with the committed default super-admin
+// password — it must be overridden via SIMF_SuperAdmin__TempPassword
+// (docs/security/SIMF-Security-Assessment-2026-06-20.md, finding H1).
+if (app.Environment.IsProduction()
+    && superAdminOptions.TempPassword == "Aa@123456789")
+{
+    throw new InvalidOperationException(
+        "SuperAdmin:TempPassword is the committed default — configure a real "
+        + "SIMF_SuperAdmin__TempPassword before starting in Production.");
+}
+
+// M4 (security) — refuse to start in Production when the AI prompt-hash HMAC
+// secret is unconfigured; the dev-fallback key is publicly derivable.
+SIMF.Infrastructure.DependencyInjection.EnsureAiPromptHashSecretConfigured(
+    app.Environment.IsProduction());
+
+// A2-10 (security) — refuse to start in Production without the PII encryption key
+// (it encrypts the UserProfile national-ID / Iqama / passport / mobile columns).
+SIMF.Infrastructure.DependencyInjection.EnsurePiiEncryptionConfigured(
+    app.Environment.IsProduction(), app.Services);
 
 // Apply the migrations and seed the super-admin. Skipped under the test host,
 // which prepares its own database.
@@ -392,6 +422,9 @@ app.UseForwardedHeaders(forwardedHeaders);
 // The correlation id is established next, so every log line for the request —
 // including a failure — carries it.
 app.UseMiddleware<CorrelationIdMiddleware>();
+
+// M7 (security) — baseline security headers on every API response.
+app.UseMiddleware<SecurityHeadersMiddleware>();
 
 // Error handling wraps the rest of the pipeline (SIMF-Sprint1 plan section 7).
 app.UseMiddleware<ErrorHandlingMiddleware>();

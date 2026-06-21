@@ -89,11 +89,13 @@ class _Guest extends AuthController {
 }
 
 class _FakeRepo implements SpeakersRepository {
-  _FakeRepo({this.detail, this.status});
+  _FakeRepo({this.detail, this.status, this.slots = const <SpeakerSlot>[]});
 
   final SpeakerDetail? detail;
   final int? status;
+  final List<SpeakerSlot> slots;
   int submits = 0;
+  DateTime? lastSlotStart;
 
   @override
   Future<List<SpeakerSummary>> getSpeakers() => throw UnimplementedError();
@@ -111,12 +113,18 @@ class _FakeRepo implements SpeakersRepository {
   }
 
   @override
+  Future<List<SpeakerSlot>> getAvailableSlots(String speakerId) async => slots;
+
+  @override
   Future<void> submitMeetingRequest(
     String speakerId, {
     required String requesterName,
     required String subject,
+    DateTime? slotStartUtc,
+    DateTime? slotEndUtc,
   }) async {
     submits++;
+    lastSlotStart = slotStartUtc;
   }
 }
 
@@ -231,6 +239,21 @@ void main() {
 
       expect(repo.submits, 1);
       expect(find.text('Meeting request sent'), findsOneWidget);
+    });
+
+    testWidgets('a speaker with availability slots shows the VIP slot picker (D-474)',
+        (tester) async {
+      final slot = SpeakerSlot(
+        startUtc: DateTime.utc(2030, 1, 1, 10),
+        endUtc: DateTime.utc(2030, 1, 1, 10, 30),
+      );
+      final repo = _FakeRepo(detail: _detail(), slots: <SpeakerSlot>[slot]);
+      await _pump(tester, repo: repo, controller: _SignedIn());
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Request meeting'));
+      await tester.pumpAndSettle();
+      // The sheet offers the VIP slot dropdown sourced from the speaker's free slots.
+      expect(find.byType(DropdownButtonFormField<SpeakerSlot>), findsOneWidget);
     });
 
     testWidgets('no meeting button when the speaker opted out', (tester) async {

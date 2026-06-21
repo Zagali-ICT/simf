@@ -184,6 +184,8 @@ class AppL10n {
   String get organisationRequired =>
       _t('اختر جهتك من القائمة', 'Pick your organisation from the list');
   String get profileTypeLabel => _t('التصنيف', 'Profile type');
+  // D-471 — hint for the profile-type searchable picker sheet.
+  String get profileTypeSearchHint => _t('ابحث عن التصنيف', 'Search profile type');
   // Page 007 — نوع التسجيل (Visitor/Other) filter (D-332). Visitor reuses
   // [signUpTypeVisitor]; Other is new.
   String get registrationTypeLabel => _t('نوع التسجيل', 'Registration type');
@@ -456,10 +458,31 @@ class AppL10n {
   String get biometricPromptEnable => _t('تفعيل', 'Enable');
   String get biometricEnabledToast =>
       _t('تم تفعيل الدخول بالبصمة', 'Face ID sign-in enabled');
-  String get biometricEnableFailedToast =>
-      _t('تعذّر تفعيل الدخول بالبصمة', "Couldn't enable Face ID sign-in");
   String get biometricDisabledToast =>
       _t('تم إيقاف الدخول بالبصمة', 'Face ID sign-in turned off');
+  // Disabling revokes the device key and wipes the local biometric credential —
+  // confirm the destructive action first (owner 2026-06-21).
+  String get biometricDisableConfirmTitle =>
+      _t('إيقاف الدخول بالبصمة', 'Turn off Face ID sign-in');
+  String get biometricDisableConfirmBody => _t(
+        'سيتم حذف بيانات الدخول بالبصمة من هذا الجهاز نهائياً.',
+        'Your Face ID sign-in data will be permanently deleted from this device.',
+      );
+  String get biometricDisableConfirmAction => _t('حذف', 'Delete');
+  // #7a — enabling first confirms intent, then verifies an emailed step-up code
+  // before the device key is enrolled.
+  String get biometricEnableConfirmTitle =>
+      _t('تفعيل الدخول ببصمة الوجه؟', 'Enable Face ID sign-in?');
+  String get biometricEnableConfirmBody => _t(
+        'سنرسل رمز تأكيد إلى بريدك الإلكتروني للتحقق من هويتك.',
+        "We'll email you a confirmation code to verify it's you.",
+      );
+  String get biometricEnableConfirmAction => _t('متابعة', 'Continue');
+  String get biometricStepUpTitle => _t('تأكيد بصمة الوجه', 'Confirm Face ID');
+  String get biometricStepUpHeading =>
+      _t('أدخل رمز التأكيد', 'Enter the confirmation code');
+  String get biometricStepUpSendFailed =>
+      _t('تعذّر إرسال الرمز. حاول مرة أخرى.', "Couldn't send the code. Try again.");
 
   // Email-OTP second factor + reset flow (Page 003 L-5/L-6).
   String get otpTitle => _t('رمز التحقق', 'Verification code');
@@ -808,6 +831,10 @@ class AppL10n {
   String get sessionLink => _t('رابط الجلسة', 'Session link');
   String get sessionSummary => _t('ملخص الجلسة', 'Session summary');
   String get askHost => _t('اسأل المحاور', 'Ask the host');
+  // #3 — pre-ask is gated on having JOINED the session (a booking), not on
+  // physical check-in; the ask card is disabled with this hint until then.
+  String get askHostJoinFirst =>
+      _t('انضم إلى الجلسة لطرح سؤال', 'Join the session to ask a question');
   String get descriptionHeading => _t('وصف الجلسة', 'Description');
   String get speakersHeading => _t('المتحدثون', 'Speakers');
   String get hostLabel => _t('المضيف', 'Host');
@@ -819,6 +846,48 @@ class AppL10n {
         'Show your badge at entry',
       );
   String get seatViewLink => _t('عرض', 'View');
+  // D-485 — the in-app session join flow (Join CTA / seat picker / hub).
+  String get joinSectionHeading => _t('الانضمام للجلسة', 'Join this session');
+  String get joinSeatCta => _t('اختر مقعدي', 'Select my seat');
+  String get joinOpenCta => _t('انضم إلى الجلسة', 'Join this session');
+  String get joinSeatHint =>
+      _t('اختر مقعدك ثم انتظر موافقة الإدارة', 'Pick your seat, then await approval');
+  String get joinOpenHint =>
+      _t('دخول عام — بدون مقعد محدد', 'General admission — no specific seat');
+  String get joinConfirmTitle => _t('تأكيد الانضمام', 'Join this session?');
+  String get joinConfirmBody => _t(
+        'سيتم إرسال طلب انضمامك إلى الإدارة للموافقة.',
+        'Your request to join will be sent to the organisers for approval.',
+      );
+  String get joinConfirmAction => _t('انضمام', 'Join');
+  String get joinPendingToast =>
+      _t('تم إرسال طلبك — بانتظار موافقة الإدارة', 'Request sent — pending approval');
+  String get joinFailed => _t('تعذّر إرسال الطلب', "Couldn't send your request");
+  String get joinSessionFull => _t('لا توجد أماكن متبقية', 'No places remain');
+  String get generalAdmissionLabel => _t('دخول عام', 'General admission');
+  String get reservationPendingHint =>
+      _t('بانتظار موافقة الإدارة', 'Pending approval');
+  String get cancelBookingCta => _t('إلغاء الحجز', 'Cancel booking');
+  String get cancelBookingConfirmTitle => _t('إلغاء الحجز', 'Cancel booking?');
+  String get cancelBookingConfirmBody => _t(
+        'سيتم إلغاء حجزك لهذه الجلسة.',
+        'Your booking for this session will be cancelled.',
+      );
+  String get bookingCancelledToast => _t('تم إلغاء الحجز', 'Booking cancelled');
+  String get bookingCancelFailed =>
+      _t('تعذّر إلغاء الحجز', "Couldn't cancel the booking");
+  // Seat picker (Page — select a seat).
+  String get seatPickerTitle => _t('اختر مقعدك', 'Select your seat');
+  String get seatPickerHint =>
+      _t('اضغط على مقعد متاح لحجزه', 'Tap an available seat to reserve it');
+  String get seatPickerRandomCta => _t('اختيار تلقائي', 'Auto-pick a seat');
+  String get seatReservedToast =>
+      _t('تم الحجز — بانتظار الموافقة', 'Reserved — pending approval');
+  String get seatReserveFailed => _t('تعذّر حجز المقعد', "Couldn't reserve that seat");
+  // Join-a-session hub.
+  String get joinHubTitle => _t('احجز مقعداً', 'Book a seat');
+  String get joinHubHint =>
+      _t('اختر جلسة للانضمام إليها', 'Choose a session to join');
   String get addToCalendar => _t('أضف إلى تقويمي', 'Add to calendar');
   String get reminder => _t('تذكير', 'Reminder');
   String get calendarAdded =>
@@ -880,6 +949,12 @@ class AppL10n {
   String get meetingNameLabel => _t('الاسم', 'Your name');
   String get meetingSubjectLabel => _t('الموضوع', 'Subject');
   String get meetingSendButton => _t('إرسال الطلب', 'Send request');
+  // D-474/D-475 (#11) — the VIP availability-slot picker.
+  String get meetingSlotLabel => _t('فترة الاجتماع (لكبار الشخصيات)', 'Meeting slot (VIP)');
+  String get meetingSlotNone =>
+      _t('لا توجد فترات متاحة حالياً', 'No meeting slots available right now');
+  String get meetingVipOnly =>
+      _t('حجز فترة اجتماع متاح لضيوف كبار الشخصيات فقط', 'Booking a meeting slot is for VIP guests only');
   String get meetingRequestSent =>
       _t('تم إرسال طلب المقابلة', 'Meeting request sent');
   String get meetingRequestInvalid => _t(
@@ -894,6 +969,19 @@ class AppL10n {
         'تعذّر إرسال الطلب. حاول مرة أخرى.',
         'Could not send the request. Try again.',
       );
+
+  // D-479 (#11 follow-up) — the read-only "My meetings" screen.
+  String get myMeetingsTitle => _t('اجتماعاتي', 'My meetings');
+  String get myMeetingsLink => _t('اجتماعاتي', 'My meetings');
+  String get myMeetingsEmpty =>
+      _t('لا توجد اجتماعات بعد', 'You have no meetings yet');
+  String get myMeetingsError =>
+      _t('تعذّر تحميل اجتماعاتك', 'Could not load your meetings');
+  String get myMeetingKindSpeaker => _t('اجتماع متحدث', 'Speaker meeting');
+  String get myMeetingKindDelegation => _t('اجتماع وفد', 'Delegation meeting');
+  String get myMeetingStatusPending => _t('قيد الانتظار', 'Pending');
+  String get myMeetingStatusAccepted => _t('مقبول', 'Accepted');
+  String get myMeetingStatusRejected => _t('مرفوض', 'Rejected');
 
   // Booths (Page 022).
   String get boothsTitle => _t('الأجنحة', 'Booths');

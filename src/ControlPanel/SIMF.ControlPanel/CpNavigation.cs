@@ -57,6 +57,8 @@ public static class CpNavigation
             // V-1 (D-429) — dedicated VVIP/VIP registration + the موج welcome-data export.
             new("Module.AdminVisitorsVip", "/admin/visitors/vip", RequiredPermission: PermissionCatalog.Visitors.RegisterOnsite, Icon: "star"),
             new("Module.AdminVisitorsVipExport", "/admin/visitors/vip/export", RequiredPermission: PermissionCatalog.Visitors.ExportVip, Icon: "download"),
+            // D-473 (#10) — delegates (وفد): a separate desk for delegate registration + bulk badges.
+            new("Module.AdminDelegates", "/admin/delegates", RequiredPermission: PermissionCatalog.Visitors.RegisterOnsite, Icon: "users"),
             new("Module.AdminOthers", "/admin/others", RequiredPermission: PermissionCatalog.Others.View, Icon: "id-card"),
             new("Module.AdminOthersPending", "/admin/others/pending", RequiredPermission: PermissionCatalog.Others.View, Icon: "hourglass"),
             // D-130 — print-bag station: lookup by QR id + reprint badge.
@@ -92,6 +94,10 @@ public static class CpNavigation
             new("Module.SessionSeatPlans", "/admin/sessions/seat-plans", RequiredPermission: PermissionCatalog.SeatPlans.View, Icon: "armchair"),
             // D-269 — attendee meeting requests TO a speaker (Mockup page 20).
             new("Module.SpeakerMeetingRequests", "/admin/speaker-meeting-requests", RequiredPermission: PermissionCatalog.SpeakerMeetingRequests.View, Icon: "inbox"),
+            // D-474 (#11, Group G) — the team defines speaker availability windows for VIP meeting slots.
+            new("Module.AdminSpeakerAvailability", "/admin/speaker-availability", RequiredPermission: PermissionCatalog.SpeakerMeetingRequests.Manage, Icon: "calendar"),
+            // D-478 (#11, Group G phase 2) — delegation↔delegation meeting requests review desk.
+            new("Module.AdminDelegationMeetings", "/admin/delegation-meetings", RequiredPermission: PermissionCatalog.DelegationMeetings.View, Icon: "inbox"),
             // D-153 — programme speakers (SIMF-DAT-001 §5.4).
             new("Module.Speakers", "/admin/speakers", RequiredPermission: PermissionCatalog.Speakers.View, Icon: "mic"),
             // P2.3 (D-228) — speaker presentation files (FR-407). Reuses Speakers.*.

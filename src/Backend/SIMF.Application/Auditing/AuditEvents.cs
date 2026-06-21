@@ -30,6 +30,10 @@ public static class AuditEvents
     public const string SignInAccountLockedOut = "SignIn.AccountLockedOut";
     public const string SignInStateBlocked = "SignIn.StateBlocked";
     public const string SignInPasswordChangeRequired = "SignIn.PasswordChangeRequired";
+    // A7-13 (NCA) — sign-in found the password older than the configured max age
+    // and forced a change. Distinct from a seeded/admin-rotated forced change so
+    // SOC can see expiry-driven rotations.
+    public const string SignInPasswordExpired = "SignIn.PasswordExpired";
     // D-206: a Control Panel sign-in with a forced-change credential was handed a
     // single-use password-change ticket (in place of the 403). The completion is
     // audited as PasswordChanged, like any other password change.
@@ -53,6 +57,12 @@ public static class AuditEvents
     public const string RefreshTokenReused = "RefreshToken.Reused";
     public const string RefreshTokenRejected = "RefreshToken.Rejected";
     public const string AccessTokenRejected = "AccessToken.Rejected";
+    // A1-12 (NCA Secure Application-Development Standard) — an authenticated
+    // request failed authorization (a 403: missing permission, or a
+    // non-Approved account state). NCA requires every failed access-control
+    // decision to be logged; without this the 401 path was audited but a
+    // denied permission left no trail.
+    public const string AuthorizationDenied = "Authorization.Denied";
     public const string SignOutSucceeded = "SignOut.Succeeded";
     public const string ForgotPasswordRequested = "ForgotPassword.Requested";
     public const string PasswordResetCompleted = "PasswordReset.Completed";
@@ -63,6 +73,9 @@ public static class AuditEvents
     public const string PasswordChanged = "PasswordChange.Succeeded";
     public const string PasswordChangeFailed = "PasswordChange.Failed";
     public const string SuperAdminSeeded = "Admin.SuperAdminSeeded";
+    // A1-19 (NCA) — the daily sweep disabled an account for inactivity beyond the
+    // configured threshold. A system action (no actor).
+    public const string AccountDormantDisabled = "Account.DormantDisabled";
 
     // H10 — D-065: an email-enqueue failure that lands AFTER the matching
     // code row is already persisted to the DB. The success audit was
@@ -125,6 +138,8 @@ public static class AuditEvents
     // D-127 — on-site walk-in registration desk
     public const string AdminWalkInRegistered = "Admin.WalkInRegistered";
     public const string AdminWalkInRegisterFailed = "Admin.WalkInRegisterFailed";
+    // D-473 (#10): bulk-generate placeholder badges (by profile type + count).
+    public const string AdminBulkBadgesGenerated = "Admin.BulkBadgesGenerated";
 
     // Logs (P6 — per-project log files + CP viewer)
     public const string AdminLogViewed = "Admin.LogViewed";
@@ -210,6 +225,10 @@ public static class AuditEvents
     public const string SessionSummarySaved = "SessionSummary.Saved";
     public const string SessionSummaryPublished = "SessionSummary.Published";
     public const string SessionSummaryUnpublished = "SessionSummary.Unpublished";
+    // D-472 (#9): the team review/approval workflow on the محضر.
+    public const string SessionSummarySubmittedForReview = "SessionSummary.SubmittedForReview";
+    public const string SessionSummaryApproved = "SessionSummary.Approved";
+    public const string SessionSummaryReturnedToDraft = "SessionSummary.ReturnedToDraft";
 
     // Session questions + moderator grants (D-169, gap doc G6 — PDF §2.7.2)
     public const string SessionQuestionSubmitted = "SessionQuestion.Submitted";
@@ -257,6 +276,9 @@ public static class AuditEvents
     public const string DeviceKeyRevoked = "DeviceKey.Revoked";
     public const string SignInWithDeviceKey = "SignIn.WithDeviceKey";
     public const string SignInWithDeviceKeyFailed = "SignIn.WithDeviceKeyFailed";
+    // #7a — emailed-OTP step-up guarding biometric device-key enrolment.
+    public const string DeviceKeyStepUpIssued = "DeviceKey.StepUpIssued";
+    public const string DeviceKeyStepUpRejected = "DeviceKey.StepUpRejected";
 
     // CMS: ContentBlock + Banner (D-173, gap doc G8 — PDF §1, §2.1)
     public const string ContentBlockUpserted = "ContentBlock.Upserted";
@@ -270,6 +292,14 @@ public static class AuditEvents
     // per-record detail/respond reveals the requester email.
     public const string SpeakerMeetingRequestSubmitted = "SpeakerMeetingRequest.Submitted";
     public const string SpeakerMeetingRequestResponded = "SpeakerMeetingRequest.Responded";
+    // D-474 (#11, Group G) — speaker availability windows for the VIP-meeting slots.
+    public const string SpeakerAvailabilityWindowCreated = "SpeakerAvailabilityWindow.Created";
+    public const string SpeakerAvailabilityWindowDeleted = "SpeakerAvailabilityWindow.Deleted";
+    // D-478 (#11, Group G phase 2) — delegation↔delegation (G2G) meeting requests.
+    public const string DelegationMeetingRequestSubmitted = "DelegationMeetingRequest.Submitted";
+    public const string DelegationMeetingRequestResponded = "DelegationMeetingRequest.Responded";
+    public const string AdminDelegationMeetingRequestsListed = "Admin.DelegationMeetingRequestsListed";
+    public const string AdminDelegationMeetingRequestViewed = "Admin.DelegationMeetingRequestViewed";
     public const string AdminSpeakerMeetingRequestsListed = "Admin.SpeakerMeetingRequestsListed";
     public const string AdminSpeakerMeetingRequestViewed = "Admin.SpeakerMeetingRequestViewed";
 

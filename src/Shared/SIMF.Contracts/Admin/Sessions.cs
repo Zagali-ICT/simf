@@ -65,7 +65,10 @@ public sealed record AdminSessionDetail(
     string? LiveCaptions = null,
     string? LiveCaptionsArabic = null,
     // D-452 — session type (Workshop/Session/Event) for the app type tabs.
-    SessionType? Type = null);
+    SessionType? Type = null,
+    // D-485 — per-session override of the hall's seat-selection mode; null =
+    // inherit the hall. Appended (defaulted) so the wire stays append-only.
+    SeatSelectionMode? SeatSelectionModeOverride = null);
 
 /// <summary>D-165 — one entry in <see cref="AdminSessionDetail.Speakers"/>.
 /// Order matters: 0 = primary speaker for the session card.</summary>
@@ -103,6 +106,8 @@ public sealed class AdminCreateSessionRequest
     public string? LiveCaptionsArabic { get; set; }
     // D-452 — session type (Workshop/Session/Event) for the app type tabs.
     public SessionType? Type { get; set; }
+    // D-485 — optional per-session override of the hall's seat-selection mode.
+    public SeatSelectionMode? SeatSelectionModeOverride { get; set; }
 }
 
 public sealed class AdminUpdateSessionRequest
@@ -131,6 +136,8 @@ public sealed class AdminUpdateSessionRequest
     public string? LiveCaptionsArabic { get; set; }
     // D-452 — session type (Workshop/Session/Event) for the app type tabs.
     public SessionType? Type { get; set; }
+    // D-485 — optional per-session override of the hall's seat-selection mode.
+    public SeatSelectionMode? SeatSelectionModeOverride { get; set; }
 }
 
 /// <summary>P3.2 — D-231: the Committee's lifecycle transition. The service

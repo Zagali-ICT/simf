@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/features/sessions/data/seat_map_models.dart';
+import 'package:simf_app/features/sessions/data/seat_map_repository.dart';
 import 'package:simf_app/features/sessions/data/session_calendar.dart';
 import 'package:simf_app/features/sessions/data/session_detail_repository.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
@@ -48,7 +50,27 @@ const _testConfig = SimfDataConfig(
   deviceType: SimfDeviceType.android,
 );
 
-const _seat = MySeat(reservationId: 'r1', rowLabel: 'B', seatNumber: 12);
+// D-485 — the caller's own seat cell (an assigned-seat booking).
+const _mySeatCell = SeatCell(
+  reservationId: 'r1',
+  rowLabel: 'B',
+  seatNumber: 12,
+  kind: SeatReservationKind.userBooking,
+);
+
+SessionSeatMap _seatMap({
+  SeatCell? myCell,
+  SeatSelectionMode mode = SeatSelectionMode.assignedSeat,
+}) =>
+    SessionSeatMap(
+      rowLabels: const <String>['A', 'B'],
+      seatsPerRow: 12,
+      reservedCells: const <SeatCell>[],
+      activeReservedCount: 0,
+      hallCapacity: 24,
+      myCell: myCell,
+      mode: mode,
+    );
 
 CurrentUser _visitor() => CurrentUser(
       id: 'u1',
@@ -77,10 +99,9 @@ class _GuestController extends AuthController {
 }
 
 class _FakeDetailRepo implements SessionDetailRepository {
-  _FakeDetailRepo({this.detail, this.seat, this.detailStatus});
+  _FakeDetailRepo({this.detail, this.detailStatus});
 
   final SessionDetail? detail;
-  final MySeat? seat;
   final int? detailStatus;
   int detailCalls = 0;
 
@@ -97,8 +118,70 @@ class _FakeDetailRepo implements SessionDetailRepository {
     return detail!;
   }
 
+  // D-485 — the screen now reads the seat MAP (mode + myCell) via
+  // SeatMapRepository; getMySeat is unused but part of the interface.
   @override
-  Future<MySeat?> getMySeat(String sessionId) async => seat;
+  Future<MySeat?> getMySeat(String sessionId) async => null;
+}
+
+class _FakeSeatRepo implements SeatMapRepository {
+  _FakeSeatRepo({this.map});
+
+  /// Null → getSeatMap throws (e.g. a pending 403) so the join section hides.
+  final SessionSeatMap? map;
+  int joinCalls = 0;
+  int reserveCalls = 0;
+  int releaseCalls = 0;
+
+  @override
+  Future<SessionSeatMap> getSeatMap(String sessionId) async {
+    final m = map;
+    if (m == null) {
+      throw ApiFailure(
+        code: ApiErrorCodes.clientNetwork,
+        message: 'x',
+        httpStatus: 403,
+      );
+    }
+    return m;
+  }
+
+  @override
+  Future<MyReservation> joinOpenSeating(String sessionId) async {
+    joinCalls++;
+    return const MyReservation(
+      reservationId: 'r9',
+      sessionId: 's1',
+      kind: SeatReservationKind.openSeating,
+      status: BookingStatus.pending,
+    );
+  }
+
+  @override
+  Future<MyReservation> reserveSeat(
+    String sessionId, {
+    required String rowLabel,
+    required int seatNumber,
+  }) async {
+    reserveCalls++;
+    return MyReservation(
+      reservationId: 'r9',
+      sessionId: 's1',
+      rowLabel: rowLabel,
+      seatNumber: seatNumber,
+      kind: SeatReservationKind.userBooking,
+      status: BookingStatus.pending,
+    );
+  }
+
+  @override
+  Future<MyReservation> reserveRandom(String sessionId) =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> releaseMine(String sessionId) async {
+    releaseCalls++;
+  }
 }
 
 class _FakeCalendar implements SessionCalendar {
@@ -111,6 +194,7 @@ Future<void> _pump(
   WidgetTester tester, {
   required SessionDetailRepository repo,
   required AuthController controller,
+  SessionSeatMap? seatMap,
   SessionCalendar? calendar,
   Locale locale = const Locale('en'),
 }) async {
@@ -143,6 +227,11 @@ Future<void> _pump(
         builder: (_, __) => const Scaffold(body: Text('MY-SEAT')),
       ),
       GoRoute(
+        path: '/sessions/:sessionId/pick-seat',
+        name: RouteNames.seatPicker,
+        builder: (_, __) => const Scaffold(body: Text('PICKER')),
+      ),
+      GoRoute(
         path: '/live',
         name: RouteNames.liveBroadcast,
         builder: (_, __) => const Scaffold(body: Text('LIVE')),
@@ -165,6 +254,7 @@ Future<void> _pump(
       overrides: <Override>[
         simfDataConfigProvider.overrideWithValue(_testConfig),
         sessionDetailRepositoryProvider.overrideWithValue(repo),
+        seatMapRepositoryProvider.overrideWithValue(_FakeSeatRepo(map: seatMap)),
         sessionCalendarProvider
             .overrideWithValue(calendar ?? _FakeCalendar()),
         authControllerProvider.overrideWith(() => controller),
@@ -248,16 +338,34 @@ void main() {
       expect(find.text('AI-SUMMARY'), findsOneWidget);
     });
 
-    testWidgets('the ask-host card opens send-question', (tester) async {
+    testWidgets('#3 — a joined user can ask: the ask-host card opens '
+        'send-question', (tester) async {
       await _pump(
         tester,
         repo: _FakeDetailRepo(detail: _detail()),
-        controller: _GuestController(),
+        seatMap: _seatMap(myCell: _mySeatCell), // joined → ask enabled
+        controller: _SignedInController(),
       );
 
       await tester.tap(find.text('Ask the host'));
       await tester.pumpAndSettle();
       expect(find.text('SEND-Q'), findsOneWidget);
+    });
+
+    testWidgets('#3 — pre-ask is gated on joining: not joined → the ask card is '
+        'disabled with a hint and does not open send-question', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeDetailRepo(detail: _detail()),
+        seatMap: _seatMap(), // approved, no reservation → not joined
+        controller: _SignedInController(),
+      );
+
+      expect(find.text('Ask the host'), findsOneWidget);
+      expect(find.text('Join the session to ask a question'), findsOneWidget);
+      await tester.tap(find.text('Ask the host'));
+      await tester.pumpAndSettle();
+      expect(find.text('SEND-Q'), findsNothing); // tap is inert until joined
     });
 
     testWidgets('a speaker with a country code renders its flag emoji',
@@ -272,25 +380,21 @@ void main() {
       expect(find.text('\u{1F1F8}\u{1F1E6}'), findsOneWidget);
     });
 
-    testWidgets('renders the seat card with the gold marker and CTAs together',
-        (tester) async {
-      // Tall surface so the whole lazy ListView (down to the CTA row) lays out.
-      tester.view.physicalSize = const Size(1200, 2600);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+    testWidgets('a held reservation shows the booking card (seat + pending '
+        '+ cancel) with the CTAs', (tester) async {
       await _pump(
         tester,
-        repo: _FakeDetailRepo(detail: _detail(), seat: _seat),
+        repo: _FakeDetailRepo(detail: _detail()),
+        seatMap: _seatMap(myCell: _mySeatCell),
         controller: _SignedInController(),
       );
 
-      // The whole KSA structure renders in one pass: header card, description,
-      // speakers, the my-seat card and the CTA row — no overflow / exception.
       expect(find.text('Session detail'), findsOneWidget);
       expect(find.text('My seat'), findsOneWidget);
       expect(find.text('Row B · Seat 12'), findsOneWidget);
-      expect(find.text('Show your badge at entry'), findsOneWidget);
+      // D-485 — the pending-approval hint replaced the badge hint.
+      expect(find.text('Pending approval'), findsOneWidget);
+      expect(find.text('Cancel booking'), findsOneWidget);
       expect(
         find.widgetWithText(FilledButton, 'Add to calendar'),
         findsOneWidget,
@@ -302,13 +406,10 @@ void main() {
     testWidgets('PAR-D2/D-extra — RTL: the gold CTA and the speaker photo lead '
         'at the inline start (right); the seat chevron trails (left)',
         (tester) async {
-      tester.view.physicalSize = const Size(1200, 2600);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
       await _pump(
         tester,
-        repo: _FakeDetailRepo(detail: _detail(), seat: _seat),
+        repo: _FakeDetailRepo(detail: _detail()),
+        seatMap: _seatMap(myCell: _mySeatCell),
         controller: _SignedInController(),
         locale: const Locale('ar'),
       );
@@ -319,46 +420,92 @@ void main() {
       expect(photoDx, greaterThan(nameDx));
 
       // Gold add-to-calendar (FilledButton) sits to the right of the reminder.
-      final filledDx = tester.getCenter(find.byType(FilledButton)).dx;
+      final filledDx = tester
+          .getCenter(find.widgetWithText(FilledButton, 'أضف إلى تقويمي'))
+          .dx;
       final outlinedDx = tester.getCenter(find.byType(OutlinedButton)).dx;
       expect(filledDx, greaterThan(outlinedDx));
 
-      // The seat-card chevron sits at the inline end (far left).
+      // The reservation-card chevron sits at the inline end (far left).
       final chevronDx = tester.getCenter(find.byIcon(Icons.chevron_left)).dx;
       expect(chevronDx, lessThan(nameDx));
     });
 
-    testWidgets('a guest sees no my-seat card', (tester) async {
-      await _pump(
-        tester,
-        repo: _FakeDetailRepo(detail: _detail(), seat: _seat),
-        controller: _GuestController(),
-      );
-      // The guest path never calls the seat endpoint → no card.
-      expect(find.text('My seat'), findsNothing);
-      expect(find.textContaining('Seat 12'), findsNothing);
-    });
-
-    testWidgets('a signed-in account with a reservation sees the seat card',
-        (tester) async {
-      await _pump(
-        tester,
-        repo: _FakeDetailRepo(detail: _detail(), seat: _seat),
-        controller: _SignedInController(),
-      );
-
-      expect(find.text('My seat'), findsOneWidget);
-      expect(find.text('Row B · Seat 12'), findsOneWidget);
-    });
-
-    testWidgets('a signed-in account with no reservation sees no card',
-        (tester) async {
+    testWidgets('a guest sees no join section', (tester) async {
       await _pump(
         tester,
         repo: _FakeDetailRepo(detail: _detail()),
+        seatMap: _seatMap(myCell: _mySeatCell),
+        controller: _GuestController(),
+      );
+      // The guest path never calls the seat endpoint → no card, no Join CTA.
+      expect(find.text('My seat'), findsNothing);
+      expect(find.textContaining('Seat 12'), findsNothing);
+      expect(find.text('Join this session'), findsNothing);
+    });
+
+    testWidgets('signed-in, assigned-seat, no reservation → the Select-my-seat '
+        'CTA opens the seat picker', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeDetailRepo(detail: _detail()),
+        seatMap: _seatMap(mode: SeatSelectionMode.assignedSeat),
         controller: _SignedInController(),
       );
+
       expect(find.text('My seat'), findsNothing);
+      expect(find.text('Join this session'), findsOneWidget); // section heading
+      final cta = find.widgetWithText(FilledButton, 'Select my seat');
+      expect(cta, findsOneWidget);
+      await tester.tap(cta);
+      await tester.pumpAndSettle();
+      expect(find.text('PICKER'), findsOneWidget);
+    });
+
+    testWidgets('signed-in, open-seating, no reservation → Join confirms then '
+        'joins (pending toast)', (tester) async {
+      final seatRepoHolder = _FakeSeatRepo(
+        map: _seatMap(mode: SeatSelectionMode.openSeating),
+      );
+      tester.view.physicalSize = const Size(1200, 2600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: <Override>[
+            simfDataConfigProvider.overrideWithValue(_testConfig),
+            sessionDetailRepositoryProvider
+                .overrideWithValue(_FakeDetailRepo(detail: _detail())),
+            seatMapRepositoryProvider.overrideWithValue(seatRepoHolder),
+            sessionCalendarProvider.overrideWithValue(_FakeCalendar()),
+            authControllerProvider.overrideWith(_SignedInController.new),
+          ],
+          child: MaterialApp(
+            locale: const Locale('en'),
+            supportedLocales: AppL10n.supportedLocales,
+            localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+              ...AppL10n.localizationsDelegates,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            home: const SessionDetailScreen(sessionId: 's1'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final cta = find.widgetWithText(FilledButton, 'Join this session');
+      expect(cta, findsOneWidget);
+      await tester.tap(cta);
+      await tester.pumpAndSettle();
+      // The confirm dialog, then Join.
+      expect(find.text('Join this session?'), findsOneWidget);
+      await tester.tap(find.widgetWithText(FilledButton, 'Join'));
+      await tester.pumpAndSettle();
+      expect(seatRepoHolder.joinCalls, 1);
+      expect(find.text('Request sent — pending approval'), findsOneWidget);
     });
 
     testWidgets('tapping a speaker navigates to the speaker profile',

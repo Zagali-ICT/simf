@@ -1,4 +1,5 @@
 // Tests: SIMF.Api.Tests/SpeakerPresentationsTests.cs
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -21,6 +22,7 @@ internal sealed class AdminSpeakerPresentationService(
     SimfAppDbContext db,
     ISpeakerPresentationStorage storage,
     IAuditLog auditLog,
+    SIMF.Application.Abstractions.IUploadScanner uploadScanner,
     TimeProvider timeProvider,
     ILogger<AdminSpeakerPresentationService> logger) : IAdminSpeakerPresentationService
 {
@@ -59,6 +61,19 @@ internal sealed class AdminSpeakerPresentationService(
                 "The presentation file must be 50 MB or smaller.",
                 "يجب ألا يتجاوز حجم ملف العرض 50 ميجابايت.");
         }
+        // M2 (security) — accept only a real PDF / Office document, by extension
+        // AND magic bytes, so an arbitrary (e.g. .html / script / executable)
+        // file can't be stored behind the 50 MB size cap alone.
+        if (!IsAllowedPresentation(content, fileName))
+        {
+            throw new ApiException(
+                ErrorCodes.SpeakerPresentationInvalid, 400,
+                "The presentation must be a PDF, PowerPoint, or Word document.",
+                "يجب أن يكون ملف العرض بصيغة PDF أو PowerPoint أو Word.");
+        }
+        // A6-18 (NCA) — malware-scan the 50 MB upload before storing it.
+        await SIMF.Application.Abstractions.UploadScannerExtensions.EnsureCleanAsync(
+            uploadScanner, content, fileName, cancellationToken);
 
         var speakerExists = await db.Speakers.AsNoTracking()
             .AnyAsync(s => s.Id == speakerId && s.IsActive, cancellationToken);
@@ -163,9 +178,53 @@ internal sealed class AdminSpeakerPresentationService(
         }, cancellationToken);
     }
 
+    private static readonly HashSet<string> AllowedPresentationExtensions =
+        new(StringComparer.OrdinalIgnoreCase)
+        { ".pdf", ".pptx", ".ppt", ".docx", ".doc", ".xlsx", ".xls" };
+
+    /// <summary>M2 (security) — true when the file looks like a real PDF, an
+    /// OOXML/ZIP container (pptx/docx/xlsx) or a legacy OLE2 document
+    /// (ppt/doc/xls): the extension is allow-listed AND the leading magic bytes
+    /// match. Defeats a renamed / mislabelled upload (CWE-434).</summary>
+    private static bool IsAllowedPresentation(byte[] content, string fileName)
+    {
+        var ext = Path.GetExtension(fileName ?? string.Empty);
+        if (!AllowedPresentationExtensions.Contains(ext))
+        {
+            return false;
+        }
+        // PDF — "%PDF".
+        if (content.Length >= 4
+            && content[0] == 0x25 && content[1] == 0x50
+            && content[2] == 0x44 && content[3] == 0x46)
+        {
+            return true;
+        }
+        // OOXML (pptx/docx/xlsx) — a ZIP container, "PK\x03\x04".
+        if (content.Length >= 4
+            && content[0] == 0x50 && content[1] == 0x4B
+            && content[2] == 0x03 && content[3] == 0x04)
+        {
+            return true;
+        }
+        // Legacy OLE2 (ppt/doc/xls) — D0 CF 11 E0 A1 B1 1A E1.
+        if (content.Length >= 8
+            && content[0] == 0xD0 && content[1] == 0xCF
+            && content[2] == 0x11 && content[3] == 0xE0
+            && content[4] == 0xA1 && content[5] == 0xB1
+            && content[6] == 0x1A && content[7] == 0xE1)
+        {
+            return true;
+        }
+        return false;
+    }
+
     private static string SanitiseFileName(string fileName)
     {
-        var name = Path.GetFileName(fileName ?? string.Empty).Trim();
+        // A3-14 (NCA App-Sec Standard) — Unicode-normalise the untrusted name
+        // before stripping the path, so visually-identical but differently-encoded
+        // sequences canonicalise to one form.
+        var name = Path.GetFileName((fileName ?? string.Empty).Normalize(NormalizationForm.FormC)).Trim();
         if (string.IsNullOrEmpty(name))
         {
             name = "presentation";

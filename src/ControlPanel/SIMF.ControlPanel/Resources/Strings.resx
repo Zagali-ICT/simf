@@ -73,6 +73,23 @@
   <data name="Module.HallSeatLayouts" xml:space="preserve"><value>Hall seat layouts</value></data>
   <data name="Module.SessionSeatPlans" xml:space="preserve"><value>Session seat plans</value></data>
   <data name="Module.SpeakerMeetingRequests" xml:space="preserve"><value>Speaker meeting requests</value></data>
+  <data name="Module.AdminSpeakerAvailability" xml:space="preserve"><value>Speaker availability</value></data>
+  <data name="Module.AdminDelegationMeetings" xml:space="preserve"><value>Delegation meetings</value></data>
+  <data name="Admin.SpeakerAvailability.Title" xml:space="preserve"><value>Speaker availability</value></data>
+  <data name="Admin.SpeakerAvailability.Speaker" xml:space="preserve"><value>Speaker</value></data>
+  <data name="Admin.SpeakerAvailability.PickSpeaker" xml:space="preserve"><value>Select a speaker…</value></data>
+  <data name="Admin.SpeakerAvailability.AddWindow" xml:space="preserve"><value>Add an availability window</value></data>
+  <data name="Admin.SpeakerAvailability.Start" xml:space="preserve"><value>Start (UTC)</value></data>
+  <data name="Admin.SpeakerAvailability.End" xml:space="preserve"><value>End (UTC)</value></data>
+  <data name="Admin.SpeakerAvailability.SlotMinutes" xml:space="preserve"><value>Slot length (minutes)</value></data>
+  <data name="Admin.SpeakerAvailability.Add" xml:space="preserve"><value>Add window</value></data>
+  <data name="Admin.SpeakerAvailability.Windows" xml:space="preserve"><value>Windows</value></data>
+  <data name="Admin.SpeakerAvailability.None" xml:space="preserve"><value>No availability windows yet.</value></data>
+  <data name="Admin.SpeakerAvailability.Min" xml:space="preserve"><value>min slots</value></data>
+  <data name="Admin.SpeakerAvailability.Added" xml:space="preserve"><value>Window added.</value></data>
+  <data name="Admin.SpeakerAvailability.Failed" xml:space="preserve"><value>The operation failed.</value></data>
+  <data name="Admin.SpeakerAvailability.BadDates" xml:space="preserve"><value>Enter a valid start and end.</value></data>
+  <data name="Admin.SpeakerAvailability.BadSlot" xml:space="preserve"><value>Enter a positive slot length.</value></data>
   <data name="Module.Gates" xml:space="preserve"><value>Gates</value></data>
   <data name="Module.GatesOperator" xml:space="preserve"><value>Gate operator</value></data>
   <data name="Module.Speakers" xml:space="preserve"><value>Speakers</value></data>
@@ -599,6 +616,7 @@
   <data name="Admin.Countries.Field.DisplayOrderHint" xml:space="preserve"><value>Sort key in the nationality picker (zero or more; ascending).</value></data>
   <data name="Admin.Countries.Field.DisplayOrderInvalid" xml:space="preserve"><value>Display order must be zero or a positive integer.</value></data>
   <data name="Admin.Countries.Field.IsActive" xml:space="preserve"><value>Active — show in the nationality picker</value></data>
+  <data name="Admin.Countries.Field.IsInvited" xml:space="preserve"><value>Invited to send a delegation (وفد)</value></data>
   <data name="Admin.Countries.Add.Title" xml:space="preserve"><value>Add country</value></data>
   <data name="Admin.Countries.Edit.Title" xml:space="preserve"><value>Edit country</value></data>
   <data name="Admin.Countries.Details.Title" xml:space="preserve"><value>Country details</value></data>
@@ -656,6 +674,9 @@
   <data name="Admin.Halls.Field.Capacity" xml:space="preserve"><value>Capacity</value></data>
   <data name="Admin.Halls.Field.CapacityHint" xml:space="preserve"><value>Seating + standing capacity (zero or more). Drives the Sessions booking cap.</value></data>
   <data name="Admin.Halls.Field.CapacityInvalid" xml:space="preserve"><value>Capacity must be zero or a positive integer.</value></data>
+  <data name="Admin.Halls.Field.SeatMode" xml:space="preserve"><value>Seat selection</value></data>
+  <data name="Admin.Halls.SeatMode.Assigned" xml:space="preserve"><value>Assigned seat (attendees pick a seat)</value></data>
+  <data name="Admin.Halls.SeatMode.Open" xml:space="preserve"><value>Open seating (general admission)</value></data>
   <data name="Admin.Halls.Field.Floor" xml:space="preserve"><value>Floor</value></data>
   <data name="Admin.Halls.Field.FloorHint" xml:space="preserve"><value>Optional. Up to 32 characters (e.g. "Ground", "Level 2").</value></data>
   <data name="Admin.Halls.Field.EquipmentNotes" xml:space="preserve"><value>Equipment + accessibility notes</value></data>
@@ -1404,6 +1425,10 @@
   <data name="Admin.Sessions.Type.Workshop" xml:space="preserve"><value>Workshop</value></data>
   <data name="Admin.Sessions.Type.Session" xml:space="preserve"><value>Session</value></data>
   <data name="Admin.Sessions.Type.Event" xml:space="preserve"><value>Event</value></data>
+  <data name="Admin.Sessions.Field.SeatMode" xml:space="preserve"><value>Seat selection (override)</value></data>
+  <data name="Admin.Sessions.SeatMode.Inherit" xml:space="preserve"><value>— Inherit from hall —</value></data>
+  <data name="Admin.Sessions.SeatMode.Assigned" xml:space="preserve"><value>Assigned seat</value></data>
+  <data name="Admin.Sessions.SeatMode.Open" xml:space="preserve"><value>Open seating (general admission)</value></data>
   <data name="Module.ProgrammeDays" xml:space="preserve"><value>Programme days</value></data>
   <data name="Admin.ProgrammeDays.Title" xml:space="preserve"><value>Programme days</value></data>
   <data name="Admin.ProgrammeDays.Loading" xml:space="preserve"><value>Loading programme days…</value></data>
@@ -1443,6 +1468,7 @@
   <data name="Admin.Bookings.Col.Session" xml:space="preserve"><value>Session</value></data>
   <data name="Admin.Bookings.Col.Start" xml:space="preserve"><value>Starts (UTC)</value></data>
   <data name="Admin.Bookings.Col.Seat" xml:space="preserve"><value>Seat</value></data>
+  <data name="Admin.Bookings.GeneralAdmission" xml:space="preserve"><value>General admission</value></data>
   <data name="Admin.Bookings.Col.Attendee" xml:space="preserve"><value>Attendee</value></data>
   <data name="Admin.Bookings.Col.BookedAt" xml:space="preserve"><value>Booked (UTC)</value></data>
   <data name="Admin.Bookings.Approve" xml:space="preserve"><value>Approve</value></data>
@@ -1707,6 +1733,11 @@
   <data name="Admin.SessionSummaries.Col.Source" xml:space="preserve"><value>Source</value></data>
   <data name="Admin.SessionSummaries.Status.None" xml:space="preserve"><value>No summary</value></data>
   <data name="Admin.SessionSummaries.Status.Draft" xml:space="preserve"><value>Draft</value></data>
+  <data name="Admin.SessionSummaries.Status.InReview" xml:space="preserve"><value>In review</value></data>
+  <data name="Admin.SessionSummaries.Status.Approved" xml:space="preserve"><value>Approved</value></data>
+  <data name="Admin.SessionSummaries.Action.SubmitReview" xml:space="preserve"><value>Submit for review</value></data>
+  <data name="Admin.SessionSummaries.Action.Approve" xml:space="preserve"><value>Approve (ready for the host)</value></data>
+  <data name="Admin.SessionSummaries.Action.ReturnToDraft" xml:space="preserve"><value>Return to draft</value></data>
   <data name="Admin.SessionSummaries.Status.Published" xml:space="preserve"><value>Published</value></data>
   <data name="Admin.SessionSummaries.Source.Ai" xml:space="preserve"><value>AI-drafted</value></data>
   <data name="Admin.SessionSummaries.Source.Manual" xml:space="preserve"><value>Hand-written</value></data>
@@ -1728,6 +1759,9 @@
   <data name="Admin.SessionSummaries.Generated" xml:space="preserve"><value>AI draft generated.</value></data>
   <data name="Admin.SessionSummaries.Saved" xml:space="preserve"><value>Summary saved.</value></data>
   <data name="Admin.SessionSummaries.Published" xml:space="preserve"><value>Summary published.</value></data>
+  <data name="Admin.SessionSummaries.Submitted" xml:space="preserve"><value>Summary submitted for review.</value></data>
+  <data name="Admin.SessionSummaries.Approved" xml:space="preserve"><value>Summary approved — ready for the host.</value></data>
+  <data name="Admin.SessionSummaries.ReturnedToDraft" xml:space="preserve"><value>Summary returned to draft.</value></data>
   <data name="Admin.SessionSummaries.Unpublished" xml:space="preserve"><value>Summary unpublished.</value></data>
   <data name="Module.HallArrivals" xml:space="preserve"><value>Hall arrivals</value></data>
   <data name="Admin.HallArrivals.Title" xml:space="preserve"><value>Hall arrivals (door scan)</value></data>
@@ -1939,6 +1973,32 @@
   <data name="Admin.SpeakerMeetingRequests.Respond.Submit" xml:space="preserve"><value>Send response</value></data>
   <data name="Admin.SpeakerMeetingRequests.Respond.Done" xml:space="preserve"><value>Response sent.</value></data>
   <data name="Admin.SpeakerMeetingRequests.Cancel" xml:space="preserve"><value>Cancel</value></data>
+
+  <!-- D-478 (#11, Group G phase 2) — delegation↔delegation meeting requests desk. -->
+  <data name="Admin.DelegationMeetings.Title" xml:space="preserve"><value>Delegation meetings</value></data>
+  <data name="Admin.DelegationMeetings.None" xml:space="preserve"><value>No delegation meeting requests yet.</value></data>
+  <data name="Admin.DelegationMeetings.Loading" xml:space="preserve"><value>Loading…</value></data>
+  <data name="Admin.DelegationMeetings.LoadFailed" xml:space="preserve"><value>Could not load delegation meeting requests.</value></data>
+  <data name="Admin.DelegationMeetings.LoadingDetail" xml:space="preserve"><value>Loading requester details…</value></data>
+  <data name="Admin.DelegationMeetings.Requester" xml:space="preserve"><value>Requester</value></data>
+  <data name="Admin.DelegationMeetings.Filter.Pending" xml:space="preserve"><value>Pending</value></data>
+  <data name="Admin.DelegationMeetings.Filter.Accepted" xml:space="preserve"><value>Accepted</value></data>
+  <data name="Admin.DelegationMeetings.Filter.Rejected" xml:space="preserve"><value>Rejected</value></data>
+  <data name="Admin.DelegationMeetings.Col.From" xml:space="preserve"><value>From delegation</value></data>
+  <data name="Admin.DelegationMeetings.Col.To" xml:space="preserve"><value>To delegation</value></data>
+  <data name="Admin.DelegationMeetings.Col.Attendees" xml:space="preserve"><value>Attendees</value></data>
+  <data name="Admin.DelegationMeetings.Col.Subject" xml:space="preserve"><value>Subject</value></data>
+  <data name="Admin.DelegationMeetings.Col.Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Admin.DelegationMeetings.Col.CreatedAt" xml:space="preserve"><value>Submitted</value></data>
+  <data name="Admin.DelegationMeetings.Respond" xml:space="preserve"><value>Respond</value></data>
+  <data name="Admin.DelegationMeetings.Respond.Title" xml:space="preserve"><value>Respond to delegation meeting request</value></data>
+  <data name="Admin.DelegationMeetings.Respond.Status" xml:space="preserve"><value>Decision</value></data>
+  <data name="Admin.DelegationMeetings.Respond.Accept" xml:space="preserve"><value>Accept</value></data>
+  <data name="Admin.DelegationMeetings.Respond.Reject" xml:space="preserve"><value>Reject</value></data>
+  <data name="Admin.DelegationMeetings.Respond.Note" xml:space="preserve"><value>Response note (optional, ≤2000 chars)</value></data>
+  <data name="Admin.DelegationMeetings.Respond.Submit" xml:space="preserve"><value>Send response</value></data>
+  <data name="Admin.DelegationMeetings.Respond.Done" xml:space="preserve"><value>Response sent.</value></data>
+  <data name="Admin.DelegationMeetings.Cancel" xml:space="preserve"><value>Cancel</value></data>
 
   <!-- D-199 — new nav labels (Module.Media/News/Sponsors/Booths/Moderation/PreviousEditions already exist). -->
   <data name="Module.MediaPartners" xml:space="preserve"><value>Media Partners</value></data>
@@ -2780,5 +2840,19 @@
   <data name="Admin.VipExport.Photo" xml:space="preserve"><value>Photo</value></data>
   <data name="Admin.VipExport.Download" xml:space="preserve"><value>Download</value></data>
   <data name="Module.AdminVisitorsVip" xml:space="preserve"><value>VIP registration</value></data>
+  <data name="Module.AdminDelegates" xml:space="preserve"><value>Delegates</value></data>
+  <data name="Admin.Delegates.Title" xml:space="preserve"><value>Delegates</value></data>
+  <data name="Admin.Delegates.Single.Title" xml:space="preserve"><value>Register a delegate</value></data>
+  <data name="Admin.Delegates.Single.Hint" xml:space="preserve"><value>A delegate is a normal visitor flagged as a delegation member; their nationality must be a country invited to send a delegation.</value></data>
+  <data name="Admin.Delegates.Bulk.Title" xml:space="preserve"><value>Bulk-generate badges</value></data>
+  <data name="Admin.Delegates.Bulk.Hint" xml:space="preserve"><value>Generate placeholder badges by profile type and count (e.g. 10 VIP, 500 Normal). Each badge carries default data and a ready QR.</value></data>
+  <data name="Admin.Delegates.Bulk.Count" xml:space="preserve"><value>Count</value></data>
+  <data name="Admin.Delegates.Bulk.IsDelegate" xml:space="preserve"><value>Flag the generated badges as delegates</value></data>
+  <data name="Admin.Delegates.Bulk.Generate" xml:space="preserve"><value>Generate badges</value></data>
+  <data name="Admin.Delegates.Bulk.Generating" xml:space="preserve"><value>Generating…</value></data>
+  <data name="Admin.Delegates.Bulk.Result" xml:space="preserve"><value>{0} badge(s) generated.</value></data>
+  <data name="Admin.Delegates.Bulk.Failed" xml:space="preserve"><value>Could not generate the badges.</value></data>
+  <data name="Admin.Delegates.Bulk.NoTypes" xml:space="preserve"><value>No active profile types to generate badges for.</value></data>
+  <data name="Admin.Delegates.Bulk.PickCount" xml:space="preserve"><value>Enter a count for at least one profile type.</value></data>
   <data name="Module.AdminVisitorsVipExport" xml:space="preserve"><value>VIP welcome export</value></data>
 </root>

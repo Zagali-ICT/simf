@@ -74,6 +74,10 @@ class AuthApi {
       '/app/auth/refresh',
       body: request.toJson(),
       decodeData: _decodeTokenPayload,
+      // The refresh call must not re-enter the 401 refresh path: a 401 here
+      // (expired / reuse-detected refresh token) would otherwise deadlock the
+      // single-flight refresh against itself.
+      skipAuthRefresh: true,
     );
   }
 

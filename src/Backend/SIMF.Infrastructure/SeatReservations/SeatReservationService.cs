@@ -57,17 +57,20 @@ internal sealed class SeatReservationService(
             }
         }
 
-        var hallCapacity = await appDbContext.Halls.AsNoTracking()
+        var hall = await appDbContext.Halls.AsNoTracking()
             .Where(h => h.Id == session.HallId)
-            .Select(h => h.Capacity)
+            .Select(h => new { h.Capacity, h.SeatSelectionMode })
             .SingleAsync(cancellationToken);
+        var effectiveMode = session.SeatSelectionModeOverride ?? hall.SeatSelectionMode;
 
         return new SessionSeatMap(
-            sessionId, session.HallId, hallCapacity, session.CapacityOverride,
+            sessionId, session.HallId, hall.Capacity, session.CapacityOverride,
             rowLabels, layout?.SeatsPerRow ?? 0,
             cells, mine, cells.Count,
             // D-432 — the session title is already loaded in the snapshot.
-            session.Title, session.TitleArabic);
+            session.Title, session.TitleArabic,
+            // D-485 — the effective mode drives the app's Join CTA.
+            effectiveMode);
     }
 
     public async Task<MySeatReservation> ReserveAsync(
@@ -78,6 +81,7 @@ internal sealed class SeatReservationService(
         var row = (request.RowLabel ?? string.Empty).Trim();
         var seat = request.SeatNumber;
         var ctx = await BuildContextAsync(sessionId, cancellationToken);
+        EnsureSeatPickAllowed(ctx);
         ValidateSeatBounds(ctx, row, seat);
         await EnsureSessionHasCapacityAsync(ctx, cancellationToken);
 
@@ -90,7 +94,8 @@ internal sealed class SeatReservationService(
                 "لديك مقعد محجوز بالفعل لهذه الجلسة.");
         }
 
-        await EnsureNoOverlapAsync(sessionId, actorUserId, ctx, cancellationToken);
+        await EnsureNoOverlapAsync(
+            sessionId, actorUserId, ctx.StartUtc, ctx.EndUtc, cancellationToken);
 
         var clash = await appDbContext.SeatReservations.AsNoTracking()
             .Where(r => r.SessionId == sessionId
@@ -145,6 +150,7 @@ internal sealed class SeatReservationService(
         CancellationToken cancellationToken = default)
     {
         var ctx = await BuildContextAsync(sessionId, cancellationToken);
+        EnsureSeatPickAllowed(ctx);
         await EnsureSessionHasCapacityAsync(ctx, cancellationToken);
 
         var existing = await GetMyActiveAsync(sessionId, actorUserId, cancellationToken);
@@ -156,14 +162,16 @@ internal sealed class SeatReservationService(
                 "لديك مقعد محجوز بالفعل لهذه الجلسة.");
         }
 
-        await EnsureNoOverlapAsync(sessionId, actorUserId, ctx, cancellationToken);
+        await EnsureNoOverlapAsync(
+            sessionId, actorUserId, ctx.StartUtc, ctx.EndUtc, cancellationToken);
 
         var occupied = await appDbContext.SeatReservations.AsNoTracking()
-            .Where(r => r.SessionId == sessionId && r.ReleasedAt == null)
+            .Where(r => r.SessionId == sessionId && r.ReleasedAt == null
+                && r.RowLabel != null)
             .Select(r => new { r.RowLabel, r.SeatNumber })
             .ToListAsync(cancellationToken);
         var taken = new HashSet<(string Row, int Seat)>(
-            occupied.Select(o => (o.RowLabel, o.SeatNumber)));
+            occupied.Select(o => (o.RowLabel!, o.SeatNumber!.Value)));
 
         foreach (var rowLabel in ctx.RowLabels)
         {
@@ -211,6 +219,85 @@ internal sealed class SeatReservationService(
             ErrorCodes.SeatSessionFull, 409,
             "No seats remain in this session.",
             "لا توجد مقاعد متبقية في هذه الجلسة.");
+    }
+
+    public async Task<MySeatReservation> JoinOpenSeatingAsync(
+        Guid sessionId, Guid actorUserId,
+        CancellationToken cancellationToken = default)
+    {
+        var session = await LoadSessionAsync(sessionId, cancellationToken);
+        var hall = await appDbContext.Halls.AsNoTracking()
+            .Where(h => h.Id == session.HallId)
+            .Select(h => new { h.Capacity, h.SeatSelectionMode })
+            .SingleAsync(cancellationToken);
+        var mode = session.SeatSelectionModeOverride ?? hall.SeatSelectionMode;
+        if (mode != SeatSelectionMode.OpenSeating)
+        {
+            throw new ApiException(
+                ErrorCodes.SeatSelectionRequired, 409,
+                "This session requires you to pick a specific seat.",
+                "تتطلب هذه الجلسة اختيار مقعد محدد.");
+        }
+
+        var existing = await GetMyActiveAsync(sessionId, actorUserId, cancellationToken);
+        if (existing is not null)
+        {
+            throw new ApiException(
+                ErrorCodes.SeatAlreadyOwnedBySession, 409,
+                "You already have a booking for this session.",
+                "لديك حجز بالفعل لهذه الجلسة.");
+        }
+
+        await EnsureNoOverlapAsync(
+            sessionId, actorUserId, session.StartUtc, session.EndUtc, cancellationToken);
+
+        // Open-seating capacity = the session override, else the hall capacity
+        // (there is no seat layout to bound it). NOTE this is an ADVISORY cap
+        // only: unlike the seat paths — which have a hard DB backstop (the unique
+        // seat index physically caps occupancy at the layout size) — open seating
+        // has no DB constraint on the row count, so concurrent joins can overshoot
+        // this count. The Control Panel approval count is the authoritative gate.
+        var declaredCap = session.CapacityOverride ?? hall.Capacity;
+        var active = await appDbContext.SeatReservations
+            .Where(r => r.SessionId == sessionId && r.ReleasedAt == null)
+            .CountAsync(cancellationToken);
+        if (active >= declaredCap)
+        {
+            throw new ApiException(
+                ErrorCodes.SeatSessionFull, 409,
+                "No places remain in this session.",
+                "لا توجد أماكن متبقية في هذه الجلسة.");
+        }
+
+        var reservation = new SeatReservation
+        {
+            Id = Guid.NewGuid(),
+            SessionId = sessionId,
+            RowLabel = null,
+            SeatNumber = null,
+            Kind = SeatReservationKind.OpenSeating,
+            ReservedForUserId = actorUserId,
+            CreatedByUserId = actorUserId,
+            CreatedAt = timeProvider.GetUtcNow(),
+            // D-485: held, pending Control Panel approval — same as a seat booking.
+            Status = BookingStatus.Pending,
+        };
+        await PersistWithUniquenessGuardAsync(reservation, cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.SeatReservationCreated,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = $"reservationId={reservation.Id}; sessionId={sessionId}; "
+                + "kind=OpenSeating; status=Pending",
+        }, cancellationToken);
+
+        logger.LogInformation(
+            "Open-seating join (pending approval) on session {SessionId} by user {Actor}",
+            sessionId, actorUserId);
+
+        return ToMine(reservation);
     }
 
     public async Task ReleaseMineAsync(
@@ -376,7 +463,8 @@ internal sealed class SeatReservationService(
                 && r.ReleasedAt == null)
             .Select(r => r.SeatNumber)
             .ToListAsync(cancellationToken);
-        var taken = new HashSet<int>(occupiedInRow);
+        var taken = new HashSet<int>(
+            occupiedInRow.Where(s => s.HasValue).Select(s => s!.Value));
 
         var now = timeProvider.GetUtcNow();
         var inserted = 0;
@@ -505,7 +593,7 @@ internal sealed class SeatReservationService(
                     joined = joined.Where(x => x.Title.Contains(v) || x.TitleArabic.Contains(v));
                     break;
                 case "seat":
-                    joined = joined.Where(x => x.RowLabel.Contains(v));
+                    joined = joined.Where(x => x.RowLabel != null && x.RowLabel.Contains(v));
                     break;
             }
         }
@@ -691,7 +779,8 @@ internal sealed class SeatReservationService(
             .SingleAsync(cancellationToken);
 
     private async Task EnsureNoOverlapAsync(
-        Guid sessionId, Guid actorUserId, SessionContext ctx,
+        Guid sessionId, Guid actorUserId,
+        DateTimeOffset startUtc, DateTimeOffset endUtc,
         CancellationToken cancellationToken)
     {
         // FR-502: the attendee must not already hold a (Pending or Approved)
@@ -704,7 +793,7 @@ internal sealed class SeatReservationService(
                 && r.SessionId != sessionId)
             .Join(appDbContext.Sessions.AsNoTracking(),
                 r => r.SessionId, s => s.Id, (r, s) => new { s.StartUtc, s.EndUtc })
-            .AnyAsync(x => x.StartUtc < ctx.EndUtc && ctx.StartUtc < x.EndUtc,
+            .AnyAsync(x => x.StartUtc < endUtc && startUtc < x.EndUtc,
                 cancellationToken);
         if (overlaps)
         {
@@ -724,14 +813,16 @@ internal sealed class SeatReservationService(
                 ErrorCodes.SeatLayoutMissing, 400,
                 "This hall does not have a seat layout configured.",
                 "لا يحتوي هذا المبنى على مخطط مقاعد مُعدّ.");
-        var hallCapacity = await appDbContext.Halls.AsNoTracking()
+        var hall = await appDbContext.Halls.AsNoTracking()
             .Where(h => h.Id == session.HallId)
-            .Select(h => h.Capacity)
+            .Select(h => new { h.Capacity, h.SeatSelectionMode })
             .SingleAsync(cancellationToken);
+        var effectiveMode = session.SeatSelectionModeOverride ?? hall.SeatSelectionMode;
         return new SessionContext(
             session.Id, session.HallId, session.CapacityOverride,
-            hallCapacity, layout, ParseRowLabels(layout.RowLabels),
-            session.Title, session.TitleArabic, session.StartUtc, session.EndUtc);
+            hall.Capacity, layout, ParseRowLabels(layout.RowLabels),
+            session.Title, session.TitleArabic, session.StartUtc, session.EndUtc,
+            effectiveMode);
     }
 
     private async Task<SessionSnapshot> LoadSessionAsync(
@@ -741,7 +832,7 @@ internal sealed class SeatReservationService(
             .Where(s => s.Id == sessionId && s.IsActive)
             .Select(s => new SessionSnapshot(
                 s.Id, s.HallId, s.CapacityOverride, s.Title, s.TitleArabic,
-                s.StartUtc, s.EndUtc))
+                s.StartUtc, s.EndUtc, s.SeatSelectionModeOverride))
             .SingleOrDefaultAsync(cancellationToken)
             ?? throw new ApiException(
                 ErrorCodes.SessionNotFound, 404,
@@ -761,6 +852,19 @@ internal sealed class SeatReservationService(
             ? Array.Empty<string>()
             : csv.Split(',', StringSplitOptions.RemoveEmptyEntries
                 | StringSplitOptions.TrimEntries);
+
+    private static void EnsureSeatPickAllowed(SessionContext ctx)
+    {
+        // D-485 — the seat-pick paths are only for assigned-seat sessions; an
+        // open-seating session is joined via JoinOpenSeatingAsync (no seat).
+        if (ctx.EffectiveMode == SeatSelectionMode.OpenSeating)
+        {
+            throw new ApiException(
+                ErrorCodes.OpenSeatingOnly, 409,
+                "This session is open seating — just join, no seat to pick.",
+                "هذه الجلسة بمقاعد مفتوحة — انضم فقط دون اختيار مقعد.");
+        }
+    }
 
     private static void ValidateSeatBounds(
         SessionContext ctx, string rowLabel, int seatNumber)
@@ -853,10 +957,12 @@ internal sealed class SeatReservationService(
                 Kind = NotificationKind.BookingConfirmed,
                 Title = "Seat reservation confirmed",
                 TitleArabic = "تم تأكيد حجز المقعد",
-                Body = $"Your seat {booking.RowLabel}{booking.SeatNumber} "
-                    + $"for \"{session.Title}\" is confirmed.",
-                BodyArabic = $"تم تأكيد مقعدك {booking.RowLabel}{booking.SeatNumber} "
-                    + $"لجلسة \"{session.TitleArabic}\".",
+                Body = booking.RowLabel is { } row
+                    ? $"Your seat {row}{booking.SeatNumber} for \"{session.Title}\" is confirmed."
+                    : $"Your place in \"{session.Title}\" is confirmed.",
+                BodyArabic = booking.RowLabel is { } rowAr
+                    ? $"تم تأكيد مقعدك {rowAr}{booking.SeatNumber} لجلسة \"{session.TitleArabic}\"."
+                    : $"تم تأكيد حضورك لجلسة \"{session.TitleArabic}\".",
                 Severity = NotificationSeverity.Success,
                 RelatedEntityType = "Session",
                 RelatedEntityId = booking.SessionId,
@@ -889,10 +995,12 @@ internal sealed class SeatReservationService(
                 Kind = NotificationKind.BookingRejected,
                 Title = "Seat booking rejected",
                 TitleArabic = "تم رفض حجز المقعد",
-                Body = $"Your seat {booking.RowLabel}{booking.SeatNumber} for "
-                    + $"\"{session.Title}\" was not approved. Reason: {reason}",
-                BodyArabic = $"لم تتم الموافقة على مقعدك {booking.RowLabel}{booking.SeatNumber} "
-                    + $"لجلسة \"{session.TitleArabic}\". السبب: {reason}",
+                Body = booking.RowLabel is { } row
+                    ? $"Your seat {row}{booking.SeatNumber} for \"{session.Title}\" was not approved. Reason: {reason}"
+                    : $"Your booking for \"{session.Title}\" was not approved. Reason: {reason}",
+                BodyArabic = booking.RowLabel is { } rowAr
+                    ? $"لم تتم الموافقة على مقعدك {rowAr}{booking.SeatNumber} لجلسة \"{session.TitleArabic}\". السبب: {reason}"
+                    : $"لم تتم الموافقة على حجزك لجلسة \"{session.TitleArabic}\". السبب: {reason}",
                 Severity = NotificationSeverity.Warning,
                 RelatedEntityType = "Session",
                 RelatedEntityId = booking.SessionId,
@@ -912,10 +1020,12 @@ internal sealed class SeatReservationService(
 
     private sealed record SessionSnapshot(
         Guid Id, Guid HallId, int? CapacityOverride, string Title, string TitleArabic,
-        DateTimeOffset StartUtc, DateTimeOffset EndUtc);
+        DateTimeOffset StartUtc, DateTimeOffset EndUtc,
+        SeatSelectionMode? SeatSelectionModeOverride);
     private sealed record SessionContext(
         Guid SessionId, Guid HallId, int? CapacityOverride, int HallCapacity,
         HallSeatLayout Layout, IReadOnlyList<string> RowLabels,
         string SessionTitle, string SessionTitleArabic,
-        DateTimeOffset StartUtc, DateTimeOffset EndUtc);
+        DateTimeOffset StartUtc, DateTimeOffset EndUtc,
+        SeatSelectionMode EffectiveMode);
 }

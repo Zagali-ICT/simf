@@ -273,6 +273,30 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     b.ToTable("DeviceKeys", (string)null);
                 });
 
+            modelBuilder.Entity("SIMF.Domain.IdentityAccess.PasswordHistoryEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "CreatedAtUtc");
+
+                    b.ToTable("PasswordHistory");
+                });
+
             modelBuilder.Entity("SIMF.Domain.IdentityAccess.Permission", b =>
                 {
                     b.Property<Guid>("Id")
@@ -470,6 +494,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<DateTimeOffset?>("LastSuccessfulSignInAtUtc")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<long?>("LastUsedTotpTimestep")
                         .HasColumnType("bigint");
 
@@ -489,6 +516,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
 
                     b.Property<bool>("PasswordChangeRequired")
                         .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("PasswordChangedAtUtc")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("PasswordHash")
                         .HasColumnType("nvarchar(max)");
@@ -692,6 +722,15 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 });
 
             modelBuilder.Entity("SIMF.Domain.IdentityAccess.DeviceKey", b =>
+                {
+                    b.HasOne("SIMF.Domain.IdentityAccess.SimfUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("SIMF.Domain.IdentityAccess.PasswordHistoryEntry", b =>
                 {
                     b.HasOne("SIMF.Domain.IdentityAccess.SimfUser", null)
                         .WithMany()

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
@@ -85,12 +86,17 @@ class SimfApiClient {
     );
   }
 
+  /// [skipAuthRefresh] marks the request so a 401 on it does NOT trigger the
+  /// token-refresh-and-retry path. Set it for the refresh call itself — otherwise
+  /// a 401 on `/app/auth/refresh` re-enters the single-flight [AuthTokenSource.refresh]
+  /// (the same in-flight future the refresh is running inside) and deadlocks.
   Future<T> post<T>(
     String path, {
     Object? body,
     Map<String, dynamic>? queryParameters,
     required T Function(Object? data) decodeData,
     CancelToken? cancelToken,
+    bool skipAuthRefresh = false,
   }) {
     return _send<T>(
       (options) => _dio.post<dynamic>(
@@ -98,7 +104,7 @@ class SimfApiClient {
         data: body,
         queryParameters: queryParameters,
         cancelToken: cancelToken,
-        options: options,
+        options: _maybeSkipRefresh(options, skipAuthRefresh),
       ),
       decodeData,
     );
@@ -299,9 +305,13 @@ class SimfApiClient {
     }
 
     // Refresh + retry on a single 401. The token source serialises
-    // concurrent refresh attempts on its end.
-    if (response.statusCode == 401) {
-      final refreshed = await _tokenSource.refresh();
+    // concurrent refresh attempts on its end. Requests marked skip-refresh
+    // (the refresh call itself, and the post-refresh retry) do NOT re-enter the
+    // refresh path — that re-entry would deadlock the single-flight refresh
+    // against itself / loop the retry.
+    if (response.statusCode == 401 &&
+        response.requestOptions.extra[_extraSkipRefresh] != true) {
+      final refreshed = await _refreshBounded();
       if (refreshed) {
         try {
           response = await call(_skipRefreshOptions());
@@ -314,6 +324,22 @@ class SimfApiClient {
     }
 
     return response;
+  }
+
+  /// A refresh-attempt timeout. The Dio HTTP timeouts cover the network call,
+  /// but a stalled single-flight refresh future (e.g. one wedged awaiting a
+  /// never-completed Completer) would otherwise hang the request forever and
+  /// spin the UI indefinitely. Bound it so a stuck refresh is treated as
+  /// "not refreshed" — the original 401 then surfaces as a normal ApiFailure
+  /// (the screen shows its error toast) instead of an endless spinner.
+  static const Duration _refreshTimeout = Duration(seconds: 20);
+
+  Future<bool> _refreshBounded() async {
+    try {
+      return await _tokenSource.refresh().timeout(_refreshTimeout);
+    } on TimeoutException {
+      return false;
+    }
   }
 
   T _parseEnvelope<T>(
@@ -363,6 +389,19 @@ class SimfApiClient {
   Options _skipRefreshOptions() {
     return Options(
       extra: <String, dynamic>{_extraSkipRefresh: true},
+    );
+  }
+
+  /// Returns [options] with the skip-refresh marker merged in when [skip] is set
+  /// (else unchanged). Lets [post] tag the refresh call so its own 401 surfaces
+  /// as a normal failure instead of re-entering the single-flight refresh.
+  Options? _maybeSkipRefresh(Options? options, bool skip) {
+    if (!skip) {
+      return options;
+    }
+    final base = options ?? Options();
+    return base.copyWith(
+      extra: <String, dynamic>{...?base.extra, _extraSkipRefresh: true},
     );
   }
 

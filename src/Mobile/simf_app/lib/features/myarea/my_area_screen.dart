@@ -308,13 +308,18 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
         const SizedBox(height: SimfTokens.space3),
         KsaTileRow(
           children: <Widget>[
+            // Saved meetings / saved sessions are not built yet (owner
+            // 2026-06-21) — the tiles still show the live count but tap through
+            // to the ComingSoon placeholder.
             KsaStatTile(
               value: dashboard.counters.meetingsCount,
               label: l10n.statMeetings,
+              onTap: () => context.pushNamed(RouteNames.savedMeetings),
             ),
             KsaStatTile(
               value: dashboard.counters.bookedSessionsCount,
               label: l10n.statBookedSessions,
+              onTap: () => context.pushNamed(RouteNames.savedSessions),
             ),
           ],
         ),
@@ -361,6 +366,19 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
         _MoreRow(
           label: l10n.smartBadgeLink,
           onTap: () => context.pushNamed(RouteNames.badge),
+        ),
+        const SizedBox(height: SimfTokens.space4),
+        // D-479 (#11 follow-up) — read-only list of the user's meetings.
+        _MoreRow(
+          label: l10n.myMeetingsLink,
+          onTap: () => context.pushNamed(RouteNames.myMeetings),
+        ),
+        const SizedBox(height: SimfTokens.space4),
+        // D-485 — the standalone Join-a-session hub (the seat-booking flow; the
+        // other entry is the Join CTA on each session page).
+        _MoreRow(
+          label: l10n.joinHubTitle,
+          onTap: () => context.pushNamed(RouteNames.joinSessionHub),
         ),
         const SizedBox(height: SimfTokens.space4),
         // Photos-only profile edit (owner scope): re-upload the ID document

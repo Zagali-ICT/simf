@@ -35,6 +35,7 @@ internal sealed class UserProfileService(
     IUserProfileRepository profiles,
     IUserIdDocumentStorage idStorage,
     IVipPhotoStorage vipPhotoStorage,
+    SIMF.Application.Abstractions.IUploadScanner uploadScanner,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     INotificationDispatcher notifications,
@@ -505,6 +506,9 @@ internal sealed class UserProfileService(
                 "The acting account was not found.",
                 "لم يتم العثور على الحساب.");
 
+        // A6-18 (NCA) — malware-scan the untrusted image before it is stored.
+        await uploadScanner.EnsureCleanAsync(content, "id-document", cancellationToken);
+
         // ID image follows the avatar contract (D-039): magic-byte and
         // size already checked at the endpoint, the storage layer
         // encrypts and writes.
@@ -584,6 +588,9 @@ internal sealed class UserProfileService(
             profiles.Add(profile);
         }
 
+        // A6-18 (NCA) — malware-scan the untrusted image before it is stored.
+        await uploadScanner.EnsureCleanAsync(content, "id-document", cancellationToken);
+
         var relativePath = await idStorage.SaveAsync(
             subjectUserId, content, contentType, cancellationToken);
         profile.IdImageRelativePath = relativePath;
@@ -651,6 +658,9 @@ internal sealed class UserProfileService(
             };
             profiles.Add(profile);
         }
+
+        // A6-18 (NCA) — malware-scan the untrusted image before it is stored.
+        await uploadScanner.EnsureCleanAsync(content, "vip-photo", cancellationToken);
 
         var relativePath = await vipPhotoStorage.SaveAsync(
             subjectUserId, content, contentType, cancellationToken);

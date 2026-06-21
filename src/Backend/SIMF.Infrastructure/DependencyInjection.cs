@@ -28,6 +28,39 @@ namespace SIMF.Infrastructure;
 /// </summary>
 public static class DependencyInjection
 {
+    /// <summary>M4 (security) — refuse to start in Production when the AI
+    /// prompt-hash HMAC secret was never configured. The dev-fallback key is
+    /// derived from a public constant string, so a dev-fallback hash leaking
+    /// into a production audit trail is trivially recomputable. Call from the
+    /// host after <see cref="AddInfrastructure"/>, which installs the key.</summary>
+    public static void EnsureAiPromptHashSecretConfigured(bool isProduction)
+    {
+        if (isProduction && SIMF.Infrastructure.Ai.AiAuditDetail.IsHmacKeyDevFallback)
+        {
+            throw new InvalidOperationException(
+                "Ai:PromptHash:Secret must be configured in Production — the "
+                + "dev-fallback HMAC key is publicly derivable. Set "
+                + "SIMF_Ai__PromptHash__Secret before starting.");
+        }
+    }
+
+    /// <summary>A2-10 (security) — refuse to start in Production when the PII
+    /// encryption key (<c>Storage:UserIdDocumentEncryptionKey</c>, reused for the
+    /// UserProfile identifier columns) is missing or not a valid 32-byte base64
+    /// key. Without it, every write of national ID / Iqama / passport / mobile
+    /// would throw at runtime. Call from the host after the app is built.</summary>
+    public static void EnsurePiiEncryptionConfigured(bool isProduction, IServiceProvider services)
+    {
+        if (isProduction
+            && !services.GetRequiredService<SIMF.Application.Abstractions.IPiiEncryptor>().IsKeyConfigured)
+        {
+            throw new InvalidOperationException(
+                "Storage:UserIdDocumentEncryptionKey must be a valid base64 32-byte key in "
+                + "Production — it encrypts the UserProfile PII columns at rest (NCA A2-10). "
+                + "Set SIMF_Storage__UserIdDocumentEncryptionKey before starting.");
+        }
+    }
+
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -82,14 +115,19 @@ public static class DependencyInjection
                 sp.GetRequiredService<RowAuditingSaveChangesInterceptor>()));
 
         // ASP.NET Core Identity — UserManager / RoleManager over the EF stores.
-        // Identity enforces the SIMF-API-001 §12.5 baseline (length and a digit)
-        // so every credential path is covered, including the seeder; the request
-        // validators add the remaining rules (a letter, not equal to the email)
-        // with field-level messages.
+        // The built-in validator enforces the SIMF-API-001 §12.5 length baseline;
+        // the content rules (NCA A7-29 — complexity classes, no repeats/sequences,
+        // no common passwords, not equal to the identifier) live in the central
+        // SimfPasswordValidator so every credential path — sign-up, admin-create,
+        // reset, change, the seeder — is covered identically, and the request
+        // validators surface the same rules with bilingual field-level messages.
         services.AddIdentityCore<SimfUser>(options =>
             {
                 options.Password.RequiredLength = 8;
-                options.Password.RequireDigit = true;
+                // The built-in character requirements are owned by
+                // SimfPasswordValidator (so the policy is defined once); leave the
+                // built-in flags off to avoid duplicate generic error entries.
+                options.Password.RequireDigit = false;
                 options.Password.RequireLowercase = false;
                 options.Password.RequireUppercase = false;
                 options.Password.RequireNonAlphanumeric = false;
@@ -101,7 +139,9 @@ public static class DependencyInjection
                 options.Lockout.AllowedForNewUsers = true;
             })
             .AddRoles<SimfRole>()
-            .AddEntityFrameworkStores<SimfIdentityDbContext>();
+            .AddEntityFrameworkStores<SimfIdentityDbContext>()
+            // NCA A7-21 — central password validator (see SimfPasswordValidator).
+            .AddPasswordValidator<SimfPasswordValidator>();
 
         services.Configure<EmailOptions>(
             configuration.GetSection(EmailOptions.SectionName));
@@ -109,6 +149,15 @@ public static class DependencyInjection
             configuration.GetSection(SuperAdminOptions.SectionName));
         services.Configure<JwtOptions>(
             configuration.GetSection(JwtOptions.SectionName));
+        // A7-13 (NCA) — credential-lifecycle settings (password max age).
+        services.Configure<IdentityLifecycleOptions>(
+            configuration.GetSection(IdentityLifecycleOptions.SectionName));
+        // A6-18 (NCA) — upload malware-scanning settings.
+        services.Configure<UploadScanningOptions>(
+            configuration.GetSection(UploadScanningOptions.SectionName));
+        // #7a — biometric device-key enrolment step-up toggle (default on).
+        services.Configure<DeviceKeyOptions>(
+            configuration.GetSection(DeviceKeyOptions.SectionName));
         // R1 — D-074: typed Storage settings; replaces four scattered
         // IConfiguration["Storage:..."] reads across FilesystemAvatarStorage,
         // EncryptedUserIdDocumentStorage, LogFileService, and Program.cs.
@@ -139,6 +188,10 @@ public static class DependencyInjection
         services.AddScoped<IUserTwoFactorStore>(sp => sp.GetRequiredService<UserAccountRepository>());
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IAccountCodeRepository, AccountCodeRepository>();
+        // A7-20 (NCA) — retired-password-hash store for reuse prevention.
+        services.AddScoped<IPasswordHistoryRepository, PasswordHistoryRepository>();
+        // A1-19 (NCA) — dormant-account auto-disable (driven by the daily sweep host).
+        services.AddScoped<IDormantAccountService, DormantAccountService>();
         services.AddScoped<IPermissionRepository, PermissionRepository>();
         services.AddScoped<ISecondFactorTokenRepository, SecondFactorTokenRepository>();
         services.AddScoped<ITotpRecoveryCodeRepository, TotpRecoveryCodeRepository>();
@@ -275,6 +328,15 @@ public static class DependencyInjection
         // D-269 (Mockup page 20) — attendee meeting requests to a speaker.
         services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.ISpeakerMeetingRequestService,
             SIMF.Infrastructure.MeetingRequests.SpeakerMeetingRequestService>();
+        // D-474 (#11, Group G) — speaker availability windows + free-slot derivation.
+        services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.ISpeakerAvailabilityService,
+            SIMF.Infrastructure.MeetingRequests.SpeakerAvailabilityService>();
+        // D-478 (#11, Group G phase 2) — delegation↔delegation meeting requests.
+        services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.IDelegationMeetingRequestService,
+            SIMF.Infrastructure.MeetingRequests.DelegationMeetingRequestService>();
+        // D-479 (#11 follow-up) — read-only "My meetings" feed for the mobile app.
+        services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.IMyMeetingsService,
+            SIMF.Infrastructure.MeetingRequests.MyMeetingsService>();
         // D-175 (gap doc G11, Mockup page 7) — per-session seat
         // reservations (visitor self-pick + random + admin row blocks).
         services.AddScoped<SIMF.Application.SeatReservations.Abstractions.ISeatReservationService,
@@ -404,12 +466,20 @@ public static class DependencyInjection
         SIMF.Infrastructure.Ai.AiAuditDetail.ConfigureHmacKey(
             configuration.GetValue<string?>(
                 $"{SIMF.Infrastructure.Ai.AiOptions.SectionName}:PromptHash:Secret"));
+        // M3 (security) — install the keyed-HMAC key for AccountCode (OTP)
+        // hashing; reuses the JWT signing key (a required, boot-validated secret).
+        SIMF.Application.IdentityAccess.AccountCodeHasher.ConfigureKey(
+            configuration[$"{SIMF.Common.Options.JwtOptions.SectionName}:SigningKey"]);
         services.AddSingleton<SIMF.Application.Ai.Abstractions.IAiProvider,
             SIMF.Infrastructure.Ai.EchoAiProvider>();
         services.AddSingleton(_ => new HttpClient { Timeout = TimeSpan.FromSeconds(30) });
         services.AddSingleton<SIMF.Infrastructure.Ai.OpenAiProvider>();
         services.AddSingleton<SIMF.Application.Ai.Abstractions.IAiProvider>(sp =>
             sp.GetRequiredService<SIMF.Infrastructure.Ai.OpenAiProvider>());
+        // D-484 — Anthropic (Claude) Messages-API provider (shares the singleton HttpClient).
+        services.AddSingleton<SIMF.Infrastructure.Ai.AnthropicAiProvider>();
+        services.AddSingleton<SIMF.Application.Ai.Abstractions.IAiProvider>(sp =>
+            sp.GetRequiredService<SIMF.Infrastructure.Ai.AnthropicAiProvider>());
         services.AddSingleton<IReadOnlyDictionary<SIMF.Common.Enums.AiProvider,
                 SIMF.Application.Ai.Abstractions.IAiProvider>>(sp =>
             sp.GetServices<SIMF.Application.Ai.Abstractions.IAiProvider>()
@@ -459,6 +529,11 @@ public static class DependencyInjection
         // V-1 (D-429) — VVIP/VIP welcome-photo store, separate base dir from avatars.
         services.AddSingleton<IVipPhotoStorage, FilesystemVipPhotoStorage>();
         services.AddSingleton<IUserIdDocumentStorage, EncryptedUserIdDocumentStorage>();
+        // A2-10 — AES-GCM encryptor for PII identifier columns; applied by an EF
+        // value converter on UserProfile (SimfAppDbContext.OnModelCreating).
+        services.AddSingleton<SIMF.Application.Abstractions.IPiiEncryptor, AesGcmPiiEncryptor>();
+        // A6-18 — upload malware scanner (EICAR default; swap for ClamAV/Defender).
+        services.AddSingleton<SIMF.Application.Abstractions.IUploadScanner, DefaultUploadScanner>();
         services.AddSingleton<ILogFileService, LogFileService>();
         services.AddSingleton<IJwtTokenService, JwtTokenService>();
         services.AddSingleton<ITotpVerifier, TotpVerifier>();

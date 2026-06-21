@@ -179,8 +179,12 @@ session starts (decision D4).
 | `Sponsor` | `NameAr`, `NameEn`, `Tier` (Strategic / Premium / Gold), `DescriptionAr`, `DescriptionEn` | references `Asset` (logo) |
 | `VenueMapNode` | `Kind` (Hall / Zone / Booth), `RefId`, `PositionX`, `PositionY`, `Shape` | references the hall, zone or booth it marks |
 
-Delegations are not modelled — they were removed from scope (SIMF-RDR-001
-context, SIMF-CON-001 section 14).
+Delegations are not modelled as a standalone entity — the original module was
+removed from scope (SIMF-RDR-001 context, SIMF-CON-001 section 14) and permanently
+deleted (D-277). **Re-introduced 2026-06-20 as a light additive feature (D-473,
+req #10):** a delegate is an ordinary visitor with `UserProfile.IsDelegate = true`
+whose nationality is an invited `Country` (`Country.IsInvited = true`) — two
+additive boolean columns, no new entity.
 
 ### 5.6 Engagement & Live
 

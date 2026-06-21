@@ -1,0 +1,163 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:simf_data_pkg/simf_data_pkg.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/features/sessions/data/seat_map_models.dart';
+import 'package:simf_app/features/sessions/data/seat_map_repository.dart';
+import 'package:simf_app/features/sessions/seat_picker_screen.dart';
+
+SessionSeatMap _map() => const SessionSeatMap(
+      rowLabels: <String>['A', 'B'],
+      seatsPerRow: 3,
+      reservedCells: <SeatCell>[
+        SeatCell(rowLabel: 'A', seatNumber: 1, kind: SeatReservationKind.userBooking),
+      ],
+      activeReservedCount: 1,
+      hallCapacity: 6,
+      sessionTitle: 'Opening',
+    );
+
+class _FakePickerRepo implements SeatMapRepository {
+  _FakePickerRepo(this.map, {this.failReserve = false});
+
+  final SessionSeatMap map;
+  final bool failReserve;
+  String? reservedRow;
+  int? reservedSeat;
+  int randomCalls = 0;
+
+  @override
+  Future<SessionSeatMap> getSeatMap(String sessionId) async => map;
+
+  @override
+  Future<MyReservation> reserveSeat(
+    String sessionId, {
+    required String rowLabel,
+    required int seatNumber,
+  }) async {
+    if (failReserve) {
+      throw ApiFailure(
+        code: 'SEAT_ALREADY_RESERVED',
+        message: 'taken',
+        httpStatus: 409,
+      );
+    }
+    reservedRow = rowLabel;
+    reservedSeat = seatNumber;
+    return MyReservation(
+      reservationId: 'r1',
+      sessionId: sessionId,
+      rowLabel: rowLabel,
+      seatNumber: seatNumber,
+      kind: SeatReservationKind.userBooking,
+      status: BookingStatus.pending,
+    );
+  }
+
+  @override
+  Future<MyReservation> reserveRandom(String sessionId) async {
+    randomCalls++;
+    return const MyReservation(
+      reservationId: 'r2',
+      sessionId: 's1',
+      rowLabel: 'A',
+      seatNumber: 2,
+      kind: SeatReservationKind.randomAssignment,
+      status: BookingStatus.pending,
+    );
+  }
+
+  @override
+  Future<MyReservation> joinOpenSeating(String sessionId) =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> releaseMine(String sessionId) => throw UnimplementedError();
+}
+
+Future<_FakePickerRepo> _pump(WidgetTester tester, {_FakePickerRepo? repo}) async {
+  tester.view.physicalSize = const Size(1000, 2200);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+  final pickerRepo = repo ?? _FakePickerRepo(_map());
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: <Override>[
+        seatMapRepositoryProvider.overrideWithValue(pickerRepo),
+      ],
+      child: MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: AppL10n.supportedLocales,
+        localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+          ...AppL10n.localizationsDelegates,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        // Push the picker so its pop-with-true on success returns here.
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: ElevatedButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<bool>(
+                    builder: (_) => const SeatPickerScreen(sessionId: 's1'),
+                  ),
+                ),
+                child: const Text('OPEN'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('OPEN'));
+  await tester.pumpAndSettle();
+  return pickerRepo;
+}
+
+void main() {
+  group('SeatPickerScreen (D-485)', () {
+    testWidgets('renders the grid + hint, and the auto-pick CTA', (tester) async {
+      await _pump(tester);
+      expect(find.text('Opening'), findsOneWidget);
+      expect(find.text('Tap an available seat to reserve it'), findsOneWidget);
+      expect(
+        find.widgetWithText(FilledButton, 'Auto-pick a seat'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('tapping an available seat reserves it', (tester) async {
+      final repo = await _pump(tester);
+      // A2 is available (only A1 is reserved). The seat carries a semantics label.
+      await tester.tap(find.bySemanticsLabel('A2'));
+      await tester.pumpAndSettle();
+      expect(repo.reservedRow, 'A');
+      expect(repo.reservedSeat, 2);
+    });
+
+    testWidgets('the auto-pick CTA reserves a random seat', (tester) async {
+      final repo = await _pump(tester);
+      await tester.tap(find.widgetWithText(FilledButton, 'Auto-pick a seat'));
+      await tester.pumpAndSettle();
+      expect(repo.randomCalls, 1);
+    });
+
+    testWidgets('a reserve failure shows the error toast and keeps the picker '
+        'usable (busy resets, no pop)', (tester) async {
+      await _pump(tester, repo: _FakePickerRepo(_map(), failReserve: true));
+      await tester.tap(find.bySemanticsLabel('A2'));
+      await tester.pumpAndSettle();
+      // The failure toast shows, and the grid is still here (the screen did not
+      // pop and is not frozen — _busy was reset in the finally).
+      expect(find.text("Couldn't reserve that seat"), findsOneWidget);
+      expect(find.bySemanticsLabel('A2'), findsOneWidget);
+    });
+  });
+}

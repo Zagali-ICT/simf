@@ -41,6 +41,9 @@ public class SimfIdentityDbContext(DbContextOptions<SimfIdentityDbContext> optio
     /// <summary>D-109: row-audit trail for changes against this DbContext.</summary>
     public DbSet<RowAudit> RowAudits => Set<RowAudit>();
 
+    /// <summary>A7-20 (NCA) — retired password hashes for reuse prevention.</summary>
+    public DbSet<PasswordHistoryEntry> PasswordHistory => Set<PasswordHistoryEntry>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

@@ -12,6 +12,8 @@ import '../../app/theme/tokens.dart';
 import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../core/country_flag.dart';
+import 'data/seat_map_models.dart';
+import 'data/seat_map_repository.dart';
 import 'data/session_calendar.dart';
 import 'data/session_detail_repository.dart';
 import 'data/session_models.dart';
@@ -48,8 +50,9 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
   bool _loading = true;
   bool _error = false;
   bool _notFound = false;
+  bool _busy = false;
   SessionDetail? _detail;
-  MySeat? _mySeat;
+  SessionSeatMap? _seatMap;
 
   @override
   void initState() {
@@ -66,17 +69,18 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     try {
       final repo = ref.read(sessionDetailRepositoryProvider);
       final detail = await repo.getDetail(widget.sessionId);
-      // The my-seat card is approved-account only; a guest never calls the seat
-      // endpoint, and a pending account's 403 simply leaves the card hidden.
-      final seat = ref.read(authControllerProvider) is AuthStateSignedIn
-          ? await _safeMySeat(repo)
+      // The seat map (myCell + effective mode) is approved-account only; a guest
+      // never calls the seat endpoint, and a pending account's 403 leaves the
+      // join section hidden (L-3).
+      final seatMap = ref.read(authControllerProvider) is AuthStateSignedIn
+          ? await _safeSeatMap()
           : null;
       if (!mounted) {
         return;
       }
       setState(() {
         _detail = detail;
-        _mySeat = seat;
+        _seatMap = seatMap;
         _loading = false;
       });
     } on ApiFailure catch (failure) {
@@ -91,13 +95,113 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     }
   }
 
-  Future<MySeat?> _safeMySeat(SessionDetailRepository repo) async {
+  Future<SessionSeatMap?> _safeSeatMap() async {
     try {
-      return await repo.getMySeat(widget.sessionId);
+      return await ref
+          .read(seatMapRepositoryProvider)
+          .getSeatMap(widget.sessionId);
     } on ApiFailure {
-      // 401 (no token) / 403 (not approved) / transport → no card (L-3).
+      // 401 (no token) / 403 (not approved) / transport → no join section (L-3).
       return null;
     }
+  }
+
+  /// D-485 — join this session. Open-seating → confirm + one-tap join; an
+  /// assigned-seat session opens the seat picker (reload on return). A guest /
+  /// pending account never reaches here — the join section is hidden for them.
+  Future<void> _join(AppL10n l10n) async {
+    final map = _seatMap;
+    if (map == null || _busy) {
+      return;
+    }
+    if (!map.mode.isOpenSeating) {
+      final picked = await context.pushNamed<bool>(
+        RouteNames.seatPicker,
+        pathParameters: <String, String>{'sessionId': widget.sessionId},
+      );
+      if (picked == true && mounted) {
+        await _load();
+      }
+      return;
+    }
+    final confirmed = await _confirm(
+      l10n.joinConfirmTitle,
+      l10n.joinConfirmBody,
+      l10n.joinConfirmAction,
+    );
+    if (confirmed != true || !mounted) {
+      return;
+    }
+    setState(() => _busy = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref
+          .read(seatMapRepositoryProvider)
+          .joinOpenSeating(widget.sessionId);
+      messenger.showSnackBar(SnackBar(content: Text(l10n.joinPendingToast)));
+    } on ApiFailure catch (failure) {
+      final full = failure.code == 'SEAT_SESSION_FULL';
+      messenger.showSnackBar(
+        SnackBar(content: Text(full ? l10n.joinSessionFull : l10n.joinFailed)),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
+    await _load();
+  }
+
+  /// D-485 — cancel the caller's held reservation (before the session starts).
+  Future<void> _cancelReservation(AppL10n l10n) async {
+    if (_busy) {
+      return;
+    }
+    final confirmed = await _confirm(
+      l10n.cancelBookingConfirmTitle,
+      l10n.cancelBookingConfirmBody,
+      l10n.cancelBookingCta,
+    );
+    if (confirmed != true || !mounted) {
+      return;
+    }
+    setState(() => _busy = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(seatMapRepositoryProvider).releaseMine(widget.sessionId);
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.bookingCancelledToast)),
+      );
+    } on ApiFailure {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.bookingCancelFailed)),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
+    await _load();
+  }
+
+  Future<bool?> _confirm(String title, String body, String action) {
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(title),
+        content: Text(body),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(AppL10n.of(dialogContext).cancelLabel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(action),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _addToCalendar(SessionDetail detail, AppL10n l10n) async {
@@ -133,9 +237,9 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
         queryParameters: <String, String>{'sessionId': widget.sessionId},
       );
 
-  /// اسأل المحاور (Figma 1056:12876) — opens send-question (26). Auth-gated: a
-  /// guest is routed to sign-in by the router's gate, like other login-only
-  /// actions.
+  /// اسأل المحاور (Figma 1056:12876) — opens send-question (26). #3 — only
+  /// reachable once the user has JOINED the session: the ask card is disabled
+  /// (this never fires) until then, so there is no guest/not-joined path here.
   void _askHost() => context.pushNamed(
         RouteNames.sendQuestion,
         queryParameters: <String, String>{'sessionId': widget.sessionId},
@@ -194,7 +298,8 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     final baseUrl = ref.read(simfDataConfigProvider).baseUrl;
     return _Content(
       detail: _detail!,
-      mySeat: _mySeat,
+      seatMap: _seatMap,
+      busy: _busy,
       l10n: l10n,
       baseUrl: baseUrl,
       onAddToCalendar: () => unawaited(_addToCalendar(_detail!, l10n)),
@@ -202,6 +307,8 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
       onSessionLink: _openLive,
       onSessionSummary: _openSummary,
       onAskHost: _askHost,
+      onJoin: () => unawaited(_join(l10n)),
+      onCancelReservation: () => unawaited(_cancelReservation(l10n)),
       onViewSeat: () => context.pushNamed(
         RouteNames.mySeat,
         pathParameters: <String, String>{'sessionId': widget.sessionId},
@@ -286,7 +393,8 @@ class _Header extends StatelessWidget {
 class _Content extends StatelessWidget {
   const _Content({
     required this.detail,
-    required this.mySeat,
+    required this.seatMap,
+    required this.busy,
     required this.l10n,
     required this.baseUrl,
     required this.onAddToCalendar,
@@ -294,12 +402,17 @@ class _Content extends StatelessWidget {
     required this.onSessionLink,
     required this.onSessionSummary,
     required this.onAskHost,
+    required this.onJoin,
+    required this.onCancelReservation,
     required this.onViewSeat,
     required this.onSpeaker,
   });
 
   final SessionDetail detail;
-  final MySeat? mySeat;
+  // D-485 — the seat map (null for a guest / pending account): drives the join
+  // section — the Join CTA when `myCell` is null, the reservation card otherwise.
+  final SessionSeatMap? seatMap;
+  final bool busy;
   final AppL10n l10n;
   final String baseUrl;
   final VoidCallback onAddToCalendar;
@@ -307,6 +420,8 @@ class _Content extends StatelessWidget {
   final VoidCallback onSessionLink;
   final VoidCallback onSessionSummary;
   final VoidCallback onAskHost;
+  final VoidCallback onJoin;
+  final VoidCallback onCancelReservation;
   final VoidCallback onViewSeat;
   final void Function(SessionSpeaker speaker) onSpeaker;
 
@@ -352,15 +467,45 @@ class _Content extends StatelessWidget {
           ],
         ],
         // اسأل المحاور (Figma 1056:12876) — sits between the speakers and the
-        // my-seat card, shown to everyone (the send-question route is auth-gated
-        // downstream).
+        // my-seat card. #3 — pre-ask is allowed only once the user has JOINED the
+        // session (holds a booking), NOT on physical check-in; until then the
+        // card is disabled with a "join first" hint.
         const SizedBox(height: SimfTokens.space5),
-        _AskHostCard(label: l10n.askHost, onTap: onAskHost),
-        if (mySeat != null) ...<Widget>[
+        _AskHostCard(
+          label: l10n.askHost,
+          onTap: onAskHost,
+          enabled: seatMap?.myCell != null,
+          // Only show the "join first" hint when a Join CTA is actually offered
+          // below (an approved account); a guest sees the card plainly disabled
+          // rather than a hint pointing at a join affordance they can't see.
+          disabledHint: seatMap != null ? l10n.askHostJoinFirst : null,
+        ),
+        // D-485 — the join section (approved account only): a held reservation
+        // shows the booking card + Cancel; otherwise the mode-branched Join CTA.
+        if (seatMap?.myCell != null) ...<Widget>[
           const SizedBox(height: SimfTokens.space5),
           _SectionHeading(l10n.mySeatHeading),
           const SizedBox(height: SimfTokens.space4),
-          _SeatCard(seat: mySeat!, l10n: l10n, onView: onViewSeat),
+          _ReservationCard(
+            cell: seatMap!.myCell!,
+            l10n: l10n,
+            busy: busy,
+            onCancel: onCancelReservation,
+            // An open-seating join has no seat to view on the hall map.
+            onView: seatMap!.myCell!.kind == SeatReservationKind.openSeating
+                ? null
+                : onViewSeat,
+          ),
+        ] else if (seatMap != null) ...<Widget>[
+          const SizedBox(height: SimfTokens.space5),
+          _SectionHeading(l10n.joinSectionHeading),
+          const SizedBox(height: SimfTokens.space4),
+          _JoinCard(
+            mode: seatMap!.mode,
+            busy: busy,
+            l10n: l10n,
+            onJoin: onJoin,
+          ),
         ],
         const SizedBox(height: SimfTokens.space6),
         _CtaRow(
@@ -817,34 +962,56 @@ class _SpeakerAvatar extends StatelessWidget {
 /// hairline holding a centred user glyph over the 12px SemiBold label. Opens
 /// send-question (26) for this session.
 class _AskHostCard extends StatelessWidget {
-  const _AskHostCard({required this.label, required this.onTap});
+  const _AskHostCard({
+    required this.label,
+    required this.onTap,
+    required this.enabled,
+    this.disabledHint,
+  });
 
   final String label;
   final VoidCallback onTap;
 
+  /// #3 — true once the user has joined the session; false disables the tap and
+  /// shows [disabledHint] (the pre-ask gate — join to ask, no check-in needed).
+  final bool enabled;
+  final String? disabledHint;
+
   @override
   Widget build(BuildContext context) {
+    final color = enabled ? Colors.white : SimfTokens.navyDisabledText;
     return KsaCard(
-      onTap: onTap,
+      onTap: enabled ? onTap : null,
       child: Padding(
         padding: const EdgeInsets.all(SimfTokens.space2),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            const Icon(
+            Icon(
               Icons.person_outline,
               size: 24,
-              color: Colors.white,
+              color: color,
             ),
             const SizedBox(height: SimfTokens.space2),
             Text(
               label,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: color,
                 fontWeight: FontWeight.w600,
                 fontSize: SimfTokens.textSm,
               ),
             ),
+            if (!enabled && disabledHint != null) ...<Widget>[
+              const SizedBox(height: SimfTokens.space1),
+              Text(
+                disabledHint!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: SimfTokens.beigeBorder,
+                  fontSize: SimfTokens.textXs,
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -852,76 +1019,153 @@ class _AskHostCard extends StatelessWidget {
   }
 }
 
-/// The my-seat card (frame 889:2761): a navy box with the beige hairline,
-/// holding a gold filled marker box on the inline-start (physical right), the
-/// row · seat line over the badge hint beside it, and a forward chevron on the
-/// inline-end (left) opening the seat map (18). There is no column axis
-/// (Page_017 L-3.1).
-class _SeatCard extends StatelessWidget {
-  const _SeatCard({
-    required this.seat,
+/// D-485 — the reservation card: the held seat (الصف · مقعد) or "general
+/// admission" for an open-seating join, the pending-approval hint, and a Cancel
+/// action. A seat-specific booking is tappable to open the seat map (18); an
+/// open-seating join has no seat to view, so the card is inert (no chevron).
+class _ReservationCard extends StatelessWidget {
+  const _ReservationCard({
+    required this.cell,
     required this.l10n,
-    required this.onView,
+    required this.busy,
+    required this.onCancel,
+    this.onView,
   });
 
-  final MySeat seat;
+  final SeatCell cell;
   final AppL10n l10n;
-  final VoidCallback onView;
+  final bool busy;
+  final VoidCallback onCancel;
+  final VoidCallback? onView;
 
   @override
   Widget build(BuildContext context) {
-    return KsaCard(
-      onTap: onView,
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space2),
-        child: Row(
-          children: <Widget>[
-            // Frame 894:2779 — a gold filled marker box at the inline start
-            // (physical right); the "View" affordance for the seat map.
-            // Labelled for screen readers.
-            Semantics(
-              button: true,
-              label: l10n.seatViewLink,
-              child: const _SeatMarker(),
-            ),
-            const SizedBox(width: SimfTokens.space4),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    l10n.seatLocation(seat.rowLabel, seat.seatNumber),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: SimfTokens.textLg,
-                    ),
+    final isOpen = cell.kind == SeatReservationKind.openSeating;
+    final title = isOpen
+        ? l10n.generalAdmissionLabel
+        : l10n.seatLocation(cell.rowLabel, cell.seatNumber);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        KsaCard(
+          onTap: onView,
+          child: Padding(
+            padding: const EdgeInsets.all(SimfTokens.space2),
+            child: Row(
+              children: <Widget>[
+                Semantics(
+                  button: onView != null,
+                  label: l10n.seatViewLink,
+                  child: const _SeatMarker(),
+                ),
+                const SizedBox(width: SimfTokens.space4),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: SimfTokens.textLg,
+                        ),
+                      ),
+                      const SizedBox(height: SimfTokens.space2),
+                      Text(
+                        l10n.reservationPendingHint,
+                        style: const TextStyle(
+                          color: SimfTokens.beigeBorder,
+                          fontSize: SimfTokens.textSm,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: SimfTokens.space2),
-                  Text(
-                    l10n.seatBadgeHint,
-                    style: const TextStyle(
-                      color: SimfTokens.beigeBorder,
-                      fontSize: SimfTokens.textSm,
-                    ),
+                ),
+                if (onView != null) ...<Widget>[
+                  const SizedBox(width: SimfTokens.space2),
+                  Icon(
+                    Directionality.of(context) == TextDirection.rtl
+                        ? Icons.chevron_left
+                        : Icons.chevron_right,
+                    size: 20,
+                    color: SimfTokens.beigeBorder,
                   ),
                 ],
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: SimfTokens.space3),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: TextButton.icon(
+            onPressed: busy ? null : onCancel,
+            icon: const Icon(Icons.close, size: 18, color: SimfTokens.danger),
+            label: Text(
+              l10n.cancelBookingCta,
+              style: const TextStyle(
+                color: SimfTokens.danger,
+                fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(width: SimfTokens.space2),
-            // Frame 889:2762 — a forward chevron at the inline end. Direction-
-            // aware so it points "into" the seat map in both locales (physical
-            // left under RTL, right under LTR).
-            Icon(
-              Directionality.of(context) == TextDirection.rtl
-                  ? Icons.chevron_left
-                  : Icons.chevron_right,
-              size: 20,
-              color: SimfTokens.beigeBorder,
-            ),
-          ],
+          ),
         ),
-      ),
+      ],
+    );
+  }
+}
+
+/// D-485 — the Join CTA, shown to an approved account that holds no reservation.
+/// An open-seating session is a one-tap join (confirmed in a dialog upstream); an
+/// assigned-seat session opens the seat picker. The label + hint follow the mode.
+class _JoinCard extends StatelessWidget {
+  const _JoinCard({
+    required this.mode,
+    required this.busy,
+    required this.l10n,
+    required this.onJoin,
+  });
+
+  final SeatSelectionMode mode;
+  final bool busy;
+  final AppL10n l10n;
+  final VoidCallback onJoin;
+
+  @override
+  Widget build(BuildContext context) {
+    final open = mode.isOpenSeating;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Text(
+          open ? l10n.joinOpenHint : l10n.joinSeatHint,
+          style: const TextStyle(
+            color: SimfTokens.beigeBorder,
+            fontSize: SimfTokens.textSm,
+          ),
+        ),
+        const SizedBox(height: SimfTokens.space3),
+        FilledButton.icon(
+          onPressed: busy ? null : onJoin,
+          style: FilledButton.styleFrom(
+            minimumSize: const Size.fromHeight(48),
+            backgroundColor: SimfTokens.accent,
+            foregroundColor: SimfTokens.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+            ),
+          ),
+          icon: Icon(open ? Icons.how_to_reg : Icons.event_seat, size: 20),
+          label: Text(
+            open ? l10n.joinOpenCta : l10n.joinSeatCta,
+            style: const TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: SimfTokens.textLg,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

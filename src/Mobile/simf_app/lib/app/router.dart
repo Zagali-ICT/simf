@@ -6,6 +6,7 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import '../core/widgets/coming_soon_screen.dart';
 import '../features/auth/email_otp_verify_screen.dart';
 import '../features/auth/badge_activation_screen.dart';
+import '../features/auth/biometric_step_up_screen.dart';
 import '../features/auth/badge_sign_in_screen.dart';
 import '../features/auth/forgot_password_screen.dart';
 import '../features/auth/reset_password_screen.dart';
@@ -22,6 +23,7 @@ import '../features/home/home_screen.dart';
 import '../features/media_partners/media_partners_screen.dart';
 import '../features/news/news_screen.dart';
 import '../features/accessibility/accessibility_screen.dart';
+import '../features/ai_summary/session_summary_list_screen.dart';
 import '../features/ai_summary/session_summary_screen.dart';
 import '../features/badge/badge_screen.dart';
 import '../features/chatbot/chatbot_screen.dart';
@@ -36,6 +38,7 @@ import '../features/more/more_screen.dart';
 import '../features/notifications/notifications_screen.dart';
 import '../features/questions/send_question_screen.dart';
 import '../features/exhibitor/my_visitors_screen.dart';
+import '../features/meetings/my_meetings_screen.dart';
 import '../features/exhibitor/scan_visitor_screen.dart';
 import '../features/gates/gate_scan_screen.dart';
 import '../features/moderation/session_moderate_screen.dart';
@@ -48,7 +51,9 @@ import '../features/profile/sign_up_interests_screen.dart';
 import '../features/profile/sign_up_visitor_screen.dart';
 import '../features/registration/registration_status_screen.dart';
 import '../features/registration/registration_success_screen.dart';
+import '../features/sessions/join_session_hub_screen.dart';
 import '../features/sessions/my_seat_screen.dart';
+import '../features/sessions/seat_picker_screen.dart';
 import '../features/sessions/session_detail_screen.dart';
 import '../features/sessions/sessions_screen.dart';
 import '../features/sponsors/sponsors_screen.dart';
@@ -148,6 +153,15 @@ const List<_Route> _routes = <_Route>[
   // D-426 — exhibitor ("Other") lead capture (approved-only; server 403s visitors).
   _Route(number: 106, name: RouteNames.scanVisitor, path: '/exhibitor/scan', labelAr: 'مسح بطاقة زائر', labelEn: 'Scan visitor badge'),
   _Route(number: 107, name: RouteNames.myVisitors, path: '/exhibitor/visitors', labelAr: 'زواري', labelEn: 'My Visitors'),
+  // D-479 (#11 follow-up) — read-only "My meetings" list (approved-only).
+  _Route(number: 108, name: RouteNames.myMeetings, path: '/my-meetings', labelAr: 'اجتماعاتي', labelEn: 'My meetings'),
+  // D-485 — the session-join flow (approved-only): the seat picker + the hub.
+  _Route(number: 109, name: RouteNames.seatPicker, path: '/sessions/:sessionId/pick-seat', labelAr: 'اختر مقعدك', labelEn: 'Select your seat'),
+  _Route(number: 110, name: RouteNames.joinSessionHub, path: '/sessions/join', labelAr: 'احجز مقعداً', labelEn: 'Book a seat'),
+  // #1/#6 — session-summaries list (public; home tile → list → aiSummary details).
+  _Route(number: 111, name: RouteNames.sessionSummaryList, path: '/session-summaries', labelAr: 'ملخص الجلسات', labelEn: 'Session summaries'),
+  // #9 — venue map focused on a booth (booth "أرشدني" CTA; public, pushed).
+  _Route(number: 112, name: RouteNames.boothMap, path: '/booths/:boothId/map', labelAr: 'الخريطة', labelEn: 'Venue map'),
 
   // D-464 — المزيد hub entries with no screen yet (Figma 1129:17224). Public;
   // they fall through to ComingSoonScreen (sentinel numbers 200+).
@@ -155,6 +169,12 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 201, name: RouteNames.faq, path: '/faq', labelAr: 'الأسئلة الشائعة', labelEn: 'FAQ'),
   _Route(number: 202, name: RouteNames.sessionPresentations, path: '/session-presentations', labelAr: 'عروض الجلسات', labelEn: 'Session presentations'),
   _Route(number: 203, name: RouteNames.contactUs, path: '/contact-us', labelAr: 'تواصل معنا', labelEn: 'Contact us'),
+  // Owner batch (2026-06-21) — entry points for features not yet designed/built;
+  // they fall through to ComingSoonScreen (sentinel numbers 200+). #5 bilateral
+  // meetings (home tile, undesigned); #8 saved sessions/meetings (My Area stats).
+  _Route(number: 204, name: RouteNames.bilateralMeetings, path: '/bilateral-meetings', labelAr: 'اللقاءات الثنائية', labelEn: 'Bilateral meetings'),
+  _Route(number: 205, name: RouteNames.savedSessions, path: '/saved-sessions', labelAr: 'الجلسات المحفوظة', labelEn: 'Saved sessions'),
+  _Route(number: 206, name: RouteNames.savedMeetings, path: '/saved-meetings', labelAr: 'المقابلات المحفوظة', labelEn: 'Saved meetings'),
 ];
 
 /// Auxiliary auth routes that aren't numbered in the mockup but live in
@@ -166,6 +186,9 @@ const List<_Route> _auxRoutes = <_Route>[
   // Part B (D-430) — badge-QR sign-in / activation (anonymous, pre-login).
   _Route(number: 0, name: RouteNames.badgeSignIn, path: '/auth/badge', labelAr: 'الدخول بالشارة', labelEn: 'Badge sign-in'),
   _Route(number: 0, name: RouteNames.badgeActivation, path: '/auth/badge-activation', labelAr: 'تفعيل الحساب', labelEn: 'Activate account'),
+  // #7a — emailed-OTP step-up to ENABLE biometric sign-in (signed-in; backend-
+  // enforced, reached from the Face-ID toggle / post-sign-in nudge).
+  _Route(number: 0, name: RouteNames.biometricStepUp, path: '/auth/biometric-step-up', labelAr: 'تأكيد بصمة الوجه', labelEn: 'Confirm Face ID'),
 ];
 
 /// Screen numbers that need a signed-in user (Visitor or higher). Until
@@ -192,6 +215,8 @@ const Set<int> _authenticatedRoutes = <int>{
   105, // Staff gate scanner (D-406; also role-gated below)
   106, // Exhibitor scan visitor badge (D-426; server 403s visitor-tier callers)
   107, // Exhibitor My Visitors (D-426)
+  109, // Seat picker (D-485; approved-only — the seat endpoints 401/403 a guest)
+  110, // Join-a-session hub (D-485; approved-only)
 };
 
 /// Routes that additionally require a minimum app privilege (D-405/D-406). The
@@ -273,6 +298,11 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   if (r.name == RouteNames.venueMap) {
     return const VenueMapScreen();
   }
+  if (r.name == RouteNames.boothMap) {
+    return VenueMapScreen(
+      targetBoothId: state.pathParameters['boothId'],
+    );
+  }
   if (r.name == RouteNames.sessions) {
     return const SessionsScreen();
   }
@@ -285,6 +315,17 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
     return MySeatScreen(
       sessionId: state.pathParameters['sessionId'] ?? '',
     );
+  }
+  if (r.name == RouteNames.seatPicker) {
+    return SeatPickerScreen(
+      sessionId: state.pathParameters['sessionId'] ?? '',
+    );
+  }
+  if (r.name == RouteNames.joinSessionHub) {
+    return const JoinSessionHubScreen();
+  }
+  if (r.name == RouteNames.sessionSummaryList) {
+    return const SessionSummaryListScreen();
   }
   if (r.name == RouteNames.speakers) {
     return const SpeakersScreen();
@@ -385,6 +426,9 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   if (r.name == RouteNames.myVisitors) {
     return const MyVisitorsScreen();
   }
+  if (r.name == RouteNames.myMeetings) {
+    return const MyMeetingsScreen();
+  }
   return ComingSoonScreen(
     screenNumber: r.number,
     screenLabelAr: r.labelAr,
@@ -404,6 +448,9 @@ Widget _auxScreenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.verifyOtp) {
     return const EmailOtpVerifyScreen();
+  }
+  if (r.name == RouteNames.biometricStepUp) {
+    return const BiometricStepUpScreen();
   }
   // Part B (D-430) — badge-QR sign-in / activation.
   if (r.name == RouteNames.badgeSignIn) {

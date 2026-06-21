@@ -42,7 +42,7 @@ frames 512:1492 / 203:1236 — D-378).
 | Menu button | Trailing hamburger | Tap → the **More** screen |
 | LIVE banner | **مباشر** box + «الجلسة الافتتاحية تُبث الآن» — static config, **no API (D10)** | Tap → the live-broadcast screen |
 | Section **عن الملتقى · المحاور** (+ **المزيد** → About) | 3 tiles: **المتحدثون** / **الأجنحة** / **الرعاة** | Tap → speakers / booths / sponsors |
-| Section **الأخبار والتغطية** (+ **المزيد** → News) | 2 tiles: **اللقاءات الثنائية** / **الأرشيف** | Tap → gallery / archive |
+| Section **الأخبار والتغطية** (+ **المزيد** → News) | 2 tiles: **اللقاءات الثنائية** / **الأرشيف** | Tap → **Coming soon** (bilateral meetings not designed yet, owner 2026-06-21) / archive |
 | Section **الميزات الذكية** (+ **المزيد** → More) | 4 tiles: **قابل أشخاص مثلك** / **المساعد الذكي** / **ملخص الجلسات** / **بطاقتي الذكية** | Tap → meet-people / chatbot / AI summary / smart badge |
 | Section **تابعنا** | 5 brand buttons (X / Instagram / LinkedIn / YouTube / TikTok) + handle caption | Tap → opens the configured URL externally; an **unconfigured button is inert** (D-369) |
 | Section **اكتشف** | The same روح السعودية row | Tap → the configured Visit-Saudi URL |

@@ -2,6 +2,7 @@
 // Tests: SIMF.Api.Tests/RecordedQuestionsTests.cs (P3.4 — D-235)
 // Tests: SIMF.Api.Tests/SessionSummaryTests.cs (P4.1a — D-237)
 using System.Globalization;
+using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
 using SIMF.Application.Programme.Abstractions;
@@ -154,5 +155,37 @@ public sealed class GetSessionSummaryEndpoint(IProgrammeSessionService service)
                 "No published summary was found for this session.",
                 "لم يتم العثور على ملخّص منشور لهذه الجلسة.");
         await Send.OkAsync(ApiResult<PublicSessionSummary>.Ok(summary), ct);
+    }
+}
+
+/// <summary>D-472 (#9): the team-approved محضر for the session's host / moderator
+/// ("ready for المحاور"). Unlike the anonymous published read, this requires an
+/// approved account and the caller must be the session's moderator or host (the
+/// service enforces it, 403 otherwise); gated on the team approval, so the host
+/// sees it before any public release. 404 when not yet approved.</summary>
+public sealed class GetApprovedSessionSummaryForHostEndpoint(IProgrammeSessionService service)
+    : Endpoint<GetSessionSummaryRequest, ApiResult<HostSessionSummary>>
+{
+    public override void Configure()
+    {
+        Get("/app/programme/sessions/{id:guid}/summary/approved");
+        Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Tags("Programme");
+    }
+
+    public override async Task HandleAsync(
+        GetSessionSummaryRequest req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var callerId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        var summary = await service.GetApprovedSummaryForHostAsync(callerId, req.Id, ct)
+            ?? throw new ApiException(
+                ErrorCodes.SessionNotFound, 404,
+                "No approved summary is available for this session yet.",
+                "لا يوجد ملخّص معتمد لهذه الجلسة بعد.");
+        await Send.OkAsync(ApiResult<HostSessionSummary>.Ok(summary), ct);
     }
 }

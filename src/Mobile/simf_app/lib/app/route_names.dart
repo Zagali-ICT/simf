@@ -33,6 +33,10 @@ class RouteNames {
   static const String home = 'home';
   static const String myArea = 'myArea';
   static const String venueMap = 'venueMap';
+  // #9 — the venue map opened focused on a specific booth (the booth card's
+  // "أرشدني" CTA). A pushed route (not the kept-alive map tab) so it loads a
+  // fresh map that selects + centres the booth's node.
+  static const String boothMap = 'boothMap';
   // §9 (D-276) — mockup screen 16 renamed Agenda → Sessions.
   static const String sessions = 'sessions';
   static const String sessionDetail = 'sessionDetail';
@@ -61,6 +65,9 @@ class RouteNames {
 
   // Section 7 — Smart features (4 screens)
   static const String aiSummary = 'aiSummary';
+  // #1/#6 — the session-summaries LIST (home tile → list → the aiSummary details
+  // page). Additive, public (Guest+, like the summary it lists).
+  static const String sessionSummaryList = 'sessionSummaryList';
   static const String meetPeople = 'meetPeople';
   static const String chatbot = 'chatbot';
   static const String aboutForum = 'aboutForum';
@@ -77,6 +84,18 @@ class RouteNames {
   static const String faq = 'faq';
   static const String sessionPresentations = 'sessionPresentations';
   static const String contactUs = 'contactUs';
+
+  // D-479 (#11 follow-up) — read-only "My meetings" list (additive, reached from
+  // My Area; Approved account). Delegation meetings are managed on the CP.
+  static const String myMeetings = 'myMeetings';
+
+  // Owner batch (2026-06-21) — entry points whose feature is not designed/built
+  // yet, so they render the ComingSoon placeholder (sentinel numbers 200+):
+  //   • bilateralMeetings (اللقاءات الثنائية) — home tile, not designed yet (#5).
+  //   • savedSessions / savedMeetings — My Area stat tiles, not built yet (#8).
+  static const String bilateralMeetings = 'bilateralMeetings';
+  static const String savedSessions = 'savedSessions';
+  static const String savedMeetings = 'savedMeetings';
 
   // FDS-014 visitor contact sharing (D-286 API; additive, not mockup-numbered).
   // Reached from More / My Area; all three require an Approved account.
@@ -95,6 +114,11 @@ class RouteNames {
   // Staff gate-operator scanner (D-406; additive, drawer entry; role-gated to
   // Staff, server enforces the Gates.Operate grant).
   static const String gateScanner = 'gateScanner';
+  // D-485 — the in-app session-join flow (additive, approved Visitor): the seat
+  // picker (assigned-seat sessions) + the standalone "Join a session" hub (the
+  // owner's "both" entry — the other is the Join CTA on the session page).
+  static const String seatPicker = 'seatPicker';
+  static const String joinSessionHub = 'joinSessionHub';
 
   // Auxiliary auth routes (not numbered in the mockup but in API-001 §12)
   static const String forgotPassword = 'forgotPassword';
@@ -107,4 +131,10 @@ class RouteNames {
 
   /// Visitor email-OTP second factor at sign-in (the app has no TOTP).
   static const String verifyOtp = 'verifyOtp';
+
+  // #7a — emailed-OTP step-up confirming the user wants to ENABLE biometric
+  // (Face-ID) sign-in. A pushed route reached from the Face-ID toggle (and the
+  // post-sign-in enrol nudge); a signed-in approved caller. Backend
+  // POST /app/auth/device-keys/step-up + the gated register.
+  static const String biometricStepUp = 'biometricStepUp';
 }

@@ -1,5 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+using Microsoft.Extensions.Options;
+using SIMF.Common.Options;
+using SIMF.Infrastructure.Identity;
 
 namespace SIMF.Infrastructure.Persistence;
 
@@ -25,6 +28,9 @@ public sealed class SimfAppDbContextFactory : IDesignTimeDbContextFactory<SimfAp
                 sql.MigrationsHistoryTable("__EFMigrationsHistory_App"))
             .Options;
 
-        return new SimfAppDbContext(options);
+        // A design-time encryptor with no key — migration scaffolding inspects the
+        // model (the value converter's presence/type) but never encrypts/decrypts.
+        var pii = new AesGcmPiiEncryptor(Options.Create(new StorageOptions()));
+        return new SimfAppDbContext(options, pii);
     }
 }

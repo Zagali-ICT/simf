@@ -571,6 +571,38 @@ class _MeetingRequestSheetState extends ConsumerState<_MeetingRequestSheet> {
       TextEditingController(text: widget.defaultName);
   final TextEditingController _subject = TextEditingController();
   bool _submitting = false;
+  // D-474/D-475 (#11) — the VIP availability-slot picker (optional: a picked slot
+  // is the VIP flow; none keeps the legacy topic-only request).
+  List<SpeakerSlot> _slots = const <SpeakerSlot>[];
+  SpeakerSlot? _selectedSlot;
+  bool _slotsLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadSlots());
+  }
+
+  Future<void> _loadSlots() async {
+    try {
+      final slots = await ref
+          .read(speakersRepositoryProvider)
+          .getAvailableSlots(widget.speakerId);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _slots = slots;
+        _slotsLoaded = true;
+      });
+    } on ApiFailure {
+      if (!mounted) {
+        return;
+      }
+      // No slots shown; the legacy topic-only request still works.
+      setState(() => _slotsLoaded = true);
+    }
+  }
 
   @override
   void dispose() {
@@ -596,6 +628,8 @@ class _MeetingRequestSheetState extends ConsumerState<_MeetingRequestSheet> {
             widget.speakerId,
             requesterName: name,
             subject: subject,
+            slotStartUtc: _selectedSlot?.startUtc,
+            slotEndUtc: _selectedSlot?.endUtc,
           );
       if (!mounted) {
         return;
@@ -613,7 +647,18 @@ class _MeetingRequestSheetState extends ConsumerState<_MeetingRequestSheet> {
     }
   }
 
+  String _formatSlot(SpeakerSlot slot) {
+    final s = slot.startUtc.toLocal();
+    final e = slot.endUtc.toLocal();
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${s.year}-${two(s.month)}-${two(s.day)} '
+        '${two(s.hour)}:${two(s.minute)}–${two(e.hour)}:${two(e.minute)}';
+  }
+
   String _failureText(ApiFailure failure, AppL10n l10n) {
+    if (failure.httpStatus == 403) {
+      return l10n.meetingVipOnly;
+    }
     if (failure.httpStatus == 409) {
       return l10n.meetingRequestNotAllowed;
     }
@@ -658,6 +703,29 @@ class _MeetingRequestSheetState extends ConsumerState<_MeetingRequestSheet> {
             maxLength: 1000,
             maxLines: 3,
           ),
+          // D-474/D-475 — pick a free slot (VIP). Optional; none = topic-only request.
+          if (_slotsLoaded && _slots.isNotEmpty)
+            DropdownButtonFormField<SpeakerSlot>(
+              initialValue: _selectedSlot,
+              isExpanded: true,
+              decoration: InputDecoration(labelText: l10n.meetingSlotLabel),
+              items: <DropdownMenuItem<SpeakerSlot>>[
+                for (final slot in _slots)
+                  DropdownMenuItem<SpeakerSlot>(
+                    value: slot,
+                    child: Text(_formatSlot(slot)),
+                  ),
+              ],
+              onChanged: (slot) => setState(() => _selectedSlot = slot),
+            )
+          else if (_slotsLoaded)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: SimfTokens.space2),
+              child: Text(
+                l10n.meetingSlotNone,
+                style: const TextStyle(color: SimfTokens.inkMuted),
+              ),
+            ),
           const SizedBox(height: SimfTokens.space4),
           FilledButton(
             onPressed: _submitting ? null : () => unawaited(_submit()),

@@ -69,6 +69,12 @@ public class Session : BaseAuditEntity
     /// reconfigured rooms override.</summary>
     public int? CapacityOverride { get; set; }
 
+    /// <summary>D-485 (owner batch 2026-06-21) — optional per-session override of
+    /// the parent <see cref="Hall"/>'s <see cref="Hall.SeatSelectionMode"/>. Null
+    /// means "inherit the hall". Lets one session in an assigned-seat hall run as
+    /// open seating (or vice-versa) without re-configuring the hall.</summary>
+    public SeatSelectionMode? SeatSelectionModeOverride { get; set; }
+
     /// <summary>P1.7 (D-217 freeze-lift) — set by the automated reminder
     /// worker once it has dispatched the "starting soon" notifications for
     /// this session. The null check is the worker's dedup guard: a session

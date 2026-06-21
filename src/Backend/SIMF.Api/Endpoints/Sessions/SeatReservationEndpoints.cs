@@ -88,6 +88,35 @@ public sealed class ReserveRandomSeatEndpoint(ISeatReservationService service)
     }
 }
 
+public sealed class JoinOpenSeatingRoute { public Guid SessionId { get; set; } }
+
+/// <summary>D-485 — join an OPEN-SEATING session (general admission, no specific
+/// seat). The reservation is created Pending and flows through the same Control
+/// Panel approval + notifications as a seat booking. 409 SEAT_SELECTION_REQUIRED
+/// when the session's effective mode is AssignedSeat (the app should show the
+/// seat picker instead).</summary>
+public sealed class JoinOpenSeatingEndpoint(ISeatReservationService service)
+    : Endpoint<JoinOpenSeatingRoute, ApiResult<MySeatReservation>>
+{
+    public override void Configure()
+    {
+        Post("/app/sessions/{sessionId:guid}/seats/join");
+        Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Sessions");
+    }
+    public override async Task HandleAsync(JoinOpenSeatingRoute req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        await Send.OkAsync(ApiResult<MySeatReservation>.Ok(
+            await service.JoinOpenSeatingAsync(req.SessionId, actorId, ct)), ct);
+    }
+}
+
 public sealed class ReleaseMySeatRoute { public Guid SessionId { get; set; } }
 
 public sealed class ReleaseMySeatEndpoint(ISeatReservationService service)

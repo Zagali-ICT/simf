@@ -13,6 +13,8 @@ public static class ErrorCodes
     public const string InternalError = "INTERNAL_ERROR";
     public const string NotFound = "NOT_FOUND";
     public const string Forbidden = "FORBIDDEN";
+    // A6-18 (NCA) — an uploaded file failed the malware scan.
+    public const string UploadMalwareDetected = "UPLOAD_MALWARE_DETECTED";
 
     // Authentication (SIMF-API-001 section 12.6 and Amendment A)
     public const string AuthEmailAlreadyRegistered = "AUTH_EMAIL_ALREADY_REGISTERED";
@@ -106,6 +108,9 @@ public static class ErrorCodes
     // User profile — nationality (P8 renamed from VISITOR_NATIONALITY_UNKNOWN
     // so the wire code matches the new domain vocabulary).
     public const string ProfileNationalityUnknown = "PROFILE_NATIONALITY_UNKNOWN";
+    /// <summary>D-473 (#10) — a delegate's nationality is not a country invited
+    /// to send a delegation (وفد).</summary>
+    public const string DelegateCountryNotInvited = "DELEGATE_COUNTRY_NOT_INVITED";
 
     // Interests (P9 — D-050; الاهتمامات)
     public const string InterestInvalid = "INTEREST_INVALID";
@@ -220,6 +225,12 @@ public static class ErrorCodes
     // Speaker meeting requests (D-269 — Mockup page 20 "Speaker profile").
     public const string SpeakerMeetingRequestInvalid = "SPEAKER_MEETING_REQUEST_INVALID";
     public const string SpeakerMeetingRequestNotFound = "SPEAKER_MEETING_REQUEST_NOT_FOUND";
+    /// <summary>D-474 (#11) — the speaker availability window was not found.</summary>
+    public const string SpeakerAvailabilityWindowNotFound = "SPEAKER_AVAILABILITY_WINDOW_NOT_FOUND";
+    /// <summary>D-478 (#11) — invalid delegation meeting request (subject/count/self).</summary>
+    public const string DelegationMeetingRequestInvalid = "DELEGATION_MEETING_REQUEST_INVALID";
+    /// <summary>D-478 (#11) — the delegation meeting request was not found.</summary>
+    public const string DelegationMeetingRequestNotFound = "DELEGATION_MEETING_REQUEST_NOT_FOUND";
     public const string SpeakerMeetingRequestsNotAllowed = "SPEAKER_MEETING_REQUESTS_NOT_ALLOWED";
     public const string SpeakerMeetingRequestStatusInvalid = "SPEAKER_MEETING_REQUEST_STATUS_INVALID";
 
@@ -232,6 +243,10 @@ public static class ErrorCodes
     public const string SeatReservationNotFound = "SEAT_RESERVATION_NOT_FOUND";
     public const string SeatCapacityExceeded = "SEAT_CAPACITY_EXCEEDED";
     public const string SeatSessionFull = "SEAT_SESSION_FULL";
+    // D-485 — seat-selection-mode mismatch between the request and the session's
+    // effective mode (Session.SeatSelectionModeOverride ?? Hall.SeatSelectionMode).
+    public const string SeatSelectionRequired = "SEAT_SELECTION_REQUIRED";
+    public const string OpenSeatingOnly = "OPEN_SEATING_ONLY";
 
     // Booking approval workflow (P2.2 / D-227 — FDS-005 §5).
     public const string BookingOverlap = "BOOKING_OVERLAP";
@@ -287,6 +302,9 @@ public static class ErrorCodes
     public const string DeviceKeyChallengeInvalid = "DEVICE_KEY_CHALLENGE_INVALID";
     public const string DeviceKeySignatureInvalid = "DEVICE_KEY_SIGNATURE_INVALID";
     public const string DeviceKeyOwnerUnavailable = "DEVICE_KEY_OWNER_UNAVAILABLE";
+    // #7a — emailed-OTP step-up before enrolling a biometric device key.
+    public const string BiometricStepUpRequired = "BIOMETRIC_STEP_UP_REQUIRED";
+    public const string BiometricStepUpInvalid = "BIOMETRIC_STEP_UP_INVALID";
 
     // Invitations + VIP notify (D-168, gap doc G5 — public-relations
     // module, PDF §2.7.3).

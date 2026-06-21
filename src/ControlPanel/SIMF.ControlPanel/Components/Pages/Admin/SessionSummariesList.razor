@@ -52,13 +52,26 @@
                         {
                             <SimfPill Variant="off">@L["Admin.SessionSummaries.Status.None"]</SimfPill>
                         }
-                        else if (context.IsPublished)
-                        {
-                            <SimfPill Variant="on">@L["Admin.SessionSummaries.Status.Published"]</SimfPill>
-                        }
                         else
                         {
-                            <SimfPill Variant="warn">@L["Admin.SessionSummaries.Status.Draft"]</SimfPill>
+                            @* D-472 — the review state (Draft / In review / Approved =
+                               ready for المحاور), plus a Published pill for the public read. *@
+                            @if (context.IsApproved)
+                            {
+                                <SimfPill Variant="on">@L["Admin.SessionSummaries.Status.Approved"]</SimfPill>
+                            }
+                            else if (context.IsInReview)
+                            {
+                                <SimfPill Variant="warn">@L["Admin.SessionSummaries.Status.InReview"]</SimfPill>
+                            }
+                            else
+                            {
+                                <SimfPill Variant="warn">@L["Admin.SessionSummaries.Status.Draft"]</SimfPill>
+                            }
+                            @if (context.IsPublished)
+                            {
+                                <SimfPill Variant="on">@L["Admin.SessionSummaries.Status.Published"]</SimfPill>
+                            }
                         }
                     </CellTemplate>
                 </SimfDataGridColumn>
@@ -76,10 +89,29 @@
                     {
                         <SimfToolbarButton Icon="edit" Title="@L["Admin.SessionSummaries.Action.Edit"]"
                                            Disabled="_busy" OnClick="@(() => OpenEditorAsync(context.SessionId))" />
+                        @* D-472 — submit the draft for the team's approval. *@
+                        @if (!context.IsInReview && !context.IsApproved)
+                        {
+                            <SimfToolbarButton Icon="send" Title="@L["Admin.SessionSummaries.Action.SubmitReview"]"
+                                               Disabled="_busy" OnClick="@(() => SubmitReviewAsync(context.SessionId))" />
+                        }
                     }
                 </AuthorizedAction>
                 @if (context.HasSummary)
                 {
+                    @* D-472 — approve a submitted summary / send it back to draft. *@
+                    <AuthorizedAction Permission="@PermissionCatalog.SessionSummaries.Approve">
+                        @if (context.IsInReview)
+                        {
+                            <SimfToolbarButton Icon="check-circle" Title="@L["Admin.SessionSummaries.Action.Approve"]"
+                                               Disabled="_busy" OnClick="@(() => ApproveSummaryAsync(context.SessionId))" />
+                        }
+                        @if (context.IsInReview || context.IsApproved)
+                        {
+                            <SimfToolbarButton Icon="reply" Title="@L["Admin.SessionSummaries.Action.ReturnToDraft"]"
+                                               Disabled="_busy" OnClick="@(() => ReturnToDraftAsync(context.SessionId))" />
+                        }
+                    </AuthorizedAction>
                     <AuthorizedAction Permission="@PermissionCatalog.SessionSummaries.Publish">
                         @if (context.IsPublished)
                         {
@@ -347,4 +379,39 @@
         !row.HasSummary ? "—"
         : row.GeneratedByAi ? L["Admin.SessionSummaries.Source.Ai"]
         : L["Admin.SessionSummaries.Source.Manual"];
+
+    // D-472 (#9) — the team review/approval workflow actions. Each forwards a PUT
+    // to the matching admin endpoint, toasts, and reloads the desk.
+    private Task SubmitReviewAsync(Guid sessionId) =>
+        TransitionAsync(sessionId, "submit-review", "Admin.SessionSummaries.Submitted");
+
+    private Task ApproveSummaryAsync(Guid sessionId) =>
+        TransitionAsync(sessionId, "approve", "Admin.SessionSummaries.Approved");
+
+    private Task ReturnToDraftAsync(Guid sessionId) =>
+        TransitionAsync(sessionId, "return-to-draft", "Admin.SessionSummaries.ReturnedToDraft");
+
+    private async Task TransitionAsync(Guid sessionId, string action, string successKey)
+    {
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<AdminSessionSummaryDetail>>(
+                "simfAccount.putJson",
+                $"/account/api/admin/session-summaries/{sessionId}/{action}", new { });
+            if (envelope is { Success: true })
+            {
+                _toast = new Toast("success", L[successKey]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SessionSummaries.Fallback"]);
+            }
+        }
+        finally { _busy = false; }
+    }
 }

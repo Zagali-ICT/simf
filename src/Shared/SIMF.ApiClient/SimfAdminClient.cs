@@ -597,6 +597,16 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
+    /// <summary>D-473 (#10) — bulk-generate placeholder badges by profile type + count.</summary>
+    public Task<ApiCallResult<AdminBulkGenerateBadgesResponse>> BulkGenerateBadgesAsync(
+        AdminBulkGenerateBadgesRequest request,
+        string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminBulkGenerateBadgesResponse>(
+            HttpMethod.Post, "visitors/bulk-generate",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
     /// <summary>D-127 — on-site walk-in Other registration.</summary>
     public Task<ApiCallResult<AdminWalkInRegistrationResponse>> RegisterOtherOnSiteAsync(
         AdminWalkInRegistrationRequest request,
@@ -1602,6 +1612,28 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Put, $"session-summaries/{sessionId}/unpublish", content: null,
             accessToken, cancellationToken);
 
+    // D-472 (#9) — the team review/approval workflow.
+    public Task<ApiCallResult<AdminSessionSummaryDetail>>
+        SubmitSessionSummaryForReviewAsync(Guid sessionId, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSessionSummaryDetail>(
+            HttpMethod.Put, $"session-summaries/{sessionId}/submit-review", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminSessionSummaryDetail>>
+        ApproveSessionSummaryAsync(Guid sessionId, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSessionSummaryDetail>(
+            HttpMethod.Put, $"session-summaries/{sessionId}/approve", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminSessionSummaryDetail>>
+        ReturnSessionSummaryToDraftAsync(Guid sessionId, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSessionSummaryDetail>(
+            HttpMethod.Put, $"session-summaries/{sessionId}/return-to-draft", content: null,
+            accessToken, cancellationToken);
+
     // P5.1d — D-244: operator hall-door QR arrival (/admin/sessions/{id}/arrivals).
     public Task<ApiCallResult<SIMF.Contracts.Sessions.QrArrivalResult>>
         RecordQrArrivalAsync(Guid sessionId, SIMF.Contracts.Sessions.RecordQrArrivalRequest request,
@@ -2048,6 +2080,56 @@ public sealed class SimfAdminClient(HttpClient http)
         CancellationToken cancellationToken = default) =>
         SendAsync<AdminSpeakerMeetingRequestDetail>(
             HttpMethod.Put, $"speaker-meeting-requests/{id}/respond",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    // D-474 (#11) — speaker availability windows.
+    public Task<ApiCallResult<IReadOnlyList<AdminSpeakerAvailabilityWindow>>>
+        ListSpeakerAvailabilityWindowsAsync(Guid speakerId, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<IReadOnlyList<AdminSpeakerAvailabilityWindow>>(
+            HttpMethod.Get, $"speakers/{speakerId}/availability-windows", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminSpeakerAvailabilityWindow>>
+        CreateSpeakerAvailabilityWindowAsync(Guid speakerId,
+            CreateSpeakerAvailabilityWindowRequest request, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSpeakerAvailabilityWindow>(
+            HttpMethod.Post, $"speakers/{speakerId}/availability-windows",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>>
+        DeleteSpeakerAvailabilityWindowAsync(Guid windowId, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"speaker-availability-windows/{windowId}", content: null,
+            accessToken, cancellationToken);
+
+    // -- D-478 (#11) — delegation meeting requests (SIMF.Contracts.Programme) -
+
+    public Task<ApiCallResult<GridPage<AdminDelegationMeetingRequestRow>>>
+        ListAdminDelegationMeetingRequestsAsync(GridQuery query, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminDelegationMeetingRequestRow>>(
+            HttpMethod.Post, "delegation-meeting-requests/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminDelegationMeetingRequestDetail>>
+        GetAdminDelegationMeetingRequestAsync(Guid id, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<AdminDelegationMeetingRequestDetail>(
+            HttpMethod.Get, $"delegation-meeting-requests/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminDelegationMeetingRequestDetail>>
+        RespondToAdminDelegationMeetingRequestAsync(
+            Guid id, RespondToDelegationMeetingRequestRequest request, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<AdminDelegationMeetingRequestDetail>(
+            HttpMethod.Put, $"delegation-meeting-requests/{id}/respond",
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 

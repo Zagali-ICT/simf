@@ -36,8 +36,8 @@ public sealed class RateLimitTests : IClassFixture<RateLimitedApiFactory>
                 new SignUpRequest
                 {
                     Email = $"rl-{Guid.NewGuid():N}@simf.test",
-                    Password = "Passw0rd!",
-                    ConfirmPassword = "Passw0rd!",
+                    Password = "Zx9#mKp2!",
+                    ConfirmPassword = "Zx9#mKp2!",
                 });
             statuses.Add(response.StatusCode);
         }

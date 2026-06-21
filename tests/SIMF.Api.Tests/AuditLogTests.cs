@@ -17,7 +17,7 @@ namespace SIMF.Api.Tests;
 /// </summary>
 public sealed class AuditLogTests : IClassFixture<SimfApiFactory>
 {
-    private const string ValidPassword = "Passw0rd!";
+    private const string ValidPassword = "Zx9#mKp2!";
 
     private readonly SimfApiFactory _factory;
     private readonly HttpClient _client;
@@ -135,12 +135,12 @@ public sealed class AuditLogTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var database = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var user = database.Users.Single(candidate => candidate.Email == email);
-        return database.AccountCodes
+        return AuthFlow.RecoverPlaintextCode(database.AccountCodes
             .Where(code => code.UserId == user.Id
                 && code.Purpose == AccountCodePurpose.EmailVerification
                 && code.ConsumedAt == null)
             .OrderByDescending(code => code.CreatedAt)
             .First()
-            .Code;
+            .Code);
     }
 }

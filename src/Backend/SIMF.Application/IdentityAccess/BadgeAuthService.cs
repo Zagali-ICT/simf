@@ -164,7 +164,7 @@ internal sealed class BadgeAuthService(
                 "The verification code has expired. Request a new one.",
                 "انتهت صلاحية رمز التحقق. اطلب رمزًا جديدًا.");
         }
-        if (!CodesMatch(code.Code, request.Code))
+        if (!CodesMatch(code.Code, AccountCodeHasher.Hash(request.Code)))
         {
             code.AttemptCount++;
             await accountCodeRepository.UpdateAsync(code, cancellationToken);
@@ -252,7 +252,8 @@ internal sealed class BadgeAuthService(
             Id = Guid.NewGuid(),
             UserId = userId,
             Purpose = AccountCodePurpose.BadgeActivationOtp,
-            Code = value,
+            // M3 (security) — store the keyed hash; `value` (plaintext) is emailed.
+            Code = AccountCodeHasher.Hash(value),
             CreatedAt = now,
             ExpiresAt = now.Add(CodeLifetime),
         }, cancellationToken);

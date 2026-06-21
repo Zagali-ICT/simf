@@ -22,7 +22,7 @@ namespace SIMF.Api.Tests;
 /// </summary>
 public sealed class BadgeAuthTests : IClassFixture<SimfApiFactory>
 {
-    private const string Password = "Passw0rd!";
+    private const string Password = "Zx9#mKp2!";
     private const string Alphabet = "23456789ABCDEFGHJKMNPQRSTVWXYZ";
 
     private readonly SimfApiFactory _factory;
@@ -166,13 +166,14 @@ public sealed class BadgeAuthTests : IClassFixture<SimfApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var idDb = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
-        return await idDb.AccountCodes
+        var hash = await idDb.AccountCodes
             .Where(c => c.UserId == userId
                 && c.Purpose == AccountCodePurpose.BadgeActivationOtp
                 && c.ConsumedAt == null)
             .OrderByDescending(c => c.CreatedAt)
             .Select(c => c.Code)
             .FirstOrDefaultAsync();
+        return hash is null ? null : AuthFlow.RecoverPlaintextCode(hash);
     }
 
     /// <summary>Creates an Approved visitor with a minted QR id, optionally with

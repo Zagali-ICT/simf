@@ -6,14 +6,40 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/features/contacts/data/contacts_repository.dart';
 import 'package:simf_app/features/contacts/share_my_contact_screen.dart';
+import 'package:simf_app/features/myarea/data/myarea_repository.dart';
 
 import '_fake_contacts_repo.dart';
 
-Future<void> _pump(WidgetTester tester, FakeContactsRepo repo) async {
+/// D-470 — the share QR now encodes the user's vCard (Arabic name + phones).
+const String _kVcard =
+    'BEGIN:VCARD\r\nVERSION:3.0\r\nFN:محمد العتيبي\r\n'
+    'TEL;TYPE=CELL:+966500112233\r\nEND:VCARD\r\n';
+
+/// Minimal stand-in for the My-Area repo — only the vCard fetch is exercised.
+class _FakeMyAreaRepo implements MyAreaRepository {
+  int vcfCalls = 0;
+
+  @override
+  Future<String> getContactCardVcf() async {
+    vcfCalls++;
+    return _kVcard;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError(invocation.memberName.toString());
+}
+
+Future<void> _pump(
+  WidgetTester tester,
+  FakeContactsRepo repo, {
+  _FakeMyAreaRepo? myArea,
+}) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: <Override>[
         contactsRepositoryProvider.overrideWithValue(repo),
+        myAreaRepositoryProvider.overrideWithValue(myArea ?? _FakeMyAreaRepo()),
       ],
       child: MaterialApp(
         locale: const Locale('en'),
@@ -33,12 +59,15 @@ Future<void> _pump(WidgetTester tester, FakeContactsRepo repo) async {
 
 void main() {
   group('ShareMyContactScreen (FDS-014)', () {
-    testWidgets('mints + renders the token as a QR', (tester) async {
-      final repo = FakeContactsRepo(token: 'ABC123');
-      await _pump(tester, repo);
+    testWidgets('sources the QR from the contact vCard, not the token (D-470)',
+        (tester) async {
+      final myArea = _FakeMyAreaRepo();
+      await _pump(tester, FakeContactsRepo(token: 'ABC123'), myArea: myArea);
 
-      expect(repo.getTokenCalls, 1);
+      // The QR renders, and it is fed by the vCard fetch (Arabic name + phones)
+      // so any phone camera can add the contact — not the opaque share token.
       expect(find.byType(QrImageView), findsOneWidget);
+      expect(myArea.vcfCalls, 1);
     });
 
     testWidgets('a load failure shows error + retry, which re-fetches',

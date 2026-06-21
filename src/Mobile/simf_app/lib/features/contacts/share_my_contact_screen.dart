@@ -33,6 +33,7 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
   bool _error = false;
   bool _rotating = false;
   String? _token;
+  String? _vcard;
 
   @override
   void initState() {
@@ -47,11 +48,16 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
     });
     try {
       final token = await ref.read(contactsRepositoryProvider).getMyShareToken();
+      // D-470 — the QR now encodes the user's vCard (Arabic name + phones) so any
+      // phone camera can add the contact. Only the QR's content changed; the rest
+      // of the screen (share .vcf, rotate) is unchanged.
+      final vcard = await ref.read(myAreaRepositoryProvider).getContactCardVcf();
       if (!mounted) {
         return;
       }
       setState(() {
         _token = token;
+        _vcard = vcard;
         _loading = false;
       });
     } on ApiFailure {
@@ -61,6 +67,7 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
       setState(() {
         _error = true;
         _token = null;
+        _vcard = null;
         _loading = false;
       });
     }
@@ -146,8 +153,8 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
-    final token = _token;
-    if (_error || token == null) {
+    final vcard = _vcard;
+    if (_error || vcard == null) {
       return _ErrorState(
         message: l10n.shareMyContactError,
         onRetry: () => unawaited(_load()),
@@ -168,7 +175,7 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(SimfTokens.space6),
                 child: QrImageView(
-                  data: token,
+                  data: vcard,
                   version: QrVersions.auto,
                   size: 240,
                   gapless: true,
@@ -189,7 +196,9 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
             ),
             const SizedBox(height: SimfTokens.space2),
             TextButton.icon(
-              onPressed: _rotating ? null : () => unawaited(_rotate()),
+              onPressed: (_rotating || _token == null)
+                  ? null
+                  : () => unawaited(_rotate()),
               icon: _rotating
                   ? const SizedBox(
                       width: 16,

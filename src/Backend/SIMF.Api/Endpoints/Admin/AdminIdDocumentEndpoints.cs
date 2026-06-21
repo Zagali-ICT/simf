@@ -141,8 +141,9 @@ public abstract class AdminIdDocumentFetchEndpointBase(IUserProfileService servi
             await Send.NotFoundAsync(ct);
             return;
         }
-        // Short private TTL so a freshly-uploaded image shows up quickly.
-        HttpContext.Response.Headers.CacheControl = "private, max-age=60";
+        // A2-14 (NCA App-Sec Standard) — the ID document (national ID / Iqama /
+        // passport) is high-value PII; never cache it in a proxy or the browser.
+        HttpContext.Response.Headers.CacheControl = "no-store";
         await Send.BytesAsync(image.Content, contentType: image.ContentType, cancellation: ct);
     }
 }

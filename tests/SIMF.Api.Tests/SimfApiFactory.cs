@@ -74,6 +74,17 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         // here; dedicated rate-limit-test factories can tighten as
         // needed in future.
         Environment.SetEnvironmentVariable("RateLimit__GlobalPermitLimit", "1000000");
+        // A7-13 — password expiry OFF by default for the general suite. Reset here
+        // (these env vars are process-wide) so a prior PasswordExpiryApiFactory
+        // class cannot leak MaxAgeDays=30 into later classes — which would expire
+        // any user created with a default CreatedAt and break their sign-in.
+        Environment.SetEnvironmentVariable("IdentityLifecycle__PasswordMaxAgeDays", "0");
+        // A7-20 — password history OFF by default for the general suite (reset the
+        // process-wide var so a prior PasswordHistoryApiFactory cannot leak its count).
+        Environment.SetEnvironmentVariable("IdentityLifecycle__PasswordHistoryCount", "0");
+        // A1-19 — dormant-account auto-disable OFF by default (reset the process-wide
+        // var so a prior DormantAccountApiFactory cannot leak its threshold).
+        Environment.SetEnvironmentVariable("IdentityLifecycle__DormantAccountDisableDays", "0");
         Environment.SetEnvironmentVariable(
             "Jwt__SigningKey", "ytlV1+ke14Pw900IRtH8zT4uIKBeaqjcj6aFfiLozS5jKgSs");
         Environment.SetEnvironmentVariable("Storage__AvatarBase", AvatarStorageDirectory);
@@ -90,6 +101,11 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         // UserProfileFaceGateTests re-enables it via FaceGateApiFactory to
         // exercise the real offline ONNX model.
         Environment.SetEnvironmentVariable("FaceDetection__Enabled", "false");
+        // #7a — the biometric-enrol emailed-OTP step-up is OFF for the general
+        // suite so the device-key ceremony tests register without a code;
+        // DeviceKeyStepUpTests re-enables it via BiometricStepUpApiFactory to
+        // exercise the real gate.
+        Environment.SetEnvironmentVariable("DeviceKey__RequireStepUpForEnrol", "false");
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)

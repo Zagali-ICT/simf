@@ -76,6 +76,30 @@ public sealed class SessionSummary
     /// (Identity DB), no FK (D-157). Null while unpublished.</summary>
     public Guid? PublishedByUserId { get; set; }
 
+    // -- D-472 (requirement #9) — the team review/approval workflow ------------
+    // On top of the publish gate, the محضر moves Draft → InReview → Approved
+    // before it is "ready for المحاور" (the session host / moderator). Each step
+    // is a nullable timestamp, matching the PublishedAt convention. Derived
+    // status: ApprovedAt != null → Approved; else ReviewSubmittedAt != null →
+    // InReview; else Draft.
+
+    /// <summary>Stamped when a team member submits the draft for approval
+    /// (Draft → InReview). Cleared by any content edit or a return-to-draft.</summary>
+    public DateTimeOffset? ReviewSubmittedAt { get; set; }
+
+    /// <summary>Bare <c>Guid</c> of the team member who submitted it for review —
+    /// cross-context (Identity DB), no FK (D-157).</summary>
+    public Guid? ReviewSubmittedByUserId { get; set; }
+
+    /// <summary>Stamped when the team approves the summary (InReview → Approved);
+    /// the approved محضر then becomes readable by the session's host / moderator
+    /// ("ready for المحاور"). Cleared by any content edit or a return-to-draft.</summary>
+    public DateTimeOffset? ApprovedAt { get; set; }
+
+    /// <summary>Bare <c>Guid</c> of the team member who approved — cross-context
+    /// (Identity DB), no FK (D-157).</summary>
+    public Guid? ApprovedByUserId { get; set; }
+
     /// <summary>Soft-delete flag — hides the summary without losing the row.</summary>
     public bool IsActive { get; set; } = true;
 

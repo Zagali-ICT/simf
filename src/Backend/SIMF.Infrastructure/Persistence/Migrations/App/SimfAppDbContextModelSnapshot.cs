@@ -938,6 +938,62 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.ToTable("BusinessMeetingParticipants", (string)null);
                 });
 
+            modelBuilder.Entity("SIMF.Domain.BusinessMeetings.DelegationMeetingRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("AttendeeCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("RequestingCountryId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("RespondedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("RespondedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ResponseNote")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTimeOffset?>("SlotEndUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("SlotStartUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("TargetCountryId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RequestedByUserId");
+
+                    b.HasIndex("RequestingCountryId");
+
+                    b.HasIndex("TargetCountryId", "Status", "CreatedAt");
+
+                    b.ToTable("DelegationMeetingRequests", (string)null);
+                });
+
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.HallAllocation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1030,6 +1086,43 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.ToTable("MeetingTables", (string)null);
                 });
 
+            modelBuilder.Entity("SIMF.Domain.BusinessMeetings.SpeakerAvailabilityWindow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("EndUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("SlotMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("SpeakerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("StartUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SpeakerId", "IsActive", "StartUtc");
+
+                    b.ToTable("SpeakerAvailabilityWindows", (string)null);
+                });
+
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.SpeakerMeetingRequest", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1056,6 +1149,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("ResponseNote")
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTimeOffset?>("SlotEndUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("SlotStartUtc")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<Guid>("SpeakerId")
                         .HasColumnType("uniqueidentifier");
@@ -1207,6 +1306,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsInvited")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(128)
@@ -1241,6 +1343,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 10,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Bahrain",
                             NameArabic = "البحرين",
                             PhonePrefix = "+973"
@@ -1252,6 +1355,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 20,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Kuwait",
                             NameArabic = "الكويت",
                             PhonePrefix = "+965"
@@ -1263,6 +1367,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 30,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Oman",
                             NameArabic = "عُمان",
                             PhonePrefix = "+968"
@@ -1274,6 +1379,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 40,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Qatar",
                             NameArabic = "قطر",
                             PhonePrefix = "+974"
@@ -1285,6 +1391,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 50,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Saudi Arabia",
                             NameArabic = "المملكة العربية السعودية",
                             PhonePrefix = "+966"
@@ -1296,6 +1403,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 60,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "United Arab Emirates",
                             NameArabic = "الإمارات العربية المتحدة",
                             PhonePrefix = "+971"
@@ -1307,6 +1415,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 70,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Egypt",
                             NameArabic = "مصر",
                             PhonePrefix = "+20"
@@ -1318,6 +1427,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 80,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Jordan",
                             NameArabic = "الأردن",
                             PhonePrefix = "+962"
@@ -1329,6 +1439,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 90,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Lebanon",
                             NameArabic = "لبنان",
                             PhonePrefix = "+961"
@@ -1340,6 +1451,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 100,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Morocco",
                             NameArabic = "المغرب",
                             PhonePrefix = "+212"
@@ -1351,6 +1463,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 110,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Türkiye",
                             NameArabic = "تركيا",
                             PhonePrefix = "+90"
@@ -1362,6 +1475,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 120,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Sudan",
                             NameArabic = "السودان",
                             PhonePrefix = "+249"
@@ -1373,6 +1487,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 130,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Yemen",
                             NameArabic = "اليمن",
                             PhonePrefix = "+967"
@@ -1384,6 +1499,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 140,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Iran",
                             NameArabic = "إيران",
                             PhonePrefix = "+98"
@@ -1395,6 +1511,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 150,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Iraq",
                             NameArabic = "العراق",
                             PhonePrefix = "+964"
@@ -1406,6 +1523,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 160,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Palestine",
                             NameArabic = "فلسطين",
                             PhonePrefix = "+970"
@@ -1417,6 +1535,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 170,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Djibouti",
                             NameArabic = "جيبوتي",
                             PhonePrefix = "+253"
@@ -1428,6 +1547,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 200,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "United States",
                             NameArabic = "الولايات المتحدة الأمريكية",
                             PhonePrefix = "+1"
@@ -1439,6 +1559,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 210,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "United Kingdom",
                             NameArabic = "المملكة المتحدة",
                             PhonePrefix = "+44"
@@ -1450,6 +1571,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 220,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "France",
                             NameArabic = "فرنسا",
                             PhonePrefix = "+33"
@@ -1461,6 +1583,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 230,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Germany",
                             NameArabic = "ألمانيا",
                             PhonePrefix = "+49"
@@ -1472,6 +1595,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 240,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Italy",
                             NameArabic = "إيطاليا",
                             PhonePrefix = "+39"
@@ -1483,6 +1607,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 250,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Spain",
                             NameArabic = "إسبانيا",
                             PhonePrefix = "+34"
@@ -1494,6 +1619,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 260,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Portugal",
                             NameArabic = "البرتغال",
                             PhonePrefix = "+351"
@@ -1505,6 +1631,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 270,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Netherlands",
                             NameArabic = "هولندا",
                             PhonePrefix = "+31"
@@ -1516,6 +1643,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 280,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Belgium",
                             NameArabic = "بلجيكا",
                             PhonePrefix = "+32"
@@ -1527,6 +1655,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 290,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Switzerland",
                             NameArabic = "سويسرا",
                             PhonePrefix = "+41"
@@ -1538,6 +1667,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 300,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Austria",
                             NameArabic = "النمسا",
                             PhonePrefix = "+43"
@@ -1549,6 +1679,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 310,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Sweden",
                             NameArabic = "السويد",
                             PhonePrefix = "+46"
@@ -1560,6 +1691,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 320,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Norway",
                             NameArabic = "النرويج",
                             PhonePrefix = "+47"
@@ -1571,6 +1703,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 330,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Denmark",
                             NameArabic = "الدنمارك",
                             PhonePrefix = "+45"
@@ -1582,6 +1715,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 340,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Finland",
                             NameArabic = "فنلندا",
                             PhonePrefix = "+358"
@@ -1593,6 +1727,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 350,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Ireland",
                             NameArabic = "أيرلندا",
                             PhonePrefix = "+353"
@@ -1604,6 +1739,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 360,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Greece",
                             NameArabic = "اليونان",
                             PhonePrefix = "+30"
@@ -1615,6 +1751,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 370,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Russia",
                             NameArabic = "روسيا",
                             PhonePrefix = "+7"
@@ -1626,6 +1763,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 400,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Japan",
                             NameArabic = "اليابان",
                             PhonePrefix = "+81"
@@ -1637,6 +1775,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 410,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "South Korea",
                             NameArabic = "كوريا الجنوبية",
                             PhonePrefix = "+82"
@@ -1648,6 +1787,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 420,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "China",
                             NameArabic = "الصين",
                             PhonePrefix = "+86"
@@ -1659,6 +1799,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 430,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "India",
                             NameArabic = "الهند",
                             PhonePrefix = "+91"
@@ -1670,6 +1811,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 440,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Pakistan",
                             NameArabic = "باكستان",
                             PhonePrefix = "+92"
@@ -1681,6 +1823,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 450,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Bangladesh",
                             NameArabic = "بنغلاديش",
                             PhonePrefix = "+880"
@@ -1692,6 +1835,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 460,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Indonesia",
                             NameArabic = "إندونيسيا",
                             PhonePrefix = "+62"
@@ -1703,6 +1847,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 470,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Malaysia",
                             NameArabic = "ماليزيا",
                             PhonePrefix = "+60"
@@ -1714,6 +1859,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 480,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Singapore",
                             NameArabic = "سنغافورة",
                             PhonePrefix = "+65"
@@ -1725,6 +1871,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 490,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Thailand",
                             NameArabic = "تايلاند",
                             PhonePrefix = "+66"
@@ -1736,6 +1883,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 500,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Viet Nam",
                             NameArabic = "فيتنام",
                             PhonePrefix = "+84"
@@ -1747,6 +1895,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 510,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Philippines",
                             NameArabic = "الفلبين",
                             PhonePrefix = "+63"
@@ -1758,6 +1907,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 520,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Australia",
                             NameArabic = "أستراليا",
                             PhonePrefix = "+61"
@@ -1769,6 +1919,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 530,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "New Zealand",
                             NameArabic = "نيوزيلندا",
                             PhonePrefix = "+64"
@@ -1780,6 +1931,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 600,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Canada",
                             NameArabic = "كندا",
                             PhonePrefix = "+1"
@@ -1791,6 +1943,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 610,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Brazil",
                             NameArabic = "البرازيل",
                             PhonePrefix = "+55"
@@ -1802,6 +1955,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 620,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Mexico",
                             NameArabic = "المكسيك",
                             PhonePrefix = "+52"
@@ -1813,6 +1967,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 630,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Argentina",
                             NameArabic = "الأرجنتين",
                             PhonePrefix = "+54"
@@ -1824,6 +1979,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 700,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "South Africa",
                             NameArabic = "جنوب أفريقيا",
                             PhonePrefix = "+27"
@@ -1835,6 +1991,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 710,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Nigeria",
                             NameArabic = "نيجيريا",
                             PhonePrefix = "+234"
@@ -1846,6 +2003,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 720,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Kenya",
                             NameArabic = "كينيا",
                             PhonePrefix = "+254"
@@ -1857,6 +2015,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                             CreatedAt = new DateTimeOffset(new DateTime(2026, 5, 29, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DisplayOrder = 730,
                             IsActive = true,
+                            IsInvited = false,
                             Name = "Ethiopia",
                             NameArabic = "إثيوبيا",
                             PhonePrefix = "+251"
@@ -2809,14 +2968,17 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("nvarchar(256)");
 
                     b.Property<string>("InternationalMobile")
-                        .HasMaxLength(24)
-                        .HasColumnType("nvarchar(24)");
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<string>("IqamaNumber")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDelegate")
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsSaudi")
@@ -2841,8 +3003,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("nvarchar(256)");
 
                     b.Property<string>("NationalId")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<int>("NationalityId")
                         .HasColumnType("int");
@@ -2851,8 +3013,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("PassportNumber")
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<string>("PlaceOfBirth")
                         .IsRequired()
@@ -2887,8 +3049,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("SaudiMobile")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
@@ -3037,6 +3199,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("nvarchar(128)");
 
                     b.Property<int>("Purpose")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SeatSelectionMode")
                         .HasColumnType("int");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
@@ -3229,6 +3394,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<DateTimeOffset?>("ReminderSentUtc")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<int?>("SeatSelectionModeOverride")
+                        .HasColumnType("int");
+
                     b.Property<DateTimeOffset>("StartUtc")
                         .HasColumnType("datetimeoffset");
 
@@ -3345,6 +3513,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
+                    b.Property<DateTimeOffset?>("ApprovedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("ApprovedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -3386,6 +3560,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .IsRequired()
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
+
+                    b.Property<DateTimeOffset?>("ReviewSubmittedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("ReviewSubmittedByUserId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("SessionId")
                         .HasColumnType("uniqueidentifier");
@@ -3931,11 +4111,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("RowLabel")
-                        .IsRequired()
                         .HasMaxLength(8)
                         .HasColumnType("nvarchar(8)");
 
-                    b.Property<int>("SeatNumber")
+                    b.Property<int?>("SeatNumber")
                         .HasColumnType("int");
 
                     b.Property<Guid>("SessionId")
@@ -3958,7 +4137,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("SessionId", "RowLabel", "SeatNumber")
                         .IsUnique()
-                        .HasFilter("[ReleasedAt] IS NULL");
+                        .HasFilter("[ReleasedAt] IS NULL AND [RowLabel] IS NOT NULL");
 
                     b.ToTable("SeatReservations", (string)null);
                 });
@@ -4387,6 +4566,25 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Navigation("Exhibitor");
                 });
 
+            modelBuilder.Entity("SIMF.Domain.BusinessMeetings.DelegationMeetingRequest", b =>
+                {
+                    b.HasOne("SIMF.Domain.Common.Country", "RequestingCountry")
+                        .WithMany()
+                        .HasForeignKey("RequestingCountryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SIMF.Domain.Common.Country", "TargetCountry")
+                        .WithMany()
+                        .HasForeignKey("TargetCountryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("RequestingCountry");
+
+                    b.Navigation("TargetCountry");
+                });
+
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.HallAllocation", b =>
                 {
                     b.HasOne("SIMF.Domain.Programme.Hall", "Hall")
@@ -4407,6 +4605,17 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .IsRequired();
 
                     b.Navigation("Hall");
+                });
+
+            modelBuilder.Entity("SIMF.Domain.BusinessMeetings.SpeakerAvailabilityWindow", b =>
+                {
+                    b.HasOne("SIMF.Domain.Programme.Speaker", "Speaker")
+                        .WithMany()
+                        .HasForeignKey("SpeakerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Speaker");
                 });
 
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.SpeakerMeetingRequest", b =>

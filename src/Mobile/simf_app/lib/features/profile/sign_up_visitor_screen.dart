@@ -73,6 +73,11 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   String? _plateLetter1;
   String? _plateLetter2;
   String? _plateLetter3;
+  // D-471 fix — a plate is valid in either order (letters-then-digits or
+  // digits-then-letters) and the canonical code PRESERVES that order. Remember a
+  // digits-first stored plate so prefill→re-sync doesn't silently reorder it
+  // (e.g. "1234ABJ" must not be rewritten to "ABJ1234").
+  bool _plateDigitsFirst = false;
   final TextEditingController _plateDigits = TextEditingController();
   final TextEditingController _organisationSearch = TextEditingController();
 
@@ -440,6 +445,14 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     // side; the picker is not a FormField, so its inline error (line ~985)
     // must also gate Next, otherwise an empty code reaches the server (400).
     final nationalityValid = _nationalityCode != null;
+    // D-471 — the profile-type picker is now a searchable field, not a FormField,
+    // so its required gate (only when the "Other" picker is actually shown — never
+    // when Visitor-locked, loading, failed or empty, per L-6) lives here.
+    final profileTypePickerShown = !_isVisitorType &&
+        !_profileTypesLoading &&
+        !_profileTypesFailed &&
+        _profileTypes.isNotEmpty;
+    final profileTypeValid = !profileTypePickerShown || _profileTypeId != null;
     // Two-photo split — the ID DOCUMENT is mandatory for every registrant; the
     // FACE photo is mandatory for men and optional for women. Either a fresh
     // pick or an already-stored image satisfies each.
@@ -451,6 +464,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         !dateOfBirthValid ||
         !organisationValid ||
         !nationalityValid ||
+        !profileTypeValid ||
         !idImageValid ||
         !faceImageValid) {
       // D-434 — surface a clear message instead of failing silently, so the
@@ -1005,39 +1019,28 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         ],
       );
     }
+    // D-471 — the same searchable bottom-sheet picker as nationality / birth-
+    // region / plate, so every lookup field on the form is identical. Under
+    // "Other" a pick is required (the empty-lookup case returns above per L-6);
+    // the picker is not a FormField, so the required gate lives in _next().
+    final selected =
+        _profileTypes.where((ProfileTypeItem t) => t.id == _profileTypeId).toList();
+    final hasValue = selected.isNotEmpty;
+    final label = hasValue
+        ? (l10n.isArabic ? selected.first.nameArabic : selected.first.name)
+        : l10n.profileTypeLabel;
+    final showError = _triedSubmit && _profileTypeId == null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         _FieldLabel(l10n.profileTypeLabel),
         const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
-          key: const ValueKey<String>('profileTypePicker'),
-          initialValue: _profileTypeId,
-          isExpanded: true,
-          style: _inputStyle,
-          dropdownColor: SimfTokens.cardBeige,
-          icon: const Icon(
-            Icons.keyboard_arrow_down,
-            color: SimfTokens.greyText,
-          ),
-          decoration: _fieldDecoration(),
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          // C5 (D-371) — under "Other" a pick is required (the empty-lookup
-          // case is excluded above per L-6: never block on missing data).
-          validator: (value) =>
-              value == null ? l10n.profileTypeRequired : null,
-          items: _profileTypes
-              .map(
-                (type) => DropdownMenuItem<String>(
-                  value: type.id,
-                  child: Text(
-                    l10n.isArabic ? type.nameArabic : type.name,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              )
-              .toList(),
-          onChanged: (value) => setState(() => _profileTypeId = value),
+        _searchPickerField(
+          fieldKey: 'profileTypePicker',
+          displayText: label,
+          isPlaceholder: !hasValue,
+          onTap: () => unawaited(_pickProfileType(l10n)),
+          errorText: showError ? l10n.profileTypeRequired : null,
         ),
       ],
     );
@@ -1067,42 +1070,89 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     );
   }
 
-  /// D-373 — the 57-country list gets a searchable picker (type-to-filter
-  /// modal sheet) instead of a plain dropdown. Switching nationality also
-  /// drives the document section (SA → national ID, else Iqama/Passport).
+  /// The shared "tap to open the searchable sheet" field chrome — the same look
+  /// (beige field + down-arrow) the nationality, birth-region and plate-letter
+  /// pickers all use (D-373/D-469/D-470). [displayText] is the selected label or
+  /// the placeholder ([isPlaceholder] greys it).
+  Widget _searchPickerField({
+    required String fieldKey,
+    required String displayText,
+    required bool isPlaceholder,
+    required VoidCallback onTap,
+    String? errorText,
+    bool showChevron = true,
+  }) {
+    return InkWell(
+      key: ValueKey<String>(fieldKey),
+      onTap: onTap,
+      borderRadius: _radius4,
+      child: InputDecorator(
+        decoration: _fieldDecoration(
+          errorText: errorText,
+          // The narrow plate-letter boxes drop the arrow so the picked
+          // "Arabic · Latin" letter has the full width to show (D-459).
+          suffixIcon: showChevron
+              ? const Icon(
+                  Icons.keyboard_arrow_down,
+                  color: SimfTokens.greyText,
+                )
+              : null,
+        ),
+        child: Text(
+          displayText,
+          style: isPlaceholder
+              ? _inputStyle.copyWith(color: SimfTokens.greyText)
+              : _inputStyle,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    );
+  }
+
+  /// Opens the shared searchable picker sheet and returns the picked value.
+  Future<String?> _openLookupSheet({
+    required List<_PickerOption> options,
+    required String searchHint,
+    Key? searchFieldKey,
+  }) {
+    return showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: SimfTokens.cardBeige,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+      ),
+      builder: (_) => _LookupSearchSheet(
+        options: options,
+        searchHint: searchHint,
+        searchFieldKey: searchFieldKey,
+      ),
+    );
+  }
+
+  /// D-373 — the 57-country list gets the shared searchable picker. Switching
+  /// nationality also drives the document section (SA → national ID, else
+  /// Iqama/Passport).
   Widget _buildNationalityField(AppL10n l10n) {
     final selected = _countries
         .where((c) => c.code == _nationalityCode)
         .toList();
-    final label = selected.isEmpty
-        ? l10n.nationalityLabel
-        : (l10n.isArabic ? selected.first.nameArabic : selected.first.name);
+    final hasValue = selected.isNotEmpty;
+    final label = hasValue
+        ? (l10n.isArabic ? selected.first.nameArabic : selected.first.name)
+        : l10n.nationalityLabel;
     final showError = _triedSubmit && _nationalityCode == null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         _FieldLabel(l10n.nationalityLabel),
         const SizedBox(height: 8),
-        InkWell(
-          key: const ValueKey<String>('nationalityPicker'),
+        _searchPickerField(
+          fieldKey: 'nationalityPicker',
+          displayText: label,
+          isPlaceholder: !hasValue,
           onTap: () => unawaited(_pickNationality(l10n)),
-          borderRadius: _radius4,
-          child: InputDecorator(
-            decoration: _fieldDecoration(
-              errorText: showError ? l10n.nationalityRequired : null,
-              suffixIcon: const Icon(
-                Icons.keyboard_arrow_down,
-                color: SimfTokens.greyText,
-              ),
-            ),
-            child: Text(
-              label,
-              style: selected.isEmpty
-                  ? _inputStyle.copyWith(color: SimfTokens.greyText)
-                  : _inputStyle,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
+          errorText: showError ? l10n.nationalityRequired : null,
         ),
       ],
     );
@@ -1112,30 +1162,29 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   /// stale national-id/iqama input when the Saudi-ness flips keeps the
   /// derived document section consistent (D-373).
   Future<void> _pickNationality(AppL10n l10n) async {
-    final picked = await showModalBottomSheet<CountryItem>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: SimfTokens.cardBeige,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-      ),
-      builder: (sheetContext) => _CountrySearchSheet(
-        countries: _countries,
-        isArabic: l10n.isArabic,
-        searchHint: l10n.searchCountryHint,
-      ),
+    final pickedCode = await _openLookupSheet(
+      options: <_PickerOption>[
+        for (final CountryItem c in _countries)
+          _PickerOption(
+            value: c.code,
+            label: l10n.isArabic ? c.nameArabic : c.name,
+            search: '${c.name} ${c.nameArabic}',
+          ),
+      ],
+      searchHint: l10n.searchCountryHint,
+      searchFieldKey: const ValueKey<String>('countrySearchField'),
     );
-    if (picked == null || !mounted) {
+    if (pickedCode == null || !mounted) {
       return;
     }
     setState(() {
       final wasSaudi = _isSaudi;
-      _nationalityCode = picked.code;
+      _nationalityCode = pickedCode;
       if (wasSaudi != _isSaudi) {
         _nationalId.clear();
         _documentNumber.clear();
         // D-469 — the birth-location control flips with nationality: becoming
-        // Saudi keeps the value only if it matches a region (else the dropdown
+        // Saudi keeps the value only if it matches a region (else the picker
         // starts empty); leaving Saudi keeps it as free text.
         if (_isSaudi) {
           _birthRegionCode = regionByName(_placeOfBirth.text)?.code;
@@ -1145,6 +1194,52 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         }
       }
     });
+  }
+
+  /// D-469/D-470 — opens the shared searchable sheet over the 13 Saudi regions
+  /// and stores the picked region's localized name in [_placeOfBirth].
+  Future<void> _pickBirthRegion(AppL10n l10n, bool isArabic) async {
+    final pickedCode = await _openLookupSheet(
+      options: <_PickerOption>[
+        for (final SaudiRegion r in saudiRegions)
+          _PickerOption(
+            value: r.code,
+            label: r.name(isArabic: isArabic),
+            search: '${r.arabic} ${r.english}',
+          ),
+      ],
+      searchHint: l10n.placeOfBirthRegionHint,
+      searchFieldKey: const ValueKey<String>('birthRegionSearchField'),
+    );
+    if (pickedCode == null || !mounted) {
+      return;
+    }
+    setState(() {
+      _birthRegionCode = pickedCode;
+      _placeOfBirth.text = regionByCode(pickedCode)?.name(isArabic: isArabic) ?? '';
+    });
+  }
+
+  /// D-471 — opens the shared searchable sheet over the loaded "Other" profile
+  /// types and stores the picked id. Mirrors the nationality / birth-region
+  /// pickers so every lookup field uses the identical sheet.
+  Future<void> _pickProfileType(AppL10n l10n) async {
+    final picked = await _openLookupSheet(
+      options: <_PickerOption>[
+        for (final ProfileTypeItem t in _profileTypes)
+          _PickerOption(
+            value: t.id,
+            label: l10n.isArabic ? t.nameArabic : t.name,
+            search: '${t.name} ${t.nameArabic}',
+          ),
+      ],
+      searchHint: l10n.profileTypeSearchHint,
+      searchFieldKey: const ValueKey<String>('profileTypeSearchField'),
+    );
+    if (picked == null || !mounted) {
+      return;
+    }
+    setState(() => _profileTypeId = picked);
   }
 
   List<Widget> _buildDocumentFields(AppL10n l10n) {
@@ -1209,24 +1304,14 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         _FieldLabel(l10n.placeOfBirthLabel),
         const SizedBox(height: 8),
         if (_isSaudi)
-          DropdownButtonFormField<String>(
-            initialValue: _birthRegionCode,
-            isExpanded: true,
-            style: _inputStyle,
-            hint: Text(l10n.placeOfBirthRegionHint, style: _inputStyle),
-            decoration: _fieldDecoration(),
-            items: <DropdownMenuItem<String>>[
-              for (final SaudiRegion r in saudiRegions)
-                DropdownMenuItem<String>(
-                  value: r.code,
-                  child: Text(r.name(isArabic: isArabic)),
-                ),
-            ],
-            onChanged: (String? code) => setState(() {
-              _birthRegionCode = code;
-              _placeOfBirth.text =
-                  regionByCode(code)?.name(isArabic: isArabic) ?? '';
-            }),
+          _searchPickerField(
+            fieldKey: 'birthRegionPicker',
+            displayText: _birthRegionCode == null
+                ? l10n.placeOfBirthRegionHint
+                : (regionByCode(_birthRegionCode)?.name(isArabic: isArabic) ??
+                    l10n.placeOfBirthRegionHint),
+            isPlaceholder: _birthRegionCode == null,
+            onTap: () => unawaited(_pickBirthRegion(l10n, isArabic)),
           )
         else
           TextFormField(
@@ -1257,7 +1342,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Expanded(
-              child: _plateLetterDropdown(
+              child: _plateLetterField(
                 l10n,
                 _plateLetter1,
                 (String? v) => _plateLetter1 = v,
@@ -1266,7 +1351,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: _plateLetterDropdown(
+              child: _plateLetterField(
                 l10n,
                 _plateLetter2,
                 (String? v) => _plateLetter2 = v,
@@ -1275,7 +1360,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: _plateLetterDropdown(
+              child: _plateLetterField(
                 l10n,
                 _plateLetter3,
                 (String? v) => _plateLetter3 = v,
@@ -1283,8 +1368,10 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
               ),
             ),
             const SizedBox(width: 8),
-            Expanded(
-              flex: 2,
+            SizedBox(
+              // Sized for exactly the 4 digits, so the three letter pickers
+              // (Expanded) absorb the freed width and show the picked letter.
+              width: 92,
               // a11y: name the digit field (its hint vanishes on input).
               child: Semantics(
                 label: l10n.plateDigitsLabel,
@@ -1314,46 +1401,83 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     );
   }
 
-  /// One of the three plate-letter dropdowns: the 17 letters, each shown as
-  /// "Arabic · Latin", stored by its Latin [SaudiPlateLetter.code]. [position]
-  /// (1–3) gives each dropdown a distinct accessible name ("Letter 1/2/3") so a
+  /// One of the three plate-letter pickers: the 17 letters, each shown as
+  /// "Arabic · Latin", stored by its Latin [SaudiPlateLetter.code]. Uses the
+  /// same searchable sheet as the nationality + region fields (D-470). [position]
+  /// (1–3) gives each field a distinct accessible name ("Letter 1/2/3") so a
   /// screen reader can tell them apart (a11y).
-  Widget _plateLetterDropdown(
+  Widget _plateLetterField(
     AppL10n l10n,
     String? value,
     ValueChanged<String?> onPicked, {
     required int position,
   }) {
+    final letter = value == null ? null : _plateLetterByCode(value);
     return Semantics(
       label: '${l10n.plateLetterHint} $position',
-      child: DropdownButtonFormField<String>(
-        initialValue: value,
-        isExpanded: true,
-        style: _inputStyle,
-        hint: Text(l10n.plateLetterHint, style: _inputStyle),
-        decoration: _fieldDecoration(),
-        items: <DropdownMenuItem<String>>[
-          for (final SaudiPlateLetter letter in saudiPlateLetters)
-            DropdownMenuItem<String>(
-              value: letter.code,
-              child: Text('${letter.arabic} · ${letter.english}'),
-            ),
-        ],
-        onChanged: (String? picked) => setState(() {
-          onPicked(picked);
-          _syncPlate();
-        }),
+      child: _searchPickerField(
+        fieldKey: 'plateLetter$position',
+        displayText: letter == null
+            ? l10n.plateLetterHint
+            : '${letter.arabic} · ${letter.english}',
+        isPlaceholder: letter == null,
+        onTap: () => unawaited(_pickPlateLetter(l10n, position, onPicked)),
+        showChevron: false,
       ),
     );
   }
 
-  /// Re-assembles [_plate] from the dropdown picks + digits (letters then
-  /// digits). Empty when nothing is picked — the plate is optional.
+  static SaudiPlateLetter? _plateLetterByCode(String code) {
+    for (final SaudiPlateLetter letter in saudiPlateLetters) {
+      if (letter.code == code) {
+        return letter;
+      }
+    }
+    return null;
+  }
+
+  /// Opens the shared searchable sheet over the 17 official plate letters (shown
+  /// "Arabic · Latin") and stores the picked Latin code, then re-assembles the
+  /// plate.
+  Future<void> _pickPlateLetter(
+    AppL10n l10n,
+    int position,
+    ValueChanged<String?> onPicked,
+  ) async {
+    final pickedCode = await _openLookupSheet(
+      options: <_PickerOption>[
+        for (final SaudiPlateLetter letter in saudiPlateLetters)
+          _PickerOption(
+            value: letter.code,
+            label: '${letter.arabic} · ${letter.english}',
+            search: '${letter.arabic} ${letter.english} ${letter.code}',
+          ),
+      ],
+      searchHint: l10n.plateLetterHint,
+      searchFieldKey: ValueKey<String>('plateLetterSearch$position'),
+    );
+    if (pickedCode == null || !mounted) {
+      return;
+    }
+    setState(() {
+      onPicked(pickedCode);
+      _syncPlate();
+    });
+  }
+
+  /// Re-assembles [_plate] from the dropdown picks + digits, preserving the
+  /// stored order ([_plateDigitsFirst]) so a digits-first plate round-trips
+  /// unchanged (D-471 fix). Letters-then-digits is the default for fresh entry.
+  /// Empty when nothing is picked — the plate is optional.
   void _syncPlate() {
     final String letters =
         '${_plateLetter1 ?? ''}${_plateLetter2 ?? ''}${_plateLetter3 ?? ''}';
     final String digits = _plateDigits.text.trim();
-    _plate.text = (letters.isEmpty && digits.isEmpty) ? '' : '$letters$digits';
+    if (letters.isEmpty && digits.isEmpty) {
+      _plate.text = '';
+    } else {
+      _plate.text = _plateDigitsFirst ? '$digits$letters' : '$letters$digits';
+    }
   }
 
   /// Splits a stored plate code into the three letter dropdowns + the digits
@@ -1366,6 +1490,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     _plateLetter2 = null;
     _plateLetter3 = null;
     _plateDigits.text = '';
+    _plateDigitsFirst = false;
     final raw = code?.trim() ?? '';
     if (raw.isEmpty) {
       _plate.text = '';
@@ -1388,6 +1513,10 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       _plateLetter2 = letters[1];
       _plateLetter3 = letters[2];
       _plateDigits.text = digits.toString();
+      // Preserve the stored order: a leading digit means digits-then-letters
+      // (e.g. "1234ABJ"); _syncPlate re-emits in that same order (D-471 fix).
+      final int firstRune = canonical.runes.first;
+      _plateDigitsFirst = firstRune >= 0x30 && firstRune <= 0x39;
       _syncPlate();
     } else {
       // Legacy / non-conforming code the dropdowns can't represent — keep it so
@@ -1947,25 +2076,41 @@ class _BeigeTabs extends StatelessWidget {
   }
 }
 
-/// D-373 — the searchable country sheet: a type-to-filter list over the
-/// 57-country lookup, matching either language's name. Returns the picked
-/// [CountryItem] via the sheet's pop.
-class _CountrySearchSheet extends StatefulWidget {
-  const _CountrySearchSheet({
-    required this.countries,
-    required this.isArabic,
-    required this.searchHint,
-  });
+/// One option for the shared [_LookupSearchSheet]: a stable [value], a display
+/// [label], and the [search] text matched against the query (defaults to the
+/// label).
+class _PickerOption {
+  const _PickerOption({
+    required this.value,
+    required this.label,
+    String? search,
+  }) : search = search ?? label;
 
-  final List<CountryItem> countries;
-  final bool isArabic;
-  final String searchHint;
-
-  @override
-  State<_CountrySearchSheet> createState() => _CountrySearchSheetState();
+  final String value;
+  final String label;
+  final String search;
 }
 
-class _CountrySearchSheetState extends State<_CountrySearchSheet> {
+/// D-373/D-469/D-470 — the shared searchable picker sheet used by the
+/// nationality, birth-region and plate-letter fields: one beige type-to-filter
+/// list so all three look and behave identically. Pops the picked
+/// [_PickerOption.value].
+class _LookupSearchSheet extends StatefulWidget {
+  const _LookupSearchSheet({
+    required this.options,
+    required this.searchHint,
+    this.searchFieldKey,
+  });
+
+  final List<_PickerOption> options;
+  final String searchHint;
+  final Key? searchFieldKey;
+
+  @override
+  State<_LookupSearchSheet> createState() => _LookupSearchSheetState();
+}
+
+class _LookupSearchSheetState extends State<_LookupSearchSheet> {
   static const TextStyle _itemStyle = TextStyle(
     fontSize: 14,
     fontWeight: FontWeight.w500,
@@ -1978,13 +2123,9 @@ class _CountrySearchSheetState extends State<_CountrySearchSheet> {
   Widget build(BuildContext context) {
     final term = _query.trim().toLowerCase();
     final filtered = term.isEmpty
-        ? widget.countries
-        : widget.countries
-            .where(
-              (c) =>
-                  c.name.toLowerCase().contains(term) ||
-                  c.nameArabic.contains(term),
-            )
+        ? widget.options
+        : widget.options
+            .where((o) => o.search.toLowerCase().contains(term))
             .toList();
     return SafeArea(
       child: Padding(
@@ -1999,7 +2140,7 @@ class _CountrySearchSheetState extends State<_CountrySearchSheet> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 child: TextField(
-                  key: const ValueKey<String>('countrySearchField'),
+                  key: widget.searchFieldKey,
                   autofocus: true,
                   style: _itemStyle,
                   onChanged: (value) => setState(() => _query = value),
@@ -2024,14 +2165,11 @@ class _CountrySearchSheetState extends State<_CountrySearchSheet> {
                 child: ListView.builder(
                   itemCount: filtered.length,
                   itemBuilder: (context, index) {
-                    final country = filtered[index];
+                    final option = filtered[index];
                     return ListTile(
                       dense: true,
-                      title: Text(
-                        widget.isArabic ? country.nameArabic : country.name,
-                        style: _itemStyle,
-                      ),
-                      onTap: () => Navigator.of(context).pop(country),
+                      title: Text(option.label, style: _itemStyle),
+                      onTap: () => Navigator.of(context).pop(option.value),
                     );
                   },
                 ),

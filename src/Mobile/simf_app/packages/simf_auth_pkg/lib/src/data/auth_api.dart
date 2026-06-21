@@ -74,6 +74,10 @@ class AuthApi {
       '/app/auth/refresh',
       body: request.toJson(),
       decodeData: _decodeTokenPayload,
+      // The refresh call must not re-enter the 401 refresh path: a 401 here
+      // (expired / reuse-detected refresh token) would otherwise deadlock the
+      // single-flight refresh against itself.
+      skipAuthRefresh: true,
     );
   }
 
@@ -112,6 +116,23 @@ class AuthApi {
           );
         }
         return DeviceKeyEntryDto.fromJson(data);
+      },
+    );
+  }
+
+  /// #7a — request an emailed step-up code before enrolling a device key —
+  /// backend `POST /app/auth/device-keys/step-up`. Requires a signed-in
+  /// approved caller; returns the masked recipient + the code lifetime.
+  Future<SendBiometricStepUpResponseDto> sendBiometricStepUp() {
+    return _client.post<SendBiometricStepUpResponseDto>(
+      '/app/auth/device-keys/step-up',
+      decodeData: (data) {
+        if (data is! Map<String, dynamic>) {
+          throw const FormatException(
+            'biometric step-up response was not an object.',
+          );
+        }
+        return SendBiometricStepUpResponseDto.fromJson(data);
       },
     );
   }

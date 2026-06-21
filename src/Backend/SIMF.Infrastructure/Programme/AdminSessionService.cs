@@ -146,6 +146,8 @@ internal sealed class AdminSessionService(
             CategoryId = request.CategoryId,
             // D-452 — session type for the app's type tabs.
             Type = request.Type,
+            // D-485 — optional per-session seat-selection-mode override.
+            SeatSelectionModeOverride = request.SeatSelectionModeOverride,
             StartUtc = request.StartUtc,
             EndUtc = request.EndUtc,
             CapacityOverride = request.CapacityOverride,
@@ -242,6 +244,7 @@ internal sealed class AdminSessionService(
         session.HallId = hall.Id;
         session.CategoryId = request.CategoryId;
         session.Type = request.Type; // D-452
+        session.SeatSelectionModeOverride = request.SeatSelectionModeOverride; // D-485
         session.StartUtc = request.StartUtc;
         session.EndUtc = request.EndUtc;
         session.CapacityOverride = request.CapacityOverride;
@@ -696,6 +699,8 @@ internal sealed class AdminSessionService(
             session.LiveCaptions,
             session.LiveCaptionsArabic,
             // D-452 — session type for the app's type tabs.
-            session.Type);
+            session.Type,
+            // D-485 — per-session seat-selection-mode override (null = inherit).
+            session.SeatSelectionModeOverride);
     }
 }

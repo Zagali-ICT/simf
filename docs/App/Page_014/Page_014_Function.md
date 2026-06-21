@@ -25,7 +25,7 @@ an editable profile form (editing lives under Settings / More, Page 41).
 | FE-3 | Theme tile | **المظهر · ليلي/نهاري** — visible but **disabled** (no light theme exists; owner decision, D-378). |
 | FE-4 | Share-profile tile | مشاركة ملفي → the share-my-contact QR screen (`/contacts/share`). |
 | FE-5 | Share-contact tile | مشاركة جهة اتصال — share contact (vCard) via the native share sheet. |
-| FE-6 | Stat tiles | مقابلات مؤكدة (`meetingsCount`) · جلسات محفوظة (`bookedSessionsCount`) — display-only. |
+| FE-6 | Stat tiles | مقابلات مؤكدة (`meetingsCount`) · جلسات محفوظة (`bookedSessionsCount`) — show the live count, and (owner 2026-06-21) tap → **Coming soon** (saved meetings / saved sessions not built yet). |
 | FE-7 | Today's schedule | جدولي اليوم — a single time-ordered list of the user's sessions **and** meetings for today; empty → "لا يوجد لديك مواعيد اليوم". |
 | FE-8 | المزيد rows | بطاقتي الذكية → Badge QR (Page 32) · اعدادات الحساب → More (Page 41) · مشاركة جدولي → `.ics` share · تسجيل الخروج → confirm dialog then sign out (D-373). |
 

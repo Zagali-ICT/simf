@@ -35,6 +35,12 @@ public sealed class PublicBoothSummary
     // CountryId), ISO 3166-1 numeric, for the app's corner flag on the logo. Null
     // when the exhibitor has no linked Contact / country.
     public int? CountryId { get; set; }
+
+    // #9 (append-only): the country NAME resolved from the Country lookup on
+    // CountryId, so the app can show the country, not just the flag. Null when no
+    // country / no matching lookup row.
+    public string? CountryName { get; set; }
+    public string? CountryNameArabic { get; set; }
 }
 
 /// <summary>D-199 — public booth detail (adds the description paragraph).</summary>
@@ -68,6 +74,11 @@ public sealed class PublicBoothDetail
     // D-456 (append-only): the exhibitor company's country (Exhibitor → Contact
     // → CountryId) for the app's corner flag; see PublicBoothSummary.
     public int? CountryId { get; set; }
+
+    // #9 (append-only): the country NAME resolved from the Country lookup; see
+    // PublicBoothSummary.
+    public string? CountryName { get; set; }
+    public string? CountryNameArabic { get; set; }
 }
 
 /// <summary>D-199 — admin grid row. B1 — D-222: the exhibitor is now the

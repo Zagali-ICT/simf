@@ -48,9 +48,10 @@
 | E2E-MOB014-009 | KSA layout: language tile toggles AR/EN; theme tile visible but disabled | happy | P1 | authored ✓ (screen — disabled palette + no tap) |
 | E2E-MOB014-010 | مشاركة ملفي opens the share-my-contact QR screen | happy | P2 | authored ✓ (screen) |
 | E2E-MOB014-011 | **Photos-only profile edit (D-437):** the المزيد section shows an **"Update ID photo"** row that re-uploads the ID document from the gallery (`POST …/user-profile/id-image`), with a success / failure toast; the **face photo (avatar)** is changed via the existing tap-the-avatar flow. Names stay set-at-sign-up (not editable here) | happy | P1 | authored ✓ (screen — the row renders; gallery upload is a platform channel, driven live) |
-| E2E-MOB014-012 | **Face-ID toggle (D-445):** the المزيد section shows an enable/disable **"Face ID sign-in"** switch that **self-hides when the device has no usable biometric**; turning it on enrols a device key (+ success toast), off revokes it (+ toast). Mirrored in the side menu. | happy | P1 | authored ✓ (widget — `FaceIdToggleTile` hidden-when-unavailable / on→enrol+flip / off→revoke+flip) |
+| E2E-MOB014-012 | **Face-ID toggle (D-445):** the المزيد section shows an enable/disable **"Face ID sign-in"** switch that **self-hides when the device has no usable biometric**; turning it on enrols a device key (+ success toast); turning it **off first asks to confirm the permanent delete** ("…permanently deleted from this device") and only revokes after the user taps **Delete** (Cancel keeps the key). Mirrored in the side menu. | happy | P1 | authored ✓ (widget — `FaceIdToggleTile` hidden-when-unavailable / on→enrol+flip / off→confirm→revoke+flip / cancel→keep) |
 | E2E-MOB014-013 | **جدولي اليوم grouping (758:1283, D-447):** the schedule splits into a "جلسات" group then a "مقابلات" group, each under its gold sub-header; both empty → the no-items placeholder | i18n/visual | P1 | authored ✓ (screen — groups + RTL `dy` order: sessions above meetings) |
 | E2E-MOB014-014 | **Share pills order (758:1305, D-447):** مشاركة جهة اتصال at the inline-start (right), مشاركة ملفي at the end (left) | i18n | P2 | authored ✓ (screen — RTL `getCenter().dx`) |
+| E2E-MOB014-015 | **Saved stat tiles → Coming soon (owner 2026-06-21):** the الإحصائيات tiles **مقابلات** and **جلسات محفوظة** still show their live counts but are now tappable; each opens the **ComingSoon** placeholder (saved meetings / saved sessions are not built yet) | happy | P2 | authored ✓ (widget — `KsaStatTile` fires `onTap`) |
 
 ## Scenarios
 
@@ -84,11 +85,27 @@ Scenario: An approved visitor enables/disables Face-ID sign-in from My Area
   When they turn it on
   Then a device key is enrolled and a success toast "Face ID sign-in enabled" is shown
   When they turn it off
-  Then the device key is revoked and the switch returns to off
+  Then a confirm dialog warns the data "will be permanently deleted from this device"
+  And tapping Delete revokes the device key and the switch returns to off
+  And tapping Cancel keeps the device key and the switch stays on
   And on a device with NO usable biometric the switch is not rendered at all
 ```
 
-**Evidence:** `biometric_auth_test.dart` — `FaceIdToggleTile` hidden-when-unavailable / toggle-on enrols + flips on / toggle-off revokes + flips off (green). The OS biometric prompt itself is the owner's on-device test.
+**Evidence:** `biometric_auth_test.dart` — `FaceIdToggleTile` hidden-when-unavailable / toggle-on enrols + flips on / toggle-off **confirm→revoke+flip** / **cancel→keep** (green). The OS biometric prompt itself is the owner's on-device test.
+
+### E2E-MOB014-015 — Saved stat tiles → Coming soon (owner 2026-06-21)
+
+```gherkin
+Scenario: The الإحصائيات stat tiles open the Coming-soon placeholder
+  Given an approved visitor on /my-area
+  Then the مقابلات and جلسات محفوظة tiles still show their live counts
+  When they tap the جلسات محفوظة tile
+  Then the ComingSoon placeholder for "Saved sessions" / "الجلسات المحفوظة" opens
+  When they go back and tap the مقابلات tile
+  Then the ComingSoon placeholder for "Saved meetings" / "المقابلات المحفوظة" opens
+```
+
+**Evidence:** `ksa_shell_test.dart` — `KsaStatTile` fires its `onTap` (green); the tiles are wired to the `savedSessions` / `savedMeetings` ComingSoon routes in `my_area_screen.dart`.
 
 ### E2E-MOB014-011 — Update ID photo (photos-only edit, D-437)
 

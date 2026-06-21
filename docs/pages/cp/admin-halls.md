@@ -45,6 +45,7 @@ delete).
 | Name (English) | yes | 128 | 1–128 chars |
 | Name (Arabic) | yes | 128 | 1–128 chars |
 | Capacity | yes | n/a | integer ≥ 0 |
+| Seat selection | yes | n/a | Assigned seat (pick a seat) / Open seating = general admission (D-485) |
 | Floor | no | 32 | optional |
 | Equipment notes | no | 1024 | optional |
 | Active | (Edit only) | bool | — |

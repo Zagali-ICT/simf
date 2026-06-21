@@ -105,6 +105,50 @@ public sealed class AdminHallGeofenceTests : IClassFixture<SimfApiFactory>
         Assert.Null(updated.GeofenceRadiusMeters);
     }
 
+    [Fact]
+    public async Task Create_and_update_round_trip_the_seat_selection_mode()
+    {
+        // D-485 — the hall's seat-selection mode persists and round-trips. The
+        // default (omitted) is AssignedSeat (0); create open, then update back.
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var assigned = await CreateHallAsync(admin, new AdminCreateHallRequest
+        {
+            Code = NewCode(), Name = "Assigned", NameArabic = "محدد", Capacity = 100,
+        });
+        Assert.Equal(0, assigned.SeatSelectionMode); // default AssignedSeat
+
+        var open = await CreateHallAsync(admin, new AdminCreateHallRequest
+        {
+            Code = NewCode(), Name = "Open", NameArabic = "مفتوح", Capacity = 100,
+            SeatSelectionMode = 1, // OpenSeating
+        });
+        Assert.Equal(1, open.SeatSelectionMode);
+
+        var response = await PutAuthAsync($"/api/v1/admin/halls/{open.Id}",
+            new AdminUpdateHallRequest
+            {
+                Code = open.Code, Name = open.Name, NameArabic = open.NameArabic,
+                Capacity = open.Capacity, IsActive = true,
+                SeatSelectionMode = 0, // back to AssignedSeat
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var updated = (await response.Content.ReadFromJsonAsync<ApiResult<AdminHallDetail>>())!.Data!;
+        Assert.Equal(0, updated.SeatSelectionMode);
+    }
+
+    [Fact]
+    public async Task Create_with_an_invalid_seat_selection_mode_is_400()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var response = await PostAuthAsync("/api/v1/admin/halls", new AdminCreateHallRequest
+        {
+            Code = NewCode(), Name = "BadMode", NameArabic = "وضع خاطئ", Capacity = 10,
+            SeatSelectionMode = 99,
+        }, admin);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     private static string NewCode() => "GH" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant();

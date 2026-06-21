@@ -60,7 +60,7 @@ internal sealed class AdminCountryService(
             .Select(country => new AdminCountrySummary(
                 country.Id, country.Code, country.Name, country.NameArabic,
                 country.PhonePrefix, country.DisplayOrder,
-                country.IsActive, country.CreatedAt))
+                country.IsActive, country.CreatedAt, country.IsInvited))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminCountrySummary>.Of(page, total,
@@ -105,6 +105,7 @@ internal sealed class AdminCountryService(
             PhonePrefix = phonePrefix,
             DisplayOrder = displayOrder,
             IsActive = true,
+            IsInvited = request.IsInvited,
             CreatedAt = now,
         };
 
@@ -153,6 +154,7 @@ internal sealed class AdminCountryService(
         country.PhonePrefix = phonePrefix;
         country.DisplayOrder = displayOrder;
         country.IsActive = request.IsActive;
+        country.IsInvited = request.IsInvited;
         country.UpdatedAt = timeProvider.GetUtcNow();
 
         await appDbContext.SaveChangesAsync(cancellationToken);
@@ -240,5 +242,5 @@ internal sealed class AdminCountryService(
     private static AdminCountryDetail ToDetail(Country country) =>
         new(country.Id, country.Code, country.Name, country.NameArabic,
             country.PhonePrefix, country.DisplayOrder,
-            country.IsActive, country.CreatedAt, country.UpdatedAt);
+            country.IsActive, country.CreatedAt, country.UpdatedAt, country.IsInvited);
 }

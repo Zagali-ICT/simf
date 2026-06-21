@@ -477,6 +477,12 @@ public sealed class AdminWalkInRegistrationRequest
 
     /// <summary>Picked interest ids (visitor-only; ignored for Other kind).</summary>
     public IList<Guid> InterestIds { get; set; } = new List<Guid>();
+
+    /// <summary>D-473 (#10) — true when the desk is registering a delegation (وفد)
+    /// member. A delegate is an ordinary visitor with this flag set; the service
+    /// then requires the nationality to be an invited country. Defaults false
+    /// (a plain visitor walk-in).</summary>
+    public bool IsDelegate { get; set; }
 }
 
 /// <summary>
@@ -495,6 +501,29 @@ public sealed record AdminWalkInRegistrationResponse(
     string ProfileTypeName,
     string ProfileTypeNameArabic,
     string ProfileTypeColor);
+
+/// <summary>D-473 (#10) — bulk-generate placeholder badges by profile type +
+/// count (e.g. 10 VIP + 500 Normal), each Approved with a minted QR, optionally
+/// flagged as delegation (وفد) members. The badges carry default data (no real
+/// personal details) to be filled in / handed out later.</summary>
+public sealed class AdminBulkGenerateBadgesRequest
+{
+    /// <summary>When true, every generated badge is flagged as a delegate.</summary>
+    public bool IsDelegate { get; set; }
+
+    /// <summary>The (profile type, count) batches to generate.</summary>
+    public IList<BulkBadgeBatch> Batches { get; set; } = new List<BulkBadgeBatch>();
+}
+
+/// <summary>D-473 (#10) — one bulk batch: how many badges of one profile type.</summary>
+public sealed class BulkBadgeBatch
+{
+    public Guid ProfileTypeId { get; set; }
+    public int Count { get; set; }
+}
+
+/// <summary>D-473 (#10) — the count of badges generated.</summary>
+public sealed record AdminBulkGenerateBadgesResponse(int Created);
 
 /// <summary>
 /// D-127 / D-126 — body returned by the broadened admin profile-read endpoints

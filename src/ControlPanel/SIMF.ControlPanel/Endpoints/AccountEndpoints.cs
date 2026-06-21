@@ -327,6 +327,15 @@ internal static class AccountEndpoints
             return Forward(await api.RegisterVisitorOnSiteAsync(body, token));
         });
 
+        // D-473 (#10) — bulk-generate placeholder badges (visitors / delegates).
+        group.MapPost("/admin/visitors/bulk-generate",
+            async (AdminBulkGenerateBadgesRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.BulkGenerateBadgesAsync(body, token));
+        });
+
         group.MapPost("/admin/others/register-onsite",
             async (AdminWalkInRegistrationRequest body, HttpContext http, SimfAdminClient api) =>
         {
@@ -578,7 +587,8 @@ internal static class AccountEndpoints
             {
                 return Results.StatusCode(status);
             }
-            http.Response.Headers.CacheControl = "private, max-age=60";
+            // A2-14 (NCA App-Sec Standard) — ID document is high-value PII; never cache.
+            http.Response.Headers.CacheControl = "no-store";
             return Results.File(bytes, contentType);
         });
 
@@ -593,7 +603,8 @@ internal static class AccountEndpoints
             {
                 return Results.StatusCode(status);
             }
-            http.Response.Headers.CacheControl = "private, max-age=60";
+            // A2-14 (NCA App-Sec Standard) — ID document is high-value PII; never cache.
+            http.Response.Headers.CacheControl = "no-store";
             return Results.File(bytes, contentType);
         });
 
@@ -1778,6 +1789,28 @@ internal static class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.UnpublishSessionSummaryAsync(sessionId, token));
         });
+        // D-472 (#9) — the team review/approval workflow passthroughs.
+        group.MapPut("/admin/session-summaries/{sessionId:guid}/submit-review",
+            async (Guid sessionId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.SubmitSessionSummaryForReviewAsync(sessionId, token));
+        });
+        group.MapPut("/admin/session-summaries/{sessionId:guid}/approve",
+            async (Guid sessionId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ApproveSessionSummaryAsync(sessionId, token));
+        });
+        group.MapPut("/admin/session-summaries/{sessionId:guid}/return-to-draft",
+            async (Guid sessionId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ReturnSessionSummaryToDraftAsync(sessionId, token));
+        });
 
         // P5.1d — D-244: operator hall-door QR arrival passthrough.
         group.MapPost("/admin/sessions/{sessionId:guid}/arrivals",
@@ -2152,6 +2185,55 @@ internal static class AccountEndpoints
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
             return Forward(await api.RespondToAdminSpeakerMeetingRequestAsync(
+                id, body, token));
+        });
+
+        // D-474 (#11) — speaker availability windows passthroughs.
+        group.MapGet("/admin/speakers/{speakerId:guid}/availability-windows",
+            async (Guid speakerId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListSpeakerAvailabilityWindowsAsync(speakerId, token));
+        });
+        group.MapPost("/admin/speakers/{speakerId:guid}/availability-windows",
+            async (Guid speakerId, CreateSpeakerAvailabilityWindowRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateSpeakerAvailabilityWindowAsync(speakerId, body, token));
+        });
+        group.MapDelete("/admin/speaker-availability-windows/{windowId:guid}",
+            async (Guid windowId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeleteSpeakerAvailabilityWindowAsync(windowId, token));
+        });
+
+        // D-478 (#11) — delegation meeting requests BFF passthroughs.
+        group.MapPost("/admin/delegation-meeting-requests/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListAdminDelegationMeetingRequestsAsync(body, token));
+        });
+        group.MapGet("/admin/delegation-meeting-requests/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetAdminDelegationMeetingRequestAsync(id, token));
+        });
+        group.MapPut("/admin/delegation-meeting-requests/{id:guid}/respond",
+            async (Guid id, RespondToDelegationMeetingRequestRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.RespondToAdminDelegationMeetingRequestAsync(
                 id, body, token));
         });
 

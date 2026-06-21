@@ -39,6 +39,11 @@ public class Country
 
 
 
+    /// <summary>D-473 (#10) — true for a country invited to send a delegation
+    /// (وفد); a delegate's nationality must be an invited country. Additive,
+    /// defaults false (the admin marks the invited countries in the CP).</summary>
+    public bool IsInvited { get; set; }
+
     /// <summary>Soft-delete flag.</summary>
     public bool IsActive { get; set; } = true;
 

@@ -40,10 +40,10 @@ public sealed class UserIdDocumentFetchEndpoint(IUserProfileService service)
             await Send.NotFoundAsync(ct);
             return;
         }
-        // The cache headers mirror the avatar — short private TTL so a
-        // re-upload becomes visible quickly while still saving round trips
-        // on routine page loads.
-        HttpContext.Response.Headers.CacheControl = "private, max-age=300";
+        // A2-14 (NCA App-Sec Standard) — the ID document (national ID / Iqama /
+        // passport) is high-value PII; never let a proxy or the browser cache
+        // it to disk. (Avatars keep a short private TTL; ID documents do not.)
+        HttpContext.Response.Headers.CacheControl = "no-store";
         await Send.BytesAsync(image.Content, contentType: image.ContentType, cancellation: ct);
     }
 }

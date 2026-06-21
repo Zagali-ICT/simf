@@ -292,13 +292,14 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var user = await db.Users.SingleAsync(u => u.Email == newEmail);
-        var inviteCode = await db.AccountCodes
+        var inviteHash = await db.AccountCodes
             .Where(c => c.UserId == user.Id
                 && c.Purpose == AccountCodePurpose.PasswordReset
                 && c.ConsumedAt == null)
             .OrderByDescending(c => c.CreatedAt)
             .Select(c => c.Code)
             .FirstAsync();
+        var inviteCode = AuthFlow.RecoverPlaintextCode(inviteHash);
 
         var reset = await _client.PostAsJsonAsync(
             "/api/v1/app/auth/reset-password",

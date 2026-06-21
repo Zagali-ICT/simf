@@ -167,14 +167,29 @@ if (!app.Environment.IsDevelopment())
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
 
-// Baseline security response headers. A full Content-Security-Policy is a
-// later hardening item (it needs a nonce for the theme bootstrap script).
+// Baseline security response headers (NCA App-Sec Standard A3-4 / A5-13 / A6-21).
+// frame-ancestors 'none' is enforced (the CP is never framed; matches the
+// X-Frame-Options DENY). The full content policy ships as Report-Only first so the
+// owner can confirm in-browser (Blazor Server's theme-bootstrap inline script + the
+// SignalR socket) before flipping it to the enforcing header — see the gap report
+// Wave 4. 'unsafe-inline'/'unsafe-eval' are present only to keep the report-only
+// pass quiet until a nonce is wired for the bootstrap script.
 app.Use(async (context, next) =>
 {
     var headers = context.Response.Headers;
     headers["X-Content-Type-Options"] = "nosniff";
     headers["X-Frame-Options"] = "DENY";
     headers["Referrer-Policy"] = "no-referrer";
+    headers["Content-Security-Policy"] = "frame-ancestors 'none'";
+    headers["Content-Security-Policy-Report-Only"] =
+        "default-src 'self'; "
+        + "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+        + "style-src 'self' 'unsafe-inline'; "
+        + "img-src 'self' data: blob: https:; "
+        + "font-src 'self' data:; "
+        + "connect-src 'self' ws: wss: https:; "
+        + "object-src 'none'; base-uri 'self'; form-action 'self'; "
+        + "frame-ancestors 'none'";
     await next();
 });
 

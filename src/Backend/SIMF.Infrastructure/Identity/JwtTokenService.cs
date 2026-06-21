@@ -73,7 +73,7 @@ internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider
             settings.AccessTokenMinutes * 60);
     }
 
-    public AccessToken CreateRecordingStreamToken(Guid sessionId)
+    public AccessToken CreateRecordingStreamToken(Guid sessionId, Guid userId)
     {
         var settings = options.Value;
         var now = timeProvider.GetUtcNow();
@@ -86,6 +86,10 @@ internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider
         {
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new("recording_session_id", sessionId.ToString()),
+            // L1 (security) — bind the token to the requesting user so a leaked
+            // stream URL is attributable. The StreamToken scheme still skips the
+            // security-stamp check on the hot streaming path.
+            new(JwtRegisteredClaimNames.Sub, userId.ToString()),
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.SigningKey));

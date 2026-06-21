@@ -47,4 +47,25 @@ public interface IAdminSessionSummaryService
     /// 404 when no summary exists.</summary>
     Task<AdminSessionSummaryDetail> UnpublishAsync(
         Guid actorUserId, Guid sessionId, CancellationToken cancellationToken = default);
+
+    // -- D-472 (requirement #9) — the team review/approval workflow -----------
+    // Draft → (SubmitForReview) → InReview → (Approve) → Approved = ready for
+    // المحاور. Any content edit (SaveAsync / GenerateAsync) returns it to Draft.
+
+    /// <summary>Submit the draft for the team's approval (Draft → InReview).
+    /// 404 when no summary exists; 400 when it is already approved (return it to
+    /// draft first).</summary>
+    Task<AdminSessionSummaryDetail> SubmitForReviewAsync(
+        Guid actorUserId, Guid sessionId, CancellationToken cancellationToken = default);
+
+    /// <summary>Approve a submitted summary (InReview → Approved); the approved
+    /// محضر then becomes readable by the session's host / moderator. 404 when no
+    /// summary exists; 400 when it has not been submitted for review.</summary>
+    Task<AdminSessionSummaryDetail> ApproveAsync(
+        Guid actorUserId, Guid sessionId, CancellationToken cancellationToken = default);
+
+    /// <summary>Send an in-review / approved summary back to Draft (clears both
+    /// the review and approval stamps). 404 when no summary exists.</summary>
+    Task<AdminSessionSummaryDetail> ReturnToDraftAsync(
+        Guid actorUserId, Guid sessionId, CancellationToken cancellationToken = default);
 }

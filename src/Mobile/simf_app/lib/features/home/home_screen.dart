@@ -378,7 +378,9 @@ class _VisitorHome extends StatelessWidget {
                 label: l10n.tileBilateralMeetings,
                 iconAsset: _HomeIcons.bilateral,
                 minHeight: 80,
-                onTap: () => context.pushNamed(RouteNames.gallery),
+                // اللقاءات الثنائية is not designed yet (owner 2026-06-21) — the
+                // tile lands on the ComingSoon placeholder, not the gallery.
+                onTap: () => context.pushNamed(RouteNames.bilateralMeetings),
               ),
               KsaNavTile(
                 label: l10n.tileArchive,
@@ -419,7 +421,9 @@ class _VisitorHome extends StatelessWidget {
                 label: l10n.tileSessionSummary,
                 iconAsset: _HomeIcons.sessionSummary,
                 minHeight: 80,
-                onTap: () => context.pushNamed(RouteNames.aiSummary),
+                // #1/#6 — the tile now opens the summaries LIST → tap a session →
+                // its AI-summary details page (was: straight to the picker screen).
+                onTap: () => context.pushNamed(RouteNames.sessionSummaryList),
               ),
               KsaNavTile(
                 label: l10n.tileEntryBadge,

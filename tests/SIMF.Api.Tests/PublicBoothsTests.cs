@@ -9,6 +9,7 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Exhibition;
+using SIMF.Domain.Common;
 using SIMF.Domain.Contacts;
 using SIMF.Domain.Exhibition;
 using SIMF.Domain.Exhibitors;
@@ -146,6 +147,85 @@ public sealed class PublicBoothsTests : IClassFixture<SimfApiFactory>
         var detail = (await (await _client.GetAsync($"/api/v1/app/booths/{boothWithLogo}"))
             .Content.ReadFromJsonAsync<ApiResult<PublicBoothDetail>>())!.Data!;
         Assert.Equal(contactId, detail.ExhibitorContactId);
+    }
+
+    // #9 — the public booth wire carries the exhibitor company's country NAME
+    // (resolved from the Country lookup on Contact.CountryId), not just the id.
+    [Fact]
+    public async Task Public_booth_carries_the_resolved_country_name()
+    {
+        const int countryId = 682; // SA
+        var contactId = Guid.NewGuid();
+        var exhibitorId = Guid.NewGuid();
+        var boothId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        var code = NewCode();
+        string expectedName;
+        string expectedNameArabic;
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            // Find-or-create the lookup row so the test is robust whether or not
+            // the environment pre-seeds the ISO country set.
+            var country = await db.Set<Country>().FindAsync(countryId);
+            if (country is null)
+            {
+                country = new Country
+                {
+                    Id = countryId,
+                    Code = "SA",
+                    Name = "Saudi Arabia",
+                    NameArabic = "السعودية",
+                    IsActive = true,
+                    CreatedAt = now,
+                };
+                db.Add(country);
+            }
+            expectedName = country.Name;
+            expectedNameArabic = country.NameArabic;
+
+            db.Set<Contact>().Add(new Contact
+            {
+                Id = contactId,
+                NameArabic = "سامي",
+                CountryId = countryId,
+                IsActive = true,
+                CreatedAt = now,
+            });
+            db.Set<Exhibitor>().Add(new Exhibitor
+            {
+                Id = exhibitorId,
+                Name = "SAMI",
+                NameArabic = "سامي",
+                ContactId = contactId,
+                IsActive = true,
+                CreatedAt = now,
+            });
+            db.Set<Booth>().Add(new Booth
+            {
+                Id = boothId,
+                Code = code,
+                Name = "Booth C",
+                NameArabic = "جناح ج",
+                ExhibitorId = exhibitorId,
+                IsActive = true,
+                CreatedAt = now,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var list = await _client.GetAsync("/api/v1/app/booths");
+        var rows = (await list.Content
+            .ReadFromJsonAsync<ApiResult<IReadOnlyList<PublicBoothSummary>>>())!.Data!;
+        var booth = rows.Single(b => b.Id == boothId);
+        Assert.Equal(countryId, booth.CountryId);
+        Assert.Equal(expectedName, booth.CountryName);
+        Assert.Equal(expectedNameArabic, booth.CountryNameArabic);
+
+        var detail = (await (await _client.GetAsync($"/api/v1/app/booths/{boothId}"))
+            .Content.ReadFromJsonAsync<ApiResult<PublicBoothDetail>>())!.Data!;
+        Assert.Equal(expectedName, detail.CountryName);
     }
 
     [Fact]

@@ -18,5 +18,10 @@ public interface IUserCredentialStore
 
     Task<UserOperationResult> ChangePasswordAsync(SimfUser user, string currentPassword, string newPassword, CancellationToken cancellationToken = default);
 
+    /// <summary>A7-20 (NCA) — true when <paramref name="providedPassword"/> matches
+    /// the stored Identity password hash <paramref name="hashedPassword"/>. Used to
+    /// check a new password against the account's password history. No DB I/O.</summary>
+    bool PasswordHashMatches(SimfUser user, string hashedPassword, string providedPassword);
+
     Task UpdateSecurityStampAsync(SimfUser user, CancellationToken cancellationToken = default);
 }

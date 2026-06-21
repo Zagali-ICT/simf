@@ -126,13 +126,13 @@ public sealed class UserProfileRollbackTests : IClassFixture<ThrowingRefreshToke
                 AccountState = AccountState.EmailVerified,
                 UserType = UserType.Visitor,
             };
-            await users.CreateAsync(user, "Passw0rd!");
+            await users.CreateAsync(user, "Zx9#mKp2!");
             userId = user.Id;
         }
         var signIn = await _client.PostAsJsonAsync("/api/v1/app/auth/sign-in",
             new SignInRequest
             {
-                Email = email, Password = "Passw0rd!",
+                Email = email, Password = "Zx9#mKp2!",
                 Audience = SignInAudience.Web,
             });
         var signInBody = (await signIn.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;

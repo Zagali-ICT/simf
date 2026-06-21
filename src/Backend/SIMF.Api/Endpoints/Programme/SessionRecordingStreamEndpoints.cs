@@ -41,8 +41,17 @@ public sealed class RequestRecordingStreamTokenEndpoint(
                 "لا يوجد تسجيل منشور متاح لهذه الجلسة.");
         }
 
-        var token = tokens.CreateRecordingStreamToken(req.Id);
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+
+        var token = tokens.CreateRecordingStreamToken(req.Id, userId);
         var streamUrl = $"/api/v1/app/programme/sessions/{req.Id}/recording/stream";
+        // L1 (security) — the response body carries a bearer stream token; never
+        // let a proxy or the browser cache it.
+        HttpContext.Response.Headers.CacheControl = "no-store";
         await Send.OkAsync(ApiResult<RecordingStreamTokenResponse>.Ok(
             new RecordingStreamTokenResponse(
                 token.Value, token.ExpiresInSeconds, streamUrl)), ct);

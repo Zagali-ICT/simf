@@ -291,6 +291,23 @@ void main() {
       expect(capturedDraft!.request.plateNumber, 'ABJ1234');
     });
 
+    testWidgets('a digits-first stored plate keeps its order on prefill — it is '
+        'not silently reordered to letters-first (D-471)', (tester) async {
+      // A plate is valid in either order; the canonical code preserves it. A
+      // stored "1234ABJ" (digits-first) must round-trip unchanged, not become
+      // "ABJ1234" (the pre-fix reorder bug).
+      final repo = _FakeProfileRepository(
+        profile: _completeProfile(plateNumber: '1234ABJ'),
+      );
+      await _pump(tester, repo);
+
+      await _tapNext(tester);
+
+      expect(find.text('INTERESTS'), findsOneWidget);
+      expect(capturedDraft, isNotNull);
+      expect(capturedDraft!.request.plateNumber, '1234ABJ');
+    });
+
     testWidgets('a Saudi profile shows the birth-location region dropdown with '
         'the stored region selected (D-469)', (tester) async {
       // _completeProfile is Saudi with placeOfBirth "Riyadh" (a region name), so
@@ -314,6 +331,45 @@ void main() {
       // English-locale dropdown shows "Riyadh" (not the empty placeholder).
       expect(find.text('Riyadh'), findsWidgets);
       expect(find.text('Select region'), findsNothing);
+    });
+
+    testWidgets('the birth-region field opens the shared searchable sheet and '
+        'picks a region (D-470)', (tester) async {
+      // Saudi profile with no stored region → the picker shows the placeholder.
+      final repo = _FakeProfileRepository(profile: _completeProfile(placeOfBirth: ''));
+      await _pump(tester, repo);
+
+      const picker = ValueKey<String>('birthRegionPicker');
+      await tester.ensureVisible(find.byKey(picker));
+      await tester.tap(find.byKey(picker));
+      await tester.pumpAndSettle();
+
+      // Same searchable sheet as the country picker (type-to-filter).
+      final search = find.byKey(const ValueKey<String>('birthRegionSearchField'));
+      expect(search, findsOneWidget);
+      await tester.enterText(search, 'Eastern');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Eastern Province'));
+      await tester.pumpAndSettle();
+
+      // The field now shows the picked region.
+      expect(find.text('Eastern Province'), findsOneWidget);
+    });
+
+    testWidgets('a plate-letter field opens the shared searchable sheet (D-470)',
+        (tester) async {
+      await _pump(tester, _FakeProfileRepository());
+
+      const picker = ValueKey<String>('plateLetter1');
+      await tester.ensureVisible(find.byKey(picker));
+      await tester.tap(find.byKey(picker));
+      await tester.pumpAndSettle();
+
+      // The shared search sheet is up over the 17 plate letters.
+      expect(
+        find.byKey(const ValueKey<String>('plateLetterSearch1')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('a profile missing only the organisation blocks Next (B3 — D-221)',

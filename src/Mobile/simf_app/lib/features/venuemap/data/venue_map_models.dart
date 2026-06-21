@@ -104,6 +104,8 @@ class BoothSummary {
     this.officerEmail,
     this.exhibitorContactId,
     this.countryId,
+    this.countryName,
+    this.countryNameArabic,
   });
 
   final String id;
@@ -131,6 +133,14 @@ class BoothSummary {
   // D-456 — the exhibitor company's country (ISO 3166-1 numeric) for the corner
   // flag on the booth logo. Null when the exhibitor has no linked Contact/country.
   final int? countryId;
+
+  // #9 — the exhibitor company's country NAME (resolved server-side from the
+  // Country lookup), shown beside the flag so the booth shows its country.
+  final String? countryName;
+  final String? countryNameArabic;
+
+  String? localizedCountry(bool isArabic) =>
+      _pick(countryNameArabic, countryName, isArabic);
 
   String localizedName(bool isArabic) {
     final ar = nameArabic.trim();
@@ -164,6 +174,8 @@ class BoothSummary {
         officerEmail: json['officerEmail'] as String?,
         exhibitorContactId: json['exhibitorContactId'] as String?,
         countryId: (json['countryId'] as num?)?.toInt(),
+        countryName: json['countryName'] as String?,
+        countryNameArabic: json['countryNameArabic'] as String?,
       );
 }
 

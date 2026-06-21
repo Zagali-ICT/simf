@@ -19,7 +19,7 @@
 
 | ID | Scenario | Type | Priority | Status |
 |----|----------|------|----------|--------|
-| E2E-MMC-001 | Share my contact — token minted + shown as QR | happy | P0 | authored |
+| E2E-MMC-001 | Share my contact — the QR encodes the user's vCard (Arabic name + phones), readable by any phone camera; the gate QrId is never in it (D-470) | happy | P0 | authored ✓ (D-470) |
 | E2E-MMC-002 | Rotate the share token — old code stops resolving | happy | P0 | authored |
 | E2E-MMC-003 | Scan / resolve a token → live card preview | happy | P0 | authored |
 | E2E-MMC-004 | Save a scanned contact (idempotent per subject) | happy | P0 | authored |
@@ -41,13 +41,15 @@ Feature: Visitor-to-visitor contact sharing (Slice E)
   I want to share my contact by showing a QR
   So that another visitor can save me without exposing my gate QrId
 
-Scenario: The visitor opens "Share my contact"
+Scenario: The visitor opens "Share my contact" (D-470 — vCard QR)
   Given an approved visitor with a completed profile
-  When the app calls GET /app/account/share-token
-  Then a stable Crockford-base32 token is returned (minted on first call)
-  And calling it again returns the SAME token (idempotent)
-  And the app renders the token as a QR + offers an OS share-intent vCard
-  And the token is SEPARATE from the visitor's entry QrId (scanning at the gate never harvests the card)
+  When the screen loads
+  Then the QR encodes the visitor's vCard from GET /app/account/contact-card.vcf
+       (FN = Arabic name, TEL = Saudi + international mobile)
+  And any phone's native camera can scan it and offer "Add to contacts" — no SIMF app needed
+  And the gate QrId is NOT emitted into the vCard (a camera-readable QR must never leak the badge/lead key)
+  And the screen still offers the OS share-intent .vcf and the rotate-token control
+       (the share token continues to gate the in-app resolve/save flow in the scenarios below)
 ```
 
 ### E2E-MMC-002 — Rotate the share token
@@ -165,4 +167,9 @@ Scenario: A saved contact whose subject is gone shows a limited card
 
 ---
 
-_Last reviewed:_ 2026-06-04 by SIMF Team.
+_Last reviewed:_ 2026-06-20 by SIMF Team — D-470: the Share-my-contact QR now
+encodes the user's vCard (Arabic name + phones) so any phone camera can add the
+contact; the gate QrId is no longer emitted into the vCard. Backend coverage:
+`MyAreaDashboardTests.Contact_card_vcf_has_the_arabic_name_and_phones_and_omits_the_qr_id`;
+app coverage: `share_my_contact_screen_test` (QR sourced from the vCard). Earlier:
+2026-06-04 (D-286 API + D-324 screens).

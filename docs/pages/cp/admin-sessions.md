@@ -127,6 +127,7 @@ First / Prev / numbered / Next / Last; default `Top = 20`; summary
 | Start (UTC) | datetime-local | yes | — | parses; treated as UTC |
 | End (UTC) | datetime-local | yes | — | parses; must be `> Start` |
 | Capacity override | number | no | — | blank = inherit hall; else integer ≥ 0 |
+| Seat selection (override) | select | no | — | blank = inherit the hall; else Assigned seat / Open seating (general admission) — D-485 |
 | Add speaker | select | no | — | builds a reorderable roster with per-speaker role (Speaker/Host) |
 | Add theme | select | no | — | multi-pick theme chips |
 | Active | checkbox | (Edit only) | — | shows in the public agenda |

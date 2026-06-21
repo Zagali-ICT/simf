@@ -187,3 +187,36 @@ public sealed class ImportVisitorsEndpoint(IAdminUserBulkService adminAccountSer
         return true;
     }
 }
+
+/// <summary>
+/// <c>POST /api/v1/admin/visitors/bulk-generate</c> — D-473 (#10). Bulk-generates
+/// placeholder badges by profile type + count (e.g. 10 VIP + 500 Normal), each an
+/// Approved visitor with default data and a minted QR. The request's
+/// <c>IsDelegate</c> flag marks the batch as delegation (وفد) members, so the same
+/// endpoint serves both the visitor and the delegate desks.
+/// </summary>
+public sealed class BulkGenerateVisitorBadgesEndpoint(IAdminUserBulkService adminAccountService)
+    : Endpoint<AdminBulkGenerateBadgesRequest, ApiResult<AdminBulkGenerateBadgesResponse>>
+{
+    public override void Configure()
+    {
+        Post("/admin/visitors/bulk-generate");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.BulkGenerate), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Tags("Admin");
+        Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
+        Summary(summary => summary.Summary =
+            "Bulk-generate placeholder visitor / delegate badges by profile type + count.");
+    }
+
+    public override async Task HandleAsync(AdminBulkGenerateBadgesRequest req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        var response = await adminAccountService.BulkGenerateBadgesAsync(
+            actorId, UserType.Visitor, req, ct);
+        await Send.OkAsync(ApiResult<AdminBulkGenerateBadgesResponse>.Ok(response), ct);
+    }
+}

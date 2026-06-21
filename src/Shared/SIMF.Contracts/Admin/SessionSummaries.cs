@@ -16,7 +16,12 @@ public sealed record AdminSessionSummaryRow(
     bool GeneratedByAi,
     bool IsPublished,
     DateTimeOffset? PublishedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTimeOffset? UpdatedAt,
+    // D-472 (#9) — the team review/approval state, derived from the timestamps:
+    // InReview = submitted but not yet approved; Approved = ready for المحاور.
+    bool IsInReview,
+    bool IsApproved,
+    DateTimeOffset? ApprovedAt);
 
 /// <summary>P4.1 — D-238: the full summary detail for the editor. Bilingual
 /// content sections + the session header (read-only context) + provenance and
@@ -39,7 +44,11 @@ public sealed record AdminSessionSummaryDetail(
     bool IsPublished,
     DateTimeOffset? PublishedAt,
     DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTimeOffset? UpdatedAt,
+    // D-472 (#9) — team review/approval state (derived from the timestamps).
+    bool IsInReview,
+    bool IsApproved,
+    DateTimeOffset? ApprovedAt);
 
 /// <summary>P4.1 — D-238: the Committee's edit (upsert) of a summary's content.
 /// Saving a session that has no summary yet creates a hand-written draft

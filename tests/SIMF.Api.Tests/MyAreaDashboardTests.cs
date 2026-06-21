@@ -76,6 +76,59 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Open_seating_join_appears_in_the_schedule_and_count()
+    {
+        // D-485 regression — a general-admission (OpenSeating) join must show in
+        // the user's booked-sessions count + today's schedule, like a seat booking.
+        var (token, userId) = await CreateApprovedVisitorAsync();
+        var now = DateTimeOffset.UtcNow;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var app = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var hall = new Hall
+            {
+                Id = Guid.NewGuid(),
+                Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+                Name = "Open Hall", NameArabic = "قاعة مفتوحة",
+                Capacity = 100,
+                SeatSelectionMode = SeatSelectionMode.OpenSeating,
+                IsActive = true, CreatedAt = now,
+            };
+            app.Halls.Add(hall);
+            var session = new Session
+            {
+                Id = Guid.NewGuid(),
+                Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+                Title = "Plenary", TitleArabic = "الجلسة العامة",
+                HallId = hall.Id,
+                StartUtc = now, EndUtc = now.AddHours(1),
+                IsActive = true, CreatedAt = now,
+            };
+            app.Sessions.Add(session);
+            app.SeatReservations.Add(new SeatReservation
+            {
+                Id = Guid.NewGuid(),
+                SessionId = session.Id,
+                RowLabel = null, SeatNumber = null,
+                Kind = SeatReservationKind.OpenSeating,
+                ReservedForUserId = userId,
+                CreatedByUserId = userId,
+                Status = BookingStatus.Pending,
+                ReleasedAt = null,
+                CreatedAt = now,
+            });
+            await app.SaveChangesAsync();
+        }
+
+        var response = await GetAuthAsync("/api/v1/app/account/dashboard", token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var data = (await response.Content.ReadFromJsonAsync<ApiResult<MyAreaDashboard>>())!.Data!;
+
+        Assert.Equal(1, data.Counters.BookedSessionsCount);
+        Assert.Single(data.TodaySchedule, i => i.Kind == "Session");
+    }
+
+    [Fact]
     public async Task Calendar_ics_returns_an_RFC5545_document_with_an_event_per_item()
     {
         var (token, userId) = await CreateApprovedVisitorAsync();
@@ -95,7 +148,7 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Contact_card_vcf_returns_a_vCard_with_the_name_and_qr_id()
+    public async Task Contact_card_vcf_has_the_arabic_name_and_phones_and_omits_the_qr_id()
     {
         var (token, userId) = await CreateApprovedVisitorAsync();
         var qrId = await SeedFullDatasetAsync(userId);
@@ -106,10 +159,16 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
         var vcf = await response.Content.ReadAsStringAsync();
 
         Assert.Contains("BEGIN:VCARD", vcf);
-        Assert.Contains("FN:Saad Alotaibi", vcf);
+        // D-470 — the Arabic name leads (requirement #8 "Name ar"); this vCard is
+        // encoded in a camera-readable QR.
+        Assert.Contains("FN:سعد العتيبي", vcf);
         Assert.Contains("TITLE:Captain", vcf);
         Assert.Contains("ORG:Royal Saudi Naval Forces", vcf);
-        Assert.Contains(qrId, vcf);
+        // The mobile numbers become TEL lines ("phones").
+        Assert.Contains("TEL;TYPE=CELL:+966500112233", vcf);
+        Assert.Contains("TEL;TYPE=CELL:+447700900123", vcf);
+        // The gate/lead QrId is NOT leaked into a QR anyone's camera can read.
+        Assert.DoesNotContain(qrId, vcf);
     }
 
     [Fact]
@@ -227,6 +286,8 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
             NationalityId = 682,
             PlaceOfBirth = "Riyadh",
             Gender = Gender.Male,
+            SaudiMobile = "+966500112233",
+            InternationalMobile = "+447700900123",
             CreatedAt = now,
         });
 

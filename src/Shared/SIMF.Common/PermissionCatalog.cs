@@ -103,6 +103,10 @@ public static class PermissionCatalog
         // V-1 (D-429) — export the VVIP/VIP welcome roster (موج/Mawj) as the
         // API + CSV + Excel feed shared with the technical teams.
         public const string ExportVip = "Visitors.ExportVip";
+
+        /// <summary>D-473 (#10) — bulk-generate placeholder badges by profile
+        /// type + count (visitors or delegates).</summary>
+        public const string BulkGenerate = "Visitors.BulkGenerate";
     }
 
     /// <summary>Attendee roster + badge printing.</summary>
@@ -303,6 +307,14 @@ public static class PermissionCatalog
         public const string Export = "SpeakerMeetingRequests.Export";
     }
 
+    /// <summary>D-478 (#11, Group G phase 2) — delegation↔delegation meeting
+    /// requests review desk. <c>View</c> lists/opens; <c>Manage</c> accepts/rejects.</summary>
+    public static class DelegationMeetings
+    {
+        public const string View = "DelegationMeetings.View";
+        public const string Manage = "DelegationMeetings.Manage";
+    }
+
     public static class Speakers
     {
         public const string View = "Speakers.View";
@@ -359,6 +371,10 @@ public static class PermissionCatalog
         public const string Edit = "SessionSummaries.Edit";
         public const string Publish = "SessionSummaries.Publish";
         public const string Export = "SessionSummaries.Export";
+
+        /// <summary>D-472 (#9) — approve a submitted محضر (and send one back to
+        /// draft); the approved محضر becomes readable by the session host/moderator.</summary>
+        public const string Approve = "SessionSummaries.Approve";
     }
 
     /// <summary>P5.1d — D-244 (FDS-003 §5.4): the hall-door arrival console — an
@@ -639,6 +655,7 @@ public static class PermissionCatalog
         new(Visitors.Export, "Visitors", "Export", "Export visitors", AdminOnly),
         new(Visitors.Import, "Visitors", "Import", "Import visitors", AdminOnly),
         new(Visitors.RegisterOnsite, "Visitors", "RegisterOnsite", "Walk-in register a visitor", AdminOnly),
+        new(Visitors.BulkGenerate, "Visitors", "BulkGenerate", "Bulk-generate placeholder badges (visitors / delegates)", AdminOnly),
         new(Visitors.ExportVip, "Visitors", "ExportVip", "Export the VVIP/VIP welcome roster (Mawj)", AdminOnly),
 
         new(Attendees.View, "Attendees", "View", "View the attendee roster", AdminOnly),
@@ -754,6 +771,9 @@ public static class PermissionCatalog
         new(SpeakerMeetingRequests.Manage, "SpeakerMeetingRequests", "Manage", "Manage speaker meeting requests", AdminOnly),
         new(SpeakerMeetingRequests.Export, "SpeakerMeetingRequests", "Export", "Export speaker meeting requests", AdminOnly),
 
+        new(DelegationMeetings.View, "DelegationMeetings", "View", "View delegation meeting requests", AdminOnly),
+        new(DelegationMeetings.Manage, "DelegationMeetings", "Manage", "Manage delegation meeting requests", AdminOnly),
+
         new(Speakers.View, "Speakers", "View", "View speakers", AdminOnly),
         new(Speakers.Create, "Speakers", "Create", "Create speakers", AdminOnly),
         new(Speakers.Edit, "Speakers", "Edit", "Edit speakers", AdminOnly),
@@ -778,6 +798,7 @@ public static class PermissionCatalog
         new(SessionSummaries.View, "SessionSummaries", "View", "View session summaries", AdminOnly),
         new(SessionSummaries.Edit, "SessionSummaries", "Edit", "Generate / edit session summaries", AdminOnly),
         new(SessionSummaries.Publish, "SessionSummaries", "Publish", "Publish / un-publish session summaries", AdminOnly),
+        new(SessionSummaries.Approve, "SessionSummaries", "Approve", "Approve session summaries (ready for the host/moderator)", AdminOnly),
         new(SessionSummaries.Export, "SessionSummaries", "Export", "Export session summaries", AdminOnly),
 
         // P5.1d — D-244: hall-door arrival console (operator QR scan).

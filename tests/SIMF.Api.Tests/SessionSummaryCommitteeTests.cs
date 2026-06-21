@@ -13,7 +13,9 @@ using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Programme;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Domain.Programme;
+using SIMF.Domain.SessionQuestions;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -145,10 +147,239 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    // -- D-472 (#9): the team review/approval workflow + host/moderator read ---
+
+    [Fact]
+    public async Task Submit_then_approve_marks_the_summary_ready_and_the_desk_reflects_it()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync();
+        await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر." }, admin);
+
+        var submitted = await PutAuthAsync(
+            $"/api/v1/admin/session-summaries/{sessionId}/submit-review", new { }, admin);
+        Assert.Equal(HttpStatusCode.OK, submitted.StatusCode);
+        var inReview = (await submitted.Content
+            .ReadFromJsonAsync<ApiResult<AdminSessionSummaryDetail>>())!.Data!;
+        Assert.True(inReview.IsInReview);
+        Assert.False(inReview.IsApproved);
+
+        var approved = await PutAuthAsync(
+            $"/api/v1/admin/session-summaries/{sessionId}/approve", new { }, admin);
+        Assert.Equal(HttpStatusCode.OK, approved.StatusCode);
+        var detail = (await approved.Content
+            .ReadFromJsonAsync<ApiResult<AdminSessionSummaryDetail>>())!.Data!;
+        Assert.True(detail.IsApproved);
+        Assert.False(detail.IsInReview);
+        Assert.NotNull(detail.ApprovedAt);
+
+        var rows = await ListAsync(admin);
+        var row = Assert.Single(rows, r => r.SessionId == sessionId);
+        Assert.True(row.IsApproved);
+    }
+
+    [Fact]
+    public async Task Approving_without_submitting_is_400()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync();
+        await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر." }, admin);
+
+        var response = await PutAuthAsync(
+            $"/api/v1/admin/session-summaries/{sessionId}/approve", new { }, admin);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Editing_a_submitted_summary_returns_it_to_draft()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync();
+        await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر." }, admin);
+        await PutAuthAsync(
+            $"/api/v1/admin/session-summaries/{sessionId}/submit-review", new { }, admin);
+
+        // Any edit invalidates the review → back to Draft.
+        var detail = await SaveAsync(
+            sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر معدّل." }, admin);
+        Assert.False(detail.IsInReview);
+        Assert.False(detail.IsApproved);
+    }
+
+    [Fact]
+    public async Task Return_to_draft_clears_an_approval()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync();
+        await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر." }, admin);
+        await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/submit-review", new { }, admin);
+        await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/approve", new { }, admin);
+
+        var returned = await PutAuthAsync(
+            $"/api/v1/admin/session-summaries/{sessionId}/return-to-draft", new { }, admin);
+        Assert.Equal(HttpStatusCode.OK, returned.StatusCode);
+        var detail = (await returned.Content
+            .ReadFromJsonAsync<ApiResult<AdminSessionSummaryDetail>>())!.Data!;
+        Assert.False(detail.IsApproved);
+        Assert.False(detail.IsInReview);
+    }
+
+    [Fact]
+    public async Task A_session_moderator_reads_the_approved_summary_and_404_before_approval()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync();
+        var (modToken, modUserId) = await CreateApprovedVisitorAsync();
+        await SeedSessionModeratorAsync(sessionId, modUserId);
+        await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر معتمد." }, admin);
+
+        // Authorized, but no approved summary yet → 404.
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await GetAuthAsync(HostUrl(sessionId), modToken)).StatusCode);
+
+        await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/submit-review", new { }, admin);
+        await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/approve", new { }, admin);
+
+        var read = await GetAuthAsync(HostUrl(sessionId), modToken);
+        Assert.Equal(HttpStatusCode.OK, read.StatusCode);
+        var body = (await read.Content
+            .ReadFromJsonAsync<ApiResult<HostSessionSummary>>())!.Data!;
+        Assert.Equal("محضر معتمد.", body.FullTextArabic);
+    }
+
+    [Fact]
+    public async Task The_session_host_reads_the_approved_summary()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync();
+        var (hostToken, hostUserId) = await CreateApprovedVisitorAsync();
+        await SeedSessionHostAsync(sessionId, hostUserId);
+        await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر." }, admin);
+        await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/submit-review", new { }, admin);
+        await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/approve", new { }, admin);
+
+        var read = await GetAuthAsync(HostUrl(sessionId), hostToken);
+        Assert.Equal(HttpStatusCode.OK, read.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_deactivated_host_is_forbidden_from_the_approved_read()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync();
+        var (hostToken, hostUserId) = await CreateApprovedVisitorAsync();
+        // The host's speaker row is soft-deleted → no longer a host.
+        await SeedSessionHostAsync(sessionId, hostUserId, speakerActive: false);
+        await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر." }, admin);
+        await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/submit-review", new { }, admin);
+        await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/approve", new { }, admin);
+
+        var read = await GetAuthAsync(HostUrl(sessionId), hostToken);
+        Assert.Equal(HttpStatusCode.Forbidden, read.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_non_moderator_non_host_visitor_is_forbidden_from_the_approved_read()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync();
+        var (token, _) = await CreateApprovedVisitorAsync();
+        await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر." }, admin);
+        await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/submit-review", new { }, admin);
+        await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/approve", new { }, admin);
+
+        var read = await GetAuthAsync(HostUrl(sessionId), token);
+        Assert.Equal(HttpStatusCode.Forbidden, read.StatusCode);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     private static string PublicUrl(Guid sessionId) =>
         $"/api/v1/app/programme/sessions/{sessionId}/summary";
+
+    private static string HostUrl(Guid sessionId) =>
+        $"/api/v1/app/programme/sessions/{sessionId}/summary/approved";
+
+    private async Task<IReadOnlyList<AdminSessionSummaryRow>> ListAsync(string token)
+    {
+        var response = await GetAuthAsync("/api/v1/admin/session-summaries", token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        return (await response.Content
+            .ReadFromJsonAsync<ApiResult<IReadOnlyList<AdminSessionSummaryRow>>>())!.Data!;
+    }
+
+    private async Task<(string Token, Guid UserId)> CreateApprovedVisitorAsync()
+    {
+        var email = $"sum-reader-{Guid.NewGuid():N}@simf.test";
+        Guid userId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            var user = new SimfUser
+            {
+                UserName = email, Email = email, EmailConfirmed = true,
+                DisplayName = "Summary Reader",
+                AccountState = AccountState.Approved,
+                UserType = UserType.Visitor,
+            };
+            await users.CreateAsync(user, AuthFlow.Password);
+            userId = user.Id;
+        }
+        var sign = await _client.PostAsJsonAsync(
+            "/api/v1/app/auth/sign-in",
+            new SignInRequest { Email = email, Password = AuthFlow.Password });
+        var token = (await sign.Content
+            .ReadFromJsonAsync<ApiResult<SignInResponse>>())!.Data!.Tokens!.AccessToken;
+        return (token, userId);
+    }
+
+    private async Task SeedSessionModeratorAsync(Guid sessionId, Guid userId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        db.SessionModerators.Add(new SessionModerator
+        {
+            SessionId = sessionId,
+            UserId = userId,
+            AssignedByUserId = Guid.NewGuid(),
+            AssignedAt = DateTimeOffset.UtcNow,
+        });
+        await db.SaveChangesAsync();
+    }
+
+    private async Task SeedSessionHostAsync(Guid sessionId, Guid userId, bool speakerActive = true)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var profile = new UserProfile
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Name = "Host User",
+            NameArabic = "المحاور",
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        db.UserProfiles.Add(profile);
+        var speaker = new Speaker
+        {
+            Id = Guid.NewGuid(),
+            Code = "SPK-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+            Name = "Host User",
+            NameArabic = "المحاور",
+            UserProfileId = profile.Id,
+            IsActive = speakerActive,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        db.Speakers.Add(speaker);
+        db.SessionSpeakers.Add(new SessionSpeaker
+        {
+            SessionId = sessionId,
+            SpeakerId = speaker.Id,
+            DisplayOrder = 0,
+            Role = SessionSpeakerRole.Host,
+        });
+        await db.SaveChangesAsync();
+    }
 
     private async Task<AdminSessionSummaryDetail> GenerateAsync(Guid sessionId, string token)
     {

@@ -86,4 +86,21 @@ public class SimfUser : IdentityUser<Guid>
     /// email verification) stay valid.
     /// </summary>
     public Guid? StateChangedByUserId { get; set; }
+
+    /// <summary>
+    /// A7-13 (NCA) — when the password was last set (UTC). Set on every
+    /// change / reset (see <c>PasswordService</c>). Null for accounts whose
+    /// password was never changed since this column was added; the expiry check
+    /// falls back to <see cref="CreatedAt"/> as the baseline. Lets sign-in
+    /// enforce an admin-configured maximum password age.
+    /// </summary>
+    public DateTimeOffset? PasswordChangedAtUtc { get; set; }
+
+    /// <summary>
+    /// A7-31 / A1-19 (NCA) — when the account last completed a sign-in (UTC). Set
+    /// when tokens are issued. Surfaced to the client as the "previous sign-in"
+    /// notice (A7-31) and used as the activity signal for dormant-account
+    /// auto-disable (A1-19). Null until the first sign-in after this column shipped.
+    /// </summary>
+    public DateTimeOffset? LastSuccessfulSignInAtUtc { get; set; }
 }

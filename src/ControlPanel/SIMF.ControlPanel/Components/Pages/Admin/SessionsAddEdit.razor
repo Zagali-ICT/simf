@@ -94,6 +94,18 @@
                     ValueChanged="@(v => _typeInput = v ?? string.Empty)"
                     Disabled="_busy" />
 
+        @* D-485 — per-session override of the hall's seat-selection mode; an
+           empty selection inherits the hall's mode. *@
+        <SimfSelect TValue="string"
+                    Label="@L["Admin.Sessions.Field.SeatMode"]"
+                    Placeholder="@L["Admin.Sessions.SeatMode.Inherit"]"
+                    Items="_seatModeOptions"
+                    ValueFor="@(id => id)"
+                    LabelFor="@(id => SeatModeLabel(id))"
+                    Value="@_seatModeInput"
+                    ValueChanged="@(v => _seatModeInput = v ?? string.Empty)"
+                    Disabled="_busy" />
+
         <SimfTextField Label="@L["Admin.Sessions.Field.StartUtc"]"
                        Type="datetime-local"
                        Value="@_startInput"
@@ -222,6 +234,8 @@
     private string _hallIdInput = string.Empty;
     private string _categoryIdInput = string.Empty;
     private string _typeInput = string.Empty;
+    // D-485 — per-session seat-mode override ("" = inherit, "0" = Assigned, "1" = Open).
+    private string _seatModeInput = string.Empty;
     private string _startInput = string.Empty;
     private string _endInput = string.Empty;
     private string _capacityInput = string.Empty;
@@ -242,6 +256,10 @@
 
     // D-452 — fixed session-type options (Workshop=0 / Session=1 / Event=2).
     private static readonly string[] _typeOptions = { "0", "1", "2" };
+
+    // D-485 — seat-mode override options ("0" = AssignedSeat, "1" = OpenSeating);
+    // the empty placeholder selection inherits the hall's mode.
+    private static readonly string[] _seatModeOptions = { "0", "1" };
 
     private readonly List<AdminSessionSpeakerEntry> _selectedSpeakers = new();
     private readonly List<Guid> _selectedThemes = new();
@@ -264,6 +282,9 @@
             _categoryIdInput = Initial.CategoryId?.ToString() ?? string.Empty;
             _typeInput = Initial.Type.HasValue
                 ? ((int)Initial.Type.Value).ToString()
+                : string.Empty;
+            _seatModeInput = Initial.SeatSelectionModeOverride.HasValue
+                ? ((int)Initial.SeatSelectionModeOverride.Value).ToString()
                 : string.Empty;
             _startInput = Initial.StartUtc.UtcDateTime.ToString("yyyy-MM-ddTHH:mm");
             _endInput = Initial.EndUtc.UtcDateTime.ToString("yyyy-MM-ddTHH:mm");
@@ -375,6 +396,19 @@
     private static SessionType? ParseType(string raw) =>
         int.TryParse(raw, out var n) && Enum.IsDefined(typeof(SessionType), n)
             ? (SessionType)n
+            : null;
+
+    // D-485 — the per-session seat-mode override select ("0"/"1"); empty = inherit.
+    private string SeatModeLabel(string id) => id switch
+    {
+        "1" => L["Admin.Sessions.SeatMode.Open"],
+        _ => L["Admin.Sessions.SeatMode.Assigned"],
+    };
+
+    private SeatSelectionMode? ParseSeatModeOverride() =>
+        int.TryParse(_seatModeInput, out var n)
+            && Enum.IsDefined(typeof(SeatSelectionMode), n)
+            ? (SeatSelectionMode)n
             : null;
 
     private void RefreshSpeakerOptions()
@@ -583,6 +617,7 @@
                         LiveSignLanguageUrl = NullIfBlank(_model.LiveSignLanguageUrl),
                         LiveCaptions = NullIfBlank(_model.LiveCaptions),
                         LiveCaptionsArabic = NullIfBlank(_model.LiveCaptionsArabic),
+                        SeatSelectionModeOverride = ParseSeatModeOverride(),
                     });
             }
             else
@@ -609,6 +644,7 @@
                         LiveSignLanguageUrl = NullIfBlank(_model.LiveSignLanguageUrl),
                         LiveCaptions = NullIfBlank(_model.LiveCaptions),
                         LiveCaptionsArabic = NullIfBlank(_model.LiveCaptionsArabic),
+                        SeatSelectionModeOverride = ParseSeatModeOverride(),
                     });
             }
 

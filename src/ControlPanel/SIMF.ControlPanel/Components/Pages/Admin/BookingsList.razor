@@ -61,7 +61,11 @@
                 <SimfDataGridColumn TItem="BookingQueueRow" Key="seat"
                                     Header="@L["Admin.Bookings.Col.Seat"]"
                                     Sortable="true" Filterable="true">
-                    <CellTemplate>@context.RowLabel@context.SeatNumber</CellTemplate>
+                    @* D-485 — an open-seating join has no row/seat; show it as
+                       general admission rather than a blank cell. *@
+                    <CellTemplate>@(context.RowLabel is null
+                        ? L["Admin.Bookings.GeneralAdmission"]
+                        : $"{context.RowLabel}{context.SeatNumber}")</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="BookingQueueRow" Key="attendee"
                                     Header="@L["Admin.Bookings.Col.Attendee"]">

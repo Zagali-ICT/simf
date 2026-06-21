@@ -79,6 +79,8 @@ public sealed class UpdateHallRequest
     public string? Floor { get; set; }
     public string? EquipmentNotes { get; set; }
     public bool IsActive { get; set; } = true;
+    // D-485: 0 = AssignedSeat, 1 = OpenSeating.
+    public int SeatSelectionMode { get; set; }
 }
 
 public sealed class UpdateHallEndpoint(IAdminHallService service)
@@ -106,6 +108,7 @@ public sealed class UpdateHallEndpoint(IAdminHallService service)
                     Code = req.Code, Name = req.Name, NameArabic = req.NameArabic,
                     Capacity = req.Capacity, Floor = req.Floor,
                     EquipmentNotes = req.EquipmentNotes, IsActive = req.IsActive,
+                    SeatSelectionMode = req.SeatSelectionMode,
                 }, ct)), ct);
     }
 }

@@ -80,7 +80,9 @@ internal sealed class MyAreaService(
                 p.NameArabic,
                 p.JobTitle,
                 p.Organisation != null ? (p.Organisation.Name ?? p.Organisation.NameArabic) : null,
-                p.QrId))
+                p.QrId,
+                p.SaudiMobile,
+                p.InternationalMobile))
             .FirstOrDefaultAsync(cancellationToken);
 
         return card ?? new MyAreaContactCard(string.Empty, string.Empty, null, null, null);
@@ -129,7 +131,13 @@ internal sealed class MyAreaService(
     {
         var sessions = await appDbContext.SeatReservations.AsNoTracking()
             .Where(r => r.ReservedForUserId == userId
-                && (r.Kind == SeatReservationKind.UserBooking || r.Kind == SeatReservationKind.RandomAssignment)
+                // D-485 — include OpenSeating joins (general admission) alongside
+                // the seat-specific kinds so a joined session shows in the user's
+                // schedule + booked-sessions count. AdminReservedRow has a null
+                // ReservedForUserId, so it is already excluded.
+                && (r.Kind == SeatReservationKind.UserBooking
+                    || r.Kind == SeatReservationKind.RandomAssignment
+                    || r.Kind == SeatReservationKind.OpenSeating)
                 && r.ReleasedAt == null
                 && r.Session!.IsActive)
             .Select(r => new

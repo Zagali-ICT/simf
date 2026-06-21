@@ -64,6 +64,14 @@ class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
   bool _notFound = false;
   SessionSummary? _summary;
 
+  /// #1/#6 — when opened with a sessionId (from the summaries list or the
+  /// session-detail "ملخص الجلسة" button) the screen is a pure DETAILS page: the
+  /// session picker is hidden. Without one it keeps the picker (legacy fallback).
+  bool get _detailsOnly {
+    final id = widget.sessionId?.trim();
+    return id != null && id.isNotEmpty;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -206,30 +214,41 @@ class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
       body: ListView(
         padding: const EdgeInsets.all(SimfTokens.space4),
         children: <Widget>[
-          sessions.when(
-            loading: () => const _PickerLoading(),
-            error: (_, __) => _Inline(
-              icon: Icons.event_busy_outlined,
-              message: l10n.aiSummaryNoSessions,
-            ),
-            data: (list) {
-              if (list.isEmpty) {
-                return _Inline(
-                  icon: Icons.event_busy_outlined,
-                  message: l10n.aiSummaryNoSessions,
+          if (!_detailsOnly) ...<Widget>[
+            sessions.when(
+              loading: () => const _PickerLoading(),
+              error: (_, __) => _Inline(
+                icon: Icons.event_busy_outlined,
+                message: l10n.aiSummaryNoSessions,
+              ),
+              data: (list) {
+                if (list.isEmpty) {
+                  return _Inline(
+                    icon: Icons.event_busy_outlined,
+                    message: l10n.aiSummaryNoSessions,
+                  );
+                }
+                _ensureSelection(list);
+                return _SessionPicker(
+                  title: l10n.aiSummaryChooseSession,
+                  sessions: list,
+                  selectedId: _selectedId,
+                  isArabic: l10n.isArabic,
+                  onSelect: _select,
                 );
-              }
-              _ensureSelection(list);
-              return _SessionPicker(
-                title: l10n.aiSummaryChooseSession,
-                sessions: list,
-                selectedId: _selectedId,
-                isArabic: l10n.isArabic,
-                onSelect: _select,
-              );
-            },
-          ),
-          const SizedBox(height: SimfTokens.space4),
+              },
+            ),
+            const SizedBox(height: SimfTokens.space4),
+          ] else
+            // Details-only (opened with a sessionId): resolve the selected-session
+            // metadata for the banner without rendering the picker.
+            sessions.maybeWhen(
+              data: (list) {
+                _ensureSelection(list);
+                return const SizedBox.shrink();
+              },
+              orElse: () => const SizedBox.shrink(),
+            ),
           ..._summaryArea(l10n),
         ],
       ),

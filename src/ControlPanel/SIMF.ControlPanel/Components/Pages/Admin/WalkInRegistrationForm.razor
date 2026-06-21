@@ -324,7 +324,7 @@
             <div class="simf-walkin__grid">
                 <SimfTextField Label="@L["Admin.WalkIn.Field.NationalId"]"
                                Helper="@L["Admin.WalkIn.Field.NationalId.Hint"]"
-                               MaxLength="10" Numeric="true"
+                               MaxLength="10" Numeric="true" Autocomplete="off"
                                @bind-Value="_model.NationalId" />
             </div>
         }
@@ -371,14 +371,14 @@
                 {
                     <SimfTextField Label="@L["Admin.WalkIn.Field.IqamaNumber"]"
                                    Helper="@L["Admin.WalkIn.Field.Iqama.Hint"]"
-                                   MaxLength="10" Numeric="true"
+                                   MaxLength="10" Numeric="true" Autocomplete="off"
                                    @bind-Value="_model.IqamaNumber" />
                 }
                 else
                 {
                     <SimfTextField Label="@L["Admin.WalkIn.Field.PassportNumber"]"
                                    Helper="@L["Admin.WalkIn.Field.Passport.Hint"]"
-                                   MaxLength="20"
+                                   MaxLength="20" Autocomplete="off"
                                    @bind-Value="_model.PassportNumber" />
                 }
             </div>
@@ -395,14 +395,14 @@
             {
                 <SimfTextField Label="@L["Admin.WalkIn.Field.SaudiMobile"]"
                                Helper="@L["Admin.WalkIn.Field.SaudiMobile.Hint"]"
-                               @bind-Value="_model.SaudiMobile"
+                               @bind-Value="_model.SaudiMobile" Autocomplete="off"
                                MaxLength="32" InputMode="tel" Type="tel" />
             }
             else
             {
                 <SimfTextField Label="@L["Admin.WalkIn.Field.InternationalMobile"]"
                                Helper="@L["Admin.WalkIn.Field.InternationalMobile.Hint"]"
-                               @bind-Value="_model.InternationalMobile"
+                               @bind-Value="_model.InternationalMobile" Autocomplete="off"
                                MaxLength="32" InputMode="tel" Type="tel" />
             }
             <SimfTextField Label="@L["Admin.WalkIn.Field.Email"]"
@@ -538,6 +538,10 @@
     /// fields (Mawj ID, honorific, preferred language) + a separate VIP welcome
     /// photo. Off by default so the regular walk-in desk is unchanged.</summary>
     [Parameter] public bool VipMode { get; set; }
+
+    /// <summary>D-473 (#10) — when true (the delegates desk), the created visitor
+    /// is flagged as a delegation member and the API requires an invited country.</summary>
+    [Parameter] public bool IsDelegate { get; set; }
 
     /// <summary>The audience tier names the VIP page is restricted to.</summary>
     private static readonly string[] VipTierNames = { "VVIP", "VIP" };
@@ -955,6 +959,10 @@
                     InternationalMobile = string.IsNullOrWhiteSpace(_model.InternationalMobile) ? null : _model.InternationalMobile.Trim(),
                     OrganisationId = _model.OrganisationId,
                     InterestIds = _model.InterestIds.ToList(),
+                    // D-473 (#10) — when hosted by the delegates page, mark the
+                    // visitor as a delegation member (the API then requires an
+                    // invited nationality).
+                    IsDelegate = IsDelegate,
                 });
 
             if (envelope is { Success: true, Data: not null })

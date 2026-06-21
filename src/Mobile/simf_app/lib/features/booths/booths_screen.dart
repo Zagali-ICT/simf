@@ -2,13 +2,16 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
+import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/country_flag_badge.dart';
 import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_svg_icon.dart';
+import '../../core/country_flag.dart';
 import '../venuemap/data/venue_map_models.dart';
 import '../venuemap/data/venue_map_repository.dart';
 
@@ -90,6 +93,15 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
       backgroundColor: SimfTokens.navyDeep,
       showDragHandle: true,
       builder: (_) => _BoothSheet(l10n: l10n, booth: booth, detail: detail),
+    );
+  }
+
+  // #9 — the booth's "أرشدني" CTA opens the venue map focused on this booth
+  // (a pushed map instance that selects + centres the booth's node).
+  void _openBoothMap(BoothSummary booth) {
+    context.pushNamed(
+      RouteNames.boothMap,
+      pathParameters: <String, String>{'boothId': booth.id},
     );
   }
 
@@ -180,6 +192,7 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
                         isArabic: isArabic,
                         baseUrl: baseUrl,
                         onTap: () => _openBooth(filtered[index]),
+                        onGuide: () => _openBoothMap(filtered[index]),
                       ),
                     ),
         ),
@@ -253,6 +266,7 @@ class _BoothCard extends StatelessWidget {
     required this.isArabic,
     required this.baseUrl,
     required this.onTap,
+    required this.onGuide,
   });
 
   final BoothSummary booth;
@@ -260,6 +274,7 @@ class _BoothCard extends StatelessWidget {
   final bool isArabic;
   final String baseUrl;
   final VoidCallback onTap;
+  final VoidCallback onGuide;
 
   @override
   Widget build(BuildContext context) {
@@ -290,7 +305,7 @@ class _BoothCard extends StatelessWidget {
             ],
             if (booth.code.isNotEmpty) ...<Widget>[
               const SizedBox(height: SimfTokens.space4),
-              _GuideButton(code: booth.code, l10n: l10n),
+              _GuideButton(code: booth.code, l10n: l10n, onTap: onGuide),
             ],
           ],
         ),
@@ -364,11 +379,56 @@ class _CompanyHeader extends StatelessWidget {
                     ),
                   ),
                 ],
+                // #9 — show the booth's country (flag + name) under the company.
+                if (booth.localizedCountry(isArabic) != null) ...<Widget>[
+                  const SizedBox(height: SimfTokens.space1),
+                  _CountryLine(
+                    countryId: booth.countryId,
+                    name: booth.localizedCountry(isArabic)!,
+                  ),
+                ],
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// #9 — a small "flag · country name" line under the company name so the booth
+/// shows its country (the corner flag badge on the logo alone is subtle).
+class _CountryLine extends StatelessWidget {
+  const _CountryLine({required this.countryId, required this.name});
+
+  final int? countryId;
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    final flag = countryFlagEmoji(countryId);
+    return Row(
+      children: <Widget>[
+        if (flag != null) ...<Widget>[
+          Text(
+            flag,
+            textDirection: TextDirection.ltr,
+            style: const TextStyle(fontSize: SimfTokens.textSm, height: 1),
+          ),
+          const SizedBox(width: SimfTokens.space1),
+        ],
+        Flexible(
+          child: Text(
+            name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: SimfTokens.beigeBorder,
+              fontSize: SimfTokens.textXs,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -669,45 +729,55 @@ class _ContactBox extends StatelessWidget {
 /// opens the same booth sheet as the card (no map deep-link is wired in this
 /// re-skin — the venue map carries the booth positions on its own page).
 class _GuideButton extends StatelessWidget {
-  const _GuideButton({required this.code, required this.l10n});
+  const _GuideButton({
+    required this.code,
+    required this.l10n,
+    required this.onTap,
+  });
 
   final String code;
   final AppL10n l10n;
 
+  /// #9 — opens the venue map focused on this booth. The inner InkWell captures
+  /// the tap, so it does not also bubble to the card's open-sheet onTap.
+  final VoidCallback onTap;
+
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: SimfTokens.accent,
+    return Material(
+      color: SimfTokens.accent,
+      borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: SimfTokens.space4,
-          vertical: SimfTokens.space3,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Flexible(
-              child: Text(
-                l10n.boothsGuideMe(code),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: SimfTokens.textSm,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: SimfTokens.space4,
+            vertical: SimfTokens.space3,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Flexible(
+                child: Text(
+                  l10n.boothsGuideMe(code),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: SimfTokens.textSm,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: SimfTokens.space2),
-            const SimfSvgIcon(
-              'assets/icons/nav_location.svg',
-              size: 18,
-              color: Colors.white,
-            ),
-          ],
+              const SizedBox(width: SimfTokens.space2),
+              const SimfSvgIcon(
+                'assets/icons/nav_location.svg',
+                size: 18,
+                color: Colors.white,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -741,9 +811,11 @@ class _BoothSheet extends StatelessWidget {
     final isArabic = l10n.isArabic;
     final exhibitor = booth.localizedExhibitor(isArabic);
     final sector = booth.localizedSector(isArabic);
+    final country = booth.localizedCountry(isArabic);
     final parts = <String>[
       if (exhibitor != null) exhibitor,
       if (sector != null) sector,
+      if (country != null) country,
     ];
     return Padding(
       padding: const EdgeInsets.fromLTRB(

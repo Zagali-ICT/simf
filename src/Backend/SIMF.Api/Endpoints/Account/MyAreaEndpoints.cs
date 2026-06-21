@@ -149,7 +149,12 @@ public sealed class MyAreaContactCardEndpoint(IMyAreaService service)
 
     private static string BuildVCard(MyAreaContactCard card)
     {
-        var name = !string.IsNullOrWhiteSpace(card.FullNameEn) ? card.FullNameEn : card.FullNameAr;
+        // D-470 — requirement #8 ("Name ar, phones"): the Arabic name leads (the
+        // English name is the fallback), and the mobile numbers become TEL lines.
+        // The gate QrId is intentionally NOT emitted — this vCard is encoded in a
+        // QR any phone camera can read, so leaking the badge/lead key here would
+        // let anyone harvest the holder's gate identity.
+        var name = !string.IsNullOrWhiteSpace(card.FullNameAr) ? card.FullNameAr : card.FullNameEn;
         var sb = new StringBuilder();
         sb.Append("BEGIN:VCARD\r\n");
         sb.Append("VERSION:3.0\r\n");
@@ -163,10 +168,13 @@ public sealed class MyAreaContactCardEndpoint(IMyAreaService service)
         {
             sb.Append("ORG:").Append(EscapeText(card.Organisation!)).Append("\r\n");
         }
-        if (!string.IsNullOrWhiteSpace(card.QrId))
+        if (!string.IsNullOrWhiteSpace(card.SaudiMobile))
         {
-            sb.Append("UID:").Append(EscapeText(card.QrId!)).Append("\r\n");
-            sb.Append("NOTE:SIMF ").Append(EscapeText(card.QrId!)).Append("\r\n");
+            sb.Append("TEL;TYPE=CELL:").Append(EscapeText(card.SaudiMobile!)).Append("\r\n");
+        }
+        if (!string.IsNullOrWhiteSpace(card.InternationalMobile))
+        {
+            sb.Append("TEL;TYPE=CELL:").Append(EscapeText(card.InternationalMobile!)).Append("\r\n");
         }
         sb.Append("END:VCARD\r\n");
         return sb.ToString();

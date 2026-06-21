@@ -2,20 +2,21 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
+import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 
-/// The outcome of turning Face-ID sign-in on.
-enum BiometricEnableResult { ok, unavailable, failed }
-
 /// One home for the device's biometric (Face-ID / fingerprint) sign-in: the OS
-/// capability check (`local_auth`) plus the device-key lifecycle (enrol /
-/// revoke / query) on [AuthController]. The sign-in button, the one-time enrol
-/// prompt and the side-menu toggle all go through this, so the `local_auth` +
-/// device-key wiring has a single owner (D-441).
+/// capability check (`local_auth`) plus the device-key lifecycle (query / revoke)
+/// on [AuthController]. The sign-in button, the side-menu toggle and the
+/// post-sign-in nudge all go through this, so the `local_auth` + device-key
+/// wiring has a single owner (D-441). #7a — enrolment is no longer a one-tap
+/// action here: both the toggle and the nudge route to [BiometricStepUpScreen],
+/// which verifies an emailed step-up code before the device key is registered.
 class BiometricAuth {
   BiometricAuth(this._ref);
 
@@ -47,19 +48,6 @@ class BiometricAuth {
       return await _auth.hasEnrolledDeviceKey();
     } catch (_) {
       return false;
-    }
-  }
-
-  /// Enrols a device key — requires a signed-in session and an OS biometric.
-  Future<BiometricEnableResult> enable() async {
-    if (!await isAvailable()) {
-      return BiometricEnableResult.unavailable;
-    }
-    try {
-      await _auth.enrolDeviceKey();
-      return BiometricEnableResult.ok;
-    } catch (_) {
-      return BiometricEnableResult.failed;
     }
   }
 
@@ -114,9 +102,10 @@ Future<void> maybeOfferBiometricEnrolment(
   // to the destination, so the nudge is visible on the screen the user lands on.
   final messenger = ScaffoldMessenger.of(context);
   // The Enable action fires up to 8s later — after the route change that pops
-  // the sign-in / OTP screen — so capture the lifetime-safe ProviderContainer,
-  // NOT the screen's WidgetRef (which would be defunct by then).
+  // the sign-in / OTP screen — so capture the lifetime-safe ProviderContainer +
+  // the GoRouter now, NOT the screen's WidgetRef / context (defunct by then).
   final container = ProviderScope.containerOf(context, listen: false);
+  final router = GoRouter.of(context);
   messenger
     ..hideCurrentSnackBar()
     ..showSnackBar(
@@ -125,46 +114,27 @@ Future<void> maybeOfferBiometricEnrolment(
         duration: const Duration(seconds: 8),
         action: SnackBarAction(
           label: l10n.biometricPromptEnable,
-          onPressed: () =>
-              unawaited(_enableFromNudge(container, messenger, l10n)),
+          // #7a — the nudge tap is the confirmation; route to the step-up
+          // screen, which emails + verifies the code and enrols. Refresh the
+          // toggle's state when the user returns.
+          onPressed: () {
+            messenger.hideCurrentSnackBar();
+            unawaited(
+              router
+                  .pushNamed(RouteNames.biometricStepUp)
+                  .then((_) => container.invalidate(biometricEnabledProvider)),
+            );
+          },
         ),
       ),
     );
 }
 
-/// Runs the enrol when the nudge's Enable action is tapped, then toasts the
-/// outcome and refreshes the toggle's state. Uses the [ProviderContainer] (not
-/// a screen [WidgetRef]) because it runs after the originating screen is gone.
-Future<void> _enableFromNudge(
-  ProviderContainer container,
-  ScaffoldMessengerState messenger,
-  AppL10n l10n,
-) async {
-  final result = await container.read(biometricAuthProvider).enable();
-  container.invalidate(biometricEnabledProvider);
-  messenger
-    ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(biometricEnableMessage(l10n, result))));
-}
-
-/// Maps an enable outcome to its localized toast — shared by the post-sign-in
-/// nudge and the toggle so the mapping has one (exhaustive) owner.
-String biometricEnableMessage(AppL10n l10n, BiometricEnableResult result) {
-  switch (result) {
-    case BiometricEnableResult.ok:
-      return l10n.biometricEnabledToast;
-    case BiometricEnableResult.unavailable:
-      return l10n.biometricUnavailable;
-    case BiometricEnableResult.failed:
-      return l10n.biometricEnableFailedToast;
-  }
-}
-
 /// The Face-ID sign-in enable/disable toggle (D-441; surfaced in the side menu
 /// AND the profile, D-445). Self-hides when the device has no usable biometric.
-/// Enabling enrols a device key (so the sign-in screen's Face-ID button works
-/// next time); disabling revokes it. Toasts the outcome. Stateful for an
-/// in-flight guard so a double-tap can't register/revoke two keys.
+/// #7a — enabling confirms intent then routes to [BiometricStepUpScreen] (an
+/// emailed-OTP step-up enrols the device key); disabling confirms + revokes it.
+/// Stateful for an in-flight guard so a double-tap can't launch/revoke twice.
 class FaceIdToggleTile extends ConsumerStatefulWidget {
   const FaceIdToggleTile({super.key});
 
@@ -198,27 +168,98 @@ class _FaceIdToggleTileState extends ConsumerState<FaceIdToggleTile> {
     );
   }
 
-  Future<void> _toggle(AppL10n l10n, bool turnOn) async {
-    final messenger = ScaffoldMessenger.of(context);
-    final biometric = ref.read(biometricAuthProvider);
+  Future<void> _toggle(AppL10n l10n, bool turnOn) =>
+      turnOn ? _enableWithStepUp(l10n) : _disable(l10n);
+
+  /// #7a — enabling first confirms intent, then routes to the emailed-OTP
+  /// step-up screen which verifies the code and enrols the device key. The
+  /// switch reflects the new state when that screen pops (it invalidates the
+  /// enabled-state provider on success).
+  Future<void> _enableWithStepUp(AppL10n l10n) async {
+    if (!await _confirmEnable(l10n) || !mounted) {
+      return;
+    }
     setState(() => _busy = true);
     try {
-      final String message;
-      if (turnOn) {
-        message = biometricEnableMessage(l10n, await biometric.enable());
-      } else {
-        await biometric.disable();
-        message = l10n.biometricDisabledToast;
+      await context.pushNamed(RouteNames.biometricStepUp);
+      if (mounted) {
+        ref.invalidate(biometricEnabledProvider);
       }
-      if (!mounted) {
-        return;
-      }
-      ref.invalidate(biometricEnabledProvider);
-      messenger.showSnackBar(SnackBar(content: Text(message)));
     } finally {
       if (mounted) {
         setState(() => _busy = false);
       }
     }
+  }
+
+  /// Disabling permanently deletes the device key — confirm before revoking it
+  /// (owner 2026-06-21), then revoke + toast.
+  Future<void> _disable(AppL10n l10n) async {
+    if (!await _confirmDisable(l10n) || !mounted) {
+      return;
+    }
+    final messenger = ScaffoldMessenger.of(context);
+    final biometric = ref.read(biometricAuthProvider);
+    setState(() => _busy = true);
+    try {
+      await biometric.disable();
+      if (!mounted) {
+        return;
+      }
+      ref.invalidate(biometricEnabledProvider);
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.biometricDisabledToast)),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
+  }
+
+  /// #7a — confirms intent before starting the emailed-OTP enable flow.
+  Future<bool> _confirmEnable(AppL10n l10n) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.biometricEnableConfirmTitle),
+        content: Text(l10n.biometricEnableConfirmBody),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.cancelLabel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.biometricEnableConfirmAction),
+          ),
+        ],
+      ),
+    );
+    return confirmed ?? false;
+  }
+
+  /// Confirms the destructive disable: revoking the device key deletes the local
+  /// biometric credential permanently (it can only be re-enrolled, not restored).
+  /// Returns true only when the user explicitly taps Delete.
+  Future<bool> _confirmDisable(AppL10n l10n) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.biometricDisableConfirmTitle),
+        content: Text(l10n.biometricDisableConfirmBody),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.cancelLabel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.biometricDisableConfirmAction),
+          ),
+        ],
+      ),
+    );
+    return confirmed ?? false;
   }
 }

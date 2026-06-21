@@ -591,14 +591,24 @@ class KsaNavTile extends StatelessWidget {
 /// A stat tile (frames 512:1780 / 213:963): a big gold number over its label,
 /// on the same card chrome as [KsaNavTile].
 class KsaStatTile extends StatelessWidget {
-  const KsaStatTile({required this.value, required this.label, super.key});
+  const KsaStatTile({
+    required this.value,
+    required this.label,
+    this.onTap,
+    super.key,
+  });
 
   final int value;
   final String label;
 
+  /// Optional tap target. Null (the default) keeps the tile inert — a plain
+  /// statistic; non-null makes the whole card tappable via [KsaCard]'s InkWell.
+  final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) {
     return KsaCard(
+      onTap: onTap,
       child: _TileBody(
         top: Text(
           '$value',

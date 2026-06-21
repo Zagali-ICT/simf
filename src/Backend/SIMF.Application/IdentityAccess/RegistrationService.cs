@@ -94,7 +94,7 @@ public sealed class RegistrationService(
             TwoFactorEnabled = true,
         };
 
-        AccountCode? issuedCode = null;
+        string? issuedCode = null;
 
         // The user row and its first verification code must commit together —
         // otherwise a failure leaves an account that can never be verified.
@@ -111,7 +111,7 @@ public sealed class RegistrationService(
             },
             cancellationToken);
 
-        await EnqueueVerificationCodeAsync(user, issuedCode!.Code, cancellationToken);
+        await EnqueueVerificationCodeAsync(user, issuedCode!, cancellationToken);
         await AuditAsync(
             AuditEvents.SignUpSucceeded, AuditOutcome.Success, user.Email!,
             userId: user.Id, cancellationToken: cancellationToken);
@@ -188,7 +188,7 @@ public sealed class RegistrationService(
                 "محاولات غير صحيحة كثيرة. اطلب رمزًا جديدًا.");
         }
 
-        if (!CodesMatch(code.Code, request.Code))
+        if (!CodesMatch(code.Code, AccountCodeHasher.Hash(request.Code)))
         {
             code.AttemptCount++;
             await accountCodeRepository.UpdateAsync(code, cancellationToken);
@@ -280,7 +280,7 @@ public sealed class RegistrationService(
         // H10 / H23 — D-065 / D-083: same shape as sign-up; helper owns
         // the failure-audit pattern.
         await emailQueue.TryEnqueueAsync(
-            BuildVerificationEmail(user.Email!, code.Code),
+            BuildVerificationEmail(user.Email!, code),
             purpose: "ResendVerification",
             subjectEmail: user.Email!,
             subjectUserId: user.Id,
@@ -344,7 +344,7 @@ public sealed class RegistrationService(
         // mint unlimited codes.
         await EnsureVerificationCodeCapNotReachedAsync(user, now, cancellationToken);
 
-        AccountCode? issuedCode = null;
+        string? issuedCode = null;
         await transactionRunner.ExecuteAsync(
             async token =>
             {
@@ -369,7 +369,7 @@ public sealed class RegistrationService(
             },
             cancellationToken);
 
-        await EnqueueVerificationCodeAsync(user, issuedCode!.Code, cancellationToken);
+        await EnqueueVerificationCodeAsync(user, issuedCode!, cancellationToken);
         await AuditAsync(
             AuditEvents.SignUpRestartedUnverified, AuditOutcome.Success, user.Email!,
             userId: user.Id, cancellationToken: cancellationToken);
@@ -457,7 +457,7 @@ public sealed class RegistrationService(
             details);
     }
 
-    private async Task<AccountCode> IssueVerificationCodeAsync(
+    private async Task<string> IssueVerificationCodeAsync(
         SimfUser user,
         DateTimeOffset now,
         CancellationToken cancellationToken)
@@ -471,17 +471,19 @@ public sealed class RegistrationService(
             await accountCodeRepository.UpdateAsync(previous, cancellationToken);
         }
 
+        // M3 (security) — store only the keyed hash; return the plaintext to email.
+        var plaintext = VerificationCodeGenerator.Generate();
         var code = new AccountCode
         {
             Id = Guid.NewGuid(),
             UserId = user.Id,
             Purpose = AccountCodePurpose.EmailVerification,
-            Code = VerificationCodeGenerator.Generate(),
+            Code = AccountCodeHasher.Hash(plaintext),
             CreatedAt = now,
             ExpiresAt = now.Add(CodeLifetime),
         };
         await accountCodeRepository.AddAsync(code, cancellationToken);
-        return code;
+        return plaintext;
     }
 
     /// <summary>
