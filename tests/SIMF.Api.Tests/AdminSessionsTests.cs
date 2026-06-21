@@ -384,6 +384,51 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
         Assert.Null(edited.SeatSelectionModeOverride);
     }
 
+    [Fact]
+    public async Task Update_round_trips_the_session_type()
+    {
+        // Regression: the update route DTO (UpdateSessionRequest) previously
+        // OMITTED Type, so a PUT silently wiped the session type to null (the same
+        // class as the D-439 live-URL drop). The type must now survive an edit.
+        var token = await CreateAdministratorAndSignInAsync();
+        var hall = await SeedHallAsync(capacity: 10);
+
+        var create = await PostAuthAsync(
+            "/api/v1/admin/sessions",
+            new AdminCreateSessionRequest
+            {
+                Code = NewCode(), Title = "Typed", TitleArabic = "مصنّف",
+                HallId = hall.Id,
+                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
+                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                Type = SessionType.Workshop,
+            },
+            token);
+        Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+        var created = (await create.Content
+            .ReadFromJsonAsync<ApiResult<AdminSessionDetail>>())!.Data!;
+        Assert.Equal(SessionType.Workshop, created.Type);
+
+        var update = await PutAuthAsync(
+            $"/api/v1/admin/sessions/{created.Id}",
+            new AdminUpdateSessionRequest
+            {
+                Code = created.Code,
+                Title = "Typed (edited)",
+                TitleArabic = created.TitleArabic,
+                HallId = created.HallId,
+                StartUtc = created.StartUtc,
+                EndUtc = created.EndUtc,
+                IsActive = true,
+                Type = SessionType.Workshop, // the CP form re-sends the type
+            },
+            token);
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+        var edited = (await update.Content
+            .ReadFromJsonAsync<ApiResult<AdminSessionDetail>>())!.Data!;
+        Assert.Equal(SessionType.Workshop, edited.Type);
+    }
+
     // D-349 — a direct HLS stream URL is still accepted (the fallback path).
     [Fact]
     public async Task Create_with_an_hls_live_url_succeeds()

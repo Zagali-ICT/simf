@@ -105,6 +105,10 @@ public sealed class UpdateSessionRequest
     // D-485 — optional per-session seat-selection-mode override (null = inherit
     // the hall). Carried on the update route DTO so a PUT round-trips it.
     public SeatSelectionMode? SeatSelectionModeOverride { get; set; }
+    // Fix: the route DTO previously omitted Type, so a PUT silently dropped the
+    // session type back to null (the same class of bug D-439 fixed for the live
+    // URLs). Carried here so the type round-trips on update like the create path.
+    public SessionType? Type { get; set; }
 }
 
 public sealed class UpdateSessionEndpoint(IAdminSessionService service)
@@ -149,6 +153,7 @@ public sealed class UpdateSessionEndpoint(IAdminSessionService service)
                     LiveCaptions = req.LiveCaptions,
                     LiveCaptionsArabic = req.LiveCaptionsArabic,
                     SeatSelectionModeOverride = req.SeatSelectionModeOverride,
+                    Type = req.Type,
                 }, ct)), ct);
     }
 }
