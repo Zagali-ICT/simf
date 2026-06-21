@@ -819,6 +819,10 @@ class AppL10n {
   String get sessionLink => _t('رابط الجلسة', 'Session link');
   String get sessionSummary => _t('ملخص الجلسة', 'Session summary');
   String get askHost => _t('اسأل المحاور', 'Ask the host');
+  // #3 — pre-ask is gated on having JOINED the session (a booking), not on
+  // physical check-in; the ask card is disabled with this hint until then.
+  String get askHostJoinFirst =>
+      _t('انضم إلى الجلسة لطرح سؤال', 'Join the session to ask a question');
   String get descriptionHeading => _t('وصف الجلسة', 'Description');
   String get speakersHeading => _t('المتحدثون', 'Speakers');
   String get hostLabel => _t('المضيف', 'Host');

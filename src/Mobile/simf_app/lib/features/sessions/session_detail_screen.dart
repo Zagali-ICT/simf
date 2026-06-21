@@ -237,9 +237,9 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
         queryParameters: <String, String>{'sessionId': widget.sessionId},
       );
 
-  /// اسأل المحاور (Figma 1056:12876) — opens send-question (26). Auth-gated: a
-  /// guest is routed to sign-in by the router's gate, like other login-only
-  /// actions.
+  /// اسأل المحاور (Figma 1056:12876) — opens send-question (26). #3 — only
+  /// reachable once the user has JOINED the session: the ask card is disabled
+  /// (this never fires) until then, so there is no guest/not-joined path here.
   void _askHost() => context.pushNamed(
         RouteNames.sendQuestion,
         queryParameters: <String, String>{'sessionId': widget.sessionId},
@@ -467,10 +467,19 @@ class _Content extends StatelessWidget {
           ],
         ],
         // اسأل المحاور (Figma 1056:12876) — sits between the speakers and the
-        // my-seat card, shown to everyone (the send-question route is auth-gated
-        // downstream).
+        // my-seat card. #3 — pre-ask is allowed only once the user has JOINED the
+        // session (holds a booking), NOT on physical check-in; until then the
+        // card is disabled with a "join first" hint.
         const SizedBox(height: SimfTokens.space5),
-        _AskHostCard(label: l10n.askHost, onTap: onAskHost),
+        _AskHostCard(
+          label: l10n.askHost,
+          onTap: onAskHost,
+          enabled: seatMap?.myCell != null,
+          // Only show the "join first" hint when a Join CTA is actually offered
+          // below (an approved account); a guest sees the card plainly disabled
+          // rather than a hint pointing at a join affordance they can't see.
+          disabledHint: seatMap != null ? l10n.askHostJoinFirst : null,
+        ),
         // D-485 — the join section (approved account only): a held reservation
         // shows the booking card + Cancel; otherwise the mode-branched Join CTA.
         if (seatMap?.myCell != null) ...<Widget>[
@@ -953,34 +962,56 @@ class _SpeakerAvatar extends StatelessWidget {
 /// hairline holding a centred user glyph over the 12px SemiBold label. Opens
 /// send-question (26) for this session.
 class _AskHostCard extends StatelessWidget {
-  const _AskHostCard({required this.label, required this.onTap});
+  const _AskHostCard({
+    required this.label,
+    required this.onTap,
+    required this.enabled,
+    this.disabledHint,
+  });
 
   final String label;
   final VoidCallback onTap;
 
+  /// #3 — true once the user has joined the session; false disables the tap and
+  /// shows [disabledHint] (the pre-ask gate — join to ask, no check-in needed).
+  final bool enabled;
+  final String? disabledHint;
+
   @override
   Widget build(BuildContext context) {
+    final color = enabled ? Colors.white : SimfTokens.navyDisabledText;
     return KsaCard(
-      onTap: onTap,
+      onTap: enabled ? onTap : null,
       child: Padding(
         padding: const EdgeInsets.all(SimfTokens.space2),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            const Icon(
+            Icon(
               Icons.person_outline,
               size: 24,
-              color: Colors.white,
+              color: color,
             ),
             const SizedBox(height: SimfTokens.space2),
             Text(
               label,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: color,
                 fontWeight: FontWeight.w600,
                 fontSize: SimfTokens.textSm,
               ),
             ),
+            if (!enabled && disabledHint != null) ...<Widget>[
+              const SizedBox(height: SimfTokens.space1),
+              Text(
+                disabledHint!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: SimfTokens.beigeBorder,
+                  fontSize: SimfTokens.textXs,
+                ),
+              ),
+            ],
           ],
         ),
       ),

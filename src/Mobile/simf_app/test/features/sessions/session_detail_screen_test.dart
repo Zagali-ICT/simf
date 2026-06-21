@@ -338,16 +338,34 @@ void main() {
       expect(find.text('AI-SUMMARY'), findsOneWidget);
     });
 
-    testWidgets('the ask-host card opens send-question', (tester) async {
+    testWidgets('#3 — a joined user can ask: the ask-host card opens '
+        'send-question', (tester) async {
       await _pump(
         tester,
         repo: _FakeDetailRepo(detail: _detail()),
-        controller: _GuestController(),
+        seatMap: _seatMap(myCell: _mySeatCell), // joined → ask enabled
+        controller: _SignedInController(),
       );
 
       await tester.tap(find.text('Ask the host'));
       await tester.pumpAndSettle();
       expect(find.text('SEND-Q'), findsOneWidget);
+    });
+
+    testWidgets('#3 — pre-ask is gated on joining: not joined → the ask card is '
+        'disabled with a hint and does not open send-question', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeDetailRepo(detail: _detail()),
+        seatMap: _seatMap(), // approved, no reservation → not joined
+        controller: _SignedInController(),
+      );
+
+      expect(find.text('Ask the host'), findsOneWidget);
+      expect(find.text('Join the session to ask a question'), findsOneWidget);
+      await tester.tap(find.text('Ask the host'));
+      await tester.pumpAndSettle();
+      expect(find.text('SEND-Q'), findsNothing); // tap is inert until joined
     });
 
     testWidgets('a speaker with a country code renders its flag emoji',
