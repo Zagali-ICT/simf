@@ -120,7 +120,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     try {
       await ref
           .read(authControllerProvider.notifier)
-          .signIn(email: email, password: password);
+          .signIn(email: email, password: password, rememberSession: _rememberMe);
       final prefs = ref.read(simfPrefsStorageProvider);
       if (_rememberMe) {
         await prefs.setString(StorageKeys.lastEmail, email);

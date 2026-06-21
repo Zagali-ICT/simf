@@ -45,7 +45,7 @@
 | E2E-MOB003-012 | Biometric (device-key) re-open | happy | P0 | authored ✓ (Dart client + controller tests; **.NET↔Dart interop proven by backend golden-vector test, D-266**; on-device prompt → simf-run) |
 | E2E-MOB003-013 | Signed-in → server `profileComplete=false` routes to Page_007 (`/sign-up/visitor`); true → Home (D-374, both auth paths) | happy | P0 | authored ✓ (widget + API tests) |
 | E2E-MOB003-014 | "Browse without signing in" → guest landing (Page 012) → public Home, no token (D-325) | happy | P1 | authored ✓ (widget test) |
-| E2E-MOB003-015 | Remember-me unchecked → the email is NOT stored for the next prefill (D-360) | edge | P1 | authored ✓ (widget test) |
+| E2E-MOB003-015 | Remember-me unchecked → the email is NOT stored for the next prefill (D-360) **and the session is kept in memory only — it does NOT survive an app restart (#9)** | edge | P0 | authored ✓ (widget + `auth_controller_signin_test` #9) |
 | E2E-MOB003-016 | Globe button toggles AR ↔ EN and persists the preference (D-363) | happy | P1 | authored ✓ (widget test) |
 | E2E-MOB003-017 | **Post-sign-in Face-ID enrol nudge (D-442/D-445; #7a):** when the device has a usable biometric and Face-ID is not yet enabled, a notification-style SnackBar with an "Enable" action appears after **every** sign-in (both the password and OTP paths); tapping Enable now **routes to the emailed-OTP step-up** (`biometricStepUp`, see [`mobile-biometric-step-up.md`](mobile-biometric-step-up.md)) instead of a one-tap enrol; never shows when already-enabled or unavailable; the captured GoRouter is lifetime-safe after the screen routes away | happy | P1 | authored ✓ (`biometric_auth_test` — show / no-show + routes-to-step-up) |
 | E2E-MOB003-018 | A malformed email → inline "Invalid email" / "بريد إلكتروني غير صالح" and the sign-in round-trip is blocked (no `signIn` call), #7 | edge | P0 | authored ✓ (widget `a malformed email shows the inline error and does not sign in`) |
@@ -206,10 +206,21 @@ Scenario: Unchecking remember-me skips storing the email
   When the user unchecks remember-me and signs in successfully
   Then the app routes to Home
   And the email is NOT stored for the next prefill
+
+Scenario: Unchecking remember-me keeps the session in memory only (#9)
+  Given the user signs in with "Keep me logged in" unchecked
+  Then the session works for this run (the access token refreshes from memory)
+  But nothing is written to durable secure storage (and any prior stored
+      session is cleared)
+  So restarting the app restores no session — the user lands signed out
+  # The backend gives no session-scoped token; the client enforces it by not
+  # persisting. A biometric (device-key) re-open always persists (it is an
+  # explicit "remember me on this device").
 ```
 
 **Evidence:** `sign_in_screen_test` — "unchecking remember-me skips storing the
-email".
+email"; `auth_controller_signin_test` — "an un-remembered sign-in keeps the
+session in memory only" + "a remembered sign-in persists the session".
 
 ### E2E-MOB003-016 — Language toggle (D-363)
 

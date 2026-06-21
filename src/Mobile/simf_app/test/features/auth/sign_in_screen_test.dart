@@ -29,7 +29,11 @@ class _FakeAuthController extends AuthController {
   AuthState build() => const AuthStateSignedOut();
 
   @override
-  Future<void> signIn({required String email, required String password}) async {
+  Future<void> signIn({
+    required String email,
+    required String password,
+    bool rememberSession = true,
+  }) async {
     switch (outcome) {
       case _Outcome.success:
         state = AuthStateSignedIn(

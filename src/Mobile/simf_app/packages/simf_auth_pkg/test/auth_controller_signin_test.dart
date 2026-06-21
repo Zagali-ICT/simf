@@ -179,4 +179,73 @@ void main() {
       );
     });
   });
+
+  group('AuthController "Keep me logged in" (#9)', () {
+    test('an un-remembered sign-in keeps the session in memory only', () async {
+      final repo = _MockAuthRepository();
+      final secure = _MockSecureStorage();
+      when(() => secure.read(any())).thenAnswer((_) async => null);
+      when(() => secure.write(any(), any())).thenAnswer((_) async {});
+      when(() => secure.clearAuthValues()).thenAnswer((_) async {});
+      when(
+        () => repo.signIn(
+          email: any(named: 'email'),
+          password: any(named: 'password'),
+        ),
+      ).thenAnswer((_) async => SignInSession(_guestPayloadSession()));
+      when(() => repo.getCurrentUser()).thenAnswer(
+        (_) async => _user(AppRole.visitor, RegistrationStatus.approved),
+      );
+
+      final container = _container(repo, secure);
+      addTearDown(container.dispose);
+      await _waitFor(container, (s) => s is AuthStateSignedOut);
+
+      await container.read(authControllerProvider.notifier).signIn(
+            email: 'visitor@example.sa',
+            password: 'pw',
+            rememberSession: false,
+          );
+
+      // Signed in for this run…
+      expect(container.read(authControllerProvider), isA<AuthStateSignedIn>());
+      // …but nothing was written to durable storage and any prior session was
+      // cleared — so a cold start restores nothing (the session does not survive
+      // an app restart).
+      verifyNever(() => secure.write(StorageKeys.refreshToken, any()));
+      verify(() => secure.clearAuthValues()).called(greaterThanOrEqualTo(1));
+    });
+
+    test('a remembered sign-in persists the session to durable storage',
+        () async {
+      final repo = _MockAuthRepository();
+      final secure = _MockSecureStorage();
+      when(() => secure.read(any())).thenAnswer((_) async => null);
+      when(() => secure.write(any(), any())).thenAnswer((_) async {});
+      when(() => secure.clearAuthValues()).thenAnswer((_) async {});
+      when(
+        () => repo.signIn(
+          email: any(named: 'email'),
+          password: any(named: 'password'),
+        ),
+      ).thenAnswer((_) async => SignInSession(_guestPayloadSession()));
+      when(() => repo.getCurrentUser()).thenAnswer(
+        (_) async => _user(AppRole.visitor, RegistrationStatus.approved),
+      );
+
+      final container = _container(repo, secure);
+      addTearDown(container.dispose);
+      await _waitFor(container, (s) => s is AuthStateSignedOut);
+
+      await container.read(authControllerProvider.notifier).signIn(
+            email: 'visitor@example.sa',
+            password: 'pw',
+            rememberSession: true,
+          );
+
+      expect(container.read(authControllerProvider), isA<AuthStateSignedIn>());
+      verify(() => secure.write(StorageKeys.refreshToken, 'R'))
+          .called(greaterThanOrEqualTo(1));
+    });
+  });
 }
