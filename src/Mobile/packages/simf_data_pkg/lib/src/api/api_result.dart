@@ -54,6 +54,7 @@ class ApiResultError {
   const ApiResultError({
     required this.code,
     required this.message,
+    this.messageArabic = '',
     this.details = const <ApiResultErrorDetail>[],
   });
 
@@ -62,6 +63,7 @@ class ApiResultError {
     return ApiResultError(
       code: json['code'] as String? ?? 'UNKNOWN_ERROR',
       message: json['message'] as String? ?? '',
+      messageArabic: json['messageArabic'] as String? ?? '',
       details: detailsRaw is List
           ? detailsRaw
               .whereType<Map<String, dynamic>>()
@@ -75,26 +77,45 @@ class ApiResultError {
   /// [message].
   final String code;
 
-  /// Human-readable message in the request's language (SIMF-API-001 §11).
-  /// Safe to display to the user as-is.
+  /// Human-readable message — the English text from the envelope. The server
+  /// sends BOTH languages; use [localized] to pick by the app's locale (the
+  /// envelope's `message` is not pre-localized by Accept-Language).
   final String message;
+
+  /// The Arabic message from the envelope; empty when the server didn't send one.
+  final String messageArabic;
 
   /// Field-level errors used mainly for validation responses.
   final List<ApiResultErrorDetail> details;
+
+  /// The locale-appropriate message: the Arabic text when [isArabic] and a
+  /// non-empty Arabic message is present, otherwise the English [message].
+  String localized(bool isArabic) =>
+      isArabic && messageArabic.isNotEmpty ? messageArabic : message;
 }
 
 /// A single field-level error entry from [ApiResultError.details].
 @immutable
 class ApiResultErrorDetail {
-  const ApiResultErrorDetail({required this.field, required this.message});
+  const ApiResultErrorDetail({
+    required this.field,
+    required this.message,
+    this.messageArabic = '',
+  });
 
   factory ApiResultErrorDetail.fromJson(Map<String, dynamic> json) {
     return ApiResultErrorDetail(
       field: json['field'] as String? ?? '',
       message: json['message'] as String? ?? '',
+      messageArabic: json['messageArabic'] as String? ?? '',
     );
   }
 
   final String field;
   final String message;
+  final String messageArabic;
+
+  /// The locale-appropriate message (Arabic when [isArabic] + present).
+  String localized(bool isArabic) =>
+      isArabic && messageArabic.isNotEmpty ? messageArabic : message;
 }

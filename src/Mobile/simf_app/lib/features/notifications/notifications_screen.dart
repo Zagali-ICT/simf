@@ -56,7 +56,20 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   @override
   void initState() {
     super.initState();
-    unawaited(_load());
+    unawaited(_openInbox());
+  }
+
+  /// #13 — opening the inbox loads the list, then marks everything read so an
+  /// opened inbox never stays unread and the Home bell badge clears. (The
+  /// backend models read/unread only — there is no separate "seen" state.)
+  Future<void> _openInbox() async {
+    await _load();
+    if (!mounted || _error) {
+      return;
+    }
+    if (_items.any((n) => !n.isRead)) {
+      await _markAllRead(reload: false);
+    }
   }
 
   Future<void> _load() async {
@@ -92,34 +105,58 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     try {
       await ref.read(notificationsRepositoryProvider).markRead(item.id);
     } on ApiFailure {
-      // Best effort — the refresh below re-syncs with the server's truth.
+      // Best effort — leave the item unread on failure.
+      return;
     }
     if (!mounted) {
       return;
     }
-    await _load();
+    // #14 — clear the Home bell badge (a separate count provider) + flip the
+    // item locally instead of a full reload.
+    ref.invalidate(unreadNotificationCountProvider);
+    setState(() {
+      _items = _items
+          .map((n) => n.id == item.id ? n.markedRead() : n)
+          .toList(growable: false);
+    });
   }
 
   Future<void> _onMarkAll(AppL10n l10n) async {
     setState(() => _markingAll = true);
     final messenger = ScaffoldMessenger.of(context);
-    try {
-      await ref.read(notificationsRepositoryProvider).markAllRead();
-    } on ApiFailure {
-      if (!mounted) {
-        return;
-      }
-      setState(() => _markingAll = false);
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.notificationsMarkAllFailed)),
-      );
-      return;
-    }
+    final ok = await _markAllRead(reload: false);
     if (!mounted) {
       return;
     }
     setState(() => _markingAll = false);
-    await _load();
+    if (!ok) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.notificationsMarkAllFailed)),
+      );
+    }
+  }
+
+  /// Marks every notification read on the server, clears the Home bell badge
+  /// (#14 — a separate count provider that the screen must invalidate), and
+  /// reflects the read state locally (or re-fetches when [reload]).
+  Future<bool> _markAllRead({required bool reload}) async {
+    try {
+      await ref.read(notificationsRepositoryProvider).markAllRead();
+    } on ApiFailure {
+      return false;
+    }
+    ref.invalidate(unreadNotificationCountProvider);
+    if (!mounted) {
+      return true;
+    }
+    if (reload) {
+      await _load();
+    } else {
+      setState(() {
+        _items = _items.map((n) => n.markedRead()).toList(growable: false);
+      });
+    }
+    return true;
   }
 
   /// Items after the active chip + search filter, newest-first order preserved.

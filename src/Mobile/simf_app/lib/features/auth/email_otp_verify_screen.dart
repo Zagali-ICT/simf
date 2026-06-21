@@ -85,7 +85,7 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
     super.dispose();
   }
 
-  bool get _canSubmit => _code.text.trim().length >= 4 && !_busy;
+  bool get _canSubmit => _code.text.trim().length == 6 && !_busy;
 
   Future<void> _submit() async {
     final code = _code.text.trim();

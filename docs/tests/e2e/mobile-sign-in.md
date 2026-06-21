@@ -32,7 +32,7 @@
 | ID | Scenario | Type | Priority | Status |
 |----|----------|------|----------|--------|
 | E2E-MOB003-001 | Password sign-in (no 2FA) → tokens → Home, with real privilege | happy | P0 | authored ✓ (widget + controller tests) |
-| E2E-MOB003-002 | Invalid credentials → inline error, password cleared, stays on sign-in | edge | P0 | authored ✓ (widget test) |
+| E2E-MOB003-002 | Invalid credentials → inline **localized** error (the envelope's AR/EN message, #8), password cleared, stays on sign-in | edge | P0 | authored ✓ (widget test) |
 | E2E-MOB003-003 | 2FA account → email-OTP screen → `verify-otp` → Home | happy | P0 | authored ✓ (widget + controller tests) |
 | E2E-MOB003-004 | Privilege comes from `/app/users/me` hydration, not the token payload | resilience | P0 | authored ✓ (controller test) |
 | E2E-MOB003-005 | Email pre-filled from the last successful sign-in | happy | P1 | authored ✓ (widget test) |
@@ -48,6 +48,8 @@
 | E2E-MOB003-015 | Remember-me unchecked → the email is NOT stored for the next prefill (D-360) | edge | P1 | authored ✓ (widget test) |
 | E2E-MOB003-016 | Globe button toggles AR ↔ EN and persists the preference (D-363) | happy | P1 | authored ✓ (widget test) |
 | E2E-MOB003-017 | **Post-sign-in Face-ID enrol nudge (D-442/D-445; #7a):** when the device has a usable biometric and Face-ID is not yet enabled, a notification-style SnackBar with an "Enable" action appears after **every** sign-in (both the password and OTP paths); tapping Enable now **routes to the emailed-OTP step-up** (`biometricStepUp`, see [`mobile-biometric-step-up.md`](mobile-biometric-step-up.md)) instead of a one-tap enrol; never shows when already-enabled or unavailable; the captured GoRouter is lifetime-safe after the screen routes away | happy | P1 | authored ✓ (`biometric_auth_test` — show / no-show + routes-to-step-up) |
+| E2E-MOB003-018 | A malformed email → inline "Invalid email" / "بريد إلكتروني غير صالح" and the sign-in round-trip is blocked (no `signIn` call), #7 | edge | P0 | authored ✓ (widget `a malformed email shows the inline error and does not sign in`) |
+| E2E-MOB003-019 | Server error messages render in the app's language — the envelope carries `message`+`messageArabic` and the data layer picks by locale (#8/#11; fixes the whole error surface, not just sign-in) | i18n | P0 | authored ✓ (data-pkg `picks the localized message by isArabic`, `decodes the Arabic message alongside the English one`) |
 
 ## Scenarios
 

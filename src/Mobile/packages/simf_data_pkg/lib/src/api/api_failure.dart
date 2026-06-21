@@ -22,10 +22,13 @@ class ApiFailure implements Exception {
   factory ApiFailure.fromEnvelope(
     ApiResultError error, {
     int? httpStatus,
+    bool isArabic = false,
   }) {
     return ApiFailure(
       code: error.code,
-      message: error.message,
+      // The envelope carries both languages; pick by the app's locale so the
+      // displayed error is translated (the screens read `message` as-is).
+      message: error.localized(isArabic),
       httpStatus: httpStatus,
       details: error.details,
     );
