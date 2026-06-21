@@ -22,6 +22,7 @@ import '../features/home/home_screen.dart';
 import '../features/media_partners/media_partners_screen.dart';
 import '../features/news/news_screen.dart';
 import '../features/accessibility/accessibility_screen.dart';
+import '../features/ai_summary/session_summary_list_screen.dart';
 import '../features/ai_summary/session_summary_screen.dart';
 import '../features/badge/badge_screen.dart';
 import '../features/chatbot/chatbot_screen.dart';
@@ -156,6 +157,8 @@ const List<_Route> _routes = <_Route>[
   // D-485 — the session-join flow (approved-only): the seat picker + the hub.
   _Route(number: 109, name: RouteNames.seatPicker, path: '/sessions/:sessionId/pick-seat', labelAr: 'اختر مقعدك', labelEn: 'Select your seat'),
   _Route(number: 110, name: RouteNames.joinSessionHub, path: '/sessions/join', labelAr: 'احجز مقعداً', labelEn: 'Book a seat'),
+  // #1/#6 — session-summaries list (public; home tile → list → aiSummary details).
+  _Route(number: 111, name: RouteNames.sessionSummaryList, path: '/session-summaries', labelAr: 'ملخص الجلسات', labelEn: 'Session summaries'),
 
   // D-464 — المزيد hub entries with no screen yet (Figma 1129:17224). Public;
   // they fall through to ComingSoonScreen (sentinel numbers 200+).
@@ -309,6 +312,9 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.joinSessionHub) {
     return const JoinSessionHubScreen();
+  }
+  if (r.name == RouteNames.sessionSummaryList) {
+    return const SessionSummaryListScreen();
   }
   if (r.name == RouteNames.speakers) {
     return const SpeakersScreen();

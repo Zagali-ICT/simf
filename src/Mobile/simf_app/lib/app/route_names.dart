@@ -61,6 +61,9 @@ class RouteNames {
 
   // Section 7 — Smart features (4 screens)
   static const String aiSummary = 'aiSummary';
+  // #1/#6 — the session-summaries LIST (home tile → list → the aiSummary details
+  // page). Additive, public (Guest+, like the summary it lists).
+  static const String sessionSummaryList = 'sessionSummaryList';
   static const String meetPeople = 'meetPeople';
   static const String chatbot = 'chatbot';
   static const String aboutForum = 'aboutForum';

@@ -425,9 +425,13 @@ class _DayBannerFallback extends StatelessWidget {
       );
 }
 
-/// The white day strip (frame node 883:2327): one cell per programme day —
-/// a short weekday over the day number; the selected day inverts to navy,
-/// weekend (Fri/Sat) weekday labels render red.
+/// The agenda day strip (frame node 883:2327, restyled #4): a **grey** calendar
+/// band spanning the **full** event date range — every day from the first to the
+/// last programme day, not only the days that carry sessions. Each cell shows the
+/// weekday over the centred day number. A day **with** sessions is "active"
+/// (white); the **selected** day is black; an empty in-between day is muted grey
+/// and not selectable. The strip fills the width (cells distributed), falling
+/// back to a horizontal scroll when the range is too long to fit.
 class _DayStrip extends StatelessWidget {
   const _DayStrip({
     required this.days,
@@ -441,83 +445,148 @@ class _DayStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final entries = _calendarRange(days);
     return Container(
       padding: const EdgeInsets.all(SimfTokens.space2),
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: SimfTokens.calendarBand,
         borderRadius:
             BorderRadius.all(Radius.circular(SimfTokens.radiusSmall)),
       ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: <Widget>[
-            for (final day in days)
-              Padding(
-                padding: const EdgeInsetsDirectional.only(
-                  end: SimfTokens.space2,
-                ),
-                child: _DayCell(
-                  day: day,
-                  selected: day.id == selectedId,
-                  onTap: () => onChanged(day.id),
-                ),
-              ),
-          ],
-        ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          const double gap = SimfTokens.space1;
+          const double minCell = 44.0;
+          final width = entries.length * minCell + (entries.length - 1) * gap;
+          // Guard the unbounded-width case (e.g. if ever placed outside a
+          // width-bounded parent) so the Expanded row can't throw.
+          final fits = constraints.maxWidth.isFinite && width <= constraints.maxWidth;
+          final row = Row(
+            mainAxisSize: fits ? MainAxisSize.max : MainAxisSize.min,
+            children: <Widget>[
+              for (var i = 0; i < entries.length; i++) ...<Widget>[
+                if (i > 0) const SizedBox(width: gap),
+                if (fits)
+                  Expanded(child: _cell(entries[i]))
+                else
+                  SizedBox(width: minCell, child: _cell(entries[i])),
+              ],
+            ],
+          );
+          return fits
+              ? row
+              : SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: row,
+                );
+        },
       ),
     );
   }
+
+  Widget _cell(_CalendarDay e) => _DayCell(
+        date: e.date,
+        hasSessions: e.programmeDay != null,
+        selected: e.programmeDay?.id == selectedId,
+        onTap:
+            e.programmeDay == null ? null : () => onChanged(e.programmeDay!.id),
+      );
+
+  /// The contiguous date range from the programme days: span the first to the
+  /// last day (inclusive), mapping each date to its [ProgrammeDay] when one
+  /// exists (an "active" day) or null (an empty in-between day).
+  static List<_CalendarDay> _calendarRange(List<ProgrammeDay> days) {
+    if (days.isEmpty) {
+      return const <_CalendarDay>[];
+    }
+    final byDate = <DateTime, ProgrammeDay>{};
+    DateTime? first;
+    DateTime? last;
+    for (final d in days) {
+      final date = DateTime(d.date.year, d.date.month, d.date.day);
+      byDate[date] = d;
+      if (first == null || date.isBefore(first)) {
+        first = date;
+      }
+      if (last == null || date.isAfter(last)) {
+        last = date;
+      }
+    }
+    final out = <_CalendarDay>[];
+    var cur = first!;
+    while (!cur.isAfter(last!)) {
+      out.add(_CalendarDay(cur, byDate[cur]));
+      cur = DateTime(cur.year, cur.month, cur.day + 1);
+    }
+    return out;
+  }
+}
+
+/// One date in the agenda calendar strip: [programmeDay] is null for an empty
+/// in-between day (no sessions), set for a day that carries sessions.
+class _CalendarDay {
+  const _CalendarDay(this.date, this.programmeDay);
+
+  final DateTime date;
+  final ProgrammeDay? programmeDay;
 }
 
 class _DayCell extends StatelessWidget {
   const _DayCell({
-    required this.day,
+    required this.date,
+    required this.hasSessions,
     required this.selected,
     required this.onTap,
   });
 
-  final ProgrammeDay day;
+  final DateTime date;
+  final bool hasSessions;
   final bool selected;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final date = day.date;
-    final weekend =
-        date.weekday == DateTime.friday || date.weekday == DateTime.saturday;
-    // The selected day inverts to white-on-navy; weekend weekday labels are red.
-    final Color weekdayColor =
-        selected ? Colors.white : (weekend ? SimfTokens.danger : SimfTokens.navy);
-    final Color numberColor = selected ? Colors.white : SimfTokens.navy;
+    // #4 — selected = black; a day with sessions ("active") = white; an empty
+    // in-between day = muted grey (transparent, so the band shows through).
+    final Color fill;
+    final Color textColor;
+    if (selected) {
+      fill = SimfTokens.navy; // near-black
+      textColor = Colors.white;
+    } else if (hasSessions) {
+      fill = SimfTokens.surface; // white
+      textColor = SimfTokens.navy;
+    } else {
+      fill = Colors.transparent;
+      textColor = SimfTokens.greyText;
+    }
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: SimfTokens.space2,
-          vertical: SimfTokens.space1,
-        ),
+        padding: const EdgeInsets.symmetric(vertical: SimfTokens.space2),
         decoration: BoxDecoration(
-          color: selected ? SimfTokens.navy : Colors.white,
+          color: fill,
           borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Text(
               _weekdayEn(date),
               style: TextStyle(
-                color: weekdayColor,
+                color: textColor,
                 fontSize: SimfTokens.textXs,
                 fontWeight: FontWeight.w600,
               ),
             ),
             Text(
               date.day.toString(),
+              textAlign: TextAlign.center,
               style: TextStyle(
-                color: numberColor,
+                color: textColor,
                 fontSize: SimfTokens.textMd,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ],

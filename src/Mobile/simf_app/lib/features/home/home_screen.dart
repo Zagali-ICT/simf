@@ -421,7 +421,9 @@ class _VisitorHome extends StatelessWidget {
                 label: l10n.tileSessionSummary,
                 iconAsset: _HomeIcons.sessionSummary,
                 minHeight: 80,
-                onTap: () => context.pushNamed(RouteNames.aiSummary),
+                // #1/#6 — the tile now opens the summaries LIST → tap a session →
+                // its AI-summary details page (was: straight to the picker screen).
+                onTap: () => context.pushNamed(RouteNames.sessionSummaryList),
               ),
               KsaNavTile(
                 label: l10n.tileEntryBadge,

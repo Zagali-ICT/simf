@@ -63,6 +63,7 @@
 | E2E-MOB016-011 | Fetch fails → error + Retry that re-runs the read | resilience | P0 | authored ✓ (screen — `a load failure shows the error + retry`) |
 | E2E-MOB016-012 | `status` / speaker `role` decode tolerantly (int **or** name; unknown → default) | contract | P0 | authored ✓ (model — `SessionStatus.fromJson` / `SessionSpeakerRole.fromJson`) |
 | E2E-MOB016-013 | List item binds the real wire names incl. the D-271 speaker country+photo | contract | P0 | authored ✓ (model — `SessionListItem.fromJson`) |
+| E2E-MOB016-014 | **Full-width calendar (#4):** the day strip is a grey band over the FULL event date range (first→last programme day, empty in-between days filled), full-width (cells distributed, scroll fallback when long); a day **with** sessions = white ("active"), the **selected** day = black, an empty day = muted grey and **not** selectable | happy/visual | P1 | authored ✓ (screen — `_DayStrip`/`_calendarRange`; existing selected-cell-navy + switch-day tests) |
 
 ## Scenarios
 

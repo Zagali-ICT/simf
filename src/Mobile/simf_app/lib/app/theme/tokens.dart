@@ -30,6 +30,7 @@ class SimfTokens {
   static const Color goldSoft = Color(0xFFD0AC77); // secondary gold text/icons
   static const Color headlineInk = Color(0xFF111827); // headings on light surfaces
   static const Color greyText = Color(0xFF6C7278); // secondary text on light surfaces
+  static const Color calendarBand = Color(0xFFE9EAEC); // #4 — light-grey agenda day-strip band
   static const Color linkNavy = Color(0xFF00245E); // inline links on light surfaces
   static const Color inputInk = Color(0xCC111827); // input text on light surfaces (#111827 at 80%)
   static const Color onGoldMuted = Color(0xFFF0F0F0); // muted text on the gold identity strip (badge 758:1469)

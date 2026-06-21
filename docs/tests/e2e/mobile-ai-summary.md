@@ -26,11 +26,12 @@
 
 | ID | Scenario | Type | Priority | Status |
 |----|----------|------|----------|--------|
-| E2E-MOB034-001 | Picker + AI banner + the three stacked cards (all content shown at once, no tabs) + action row | happy | P0 | authored ✓ (screen `renders the picker, AI banner and the stacked summary cards (frame 1078:14952 — no tabs)`) |
+| E2E-MOB034-001 | **Details-only when opened with a `sessionId` (#1/#6):** no picker; AI banner + the three stacked cards (all content at once, no tabs) + action row | happy | P0 | authored ✓ (screen `with a sessionId it is details-only (no picker)…`) |
 | E2E-MOB034-002 | Speakers render as a single "·"-joined line | happy | P1 | covered (screen asserts the joined speakers line) |
-| E2E-MOB034-003 | No `sessionId` → auto-select the first programme session + load its summary | happy | P1 | authored ✓ (screen `with no sessionId it auto-selects the first session`) |
-| E2E-MOB034-004 | 404 → no-published-summary state; picker still shown | edge | P1 | authored ✓ (screen `a 404 shows the no-published-summary state`) |
+| E2E-MOB034-003 | **No `sessionId` → the picker is shown** (legacy fallback) + auto-select the first session | happy | P1 | authored ✓ (screen `with no sessionId it auto-selects the first session`) |
+| E2E-MOB034-004 | 404 → no-published-summary state; **no picker in details-only** (the user goes back to the list to pick another) | edge | P1 | authored ✓ (screen `a 404 shows the no-published-summary state`) |
 | E2E-MOB034-005 | Non-404 failure → error + retry, which re-fetches | edge | P1 | authored ✓ (screen `a non-404 failure shows error + retry, which re-fetches`) |
+| E2E-MOB034-006 | **Summaries LIST (#1/#6):** the home "ملخص الجلسات" tile opens `SessionSummaryListScreen` — a list of all sessions (title + time · hall); tapping one opens the AI-summary details (sessionId in query). Empty → empty state | happy | P1 | authored ✓ (`session_summary_list_screen_test` — list→details + empty) |
 
 ## Scenarios
 

@@ -131,14 +131,14 @@ Future<void> _pump(
 void main() {
   group('AiSummaryScreen (Page 034 — KSA frame 1072:13518)', () {
     testWidgets(
-        'renders the picker, AI banner and the stacked summary cards '
-        '(frame 1078:14952 — no tabs)', (tester) async {
+        'with a sessionId it is details-only (no picker) — AI banner + the '
+        'stacked summary cards (frame 1078:14952 — no tabs)', (tester) async {
       final repo = _FakeSummaryRepo(summary: _summary());
       await _pump(tester, repo: repo, sessions: _sessions, sessionId: 's1');
 
       expect(repo.calls, 1);
-      // Picker + banner.
-      expect(find.text('Choose the session'), findsOneWidget);
+      // #1/#6 — opened with a sessionId, the picker is hidden (details-only).
+      expect(find.text('Choose the session'), findsNothing);
       expect(find.text('Auto-generated summary'), findsOneWidget);
       // The three section headings now stack as cards (no tabs).
       expect(find.text('Key points'), findsOneWidget);
@@ -162,6 +162,8 @@ void main() {
       await _pump(tester, repo: repo, sessions: _sessions);
 
       expect(repo.calls, 1);
+      // Without a sessionId the picker is shown (legacy fallback) + auto-selects.
+      expect(find.text('Choose the session'), findsOneWidget);
       expect(find.text('Auto-generated summary'), findsOneWidget);
     });
 
@@ -173,8 +175,9 @@ void main() {
         sessionId: 's1',
       );
       expect(find.text('No published summary yet.'), findsOneWidget);
-      // The picker still renders so the user can pick another session.
-      expect(find.text('Choose the session'), findsOneWidget);
+      // #1/#6 — details-only (a sessionId was passed): no picker; the user goes
+      // back to the summaries list to pick another session.
+      expect(find.text('Choose the session'), findsNothing);
     });
 
     testWidgets('a non-404 failure shows error + retry, which re-fetches',
