@@ -60,6 +60,14 @@ internal sealed class RowAuditingSaveChangesInterceptor(
         "PasswordHash",
         "SecurityStamp",
         "ConcurrencyStamp",
+        // A2-10 — the UserProfile PII identifiers are encrypted at rest; the
+        // row-audit reads the model (plaintext) value, so redact them here too so
+        // the audit trail records *that* they changed without leaking the PII.
+        "NationalId",
+        "IqamaNumber",
+        "PassportNumber",
+        "SaudiMobile",
+        "InternationalMobile",
     };
 
     private static readonly string[] RedactedSuffixes =

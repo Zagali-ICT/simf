@@ -364,6 +364,11 @@ if (app.Environment.IsProduction()
 SIMF.Infrastructure.DependencyInjection.EnsureAiPromptHashSecretConfigured(
     app.Environment.IsProduction());
 
+// A2-10 (security) — refuse to start in Production without the PII encryption key
+// (it encrypts the UserProfile national-ID / Iqama / passport / mobile columns).
+SIMF.Infrastructure.DependencyInjection.EnsurePiiEncryptionConfigured(
+    app.Environment.IsProduction(), app.Services);
+
 // Apply the migrations and seed the super-admin. Skipped under the test host,
 // which prepares its own database.
 if (!app.Environment.IsEnvironment("Testing"))

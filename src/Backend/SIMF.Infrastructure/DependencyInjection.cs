@@ -44,6 +44,23 @@ public static class DependencyInjection
         }
     }
 
+    /// <summary>A2-10 (security) — refuse to start in Production when the PII
+    /// encryption key (<c>Storage:UserIdDocumentEncryptionKey</c>, reused for the
+    /// UserProfile identifier columns) is missing or not a valid 32-byte base64
+    /// key. Without it, every write of national ID / Iqama / passport / mobile
+    /// would throw at runtime. Call from the host after the app is built.</summary>
+    public static void EnsurePiiEncryptionConfigured(bool isProduction, IServiceProvider services)
+    {
+        if (isProduction
+            && !services.GetRequiredService<SIMF.Application.Abstractions.IPiiEncryptor>().IsKeyConfigured)
+        {
+            throw new InvalidOperationException(
+                "Storage:UserIdDocumentEncryptionKey must be a valid base64 32-byte key in "
+                + "Production — it encrypts the UserProfile PII columns at rest (NCA A2-10). "
+                + "Set SIMF_Storage__UserIdDocumentEncryptionKey before starting.");
+        }
+    }
+
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -502,6 +519,9 @@ public static class DependencyInjection
         // V-1 (D-429) — VVIP/VIP welcome-photo store, separate base dir from avatars.
         services.AddSingleton<IVipPhotoStorage, FilesystemVipPhotoStorage>();
         services.AddSingleton<IUserIdDocumentStorage, EncryptedUserIdDocumentStorage>();
+        // A2-10 — AES-GCM encryptor for PII identifier columns; applied by an EF
+        // value converter on UserProfile (SimfAppDbContext.OnModelCreating).
+        services.AddSingleton<SIMF.Application.Abstractions.IPiiEncryptor, AesGcmPiiEncryptor>();
         services.AddSingleton<ILogFileService, LogFileService>();
         services.AddSingleton<IJwtTokenService, JwtTokenService>();
         services.AddSingleton<ITotpVerifier, TotpVerifier>();

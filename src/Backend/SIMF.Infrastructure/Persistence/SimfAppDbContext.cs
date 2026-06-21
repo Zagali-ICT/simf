@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using SIMF.Application.Abstractions;
 using SIMF.Domain.AccessControl;
 using SIMF.Domain.Ai;
 using SIMF.Domain.Archive;
@@ -34,8 +36,11 @@ namespace SIMF.Infrastructure.Persistence;
 /// relation/FK and no duplicated data: a reference to an Identity user is a bare
 /// <c>Guid</c> resolved on read (see the Data/Identity separation rule).
 /// </summary>
-public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbContext(options)
+public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEncryptor pii)
+    : DbContext(options)
 {
+    private readonly IPiiEncryptor _pii = pii;
+
     /// <summary>The operation log — the durable audit trail (SIMF-FDS-001 section 9).</summary>
     public DbSet<OperationLogEntry> OperationLog => Set<OperationLogEntry>();
 
@@ -229,5 +234,30 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
         modelBuilder.ApplyConfigurationsFromAssembly(
             typeof(SimfAppDbContext).Assembly,
             type => type.Namespace == "SIMF.Infrastructure.Persistence.Configurations.App");
+
+        // A2-10 (NCA Secure App-Dev Standard) — encrypt the most sensitive PII
+        // identifier columns at rest with AES-GCM (IPiiEncryptor). Applied here
+        // (after the entity configurations) because the converter needs the
+        // injected encryptor; the widened length (256) holds the enc:1: blob.
+        // These columns have no index/unique/equality-query dependency, so
+        // randomized encryption is safe (verified). Reads of legacy plaintext
+        // rows are returned unchanged until they are next written.
+        var piiConverter = new ValueConverter<string?, string?>(
+            value => _pii.Encrypt(value),
+            value => _pii.Decrypt(value));
+        modelBuilder.Entity<SIMF.Domain.Profiles.UserProfile>(entity =>
+        {
+            foreach (var property in new[]
+            {
+                nameof(SIMF.Domain.Profiles.UserProfile.NationalId),
+                nameof(SIMF.Domain.Profiles.UserProfile.IqamaNumber),
+                nameof(SIMF.Domain.Profiles.UserProfile.PassportNumber),
+                nameof(SIMF.Domain.Profiles.UserProfile.SaudiMobile),
+                nameof(SIMF.Domain.Profiles.UserProfile.InternationalMobile),
+            })
+            {
+                entity.Property(property).HasConversion(piiConverter).HasMaxLength(256);
+            }
+        });
     }
 }
