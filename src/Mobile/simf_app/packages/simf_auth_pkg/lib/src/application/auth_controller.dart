@@ -189,6 +189,18 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
     await reloadCurrentUser();
   }
 
+  /// #12 — re-issue the emailed sign-in OTP for the in-progress ticket, in place
+  /// (no return to sign-in). The same ticket stays valid, so [AuthState] is
+  /// unchanged; returns the resend-button cooldown in seconds. No-op (-1) when
+  /// not awaiting an OTP.
+  Future<int> resendOtp() async {
+    final current = state;
+    if (current is! AuthStateAwaitingOtp) {
+      return -1;
+    }
+    return _repository.resendOtp(otpToken: current.otpToken);
+  }
+
   /// Sign-up step 1 (Page 005). Creates a Visitor account (no privilege,
   /// under review, profile incomplete) and triggers the email-OTP — it does
   /// **not** sign the user in and does **not** change [AuthState]. The success

@@ -248,4 +248,54 @@ void main() {
           .called(greaterThanOrEqualTo(1));
     });
   });
+
+  group('AuthController OTP resend (#12)', () {
+    test('resendOtp re-issues for the in-progress ticket without re-auth',
+        () async {
+      final repo = _MockAuthRepository();
+      final secure = _MockSecureStorage();
+      when(() => secure.read(any())).thenAnswer((_) async => null);
+      when(() => secure.write(any(), any())).thenAnswer((_) async {});
+      when(
+        () => repo.signIn(
+          email: any(named: 'email'),
+          password: any(named: 'password'),
+        ),
+      ).thenAnswer((_) async => const SignInOtpChallenge('otp-tok'));
+      when(() => repo.resendOtp(otpToken: any(named: 'otpToken')))
+          .thenAnswer((_) async => 60);
+
+      final container = _container(repo, secure);
+      addTearDown(container.dispose);
+      await _waitFor(container, (s) => s is AuthStateSignedOut);
+      final notifier = container.read(authControllerProvider.notifier);
+      await notifier.signIn(email: 'v@simf', password: 'pw');
+      expect(container.read(authControllerProvider), isA<AuthStateAwaitingOtp>());
+
+      final cooldown = await notifier.resendOtp();
+
+      expect(cooldown, 60);
+      verify(() => repo.resendOtp(otpToken: 'otp-tok')).called(1);
+      // The ticket is unchanged — still awaiting the OTP, not bounced to sign-in.
+      expect(container.read(authControllerProvider), isA<AuthStateAwaitingOtp>());
+    });
+
+    test('resendOtp is a no-op (-1) when not awaiting an OTP', () async {
+      final repo = _MockAuthRepository();
+      final secure = _MockSecureStorage();
+      when(() => secure.read(any())).thenAnswer((_) async => null);
+      when(() => repo.resendOtp(otpToken: any(named: 'otpToken')))
+          .thenAnswer((_) async => 60);
+
+      final container = _container(repo, secure);
+      addTearDown(container.dispose);
+      await _waitFor(container, (s) => s is AuthStateSignedOut);
+
+      final cooldown =
+          await container.read(authControllerProvider.notifier).resendOtp();
+
+      expect(cooldown, -1);
+      verifyNever(() => repo.resendOtp(otpToken: any(named: 'otpToken')));
+    });
+  });
 }

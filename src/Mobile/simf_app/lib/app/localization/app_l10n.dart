@@ -498,6 +498,9 @@ class AppL10n {
   String get otpResendCountdown => _t('إعادة الإرسال خلال', 'Resend in');
   String get otpDidntReceive => _t('لم يصلك الرمز؟', 'Didn\'t get the code?');
   String get otpResendAction => _t('إعادة الإرسال', 'Resend');
+  // #12 — confirmation that a fresh sign-in code was emailed in place.
+  String get otpResentToast =>
+      _t('تم إرسال رمز جديد إلى بريدك', 'A new code was sent to your email');
   String get forgotPasswordTitle =>
       _t('استعادة كلمة المرور', 'Reset password');
   String get forgotPasswordBody => _t(

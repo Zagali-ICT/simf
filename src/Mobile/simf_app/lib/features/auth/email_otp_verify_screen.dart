@@ -22,8 +22,9 @@ const Color _sweepTint = Color(0x0AFFFFFF);
 /// when the account has 2FA on; the controller holds the `otpToken`. The user
 /// enters the emailed code and the app calls `POST /app/auth/verify-otp`.
 /// Visitor-only (no TOTP path). A resend countdown shows below the boxes; once
-/// it elapses, "إعادة الإرسال" returns to sign-in (a 2FA code can only be
-/// re-issued by re-authenticating — the password isn't held here). Frame 758:2616.
+/// it elapses, "إعادة الإرسال" re-issues the code **in place** via
+/// `POST /app/auth/resend-otp` (#12 — keyed by the ticket, no re-authentication)
+/// and restarts the countdown. Frame 758:2616.
 class EmailOtpVerifyScreen extends ConsumerStatefulWidget {
   const EmailOtpVerifyScreen({super.key});
 
@@ -50,7 +51,7 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
     super.initState();
     // The focused-box highlight follows the hidden field's focus.
     _codeFocus.addListener(() => setState(() {}));
-    _resendTap = TapGestureRecognizer()..onTap = _back;
+    _resendTap = TapGestureRecognizer()..onTap = () => unawaited(_resend());
     _startCountdown();
   }
 
@@ -112,6 +113,38 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
         }
         routeAfterAuth(context, ref);
       }
+    } on AuthFailure catch (failure) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _error = failure is NetworkUnavailable
+            ? l10n.networkErrorBody
+            : failure.source.message;
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
+  }
+
+  /// #12 — re-issue the emailed code in place (the controller keeps the ticket),
+  /// restart the cooldown, and toast. A rate-limit / failure surfaces inline.
+  Future<void> _resend() async {
+    final l10n = AppL10n.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await ref.read(authControllerProvider.notifier).resendOtp();
+      if (!mounted) {
+        return;
+      }
+      _startCountdown();
+      messenger.showSnackBar(SnackBar(content: Text(l10n.otpResentToast)));
     } on AuthFailure catch (failure) {
       if (!mounted) {
         return;
@@ -323,9 +356,9 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                // Resend row (frame 758:2616). A 2FA OTP can only be re-issued
-                // by re-authenticating (the password isn't on this screen), so
-                // "إعادة الإرسال" returns to sign-in once the countdown ends.
+                // Resend row (frame 758:2616). #12 — once the countdown ends
+                // "إعادة الإرسال" re-issues the code IN PLACE (resend-otp, keyed
+                // by the ticket); it no longer returns to sign-in.
                 Text.rich(
                   TextSpan(
                     children: <InlineSpan>[

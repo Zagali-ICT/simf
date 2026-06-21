@@ -58,6 +58,14 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<int> resendOtp({required String otpToken}) async {
+    final result = await _guard(
+      () => _api.resendOtp(ResendOtpRequest(otpToken: otpToken)),
+    );
+    return result.cooldownSeconds;
+  }
+
+  @override
   Future<void> signUp({
     required String email,
     required String password,

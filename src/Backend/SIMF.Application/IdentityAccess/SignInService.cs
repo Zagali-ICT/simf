@@ -48,6 +48,8 @@ public sealed class SignInService(
     private static readonly TimeSpan OtpRequestWindow = TimeSpan.FromHours(1);
     private const int MaxSecondFactorAttempts = 5;
     private const int MaxOtpRequestsPerWindow = 5;
+    // #12 — client resend-button cooldown (the hard cap is MaxOtpRequestsPerWindow).
+    private const int ResendCooldownSeconds = 60;
 
     public async Task<SignInResponse> SignInAsync(
         SignInRequest request,
@@ -389,6 +391,49 @@ public sealed class SignInService(
         ticket.ConsumedAt = now;
         await secondFactorTokenRepository.UpdateAsync(ticket, cancellationToken);
         return await IssueTokensAsync(user, cancellationToken);
+    }
+
+    public async Task<ResendOtpResponse> ResendOtpAsync(
+        ResendOtpRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        // #12 — re-issue the emailed code for an in-progress 2FA ticket without
+        // re-entering the password (the ticket already proved it). GetValidTicket
+        // throws on a missing / consumed / attempt-exhausted / expired ticket.
+        var ticket = await GetValidTicketAsync(
+            request.OtpToken, SecondFactorKind.EmailOtp, cancellationToken);
+        var user = await accounts.FindByIdAsync(ticket.UserId, cancellationToken)
+            ?? throw new ApiException(ErrorCodes.AuthOtpTokenInvalid, 400,
+                "The sign-in session is no longer valid.",
+                "جلسة تسجيل الدخول لم تعد صالحة.");
+
+        await EnsureNotLockedOutAsync(user, cancellationToken);
+
+        var now = timeProvider.GetUtcNow();
+        // Re-issue under the same per-hour budget (5/window) — a 6th resend
+        // throws RateLimitExceeded (429), consuming any prior unconsumed code.
+        var otpCode = await IssueSignInOtpAsync(user, now, cancellationToken);
+
+        // The ticket (5 min) is shorter than the code (10 min), so refresh the
+        // ticket window or the fresh code could outlive its verifiable session.
+        // The ticket's AttemptCount is deliberately NOT reset here: resending
+        // must not hand back a fresh brute-force budget — the 5-strike verify
+        // counter stays monotonic across every code issued under this ticket.
+        ticket.ExpiresAt = now.Add(TicketLifetime);
+        await secondFactorTokenRepository.UpdateAsync(ticket, cancellationToken);
+
+        await emailQueue.TryEnqueueAsync(
+            BuildSignInOtpEmail(user.Email!, otpCode),
+            purpose: "SignInOtp",
+            subjectEmail: user.Email!,
+            subjectUserId: user.Id,
+            auditLog: auditLog,
+            logger: logger,
+            cancellationToken: cancellationToken);
+        await AuditAsync(AuditEvents.SignInSecondFactorIssued, AuditOutcome.Success,
+            user.Email!, user.Id, detail: "resend", cancellationToken: cancellationToken);
+
+        return new ResendOtpResponse(ResendCooldownSeconds);
     }
 
     /// <summary>
