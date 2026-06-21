@@ -225,6 +225,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #24-01 `archiveDetail` (`GET /app/archive/{id}`) | [`mobile-archive-detail.md`](mobile-archive-detail.md) | E2E-MOB024D-001..009 |
 | `My Contacts` / `Share my contact` (`/app/account/share-token` + `/app/contacts/*`) | [`mobile-my-contacts.md`](mobile-my-contacts.md) | E2E-MMC-001..011 |
 | `My meetings` (`GET /app/my-meetings`) — D-479, additive read-only | [`mobile-my-meetings.md`](mobile-my-meetings.md) | E2E-MMM-001..006 |
+| `Confirm Face ID` step-up (`POST /app/auth/device-keys/step-up` + gated register) — #7a biometric-enable | [`mobile-biometric-step-up.md`](mobile-biometric-step-up.md) | E2E-MBSU-001..011 |
 
 ## How to add a new catalogue file
 

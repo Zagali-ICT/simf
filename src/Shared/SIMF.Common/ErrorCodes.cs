@@ -300,6 +300,9 @@ public static class ErrorCodes
     public const string DeviceKeyChallengeInvalid = "DEVICE_KEY_CHALLENGE_INVALID";
     public const string DeviceKeySignatureInvalid = "DEVICE_KEY_SIGNATURE_INVALID";
     public const string DeviceKeyOwnerUnavailable = "DEVICE_KEY_OWNER_UNAVAILABLE";
+    // #7a — emailed-OTP step-up before enrolling a biometric device key.
+    public const string BiometricStepUpRequired = "BIOMETRIC_STEP_UP_REQUIRED";
+    public const string BiometricStepUpInvalid = "BIOMETRIC_STEP_UP_INVALID";
 
     // Invitations + VIP notify (D-168, gap doc G5 — public-relations
     // module, PDF §2.7.3).

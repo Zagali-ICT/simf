@@ -269,6 +269,9 @@ public static class AuditEvents
     public const string DeviceKeyRevoked = "DeviceKey.Revoked";
     public const string SignInWithDeviceKey = "SignIn.WithDeviceKey";
     public const string SignInWithDeviceKeyFailed = "SignIn.WithDeviceKeyFailed";
+    // #7a — emailed-OTP step-up guarding biometric device-key enrolment.
+    public const string DeviceKeyStepUpIssued = "DeviceKey.StepUpIssued";
+    public const string DeviceKeyStepUpRejected = "DeviceKey.StepUpRejected";
 
     // CMS: ContentBlock + Banner (D-173, gap doc G8 — PDF §1, §2.1)
     public const string ContentBlockUpserted = "ContentBlock.Upserted";

@@ -267,7 +267,10 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
   /// sign-in): generates a P-256 key pair, registers the public key with the
   /// server, and stores the private key + id in secure storage. No-op unless
   /// signed in (registration requires the bearer token).
-  Future<void> enrolDeviceKey({String label = 'SIMF mobile'}) async {
+  Future<void> enrolDeviceKey({
+    String label = 'SIMF mobile',
+    String? stepUpCode,
+  }) async {
     if (state is! AuthStateSignedIn) {
       return;
     }
@@ -275,6 +278,7 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
     final id = await _repository.registerDeviceKey(
       publicKeySpki: pair.publicKeySpkiBase64,
       label: label,
+      stepUpCode: stepUpCode,
     );
     await _secureStorage.write(StorageKeys.deviceKeyId, id);
     await _secureStorage.write(
@@ -282,6 +286,10 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
       pair.privateKeyBase64,
     );
   }
+
+  /// #7a — request an emailed step-up code before enrolling biometric sign-in;
+  /// returns the masked address the code was sent to (for the confirm screen).
+  Future<String> sendBiometricStepUp() => _repository.sendBiometricStepUp();
 
   /// Whether a device key is enrolled on this device — the sign-in screen only
   /// offers the biometric button when this is true.

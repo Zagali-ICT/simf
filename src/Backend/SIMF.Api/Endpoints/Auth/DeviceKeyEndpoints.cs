@@ -34,6 +34,35 @@ public sealed class RegisterDeviceKeyEndpoint(IDeviceKeyService service)
     }
 }
 
+/// <summary>#7a — issue + email a step-up code to the signed-in caller's own
+/// address. The user supplies it on the following
+/// <see cref="RegisterDeviceKeyEndpoint"/> call, so a borrowed-but-unlocked
+/// phone can't silently enrol a biometric credential without also holding the
+/// account's email. The re-issue cap lives in the service (5 per hour); "auth"
+/// adds the per-IP limiter the other device-key endpoints use.</summary>
+public sealed class SendBiometricStepUpEndpoint(IDeviceKeyService service)
+    : EndpointWithoutRequest<ApiResult<SendBiometricStepUpResponse>>
+{
+    public override void Configure()
+    {
+        Post("/app/auth/device-keys/step-up");
+        Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Auth");
+    }
+
+    public override async Task HandleAsync(CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var callerId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        var result = await service.IssueEnrolStepUpAsync(callerId, ct);
+        await Send.OkAsync(ApiResult<SendBiometricStepUpResponse>.Ok(result), ct);
+    }
+}
+
 public sealed class ListMyDeviceKeysEndpoint(IDeviceKeyService service)
     : EndpointWithoutRequest<ApiResult<IReadOnlyList<DeviceKeyEntry>>>
 {

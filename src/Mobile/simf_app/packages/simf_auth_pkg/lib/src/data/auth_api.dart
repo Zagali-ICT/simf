@@ -120,6 +120,23 @@ class AuthApi {
     );
   }
 
+  /// #7a — request an emailed step-up code before enrolling a device key —
+  /// backend `POST /app/auth/device-keys/step-up`. Requires a signed-in
+  /// approved caller; returns the masked recipient + the code lifetime.
+  Future<SendBiometricStepUpResponseDto> sendBiometricStepUp() {
+    return _client.post<SendBiometricStepUpResponseDto>(
+      '/app/auth/device-keys/step-up',
+      decodeData: (data) {
+        if (data is! Map<String, dynamic>) {
+          throw const FormatException(
+            'biometric step-up response was not an object.',
+          );
+        }
+        return SendBiometricStepUpResponseDto.fromJson(data);
+      },
+    );
+  }
+
   Future<DeviceKeyChallengeDto> issueDeviceKeyChallenge(String deviceKeyId) {
     return _client.post<DeviceKeyChallengeDto>(
       '/app/auth/device-keys/$deviceKeyId/challenge',

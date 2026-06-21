@@ -10,7 +10,21 @@ public sealed class RegisterDeviceKeyRequest
     public string PublicKey { get; set; } = string.Empty;
     public string Algorithm { get; set; } = "ES256";
     public string Label { get; set; } = string.Empty;
+
+    /// <summary>#7a — the emailed-OTP step-up code confirming the user intends
+    /// to enrol biometric sign-in. Required by the server when
+    /// <c>DeviceKey:RequireStepUpForEnrol</c> is on (the default); obtained from
+    /// <c>POST /app/auth/device-keys/step-up</c>. Nullable + appended so the
+    /// register contract stays wire-compatible.</summary>
+    public string? StepUpCode { get; set; }
 }
+
+/// <summary>#7a — the result of requesting a biometric-enrol step-up code: the
+/// masked address the code was emailed to (for the "we sent a code to t***@x"
+/// line) and how long it stays valid. Never carries the plaintext code.</summary>
+public sealed record SendBiometricStepUpResponse(
+    string MaskedEmail,
+    int ExpiresInSeconds);
 
 /// <summary>D-172 — one of the caller's device keys (or one row in the
 /// admin list). The public-key field is **not** included to avoid

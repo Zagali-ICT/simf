@@ -132,6 +132,9 @@ public static class DependencyInjection
             configuration.GetSection(SuperAdminOptions.SectionName));
         services.Configure<JwtOptions>(
             configuration.GetSection(JwtOptions.SectionName));
+        // #7a — biometric device-key enrolment step-up toggle (default on).
+        services.Configure<DeviceKeyOptions>(
+            configuration.GetSection(DeviceKeyOptions.SectionName));
         // R1 — D-074: typed Storage settings; replaces four scattered
         // IConfiguration["Storage:..."] reads across FilesystemAvatarStorage,
         // EncryptedUserIdDocumentStorage, LogFileService, and Program.cs.

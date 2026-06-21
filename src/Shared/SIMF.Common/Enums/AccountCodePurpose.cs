@@ -25,4 +25,12 @@ public enum AccountCodePurpose
     /// freeze permits appending new enum values); display falls back to the enum
     /// name (these codes are never enumerated in a UI).</summary>
     BadgeActivationOtp = 3,
+
+    /// <summary>#7a — a one-time code emailed to a signed-in user as the step-up
+    /// confirmation before a biometric (Face-ID) device key is enrolled, so a
+    /// borrowed-but-unlocked phone can't silently bind a new credential without
+    /// also holding the account's email. Additive value (D-110 freeze permits
+    /// appending new enum values); display falls back to the enum name (these
+    /// codes are never enumerated in a UI).</summary>
+    BiometricEnrolStepUp = 4,
 }

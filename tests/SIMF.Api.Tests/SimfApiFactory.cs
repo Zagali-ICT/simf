@@ -90,6 +90,11 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         // UserProfileFaceGateTests re-enables it via FaceGateApiFactory to
         // exercise the real offline ONNX model.
         Environment.SetEnvironmentVariable("FaceDetection__Enabled", "false");
+        // #7a — the biometric-enrol emailed-OTP step-up is OFF for the general
+        // suite so the device-key ceremony tests register without a code;
+        // DeviceKeyStepUpTests re-enables it via BiometricStepUpApiFactory to
+        // exercise the real gate.
+        Environment.SetEnvironmentVariable("DeviceKey__RequireStepUpForEnrol", "false");
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)

@@ -131,4 +131,10 @@ class RouteNames {
 
   /// Visitor email-OTP second factor at sign-in (the app has no TOTP).
   static const String verifyOtp = 'verifyOtp';
+
+  // #7a — emailed-OTP step-up confirming the user wants to ENABLE biometric
+  // (Face-ID) sign-in. A pushed route reached from the Face-ID toggle (and the
+  // post-sign-in enrol nudge); a signed-in approved caller. Backend
+  // POST /app/auth/device-keys/step-up + the gated register.
+  static const String biometricStepUp = 'biometricStepUp';
 }

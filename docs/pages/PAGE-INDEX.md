@@ -219,6 +219,7 @@ testing (see [`SIMF-APP-Build-Plan.md`](../App/SIMF-APP-Build-Plan.md)).
 | `myMeetings` (`GET /app/my-meetings`) — D-479, additive read-only | 🟢 Screen built (D-479) | Visitor (approved) | _(see e2e)_ | [e2e/mobile-my-meetings.md](../tests/e2e/mobile-my-meetings.md) |
 | `sessionModerate` (`GET/PUT /app/sessions/{id}/questions/moderate·push·hide`) — moderator Q&A, additive | 🟢 Screen built (D-405) | Moderator+ (server: per-session grant) | — (Figma 758:5307) | [e2e/mobile-session-moderate.md](../tests/e2e/mobile-session-moderate.md) |
 | `gateScanner` (`GET /app/gates/my-assignments` · `POST /app/gates/{id}/scans`) — staff gate console, additive | 🟢 Screen built (D-406) | Staff (server: GateOperator grant) | — (Figma 758:4380/4651/4735/4819/4886) | [e2e/mobile-gate-scan.md](../tests/e2e/mobile-gate-scan.md) |
+| `biometricStepUp` (`POST /app/auth/device-keys/step-up` + gated register) — #7a biometric-enable emailed-OTP step-up | 🟢 Screen built (#7a); confirm → email a code → enrol; reached from the Face-ID toggle / post-sign-in nudge; server-enforced | Visitor+ (approved) | _(reuses the KSA OTP frame)_ | [e2e/mobile-biometric-step-up.md](../tests/e2e/mobile-biometric-step-up.md) |
 
 ---
 

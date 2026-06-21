@@ -14,6 +14,14 @@ public interface IDeviceKeyService
         RegisterDeviceKeyRequest request,
         CancellationToken cancellationToken = default);
 
+    /// <summary>#7a — issue + email a one-time step-up code to the signed-in
+    /// caller's own address, to be supplied on the following
+    /// <see cref="RegisterAsync"/> call. Capped per window like the sign-in OTP;
+    /// returns the masked recipient + lifetime (never the plaintext code).</summary>
+    Task<SendBiometricStepUpResponse> IssueEnrolStepUpAsync(
+        Guid callerUserId,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<DeviceKeyEntry>> ListMineAsync(
         Guid callerUserId,
         CancellationToken cancellationToken = default);

@@ -458,8 +458,6 @@ class AppL10n {
   String get biometricPromptEnable => _t('تفعيل', 'Enable');
   String get biometricEnabledToast =>
       _t('تم تفعيل الدخول بالبصمة', 'Face ID sign-in enabled');
-  String get biometricEnableFailedToast =>
-      _t('تعذّر تفعيل الدخول بالبصمة', "Couldn't enable Face ID sign-in");
   String get biometricDisabledToast =>
       _t('تم إيقاف الدخول بالبصمة', 'Face ID sign-in turned off');
   // Disabling revokes the device key and wipes the local biometric credential —
@@ -471,6 +469,20 @@ class AppL10n {
         'Your Face ID sign-in data will be permanently deleted from this device.',
       );
   String get biometricDisableConfirmAction => _t('حذف', 'Delete');
+  // #7a — enabling first confirms intent, then verifies an emailed step-up code
+  // before the device key is enrolled.
+  String get biometricEnableConfirmTitle =>
+      _t('تفعيل الدخول ببصمة الوجه؟', 'Enable Face ID sign-in?');
+  String get biometricEnableConfirmBody => _t(
+        'سنرسل رمز تأكيد إلى بريدك الإلكتروني للتحقق من هويتك.',
+        "We'll email you a confirmation code to verify it's you.",
+      );
+  String get biometricEnableConfirmAction => _t('متابعة', 'Continue');
+  String get biometricStepUpTitle => _t('تأكيد بصمة الوجه', 'Confirm Face ID');
+  String get biometricStepUpHeading =>
+      _t('أدخل رمز التأكيد', 'Enter the confirmation code');
+  String get biometricStepUpSendFailed =>
+      _t('تعذّر إرسال الرمز. حاول مرة أخرى.', "Couldn't send the code. Try again.");
 
   // Email-OTP second factor + reset flow (Page 003 L-5/L-6).
   String get otpTitle => _t('رمز التحقق', 'Verification code');

@@ -195,6 +195,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<String> registerDeviceKey({
     required String publicKeySpki,
     required String label,
+    String? stepUpCode,
   }) async {
     final entry = await _guard(
       () => _api.registerDeviceKey(
@@ -202,10 +203,17 @@ class AuthRepositoryImpl implements AuthRepository {
           publicKey: publicKeySpki,
           algorithm: DeviceKeyClient.algorithm,
           label: label,
+          stepUpCode: stepUpCode,
         ),
       ),
     );
     return entry.id;
+  }
+
+  @override
+  Future<String> sendBiometricStepUp() async {
+    final result = await _guard(() => _api.sendBiometricStepUp());
+    return result.maskedEmail;
   }
 
   @override

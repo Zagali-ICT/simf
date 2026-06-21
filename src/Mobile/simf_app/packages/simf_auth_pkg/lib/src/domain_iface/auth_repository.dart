@@ -92,10 +92,17 @@ abstract class AuthRepository {
 
   /// Register a device key (public SPKI) for biometric sign-in; returns the
   /// server-assigned device-key id. Requires a signed-in approved caller.
+  /// #7a — [stepUpCode] is the emailed confirmation code; required by the
+  /// server when the enrol step-up gate is on, omitted otherwise.
   Future<String> registerDeviceKey({
     required String publicKeySpki,
     required String label,
+    String? stepUpCode,
   });
+
+  /// #7a — request an emailed step-up code before enrolling a device key;
+  /// returns the masked address it was sent to. Requires a signed-in caller.
+  Future<String> sendBiometricStepUp();
 
   /// Ask the server for a fresh challenge for [deviceKeyId]; returns the
   /// base64 challenge to sign.
