@@ -85,18 +85,34 @@ several in an isolated worktree to avoid a concurrent worker's broken-tree windo
 | 4 | A3-4/A5-13/A6-21 CSP (enforced on API; report-only on CP/Web) | `c0cd95ca` |
 | 5 | A11-3 shared-PII temp purge (A11-6 FLAG_SECURE + A11-16 signing applied to git-ignored `android/` → owner) | `ef86f93a` |
 | 8 | §3-20 re-enabled test gate · A6-13 SCA + NuGetAudit · A6-2 SBOM · §1-2/§3-2 SAST/DAST scaffold | `9d9c1a4b` |
-| 9 | A4-13 threat model (`SIMF-Threat-Model-2026-06-21.md`) + `SecurityResponseTests` regression | (this) |
+| 9 | A4-13 threat model (`SIMF-Threat-Model-2026-06-21.md`) + `SecurityResponseTests` regression | `f6ebbbc5` |
+| 6a | A2-10 PII-at-rest (AES-GCM EF value converter + migration `SecA210`; RowAudit redacts PII) | `4b1c3086` |
+| 6b | A7-13 password expiry (`PasswordChangedAtUtc` + config; migration `SecA713`) | `5287aad9` |
+| 6c | A7-20 password-history reuse prevention (new table; migration `SecA720`) | `609a42b0` |
+| 6d | A7-31 last-sign-in tracking + `AuthTokens.PreviousSignInAtUtc` (migration `SecA731`) | `8a7b4e70` |
+| 6e | A1-19 dormant-account auto-disable (service + daily `BackgroundService`) | `041a4aea` |
+| 7 | A6-18 upload AV scan (`IUploadScanner` + EICAR default; wired into every upload path) | `ae0b4eb2` |
 
-**Deferred to a follow-up (owner decision):**
-- **Wave 6 (freeze-gated schema)** — A2-10 PII-at-rest, A7-13 expiry, A7-20 history,
-  A7-31 last-login, A1-19 dormant-disable, A1-14/A4-10 export governor — **paused until
-  the concurrent worker's uncommitted App-schema (SeatReservation) refactor is committed**,
-  so the `SimfAppDbContext` migration serialises cleanly (avoids snapshot/ordering conflict).
-- **Wave 7 (A6-18 upload AV)** — pluggable scanner; paused with Wave 6 (same Infrastructure).
-- **A7-8** IP-lockout tier (partial; would lock the shared-loopback test suite).
-- **Mobile** A11-7 root/JB, A11-26 anti-debug, A11-11 Dart obfuscate, A11-14 field
-  autocorrect, A11-19 CSRF (need a pub package + owner policy + device test).
-- **A9-15** crypto-/TLS-failure audit events.
+**Status: every ❌ gap that is fixable in code is now closed** (18 commits, all full-suite
+green: API 1179/1179, Application 34, CP 180, ApiClient 41 + the dedicated security tests).
+
+**Remaining (not hard ❌ gaps):**
+- **A1-14/A4-10** per-user/day export governor — ⚠️ *partial* (strong per-request rate
+  limits already exist); optional enhancement.
+- **A7-8** IP-lockout tier — ⚠️ partial (account + per-email + per-IP limits already exist).
+- **A9-15** crypto-/TLS-failure audit events — ⚠️ (most security events already audited).
+- **Client follow-up:** surface the A7-31 "last signed in …" notice in app/web/CP UI
+  (the data is already on `AuthTokens.PreviousSignInAtUtc`).
+- **Mobile (need a pub package + owner policy + device test):** A11-7 root/JB detection,
+  A11-26 anti-debug, A11-11 Dart `--obfuscate`, A11-14 field autocorrect, A11-19 CSRF; plus
+  A11-6 FLAG_SECURE + A11-16 release signing live on disk in the git-ignored `android/`.
+
+**Owner / ops (cannot be code — Groups D & E):** rotate the 4 git-history secrets + purge
+(C1); verify `SIMF_SuperAdmin__*` env (H1); CA cert then remove the Flutter TLS bypass +
+add pinning (C2/H2); SQL/host hardening; WAF; independent pentest; key-management policy
+(A2-7); SIEM forwarding/log archival; the one-time legacy-PII re-encryption sweep; and
+**enable** the new admin knobs (`IdentityLifecycle:PasswordMaxAgeDays` /
+`PasswordHistoryCount` / `DormantAccountDisableDays`, all default 0/off).
 
 **Owner / ops actions (cannot be code — Groups D & E):** rotate the 4 git-history secrets
 + purge history (C1); verify `SIMF_SuperAdmin__*` env (H1); CA cert then remove the Flutter
