@@ -9,6 +9,7 @@
 @attribute [RequirePermission(PermissionCatalog.AiPrompts.View)]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
+@inject NavigationManager Nav
 
 <PageTitle>@L["Admin.AiServices.Title"] · SIMF</PageTitle>
 
@@ -89,6 +90,10 @@
                 </SimfDataGridColumn>
             </Columns>
             <RowActions>
+                @* Open the per-service detail (Routing / Prompts / Analytics tabs).
+                   Same AiPrompts.View gate as this page + the detail page. *@
+                <SimfToolbarButton Icon="eye" Title="@L["Admin.AiServices.OpenDetail"]"
+                                   OnClick="@(() => Nav.NavigateTo($"/admin/ai/services/{context.Feature}"))" />
                 @* Set this service's provider/model on its active prompt (reuses the
                    prompt PUT, gated by AiPrompts.Edit). Shown only when the service
                    has an active prompt to retarget. *@
@@ -96,7 +101,7 @@
                     @if (context.ActivePromptId is not null)
                     {
                         <SimfToolbarButton Icon="edit" Title="@L["Admin.AiServices.Routing"]"
-                                           OnClick="@(() => OpenRoutingAsync(context.ActivePromptId.Value))" />
+                                           OnClick="@(() => OpenRouting(context.ActivePromptId.Value))" />
                     }
                 </AuthorizedAction>
             </RowActions>
@@ -107,48 +112,13 @@
     </div>
 </div>
 
-@if (_routing is not null)
+@if (_routingPromptId is not null)
 {
     <SimfModal Open="true" Title="@L["Admin.AiServices.Routing.Title"]" OnClose="CloseRouting">
         <ChildContent>
-            @if (_routingError is not null)
-            {
-                <SimfAlert Variant="error">@_routingError</SimfAlert>
-            }
-            <p><code>@_routing.Key</code></p>
-            <div class="simf-form__fields">
-                <SimfSelect TValue="string"
-                            Label="@L["Admin.AiPrompts.Field.Provider"]"
-                            Items="AiEnumOptions.Providers"
-                            ValueFor="@(id => id)"
-                            LabelFor="@(id => AiEnumOptions.ProviderLabel(id))"
-                            Value="@_routingProvider"
-                            ValueChanged="@(v => _routingProvider = v ?? string.Empty)"
-                            Disabled="_routingBusy" />
-                <SimfTextField Label="@L["Admin.AiPrompts.Field.Model"]"
-                               @bind-Value="_routingModel" Disabled="_routingBusy" />
-                <label class="simf-field">
-                    <span class="simf-field__label">@L["Admin.AiPrompts.Field.Temperature"]</span>
-                    <input class="simf-field__input" type="number" step="0.1" min="0" max="2"
-                           value="@_routingTemp.ToString(CultureInfo.InvariantCulture)"
-                           @onchange="OnRoutingTempChanged" disabled="@_routingBusy" />
-                </label>
-                <label class="simf-field">
-                    <span class="simf-field__label">@L["Admin.AiPrompts.Field.MaxOutputTokens"]</span>
-                    <input class="simf-field__input" type="number" min="1" max="8000"
-                           value="@_routingMax"
-                           @onchange="OnRoutingMaxChanged" disabled="@_routingBusy" />
-                </label>
-            </div>
+            <AiRoutingEditor PromptId="_routingPromptId.Value"
+                             OnSaved="OnRoutingSavedAsync" OnCancel="CloseRouting" />
         </ChildContent>
-        <Footer>
-            <SimfButton Type="button" OnClick="SaveRoutingAsync" Loading="_routingBusy">
-                @L["Admin.AiServices.Routing.Save"]
-            </SimfButton>
-            <SimfButton Type="button" Variant="secondary" Disabled="_routingBusy" OnClick="CloseRouting">
-                @L["Admin.AiServices.Routing.Cancel"]
-            </SimfButton>
-        </Footer>
     </SimfModal>
 }
 
@@ -263,94 +233,20 @@
         _page = GridPage<ServiceRow>.Of(items, filtered.Count, _query);
     }
 
-    // CP Phase-1 — set a service's provider/model from the console: load its
-    // active prompt (GET), edit only the routing fields, PUT it back. Reuses the
-    // prompt endpoints; the action is gated by AiPrompts.Edit (the PUT's gate).
-    private AdminAiPromptDetail? _routing;
-    private string _routingProvider = string.Empty;
-    private string _routingModel = string.Empty;
-    private double _routingTemp;
-    private int _routingMax;
-    private bool _routingBusy;
-    private string? _routingError;
+    // CP Phase-1/2 — set a service's provider/model from the console. The shared
+    // AiRoutingEditor (hosted in the modal) loads the active prompt + PUTs the
+    // routing change; this page only opens/closes it and reloads on save. The
+    // action is gated by AiPrompts.Edit (the editor's PUT permission).
+    private Guid? _routingPromptId;
 
-    private async Task OpenRoutingAsync(Guid promptId)
+    private void OpenRouting(Guid promptId) => _routingPromptId = promptId;
+
+    private async Task OnRoutingSavedAsync()
     {
-        _toast = null;
-        _routingError = null;
-        var env = await JS.InvokeAsync<ApiResult<AdminAiPromptDetail>>(
-            "simfAccount.getJson", $"/account/api/admin/ai/prompts/{promptId}");
-        if (env is { Success: true, Data: not null })
-        {
-            _routing = env.Data;
-            _routingProvider = AiEnumOptions.Id(_routing.Provider);
-            _routingModel = _routing.Model;
-            _routingTemp = _routing.Temperature;
-            _routingMax = _routing.MaxOutputTokens;
-        }
-        else
-        {
-            _toast = new Toast("error",
-                env?.Error?.MessageForCurrentCulture() ?? L["Admin.AiServices.LoadFailed"]);
-        }
+        _routingPromptId = null;
+        _toast = new Toast("success", L["Admin.AiServices.Routing.Saved"]);
+        await LoadAsync();
     }
 
-    private void OnRoutingTempChanged(ChangeEventArgs e)
-    {
-        if (double.TryParse(e.Value?.ToString(), NumberStyles.Float,
-            CultureInfo.InvariantCulture, out var d)) _routingTemp = d;
-    }
-
-    private void OnRoutingMaxChanged(ChangeEventArgs e)
-    {
-        if (int.TryParse(e.Value?.ToString(), out var n)) _routingMax = n;
-    }
-
-    private async Task SaveRoutingAsync()
-    {
-        if (_routing is null || _routingBusy) return;
-        _routingBusy = true;
-        _routingError = null;
-        try
-        {
-            // PUT the whole prompt back with only the routing fields changed — the
-            // update endpoint takes the full prompt, so the unedited fields are
-            // echoed from the loaded detail.
-            var env = await JS.InvokeAsync<ApiResult<AdminAiPromptDetail>>(
-                "simfAccount.putJson", $"/account/api/admin/ai/prompts/{_routing.Id}",
-                new UpdateAiPromptRequest
-                {
-                    Feature = _routing.Feature,
-                    DisplayName = _routing.DisplayName,
-                    DisplayNameArabic = _routing.DisplayNameArabic,
-                    Description = _routing.Description,
-                    DescriptionArabic = _routing.DescriptionArabic,
-                    Provider = AiEnumOptions.ParseProvider(_routingProvider),
-                    Model = _routingModel,
-                    SystemPrompt = _routing.SystemPrompt,
-                    UserPromptTemplate = _routing.UserPromptTemplate,
-                    Temperature = _routingTemp,
-                    MaxOutputTokens = _routingMax,
-                    IsActive = _routing.IsActive,
-                });
-            if (env is { Success: true })
-            {
-                _routing = null;
-                _toast = new Toast("success", L["Admin.AiServices.Routing.Saved"]);
-                await LoadAsync();
-            }
-            else
-            {
-                _routingError = env?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.AiServices.LoadFailed"];
-            }
-        }
-        finally { _routingBusy = false; }
-    }
-
-    private void CloseRouting()
-    {
-        _routing = null;
-        _routingError = null;
-    }
+    private void CloseRouting() => _routingPromptId = null;
 }

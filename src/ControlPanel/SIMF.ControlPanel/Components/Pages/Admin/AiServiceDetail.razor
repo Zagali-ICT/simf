@@ -1,0 +1,216 @@
+@* CP Phase-2 — per-service detail: a tabbed drill-down for one AI service
+   (AiFeature), reached from the services console. Routing tab = the inline
+   AiRoutingEditor (set provider/model on the active prompt); Prompts tab = this
+   service's prompts; Analytics tab = its 24h health from the dashboard aggregate.
+   Read-mostly; the only write is the routing edit (gated AiPrompts.Edit). *@
+@page "/admin/ai/services/{Feature}"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.AiPrompts.View)]
+@using SIMF.Components.Layout
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.AiServiceDetail.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@(_feature?.ToString() ?? L["Admin.AiServiceDetail.Title"])" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        @if (_feature is null)
+        {
+            <SimfEmptyState Title="@L["Admin.AiServiceDetail.Unknown"]" />
+        }
+        else
+        {
+            <SimfTabs Tabs="_tabs" Active="_active" ActiveChanged="OnTabChangedAsync" />
+
+            @if (_active == "routing")
+            {
+                @if (_activePromptId is null)
+                {
+                    <SimfEmptyState Title="@L["Admin.AiServiceDetail.NoActiveRouting"]" />
+                }
+                else
+                {
+                    <AuthorizedAction Permission="@PermissionCatalog.AiPrompts.Edit">
+                        <AiRoutingEditor PromptId="_activePromptId.Value" OnSaved="OnRoutingSavedAsync" />
+                    </AuthorizedAction>
+                }
+            }
+            else if (_active == "prompts")
+            {
+                @if (_prompts.Count == 0)
+                {
+                    <SimfEmptyState Title="@L["Admin.AiPrompts.None"]" />
+                }
+                else
+                {
+                    <table class="simf-table">
+                        <thead>
+                            <tr>
+                                <th>@L["Admin.AiPrompts.Col.Key"]</th>
+                                <th>@L["Admin.AiPrompts.Col.Provider"]</th>
+                                <th>@L["Admin.AiPrompts.Col.Model"]</th>
+                                <th>@L["Admin.AiPrompts.Col.Version"]</th>
+                                <th>@L["Admin.AiPrompts.Col.Active"]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in _prompts)
+                            {
+                                <tr>
+                                    <td><code>@p.Key</code></td>
+                                    <td>@p.Provider</td>
+                                    <td>@p.Model</td>
+                                    <td>v@(p.Version)</td>
+                                    <td>
+                                        @if (p.IsActive)
+                                        {
+                                            <SimfPill Variant="on">@L["Admin.AiPrompts.Active.Yes"]</SimfPill>
+                                        }
+                                        else
+                                        {
+                                            <SimfPill Variant="off">@L["Admin.AiPrompts.Active.No"]</SimfPill>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            }
+            else if (_active == "analytics")
+            {
+                @if (_statsLoading)
+                {
+                    <p>@L["Admin.AiDashboard.Loading"]</p>
+                }
+                else if (_stat is null)
+                {
+                    <SimfEmptyState Title="@L["Admin.AiDashboard.NoActivity"]" />
+                }
+                else
+                {
+                    <p class="simf-field__helper">@L["Admin.AiDashboard.Window"]</p>
+                    <div class="simf-form__actions">
+                        <SimfStatCard Title="@L["Admin.AiDashboard.Calls"]"
+                                      Value="@_stat.Calls.ToString("N0")" />
+                        <SimfStatCard Title="@L["Admin.AiDashboard.ErrorRate"]"
+                                      Value="@Pct(_stat.ErrorRate)" />
+                        <SimfStatCard Title="@L["Admin.AiDashboard.Latency"]"
+                                      Value="@($"{_stat.AvgLatencyMs} ms")" />
+                        <SimfStatCard Title="@L["Admin.AiDashboard.Tokens"]"
+                                      Value="@_stat.TotalTokens.ToString("N0")" />
+                    </div>
+                }
+            }
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Feature { get; set; } = string.Empty;
+
+    private record Toast(string Variant, string Message);
+
+    private AiFeature? _feature;
+    private string _active = "routing";
+    private Toast? _toast;
+    private List<SimfTabs.Tab> _tabs = new();
+
+    private List<AdminAiPromptSummary> _prompts = new();
+    private Guid? _activePromptId;
+
+    private AdminAiServiceStat? _stat;
+    private bool _statsLoaded;
+    private bool _statsLoading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _feature = Enum.TryParse<AiFeature>(Feature, ignoreCase: true, out var f)
+            && Enum.IsDefined(typeof(AiFeature), f)
+            ? f : null;
+        _tabs = new()
+        {
+            new("routing", L["Admin.AiServiceDetail.Tab.Routing"]),
+            new("prompts", L["Admin.AiServices.Col.Prompts"]),
+            new("analytics", L["Admin.AiServiceDetail.Tab.Analytics"]),
+        };
+        if (_feature is not null)
+        {
+            await LoadPromptsAsync();
+        }
+    }
+
+    private async Task OnTabChangedAsync(string key)
+    {
+        _active = key;
+        if (key == "analytics" && !_statsLoaded)
+        {
+            await LoadStatsAsync();
+        }
+    }
+
+    private async Task LoadPromptsAsync()
+    {
+        // Reuse the prompt catalogue read + filter to this feature CP-side (the
+        // catalogue is tiny). The active prompt drives the Routing tab.
+        var env = await JS.InvokeAsync<ApiResult<GridPage<AdminAiPromptSummary>>>(
+            "simfAccount.postJson", "/account/api/admin/ai/prompts/list",
+            new GridQuery { Top = 500 });
+        if (env is { Success: true, Data: not null })
+        {
+            _prompts = env.Data.Items
+                .Where(p => p.Feature == _feature)
+                .OrderByDescending(p => p.IsActive)
+                .ThenByDescending(p => p.Version)
+                .ToList();
+            _activePromptId = _prompts.FirstOrDefault(p => p.IsActive)?.Id;
+        }
+        else
+        {
+            _toast = new Toast("error",
+                env?.Error?.MessageForCurrentCulture() ?? L["Admin.AiServices.LoadFailed"]);
+        }
+    }
+
+    private async Task LoadStatsAsync()
+    {
+        _statsLoading = true;
+        try
+        {
+            // The dashboard aggregate already breaks down per service; pick this
+            // feature's row. A 403 (no AiDashboard.View) or any failure simply
+            // leaves _stat null → the "no activity" state (graceful degradation).
+            var env = await JS.InvokeAsync<ApiResult<AdminAiDashboard>>(
+                "simfAccount.getJson", "/account/api/admin/ai/dashboard");
+            if (env is { Success: true, Data: not null })
+            {
+                _stat = env.Data.Services.FirstOrDefault(s => s.Feature == _feature);
+            }
+        }
+        catch
+        {
+            // Graceful — analytics is best-effort on this page.
+        }
+        finally
+        {
+            _statsLoaded = true;
+            _statsLoading = false;
+        }
+    }
+
+    private async Task OnRoutingSavedAsync()
+    {
+        _toast = new Toast("success", L["Admin.AiServices.Routing.Saved"]);
+        await LoadPromptsAsync();
+    }
+
+    private static string Pct(double rate) =>
+        (rate * 100).ToString("0.0", CultureInfo.InvariantCulture) + "%";
+}

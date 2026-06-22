@@ -1879,6 +1879,12 @@
   <data name="Admin.AiServices.Routing.Save" xml:space="preserve"><value>حفظ التوجيه</value></data>
   <data name="Admin.AiServices.Routing.Cancel" xml:space="preserve"><value>إلغاء</value></data>
   <data name="Admin.AiServices.Routing.Saved" xml:space="preserve"><value>تم تحديث التوجيه.</value></data>
+  <data name="Admin.AiServices.OpenDetail" xml:space="preserve"><value>فتح</value></data>
+  <data name="Admin.AiServiceDetail.Title" xml:space="preserve"><value>خدمة الذكاء الاصطناعي</value></data>
+  <data name="Admin.AiServiceDetail.Unknown" xml:space="preserve"><value>خدمة ذكاء اصطناعي غير معروفة.</value></data>
+  <data name="Admin.AiServiceDetail.NoActiveRouting" xml:space="preserve"><value>لا يوجد محفّز فعّال لهذه الخدمة لتهيئته.</value></data>
+  <data name="Admin.AiServiceDetail.Tab.Routing" xml:space="preserve"><value>التوجيه</value></data>
+  <data name="Admin.AiServiceDetail.Tab.Analytics" xml:space="preserve"><value>التحليلات</value></data>
   <data name="Admin.AiPrompts.New" xml:space="preserve"><value>محفّز جديد</value></data>
   <data name="Admin.AiPrompts.None" xml:space="preserve"><value>لا توجد محفّزات بعد.</value></data>
   <data name="Admin.AiPrompts.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
