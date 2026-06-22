@@ -6,8 +6,10 @@ using Microsoft.Extensions.DependencyInjection;
 using SIMF.Application.Abstractions;
 using SIMF.Application.Assets.Abstractions;
 using SIMF.Application.IdentityAccess;
+using SIMF.Application.Media.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Contracts.Media;
 using SIMF.Domain.IdentityAccess;
 using Xunit;
 
@@ -86,6 +88,33 @@ public sealed class UploadScanningTests : IClassFixture<SimfApiFactory>
 
         var ex = await Assert.ThrowsAsync<ApiException>(
             () => accounts.SetAvatarAsync(userId, payload, "image/png"));
+        Assert.Equal(ErrorCodes.UploadMalwareDetected, ex.Code);
+    }
+
+    [Fact]
+    public async Task Media_image_upload_carrying_eicar_is_rejected_before_storage()
+    {
+        Guid mediaId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var media = scope.ServiceProvider.GetRequiredService<IAdminMediaService>();
+            var created = await media.CreateAsync(
+                Guid.NewGuid(),
+                new AdminCreateMediaRequest
+                {
+                    Kind = MediaKind.Image,
+                    Title = "scan-test",
+                    DisplayOrder = 1,
+                });
+            mediaId = created.Id;
+        }
+
+        using var scope2 = _factory.Services.CreateScope();
+        var media2 = scope2.ServiceProvider.GetRequiredService<IAdminMediaService>();
+        var payload = PngHeader.Concat(Eicar).ToArray();
+
+        var ex = await Assert.ThrowsAsync<ApiException>(
+            () => media2.SetImageAsync(Guid.NewGuid(), mediaId, payload, "image/png"));
         Assert.Equal(ErrorCodes.UploadMalwareDetected, ex.Code);
     }
 }
