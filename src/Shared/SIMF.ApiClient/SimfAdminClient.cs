@@ -2018,6 +2018,21 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
 
+    /// <summary>D-179 — full redacted payload for one invocation (SOC drill-down).</summary>
+    public Task<ApiCallResult<AdminAiInvocationDetail>> GetAiInvocationAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminAiInvocationDetail>(
+            HttpMethod.Get, $"ai/invocations/{id}", content: null,
+            accessToken, cancellationToken);
+
+    /// <summary>CP Phase-1 — the AI dashboard 24h health aggregate.</summary>
+    public Task<ApiCallResult<AdminAiDashboard>> GetAiDashboardAsync(
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<AdminAiDashboard>(
+            HttpMethod.Get, "ai/dashboard", content: null,
+            accessToken, cancellationToken);
+
     // -- D-182 (CP UI for D-175 seat reservations) -------------------------
 
     public Task<ApiCallResult<HallSeatLayoutSnapshot>> GetHallSeatLayoutAsync(

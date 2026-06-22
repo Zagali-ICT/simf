@@ -2113,6 +2113,33 @@ internal static class AccountEndpoints
             return Forward(await api.ListAiInvocationsAsync(body, token));
         });
 
+        // D-188 — append-only prompt version history (CP Phase-0 history modal).
+        group.MapGet("/admin/ai/prompts/{id:guid}/history",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetAiPromptHistoryAsync(id, token));
+        });
+
+        // D-179 — full redacted invocation payload (CP Phase-0 detail modal).
+        group.MapGet("/admin/ai/invocations/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetAiInvocationAsync(id, token));
+        });
+
+        // CP Phase-1 — the AI dashboard 24h health aggregate.
+        group.MapGet("/admin/ai/dashboard",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetAiDashboardAsync(token));
+        });
+
         // D-182 (CP UI for D-175 seat reservations).
         group.MapGet("/admin/halls/{hallId:guid}/seat-layout",
             async (Guid hallId, HttpContext http, SimfAdminClient api) =>
