@@ -47,4 +47,10 @@ public sealed class AiServicesConsoleTests : CpComponentTestBase
             Assert.Contains("Admin.AiPrompts.Hosting.Risk", cut.Markup);
         });
     }
+
+    // The "Configure routing" action is gated by AuthorizedAction (AiPrompts.Edit);
+    // bUnit's test principal carries the Administrator role but not the per-action
+    // permission claim, so the gated button + its GET/PUT modal flow are covered by
+    // the E2E catalogue (cp-admin-ai-services.md, E2E-AIS-012..014) rather than here.
+    // The underlying prompt PUT is already unit-covered by AiPromptsAddEditTests.
 }

@@ -31,6 +31,9 @@
 | E2E-AIS-009 | Auth gate — a signed-in admin **without** `AiPrompts.View` cannot see the nav item or reach the route | auth | P0 | _to author_ |
 | E2E-AIS-010 | Server 500 — the list endpoint fails → error `SimfAlert`, no rows | error | P2 | _to author_ |
 | E2E-AIS-011 | RTL — Arabic locale renders the page RTL with localized service names (prompt `DisplayNameArabic`) | rtl | P2 | _to author_ |
+| E2E-AIS-012 | Configure routing — open the modal on a service, change provider + model, Save → "Routing updated." and the grid shows the new provider | happy | P0 | _to author_ |
+| E2E-AIS-013 | Routing auth — an admin without `AiPrompts.Edit` does not see the "Configure routing" action | auth | P1 | _to author_ |
+| E2E-AIS-014 | Routing absent — a service whose only prompt is inactive offers no "Configure routing" action (nothing to retarget) | edge | P2 | _to author_ |
 
 ## Scenarios
 
@@ -75,4 +78,20 @@ Scenario: E2E-AIS-009 Auth gate
   Given I am signed in as an admin whose roles grant no "AiPrompts.View" permission
   Then the "AI services" item is absent from the side menu
   And navigating directly to "/admin/ai/services" is refused by the page guard
+
+Scenario: E2E-AIS-012 Configure a service's routing from the console
+  Given I am signed in with "AiPrompts.Edit"
+  And the "Session summary" service's active prompt routes to "Echo"
+  When I click "Configure routing" on the Session-summary row
+  And the routing modal opens showing the active prompt's provider/model
+  And I change Provider to "Gemini" and Model to "gemini-2.5-flash"
+  And I click "Save routing"
+  Then a "Routing updated." toast is shown
+  And the Session-summary row now shows Provider "Gemini" and Model "gemini-2.5-flash"
+  And only the routing fields changed — the prompt's text/feature/active state are unchanged
+
+Scenario: E2E-AIS-013 Routing action hidden without edit permission
+  Given I am signed in with "AiPrompts.View" but NOT "AiPrompts.Edit"
+  When I open "/admin/ai/services"
+  Then no row shows the "Configure routing" action
 ```
