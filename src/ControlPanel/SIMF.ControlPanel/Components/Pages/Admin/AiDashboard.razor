@@ -1,0 +1,111 @@
+@* CP Phase-1 — the AI Control Center landing dashboard. Read-only: a top-line of
+   invocation-health tiles (calls / error rate / avg latency / tokens / active
+   services) over the last 24h plus a per-service breakdown. Every value is an
+   on-demand aggregate from GET /admin/ai/dashboard (one query, no new schema).
+   Gated by AiDashboard.View — the same permission that gates that endpoint. *@
+@page "/admin/ai"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.AiDashboard.View)]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.AiDashboard.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.AiDashboard.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        @if (_loading && _dashboard is null)
+        {
+            <p>@L["Admin.AiDashboard.Loading"]</p>
+        }
+        else if (_dashboard is not null)
+        {
+            <p class="simf-field__helper">@L["Admin.AiDashboard.Window"]</p>
+
+            @* Top-line health tiles — same stat-card layout as the other dashboards. *@
+            <div class="simf-form__actions">
+                <SimfStatCard Title="@L["Admin.AiDashboard.Calls"]"
+                              Value="@_dashboard.TotalCalls.ToString("N0")" />
+                <SimfStatCard Title="@L["Admin.AiDashboard.ErrorRate"]"
+                              Value="@Pct(_dashboard.ErrorRate)" />
+                <SimfStatCard Title="@L["Admin.AiDashboard.Latency"]"
+                              Value="@($"{_dashboard.AvgLatencyMs} ms")" />
+                <SimfStatCard Title="@L["Admin.AiDashboard.Tokens"]"
+                              Value="@_dashboard.TotalTokens.ToString("N0")" />
+                <SimfStatCard Title="@L["Admin.AiDashboard.Services"]"
+                              Value="@($"{_dashboard.ActiveServices} / {_dashboard.TotalServices}")" />
+            </div>
+
+            @if (_dashboard.Services.Count == 0)
+            {
+                <SimfEmptyState Title="@L["Admin.AiDashboard.NoActivity"]" />
+            }
+            else
+            {
+                <table class="simf-table">
+                    <thead>
+                        <tr>
+                            <th>@L["Admin.AiDashboard.Col.Service"]</th>
+                            <th>@L["Admin.AiDashboard.Calls"]</th>
+                            <th>@L["Admin.AiDashboard.Col.Errors"]</th>
+                            <th>@L["Admin.AiDashboard.Latency"]</th>
+                            <th>@L["Admin.AiDashboard.Tokens"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in _dashboard.Services)
+                        {
+                            <tr>
+                                <td>@s.Feature</td>
+                                <td>@s.Calls.ToString("N0")</td>
+                                <td>@s.ErrorCount (@Pct(s.ErrorRate))</td>
+                                <td>@(s.AvgLatencyMs) ms</td>
+                                <td>@s.TotalTokens.ToString("N0")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private AdminAiDashboard? _dashboard;
+    private bool _loading;
+    private Toast? _toast;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminAiDashboard>>(
+                "simfAccount.getJson", "/account/api/admin/ai/dashboard");
+            if (env is { Success: true, Data: not null })
+            {
+                _dashboard = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.AiDashboard.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private static string Pct(double rate) =>
+        (rate * 100).ToString("0.0", CultureInfo.InvariantCulture) + "%";
+}

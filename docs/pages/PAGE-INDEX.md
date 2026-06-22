@@ -99,6 +99,7 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/content-blocks` | ✅ Real | Administrator  | [cp/admin-content-blocks.md](cp/admin-content-blocks.md) | [e2e/cp-admin-content-blocks.md](../tests/e2e/cp-admin-content-blocks.md) |
 | **Knowledge & AI** | | | | |
 | `/admin/faq` | ✅ Real (D-218) | Administrator | — | [e2e/cp-admin-faq.md](../tests/e2e/cp-admin-faq.md) |
+| `/admin/ai` | ✅ Real (CP Phase-1) | Administrator | [cp/admin-ai-dashboard.md](cp/admin-ai-dashboard.md) | [e2e/cp-admin-ai-dashboard.md](../tests/e2e/cp-admin-ai-dashboard.md) |
 | `/admin/ai/services` | ✅ Real (CP Phase-1) | Administrator | [cp/admin-ai-services.md](cp/admin-ai-services.md) | [e2e/cp-admin-ai-services.md](../tests/e2e/cp-admin-ai-services.md) |
 | `/admin/ai/prompts` | ✅ Real (D-176) | Administrator  | [cp/admin-ai-prompts.md](cp/admin-ai-prompts.md) | [e2e/cp-admin-ai-prompts.md](../tests/e2e/cp-admin-ai-prompts.md) |
 | `/admin/ai/invocations` | ✅ Real (D-176/D-179) | Administrator | — | [e2e/cp-admin-ai-invocations.md](../tests/e2e/cp-admin-ai-invocations.md) |
