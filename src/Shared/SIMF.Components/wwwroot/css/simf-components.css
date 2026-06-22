@@ -325,6 +325,14 @@
   background-color: var(--color-surface-sunken);
   color: var(--color-text-muted);
 }
+.simf-pill--warn {
+  background-color: var(--color-warning-surface);
+  color: var(--color-warning);
+}
+.simf-pill--danger {
+  background-color: var(--color-error-surface);
+  color: var(--color-error);
+}
 
 /* -- SimfCheckbox — labelled checkbox primitive (D-043) --------------------- */
 .simf-checkbox {

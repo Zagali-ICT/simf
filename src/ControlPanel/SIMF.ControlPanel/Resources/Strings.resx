@@ -1870,6 +1870,11 @@
   <data name="Admin.AiPrompts.Col.Model" xml:space="preserve"><value>Model</value></data>
   <data name="Admin.AiPrompts.Col.Version" xml:space="preserve"><value>Version</value></data>
   <data name="Admin.AiPrompts.Col.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.AiPrompts.Col.Hosting" xml:space="preserve"><value>Hosting</value></data>
+  <data name="Admin.AiPrompts.Hosting.Cloud" xml:space="preserve"><value>Cloud</value></data>
+  <data name="Admin.AiPrompts.Hosting.Offline" xml:space="preserve"><value>Offline</value></data>
+  <data name="Admin.AiPrompts.Hosting.OpenAi" xml:space="preserve"><value>OpenAI API</value></data>
+  <data name="Admin.AiPrompts.Hosting.Risk" xml:space="preserve"><value>Residency risk</value></data>
   <data name="Admin.AiPrompts.Field.Key" xml:space="preserve"><value>Key (kebab-case slug, immutable)</value></data>
   <data name="Admin.AiPrompts.Field.Feature" xml:space="preserve"><value>Feature</value></data>
   <data name="Admin.AiPrompts.Field.DisplayName" xml:space="preserve"><value>Display name (English)</value></data>
