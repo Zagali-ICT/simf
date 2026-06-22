@@ -20,34 +20,24 @@
         <SimfTextField Label="@L["Admin.AiPrompts.Field.Key"]"
                        @bind-Value="_model.Key"
                        Disabled="@(_busy || IsEdit)" />
-        <label class="simf-field">
-            <span class="simf-field__label">@L["Admin.AiPrompts.Field.Feature"]</span>
-            <select class="simf-field__input"
-                    value="@((int)_model.Feature)"
-                    @onchange="OnFeatureChanged"
-                    disabled="@_busy">
-                @foreach (var f in Enum.GetValues<AiFeature>())
-                {
-                    <option value="@((int)f)">@f</option>
-                }
-            </select>
-        </label>
+        <SimfSelect TValue="string"
+                    Label="@L["Admin.AiPrompts.Field.Feature"]"
+                    Items="_featureOptions"
+                    LabelFor="@(id => FeatureLabel(id))"
+                    Value="@_featureInput"
+                    ValueChanged="@(v => _featureInput = v ?? string.Empty)"
+                    Disabled="_busy" />
         <SimfTextField Label="@L["Admin.AiPrompts.Field.DisplayName"]"
                        @bind-Value="_model.DisplayName" Disabled="_busy" />
         <SimfTextField Label="@L["Admin.AiPrompts.Field.DisplayNameArabic"]"
                        @bind-Value="_model.DisplayNameArabic" Disabled="_busy" />
-        <label class="simf-field">
-            <span class="simf-field__label">@L["Admin.AiPrompts.Field.Provider"]</span>
-            <select class="simf-field__input"
-                    value="@((int)_model.Provider)"
-                    @onchange="OnProviderChanged"
-                    disabled="@_busy">
-                @foreach (var p in Enum.GetValues<AiProvider>())
-                {
-                    <option value="@((int)p)">@p</option>
-                }
-            </select>
-        </label>
+        <SimfSelect TValue="string"
+                    Label="@L["Admin.AiPrompts.Field.Provider"]"
+                    Items="_providerOptions"
+                    LabelFor="@(id => ProviderLabel(id))"
+                    Value="@_providerInput"
+                    ValueChanged="@(v => _providerInput = v ?? string.Empty)"
+                    Disabled="_busy" />
         <SimfTextField Label="@L["Admin.AiPrompts.Field.Model"]"
                        @bind-Value="_model.Model" Disabled="_busy" />
         <label class="simf-field">
@@ -101,6 +91,16 @@
 
 @code {
     private readonly FormModel _model = new();
+    // Feature + Provider are SimfSelect<string>-bound: held as int-string ids and
+    // parsed back to the enums at submit (mirrors SessionsAddEdit's enum selects).
+    private string _featureInput =
+        ((int)AiFeature.QuestionFilter).ToString(CultureInfo.InvariantCulture);
+    private string _providerInput =
+        ((int)AiProvider.Echo).ToString(CultureInfo.InvariantCulture);
+    private static readonly string[] _featureOptions = Enum.GetValues<AiFeature>()
+        .Select(f => ((int)f).ToString(CultureInfo.InvariantCulture)).ToArray();
+    private static readonly string[] _providerOptions = Enum.GetValues<AiProvider>()
+        .Select(p => ((int)p).ToString(CultureInfo.InvariantCulture)).ToArray();
     private EditContext _editContext = default!;
     private bool _busy;
     private string? _error;
@@ -110,12 +110,12 @@
         if (Initial is not null)
         {
             _model.Key = Initial.Key;
-            _model.Feature = Initial.Feature;
+            _featureInput = ((int)Initial.Feature).ToString(CultureInfo.InvariantCulture);
             _model.DisplayName = Initial.DisplayName;
             _model.DisplayNameArabic = Initial.DisplayNameArabic;
             _model.Description = Initial.Description;
             _model.DescriptionArabic = Initial.DescriptionArabic;
-            _model.Provider = Initial.Provider;
+            _providerInput = ((int)Initial.Provider).ToString(CultureInfo.InvariantCulture);
             _model.Model = Initial.Model;
             _model.SystemPrompt = Initial.SystemPrompt;
             _model.UserPromptTemplate = Initial.UserPromptTemplate;
@@ -152,12 +152,12 @@
                     $"/account/api/admin/ai/prompts/{Initial!.Id}",
                     new UpdateAiPromptRequest
                     {
-                        Feature = _model.Feature,
+                        Feature = ParseFeature(),
                         DisplayName = _model.DisplayName.Trim(),
                         DisplayNameArabic = _model.DisplayNameArabic.Trim(),
                         Description = _model.Description,
                         DescriptionArabic = _model.DescriptionArabic,
-                        Provider = _model.Provider,
+                        Provider = ParseProvider(),
                         Model = _model.Model,
                         SystemPrompt = _model.SystemPrompt,
                         UserPromptTemplate = _model.UserPromptTemplate,
@@ -174,12 +174,12 @@
                     new CreateAiPromptRequest
                     {
                         Key = _model.Key.Trim(),
-                        Feature = _model.Feature,
+                        Feature = ParseFeature(),
                         DisplayName = _model.DisplayName.Trim(),
                         DisplayNameArabic = _model.DisplayNameArabic.Trim(),
                         Description = _model.Description,
                         DescriptionArabic = _model.DescriptionArabic,
-                        Provider = _model.Provider,
+                        Provider = ParseProvider(),
                         Model = _model.Model,
                         SystemPrompt = _model.SystemPrompt,
                         UserPromptTemplate = _model.UserPromptTemplate,
@@ -205,17 +205,23 @@
         finally { _busy = false; }
     }
 
-    private void OnFeatureChanged(ChangeEventArgs e)
-    {
-        if (int.TryParse(e.Value?.ToString(), out var v))
-            _model.Feature = (AiFeature)v;
-    }
+    // SimfSelect option labels: the int-string id → the enum's name.
+    private static string FeatureLabel(string id) =>
+        int.TryParse(id, out var n) && Enum.IsDefined(typeof(AiFeature), n)
+            ? ((AiFeature)n).ToString() : id;
 
-    private void OnProviderChanged(ChangeEventArgs e)
-    {
-        if (int.TryParse(e.Value?.ToString(), out var v))
-            _model.Provider = (AiProvider)v;
-    }
+    private static string ProviderLabel(string id) =>
+        int.TryParse(id, out var n) && Enum.IsDefined(typeof(AiProvider), n)
+            ? ((AiProvider)n).ToString() : id;
+
+    // Submit-time parse of the bound int-string ids back to the enums.
+    private AiFeature ParseFeature() =>
+        int.TryParse(_featureInput, out var n) && Enum.IsDefined(typeof(AiFeature), n)
+            ? (AiFeature)n : AiFeature.QuestionFilter;
+
+    private AiProvider ParseProvider() =>
+        int.TryParse(_providerInput, out var n) && Enum.IsDefined(typeof(AiProvider), n)
+            ? (AiProvider)n : AiProvider.Echo;
 
     private void OnSystemPromptChanged(ChangeEventArgs e) =>
         _model.SystemPrompt = e.Value?.ToString() ?? string.Empty;
@@ -242,12 +248,10 @@
     private sealed class FormModel
     {
         public string Key { get; set; } = string.Empty;
-        public AiFeature Feature { get; set; }
         public string DisplayName { get; set; } = string.Empty;
         public string DisplayNameArabic { get; set; } = string.Empty;
         public string? Description { get; set; }
         public string? DescriptionArabic { get; set; }
-        public AiProvider Provider { get; set; } = AiProvider.Echo;
         public string Model { get; set; } = "echo";
         public string SystemPrompt { get; set; } = string.Empty;
         public string UserPromptTemplate { get; set; } = string.Empty;
