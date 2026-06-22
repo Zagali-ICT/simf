@@ -22,6 +22,9 @@ public sealed class AiOptions
     /// <summary>D-484 — the Anthropic (Claude) Messages-API provider settings.</summary>
     public AnthropicOptions Anthropic { get; set; } = new();
 
+    /// <summary>The Google Gemini (Generative Language API) provider settings.</summary>
+    public GeminiOptions Gemini { get; set; } = new();
+
     /// <summary>D-181 — HMAC key for prompt-content drift hashes.</summary>
     public AiPromptHashOptions PromptHash { get; set; } = new();
 }
@@ -46,6 +49,28 @@ public sealed class AnthropicOptions
 
     /// <summary><c>max_tokens</c> fallback (Anthropic requires it on every
     /// request) when a prompt/call does not specify one.</summary>
+    public int DefaultMaxTokens { get; set; } = 2048;
+}
+
+/// <summary>Google Gemini (Generative Language API) provider settings. Bound to
+/// <c>Ai:Gemini</c>; the API key is supplied via env var
+/// <c>SIMF_Ai__Gemini__ApiKey</c> in production — never committed. Used for
+/// non-sensitive features under the hybrid policy.</summary>
+public sealed class GeminiOptions
+{
+    /// <summary>API key. Empty ⇒ the provider throws
+    /// <c>AI_PROVIDER_NOT_CONFIGURED</c> (503).</summary>
+    public string? ApiKey { get; set; }
+
+    /// <summary>Generative Language API base URL. Defaults to the public endpoint.</summary>
+    public string BaseUrl { get; set; } = "https://generativelanguage.googleapis.com";
+
+    /// <summary>Model fallback when a prompt omits its own Model (e.g.
+    /// <c>gemini-2.5-flash</c>). The per-service model is set in the CP.</summary>
+    public string DefaultModel { get; set; } = "gemini-2.5-flash";
+
+    /// <summary><c>maxOutputTokens</c> fallback when a prompt/call does not
+    /// specify one.</summary>
     public int DefaultMaxTokens { get; set; } = 2048;
 }
 

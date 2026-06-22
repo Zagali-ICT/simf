@@ -480,6 +480,10 @@ public static class DependencyInjection
         services.AddSingleton<SIMF.Infrastructure.Ai.AnthropicAiProvider>();
         services.AddSingleton<SIMF.Application.Ai.Abstractions.IAiProvider>(sp =>
             sp.GetRequiredService<SIMF.Infrastructure.Ai.AnthropicAiProvider>());
+        // Google Gemini (Generative Language API) provider (shares the singleton HttpClient).
+        services.AddSingleton<SIMF.Infrastructure.Ai.GeminiAiProvider>();
+        services.AddSingleton<SIMF.Application.Ai.Abstractions.IAiProvider>(sp =>
+            sp.GetRequiredService<SIMF.Infrastructure.Ai.GeminiAiProvider>());
         services.AddSingleton<IReadOnlyDictionary<SIMF.Common.Enums.AiProvider,
                 SIMF.Application.Ai.Abstractions.IAiProvider>>(sp =>
             sp.GetServices<SIMF.Application.Ai.Abstractions.IAiProvider>()
