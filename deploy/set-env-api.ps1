@@ -81,6 +81,12 @@ $vars = [ordered]@{
     # --- Reverse proxy (trusted hops for X-Forwarded-For) ---
     "SIMF_ReverseProxy__KnownProxies__0"           = ""  # [REQUIRED for prod] first trusted proxy IP; add __1, __2 ...
 
+    # --- OpenAPI / Swagger UI (D-355) — OFF in prod by default. If you set
+    #     SIMF_Swagger__AllowSwagger=true in Production, BOTH Basic-auth creds
+    #     below become REQUIRED or the app REFUSES TO START (HTTP 500.30). ---
+    "SIMF_Swagger__Username"                       = ""  # [REQUIRED only if AllowSwagger=true][SECRET]
+    "SIMF_Swagger__Password"                       = ""  # [REQUIRED only if AllowSwagger=true][SECRET]
+
     # --- Web-app CORS (D-376) — ONLY when the published Flutter web app is
     #     hosted on a DIFFERENT origin than this API; empty = no CORS.
     #     The origin is public (not a secret), so the real production value is
@@ -115,4 +121,45 @@ foreach ($name in $vars.Keys) {
 
 Write-Host ""
 Write-Host "SimfAPI env: $set set, $skipped skipped (empty)."
-Write-Host "Restart the IIS app pool (or the server) so w3wp picks up the new Machine-scope variables."
+
+# --- Boot-critical completeness gate (added after the 2026-06-22 deploy outage) ---
+# Every variable below HARD-FAILS the API at startup in Production (the Program.cs
+# guards + the Ensure*Configured calls + the StorageOptions ValidateOnStart hook).
+# If any is empty in the Machine environment, the next app-pool recycle boot-fails
+# with "HTTP Error 500.30 - ASP.NET Core app failed to start". This gate reads the
+# resulting Machine values (not just this script's table) so a variable that was
+# never carried over from an older provisioning is caught here, not in prod.
+$bootCritical = @(
+    "SIMF_ConnectionStrings__SimfIdentityDb"
+    "SIMF_ConnectionStrings__SimfAppDb"
+    "SIMF_Jwt__SigningKey"
+    "SIMF_SuperAdmin__TempPassword"
+    "SIMF_ReverseProxy__KnownProxies__0"
+    "SIMF_Ai__PromptHash__Secret"                 # Production guard (M4)
+    "SIMF_Storage__UserIdDocumentEncryptionKey"   # Production guard (A2-10)
+    "SIMF_Storage__AvatarBase"                    # ValidateOnStart (D-074)
+    "SIMF_Storage__UserIdDocumentBase"
+)
+$missing = @()
+foreach ($name in $bootCritical) {
+    $live = [Environment]::GetEnvironmentVariable($name, [EnvironmentVariableTarget]::Machine)
+    if ([string]::IsNullOrWhiteSpace($live)) { $missing += $name }
+}
+# If Swagger UI is turned on in prod, its Basic-auth creds become boot-critical too.
+$swaggerOn = [Environment]::GetEnvironmentVariable("SIMF_Swagger__AllowSwagger", [EnvironmentVariableTarget]::Machine)
+if ($swaggerOn -eq "true") {
+    foreach ($name in @("SIMF_Swagger__Username", "SIMF_Swagger__Password")) {
+        $live = [Environment]::GetEnvironmentVariable($name, [EnvironmentVariableTarget]::Machine)
+        if ([string]::IsNullOrWhiteSpace($live)) { $missing += $name }
+    }
+}
+
+Write-Host ""
+if ($missing.Count -gt 0) {
+    Write-Warning "BOOT-CRITICAL variables still EMPTY - the API will NOT start in Production:"
+    $missing | ForEach-Object { Write-Host "  MISSING: $_" -ForegroundColor Red }
+    Write-Host "Set these (Machine scope) and re-run this script BEFORE recycling the app pool." -ForegroundColor Red
+} else {
+    Write-Host "All boot-critical variables are present." -ForegroundColor Green
+    Write-Host "Restart the IIS app pool (or the server) so w3wp picks up the new Machine-scope variables."
+}
