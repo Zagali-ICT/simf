@@ -158,34 +158,26 @@ void main() {
       expect(repo.listCalls, greaterThanOrEqualTo(2));
     });
 
-    testWidgets('tapping an unread row marks it read then refreshes', (tester) async {
+    testWidgets('opening marks every unread notification read (#13/#14)',
+        (tester) async {
       final repo = _FakeNotificationsRepository(
         items: <NotificationItem>[_item()],
       );
       await _pump(tester, repo: repo);
-      await tester.tap(find.text('Session starts soon'));
-      await tester.pumpAndSettle();
-      expect(repo.readIds, contains('n1'));
-      expect(repo.listCalls, greaterThanOrEqualTo(2));
-    });
-
-    testWidgets('mark-all action calls the repo when there is unread', (tester) async {
-      final repo = _FakeNotificationsRepository(
-        items: <NotificationItem>[_item()],
-      );
-      await _pump(tester, repo: repo);
-      await tester.tap(find.widgetWithText(TextButton, 'Mark all read'));
-      await tester.pumpAndSettle();
+      // The backend has no separate "seen" state, so opening the inbox marks
+      // everything read: the item stays listed, but the unread affordance
+      // clears and the explicit "Mark all read" button is no longer offered.
       expect(repo.markAllCalls, 1);
+      expect(find.text('Session starts soon'), findsOneWidget);
+      expect(find.text('Mark all read'), findsNothing);
     });
 
-    testWidgets('no mark-all action when everything is read', (tester) async {
-      await _pump(
-        tester,
-        repo: _FakeNotificationsRepository(
-          items: <NotificationItem>[_item(isRead: true)],
-        ),
+    testWidgets('opening an all-read inbox does not call mark-all', (tester) async {
+      final repo = _FakeNotificationsRepository(
+        items: <NotificationItem>[_item(isRead: true)],
       );
+      await _pump(tester, repo: repo);
+      expect(repo.markAllCalls, 0);
       expect(find.text('Mark all read'), findsNothing);
     });
   });

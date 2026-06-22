@@ -52,6 +52,21 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Generate_feeds_the_session_subtitle_transcript_into_the_ai_draft()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        // A session whose live subtitle/transcript carries a distinctive phrase.
+        var sessionId = await SeedSessionAsync(
+            liveCaptionsArabic: "تعاون الغوّاصات وأمن الملاحة البحرية");
+
+        var detail = await GenerateAsync(sessionId, admin);
+
+        // The Echo provider echoes the substituted user prompt, which now carries
+        // the session's transcript — proving LiveCaptions flows into the AI input.
+        Assert.Contains("تعاون الغوّاصات", detail.FullTextArabic!);
+    }
+
+    [Fact]
     public async Task Save_creates_a_hand_written_draft_with_no_ai_model()
     {
         var admin = await CreateAdministratorAndSignInAsync();
@@ -400,7 +415,8 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
             .ReadFromJsonAsync<ApiResult<AdminSessionSummaryDetail>>())!.Data!;
     }
 
-    private async Task<Guid> SeedSessionAsync()
+    private async Task<Guid> SeedSessionAsync(
+        string? liveCaptions = null, string? liveCaptionsArabic = null)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -420,6 +436,8 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
             HallId = hall.Id,
             StartUtc = DateTimeOffset.UtcNow.AddMinutes(-90),
             EndUtc = DateTimeOffset.UtcNow.AddMinutes(-30),
+            LiveCaptions = liveCaptions,
+            LiveCaptionsArabic = liveCaptionsArabic,
             IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
         };
         db.Sessions.Add(session);

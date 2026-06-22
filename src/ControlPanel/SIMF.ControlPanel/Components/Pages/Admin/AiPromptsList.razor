@@ -88,6 +88,21 @@
                                         Header="@L["Admin.AiPrompts.Col.Model"]">
                         <CellTemplate>@context.Model</CellTemplate>
                     </SimfDataGridColumn>
+                    @* Hybrid visibility: where this service runs (cloud / on-prem /
+                       offline) + a residency warning when a sensitive feature routes
+                       to a definitely-cloud provider. Derived CP-side; no schema. *@
+                    <SimfDataGridColumn TItem="AdminAiPromptSummary" Key="hosting"
+                                        Header="@L["Admin.AiPrompts.Col.Hosting"]">
+                        <CellTemplate>
+                            <SimfPill Variant="@AiHosting.Variant(context.Provider)">
+                                @L[AiHosting.LabelKey(context.Provider)]
+                            </SimfPill>
+                            @if (AiHosting.IsResidencyRisk(context.Feature, context.Provider))
+                            {
+                                <SimfPill Variant="danger">@L["Admin.AiPrompts.Hosting.Risk"]</SimfPill>
+                            }
+                        </CellTemplate>
+                    </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminAiPromptSummary" Key="version"
                                         Header="@L["Admin.AiPrompts.Col.Version"]"
                                         Sortable="true">
@@ -112,6 +127,12 @@
                     <AuthorizedAction Permission="@PermissionCatalog.AiPrompts.Test">
                         <SimfToolbarButton Icon="flask" Title="@L["Admin.AiPrompts.Test"]"
                                            OnClick="@(() => OnTestAsync(context))" />
+                    </AuthorizedAction>
+                    @* Surface the append-only version history (D-188). The endpoint
+                       gates on AiPrompts.View, so the action does too. *@
+                    <AuthorizedAction Permission="@PermissionCatalog.AiPrompts.View">
+                        <SimfToolbarButton Icon="clock" Title="@L["Admin.AiPrompts.History"]"
+                                           OnClick="@(() => OnHistoryAsync(context))" />
                     </AuthorizedAction>
                 </RowActions>
                 <EmptyTemplate>
@@ -181,6 +202,52 @@
     </SimfModal>
 }
 
+@if (_historyOpen)
+{
+    <SimfModal Open="true" Title="@L["Admin.AiPrompts.History.Title"]" OnClose="CloseHistory">
+        <ChildContent>
+            <p><code>@_historyKey</code></p>
+            @if (_history.Count == 0)
+            {
+                <SimfEmptyState Title="@L["Admin.AiPrompts.History.Empty"]" />
+            }
+            else
+            {
+                <table class="simf-table">
+                    <thead>
+                        <tr>
+                            <th>@L["Admin.AiPrompts.Col.Version"]</th>
+                            <th>@L["Admin.AiPrompts.Col.Provider"]</th>
+                            <th>@L["Admin.AiPrompts.Col.Model"]</th>
+                            <th>@L["Admin.AiPrompts.Col.Active"]</th>
+                            <th>@L["Admin.AiPrompts.History.Col.Authored"]</th>
+                            <th>@L["Admin.AiPrompts.History.Col.Hash"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var h in _history)
+                        {
+                            <tr>
+                                <td>v@(h.Version)</td>
+                                <td>@h.Provider</td>
+                                <td>@h.Model</td>
+                                <td>@(h.IsActive ? "✓" : "—")</td>
+                                <td>@h.CapturedFromUpdatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</td>
+                                <td><code>@ShortHash(h.ContentHash)</code></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Variant="secondary" OnClick="CloseHistory">
+                @L["Admin.AiPrompts.Details.Close"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
 @code {
     private record Toast(string Variant, string Message);
 
@@ -238,6 +305,9 @@
 
     private string FormatPage(int current, int total) =>
         string.Format(L["Grid.Page"], current, total);
+
+    // Hybrid hosting visibility is shared with the AI services console — see
+    // AiHosting (CP-side derivation from provider + feature, no schema).
 
     private async Task LoadAsync()
     {
@@ -400,4 +470,42 @@
 
     private void OnTestInputsChanged(ChangeEventArgs e) =>
         _testInputsRaw = e.Value?.ToString() ?? string.Empty;
+
+    // D-188 — append-only version history for one prompt, reusing the existing
+    // GET /admin/ai/prompts/{id}/history endpoint (gated on AiPrompts.View).
+    private bool _historyOpen;
+    private string _historyKey = string.Empty;
+    private IReadOnlyList<AdminAiPromptHistoryEntry> _history =
+        Array.Empty<AdminAiPromptHistoryEntry>();
+
+    private async Task OnHistoryAsync(AdminAiPromptSummary row)
+    {
+        _toast = null;
+        _historyKey = row.Key;
+        _history = Array.Empty<AdminAiPromptHistoryEntry>();
+        var env = await JS.InvokeAsync<ApiResult<IReadOnlyList<AdminAiPromptHistoryEntry>>>(
+            "simfAccount.getJson", $"/account/api/admin/ai/prompts/{row.Id}/history");
+        if (env is { Success: true, Data: not null })
+        {
+            _history = env.Data;
+            _historyOpen = true;
+        }
+        else
+        {
+            _toast = new Toast("error",
+                env?.Error?.MessageForCurrentCulture() ?? L["Admin.AiPrompts.LoadFailed"]);
+        }
+    }
+
+    private void CloseHistory()
+    {
+        _historyOpen = false;
+        _historyKey = string.Empty;
+        _history = Array.Empty<AdminAiPromptHistoryEntry>();
+    }
+
+    // Show a readable prefix of the (long) content-hash in the history table.
+    private static string ShortHash(string hash) =>
+        string.IsNullOrEmpty(hash) ? "—"
+        : hash.Length <= 16 ? hash : hash[..16] + "…";
 }

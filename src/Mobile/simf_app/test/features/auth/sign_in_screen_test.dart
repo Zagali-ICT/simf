@@ -29,7 +29,11 @@ class _FakeAuthController extends AuthController {
   AuthState build() => const AuthStateSignedOut();
 
   @override
-  Future<void> signIn({required String email, required String password}) async {
+  Future<void> signIn({
+    required String email,
+    required String password,
+    bool rememberSession = true,
+  }) async {
     switch (outcome) {
       case _Outcome.success:
         state = AuthStateSignedIn(
@@ -202,6 +206,22 @@ void main() {
         prefs.getString(StorageKeys.lastEmail),
         equals('visitor@example.sa'),
       );
+    });
+
+    testWidgets('a malformed email shows the inline error and does not sign in '
+        '(#7)', (tester) async {
+      await _pump(tester, _Outcome.success, _FakePrefs());
+
+      await tester.enterText(find.byType(TextField).at(0), 'not-an-email');
+      await tester.enterText(find.byType(TextField).at(1), 'Password1');
+      await tester.pump();
+      await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+      await tester.pumpAndSettle();
+
+      // Client-side validation blocks the round-trip: the inline error shows
+      // and the screen never navigates (signIn was not called).
+      expect(find.text('Invalid email'), findsOneWidget);
+      expect(find.text('HOME'), findsNothing);
     });
 
     testWidgets('the Face-ID button is hidden when the device has no biometric',

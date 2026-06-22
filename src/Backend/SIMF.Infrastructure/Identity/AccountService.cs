@@ -26,6 +26,7 @@ internal sealed class AccountService(
     IAvatarStorage avatarStorage,
     IRecoveryCodeService recoveryCodes,
     IUserProfileService userProfiles,
+    IUploadScanner uploadScanner,
     IAuditLog auditLog,
     ILogger<AccountService> logger) : IAccountService
 {
@@ -130,6 +131,11 @@ internal sealed class AccountService(
                 "The avatar file must be PNG, JPEG or WebP.",
                 "يجب أن تكون الصورة بصيغة PNG أو JPEG أو WebP.");
         }
+
+        // A6-18 (NCA) — malware-scan the untrusted image before it is stored
+        // (the avatar is a public, app-facing upload; it must run the same scan
+        // seam as the ID-document / asset / presentation paths).
+        await uploadScanner.EnsureCleanAsync(content, "avatar", cancellationToken);
 
         var relativePath = await avatarStorage.SaveAsync(
             user.Id, content, normalisedContentType, cancellationToken);

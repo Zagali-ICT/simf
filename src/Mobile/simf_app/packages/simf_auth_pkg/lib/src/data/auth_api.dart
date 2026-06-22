@@ -44,6 +44,20 @@ class AuthApi {
     );
   }
 
+  // #12 — re-issue the emailed sign-in OTP in place (no re-authentication).
+  Future<ResendOtpResponseDto> resendOtp(ResendOtpRequest request) {
+    return _client.post<ResendOtpResponseDto>(
+      '/app/auth/resend-otp',
+      body: request.toJson(),
+      decodeData: (data) {
+        if (data is! Map<String, dynamic>) {
+          throw const FormatException('resend-otp response was not an object.');
+        }
+        return ResendOtpResponseDto.fromJson(data);
+      },
+    );
+  }
+
   // SIMF-API-001 §12.4
   Future<Map<String, dynamic>> signUp(SignUpRequest request) {
     return _client.post<Map<String, dynamic>>(

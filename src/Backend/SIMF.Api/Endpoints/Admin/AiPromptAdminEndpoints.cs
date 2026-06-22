@@ -192,6 +192,25 @@ public sealed class ListAiInvocationsEndpoint(IAdminAiPromptService service)
             await service.ListInvocationsAsync(req, ct)), ct);
 }
 
+/// <summary>CP Phase-1 — the AI Control Center dashboard: rolled-up invocation
+/// health (calls / errors / latency / tokens, overall + per service) over the
+/// last 24h plus the configured-service counts. Read-only; its own permission
+/// (<c>AiDashboard.View</c>) gates both this endpoint and the CP page.</summary>
+public sealed class GetAiDashboardEndpoint(IAdminAiPromptService service)
+    : EndpointWithoutRequest<ApiResult<AdminAiDashboard>>
+{
+    public override void Configure()
+    {
+        Get("/admin/ai/dashboard");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.AiDashboard.View),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Tags("Admin");
+    }
+    public override async Task HandleAsync(CancellationToken ct) =>
+        await Send.OkAsync(ApiResult<AdminAiDashboard>.Ok(
+            await service.GetDashboardAsync(24, ct)), ct);
+}
+
 /// <summary>D-179 — SOC drill-down: returns the full invocation
 /// payload (<c>InputJson</c> + <c>OutputText</c>) for one row. The
 /// grid list deliberately omits these for lightness + PII discipline;

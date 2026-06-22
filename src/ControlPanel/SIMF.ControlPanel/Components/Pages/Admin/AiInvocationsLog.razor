@@ -97,12 +97,56 @@
                     </CellTemplate>
                 </SimfDataGridColumn>
             </Columns>
+            <RowActions>
+                @* SOC drill-down (D-179): the full redacted payload for one row.
+                   The endpoint gates on AiInvocations.View, so the action does too. *@
+                <AuthorizedAction Permission="@PermissionCatalog.AiInvocations.View">
+                    <SimfToolbarButton Icon="eye" Title="@L["Admin.AiInvocations.Detail"]"
+                                       OnClick="@(() => OnDetailAsync(context))" />
+                </AuthorizedAction>
+            </RowActions>
             <EmptyTemplate>
                 <SimfEmptyState Title="@L["Admin.AiInvocations.None"]" />
             </EmptyTemplate>
         </SimfDataGrid>
     </div>
 </div>
+
+@if (_detail is not null)
+{
+    <SimfModal Open="true" Title="@L["Admin.AiInvocations.Detail.Title"]" OnClose="CloseDetail">
+        <ChildContent>
+            <dl class="simf-dl">
+                <dt>@L["Admin.AiInvocations.Col.PromptKey"]</dt>
+                <dd><code>@_detail.PromptKey</code></dd>
+                <dt>@L["Admin.AiInvocations.Col.Feature"]</dt>
+                <dd>@_detail.Feature</dd>
+                <dt>@L["Admin.AiInvocations.Col.Provider"]</dt>
+                <dd>@_detail.Provider · @_detail.Model</dd>
+                <dt>@L["Admin.AiInvocations.Col.Caller"]</dt>
+                <dd>@_detail.CallerKind</dd>
+                <dt>@L["Admin.AiInvocations.Col.Latency"]</dt>
+                <dd>@(_detail.LatencyMs)ms</dd>
+                <dt>@L["Admin.AiInvocations.Col.Tokens"]</dt>
+                <dd>@(_detail.TokensInput?.ToString() ?? "—") / @(_detail.TokensOutput?.ToString() ?? "—")</dd>
+                @if (_detail.ErrorCode is not null)
+                {
+                    <dt>@L["Admin.AiInvocations.Col.Error"]</dt>
+                    <dd><SimfPill Variant="danger">@_detail.ErrorCode</SimfPill></dd>
+                }
+                <dt>@L["Admin.AiInvocations.Detail.Input"]</dt>
+                <dd><pre class="simf-pre--wrap">@_detail.InputJson</pre></dd>
+                <dt>@L["Admin.AiInvocations.Detail.Output"]</dt>
+                <dd><pre class="simf-pre--wrap">@(_detail.OutputText ?? "—")</pre></dd>
+            </dl>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Variant="secondary" OnClick="CloseDetail">
+                @L["Admin.AiInvocations.Detail.Close"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
 
 @code {
     private record Toast(string Variant, string Message);
@@ -174,4 +218,28 @@
         }
         finally { _loading = false; }
     }
+
+    // D-179 — SOC drill-down: the full redacted payload for one invocation,
+    // reusing the existing GET /admin/ai/invocations/{id} endpoint (gated on
+    // AiInvocations.View, the same permission this page requires).
+    private AdminAiInvocationDetail? _detail;
+
+    private async Task OnDetailAsync(AdminAiInvocationRow row)
+    {
+        _toast = null;
+        var env = await JS.InvokeAsync<ApiResult<AdminAiInvocationDetail>>(
+            "simfAccount.getJson", $"/account/api/admin/ai/invocations/{row.Id}");
+        if (env is { Success: true, Data: not null })
+        {
+            _detail = env.Data;
+        }
+        else
+        {
+            _toast = new Toast("error",
+                env?.Error?.MessageForCurrentCulture()
+                ?? L["Admin.AiInvocations.LoadFailed"]);
+        }
+    }
+
+    private void CloseDetail() => _detail = null;
 }

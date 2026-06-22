@@ -24,6 +24,10 @@ abstract class AuthRepository {
     required String code,
   });
 
+  /// #12 — re-issue + email the sign-in OTP for the in-progress [otpToken]
+  /// (no re-authentication). Returns the resend-button cooldown in seconds.
+  Future<int> resendOtp({required String otpToken});
+
   /// Start an account: creates the account in a pending, email-unverified
   /// state and sends a six-digit verification code to the email.
   Future<void> signUp({

@@ -139,6 +139,7 @@
   <data name="Admin.Faq.LoadFailed" xml:space="preserve"><value>تعذّر إكمال الطلب. حاول مرة أخرى.</value></data>
   <data name="Admin.Faq.Saved" xml:space="preserve"><value>تم الحفظ.</value></data>
   <data name="Admin.Faq.Deactivated" xml:space="preserve"><value>تم إلغاء التفعيل.</value></data>
+  <data name="Module.AiServices" xml:space="preserve"><value>خدمات الذكاء الاصطناعي</value></data>
   <data name="Module.AiPrompts" xml:space="preserve"><value>محفّزات الذكاء الاصطناعي</value></data>
   <data name="Module.AiInvocations" xml:space="preserve"><value>سجلّ استدعاءات الذكاء الاصطناعي</value></data>
   <data name="Module.Media" xml:space="preserve"><value>المركز الإعلامي</value></data>
@@ -1852,6 +1853,19 @@
   <data name="Admin.Banners.Col.Active" xml:space="preserve"><value>مفعّلة</value></data>
   <!-- D-176 (gap doc G12) — AI module CP -->
   <data name="Admin.AiPrompts.Title" xml:space="preserve"><value>محفّزات الذكاء الاصطناعي</value></data>
+  <data name="Admin.AiServices.Title" xml:space="preserve"><value>خدمات الذكاء الاصطناعي</value></data>
+  <data name="Admin.AiServices.Loading" xml:space="preserve"><value>جارٍ تحميل الخدمات…</value></data>
+  <data name="Admin.AiServices.LoadFailed" xml:space="preserve"><value>تعذّر تحميل خدمات الذكاء الاصطناعي.</value></data>
+  <data name="Admin.AiServices.None" xml:space="preserve"><value>لا توجد خدمات ذكاء اصطناعي مُهيّأة.</value></data>
+  <data name="Admin.AiServices.NoActive" xml:space="preserve"><value>لا يوجد فعّال</value></data>
+  <data name="Admin.AiServices.Col.Service" xml:space="preserve"><value>الخدمة</value></data>
+  <data name="Admin.AiServices.Col.ActivePrompt" xml:space="preserve"><value>المحفّز الفعّال</value></data>
+  <data name="Admin.AiServices.Col.Prompts" xml:space="preserve"><value>المحفّزات</value></data>
+  <data name="Admin.AiServices.Routing" xml:space="preserve"><value>تهيئة التوجيه</value></data>
+  <data name="Admin.AiServices.Routing.Title" xml:space="preserve"><value>توجيه الخدمة</value></data>
+  <data name="Admin.AiServices.Routing.Save" xml:space="preserve"><value>حفظ التوجيه</value></data>
+  <data name="Admin.AiServices.Routing.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.AiServices.Routing.Saved" xml:space="preserve"><value>تم تحديث التوجيه.</value></data>
   <data name="Admin.AiPrompts.New" xml:space="preserve"><value>محفّز جديد</value></data>
   <data name="Admin.AiPrompts.None" xml:space="preserve"><value>لا توجد محفّزات بعد.</value></data>
   <data name="Admin.AiPrompts.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
@@ -1863,6 +1877,16 @@
   <data name="Admin.AiPrompts.Col.Model" xml:space="preserve"><value>النموذج</value></data>
   <data name="Admin.AiPrompts.Col.Version" xml:space="preserve"><value>الإصدار</value></data>
   <data name="Admin.AiPrompts.Col.Active" xml:space="preserve"><value>مفعّل</value></data>
+  <data name="Admin.AiPrompts.Col.Hosting" xml:space="preserve"><value>الاستضافة</value></data>
+  <data name="Admin.AiPrompts.Hosting.Cloud" xml:space="preserve"><value>سحابي</value></data>
+  <data name="Admin.AiPrompts.Hosting.Offline" xml:space="preserve"><value>غير متصل</value></data>
+  <data name="Admin.AiPrompts.Hosting.OpenAi" xml:space="preserve"><value>واجهة OpenAI</value></data>
+  <data name="Admin.AiPrompts.Hosting.Risk" xml:space="preserve"><value>مخاطر سيادة البيانات</value></data>
+  <data name="Admin.AiPrompts.History" xml:space="preserve"><value>السجل</value></data>
+  <data name="Admin.AiPrompts.History.Title" xml:space="preserve"><value>سجل إصدارات المحفّز</value></data>
+  <data name="Admin.AiPrompts.History.Empty" xml:space="preserve"><value>لا توجد إصدارات سابقة.</value></data>
+  <data name="Admin.AiPrompts.History.Col.Authored" xml:space="preserve"><value>التأليف</value></data>
+  <data name="Admin.AiPrompts.History.Col.Hash" xml:space="preserve"><value>بصمة المحتوى</value></data>
   <data name="Admin.AiPrompts.Field.Key" xml:space="preserve"><value>المفتاح (kebab-case، غير قابل للتعديل)</value></data>
   <data name="Admin.AiPrompts.Field.Feature" xml:space="preserve"><value>الميزة</value></data>
   <data name="Admin.AiPrompts.Field.DisplayName" xml:space="preserve"><value>الاسم (إنجليزي)</value></data>
@@ -1896,6 +1920,11 @@
   <data name="Admin.AiInvocations.None" xml:space="preserve"><value>لا توجد استدعاءات حتى الآن.</value></data>
   <data name="Admin.AiInvocations.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
   <data name="Admin.AiInvocations.LoadFailed" xml:space="preserve"><value>تعذّر تحميل سجلّ الاستدعاءات.</value></data>
+  <data name="Admin.AiInvocations.Detail" xml:space="preserve"><value>التفاصيل</value></data>
+  <data name="Admin.AiInvocations.Detail.Title" xml:space="preserve"><value>تفاصيل الاستدعاء</value></data>
+  <data name="Admin.AiInvocations.Detail.Input" xml:space="preserve"><value>المدخلات (مُخفّاة)</value></data>
+  <data name="Admin.AiInvocations.Detail.Output" xml:space="preserve"><value>المخرجات</value></data>
+  <data name="Admin.AiInvocations.Detail.Close" xml:space="preserve"><value>إغلاق</value></data>
   <data name="Admin.AiInvocations.Col.Time" xml:space="preserve"><value>الوقت</value></data>
   <data name="Admin.AiInvocations.Col.PromptKey" xml:space="preserve"><value>مفتاح المحفّز</value></data>
   <data name="Admin.AiInvocations.Col.Feature" xml:space="preserve"><value>الميزة</value></data>

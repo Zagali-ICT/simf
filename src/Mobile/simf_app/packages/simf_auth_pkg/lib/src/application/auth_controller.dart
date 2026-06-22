@@ -66,6 +66,12 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
   String? _accessToken;
   String? _refreshToken;
 
+  // #9 — "Keep me logged in". When false the session is kept in memory ONLY:
+  // it works for this run (refresh uses the in-memory token) but is never
+  // written to durable storage, so it does not survive an app restart. Set per
+  // sign-in; defaults to remembered (the device-key / cold-start paths).
+  bool _rememberSession = true;
+
   // Single-flight guard for [refresh] — the in-flight refresh Future shared by
   // every concurrent 401 caller. See [refresh].
   Future<bool>? _refreshInFlight;
@@ -149,7 +155,11 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
   Future<void> signIn({
     required String email,
     required String password,
+    bool rememberSession = true,
   }) async {
+    // #9 — gate durable session persistence on "Keep me logged in"; carried
+    // through to the OTP step (same controller) and honoured by _persistSession.
+    _rememberSession = rememberSession;
     final result = await _repository.signIn(email: email, password: password);
     switch (result) {
       case SignInSession(:final session):
@@ -177,6 +187,18 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
     _setSignedIn(session);
     // Hydrate the authoritative privilege (the token payload omits it) — L-4.
     await reloadCurrentUser();
+  }
+
+  /// #12 — re-issue the emailed sign-in OTP for the in-progress ticket, in place
+  /// (no return to sign-in). The same ticket stays valid, so [AuthState] is
+  /// unchanged; returns the resend-button cooldown in seconds. No-op (-1) when
+  /// not awaiting an OTP.
+  Future<int> resendOtp() async {
+    final current = state;
+    if (current is! AuthStateAwaitingOtp) {
+      return -1;
+    }
+    return _repository.resendOtp(otpToken: current.otpToken);
   }
 
   /// Sign-up step 1 (Page 005). Creates a Visitor account (no privilege,
@@ -317,6 +339,9 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
       challenge: challenge,
       signature: signature,
     );
+    // #9 — a biometric re-open is an explicit "remember me on this device"
+    // (the device key was enrolled for exactly that), so persist the session.
+    _rememberSession = true;
     await _persistSession(session);
     _setSignedIn(session);
     await reloadCurrentUser();
@@ -466,6 +491,12 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
   }
 
   Future<void> _persistSession(Session session) async {
+    if (!_rememberSession) {
+      // #9 — "Keep me logged in" is off: keep the session in memory only and
+      // make sure nothing is left in durable storage to restore next launch.
+      await _clearSessionStorage();
+      return;
+    }
     await Future.wait(<Future<void>>[
       _secureStorage.write(StorageKeys.accessToken, session.accessToken),
       _secureStorage.write(StorageKeys.refreshToken, session.refreshToken),

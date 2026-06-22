@@ -24,6 +24,7 @@ namespace SIMF.Infrastructure.Media;
 internal sealed class AdminMediaService(
     SimfAppDbContext dbContext,
     IMediaImageStorage imageStorage,
+    IUploadScanner uploadScanner,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<AdminMediaService> logger) : IAdminMediaService
@@ -241,6 +242,10 @@ internal sealed class AdminMediaService(
                 ErrorCodes.MediaNotFound, 404,
                 "The media item was not found.",
                 "لم يتم العثور على عنصر الوسائط.");
+
+        // A6-18 (NCA) — malware-scan the untrusted image before it is stored,
+        // matching the ID-document / avatar / asset / presentation paths.
+        await uploadScanner.EnsureCleanAsync(content, "media-image", cancellationToken);
 
         var relativePath = await imageStorage.SaveAsync(
             item.Id, MediaImageSlot.Image, content, contentType, cancellationToken);

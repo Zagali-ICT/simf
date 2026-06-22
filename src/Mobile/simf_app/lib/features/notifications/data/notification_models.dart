@@ -68,6 +68,21 @@ class NotificationItem {
     return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
   }
 
+  /// A copy marked read — clears the unread dot optimistically after a
+  /// mark-read without re-fetching the whole list.
+  NotificationItem markedRead() => NotificationItem(
+        id: id,
+        kind: kind,
+        title: title,
+        titleArabic: titleArabic,
+        body: body,
+        bodyArabic: bodyArabic,
+        severity: severity,
+        isRead: true,
+        readAt: readAt,
+        createdAt: createdAt,
+      );
+
   static NotificationItem fromJson(Map<String, dynamic> json) {
     final readAtRaw = json['readAt'] as String?;
     final createdAtRaw = json['createdAt'] as String?;

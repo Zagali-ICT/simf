@@ -79,7 +79,7 @@ class _BiometricStepUpScreenState extends ConsumerState<BiometricStepUpScreen> {
     return '$m:$s';
   }
 
-  bool get _canSubmit => _code.text.trim().length >= 4 && !_verifying;
+  bool get _canSubmit => _code.text.trim().length == 6 && !_verifying;
 
   /// Asks the backend to email a step-up code; shows the masked recipient and
   /// (re)starts the resend countdown. A failure surfaces inline. Kicked off from

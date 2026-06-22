@@ -44,7 +44,13 @@ These are **placeholders** — set them to the real SIMF server values:
 
 1. **`pool` name** (in `azure-pipelines.yml`) — the self-hosted agent pool. The
    build agent needs the **.NET 10 SDK**; the deploy agent needs **IIS** + the
-   `WebAdministration` PowerShell module and rights to stop/start sites.
+   `WebAdministration` PowerShell module and rights to stop/start sites. The
+   build agent also runs the integration test gate, which hosts the API against
+   **SQL Server LocalDB** (`(localdb)\MSSQLLocalDB`); the `Provision SQL Server
+   LocalDB` pipeline step installs it on first run via Chocolatey (so the agent
+   needs outbound access to `community.chocolatey.org` + the package source, and
+   rights to install an MSI), then creates/starts the instance. Installing
+   LocalDB on the agent once removes the per-run download.
 2. **`environment` name** (`SIMF-Prod` placeholder) — register an Azure DevOps
    **Environment** of this name and bind it to the SIMF server.
 3. **IIS site names + physical paths** — the `-ApiSiteName/-ApiPath`,

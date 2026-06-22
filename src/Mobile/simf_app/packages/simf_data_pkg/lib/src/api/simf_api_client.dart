@@ -29,7 +29,7 @@ import 'interceptors/logging_interceptor.dart';
 ///   4. The envelope is parsed. A `success: true` response returns the
 ///      data; a `success: false` envelope is thrown as [ApiFailure].
 class SimfApiClient {
-  SimfApiClient._(this._dio, this._tokenSource);
+  SimfApiClient._(this._dio, this._tokenSource, this._currentLanguageCode);
 
   factory SimfApiClient.build({
     required SimfDataConfig config,
@@ -63,11 +63,14 @@ class SimfApiClient {
       LoggingInterceptor(enabled: config.enableRequestLogging),
     );
 
-    return SimfApiClient._(dio, tokenSource);
+    return SimfApiClient._(dio, tokenSource, currentLanguageCode);
   }
 
   final Dio _dio;
   final AuthTokenSource _tokenSource;
+  // The app's current language code (e.g. 'ar'/'en'), used to pick the
+  // locale-appropriate error message from the bilingual envelope.
+  final String Function() _currentLanguageCode;
 
   Future<T> get<T>(
     String path, {
@@ -374,6 +377,7 @@ class SimfApiClient {
       throw ApiFailure.fromEnvelope(
         result.error!,
         httpStatus: response.statusCode,
+        isArabic: _currentLanguageCode() == 'ar',
       );
     }
 

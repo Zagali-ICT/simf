@@ -20,6 +20,13 @@ public interface ISignInService
         VerifyOtpRequest request,
         CancellationToken cancellationToken = default);
 
+    /// <summary>#12 — re-issue + email the visitor sign-in OTP for an in-progress
+    /// 2FA ticket (no password needed). The ticket's window is refreshed so the
+    /// fresh code is verifiable; capped per the same per-hour OTP budget.</summary>
+    Task<ResendOtpResponse> ResendOtpAsync(
+        ResendOtpRequest request,
+        CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Completes sign-in using a single-use recovery code instead of a TOTP
     /// (decision D-040). The MFA token is the same ticket the password step

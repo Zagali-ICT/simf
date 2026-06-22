@@ -683,6 +683,21 @@ here.
 `mfaToken` for an admin (TOTP, §12.4) and `mfaRequired` with an `otpToken` for a
 visitor (email OTP, here).
 
+#### Resend the visitor OTP in place (#12)
+
+`POST /api/v1/app/auth/resend-otp` re-issues + emails a fresh six-digit code for
+an **in-progress** visitor 2FA session, keyed by the existing `otpToken` — no
+re-authentication. The same ticket stays valid (its window is refreshed), so the
+client keeps its `otpToken` and just restarts the resend cooldown.
+
+- Request: `{ "otpToken": "<opaque>" }`
+- Success — 200: `{ "cooldownSeconds": 60 }`.
+- Failure: `AUTH_OTP_TOKEN_INVALID` (400 — missing / consumed / attempt-exhausted /
+  expired ticket, generic so it is not an account oracle), `RATE_LIMIT_EXCEEDED`
+  (429 — the per-account 5-codes-per-hour budget shared with sign-in).
+- The verify attempt budget is **not** reset by a resend (brute-force stays
+  capped at 5 wrong guesses across the ticket's life).
+
 ### A.2 New endpoint — change password
 
 `POST /api/v1/auth/change-password` — requires a valid `Authorization` header.

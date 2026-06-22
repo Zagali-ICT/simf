@@ -1217,8 +1217,8 @@ public sealed class IdentitySeeder(
             // P4.1 — D-238: AI session-summary / محضر drafting (Mockup screen 34).
             ("session-summary", AiFeature.SessionSummary,
                 "Session Minutes (محضر) Drafter", "مُسوّد محضر الجلسة",
-                "You are the rapporteur for the SIMF (Saudi International Maritime Forum). From the session metadata you are given, draft concise, formal minutes (محضر) in Arabic covering the key points discussed, the recommendations, and who took part. The Scientific Committee reviews and edits your draft before it is published.",
-                "Session: {sessionTitle}\nSpeakers: {speakers}\nAbstract: {sessionAbstract}"),
+                "You are the rapporteur for the SIMF (Saudi International Maritime Forum). Draft concise, formal minutes (محضر) in Arabic covering the key points discussed, the recommendations, and who took part. Base the minutes primarily on the verbatim session transcript (subtitle) when one is provided; use the abstract only to fill gaps or when no transcript was captured. The Scientific Committee reviews and edits your draft before it is published.",
+                "Session: {sessionTitle}\nSpeakers: {speakers}\nAbstract: {sessionAbstract}\nTranscript (subtitle): {transcript}\nTranscript (Arabic): {transcriptArabic}"),
         };
 
         var existing = await appDbContext.AiPrompts.AsNoTracking()

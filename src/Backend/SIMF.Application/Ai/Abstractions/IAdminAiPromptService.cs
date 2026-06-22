@@ -45,4 +45,10 @@ public interface IAdminAiPromptService
     /// check via <see cref="GetAsync"/> when needed).</summary>
     Task<IReadOnlyList<AdminAiPromptHistoryEntry>> GetHistoryAsync(
         Guid promptId, CancellationToken cancellationToken = default);
+
+    /// <summary>CP Phase-1 — the AI dashboard: rolled-up invocation health over
+    /// the last <paramref name="windowHours"/> hours (calls / errors / latency /
+    /// tokens, overall + per service) plus the configured-service counts.</summary>
+    Task<AdminAiDashboard> GetDashboardAsync(
+        int windowHours = 24, CancellationToken cancellationToken = default);
 }

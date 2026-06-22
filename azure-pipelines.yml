@@ -150,6 +150,63 @@ stages:
     #         scantype: 'targetedScan'
     #         url: 'https://simf-staging.zagali-ict.com'
 
+    # --- SQL Server LocalDB for the integration tests. The self-hosted build
+    #     agent does not ship LocalDB, and SIMF.Api.Tests host the API against
+    #     (localdb)\MSSQLLocalDB (see tests/SIMF.Api.Tests/SimfApiFactory.cs), so
+    #     the test gate below cannot reach SQL Server without it. This step
+    #     installs LocalDB on first run (idempotent — skipped once present) via
+    #     Chocolatey, then creates + starts the MSSQLLocalDB automatic instance
+    #     under the agent's account. It FAILS LOUDLY if LocalDB is still
+    #     unreachable, so a provisioning problem can never masquerade as a passing
+    #     test gate. `sqllocaldb` is the standard Chocolatey package; the
+    #     bootstrap URL is Chocolatey's official installer. ---
+    - powershell: |
+        $ErrorActionPreference = 'Stop'
+
+        function Get-SqlLocalDbExe {
+          $cmd = Get-Command SqlLocalDB.exe -ErrorAction SilentlyContinue
+          if ($cmd) { return $cmd.Source }
+          $found = Get-ChildItem 'C:\Program Files\Microsoft SQL Server\*\Tools\Binn\SqlLocalDB.exe' -ErrorAction SilentlyContinue |
+            Select-Object -First 1
+          if ($found) { return $found.FullName }
+          return $null
+        }
+
+        $exe = Get-SqlLocalDbExe
+        if (-not $exe) {
+          Write-Host 'SqlLocalDB not found - installing SQL Server Express LocalDB via Chocolatey.'
+          if (-not (Get-Command choco.exe -ErrorAction SilentlyContinue)) {
+            Write-Host 'Chocolatey not found - bootstrapping it.'
+            Set-ExecutionPolicy Bypass -Scope Process -Force
+            [System.Net.ServicePointManager]::SecurityProtocol = 3072
+            Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+            $env:PATH += ";$($env:ProgramData)\chocolatey\bin"
+          }
+          choco install sqllocaldb -y --no-progress
+          if ($LASTEXITCODE -ne 0) {
+            throw "Chocolatey failed to install 'sqllocaldb' (exit $LASTEXITCODE). Install SQL Server Express LocalDB on the build agent manually, then re-run."
+          }
+          $exe = Get-SqlLocalDbExe
+        }
+
+        if (-not $exe) {
+          throw 'SqlLocalDB.exe still not found after install - provision SQL Server Express LocalDB on the build agent.'
+        }
+        Write-Host "Using SqlLocalDB at: $exe"
+
+        # create (tolerate 'already exists') + start are both idempotent across runs.
+        # stderr is intentionally NOT redirected (a benign 'already exists' on create
+        # must not fail the step); the info check below is the real gate.
+        & $exe create MSSQLLocalDB
+        & $exe start  MSSQLLocalDB
+
+        $info = (& $exe info MSSQLLocalDB) | Out-String
+        Write-Host $info
+        if ($info -notmatch 'State:\s*Running') {
+          throw 'MSSQLLocalDB is not Running - the integration tests cannot reach SQL Server.'
+        }
+      displayName: 'Provision SQL Server LocalDB (integration tests)'
+
     # --- Test gate (NCA Secure App-Dev Standard §3-20; SIMF-OPS-001 §5) — a
     #     failing test stops the pipeline. RE-ENABLED 2026-06-21 (had been
     #     temporarily disabled 2026-06-05 for speed). SIMF.Api.Tests runs ~13 min. ---

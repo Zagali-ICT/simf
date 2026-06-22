@@ -125,6 +125,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 
 | Page | File | Scenarios |
 |------|------|-----------|
+| `/admin/ai/services` | [`cp-admin-ai-services.md`](cp-admin-ai-services.md) | E2E-AIS-001..011 |
 | `/admin/ai/prompts` | [`cp-admin-ai-prompts.md`](cp-admin-ai-prompts.md) | E2E-AIP-001..022 |
 | `/admin/ai/invocations` | [`cp-admin-ai-invocations.md`](cp-admin-ai-invocations.md) | E2E-AIV-001..012 |
 

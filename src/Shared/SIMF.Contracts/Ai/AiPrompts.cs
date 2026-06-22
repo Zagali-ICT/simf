@@ -160,6 +160,31 @@ public sealed record AdminAiInvocationDetail(
     string? OutputText,
     DateTimeOffset CreatedAt);
 
+/// <summary>CP Phase-1 — the AI Control Center dashboard: rolled-up invocation
+/// health over a recent window (default 24h) plus a per-service breakdown, and
+/// the service-configuration counts. Read-only.</summary>
+public sealed record AdminAiDashboard(
+    int WindowHours,
+    int TotalCalls,
+    int ErrorCount,
+    double ErrorRate,
+    int AvgLatencyMs,
+    long TotalTokens,
+    int ActiveServices,
+    int TotalServices,
+    IReadOnlyList<AdminAiServiceStat> Services);
+
+/// <summary>Per-service (<see cref="AiFeature"/>) health over the dashboard
+/// window. <see cref="ErrorRate"/> is 0..1; <see cref="AvgLatencyMs"/> and the
+/// token total cover only the calls in the window.</summary>
+public sealed record AdminAiServiceStat(
+    AiFeature Feature,
+    int Calls,
+    int ErrorCount,
+    double ErrorRate,
+    int AvgLatencyMs,
+    long TotalTokens);
+
 // Feature request bodies ------------------------------------------------
 
 public class FilterQuestionRequest

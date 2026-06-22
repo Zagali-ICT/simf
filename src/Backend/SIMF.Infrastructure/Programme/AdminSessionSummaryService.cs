@@ -117,11 +117,18 @@ internal sealed class AdminSessionSummaryService(
             .Select(link => link.Speaker!.Name)
             .ToListAsync(cancellationToken);
 
+        // The session's live subtitle/transcript is the primary source for the
+        // minutes: the AI drafts from what was actually said, falling back to the
+        // abstract only when no transcript was captured. Kept as two separate
+        // inputs so each stays within the IAiService per-value cap (each
+        // LiveCaptions column is ≤2048 chars; one combined value could exceed it).
         var inputs = new Dictionary<string, string>
         {
             ["sessionTitle"] = session.Title,
             ["speakers"] = speakers.Count > 0 ? string.Join(", ", speakers) : "—",
             ["sessionAbstract"] = session.Description ?? string.Empty,
+            ["transcript"] = session.LiveCaptions ?? string.Empty,
+            ["transcriptArabic"] = session.LiveCaptionsArabic ?? string.Empty,
         };
 
         var result = await aiService.InvokeAsync(

@@ -49,6 +49,25 @@ void main() {
       expect(result.error!.details, isEmpty);
     });
 
+    test('decodes the Arabic message alongside the English one (#8/#11)', () {
+      final json = <String, dynamic>{
+        'success': false,
+        'data': null,
+        'error': {
+          'code': 'AUTH_INVALID_CREDENTIALS',
+          'message': 'The email or password is incorrect.',
+          'messageArabic': 'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
+          'details': <Map<String, dynamic>>[],
+        },
+        'meta': null,
+      };
+      final result = ApiResult<Object>.fromJson(json, (_) => Object());
+      expect(result.error!.message, contains('incorrect'));
+      expect(result.error!.messageArabic, contains('غير صحيحة'));
+      expect(result.error!.localized(true), contains('غير صحيحة'));
+      expect(result.error!.localized(false), contains('incorrect'));
+    });
+
     test('decodes field-level details on a VALIDATION_FAILED envelope', () {
       final json = <String, dynamic>{
         'success': false,
@@ -117,6 +136,30 @@ void main() {
       expect(failure.message, equals('Wrong.'));
       expect(failure.httpStatus, equals(401));
       expect(failure.details, hasLength(1));
+    });
+
+    test('picks the localized message by isArabic (#8/#11)', () {
+      const error = ApiResultError(
+        code: 'AUTH_INVALID_CREDENTIALS',
+        message: 'The email or password is incorrect.',
+        messageArabic: 'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
+      );
+      expect(
+        ApiFailure.fromEnvelope(error, isArabic: true).message,
+        equals('البريد الإلكتروني أو كلمة المرور غير صحيحة.'),
+      );
+      expect(
+        ApiFailure.fromEnvelope(error, isArabic: false).message,
+        equals('The email or password is incorrect.'),
+      );
+    });
+
+    test('falls back to English when the envelope carries no Arabic', () {
+      const error = ApiResultError(code: 'X', message: 'Only English.');
+      expect(
+        ApiFailure.fromEnvelope(error, isArabic: true).message,
+        equals('Only English.'),
+      );
     });
   });
 }

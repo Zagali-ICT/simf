@@ -464,6 +464,11 @@ public static class PermissionCatalog
         public const string View = "AiInvocations.View";
     }
 
+    public static class AiDashboard
+    {
+        public const string View = "AiDashboard.View";
+    }
+
     // ── Content ──────────────────────────────────────────────────────────
 
     /// <summary>Dynamic CMS content blocks (upsert covers create + edit).</summary>
@@ -853,6 +858,7 @@ public static class PermissionCatalog
         new(AiPrompts.Import, "AiPrompts", "Import", "Import AI prompts", AdminOnly),
 
         new(AiInvocations.View, "AiInvocations", "View", "View AI invocations log", AdminOnly),
+        new(AiDashboard.View, "AiDashboard", "View", "View the AI dashboard", AdminOnly),
 
         // Content
         new(ContentBlocks.View, "ContentBlocks", "View", "View content blocks", AdminOnly),

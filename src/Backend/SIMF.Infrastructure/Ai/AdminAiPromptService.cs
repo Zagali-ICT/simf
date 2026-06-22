@@ -382,6 +382,64 @@ internal sealed class AdminAiPromptService(
             new GridQuery { Skip = skip, Top = top });
     }
 
+    public async Task<AdminAiDashboard> GetDashboardAsync(
+        int windowHours = 24, CancellationToken cancellationToken = default)
+    {
+        var hours = Math.Clamp(windowHours, 1, 24 * 30);
+        var since = timeProvider.GetUtcNow().AddHours(-hours);
+
+        // Per-service invocation aggregates over the window (one GROUP BY).
+        var perFeature = await appDbContext.AiInvocations.AsNoTracking()
+            .Where(i => i.CreatedAt >= since)
+            .GroupBy(i => i.Feature)
+            .Select(g => new
+            {
+                Feature = g.Key,
+                Calls = g.Count(),
+                Errors = g.Count(x => x.ErrorCode != null),
+                AvgLatency = g.Average(x => (double?)x.LatencyMs) ?? 0,
+                Tokens = g.Sum(x => (long?)((x.TokensInput ?? 0) + (x.TokensOutput ?? 0))) ?? 0L,
+            })
+            .ToListAsync(cancellationToken);
+
+        var services = perFeature
+            .OrderBy(f => f.Feature)
+            .Select(f => new AdminAiServiceStat(
+                f.Feature,
+                f.Calls,
+                f.Errors,
+                f.Calls > 0 ? (double)f.Errors / f.Calls : 0,
+                (int)Math.Round(f.AvgLatency),
+                f.Tokens))
+            .ToList();
+
+        var totalCalls = perFeature.Sum(f => f.Calls);
+        var errorCount = perFeature.Sum(f => f.Errors);
+        var totalTokens = perFeature.Sum(f => f.Tokens);
+        // Call-weighted average latency across services (not an average of averages).
+        var avgLatency = totalCalls > 0
+            ? (int)Math.Round(perFeature.Sum(f => f.AvgLatency * f.Calls) / totalCalls)
+            : 0;
+
+        // Service-configuration counts from the prompt catalogue (independent of
+        // the call window — a service with no calls is still a configured service).
+        var promptFeatures = await appDbContext.AiPrompts.AsNoTracking()
+            .GroupBy(p => p.Feature)
+            .Select(g => new { Feature = g.Key, AnyActive = g.Any(p => p.IsActive) })
+            .ToListAsync(cancellationToken);
+
+        return new AdminAiDashboard(
+            WindowHours: hours,
+            TotalCalls: totalCalls,
+            ErrorCount: errorCount,
+            ErrorRate: totalCalls > 0 ? (double)errorCount / totalCalls : 0,
+            AvgLatencyMs: avgLatency,
+            TotalTokens: totalTokens,
+            ActiveServices: promptFeatures.Count(f => f.AnyActive),
+            TotalServices: promptFeatures.Count,
+            Services: services);
+    }
+
     // -- Validation helpers --
 
     private sealed record ValidatedCreate(

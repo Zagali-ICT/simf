@@ -20,34 +20,26 @@
         <SimfTextField Label="@L["Admin.AiPrompts.Field.Key"]"
                        @bind-Value="_model.Key"
                        Disabled="@(_busy || IsEdit)" />
-        <label class="simf-field">
-            <span class="simf-field__label">@L["Admin.AiPrompts.Field.Feature"]</span>
-            <select class="simf-field__input"
-                    value="@((int)_model.Feature)"
-                    @onchange="OnFeatureChanged"
-                    disabled="@_busy">
-                @foreach (var f in Enum.GetValues<AiFeature>())
-                {
-                    <option value="@((int)f)">@f</option>
-                }
-            </select>
-        </label>
+        <SimfSelect TValue="string"
+                    Label="@L["Admin.AiPrompts.Field.Feature"]"
+                    Items="AiEnumOptions.Features"
+                    ValueFor="@(id => id)"
+                    LabelFor="@(id => AiEnumOptions.FeatureLabel(id))"
+                    Value="@_featureInput"
+                    ValueChanged="@(v => _featureInput = v ?? string.Empty)"
+                    Disabled="_busy" />
         <SimfTextField Label="@L["Admin.AiPrompts.Field.DisplayName"]"
                        @bind-Value="_model.DisplayName" Disabled="_busy" />
         <SimfTextField Label="@L["Admin.AiPrompts.Field.DisplayNameArabic"]"
                        @bind-Value="_model.DisplayNameArabic" Disabled="_busy" />
-        <label class="simf-field">
-            <span class="simf-field__label">@L["Admin.AiPrompts.Field.Provider"]</span>
-            <select class="simf-field__input"
-                    value="@((int)_model.Provider)"
-                    @onchange="OnProviderChanged"
-                    disabled="@_busy">
-                @foreach (var p in Enum.GetValues<AiProvider>())
-                {
-                    <option value="@((int)p)">@p</option>
-                }
-            </select>
-        </label>
+        <SimfSelect TValue="string"
+                    Label="@L["Admin.AiPrompts.Field.Provider"]"
+                    Items="AiEnumOptions.Providers"
+                    ValueFor="@(id => id)"
+                    LabelFor="@(id => AiEnumOptions.ProviderLabel(id))"
+                    Value="@_providerInput"
+                    ValueChanged="@(v => _providerInput = v ?? string.Empty)"
+                    Disabled="_busy" />
         <SimfTextField Label="@L["Admin.AiPrompts.Field.Model"]"
                        @bind-Value="_model.Model" Disabled="_busy" />
         <label class="simf-field">
@@ -101,6 +93,10 @@
 
 @code {
     private readonly FormModel _model = new();
+    // Feature + Provider are SimfSelect<string>-bound: held as int-string ids and
+    // parsed back to the enums at submit (mirrors SessionsAddEdit's enum selects).
+    private string _featureInput = AiEnumOptions.Id(AiFeature.QuestionFilter);
+    private string _providerInput = AiEnumOptions.Id(AiProvider.Echo);
     private EditContext _editContext = default!;
     private bool _busy;
     private string? _error;
@@ -110,12 +106,12 @@
         if (Initial is not null)
         {
             _model.Key = Initial.Key;
-            _model.Feature = Initial.Feature;
+            _featureInput = AiEnumOptions.Id(Initial.Feature);
             _model.DisplayName = Initial.DisplayName;
             _model.DisplayNameArabic = Initial.DisplayNameArabic;
             _model.Description = Initial.Description;
             _model.DescriptionArabic = Initial.DescriptionArabic;
-            _model.Provider = Initial.Provider;
+            _providerInput = AiEnumOptions.Id(Initial.Provider);
             _model.Model = Initial.Model;
             _model.SystemPrompt = Initial.SystemPrompt;
             _model.UserPromptTemplate = Initial.UserPromptTemplate;
@@ -152,12 +148,12 @@
                     $"/account/api/admin/ai/prompts/{Initial!.Id}",
                     new UpdateAiPromptRequest
                     {
-                        Feature = _model.Feature,
+                        Feature = AiEnumOptions.ParseFeature(_featureInput),
                         DisplayName = _model.DisplayName.Trim(),
                         DisplayNameArabic = _model.DisplayNameArabic.Trim(),
                         Description = _model.Description,
                         DescriptionArabic = _model.DescriptionArabic,
-                        Provider = _model.Provider,
+                        Provider = AiEnumOptions.ParseProvider(_providerInput),
                         Model = _model.Model,
                         SystemPrompt = _model.SystemPrompt,
                         UserPromptTemplate = _model.UserPromptTemplate,
@@ -174,12 +170,12 @@
                     new CreateAiPromptRequest
                     {
                         Key = _model.Key.Trim(),
-                        Feature = _model.Feature,
+                        Feature = AiEnumOptions.ParseFeature(_featureInput),
                         DisplayName = _model.DisplayName.Trim(),
                         DisplayNameArabic = _model.DisplayNameArabic.Trim(),
                         Description = _model.Description,
                         DescriptionArabic = _model.DescriptionArabic,
-                        Provider = _model.Provider,
+                        Provider = AiEnumOptions.ParseProvider(_providerInput),
                         Model = _model.Model,
                         SystemPrompt = _model.SystemPrompt,
                         UserPromptTemplate = _model.UserPromptTemplate,
@@ -205,17 +201,8 @@
         finally { _busy = false; }
     }
 
-    private void OnFeatureChanged(ChangeEventArgs e)
-    {
-        if (int.TryParse(e.Value?.ToString(), out var v))
-            _model.Feature = (AiFeature)v;
-    }
-
-    private void OnProviderChanged(ChangeEventArgs e)
-    {
-        if (int.TryParse(e.Value?.ToString(), out var v))
-            _model.Provider = (AiProvider)v;
-    }
+    // Feature/Provider option lists, labels and parse live in the shared
+    // AiEnumOptions helper (also used by the services-console routing editor).
 
     private void OnSystemPromptChanged(ChangeEventArgs e) =>
         _model.SystemPrompt = e.Value?.ToString() ?? string.Empty;
@@ -242,12 +229,10 @@
     private sealed class FormModel
     {
         public string Key { get; set; } = string.Empty;
-        public AiFeature Feature { get; set; }
         public string DisplayName { get; set; } = string.Empty;
         public string DisplayNameArabic { get; set; } = string.Empty;
         public string? Description { get; set; }
         public string? DescriptionArabic { get; set; }
-        public AiProvider Provider { get; set; } = AiProvider.Echo;
         public string Model { get; set; } = "echo";
         public string SystemPrompt { get; set; } = string.Empty;
         public string UserPromptTemplate { get; set; } = string.Empty;

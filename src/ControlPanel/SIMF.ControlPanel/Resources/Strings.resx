@@ -139,6 +139,7 @@
   <data name="Admin.Faq.LoadFailed" xml:space="preserve"><value>Could not complete the request. Please try again.</value></data>
   <data name="Admin.Faq.Saved" xml:space="preserve"><value>Saved.</value></data>
   <data name="Admin.Faq.Deactivated" xml:space="preserve"><value>Deactivated.</value></data>
+  <data name="Module.AiServices" xml:space="preserve"><value>AI services</value></data>
   <data name="Module.AiPrompts" xml:space="preserve"><value>AI prompts</value></data>
   <data name="Module.AiInvocations" xml:space="preserve"><value>AI invocations</value></data>
   <data name="Module.Media" xml:space="preserve"><value>Media Center</value></data>
@@ -1859,6 +1860,19 @@
   <data name="Admin.Banners.Col.Active" xml:space="preserve"><value>Active</value></data>
   <!-- D-176 (gap doc G12) — AI module CP -->
   <data name="Admin.AiPrompts.Title" xml:space="preserve"><value>AI prompts</value></data>
+  <data name="Admin.AiServices.Title" xml:space="preserve"><value>AI services</value></data>
+  <data name="Admin.AiServices.Loading" xml:space="preserve"><value>Loading services…</value></data>
+  <data name="Admin.AiServices.LoadFailed" xml:space="preserve"><value>Could not load AI services.</value></data>
+  <data name="Admin.AiServices.None" xml:space="preserve"><value>No AI services configured.</value></data>
+  <data name="Admin.AiServices.NoActive" xml:space="preserve"><value>None active</value></data>
+  <data name="Admin.AiServices.Col.Service" xml:space="preserve"><value>Service</value></data>
+  <data name="Admin.AiServices.Col.ActivePrompt" xml:space="preserve"><value>Active prompt</value></data>
+  <data name="Admin.AiServices.Col.Prompts" xml:space="preserve"><value>Prompts</value></data>
+  <data name="Admin.AiServices.Routing" xml:space="preserve"><value>Configure routing</value></data>
+  <data name="Admin.AiServices.Routing.Title" xml:space="preserve"><value>Service routing</value></data>
+  <data name="Admin.AiServices.Routing.Save" xml:space="preserve"><value>Save routing</value></data>
+  <data name="Admin.AiServices.Routing.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.AiServices.Routing.Saved" xml:space="preserve"><value>Routing updated.</value></data>
   <data name="Admin.AiPrompts.New" xml:space="preserve"><value>New prompt</value></data>
   <data name="Admin.AiPrompts.None" xml:space="preserve"><value>No AI prompts yet.</value></data>
   <data name="Admin.AiPrompts.Loading" xml:space="preserve"><value>Loading…</value></data>
@@ -1870,6 +1884,16 @@
   <data name="Admin.AiPrompts.Col.Model" xml:space="preserve"><value>Model</value></data>
   <data name="Admin.AiPrompts.Col.Version" xml:space="preserve"><value>Version</value></data>
   <data name="Admin.AiPrompts.Col.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.AiPrompts.Col.Hosting" xml:space="preserve"><value>Hosting</value></data>
+  <data name="Admin.AiPrompts.Hosting.Cloud" xml:space="preserve"><value>Cloud</value></data>
+  <data name="Admin.AiPrompts.Hosting.Offline" xml:space="preserve"><value>Offline</value></data>
+  <data name="Admin.AiPrompts.Hosting.OpenAi" xml:space="preserve"><value>OpenAI API</value></data>
+  <data name="Admin.AiPrompts.Hosting.Risk" xml:space="preserve"><value>Residency risk</value></data>
+  <data name="Admin.AiPrompts.History" xml:space="preserve"><value>History</value></data>
+  <data name="Admin.AiPrompts.History.Title" xml:space="preserve"><value>Prompt version history</value></data>
+  <data name="Admin.AiPrompts.History.Empty" xml:space="preserve"><value>No prior versions.</value></data>
+  <data name="Admin.AiPrompts.History.Col.Authored" xml:space="preserve"><value>Authored</value></data>
+  <data name="Admin.AiPrompts.History.Col.Hash" xml:space="preserve"><value>Content hash</value></data>
   <data name="Admin.AiPrompts.Field.Key" xml:space="preserve"><value>Key (kebab-case slug, immutable)</value></data>
   <data name="Admin.AiPrompts.Field.Feature" xml:space="preserve"><value>Feature</value></data>
   <data name="Admin.AiPrompts.Field.DisplayName" xml:space="preserve"><value>Display name (English)</value></data>
@@ -1903,6 +1927,11 @@
   <data name="Admin.AiInvocations.None" xml:space="preserve"><value>No invocations recorded yet.</value></data>
   <data name="Admin.AiInvocations.Loading" xml:space="preserve"><value>Loading…</value></data>
   <data name="Admin.AiInvocations.LoadFailed" xml:space="preserve"><value>Could not load invocations.</value></data>
+  <data name="Admin.AiInvocations.Detail" xml:space="preserve"><value>Detail</value></data>
+  <data name="Admin.AiInvocations.Detail.Title" xml:space="preserve"><value>Invocation detail</value></data>
+  <data name="Admin.AiInvocations.Detail.Input" xml:space="preserve"><value>Input (redacted)</value></data>
+  <data name="Admin.AiInvocations.Detail.Output" xml:space="preserve"><value>Output</value></data>
+  <data name="Admin.AiInvocations.Detail.Close" xml:space="preserve"><value>Close</value></data>
   <data name="Admin.AiInvocations.Col.Time" xml:space="preserve"><value>Time</value></data>
   <data name="Admin.AiInvocations.Col.PromptKey" xml:space="preserve"><value>Prompt key</value></data>
   <data name="Admin.AiInvocations.Col.Feature" xml:space="preserve"><value>Feature</value></data>
