@@ -84,12 +84,18 @@ triggers a deploy, or the live API will not start.
 
 ---
 
-## 5. 🟠 Flagged NCA follow-ups — NOT in this PR, owner decisions before go-live
+## 5. 🟠 NCA follow-ups — dispositioned by the owner (D-494), now formalized as pre-go-live gates
 
-These were surfaced by the D-493 review and **deliberately not fixed
-unilaterally** because each is a judgement/deploy call, not a clear-and-safe
-edit. Both are currently latent (not live holes); resolve before relying on the
-feature in production.
+Surfaced by the D-493 review and dispositioned by the owner on 2026-06-22
+(**D-494**): the owner chose to **leave both behaviours unchanged** and formalize
+each as an explicit **code-level gate** (a `<remarks>` warning at the call site)
+plus this doc, rather than reverse tested semantics or pre-accept an availability
+tradeoff. Both are latent today (not live holes). They must be resolved before
+the relevant feature is enabled / before go-live.
+
+> The third D-493 follow-up — the admin media-gallery upload being unscanned
+> (Medium) — was **fixed** (commit `fb107ac1`, in this PR), so every untrusted
+> upload path now runs the A6-18 scan seam.
 
 1. **Dormancy NULL-baseline mass-disable risk** —
    `DormantAccountService.cs:40` keys dormancy on

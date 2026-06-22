@@ -14,6 +14,14 @@ namespace SIMF.Infrastructure.Identity;
 /// ICAP gateway) as <see cref="IUploadScanner"/> in DI — every upload path already
 /// calls the seam, so it is a one-line swap.
 /// </summary>
+/// <remarks>
+/// GO-LIVE GATE (D-494): when wiring the real engine, also decide the
+/// unavailable-engine policy. Today a <see cref="UploadScanVerdict.Skipped"/>
+/// verdict (scanning disabled or the engine reporting "unavailable") lets the
+/// upload through — fail-open. Production should treat a real engine being
+/// unavailable as fail-closed (reject the upload) rather than silently storing
+/// an unscanned file. See the merge-readiness doc §5.2 and DECISIONS_LOG D-494.
+/// </remarks>
 internal sealed class DefaultUploadScanner(
     IOptions<UploadScanningOptions> options,
     ILogger<DefaultUploadScanner> logger) : IUploadScanner
