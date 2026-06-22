@@ -1868,6 +1868,11 @@
   <data name="Admin.AiPrompts.Hosting.Offline" xml:space="preserve"><value>غير متصل</value></data>
   <data name="Admin.AiPrompts.Hosting.OpenAi" xml:space="preserve"><value>واجهة OpenAI</value></data>
   <data name="Admin.AiPrompts.Hosting.Risk" xml:space="preserve"><value>مخاطر سيادة البيانات</value></data>
+  <data name="Admin.AiPrompts.History" xml:space="preserve"><value>السجل</value></data>
+  <data name="Admin.AiPrompts.History.Title" xml:space="preserve"><value>سجل إصدارات المحفّز</value></data>
+  <data name="Admin.AiPrompts.History.Empty" xml:space="preserve"><value>لا توجد إصدارات سابقة.</value></data>
+  <data name="Admin.AiPrompts.History.Col.Authored" xml:space="preserve"><value>التأليف</value></data>
+  <data name="Admin.AiPrompts.History.Col.Hash" xml:space="preserve"><value>بصمة المحتوى</value></data>
   <data name="Admin.AiPrompts.Field.Key" xml:space="preserve"><value>المفتاح (kebab-case، غير قابل للتعديل)</value></data>
   <data name="Admin.AiPrompts.Field.Feature" xml:space="preserve"><value>الميزة</value></data>
   <data name="Admin.AiPrompts.Field.DisplayName" xml:space="preserve"><value>الاسم (إنجليزي)</value></data>
@@ -1901,6 +1906,11 @@
   <data name="Admin.AiInvocations.None" xml:space="preserve"><value>لا توجد استدعاءات حتى الآن.</value></data>
   <data name="Admin.AiInvocations.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
   <data name="Admin.AiInvocations.LoadFailed" xml:space="preserve"><value>تعذّر تحميل سجلّ الاستدعاءات.</value></data>
+  <data name="Admin.AiInvocations.Detail" xml:space="preserve"><value>التفاصيل</value></data>
+  <data name="Admin.AiInvocations.Detail.Title" xml:space="preserve"><value>تفاصيل الاستدعاء</value></data>
+  <data name="Admin.AiInvocations.Detail.Input" xml:space="preserve"><value>المدخلات (مُخفّاة)</value></data>
+  <data name="Admin.AiInvocations.Detail.Output" xml:space="preserve"><value>المخرجات</value></data>
+  <data name="Admin.AiInvocations.Detail.Close" xml:space="preserve"><value>إغلاق</value></data>
   <data name="Admin.AiInvocations.Col.Time" xml:space="preserve"><value>الوقت</value></data>
   <data name="Admin.AiInvocations.Col.PromptKey" xml:space="preserve"><value>مفتاح المحفّز</value></data>
   <data name="Admin.AiInvocations.Col.Feature" xml:space="preserve"><value>الميزة</value></data>

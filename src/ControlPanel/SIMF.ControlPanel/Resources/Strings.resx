@@ -1875,6 +1875,11 @@
   <data name="Admin.AiPrompts.Hosting.Offline" xml:space="preserve"><value>Offline</value></data>
   <data name="Admin.AiPrompts.Hosting.OpenAi" xml:space="preserve"><value>OpenAI API</value></data>
   <data name="Admin.AiPrompts.Hosting.Risk" xml:space="preserve"><value>Residency risk</value></data>
+  <data name="Admin.AiPrompts.History" xml:space="preserve"><value>History</value></data>
+  <data name="Admin.AiPrompts.History.Title" xml:space="preserve"><value>Prompt version history</value></data>
+  <data name="Admin.AiPrompts.History.Empty" xml:space="preserve"><value>No prior versions.</value></data>
+  <data name="Admin.AiPrompts.History.Col.Authored" xml:space="preserve"><value>Authored</value></data>
+  <data name="Admin.AiPrompts.History.Col.Hash" xml:space="preserve"><value>Content hash</value></data>
   <data name="Admin.AiPrompts.Field.Key" xml:space="preserve"><value>Key (kebab-case slug, immutable)</value></data>
   <data name="Admin.AiPrompts.Field.Feature" xml:space="preserve"><value>Feature</value></data>
   <data name="Admin.AiPrompts.Field.DisplayName" xml:space="preserve"><value>Display name (English)</value></data>
@@ -1908,6 +1913,11 @@
   <data name="Admin.AiInvocations.None" xml:space="preserve"><value>No invocations recorded yet.</value></data>
   <data name="Admin.AiInvocations.Loading" xml:space="preserve"><value>Loading…</value></data>
   <data name="Admin.AiInvocations.LoadFailed" xml:space="preserve"><value>Could not load invocations.</value></data>
+  <data name="Admin.AiInvocations.Detail" xml:space="preserve"><value>Detail</value></data>
+  <data name="Admin.AiInvocations.Detail.Title" xml:space="preserve"><value>Invocation detail</value></data>
+  <data name="Admin.AiInvocations.Detail.Input" xml:space="preserve"><value>Input (redacted)</value></data>
+  <data name="Admin.AiInvocations.Detail.Output" xml:space="preserve"><value>Output</value></data>
+  <data name="Admin.AiInvocations.Detail.Close" xml:space="preserve"><value>Close</value></data>
   <data name="Admin.AiInvocations.Col.Time" xml:space="preserve"><value>Time</value></data>
   <data name="Admin.AiInvocations.Col.PromptKey" xml:space="preserve"><value>Prompt key</value></data>
   <data name="Admin.AiInvocations.Col.Feature" xml:space="preserve"><value>Feature</value></data>
