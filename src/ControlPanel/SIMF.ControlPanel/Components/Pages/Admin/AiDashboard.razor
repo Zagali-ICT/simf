@@ -48,6 +48,11 @@
             }
             else
             {
+                @* Fixed ≤8-row enum summary (one row per AiFeature) — NOT a CRUD list
+                   page, so SimfDataGrid is intentionally not used (no paging / filter /
+                   sort / row actions). Mirrors AttendanceDashboard's split: a grid for
+                   the unbounded server-paged breakdown, plain markup for a small fixed
+                   summary. (Carve-out from the "never a raw table" list-page standard.) *@
                 <table class="simf-table">
                     <thead>
                         <tr>
@@ -102,6 +107,13 @@
                     env?.Error?.MessageForCurrentCulture()
                     ?? L["Admin.AiDashboard.LoadFailed"]);
             }
+        }
+        catch
+        {
+            // A transport / JS-interop throw (not a non-success envelope) surfaces
+            // the localized failure toast instead of an unhandled error, matching
+            // AttendanceDashboard's load handler.
+            _toast = new Toast("error", L["Admin.AiDashboard.LoadFailed"]);
         }
         finally { _loading = false; }
     }
