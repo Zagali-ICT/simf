@@ -1,11 +1,14 @@
 // NCA A6-18 — proves uploads are malware-scanned: the default scanner detects the
 // EICAR test signature, and an upload carrying it is rejected before storage.
 using System.Text;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Application.Abstractions;
 using SIMF.Application.Assets.Abstractions;
+using SIMF.Application.IdentityAccess;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Domain.IdentityAccess;
 using Xunit;
 
 namespace SIMF.Api.Tests;
@@ -52,6 +55,37 @@ public sealed class UploadScanningTests : IClassFixture<SimfApiFactory>
         var ex = await Assert.ThrowsAsync<ApiException>(() => assets.SetUploadAsync(
             Guid.NewGuid(), AssetCategory.SpeakerPhoto, Guid.NewGuid(), AssetKind.Image,
             payload, "image/png", "photo.png"));
+        Assert.Equal(ErrorCodes.UploadMalwareDetected, ex.Code);
+    }
+
+    [Fact]
+    public async Task Avatar_upload_carrying_eicar_is_rejected_before_storage()
+    {
+        // The public app-facing avatar path must run the same scan seam.
+        var email = $"avatar-scan-{Guid.NewGuid():N}@simf.test";
+        Guid userId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            var user = new SimfUser
+            {
+                UserName = email,
+                Email = email,
+                EmailConfirmed = true,
+                DisplayName = "Avatar Scan",
+                AccountState = AccountState.Approved,
+                UserType = UserType.Visitor,
+            };
+            await users.CreateAsync(user, AuthFlow.Password);
+            userId = user.Id;
+        }
+
+        using var scope2 = _factory.Services.CreateScope();
+        var accounts = scope2.ServiceProvider.GetRequiredService<IAccountService>();
+        var payload = PngHeader.Concat(Eicar).ToArray();
+
+        var ex = await Assert.ThrowsAsync<ApiException>(
+            () => accounts.SetAvatarAsync(userId, payload, "image/png"));
         Assert.Equal(ErrorCodes.UploadMalwareDetected, ex.Code);
     }
 }

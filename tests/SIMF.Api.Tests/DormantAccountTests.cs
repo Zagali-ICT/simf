@@ -47,7 +47,29 @@ public sealed class DormantAccountTests : IClassFixture<DormantAccountApiFactory
         Assert.Equal(AccountState.Approved, await StateOfAsync(recentEmail));
     }
 
-    private async Task<string> CreateUserAsync(string email, AccountState state, DateTimeOffset createdAt)
+    [Fact]
+    public async Task Sweep_never_disables_administrators()
+    {
+        var t0 = _factory.Time.GetUtcNow();
+        var stamp = Guid.NewGuid().ToString("N");
+        // A long-dormant ADMIN (Approved + UserType.Admin) — must be left alone so
+        // the sweep can never lock out the (only) admin and brick the CP.
+        var adminEmail = await CreateUserAsync(
+            $"dormant-admin-{stamp}@simf.test", AccountState.Approved, t0, UserType.Admin);
+
+        _factory.Time.Advance(TimeSpan.FromDays(365));
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var sweep = scope.ServiceProvider.GetRequiredService<IDormantAccountService>();
+            await sweep.DisableDormantAccountsAsync();
+        }
+
+        Assert.Equal(AccountState.Approved, await StateOfAsync(adminEmail));
+    }
+
+    private async Task<string> CreateUserAsync(
+        string email, AccountState state, DateTimeOffset createdAt,
+        UserType userType = UserType.Visitor)
     {
         using var scope = _factory.Services.CreateScope();
         var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
@@ -58,7 +80,7 @@ public sealed class DormantAccountTests : IClassFixture<DormantAccountApiFactory
             EmailConfirmed = true,
             DisplayName = "Dormancy Test",
             AccountState = state,
-            UserType = UserType.Visitor,
+            UserType = userType,
             CreatedAt = createdAt,
         };
         var result = await users.CreateAsync(user, AuthFlow.Password);

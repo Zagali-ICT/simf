@@ -33,6 +33,10 @@ internal sealed class DormantAccountService(
 
         var dormant = await dbContext.Users
             .Where(user => user.AccountState == AccountState.Approved
+                // Never auto-disable administrators — the sweep must not be able to
+                // lock out the (only) admin and brick the Control Panel, including
+                // the seeded super-admin (Approved + UserType.Admin).
+                && user.UserType != UserType.Admin
                 && (user.LastSuccessfulSignInAtUtc ?? user.CreatedAt) < cutoff)
             .ToListAsync(cancellationToken);
         if (dormant.Count == 0)
