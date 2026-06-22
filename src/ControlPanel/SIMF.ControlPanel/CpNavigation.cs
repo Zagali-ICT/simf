@@ -153,6 +153,8 @@ public static class CpNavigation
             new("Module.Faq", "/admin/faq", RequiredPermission: PermissionCatalog.Faq.View, Icon: "help-circle"),
             // D-176 (gap doc G12) — centralised AI module: prompt
             // catalogue + invocations log. Real pages, no longer stubs.
+            // CP Phase-1 — the AI Control Center dashboard (24h invocation health).
+            new("Module.AiDashboard", "/admin/ai", RequiredPermission: PermissionCatalog.AiDashboard.View, Icon: "bar-chart"),
             // CP Phase-1 — the per-service "AI services" view (aggregates the
             // catalogue by feature); gated by the same AiPrompts.View.
             new("Module.AiServices", "/admin/ai/services", RequiredPermission: PermissionCatalog.AiPrompts.View, Icon: "list"),

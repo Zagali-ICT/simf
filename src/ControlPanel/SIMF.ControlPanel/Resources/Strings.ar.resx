@@ -139,6 +139,7 @@
   <data name="Admin.Faq.LoadFailed" xml:space="preserve"><value>تعذّر إكمال الطلب. حاول مرة أخرى.</value></data>
   <data name="Admin.Faq.Saved" xml:space="preserve"><value>تم الحفظ.</value></data>
   <data name="Admin.Faq.Deactivated" xml:space="preserve"><value>تم إلغاء التفعيل.</value></data>
+  <data name="Module.AiDashboard" xml:space="preserve"><value>لوحة الذكاء الاصطناعي</value></data>
   <data name="Module.AiServices" xml:space="preserve"><value>خدمات الذكاء الاصطناعي</value></data>
   <data name="Module.AiPrompts" xml:space="preserve"><value>محفّزات الذكاء الاصطناعي</value></data>
   <data name="Module.AiInvocations" xml:space="preserve"><value>سجلّ استدعاءات الذكاء الاصطناعي</value></data>
@@ -1854,6 +1855,18 @@
   <!-- D-176 (gap doc G12) — AI module CP -->
   <data name="Admin.AiPrompts.Title" xml:space="preserve"><value>محفّزات الذكاء الاصطناعي</value></data>
   <data name="Admin.AiServices.Title" xml:space="preserve"><value>خدمات الذكاء الاصطناعي</value></data>
+  <data name="Admin.AiDashboard.Title" xml:space="preserve"><value>لوحة الذكاء الاصطناعي</value></data>
+  <data name="Admin.AiDashboard.Loading" xml:space="preserve"><value>جارٍ تحميل اللوحة…</value></data>
+  <data name="Admin.AiDashboard.LoadFailed" xml:space="preserve"><value>تعذّر تحميل لوحة الذكاء الاصطناعي.</value></data>
+  <data name="Admin.AiDashboard.Window" xml:space="preserve"><value>آخر 24 ساعة</value></data>
+  <data name="Admin.AiDashboard.Calls" xml:space="preserve"><value>الاستدعاءات</value></data>
+  <data name="Admin.AiDashboard.ErrorRate" xml:space="preserve"><value>معدّل الأخطاء</value></data>
+  <data name="Admin.AiDashboard.Latency" xml:space="preserve"><value>متوسط زمن الاستجابة</value></data>
+  <data name="Admin.AiDashboard.Tokens" xml:space="preserve"><value>الرموز</value></data>
+  <data name="Admin.AiDashboard.Services" xml:space="preserve"><value>الخدمات الفعّالة</value></data>
+  <data name="Admin.AiDashboard.Col.Service" xml:space="preserve"><value>الخدمة</value></data>
+  <data name="Admin.AiDashboard.Col.Errors" xml:space="preserve"><value>الأخطاء</value></data>
+  <data name="Admin.AiDashboard.NoActivity" xml:space="preserve"><value>لا توجد استدعاءات في هذه الفترة بعد.</value></data>
   <data name="Admin.AiServices.Loading" xml:space="preserve"><value>جارٍ تحميل الخدمات…</value></data>
   <data name="Admin.AiServices.LoadFailed" xml:space="preserve"><value>تعذّر تحميل خدمات الذكاء الاصطناعي.</value></data>
   <data name="Admin.AiServices.None" xml:space="preserve"><value>لا توجد خدمات ذكاء اصطناعي مُهيّأة.</value></data>
@@ -1866,6 +1879,12 @@
   <data name="Admin.AiServices.Routing.Save" xml:space="preserve"><value>حفظ التوجيه</value></data>
   <data name="Admin.AiServices.Routing.Cancel" xml:space="preserve"><value>إلغاء</value></data>
   <data name="Admin.AiServices.Routing.Saved" xml:space="preserve"><value>تم تحديث التوجيه.</value></data>
+  <data name="Admin.AiServices.OpenDetail" xml:space="preserve"><value>فتح</value></data>
+  <data name="Admin.AiServiceDetail.Title" xml:space="preserve"><value>خدمة الذكاء الاصطناعي</value></data>
+  <data name="Admin.AiServiceDetail.Unknown" xml:space="preserve"><value>خدمة ذكاء اصطناعي غير معروفة.</value></data>
+  <data name="Admin.AiServiceDetail.NoActiveRouting" xml:space="preserve"><value>لا يوجد محفّز فعّال لهذه الخدمة لتهيئته.</value></data>
+  <data name="Admin.AiServiceDetail.Tab.Routing" xml:space="preserve"><value>التوجيه</value></data>
+  <data name="Admin.AiServiceDetail.Tab.Analytics" xml:space="preserve"><value>التحليلات</value></data>
   <data name="Admin.AiPrompts.New" xml:space="preserve"><value>محفّز جديد</value></data>
   <data name="Admin.AiPrompts.None" xml:space="preserve"><value>لا توجد محفّزات بعد.</value></data>
   <data name="Admin.AiPrompts.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>

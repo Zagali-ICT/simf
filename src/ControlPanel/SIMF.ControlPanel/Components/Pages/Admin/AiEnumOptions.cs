@@ -40,4 +40,10 @@ internal static class AiEnumOptions
     public static AiFeature ParseFeature(string id) =>
         int.TryParse(id, out var n) && Enum.IsDefined(typeof(AiFeature), n)
             ? (AiFeature)n : AiFeature.QuestionFilter;
+
+    /// <summary>Format a 0..1 rate as a one-decimal percentage (e.g. "5.0%").
+    /// Shared by the AI dashboard + service-detail analytics so the percent
+    /// policy can't drift between them.</summary>
+    public static string Pct(double rate) =>
+        (rate * 100).ToString("0.0", CultureInfo.InvariantCulture) + "%";
 }

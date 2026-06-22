@@ -139,6 +139,7 @@
   <data name="Admin.Faq.LoadFailed" xml:space="preserve"><value>Could not complete the request. Please try again.</value></data>
   <data name="Admin.Faq.Saved" xml:space="preserve"><value>Saved.</value></data>
   <data name="Admin.Faq.Deactivated" xml:space="preserve"><value>Deactivated.</value></data>
+  <data name="Module.AiDashboard" xml:space="preserve"><value>AI dashboard</value></data>
   <data name="Module.AiServices" xml:space="preserve"><value>AI services</value></data>
   <data name="Module.AiPrompts" xml:space="preserve"><value>AI prompts</value></data>
   <data name="Module.AiInvocations" xml:space="preserve"><value>AI invocations</value></data>
@@ -1861,6 +1862,18 @@
   <!-- D-176 (gap doc G12) — AI module CP -->
   <data name="Admin.AiPrompts.Title" xml:space="preserve"><value>AI prompts</value></data>
   <data name="Admin.AiServices.Title" xml:space="preserve"><value>AI services</value></data>
+  <data name="Admin.AiDashboard.Title" xml:space="preserve"><value>AI dashboard</value></data>
+  <data name="Admin.AiDashboard.Loading" xml:space="preserve"><value>Loading the dashboard…</value></data>
+  <data name="Admin.AiDashboard.LoadFailed" xml:space="preserve"><value>Could not load the AI dashboard.</value></data>
+  <data name="Admin.AiDashboard.Window" xml:space="preserve"><value>Last 24 hours</value></data>
+  <data name="Admin.AiDashboard.Calls" xml:space="preserve"><value>Calls</value></data>
+  <data name="Admin.AiDashboard.ErrorRate" xml:space="preserve"><value>Error rate</value></data>
+  <data name="Admin.AiDashboard.Latency" xml:space="preserve"><value>Avg latency</value></data>
+  <data name="Admin.AiDashboard.Tokens" xml:space="preserve"><value>Tokens</value></data>
+  <data name="Admin.AiDashboard.Services" xml:space="preserve"><value>Active services</value></data>
+  <data name="Admin.AiDashboard.Col.Service" xml:space="preserve"><value>Service</value></data>
+  <data name="Admin.AiDashboard.Col.Errors" xml:space="preserve"><value>Errors</value></data>
+  <data name="Admin.AiDashboard.NoActivity" xml:space="preserve"><value>No AI calls in this window yet.</value></data>
   <data name="Admin.AiServices.Loading" xml:space="preserve"><value>Loading services…</value></data>
   <data name="Admin.AiServices.LoadFailed" xml:space="preserve"><value>Could not load AI services.</value></data>
   <data name="Admin.AiServices.None" xml:space="preserve"><value>No AI services configured.</value></data>
@@ -1873,6 +1886,12 @@
   <data name="Admin.AiServices.Routing.Save" xml:space="preserve"><value>Save routing</value></data>
   <data name="Admin.AiServices.Routing.Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Admin.AiServices.Routing.Saved" xml:space="preserve"><value>Routing updated.</value></data>
+  <data name="Admin.AiServices.OpenDetail" xml:space="preserve"><value>Open</value></data>
+  <data name="Admin.AiServiceDetail.Title" xml:space="preserve"><value>AI service</value></data>
+  <data name="Admin.AiServiceDetail.Unknown" xml:space="preserve"><value>Unknown AI service.</value></data>
+  <data name="Admin.AiServiceDetail.NoActiveRouting" xml:space="preserve"><value>This service has no active prompt to configure.</value></data>
+  <data name="Admin.AiServiceDetail.Tab.Routing" xml:space="preserve"><value>Routing</value></data>
+  <data name="Admin.AiServiceDetail.Tab.Analytics" xml:space="preserve"><value>Analytics</value></data>
   <data name="Admin.AiPrompts.New" xml:space="preserve"><value>New prompt</value></data>
   <data name="Admin.AiPrompts.None" xml:space="preserve"><value>No AI prompts yet.</value></data>
   <data name="Admin.AiPrompts.Loading" xml:space="preserve"><value>Loading…</value></data>

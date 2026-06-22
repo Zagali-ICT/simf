@@ -1,0 +1,41 @@
+@* SimfTabs — a horizontal tab strip. The host owns the active key and renders
+   the active panel itself (this component only draws the tab buttons + raises
+   the change), which keeps it free of child-collection state. Accessible
+   (role="tablist"/"tab" + aria-selected) and RTL-correct (logical properties in
+   the CSS, no hardcoded left/right). Styled only from theme.tokens.css. *@
+@namespace SIMF.Components.Layout
+
+<div class="simf-tabs" role="tablist">
+    @foreach (var tab in Tabs ?? Array.Empty<Tab>())
+    {
+        var active = tab.Key == Active;
+        <button type="button" role="tab"
+                class="simf-tabs__tab @(active ? "simf-tabs__tab--active" : null)"
+                aria-selected="@(active ? "true" : "false")"
+                disabled="@(active || Disabled)"
+                @onclick="@(() => OnSelectAsync(tab.Key))">
+            @tab.Label
+        </button>
+    }
+</div>
+
+@code {
+    /// <summary>One tab — a stable <paramref name="Key"/> the host switches on
+    /// and a visible <paramref name="Label"/> (localized by the host).</summary>
+    public sealed record Tab(string Key, string Label);
+
+    /// <summary>The tabs to render, in display order.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<Tab>? Tabs { get; set; }
+
+    /// <summary>The currently-selected tab key.</summary>
+    [Parameter, EditorRequired] public string Active { get; set; } = string.Empty;
+
+    /// <summary>Raised with the newly-selected key when a tab is clicked.</summary>
+    [Parameter] public EventCallback<string> ActiveChanged { get; set; }
+
+    /// <summary>Disables the whole strip (e.g. while a panel is loading).</summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    private Task OnSelectAsync(string key) =>
+        key == Active ? Task.CompletedTask : ActiveChanged.InvokeAsync(key);
+}
