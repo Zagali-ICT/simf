@@ -33,7 +33,7 @@
                 <SimfStatCard Title="@L["Admin.AiDashboard.Calls"]"
                               Value="@_dashboard.TotalCalls.ToString("N0")" />
                 <SimfStatCard Title="@L["Admin.AiDashboard.ErrorRate"]"
-                              Value="@Pct(_dashboard.ErrorRate)" />
+                              Value="@AiEnumOptions.Pct(_dashboard.ErrorRate)" />
                 <SimfStatCard Title="@L["Admin.AiDashboard.Latency"]"
                               Value="@($"{_dashboard.AvgLatencyMs} ms")" />
                 <SimfStatCard Title="@L["Admin.AiDashboard.Tokens"]"
@@ -69,7 +69,7 @@
                             <tr>
                                 <td>@s.Feature</td>
                                 <td>@s.Calls.ToString("N0")</td>
-                                <td>@s.ErrorCount (@Pct(s.ErrorRate))</td>
+                                <td>@s.ErrorCount (@AiEnumOptions.Pct(s.ErrorRate))</td>
                                 <td>@(s.AvgLatencyMs) ms</td>
                                 <td>@s.TotalTokens.ToString("N0")</td>
                             </tr>
@@ -117,7 +117,4 @@
         }
         finally { _loading = false; }
     }
-
-    private static string Pct(double rate) =>
-        (rate * 100).ToString("0.0", CultureInfo.InvariantCulture) + "%";
 }

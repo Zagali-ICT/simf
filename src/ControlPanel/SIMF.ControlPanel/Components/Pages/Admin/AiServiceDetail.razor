@@ -101,7 +101,7 @@
                         <SimfStatCard Title="@L["Admin.AiDashboard.Calls"]"
                                       Value="@_stat.Calls.ToString("N0")" />
                         <SimfStatCard Title="@L["Admin.AiDashboard.ErrorRate"]"
-                                      Value="@Pct(_stat.ErrorRate)" />
+                                      Value="@AiEnumOptions.Pct(_stat.ErrorRate)" />
                         <SimfStatCard Title="@L["Admin.AiDashboard.Latency"]"
                                       Value="@($"{_stat.AvgLatencyMs} ms")" />
                         <SimfStatCard Title="@L["Admin.AiDashboard.Tokens"]"
@@ -210,7 +210,4 @@
         _toast = new Toast("success", L["Admin.AiServices.Routing.Saved"]);
         await LoadPromptsAsync();
     }
-
-    private static string Pct(double rate) =>
-        (rate * 100).ToString("0.0", CultureInfo.InvariantCulture) + "%";
 }
