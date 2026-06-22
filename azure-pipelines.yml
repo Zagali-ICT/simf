@@ -150,6 +150,13 @@ stages:
     #         scantype: 'targetedScan'
     #         url: 'https://simf-staging.zagali-ict.com'
 
+    # --- Performance smoke gate (SIMF-PTS-001 §8). Ready-to-enable scaffold: needs
+    #     k6 on the agent and a reachable Staging URL, so it is commented to avoid
+    #     breaking the pipeline. Enable once Staging is up:
+    #     - script: |
+    #         k6 run -e BASE_URL=$(STAGING_BASE_URL) tests/perf/k6-baseline.js
+    #       displayName: 'Performance smoke (k6)'
+
     # --- SQL Server LocalDB for the integration tests. The self-hosted build
     #     agent does not ship LocalDB, and SIMF.Api.Tests host the API against
     #     (localdb)\MSSQLLocalDB (see tests/SIMF.Api.Tests/SimfApiFactory.cs), so
