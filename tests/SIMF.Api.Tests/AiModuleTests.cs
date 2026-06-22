@@ -409,4 +409,69 @@ public sealed class AiModuleTests : IClassFixture<SimfApiFactory>
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return _client.SendAsync(request);
     }
+
+    // -- CP Phase-1 dashboard --------------------------------------------------
+
+    [Fact]
+    public async Task Dashboard_aggregates_recent_invocations_per_service()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        // Seed isolated telemetry for a feature no other test invokes, so the
+        // per-service assertions are deterministic in the shared fixture DB.
+        await SeedInvocationAsync(AiFeature.LiveSignLanguage, errorCode: null, latency: 100, tokIn: 10, tokOut: 20, ageHours: 1);
+        await SeedInvocationAsync(AiFeature.LiveSignLanguage, errorCode: "X", latency: 300, tokIn: 0, tokOut: 0, ageHours: 2);
+        // A 48h-old call is outside the 24h window and must be excluded.
+        await SeedInvocationAsync(AiFeature.LiveSignLanguage, errorCode: null, latency: 999, tokIn: 9, tokOut: 9, ageHours: 48);
+
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/admin/ai/dashboard");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", admin);
+        var resp = await _client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var d = (await resp.Content.ReadFromJsonAsync<ApiResult<AdminAiDashboard>>())!.Data!;
+
+        Assert.Equal(24, d.WindowHours);
+        var svc = Assert.Single(d.Services, s => s.Feature == AiFeature.LiveSignLanguage);
+        Assert.Equal(2, svc.Calls);            // the 48h-old call is excluded
+        Assert.Equal(1, svc.ErrorCount);
+        Assert.Equal(0.5, svc.ErrorRate);
+        Assert.Equal(30, svc.TotalTokens);     // 10+20 (+0+0)
+        Assert.Equal(200, svc.AvgLatencyMs);   // (100+300)/2
+        // The seeded prompt catalogue means there is at least one configured/active service.
+        Assert.True(d.TotalServices >= 1);
+        Assert.True(d.ActiveServices >= 1);
+    }
+
+    [Fact]
+    public async Task Dashboard_is_forbidden_for_a_non_admin()
+    {
+        var visitor = await SignInApprovedVisitorAsync();
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/admin/ai/dashboard");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", visitor);
+        var resp = await _client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
+    }
+
+    private async Task SeedInvocationAsync(
+        AiFeature feature, string? errorCode, int latency, int tokIn, int tokOut, int ageHours)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        db.AiInvocations.Add(new SIMF.Domain.Ai.AiInvocation
+        {
+            Id = Guid.NewGuid(),
+            PromptKey = "dashboard-test",
+            Feature = feature,
+            Provider = AiProvider.Echo,
+            Model = "echo",
+            InputJson = "{}",
+            OutputText = errorCode is null ? "ok" : null,
+            TokensInput = tokIn,
+            TokensOutput = tokOut,
+            LatencyMs = latency,
+            ErrorCode = errorCode,
+            CallerKind = "Admin",
+            CreatedAt = DateTimeOffset.UtcNow.AddHours(-ageHours),
+        });
+        await db.SaveChangesAsync();
+    }
 }
