@@ -139,6 +139,7 @@
   <data name="Admin.Faq.LoadFailed" xml:space="preserve"><value>Could not complete the request. Please try again.</value></data>
   <data name="Admin.Faq.Saved" xml:space="preserve"><value>Saved.</value></data>
   <data name="Admin.Faq.Deactivated" xml:space="preserve"><value>Deactivated.</value></data>
+  <data name="Module.AiServices" xml:space="preserve"><value>AI services</value></data>
   <data name="Module.AiPrompts" xml:space="preserve"><value>AI prompts</value></data>
   <data name="Module.AiInvocations" xml:space="preserve"><value>AI invocations</value></data>
   <data name="Module.Media" xml:space="preserve"><value>Media Center</value></data>
@@ -1859,6 +1860,14 @@
   <data name="Admin.Banners.Col.Active" xml:space="preserve"><value>Active</value></data>
   <!-- D-176 (gap doc G12) — AI module CP -->
   <data name="Admin.AiPrompts.Title" xml:space="preserve"><value>AI prompts</value></data>
+  <data name="Admin.AiServices.Title" xml:space="preserve"><value>AI services</value></data>
+  <data name="Admin.AiServices.Loading" xml:space="preserve"><value>Loading services…</value></data>
+  <data name="Admin.AiServices.LoadFailed" xml:space="preserve"><value>Could not load AI services.</value></data>
+  <data name="Admin.AiServices.None" xml:space="preserve"><value>No AI services configured.</value></data>
+  <data name="Admin.AiServices.NoActive" xml:space="preserve"><value>None active</value></data>
+  <data name="Admin.AiServices.Col.Service" xml:space="preserve"><value>Service</value></data>
+  <data name="Admin.AiServices.Col.ActivePrompt" xml:space="preserve"><value>Active prompt</value></data>
+  <data name="Admin.AiServices.Col.Prompts" xml:space="preserve"><value>Prompts</value></data>
   <data name="Admin.AiPrompts.New" xml:space="preserve"><value>New prompt</value></data>
   <data name="Admin.AiPrompts.None" xml:space="preserve"><value>No AI prompts yet.</value></data>
   <data name="Admin.AiPrompts.Loading" xml:space="preserve"><value>Loading…</value></data>

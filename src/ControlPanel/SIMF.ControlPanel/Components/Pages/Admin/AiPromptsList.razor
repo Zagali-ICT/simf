@@ -94,10 +94,10 @@
                     <SimfDataGridColumn TItem="AdminAiPromptSummary" Key="hosting"
                                         Header="@L["Admin.AiPrompts.Col.Hosting"]">
                         <CellTemplate>
-                            <SimfPill Variant="@HostingVariant(context.Provider)">
-                                @HostingLabel(context.Provider)
+                            <SimfPill Variant="@AiHosting.Variant(context.Provider)">
+                                @L[AiHosting.LabelKey(context.Provider)]
                             </SimfPill>
-                            @if (IsResidencyRisk(context))
+                            @if (AiHosting.IsResidencyRisk(context.Feature, context.Provider))
                             {
                                 <SimfPill Variant="danger">@L["Admin.AiPrompts.Hosting.Risk"]</SimfPill>
                             }
@@ -306,41 +306,8 @@
     private string FormatPage(int current, int total) =>
         string.Format(L["Grid.Page"], current, total);
 
-    // Hybrid hosting visibility (CP-side derivation, no schema). The deployment
-    // (cloud vs on-prem) for OpenAI depends on its configured BaseUrl, which is
-    // global config the row does not carry — so OpenAI is shown as endpoint-
-    // dependent, NOT asserted on-prem or cloud, and never flagged as a risk
-    // (it may be the on-prem endpoint). Only definitely-external SaaS providers
-    // are "Cloud".
-    private static bool IsDefinitelyCloud(AiProvider p) =>
-        p is AiProvider.Gemini or AiProvider.Anthropic or AiProvider.AzureOpenAi;
-
-    // Features that process actual session / defense content — keeping these on a
-    // cloud provider is the data-residency concern the warning surfaces.
-    private static readonly HashSet<AiFeature> _sensitiveFeatures = new()
-    {
-        AiFeature.SessionSummary,
-        AiFeature.Assistance,
-        AiFeature.LiveTranslation,
-        AiFeature.LiveSignLanguage,
-    };
-
-    private string HostingVariant(AiProvider p) => p switch
-    {
-        AiProvider.Echo => "off",
-        AiProvider.OpenAi => "admin",
-        _ => "warn",
-    };
-
-    private string HostingLabel(AiProvider p) => p switch
-    {
-        AiProvider.Echo => L["Admin.AiPrompts.Hosting.Offline"],
-        AiProvider.OpenAi => L["Admin.AiPrompts.Hosting.OpenAi"],
-        _ => L["Admin.AiPrompts.Hosting.Cloud"],
-    };
-
-    private static bool IsResidencyRisk(AdminAiPromptSummary row) =>
-        _sensitiveFeatures.Contains(row.Feature) && IsDefinitelyCloud(row.Provider);
+    // Hybrid hosting visibility is shared with the AI services console — see
+    // AiHosting (CP-side derivation from provider + feature, no schema).
 
     private async Task LoadAsync()
     {
