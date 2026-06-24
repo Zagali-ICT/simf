@@ -13,6 +13,7 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
+import '../../core/organization_profile/organization_profile.dart';
 import '../accessibility/data/accessibility_controller.dart';
 import 'data/live_repository.dart';
 import 'youtube_url.dart';
@@ -134,6 +135,17 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
     );
   }
 
+  /// D-495 — a synthetic live session for the forum's main (global) live stream,
+  /// used when the screen opens without a specific session id. The title is the
+  /// forum name; the feed is the Organization profile's liveStreamUrl.
+  LiveSession _globalLiveSession(OrgProfile profile, String url) => LiveSession(
+        title: profile.name,
+        titleArabic: profile.nameArabic,
+        status: 1,
+        hasRecording: false,
+        liveStreamUrl: url,
+      );
+
   /// The frame's header line — "يُبث الآن · {hall}" (or just the label when the
   /// broadcasting hall is not known).
   static String _broadcastLabel(AppL10n l10n, bool isLive, String? hall) {
@@ -154,6 +166,14 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
 
   Widget _buildBody(AppL10n l10n) {
     if (!_hasId) {
+      // D-495 — no session id → play the forum's main (global) live-stream link
+      // from the Organization profile when the admin has configured one; else the
+      // "pick a session" empty state.
+      final profile = ref.watch(orgProfileProvider);
+      final globalUrl = profile?.liveStreamUrl;
+      if (profile != null && globalUrl != null && globalUrl.isNotEmpty) {
+        return _content(l10n, _globalLiveSession(profile, globalUrl));
+      }
       return KsaEmptyState(
         icon: Icons.live_tv_outlined,
         message: l10n.liveNoSessionSelected,
@@ -272,12 +292,15 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
                 noticeBody: l10n.liveRegionNoticeBody,
               ),
 
-              const SizedBox(height: SimfTokens.space6),
               // Ask-a-question entry → Page 026 (the frame's L-3 Q&A affordance).
-              _AskQuestionButton(
-                label: l10n.liveAskQuestion,
-                onTap: _askQuestion,
-              ),
+              // Session-specific — only for a real session, not the global main-live.
+              if (_hasId) ...<Widget>[
+                const SizedBox(height: SimfTokens.space6),
+                _AskQuestionButton(
+                  label: l10n.liveAskQuestion,
+                  onTap: _askQuestion,
+                ),
+              ],
 
               // D-433 — "الجلسات القادمة" upcoming-sessions cards (frame
               // 934:3621/3630), from the shipped agenda list (non-blocking read).
