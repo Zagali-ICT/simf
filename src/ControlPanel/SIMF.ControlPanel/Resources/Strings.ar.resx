@@ -857,6 +857,14 @@
   <data name="Admin.WalkIn.Field.Plate.Letter" xml:space="preserve"><value>حرف</value></data>
   <data name="Admin.WalkIn.Field.Plate.Digits" xml:space="preserve"><value>الأرقام</value></data>
   <data name="Module.SiteSettings" xml:space="preserve"><value>إعدادات الموقع</value></data>
+  <data name="Module.OrganizationProfile" xml:space="preserve"><value>ملف الملتقى</value></data>
+  <data name="Admin.OrganizationProfile.Title" xml:space="preserve"><value>ملف الملتقى</value></data>
+  <data name="Admin.OrganizationProfile.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
+  <data name="Admin.OrganizationProfile.Save" xml:space="preserve"><value>حفظ</value></data>
+  <data name="Admin.OrganizationProfile.Saving" xml:space="preserve"><value>جارٍ الحفظ…</value></data>
+  <data name="Admin.OrganizationProfile.Saved" xml:space="preserve"><value>تم الحفظ.</value></data>
+  <data name="Admin.OrganizationProfile.SaveFailed" xml:space="preserve"><value>تعذّر حفظ الملف.</value></data>
+  <data name="Admin.OrganizationProfile.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الملف.</value></data>
   <data name="Admin.SiteSettings.Title" xml:space="preserve"><value>إعدادات الموقع</value></data>
   <data name="Admin.SiteSettings.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
   <data name="Admin.SiteSettings.Section.Registration" xml:space="preserve"><value>رسالة التسجيل</value></data>

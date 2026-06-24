@@ -109,6 +109,7 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/gates/operator` | ✅ Real (D-148) | Gate operator | — | [e2e/cp-admin-gates-operator.md](../tests/e2e/cp-admin-gates-operator.md) |
 | `/admin/gates/dashboard` | ✅ Real | Administrator | — | [e2e/cp-admin-gates-dashboard.md](../tests/e2e/cp-admin-gates-dashboard.md) |
 | `/admin/configuration` | ✅ Real (D-229) | Administrator  | [cp/admin-configuration.md](cp/admin-configuration.md) | [e2e/cp-admin-configuration.md](../tests/e2e/cp-admin-configuration.md) |
+| `/admin/organization-profile` | ✅ Real (D-495) | Administrator | [cp/organization-profile.md](cp/organization-profile.md) | [e2e/cp-organization-profile.md](../tests/e2e/cp-organization-profile.md) |
 | `/admin/operations` | ✅ Real (D-166) | Administrator | — | [e2e/cp-admin-operations.md](../tests/e2e/cp-admin-operations.md) |
 | `/admin/operation-log` | ✅ Real | Administrator | [cp/admin-operation-log.md](cp/admin-operation-log.md) | [e2e/cp-admin-operation-log.md](../tests/e2e/cp-admin-operation-log.md) |
 | `/admin/logs` | ✅ Real | Administrator | [cp/admin-logs.md](cp/admin-logs.md) | [e2e/cp-admin-logs.md](../tests/e2e/cp-admin-logs.md) |

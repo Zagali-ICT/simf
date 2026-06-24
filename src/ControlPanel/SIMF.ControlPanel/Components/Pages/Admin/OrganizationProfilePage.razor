@@ -1,0 +1,337 @@
+@* D-495 — CP "Organization Profile" page: edit the edition-generic forum config
+   (name / title / slogan / bio, version + dates, status + year, location + GPS,
+   contact, live-stream link, social links, and the about-items + details lists).
+   Reads / writes via /admin/organization-profile; the app + website consume it
+   through GET /app/organization-profile. View opens it; Manage saves. *@
+@page "/admin/organization-profile"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.OrganizationProfile.View)]
+@using SIMF.Contracts.Admin
+@using SIMF.Contracts.Organization
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.OrganizationProfile.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.OrganizationProfile.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toastMessage is not null)
+        {
+            <SimfAlert Variant="@_toastVariant">@_toastMessage</SimfAlert>
+        }
+
+        @if (_loading)
+        {
+            <p>@L["Admin.OrganizationProfile.Loading"]</p>
+        }
+        else
+        {
+            <EditForm EditContext="_editContext" OnSubmit="SaveAsync" class="simf-form">
+                <div class="simf-form__fields">
+                    <h3>Identity</h3>
+                    <SimfTextField Label="Name (EN)" MaxLength="256" @bind-Value="_model.Name" Disabled="_busy" />
+                    <SimfTextField Label="Name (AR)" MaxLength="256" @bind-Value="_model.NameArabic" Disabled="_busy" />
+                    <SimfTextField Label="Title (EN)" MaxLength="256" @bind-Value="_model.Title" Disabled="_busy" />
+                    <SimfTextField Label="Title (AR)" MaxLength="256" @bind-Value="_model.TitleArabic" Disabled="_busy" />
+                    <SimfTextField Label="Slogan (EN)" MaxLength="512" @bind-Value="_model.Slogan" Disabled="_busy" />
+                    <SimfTextField Label="Slogan (AR)" MaxLength="512" @bind-Value="_model.SloganArabic" Disabled="_busy" />
+                    <SimfTextField Label="Bio (EN)" MaxLength="4000" @bind-Value="_model.Bio" Disabled="_busy" />
+                    <SimfTextField Label="Bio (AR)" MaxLength="4000" @bind-Value="_model.BioArabic" Disabled="_busy" />
+
+                    <h3>Edition</h3>
+                    <SimfTextField Label="Current year" MaxLength="4" @bind-Value="_model.CurrentYear" Disabled="_busy" />
+                    <label class="simf-field">
+                        <span class="simf-field__label">Status</span>
+                        <select class="simf-field__input" @bind="_model.Status" disabled="@_busy">
+                            <option value="Soon">Soon</option>
+                            <option value="Open">Open</option>
+                            <option value="Archived">Archived (closed)</option>
+                        </select>
+                    </label>
+                    <SimfTextField Label="Event start (YYYY-MM-DD)" MaxLength="10" @bind-Value="_model.EventStartDate" Disabled="_busy" />
+                    <SimfTextField Label="Event end (YYYY-MM-DD)" MaxLength="10" @bind-Value="_model.EventEndDate" Disabled="_busy" />
+                    <SimfTextField Label="Version" MaxLength="64" @bind-Value="_model.Version" Disabled="_busy" />
+                    <SimfTextField Label="System version" MaxLength="64" @bind-Value="_model.SysVersion" Disabled="_busy" />
+
+                    <h3>Location</h3>
+                    <SimfTextField Label="Location (EN)" MaxLength="512" @bind-Value="_model.LocationText" Disabled="_busy" />
+                    <SimfTextField Label="Location (AR)" MaxLength="512" @bind-Value="_model.LocationTextArabic" Disabled="_busy" />
+                    <SimfTextField Label="Latitude" MaxLength="16" @bind-Value="_model.Latitude" Disabled="_busy" />
+                    <SimfTextField Label="Longitude" MaxLength="16" @bind-Value="_model.Longitude" Disabled="_busy" />
+
+                    <h3>Contact</h3>
+                    <SimfTextField Label="Phone" MaxLength="64" @bind-Value="_model.ContactPhone" Disabled="_busy" />
+                    <SimfTextField Label="Email" MaxLength="256" @bind-Value="_model.ContactEmail" Disabled="_busy" />
+                    <SimfTextField Label="Website" MaxLength="1024" @bind-Value="_model.ContactWebsite" Disabled="_busy" />
+
+                    <h3>Live stream</h3>
+                    <SimfTextField Label="Main live-stream link (YouTube)" MaxLength="1024" @bind-Value="_model.LiveStreamUrl" Disabled="_busy" />
+
+                    <h3>Social links</h3>
+                    <SimfTextField Label="Facebook" MaxLength="1024" @bind-Value="_model.Facebook" Disabled="_busy" />
+                    <SimfTextField Label="X (Twitter)" MaxLength="1024" @bind-Value="_model.X" Disabled="_busy" />
+                    <SimfTextField Label="Instagram" MaxLength="1024" @bind-Value="_model.Instagram" Disabled="_busy" />
+                    <SimfTextField Label="LinkedIn" MaxLength="1024" @bind-Value="_model.LinkedIn" Disabled="_busy" />
+                    <SimfTextField Label="YouTube" MaxLength="1024" @bind-Value="_model.YouTube" Disabled="_busy" />
+                    <SimfTextField Label="TikTok" MaxLength="1024" @bind-Value="_model.TikTok" Disabled="_busy" />
+                    <SimfTextField Label="Snapchat" MaxLength="1024" @bind-Value="_model.Snapchat" Disabled="_busy" />
+
+                    <h3>About items</h3>
+                    @foreach (var item in _model.AboutItems)
+                    {
+                        <div class="simf-form__row">
+                            <SimfTextField Label="Title (EN)" MaxLength="256" @bind-Value="item.Title" Disabled="_busy" />
+                            <SimfTextField Label="Title (AR)" MaxLength="256" @bind-Value="item.TitleArabic" Disabled="_busy" />
+                            <SimfTextField Label="Text (EN)" MaxLength="4000" @bind-Value="item.Text" Disabled="_busy" />
+                            <SimfTextField Label="Text (AR)" MaxLength="4000" @bind-Value="item.TextArabic" Disabled="_busy" />
+                            <button type="button" class="simf-button simf-button--ghost"
+                                    @onclick="() => _model.AboutItems.Remove(item)" disabled="@_busy">Remove</button>
+                        </div>
+                    }
+                    <button type="button" class="simf-button simf-button--ghost"
+                            @onclick="AddAbout" disabled="@_busy">+ Add about item</button>
+
+                    <h3>Details</h3>
+                    @foreach (var row in _model.Details)
+                    {
+                        <div class="simf-form__row">
+                            <SimfTextField Label="Name (EN)" MaxLength="256" @bind-Value="row.Name" Disabled="_busy" />
+                            <SimfTextField Label="Name (AR)" MaxLength="256" @bind-Value="row.NameArabic" Disabled="_busy" />
+                            <SimfTextField Label="Value" MaxLength="1024" @bind-Value="row.Value" Disabled="_busy" />
+                            <button type="button" class="simf-button simf-button--ghost"
+                                    @onclick="() => _model.Details.Remove(row)" disabled="@_busy">Remove</button>
+                        </div>
+                    }
+                    <button type="button" class="simf-button simf-button--ghost"
+                            @onclick="AddDetail" disabled="@_busy">+ Add detail</button>
+                </div>
+                <div class="simf-form__actions">
+                    <AuthorizedAction Permission="@PermissionCatalog.OrganizationProfile.Manage">
+                        <SimfButton Loading="_busy" LoadingLabel="@L["Admin.OrganizationProfile.Saving"]">
+                            @L["Admin.OrganizationProfile.Save"]
+                        </SimfButton>
+                    </AuthorizedAction>
+                </div>
+            </EditForm>
+        }
+    </div>
+</div>
+
+@code {
+    private readonly Model _model = new();
+    private EditContext _editContext = default!;
+    private bool _loading = true;
+    private bool _busy;
+    private string? _toastMessage;
+    private string _toastVariant = "success";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _editContext = new EditContext(_model);
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<OrganizationProfileResponse>>(
+                "simfAccount.getJson", "/account/api/admin/organization-profile");
+            if (envelope is { Success: true, Data: not null })
+            {
+                Load(envelope.Data);
+            }
+            else
+            {
+                _toastVariant = "error";
+                _toastMessage = L["Admin.OrganizationProfile.LoadFailed"];
+            }
+        }
+        catch (Exception)
+        {
+            _toastVariant = "error";
+            _toastMessage = L["Admin.OrganizationProfile.LoadFailed"];
+        }
+        finally { _loading = false; }
+    }
+
+    private void Load(OrganizationProfileResponse d)
+    {
+        _model.Name = d.Name;
+        _model.NameArabic = d.NameArabic;
+        _model.Title = d.Title;
+        _model.TitleArabic = d.TitleArabic;
+        _model.Slogan = d.Slogan ?? string.Empty;
+        _model.SloganArabic = d.SloganArabic ?? string.Empty;
+        _model.Bio = d.Bio ?? string.Empty;
+        _model.BioArabic = d.BioArabic ?? string.Empty;
+        _model.CurrentYear = d.CurrentYear.ToString();
+        _model.Status = d.Status;
+        _model.EventStartDate = DateString(d.EventStartDate);
+        _model.EventEndDate = DateString(d.EventEndDate);
+        _model.Version = d.Version ?? string.Empty;
+        _model.SysVersion = d.SysVersion ?? string.Empty;
+        _model.LocationText = d.LocationText ?? string.Empty;
+        _model.LocationTextArabic = d.LocationTextArabic ?? string.Empty;
+        _model.Latitude = d.Latitude?.ToString() ?? string.Empty;
+        _model.Longitude = d.Longitude?.ToString() ?? string.Empty;
+        _model.ContactPhone = d.ContactPhone ?? string.Empty;
+        _model.ContactEmail = d.ContactEmail ?? string.Empty;
+        _model.ContactWebsite = d.ContactWebsite ?? string.Empty;
+        _model.LiveStreamUrl = d.LiveStreamUrl ?? string.Empty;
+        _model.Facebook = d.Social.Facebook ?? string.Empty;
+        _model.X = d.Social.X ?? string.Empty;
+        _model.Instagram = d.Social.Instagram ?? string.Empty;
+        _model.LinkedIn = d.Social.LinkedIn ?? string.Empty;
+        _model.YouTube = d.Social.YouTube ?? string.Empty;
+        _model.TikTok = d.Social.TikTok ?? string.Empty;
+        _model.Snapchat = d.Social.Snapchat ?? string.Empty;
+        _model.AboutItems = d.AboutItems
+            .Select(a => new AboutRow
+            {
+                Id = a.Id, Title = a.Title, TitleArabic = a.TitleArabic,
+                Text = a.Text, TextArabic = a.TextArabic,
+            }).ToList();
+        _model.Details = d.Details
+            .Select(x => new DetailRow
+            {
+                Id = x.Id, Name = x.Name, NameArabic = x.NameArabic, Value = x.Value,
+            }).ToList();
+    }
+
+    private void AddAbout() => _model.AboutItems.Add(new AboutRow());
+    private void AddDetail() => _model.Details.Add(new DetailRow());
+
+    private async Task SaveAsync()
+    {
+        if (_busy) { return; }
+        _busy = true;
+        _toastMessage = null;
+        try
+        {
+            var request = new AdminUpdateOrganizationProfileRequest
+            {
+                Name = _model.Name,
+                NameArabic = _model.NameArabic,
+                Title = _model.Title,
+                TitleArabic = _model.TitleArabic,
+                Slogan = _model.Slogan,
+                SloganArabic = _model.SloganArabic,
+                Bio = _model.Bio,
+                BioArabic = _model.BioArabic,
+                CurrentYear = int.TryParse(_model.CurrentYear, out var y) ? y : 0,
+                Status = _model.Status,
+                EventStartDate = ParseDate(_model.EventStartDate),
+                EventEndDate = ParseDate(_model.EventEndDate),
+                Version = _model.Version,
+                SysVersion = _model.SysVersion,
+                LocationText = _model.LocationText,
+                LocationTextArabic = _model.LocationTextArabic,
+                Latitude = ParseDecimal(_model.Latitude),
+                Longitude = ParseDecimal(_model.Longitude),
+                ContactPhone = _model.ContactPhone,
+                ContactEmail = _model.ContactEmail,
+                ContactWebsite = _model.ContactWebsite,
+                LiveStreamUrl = _model.LiveStreamUrl,
+                Facebook = _model.Facebook,
+                X = _model.X,
+                Instagram = _model.Instagram,
+                LinkedIn = _model.LinkedIn,
+                YouTube = _model.YouTube,
+                TikTok = _model.TikTok,
+                Snapchat = _model.Snapchat,
+                AboutItems = _model.AboutItems
+                    .Select((a, i) => new AdminOrganizationAboutItem
+                    {
+                        Id = a.Id, Title = a.Title, TitleArabic = a.TitleArabic,
+                        Text = a.Text, TextArabic = a.TextArabic, DisplayOrder = i,
+                    }).ToList(),
+                Details = _model.Details
+                    .Select((x, i) => new AdminOrganizationDetail
+                    {
+                        Id = x.Id, Name = x.Name, NameArabic = x.NameArabic,
+                        Value = x.Value, DisplayOrder = i,
+                    }).ToList(),
+            };
+
+            var envelope = await JS.InvokeAsync<ApiResult<OrganizationProfileResponse>>(
+                "simfAccount.putJson", "/account/api/admin/organization-profile", request);
+            if (envelope is { Success: true, Data: not null })
+            {
+                Load(envelope.Data);
+                _toastVariant = "success";
+                _toastMessage = L["Admin.OrganizationProfile.Saved"];
+            }
+            else
+            {
+                _toastVariant = "error";
+                _toastMessage = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.OrganizationProfile.SaveFailed"];
+            }
+        }
+        catch (Exception)
+        {
+            _toastVariant = "error";
+            _toastMessage = L["Admin.OrganizationProfile.SaveFailed"];
+        }
+        finally { _busy = false; }
+    }
+
+    private static string DateString(DateTimeOffset? value) =>
+        value?.ToString("yyyy-MM-dd") ?? string.Empty;
+
+    private static DateTimeOffset? ParseDate(string? raw) =>
+        DateTimeOffset.TryParse(raw, out var d) ? d : null;
+
+    private static decimal? ParseDecimal(string? raw) =>
+        decimal.TryParse(raw, out var v) ? v : null;
+
+    private sealed class Model
+    {
+        public string Name { get; set; } = string.Empty;
+        public string NameArabic { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string TitleArabic { get; set; } = string.Empty;
+        public string Slogan { get; set; } = string.Empty;
+        public string SloganArabic { get; set; } = string.Empty;
+        public string Bio { get; set; } = string.Empty;
+        public string BioArabic { get; set; } = string.Empty;
+        public string CurrentYear { get; set; } = "2026";
+        public string Status { get; set; } = "Open";
+        public string EventStartDate { get; set; } = string.Empty;
+        public string EventEndDate { get; set; } = string.Empty;
+        public string Version { get; set; } = string.Empty;
+        public string SysVersion { get; set; } = string.Empty;
+        public string LocationText { get; set; } = string.Empty;
+        public string LocationTextArabic { get; set; } = string.Empty;
+        public string Latitude { get; set; } = string.Empty;
+        public string Longitude { get; set; } = string.Empty;
+        public string ContactPhone { get; set; } = string.Empty;
+        public string ContactEmail { get; set; } = string.Empty;
+        public string ContactWebsite { get; set; } = string.Empty;
+        public string LiveStreamUrl { get; set; } = string.Empty;
+        public string Facebook { get; set; } = string.Empty;
+        public string X { get; set; } = string.Empty;
+        public string Instagram { get; set; } = string.Empty;
+        public string LinkedIn { get; set; } = string.Empty;
+        public string YouTube { get; set; } = string.Empty;
+        public string TikTok { get; set; } = string.Empty;
+        public string Snapchat { get; set; } = string.Empty;
+        public List<AboutRow> AboutItems { get; set; } = new();
+        public List<DetailRow> Details { get; set; } = new();
+    }
+
+    private sealed class AboutRow
+    {
+        public Guid? Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string TitleArabic { get; set; } = string.Empty;
+        public string Text { get; set; } = string.Empty;
+        public string TextArabic { get; set; } = string.Empty;
+    }
+
+    private sealed class DetailRow
+    {
+        public Guid? Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string NameArabic { get; set; } = string.Empty;
+        public string Value { get; set; } = string.Empty;
+    }
+}

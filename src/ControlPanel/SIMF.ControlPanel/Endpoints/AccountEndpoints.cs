@@ -2806,6 +2806,22 @@ internal static class AccountEndpoints
             return Forward(await api.DeleteSystemSettingAsync(id, token));
         });
 
+        // D-495 — Organization / About profile passthroughs.
+        group.MapGet("/admin/organization-profile",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetOrganizationProfileAsync(token));
+        });
+        group.MapPut("/admin/organization-profile",
+            async (AdminUpdateOrganizationProfileRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.SaveOrganizationProfileAsync(body, token));
+        });
+
         // P2.5 (D-230) — 2D venue-map node CRUD passthroughs.
         group.MapPost("/admin/venue-map/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>

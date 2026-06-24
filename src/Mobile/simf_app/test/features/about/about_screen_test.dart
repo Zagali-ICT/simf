@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/core/organization_profile/organization_profile.dart';
 import 'package:simf_app/features/about/about_screen.dart';
 import 'package:simf_app/features/content/data/content_models.dart';
 import 'package:simf_app/features/content/data/content_repository.dart';
@@ -27,6 +28,16 @@ class _FakeContentRepo implements ContentRepository {
     }
     return block!;
   }
+}
+
+/// A stub that pins the shared org-profile value to null (no network, no prefs),
+/// so the About screen falls back to its bundled l10n content.
+class _NullOrgProfile extends OrgProfileController {
+  @override
+  OrgProfile? build() => null;
+
+  @override
+  Future<void> warm() async {}
 }
 
 const _testConfig = SimfDataConfig(
@@ -76,6 +87,9 @@ Future<void> _pump(
       overrides: <Override>[
         simfDataConfigProvider.overrideWithValue(_testConfig),
         contentRepositoryProvider.overrideWithValue(repo),
+        // Force the shared profile to null so the screen renders its static l10n
+        // fallback (these cases assert the offline/fallback content).
+        orgProfileProvider.overrideWith(_NullOrgProfile.new),
       ],
       child: MaterialApp.router(
         routerConfig: router,

@@ -6,6 +6,7 @@ using SIMF.Contracts.Archive;
 using SIMF.Contracts.Cms;
 using SIMF.Contracts.Configuration;
 using SIMF.Contracts.Media;
+using SIMF.Contracts.Organization;
 using SIMF.Contracts.Programme;
 using SIMF.Contracts.PublicRelations;
 using SIMF.Contracts.Sponsors;
@@ -60,6 +61,13 @@ public sealed class SimfPublicClient(HttpClient http)
     /// unreachable service.</summary>
     public Task<SiteSettingsResponse?> GetSiteSettingsAsync(CancellationToken cancellationToken = default) =>
         GetAsync<SiteSettingsResponse>("site-settings", cancellationToken);
+
+    /// <summary>D-495 — the public Organization / About profile
+    /// (<c>GET /api/v1/app/organization-profile</c>): the edition-generic forum
+    /// config (name / dates / status / location / contact / social / about / details).
+    /// Returns <c>null</c> on a failed envelope or an unreachable service.</summary>
+    public Task<OrganizationProfileResponse?> GetOrganizationProfileAsync(CancellationToken cancellationToken = default) =>
+        GetAsync<OrganizationProfileResponse>("organization-profile", cancellationToken);
 
     /// <summary>One page of the public News feed
     /// (<c>GET /api/v1/app/news</c>). Returns <c>null</c> on a failed envelope

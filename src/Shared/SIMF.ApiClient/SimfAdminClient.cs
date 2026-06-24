@@ -17,6 +17,7 @@ using SIMF.Contracts.Contacts;
 using SIMF.Contracts.Feedback;
 using SIMF.Contracts.Logs;
 using SIMF.Contracts.Media;
+using SIMF.Contracts.Organization;
 using SIMF.Contracts.Programme;
 using SIMF.Contracts.PublicRelations;
 using SIMF.Contracts.Sessions;
@@ -1912,6 +1913,25 @@ public sealed class SimfAdminClient(HttpClient http)
         HttpMethod method, string path, HttpContent? content,
         string accessToken, CancellationToken cancellationToken) =>
         SendWithBaseAsync<T>("api/v1/app/sessions/", method, path, content,
+            accessToken, cancellationToken);
+
+    // -- D-495 — Organization / About profile editor --------------------------
+
+    /// <summary>D-495 — read the full Organization Profile (incl. child-row ids)
+    /// for the CP editor. Gated by OrganizationProfile.View.</summary>
+    public Task<ApiCallResult<OrganizationProfileResponse>> GetOrganizationProfileAsync(
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<OrganizationProfileResponse>(
+            HttpMethod.Get, "organization-profile", null, accessToken, cancellationToken);
+
+    /// <summary>D-495 — save the Organization Profile (full-document upsert).
+    /// Gated by OrganizationProfile.Manage.</summary>
+    public Task<ApiCallResult<OrganizationProfileResponse>> SaveOrganizationProfileAsync(
+        AdminUpdateOrganizationProfileRequest request,
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<OrganizationProfileResponse>(
+            HttpMethod.Put, "organization-profile",
+            JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
     private Task<ApiCallResult<T>> SendAsync<T>(

@@ -13,4 +13,8 @@ public enum AssetCategory
     ArchiveCover = 4,
     NewsImage = 5,
     ProgrammeDayImage = 6,
+
+    /// <summary>D-495 — the Organization Profile logo (owner =
+    /// <c>OrganizationProfile.SingletonId</c>).</summary>
+    OrganizationLogo = 7,
 }

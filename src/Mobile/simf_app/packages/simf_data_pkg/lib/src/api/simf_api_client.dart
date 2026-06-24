@@ -281,6 +281,47 @@ class SimfApiClient {
     );
   }
 
+  /// A conditional GET (D-495) — sends [ifModifiedSince] as `If-Modified-Since`
+  /// and returns [ConditionalResponse.notModified] on a `304`; otherwise the
+  /// decoded `ApiResult` envelope data plus the response `Last-Modified` token to
+  /// cache for the next revalidation. Unlike [get] it tolerates the non-2xx `304`
+  /// (the envelope path would treat the empty body as malformed). Refreshes +
+  /// replays once on a 401 like the other paths.
+  Future<ConditionalResponse<T>> getConditional<T>(
+    String path, {
+    String? ifModifiedSince,
+    required T Function(Object? data) decodeData,
+  }) async {
+    final response = await _execute(
+      (options) => _dio.get<dynamic>(
+        path,
+        options: (options ?? Options())
+          ..headers = <String, dynamic>{
+            ...?options?.headers,
+            if (ifModifiedSince != null) 'If-Modified-Since': ifModifiedSince,
+          },
+      ),
+    );
+
+    final status = response.statusCode ?? 0;
+    if (status == 304) {
+      return ConditionalResponse<T>.notModified();
+    }
+    if (status < 200 || status >= 300) {
+      throw ApiFailure(
+        code: ApiErrorCodes.clientNetwork,
+        message: 'Request failed with status $status.',
+        httpStatus: status,
+      );
+    }
+
+    final data = _parseEnvelope<T>(response, decodeData);
+    return ConditionalResponse<T>.modified(
+      data,
+      response.headers.value('last-modified'),
+    );
+  }
+
   Future<T> _send<T>(
     Future<Response<dynamic>> Function(Options? options) call,
     T Function(Object? data) decodeData,
@@ -444,4 +485,21 @@ class SimfApiClient {
   /// the single-retry contract is enforced by [_send] itself (it does not
   /// recurse). Kept as a stable key for future extension.
   static const String _extraSkipRefresh = 'simf.auth.skipRefresh';
+}
+
+/// The result of [SimfApiClient.getConditional] — either "not modified" (the
+/// server's `Last-Modified` matched the supplied `If-Modified-Since`) or the
+/// freshly-decoded [data] plus the new [lastModified] token (D-495).
+class ConditionalResponse<T> {
+  const ConditionalResponse.modified(this.data, this.lastModified)
+      : notModified = false;
+
+  const ConditionalResponse.notModified()
+      : data = null,
+        lastModified = null,
+        notModified = true;
+
+  final T? data;
+  final String? lastModified;
+  final bool notModified;
 }

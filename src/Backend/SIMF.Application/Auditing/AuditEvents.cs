@@ -191,6 +191,9 @@ public static class AuditEvents
     public const string SystemSettingUpdated = "SystemSetting.Updated";
     public const string SystemSettingDeactivated = "SystemSetting.Deactivated";
 
+    // Organization / About profile (D-495)
+    public const string OrganizationProfileUpdated = "OrganizationProfile.Updated";
+
     // Venue map nodes (P2.5 / D-230 — FR-605)
     public const string VenueMapNodeCreated = "VenueMapNode.Created";
     public const string VenueMapNodeUpdated = "VenueMapNode.Updated";

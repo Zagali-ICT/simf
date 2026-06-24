@@ -865,6 +865,14 @@
   <data name="Admin.WalkIn.Field.Plate.Letter" xml:space="preserve"><value>Letter</value></data>
   <data name="Admin.WalkIn.Field.Plate.Digits" xml:space="preserve"><value>Digits</value></data>
   <data name="Module.SiteSettings" xml:space="preserve"><value>Site Settings</value></data>
+  <data name="Module.OrganizationProfile" xml:space="preserve"><value>Organization Profile</value></data>
+  <data name="Admin.OrganizationProfile.Title" xml:space="preserve"><value>Organization Profile</value></data>
+  <data name="Admin.OrganizationProfile.Loading" xml:space="preserve"><value>Loading…</value></data>
+  <data name="Admin.OrganizationProfile.Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Admin.OrganizationProfile.Saving" xml:space="preserve"><value>Saving…</value></data>
+  <data name="Admin.OrganizationProfile.Saved" xml:space="preserve"><value>Saved.</value></data>
+  <data name="Admin.OrganizationProfile.SaveFailed" xml:space="preserve"><value>Could not save the profile.</value></data>
+  <data name="Admin.OrganizationProfile.LoadFailed" xml:space="preserve"><value>Could not load the profile.</value></data>
   <data name="Admin.SiteSettings.Title" xml:space="preserve"><value>Site Settings</value></data>
   <data name="Admin.SiteSettings.Loading" xml:space="preserve"><value>Loading…</value></data>
   <data name="Admin.SiteSettings.Section.Registration" xml:space="preserve"><value>Registration message</value></data>
