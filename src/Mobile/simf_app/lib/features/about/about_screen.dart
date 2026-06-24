@@ -107,6 +107,16 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
             (l10n.aboutDetailLocationLabel, l10n.aboutDetailLocationValue),
           ];
 
+    // D-495 — contact rows (only the fields the admin actually set).
+    final contactRows = <(String, String)>[
+      if (profile?.contactPhone != null)
+        (l10n.aboutContactPhone, profile!.contactPhone!),
+      if (profile?.contactEmail != null)
+        (l10n.aboutContactEmail, profile!.contactEmail!),
+      if (profile?.contactWebsite != null)
+        (l10n.aboutContactWebsite, profile!.contactWebsite!),
+    ];
+
     final themes = <(String, String, String)>[
       ('01', l10n.aboutTheme1Title, l10n.aboutTheme1Body),
       ('02', l10n.aboutTheme2Title, l10n.aboutTheme2Body),
@@ -151,10 +161,46 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
               ),
             ),
           ],
+          // D-495 — the edition status badge (status · year).
+          if (profile != null) ...<Widget>[
+            const SizedBox(height: SimfTokens.space3),
+            Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SimfTokens.space3,
+                  vertical: SimfTokens.space1,
+                ),
+                decoration: BoxDecoration(
+                  color: SimfTokens.accent,
+                  borderRadius: BorderRadius.circular(SimfTokens.radius),
+                ),
+                child: Text(
+                  '${l10n.aboutStatus(profile.status)} · ${profile.currentYear}',
+                  style: const TextStyle(
+                    color: SimfTokens.navyDeep,
+                    fontSize: SimfTokens.textSm,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: SimfTokens.space5),
           ...aboutCards,
           const SizedBox(height: SimfTokens.space4),
           _DetailsCard(title: l10n.aboutDetailsTitle, rows: detailRows),
+          // D-495 — contact + version cards (shown only when set).
+          if (contactRows.isNotEmpty) ...<Widget>[
+            const SizedBox(height: SimfTokens.space4),
+            _DetailsCard(title: l10n.aboutContactTitle, rows: contactRows),
+          ],
+          if (profile?.version != null && profile!.version!.isNotEmpty) ...<Widget>[
+            const SizedBox(height: SimfTokens.space4),
+            _DetailsCard(
+              title: l10n.aboutVersionTitle,
+              rows: <(String, String)>[(l10n.aboutVersionLabel, profile.version!)],
+            ),
+          ],
           const SizedBox(height: SimfTokens.space4),
           _ThemesCard(title: l10n.aboutThemesTitle, themes: themes),
         ],

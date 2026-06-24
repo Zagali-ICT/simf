@@ -30,15 +30,42 @@ class _FakeContentRepo implements ContentRepository {
   }
 }
 
-/// A stub that pins the shared org-profile value to null (no network, no prefs),
-/// so the About screen falls back to its bundled l10n content.
-class _NullOrgProfile extends OrgProfileController {
+/// A stub that pins the shared org-profile value (null → the About screen falls
+/// back to its bundled l10n content; a profile → it data-drives the screen).
+class _StubOrgProfile extends OrgProfileController {
+  _StubOrgProfile(this._value);
+  final OrgProfile? _value;
   @override
-  OrgProfile? build() => null;
+  OrgProfile? build() => _value;
 
   @override
   Future<void> warm() async {}
 }
+
+OrgProfile _orgProfile() => OrgProfile(
+      name: 'The International Maritime Forum',
+      nameArabic: 'الملتقى الدولي البحري',
+      title: 'The Saudi Forum',
+      titleArabic: 'الملتقى السعودي',
+      currentYear: 2026,
+      status: 'Open',
+      version: '1.0.0',
+      contactPhone: '+966 11 000 0000',
+      contactEmail: 'info@simf.example',
+      contactWebsite: 'https://simf.example',
+      social: const OrgSocial(),
+      aboutItems: const <OrgAboutItem>[
+        OrgAboutItem(
+          title: 'Mission',
+          titleArabic: 'الرسالة',
+          text: 'Advance maritime dialogue',
+          textArabic: 'تعزيز الحوار',
+        ),
+      ],
+      details: const <OrgDetail>[
+        OrgDetail(name: 'Year', nameArabic: 'السنة', value: '2026'),
+      ],
+    );
 
 const _testConfig = SimfDataConfig(
   baseUrl: 'http://test.local/api/v1',
@@ -50,6 +77,7 @@ Future<void> _pump(
   WidgetTester tester,
   ContentRepository repo, {
   Locale locale = const Locale('en'),
+  OrgProfile? profile,
 }) async {
   // A tall surface so the whole scroll content (header + mission + vision +
   // details + the four themes) lays out — the lazy ListView would otherwise not
@@ -87,9 +115,9 @@ Future<void> _pump(
       overrides: <Override>[
         simfDataConfigProvider.overrideWithValue(_testConfig),
         contentRepositoryProvider.overrideWithValue(repo),
-        // Force the shared profile to null so the screen renders its static l10n
-        // fallback (these cases assert the offline/fallback content).
-        orgProfileProvider.overrideWith(_NullOrgProfile.new),
+        // Pin the shared profile (null in the fallback cases; a real profile in
+        // the data-driven case).
+        orgProfileProvider.overrideWith(() => _StubOrgProfile(profile)),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -175,6 +203,29 @@ void main() {
           .getCenter(find.text('المتغيرات في البيئة الاستراتيجية العالمية'))
           .dx;
       expect(numberX, greaterThan(titleX));
+    });
+
+    testWidgets('D-495 — a profile drives the name, status badge, contact + version',
+        (tester) async {
+      await _pump(
+        tester,
+        _FakeContentRepo(status: 404),
+        profile: _orgProfile(),
+      );
+
+      // Name + title come from the profile (not the l10n default).
+      expect(find.text('The International Maritime Forum'), findsOneWidget);
+      expect(find.text('The Saudi Forum'), findsOneWidget);
+      // The edition status badge: "Open · 2026".
+      expect(find.text('Open · 2026'), findsOneWidget);
+      // The about-item drives a vision/mission card.
+      expect(find.text('Mission'), findsOneWidget);
+      // The contact card + a value.
+      expect(find.text('Contact'), findsOneWidget);
+      expect(find.textContaining('info@simf.example'), findsOneWidget);
+      // The version card + its value.
+      expect(find.text('System info'), findsOneWidget);
+      expect(find.textContaining('1.0.0'), findsOneWidget);
     });
   });
 }

@@ -36,6 +36,7 @@ class OrgProfile {
     this.contactWebsite,
     this.liveStreamUrl,
     this.logoUrl,
+    this.version,
   });
 
   final String name;
@@ -58,6 +59,7 @@ class OrgProfile {
   final String? contactWebsite;
   final String? liveStreamUrl;
   final String? logoUrl;
+  final String? version;
 
   String nameFor(bool isArabic) => isArabic ? nameArabic : name;
   String titleFor(bool isArabic) => isArabic ? titleArabic : title;
@@ -84,6 +86,7 @@ class OrgProfile {
         contactWebsite: json['contactWebsite'] as String?,
         liveStreamUrl: json['liveStreamUrl'] as String?,
         logoUrl: json['logoUrl'] as String?,
+        version: json['version'] as String?,
         social: OrgSocial.fromJson(_asStringMap(json['social'])),
         aboutItems: ((json['aboutItems'] as List?) ?? const <dynamic>[])
             .map((m) => OrgAboutItem.fromJson(_asStringMap(m)))

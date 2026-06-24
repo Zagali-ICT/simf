@@ -1076,6 +1076,24 @@ class AppL10n {
   String get aboutDetailDateValue => '01-2026 — 04-2026';
   String get aboutDetailLocationLabel => _t('المكان', 'Location');
   String get aboutDetailLocationValue => _t('السعودية', 'Saudi Arabia');
+  // D-495 — Organization-profile additions: status badge + contact + version.
+  String aboutStatus(String status) {
+    switch (status) {
+      case 'Soon':
+        return _t('قريباً', 'Coming soon');
+      case 'Archived':
+        return _t('مؤرشف', 'Archived');
+      default:
+        return _t('مفتوح', 'Open');
+    }
+  }
+
+  String get aboutContactTitle => _t('التواصل', 'Contact');
+  String get aboutContactPhone => _t('الهاتف', 'Phone');
+  String get aboutContactEmail => _t('البريد الإلكتروني', 'Email');
+  String get aboutContactWebsite => _t('الموقع الإلكتروني', 'Website');
+  String get aboutVersionTitle => _t('معلومات النظام', 'System info');
+  String get aboutVersionLabel => _t('الإصدار', 'Version');
   String get aboutHeroHeading => _t(
         'منصة سعودية عالمية لدعم الحوار في قضايا الأمن البحري',
         'A Saudi global platform advancing dialogue on maritime-security issues',
