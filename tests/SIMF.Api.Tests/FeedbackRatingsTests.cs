@@ -1,5 +1,6 @@
-// D-199 (gap doc / Mockup page 40) — forum rating: one-per-user upsert +
-// admin list with average. Mirrors DelegationsTests / SeatReservationsTests.
+// Dynamic ratings — app form/submit (upsert) + admin responses list with
+// average. The "App" (global) + "Session" (per-session) types are seeded by
+// RatingSeeder. Mirrors SeatReservationsTests / FaqTests.
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -29,132 +30,153 @@ public sealed class FeedbackRatingsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Visitor_can_submit_a_rating()
+    public async Task App_form_exposes_overall_and_comment_config()
     {
         var visitor = await SignInApprovedVisitorAsync();
 
-        var response = await PostAuthAsync(
-            "/api/v1/app/feedback/rate",
-            new RateRequest(5, "Excellent forum"), visitor);
+        var response = await GetAuthAsync("/api/v1/app/feedback/form?code=App", visitor);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var view = (await response.Content
-            .ReadFromJsonAsync<ApiResult<RatingView>>())!.Data!;
-        Assert.Equal(5, view.Stars);
-        Assert.Equal("Excellent forum", view.Comment);
-        Assert.Null(view.UpdatedAt);
+        var form = (await response.Content
+            .ReadFromJsonAsync<ApiResult<RatingFormView>>())!.Data!;
+        Assert.Equal("App", form.Code);
+        Assert.Equal(RatingScope.Global, form.Scope);
+        Assert.True(form.HasOverallStars);
+        Assert.True(form.AllowComment);
+        Assert.Null(form.TargetId);
     }
 
     [Fact]
-    public async Task Visitor_can_submit_per_element_scores()
+    public async Task Visitor_can_submit_app_rating()
     {
-        // D-463 (Figma 1116:16894 "قيّم العناصر") — the four optional element
-        // scores persist and echo back on the view.
         var visitor = await SignInApprovedVisitorAsync();
+        var form = await GetFormAsync("App", null, visitor);
 
         var response = await PostAuthAsync(
-            "/api/v1/app/feedback/rate",
-            new RateRequest(4, "great",
-                OrganizationStars: 5, ContentStars: 4,
-                AppStars: 3, VenueStars: 2),
+            "/api/v1/app/feedback/submit",
+            new SubmitRatingRequest
+            {
+                RatingTypeId = form.RatingTypeId,
+                OverallStars = 5,
+                Comment = "Excellent forum",
+            },
             visitor);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var view = (await response.Content
-            .ReadFromJsonAsync<ApiResult<RatingView>>())!.Data!;
-        Assert.Equal(4, view.Stars);
-        Assert.Equal(5, view.OrganizationStars);
-        Assert.Equal(4, view.ContentStars);
-        Assert.Equal(3, view.AppStars);
-        Assert.Equal(2, view.VenueStars);
+            .ReadFromJsonAsync<ApiResult<RatingSubmissionView>>())!.Data!;
+        Assert.Equal(5, view.OverallStars);
+        Assert.Equal("Excellent forum", view.Comment);
+        Assert.Null(view.TargetId);
+        Assert.Null(view.UpdatedAt);
     }
 
     [Fact]
-    public async Task Element_scores_are_optional_and_default_to_null()
+    public async Task Resubmitting_upserts_the_single_row_and_prefills()
     {
         var visitor = await SignInApprovedVisitorAsync();
-
-        var response = await PostAuthAsync(
-            "/api/v1/app/feedback/rate",
-            new RateRequest(5, null), visitor);
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-        var view = (await response.Content
-            .ReadFromJsonAsync<ApiResult<RatingView>>())!.Data!;
-        Assert.Null(view.OrganizationStars);
-        Assert.Null(view.ContentStars);
-        Assert.Null(view.AppStars);
-        Assert.Null(view.VenueStars);
-    }
-
-    [Fact]
-    public async Task Out_of_range_element_score_is_rejected_with_400()
-    {
-        var visitor = await SignInApprovedVisitorAsync();
-
-        var response = await PostAuthAsync(
-            "/api/v1/app/feedback/rate",
-            new RateRequest(4, null, OrganizationStars: 6), visitor);
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task Rating_twice_upserts_the_single_row_for_the_user()
-    {
-        var visitor = await SignInApprovedVisitorAsync();
+        var form = await GetFormAsync("App", null, visitor);
 
         var first = await PostAuthAsync(
-            "/api/v1/app/feedback/rate",
-            new RateRequest(3, "Good"), visitor);
-        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+            "/api/v1/app/feedback/submit",
+            new SubmitRatingRequest { RatingTypeId = form.RatingTypeId, OverallStars = 3, Comment = "Good" },
+            visitor);
         var firstView = (await first.Content
-            .ReadFromJsonAsync<ApiResult<RatingView>>())!.Data!;
+            .ReadFromJsonAsync<ApiResult<RatingSubmissionView>>())!.Data!;
 
         var second = await PostAuthAsync(
-            "/api/v1/app/feedback/rate",
-            new RateRequest(4, "Better on day two"), visitor);
-        Assert.Equal(HttpStatusCode.OK, second.StatusCode);
+            "/api/v1/app/feedback/submit",
+            new SubmitRatingRequest { RatingTypeId = form.RatingTypeId, OverallStars = 4, Comment = "Better" },
+            visitor);
         var secondView = (await second.Content
-            .ReadFromJsonAsync<ApiResult<RatingView>>())!.Data!;
+            .ReadFromJsonAsync<ApiResult<RatingSubmissionView>>())!.Data!;
 
-        // Same row (upsert), updated values, UpdatedAt now stamped.
-        Assert.Equal(firstView.Id, secondView.Id);
-        Assert.Equal(4, secondView.Stars);
-        Assert.Equal("Better on day two", secondView.Comment);
+        Assert.Equal(firstView.Id, secondView.Id); // same row (upsert)
+        Assert.Equal(4, secondView.OverallStars);
+        Assert.Equal("Better", secondView.Comment);
         Assert.NotNull(secondView.UpdatedAt);
+
+        // The form now prefills from the existing submission.
+        var refetched = await GetFormAsync("App", null, visitor);
+        Assert.Equal(4, refetched.Existing!.OverallStars);
+        Assert.Equal("Better", refetched.Existing!.Comment);
     }
 
     [Fact]
-    public async Task Out_of_range_stars_is_rejected_with_400()
+    public async Task Missing_overall_on_a_type_that_requires_it_is_400()
     {
         var visitor = await SignInApprovedVisitorAsync();
+        var form = await GetFormAsync("App", null, visitor);
 
         var response = await PostAuthAsync(
-            "/api/v1/app/feedback/rate",
-            new RateRequest(6, null), visitor);
-        // FluentValidation rejects before the handler runs.
+            "/api/v1/app/feedback/submit",
+            new SubmitRatingRequest { RatingTypeId = form.RatingTypeId, Comment = "no stars" },
+            visitor);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
-    public async Task Unauthenticated_rate_is_401()
+    public async Task Out_of_range_overall_is_rejected_with_400()
+    {
+        var visitor = await SignInApprovedVisitorAsync();
+        var form = await GetFormAsync("App", null, visitor);
+
+        var response = await PostAuthAsync(
+            "/api/v1/app/feedback/submit",
+            new SubmitRatingRequest { RatingTypeId = form.RatingTypeId, OverallStars = 6 },
+            visitor);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Unauthenticated_submit_is_401()
     {
         var response = await _client.PostAsJsonAsync(
-            "/api/v1/app/feedback/rate", new RateRequest(5, null));
+            "/api/v1/app/feedback/submit",
+            new SubmitRatingRequest { Code = "App", OverallStars = 5 });
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
-    public async Task Admin_list_returns_ratings_with_average()
+    public async Task Per_session_form_without_a_target_is_400()
     {
-        // Two visitors rate 2 and 4 -> average 3.0 across these two rows.
+        var visitor = await SignInApprovedVisitorAsync();
+
+        var response = await GetAuthAsync("/api/v1/app/feedback/form?code=Session", visitor);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Per_session_submit_for_unknown_session_is_404()
+    {
+        var visitor = await SignInApprovedVisitorAsync();
+
+        var response = await PostAuthAsync(
+            "/api/v1/app/feedback/submit",
+            new SubmitRatingRequest
+            {
+                Code = "Session",
+                TargetId = Guid.NewGuid(), // no such session
+                OverallStars = 5,
+            },
+            visitor);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Admin_list_returns_responses_with_average()
+    {
         var v1 = await SignInApprovedVisitorAsync();
-        Assert.Equal(HttpStatusCode.OK,
-            (await PostAuthAsync("/api/v1/app/feedback/rate", new RateRequest(2, "meh"), v1)).StatusCode);
+        var f1 = await GetFormAsync("App", null, v1);
+        Assert.Equal(HttpStatusCode.OK, (await PostAuthAsync(
+            "/api/v1/app/feedback/submit",
+            new SubmitRatingRequest { RatingTypeId = f1.RatingTypeId, OverallStars = 2, Comment = "meh" }, v1)).StatusCode);
 
         var v2 = await SignInApprovedVisitorAsync();
-        Assert.Equal(HttpStatusCode.OK,
-            (await PostAuthAsync("/api/v1/app/feedback/rate", new RateRequest(4, "nice"), v2)).StatusCode);
+        var f2 = await GetFormAsync("App", null, v2);
+        Assert.Equal(HttpStatusCode.OK, (await PostAuthAsync(
+            "/api/v1/app/feedback/submit",
+            new SubmitRatingRequest { RatingTypeId = f2.RatingTypeId, OverallStars = 4, Comment = "nice" }, v2)).StatusCode);
 
         var admin = await CreateAdministratorAndSignInAsync();
         var response = await PostAuthAsync(
@@ -163,10 +185,10 @@ public sealed class FeedbackRatingsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var page = (await response.Content
-            .ReadFromJsonAsync<ApiResult<AdminRatingsPage>>())!.Data!;
-        Assert.True(page.RatingCount >= 2);
-        Assert.True(page.AverageStars > 0);
-        Assert.NotEmpty(page.Ratings.Items);
+            .ReadFromJsonAsync<ApiResult<AdminRatingResponsesPage>>())!.Data!;
+        Assert.True(page.ResponseCount >= 2);
+        Assert.True(page.AverageOverall > 0);
+        Assert.NotEmpty(page.Responses.Items);
     }
 
     [Fact]
@@ -180,6 +202,14 @@ public sealed class FeedbackRatingsTests : IClassFixture<SimfApiFactory>
     }
 
     // -- Helpers --------------------------------------------------------------
+
+    private async Task<RatingFormView> GetFormAsync(string? code, Guid? targetId, string token)
+    {
+        var url = $"/api/v1/app/feedback/form?code={code}";
+        if (targetId is { } t) { url += $"&targetId={t}"; }
+        var response = await GetAuthAsync(url, token);
+        return (await response.Content.ReadFromJsonAsync<ApiResult<RatingFormView>>())!.Data!;
+    }
 
     private async Task<string> SignInApprovedVisitorAsync()
     {
@@ -201,8 +231,6 @@ public sealed class FeedbackRatingsTests : IClassFixture<SimfApiFactory>
                     _factory, email, AccountCodePurpose.EmailVerification),
             });
         AuthFlow.SetAccountState(_factory, email, AccountState.Approved);
-        // D-373 — registration enables 2FA; this auth plumbing needs the
-        // direct-token path (the admin-disabled scenario).
         AuthFlow.DisableTwoFactor(_factory, email);
         var sign = await _client.PostAsJsonAsync(
             "/api/v1/app/auth/sign-in",
@@ -241,6 +269,13 @@ public sealed class FeedbackRatingsTests : IClassFixture<SimfApiFactory>
             });
         var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
         return body.Data!.Tokens!.AccessToken;
+    }
+
+    private Task<HttpResponseMessage> GetAuthAsync(string url, string token)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
     }
 
     private Task<HttpResponseMessage> PostAuthAsync<TBody>(

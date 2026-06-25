@@ -144,8 +144,10 @@ public static class CpNavigation
             new("Module.LiveSessions", "/m/live-sessions", IsStub: true, Icon: "video"),
             // D-199 — audience-comments moderation desk (Mockup page 28).
             new("Module.Moderation", "/admin/comments-moderation", RequiredPermission: PermissionCatalog.Comments.View, Icon: "message-circle"),
-            // D-199 — forum ratings read-only view (Mockup screen 40).
+            // Submitted ratings read-only view + KPIs.
             new("Module.Ratings", "/admin/ratings", RequiredPermission: PermissionCatalog.Ratings.View, Icon: "star"),
+            // Dynamic rating configuration — types / question groups / questions.
+            new("Module.RatingConfig", "/admin/rating-config", RequiredPermission: PermissionCatalog.RatingConfig.View, Icon: "sliders"),
         ]),
         new("Nav.Knowledge",
         [

@@ -7,54 +7,28 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/ksa_shell.dart';
+import 'data/feedback_repository.dart';
+import 'data/rating_models.dart';
 
-/// Data layer for the rating (Page_040). `POST /app/feedback/rate`
-/// (`RequireApprovedAccount`) upserts the caller's overall star rating, the four
-/// optional per-element scores (D-463, Figma "قيّم العناصر") and the comment.
-class FeedbackRepository {
-  FeedbackRepository(this._client);
-
-  final SimfApiClient _client;
-
-  Future<void> submitRating({
-    required int stars,
-    String? comment,
-    int? organizationStars,
-    int? contentStars,
-    int? appStars,
-    int? venueStars,
-  }) {
-    return _client.post<bool>(
-      '/app/feedback/rate',
-      body: <String, dynamic>{
-        'stars': stars,
-        'comment': comment,
-        // Appended D-463 fields — omitted-as-null when the element is unscored.
-        'organizationStars': organizationStars,
-        'contentStars': contentStars,
-        'appStars': appStars,
-        'venueStars': venueStars,
-      },
-      decodeData: (_) => true,
-    );
-  }
-}
-
-final feedbackRepositoryProvider = Provider<FeedbackRepository>((ref) {
-  return FeedbackRepository(ref.watch(simfApiClientProvider));
-});
-
-/// Page 040 — تقييم الملتقى · Rate (#40, `/rate`, Visitor login-only).
+/// Page 040 — تقييم الملتقى · Rate (#40, `/rate`, login-only).
 ///
-/// Pixel-parity to KSA Figma frame `1116:16894`: on the navy [KsaPage] shell,
-/// a centred lead ("شارك تجربتك" → the question → the overall star row → the
-/// "{n} من 5 · {word}" summary), the "قيّم العناصر" block of four per-element
-/// star rows (organisation / content / app / venue), the "ملاحظاتك" notes box
-/// and the gold "إرسال التقييم" button. The overall stars are required; the four
-/// element scores and the comment are optional. `POST /app/feedback/rate`; a
-/// 401/403 maps to a toast.
+/// Dynamic, config-driven rating screen. It fetches the form for a rating type
+/// (resolved by [code] — e.g. "App" / "Session" — or [ratingTypeId]) and optional
+/// [targetId] (a session id for a per-session type), then renders the optional
+/// overall star row, the server-defined grouped + flat questions (each a 1–5 star
+/// bar) and the optional comment box, prefilled from any existing submission.
+/// `GET /app/feedback/form` then `POST /app/feedback/submit`.
 class RateScreen extends ConsumerStatefulWidget {
-  const RateScreen({super.key});
+  const RateScreen({
+    super.key,
+    this.code,
+    this.ratingTypeId,
+    this.targetId,
+  });
+
+  final String? code;
+  final String? ratingTypeId;
+  final String? targetId;
 
   @override
   ConsumerState<RateScreen> createState() => _RateScreenState();
@@ -62,12 +36,21 @@ class RateScreen extends ConsumerStatefulWidget {
 
 class _RateScreenState extends ConsumerState<RateScreen> {
   final TextEditingController _comment = TextEditingController();
-  int _stars = 0;
-  int _organization = 0;
-  int _content = 0;
-  int _app = 0;
-  int _venue = 0;
+
+  RatingFormView? _form;
+  bool _loading = true;
+  bool _loadFailed = false;
   bool _submitting = false;
+
+  int _overall = 0;
+  // questionId → stars (0 = unscored).
+  final Map<String, int> _answers = <String, int>{};
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadForm());
+  }
 
   @override
   void dispose() {
@@ -75,26 +58,87 @@ class _RateScreenState extends ConsumerState<RateScreen> {
     super.dispose();
   }
 
-  /// 0 (unscored) maps to null on the wire; 1–5 passes through.
-  int? _orNull(int value) => value < 1 ? null : value;
+  Future<void> _loadForm() async {
+    setState(() {
+      _loading = true;
+      _loadFailed = false;
+    });
+    try {
+      // Default to the global "App" rating when no type was specified (the
+      // More-menu entry point).
+      final form = await ref.read(feedbackRepositoryProvider).getForm(
+            code: widget.ratingTypeId == null ? (widget.code ?? 'App') : null,
+            ratingTypeId: widget.ratingTypeId,
+            targetId: widget.targetId,
+          );
+      if (!mounted) {
+        return;
+      }
+      // Prefill from any existing submission.
+      final existing = form.existing;
+      if (existing != null) {
+        _overall = existing.overallStars ?? 0;
+        _answers
+          ..clear()
+          ..addAll(existing.answers);
+        if ((existing.comment ?? '').isNotEmpty) {
+          _comment.text = existing.comment!;
+        }
+      }
+      setState(() {
+        _form = form;
+        _loading = false;
+      });
+    } on ApiFailure {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _loading = false;
+        _loadFailed = true;
+      });
+    }
+  }
 
-  Future<void> _submit(AppL10n l10n) async {
-    if (_stars < 1) {
-      ScaffoldMessenger.of(context)
+  Future<void> _submit(AppL10n l10n, RatingFormView form) async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    if (form.hasOverallStars && _overall < 1) {
+      messenger
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(l10n.rateStarsRequired)));
       return;
     }
+
+    // Every required question must be scored.
+    final required = <RatingFormQuestion>[
+      for (final g in form.groups) ...g.questions.where((q) => q.isRequired),
+      ...form.ungroupedQuestions.where((q) => q.isRequired),
+    ];
+    final missingRequired =
+        required.any((q) => (_answers[q.id] ?? 0) < 1);
+    if (missingRequired) {
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(l10n.rateRequiredQuestions)));
+      return;
+    }
+
     setState(() => _submitting = true);
-    final messenger = ScaffoldMessenger.of(context);
     try {
-      await ref.read(feedbackRepositoryProvider).submitRating(
-            stars: _stars,
-            comment: _comment.text.trim().isEmpty ? null : _comment.text.trim(),
-            organizationStars: _orNull(_organization),
-            contentStars: _orNull(_content),
-            appStars: _orNull(_app),
-            venueStars: _orNull(_venue),
+      // Only send answered questions (stars 1–5).
+      final answers = <String, int>{
+        for (final e in _answers.entries)
+          if (e.value >= 1) e.key: e.value,
+      };
+      await ref.read(feedbackRepositoryProvider).submit(
+            ratingTypeId: form.ratingTypeId,
+            targetId: form.targetId,
+            overallStars: form.hasOverallStars ? _overall : null,
+            comment: form.allowComment && _comment.text.trim().isNotEmpty
+                ? _comment.text.trim()
+                : null,
+            answers: answers,
           );
       if (!mounted) {
         return;
@@ -117,161 +161,215 @@ class _RateScreenState extends ConsumerState<RateScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
+    final form = _form;
     return KsaPage(
       title: l10n.rateTitle,
       onBack: () => ksaBackOrHome(context),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          SimfTokens.space4,
-          SimfTokens.space5,
-          SimfTokens.space4,
-          SimfTokens.space6,
-        ),
+      body: _loading
+          ? const Center(
+              child: CircularProgressIndicator(color: SimfTokens.accent),
+            )
+          : _loadFailed || form == null
+              ? _LoadError(message: l10n.rateLoadFailed, onRetry: _loadForm)
+              : _buildForm(l10n, form),
+    );
+  }
+
+  Widget _buildForm(AppL10n l10n, RatingFormView form) {
+    final isArabic = l10n.isArabic;
+    final children = <Widget>[];
+
+    if (form.hasOverallStars) {
+      children.add(Column(
         children: <Widget>[
-          // Centred lead: kicker, question, the overall star row and the
-          // dynamic "{n} من 5 · {word}" summary (frame 1116:17144).
-          Column(
-            children: <Widget>[
-              Text(
-                l10n.rateKicker,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: SimfTokens.beigeBorder,
-                  fontSize: SimfTokens.textMd,
-                ),
-              ),
-              const SizedBox(height: SimfTokens.space6),
-              Text(
-                l10n.rateLead,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: SimfTokens.textTitle,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: SimfTokens.space6),
-              _StarRow(
-                value: _stars,
-                size: 30,
-                gap: SimfTokens.space3,
-                onChanged: (v) => setState(() => _stars = v),
-              ),
-              const SizedBox(height: SimfTokens.space5),
-              // Summary shows only once an overall score is picked; a same-height
-              // spacer holds the slot otherwise. Sizes naturally so it never
-              // clips under the accessibility text scaler.
-              if (_stars < 1)
-                const SizedBox(height: 20)
-              else
-                Text(
-                  l10n.rateScoreSummary(_stars),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: SimfTokens.beigeBorder,
-                    fontSize: SimfTokens.textMd,
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: SimfTokens.space5),
-          // "قيّم العناصر" — the four per-element rows (frames 1116:17145…17211).
           Text(
-            l10n.rateElementsTitle,
-            textAlign: TextAlign.start,
+            l10n.rateKicker,
+            textAlign: TextAlign.center,
             style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w500,
-              fontSize: SimfTokens.textLg,
+              color: SimfTokens.beigeBorder,
+              fontSize: SimfTokens.textMd,
             ),
-          ),
-          const SizedBox(height: SimfTokens.space3),
-          _CategoryRow(
-            label: l10n.rateCatOrganization,
-            value: _organization,
-            onChanged: (v) => setState(() => _organization = v),
-          ),
-          const SizedBox(height: SimfTokens.space4),
-          _CategoryRow(
-            label: l10n.rateCatContent,
-            value: _content,
-            onChanged: (v) => setState(() => _content = v),
-          ),
-          const SizedBox(height: SimfTokens.space4),
-          _CategoryRow(
-            label: l10n.rateCatApp,
-            value: _app,
-            onChanged: (v) => setState(() => _app = v),
-          ),
-          const SizedBox(height: SimfTokens.space4),
-          _CategoryRow(
-            label: l10n.rateCatVenue,
-            value: _venue,
-            onChanged: (v) => setState(() => _venue = v),
           ),
           const SizedBox(height: SimfTokens.space6),
-          // "ملاحظاتك" notes box (frame 1116:17216).
           Text(
-            l10n.rateCommentLabel,
-            textAlign: TextAlign.start,
+            l10n.rateLead,
+            textAlign: TextAlign.center,
             style: const TextStyle(
               color: Colors.white,
-              fontWeight: FontWeight.w500,
-              fontSize: SimfTokens.textLg,
+              fontWeight: FontWeight.w700,
+              fontSize: SimfTokens.textTitle,
+              height: 1.4,
             ),
           ),
-          const SizedBox(height: SimfTokens.space2),
-          TextField(
-            controller: _comment,
-            maxLength: 2000,
-            maxLines: 4,
-            minLines: 4,
-            style: const TextStyle(color: Colors.white, fontSize: SimfTokens.textMd),
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: SimfTokens.navyDeep,
-              hintText: l10n.rateCommentHint,
-              hintStyle: const TextStyle(
-                color: SimfTokens.beigeBorder,
-                fontSize: SimfTokens.textSm,
-              ),
-              counterText: '',
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: SimfTokens.space3,
-                vertical: SimfTokens.space3,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(SimfTokens.radius),
-                borderSide: BorderSide.none,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(SimfTokens.radius),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(SimfTokens.radius),
-                borderSide: const BorderSide(color: SimfTokens.accent),
-              ),
-            ),
+          const SizedBox(height: SimfTokens.space6),
+          _StarRow(
+            value: _overall,
+            size: 30,
+            gap: SimfTokens.space3,
+            onChanged: (v) => setState(() => _overall = v),
           ),
           const SizedBox(height: SimfTokens.space5),
-          // Gold "إرسال التقييم" button (frame 1116:17220). Stays gold while
-          // submitting (a white spinner replaces the label) instead of turning
-          // into an unreadable dark box.
-          _GoldButton(
-            label: l10n.rateSubmit,
-            loading: _submitting,
-            onTap: () => unawaited(_submit(l10n)),
-          ),
+          if (_overall < 1)
+            const SizedBox(height: 20)
+          else
+            Text(
+              l10n.rateScoreSummary(_overall),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: SimfTokens.beigeBorder,
+                fontSize: SimfTokens.textMd,
+              ),
+            ),
         ],
+      ),);
+      children.add(const SizedBox(height: SimfTokens.space5));
+    }
+
+    // Grouped questions — a section per group.
+    for (final group in form.groups) {
+      children.add(_SectionTitle(group.localizedName(isArabic)));
+      children.add(const SizedBox(height: SimfTokens.space3));
+      for (final q in group.questions) {
+        children.add(_questionRow(isArabic, q));
+        children.add(const SizedBox(height: SimfTokens.space4));
+      }
+      children.add(const SizedBox(height: SimfTokens.space3));
+    }
+
+    // Flat (ungrouped) questions — under the generic "Rate the elements" title.
+    if (form.ungroupedQuestions.isNotEmpty) {
+      children.add(_SectionTitle(l10n.rateElementsTitle));
+      children.add(const SizedBox(height: SimfTokens.space3));
+      for (final q in form.ungroupedQuestions) {
+        children.add(_questionRow(isArabic, q));
+        children.add(const SizedBox(height: SimfTokens.space4));
+      }
+    }
+
+    if (form.allowComment) {
+      final commentLabel =
+          form.localizedCommentLabel(isArabic) ?? l10n.rateCommentLabel;
+      children.add(const SizedBox(height: SimfTokens.space5));
+      children.add(_SectionTitle(commentLabel));
+      children.add(const SizedBox(height: SimfTokens.space2));
+      children.add(TextField(
+        controller: _comment,
+        maxLength: 2000,
+        maxLines: 4,
+        minLines: 4,
+        style: const TextStyle(color: Colors.white, fontSize: SimfTokens.textMd),
+        decoration: InputDecoration(
+          filled: true,
+          fillColor: SimfTokens.navyDeep,
+          hintText: l10n.rateCommentHint,
+          hintStyle: const TextStyle(
+            color: SimfTokens.beigeBorder,
+            fontSize: SimfTokens.textSm,
+          ),
+          counterText: '',
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: SimfTokens.space3,
+            vertical: SimfTokens.space3,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(SimfTokens.radius),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(SimfTokens.radius),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(SimfTokens.radius),
+            borderSide: const BorderSide(color: SimfTokens.accent),
+          ),
+        ),
+      ),);
+    }
+
+    children.add(const SizedBox(height: SimfTokens.space5));
+    children.add(_GoldButton(
+      label: l10n.rateSubmit,
+      loading: _submitting,
+      onTap: () => unawaited(_submit(l10n, form)),
+    ),);
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+        SimfTokens.space4,
+        SimfTokens.space5,
+        SimfTokens.space4,
+        SimfTokens.space6,
+      ),
+      children: children,
+    );
+  }
+
+  Widget _questionRow(bool isArabic, RatingFormQuestion q) => _CategoryRow(
+        label: q.localizedText(isArabic),
+        value: _answers[q.id] ?? 0,
+        onChanged: (v) => setState(() => _answers[q.id] = v),
+      );
+}
+
+/// A left-aligned white section heading (group name / "Rate the elements" /
+/// comment label).
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      textAlign: TextAlign.start,
+      style: const TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.w500,
+        fontSize: SimfTokens.textLg,
       ),
     );
   }
 }
 
-/// One per-element row (frames 1116:17145…): the beige-hairline 48-high box with
-/// the element name at the inline start and the small star bar at the inline end.
+/// Form-load failure with a retry button.
+class _LoadError extends StatelessWidget {
+  const _LoadError({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(SimfTokens.space5),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: SimfTokens.textMd,
+              ),
+            ),
+            const SizedBox(height: SimfTokens.space4),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(AppL10n.of(context).retryLabel),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One per-element row: the beige-hairline 48-high box with the element name at
+/// the inline start and the small star bar at the inline end.
 class _CategoryRow extends StatelessWidget {
   const _CategoryRow({
     required this.label,
@@ -366,10 +464,9 @@ class _StarRow extends StatelessWidget {
   }
 }
 
-/// The full-width gold action button (frame 1116:17220): radius-4 gold fill with
-/// the centred white label. Stays gold while [loading] (taps disabled, a white
-/// spinner replaces the label) so the button never turns into an unreadable
-/// dark box on the navy surface.
+/// The full-width gold action button: radius-4 gold fill with the centred white
+/// label. Stays gold while [loading] (taps disabled, a white spinner replaces the
+/// label) so the button never turns into an unreadable dark box on the navy.
 class _GoldButton extends StatelessWidget {
   const _GoldButton({
     required this.label,

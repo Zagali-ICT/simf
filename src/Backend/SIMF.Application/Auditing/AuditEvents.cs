@@ -430,11 +430,21 @@ public static class AuditEvents
     public const string ArchiveEditionUpdated = "archive_edition.updated";
     public const string ArchiveEditionDeactivated = "archive_edition.deactivated";
 
-    // Ratings (D-199 — "Rate the Forum", Mockup screen 40. Promoted from the
-    // RatingService module-local consts; string values are the audit
-    // contract).
+    // Ratings — attendee submission (now upserts a RatingResponse with
+    // per-question answers; string values are the audit contract).
     public const string RatingSubmitted = "Rating.Submitted";
     public const string RatingRevised = "Rating.Revised";
+
+    // Rating configuration — admin CRUD over types / question groups / questions.
+    public const string RatingTypeCreated = "RatingType.Created";
+    public const string RatingTypeUpdated = "RatingType.Updated";
+    public const string RatingTypeDeactivated = "RatingType.Deactivated";
+    public const string RatingGroupCreated = "RatingGroup.Created";
+    public const string RatingGroupUpdated = "RatingGroup.Updated";
+    public const string RatingGroupDeactivated = "RatingGroup.Deactivated";
+    public const string RatingQuestionCreated = "RatingQuestion.Created";
+    public const string RatingQuestionUpdated = "RatingQuestion.Updated";
+    public const string RatingQuestionDeactivated = "RatingQuestion.Deactivated";
 
     // Organisations (B3 / D-220 — Saudi-companies lookup + government Excel
     // bulk-import; one Imported row per upload carries the counts).

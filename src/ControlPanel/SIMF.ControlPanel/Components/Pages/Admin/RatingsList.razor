@@ -1,7 +1,8 @@
-@* D-199 (Mockup screen 40 "Rate the Forum") — read-only admin view of the
-   attendee forum ratings. Shows the average-stars + count headline and a
-   SimfDataGrid of individual ratings (stars, comment, active, date). No create
-   / edit / delete — ratings are owned by the attendees who submit them. *@
+@* Read-only admin view of submitted rating responses. Shows the overall-average
+   + count headline, per-type KPI cards (response count + average overall + the
+   per-question averages), and a SimfDataGrid of individual responses. No create /
+   edit / delete — responses are owned by the attendees who submit them. The
+   rating *configuration* (types / questions) lives on /admin/rating-config. *@
 @page "/admin/ratings"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Ratings.View)]
@@ -20,24 +21,35 @@
             <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
         }
 
-        @* Reuse the existing .simf-form__actions flex-row layout to lay the
-           two headline stat cards side by side — there is no dedicated
-           stat-row class in the component CSS this wave. *@
         <div class="simf-form__actions">
             <SimfStatCard Title="@L["Admin.Ratings.Stat.Average"]"
-                          Value="@_averageStars.ToString("0.0", CultureInfo.InvariantCulture)" />
+                          Value="@_averageOverall.ToString("0.0", CultureInfo.InvariantCulture)" />
             <SimfStatCard Title="@L["Admin.Ratings.Stat.Count"]"
-                          Value="@_ratingCount.ToString(CultureInfo.InvariantCulture)" />
+                          Value="@_responseCount.ToString(CultureInfo.InvariantCulture)" />
         </div>
 
-        <SimfDataGrid TItem="AdminRatingSummary"
+        @if (_kpi is not null && _kpi.Types.Count > 0)
+        {
+            <h2 class="simf-section__title">@L["Admin.Ratings.Kpi.Heading"]</h2>
+            <div class="simf-form__actions">
+                @foreach (var type in _kpi.Types)
+                {
+                    <SimfStatCard Title="@type.Name"
+                                  Value="@type.AverageOverall.ToString("0.0", CultureInfo.InvariantCulture)"
+                                  Delta="@string.Format(L["Admin.Ratings.Kpi.Responses"], type.ResponseCount)"
+                                  DeltaTone="neutral" />
+                }
+            </div>
+        }
+
+        <SimfDataGrid TItem="AdminRatingResponseSummary"
                       Query="_query"
                       Page="_page"
                       Loading="_loading"
                       OnQueryChanged="OnQueryChangedAsync"
                       Multiselect="true"
                       RowKey="@(r => r.Id.ToString())"
-                      RowLabel="@(r => $"{r.Stars}/5")"
+                      RowLabel="@(r => r.RatingTypeName)"
                       Caption="@L["Admin.Ratings.Title"]"
                       OnExport="OnExportAsync"
                       ExportLabel="@L["Grid.Export"]"
@@ -59,35 +71,30 @@
                       PageFormatter="@FormatPage"
                       SummaryFormatter="@FormatSummary">
             <Columns>
-                <SimfDataGridColumn TItem="AdminRatingSummary" Key="stars"
-                                    Header="@L["Admin.Ratings.Col.Stars"]"
-                                    Sortable="true">
-                    <CellTemplate>@(context.Stars) / 5</CellTemplate>
+                <SimfDataGridColumn TItem="AdminRatingResponseSummary" Key="type"
+                                    Header="@L["Admin.Ratings.Col.Type"]">
+                    <CellTemplate>@context.RatingTypeName</CellTemplate>
                 </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminRatingSummary" Key="organizationStars"
-                                    Header="@L["Admin.Ratings.Col.Organization"]">
-                    <CellTemplate>@FormatScore(context.OrganizationStars)</CellTemplate>
+                <SimfDataGridColumn TItem="AdminRatingResponseSummary" Key="target"
+                                    Header="@L["Admin.Ratings.Col.Target"]">
+                    <CellTemplate>@(context.TargetId == Guid.Empty ? "—" : context.TargetId.ToString())</CellTemplate>
                 </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminRatingSummary" Key="contentStars"
-                                    Header="@L["Admin.Ratings.Col.Content"]">
-                    <CellTemplate>@FormatScore(context.ContentStars)</CellTemplate>
+                <SimfDataGridColumn TItem="AdminRatingResponseSummary" Key="overall"
+                                    Header="@L["Admin.Ratings.Col.Overall"]" Sortable="true">
+                    <CellTemplate>@(context.OverallStars is null ? "—" : $"{context.OverallStars} / 5")</CellTemplate>
                 </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminRatingSummary" Key="appStars"
-                                    Header="@L["Admin.Ratings.Col.App"]">
-                    <CellTemplate>@FormatScore(context.AppStars)</CellTemplate>
+                <SimfDataGridColumn TItem="AdminRatingResponseSummary" Key="answers"
+                                    Header="@L["Admin.Ratings.Col.Answers"]">
+                    <CellTemplate>@context.AnswerCount</CellTemplate>
                 </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminRatingSummary" Key="venueStars"
-                                    Header="@L["Admin.Ratings.Col.Venue"]">
-                    <CellTemplate>@FormatScore(context.VenueStars)</CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminRatingSummary" Key="comment"
+                <SimfDataGridColumn TItem="AdminRatingResponseSummary" Key="comment"
                                     Header="@L["Admin.Ratings.Col.Comment"]"
                                     Filterable="true">
                     <CellTemplate>
                         @(string.IsNullOrWhiteSpace(context.Comment) ? "—" : context.Comment)
                     </CellTemplate>
                 </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminRatingSummary" Key="isActive"
+                <SimfDataGridColumn TItem="AdminRatingResponseSummary" Key="isActive"
                                     Header="@L["Admin.Ratings.Col.Active"]">
                     <CellTemplate>
                         @if (context.IsActive)
@@ -100,7 +107,7 @@
                         }
                     </CellTemplate>
                 </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminRatingSummary" Key="createdAt"
+                <SimfDataGridColumn TItem="AdminRatingResponseSummary" Key="createdAt"
                                     Header="@L["Admin.Ratings.Col.CreatedAt"]"
                                     Sortable="true">
                     <CellTemplate>
@@ -119,13 +126,18 @@
     private record Toast(string Variant, string Message);
 
     private GridQuery _query = new() { Top = 20 };
-    private GridPage<AdminRatingSummary> _page = new();
-    private double _averageStars;
-    private int _ratingCount;
+    private GridPage<AdminRatingResponseSummary> _page = new();
+    private double _averageOverall;
+    private int _responseCount;
+    private AdminRatingKpiView? _kpi;
     private bool _loading;
     private Toast? _toast;
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+        await LoadKpiAsync();
+    }
 
     private async Task OnQueryChangedAsync(GridQuery next)
     {
@@ -139,15 +151,9 @@
     private string FormatPage(int current, int total) =>
         string.Format(L["Grid.Page"], current, total);
 
-    // Per-element score cell: "N / 5", or an em dash when the attendee skipped
-    // that element (the column is an additive nullable — D-463).
-    private static string FormatScore(int? stars) =>
-        stars is null ? "—" : $"{stars} / 5";
-
-    // D-356 — Excel export (selected rows, or the current filtered set). Direct
-    // download via the generic /export proxy. Export only — ratings are owned by
-    // the attendees who submit them, so the admin view is read-only (no import).
-    private Task OnExportAsync(IReadOnlyList<AdminRatingSummary> selected) =>
+    // Excel export (selected rows, or the current filtered set). Export only —
+    // responses are owned by the attendees who submit them (read-only view).
+    private Task OnExportAsync(IReadOnlyList<AdminRatingResponseSummary> selected) =>
         JS.InvokeVoidAsync("simfAccount.downloadXlsx",
             "/account/api/admin/ratings/export",
             new AdminGridExportRequest
@@ -161,14 +167,14 @@
         _loading = true;
         try
         {
-            var env = await JS.InvokeAsync<ApiResult<AdminRatingsPage>>(
+            var env = await JS.InvokeAsync<ApiResult<AdminRatingResponsesPage>>(
                 "simfAccount.postJson",
                 "/account/api/admin/feedback/ratings", _query);
             if (env is { Success: true, Data: not null })
             {
-                _page = env.Data.Ratings;
-                _averageStars = env.Data.AverageStars;
-                _ratingCount = env.Data.RatingCount;
+                _page = env.Data.Responses;
+                _averageOverall = env.Data.AverageOverall;
+                _responseCount = env.Data.ResponseCount;
             }
             else
             {
@@ -178,5 +184,12 @@
             }
         }
         finally { _loading = false; }
+    }
+
+    private async Task LoadKpiAsync()
+    {
+        var env = await JS.InvokeAsync<ApiResult<AdminRatingKpiView>>(
+            "simfAccount.getJson", "/account/api/admin/feedback/ratings/kpi");
+        if (env is { Success: true, Data: not null }) { _kpi = env.Data; }
     }
 }

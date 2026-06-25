@@ -391,6 +391,9 @@ if (!app.Environment.IsEnvironment("Testing"))
     await services.GetRequiredService<SimfAppDbContext>().Database.MigrateAsync();
     await services.GetRequiredService<SimfIdentityDbContext>().Database.MigrateAsync();
     await services.GetRequiredService<IdentitySeeder>().SeedAsync();
+    // The built-in rating types (App + Session) must exist in every environment
+    // so the app + the end-of-session worker resolve them by code. Idempotent.
+    await services.GetRequiredService<SIMF.Infrastructure.Feedback.RatingSeeder>().SeedAsync();
 
     // B3 — D-221 — in Development only, seed a few sample organisations so the
     // registration organisation picker has data before the gov Excel import.

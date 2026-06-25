@@ -81,6 +81,12 @@ public class Session : BaseAuditEntity
     /// is reminded exactly once. Null until reminded (the normal state).</summary>
     public DateTimeOffset? ReminderSentUtc { get; set; }
 
+    /// <summary>Set by the end-of-session rating-prompt worker once it has
+    /// dispatched the "please rate this session" notifications. The null check is
+    /// the worker's dedup guard: a session is prompted exactly once. Null until
+    /// prompted (the normal state).</summary>
+    public DateTimeOffset? RatingPromptSentUtc { get; set; }
+
     /// <summary>P3.2 — D-231 (Completion Programme §5.2, Option A): the
     /// broadcast lifecycle. The Scientific Committee drives the transitions
     /// in the CP (<c>Scheduled → Held → Recorded → Published</c>).

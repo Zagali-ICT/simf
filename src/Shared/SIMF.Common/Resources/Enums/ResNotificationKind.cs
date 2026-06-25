@@ -33,6 +33,7 @@ public static class ResNotificationKind
     public static string BookingRejected => Get(nameof(BookingRejected));
     public static string MeetingScheduled => Get(nameof(MeetingScheduled));
     public static string MeetingCancelled => Get(nameof(MeetingCancelled));
+    public static string SessionRatingRequest => Get(nameof(SessionRatingRequest));
 
     private static string Get(string key) =>
         ResourceManager.GetString(key, CultureInfo.CurrentUICulture) ?? key;

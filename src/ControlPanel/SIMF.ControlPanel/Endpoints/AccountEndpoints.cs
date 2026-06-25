@@ -11,6 +11,7 @@ using SIMF.Contracts.BusinessMeetings;
 using SIMF.Contracts.Exhibitors;
 using SIMF.Contracts.Exhibition;
 using SIMF.Contracts.Faq;
+using SIMF.Contracts.Feedback;
 using SIMF.Contracts.Organisations;
 using SIMF.Contracts.Contacts;
 using SIMF.Contracts.Logs;
@@ -2966,6 +2967,120 @@ internal static class AccountEndpoints
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
             return Forward(await api.ListRatingsAsync(body, token));
+        });
+        group.MapGet("/admin/feedback/ratings/kpi",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetRatingKpiAsync(token));
+        });
+
+        // Rating configuration (types → groups → questions) BFF passthroughs.
+        group.MapPost("/admin/ratings/types/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListRatingTypesAsync(body, token));
+        });
+        group.MapGet("/admin/ratings/types/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetRatingTypeAsync(id, token));
+        });
+        group.MapPost("/admin/ratings/types",
+            async (CreateRatingTypeRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateRatingTypeAsync(body, token));
+        });
+        group.MapPut("/admin/ratings/types/{id:guid}",
+            async (Guid id, UpdateRatingTypeRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateRatingTypeAsync(id, body, token));
+        });
+        group.MapDelete("/admin/ratings/types/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeleteRatingTypeAsync(id, token));
+        });
+        group.MapPost("/admin/ratings/types/{typeId:guid}/groups/list",
+            async (Guid typeId, GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListRatingGroupsAsync(typeId, body, token));
+        });
+        group.MapGet("/admin/ratings/groups/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetRatingGroupAsync(id, token));
+        });
+        group.MapPost("/admin/ratings/groups",
+            async (CreateRatingQuestionGroupRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateRatingGroupAsync(body, token));
+        });
+        group.MapPut("/admin/ratings/groups/{id:guid}",
+            async (Guid id, UpdateRatingQuestionGroupRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateRatingGroupAsync(id, body, token));
+        });
+        group.MapDelete("/admin/ratings/groups/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeleteRatingGroupAsync(id, token));
+        });
+        group.MapPost("/admin/ratings/types/{typeId:guid}/questions/list",
+            async (Guid typeId, GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListRatingQuestionsAsync(typeId, body, token));
+        });
+        group.MapGet("/admin/ratings/questions/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetRatingQuestionAsync(id, token));
+        });
+        group.MapPost("/admin/ratings/questions",
+            async (CreateRatingQuestionRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateRatingQuestionAsync(body, token));
+        });
+        group.MapPut("/admin/ratings/questions/{id:guid}",
+            async (Guid id, UpdateRatingQuestionRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateRatingQuestionAsync(id, body, token));
+        });
+        group.MapDelete("/admin/ratings/questions/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeleteRatingQuestionAsync(id, token));
         });
 
         // D-199 — Session-comment moderation BFF passthroughs.

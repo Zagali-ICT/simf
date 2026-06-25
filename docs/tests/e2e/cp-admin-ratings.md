@@ -1,4 +1,4 @@
-# E2E test catalogue — Ratings (read-only) (`/admin/ratings`)
+# E2E test catalogue — Ratings viewer (`/admin/ratings`)
 
 | | |
 |--|--|
@@ -7,348 +7,128 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel export added; toggle N/A on this read-only page) |
+| **Last reviewed** | 2026-06-25 (D-496 — dynamic ratings; rebound to RatingResponses + KPI) |
 
-> **Page shape (read this first).** `/admin/ratings` is a **read-only** admin view
-> of attendee forum ratings (D-199, Mockup screen 40 "Rate the Forum"). There is
-> **no Add / Edit / Delete / Deactivate** on this page — ratings are owned by the
-> attendees who submit them via `POST /api/v1/feedback/rate`. The CP page therefore
-> exposes exactly these functions, all of which the catalogue below must drive and
-> assert:
->
-> 1. On load, a single `POST /account/api/admin/feedback/ratings` (BFF) → API
->    `POST /api/v1/admin/feedback/ratings` with body `GridQuery { Top = 20 }`.
-> 2. Two headline **stat cards** — "Average rating" (`AverageStars`, formatted `0.0`,
->    invariant) and "Total ratings" (`RatingCount`).
-> 3. A **`SimfDataGrid`** (D-256 raw-table→grid conversion) with four columns:
->    Stars (`{n} / 5`, **sortable**), Comment (`—` when blank, **per-column
->    filterable**), Active (a `SimfPill` — "Active" / "Inactive"; only ever
->    "Active" here), Submitted at (`yyyy-MM-dd HH:mm:ss 'UTC'`, **sortable**).
->    The grid carries the standard select-all checkbox column (`Multiselect="true"`)
->    but **no bulk-action toolbar button and no per-row actions** — it stays
->    read-only; the checkboxes are cosmetic.
-> 4. A **full pager** (First / Prev / numbered pages / Next / Last + page-size
->    selector) with the summary line "Showing {from}–{to} of {total}".
-> 5. The **`SimfEmptyState`** ("No ratings yet.") in the grid's `EmptyTemplate`
->    when the active set is empty.
-> 6. A **`SimfAlert` error** (`_toast`) at the top of the surface + load-failed
->    copy when the list call fails.
->
-> The "golden CRUD round-trip" therefore becomes a **golden read round-trip**: an
-> attendee submits a rating through the public API, then the admin page renders it
-> in the grid with the recomputed average. Inactive (soft-deleted) ratings are
-> excluded by the service (`.Where(rating => rating.IsActive)`), so the grid only
-> ever shows `Active = ✓`.
+> **Page shape (D-496).** Read-only viewer of submitted **rating responses**. A two
+> stat-card headline (Average overall + Total responses, from `POST
+> /account/api/admin/feedback/ratings`), a **per-type KPI** card row (from `GET
+> /account/api/admin/feedback/ratings/kpi` — each card = a type's average overall
+> with its response count), then a `SimfDataGrid` of responses (Type, Target,
+> Overall, Answers, Comment, Active, Submitted-at). **Export-only** (XLSX via
+> `/account/api/admin/ratings/export`) — responses are owned by the attendees who
+> submit them, so there is no create/edit/delete. The rating *configuration* lives on
+> [`/admin/rating-config`](cp-admin-rating-config.md). Gated by
+> `PermissionCatalog.Ratings.View`; export by `Ratings.Export`.
 
 ## Coverage matrix
 
 | ID | Scenario | Type | Priority | Status |
 |----|----------|------|----------|--------|
-| E2E-RAT-001 | Golden read round-trip — attendee rates via API → admin grid + average update | happy | P0 | _to author_ |
-| E2E-RAT-002 | Stat cards render Average (`0.0`) + Total over the active set | happy | P1 | _to author_ |
-| E2E-RAT-003 | Table columns render exactly (Stars `n/5`, blank Comment → `—`, Active `✓`, UTC timestamp) | happy | P1 | _to author_ |
-| E2E-RAT-004 | Pager summary line "Showing {from}–{to} of {total}" | happy | P2 | _to author_ |
-| E2E-RAT-005 | Read-only guarantee — no Add/Edit/Delete/Deactivate controls anywhere | happy | P1 | _to author_ |
-| E2E-RAT-006 | Empty state renders `SimfEmptyState` ("No ratings yet.") | happy | P1 | _to author_ |
-| E2E-RAT-007 | Auth gate — signed-in admin lacking `Ratings.View` → `/not-permitted` | auth | P0 | _to author_ |
-| E2E-RAT-008 | Inactive ratings excluded — soft-deleted row never appears, count/average ignore it | error | P1 | _to author_ |
-| E2E-RAT-009 | Server 500 on `/ratings` → `SimfAlert` error + bilingual load-failed copy, no rows | resilience | P2 | _to author_ |
-| E2E-RAT-010 | RTL / Arabic render — page, stat cards, table headers mirror | i18n | P1 | _to author_ |
-| E2E-RAT-011 | Per-column filter (Comment) narrows the grid via `GridQuery.Filters["comment"]` | happy | P1 | _to author_ |
-| E2E-RAT-012 | Column sort toggles (Stars / Submitted at) via `Sort` + `SortDescending` | happy | P2 | _to author_ |
-| E2E-RAT-013 | Excel export — toolbar Export downloads an .xlsx of the filtered grid (whole grid vs selected rows) (D-356) | happy | P1 | _to author_ |
+| E2E-RAT-001 | Headline stats — Average overall + Total responses render | happy | P0 | _to author_ |
+| E2E-RAT-002 | Per-type KPI cards render (avg overall + response count per type) | happy | P0 | _to author_ |
+| E2E-RAT-003 | Responses grid lists rows (Type/Target/Overall/Answers/Comment/Active/Submitted) | happy | P0 | _to author_ |
+| E2E-RAT-004 | Global response shows Target "—"; per-session shows the session id | happy | P1 | _to author_ |
+| E2E-RAT-005 | Comment per-column filter narrows the grid | happy | P1 | _to author_ |
+| E2E-RAT-006 | Sort by Overall / Submitted-at | happy | P2 | _to author_ |
+| E2E-RAT-007 | Empty state renders `SimfEmptyState` when there are no responses | happy | P1 | _to author_ |
+| E2E-RAT-008 | Export — XLSX downloads (selected rows or filtered set) | happy | P1 | _to author_ |
+| E2E-RAT-009 | Auth gate — admin lacking `Ratings.View` → `/not-permitted` | auth | P0 | _to author_ |
+| E2E-RAT-010 | Export gate — admin lacking `Ratings.Export` is forbidden | auth | P1 | _to author_ |
+| E2E-RAT-011 | Server 500 on `/feedback/ratings` → bilingual fallback toast | resilience | P2 | _to author_ |
+| E2E-RAT-012 | RTL / Arabic render — page mirrors, headers translate | i18n | P1 | _to author_ |
 
 ## Scenarios
 
-### E2E-RAT-001 — Golden read round-trip
+### E2E-RAT-001/002/003 — Headline, KPI cards, responses grid
 
 ```gherkin
-Feature: Ratings read-only admin view — golden round-trip
-  As an Administrator with the Ratings.View permission
-  I want to see the attendee forum ratings and the headline average
-  So that I can report how the forum was received
+Feature: Admin reviews submitted ratings
+  As an Administrator
+  I want to see the aggregate and per-type rating results
+  So that I can report on attendee satisfaction
 
 Background:
   Given the API is reachable on http://localhost:5175
   And the Control Panel is reachable on http://localhost:5158
-  And an Administrator with the Ratings.View permission signs in via /login + /login/totp
-    using superadmin@zagali-ict.com and a TOTP from the Get-Totp helper
+  And an Administrator with Ratings.View has signed in via /login + /login/totp
+  And at least two attendees have submitted an "App" rating (overall 2 and 4)
+  And the administrator has landed on /admin/ratings
 
-Scenario: An attendee rating shows up in the admin grid with a recomputed average
-  Given an approved attendee submits POST /api/v1/feedback/rate with body { "Stars": 5, "Comment": "Excellent forum" }
-  And the API returns HTTP 200 with ApiResult.Data.Stars = 5 and UpdatedAt = null
-  When the administrator navigates to /admin/ratings
-  Then the page issues exactly one POST /account/api/admin/feedback/ratings with body { "Top": 20 }
-  And the BFF forwards it to API POST /api/v1/admin/feedback/ratings and returns HTTP 200
-  And the SimfBanner title reads "Ratings"
-  And the "Average rating" stat card reflects the average of the active set (e.g. "5.0" when this is the only rating)
-  And the "Total ratings" stat card equals the active rating count (e.g. "1")
-  And a grid row exists with Stars="5 / 5", Comment="Excellent forum", an Active SimfPill reading "Active", and a Submitted-at value in "yyyy-MM-dd HH:mm:ss UTC" form
-  And the pager summary reads "Showing 1–1 of 1"
-
-  When the same attendee re-submits POST /api/v1/feedback/rate with body { "Stars": 3, "Comment": "Good on day two" }
-  And the API returns HTTP 200 (upsert — same rating Id, UpdatedAt now stamped)
-  And the administrator reloads /admin/ratings
-  Then the "Total ratings" stat card is unchanged (still one row per attendee)
-  And the row for that attendee now shows Stars="3 / 5" and Comment="Good on day two"
-  And the "Average rating" stat card has recomputed accordingly
+Scenario: The page shows the headline stats, per-type KPI cards and the responses grid
+  Then the page fires POST /account/api/admin/feedback/ratings and GET /account/api/admin/feedback/ratings/kpi
+  And two stat cards render: "Average rating" = "3.0" and "Total ratings" = "2" (or more)
+  And under "Ratings by type" a stat card for "App" shows its average overall with "2 responses"
+  And the responses grid lists a row per submission with columns
+    Type="App", Target="—", Overall="2 / 5" (or "4 / 5"), Answers="0", the comment, the green "Active" pill, and the Submitted-at UTC timestamp
 ```
 
 **Evidence captured:**
-- Screenshot before: `docs/screenshots/cp-admin-ratings-golden-before.png`
-- Screenshot after: `docs/screenshots/cp-admin-ratings-golden-after.png`
+- Screenshot: `docs/screenshots/cp-admin-ratings-overview.png`
 - Console errors: 0 expected
-- Network: every `/account/api/admin/feedback/ratings` call returns 200; the round-trip
-  attendee write `/api/v1/feedback/rate` returns 200
-- Audit rows: the attendee write produces an `OperationLog`/audit entry with
-  `EventType = AuditEvents.RatingSubmitted` on first submit and
-  `AuditEvents.RatingRevised` on the upsert (actor = the attendee, **not** the admin —
-  the admin view performs no writes and emits no audit row)
+- Network: `/feedback/ratings` and `/feedback/ratings/kpi` both 200
 
-### E2E-RAT-002 — Stat cards
+### E2E-RAT-004 — Target column
 
 ```gherkin
-Scenario: Average and Total stat cards compute over the active set
-  Given two approved attendees submit ratings of 2 stars and 4 stars via POST /api/v1/feedback/rate
-  When the administrator opens /admin/ratings
-  Then the "Average rating" stat card reads "3.0" (formatted "0.0", invariant culture — a dot decimal even in Arabic)
-  And the "Total ratings" stat card reads "2"
-  And both cards render as SimfStatCard components laid out in the .simf-form__actions flex row
+Scenario: Global vs per-session responses show the Target column correctly
+  Given an "App" (global) response and a "Session" (per-session) response exist
+  When the administrator views the grid
+  Then the App row's Target column reads "—"
+  And the Session row's Target column reads the rated session's id
 ```
 
-### E2E-RAT-003 — Table columns
+### E2E-RAT-008 — Export
 
 ```gherkin
-Scenario: Grid renders the four columns with the documented formatting
-  Given the active set contains one rating of 4 stars with no comment
-  When the administrator opens /admin/ratings
-  Then the grid header row reads: "Stars", "Comment", "Active", "Submitted at"
-  And the single body row shows:
-    | Stars | Comment | Active | Submitted at                |
-    | 4 / 5 | —       | Active | <UTC timestamp yyyy-MM-dd HH:mm:ss UTC> |
-  And the Comment cell renders the em-dash placeholder "—" because the comment is blank
-  And the Active cell renders a SimfPill with Variant="on" reading "Active" because the page only ever lists active ratings
+Scenario: Export the current responses to XLSX
+  Given the responses grid has rows
+  When the administrator clicks "Export"
+  Then JS invokes simfAccount.downloadXlsx against /account/api/admin/ratings/export
+  And an .xlsx file downloads (ZIP magic bytes 50 4B 03 04)
+  And its columns are Type, Target, Overall, Comment, Answers, AverageAnswerStars, IsActive, CreatedAt
 ```
 
-### E2E-RAT-004 — Pager summary
+### E2E-RAT-009 / E2E-RAT-010 — Auth + export gates
 
 ```gherkin
-Scenario: Pager summary line reflects skip/window/total
-  Given the active set contains 3 ratings and the query Top = 20
-  When the administrator opens /admin/ratings
-  Then the summary line beneath the grid reads "Showing 1–3 of 3"
-  And it is rendered from L["Grid.Summary"] = "Showing {0}–{1} of {2}"
-    with {0}=Skip+1, {1}=Skip+Items.Count, {2}=Total
-```
-
-### E2E-RAT-005 — Read-only guarantee
-
-```gherkin
-Scenario: The page exposes no write controls
-  Given the administrator is on /admin/ratings with at least one rating visible
-  When the page has finished loading
-  Then there is no "Add rating" / "New" / toolbar create button
-  And no grid row exposes an Edit (pencil), Delete (trash), Deactivate, or Details (info) icon action
-  And the only toolbar action is "Export" (wired via OnExport — read-only Excel download, never a write); there is no edit/delete bulk-action button
-  And the select-all + row checkboxes (Multiselect="true") drive only the Export selection, not any write/bulk-edit action
-  And the read affordances are the "Export" toolbar action, the column sort buttons (Stars / Submitted at), the Comment per-column filter input, the pager, the language toggle and the nav rail
-  And no /account/api/admin/feedback/ratings PUT/POST(create)/DELETE request can be issued from this page (the only outbound write-shaped call is the read-only POST /account/api/admin/ratings/export that streams an .xlsx)
-```
-
-### E2E-RAT-006 — Empty state
-
-```gherkin
-Scenario: Empty active set renders SimfEmptyState
-  Given the database has no active Rating rows
-  When the administrator opens /admin/ratings
-  Then the page issues POST /account/api/admin/feedback/ratings and gets HTTP 200 with Ratings.Items empty
-  And the grid area renders the SimfEmptyState component
-  And the empty state title reads "No ratings yet." / "لا توجد تقييمات بعد."
-  And the "Average rating" stat card reads "0.0" (AverageStars is 0 when there are no active ratings)
-  And the "Total ratings" stat card reads "0"
-  And no error SimfAlert appears
-```
-
-### E2E-RAT-007 — Auth gate
-
-```gherkin
-Scenario: Signed-in admin lacking Ratings.View is denied
-  Given a signed-in Control Panel user whose role does NOT include the "Ratings.View" permission
-    (the page is gated by @attribute [RequirePermission(PermissionCatalog.Ratings.View)] and the
-     CpNavigation item "Module.Ratings" carries RequiredPermission = Ratings.View)
+Scenario: Signed-in admin lacking Ratings.View is denied the page
+  Given a signed-in admin whose roles grant no Ratings.View permission
   When they navigate to /admin/ratings
   Then they land on /not-permitted with HTTP 200
-  And no /account/api/admin/feedback/ratings request fires
-  And the "Module.Ratings" item is hidden from the nav rail for that user
+  And no POST /account/api/admin/feedback/ratings request fires
 
-Scenario: API enforces the same permission at the lower layer
-  Given a signed-in approved Visitor (no Administrator role / no Ratings.View)
-  When a POST /api/v1/admin/feedback/ratings is sent with their token
-  Then the API returns HTTP 403 Forbidden
-  And no rating data is returned
+Scenario: Admin lacking Ratings.Export is forbidden from the export endpoint
+  Given a signed-in admin granted Ratings.View but not Ratings.Export
+  When an export is attempted against /admin/ratings/export
+  Then the API returns HTTP 403
 ```
 
-### E2E-RAT-008 — Inactive ratings excluded
+### E2E-RAT-012 — RTL / Arabic render
 
 ```gherkin
-Scenario: Soft-deleted (inactive) ratings never surface and do not skew the headline
-  Given attendee A has an active rating of 5 stars
-  And attendee B's rating row exists but has IsActive = false (soft-deleted)
-  When the administrator opens /admin/ratings
-  Then only attendee A's row appears in the table (Active = "✓")
-  And the "Total ratings" stat card reads "1" (the inactive row is not counted)
-  And the "Average rating" stat card reads "5.0" (computed over the active set only)
-  And the service applied .Where(rating => rating.IsActive) so attendee B is excluded entirely
-```
-
-### E2E-RAT-009 — Server 500 on list
-
-```gherkin
-Scenario: API 500 on the ratings list shows the error banner and load-failed copy
-  Given the API is configured to return 500 on /api/v1/admin/feedback/ratings (e.g. DB down)
-  When the administrator opens /admin/ratings
-  Then the page first shows the loading text "Loading ratings…" / "جارٍ تحميل التقييمات…"
-  And then a SimfAlert (_toast) with Variant="error" renders at the top of the surface
-  And it reads the env Error.MessageForCurrentCulture(), or the fallback
-    "Could not load ratings. Please try again." / "تعذّر تحميل التقييمات. يرجى المحاولة مرة أخرى."
-  And the stat cards read "0.0" / "0" and the grid shows the SimfEmptyState (no rating rows were loaded into _page)
-```
-
-### E2E-RAT-010 — RTL / Arabic render
-
-```gherkin
-Scenario: Arabic toggle mirrors the page, stat cards and table
+Scenario: Arabic toggle mirrors the page
   Given the administrator is on /admin/ratings in English
-  When they click the "العربية" link in the header
-  Then the page reloads with <html dir="rtl" lang="ar">
-  And the SimfBanner title reads "التقييمات"
-  And the stat-card titles read "متوسط التقييم" and "إجمالي التقييمات"
-  And the grid headers read "النجوم", "التعليق", "مُفعّل", "تاريخ الإرسال"
-  And the Comment per-column filter input shows its Arabic placeholder "بحث" with aria-label "تصفية العمود التعليق"
-  And the nav rail and stat-card row mirror (reverse order)
-  And the average value still renders with a Latin/invariant decimal point (e.g. "5.0"),
-    because it is formatted with CultureInfo.InvariantCulture regardless of UI culture
+  When they switch the UI language to العربية
+  Then the page reloads with <html dir="rtl" lang="ar"> and the banner reads "التقييمات"
+  And the grid headers read "النوع", "العنصر", "التقييم العام", "الإجابات", "التعليق", "نشط"
+  And the "Ratings by type" heading reads "التقييمات حسب النوع"
 ```
-
-### E2E-RAT-011 — Per-column filter narrows the grid
-
-```gherkin
-Scenario: Typing into the Comment column filter narrows the grid (server-side)
-  Given the active set contains three ratings with comments
-    "Excellent forum", "Good on day two", and "Excellent venue"
-  And the administrator is on /admin/ratings showing all three rows
-    (the "Total ratings" stat card reads "3")
-  When the administrator types "Excellent" into the per-column filter input
-    under the "Comment" header (aria-label "Filter column Comment")
-  And the 300 ms debounce elapses
-  Then exactly one POST /account/api/admin/feedback/ratings fires with
-    GridQuery.Filters["comment"] = "Excellent" and Skip reset to 0
-  And the API (RatingService.ListAllAsync) applies
-    .Where(r => r.Comment != null && r.Comment.Contains("Excellent"))
-  And the grid now shows only the two matching rows
-    ("Excellent forum" and "Excellent venue")
-  And the pager summary reads "Showing 1–2 of 2"
-  And the "Average rating" / "Total ratings" stat cards recompute over the
-    filtered active set (RatingService averages and counts AFTER the filter)
-  When the administrator clears the Comment filter input
-  Then a POST fires with no "comment" key in GridQuery.Filters and Skip = 0
-  And all three rows return
-  And the Stars and Submitted-at columns expose no filter input (only the
-    Comment column is Filterable="true")
-```
-
-### E2E-RAT-012 — Column sort toggles
-
-```gherkin
-Scenario: Sorting on Stars and Submitted at toggles ascending / descending
-  Given the active set contains ratings of 2, 5 and 3 stars
-  And the administrator is on /admin/ratings
-  When the administrator clicks the "Stars" column header sort button
-  Then a POST /account/api/admin/feedback/ratings fires with
-    GridQuery.Sort = "stars", SortDescending = false and Skip reset to 0
-  And the grid orders the rows ascending by stars (2, 3, 5)
-  And the "Stars" header shows aria-sort="ascending" with the ▲ arrow
-
-  When the administrator clicks the "Stars" header again
-  Then a POST fires with Sort = "stars", SortDescending = true
-  And the grid orders the rows descending by stars (5, 3, 2)
-  And the header shows aria-sort="descending" with the ▼ arrow
-
-  When the administrator clicks the "Submitted at" column header sort button
-  Then a POST fires with Sort = "createdat", SortDescending = false (new column resets direction)
-  And RatingService orders by rating.CreatedAt ascending
-  And the "Comment" and "Active" columns have no sort button (Sortable is unset)
-```
-
-### E2E-RAT-013 — Excel export (D-356)
-
-```gherkin
-Scenario: Export the ratings grid to an XLSX workbook (whole filtered set vs selected rows)
-  Given the administrator is on /admin/ratings with at least two active ratings visible
-  And the grid toolbar shows the "Export" action (OnExport wired; ExportLabel = L["Grid.Export"])
-  When they click "Export" with no rows selected
-  Then the page calls the JS interop simfAccount.downloadXlsx against
-    POST /account/api/admin/ratings/export (BFF → API) as a direct file download
-  And the AdminGridExportRequest body carries Ids = [] (empty) and Query = the current _query
-    (so the whole currently-filtered set is exported)
-  And the browser saves an .xlsx workbook whose sheet header row reads
-    Stars | Comment | IsActive | CreatedAt (the read-only grid columns)
-  And no rating data is created, updated or deleted (export is read-only)
-
-  When they instead tick exactly two rows then click "Export"
-  Then the AdminGridExportRequest body carries those two rating Ids and Query = null
-    (selected.Count > 0, so the current page query is omitted)
-  And the workbook contains exactly those two rows
-
-  When the export would exceed 5000 rows (the API export cap)
-  Then the API returns HTTP 400 and the page surfaces a bilingual error toast
-    and no file is saved
-```
-
-**Evidence captured:**
-- Screenshot of the toolbar "Export" action + the saved workbook → `docs/screenshots/cp-admin-ratings-export.png`
-- Console errors: 0 expected
-- Network: POST /account/api/admin/ratings/export returns 200 with an
-  `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` body; the
-  attachment filename header carries the `.xlsx` name
-- This page is **export-only** — there is no Import toolbar action wired (OnImport is
-  not set), so no `/account/api/admin/ratings/import` call is reachable from here
 
 ---
 
 ## Implementation notes
 
-- **API integration tests at a lower layer.** `tests/SIMF.Api.Tests/FeedbackRatingsTests.cs`
-  already covers this surface without a browser:
-  - `Admin_list_returns_ratings_with_average` — two visitors rate 2 and 4, the admin
-    list returns `RatingCount >= 2`, `AverageStars > 0`, non-empty `Ratings.Items`
-    (backs **E2E-RAT-001 / -002**).
-  - `Admin_list_is_forbidden_for_non_admin` — a visitor token gets **403** on
-    `/api/v1/admin/feedback/ratings` (backs the API half of **E2E-RAT-007**).
-  - `Visitor_can_submit_a_rating`, `Rating_twice_upserts_the_single_row_for_the_user`,
-    `Out_of_range_stars_is_rejected_with_400`, `Unauthenticated_rate_is_401` — exercise
-    the attendee write that seeds the data for the read round-trip (the upsert backs the
-    re-submit half of **E2E-RAT-001**).
-  When E2E covers these scenarios, keep both layers during the Playwright transition.
-- **Backing surfaces grounded in source.** Page:
-  `src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/RatingsList.razor` (route
-  `/admin/ratings`, `[RequirePermission(PermissionCatalog.Ratings.View)]`). BFF
-  passthrough: `AccountEndpoints.cs` `POST /admin/feedback/ratings` →
-  `SimfAdminClient.ListRatingsAsync` → API `POST /api/v1/admin/feedback/ratings`
-  (`FeedbackEndpoints.cs` `ListAdminRatingsEndpoint`). Service:
-  `RatingService.ListAllAsync` (active-only filter, average guarded to `0` on empty,
-  sort by `stars`/`createdat`, per-column `Filters["comment"]` `.Contains` plus the
-  legacy `Search` LIKE on `Comment`). Contracts:
-  `SIMF.Contracts.Feedback.AdminRatingsPage` / `AdminRatingSummary`. Permission:
-  `PermissionCatalog.Ratings.View` (`"Ratings.View"`, `AdminOnly` baseline).
-- **No write path on this page.** Any future Edit/Deactivate would need its own
-  permission code, API action and matching E2E rows per the per-page/per-action rule —
-  it is intentionally absent today.
-- **Convert to Playwright** when the runner is adopted: copy each Gherkin scenario into a
-  `.feature` file under `tests/SIMF.E2E.Tests/` (project to be created) + step
-  definitions. The Gherkin shape is already runner-agnostic.
+- **Read-only viewer.** No create/edit/delete — responses belong to attendees. The
+  only write surface for ratings is the configuration page (`/admin/rating-config`).
+- **KPI endpoint** `GET /admin/feedback/ratings/kpi` returns per-type response counts,
+  average overall and per-question averages; the page surfaces the per-type average +
+  count as stat cards (per-question averages are available for a future drill-down).
+- **API integration tests** at `tests/SIMF.Api.Tests/FeedbackRatingsTests.cs` (admin
+  list + average) and `RatingsExcelTests.cs` (export round-trip + `Ratings.Export`
+  gate) cover this surface at a lower layer.
+- **Permission gates** (HARD RULE): page `[RequirePermission(PermissionCatalog.Ratings.View)]`;
+  list/KPI gated `Ratings.View`; export gated `Ratings.Export`.
 
 ---
 
-_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
-_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle): added E2E-RAT-013 (Excel export); page is export-only with no presentation toggle (read-only view, no forms). Corrected the read-only-guarantee scenario (E2E-RAT-005) to account for the now-shipped Export toolbar action.
+_Last reviewed:_ 2026-06-25 by Claude (D-496 dynamic ratings).

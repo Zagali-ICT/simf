@@ -9,67 +9,89 @@ using SIMF.Contracts.Feedback;
 
 namespace SIMF.Api.Endpoints.Feedback;
 
-/// <summary>D-199 (Mockup screen 40 "Rate the Forum") — the attendee submits
-/// or revises their single overall rating. Authed + approved account, exactly
-/// like the seat-reservation / session-question attendee writes; one-per-user
-/// upsert is enforced in the service + a unique index.</summary>
-public sealed class RateRequestValidator : Validator<RateRequest>
+// App-facing dynamic rating endpoints + the admin responses/KPI viewer. The
+// attendee fetches the form for a type (+ optional target), then submits;
+// validation of the dynamic shape lives in the service.
+
+public sealed class SubmitRatingRequestValidator : Validator<SubmitRatingRequest>
 {
-    public RateRequestValidator()
+    public SubmitRatingRequestValidator()
     {
-        RuleFor(x => x.Stars)
-            .InclusiveBetween(1, 5)
+        RuleFor(x => x)
+            .Must(x => x.RatingTypeId != Guid.Empty || !string.IsNullOrWhiteSpace(x.Code))
+            .WithMessage("A rating type id or code is required.");
+
+        RuleFor(x => x.OverallStars!.Value)
+            .InclusiveBetween(1, 5).When(x => x.OverallStars is not null)
             .WithMessage("Stars must be between 1 and 5.");
 
-        // Per-element scores (Figma "قيّم العناصر") — each optional, but when
-        // present must be a valid 1–5, exactly like the overall stars.
-        RuleFor(x => x.OrganizationStars!.Value)
-            .InclusiveBetween(1, 5).When(x => x.OrganizationStars is not null)
-            .WithMessage("Organization stars must be between 1 and 5.");
-        RuleFor(x => x.ContentStars!.Value)
-            .InclusiveBetween(1, 5).When(x => x.ContentStars is not null)
-            .WithMessage("Content stars must be between 1 and 5.");
-        RuleFor(x => x.AppStars!.Value)
-            .InclusiveBetween(1, 5).When(x => x.AppStars is not null)
-            .WithMessage("App stars must be between 1 and 5.");
-        RuleFor(x => x.VenueStars!.Value)
-            .InclusiveBetween(1, 5).When(x => x.VenueStars is not null)
-            .WithMessage("Venue stars must be between 1 and 5.");
-
-        // MaximumLength MUST stay aligned with EF HasMaxLength(2000) on Rating.Comment.
+        // MaximumLength MUST stay aligned with EF HasMaxLength(2000) on RatingResponse.Comment.
         RuleFor(x => x.Comment)
             .MaximumLength(2000)
             .When(x => x.Comment is not null);
+
+        RuleForEach(x => x.Answers).ChildRules(answer =>
+        {
+            answer.RuleFor(a => a.QuestionId).NotEmpty()
+                .WithMessage("Each answer must reference a question.");
+            answer.RuleFor(a => a.Stars).InclusiveBetween(1, 5)
+                .WithMessage("Each score must be between 1 and 5.");
+        });
     }
 }
 
-public sealed class RateFeedbackEndpoint(IRatingService service)
-    : Endpoint<RateRequest, ApiResult<RatingView>>
+/// <summary>GET the dynamic rating form for a type (+ optional target),
+/// including the attendee's existing submission for prefill.</summary>
+public sealed class GetRatingFormEndpoint(IRatingFormService service)
+    : Endpoint<RatingFormRequest, ApiResult<RatingFormView>>
 {
     public override void Configure()
     {
-        Post("/app/feedback/rate");
+        Get("/app/feedback/form");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
-        Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Feedback");
     }
 
-    public override async Task HandleAsync(RateRequest req, CancellationToken ct)
+    public override async Task HandleAsync(RatingFormRequest req, CancellationToken ct)
     {
         if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
         {
             await Send.UnauthorizedAsync(ct);
             return;
         }
-        var view = await service.RateAsync(userId, req, ct);
-        await Send.OkAsync(ApiResult<RatingView>.Ok(view), ct);
+        var view = await service.GetFormAsync(userId, req, ct);
+        await Send.OkAsync(ApiResult<RatingFormView>.Ok(view), ct);
     }
 }
 
-/// <summary>D-199 — admin list of ratings + the average-stars headline.
-/// Administrator-only + approved account, mirroring the other admin lists.</summary>
-public sealed class ListAdminRatingsEndpoint(IRatingService service)
-    : Endpoint<GridQuery, ApiResult<AdminRatingsPage>>
+/// <summary>POST the attendee's submission (overall + per-question answers +
+/// comment). Upserts one submission per user per (type, target).</summary>
+public sealed class SubmitRatingEndpoint(IRatingFormService service)
+    : Endpoint<SubmitRatingRequest, ApiResult<RatingSubmissionView>>
+{
+    public override void Configure()
+    {
+        Post("/app/feedback/submit");
+        Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Feedback");
+    }
+
+    public override async Task HandleAsync(SubmitRatingRequest req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        var view = await service.SubmitAsync(userId, req, ct);
+        await Send.OkAsync(ApiResult<RatingSubmissionView>.Ok(view), ct);
+    }
+}
+
+/// <summary>Admin list of rating responses + the average-overall headline.</summary>
+public sealed class ListAdminRatingsEndpoint(IAdminRatingResponseService service)
+    : Endpoint<GridQuery, ApiResult<AdminRatingResponsesPage>>
 {
     public override void Configure()
     {
@@ -80,6 +102,24 @@ public sealed class ListAdminRatingsEndpoint(IRatingService service)
     }
 
     public override async Task HandleAsync(GridQuery req, CancellationToken ct) =>
-        await Send.OkAsync(ApiResult<AdminRatingsPage>.Ok(
-            await service.ListAllAsync(req, ct)), ct);
+        await Send.OkAsync(ApiResult<AdminRatingResponsesPage>.Ok(
+            await service.ListResponsesAsync(req, ct)), ct);
+}
+
+/// <summary>Admin rating KPIs — per type response count, overall average and the
+/// per-question averages.</summary>
+public sealed class RatingKpiEndpoint(IAdminRatingResponseService service)
+    : EndpointWithoutRequest<ApiResult<AdminRatingKpiView>>
+{
+    public override void Configure()
+    {
+        Get("/admin/feedback/ratings/kpi");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Ratings.View),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Tags("Admin");
+    }
+
+    public override async Task HandleAsync(CancellationToken ct) =>
+        await Send.OkAsync(ApiResult<AdminRatingKpiView>.Ok(
+            await service.GetKpiAsync(ct)), ct);
 }

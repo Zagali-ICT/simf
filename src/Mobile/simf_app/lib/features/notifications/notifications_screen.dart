@@ -2,10 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
+import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_svg_icon.dart';
@@ -19,6 +21,7 @@ const Set<String> _sessionKinds = <String>{
   'BookingRejected',
   'MeetingScheduled',
   'MeetingCancelled',
+  'SessionRatingRequest',
 };
 const Set<String> _vipKinds = <String>{'InvitationReceived', 'VipBroadcast'};
 
@@ -99,26 +102,42 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   }
 
   Future<void> _onTapItem(NotificationItem item) async {
-    if (item.isRead) {
-      return;
+    // Mark unread items read (best effort) before any navigation.
+    if (!item.isRead) {
+      try {
+        await ref.read(notificationsRepositoryProvider).markRead(item.id);
+      } on ApiFailure {
+        // Best effort — leave the item unread on failure, but still deep-link.
+      }
+      if (!mounted) {
+        return;
+      }
+      // #14 — clear the Home bell badge (a separate count provider) + flip the
+      // item locally instead of a full reload.
+      ref.invalidate(unreadNotificationCountProvider);
+      setState(() {
+        _items = _items
+            .map((n) => n.id == item.id ? n.markedRead() : n)
+            .toList(growable: false);
+      });
     }
-    try {
-      await ref.read(notificationsRepositoryProvider).markRead(item.id);
-    } on ApiFailure {
-      // Best effort — leave the item unread on failure.
-      return;
+    _maybeDeepLink(item);
+  }
+
+  /// Deep-links from an actionable notification. The end-of-session prompt
+  /// (`SessionRatingRequest`) carries the session id in `relatedEntityId`; tap
+  /// opens the Session rating form for it.
+  void _maybeDeepLink(NotificationItem item) {
+    if (item.kind == 'SessionRatingRequest' &&
+        (item.relatedEntityId ?? '').isNotEmpty) {
+      context.pushNamed(
+        RouteNames.rate,
+        queryParameters: <String, String>{
+          'code': 'Session',
+          'targetId': item.relatedEntityId!,
+        },
+      );
     }
-    if (!mounted) {
-      return;
-    }
-    // #14 — clear the Home bell badge (a separate count provider) + flip the
-    // item locally instead of a full reload.
-    ref.invalidate(unreadNotificationCountProvider);
-    setState(() {
-      _items = _items
-          .map((n) => n.id == item.id ? n.markedRead() : n)
-          .toList(growable: false);
-    });
   }
 
   Future<void> _onMarkAll(AppL10n l10n) async {
