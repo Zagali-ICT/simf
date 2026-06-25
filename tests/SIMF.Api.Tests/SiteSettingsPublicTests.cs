@@ -1,19 +1,22 @@
 using System.Net;
 using System.Net.Http.Json;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
 using SIMF.Contracts.Configuration;
-using SIMF.Domain.Configuration;
+using SIMF.Domain.Organization;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
 namespace SIMF.Api.Tests;
 
 /// <summary>
-/// D-461 — the public site-settings read-path (<c>GET /api/v1/app/site-settings</c>):
-/// anonymous, returns the in-code defaults until an admin sets the keys, then
-/// surfaces the configured overrides. The two cases use disjoint keys so they
-/// stay order-independent on the shared test DB.
+/// D-461 / D-495 — the public site-settings read-path (<c>GET /api/v1/app/site-settings</c>):
+/// anonymous, returns the in-code defaults until an admin sets the values, then
+/// surfaces the configured overrides. The social links + welcome message now live on
+/// the singleton <see cref="OrganizationProfile"/> (migrated out of the old SystemSetting
+/// keys); each case touches a distinct field so they stay order-independent on the
+/// shared test DB.
 /// </summary>
 public sealed class SiteSettingsPublicTests : IClassFixture<SimfApiFactory>
 {
@@ -36,7 +39,7 @@ public sealed class SiteSettingsPublicTests : IClassFixture<SimfApiFactory>
         var body = (await response.Content
             .ReadFromJsonAsync<ApiResult<SiteSettingsResponse>>())!;
         Assert.True(body.Success);
-        // The Arabic message + Facebook are never set by the override test, so
+        // The Arabic message + Facebook are never set by the override tests, so
         // they always read the defaults regardless of test order.
         Assert.Equal(SiteSettingKeys.DefaultRegistrationMessageAr,
             body.Data!.RegistrationSuccessMessageAr);
@@ -49,22 +52,10 @@ public sealed class SiteSettingsPublicTests : IClassFixture<SimfApiFactory>
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-            db.SystemSettings.Add(new SystemSetting
-            {
-                Id = Guid.NewGuid(),
-                Key = SiteSettingKeys.SocialX,
-                Value = "https://x.com/simf",
-                IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
-            });
-            db.SystemSettings.Add(new SystemSetting
-            {
-                Id = Guid.NewGuid(),
-                Key = SiteSettingKeys.RegistrationSuccessMessageEn,
-                Value = "Welcome aboard the Forum!",
-                IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
-            });
+            var profile = await db.OrganizationProfile
+                .SingleAsync(p => p.Id == OrganizationProfile.SingletonId);
+            profile.XUrl = "https://x.com/simf";
+            profile.RegistrationSuccessMessage = "Welcome aboard the Forum!";
             await db.SaveChangesAsync();
         }
 
@@ -87,14 +78,9 @@ public sealed class SiteSettingsPublicTests : IClassFixture<SimfApiFactory>
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-            db.SystemSettings.Add(new SystemSetting
-            {
-                Id = Guid.NewGuid(),
-                Key = SiteSettingKeys.SocialYouTube,
-                Value = "javascript:alert(document.cookie)",
-                IsActive = true,
-                CreatedAt = DateTimeOffset.UtcNow,
-            });
+            var profile = await db.OrganizationProfile
+                .SingleAsync(p => p.Id == OrganizationProfile.SingletonId);
+            profile.YouTubeUrl = "javascript:alert(document.cookie)";
             await db.SaveChangesAsync();
         }
 

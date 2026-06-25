@@ -39,4 +39,10 @@ class StorageKeys {
       'simf.prefs.accessibility_screen_reader';
   static const String accessibilityCaptions =
       'simf.prefs.accessibility_captions';
+
+  /// D-495 — the cached Organization / About profile JSON (loaded at splash, read
+  /// app-wide) + its `Last-Modified` token for the conditional-GET revalidation.
+  static const String orgProfileJson = 'simf.prefs.org_profile_json';
+  static const String orgProfileLastModified =
+      'simf.prefs.org_profile_last_modified';
 }

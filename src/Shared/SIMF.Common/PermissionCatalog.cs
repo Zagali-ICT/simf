@@ -585,6 +585,14 @@ public static class PermissionCatalog
         public const string Import = "Configuration.Import";
     }
 
+    /// <summary>D-495 — the Organization / About profile editor (single-record
+    /// edition-generic branding config). View opens it; Manage saves changes.</summary>
+    public static class OrganizationProfile
+    {
+        public const string View = "OrganizationProfile.View";
+        public const string Manage = "OrganizationProfile.Manage";
+    }
+
     public static class OperationLog
     {
         public const string View = "OperationLog.View";
@@ -935,6 +943,9 @@ public static class PermissionCatalog
         new(Configuration.Delete, "Configuration", "Delete", "Delete system settings", AdminOnly),
         new(Configuration.Export, "Configuration", "Export", "Export system settings", AdminOnly),
         new(Configuration.Import, "Configuration", "Import", "Import system settings", AdminOnly),
+
+        new(OrganizationProfile.View, "OrganizationProfile", "View", "View the organization profile", AdminOnly),
+        new(OrganizationProfile.Manage, "OrganizationProfile", "Manage", "Edit the organization profile", AdminOnly),
 
         new(OperationLog.View, "OperationLog", "View", "View the operation log", AdminOnly),
         new(OperationLog.Export, "OperationLog", "Export", "Export the operation log", AdminOnly),

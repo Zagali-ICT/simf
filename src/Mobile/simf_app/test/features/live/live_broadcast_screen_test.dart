@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/tokens.dart';
+import 'package:simf_app/core/organization_profile/organization_profile.dart';
 import 'package:simf_app/features/live/data/live_repository.dart';
 import 'package:simf_app/features/live/live_broadcast_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
@@ -57,10 +58,35 @@ class _FakeLiveRepo implements LiveRepository {
       upcoming;
 }
 
+/// Pins the shared org-profile value (null by default → the no-session screen
+/// shows the empty state; a profile with a liveStreamUrl → the global main-live).
+class _StubOrgProfile extends OrgProfileController {
+  _StubOrgProfile(this._value);
+  final OrgProfile? _value;
+  @override
+  OrgProfile? build() => _value;
+  @override
+  Future<void> warm() async {}
+}
+
+OrgProfile _orgProfile({String? liveStreamUrl}) => OrgProfile(
+      name: 'The Forum',
+      nameArabic: 'الملتقى',
+      title: 'The Forum',
+      titleArabic: 'الملتقى',
+      currentYear: 2026,
+      status: 'Open',
+      social: const OrgSocial(),
+      aboutItems: const <OrgAboutItem>[],
+      details: const <OrgDetail>[],
+      liveStreamUrl: liveStreamUrl,
+    );
+
 Future<void> _pump(
   WidgetTester tester, {
   required LiveRepository repo,
   String? sessionId,
+  OrgProfile? profile,
   Locale locale = const Locale('en'),
   bool settle = true,
 }) async {
@@ -84,6 +110,7 @@ Future<void> _pump(
     ProviderScope(
       overrides: <Override>[
         liveRepositoryProvider.overrideWithValue(repo),
+        orgProfileProvider.overrideWith(() => _StubOrgProfile(profile)),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -133,6 +160,40 @@ void main() {
         find.text('No live session selected — open a session to watch.'),
         findsOneWidget,
       );
+      expect(repo.calls, 0);
+    });
+
+    testWidgets('D-495 — no sessionId but a profile live link plays the global '
+        'main live (forum name, no ask-question)', (tester) async {
+      final repo = _FakeLiveRepo(session: _liveSession());
+      await _pump(
+        tester,
+        repo: repo,
+        sessionId: null,
+        profile: _orgProfile(
+          liveStreamUrl: 'https://www.youtube.com/watch?v=simf',
+        ),
+        // The player can't init headless — the region notice + title still render.
+        settle: false,
+      );
+
+      // Not the empty state — the global main-live is shown instead.
+      expect(
+        find.text('No live session selected — open a session to watch.'),
+        findsNothing,
+      );
+      // The forum name is the now-broadcasting title.
+      expect(find.text('The Forum'), findsOneWidget);
+      // The static region-restriction notice still renders.
+      expect(
+        find.textContaining(
+          'Live broadcasting is available only inside the Riyadh region',
+        ),
+        findsOneWidget,
+      );
+      // The session-specific ask-question entry is hidden for the global live.
+      expect(find.text('Ask a question'), findsNothing);
+      // No session id → never fetched a session.
       expect(repo.calls, 0);
     });
 

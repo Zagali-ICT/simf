@@ -7,6 +7,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/ksa_shell.dart';
+import '../../core/organization_profile/organization_profile.dart';
 import '../content/data/content_models.dart';
 import '../content/data/content_repository.dart';
 
@@ -55,10 +56,66 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
+    final isAr = l10n.isArabic;
+    // D-495 — the edition-generic forum config; loaded at splash, persisted
+    // locally, shared app-wide. Falls back to the bundled l10n copy until it's
+    // available (first run / offline) so the page always renders.
+    final profile = ref.watch(orgProfileProvider);
+
     final block = _block;
     final visionBody = (block != null && block.hasBody)
-        ? block.localizedBody(l10n.isArabic)
+        ? block.localizedBody(isAr)
         : l10n.aboutHeroBody;
+
+    final forumName = (profile != null && profile.nameFor(isAr).isNotEmpty)
+        ? profile.nameFor(isAr)
+        : l10n.aboutForumName;
+    final forumTitle = profile != null ? profile.titleFor(isAr) : '';
+
+    // The "about" cards — driven by the profile's about-items (the same
+    // vision/mission card design) when present, else the bundled copy.
+    final aboutCards = <Widget>[];
+    if (profile != null && profile.aboutItems.isNotEmpty) {
+      for (final item in profile.aboutItems) {
+        if (aboutCards.isNotEmpty) {
+          aboutCards.add(const SizedBox(height: SimfTokens.space4));
+        }
+        aboutCards.add(
+          _AboutCard(
+            title: item.titleFor(isAr),
+            body: item.textFor(isAr),
+          ),
+        );
+      }
+    } else {
+      aboutCards.add(
+        _AboutCard(
+          title: l10n.aboutMissionTitle,
+          body: l10n.aboutHeroHeading,
+        ),
+      );
+      aboutCards.add(const SizedBox(height: SimfTokens.space4));
+      aboutCards.add(_AboutCard(title: l10n.aboutVisionTitle, body: visionBody));
+    }
+
+    // The "details" list — driven by the profile's details when present.
+    final detailRows = (profile != null && profile.details.isNotEmpty)
+        ? profile.details.map((d) => (d.nameFor(isAr), d.value)).toList()
+        : <(String, String)>[
+            (l10n.aboutDetailYearLabel, l10n.aboutDetailYearValue),
+            (l10n.aboutDetailDateLabel, l10n.aboutDetailDateValue),
+            (l10n.aboutDetailLocationLabel, l10n.aboutDetailLocationValue),
+          ];
+
+    // D-495 — contact rows (only the fields the admin actually set).
+    final contactRows = <(String, String)>[
+      if (profile?.contactPhone != null)
+        (l10n.aboutContactPhone, profile!.contactPhone!),
+      if (profile?.contactEmail != null)
+        (l10n.aboutContactEmail, profile!.contactEmail!),
+      if (profile?.contactWebsite != null)
+        (l10n.aboutContactWebsite, profile!.contactWebsite!),
+    ];
 
     final themes = <(String, String, String)>[
       ('01', l10n.aboutTheme1Title, l10n.aboutTheme1Body),
@@ -73,7 +130,7 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
       body: ListView(
         padding: const EdgeInsets.all(SimfTokens.space4),
         children: <Widget>[
-          // Anchor-mark header (frame 1116:16448).
+          // Anchor-mark header (frame 1116:16448) — name, then title.
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
@@ -81,7 +138,7 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
               const SizedBox(width: SimfTokens.space2),
               Flexible(
                 child: Text(
-                  l10n.aboutForumName,
+                  forumName,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     color: SimfTokens.accent,
@@ -92,19 +149,58 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
               ),
             ],
           ),
+          if (forumTitle.isNotEmpty) ...<Widget>[
+            const SizedBox(height: SimfTokens.space2),
+            Text(
+              forumTitle,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: SimfTokens.textMd,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+          // D-495 — the edition status badge (status · year).
+          if (profile != null) ...<Widget>[
+            const SizedBox(height: SimfTokens.space3),
+            Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SimfTokens.space3,
+                  vertical: SimfTokens.space1,
+                ),
+                decoration: BoxDecoration(
+                  color: SimfTokens.accent,
+                  borderRadius: BorderRadius.circular(SimfTokens.radius),
+                ),
+                child: Text(
+                  '${l10n.aboutStatus(profile.status)} · ${profile.currentYear}',
+                  style: const TextStyle(
+                    color: SimfTokens.navyDeep,
+                    fontSize: SimfTokens.textSm,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: SimfTokens.space5),
-          _AboutCard(title: l10n.aboutMissionTitle, body: l10n.aboutHeroHeading),
+          ...aboutCards,
           const SizedBox(height: SimfTokens.space4),
-          _AboutCard(title: l10n.aboutVisionTitle, body: visionBody),
-          const SizedBox(height: SimfTokens.space4),
-          _DetailsCard(
-            title: l10n.aboutDetailsTitle,
-            rows: <(String, String)>[
-              (l10n.aboutDetailYearLabel, l10n.aboutDetailYearValue),
-              (l10n.aboutDetailDateLabel, l10n.aboutDetailDateValue),
-              (l10n.aboutDetailLocationLabel, l10n.aboutDetailLocationValue),
-            ],
-          ),
+          _DetailsCard(title: l10n.aboutDetailsTitle, rows: detailRows),
+          // D-495 — contact + version cards (shown only when set).
+          if (contactRows.isNotEmpty) ...<Widget>[
+            const SizedBox(height: SimfTokens.space4),
+            _DetailsCard(title: l10n.aboutContactTitle, rows: contactRows),
+          ],
+          if (profile?.version != null && profile!.version!.isNotEmpty) ...<Widget>[
+            const SizedBox(height: SimfTokens.space4),
+            _DetailsCard(
+              title: l10n.aboutVersionTitle,
+              rows: <(String, String)>[(l10n.aboutVersionLabel, profile.version!)],
+            ),
+          ],
           const SizedBox(height: SimfTokens.space4),
           _ThemesCard(title: l10n.aboutThemesTitle, themes: themes),
         ],

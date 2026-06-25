@@ -5,6 +5,7 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/route_names.dart';
+import '../../core/organization_profile/organization_profile.dart';
 import '../../core/startup/app_update_checker.dart';
 
 /// Minimum time the logo is shown so the splash never flickers (Page_001 Logic
@@ -60,6 +61,12 @@ class SplashController extends Notifier<SplashState> {
   }
 
   Future<void> _run() async {
+    // D-495 — load the edition-generic forum config at the splash: the controller
+    // hydrates instantly from local storage, then this refreshes it from the API
+    // (Last-Modified / 304). Available app-wide afterwards via orgProfileProvider.
+    // Fire-and-forget — never blocks boot.
+    unawaited(ref.read(orgProfileProvider.notifier).warm());
+
     final checker = ref.read(appUpdateCheckerProvider);
     final minDisplay = ref.read(minSplashDurationProvider);
 
