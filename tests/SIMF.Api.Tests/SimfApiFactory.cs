@@ -136,6 +136,10 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         // explicitly. Idempotent.
         services.GetRequiredService<SIMF.Infrastructure.Identity.IdentitySeeder>()
             .SeedAsync().GetAwaiter().GetResult();
+        // The built-in rating types (App + Session) are seeded at runtime (not via
+        // migration InsertData), so the test fixture invokes the seeder too.
+        services.GetRequiredService<SIMF.Infrastructure.Feedback.RatingSeeder>()
+            .SeedAsync().GetAwaiter().GetResult();
     }
 
     protected override void Dispose(bool disposing)

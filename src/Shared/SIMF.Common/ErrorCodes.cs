@@ -191,6 +191,16 @@ public static class ErrorCodes
     public const string FaqGroupNotFound = "FAQ_GROUP_NOT_FOUND";
     public const string FaqEntryNotFound = "FAQ_ENTRY_NOT_FOUND";
 
+    // Dynamic ratings — config CRUD + attendee submission.
+    public const string RatingInvalid = "RATING_INVALID";
+    public const string RatingTypeNotFound = "RATING_TYPE_NOT_FOUND";
+    public const string RatingTypeIsSystem = "RATING_TYPE_IS_SYSTEM";
+    public const string RatingTypeCodeTaken = "RATING_TYPE_CODE_TAKEN";
+    public const string RatingGroupNotFound = "RATING_GROUP_NOT_FOUND";
+    public const string RatingQuestionNotFound = "RATING_QUESTION_NOT_FOUND";
+    public const string RatingTargetRequired = "RATING_TARGET_REQUIRED";
+    public const string RatingTargetNotFound = "RATING_TARGET_NOT_FOUND";
+
     // Media (D-199 — media gallery, Mockup page 30. Promoted from the
     // module-local MediaErrorCodes; string values are the wire contract).
     public const string MediaNotFound = "media_not_found";

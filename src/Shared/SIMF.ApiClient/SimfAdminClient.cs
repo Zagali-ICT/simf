@@ -895,6 +895,83 @@ public sealed class SimfAdminClient(HttpClient http)
         SendAsync<bool>(HttpMethod.Delete, $"faq/entries/{id}", content: null,
             accessToken, cancellationToken);
 
+    // -- Rating configuration (types → groups → questions) ------------------
+
+    public Task<ApiCallResult<GridPage<AdminRatingTypeSummary>>> ListRatingTypesAsync(
+        GridQuery query, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminRatingTypeSummary>>(HttpMethod.Post, "ratings/types/list",
+            JsonContent.Create(query, options: JsonOptions), accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminRatingTypeSummary>> GetRatingTypeAsync(
+        Guid id, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<AdminRatingTypeSummary>(HttpMethod.Get, $"ratings/types/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminRatingTypeSummary>> CreateRatingTypeAsync(
+        CreateRatingTypeRequest request, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<AdminRatingTypeSummary>(HttpMethod.Post, "ratings/types",
+            JsonContent.Create(request, options: JsonOptions), accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminRatingTypeSummary>> UpdateRatingTypeAsync(
+        Guid id, UpdateRatingTypeRequest request, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<AdminRatingTypeSummary>(HttpMethod.Put, $"ratings/types/{id}",
+            JsonContent.Create(request, options: JsonOptions), accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> DeleteRatingTypeAsync(
+        Guid id, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(HttpMethod.Delete, $"ratings/types/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<GridPage<AdminRatingQuestionGroupSummary>>> ListRatingGroupsAsync(
+        Guid typeId, GridQuery query, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminRatingQuestionGroupSummary>>(HttpMethod.Post, $"ratings/types/{typeId}/groups/list",
+            JsonContent.Create(query, options: JsonOptions), accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminRatingQuestionGroupSummary>> GetRatingGroupAsync(
+        Guid id, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<AdminRatingQuestionGroupSummary>(HttpMethod.Get, $"ratings/groups/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminRatingQuestionGroupSummary>> CreateRatingGroupAsync(
+        CreateRatingQuestionGroupRequest request, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<AdminRatingQuestionGroupSummary>(HttpMethod.Post, "ratings/groups",
+            JsonContent.Create(request, options: JsonOptions), accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminRatingQuestionGroupSummary>> UpdateRatingGroupAsync(
+        Guid id, UpdateRatingQuestionGroupRequest request, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<AdminRatingQuestionGroupSummary>(HttpMethod.Put, $"ratings/groups/{id}",
+            JsonContent.Create(request, options: JsonOptions), accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> DeleteRatingGroupAsync(
+        Guid id, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(HttpMethod.Delete, $"ratings/groups/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<GridPage<AdminRatingQuestionSummary>>> ListRatingQuestionsAsync(
+        Guid typeId, GridQuery query, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminRatingQuestionSummary>>(HttpMethod.Post, $"ratings/types/{typeId}/questions/list",
+            JsonContent.Create(query, options: JsonOptions), accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminRatingQuestionSummary>> GetRatingQuestionAsync(
+        Guid id, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<AdminRatingQuestionSummary>(HttpMethod.Get, $"ratings/questions/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminRatingQuestionSummary>> CreateRatingQuestionAsync(
+        CreateRatingQuestionRequest request, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<AdminRatingQuestionSummary>(HttpMethod.Post, "ratings/questions",
+            JsonContent.Create(request, options: JsonOptions), accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminRatingQuestionSummary>> UpdateRatingQuestionAsync(
+        Guid id, UpdateRatingQuestionRequest request, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<AdminRatingQuestionSummary>(HttpMethod.Put, $"ratings/questions/{id}",
+            JsonContent.Create(request, options: JsonOptions), accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> DeleteRatingQuestionAsync(
+        Guid id, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(HttpMethod.Delete, $"ratings/questions/{id}", content: null,
+            accessToken, cancellationToken);
+
     // -- D-134 Sprint A — Roles admin CRUD (existing schema, no migration) --
 
     /// <summary>One page of roles for the admin grid (D-134 Sprint A).</summary>
@@ -2875,15 +2952,21 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    // -- D-199 — Ratings admin read (SIMF.Contracts.Feedback) ---------------
+    // -- Ratings admin read (SIMF.Contracts.Feedback) -----------------------
 
-    public Task<ApiCallResult<AdminRatingsPage>> ListRatingsAsync(
+    public Task<ApiCallResult<AdminRatingResponsesPage>> ListRatingsAsync(
         GridQuery query, string accessToken,
         CancellationToken cancellationToken = default) =>
-        SendAsync<AdminRatingsPage>(
+        SendAsync<AdminRatingResponsesPage>(
             HttpMethod.Post, "feedback/ratings",
             JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminRatingKpiView>> GetRatingKpiAsync(
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<AdminRatingKpiView>(
+            HttpMethod.Get, "feedback/ratings/kpi",
+            content: null, accessToken, cancellationToken);
 
     // -- D-199 — Session-comment moderation (SIMF.Contracts.Sessions) -------
 

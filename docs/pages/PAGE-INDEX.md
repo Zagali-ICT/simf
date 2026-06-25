@@ -80,7 +80,8 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/question-queue` | ✅ Real (D-234) | Administrator  | [cp/admin-question-queue.md](cp/admin-question-queue.md) | [e2e/cp-admin-question-queue.md](../tests/e2e/cp-admin-question-queue.md) |
 | `/sessions/{id}/moderate` | ✅ Real | Session moderator | — | [e2e/cp-session-moderate.md](../tests/e2e/cp-session-moderate.md) |
 | `/admin/comments-moderation` | ✅ Real (D-199) | Administrator  | [cp/admin-comments-moderation.md](cp/admin-comments-moderation.md) | [e2e/cp-admin-comments-moderation.md](../tests/e2e/cp-admin-comments-moderation.md) |
-| `/admin/ratings` | ✅ Real (D-199) | Administrator  | [cp/admin-ratings.md](cp/admin-ratings.md) | [e2e/cp-admin-ratings.md](../tests/e2e/cp-admin-ratings.md) |
+| `/admin/ratings` | ✅ Real (D-496 — responses + KPI) | Administrator  | [cp/admin-ratings.md](cp/admin-ratings.md) | [e2e/cp-admin-ratings.md](../tests/e2e/cp-admin-ratings.md) |
+| `/admin/rating-config` | ✅ Real (D-496 — dynamic rating config) | Administrator  | [cp/admin-rating-config.md](cp/admin-rating-config.md) | [e2e/cp-admin-rating-config.md](../tests/e2e/cp-admin-rating-config.md) |
 | `/admin/session-summaries` | ✅ Real (D-238) | Administrator  | [cp/admin-session-summaries.md](cp/admin-session-summaries.md) | [e2e/cp-admin-session-summaries.md](../tests/e2e/cp-admin-session-summaries.md) |
 | `/admin/hall-arrivals` | ✅ Real (D-244) | Administrator/operator | — | [e2e/cp-admin-hall-arrivals.md](../tests/e2e/cp-admin-hall-arrivals.md) |
 | **Exhibition** | | | | |
@@ -201,7 +202,7 @@ testing (see [`SIMF-APP-Build-Plan.md`](../App/SIMF-APP-Build-Plan.md)).
 | #29 `news` (`GET /app/news` + `/{id}`; thumbnail `GET /app/assets/NewsImage/{id}/image`) | 🟢 Screen built (D-308); Figma 957:2197 card — thumbnail + date (P2) | Guest+ | [App/Page_029](../App/Page_029/README.md) | [e2e/mobile-news.md](../tests/e2e/mobile-news.md) |
 | #30 `gallery` (`GET /app/media` + `/{id}/image`) | 🟢 Screen built (D-309); tile bitmaps (D-342) | Guest+ | [App/Page_030](../App/Page_030/README.md) | [e2e/mobile-gallery.md](../tests/e2e/mobile-gallery.md) |
 | #37 `aboutForum` (`GET /app/content/about`) | 🟢 Screen built (D-311); restructured Figma `1116:16448` — mission/vision/details/themes (D-465) | Guest+ | [App/Page_037](../App/Page_037/README.md) | [e2e/mobile-about.md](../tests/e2e/mobile-about.md) |
-| #40 `rate` (`POST /app/feedback/rate`) | 🟢 Screen built (D-310); per-element scores + Figma `1116:16894` (D-463) | Visitor (login-only) | [App/Page_040](../App/Page_040/README.md) | [e2e/mobile-rate.md](../tests/e2e/mobile-rate.md) |
+| #40 `rate` (`GET/POST /app/feedback/form\|submit`) | 🟢 Screen built (D-310); dynamic config-driven form + session deep-link (D-496) | Visitor (login-only) | [App/Page_040](../App/Page_040/README.md) | [e2e/mobile-rate.md](../tests/e2e/mobile-rate.md) |
 | #31 `mediaPartners` (`GET /app/media-partners` + logo `GET /app/assets/MediaPartnerLogo/{id}/image`) | 🟢 Screen built (D-306); Figma 958:2246 hub + real logos (P1) | Guest+ | [App/Page_031](../App/Page_031/README.md) | [e2e/mobile-media-partners.md](../tests/e2e/mobile-media-partners.md) |
 | #12 `guestMode` (no API) | 🟢 Screen built (D-316) | Guest | [App/Page_012](../App/Page_012/README.md) | [e2e/mobile-guest-mode.md](../tests/e2e/mobile-guest-mode.md) |
 | #33 `notifications` (`POST /app/account/notifications/list` + `/{id}/read` + `/read-all`) | 🟢 Screen built (D-312) | Signed-in | [App/Page_033](../App/Page_033/README.md) | [e2e/mobile-notifications.md](../tests/e2e/mobile-notifications.md) |

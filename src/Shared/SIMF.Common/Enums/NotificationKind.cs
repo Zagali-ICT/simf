@@ -112,4 +112,12 @@ public enum NotificationKind
     /// Control Panel cancels a confirmed business meeting. In-app row only.</summary>
     [Display(Description = nameof(ResNotificationKind.MeetingCancelled), ResourceType = typeof(ResNotificationKind))]
     MeetingCancelled = 44,
+
+    /// <summary>Dispatched by the end-of-session rating-prompt worker to every
+    /// attendee with an active seat in a session that has just ended, inviting
+    /// them to rate it. <c>RelatedEntityType="Session"</c> + <c>RelatedEntityId</c>
+    /// carry the session id so the app deep-links to its rating screen. In-app
+    /// row only. Additive value (append-only — the frozen-enum rule).</summary>
+    [Display(Description = nameof(ResNotificationKind.SessionRatingRequest), ResourceType = typeof(ResNotificationKind))]
+    SessionRatingRequest = 45,
 }

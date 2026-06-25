@@ -1,0 +1,706 @@
+@* Dynamic rating configuration. Three levels: a rating-types grid (top) and,
+   when a type is selected via "Manage", its question-groups grid + questions grid
+   below. Mirrors FaqManager (the canonical SimfDataGrid CRUD pattern); per-action
+   Create/Edit/Delete is gated by the API. System types (App / Session) can't be
+   deleted (the API rejects it) and their Code/Scope are locked in the edit form. *@
+@page "/admin/rating-config"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.RatingConfig.View)]
+@using SIMF.Contracts.Feedback
+@using SIMF.Common.Enums
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.RatingConfig.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.RatingConfig.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <h2 class="simf-section__title">@L["Admin.RatingConfig.Types.Heading"]</h2>
+
+        <SimfDataGrid TItem="AdminRatingTypeSummary"
+                      Query="_typeQuery"
+                      Page="_typePage"
+                      Loading="_typeLoading"
+                      OnQueryChanged="OnTypeQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(r => r.Id.ToString())"
+                      RowLabel="@(r => r.Name)"
+                      Caption="@L["Admin.RatingConfig.Types.Heading"]"
+                      OnAdd="OpenAddType"
+                      OnEditOne="OpenEditType"
+                      OnDeleteOne="DeactivateTypeAsync"
+                      PrevLabel="@L["Grid.Prev"]" NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]" LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]" PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Grid.Loading"]" ActionsHeader="@L["Grid.Actions"]"
+                      SelectAllLabel="@L["Grid.SelectAll"]" SelectRowLabel="@L["Grid.SelectRow"]"
+                      AddLabel="@L["Grid.Add"]" EditLabel="@L["Grid.Edit"]" DeleteLabel="@L["Grid.Delete"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminRatingTypeSummary" Key="code"
+                                    Header="@L["Admin.RatingConfig.Col.Code"]" Sortable="true">
+                    <CellTemplate>@context.Code</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminRatingTypeSummary" Key="name"
+                                    Header="@L["Admin.RatingConfig.Col.Name"]" Sortable="true">
+                    <CellTemplate>@context.Name</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminRatingTypeSummary" Key="scope"
+                                    Header="@L["Admin.RatingConfig.Col.Scope"]">
+                    <CellTemplate>@ScopeLabel(context.Scope)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminRatingTypeSummary" Key="system"
+                                    Header="@L["Admin.RatingConfig.Col.System"]">
+                    <CellTemplate>
+                        @if (context.IsSystem)
+                        {
+                            <SimfPill Variant="on">@L["Grid.Yes"]</SimfPill>
+                        }
+                        else
+                        {
+                            <SimfPill Variant="off">@L["Grid.No"]</SimfPill>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminRatingTypeSummary" Key="groups"
+                                    Header="@L["Admin.RatingConfig.Col.Groups"]">
+                    <CellTemplate>@context.GroupCount</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminRatingTypeSummary" Key="questions"
+                                    Header="@L["Admin.RatingConfig.Col.Questions"]">
+                    <CellTemplate>@context.QuestionCount</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminRatingTypeSummary" Key="responses"
+                                    Header="@L["Admin.RatingConfig.Col.Responses"]">
+                    <CellTemplate>@context.ResponseCount</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminRatingTypeSummary" Key="isActive"
+                                    Header="@L["Admin.RatingConfig.Col.Active"]">
+                    <CellTemplate>
+                        @if (context.IsActive)
+                        {
+                            <SimfPill Variant="on">@L["Grid.Active"]</SimfPill>
+                        }
+                        else
+                        {
+                            <SimfPill Variant="off">@L["Grid.Inactive"]</SimfPill>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <RowActions>
+                <SimfToolbarButton Icon="list-tree" Title="@L["Admin.RatingConfig.Action.Manage"]"
+                                   OnClick="@(() => SelectTypeAsync(context))" />
+            </RowActions>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.RatingConfig.Types.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+
+        @if (_selectedType is not null)
+        {
+            <h2 class="simf-section__title">
+                @(string.Format(L["Admin.RatingConfig.Groups.Heading"], _selectedType.Name))
+            </h2>
+
+            <SimfDataGrid TItem="AdminRatingQuestionGroupSummary"
+                          Query="_groupQuery"
+                          Page="_groupPage"
+                          Loading="_groupLoading"
+                          OnQueryChanged="OnGroupQueryChangedAsync"
+                          Multiselect="true"
+                          RowKey="@(r => r.Id.ToString())"
+                          RowLabel="@(r => r.Name)"
+                          Caption="@L["Admin.RatingConfig.Groups.Heading"]"
+                          OnAdd="OpenAddGroup"
+                          OnEditOne="OpenEditGroup"
+                          OnDeleteOne="DeactivateGroupAsync"
+                          PrevLabel="@L["Grid.Prev"]" NextLabel="@L["Grid.Next"]"
+                          FirstLabel="@L["Grid.First"]" LastLabel="@L["Grid.Last"]"
+                          PageSizeLabel="@L["Grid.PageSize"]" PageFormatter="@FormatPage"
+                          LoadingLabel="@L["Grid.Loading"]" ActionsHeader="@L["Grid.Actions"]"
+                          SelectAllLabel="@L["Grid.SelectAll"]" SelectRowLabel="@L["Grid.SelectRow"]"
+                          AddLabel="@L["Admin.RatingConfig.Action.AddGroup"]" EditLabel="@L["Grid.Edit"]"
+                          DeleteLabel="@L["Grid.Delete"]" SummaryFormatter="@FormatSummary">
+                <Columns>
+                    <SimfDataGridColumn TItem="AdminRatingQuestionGroupSummary" Key="name"
+                                        Header="@L["Admin.RatingConfig.Col.Name"]" Sortable="true">
+                        <CellTemplate>@context.Name</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminRatingQuestionGroupSummary" Key="namear"
+                                        Header="@L["Admin.RatingConfig.Col.NameAr"]">
+                        <CellTemplate>@context.NameArabic</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminRatingQuestionGroupSummary" Key="displayorder"
+                                        Header="@L["Admin.RatingConfig.Col.Order"]" Sortable="true">
+                        <CellTemplate>@context.DisplayOrder</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminRatingQuestionGroupSummary" Key="questions"
+                                        Header="@L["Admin.RatingConfig.Col.Questions"]">
+                        <CellTemplate>@context.QuestionCount</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminRatingQuestionGroupSummary" Key="isActive"
+                                        Header="@L["Admin.RatingConfig.Col.Active"]">
+                        <CellTemplate>
+                            @if (context.IsActive)
+                            {
+                                <SimfPill Variant="on">@L["Grid.Active"]</SimfPill>
+                            }
+                            else
+                            {
+                                <SimfPill Variant="off">@L["Grid.Inactive"]</SimfPill>
+                            }
+                        </CellTemplate>
+                    </SimfDataGridColumn>
+                </Columns>
+                <EmptyTemplate>
+                    <SimfEmptyState Title="@L["Admin.RatingConfig.Groups.None"]" />
+                </EmptyTemplate>
+            </SimfDataGrid>
+
+            <h2 class="simf-section__title">
+                @(string.Format(L["Admin.RatingConfig.Questions.Heading"], _selectedType.Name))
+            </h2>
+
+            <SimfDataGrid TItem="AdminRatingQuestionSummary"
+                          Query="_questionQuery"
+                          Page="_questionPage"
+                          Loading="_questionLoading"
+                          OnQueryChanged="OnQuestionQueryChangedAsync"
+                          Multiselect="true"
+                          RowKey="@(r => r.Id.ToString())"
+                          RowLabel="@(r => r.Text)"
+                          Caption="@L["Admin.RatingConfig.Questions.Heading"]"
+                          OnAdd="OpenAddQuestion"
+                          OnEditOne="OpenEditQuestion"
+                          OnDeleteOne="DeactivateQuestionAsync"
+                          PrevLabel="@L["Grid.Prev"]" NextLabel="@L["Grid.Next"]"
+                          FirstLabel="@L["Grid.First"]" LastLabel="@L["Grid.Last"]"
+                          PageSizeLabel="@L["Grid.PageSize"]" PageFormatter="@FormatPage"
+                          LoadingLabel="@L["Grid.Loading"]" ActionsHeader="@L["Grid.Actions"]"
+                          SelectAllLabel="@L["Grid.SelectAll"]" SelectRowLabel="@L["Grid.SelectRow"]"
+                          AddLabel="@L["Admin.RatingConfig.Action.AddQuestion"]" EditLabel="@L["Grid.Edit"]"
+                          DeleteLabel="@L["Grid.Delete"]" SummaryFormatter="@FormatSummary">
+                <Columns>
+                    <SimfDataGridColumn TItem="AdminRatingQuestionSummary" Key="text"
+                                        Header="@L["Admin.RatingConfig.Col.Text"]" Sortable="true">
+                        <CellTemplate>@context.Text</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminRatingQuestionSummary" Key="textar"
+                                        Header="@L["Admin.RatingConfig.Col.NameAr"]">
+                        <CellTemplate>@context.TextArabic</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminRatingQuestionSummary" Key="group"
+                                        Header="@L["Admin.RatingConfig.Col.Group"]">
+                        <CellTemplate>@GroupName(context.RatingQuestionGroupId)</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminRatingQuestionSummary" Key="required"
+                                        Header="@L["Admin.RatingConfig.Col.Required"]">
+                        <CellTemplate>
+                            @if (context.IsRequired)
+                            {
+                                <SimfPill Variant="on">@L["Grid.Yes"]</SimfPill>
+                            }
+                            else
+                            {
+                                <SimfPill Variant="off">@L["Grid.No"]</SimfPill>
+                            }
+                        </CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminRatingQuestionSummary" Key="displayorder"
+                                        Header="@L["Admin.RatingConfig.Col.Order"]" Sortable="true">
+                        <CellTemplate>@context.DisplayOrder</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminRatingQuestionSummary" Key="isActive"
+                                        Header="@L["Admin.RatingConfig.Col.Active"]">
+                        <CellTemplate>
+                            @if (context.IsActive)
+                            {
+                                <SimfPill Variant="on">@L["Grid.Active"]</SimfPill>
+                            }
+                            else
+                            {
+                                <SimfPill Variant="off">@L["Grid.Inactive"]</SimfPill>
+                            }
+                        </CellTemplate>
+                    </SimfDataGridColumn>
+                </Columns>
+                <EmptyTemplate>
+                    <SimfEmptyState Title="@L["Admin.RatingConfig.Questions.None"]" />
+                </EmptyTemplate>
+            </SimfDataGrid>
+        }
+    </div>
+</div>
+
+@if (_typeModalOpen)
+{
+    <SimfModal Open="true" Title="@(_typeEditId is null ? L["Admin.RatingConfig.Type.Add.Title"] : L["Admin.RatingConfig.Type.Edit.Title"])"
+               OnClose="CloseTypeModal">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <SimfTextField Label="@L["Admin.RatingConfig.Field.Code"]" MaxLength="64"
+                               @bind-Value="_typeCode" Disabled="@(_busy || _typeEditId is not null)" />
+                <SimfTextField Label="@L["Admin.RatingConfig.Field.NameEn"]" MaxLength="128"
+                               @bind-Value="_typeNameEn" Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.RatingConfig.Field.NameAr"]" MaxLength="128"
+                               @bind-Value="_typeNameAr" Disabled="_busy" />
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.RatingConfig.Field.Scope"]</span>
+                    <select class="simf-field__input" @bind="_typeScope"
+                            disabled="@(_busy || _typeEditId is not null)">
+                        <option value="@RatingScope.Global">@L["Admin.RatingConfig.Scope.Global"]</option>
+                        <option value="@RatingScope.PerSession">@L["Admin.RatingConfig.Scope.PerSession"]</option>
+                    </select>
+                </label>
+                <SimfCheckbox @bind-Value="_typeHasOverall" Disabled="_busy">
+                    @L["Admin.RatingConfig.Field.HasOverall"]
+                </SimfCheckbox>
+                <SimfCheckbox @bind-Value="_typeAllowComment" Disabled="_busy">
+                    @L["Admin.RatingConfig.Field.AllowComment"]
+                </SimfCheckbox>
+                <SimfTextField Label="@L["Admin.RatingConfig.Field.CommentLabelEn"]" MaxLength="128"
+                               @bind-Value="_typeCommentLabelEn" Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.RatingConfig.Field.CommentLabelAr"]" MaxLength="128"
+                               @bind-Value="_typeCommentLabelAr" Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.RatingConfig.Field.Order"]" Type="number"
+                               Value="@_typeOrder" ValueChanged="@(v => _typeOrder = v)"
+                               ValueExpression="@(() => _typeOrder)" Disabled="_busy" />
+                @if (_typeEditId is not null && !_typeIsSystem)
+                {
+                    <SimfCheckbox @bind-Value="_typeActive" Disabled="_busy">
+                        @L["Admin.RatingConfig.Field.IsActive"]
+                    </SimfCheckbox>
+                }
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" OnClick="SaveTypeAsync" Loading="_busy">@L["Admin.RatingConfig.Save"]</SimfButton>
+            <SimfButton Type="button" Variant="secondary" OnClick="CloseTypeModal" Disabled="_busy">
+                @L["Admin.RatingConfig.Cancel"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@if (_groupModalOpen)
+{
+    <SimfModal Open="true" Title="@(_groupEditId is null ? L["Admin.RatingConfig.Group.Add.Title"] : L["Admin.RatingConfig.Group.Edit.Title"])"
+               OnClose="CloseGroupModal">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <SimfTextField Label="@L["Admin.RatingConfig.Field.NameEn"]" MaxLength="128"
+                               @bind-Value="_groupNameEn" Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.RatingConfig.Field.NameAr"]" MaxLength="128"
+                               @bind-Value="_groupNameAr" Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.RatingConfig.Field.Order"]" Type="number"
+                               Value="@_groupOrder" ValueChanged="@(v => _groupOrder = v)"
+                               ValueExpression="@(() => _groupOrder)" Disabled="_busy" />
+                @if (_groupEditId is not null)
+                {
+                    <SimfCheckbox @bind-Value="_groupActive" Disabled="_busy">
+                        @L["Admin.RatingConfig.Field.IsActive"]
+                    </SimfCheckbox>
+                }
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" OnClick="SaveGroupAsync" Loading="_busy">@L["Admin.RatingConfig.Save"]</SimfButton>
+            <SimfButton Type="button" Variant="secondary" OnClick="CloseGroupModal" Disabled="_busy">
+                @L["Admin.RatingConfig.Cancel"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@if (_questionModalOpen)
+{
+    <SimfModal Open="true" Title="@(_questionEditId is null ? L["Admin.RatingConfig.Question.Add.Title"] : L["Admin.RatingConfig.Question.Edit.Title"])"
+               OnClose="CloseQuestionModal">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <SimfTextField Label="@L["Admin.RatingConfig.Field.TextEn"]" MaxLength="512"
+                               @bind-Value="_questionTextEn" Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.RatingConfig.Field.TextAr"]" MaxLength="512"
+                               @bind-Value="_questionTextAr" Disabled="_busy" />
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.RatingConfig.Field.Group"]</span>
+                    <select class="simf-field__input" @bind="_questionGroupId" disabled="_busy">
+                        <option value="">@L["Admin.RatingConfig.Field.GroupNone"]</option>
+                        @foreach (var g in _groupPage.Items)
+                        {
+                            <option value="@g.Id">@g.Name</option>
+                        }
+                    </select>
+                </label>
+                <SimfCheckbox @bind-Value="_questionRequired" Disabled="_busy">
+                    @L["Admin.RatingConfig.Field.Required"]
+                </SimfCheckbox>
+                <SimfTextField Label="@L["Admin.RatingConfig.Field.Order"]" Type="number"
+                               Value="@_questionOrder" ValueChanged="@(v => _questionOrder = v)"
+                               ValueExpression="@(() => _questionOrder)" Disabled="_busy" />
+                @if (_questionEditId is not null)
+                {
+                    <SimfCheckbox @bind-Value="_questionActive" Disabled="_busy">
+                        @L["Admin.RatingConfig.Field.IsActive"]
+                    </SimfCheckbox>
+                }
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" OnClick="SaveQuestionAsync" Loading="_busy">@L["Admin.RatingConfig.Save"]</SimfButton>
+            <SimfButton Type="button" Variant="secondary" OnClick="CloseQuestionModal" Disabled="_busy">
+                @L["Admin.RatingConfig.Cancel"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private GridQuery _typeQuery = new() { Top = 20 };
+    private GridPage<AdminRatingTypeSummary> _typePage = new();
+    private bool _typeLoading;
+
+    private AdminRatingTypeSummary? _selectedType;
+    private GridQuery _groupQuery = new() { Top = 50 };
+    private GridPage<AdminRatingQuestionGroupSummary> _groupPage = new();
+    private bool _groupLoading;
+    private GridQuery _questionQuery = new() { Top = 50 };
+    private GridPage<AdminRatingQuestionSummary> _questionPage = new();
+    private bool _questionLoading;
+
+    private bool _busy;
+    private Toast? _toast;
+
+    // Type modal state.
+    private bool _typeModalOpen;
+    private Guid? _typeEditId;
+    private bool _typeIsSystem;
+    private string _typeCode = string.Empty;
+    private string _typeNameEn = string.Empty;
+    private string _typeNameAr = string.Empty;
+    private RatingScope _typeScope = RatingScope.Global;
+    private bool _typeHasOverall = true;
+    private bool _typeAllowComment = true;
+    private string _typeCommentLabelEn = string.Empty;
+    private string _typeCommentLabelAr = string.Empty;
+    private string _typeOrder = "0";
+    private bool _typeActive = true;
+
+    // Group modal state.
+    private bool _groupModalOpen;
+    private Guid? _groupEditId;
+    private string _groupNameEn = string.Empty;
+    private string _groupNameAr = string.Empty;
+    private string _groupOrder = "0";
+    private bool _groupActive = true;
+
+    // Question modal state.
+    private bool _questionModalOpen;
+    private Guid? _questionEditId;
+    private string _questionTextEn = string.Empty;
+    private string _questionTextAr = string.Empty;
+    private string _questionGroupId = string.Empty;
+    private bool _questionRequired;
+    private string _questionOrder = "0";
+    private bool _questionActive = true;
+
+    protected override async Task OnInitializedAsync() => await LoadTypesAsync();
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
+
+    private string ScopeLabel(RatingScope scope) => scope == RatingScope.PerSession
+        ? L["Admin.RatingConfig.Scope.PerSession"]
+        : L["Admin.RatingConfig.Scope.Global"];
+
+    private string GroupName(Guid? id) =>
+        id is { } gid && _groupPage.Items.FirstOrDefault(g => g.Id == gid) is { } g ? g.Name : "—";
+
+    // -- Types --
+    private async Task OnTypeQueryChangedAsync(GridQuery next)
+    {
+        _typeQuery = next;
+        await LoadTypesAsync();
+    }
+
+    private async Task LoadTypesAsync()
+    {
+        _typeLoading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminRatingTypeSummary>>>(
+                "simfAccount.postJson", "/account/api/admin/ratings/types/list", _typeQuery);
+            if (env is { Success: true, Data: not null }) { _typePage = env.Data; }
+            else { _toast = new Toast("error", env?.Error?.MessageForCurrentCulture() ?? L["Admin.RatingConfig.LoadFailed"]); }
+        }
+        finally { _typeLoading = false; }
+    }
+
+    private async Task SelectTypeAsync(AdminRatingTypeSummary type)
+    {
+        _selectedType = type;
+        _groupQuery = new GridQuery { Top = 50 };
+        _questionQuery = new GridQuery { Top = 50 };
+        await LoadGroupsAsync();
+        await LoadQuestionsAsync();
+    }
+
+    private void OpenAddType()
+    {
+        _typeEditId = null;
+        _typeIsSystem = false;
+        _typeCode = _typeNameEn = _typeNameAr = _typeCommentLabelEn = _typeCommentLabelAr = string.Empty;
+        _typeScope = RatingScope.Global;
+        _typeHasOverall = _typeAllowComment = true;
+        _typeOrder = "0";
+        _typeActive = true;
+        _typeModalOpen = true;
+    }
+
+    private void OpenEditType(AdminRatingTypeSummary t)
+    {
+        _typeEditId = t.Id;
+        _typeIsSystem = t.IsSystem;
+        _typeCode = t.Code;
+        _typeNameEn = t.Name;
+        _typeNameAr = t.NameArabic;
+        _typeScope = t.Scope;
+        _typeHasOverall = t.HasOverallStars;
+        _typeAllowComment = t.AllowComment;
+        _typeCommentLabelEn = t.CommentLabel ?? string.Empty;
+        _typeCommentLabelAr = t.CommentLabelArabic ?? string.Empty;
+        _typeOrder = t.DisplayOrder.ToString();
+        _typeActive = t.IsActive;
+        _typeModalOpen = true;
+    }
+
+    private void CloseTypeModal() => _typeModalOpen = false;
+
+    private async Task SaveTypeAsync()
+    {
+        _busy = true;
+        _toast = null;
+        try
+        {
+            int.TryParse(_typeOrder, out var order);
+            ApiResult<AdminRatingTypeSummary>? env;
+            if (_typeEditId is null)
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminRatingTypeSummary>>(
+                    "simfAccount.postJson", "/account/api/admin/ratings/types",
+                    new CreateRatingTypeRequest
+                    {
+                        Code = _typeCode, Name = _typeNameEn, NameArabic = _typeNameAr,
+                        Scope = _typeScope, HasOverallStars = _typeHasOverall, AllowComment = _typeAllowComment,
+                        CommentLabel = _typeCommentLabelEn, CommentLabelArabic = _typeCommentLabelAr,
+                        DisplayOrder = order,
+                    });
+            }
+            else
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminRatingTypeSummary>>(
+                    "simfAccount.putJson", $"/account/api/admin/ratings/types/{_typeEditId}",
+                    new UpdateRatingTypeRequest
+                    {
+                        Name = _typeNameEn, NameArabic = _typeNameAr,
+                        HasOverallStars = _typeHasOverall, AllowComment = _typeAllowComment,
+                        CommentLabel = _typeCommentLabelEn, CommentLabelArabic = _typeCommentLabelAr,
+                        DisplayOrder = order, IsActive = _typeActive,
+                    });
+            }
+            if (env is { Success: true }) { _typeModalOpen = false; _toast = new Toast("success", L["Admin.RatingConfig.Saved"]); await LoadTypesAsync(); }
+            else { _toast = new Toast("error", env?.Error?.MessageForCurrentCulture() ?? L["Admin.RatingConfig.LoadFailed"]); }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task DeactivateTypeAsync(AdminRatingTypeSummary t)
+    {
+        _toast = null;
+        var env = await JS.InvokeAsync<ApiResult<bool>>(
+            "simfAccount.deleteJson", $"/account/api/admin/ratings/types/{t.Id}");
+        if (env is { Success: true })
+        {
+            _toast = new Toast("success", L["Admin.RatingConfig.Deactivated"]);
+            if (_selectedType?.Id == t.Id) { _selectedType = null; }
+            await LoadTypesAsync();
+        }
+        else { _toast = new Toast("error", env?.Error?.MessageForCurrentCulture() ?? L["Admin.RatingConfig.LoadFailed"]); }
+    }
+
+    // -- Groups --
+    private async Task OnGroupQueryChangedAsync(GridQuery next) { _groupQuery = next; await LoadGroupsAsync(); }
+
+    private async Task LoadGroupsAsync()
+    {
+        if (_selectedType is null) return;
+        _groupLoading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminRatingQuestionGroupSummary>>>(
+                "simfAccount.postJson", $"/account/api/admin/ratings/types/{_selectedType.Id}/groups/list", _groupQuery);
+            if (env is { Success: true, Data: not null }) { _groupPage = env.Data; }
+            else { _toast = new Toast("error", env?.Error?.MessageForCurrentCulture() ?? L["Admin.RatingConfig.LoadFailed"]); }
+        }
+        finally { _groupLoading = false; }
+    }
+
+    private void OpenAddGroup()
+    {
+        _groupEditId = null;
+        _groupNameEn = _groupNameAr = string.Empty;
+        _groupOrder = "0";
+        _groupActive = true;
+        _groupModalOpen = true;
+    }
+
+    private void OpenEditGroup(AdminRatingQuestionGroupSummary g)
+    {
+        _groupEditId = g.Id;
+        _groupNameEn = g.Name;
+        _groupNameAr = g.NameArabic;
+        _groupOrder = g.DisplayOrder.ToString();
+        _groupActive = g.IsActive;
+        _groupModalOpen = true;
+    }
+
+    private void CloseGroupModal() => _groupModalOpen = false;
+
+    private async Task SaveGroupAsync()
+    {
+        if (_selectedType is null) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            int.TryParse(_groupOrder, out var order);
+            ApiResult<AdminRatingQuestionGroupSummary>? env;
+            if (_groupEditId is null)
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminRatingQuestionGroupSummary>>(
+                    "simfAccount.postJson", "/account/api/admin/ratings/groups",
+                    new CreateRatingQuestionGroupRequest { RatingTypeId = _selectedType.Id, Name = _groupNameEn, NameArabic = _groupNameAr, DisplayOrder = order });
+            }
+            else
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminRatingQuestionGroupSummary>>(
+                    "simfAccount.putJson", $"/account/api/admin/ratings/groups/{_groupEditId}",
+                    new UpdateRatingQuestionGroupRequest { Name = _groupNameEn, NameArabic = _groupNameAr, DisplayOrder = order, IsActive = _groupActive });
+            }
+            if (env is { Success: true }) { _groupModalOpen = false; _toast = new Toast("success", L["Admin.RatingConfig.Saved"]); await LoadGroupsAsync(); await LoadTypesAsync(); }
+            else { _toast = new Toast("error", env?.Error?.MessageForCurrentCulture() ?? L["Admin.RatingConfig.LoadFailed"]); }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task DeactivateGroupAsync(AdminRatingQuestionGroupSummary g)
+    {
+        _toast = null;
+        var env = await JS.InvokeAsync<ApiResult<bool>>(
+            "simfAccount.deleteJson", $"/account/api/admin/ratings/groups/{g.Id}");
+        if (env is { Success: true }) { _toast = new Toast("success", L["Admin.RatingConfig.Deactivated"]); await LoadGroupsAsync(); await LoadQuestionsAsync(); await LoadTypesAsync(); }
+        else { _toast = new Toast("error", env?.Error?.MessageForCurrentCulture() ?? L["Admin.RatingConfig.LoadFailed"]); }
+    }
+
+    // -- Questions --
+    private async Task OnQuestionQueryChangedAsync(GridQuery next) { _questionQuery = next; await LoadQuestionsAsync(); }
+
+    private async Task LoadQuestionsAsync()
+    {
+        if (_selectedType is null) return;
+        _questionLoading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminRatingQuestionSummary>>>(
+                "simfAccount.postJson", $"/account/api/admin/ratings/types/{_selectedType.Id}/questions/list", _questionQuery);
+            if (env is { Success: true, Data: not null }) { _questionPage = env.Data; }
+            else { _toast = new Toast("error", env?.Error?.MessageForCurrentCulture() ?? L["Admin.RatingConfig.LoadFailed"]); }
+        }
+        finally { _questionLoading = false; }
+    }
+
+    private void OpenAddQuestion()
+    {
+        _questionEditId = null;
+        _questionTextEn = _questionTextAr = string.Empty;
+        _questionGroupId = string.Empty;
+        _questionRequired = false;
+        _questionOrder = "0";
+        _questionActive = true;
+        _questionModalOpen = true;
+    }
+
+    private void OpenEditQuestion(AdminRatingQuestionSummary q)
+    {
+        _questionEditId = q.Id;
+        _questionTextEn = q.Text;
+        _questionTextAr = q.TextArabic;
+        _questionGroupId = q.RatingQuestionGroupId?.ToString() ?? string.Empty;
+        _questionRequired = q.IsRequired;
+        _questionOrder = q.DisplayOrder.ToString();
+        _questionActive = q.IsActive;
+        _questionModalOpen = true;
+    }
+
+    private void CloseQuestionModal() => _questionModalOpen = false;
+
+    private async Task SaveQuestionAsync()
+    {
+        if (_selectedType is null) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            int.TryParse(_questionOrder, out var order);
+            Guid? groupId = Guid.TryParse(_questionGroupId, out var gid) ? gid : null;
+            ApiResult<AdminRatingQuestionSummary>? env;
+            if (_questionEditId is null)
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminRatingQuestionSummary>>(
+                    "simfAccount.postJson", "/account/api/admin/ratings/questions",
+                    new CreateRatingQuestionRequest
+                    {
+                        RatingTypeId = _selectedType.Id, RatingQuestionGroupId = groupId,
+                        Text = _questionTextEn, TextArabic = _questionTextAr,
+                        IsRequired = _questionRequired, DisplayOrder = order,
+                    });
+            }
+            else
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminRatingQuestionSummary>>(
+                    "simfAccount.putJson", $"/account/api/admin/ratings/questions/{_questionEditId}",
+                    new UpdateRatingQuestionRequest
+                    {
+                        RatingQuestionGroupId = groupId,
+                        Text = _questionTextEn, TextArabic = _questionTextAr,
+                        IsRequired = _questionRequired, DisplayOrder = order, IsActive = _questionActive,
+                    });
+            }
+            if (env is { Success: true }) { _questionModalOpen = false; _toast = new Toast("success", L["Admin.RatingConfig.Saved"]); await LoadQuestionsAsync(); await LoadGroupsAsync(); await LoadTypesAsync(); }
+            else { _toast = new Toast("error", env?.Error?.MessageForCurrentCulture() ?? L["Admin.RatingConfig.LoadFailed"]); }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task DeactivateQuestionAsync(AdminRatingQuestionSummary q)
+    {
+        _toast = null;
+        var env = await JS.InvokeAsync<ApiResult<bool>>(
+            "simfAccount.deleteJson", $"/account/api/admin/ratings/questions/{q.Id}");
+        if (env is { Success: true }) { _toast = new Toast("success", L["Admin.RatingConfig.Deactivated"]); await LoadQuestionsAsync(); await LoadTypesAsync(); }
+        else { _toast = new Toast("error", env?.Error?.MessageForCurrentCulture() ?? L["Admin.RatingConfig.LoadFailed"]); }
+    }
+}

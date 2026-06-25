@@ -357,7 +357,12 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
     return const AboutScreen();
   }
   if (r.name == RouteNames.rate) {
-    return const RateScreen();
+    final q = state.uri.queryParameters;
+    return RateScreen(
+      code: q['code'],
+      ratingTypeId: q['ratingTypeId'],
+      targetId: q['targetId'],
+    );
   }
   if (r.name == RouteNames.notifications) {
     return const NotificationsScreen();

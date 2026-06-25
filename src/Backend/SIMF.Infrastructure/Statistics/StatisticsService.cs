@@ -72,14 +72,15 @@ internal sealed class StatisticsService(
                 c => c.IsActive && c.Status == SessionCommentStatus.Pending,
                 cancellationToken);
 
-        var ratingsCount = await appDbContext.Ratings.AsNoTracking()
+        var ratingsCount = await appDbContext.RatingResponses.AsNoTracking()
             .CountAsync(r => r.IsActive, cancellationToken);
 
-        // Average over active ratings only. The nullable cast makes an empty
-        // set return null (not throw on AverageAsync), folded to 0.
-        var averageRating = await appDbContext.Ratings.AsNoTracking()
-            .Where(r => r.IsActive)
-            .Select(r => (double?)r.Stars)
+        // Average over the overall score of active responses (responses that
+        // carry one). The nullable cast makes an empty set return null (not throw
+        // on AverageAsync), folded to 0.
+        var averageRating = await appDbContext.RatingResponses.AsNoTracking()
+            .Where(r => r.IsActive && r.OverallStars != null)
+            .Select(r => (double?)r.OverallStars!.Value)
             .AverageAsync(cancellationToken) ?? 0;
 
         return new StatisticsDashboard(

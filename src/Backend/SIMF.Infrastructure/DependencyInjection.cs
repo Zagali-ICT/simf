@@ -300,6 +300,8 @@ public static class DependencyInjection
         services.AddHostedService<SIMF.Infrastructure.Operations.RegistrationGateAutoCloseWorker>();
         // P1.7 (D-217) — automated "session starting soon" reminder worker.
         services.AddHostedService<SIMF.Infrastructure.Operations.SessionReminderWorker>();
+        // End-of-session "please rate this session" prompt worker.
+        services.AddHostedService<SIMF.Infrastructure.Operations.SessionRatingPromptWorker>();
         // D-168 (gap doc G5) — public-relations team: invitation CRUD +
         // VIP list + bulk-notify dispatcher (PDF §2.7.3).
         services.AddScoped<SIMF.Application.PublicRelations.Abstractions.IAdminInvitationService,
@@ -424,8 +426,15 @@ public static class DependencyInjection
         // P4.2 — D-236: advisory question AI filter (stub). Stateless singleton.
         services.AddSingleton<SIMF.Application.SessionQuestions.Abstractions.IQuestionAiFilter,
             SIMF.Infrastructure.SessionQuestions.StubQuestionAiFilter>();
-        services.AddScoped<SIMF.Application.Feedback.Abstractions.IRatingService,
-            SIMF.Infrastructure.Feedback.RatingService>();
+        // Dynamic, config-driven ratings — app form/submit, admin config CRUD,
+        // admin responses + KPI viewer, and the built-in-types seeder.
+        services.AddScoped<SIMF.Application.Feedback.Abstractions.IRatingFormService,
+            SIMF.Infrastructure.Feedback.RatingFormService>();
+        services.AddScoped<SIMF.Application.Feedback.Abstractions.IAdminRatingConfigService,
+            SIMF.Infrastructure.Feedback.AdminRatingConfigService>();
+        services.AddScoped<SIMF.Application.Feedback.Abstractions.IAdminRatingResponseService,
+            SIMF.Infrastructure.Feedback.AdminRatingResponseService>();
+        services.AddScoped<SIMF.Infrastructure.Feedback.RatingSeeder>();
         // B6 — D-224: visitor-to-visitor networking connections (app-facing).
         services.AddScoped<SIMF.Application.Networking.Abstractions.INetworkingService,
             SIMF.Infrastructure.Networking.NetworkingService>();

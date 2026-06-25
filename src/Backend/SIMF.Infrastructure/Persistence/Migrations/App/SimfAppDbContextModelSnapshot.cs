@@ -2600,21 +2600,142 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.ToTable("FaqGroups", (string)null);
                 });
 
-            modelBuilder.Entity("SIMF.Domain.Feedback.Rating", b =>
+            modelBuilder.Entity("SIMF.Domain.Feedback.RatingAnswer", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int?>("AppStars")
+                    b.Property<Guid>("RatingQuestionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RatingResponseId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Stars")
                         .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RatingQuestionId");
+
+                    b.HasIndex("RatingResponseId", "RatingQuestionId")
+                        .IsUnique();
+
+                    b.ToTable("RatingAnswers", (string)null);
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Feedback.RatingQuestion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRequired")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("RatingQuestionGroupId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RatingTypeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
+                    b.Property<string>("TextArabic")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RatingQuestionGroupId");
+
+                    b.HasIndex("RatingTypeId", "IsActive", "DisplayOrder");
+
+                    b.ToTable("RatingQuestions", (string)null);
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Feedback.RatingQuestionGroup", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("NameArabic")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<Guid>("RatingTypeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RatingTypeId", "IsActive", "DisplayOrder");
+
+                    b.ToTable("RatingQuestionGroups", (string)null);
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Feedback.RatingResponse", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Comment")
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
-
-                    b.Property<int?>("ContentStars")
-                        .HasColumnType("int");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
@@ -2628,11 +2749,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<int?>("OrganizationStars")
+                    b.Property<int?>("OverallStars")
                         .HasColumnType("int");
 
-                    b.Property<int>("Stars")
-                        .HasColumnType("int");
+                    b.Property<Guid>("RatingTypeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TargetId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
@@ -2643,15 +2767,86 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int?>("VenueStars")
+                    b.HasKey("Id");
+
+                    b.HasIndex("RatingTypeId");
+
+                    b.HasIndex("UserId", "RatingTypeId", "TargetId")
+                        .IsUnique();
+
+                    b.ToTable("RatingResponses", (string)null);
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Feedback.RatingType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("AllowComment")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("CommentLabel")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("CommentLabelArabic")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
+
+                    b.Property<bool>("HasOverallStars")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsSystem")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("NameArabic")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<int>("Scope")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId")
+                    b.HasIndex("Code")
                         .IsUnique();
 
-                    b.ToTable("Ratings", (string)null);
+                    b.HasIndex("IsActive", "DisplayOrder");
+
+                    b.ToTable("RatingTypes", (string)null);
                 });
 
             modelBuilder.Entity("SIMF.Domain.Media.MediaItem", b =>
@@ -3658,6 +3853,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("nvarchar(1024)");
 
                     b.Property<DateTimeOffset?>("PublishedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("RatingPromptSentUtc")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("RecordingContentType")
@@ -4977,6 +5175,65 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Navigation("Group");
                 });
 
+            modelBuilder.Entity("SIMF.Domain.Feedback.RatingAnswer", b =>
+                {
+                    b.HasOne("SIMF.Domain.Feedback.RatingQuestion", "Question")
+                        .WithMany()
+                        .HasForeignKey("RatingQuestionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SIMF.Domain.Feedback.RatingResponse", "Response")
+                        .WithMany("Answers")
+                        .HasForeignKey("RatingResponseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Question");
+
+                    b.Navigation("Response");
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Feedback.RatingQuestion", b =>
+                {
+                    b.HasOne("SIMF.Domain.Feedback.RatingQuestionGroup", "Group")
+                        .WithMany("Questions")
+                        .HasForeignKey("RatingQuestionGroupId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("SIMF.Domain.Feedback.RatingType", "Type")
+                        .WithMany("Questions")
+                        .HasForeignKey("RatingTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Group");
+
+                    b.Navigation("Type");
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Feedback.RatingQuestionGroup", b =>
+                {
+                    b.HasOne("SIMF.Domain.Feedback.RatingType", "Type")
+                        .WithMany("Groups")
+                        .HasForeignKey("RatingTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Type");
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Feedback.RatingResponse", b =>
+                {
+                    b.HasOne("SIMF.Domain.Feedback.RatingType", "Type")
+                        .WithMany()
+                        .HasForeignKey("RatingTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Type");
+                });
+
             modelBuilder.Entity("SIMF.Domain.Organization.OrganizationAboutItem", b =>
                 {
                     b.HasOne("SIMF.Domain.Organization.OrganizationProfile", "Profile")
@@ -5288,6 +5545,23 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
             modelBuilder.Entity("SIMF.Domain.Faq.FaqGroup", b =>
                 {
                     b.Navigation("Entries");
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Feedback.RatingQuestionGroup", b =>
+                {
+                    b.Navigation("Questions");
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Feedback.RatingResponse", b =>
+                {
+                    b.Navigation("Answers");
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Feedback.RatingType", b =>
+                {
+                    b.Navigation("Groups");
+
+                    b.Navigation("Questions");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Organization.OrganizationProfile", b =>

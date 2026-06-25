@@ -43,6 +43,8 @@ class NotificationItem {
     required this.isRead,
     this.readAt,
     this.createdAt,
+    this.relatedEntityType,
+    this.relatedEntityId,
   });
 
   final String id;
@@ -55,6 +57,11 @@ class NotificationItem {
   final bool isRead;
   final DateTime? readAt;
   final DateTime? createdAt;
+
+  /// Optional deep-link target the tile can route to (e.g. "Session" + the
+  /// session id for a "rate this session" prompt).
+  final String? relatedEntityType;
+  final String? relatedEntityId;
 
   String localizedTitle(bool isArabic) {
     final ar = titleArabic.trim();
@@ -81,6 +88,8 @@ class NotificationItem {
         isRead: true,
         readAt: readAt,
         createdAt: createdAt,
+        relatedEntityType: relatedEntityType,
+        relatedEntityId: relatedEntityId,
       );
 
   static NotificationItem fromJson(Map<String, dynamic> json) {
@@ -98,6 +107,8 @@ class NotificationItem {
       readAt: readAtRaw == null ? null : DateTime.tryParse(readAtRaw)?.toUtc(),
       createdAt:
           createdAtRaw == null ? null : DateTime.tryParse(createdAtRaw)?.toUtc(),
+      relatedEntityType: json['relatedEntityType'] as String?,
+      relatedEntityId: json['relatedEntityId'] as String?,
     );
   }
 

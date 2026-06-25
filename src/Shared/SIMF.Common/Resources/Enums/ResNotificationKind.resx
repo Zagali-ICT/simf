@@ -25,4 +25,5 @@
   <data name="BookingRejected" xml:space="preserve"><value>Seat booking rejected</value></data>
   <data name="MeetingScheduled" xml:space="preserve"><value>A meeting was scheduled for you</value></data>
   <data name="MeetingCancelled" xml:space="preserve"><value>A meeting was cancelled</value></data>
+  <data name="SessionRatingRequest" xml:space="preserve"><value>Rate this session</value></data>
 </root>

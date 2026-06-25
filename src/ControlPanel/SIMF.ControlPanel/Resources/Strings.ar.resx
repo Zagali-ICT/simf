@@ -2309,6 +2309,66 @@
   <data name="Admin.Ratings.Col.Content" xml:space="preserve"><value>المحتوى</value></data>
   <data name="Admin.Ratings.Col.App" xml:space="preserve"><value>التطبيق</value></data>
   <data name="Admin.Ratings.Col.Venue" xml:space="preserve"><value>المكان والمرافق</value></data>
+  <data name="Admin.Ratings.Col.Type" xml:space="preserve"><value>النوع</value></data>
+  <data name="Admin.Ratings.Col.Target" xml:space="preserve"><value>العنصر</value></data>
+  <data name="Admin.Ratings.Col.Overall" xml:space="preserve"><value>التقييم العام</value></data>
+  <data name="Admin.Ratings.Col.Answers" xml:space="preserve"><value>الإجابات</value></data>
+  <data name="Admin.Ratings.Kpi.Heading" xml:space="preserve"><value>التقييمات حسب النوع</value></data>
+  <data name="Admin.Ratings.Kpi.Responses" xml:space="preserve"><value>{0} ردود</value></data>
+  <data name="Module.RatingConfig" xml:space="preserve"><value>إعداد التقييمات</value></data>
+  <data name="Grid.Yes" xml:space="preserve"><value>نعم</value></data>
+  <data name="Grid.No" xml:space="preserve"><value>لا</value></data>
+  <data name="Admin.RatingConfig.Title" xml:space="preserve"><value>إعداد التقييمات</value></data>
+  <data name="Admin.RatingConfig.LoadFailed" xml:space="preserve"><value>تعذّر تحميل إعداد التقييمات. حاول مرة أخرى.</value></data>
+  <data name="Admin.RatingConfig.Saved" xml:space="preserve"><value>تم الحفظ.</value></data>
+  <data name="Admin.RatingConfig.Deactivated" xml:space="preserve"><value>تم التعطيل.</value></data>
+  <data name="Admin.RatingConfig.Save" xml:space="preserve"><value>حفظ</value></data>
+  <data name="Admin.RatingConfig.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.RatingConfig.Types.Heading" xml:space="preserve"><value>أنواع التقييم</value></data>
+  <data name="Admin.RatingConfig.Types.None" xml:space="preserve"><value>لا توجد أنواع تقييم بعد.</value></data>
+  <data name="Admin.RatingConfig.Groups.Heading" xml:space="preserve"><value>مجموعات الأسئلة — {0}</value></data>
+  <data name="Admin.RatingConfig.Groups.None" xml:space="preserve"><value>لا توجد مجموعات بعد.</value></data>
+  <data name="Admin.RatingConfig.Questions.Heading" xml:space="preserve"><value>الأسئلة — {0}</value></data>
+  <data name="Admin.RatingConfig.Questions.None" xml:space="preserve"><value>لا توجد أسئلة بعد.</value></data>
+  <data name="Admin.RatingConfig.Action.Manage" xml:space="preserve"><value>إدارة</value></data>
+  <data name="Admin.RatingConfig.Action.AddGroup" xml:space="preserve"><value>إضافة مجموعة</value></data>
+  <data name="Admin.RatingConfig.Action.AddQuestion" xml:space="preserve"><value>إضافة سؤال</value></data>
+  <data name="Admin.RatingConfig.Col.Code" xml:space="preserve"><value>الرمز</value></data>
+  <data name="Admin.RatingConfig.Col.Name" xml:space="preserve"><value>الاسم</value></data>
+  <data name="Admin.RatingConfig.Col.NameAr" xml:space="preserve"><value>الاسم (عربي)</value></data>
+  <data name="Admin.RatingConfig.Col.Scope" xml:space="preserve"><value>النطاق</value></data>
+  <data name="Admin.RatingConfig.Col.System" xml:space="preserve"><value>مدمج</value></data>
+  <data name="Admin.RatingConfig.Col.Order" xml:space="preserve"><value>الترتيب</value></data>
+  <data name="Admin.RatingConfig.Col.Active" xml:space="preserve"><value>نشط</value></data>
+  <data name="Admin.RatingConfig.Col.Groups" xml:space="preserve"><value>المجموعات</value></data>
+  <data name="Admin.RatingConfig.Col.Questions" xml:space="preserve"><value>الأسئلة</value></data>
+  <data name="Admin.RatingConfig.Col.Responses" xml:space="preserve"><value>الردود</value></data>
+  <data name="Admin.RatingConfig.Col.Text" xml:space="preserve"><value>السؤال</value></data>
+  <data name="Admin.RatingConfig.Col.Group" xml:space="preserve"><value>المجموعة</value></data>
+  <data name="Admin.RatingConfig.Col.Required" xml:space="preserve"><value>مطلوب</value></data>
+  <data name="Admin.RatingConfig.Scope.Global" xml:space="preserve"><value>عام (مرة واحدة لكل مستخدم)</value></data>
+  <data name="Admin.RatingConfig.Scope.PerSession" xml:space="preserve"><value>لكل جلسة</value></data>
+  <data name="Admin.RatingConfig.Type.Add.Title" xml:space="preserve"><value>إضافة نوع تقييم</value></data>
+  <data name="Admin.RatingConfig.Type.Edit.Title" xml:space="preserve"><value>تعديل نوع التقييم</value></data>
+  <data name="Admin.RatingConfig.Group.Add.Title" xml:space="preserve"><value>إضافة مجموعة</value></data>
+  <data name="Admin.RatingConfig.Group.Edit.Title" xml:space="preserve"><value>تعديل المجموعة</value></data>
+  <data name="Admin.RatingConfig.Question.Add.Title" xml:space="preserve"><value>إضافة سؤال</value></data>
+  <data name="Admin.RatingConfig.Question.Edit.Title" xml:space="preserve"><value>تعديل السؤال</value></data>
+  <data name="Admin.RatingConfig.Field.Code" xml:space="preserve"><value>الرمز</value></data>
+  <data name="Admin.RatingConfig.Field.NameEn" xml:space="preserve"><value>الاسم (إنجليزي)</value></data>
+  <data name="Admin.RatingConfig.Field.NameAr" xml:space="preserve"><value>الاسم (عربي)</value></data>
+  <data name="Admin.RatingConfig.Field.Scope" xml:space="preserve"><value>النطاق</value></data>
+  <data name="Admin.RatingConfig.Field.HasOverall" xml:space="preserve"><value>إظهار التقييم العام بالنجوم</value></data>
+  <data name="Admin.RatingConfig.Field.AllowComment" xml:space="preserve"><value>السماح بتعليق</value></data>
+  <data name="Admin.RatingConfig.Field.CommentLabelEn" xml:space="preserve"><value>عنوان التعليق (إنجليزي)</value></data>
+  <data name="Admin.RatingConfig.Field.CommentLabelAr" xml:space="preserve"><value>عنوان التعليق (عربي)</value></data>
+  <data name="Admin.RatingConfig.Field.Order" xml:space="preserve"><value>ترتيب العرض</value></data>
+  <data name="Admin.RatingConfig.Field.IsActive" xml:space="preserve"><value>نشط</value></data>
+  <data name="Admin.RatingConfig.Field.TextEn" xml:space="preserve"><value>السؤال (إنجليزي)</value></data>
+  <data name="Admin.RatingConfig.Field.TextAr" xml:space="preserve"><value>السؤال (عربي)</value></data>
+  <data name="Admin.RatingConfig.Field.Required" xml:space="preserve"><value>مطلوب للإرسال</value></data>
+  <data name="Admin.RatingConfig.Field.Group" xml:space="preserve"><value>المجموعة</value></data>
+  <data name="Admin.RatingConfig.Field.GroupNone" xml:space="preserve"><value>(بدون مجموعة)</value></data>
 
   <!-- D-199 — Audience-comments moderation. -->
   <data name="Admin.Comments.Title" xml:space="preserve"><value>تعليقات الجمهور</value></data>

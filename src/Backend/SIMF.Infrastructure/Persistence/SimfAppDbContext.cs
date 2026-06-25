@@ -184,7 +184,14 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     public DbSet<SessionComment> SessionComments => Set<SessionComment>();
     // B5 — D-223: per-user likes on audience comments.
     public DbSet<SessionCommentLike> SessionCommentLikes => Set<SessionCommentLike>();
-    public DbSet<Rating> Ratings => Set<Rating>();
+    // Dynamic, config-driven ratings — admin defines types/groups/questions,
+    // attendees submit responses with per-question answers (replaces the old
+    // fixed single-row Rating model).
+    public DbSet<RatingType> RatingTypes => Set<RatingType>();
+    public DbSet<RatingQuestionGroup> RatingQuestionGroups => Set<RatingQuestionGroup>();
+    public DbSet<RatingQuestion> RatingQuestions => Set<RatingQuestion>();
+    public DbSet<RatingResponse> RatingResponses => Set<RatingResponse>();
+    public DbSet<RatingAnswer> RatingAnswers => Set<RatingAnswer>();
 
     // D-202 — exhibitors + the accounts provisioned under them (additive
     // tables; account link is a logical Guid FK to SimfUser on the Identity DB

@@ -446,6 +446,16 @@ public static class PermissionCatalog
         public const string Export = "Ratings.Export";
     }
 
+    /// <summary>Dynamic rating configuration — admin CRUD over rating types,
+    /// question groups and questions.</summary>
+    public static class RatingConfig
+    {
+        public const string View = "RatingConfig.View";
+        public const string Create = "RatingConfig.Create";
+        public const string Edit = "RatingConfig.Edit";
+        public const string Delete = "RatingConfig.Delete";
+    }
+
     // ── Knowledge ────────────────────────────────────────────────────────
 
     public static class AiPrompts
@@ -855,6 +865,10 @@ public static class PermissionCatalog
 
         new(Ratings.View, "Ratings", "View", "View ratings and feedback", AdminOnly),
         new(Ratings.Export, "Ratings", "Export", "Export ratings and feedback", AdminOnly),
+        new(RatingConfig.View, "RatingConfig", "View", "View rating configuration", AdminOnly),
+        new(RatingConfig.Create, "RatingConfig", "Create", "Create rating types/questions", AdminOnly),
+        new(RatingConfig.Edit, "RatingConfig", "Edit", "Edit rating types/questions", AdminOnly),
+        new(RatingConfig.Delete, "RatingConfig", "Delete", "Delete rating types/questions", AdminOnly),
 
         // Knowledge
         new(AiPrompts.View, "AiPrompts", "View", "View AI prompts", AdminOnly),

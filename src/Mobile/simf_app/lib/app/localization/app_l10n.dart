@@ -1182,6 +1182,12 @@ class AppL10n {
   String get rateThanks => _t('شكراً لتقييمك', 'Thanks for your rating');
   String get rateFailed =>
       _t('تعذّر إرسال التقييم. حاول مرة أخرى.', 'Could not submit. Try again.');
+  String get rateRequiredQuestions => _t(
+        'يرجى الإجابة على جميع الأسئلة المطلوبة',
+        'Please answer all required questions',
+      );
+  String get rateLoadFailed =>
+      _t('تعذّر تحميل نموذج التقييم.', 'Could not load the rating form.');
 
   // Media partners (Page 031).
   String get mediaPartnersTitle => _t('الشركاء الإعلاميون', 'Media partners');
