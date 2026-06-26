@@ -1421,6 +1421,75 @@ class AppL10n {
   String get aiSummaryNoSessions =>
       _t('لا توجد جلسات متاحة بعد.', 'No sessions available yet.');
 
+  // Wave 2 — session-summaries list (Figma 1388:8392): search + the three
+  // الجميع / جلساتي / المفضلة tabs over the cached programme.
+  String get sessionSummarySearchHint =>
+      _t('ابحث عن جلسة أو متحدث...', 'Search a session or speaker...');
+  String get sessionsTabAll => _t('الجميع', 'All');
+  String get sessionsTabMine => _t('جلساتي', 'My sessions');
+  String get sessionsTabFavourites => _t('المفضلة', 'Favourites');
+  String get sessionsNoFavourites =>
+      _t('لا توجد جلسات مفضلة بعد.', 'No favourite sessions yet.');
+  String get sessionsNoMine =>
+      _t('لا توجد جلسات محجوزة بعد.', 'No booked sessions yet.');
+  String get sessionsNoMatch =>
+      _t('لا توجد نتائج مطابقة.', 'No matching results.');
+  String get sessionRecordedBadge => _t('مسجل', 'Recorded');
+  String get favouriteToggleError =>
+      _t('تعذر تحديث المفضلة.', 'Could not update favourites.');
+  String sessionDurationMinutes(int minutes) =>
+      _t('$minutes دقيقة', '$minutes min');
+
+  // Wave 2 — "my sessions" list, App "تفاصيل الجلسات" (Figma 1388:9067), reached
+  // from the My-Area "my sessions" counter. Four tabs partition the user's
+  // booked / joined sessions.
+  String get mySessionsTitle => _t('تفاصيل الجلسات', 'Session details');
+  String get mySessionsTabUpcoming => _t('القادمة', 'Upcoming');
+  String get mySessionsTabAttended => _t('حضرتها', 'Attended');
+  String get mySessionsTabMissed => _t('فاتتني', 'Missed');
+  String get mySessionsTabArchive => _t('الأرشيف', 'Archive');
+  String get mySessionsError =>
+      _t('تعذر تحميل جلساتك.', 'Could not load your sessions.');
+  String get mySessionsEmpty =>
+      _t('لا توجد جلسات في هذه القائمة.', 'No sessions in this list.');
+  // The count subtitle, e.g. "3 جلسات قادمة" / "3 upcoming sessions".
+  String mySessionsCount(int count, String tabLabel) =>
+      _t('$count جلسة · $tabLabel', '$count · $tabLabel');
+
+  // Wave 2 — session-presentations list, App "عروض الجلسات" (Figma 1388:7621):
+  // downloadable decks grouped by day, each with a تحميل button.
+  String get sessionPresentationsTitle =>
+      _t('عروض الجلسات', 'Session presentations');
+  String get presentationsEmpty =>
+      _t('لا توجد عروض متاحة بعد.', 'No presentations available yet.');
+  String get presentationsError =>
+      _t('تعذر تحميل العروض.', 'Could not load the presentations.');
+  String get presentationDownload => _t('تحميل', 'Download');
+  String get presentationDownloading => _t('جارٍ التحميل...', 'Downloading...');
+  String get presentationDownloadError =>
+      _t('تعذر تحميل الملف.', 'Could not download the file.');
+
+  // Event day group header, 1-based ("اليوم الأول" / "Day 1") — shared by the
+  // session-summaries (8392) + presentations (7621) day grouping.
+  String eventDayLabel(int dayIndex) {
+    const arabicOrdinals = <String>[
+      'الأول',
+      'الثاني',
+      'الثالث',
+      'الرابع',
+      'الخامس',
+      'السادس',
+      'السابع',
+    ];
+    if (isArabic) {
+      final ordinal = dayIndex >= 1 && dayIndex <= arabicOrdinals.length
+          ? arabicOrdinals[dayIndex - 1]
+          : '$dayIndex';
+      return 'اليوم $ordinal';
+    }
+    return 'Day $dayIndex';
+  }
+
   // Send a question (Page 026 — live Q&A composer).
   // Figma 934:3636 retitled the screen to "معلومات عن الجلسة" (Session
   // information) — the session-data block sits above the question composer.

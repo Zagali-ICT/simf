@@ -29,4 +29,12 @@ public interface IMyAreaService
     Task<MyAreaContactCard> GetContactCardAsync(
         Guid userId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>The "my sessions" list (App "تفاصيل الجلسات", Figma 1388:9067):
+    /// the user's booked / joined sessions across all days, each with the
+    /// per-user heart + attended flag, time-ordered. The app partitions these
+    /// into the القادمة / حضرتها / فاتتني / الأرشيف tabs client-side.</summary>
+    Task<MyAreaSessions> GetMySessionsAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default);
 }

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:share_plus/share_plus.dart';
 
 /// Web implementation of [shareTextContent].
@@ -12,3 +14,18 @@ Future<void> shareTextContent({
   required String mimeType,
 }) =>
     Share.share(content);
+
+/// Web implementation of [shareBinaryContent] — shares the in-memory [bytes] via
+/// the browser share API (no `dart:io` filesystem on web).
+Future<void> shareBinaryContent({
+  required List<int> bytes,
+  required String filename,
+  required String mimeType,
+}) =>
+    Share.shareXFiles(<XFile>[
+      XFile.fromData(
+        Uint8List.fromList(bytes),
+        name: filename,
+        mimeType: mimeType,
+      ),
+    ]);

@@ -89,6 +89,11 @@ class RouteNames {
   // My Area; Approved account). Delegation meetings are managed on the CP.
   static const String myMeetings = 'myMeetings';
 
+  // Wave 2 (Figma 1388:9067) — "my sessions" (تفاصيل الجلسات): the caller's
+  // booked / joined sessions with القادمة / حضرتها / فاتتني / الأرشيف tabs,
+  // reached from the My-Area "my sessions" counter (Approved account).
+  static const String myAreaSessions = 'myAreaSessions';
+
   // Owner batch (2026-06-21) — entry points whose feature is not designed/built
   // yet, so they render the ComingSoon placeholder (sentinel numbers 200+):
   //   • bilateralMeetings (اللقاءات الثنائية) — home tile, not designed yet (#5).

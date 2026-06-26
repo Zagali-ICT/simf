@@ -210,6 +210,28 @@ public sealed record HostSessionSummary(
     bool GeneratedByAi,
     DateTimeOffset ApprovedAt);
 
+/// <summary>Wave 2 (Figma 1388:7621 "عروض الجلسات") — one downloadable session
+/// presentation on the public list: the session it belongs to (title bilingual +
+/// start, for the app's day tabs), the presenting speaker (bilingual), and the
+/// file metadata. The bytes are fetched from
+/// <c>GET /app/presentations/{id}/file</c>, not embedded. Served by
+/// <c>GET /api/v1/app/presentations</c> for an approved (signed-in) account.</summary>
+public sealed record PublicPresentationItem(
+    Guid Id,
+    Guid SessionId,
+    string SessionTitle,
+    string SessionTitleArabic,
+    DateTimeOffset SessionStartUtc,
+    string SpeakerName,
+    string SpeakerNameArabic,
+    string FileName,
+    string ContentType,
+    long SizeBytes);
+
+/// <summary>Wave 2 — envelope for the public session-presentations list
+/// (Figma 1388:7621). Time-ordered by session start so the app groups by day.</summary>
+public sealed record PublicPresentations(IReadOnlyList<PublicPresentationItem> Items);
+
 /// <summary>P3.2b — D-232 (D-213): the response from the recording stream-token
 /// endpoint. <see cref="Token"/> is a short-lived JWT scoped to one recording;
 /// the player appends it to <see cref="StreamUrl"/> on the query string

@@ -225,6 +225,10 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     // triaged in the Control Panel. Additive table; submitter is a bare Guid.
     public DbSet<ContactInquiry> ContactInquiries => Set<ContactInquiry>();
 
+    // Session favourites (المفضلة) — the heart toggle on the session-summaries
+    // (1388:8392) + my-sessions (1388:9067) screens. One row per (user, session).
+    public DbSet<SessionFavourite> SessionFavourites => Set<SessionFavourite>();
+
     // D-495 — the singleton Organization / About profile + its two child lists
     // (the edition-generic forum config: name/dates/status/social/contact/about).
     public DbSet<OrganizationProfile> OrganizationProfile => Set<OrganizationProfile>();

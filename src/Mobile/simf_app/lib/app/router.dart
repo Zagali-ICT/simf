@@ -47,6 +47,7 @@ import '../features/gates/gate_scan_screen.dart';
 import '../features/moderation/session_moderate_screen.dart';
 import '../features/myarea/identity_verification_screen.dart';
 import '../features/myarea/my_area_screen.dart';
+import '../features/myarea/my_sessions_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/venuemap/venue_map_screen.dart';
 import '../features/profile/data/profile_models.dart';
@@ -58,6 +59,7 @@ import '../features/sessions/join_session_hub_screen.dart';
 import '../features/sessions/my_seat_screen.dart';
 import '../features/sessions/seat_picker_screen.dart';
 import '../features/sessions/session_detail_screen.dart';
+import '../features/sessions/session_presentations_screen.dart';
 import '../features/sessions/sessions_screen.dart';
 import '../features/sponsors/sponsors_screen.dart';
 import '../features/speakers/speaker_profile_screen.dart';
@@ -165,6 +167,8 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 111, name: RouteNames.sessionSummaryList, path: '/session-summaries', labelAr: 'ملخص الجلسات', labelEn: 'Session summaries'),
   // #9 — venue map focused on a booth (booth "أرشدني" CTA; public, pushed).
   _Route(number: 112, name: RouteNames.boothMap, path: '/booths/:boothId/map', labelAr: 'الخريطة', labelEn: 'Venue map'),
+  // Wave 2 (Figma 1388:9067) — "my sessions" (approved-only; My-Area counter).
+  _Route(number: 113, name: RouteNames.myAreaSessions, path: '/my-area/sessions', labelAr: 'تفاصيل الجلسات', labelEn: 'Session details'),
 
   // D-464 — المزيد hub entries with no screen yet (Figma 1129:17224). Public;
   // they fall through to ComingSoonScreen (sentinel numbers 200+).
@@ -220,6 +224,8 @@ const Set<int> _authenticatedRoutes = <int>{
   107, // Exhibitor My Visitors (D-426)
   109, // Seat picker (D-485; approved-only — the seat endpoints 401/403 a guest)
   110, // Join-a-session hub (D-485; approved-only)
+  113, // My sessions (Wave 2; approved-only — /app/account/sessions 401/403 a guest)
+  202, // Session presentations (Wave 2; approved-only — /app/presentations 401/403 a guest)
 };
 
 /// Routes that additionally require a minimum app privilege (D-405/D-406). The
@@ -445,6 +451,12 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.contactUs) {
     return const ContactUsScreen();
+  }
+  if (r.name == RouteNames.sessionPresentations) {
+    return const SessionPresentationsScreen();
+  }
+  if (r.name == RouteNames.myAreaSessions) {
+    return const MySessionsScreen();
   }
   return ComingSoonScreen(
     screenNumber: r.number,

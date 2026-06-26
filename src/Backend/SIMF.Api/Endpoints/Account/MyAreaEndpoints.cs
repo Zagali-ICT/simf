@@ -42,6 +42,38 @@ public sealed class MyAreaDashboardEndpoint(IMyAreaService service)
 }
 
 /// <summary>
+/// <c>GET /api/v1/app/account/sessions</c> — the "my sessions" list (App
+/// "تفاصيل الجلسات", Figma 1388:9067): the user's booked / joined sessions across
+/// all days, each with the per-user heart + attended flag, time-ordered. The app
+/// partitions them into the القادمة / حضرتها / فاتتني / الأرشيف tabs client-side.
+/// Approved account, own <c>sub</c>; an additive read-only aggregate (no schema).
+/// </summary>
+public sealed class MyAreaSessionsEndpoint(IMyAreaService service)
+    : EndpointWithoutRequest<ApiResult<MyAreaSessions>>
+{
+    public override void Configure()
+    {
+        Get("/app/account/sessions");
+        Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Tags("Account");
+        Summary(summary => summary.Summary =
+            "My sessions: the caller's booked / joined sessions with the heart + attended flags.");
+    }
+
+    public override async Task HandleAsync(CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var userId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+
+        var sessions = await service.GetMySessionsAsync(userId, ct);
+        await Send.OkAsync(ApiResult<MyAreaSessions>.Ok(sessions), ct);
+    }
+}
+
+/// <summary>
 /// <c>GET /api/v1/app/account/calendar.ics</c> — the user's full schedule (every
 /// held session + accepted speaker meeting + confirmed business meeting, all
 /// days) as an RFC 5545 calendar the app hands to the native add-to-calendar /

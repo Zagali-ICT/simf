@@ -25,6 +25,24 @@ Future<void> shareTextContent({
   await Share.shareXFiles(<XFile>[XFile(file.path, mimeType: mimeType)]);
 }
 
+/// Native (Android / iOS / desktop) implementation of [shareBinaryContent] —
+/// writes the downloaded [bytes] to a real temp file and shares it so the OS
+/// sheet offers Save-to-Files / Open (the تحميل path, Figma 1388:7621).
+Future<void> shareBinaryContent({
+  required List<int> bytes,
+  required String filename,
+  required String mimeType,
+}) async {
+  // A11-3 (NCA) — purge leftover share temp files before writing a new one so a
+  // previously-shared file never lingers across sessions.
+  await _purgeOldShareTemp();
+
+  final dir = await Directory.systemTemp.createTemp('simf_share');
+  final file = File('${dir.path}/$filename');
+  await file.writeAsBytes(bytes);
+  await Share.shareXFiles(<XFile>[XFile(file.path, mimeType: mimeType)]);
+}
+
 /// Best-effort removal of temp directories left by earlier shares.
 Future<void> _purgeOldShareTemp() async {
   try {

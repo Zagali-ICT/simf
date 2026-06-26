@@ -88,6 +88,83 @@ internal sealed class MyAreaService(
         return card ?? new MyAreaContactCard(string.Empty, string.Empty, null, null, null);
     }
 
+    public async Task<MyAreaSessions> GetMySessionsAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        // The user's booked / joined sessions — the same active seat-bookings the
+        // dashboard counts (D-485 kinds, not released, active session). Project the
+        // card fields + the primary speaker (DisplayOrder 0) to an anonymous type;
+        // distinct by session, since a user may hold more than one active row.
+        var rows = await appDbContext.SeatReservations.AsNoTracking()
+            .Where(r => r.ReservedForUserId == userId
+                && (r.Kind == SeatReservationKind.UserBooking
+                    || r.Kind == SeatReservationKind.RandomAssignment
+                    || r.Kind == SeatReservationKind.OpenSeating)
+                && r.ReleasedAt == null
+                && r.Session!.IsActive)
+            .Select(r => new
+            {
+                r.SessionId,
+                r.Session!.Title,
+                r.Session.TitleArabic,
+                r.Session.StartUtc,
+                r.Session.EndUtc,
+                r.Session.Status,
+                HallEn = r.Session.Hall!.Name,
+                HallAr = r.Session.Hall.NameArabic,
+                CategoryEn = r.Session.Category != null ? r.Session.Category.Name : null,
+                CategoryAr = r.Session.Category != null ? r.Session.Category.NameArabic : null,
+                Speaker = r.Session.Speakers
+                    .OrderBy(ss => ss.DisplayOrder)
+                    .Select(ss => new
+                    {
+                        ss.Speaker!.Name,
+                        ss.Speaker.NameArabic,
+                        ss.Speaker.Rank,
+                    })
+                    .FirstOrDefault(),
+            })
+            .ToListAsync(cancellationToken);
+
+        // The sessions the user actually arrived at (any HallAttendance row) and
+        // the ones they hearted — two cheap id sets resolved on read.
+        var attended = (await appDbContext.HallAttendances.AsNoTracking()
+            .Where(a => a.UserId == userId)
+            .Select(a => a.SessionId)
+            .Distinct()
+            .ToListAsync(cancellationToken)).ToHashSet();
+
+        var favourites = (await appDbContext.SessionFavourites.AsNoTracking()
+            .Where(f => f.UserId == userId)
+            .Select(f => f.SessionId)
+            .ToListAsync(cancellationToken)).ToHashSet();
+
+        var items = rows
+            .GroupBy(r => r.SessionId)
+            .Select(g => g.First())
+            .OrderBy(r => r.StartUtc)
+            .Select(r => new MyAreaSessionItem(
+                r.SessionId,
+                r.Title,
+                r.TitleArabic,
+                r.StartUtc,
+                r.EndUtc,
+                r.HallEn,
+                r.HallAr,
+                r.CategoryEn,
+                r.CategoryAr,
+                r.Speaker?.Name,
+                r.Speaker?.NameArabic,
+                r.Speaker?.Rank,
+                r.Status,
+                attended.Contains(r.SessionId),
+                favourites.Contains(r.SessionId)))
+            .ToList();
+
+        return new MyAreaSessions(items);
+    }
+
     private async Task<MyAreaIdentity> LoadIdentityAsync(Guid userId, CancellationToken cancellationToken)
     {
         var profile = await appDbContext.UserProfiles.AsNoTracking()

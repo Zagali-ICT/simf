@@ -376,6 +376,12 @@ public static class DependencyInjection
         // Contact-us inquiries — public submit + CP inbox (Figma 1388:7567).
         services.AddScoped<SIMF.Application.Support.Abstractions.IContactInquiryService,
             SIMF.Infrastructure.Support.ContactInquiryService>();
+        // Session favourites (المفضلة) — heart toggle on summaries + my-sessions.
+        services.AddScoped<SIMF.Application.Programme.Abstractions.ISessionFavouriteService,
+            SIMF.Infrastructure.Programme.SessionFavouriteService>();
+        // Wave 2 — public read + download of speaker presentations (Figma 1388:7621).
+        services.AddScoped<SIMF.Application.Programme.Abstractions.IPublicSpeakerPresentationService,
+            SIMF.Infrastructure.Programme.PublicSpeakerPresentationService>();
         services.AddScoped<SIMF.Application.PublicRelations.Abstractions.IPublicMediaPartnerService,
             SIMF.Infrastructure.PublicRelations.PublicMediaPartnerService>();
         services.AddScoped<SIMF.Application.PublicRelations.Abstractions.IAdminMediaPartnerService,

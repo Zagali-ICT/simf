@@ -221,7 +221,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #38 `accessibility` (no API) | [`mobile-accessibility.md`](mobile-accessibility.md) | E2E-MOB038-001..004 |
 | #41 `more` (no API) | [`mobile-more.md`](mobile-more.md) | E2E-MOB041-001..003 |
 | #34 `aiSummary` (`GET /app/programme/sessions/{id}/summary`) | [`mobile-ai-summary.md`](mobile-ai-summary.md) | E2E-MOB034-001..006 |
-| `sessionSummaryList` (`GET /app/programme/sessions`) — #1/#6 (home tile → list → #34 details) | [`mobile-ai-summary.md`](mobile-ai-summary.md) | E2E-MOB034-006 |
+| #111 `sessionSummaryList` (cached programme + favourites/booked overlay) — Wave 2 pixel pass, Figma `1388:8392` | [`mobile-session-summaries.md`](mobile-session-summaries.md) | E2E-MOB111-001..008 |
 | #26 `sendQuestion` (`POST /app/sessions/{id}/questions`) | [`mobile-send-question.md`](mobile-send-question.md) | E2E-MOB026-001..006 |
 | #28 `audienceComments` (`GET/POST /app/sessions/{id}/comments` + like) | [`mobile-audience-comments.md`](mobile-audience-comments.md) | E2E-MOB028-001..007 |
 | #32 `badge` (`GET /app/account/dashboard`) | [`mobile-badge.md`](mobile-badge.md) | E2E-MOB032-001..004 |
@@ -234,6 +234,8 @@ API endpoints land (D-249). The per-screen design docs live under
 | #200 `forumGuide` (no API — static guide) — built from ComingSoon, Figma `1388:7493` | [`mobile-forum-guide.md`](mobile-forum-guide.md) | E2E-MOB200-001..005 |
 | #201 `faq` (`GET /app/faq` — public) — built from ComingSoon, Figma `1388:7567` | [`mobile-faq.md`](mobile-faq.md) | E2E-MOB201-001..006 |
 | #203 `contactUs` (`POST /app/contact-inquiry` + `GET /app/organization-profile`) — built from ComingSoon, Figma `1388:7711` | [`mobile-contact-us.md`](mobile-contact-us.md) | E2E-MOB203-001..007 |
+| #202 `sessionPresentations` (`GET /app/presentations` + `/{id}/file`) — built from ComingSoon, Figma `1388:7621` | [`mobile-session-presentations.md`](mobile-session-presentations.md) | E2E-MOB202-001..006 |
+| #113 `myAreaSessions` (`GET /app/account/sessions`) — Wave 2 my-sessions, Figma `1388:9067` | [`mobile-my-sessions.md`](mobile-my-sessions.md) | E2E-MOB113-001..007 |
 
 ## How to add a new catalogue file
 
