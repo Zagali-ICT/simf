@@ -1008,18 +1008,67 @@ class AppL10n {
         'Could not send the request. Try again.',
       );
 
-  // D-479 (#11 follow-up) — the read-only "My meetings" screen.
-  String get myMeetingsTitle => _t('اجتماعاتي', 'My meetings');
-  String get myMeetingsLink => _t('اجتماعاتي', 'My meetings');
-  String get myMeetingsEmpty =>
-      _t('لا توجد اجتماعات بعد', 'You have no meetings yet');
-  String get myMeetingsError =>
-      _t('تعذّر تحميل اجتماعاتك', 'Could not load your meetings');
-  String get myMeetingKindSpeaker => _t('اجتماع متحدث', 'Speaker meeting');
-  String get myMeetingKindDelegation => _t('اجتماع وفد', 'Delegation meeting');
-  String get myMeetingStatusPending => _t('قيد الانتظار', 'Pending');
-  String get myMeetingStatusAccepted => _t('مقبول', 'Accepted');
-  String get myMeetingStatusRejected => _t('مرفوض', 'Rejected');
+  // D-500 (Wave 5, الطلبات 1408:9726) — the unified requests feed (supersedes the
+  // D-479 read-only My-meetings screen).
+  String get requestsTitle => _t('الطلبات', 'Requests');
+  String get requestsLink => _t('الطلبات', 'Requests');
+  String get requestsEmpty =>
+      _t('لا توجد طلبات بعد', 'You have no requests yet');
+  String get requestsNoResults =>
+      _t('لا توجد طلبات بهذه الحالة', 'No requests with this status');
+  String get requestsError =>
+      _t('تعذّر تحميل طلباتك', 'Could not load your requests');
+
+  // Type headlines (rendered from AppRequestKind).
+  String get requestKindSpeaker => _t('طلب لقاء مع متحدث', 'Speaker meeting request');
+  String get requestKindDelegation => _t('طلب اجتماع وفد', 'Delegation meeting request');
+  String get requestKindSession => _t('طلب حضور جلسة', 'Session attendance request');
+  String get requestKindDocument => _t('طلب وثيقة المشاركة', 'Participation document request');
+  String get requestKindBadge => _t('طلب تحديث البادج', 'Badge update request');
+
+  // Status chips.
+  String get requestStatusAll => _t('الكل', 'All');
+  String get requestStatusPending => _t('قيد المراجعة', 'Under review');
+  String get requestStatusAccepted => _t('مقبول', 'Accepted');
+  String get requestStatusRejected => _t('مرفوض', 'Rejected');
+  String get requestStatusCancelled => _t('ملغى', 'Cancelled');
+
+  // New-request flow.
+  String get requestNew => _t('طلب جديد', 'New request');
+  String get requestNewTitle => _t('نوع الطلب', 'Request type');
+  String get requestNewDocument => _t('طلب وثيقة المشاركة', 'Participation document');
+  String get requestNewBadge => _t('طلب تحديث البادج', 'Badge update');
+
+  // Document form.
+  String get requestDocTypeLabel => _t('نوع الوثيقة', 'Document type');
+  String get requestDocTypeAttendance =>
+      _t('شهادة حضور رسمية', 'Official attendance certificate');
+  String get requestDocTypeParticipation => _t('خطاب مشاركة', 'Participation letter');
+  String get requestDocTypeInvitation => _t('خطاب دعوة', 'Invitation letter');
+  String get requestNoteLabel => _t('ملاحظة (اختيارية)', 'Note (optional)');
+
+  // Badge form.
+  String get requestBadgeTitleLabel =>
+      _t('المسمى الوظيفي الجديد', 'New job title');
+  String get requestBadgeTitleRequired =>
+      _t('أدخل المسمى الوظيفي', 'Enter a job title');
+  String get requestBadgeReasonLabel => _t('السبب (اختياري)', 'Reason (optional)');
+
+  // Actions / toasts.
+  String get requestSubmit => _t('إرسال الطلب', 'Submit request');
+  String get requestSubmitted => _t('تم إرسال طلبك', 'Your request was submitted');
+  String get requestSubmitFailed =>
+      _t('تعذّر إرسال الطلب', 'Could not submit the request');
+  String get requestCancel => _t('إلغاء الطلب', 'Cancel request');
+  String get requestCancelConfirm =>
+      _t('هل تريد إلغاء هذا الطلب؟', 'Cancel this request?');
+  String get requestCancelKeep => _t('تراجع', 'Keep');
+  String get requestCancelled => _t('تم إلغاء الطلب', 'Request cancelled');
+  String get requestCancelFailed =>
+      _t('تعذّر إلغاء الطلب', 'Could not cancel the request');
+
+  /// A request card's short date (locale-aware "12 يناير 2026" / "12 Jan 2026").
+  String requestDate(DateTime date) => _shortDate(date);
 
   // Booths (Page 022).
   String get boothsTitle => _t('الأجنحة', 'Booths');

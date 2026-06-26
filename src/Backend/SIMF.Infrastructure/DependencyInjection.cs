@@ -342,9 +342,15 @@ public static class DependencyInjection
         // D-478 (#11, Group G phase 2) — delegation↔delegation meeting requests.
         services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.IDelegationMeetingRequestService,
             SIMF.Infrastructure.MeetingRequests.DelegationMeetingRequestService>();
-        // D-479 (#11 follow-up) — read-only "My meetings" feed for the mobile app.
-        services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.IMyMeetingsService,
-            SIMF.Infrastructure.MeetingRequests.MyMeetingsService>();
+        // D-500 (Wave 5, الطلبات) — the unified "My requests" feed (supersedes the
+        // old read-only My-meetings feed, D-479) + the two new standalone request
+        // types (participation-document + badge-update).
+        services.AddScoped<SIMF.Application.Requests.Abstractions.IMyRequestsService,
+            SIMF.Infrastructure.Requests.MyRequestsService>();
+        services.AddScoped<SIMF.Application.Requests.Abstractions.IParticipationDocumentRequestService,
+            SIMF.Infrastructure.Requests.ParticipationDocumentRequestService>();
+        services.AddScoped<SIMF.Application.Requests.Abstractions.IBadgeUpdateRequestService,
+            SIMF.Infrastructure.Requests.BadgeUpdateRequestService>();
         // D-175 (gap doc G11, Mockup page 7) — per-session seat
         // reservations (visitor self-pick + random + admin row blocks).
         services.AddScoped<SIMF.Application.SeatReservations.Abstractions.ISeatReservationService,

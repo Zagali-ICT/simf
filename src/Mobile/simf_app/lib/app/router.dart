@@ -43,7 +43,7 @@ import '../features/more/more_screen.dart';
 import '../features/notifications/notifications_screen.dart';
 import '../features/questions/send_question_screen.dart';
 import '../features/exhibitor/my_visitors_screen.dart';
-import '../features/meetings/my_meetings_screen.dart';
+import '../features/requests/requests_screen.dart';
 import '../features/exhibitor/scan_visitor_screen.dart';
 import '../features/gates/gate_scan_screen.dart';
 import '../features/moderation/session_moderate_screen.dart';
@@ -165,8 +165,8 @@ const List<_Route> _routes = <_Route>[
   // D-426 — exhibitor ("Other") lead capture (approved-only; server 403s visitors).
   _Route(number: 106, name: RouteNames.scanVisitor, path: '/exhibitor/scan', labelAr: 'مسح بطاقة زائر', labelEn: 'Scan visitor badge'),
   _Route(number: 107, name: RouteNames.myVisitors, path: '/exhibitor/visitors', labelAr: 'زواري', labelEn: 'My Visitors'),
-  // D-479 (#11 follow-up) — read-only "My meetings" list (approved-only).
-  _Route(number: 108, name: RouteNames.myMeetings, path: '/my-meetings', labelAr: 'اجتماعاتي', labelEn: 'My meetings'),
+  // D-500 (Wave 5, الطلبات) — the unified requests feed (approved-only).
+  _Route(number: 108, name: RouteNames.requests, path: '/requests', labelAr: 'الطلبات', labelEn: 'Requests'),
   // D-485 — the session-join flow (approved-only): the seat picker + the hub.
   _Route(number: 109, name: RouteNames.seatPicker, path: '/sessions/:sessionId/pick-seat', labelAr: 'اختر مقعدك', labelEn: 'Select your seat'),
   _Route(number: 110, name: RouteNames.joinSessionHub, path: '/sessions/join', labelAr: 'احجز مقعداً', labelEn: 'Book a seat'),
@@ -460,8 +460,8 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   if (r.name == RouteNames.myVisitors) {
     return const MyVisitorsScreen();
   }
-  if (r.name == RouteNames.myMeetings) {
-    return const MyMeetingsScreen();
+  if (r.name == RouteNames.requests) {
+    return const RequestsScreen();
   }
   if (r.name == RouteNames.forumGuide) {
     return const ForumGuideScreen();

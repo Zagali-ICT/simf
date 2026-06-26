@@ -315,7 +315,7 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
             KsaStatTile(
               value: dashboard.counters.meetingsCount,
               label: l10n.statMeetings,
-              onTap: () => context.pushNamed(RouteNames.myMeetings),
+              onTap: () => context.pushNamed(RouteNames.requests),
             ),
             KsaStatTile(
               value: dashboard.counters.bookedSessionsCount,
@@ -369,10 +369,10 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
           onTap: () => context.pushNamed(RouteNames.badge),
         ),
         const SizedBox(height: SimfTokens.space4),
-        // D-479 (#11 follow-up) — read-only list of the user's meetings.
+        // D-500 (Wave 5, الطلبات) — the unified requests feed.
         _MoreRow(
-          label: l10n.myMeetingsLink,
-          onTap: () => context.pushNamed(RouteNames.myMeetings),
+          label: l10n.requestsLink,
+          onTap: () => context.pushNamed(RouteNames.requests),
         ),
         const SizedBox(height: SimfTokens.space4),
         // D-485 — the standalone Join-a-session hub (the seat-booking flow; the

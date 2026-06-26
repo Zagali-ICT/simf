@@ -306,6 +306,18 @@ public static class AuditEvents
     public const string AdminSpeakerMeetingRequestsListed = "Admin.SpeakerMeetingRequestsListed";
     public const string AdminSpeakerMeetingRequestViewed = "Admin.SpeakerMeetingRequestViewed";
 
+    // D-500 (Wave 5, الطلبات) — participation-document + badge-update requests
+    // (the admin detail/respond reveals the requester email — same SOC rationale).
+    public const string ParticipationDocumentRequestSubmitted = "ParticipationDocumentRequest.Submitted";
+    public const string ParticipationDocumentRequestResponded = "ParticipationDocumentRequest.Responded";
+    public const string AdminParticipationDocumentRequestsListed = "Admin.ParticipationDocumentRequestsListed";
+    public const string AdminParticipationDocumentRequestViewed = "Admin.ParticipationDocumentRequestViewed";
+    public const string BadgeUpdateRequestSubmitted = "BadgeUpdateRequest.Submitted";
+    public const string BadgeUpdateRequestResponded = "BadgeUpdateRequest.Responded";
+    public const string AdminBadgeUpdateRequestsListed = "Admin.BadgeUpdateRequestsListed";
+    public const string AdminBadgeUpdateRequestViewed = "Admin.BadgeUpdateRequestViewed";
+    public const string AppRequestCancelled = "AppRequest.Cancelled";
+
     // Seat reservations (D-175, gap doc G11 — Mockup page 7)
     public const string HallSeatLayoutUpdated = "HallSeatLayout.Updated";
     public const string SeatReservationCreated = "SeatReservation.Created";

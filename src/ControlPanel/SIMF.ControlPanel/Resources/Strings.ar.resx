@@ -75,6 +75,8 @@
   <data name="Module.SpeakerMeetingRequests" xml:space="preserve"><value>طلبات مقابلة المتحدثين</value></data>
   <data name="Module.AdminSpeakerAvailability" xml:space="preserve"><value>توفّر المتحدثين</value></data>
   <data name="Module.AdminDelegationMeetings" xml:space="preserve"><value>اجتماعات الوفود</value></data>
+  <data name="Module.AdminDocumentRequests" xml:space="preserve"><value>طلبات الوثائق</value></data>
+  <data name="Module.AdminBadgeRequests" xml:space="preserve"><value>طلبات تحديث البادج</value></data>
   <data name="Admin.SpeakerAvailability.Title" xml:space="preserve"><value>توفّر المتحدثين</value></data>
   <data name="Admin.SpeakerAvailability.Speaker" xml:space="preserve"><value>المتحدّث</value></data>
   <data name="Admin.SpeakerAvailability.PickSpeaker" xml:space="preserve"><value>اختر متحدّثاً…</value></data>
@@ -2045,6 +2047,62 @@
   <data name="Admin.SpeakerMeetingRequests.Respond.Submit" xml:space="preserve"><value>إرسال الردّ</value></data>
   <data name="Admin.SpeakerMeetingRequests.Respond.Done" xml:space="preserve"><value>تم إرسال الردّ.</value></data>
   <data name="Admin.SpeakerMeetingRequests.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+
+  <!-- D-500 (Wave 5, الطلبات) — participation-document request desk. -->
+  <data name="Admin.DocumentRequests.Title" xml:space="preserve"><value>طلبات الوثائق</value></data>
+  <data name="Admin.DocumentRequests.Loading" xml:space="preserve"><value>جارٍ تحميل طلبات الوثائق…</value></data>
+  <data name="Admin.DocumentRequests.LoadFailed" xml:space="preserve"><value>تعذّر تحميل طلبات الوثائق.</value></data>
+  <data name="Admin.DocumentRequests.LoadingDetail" xml:space="preserve"><value>جارٍ التحميل…</value></data>
+  <data name="Admin.DocumentRequests.None" xml:space="preserve"><value>لا توجد طلبات وثائق بعد.</value></data>
+  <data name="Admin.DocumentRequests.Col.Requester" xml:space="preserve"><value>مقدّم الطلب</value></data>
+  <data name="Admin.DocumentRequests.Col.DocumentType" xml:space="preserve"><value>الوثيقة</value></data>
+  <data name="Admin.DocumentRequests.Col.Note" xml:space="preserve"><value>ملاحظة</value></data>
+  <data name="Admin.DocumentRequests.Col.Status" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.DocumentRequests.Col.CreatedAt" xml:space="preserve"><value>تاريخ الإرسال</value></data>
+  <data name="Admin.DocumentRequests.Col.RespondedAt" xml:space="preserve"><value>تاريخ الردّ</value></data>
+  <data name="Admin.DocumentRequests.Filter.Pending" xml:space="preserve"><value>قيد المراجعة</value></data>
+  <data name="Admin.DocumentRequests.Filter.Accepted" xml:space="preserve"><value>مقبول</value></data>
+  <data name="Admin.DocumentRequests.Filter.Rejected" xml:space="preserve"><value>مرفوض</value></data>
+  <data name="Admin.DocumentRequests.Filter.Cancelled" xml:space="preserve"><value>ملغى</value></data>
+  <data name="Admin.DocumentRequests.Type.AttendanceCertificate" xml:space="preserve"><value>شهادة حضور رسمية</value></data>
+  <data name="Admin.DocumentRequests.Type.ParticipationLetter" xml:space="preserve"><value>خطاب مشاركة</value></data>
+  <data name="Admin.DocumentRequests.Type.InvitationLetter" xml:space="preserve"><value>خطاب دعوة</value></data>
+  <data name="Admin.DocumentRequests.Respond" xml:space="preserve"><value>الردّ</value></data>
+  <data name="Admin.DocumentRequests.Respond.Title" xml:space="preserve"><value>الردّ على طلب وثيقة</value></data>
+  <data name="Admin.DocumentRequests.Respond.Status" xml:space="preserve"><value>القرار</value></data>
+  <data name="Admin.DocumentRequests.Respond.Accept" xml:space="preserve"><value>قبول</value></data>
+  <data name="Admin.DocumentRequests.Respond.Reject" xml:space="preserve"><value>رفض</value></data>
+  <data name="Admin.DocumentRequests.Respond.Note" xml:space="preserve"><value>ملاحظة الردّ (اختيارية، حتى 2000 محرف)</value></data>
+  <data name="Admin.DocumentRequests.Respond.Submit" xml:space="preserve"><value>إرسال الردّ</value></data>
+  <data name="Admin.DocumentRequests.Respond.Done" xml:space="preserve"><value>تم إرسال الردّ.</value></data>
+  <data name="Admin.DocumentRequests.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+
+  <!-- D-500 (Wave 5, الطلبات) — badge-update request desk. -->
+  <data name="Admin.BadgeRequests.Title" xml:space="preserve"><value>طلبات تحديث البادج</value></data>
+  <data name="Admin.BadgeRequests.Loading" xml:space="preserve"><value>جارٍ تحميل طلبات تحديث البادج…</value></data>
+  <data name="Admin.BadgeRequests.LoadFailed" xml:space="preserve"><value>تعذّر تحميل طلبات تحديث البادج.</value></data>
+  <data name="Admin.BadgeRequests.LoadingDetail" xml:space="preserve"><value>جارٍ التحميل…</value></data>
+  <data name="Admin.BadgeRequests.None" xml:space="preserve"><value>لا توجد طلبات تحديث بادج بعد.</value></data>
+  <data name="Admin.BadgeRequests.Col.Requester" xml:space="preserve"><value>مقدّم الطلب</value></data>
+  <data name="Admin.BadgeRequests.Col.Requested" xml:space="preserve"><value>المسمى المطلوب</value></data>
+  <data name="Admin.BadgeRequests.Col.Current" xml:space="preserve"><value>المسمى الحالي</value></data>
+  <data name="Admin.BadgeRequests.Col.Note" xml:space="preserve"><value>السبب</value></data>
+  <data name="Admin.BadgeRequests.Col.Status" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.BadgeRequests.Col.CreatedAt" xml:space="preserve"><value>تاريخ الإرسال</value></data>
+  <data name="Admin.BadgeRequests.Col.RespondedAt" xml:space="preserve"><value>تاريخ الردّ</value></data>
+  <data name="Admin.BadgeRequests.Filter.Pending" xml:space="preserve"><value>قيد المراجعة</value></data>
+  <data name="Admin.BadgeRequests.Filter.Accepted" xml:space="preserve"><value>مقبول</value></data>
+  <data name="Admin.BadgeRequests.Filter.Rejected" xml:space="preserve"><value>مرفوض</value></data>
+  <data name="Admin.BadgeRequests.Filter.Cancelled" xml:space="preserve"><value>ملغى</value></data>
+  <data name="Admin.BadgeRequests.Respond" xml:space="preserve"><value>الردّ</value></data>
+  <data name="Admin.BadgeRequests.Respond.Title" xml:space="preserve"><value>الردّ على طلب تحديث البادج</value></data>
+  <data name="Admin.BadgeRequests.Respond.Status" xml:space="preserve"><value>القرار</value></data>
+  <data name="Admin.BadgeRequests.Respond.Accept" xml:space="preserve"><value>قبول</value></data>
+  <data name="Admin.BadgeRequests.Respond.Reject" xml:space="preserve"><value>رفض</value></data>
+  <data name="Admin.BadgeRequests.Respond.Note" xml:space="preserve"><value>ملاحظة الردّ (اختيارية، حتى 2000 محرف)</value></data>
+  <data name="Admin.BadgeRequests.Respond.Submit" xml:space="preserve"><value>إرسال الردّ</value></data>
+  <data name="Admin.BadgeRequests.Respond.Done" xml:space="preserve"><value>تم إرسال الردّ.</value></data>
+  <data name="Admin.BadgeRequests.Cancel" xml:space="preserve"><value>إلغاء</value></data>
 
   <!-- D-478 (#11, Group G phase 2) — delegation↔delegation meeting requests desk. -->
   <data name="Admin.DelegationMeetings.Title" xml:space="preserve"><value>اجتماعات الوفود</value></data>

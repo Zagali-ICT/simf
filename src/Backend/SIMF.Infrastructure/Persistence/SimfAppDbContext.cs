@@ -147,6 +147,13 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     // D-478 (#11, Group G phase 2) — delegation↔delegation (G2G) meeting requests.
     public DbSet<DelegationMeetingRequest> DelegationMeetingRequests => Set<DelegationMeetingRequest>();
 
+    // D-500 (Wave 5, الطلبات 1408:9726) — the two new standalone request types
+    // surfaced in the unified requests feed: participation-document + badge-update.
+    public DbSet<SIMF.Domain.Requests.ParticipationDocumentRequest> ParticipationDocumentRequests =>
+        Set<SIMF.Domain.Requests.ParticipationDocumentRequest>();
+    public DbSet<SIMF.Domain.Requests.BadgeUpdateRequest> BadgeUpdateRequests =>
+        Set<SIMF.Domain.Requests.BadgeUpdateRequest>();
+
     /// <summary>D-175 (gap doc G11, Mockup page 7) — per-hall seat
     /// grid layout (rows + seats-per-row). Optional 1:1 with Hall.</summary>
     public DbSet<HallSeatLayout> HallSeatLayouts => Set<HallSeatLayout>();

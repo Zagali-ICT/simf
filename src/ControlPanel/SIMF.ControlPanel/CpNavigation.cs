@@ -98,6 +98,9 @@ public static class CpNavigation
             new("Module.AdminSpeakerAvailability", "/admin/speaker-availability", RequiredPermission: PermissionCatalog.SpeakerMeetingRequests.Manage, Icon: "calendar"),
             // D-478 (#11, Group G phase 2) — delegation↔delegation meeting requests review desk.
             new("Module.AdminDelegationMeetings", "/admin/delegation-meetings", RequiredPermission: PermissionCatalog.DelegationMeetings.View, Icon: "inbox"),
+            // D-500 (Wave 5, الطلبات) — participation-document + badge-update request review desks.
+            new("Module.AdminDocumentRequests", "/admin/document-requests", RequiredPermission: PermissionCatalog.ParticipationDocumentRequests.View, Icon: "inbox"),
+            new("Module.AdminBadgeRequests", "/admin/badge-requests", RequiredPermission: PermissionCatalog.BadgeUpdateRequests.View, Icon: "inbox"),
             // D-153 — programme speakers (SIMF-DAT-001 §5.4).
             new("Module.Speakers", "/admin/speakers", RequiredPermission: PermissionCatalog.Speakers.View, Icon: "mic"),
             // P2.3 (D-228) — speaker presentation files (FR-407). Reuses Speakers.*.

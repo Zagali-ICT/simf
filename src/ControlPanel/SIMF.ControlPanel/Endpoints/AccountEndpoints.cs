@@ -17,6 +17,7 @@ using SIMF.Contracts.Contacts;
 using SIMF.Contracts.Logs;
 using SIMF.Contracts.Media;
 using SIMF.Contracts.Programme;
+using SIMF.Contracts.Requests;
 using SIMF.Contracts.PublicRelations;
 using SIMF.Contracts.Sessions;
 
@@ -2213,6 +2214,60 @@ internal static class AccountEndpoints
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
             return Forward(await api.RespondToAdminSpeakerMeetingRequestAsync(
+                id, body, token));
+        });
+
+        // D-500 (Wave 5, الطلبات) — participation-document request BFF passthroughs.
+        group.MapPost("/admin/document-requests/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListAdminParticipationDocumentRequestsAsync(body, token));
+        });
+
+        group.MapGet("/admin/document-requests/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetAdminParticipationDocumentRequestAsync(id, token));
+        });
+
+        group.MapPut("/admin/document-requests/{id:guid}/respond",
+            async (Guid id, RespondToParticipationDocumentRequestRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.RespondToAdminParticipationDocumentRequestAsync(
+                id, body, token));
+        });
+
+        // D-500 (Wave 5, الطلبات) — badge-update request BFF passthroughs.
+        group.MapPost("/admin/badge-requests/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListAdminBadgeUpdateRequestsAsync(body, token));
+        });
+
+        group.MapGet("/admin/badge-requests/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetAdminBadgeUpdateRequestAsync(id, token));
+        });
+
+        group.MapPut("/admin/badge-requests/{id:guid}/respond",
+            async (Guid id, RespondToBadgeUpdateRequestRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.RespondToAdminBadgeUpdateRequestAsync(
                 id, body, token));
         });
 

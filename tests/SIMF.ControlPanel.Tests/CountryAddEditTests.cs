@@ -24,6 +24,10 @@ public sealed class CountryAddEditTests : CpComponentTestBase
     [Fact]
     public void Edit_mode_shows_the_Active_checkbox()
     {
+        // D-499 added an edit-mode OnInitializedAsync load of the head-of-delegation
+        // options (simfAccount.getJson .../delegates); loose mode lets that JS call
+        // no-op so the render-only assertion can run.
+        JSInterop.Mode = JSRuntimeMode.Loose;
         var cut = RenderComponent<CountryAddEdit>(p => p
             .Add(x => x.IsEdit, true)
             .Add(x => x.Initial, Detail()));

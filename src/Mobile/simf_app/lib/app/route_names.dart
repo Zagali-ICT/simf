@@ -93,9 +93,9 @@ class RouteNames {
   static const String sessionPresentations = 'sessionPresentations';
   static const String contactUs = 'contactUs';
 
-  // D-479 (#11 follow-up) — read-only "My meetings" list (additive, reached from
-  // My Area; Approved account). Delegation meetings are managed on the CP.
-  static const String myMeetings = 'myMeetings';
+  // D-500 (Wave 5, الطلبات 1408:9726) — the unified requests feed (reached from My
+  // Area; Approved account). Supersedes the D-479 read-only My-meetings route.
+  static const String requests = 'requests';
 
   // Wave 2 (Figma 1388:9067) — "my sessions" (تفاصيل الجلسات): the caller's
   // booked / joined sessions with القادمة / حضرتها / فاتتني / الأرشيف tabs,

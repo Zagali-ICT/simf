@@ -75,6 +75,8 @@
   <data name="Module.SpeakerMeetingRequests" xml:space="preserve"><value>Speaker meeting requests</value></data>
   <data name="Module.AdminSpeakerAvailability" xml:space="preserve"><value>Speaker availability</value></data>
   <data name="Module.AdminDelegationMeetings" xml:space="preserve"><value>Delegation meetings</value></data>
+  <data name="Module.AdminDocumentRequests" xml:space="preserve"><value>Document requests</value></data>
+  <data name="Module.AdminBadgeRequests" xml:space="preserve"><value>Badge requests</value></data>
   <data name="Admin.SpeakerAvailability.Title" xml:space="preserve"><value>Speaker availability</value></data>
   <data name="Admin.SpeakerAvailability.Speaker" xml:space="preserve"><value>Speaker</value></data>
   <data name="Admin.SpeakerAvailability.PickSpeaker" xml:space="preserve"><value>Select a speaker…</value></data>
@@ -2052,6 +2054,62 @@
   <data name="Admin.SpeakerMeetingRequests.Respond.Submit" xml:space="preserve"><value>Send response</value></data>
   <data name="Admin.SpeakerMeetingRequests.Respond.Done" xml:space="preserve"><value>Response sent.</value></data>
   <data name="Admin.SpeakerMeetingRequests.Cancel" xml:space="preserve"><value>Cancel</value></data>
+
+  <!-- D-500 (Wave 5, الطلبات) — participation-document request desk. -->
+  <data name="Admin.DocumentRequests.Title" xml:space="preserve"><value>Document requests</value></data>
+  <data name="Admin.DocumentRequests.Loading" xml:space="preserve"><value>Loading document requests…</value></data>
+  <data name="Admin.DocumentRequests.LoadFailed" xml:space="preserve"><value>Could not load document requests.</value></data>
+  <data name="Admin.DocumentRequests.LoadingDetail" xml:space="preserve"><value>Loading…</value></data>
+  <data name="Admin.DocumentRequests.None" xml:space="preserve"><value>No document requests yet.</value></data>
+  <data name="Admin.DocumentRequests.Col.Requester" xml:space="preserve"><value>Requester</value></data>
+  <data name="Admin.DocumentRequests.Col.DocumentType" xml:space="preserve"><value>Document</value></data>
+  <data name="Admin.DocumentRequests.Col.Note" xml:space="preserve"><value>Note</value></data>
+  <data name="Admin.DocumentRequests.Col.Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Admin.DocumentRequests.Col.CreatedAt" xml:space="preserve"><value>Submitted</value></data>
+  <data name="Admin.DocumentRequests.Col.RespondedAt" xml:space="preserve"><value>Responded</value></data>
+  <data name="Admin.DocumentRequests.Filter.Pending" xml:space="preserve"><value>Under review</value></data>
+  <data name="Admin.DocumentRequests.Filter.Accepted" xml:space="preserve"><value>Accepted</value></data>
+  <data name="Admin.DocumentRequests.Filter.Rejected" xml:space="preserve"><value>Rejected</value></data>
+  <data name="Admin.DocumentRequests.Filter.Cancelled" xml:space="preserve"><value>Cancelled</value></data>
+  <data name="Admin.DocumentRequests.Type.AttendanceCertificate" xml:space="preserve"><value>Official attendance certificate</value></data>
+  <data name="Admin.DocumentRequests.Type.ParticipationLetter" xml:space="preserve"><value>Participation letter</value></data>
+  <data name="Admin.DocumentRequests.Type.InvitationLetter" xml:space="preserve"><value>Invitation letter</value></data>
+  <data name="Admin.DocumentRequests.Respond" xml:space="preserve"><value>Respond</value></data>
+  <data name="Admin.DocumentRequests.Respond.Title" xml:space="preserve"><value>Respond to document request</value></data>
+  <data name="Admin.DocumentRequests.Respond.Status" xml:space="preserve"><value>Decision</value></data>
+  <data name="Admin.DocumentRequests.Respond.Accept" xml:space="preserve"><value>Accept</value></data>
+  <data name="Admin.DocumentRequests.Respond.Reject" xml:space="preserve"><value>Reject</value></data>
+  <data name="Admin.DocumentRequests.Respond.Note" xml:space="preserve"><value>Response note (optional, ≤2000 chars)</value></data>
+  <data name="Admin.DocumentRequests.Respond.Submit" xml:space="preserve"><value>Send response</value></data>
+  <data name="Admin.DocumentRequests.Respond.Done" xml:space="preserve"><value>Response sent.</value></data>
+  <data name="Admin.DocumentRequests.Cancel" xml:space="preserve"><value>Cancel</value></data>
+
+  <!-- D-500 (Wave 5, الطلبات) — badge-update request desk. -->
+  <data name="Admin.BadgeRequests.Title" xml:space="preserve"><value>Badge requests</value></data>
+  <data name="Admin.BadgeRequests.Loading" xml:space="preserve"><value>Loading badge requests…</value></data>
+  <data name="Admin.BadgeRequests.LoadFailed" xml:space="preserve"><value>Could not load badge requests.</value></data>
+  <data name="Admin.BadgeRequests.LoadingDetail" xml:space="preserve"><value>Loading…</value></data>
+  <data name="Admin.BadgeRequests.None" xml:space="preserve"><value>No badge requests yet.</value></data>
+  <data name="Admin.BadgeRequests.Col.Requester" xml:space="preserve"><value>Requester</value></data>
+  <data name="Admin.BadgeRequests.Col.Requested" xml:space="preserve"><value>Requested title</value></data>
+  <data name="Admin.BadgeRequests.Col.Current" xml:space="preserve"><value>Current title</value></data>
+  <data name="Admin.BadgeRequests.Col.Note" xml:space="preserve"><value>Reason</value></data>
+  <data name="Admin.BadgeRequests.Col.Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Admin.BadgeRequests.Col.CreatedAt" xml:space="preserve"><value>Submitted</value></data>
+  <data name="Admin.BadgeRequests.Col.RespondedAt" xml:space="preserve"><value>Responded</value></data>
+  <data name="Admin.BadgeRequests.Filter.Pending" xml:space="preserve"><value>Under review</value></data>
+  <data name="Admin.BadgeRequests.Filter.Accepted" xml:space="preserve"><value>Accepted</value></data>
+  <data name="Admin.BadgeRequests.Filter.Rejected" xml:space="preserve"><value>Rejected</value></data>
+  <data name="Admin.BadgeRequests.Filter.Cancelled" xml:space="preserve"><value>Cancelled</value></data>
+  <data name="Admin.BadgeRequests.Respond" xml:space="preserve"><value>Respond</value></data>
+  <data name="Admin.BadgeRequests.Respond.Title" xml:space="preserve"><value>Respond to badge request</value></data>
+  <data name="Admin.BadgeRequests.Respond.Status" xml:space="preserve"><value>Decision</value></data>
+  <data name="Admin.BadgeRequests.Respond.Accept" xml:space="preserve"><value>Accept</value></data>
+  <data name="Admin.BadgeRequests.Respond.Reject" xml:space="preserve"><value>Reject</value></data>
+  <data name="Admin.BadgeRequests.Respond.Note" xml:space="preserve"><value>Response note (optional, ≤2000 chars)</value></data>
+  <data name="Admin.BadgeRequests.Respond.Submit" xml:space="preserve"><value>Send response</value></data>
+  <data name="Admin.BadgeRequests.Respond.Done" xml:space="preserve"><value>Response sent.</value></data>
+  <data name="Admin.BadgeRequests.Cancel" xml:space="preserve"><value>Cancel</value></data>
 
   <!-- D-478 (#11, Group G phase 2) — delegation↔delegation meeting requests desk. -->
   <data name="Admin.DelegationMeetings.Title" xml:space="preserve"><value>Delegation meetings</value></data>
