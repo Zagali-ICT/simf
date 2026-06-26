@@ -40,7 +40,10 @@ public sealed record AdminContactDetail(
     string? CountryNameAr,
     bool IsActive,
     DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTimeOffset? UpdatedAt,
+    // Optional bilingual city (≤128 chars each).
+    string? City = null,
+    string? CityArabic = null);
 
 /// <summary>Admin create payload.</summary>
 public sealed class CreateContactRequest
@@ -86,6 +89,12 @@ public sealed class CreateContactRequest
 
     /// <summary>ISO 3166-1 numeric country id (optional FK to the Country lookup).</summary>
     public int? CountryId { get; set; }
+
+    /// <summary>English city name (optional, ≤128 chars).</summary>
+    public string? City { get; set; }
+
+    /// <summary>Arabic city name (optional, ≤128 chars).</summary>
+    public string? CityArabic { get; set; }
 }
 
 /// <summary>Admin update payload.</summary>
@@ -132,6 +141,12 @@ public class UpdateContactRequest
 
     /// <summary>ISO 3166-1 numeric country id (optional FK to the Country lookup).</summary>
     public int? CountryId { get; set; }
+
+    /// <summary>English city name (optional, ≤128 chars).</summary>
+    public string? City { get; set; }
+
+    /// <summary>Arabic city name (optional, ≤128 chars).</summary>
+    public string? CityArabic { get; set; }
 
     /// <summary>Whether the contact is active.</summary>
     public bool IsActive { get; set; } = true;

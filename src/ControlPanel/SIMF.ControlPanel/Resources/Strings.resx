@@ -2210,6 +2210,8 @@
   <data name="Admin.Sponsors.Field.Url" xml:space="preserve"><value>Link</value></data>
   <data name="Admin.Sponsors.Field.Tagline" xml:space="preserve"><value>Tagline (English)</value></data>
   <data name="Admin.Sponsors.Field.TaglineAr" xml:space="preserve"><value>Tagline (Arabic)</value></data>
+  <data name="Admin.Sponsors.Field.About" xml:space="preserve"><value>About (English)</value></data>
+  <data name="Admin.Sponsors.Field.AboutAr" xml:space="preserve"><value>About (Arabic)</value></data>
   <data name="Admin.Sponsors.Field.Logo" xml:space="preserve"><value>Logo path</value></data>
   <data name="Admin.Sponsors.Field.DisplayOrder" xml:space="preserve"><value>Display order</value></data>
   <data name="Admin.Sponsors.Field.IsActive" xml:space="preserve"><value>Active</value></data>
@@ -2473,6 +2475,8 @@
   <data name="Admin.Exhibitors.Field.ContactEmail" xml:space="preserve"><value>Contact email</value></data>
   <data name="Admin.Exhibitors.Field.ContactPhone" xml:space="preserve"><value>Contact phone</value></data>
   <data name="Admin.Exhibitors.Field.Website" xml:space="preserve"><value>Website</value></data>
+  <data name="Admin.Exhibitors.Field.Tier" xml:space="preserve"><value>Tier</value></data>
+  <data name="Admin.Exhibitors.Field.TierNone" xml:space="preserve"><value>— none —</value></data>
   <data name="Admin.Exhibitors.Field.IsActive" xml:space="preserve"><value>Active</value></data>
   <data name="Admin.Exhibitors.Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Admin.Exhibitors.Save" xml:space="preserve"><value>Save</value></data>
@@ -2777,6 +2781,8 @@
   <data name="Admin.Contacts.Field.InstagramUrl" xml:space="preserve"><value>Instagram URL</value></data>
   <data name="Admin.Contacts.Field.Country" xml:space="preserve"><value>Country</value></data>
   <data name="Admin.Contacts.Field.CountryPlaceholder" xml:space="preserve"><value>Select a country</value></data>
+  <data name="Admin.Contacts.Field.City" xml:space="preserve"><value>City (English)</value></data>
+  <data name="Admin.Contacts.Field.CityAr" xml:space="preserve"><value>City (Arabic)</value></data>
   <data name="Admin.Contacts.Field.Latitude" xml:space="preserve"><value>Latitude</value></data>
   <data name="Admin.Contacts.Field.Longitude" xml:space="preserve"><value>Longitude</value></data>
   <data name="Admin.Contacts.Field.LatLongHint" xml:space="preserve"><value>Optional map location (set both, or leave both blank)</value></data>

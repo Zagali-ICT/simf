@@ -2203,6 +2203,8 @@
   <data name="Admin.Sponsors.Field.Url" xml:space="preserve"><value>الرابط</value></data>
   <data name="Admin.Sponsors.Field.Tagline" xml:space="preserve"><value>النص التعريفي (إنجليزي)</value></data>
   <data name="Admin.Sponsors.Field.TaglineAr" xml:space="preserve"><value>النص التعريفي (عربي)</value></data>
+  <data name="Admin.Sponsors.Field.About" xml:space="preserve"><value>نبذة (إنجليزي)</value></data>
+  <data name="Admin.Sponsors.Field.AboutAr" xml:space="preserve"><value>نبذة (عربي)</value></data>
   <data name="Admin.Sponsors.Field.Logo" xml:space="preserve"><value>مسار الشعار</value></data>
   <data name="Admin.Sponsors.Field.DisplayOrder" xml:space="preserve"><value>ترتيب العرض</value></data>
   <data name="Admin.Sponsors.Field.IsActive" xml:space="preserve"><value>نشط</value></data>
@@ -2466,6 +2468,8 @@
   <data name="Admin.Exhibitors.Field.ContactEmail" xml:space="preserve"><value>البريد الإلكتروني للتواصل</value></data>
   <data name="Admin.Exhibitors.Field.ContactPhone" xml:space="preserve"><value>هاتف التواصل</value></data>
   <data name="Admin.Exhibitors.Field.Website" xml:space="preserve"><value>الموقع الإلكتروني</value></data>
+  <data name="Admin.Exhibitors.Field.Tier" xml:space="preserve"><value>الفئة</value></data>
+  <data name="Admin.Exhibitors.Field.TierNone" xml:space="preserve"><value>— بدون —</value></data>
   <data name="Admin.Exhibitors.Field.IsActive" xml:space="preserve"><value>نشط</value></data>
   <data name="Admin.Exhibitors.Cancel" xml:space="preserve"><value>إلغاء</value></data>
   <data name="Admin.Exhibitors.Save" xml:space="preserve"><value>حفظ</value></data>
@@ -2770,6 +2774,8 @@
   <data name="Admin.Contacts.Field.InstagramUrl" xml:space="preserve"><value>رابط إنستغرام</value></data>
   <data name="Admin.Contacts.Field.Country" xml:space="preserve"><value>الدولة</value></data>
   <data name="Admin.Contacts.Field.CountryPlaceholder" xml:space="preserve"><value>اختر الدولة</value></data>
+  <data name="Admin.Contacts.Field.City" xml:space="preserve"><value>المدينة (إنجليزي)</value></data>
+  <data name="Admin.Contacts.Field.CityAr" xml:space="preserve"><value>المدينة (عربي)</value></data>
   <data name="Admin.Contacts.Field.Latitude" xml:space="preserve"><value>خط العرض</value></data>
   <data name="Admin.Contacts.Field.Longitude" xml:space="preserve"><value>خط الطول</value></data>
   <data name="Admin.Contacts.Field.LatLongHint" xml:space="preserve"><value>موقع اختياري على الخريطة (أدخل كليهما أو اتركهما فارغين)</value></data>

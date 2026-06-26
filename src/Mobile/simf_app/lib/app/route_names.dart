@@ -49,6 +49,11 @@ class RouteNames {
   static const String sponsors = 'sponsors';
   static const String archive = 'archive';
 
+  // Wave 3 (Figma 1439:11881 / 11826) — the exhibitor + sponsor detail screens
+  // (shared template), opened by tapping a booth / sponsor in their lists.
+  static const String exhibitorDetail = 'exhibitorDetail';
+  static const String sponsorDetail = 'sponsorDetail';
+
   // Section 4 — Live & Q&A (3 screens; 27 request-interview removed — D-278)
   static const String liveBroadcast = 'liveBroadcast';
   static const String sendQuestion = 'sendQuestion';

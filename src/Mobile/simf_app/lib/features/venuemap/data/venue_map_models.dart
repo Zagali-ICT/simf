@@ -199,6 +199,15 @@ class BoothDetail {
     this.officerName,
     this.officerPhone,
     this.officerEmail,
+    this.exhibitorContactId,
+    this.countryId,
+    this.countryName,
+    this.countryNameArabic,
+    this.city,
+    this.cityArabic,
+    this.tier,
+    this.tierName,
+    this.website,
   });
 
   final String id;
@@ -218,11 +227,41 @@ class BoothDetail {
   final String? officerPhone;
   final String? officerEmail;
 
+  // P6 — D-440: the exhibitor's Contact id (CompanyLogo owner).
+  final String? exhibitorContactId;
+  // D-456: the exhibitor company's country.
+  final int? countryId;
+  final String? countryName;
+  final String? countryNameArabic;
+
+  // Wave 3 (Figma 1439:11881) — the exhibitor-detail extras: the location-line
+  // city (paired with the country), the tier (raw + name for the pill), and the
+  // exhibitor website. All null when the exhibitor / its Contact has no value.
+  final String? city;
+  final String? cityArabic;
+  final int? tier;
+  final String? tierName;
+  final String? website;
+
+  String localizedName(bool isArabic) {
+    final ar = nameArabic.trim();
+    final en = name.trim();
+    return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+  }
+
+  String? localizedExhibitor(bool isArabic) =>
+      _pick(exhibitorNameArabic, exhibitorName, isArabic);
+
   String? localizedDescription(bool isArabic) =>
       _pick(descriptionArabic, description, isArabic);
 
   String? localizedHallName(bool isArabic) =>
       _pick(hallNameArabic, hallName, isArabic);
+
+  String? localizedCountry(bool isArabic) =>
+      _pick(countryNameArabic, countryName, isArabic);
+
+  String? localizedCity(bool isArabic) => _pick(cityArabic, city, isArabic);
 
   static BoothDetail fromJson(Map<String, dynamic> json) => BoothDetail(
         id: json['id'] as String? ?? '',
@@ -240,6 +279,15 @@ class BoothDetail {
         officerName: json['officerName'] as String?,
         officerPhone: json['officerPhone'] as String?,
         officerEmail: json['officerEmail'] as String?,
+        exhibitorContactId: json['exhibitorContactId'] as String?,
+        countryId: (json['countryId'] as num?)?.toInt(),
+        countryName: json['countryName'] as String?,
+        countryNameArabic: json['countryNameArabic'] as String?,
+        city: json['city'] as String?,
+        cityArabic: json['cityArabic'] as String?,
+        tier: (json['tier'] as num?)?.toInt(),
+        tierName: json['tierName'] as String?,
+        website: json['website'] as String?,
       );
 }
 

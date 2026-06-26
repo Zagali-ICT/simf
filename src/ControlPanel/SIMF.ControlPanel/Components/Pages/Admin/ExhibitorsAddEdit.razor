@@ -46,6 +46,20 @@
                    ValueExpression="@(() => _form.Website)"
                    MaxLength="512"
                    Disabled="_busy" />
+    @* Optional exhibitor tier — a blank option leaves the tier null. *@
+    <label class="simf-field">
+        <span class="simf-field__label">@L["Admin.Exhibitors.Field.Tier"]</span>
+        <select class="simf-field__input"
+                value="@(_form.Tier?.ToString() ?? string.Empty)"
+                @onchange="OnTierChanged"
+                disabled="@_busy">
+            <option value="">@L["Admin.Exhibitors.Field.TierNone"]</option>
+            @foreach (var tier in _tiers)
+            {
+                <option value="@tier.Value">@tier.Name</option>
+            }
+        </select>
+    </label>
     @* SIMF-FDS-014 (D-283) — optional link to a shared Contact directory record. *@
     <ContactPicker Value="_form.ContactId" ValueChanged="@(v => _form.ContactId = v)" Disabled="_busy" />
     @if (IsEdit)
@@ -72,6 +86,18 @@
 </div>
 
 @code {
+    // ExhibitorTier value/name pairs for the (optional) tier dropdown. Aligned
+    // with SIMF.Common.Enums.ExhibitorTier.
+    private sealed record TierOption(int Value, string Name);
+
+    private static readonly IReadOnlyList<TierOption> _tiers =
+    [
+        new((int)ExhibitorTier.Premium, "Premium"),
+        new((int)ExhibitorTier.Gold, "Gold"),
+        new((int)ExhibitorTier.Silver, "Silver"),
+        new((int)ExhibitorTier.Bronze, "Bronze"),
+    ];
+
     private readonly FormModel _form = new();
     private bool _busy;
     private string? _error;
@@ -86,6 +112,7 @@
             _form.ContactPhone = Initial.ContactPhone ?? string.Empty;
             _form.Website = Initial.Website ?? string.Empty;
             _form.ContactId = Initial.ContactId;
+            _form.Tier = Initial.Tier is null ? null : (int)Initial.Tier.Value;
             _form.IsActive = Initial.IsActive;
         }
     }
@@ -121,6 +148,7 @@
                         ContactPhone = NullIfBlank(_form.ContactPhone),
                         Website = NullIfBlank(_form.Website),
                         ContactId = _form.ContactId,
+                        Tier = _form.Tier is null ? null : (ExhibitorTier)_form.Tier.Value,
                     });
             }
             else
@@ -136,6 +164,7 @@
                         ContactPhone = NullIfBlank(_form.ContactPhone),
                         Website = NullIfBlank(_form.Website),
                         ContactId = _form.ContactId,
+                        Tier = _form.Tier is null ? null : (ExhibitorTier)_form.Tier.Value,
                         IsActive = _form.IsActive,
                     });
             }
@@ -157,6 +186,11 @@
         finally { _busy = false; }
     }
 
+    private void OnTierChanged(ChangeEventArgs e)
+    {
+        _form.Tier = int.TryParse(e.Value?.ToString(), out var n) ? n : null;
+    }
+
     private static string? NullIfBlank(string value) =>
         string.IsNullOrWhiteSpace(value) ? null : value;
 
@@ -168,6 +202,7 @@
         public string ContactPhone { get; set; } = string.Empty;
         public string Website { get; set; } = string.Empty;
         public Guid? ContactId { get; set; }
+        public int? Tier { get; set; }
         public bool IsActive { get; set; } = true;
     }
 }

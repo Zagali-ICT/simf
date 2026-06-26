@@ -58,6 +58,12 @@ public sealed class Contact : BaseAuditEntity
     /// <c>SIMF.Domain.Common.Country.Id</c>. Optional.</summary>
     public int? CountryId { get; set; }
 
+    /// <summary>Wave 3 (Figma 1439:11881 / 11826) — the city, shown on the
+    /// exhibitor / sponsor detail location line ("الظهران، المملكة العربية
+    /// السعودية" = City، Country). Bilingual; ≤128. Optional. Additive (D-219).</summary>
+    public string? City { get; set; }
+    public string? CityArabic { get; set; }
+
     /// <summary>Map latitude (WGS84, [-90,90]). Optional — set together with
     /// <see cref="Longitude"/>.</summary>
     public double? Latitude { get; set; }

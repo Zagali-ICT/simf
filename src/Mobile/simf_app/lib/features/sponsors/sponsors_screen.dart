@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
+import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/country_flag_badge.dart';
 import '../../app/widgets/ksa_shell.dart';
@@ -95,6 +97,13 @@ class SponsorsScreen extends ConsumerWidget {
                           sponsor.localizedTagline(isArabic) ?? sponsor.url,
                       hero: i == 0,
                       countryId: sponsor.countryId,
+                      // Wave 3 — tap → the sponsor detail (Figma 1439:11826).
+                      onTap: () => context.pushNamed(
+                        RouteNames.sponsorDetail,
+                        pathParameters: <String, String>{
+                          'sponsorId': sponsor.id,
+                        },
+                      ),
                     ),
                     const SizedBox(height: SimfTokens.space4),
                   ],
@@ -159,6 +168,7 @@ class _SponsorCard extends StatelessWidget {
     required this.secondary,
     required this.hero,
     required this.countryId,
+    required this.onTap,
   });
 
   final String id;
@@ -168,6 +178,7 @@ class _SponsorCard extends StatelessWidget {
   final String? secondary;
   final bool hero;
   final int? countryId;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -177,6 +188,7 @@ class _SponsorCard extends StatelessWidget {
     const Color nameColor = Colors.white;
     final Color subColor = hero ? SimfTokens.navyDeep : SimfTokens.beigeBorder;
     return KsaCard(
+      onTap: onTap,
       color: hero ? SimfTokens.accent : SimfTokens.navyDeep,
       borderColor: SimfTokens.beigeBorder,
       child: ConstrainedBox(
@@ -374,6 +386,11 @@ class _SponsorGrid extends StatelessWidget {
         name: sponsors[i].localizedName(isArabic),
         initials: SponsorsScreen._badgeText(sponsors[i], isArabic),
         countryId: sponsors[i].countryId,
+        // Wave 3 — tap → the sponsor detail (Figma 1439:11826).
+        onTap: () => context.pushNamed(
+          RouteNames.sponsorDetail,
+          pathParameters: <String, String>{'sponsorId': sponsors[i].id},
+        ),
       ),
     );
   }
@@ -389,6 +406,7 @@ class _SponsorGridTile extends StatelessWidget {
     required this.name,
     required this.initials,
     required this.countryId,
+    required this.onTap,
   });
 
   final String id;
@@ -396,23 +414,27 @@ class _SponsorGridTile extends StatelessWidget {
   final String name;
   final String initials;
   final int? countryId;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return CountryFlagBadge(
       countryId: countryId,
-      child: Container(
-      clipBehavior: Clip.antiAlias,
-      padding: const EdgeInsets.all(SimfTokens.space2),
-      decoration: BoxDecoration(
+      child: Material(
         color: SimfTokens.navyDeep,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        border: Border.all(
-          color: SimfTokens.beigeBorder,
-          width: SimfTokens.hairline,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+          side: const BorderSide(
+            color: SimfTokens.beigeBorder,
+            width: SimfTokens.hairline,
+          ),
         ),
-      ),
-      child: Column(
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(SimfTokens.space2),
+            child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           Expanded(
@@ -435,8 +457,10 @@ class _SponsorGridTile extends StatelessWidget {
               fontSize: SimfTokens.textSm,
             ),
           ),
-        ],
-      ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

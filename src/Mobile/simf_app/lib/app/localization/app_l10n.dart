@@ -1490,6 +1490,49 @@ class AppL10n {
     return 'Day $dayIndex';
   }
 
+  // Wave 3 — exhibitor (Figma 1439:11881) + sponsor (1439:11826) detail screens
+  // (shared template). The tier pill prefixes a localized tier word onto the role.
+  String get exhibitorDetailTitle => _t('العارض', 'Exhibitor');
+  String get sponsorDetailTitle => _t('الراعي', 'Sponsor');
+  String get exhibitorAboutHeader =>
+      _t('نبذة عن العارض', 'About the exhibitor');
+  String get sponsorAboutHeader => _t('نبذة عن الراعي', 'About the sponsor');
+  String get standLocationLabel =>
+      _t('موقع الجناح على الخريطة', 'Booth location on the map');
+  String get websiteLabel => _t('الموقع الإلكتروني', 'Website');
+  String get entityDetailError =>
+      _t('تعذر تحميل التفاصيل.', 'Could not load the details.');
+
+  /// The exhibitor tier pill, e.g. "عارض بريميوم" / "Premium exhibitor".
+  String exhibitorTierPill(String tierName) =>
+      _t('عارض ${_tierWord(tierName)}', '${_tierWord(tierName)} exhibitor');
+
+  /// The sponsor tier pill, e.g. "رعاية بريميوم" / "Premium sponsor".
+  String sponsorTierPill(String tierName) =>
+      _t('رعاية ${_tierWord(tierName)}', '${_tierWord(tierName)} sponsor');
+
+  /// Maps the wire tier enum name (Premium/Platinum/Gold/Silver/Bronze) to its
+  /// localized word; an unknown value passes through unchanged.
+  String _tierWord(String tierName) {
+    if (!isArabic) {
+      return tierName;
+    }
+    switch (tierName) {
+      case 'Premium':
+        return 'بريميوم';
+      case 'Platinum':
+        return 'بلاتيني';
+      case 'Gold':
+        return 'ذهبي';
+      case 'Silver':
+        return 'فضي';
+      case 'Bronze':
+        return 'برونزي';
+      default:
+        return tierName;
+    }
+  }
+
   // Send a question (Page 026 — live Q&A composer).
   // Figma 934:3636 retitled the screen to "معلومات عن الجلسة" (Session
   // information) — the session-data block sits above the question composer.

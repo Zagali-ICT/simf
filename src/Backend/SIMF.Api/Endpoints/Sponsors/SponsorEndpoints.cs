@@ -27,6 +27,31 @@ public sealed class ListPublicSponsorsEndpoint(IPublicSponsorService service)
             await service.ListAsync(ct)), ct);
 }
 
+/// <summary>Wave 3 (Figma 1439:11826 "الراعي") — public anonymous sponsor detail
+/// (about, city, website, tier, country). A 404 when the sponsor is missing /
+/// inactive.</summary>
+public sealed class GetPublicSponsorRequest { public Guid Id { get; set; } }
+
+public sealed class GetPublicSponsorEndpoint(IPublicSponsorService service)
+    : Endpoint<GetPublicSponsorRequest, ApiResult<PublicSponsorDetail>>
+{
+    public override void Configure()
+    {
+        Get("/app/sponsors/{id:guid}");
+        AllowAnonymous();
+        Tags("Public");
+    }
+
+    public override async Task HandleAsync(GetPublicSponsorRequest req, CancellationToken ct)
+    {
+        var detail = await service.GetAsync(req.Id, ct)
+            ?? throw new ApiException(ErrorCodes.SponsorNotFound, 404,
+                "The sponsor was not found.",
+                "لم يتم العثور على الراعي.");
+        await Send.OkAsync(ApiResult<PublicSponsorDetail>.Ok(detail), ct);
+    }
+}
+
 // -- Admin sponsor CRUD --
 
 public sealed class ListSponsorsEndpoint(IAdminSponsorService service)
@@ -102,6 +127,8 @@ public sealed class UpdateSponsorRequest
     public string? Url { get; set; }
     public int DisplayOrder { get; set; }
     public Guid? ContactId { get; set; }
+    public string? About { get; set; }
+    public string? AboutArabic { get; set; }
     public bool IsActive { get; set; } = true;
 }
 
@@ -135,6 +162,8 @@ public sealed class UpdateSponsorEndpoint(IAdminSponsorService service)
                     Url = req.Url,
                     DisplayOrder = req.DisplayOrder,
                     ContactId = req.ContactId,
+                    About = req.About,
+                    AboutArabic = req.AboutArabic,
                     IsActive = req.IsActive,
                 }, ct)), ct);
     }

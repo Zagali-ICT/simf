@@ -16,6 +16,7 @@ import '../features/auth/sign_up_form_screen.dart';
 import '../features/about/about_screen.dart';
 import '../features/archive/archive_screen.dart';
 import '../features/booths/booths_screen.dart';
+import '../features/booths/exhibitor_detail_screen.dart';
 import '../features/content/terms_screen.dart';
 import '../features/faq/faq_screen.dart';
 import '../features/feedback/rate_screen.dart';
@@ -61,6 +62,7 @@ import '../features/sessions/seat_picker_screen.dart';
 import '../features/sessions/session_detail_screen.dart';
 import '../features/sessions/session_presentations_screen.dart';
 import '../features/sessions/sessions_screen.dart';
+import '../features/sponsors/sponsor_detail_screen.dart';
 import '../features/sponsors/sponsors_screen.dart';
 import '../features/speakers/speaker_profile_screen.dart';
 import '../features/speakers/speakers_screen.dart';
@@ -119,6 +121,9 @@ const List<_Route> _routes = <_Route>[
   // Section 3 — Content & activities (3 screens; 21 delegations removed — D-277)
   _Route(number: 22, name: RouteNames.booths, path: '/booths', labelAr: 'الأجنحة', labelEn: 'Booths'),
   _Route(number: 23, name: RouteNames.sponsors, path: '/sponsors', labelAr: 'الرعاة', labelEn: 'Sponsors'),
+  // Wave 3 (Figma 1439:11881 / 11826) — exhibitor + sponsor detail (public, pushed).
+  _Route(number: 220, name: RouteNames.exhibitorDetail, path: '/exhibitors/:boothId', labelAr: 'العارض', labelEn: 'Exhibitor'),
+  _Route(number: 221, name: RouteNames.sponsorDetail, path: '/sponsors/:sponsorId', labelAr: 'الراعي', labelEn: 'Sponsor'),
   _Route(number: 24, name: RouteNames.archive, path: '/archive', labelAr: 'الأرشيف', labelEn: 'Archive'),
 
   // Section 4 — Live & Q&A (3 screens; 27 request-interview removed — D-278)
@@ -347,8 +352,18 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   if (r.name == RouteNames.booths) {
     return const BoothsScreen();
   }
+  if (r.name == RouteNames.exhibitorDetail) {
+    return ExhibitorDetailScreen(
+      boothId: state.pathParameters['boothId'] ?? '',
+    );
+  }
   if (r.name == RouteNames.sponsors) {
     return const SponsorsScreen();
+  }
+  if (r.name == RouteNames.sponsorDetail) {
+    return SponsorDetailScreen(
+      sponsorId: state.pathParameters['sponsorId'] ?? '',
+    );
   }
   if (r.name == RouteNames.mediaPartners) {
     return const MediaPartnersScreen();

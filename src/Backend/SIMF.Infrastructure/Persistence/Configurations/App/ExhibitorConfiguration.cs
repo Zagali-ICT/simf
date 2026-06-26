@@ -23,6 +23,10 @@ internal sealed class ExhibitorConfiguration : IEntityTypeConfiguration<Exhibito
         builder.Property(exhibitor => exhibitor.ContactPhone).HasMaxLength(32);
         builder.Property(exhibitor => exhibitor.Website).HasMaxLength(512);
 
+        // Wave 3 (Figma 1439:11881) — optional exhibitor tier, stored by its int
+        // value (additive-only enum discipline). Nullable → no tier pill when unset.
+        builder.Property(exhibitor => exhibitor.Tier).HasConversion<int>();
+
         // SIMF-FDS-014 — D-260: optional shared Contact link. Restrict (a Contact
         // is soft-deleted, never hard-deleted under a referrer). HasForeignKey
         // creates the FK index.

@@ -31,7 +31,10 @@ public sealed record AdminSponsorDetail(
     Guid? ContactId,
     // D-432 — optional bilingual tagline (Figma 922:2824).
     string? Tagline = null,
-    string? TaglineArabic = null);
+    string? TaglineArabic = null,
+    // Optional bilingual about paragraph (≤2048 chars each).
+    string? About = null,
+    string? AboutArabic = null);
 
 /// <summary>Create payload for a sponsor. <c>Tier</c> is the int enum value
 /// (10=Platinum, 20=Gold, 30=Silver, 40=Bronze).</summary>
@@ -51,6 +54,10 @@ public sealed class AdminCreateSponsorRequest
     /// <summary>D-432 — optional bilingual tagline (≤256 chars each).</summary>
     public string? Tagline { get; set; }
     public string? TaglineArabic { get; set; }
+
+    /// <summary>Optional bilingual about paragraph (≤2048 chars each).</summary>
+    public string? About { get; set; }
+    public string? AboutArabic { get; set; }
 }
 
 /// <summary>Update payload (adds IsActive to the create shape).</summary>
@@ -70,6 +77,10 @@ public sealed class AdminUpdateSponsorRequest
     /// <summary>D-432 — optional bilingual tagline (≤256 chars each).</summary>
     public string? Tagline { get; set; }
     public string? TaglineArabic { get; set; }
+
+    /// <summary>Optional bilingual about paragraph (≤2048 chars each).</summary>
+    public string? About { get; set; }
+    public string? AboutArabic { get; set; }
 
     public bool IsActive { get; set; } = true;
 }

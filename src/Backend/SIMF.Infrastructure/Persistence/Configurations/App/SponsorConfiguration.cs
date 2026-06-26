@@ -34,6 +34,11 @@ internal sealed class SponsorConfiguration : IEntityTypeConfiguration<Sponsor>
         builder.Property(sponsor => sponsor.Tagline).HasMaxLength(256);
         builder.Property(sponsor => sponsor.TaglineArabic).HasMaxLength(256);
 
+        // Wave 3 — optional bilingual "نبذة عن الراعي" about paragraph (≤2048,
+        // mirrors the CP MaxLength). Additive nullable columns (D-219 freeze-lift).
+        builder.Property(sponsor => sponsor.About).HasMaxLength(2048);
+        builder.Property(sponsor => sponsor.AboutArabic).HasMaxLength(2048);
+
         // SIMF-FDS-014 — D-260: optional shared Contact link. Restrict (a Contact
         // is soft-deleted, never hard-deleted under a referrer). HasForeignKey
         // creates the FK index.

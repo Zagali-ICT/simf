@@ -8,4 +8,9 @@ public interface IPublicSponsorService
 {
     Task<PublicSponsors> ListAsync(
         CancellationToken cancellationToken = default);
+
+    /// <summary>Wave 3 (Figma 1439:11826) — the full sponsor-detail view (about,
+    /// city, website, tier, country). Null when the sponsor is missing / inactive.</summary>
+    Task<PublicSponsorDetail?> GetAsync(
+        Guid id, CancellationToken cancellationToken = default);
 }

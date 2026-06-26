@@ -20,8 +20,8 @@ import '../venuemap/data/venue_map_repository.dart';
 ///
 /// **Public.** Reuses the shipped booth reads (`GET /app/booths` + `/{id}`,
 /// D-199 / D-230) already wired in [VenueMapRepository] — the list of exhibitor
-/// booths; tapping a booth opens a bottom sheet with the lazily-loaded
-/// description.
+/// booths; tapping a booth opens the full exhibitor detail screen (Wave 3, Figma
+/// 1439:11881).
 ///
 /// Frame mapping: the navy scaffold + centred header (الأجنحة) and the shared
 /// bottom nav from [KsaPage]; a bordered search field (ابحث عن جناح أو شركة);
@@ -77,22 +77,12 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
     }
   }
 
-  Future<BoothDetail?> _safeDetail(String id) async {
-    try {
-      return await ref.read(venueMapRepositoryProvider).getBoothDetail(id);
-    } on ApiFailure {
-      return null;
-    }
-  }
-
+  // Wave 3 — tapping a booth opens the full exhibitor detail screen (Figma
+  // 1439:11881), replacing the earlier description bottom sheet.
   void _openBooth(BoothSummary booth) {
-    final l10n = AppL10n.of(context);
-    final detail = _safeDetail(booth.id);
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: SimfTokens.navyDeep,
-      showDragHandle: true,
-      builder: (_) => _BoothSheet(l10n: l10n, booth: booth, detail: detail),
+    context.pushNamed(
+      RouteNames.exhibitorDetail,
+      pathParameters: <String, String>{'boothId': booth.id},
     );
   }
 
@@ -793,81 +783,3 @@ String _initials(String name) {
   return trimmed.substring(0, trimmed.length >= 2 ? 2 : 1).toUpperCase();
 }
 
-/// The booth detail bottom sheet — the company name + sub-line over the
-/// lazily-loaded description paragraph, on the navy surface.
-class _BoothSheet extends StatelessWidget {
-  const _BoothSheet({
-    required this.l10n,
-    required this.booth,
-    required this.detail,
-  });
-
-  final AppL10n l10n;
-  final BoothSummary booth;
-  final Future<BoothDetail?> detail;
-
-  @override
-  Widget build(BuildContext context) {
-    final isArabic = l10n.isArabic;
-    final exhibitor = booth.localizedExhibitor(isArabic);
-    final sector = booth.localizedSector(isArabic);
-    final country = booth.localizedCountry(isArabic);
-    final parts = <String>[
-      if (exhibitor != null) exhibitor,
-      if (sector != null) sector,
-      if (country != null) country,
-    ];
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        SimfTokens.space5,
-        0,
-        SimfTokens.space5,
-        SimfTokens.space6,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            booth.localizedName(isArabic),
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: SimfTokens.textLg,
-            ),
-          ),
-          if (parts.isNotEmpty) ...<Widget>[
-            const SizedBox(height: SimfTokens.space2),
-            Text(
-              parts.join(' · '),
-              style: const TextStyle(color: SimfTokens.beigeBorder),
-            ),
-          ],
-          const SizedBox(height: SimfTokens.space3),
-          FutureBuilder<BoothDetail?>(
-            future: detail,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return Text(
-                  l10n.loadingLabel,
-                  style: const TextStyle(color: SimfTokens.txtTertiary),
-                );
-              }
-              final description = snapshot.data?.localizedDescription(isArabic);
-              if (description == null) {
-                return const SizedBox.shrink();
-              }
-              return Text(
-                description,
-                style: const TextStyle(
-                  color: SimfTokens.beigeBorder,
-                  height: 1.5,
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}

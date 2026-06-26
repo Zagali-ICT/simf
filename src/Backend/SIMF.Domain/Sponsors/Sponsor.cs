@@ -50,6 +50,12 @@ public sealed class Sponsor: BaseAuditEntity
     /// <summary>D-432 — Arabic tagline (≤256 chars). The primary surface.</summary>
     public string? TaglineArabic { get; set; }
 
+    /// <summary>Wave 3 (Figma 1439:11826) — the full "نبذة عن الراعي" about
+    /// paragraph on the sponsor-detail screen (distinct from the short
+    /// <see cref="Tagline"/>). Bilingual; ≤2048. Optional. Additive (D-219).</summary>
+    public string? About { get; set; }
+    public string? AboutArabic { get; set; }
+
 
     /// <summary>SIMF-FDS-014 (D-260) — optional link to the shared <c>Contact</c>
     /// directory record (logo / name / phones / social / website / location /
