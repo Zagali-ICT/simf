@@ -66,8 +66,11 @@ public sealed class AdminCreateSponsorRequest
     public string? AboutArabic { get; set; }
 }
 
-/// <summary>Update payload (adds IsActive to the create shape).</summary>
-public sealed class AdminUpdateSponsorRequest
+/// <summary>Update payload (adds IsActive to the create shape).
+/// Not sealed: the admin update endpoint binds {id}+body via a derived route
+/// class (D-504, mirroring <c>UpdateExhibitorRoute</c>) so it cannot drop a
+/// field at bind time.</summary>
+public class AdminUpdateSponsorRequest
 {
     public string NameEn { get; set; } = string.Empty;
     public string NameAr { get; set; } = string.Empty;
