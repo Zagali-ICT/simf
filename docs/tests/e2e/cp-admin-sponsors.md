@@ -44,6 +44,7 @@
 | E2E-SPN-022 | Excel import — Import → workbook → result modal "N created…" + per-row error (D-356) | happy | P1 | _to author_ |
 | E2E-SPN-023 | Excel import rejection — non-.xlsx / wrong-sheet → 400 + bilingual toast, nothing created (D-356) | error | P1 | _to author_ |
 | E2E-SPN-024 | Logo via the unified media-asset pipeline — upload then external link (D-357) | happy | P1 | _to author_ |
+| E2E-SPN-025 | Edit preserves the bilingual tagline — regression (D-501) | error | P0 | _to author_ |
 
 ## Scenarios
 
@@ -581,9 +582,39 @@ Scenario: Upload logo, then switch it to an external link
 video upload is 400; deactivate->restore round-trips; restoring when a live (category,owner) asset
 already exists is 409 (covered by `tests/SIMF.Api.Tests/AssetEndpointsTests.cs`).
 
+### E2E-SPN-025 — Edit preserves the bilingual tagline (regression D-501)
+
+```gherkin
+Scenario: Editing a sponsor does not wipe its tagline
+  # Regression for D-501: the inline UpdateSponsorRequest bind model had no
+  # Tagline/TaglineArabic property, so FastEndpoints silently dropped them on PUT
+  # and UpdateAsync overwrote the stored tagline with null — every edit lost it.
+  Given an active sponsor "Tagline Co" / "شركة الشعار" exists in tier "Gold"
+        with Tagline = "Strategic Partner" / "الشريك الاستراتيجي"
+  And the administrator is on /admin/sponsors
+  When they click the "Tagline Co" row's Edit (pencil) action
+  Then the modal pre-fills the Tagline (English) and Tagline (Arabic) fields
+       with "Strategic Partner" and "الشريك الاستراتيجي"
+  When they change Display order to "5" and leave both tagline fields unchanged
+  And they click "Save"
+  Then PUT /account/api/admin/sponsors/{id} returns HTTP 200
+  And the returned AdminSponsorDetail still has
+       Tagline = "Strategic Partner" and TaglineArabic = "الشريك الاستراتيجي"
+  When they re-open the "Tagline Co" row's Edit action (or the public sponsor detail)
+  Then both tagline fields are still populated (the tagline was NOT lost on save)
+```
+
+**Evidence captured:**
+- API-layer proof: `tests/SIMF.Api.Tests/SponsorsTests.cs` →
+  `Admin_update_preserves_the_tagline` (fails before the fix — the tagline returns
+  `null`; passes after the bind model carries `Tagline`/`TaglineArabic`).
+- Network: the PUT request body carries `tagline`/`taglineArabic`, and the 200
+  response echoes them back unchanged.
+
 ---
 
-_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle). Added E2E-SPN-018..023
+_Last reviewed:_ 2026-06-26 by Claude (D-501 — tagline-preserved-on-edit regression scenario).
+Prior: 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle). Added E2E-SPN-018..023
 (D-353 toggle + full-page round-trip + SimfConfirm delete gate; D-356 Excel export/import +
 import rejection) and corrected the stale native-`window.confirm` delete copy in
 E2E-SPN-001/004/005 + the CP page note to the shipped CrudShell + SimfConfirm flow.

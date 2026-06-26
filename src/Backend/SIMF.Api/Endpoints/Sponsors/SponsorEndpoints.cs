@@ -127,6 +127,12 @@ public sealed class UpdateSponsorRequest
     public string? Url { get; set; }
     public int DisplayOrder { get; set; }
     public Guid? ContactId { get; set; }
+
+    // D-432 / D-501 — must be bound here or the inline model silently drops the
+    // tagline and UpdateAsync overwrites the stored value with null on every edit.
+    public string? Tagline { get; set; }
+    public string? TaglineArabic { get; set; }
+
     public string? About { get; set; }
     public string? AboutArabic { get; set; }
     public bool IsActive { get; set; } = true;
@@ -162,6 +168,8 @@ public sealed class UpdateSponsorEndpoint(IAdminSponsorService service)
                     Url = req.Url,
                     DisplayOrder = req.DisplayOrder,
                     ContactId = req.ContactId,
+                    Tagline = req.Tagline,
+                    TaglineArabic = req.TaglineArabic,
                     About = req.About,
                     AboutArabic = req.AboutArabic,
                     IsActive = req.IsActive,

@@ -247,6 +247,47 @@ public sealed class SponsorsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Admin_update_preserves_the_tagline()
+    {
+        // D-501 regression — editing a sponsor used to wipe its bilingual tagline:
+        // the inline UpdateSponsorRequest bind model had no Tagline/TaglineArabic
+        // property, so FastEndpoints dropped them and UpdateAsync overwrote the
+        // stored value with null. This must round-trip through the HTTP bind layer
+        // (a service-level test passes despite the bug — the drop is at binding).
+        var admin = await CreateAdministratorAndSignInAsync();
+        var create = await PostAuthAsync(
+            "/api/v1/admin/sponsors",
+            new AdminCreateSponsorRequest
+            {
+                NameEn = "Tagline Co", NameAr = "شركة الشعار",
+                Tier = (int)SponsorTier.Gold, DisplayOrder = 0,
+                Tagline = "Strategic Partner",
+                TaglineArabic = "الشريك الاستراتيجي",
+            }, admin);
+        var created = (await create.Content
+            .ReadFromJsonAsync<ApiResult<AdminSponsorDetail>>())!.Data!;
+        Assert.Equal("Strategic Partner", created.Tagline);
+
+        // Edit changing only the display order, resending the same tagline exactly
+        // as the CP form posts it.
+        var update = await PutAuthAsync(
+            $"/api/v1/admin/sponsors/{created.Id}",
+            new AdminUpdateSponsorRequest
+            {
+                NameEn = "Tagline Co", NameAr = "شركة الشعار",
+                Tier = (int)SponsorTier.Gold, DisplayOrder = 5,
+                Tagline = "Strategic Partner",
+                TaglineArabic = "الشريك الاستراتيجي",
+                IsActive = true,
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+        var updated = (await update.Content
+            .ReadFromJsonAsync<ApiResult<AdminSponsorDetail>>())!.Data!;
+        Assert.Equal("Strategic Partner", updated.Tagline);
+        Assert.Equal("الشريك الاستراتيجي", updated.TaglineArabic);
+    }
+
+    [Fact]
     public async Task Non_admin_caller_is_forbidden_on_create()
     {
         var visitor = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
@@ -296,6 +337,17 @@ public sealed class SponsorsTests : IClassFixture<SimfApiFactory>
         string url, TBody body, string token) where TBody : class
     {
         var request = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Content = JsonContent.Create(body),
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
+
+    private Task<HttpResponseMessage> PutAuthAsync<TBody>(
+        string url, TBody body, string token) where TBody : class
+    {
+        var request = new HttpRequestMessage(HttpMethod.Put, url)
         {
             Content = JsonContent.Create(body),
         };
