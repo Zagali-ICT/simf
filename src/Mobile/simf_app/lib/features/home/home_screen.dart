@@ -211,6 +211,15 @@ class _GuestHome extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: SimfTokens.space2),
+          // D-499 (الوفود, Figma 1426:10771) — the delegations entry, public so a
+          // guest reaches it like the speakers / exhibition tiles above.
+          KsaNavTile(
+            label: l10n.delegationsTitle,
+            icon: Icons.flag_outlined,
+            minHeight: 80,
+            onTap: () => context.pushNamed(RouteNames.delegations),
+          ),
           const SizedBox(height: SimfTokens.space4),
           // The locked smart-badge card — a visual cue that signing in
           // unlocks it; never tappable as a guest.
@@ -389,6 +398,15 @@ class _VisitorHome extends StatelessWidget {
                 onTap: () => context.pushNamed(RouteNames.archive),
               ),
             ],
+          ),
+          const SizedBox(height: SimfTokens.space2),
+          // D-499 (الوفود, Figma 1426:10771) — the delegations entry: the invited
+          // countries + their heads of delegation. Public (anonymous endpoint).
+          KsaNavTile(
+            label: l10n.delegationsTitle,
+            icon: Icons.flag_outlined,
+            minHeight: 80,
+            onTap: () => context.pushNamed(RouteNames.delegations),
           ),
           const SizedBox(height: SimfTokens.space6),
           // "الميزات الذكية" (758:1158) — header + the المزيد link → More.

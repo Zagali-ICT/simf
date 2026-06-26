@@ -422,6 +422,9 @@ public static class DependencyInjection
             SIMF.Infrastructure.Contacts.AdminContactService>();
         services.AddScoped<SIMF.Application.Sponsors.Abstractions.IPublicSponsorService,
             SIMF.Infrastructure.Sponsors.PublicSponsorService>();
+        // D-499 (الوفود) — anonymous public delegations view (invited countries).
+        services.AddScoped<SIMF.Application.Delegations.Abstractions.IPublicDelegationService,
+            SIMF.Infrastructure.Delegations.PublicDelegationService>();
         services.AddScoped<SIMF.Application.Sponsors.Abstractions.IAdminSponsorService,
             SIMF.Infrastructure.Sponsors.AdminSponsorService>();
         services.AddScoped<SIMF.Application.Archive.Abstractions.IPublicArchiveService,

@@ -1456,6 +1456,83 @@ class AppL10n {
   String mySessionsCount(int count, String tabLabel) =>
       _t('$count جلسة · $tabLabel', '$count · $tabLabel');
 
+  // Wave 4 — Delegations, App "الوفود" (Figma 1426:10771): the invited countries'
+  // delegations with head of delegation, date range and member count.
+  String get delegationsTitle => _t('الوفود', 'Delegations');
+  String get delegationsSearchHint =>
+      _t('ابحث عن دولة أو وفد...', 'Search for a country or delegation...');
+  String get delegationsError =>
+      _t('تعذر تحميل الوفود.', 'Could not load delegations.');
+  String get delegationsEmpty => _t('لا توجد وفود بعد.', 'No delegations yet.');
+  String get delegationsNoResults =>
+      _t('لا توجد نتائج مطابقة.', 'No matching results.');
+  String get delegationsCountriesStat =>
+      _t('دولة مشاركة', 'Participating countries');
+  String get delegationsParticipantsStat =>
+      _t('إجمالي المشاركين', 'Total participants');
+  String get delegationsHeadLabel => _t('رئيس الوفد', 'Head of delegation');
+
+  /// The member count, e.g. "12 عضو" / "12 members" (with the Arabic plural).
+  String delegationsMembers(int count) {
+    if (!isArabic) {
+      return count == 1 ? '1 member' : '$count members';
+    }
+    if (count == 1) {
+      return 'عضو واحد';
+    }
+    if (count == 2) {
+      return 'عضوان';
+    }
+    if (count >= 3 && count <= 10) {
+      return '$count أعضاء';
+    }
+    return '$count عضواً';
+  }
+
+  /// The delegation date range, e.g. "12 يناير – 15 يناير" / "12 Jan – 15 Jan".
+  /// Falls back to whichever single date is present; '' when neither is set.
+  String delegationsDateRange(DateTime? start, DateTime? end) {
+    final from = start == null ? null : _shortDate(start);
+    final to = end == null ? null : _shortDate(end);
+    if (from != null && to != null) {
+      return '$from – $to';
+    }
+    return from ?? to ?? '';
+  }
+
+  String _shortDate(DateTime date) {
+    const arabicMonths = <String>[
+      'يناير',
+      'فبراير',
+      'مارس',
+      'أبريل',
+      'مايو',
+      'يونيو',
+      'يوليو',
+      'أغسطس',
+      'سبتمبر',
+      'أكتوبر',
+      'نوفمبر',
+      'ديسمبر',
+    ];
+    const englishMonths = <String>[
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final month = (isArabic ? arabicMonths : englishMonths)[date.month - 1];
+    return '${date.day} $month';
+  }
+
   // Wave 2 — session-presentations list, App "عروض الجلسات" (Figma 1388:7621):
   // downloadable decks grouped by day, each with a تحميل button.
   String get sessionPresentationsTitle =>

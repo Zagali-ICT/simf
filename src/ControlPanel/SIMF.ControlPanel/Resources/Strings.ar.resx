@@ -632,6 +632,13 @@
   <data name="Admin.Countries.Field.DisplayOrderInvalid" xml:space="preserve"><value>يجب أن يكون ترتيب العرض صفراً أو عدداً صحيحاً موجباً.</value></data>
   <data name="Admin.Countries.Field.IsActive" xml:space="preserve"><value>مفعّل — عرضه في قائمة الجنسيات</value></data>
   <data name="Admin.Countries.Field.IsInvited" xml:space="preserve"><value>مدعوّة لإرسال وفد</value></data>
+  <data name="Admin.Countries.Field.DelegationArrival" xml:space="preserve"><value>تاريخ وصول الوفد</value></data>
+  <data name="Admin.Countries.Field.DelegationDeparture" xml:space="preserve"><value>تاريخ مغادرة الوفد</value></data>
+  <data name="Admin.Countries.Field.DelegationDateHint" xml:space="preserve"><value>يظهر كنطاق التاريخ في بطاقة الوفود بالتطبيق.</value></data>
+  <data name="Admin.Countries.Field.DelegationDatesInvalid" xml:space="preserve"><value>يجب أن يكون تاريخ المغادرة في أو بعد تاريخ الوصول.</value></data>
+  <data name="Admin.Countries.Field.HeadOfDelegation" xml:space="preserve"><value>رئيس الوفد</value></data>
+  <data name="Admin.Countries.Field.HeadOfDelegationHint" xml:space="preserve"><value>اختر أحد أعضاء وفد هذا البلد النشطين.</value></data>
+  <data name="Admin.Countries.Field.HeadNone" xml:space="preserve"><value>— بدون —</value></data>
   <data name="Admin.Countries.Add.Title" xml:space="preserve"><value>إضافة بلد</value></data>
   <data name="Admin.Countries.Edit.Title" xml:space="preserve"><value>تعديل البلد</value></data>
   <data name="Admin.Countries.Details.Title" xml:space="preserve"><value>تفاصيل البلد</value></data>

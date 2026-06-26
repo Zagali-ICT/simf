@@ -18,6 +18,7 @@ import '../features/archive/archive_screen.dart';
 import '../features/booths/booths_screen.dart';
 import '../features/booths/exhibitor_detail_screen.dart';
 import '../features/content/terms_screen.dart';
+import '../features/delegations/delegations_screen.dart';
 import '../features/faq/faq_screen.dart';
 import '../features/feedback/rate_screen.dart';
 import '../features/forum_guide/forum_guide_screen.dart';
@@ -118,7 +119,8 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 19, name: RouteNames.speakers, path: '/speakers', labelAr: 'المتحدثون', labelEn: 'Speakers'),
   _Route(number: 20, name: RouteNames.speakerProfile, path: '/speakers/:speakerId', labelAr: 'القبطان البحري', labelEn: 'Speaker profile'),
 
-  // Section 3 — Content & activities (3 screens; 21 delegations removed — D-277)
+  // Section 3 — Content & activities. D-499 restored delegations (#21).
+  _Route(number: 21, name: RouteNames.delegations, path: '/delegations', labelAr: 'الوفود', labelEn: 'Delegations'),
   _Route(number: 22, name: RouteNames.booths, path: '/booths', labelAr: 'الأجنحة', labelEn: 'Booths'),
   _Route(number: 23, name: RouteNames.sponsors, path: '/sponsors', labelAr: 'الرعاة', labelEn: 'Sponsors'),
   // Wave 3 (Figma 1439:11881 / 11826) — exhibitor + sponsor detail (public, pushed).
@@ -348,6 +350,9 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
     return SpeakerProfileScreen(
       speakerId: state.pathParameters['speakerId'] ?? '',
     );
+  }
+  if (r.name == RouteNames.delegations) {
+    return const DelegationsScreen();
   }
   if (r.name == RouteNames.booths) {
     return const BoothsScreen();

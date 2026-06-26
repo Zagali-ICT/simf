@@ -44,9 +44,12 @@ class RouteNames {
   static const String speakers = 'speakers';
   static const String speakerProfile = 'speakerProfile';
 
-  // Section 3 — Content & activities (3 screens; 21 delegations removed — D-277)
+  // Section 3 — Content & activities. D-499 (الوفود, Figma 1426:10771) restored
+  // delegations (#21) as a real screen — the invited countries + their heads of
+  // delegation, public (anonymous GET /app/delegations).
   static const String booths = 'booths';
   static const String sponsors = 'sponsors';
+  static const String delegations = 'delegations';
   static const String archive = 'archive';
 
   // Wave 3 (Figma 1439:11881 / 11826) — the exhibitor + sponsor detail screens

@@ -5,6 +5,7 @@
    and editable on Add, read-only on Edit. Supersedes CountryForm.razor (D-155),
    which keyed off Initial==null. *@
 @inherits CrudAddEditFormBase<AdminCountryDetail>
+@using System.Globalization
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 
@@ -48,8 +49,28 @@
             @L["Admin.Countries.Field.IsInvited"]
         </SimfCheckbox>
 
+        @* D-499 (الوفود) — the invited delegation's arrival/departure dates +
+           (on edit, once delegates exist) its head of delegation. *@
+        <SimfTextField Label="@L["Admin.Countries.Field.DelegationArrival"]"
+                       Helper="@L["Admin.Countries.Field.DelegationDateHint"]"
+                       Type="date"
+                       @bind-Value="_model.ArrivalDate" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Countries.Field.DelegationDeparture"]"
+                       Type="date"
+                       @bind-Value="_model.DepartureDate" Disabled="_busy" />
+
         @if (IsEdit)
         {
+            <SimfSelect TValue="AdminCountryDelegateOption"
+                        Label="@L["Admin.Countries.Field.HeadOfDelegation"]"
+                        Helper="@L["Admin.Countries.Field.HeadOfDelegationHint"]"
+                        Items="_delegates"
+                        ValueFor="@(d => d.UserProfileId.ToString())"
+                        LabelFor="@HeadLabel"
+                        Value="_selectedHead"
+                        ValueChanged="@(d => _selectedHead = d)"
+                        Disabled="_busy" />
+
             <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">
                 @L["Admin.Countries.Field.IsActive"]
             </SimfCheckbox>
@@ -71,12 +92,23 @@
 </EditForm>
 
 @code {
+    // D-499 (الوفود) — the "no head" sentinel prepended to the picker so an admin
+    // can clear a previously-set head (the SimfSelect placeholder is disabled once
+    // a value is chosen).
+    private static readonly AdminCountryDelegateOption HeadNone =
+        new(Guid.Empty, string.Empty, string.Empty, null);
+
     private readonly Model _model = new();
     private string _idInput = string.Empty;
     private string _displayOrderInput = "0";
     private EditContext _editContext = default!;
     private bool _busy;
     private string? _error;
+
+    // D-499 — the country's active delegates (head picker) + the current selection.
+    private List<AdminCountryDelegateOption> _delegates = new();
+    private AdminCountryDelegateOption? _selectedHead;
+    private Guid? _initialHeadId;
 
     protected override void OnInitialized()
     {
@@ -88,10 +120,38 @@
             _model.PhonePrefix = Initial.PhonePrefix ?? string.Empty;
             _model.IsActive = Initial.IsActive;
             _model.IsInvited = Initial.IsInvited;
+            _model.ArrivalDate = Initial.DelegationArrivalDate?.ToString("yyyy-MM-dd") ?? string.Empty;
+            _model.DepartureDate = Initial.DelegationDepartureDate?.ToString("yyyy-MM-dd") ?? string.Empty;
+            _initialHeadId = Initial.HeadOfDelegationUserProfileId;
             _displayOrderInput = Initial.DisplayOrder.ToString();
             _idInput = Initial.Id.ToString();
         }
         _editContext = new EditContext(_model);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // D-499 — only the Edit form picks a head (a country has no delegates until
+        // it has an id + registrations).
+        if (!IsEdit || Initial is null) { return; }
+
+        _delegates = new List<AdminCountryDelegateOption> { HeadNone };
+        var envelope = await JS.InvokeAsync<ApiResult<IReadOnlyList<AdminCountryDelegateOption>>>(
+            "simfAccount.getJson", $"/account/api/admin/countries/{Initial.Id}/delegates");
+        if (envelope is { Success: true, Data: not null })
+        {
+            _delegates.AddRange(envelope.Data);
+        }
+        _selectedHead = _initialHeadId is { } id
+            ? _delegates.FirstOrDefault(d => d.UserProfileId == id) ?? HeadNone
+            : HeadNone;
+    }
+
+    private string HeadLabel(AdminCountryDelegateOption option)
+    {
+        if (option.UserProfileId == Guid.Empty) { return L["Admin.Countries.Field.HeadNone"]; }
+        var name = string.IsNullOrWhiteSpace(option.NameArabic) ? option.Name : option.NameArabic;
+        return string.IsNullOrWhiteSpace(option.JobTitle) ? name : $"{name} — {option.JobTitle}";
     }
 
     private async Task HandleSubmitAsync()
@@ -125,6 +185,17 @@
             _error = L["Admin.Countries.Field.DisplayOrderInvalid"]; return;
         }
 
+        // D-499 — parse the optional delegation date range (HTML date inputs post
+        // an invariant yyyy-MM-dd string) and resolve the head pointer.
+        var arrival = ParseDate(_model.ArrivalDate);
+        var departure = ParseDate(_model.DepartureDate);
+        if (arrival is not null && departure is not null && departure < arrival)
+        {
+            _error = L["Admin.Countries.Field.DelegationDatesInvalid"]; return;
+        }
+        var headId = _selectedHead is { } head && head.UserProfileId != Guid.Empty
+            ? head.UserProfileId : (Guid?)null;
+
         _busy = true;
         try
         {
@@ -142,6 +213,9 @@
                         PhonePrefix = NullIfBlank(_model.PhonePrefix),
                         DisplayOrder = order,
                         IsInvited = _model.IsInvited,
+                        DelegationArrivalDate = arrival,
+                        DelegationDepartureDate = departure,
+                        HeadOfDelegationUserProfileId = headId,
                     });
             }
             else
@@ -157,6 +231,9 @@
                         DisplayOrder = order,
                         IsActive = _model.IsActive,
                         IsInvited = _model.IsInvited,
+                        DelegationArrivalDate = arrival,
+                        DelegationDepartureDate = departure,
+                        HeadOfDelegationUserProfileId = headId,
                     });
             }
 
@@ -180,6 +257,11 @@
     private static string? NullIfBlank(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
+    private static DateOnly? ParseDate(string? value) =>
+        DateOnly.TryParseExact((value ?? string.Empty).Trim(), "yyyy-MM-dd",
+            CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
+            ? date : null;
+
     private sealed class Model
     {
         public string Code { get; set; } = string.Empty;
@@ -188,5 +270,7 @@
         public string PhonePrefix { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
         public bool IsInvited { get; set; }
+        public string ArrivalDate { get; set; } = string.Empty;
+        public string DepartureDate { get; set; } = string.Empty;
     }
 }

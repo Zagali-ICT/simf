@@ -25,7 +25,20 @@ public sealed record AdminCountryDetail(
     DateTimeOffset CreatedAt,
     DateTimeOffset? UpdatedAt,
     // D-473 (#10) — invited to send a delegation (وفد).
-    bool IsInvited = false);
+    bool IsInvited = false,
+    // D-499 (الوفود) — the invited delegation's arrival/departure dates + the
+    // UserProfile id of its head of delegation (رئيس الوفد). All nullable.
+    DateOnly? DelegationArrivalDate = null,
+    DateOnly? DelegationDepartureDate = null,
+    Guid? HeadOfDelegationUserProfileId = null);
+
+/// <summary>D-499 (الوفود) — one delegate of an invited country, offered in the
+/// CP head-of-delegation picker on the country Edit form.</summary>
+public sealed record AdminCountryDelegateOption(
+    Guid UserProfileId,
+    string Name,
+    string NameArabic,
+    string? JobTitle);
 
 public sealed class AdminCreateCountryRequest
 {
@@ -39,6 +52,16 @@ public sealed class AdminCreateCountryRequest
 
     /// <summary>D-473 (#10) — true for a country invited to send a delegation (وفد).</summary>
     public bool IsInvited { get; set; }
+
+    /// <summary>D-499 (الوفود) — the invited delegation's arrival date (optional).</summary>
+    public DateOnly? DelegationArrivalDate { get; set; }
+
+    /// <summary>D-499 (الوفود) — the invited delegation's departure date (optional).</summary>
+    public DateOnly? DelegationDepartureDate { get; set; }
+
+    /// <summary>D-499 (الوفود) — the UserProfile id of the head of delegation
+    /// (رئيس الوفد); must be an active delegate of this country (optional).</summary>
+    public Guid? HeadOfDelegationUserProfileId { get; set; }
 }
 
 public sealed class AdminUpdateCountryRequest
@@ -52,4 +75,14 @@ public sealed class AdminUpdateCountryRequest
 
     /// <summary>D-473 (#10) — true for a country invited to send a delegation (وفد).</summary>
     public bool IsInvited { get; set; }
+
+    /// <summary>D-499 (الوفود) — the invited delegation's arrival date (optional).</summary>
+    public DateOnly? DelegationArrivalDate { get; set; }
+
+    /// <summary>D-499 (الوفود) — the invited delegation's departure date (optional).</summary>
+    public DateOnly? DelegationDepartureDate { get; set; }
+
+    /// <summary>D-499 (الوفود) — the UserProfile id of the head of delegation
+    /// (رئيس الوفد); must be an active delegate of this country (optional).</summary>
+    public Guid? HeadOfDelegationUserProfileId { get; set; }
 }

@@ -635,6 +635,13 @@
   <data name="Admin.Countries.Field.DisplayOrderInvalid" xml:space="preserve"><value>Display order must be zero or a positive integer.</value></data>
   <data name="Admin.Countries.Field.IsActive" xml:space="preserve"><value>Active — show in the nationality picker</value></data>
   <data name="Admin.Countries.Field.IsInvited" xml:space="preserve"><value>Invited to send a delegation (وفد)</value></data>
+  <data name="Admin.Countries.Field.DelegationArrival" xml:space="preserve"><value>Delegation arrival date</value></data>
+  <data name="Admin.Countries.Field.DelegationDeparture" xml:space="preserve"><value>Delegation departure date</value></data>
+  <data name="Admin.Countries.Field.DelegationDateHint" xml:space="preserve"><value>Shown as the date range on the app's Delegations card.</value></data>
+  <data name="Admin.Countries.Field.DelegationDatesInvalid" xml:space="preserve"><value>The departure date must be on or after the arrival date.</value></data>
+  <data name="Admin.Countries.Field.HeadOfDelegation" xml:space="preserve"><value>Head of delegation (رئيس الوفد)</value></data>
+  <data name="Admin.Countries.Field.HeadOfDelegationHint" xml:space="preserve"><value>Pick one of this country's active delegates.</value></data>
+  <data name="Admin.Countries.Field.HeadNone" xml:space="preserve"><value>— None —</value></data>
   <data name="Admin.Countries.Add.Title" xml:space="preserve"><value>Add country</value></data>
   <data name="Admin.Countries.Edit.Title" xml:space="preserve"><value>Edit country</value></data>
   <data name="Admin.Countries.Details.Title" xml:space="preserve"><value>Country details</value></data>
