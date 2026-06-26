@@ -52,7 +52,11 @@ public sealed class AdminCreateHallRequest
     public int SeatSelectionMode { get; set; }
 }
 
-public sealed class AdminUpdateHallRequest
+/// <summary>Not sealed: the admin update endpoint binds {id}+body via a derived
+/// route class (D-505, mirroring <c>UpdateExhibitorRoute</c>/<c>UpdateSponsorRoute</c>)
+/// so it cannot drop a field at bind time — the GPS geofence was being wiped on
+/// every edit because the old inline bind model omitted it.</summary>
+public class AdminUpdateHallRequest
 {
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;

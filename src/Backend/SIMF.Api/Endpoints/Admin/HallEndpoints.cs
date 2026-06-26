@@ -69,22 +69,18 @@ public sealed class CreateHallEndpoint(IAdminHallService service)
     }
 }
 
-public sealed class UpdateHallRequest
+// D-505 — bind {id} + body via a derived route that INHERITS the contract
+// (mirrors UpdateExhibitorRoute / UpdateSponsorRoute). The old inline
+// UpdateHallRequest omitted the GPS geofence fields, so FastEndpoints dropped
+// the geofence the CP form sends and UpdateAsync wiped the stored geofence on
+// every edit. Passing the bound req straight through makes the drop impossible.
+public sealed class UpdateHallRoute : AdminUpdateHallRequest
 {
     public Guid Id { get; set; }
-    public string Code { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public string NameArabic { get; set; } = string.Empty;
-    public int Capacity { get; set; }
-    public string? Floor { get; set; }
-    public string? EquipmentNotes { get; set; }
-    public bool IsActive { get; set; } = true;
-    // D-485: 0 = AssignedSeat, 1 = OpenSeating.
-    public int SeatSelectionMode { get; set; }
 }
 
 public sealed class UpdateHallEndpoint(IAdminHallService service)
-    : Endpoint<UpdateHallRequest, ApiResult<AdminHallDetail>>
+    : Endpoint<UpdateHallRoute, ApiResult<AdminHallDetail>>
 {
     public override void Configure()
     {
@@ -94,7 +90,7 @@ public sealed class UpdateHallEndpoint(IAdminHallService service)
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
     }
-    public override async Task HandleAsync(UpdateHallRequest req, CancellationToken ct)
+    public override async Task HandleAsync(UpdateHallRoute req, CancellationToken ct)
     {
         if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
         {
@@ -102,14 +98,7 @@ public sealed class UpdateHallEndpoint(IAdminHallService service)
             return;
         }
         await Send.OkAsync(ApiResult<AdminHallDetail>.Ok(
-            await service.UpdateAsync(actorId, req.Id,
-                new AdminUpdateHallRequest
-                {
-                    Code = req.Code, Name = req.Name, NameArabic = req.NameArabic,
-                    Capacity = req.Capacity, Floor = req.Floor,
-                    EquipmentNotes = req.EquipmentNotes, IsActive = req.IsActive,
-                    SeatSelectionMode = req.SeatSelectionMode,
-                }, ct)), ct);
+            await service.UpdateAsync(actorId, req.Id, req, ct)), ct);
     }
 }
 

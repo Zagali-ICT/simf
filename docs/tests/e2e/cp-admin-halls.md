@@ -41,6 +41,7 @@
 | E2E-HAL-020 | Excel export: toolbar Export downloads an .xlsx of the filtered grid / selected rows (D-356) | happy | P1 | _to author_ |
 | E2E-HAL-021 | Excel import: upload a workbook → rows created/updated + result modal with per-row outcome (D-356) | happy | P1 | _to author_ |
 | E2E-HAL-022 | Excel import: a non-.xlsx / wrong-sheet upload → bilingual rejection, nothing created (D-356) | error | P1 | _to author_ |
+| E2E-HAL-023 | Edit preserves a re-sent geofence — regression (D-505) | error | P0 | _to author_ |
 
 ## Scenarios
 
@@ -477,7 +478,8 @@ Scenario: A bad upload is rejected without creating anything
   `Hall.Deactivated` (`SIMF.Application/Auditing/AuditEvents.cs`).
 - **API integration tests** that cover the same surface at a lower layer
   (no browser): `tests/SIMF.Api.Tests/AdminHallGeofenceTests.cs` (geofence
-  parse + persistence). The hall arrival/attendance chain is covered by
+  parse + persistence + the **D-505** `Update_preserves_a_geofence_that_is_resent`
+  edit-wipe regression). The hall arrival/attendance chain is covered by
   `tests/SIMF.Api.Tests/HallArrivalScanTests.cs` and
   `tests/SIMF.Api.Tests/HallAttendanceTests.cs` (a different surface — those
   drive the mobile arrival flow, not this CP page). No dedicated
@@ -485,6 +487,25 @@ Scenario: A bad upload is rejected without creating anything
   references one as the intended home), so E2E-HAL-005..009 also serve as the
   authoritative regression record for hall validation/conflict until that
   xUnit suite lands.
+
+### E2E-HAL-023 — Edit preserves a re-sent geofence (regression D-505)
+
+```gherkin
+Scenario: Editing a hall does not wipe its geofence
+  # Regression for D-505: the inline UpdateHallRequest bind model omitted the
+  # geofence, so FastEndpoints dropped the lat/lon/radius the CP form resends and
+  # the service wiped the stored geofence on every edit.
+  Given a hall "Geo Hall" exists with geofence lat=24.7136 lon=46.6753 radius=80
+  And the administrator opens its Edit form (the geofence fields pre-fill)
+  When they change Capacity to 45, leave the geofence fields unchanged, and Save
+  Then PUT /account/api/admin/halls/{id} returns HTTP 200
+  And the returned hall still has GeofenceCenterLat=24.7136, GeofenceCenterLon=46.6753,
+      GeofenceRadiusMeters=80 (the geofence was NOT wiped) and Capacity=45
+```
+
+**Evidence:** `tests/SIMF.Api.Tests/AdminHallGeofenceTests.cs` →
+`Update_preserves_a_geofence_that_is_resent` (fails before the fix — geofence
+returns null; passes after the bind model inherits the contract).
 
 ---
 

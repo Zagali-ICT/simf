@@ -106,6 +106,36 @@ public sealed class AdminHallGeofenceTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Update_preserves_a_geofence_that_is_resent()
+    {
+        // D-505 regression — the inline UpdateHallRequest bind model omitted the
+        // geofence, so FastEndpoints dropped the geofence the CP form resends and
+        // UpdateAsync wiped the stored geofence on every edit. Resending it (while
+        // changing another field) must round-trip. This drives the HTTP bind layer
+        // — the service maps it correctly, so only an HTTP test catches the drop.
+        var admin = await CreateAdministratorAndSignInAsync();
+        var created = await CreateHallAsync(admin, new AdminCreateHallRequest
+        {
+            Code = NewCode(), Name = "Keep Geo", NameArabic = "احتفظ بالسياج", Capacity = 30,
+            GeofenceCenterLat = 24.7136, GeofenceCenterLon = 46.6753, GeofenceRadiusMeters = 80,
+        });
+
+        var response = await PutAuthAsync($"/api/v1/admin/halls/{created.Id}",
+            new AdminUpdateHallRequest
+            {
+                Code = created.Code, Name = created.Name, NameArabic = created.NameArabic,
+                Capacity = 45, IsActive = true,
+                GeofenceCenterLat = 24.7136, GeofenceCenterLon = 46.6753, GeofenceRadiusMeters = 80,
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var updated = (await response.Content.ReadFromJsonAsync<ApiResult<AdminHallDetail>>())!.Data!;
+        Assert.Equal(45, updated.Capacity);
+        Assert.Equal(24.7136, updated.GeofenceCenterLat);
+        Assert.Equal(46.6753, updated.GeofenceCenterLon);
+        Assert.Equal(80, updated.GeofenceRadiusMeters);
+    }
+
+    [Fact]
     public async Task Create_and_update_round_trip_the_seat_selection_mode()
     {
         // D-485 — the hall's seat-selection mode persists and round-trips. The
