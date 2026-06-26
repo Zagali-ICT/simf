@@ -61,7 +61,8 @@ internal sealed class AdminCountryService(
             .Select(country => new AdminCountrySummary(
                 country.Id, country.Code, country.Name, country.NameArabic,
                 country.PhonePrefix, country.DisplayOrder,
-                country.IsActive, country.CreatedAt, country.IsInvited))
+                country.IsActive, country.CreatedAt, country.IsInvited,
+                country.DelegationArrivalDate, country.DelegationDepartureDate))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminCountrySummary>.Of(page, total,

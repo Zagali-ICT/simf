@@ -29,7 +29,14 @@ public sealed record AdminBannerSummary(
     DateTimeOffset EndUtc,
     int DisplayOrder,
     bool IsActive,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    // D-506 — carried so the grid Excel export can round-trip them (not rendered
+    // as grid columns). Body/BodyArabic are required for create; ImageUrl/LinkUrl
+    // are optional. Default to empty/null when unset.
+    string Body = "",
+    string BodyArabic = "",
+    string? ImageUrl = null,
+    string? LinkUrl = null);
 
 public sealed record AdminBannerDetail(
     Guid Id,

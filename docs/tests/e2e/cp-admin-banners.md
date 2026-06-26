@@ -74,6 +74,7 @@
 | E2E-BNR-020 | Excel export: toolbar Export → POST /export (whole filtered grid vs selected rows; header row) (D-356) | happy | P1 | _to author_ |
 | E2E-BNR-021 | Excel import: toolbar Import → POST /import multipart → "N created…" modal + per-row error (D-356) | happy | P1 | _to author_ |
 | E2E-BNR-022 | Excel import rejection: non-.xlsx / wrong-sheet upload → 400 + bilingual toast, nothing created (D-356) | error | P1 | _to author_ |
+| E2E-BNR-023 | Excel round-trip: export carries Body/BodyArabic/ImageUrl/LinkUrl, and an import workbook with those columns persists all four (D-506) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -464,6 +465,9 @@ Scenario: Export the filtered grid to an XLSX workbook
   And the browser saves a file named simf-banners-{yyyyMMddHHmmss}.xlsx
   And the workbook's "Banners" sheet header row reads
       Title | TitleArabic | StartUtc | EndUtc | DisplayOrder | IsActive
+      | Body | BodyArabic | ImageUrl | LinkUrl
+      (D-506 — the last four were appended so the export round-trips back through
+       import without dropping the body or the image/link URLs)
   And it contains the whole filtered set (the API caps the export at 5000 rows)
   When they instead tick two row checkboxes then click "Export"
   Then the POST carries those two Ids (Query still sent) and the workbook contains
@@ -472,7 +476,8 @@ Scenario: Export the filtered grid to an XLSX workbook
 
 **Evidence captured:**
 - Network: `POST /account/api/admin/banners/export` returns 200 with the xlsx content-type
-- Saved file `simf-banners-*.xlsx` opens with the six-column header row above
+- Saved file `simf-banners-*.xlsx` opens with the ten-column header row above
+  (six grid columns + the four D-506 round-trip columns Body/BodyArabic/ImageUrl/LinkUrl)
 
 ### E2E-BNR-021 — Excel import (D-356)
 
@@ -514,6 +519,32 @@ Scenario: A bad upload is rejected without creating anything
   And nothing is created
 ```
 
+### E2E-BNR-023 — Excel round-trip of Body / image / link (D-506)
+
+```gherkin
+Scenario: The export carries Body/BodyArabic/ImageUrl/LinkUrl and an import re-reads them
+  Given the administrator is on /admin/banners with at least one banner that has
+      a Body, an Image URL and a Click-through URL
+  When they click the toolbar "Export" action
+  Then the "Banners" sheet header row now includes Body | BodyArabic | ImageUrl | LinkUrl
+      appended after IsActive (D-506 — previously these four were dropped on export)
+  And each exported row carries that banner's Body, BodyArabic, ImageUrl and LinkUrl
+
+  When they edit one row of the exported workbook to a new Title and re-import it
+      (the "Banners" sheet keeps the Body | BodyArabic | ImageUrl | LinkUrl columns)
+  Then a POST /account/api/admin/banners/import fires and creates the row
+  And opening that new banner's Edit (GET /account/api/admin/banners/{id}) shows the
+      Body (EN/AR), Image URL and Click-through URL exactly as they were in the workbook
+      (round-trip with no field dropped)
+```
+
+**Evidence captured:**
+- Network: `POST /account/api/admin/banners/export` returns 200; the workbook's
+  "Banners" header row ends with `Body | BodyArabic | ImageUrl | LinkUrl`
+- API tests: `tests/SIMF.Api.Tests/BannersExcelTests.cs` —
+  `Export_includes_the_body_image_and_link_columns` (export header presence) and
+  `Import_round_trips_the_body_image_and_link` (import → GET detail carries all four)
+
 ---
 
 ## Implementation notes
@@ -546,3 +577,5 @@ Scenario: A bad upload is rejected without creating anything
 ---
 
 _Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle): added E2E-BNR-017..022 (presentation toggle, full-page round-trip, CrudShell+SimfConfirm delete gate, Excel export/import/rejection) and corrected the stale page-summary + BNR-001/010 one-click-delete claims to the shipped CrudShell + SimfConfirm flow.
+
+_Updated:_ 2026-06-26 by Claude (D-506 — Excel field-drop fix): the export now appends Body/BodyArabic/ImageUrl/LinkUrl (import already read them) so all four round-trip; added E2E-BNR-023 + the matrix row and corrected the stale six-column export header list in E2E-BNR-020.

@@ -32,6 +32,11 @@ public sealed class ExportThemesEndpoint(IAdminThemeService service, IGridExcelE
         new("DisplayOrder", row => row.DisplayOrder),
         new("PageColor", row => row.PageColor),
         new("IsActive", row => row.IsActive),
+        // D-506 — round-trip the bilingual descriptions (appended so the existing
+        // column order is unchanged; import binds by header name and already
+        // reads these two columns in ApplyRowAsync).
+        new("Description", row => row.Description),
+        new("DescriptionArabic", row => row.DescriptionArabic),
     ];
 
     protected override async Task<IReadOnlyList<AdminThemeSummary>> ListAsync(

@@ -11,7 +11,12 @@ public sealed record AdminCountrySummary(
     bool IsActive,
     DateTimeOffset CreatedAt,
     // D-473 (#10) — invited to send a delegation (وفد).
-    bool IsInvited = false);
+    bool IsInvited = false,
+    // D-506 — the invited delegation's arrival/departure dates, carried so the
+    // grid Excel export can round-trip them (not rendered as grid columns).
+    // Optional; null when unset or the country is not invited.
+    DateOnly? DelegationArrivalDate = null,
+    DateOnly? DelegationDepartureDate = null);
 
 /// <summary>Full country detail (Details + Edit modals).</summary>
 public sealed record AdminCountryDetail(

@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
+| **Last reviewed** | 2026-06-26 (D-506 — Excel round-trips the 8 dropped fields) |
 
 > **Permissions.** The page is gated `@attribute [RequirePermission(PermissionCatalog.Sessions.View)]`
 > (`"Sessions.View"`). CRUD actions sit behind distinct codes:
@@ -62,6 +62,7 @@
 | E2E-SES-023 | Excel import: upload a workbook → rows created + result modal with per-row outcome (D-356) | happy | P1 | _to author_ |
 | E2E-SES-024 | Excel import: a non-workbook / wrong-sheet upload → bilingual rejection, nothing created (D-356) | error | P1 | _to author_ |
 | E2E-SES-025 | AI live captions field round-trips + the whole live section survives an edit (regression — D-439) | happy/regression | P1 | authored ✓ (`AdminSessionsTests.Update_round_trips_all_live_fields`) |
+| E2E-SES-026 | Excel export/import round-trips the 8 previously-dropped fields (Description+Arabic, the 2 live URLs, the 2 live captions, Type, SeatSelectionModeOverride) — D-506 | happy/regression | P1 | authored ✓ (`SessionsExcelTests.Export_includes_the_dropped_round_trip_columns` + `.Import_round_trips_the_dropped_fields`) |
 
 ## Scenarios
 
@@ -508,8 +509,13 @@ Scenario: Export the sessions grid to an XLSX workbook
   And the browser saves a file named simf-sessions-{timestamp}.xlsx
   And the workbook's "Sessions" sheet header row reads
       Code | Title | TitleArabic | Hall | Category | StartUtc | EndUtc | Capacity | Status | IsActive
+      | Type | SeatSelectionModeOverride | Description | DescriptionArabic
+      | LiveStreamUrl | LiveSignLanguageUrl | LiveCaptions | LiveCaptionsArabic
+      (the last eight appended by D-506 so they round-trip through import; blank when unset)
   And the Hall cell holds the hall *code*, the Category cell the category English name,
       and StartUtc/EndUtc are ISO-8601 UTC strings (e.g. 2026-11-10T09:00:00Z)
+  And Type / SeatSelectionModeOverride are written by their display name (Workshop/Session/Event,
+      AssignedSeat/OpenSeating)
   And the speaker roster and theme set are NOT exported (M-to-M, omitted by design)
   When they instead select two rows then click "Export"
   Then the POST body carries those two Ids and the workbook contains exactly those two rows
@@ -551,6 +557,28 @@ Scenario: A bad upload is rejected without creating anything
   Then the parse rejects it with a bilingual error and nothing is created
 ```
 
+### E2E-SES-026 — Excel round-trips the eight previously-dropped fields (D-506)
+
+```gherkin
+Scenario: The eight dropped fields survive an export → import round-trip
+  Given the administrator is on /admin/sessions
+  And one active Hall with code "AUD-A" exists
+  When they import an .xlsx whose "Sessions" sheet adds the optional columns
+      Type | SeatSelectionModeOverride | Description | DescriptionArabic
+      | LiveStreamUrl | LiveSignLanguageUrl | LiveCaptions | LiveCaptionsArabic
+      to the required headers, with one row carrying
+      Type="Event", SeatSelectionModeOverride="OpenSeating",
+      a bilingual Description, two valid YouTube live URLs and a bilingual caption
+  Then the row is created and Type + SeatSelectionModeOverride appear on the grid summary
+  And opening the new row in View/Edit shows the Description, the two live URLs and the captions
+  And exporting that grid writes those eight values back into the same columns
+  When a row carries Type="Bonfire" (not Workshop/Session/Event)
+      or SeatSelectionModeOverride="Hovering" (not AssignedSeat/OpenSeating)
+  Then that row errors per-row ("The type must be one of Workshop, Session or Event."
+      / "The seat-selection mode must be one of AssignedSeat or OpenSeating.") and the others still import
+  And a blank Type / SeatSelectionModeOverride leaves the field unset (null = inherit the hall)
+```
+
 ---
 
 ## Implementation notes
@@ -573,7 +601,9 @@ Scenario: A bad upload is rejected without creating anything
     surface (the `Sessions` sheet column layout, hall-code / category-name
     resolution, the insert-only import, the per-row error aggregation, the
     `Sessions.Export` / `Sessions.Import` permission gates and the
-    ZIP-magic / 5 MB / 5000-row upload defence).
+    ZIP-magic / 5 MB / 5000-row upload defence), plus the D-506 round-trip of the
+    eight previously-dropped fields (`Export_includes_the_dropped_round_trip_columns`
+    + `Import_round_trips_the_dropped_fields`).
 - **Manual smoke is canonical today.** Until Playwright is adopted, run these
   scenarios as a Chrome DevTools MCP session: sign in per the Auth setup, walk
   each scenario, and capture screenshots into `docs/screenshots/cp-admin-sessions-*.png`.
@@ -587,4 +617,4 @@ Scenario: A bad upload is rejected without creating anything
 
 ---
 
-_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle).
+_Last reviewed:_ 2026-06-26 by Claude (D-506 — Excel round-trips the 8 dropped fields).

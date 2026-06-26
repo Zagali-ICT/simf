@@ -248,7 +248,9 @@ internal sealed class AdminCmsService(
             .Skip(skip).Take(top)
             .Select(b => new AdminBannerSummary(
                 b.Id, b.Title, b.TitleArabic,
-                b.StartUtc, b.EndUtc, b.DisplayOrder, b.IsActive, b.CreatedAt))
+                b.StartUtc, b.EndUtc, b.DisplayOrder, b.IsActive, b.CreatedAt,
+                // D-506 — round-trip body + image/link through the grid Excel export.
+                b.Body, b.BodyArabic, b.ImageUrl, b.LinkUrl))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminBannerSummary>.Of(page, total,

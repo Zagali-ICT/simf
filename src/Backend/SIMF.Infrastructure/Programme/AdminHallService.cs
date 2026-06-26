@@ -84,7 +84,12 @@ internal sealed class AdminHallService(
             .Select(hall => new AdminHallSummary(
                 hall.Id, hall.Code, hall.Name, hall.NameArabic,
                 hall.Capacity, hall.Floor, hall.IsActive, hall.CreatedAt,
-                (int)hall.Purpose))
+                (int)hall.Purpose,
+                // D-506 — appended for the grid Excel round-trip (positional
+                // order must match the AdminHallSummary record exactly).
+                hall.EquipmentNotes,
+                hall.GeofenceCenterLat, hall.GeofenceCenterLon, hall.GeofenceRadiusMeters,
+                (int)hall.SeatSelectionMode))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminHallSummary>.Of(page, total,

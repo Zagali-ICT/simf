@@ -93,7 +93,10 @@ internal sealed class AdminGateService(
                 gate.DirectionMode,
                 gate.AllowedProfileTypes.Count,
                 gate.Assignments.Count(assignment => assignment.IsActive),
-                gate.IsActive, gate.CreatedAt))
+                gate.IsActive, gate.CreatedAt,
+                // D-506 — carried so the grid Excel export round-trips the
+                // bilingual description (positional order matches the record).
+                gate.Description, gate.DescriptionArabic))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminGateSummary>.Of(page, total,

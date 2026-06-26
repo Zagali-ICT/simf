@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
+| **Last reviewed** | 2026-06-26 (D-506 — Excel description field-drop fix) |
 
 > **Permission gate:** the page carries `@attribute [RequirePermission(PermissionCatalog.Themes.View)]`
 > (`Themes.View`). The API endpoints are gated per-action:
@@ -43,6 +43,7 @@
 | E2E-THM-022 | Excel export: toolbar Export downloads an .xlsx of the filtered grid / selected rows (D-356) | happy | P1 | _to author_ |
 | E2E-THM-023 | Excel import: upload a workbook → rows created + result modal with per-row outcome (D-356) | happy | P1 | _to author_ |
 | E2E-THM-024 | Excel import: a non-workbook / wrong-sheet upload → bilingual rejection, nothing created (D-356) | error | P1 | _to author_ |
+| E2E-THM-025 | Excel field-drop fix: Description + DescriptionArabic round-trip through export AND import (D-506) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -439,7 +440,8 @@ Scenario: Export the filtered grid / selected rows to an XLSX workbook
       (whole filtered grid)
   And the browser saves a file named simf-themes-{timestamp}.xlsx
   And the workbook's "Themes" sheet header row reads
-      Code | Name | NameArabic | DisplayOrder | PageColor | IsActive
+      Code | Name | NameArabic | DisplayOrder | PageColor | IsActive | Description | DescriptionArabic
+      (Description + DescriptionArabic appended by D-506 so they round-trip)
   When they instead select two rows then click "Export"
   Then the request carries those two Ids (Query omitted) and the workbook
       contains exactly those two themes
@@ -481,6 +483,35 @@ Scenario: A bad / wrong-sheet upload is rejected without creating anything
   And the import is capped at 5000 rows server-side
 ```
 
+### E2E-THM-025 — Excel field-drop fix: descriptions round-trip (D-506)
+
+```gherkin
+Scenario: Description + DescriptionArabic survive both export and import
+  Given the administrator is on /admin/themes
+  And a theme exists with Code="DEF", Description (English)="Maritime security track."
+      and Description (Arabic)="مسار الأمن البحري."
+  When they click the toolbar "Export" action
+  Then a POST /account/api/admin/themes/export fires
+  And the workbook's "Themes" sheet header row now includes the appended
+      Description and DescriptionArabic columns (D-506)
+  And the "DEF" data row carries "Maritime security track." in the Description cell
+      and "مسار الأمن البحري." in the DescriptionArabic cell
+      (previously these two columns were dropped at the export boundary)
+
+  When they then "Import" a workbook whose "Themes" sheet adds the optional
+      Description | DescriptionArabic columns for a brand-new Code="OPS" row
+  Then a POST /account/api/admin/themes/import fires
+  And the "OPS" theme is created with the imported bilingual descriptions persisted
+  And GET /account/api/admin/themes/{id} for "OPS" returns both descriptions
+      (the import already read these columns; D-506 added the matching export columns)
+  And the RequiredHeaders (Code | Name | NameArabic | PageColor) are unchanged —
+      Description/DescriptionArabic stay optional, blank cells persist as NULL
+```
+
+**Lower-layer coverage:** `tests/SIMF.Api.Tests/ThemesExcelTests.cs` carries
+`Export_includes_the_description_columns` and `Import_round_trips_the_description`
+(D-506) as the integration proof of this scenario.
+
 ---
 
 ## Implementation notes
@@ -507,4 +538,6 @@ Scenario: A bad / wrong-sheet upload is rejected without creating anything
 
 ---
 
-_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel export + import + D-353 Page↔Popup toggle).
+_Last reviewed:_ 2026-06-26 by Claude (D-506 — Excel Description/DescriptionArabic
+field-drop fix: export now surfaces both columns; previously D-356 Phase 5 — Excel
+export + import + D-353 Page↔Popup toggle).

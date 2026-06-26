@@ -100,7 +100,11 @@ internal sealed class AdminNewsService(
                 news.PublishedAt,
                 news.DisplayOrder,
                 news.IsActive,
-                news.CreatedAt))
+                news.CreatedAt,
+                // D-506 — append in the same positional order as the record so the
+                // Excel export round-trips the bilingual body + excerpt.
+                news.BodyArabic,
+                news.ExcerptArabic))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminNewsSummary>.Of(page, total,

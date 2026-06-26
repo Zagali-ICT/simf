@@ -119,6 +119,84 @@ public sealed class CountriesExcelTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Excel_round_trips_the_delegation_flag_and_dates()
+    {
+        // D-506 — import a workbook carrying IsInvited + the two delegation
+        // dates, confirm the list summary + GET detail carry them, then export
+        // and confirm the new columns round-trip (all three were previously
+        // dropped on both the import and export sides).
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var id = FreshId();
+        var code = FreshCode();
+        var name = $"Delegation Country {Guid.NewGuid():N}";
+
+        using var inWorkbook = new XLWorkbook();
+        var inSheet = inWorkbook.Worksheets.Add("Countries");
+        inSheet.Cell(1, 1).Value = "Id";
+        inSheet.Cell(1, 2).Value = "Code";
+        inSheet.Cell(1, 3).Value = "Name";
+        inSheet.Cell(1, 4).Value = "NameArabic";
+        inSheet.Cell(1, 5).Value = "IsInvited";
+        inSheet.Cell(1, 6).Value = "DelegationArrivalDate";
+        inSheet.Cell(1, 7).Value = "DelegationDepartureDate";
+        inSheet.Cell(2, 1).Value = id;
+        inSheet.Cell(2, 2).Value = code;
+        inSheet.Cell(2, 3).Value = name;
+        inSheet.Cell(2, 4).Value = "وفد";
+        inSheet.Cell(2, 5).Value = "Yes";
+        inSheet.Cell(2, 6).Value = "2027-01-15";
+        inSheet.Cell(2, 7).Value = "2027-01-20";
+        byte[] importBytes;
+        using (var stream = new MemoryStream())
+        {
+            inWorkbook.SaveAs(stream);
+            importBytes = stream.ToArray();
+        }
+
+        var import = await PostFileAuthAsync(
+            "/api/v1/admin/countries/import", importBytes, adminToken);
+        Assert.Equal(HttpStatusCode.OK, import.StatusCode);
+        var result = (await import.Content
+            .ReadFromJsonAsync<ApiResult<AdminGridImportResult>>())!.Data!;
+        Assert.Equal(1, result.Created);
+        Assert.Empty(result.Errors);
+
+        // The list summary now carries IsInvited + the two dates.
+        var list = await PostAuthAsync(
+            "/api/v1/admin/countries/list", new GridQuery { Top = 500 }, adminToken);
+        var page = (await list.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminCountrySummary>>>())!.Data!;
+        var summary = page.Items.Single(item => item.Code == code);
+        Assert.True(summary.IsInvited);
+        Assert.Equal(new DateOnly(2027, 1, 15), summary.DelegationArrivalDate);
+        Assert.Equal(new DateOnly(2027, 1, 20), summary.DelegationDepartureDate);
+
+        // The GET detail carries them too.
+        var getResponse = await GetAuthAsync($"/api/v1/admin/countries/{id}", adminToken);
+        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+        var detail = (await getResponse.Content
+            .ReadFromJsonAsync<ApiResult<AdminCountryDetail>>())!.Data!;
+        Assert.True(detail.IsInvited);
+        Assert.Equal(new DateOnly(2027, 1, 15), detail.DelegationArrivalDate);
+        Assert.Equal(new DateOnly(2027, 1, 20), detail.DelegationDepartureDate);
+
+        // The export now emits the three new header columns.
+        var export = await PostAuthAsync(
+            "/api/v1/admin/countries/export",
+            new AdminGridExportRequest { Query = new GridQuery { Top = 500 } },
+            adminToken);
+        Assert.Equal(HttpStatusCode.OK, export.StatusCode);
+        var bytes = await export.Content.ReadAsByteArrayAsync();
+        using var outStream = new MemoryStream(bytes);
+        using var outWorkbook = new XLWorkbook(outStream);
+        var sheet = outWorkbook.Worksheet("Countries");
+        var headers = sheet.Row(1).CellsUsed().Select(c => c.GetString()).ToList();
+        Assert.Contains("IsInvited", headers);
+        Assert.Contains("DelegationArrivalDate", headers);
+        Assert.Contains("DelegationDepartureDate", headers);
+    }
+
+    [Fact]
     public async Task Import_rejects_a_file_that_is_not_a_workbook()
     {
         var adminToken = await CreateAdministratorAndSignInAsync();
@@ -271,6 +349,13 @@ public sealed class CountriesExcelTests : IClassFixture<SimfApiFactory>
         file.Headers.ContentType = new MediaTypeHeaderValue(XlsxContentType);
         content.Add(file, "file", "import.xlsx");
         var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = content };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
+
+    private Task<HttpResponseMessage> GetAuthAsync(string url, string token)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return _client.SendAsync(request);
     }

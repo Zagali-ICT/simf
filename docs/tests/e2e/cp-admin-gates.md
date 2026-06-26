@@ -27,10 +27,13 @@
 >   and `POST /account/api/admin/gates/import`. Export permission `Gates.Export`,
 >   import permission `Gates.Import`. Export sheet **"Gates"**, file prefix
 >   `simf-gates`, header row `Code | Name | NameArabic | DirectionMode |
->   AllowedProfileTypeCount | AssignedOperatorCount | IsActive`. Import is
->   **insert-only**, required headers `Code | Name | NameArabic` (the parser also
->   reads optional `Description`, `DescriptionArabic`, `DirectionMode`); a
->   duplicate code or invalid field is a per-row error, not a batch abort.
+>   AllowedProfileTypeCount | AssignedOperatorCount | IsActive | Description |
+>   DescriptionArabic` (D-506 appended the two bilingual description columns so
+>   the workbook round-trips them; `AllowedProfileTypeIds` / `AssignedOperatorUserIds`
+>   stay out — they are FK collections, not flat cells). Import is **insert-only**,
+>   required headers `Code | Name | NameArabic` (the parser also reads optional
+>   `Description`, `DescriptionArabic`, `DirectionMode`); a duplicate code or
+>   invalid field is a per-row error, not a batch abort.
 > - Required permission: **`Gates.Manage`** (`@attribute [RequirePermission(PermissionCatalog.Gates.Manage)]`).
 > - Nav item: `Module.Gates` → `/admin/gates`, `RequiredPermission = PermissionCatalog.Gates.Manage` (`CpNavigation.cs`).
 > - BFF passthroughs (`AccountEndpoints.cs`): `POST /account/api/admin/gates/list`,
@@ -77,6 +80,7 @@
 | E2E-GAT-019 | Excel export: toolbar Export downloads an .xlsx of the filtered grid / selected rows (D-356) | happy | P1 | _to author_ |
 | E2E-GAT-020 | Excel import: upload a workbook → rows created + result modal with per-row outcome (D-356) | happy | P1 | _to author_ |
 | E2E-GAT-021 | Excel import: a non-workbook / wrong-sheet upload → bilingual rejection, nothing created (D-356) | error | P1 | _to author_ |
+| E2E-GAT-022 | Excel round-trip: the bilingual Description survives export → import (D-506) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -481,7 +485,8 @@ Scenario: Export the filtered grid (and a selection) to an XLSX workbook
   And the browser saves a file named simf-gates-{timestamp}.xlsx
   And the workbook's "Gates" sheet has the header row
     Code | Name | NameArabic | DirectionMode | AllowedProfileTypeCount |
-    AssignedOperatorCount | IsActive
+    AssignedOperatorCount | IsActive | Description | DescriptionArabic
+    (D-506 appended the two description columns)
   When they instead tick two row checkboxes then click "Export"
   Then the POST carries those two row Ids (Query omitted) and the workbook
     contains exactly those two gates
@@ -491,7 +496,8 @@ Scenario: Export the filtered grid (and a selection) to an XLSX workbook
 **Evidence captured:**
 - Network: `POST /account/api/admin/gates/export` returns 200 with an
   `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` body.
-- Saved file opened: header row matches the seven columns above.
+- Saved file opened: header row matches the nine columns above (the seven grid
+  columns plus the D-506 Description / DescriptionArabic round-trip columns).
 
 ### E2E-GAT-020 — Excel import (D-356)
 
@@ -534,6 +540,36 @@ Scenario: A bad / wrong-sheet upload is rejected without creating anything
   And the grid is unchanged and no Gate.Created audit row is written
 ```
 
+### E2E-GAT-022 — Excel round-trips the bilingual Description (D-506)
+
+```gherkin
+Scenario: The bilingual Description survives an export then re-import
+  Given the administrator is on /admin/gates with the Gates.Export + Gates.Import permissions
+  And a gate "G-DESC-1" exists with Description="Main north entrance."
+    and Description (Arabic)="المدخل الشمالي الرئيسي."
+  When they click the toolbar "Export" action
+  Then a POST /account/api/admin/gates/export returns 200
+  And the "Gates" sheet header row carries the appended Description and
+    DescriptionArabic columns (D-506)
+  And the G-DESC-1 row's Description cell reads "Main north entrance."
+    and its DescriptionArabic cell reads "المدخل الشمالي الرئيسي."
+
+  When they import a workbook whose "Gates" sheet carries
+    Code | Name | NameArabic | Description | DescriptionArabic
+    with one new row (G-DESC-2 / Gate 2 / بوابة ٢ / "Service door." / "باب الخدمة.")
+  Then a POST /account/api/admin/gates/import returns 200 with 1 created, 0 errors
+  And the created gate's detail (and the grid summary) carries the imported
+    bilingual Description — the field is no longer dropped at the IO boundary
+  And the FK collections (Allowed profile types, Assigned operators) are NOT
+    expressed in the workbook (they are FK lists, set afterwards via Edit)
+```
+
+**Evidence captured:**
+- Lower-layer proof: `tests/SIMF.Api.Tests/GatesExcelTests.cs` →
+  `Export_includes_the_description_columns` (export header + cell) and
+  `Import_round_trips_the_description` (import → list summary carries it).
+- Network: `POST /account/api/admin/gates/export` then `.../import` both return 200.
+
 ---
 
 ## Implementation notes
@@ -559,5 +595,8 @@ Scenario: A bad / wrong-sheet upload is rejected without creating anything
 
 ---
 
-_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle; added
+_Last reviewed:_ 2026-06-26 by Claude (D-506 — appended the Description /
+DescriptionArabic Excel round-trip columns; added E2E-GAT-022 and corrected the
+stale export header list in the page facts + E2E-GAT-019).
+_Previously:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle; added
 E2E-GAT-016..021, corrected the stale GateForm/one-click-delete page facts).

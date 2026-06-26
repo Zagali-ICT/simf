@@ -33,6 +33,11 @@ public sealed class ExportNewsEndpoint(IAdminNewsService service, IGridExcelExpo
         new("PublishedAt", row => row.PublishedAt),
         new("DisplayOrder", row => row.DisplayOrder),
         new("IsActive", row => row.IsActive),
+        // D-506 — round-trip the Arabic body + excerpt (appended so the existing
+        // column order is unchanged; import binds by header name and already reads
+        // these cells in ApplyRowAsync).
+        new("BodyArabic", row => row.BodyArabic),
+        new("ExcerptArabic", row => row.ExcerptArabic),
     ];
 
     protected override async Task<IReadOnlyList<AdminNewsSummary>> ListAsync(

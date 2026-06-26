@@ -85,6 +85,92 @@ public sealed class GatesExcelTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Export_includes_the_description_columns()
+    {
+        // D-506 — the gate Excel export must surface the bilingual description,
+        // not drop it at the IO boundary.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var code = NewGateCode();
+        var create = await PostAuthAsync(
+            "/api/v1/admin/gates",
+            new AdminCreateGateRequest
+            {
+                Code = code,
+                Name = "Gate With Description",
+                NameArabic = "بوابة بوصف",
+                DirectionMode = DirectionMode.Both,
+                Description = "Main north entrance.",
+                DescriptionArabic = "المدخل الشمالي الرئيسي.",
+            },
+            adminToken);
+        Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/gates/export",
+            new AdminGridExportRequest { Query = new GridQuery { Top = 200 } },
+            adminToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+
+        using var stream = new MemoryStream(bytes);
+        using var workbook = new XLWorkbook(stream);
+        var sheet = workbook.Worksheet("Gates");
+        var headers = sheet.Row(1).CellsUsed().Select(c => c.GetString()).ToList();
+        Assert.Contains("Description", headers);
+        Assert.Contains("DescriptionArabic", headers);
+
+        var codeCol = headers.IndexOf("Code") + 1;
+        var descCol = headers.IndexOf("Description") + 1;
+        var dataRow = sheet.RowsUsed().Skip(1)
+            .First(r => r.Cell(codeCol).GetString() == code.ToUpperInvariant());
+        Assert.Equal("Main north entrance.", dataRow.Cell(descCol).GetString());
+    }
+
+    [Fact]
+    public async Task Import_round_trips_the_description()
+    {
+        // D-506 — an import workbook carrying Description/DescriptionArabic must
+        // persist them (the summary the list returns now carries them too).
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var code = NewGateCode();
+
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.Worksheets.Add("Gates");
+        sheet.Cell(1, 1).Value = "Code";
+        sheet.Cell(1, 2).Value = "Name";
+        sheet.Cell(1, 3).Value = "NameArabic";
+        sheet.Cell(1, 4).Value = "Description";
+        sheet.Cell(1, 5).Value = "DescriptionArabic";
+        sheet.Cell(2, 1).Value = code;
+        sheet.Cell(2, 2).Value = "Gate XLSX Description";
+        sheet.Cell(2, 3).Value = "بوابة وصف";
+        sheet.Cell(2, 4).Value = "Main north entrance.";
+        sheet.Cell(2, 5).Value = "المدخل الشمالي الرئيسي.";
+        byte[] bytes;
+        using (var stream = new MemoryStream())
+        {
+            workbook.SaveAs(stream);
+            bytes = stream.ToArray();
+        }
+
+        var response = await PostFileAuthAsync(
+            "/api/v1/admin/gates/import", bytes, adminToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminGridImportResult>>())!.Data!;
+        Assert.True(result.Created >= 1);
+        Assert.Empty(result.Errors);
+
+        var list = await PostAuthAsync(
+            "/api/v1/admin/gates/list", new GridQuery { Top = 200 }, adminToken);
+        var page = (await list.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminGateSummary>>>())!.Data!;
+        var created = page.Items.Single(item => item.Code == code.ToUpperInvariant());
+        Assert.Equal("Main north entrance.", created.Description);
+        Assert.Equal("المدخل الشمالي الرئيسي.", created.DescriptionArabic);
+    }
+
+    [Fact]
     public async Task Import_reports_a_per_row_error_for_a_duplicate_without_aborting()
     {
         var adminToken = await CreateAdministratorAndSignInAsync();

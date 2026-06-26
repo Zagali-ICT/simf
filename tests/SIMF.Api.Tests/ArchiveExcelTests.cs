@@ -90,6 +90,121 @@ public sealed class ArchiveExcelTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Export_includes_the_dropped_edition_columns()
+    {
+        // D-506 — the archive Excel export must surface the dropped edition fields
+        // (summary, location, date label, cover path), not drop them at the IO
+        // boundary.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var year = NewYear();
+        var titleEn = $"Export Drops {Guid.NewGuid():N}";
+        var create = await PostAuthAsync(
+            "/api/v1/admin/archive",
+            new CreateArchiveEditionRequest
+            {
+                Year = year,
+                TitleEn = titleEn,
+                TitleAr = "نسخة التصدير",
+                SummaryEn = "An export summary.",
+                SummaryAr = "ملخص التصدير.",
+                LocationEn = "Riyadh",
+                LocationAr = "الرياض",
+                CoverImageRelativePath = "archive/x/cover.jpg",
+                DateLabelEn = "March 2019",
+                DateLabelAr = "مارس 2019",
+            },
+            adminToken);
+        Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/archive/export",
+            new AdminGridExportRequest { Query = new GridQuery { Top = 500 } },
+            adminToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+
+        using var stream = new MemoryStream(bytes);
+        using var workbook = new XLWorkbook(stream);
+        var sheet = workbook.Worksheet("Archive");
+        var headers = sheet.Row(1).CellsUsed().Select(c => c.GetString()).ToList();
+        Assert.Contains("SummaryEn", headers);
+        Assert.Contains("SummaryAr", headers);
+        Assert.Contains("LocationEn", headers);
+        Assert.Contains("LocationAr", headers);
+        Assert.Contains("CoverImageRelativePath", headers);
+        Assert.Contains("DateLabelEn", headers);
+        Assert.Contains("DateLabelAr", headers);
+
+        var titleCol = headers.IndexOf("TitleEn") + 1;
+        var locCol = headers.IndexOf("LocationEn") + 1;
+        var dataRow = sheet.RowsUsed().Skip(1)
+            .First(r => r.Cell(titleCol).GetString() == titleEn);
+        Assert.Equal("Riyadh", dataRow.Cell(locCol).GetString());
+    }
+
+    [Fact]
+    public async Task Import_round_trips_the_dropped_edition_fields()
+    {
+        // D-506 — an import workbook carrying the dropped edition columns must
+        // persist them (the GET detail the admin reads now carries them too).
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var year = NewYear();
+        var titleEn = $"Drops XLSX {Guid.NewGuid():N}";
+
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.Worksheets.Add("Archive");
+        sheet.Cell(1, 1).Value = "Year";
+        sheet.Cell(1, 2).Value = "TitleEn";
+        sheet.Cell(1, 3).Value = "TitleAr";
+        sheet.Cell(1, 4).Value = "SummaryEn";
+        sheet.Cell(1, 5).Value = "SummaryAr";
+        sheet.Cell(1, 6).Value = "LocationEn";
+        sheet.Cell(1, 7).Value = "LocationAr";
+        sheet.Cell(1, 8).Value = "CoverImageRelativePath";
+        sheet.Cell(1, 9).Value = "DateLabelEn";
+        sheet.Cell(1, 10).Value = "DateLabelAr";
+        sheet.Cell(2, 1).Value = year;
+        sheet.Cell(2, 2).Value = titleEn;
+        sheet.Cell(2, 3).Value = "نسخة مستوردة";
+        sheet.Cell(2, 4).Value = "An imported summary.";
+        sheet.Cell(2, 5).Value = "ملخص مستورد.";
+        sheet.Cell(2, 6).Value = "Jeddah";
+        sheet.Cell(2, 7).Value = "جدة";
+        sheet.Cell(2, 8).Value = "archive/imported/cover.jpg";
+        sheet.Cell(2, 9).Value = "April 2020";
+        sheet.Cell(2, 10).Value = "أبريل 2020";
+        byte[] bytes;
+        using (var stream = new MemoryStream())
+        {
+            workbook.SaveAs(stream);
+            bytes = stream.ToArray();
+        }
+
+        var response = await PostFileAuthAsync(
+            "/api/v1/admin/archive/import", bytes, adminToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminGridImportResult>>())!.Data!;
+        Assert.Equal(1, result.Created);
+        Assert.Empty(result.Errors);
+
+        // The created edition is now listed and the grid summary carries the
+        // round-tripped fields.
+        var list = await PostAuthAsync(
+            "/api/v1/admin/archive/list", new GridQuery { Top = 500 }, adminToken);
+        var page = (await list.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminArchiveEditionSummary>>>())!.Data!;
+        var created = page.Items.Single(item => item.TitleEn == titleEn);
+        Assert.Equal("An imported summary.", created.SummaryEn);
+        Assert.Equal("ملخص مستورد.", created.SummaryAr);
+        Assert.Equal("Jeddah", created.LocationEn);
+        Assert.Equal("جدة", created.LocationAr);
+        Assert.Equal("archive/imported/cover.jpg", created.CoverImageRelativePath);
+        Assert.Equal("April 2020", created.DateLabelEn);
+        Assert.Equal("أبريل 2020", created.DateLabelAr);
+    }
+
+    [Fact]
     public async Task Import_reports_a_per_row_error_for_a_duplicate_without_aborting()
     {
         var adminToken = await CreateAdministratorAndSignInAsync();

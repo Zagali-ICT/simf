@@ -23,7 +23,17 @@ public sealed record AdminSessionSummary(
     // P3.2 — D-231: broadcast lifecycle status (appended, default Scheduled).
     SessionStatus Status = SessionStatus.Scheduled,
     // D-452 — session type (Workshop/Session/Event) for the app type tabs.
-    SessionType? Type = null);
+    SessionType? Type = null,
+    // D-506 — carried so the grid Excel export can round-trip them (not rendered
+    // as grid columns). Appended (defaulted) so the wire stays append-only; blank
+    // when unset.
+    string? Description = null,
+    string? DescriptionArabic = null,
+    string? LiveStreamUrl = null,
+    string? LiveSignLanguageUrl = null,
+    string? LiveCaptions = null,
+    string? LiveCaptionsArabic = null,
+    SeatSelectionMode? SeatSelectionModeOverride = null);
 
 /// <summary>D-165 — full session detail (Details + Edit modals).
 /// Includes the speaker and theme join sets so the editor can
