@@ -370,6 +370,12 @@ public static class DependencyInjection
         // P2.1 (D-211) — FAQ management (two-level group → entry).
         services.AddScoped<SIMF.Application.Faq.Abstractions.IAdminFaqService,
             SIMF.Infrastructure.Faq.AdminFaqService>();
+        // Public, anonymous FAQ read for the app accordion (Figma 1388:7567).
+        services.AddScoped<SIMF.Application.Faq.Abstractions.IPublicFaqService,
+            SIMF.Infrastructure.Faq.PublicFaqService>();
+        // Contact-us inquiries — public submit + CP inbox (Figma 1388:7567).
+        services.AddScoped<SIMF.Application.Support.Abstractions.IContactInquiryService,
+            SIMF.Infrastructure.Support.ContactInquiryService>();
         services.AddScoped<SIMF.Application.PublicRelations.Abstractions.IPublicMediaPartnerService,
             SIMF.Infrastructure.PublicRelations.PublicMediaPartnerService>();
         services.AddScoped<SIMF.Application.PublicRelations.Abstractions.IAdminMediaPartnerService,

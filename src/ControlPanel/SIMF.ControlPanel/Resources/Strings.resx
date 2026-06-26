@@ -102,6 +102,22 @@
   <data name="Module.LiveSessions" xml:space="preserve"><value>Live sessions</value></data>
   <data name="Module.Moderation" xml:space="preserve"><value>Moderation queue</value></data>
   <data name="Module.Faq" xml:space="preserve"><value>FAQ groups &amp; entries</value></data>
+  <data name="Module.ContactInquiries" xml:space="preserve"><value>Contact inquiries</value></data>
+  <data name="Admin.ContactInquiries.Title" xml:space="preserve"><value>Contact inquiries</value></data>
+  <data name="Admin.ContactInquiries.Loading" xml:space="preserve"><value>Loading inquiries…</value></data>
+  <data name="Admin.ContactInquiries.LoadFailed" xml:space="preserve"><value>The inquiries could not be loaded.</value></data>
+  <data name="Admin.ContactInquiries.None" xml:space="preserve"><value>No inquiries yet.</value></data>
+  <data name="Admin.ContactInquiries.Col.Name" xml:space="preserve"><value>Name</value></data>
+  <data name="Admin.ContactInquiries.Col.Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Admin.ContactInquiries.Col.Message" xml:space="preserve"><value>Message</value></data>
+  <data name="Admin.ContactInquiries.Col.Received" xml:space="preserve"><value>Received</value></data>
+  <data name="Admin.ContactInquiries.Col.Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Admin.ContactInquiries.Status.Open" xml:space="preserve"><value>Open</value></data>
+  <data name="Admin.ContactInquiries.Status.Handled" xml:space="preserve"><value>Handled</value></data>
+  <data name="Admin.ContactInquiries.MarkHandled" xml:space="preserve"><value>Mark handled</value></data>
+  <data name="Admin.ContactInquiries.Reopen" xml:space="preserve"><value>Reopen</value></data>
+  <data name="Admin.ContactInquiries.Handled" xml:space="preserve"><value>Inquiry marked handled.</value></data>
+  <data name="Admin.ContactInquiries.Reopened" xml:space="preserve"><value>Inquiry reopened.</value></data>
   <data name="Module.AiSettings" xml:space="preserve"><value>AI settings</value></data>
   <data name="Admin.Faq.Title" xml:space="preserve"><value>FAQ management</value></data>
   <data name="Admin.Faq.Groups.Heading" xml:space="preserve"><value>FAQ groups</value></data>

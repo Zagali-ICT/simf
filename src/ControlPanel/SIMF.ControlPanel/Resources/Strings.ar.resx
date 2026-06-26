@@ -102,6 +102,22 @@
   <data name="Module.LiveSessions" xml:space="preserve"><value>الجلسات المباشرة</value></data>
   <data name="Module.Moderation" xml:space="preserve"><value>قائمة الإشراف</value></data>
   <data name="Module.Faq" xml:space="preserve"><value>الأسئلة الشائعة</value></data>
+  <data name="Module.ContactInquiries" xml:space="preserve"><value>رسائل تواصل معنا</value></data>
+  <data name="Admin.ContactInquiries.Title" xml:space="preserve"><value>رسائل تواصل معنا</value></data>
+  <data name="Admin.ContactInquiries.Loading" xml:space="preserve"><value>جارٍ تحميل الرسائل…</value></data>
+  <data name="Admin.ContactInquiries.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الرسائل.</value></data>
+  <data name="Admin.ContactInquiries.None" xml:space="preserve"><value>لا توجد رسائل بعد.</value></data>
+  <data name="Admin.ContactInquiries.Col.Name" xml:space="preserve"><value>الاسم</value></data>
+  <data name="Admin.ContactInquiries.Col.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
+  <data name="Admin.ContactInquiries.Col.Message" xml:space="preserve"><value>الرسالة</value></data>
+  <data name="Admin.ContactInquiries.Col.Received" xml:space="preserve"><value>وردت</value></data>
+  <data name="Admin.ContactInquiries.Col.Status" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.ContactInquiries.Status.Open" xml:space="preserve"><value>مفتوحة</value></data>
+  <data name="Admin.ContactInquiries.Status.Handled" xml:space="preserve"><value>تمت المعالجة</value></data>
+  <data name="Admin.ContactInquiries.MarkHandled" xml:space="preserve"><value>وضع كمُعالجة</value></data>
+  <data name="Admin.ContactInquiries.Reopen" xml:space="preserve"><value>إعادة فتح</value></data>
+  <data name="Admin.ContactInquiries.Handled" xml:space="preserve"><value>تم وضع الرسالة كمُعالجة.</value></data>
+  <data name="Admin.ContactInquiries.Reopened" xml:space="preserve"><value>تمت إعادة فتح الرسالة.</value></data>
   <data name="Module.AiSettings" xml:space="preserve"><value>إعدادات الذكاء الاصطناعي</value></data>
   <data name="Admin.Faq.Title" xml:space="preserve"><value>إدارة الأسئلة الشائعة</value></data>
   <data name="Admin.Faq.Groups.Heading" xml:space="preserve"><value>مجموعات الأسئلة</value></data>

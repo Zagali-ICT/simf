@@ -369,7 +369,35 @@ class AppL10n {
   String get regSuccessHeaderTitle => _t('تم التسجيل', 'Registered');
   String get referenceNumberLabel =>
       _t('رقم البطاقة المرجعي', 'Reference badge number');
-  String get contactUsTitle => _t('تواصل معانا', 'Contact us');
+  String get contactUsTitle => _t('تواصل معنا', 'Contact us');
+  // تواصل معنا — Contact us screen (Figma 1388-7711; POST /app/contact-inquiry).
+  String get contactSendTitle => _t('أرسل رسالة', 'Send a message');
+  String get contactNameLabel => _t('الاسم', 'Name');
+  String get contactNameHint => _t('أدخل اسمك الكامل', 'Enter your full name');
+  String get contactNameRequired => _t('الاسم مطلوب', 'Name is required');
+  String get contactEmailLabel => _t('البريد الإلكتروني', 'Email');
+  String get contactEmailHint => _t('example@email.com', 'example@email.com');
+  String get contactEmailInvalid =>
+      _t('بريد إلكتروني صالح مطلوب', 'A valid email is required');
+  String get contactMessageLabel => _t('الرسالة', 'Message');
+  String get contactMessageHint =>
+      _t('اكتب رسالتك هنا...', 'Write your message here…');
+  String get contactMessageRequired =>
+      _t('الرسالة مطلوبة', 'Message is required');
+  String get contactSendButton => _t('إرسال', 'Send');
+  String get contactInfoTitle => _t('معلومات التواصل', 'Contact information');
+  String get contactHotlineLabel => _t('الخط الساخن', 'Hotline');
+  String get contactLocationLabel => _t('الموقع', 'Location');
+  String get contactSocialTitle =>
+      _t('وسائل التواصل الاجتماعي', 'Social media');
+  String get contactSentToast => _t(
+        'تم إرسال رسالتك. شكراً لتواصلك معنا.',
+        'Your message has been sent. Thank you for contacting us.',
+      );
+  String get contactSendFailed => _t(
+        'تعذّر إرسال رسالتك. حاول مرة أخرى.',
+        'Could not send your message. Please try again.',
+      );
   String get simfSocialFooter => _t(
         '@SIMF_RSNF · الملتقى البحري السعودي الدولي',
         '@SIMF_RSNF · Saudi International Maritime Forum',
@@ -636,6 +664,13 @@ class AppL10n {
   String get faqRowTitle => _t('الأسئلة الشائعة', 'FAQ');
   String get faqRowSubtitle =>
       _t('FAQ • معلومات الموقع والفعالية', 'FAQ • Venue & event info');
+  // الأسئلة الشائعة — FAQ accordion (Figma 1388-7567; GET /app/faq).
+  String get faqEmpty =>
+      _t('لا توجد أسئلة شائعة بعد.', 'No frequently asked questions yet.');
+  String get faqError => _t(
+        'تعذّر تحميل الأسئلة الشائعة.',
+        'Could not load the FAQ.',
+      );
   String get discoverSaudiTitle => _t('روح السعودية', 'Spirit of Saudi');
   String get discoverSaudiSubtitle =>
       _t('زر السعودية · استكشف الرياض', 'Visit Saudi · Discover Riyadh');
@@ -1298,6 +1333,46 @@ class AppL10n {
   String get moreForumGuide => _t('دليل الملتقى', 'Forum guide');
   String get morePresentations => _t('عروض الجلسات', 'Session presentations');
   String get moreVisitSaudi => _t('استكشف الرياض · VisitSaudi', 'Explore Riyadh · VisitSaudi');
+
+  // دليل الملتقى — Forum guide (Figma 1388-7493). Static in-app copy (no
+  // backend). The Arabic strings are reproduced verbatim from the design; the
+  // Figma leaves steps 3 & 5 with placeholder/duplicate copy (owner to supply
+  // final wording).
+  String get forumGuideTitle => _t('دليل الملتقى', 'Forum guide');
+  String get forumGuideIntro => _t(
+        'مرحبًا بك في ملتقى SIMF 2026. يهدف هذا الدليل إلى مساعدتك على الاستفادة القصوى من تجربتك في الملتقى.',
+        'Welcome to SIMF 2026. This guide is here to help you get the most out of your forum experience.',
+      );
+  String get forumGuideStep1Title =>
+      _t('التسجيل والدخول', 'Registration & sign-in');
+  String get forumGuideStep1Body => _t(
+        'قم بتسجيل الدخول باستخدام بريدك الإلكتروني وكلمة المرور المُرسلة إليك عند التسجيل في الملتقى.',
+        'Sign in with the email and password sent to you when you registered for the forum.',
+      );
+  String get forumGuideStep2Title =>
+      _t('استكشاف الجلسات', 'Explore the sessions');
+  String get forumGuideStep2Body => _t(
+        'تصفّح جدول الجلسات من الصفحة الرئيسية واختر الجلسة التي تودّ حضورها وأضفها إلى مفضلتك.',
+        'Browse the session schedule from the home page, pick the session you want to attend, and add it to your favourites.',
+      );
+  String get forumGuideStep3Title =>
+      _t('التسجيل الحضور والدخول', 'On-site registration & entry');
+  String get forumGuideStep3Body => _t(
+        'قم بتسجيل الدخول باستخدام بريدك الإلكتروني وكلمة المرور المُرسلة إليك عند التسجيل في الملتقى.',
+        'Sign in with the email and password sent to you when you registered for the forum.',
+      );
+  String get forumGuideStep4Title =>
+      _t('التواصل مع المتحدثين', 'Reach the speakers');
+  String get forumGuideStep4Body => _t(
+        'يمكنك إرسال أسئلتك للمتحدثين مباشرةً من خلال قسم الأسئلة في صفحة كل جلسة.',
+        'You can send your questions to the speakers directly from the questions section on each session page.',
+      );
+  String get forumGuideStep5Title =>
+      _t('التسجيل والدخول', 'Registration & sign-in');
+  String get forumGuideStep5Body => _t(
+        'قم بتسجيل الدخول باستخدام بريدك الإلكتروني وكلمة المرور المُرسلة إليك عند التسجيل في الملتقى.',
+        'Sign in with the email and password sent to you when you registered for the forum.',
+      );
   String get moreLanguage => _t('اللغة', 'Language');
   String get moreRateApp => _t('تقييم التطبيق', 'Rate the app');
   String get moreMyAreaCardTitle => _t('منطقتي', 'My area');

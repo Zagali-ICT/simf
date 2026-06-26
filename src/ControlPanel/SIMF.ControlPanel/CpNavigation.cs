@@ -188,6 +188,8 @@ public static class CpNavigation
             // VIP list + bulk-notify (PDF §2.7.3).
             new("Module.Invitations", "/admin/invitations", RequiredPermission: PermissionCatalog.Invitations.View, Icon: "mail"),
             new("Module.Vips", "/admin/vips", RequiredPermission: PermissionCatalog.Vips.View, Icon: "crown"),
+            // Contact-us inbox (Figma 1388:7567) — triage app-submitted inquiries.
+            new("Module.ContactInquiries", "/admin/contact-inquiries", RequiredPermission: PermissionCatalog.ContactInquiries.View, Icon: "inbox"),
         ]),
         new("Nav.Gates",
         [

@@ -530,6 +530,14 @@ public static class PermissionCatalog
         public const string Delete = "Faq.Delete";
     }
 
+    /// <summary>Contact-us inbox (Figma 1388:7567) — triage the inquiries the
+    /// app's "تواصل معنا" form submits.</summary>
+    public static class ContactInquiries
+    {
+        public const string View = "ContactInquiries.View";
+        public const string Manage = "ContactInquiries.Manage";
+    }
+
     public static class MediaPartners
     {
         public const string View = "MediaPartners.View";
@@ -917,6 +925,9 @@ public static class PermissionCatalog
         new(Faq.Create, "Faq", "Create", "Create FAQ groups + entries", AdminOnly),
         new(Faq.Edit, "Faq", "Edit", "Edit FAQ groups + entries", AdminOnly),
         new(Faq.Delete, "Faq", "Delete", "Delete FAQ groups + entries", AdminOnly),
+
+        new(ContactInquiries.View, "ContactInquiries", "View", "View contact-us inquiries", AdminOnly),
+        new(ContactInquiries.Manage, "ContactInquiries", "Manage", "Mark contact-us inquiries handled", AdminOnly),
 
         new(MediaPartners.View, "MediaPartners", "View", "View media partners", AdminOnly),
         new(MediaPartners.Create, "MediaPartners", "Create", "Create media partners", AdminOnly),

@@ -19,6 +19,7 @@ using SIMF.Domain.Networking;
 using SIMF.Domain.Operations;
 using SIMF.Domain.Organisations;
 using SIMF.Domain.Organization;
+using SIMF.Domain.Support;
 using SIMF.Domain.Profiles;
 using SIMF.Domain.Programme;
 using SIMF.Domain.PublicRelations;
@@ -219,6 +220,10 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     // P2.1 (D-211) — two-level FAQ: groups own ordered question/answer entries.
     public DbSet<FaqGroup> FaqGroups => Set<FaqGroup>();
     public DbSet<FaqEntry> FaqEntries => Set<FaqEntry>();
+
+    // "تواصل معنا / Contact us" inbox (Figma 1388:7567) — app form submissions
+    // triaged in the Control Panel. Additive table; submitter is a bare Guid.
+    public DbSet<ContactInquiry> ContactInquiries => Set<ContactInquiry>();
 
     // D-495 — the singleton Organization / About profile + its two child lists
     // (the edition-generic forum config: name/dates/status/social/contact/about).

@@ -231,6 +231,9 @@ API endpoints land (D-249). The per-screen design docs live under
 | `My Contacts` / `Share my contact` (`/app/account/share-token` + `/app/contacts/*`) | [`mobile-my-contacts.md`](mobile-my-contacts.md) | E2E-MMC-001..011 |
 | `My meetings` (`GET /app/my-meetings`) — D-479, additive read-only | [`mobile-my-meetings.md`](mobile-my-meetings.md) | E2E-MMM-001..006 |
 | `Confirm Face ID` step-up (`POST /app/auth/device-keys/step-up` + gated register) — #7a biometric-enable | [`mobile-biometric-step-up.md`](mobile-biometric-step-up.md) | E2E-MBSU-001..011 |
+| #200 `forumGuide` (no API — static guide) — built from ComingSoon, Figma `1388:7493` | [`mobile-forum-guide.md`](mobile-forum-guide.md) | E2E-MOB200-001..005 |
+| #201 `faq` (`GET /app/faq` — public) — built from ComingSoon, Figma `1388:7567` | [`mobile-faq.md`](mobile-faq.md) | E2E-MOB201-001..006 |
+| #203 `contactUs` (`POST /app/contact-inquiry` + `GET /app/organization-profile`) — built from ComingSoon, Figma `1388:7711` | [`mobile-contact-us.md`](mobile-contact-us.md) | E2E-MOB203-001..007 |
 
 ## How to add a new catalogue file
 

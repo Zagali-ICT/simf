@@ -17,7 +17,9 @@ import '../features/about/about_screen.dart';
 import '../features/archive/archive_screen.dart';
 import '../features/booths/booths_screen.dart';
 import '../features/content/terms_screen.dart';
+import '../features/faq/faq_screen.dart';
 import '../features/feedback/rate_screen.dart';
+import '../features/forum_guide/forum_guide_screen.dart';
 import '../features/gallery/gallery_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/media_partners/media_partners_screen.dart';
@@ -28,6 +30,7 @@ import '../features/ai_summary/session_summary_screen.dart';
 import '../features/badge/badge_screen.dart';
 import '../features/chatbot/chatbot_screen.dart';
 import '../features/comments/audience_comments_screen.dart';
+import '../features/contact_us/contact_us_screen.dart';
 import '../features/contacts/my_contacts_screen.dart';
 import '../features/contacts/scan_contact_screen.dart';
 import '../features/contacts/share_my_contact_screen.dart';
@@ -433,6 +436,15 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.myMeetings) {
     return const MyMeetingsScreen();
+  }
+  if (r.name == RouteNames.forumGuide) {
+    return const ForumGuideScreen();
+  }
+  if (r.name == RouteNames.faq) {
+    return const FaqScreen();
+  }
+  if (r.name == RouteNames.contactUs) {
+    return const ContactUsScreen();
   }
   return ComingSoonScreen(
     screenNumber: r.number,
