@@ -45,6 +45,7 @@
 | E2E-SPN-023 | Excel import rejection — non-.xlsx / wrong-sheet → 400 + bilingual toast, nothing created (D-356) | error | P1 | _to author_ |
 | E2E-SPN-024 | Logo via the unified media-asset pipeline — upload then external link (D-357) | happy | P1 | _to author_ |
 | E2E-SPN-025 | Edit preserves the bilingual tagline — regression (D-501) | error | P0 | _to author_ |
+| E2E-SPN-026 | Excel export/import round-trips Tagline/TaglineArabic + About/AboutArabic (D-502) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -454,6 +455,7 @@ Scenario: Export the filtered grid (or just selected rows) to an XLSX workbook
   And the browser saves a file named simf-sponsors-{yyyyMMddHHmmss}.xlsx
   And the workbook's "Sponsors" sheet header row reads
       NameEn | NameAr | Tier | LogoRelativePath | Url | DisplayOrder | IsActive
+      | Tagline | TaglineArabic | About | AboutArabic   (D-502)
   And the Tier column is written by display name (Platinum/Gold/Silver/Bronze) so it
       round-trips back through import
   When they instead select two rows then click "Export"
@@ -487,6 +489,8 @@ Scenario: Import sponsors from a workbook and see the per-row outcome
       "الاسم بالإنجليزية والعربية مطلوبان."
   And note: import is insert-only — ContactId (the optional shared-Contact link) is never set
       by import; an admin links a contact afterwards via Edit
+  And the optional Tagline/TaglineArabic/About/AboutArabic columns ARE imported when present
+      (trimmed + length-guarded by CreateAsync); absent columns simply stay null (D-502)
 ```
 
 ### E2E-SPN-023 — Excel import rejection (D-356)
@@ -537,7 +541,8 @@ Scenario: A bad / wrong-sheet upload is rejected and nothing is created
   - `PUT /admin/sponsors/{id}` — policy `Sponsors.Edit`, rate-limited "auth"
   - `DELETE /admin/sponsors/{id}` — policy `Sponsors.Delete` (soft-deactivate), rate-limited "auth"
   - `POST /admin/sponsors/export` — policy `Sponsors.Export`, rate-limited "auth"; columns
-    NameEn, NameAr, Tier (display name), LogoRelativePath, Url, DisplayOrder, IsActive; sheet
+    NameEn, NameAr, Tier (display name), LogoRelativePath, Url, DisplayOrder, IsActive,
+    Tagline, TaglineArabic, About, AboutArabic (D-502); sheet
     "Sponsors"; file `simf-sponsors-{ts}.xlsx`; 5000-row cap
     (`src/Backend/SIMF.Api/Endpoints/Admin/SponsorsExcelEndpoints.cs` →
     `ExportSponsorsEndpoint` over `AdminGridExportEndpoint<AdminSponsorSummary>`)
@@ -611,9 +616,36 @@ Scenario: Editing a sponsor does not wipe its tagline
 - Network: the PUT request body carries `tagline`/`taglineArabic`, and the 200
   response echoes them back unchanged.
 
+### E2E-SPN-026 — Excel round-trips Tagline/TaglineArabic + About/AboutArabic (D-502)
+
+```gherkin
+Scenario: Export then re-import carries the bilingual tagline + about
+  # Regression for D-502: the sponsor Excel export columns + import ApplyRowAsync
+  # omitted Tagline/TaglineArabic/About/AboutArabic, so those fields could not
+  # round-trip through Excel (export hid them; import always left them null).
+  Given an active sponsor exists with Tagline = "Strategic Partner" / "الشريك الاستراتيجي"
+        and About = "A global energy leader." / "شركة طاقة عالمية."
+  When the administrator clicks the toolbar "Export" action
+  Then the "Sponsors" sheet header row includes the columns
+       Tagline, TaglineArabic, About, AboutArabic
+  And that sponsor's row carries "Strategic Partner" in the Tagline cell
+  When they import a workbook whose row sets
+       Tagline = "Strategic Partner", TaglineArabic = "الشريك الاستراتيجي",
+       About = "A global energy leader.", AboutArabic = "شركة طاقة عالمية."
+  Then POST /account/api/admin/sponsors/import returns HTTP 200 with the row Created
+  And the created sponsor's detail (and the grid list summary) carries all four
+       bilingual values — they were NOT dropped at the Excel IO boundary
+```
+
+**Evidence captured:**
+- API-layer proof: `tests/SIMF.Api.Tests/SponsorsExcelTests.cs` →
+  `Export_includes_the_tagline_and_about_columns` (parses the workbook, asserts the
+  four headers + the Tagline value) and `Import_round_trips_the_tagline_and_about`
+  (imports a workbook with the four columns, asserts the listed summary carries them).
+
 ---
 
-_Last reviewed:_ 2026-06-26 by Claude (D-501 — tagline-preserved-on-edit regression scenario).
+_Last reviewed:_ 2026-06-26 by Claude (D-502 — Excel tagline/about round-trip; D-501 edit-preserves-tagline).
 Prior: 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle). Added E2E-SPN-018..023
 (D-353 toggle + full-page round-trip + SimfConfirm delete gate; D-356 Excel export/import +
 import rejection) and corrected the stale native-`window.confirm` delete copy in

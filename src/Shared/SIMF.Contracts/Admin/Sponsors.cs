@@ -13,7 +13,13 @@ public sealed record AdminSponsorSummary(
     string? Url,
     int DisplayOrder,
     bool IsActive,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    // D-502 — carried so the grid Excel export can round-trip them (not rendered
+    // as grid columns). Optional; blank when unset.
+    string? Tagline = null,
+    string? TaglineArabic = null,
+    string? About = null,
+    string? AboutArabic = null);
 
 /// <summary>Full sponsor detail (Details + Edit modals).</summary>
 public sealed record AdminSponsorDetail(

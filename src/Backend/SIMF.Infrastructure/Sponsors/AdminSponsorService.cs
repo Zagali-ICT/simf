@@ -99,7 +99,11 @@ internal sealed class AdminSponsorService(
                 sponsor.Url,
                 sponsor.DisplayOrder,
                 sponsor.IsActive,
-                sponsor.CreatedAt))
+                sponsor.CreatedAt,
+                sponsor.Tagline,
+                sponsor.TaglineArabic,
+                sponsor.About,
+                sponsor.AboutArabic))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminSponsorSummary>.Of(page, total,
