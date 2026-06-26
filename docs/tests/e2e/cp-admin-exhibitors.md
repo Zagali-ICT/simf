@@ -46,6 +46,7 @@
 | E2E-EXH-021 | Excel export — toolbar Export → POST /export (whole grid vs selected rows + header row) (D-356) | happy | P1 | _to author_ |
 | E2E-EXH-022 | Excel import — Import → workbook → result modal "N created…" + per-row error (D-356) | happy | P1 | _to author_ |
 | E2E-EXH-023 | Excel import rejection — non-.xlsx / wrong-sheet → 400 + bilingual toast, nothing created (D-356) | error | P1 | _to author_ |
+| E2E-EXH-024 | Excel export/import round-trips the Tier (D-503) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -472,7 +473,7 @@ Scenario: Export the filtered grid (or just selected rows) to an XLSX workbook
       (Content-Type application/vnd.openxmlformats-officedocument.spreadsheetml.sheet)
   And the browser saves a file named simf-exhibitors-{yyyyMMddHHmmss}.xlsx
   And the workbook's "Exhibitors" sheet header row reads
-      NameEn | NameAr | ContactEmail | ContactPhone | Website | AccountCount | IsActive
+      NameEn | NameAr | ContactEmail | ContactPhone | Website | AccountCount | IsActive | Tier   (D-503)
   When they instead select two rows then click "Export"
   Then OnExportAsync calls _excel.ExportAsync([id1, id2], current Query)
   And the export request carries those two Ids in AdminGridExportRequest.Ids and Query = null
@@ -505,6 +506,8 @@ Scenario: Import exhibitors from a workbook and see the per-row outcome
       derived count), IsActive (a created exhibitor is always active) and the ContactId
       directory FK are intentionally NOT settable by import; the RowKey echoed in errors is
       the NameEn cell
+  And the optional Tier column IS settable (Premium/Gold/Silver/Bronze or the raw int;
+      blank → null; an unknown non-blank tier → per-row error) (D-503)
 ```
 
 ### E2E-EXH-023 — Excel import rejection (D-356)
@@ -527,6 +530,32 @@ Scenario: A bad / wrong-sheet upload is rejected and nothing is created
   And no exhibitor is created
 ```
 
+### E2E-EXH-024 — Excel round-trips the tier (D-503)
+
+```gherkin
+Scenario: Export then re-import carries the exhibitor tier
+  # Regression for D-503: the export columns + import ApplyRowAsync omitted the
+  # D-498 Exhibitor.Tier, so the tier could not round-trip through Excel (export
+  # hid it; insert-only import always left it null).
+  Given an exhibitor "Tier Co" exists with Tier = "Premium"
+  When the administrator clicks the toolbar "Export" action
+  Then the "Exhibitors" sheet header row includes a "Tier" column
+  And that exhibitor's row carries "Premium" in the Tier cell
+  When they import a workbook whose row sets Tier = "Premium"
+  Then POST /account/api/admin/exhibitors/import returns HTTP 200 with the row Created
+  And the created exhibitor's grid summary carries Tier = Premium
+  When they import a row whose Tier cell is "Diamond" (unknown)
+  Then that row is reported in the modal error list
+       ("The tier must be one of Premium, Gold, Silver or Bronze." /
+        "يجب أن تكون الفئة إحدى: بريميوم أو ذهبي أو فضي أو برونزي.")
+  And a row with a blank Tier cell still creates (the tier is optional → null)
+```
+
+**Evidence captured:**
+- API-layer proof: `tests/SIMF.Api.Tests/ExhibitorsExcelTests.cs` →
+  `Excel_round_trips_the_tier` (import a Tier workbook → the list summary carries it →
+  export emits the Tier column) and `Import_reports_a_per_row_error_for_an_unknown_tier`.
+
 ---
 
 ## Implementation notes
@@ -544,6 +573,8 @@ Scenario: A bad / wrong-sheet upload is rejected and nothing is created
     - `Export_returns_an_xlsx_workbook` (E2E-EXH-021 at API layer; asserts ZIP magic)
     - `Import_creates_each_row_and_reports_the_outcome` (E2E-EXH-022; created rows then list)
     - `Import_reports_a_per_row_error_for_a_blank_name_without_aborting` (E2E-EXH-022 error path)
+    - `Excel_round_trips_the_tier` (E2E-EXH-024; import Tier → list summary → export column, D-503)
+    - `Import_reports_a_per_row_error_for_an_unknown_tier` (E2E-EXH-024 error path, D-503)
     - `Non_admin_caller_is_forbidden_from_export` (E2E-EXH-009 at API layer)
   When an E2E scenario reliably covers one of these, the matching `Api.Tests` case
   can usually be retired — but keep both during the transition.
@@ -559,13 +590,15 @@ Scenario: A bad / wrong-sheet upload is rejected and nothing is created
   - `GET /admin/exhibitors/{id}/accounts` — policy `Exhibitors.View`
   - `POST /admin/exhibitors/{id}/accounts` — policy `Exhibitors.Create`, rate-limited "auth"
   - `POST /admin/exhibitors/export` — policy `Exhibitors.Export`, rate-limited "auth"; columns
-    NameEn, NameAr, ContactEmail, ContactPhone, Website, AccountCount, IsActive; sheet
+    NameEn, NameAr, ContactEmail, ContactPhone, Website, AccountCount, IsActive,
+    Tier (display name, D-503); sheet
     "Exhibitors"; file `simf-exhibitors-{ts}.xlsx`; 5000-row cap
     (`ExportExhibitorsEndpoint` over `AdminGridExportEndpoint<AdminExhibitorSummary>`)
   - `POST /admin/exhibitors/import` — policy `Exhibitors.Import`, rate-limited "auth"; multipart
     "file"; required headers NameEn/NameAr; insert-only; AccountCount/IsActive/ContactId omitted;
-    5 MB + ZIP-magic upload gate (400/`AdminImportEmpty` for >5 MB → 413), 5000-row cap; blank
-    name = per-row error (`ImportExhibitorsEndpoint` over `AdminGridImportEndpoint`)
+    optional Tier column (Premium/Gold/Silver/Bronze or int; blank → null; unknown → per-row
+    error, D-503); 5 MB + ZIP-magic upload gate (400/`AdminImportEmpty` for >5 MB → 413),
+    5000-row cap; blank name = per-row error (`ImportExhibitorsEndpoint` over `AdminGridImportEndpoint`)
   - Error codes: `EXHIBITOR_INVALID` (400), `EXHIBITOR_NOT_FOUND` (404),
     `EXHIBITOR_INACTIVE` (409 — provisioning under an inactive exhibitor),
     `EXHIBITOR_ACCOUNT_INVALID` (400 — bad contact name/email/role length)

@@ -14,7 +14,10 @@ public sealed record AdminExhibitorSummary(
     string? Website,
     int AccountCount,
     bool IsActive,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    // D-503 — carried so the grid Excel export can round-trip the tier (the grid
+    // does not render it as a column). Optional; null = no tier.
+    ExhibitorTier? Tier = null);
 
 /// <summary>D-199 #3 — full admin detail for one exhibitor.</summary>
 public sealed record AdminExhibitorDetail(

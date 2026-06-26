@@ -81,7 +81,7 @@ internal sealed class AdminExhibitorService(
                 c.ContactEmail, c.ContactPhone, c.Website,
                 appDbContext.Set<ExhibitorMembership>()
                     .Count(m => m.ExhibitorId == c.Id && m.IsActive),
-                c.IsActive, c.CreatedAt))
+                c.IsActive, c.CreatedAt, c.Tier))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminExhibitorSummary>.Of(page, total,
