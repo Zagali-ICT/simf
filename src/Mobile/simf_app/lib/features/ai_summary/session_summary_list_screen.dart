@@ -47,7 +47,7 @@ class _SessionSummaryListScreenState
     ];
 
     return KsaPage(
-      title: l10n.aiSummaryTitle,
+      title: l10n.sessionSummariesTitle,
       onBack: () => ksaBackOrHome(context),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -65,6 +65,8 @@ class _SessionSummaryListScreenState
             labels: tabLabels,
             selectedIndex: _SummaryTab.values.indexOf(_tab),
             onSelected: (i) => setState(() => _tab = _SummaryTab.values[i]),
+            // The summaries frame (1388:8392) has exactly 3 equal-width tabs.
+            equalWidth: true,
           ),
           const SizedBox(height: SimfTokens.space3),
           Expanded(
@@ -226,7 +228,9 @@ class _SessionSummaryListScreenState
   }
 }
 
-/// The navy search field with a leading magnifier (Figma 1388:8392).
+/// The search field (Figma 1388:8402): the search glyph + hint at the inline
+/// start (right in RTL), the filter glyph in a 40px divider-walled cell at the
+/// inline end. radius-4, beige hairline, height 48. (Same shape as الوفود.)
 class _SearchField extends StatelessWidget {
   const _SearchField({required this.hint, required this.onChanged});
 
@@ -235,42 +239,61 @@ class _SearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      onChanged: onChanged,
-      style: const TextStyle(color: Colors.white, fontSize: SimfTokens.textMd),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(
+    return Container(
+      height: 48,
+      decoration: BoxDecoration(
+        color: SimfTokens.navyDeep,
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        border: Border.all(
           color: SimfTokens.beigeBorder,
-          fontSize: SimfTokens.textMd,
+          width: SimfTokens.hairline,
         ),
-        prefixIcon: const Icon(Icons.search, color: SimfTokens.beigeBorder),
-        filled: true,
-        fillColor: SimfTokens.navyDeep,
-        contentPadding: const EdgeInsets.symmetric(
-          vertical: SimfTokens.space3,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(SimfTokens.radius),
-          borderSide: const BorderSide(
-            color: SimfTokens.beigeBorder,
-            width: SimfTokens.hairline,
+      ),
+      child: Row(
+        children: <Widget>[
+          const Padding(
+            padding: EdgeInsetsDirectional.only(start: SimfTokens.space3),
+            child: Icon(Icons.search, color: SimfTokens.beigeBorder, size: 16),
           ),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(SimfTokens.radius),
-          borderSide: const BorderSide(
-            color: SimfTokens.beigeBorder,
-            width: SimfTokens.hairline,
+          Expanded(
+            child: TextField(
+              onChanged: onChanged,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: SimfTokens.textMd,
+              ),
+              cursorColor: SimfTokens.accent,
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: const TextStyle(
+                  color: SimfTokens.beigeBorder,
+                  fontSize: SimfTokens.textMd,
+                ),
+                isDense: true,
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: SimfTokens.space3,
+                  vertical: SimfTokens.space2,
+                ),
+              ),
+            ),
           ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(SimfTokens.radius),
-          borderSide: const BorderSide(
-            color: SimfTokens.accent,
-            width: SimfTokens.hairlineBold,
+          Container(
+            width: 40,
+            height: double.infinity,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              border: BorderDirectional(
+                start: BorderSide(
+                  color: SimfTokens.beigeBorder,
+                  width: SimfTokens.hairline,
+                ),
+              ),
+            ),
+            child:
+                const Icon(Icons.tune, color: SimfTokens.beigeBorder, size: 16),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -301,29 +324,32 @@ class _SummaryCard extends StatelessWidget {
     final isRecorded = item.status == SessionStatus.recorded ||
         item.status == SessionStatus.published;
 
+    final hasMeta = speaker != null || (hall != null && hall.isNotEmpty);
     return KsaCard(
       onTap: () => context.pushNamed(
         RouteNames.aiSummary,
         queryParameters: <String, String>{'sessionId': item.id},
       ),
       child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space3),
+        padding: const EdgeInsets.all(SimfTokens.space2), // p-8 (Figma 1388:8430)
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
+            // Title + time on the right, the favourite heart on the left.
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
                       Text(
                         item.localizedTitle(isArabic),
+                        textAlign: TextAlign.start,
                         style: const TextStyle(
                           color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: SimfTokens.textLg,
+                          fontWeight: FontWeight.w500,
+                          fontSize: SimfTokens.textMd, // 14
                         ),
                       ),
                       const SizedBox(height: SimfTokens.space2),
@@ -331,31 +357,47 @@ class _SummaryCard extends StatelessWidget {
                         icon: Icons.access_time,
                         text: '$time · $durationLabel',
                       ),
-                      if (speaker != null) ...<Widget>[
-                        const SizedBox(height: SimfTokens.space1),
-                        _IconLine(
-                          icon: Icons.person_outline,
-                          text: speaker,
-                          trailing: hall,
-                        ),
-                      ],
                     ],
                   ),
                 ),
-                const SizedBox(width: SimfTokens.space3),
+                const SizedBox(width: SimfTokens.space2),
                 FavouriteHeartButton(sessionId: item.id),
               ],
             ),
-            if (isRecorded || (category != null && category.isNotEmpty)) ...[
-              const SizedBox(height: SimfTokens.space3),
+            // Speaker (right) + hall (left), each in a beige icon-box group.
+            if (hasMeta) ...<Widget>[
+              const SizedBox(height: SimfTokens.space4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  if (speaker != null)
+                    Flexible(
+                      child: _MetaGroup(
+                        icon: Icons.person_outline,
+                        text: speaker,
+                      ),
+                    ),
+                  if (hall != null && hall.isNotEmpty)
+                    Flexible(
+                      child: _MetaGroup(
+                        icon: Icons.location_on_outlined,
+                        text: hall,
+                      ),
+                    ),
+                ],
+              ),
+            ],
+            if (isRecorded || (category != null && category.isNotEmpty)) ...<Widget>[
+              const SizedBox(height: SimfTokens.space4),
+              // مسجّل badge on the inline end (left in RTL), the category pill
+              // filling the rest (Figma 1388:8462).
               Row(
                 children: <Widget>[
-                  if (isRecorded) ...<Widget>[
-                    _RecordedBadge(label: recordedBadge),
-                    const SizedBox(width: SimfTokens.space2),
-                  ],
-                  if (category != null && category.isNotEmpty)
+                  if (category != null && category.isNotEmpty) ...<Widget>[
                     Expanded(child: _CategoryPill(label: category)),
+                    if (isRecorded) const SizedBox(width: SimfTokens.space4),
+                  ],
+                  if (isRecorded) _RecordedBadge(label: recordedBadge),
                 ],
               ),
             ],
@@ -376,19 +418,20 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
+/// The clock·time·duration line under the title (Figma 1388:8439): a 12px glyph
+/// + a beige 12px label.
 class _IconLine extends StatelessWidget {
-  const _IconLine({required this.icon, required this.text, this.trailing});
+  const _IconLine({required this.icon, required this.text});
 
   final IconData icon;
   final String text;
-  final String? trailing;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: <Widget>[
-        Icon(icon, size: 14, color: SimfTokens.beigeBorder),
-        const SizedBox(width: SimfTokens.space1),
+        Icon(icon, size: 12, color: SimfTokens.beigeBorder),
+        const SizedBox(width: SimfTokens.space2),
         Expanded(
           child: Text(
             text,
@@ -400,16 +443,46 @@ class _IconLine extends StatelessWidget {
             ),
           ),
         ),
-        if (trailing != null && trailing!.isNotEmpty) ...<Widget>[
-          const SizedBox(width: SimfTokens.space2),
-          Text(
-            trailing!,
+      ],
+    );
+  }
+}
+
+/// A speaker / hall meta group (Figma 1388:8445 / 8453): a 24px beige icon box
+/// (navy glyph) leading (right in RTL), then the beige 12px label.
+class _MetaGroup extends StatelessWidget {
+  const _MetaGroup({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Container(
+          width: 24,
+          height: 24,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: SimfTokens.beigeBorder,
+            borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+          ),
+          child: Icon(icon, size: 12, color: SimfTokens.navy),
+        ),
+        const SizedBox(width: SimfTokens.space2),
+        Flexible(
+          child: Text(
+            text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               color: SimfTokens.beigeBorder,
               fontSize: SimfTokens.textSm,
             ),
           ),
-        ],
+        ),
       ],
     );
   }
@@ -425,24 +498,31 @@ class _RecordedBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: SimfTokens.space3,
-        vertical: SimfTokens.space1,
+        horizontal: SimfTokens.space4, // 16
+        vertical: SimfTokens.space2, // 8
       ),
       decoration: BoxDecoration(
         color: SimfTokens.accent,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        borderRadius: BorderRadius.circular(SimfTokens.radius), // 8
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          const Icon(Icons.circle, size: 8, color: SimfTokens.navy),
-          const SizedBox(width: SimfTokens.space1),
           Text(
             label,
             style: const TextStyle(
-              color: SimfTokens.navy,
-              fontSize: SimfTokens.textXs,
-              fontWeight: FontWeight.w600,
+              color: Colors.white,
+              fontSize: SimfTokens.textSm, // 12
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(width: SimfTokens.space2),
+          Container(
+            width: 8,
+            height: 8,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
             ),
           ),
         ],
@@ -461,11 +541,12 @@ class _CategoryPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: SimfTokens.space3,
-        vertical: SimfTokens.space2,
+        horizontal: SimfTokens.space4, // 16
+        vertical: SimfTokens.space2, // 8
       ),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        color: SimfTokens.navyDeep,
+        borderRadius: BorderRadius.circular(SimfTokens.radius), // 8
         border: Border.all(
           color: SimfTokens.beigeBorder,
           width: SimfTokens.hairline,
@@ -477,8 +558,9 @@ class _CategoryPill extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
         textAlign: TextAlign.center,
         style: const TextStyle(
-          color: SimfTokens.beigeBorder,
-          fontSize: SimfTokens.textXs,
+          color: Colors.white,
+          fontSize: SimfTokens.textSm, // 12
+          fontWeight: FontWeight.w500,
         ),
       ),
     );
