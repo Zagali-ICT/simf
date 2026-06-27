@@ -24,8 +24,15 @@ class SimfTokens {
   static const Color success = Color(0xFF2E7D32);
   static const Color warning = Color(0xFFE8932A); // amber — "being answered" (Figma 1461:12227)
 
+  // Moderator desk per-action colours — Figma 1461:12227 (Tailwind red-600 /
+  // green-600 / amber-500): reject, answered, being-answered (on-stage).
+  static const Color qReject = Color(0xFFDC2626);
+  static const Color qAnswered = Color(0xFF16A34A);
+  static const Color qStage = Color(0xFFF59E0B);
+
   // KSA-Project light-surface + auth-flow palette (D-358/D-359).
   static const Color navySurface = Color(0xFF102238); // elevated navy surface (login bg)
+  static const Color navyHeader = Color(0xFF071832); // darker header block behind the forum title (Figma 1467:12565 / 1461:12565)
   static const Color beigeBorder = Color(0xFFC2B8A2); // "Pragraph Color" — borders + on-navy paragraph text
   static const Color cardBeige = Color(0xFFF1ECE4); // light card surface
   static const Color goldSoft = Color(0xFFD0AC77); // secondary gold text/icons

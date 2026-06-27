@@ -321,61 +321,90 @@ class _StaffRegisterVisitorScreenState
     return Scaffold(
       backgroundColor: SimfTokens.navySurface,
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Row(
-                textDirection: TextDirection.ltr,
+            // Navy header block (Figma 1467:12565 — #071832): back + globe row,
+            // then the centred forum title with the crest.
+            Container(
+              color: SimfTokens.navyHeader,
+              padding: const EdgeInsets.only(bottom: 24),
+              child: Column(
                 children: <Widget>[
-                  IconButton(
-                    onPressed: _back,
-                    icon: const Icon(
-                      Icons.arrow_back_ios_new,
-                      color: Colors.white,
-                      size: 20,
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                    child: Row(
+                      textDirection: TextDirection.ltr,
+                      children: <Widget>[
+                        // Circular navy back button with a left chevron (Figma).
+                        Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Material(
+                            color: SimfTokens.navyDeep,
+                            shape: const CircleBorder(),
+                            child: InkWell(
+                              customBorder: const CircleBorder(),
+                              onTap: _back,
+                              child: const Padding(
+                                padding: EdgeInsets.all(10),
+                                child: Icon(
+                                  Icons.chevron_left,
+                                  color: Colors.white,
+                                  size: 26,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        SizedBox(
+                          width: 56,
+                          height: 56,
+                          child: IconButton(
+                            tooltip: l10n.languageToggleLabel,
+                            onPressed: _toggleLanguage,
+                            style: IconButton.styleFrom(
+                              backgroundColor: SimfTokens.navyDeep,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                            ),
+                            icon: const Icon(
+                              Icons.language,
+                              color: SimfTokens.accent,
+                              size: 30,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const Spacer(),
-                  SizedBox(
-                    width: 40,
-                    height: 40,
-                    child: IconButton(
-                      tooltip: l10n.languageToggleLabel,
-                      onPressed: _toggleLanguage,
-                      style: IconButton.styleFrom(
-                        backgroundColor: SimfTokens.navyDeep,
-                        shape:
-                            const RoundedRectangleBorder(borderRadius: _radius4),
-                      ),
-                      icon: const Icon(
-                        Icons.language,
-                        color: SimfTokens.accent,
-                        size: 24,
-                      ),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: Row(
+                      textDirection: TextDirection.ltr,
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Flexible(
+                          child: Text(
+                            l10n.signInForumTitle,
+                            textAlign: TextAlign.center,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        const SimfLogo(size: 44),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                const SimfLogo(size: 44),
-                const SizedBox(width: 16),
-                Flexible(
-                  child: Text(
-                    l10n.signInForumTitle,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
             Expanded(child: _buildBody(l10n)),
           ],
         ),
@@ -414,22 +443,17 @@ class _StaffRegisterVisitorScreenState
     return Form(
       key: _formKey,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 760),
-            child: Material(
-              color: SimfTokens.cardBeige,
-              borderRadius: _radius4,
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final wide = constraints.maxWidth >= 640;
-                    return _buildForm(l10n, wide);
-                  },
-                ),
-              ),
+        padding: const EdgeInsets.all(24),
+        child: Material(
+          color: SimfTokens.cardBeige,
+          borderRadius: _radius4,
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final wide = constraints.maxWidth >= 600;
+                return _buildForm(l10n, wide);
+              },
             ),
           ),
         ),
@@ -438,20 +462,41 @@ class _StaffRegisterVisitorScreenState
   }
 
   Widget _buildForm(AppL10n l10n, bool wide) {
+    const gap = SizedBox(height: 32);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        Text(
-          l10n.staffRegisterVisitorTitle,
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w600,
-            color: SimfTokens.headlineInk,
-          ),
+        // Card head — avatar (left) + title (right), Figma 805:1441.
+        Row(
+          children: <Widget>[
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: SimfTokens.navyDeep,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.person_outline,
+                color: SimfTokens.accent,
+                size: 32,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                l10n.staffRegisterVisitorTitle,
+                textAlign: TextAlign.end,
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w600,
+                  color: SimfTokens.headlineInk,
+                ),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 16),
-        _notice(l10n.staffCompletePrompt),
-        const SizedBox(height: 24),
+        gap,
         _twoCol(
           wide,
           _textField(
@@ -468,6 +513,7 @@ class _StaffRegisterVisitorScreenState
             validator: _validatePhone,
           ),
         ),
+        gap,
         _twoCol(
           wide,
           _textField(
@@ -488,21 +534,25 @@ class _StaffRegisterVisitorScreenState
             ],
           ),
         ),
+        gap,
         _twoCol(
           wide,
           _genderField(l10n),
           _nationalityField(l10n),
         ),
+        gap,
         _twoCol(
           wide,
           _documentField(l10n),
           _isSaudi ? const SizedBox.shrink() : _documentNumberField(l10n),
         ),
+        gap,
         _twoCol(
           wide,
-          _organisationField(l10n),
           _textField(l10n.jobTitleLabel, _jobTitle, maxLength: 128),
+          _organisationField(l10n),
         ),
+        gap,
         _twoCol(
           wide,
           _attachField(
@@ -518,7 +568,7 @@ class _StaffRegisterVisitorScreenState
             () => unawaited(_pickImage(false)),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 24),
         Center(
           child: TextButton(
             onPressed: () => context.pushNamed(RouteNames.terms),
@@ -531,32 +581,41 @@ class _StaffRegisterVisitorScreenState
             child: Text(
               l10n.termsAgreeQuestion,
               style: const TextStyle(
-                fontSize: 14,
+                fontSize: 18,
                 fontWeight: FontWeight.w600,
                 decoration: TextDecoration.underline,
               ),
             ),
           ),
         ),
-        const SizedBox(height: 24),
-        FilledButton(
-          onPressed: _submitting ? null : () => unawaited(_submit()),
-          child: _submitting
-              ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: SimfTokens.navy,
+        gap,
+        // التالي — full-width gold CTA, h56 (Figma 805:1547).
+        SizedBox(
+          height: 56,
+          child: FilledButton(
+            onPressed: _submitting ? null : () => unawaited(_submit()),
+            style: FilledButton.styleFrom(
+              backgroundColor: SimfTokens.accent,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: _radius4),
+            ),
+            child: _submitting
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : Text(
+                    l10n.nextLabel,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                )
-              : Text(
-                  l10n.nextLabel,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+          ),
         ),
       ],
     );
@@ -566,56 +625,23 @@ class _StaffRegisterVisitorScreenState
   Widget _twoCol(bool wide, Widget a, Widget b) {
     if (b is SizedBox) {
       // The second slot is empty (e.g. Saudi → no document-type toggle).
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 16),
-        child: a,
-      );
+      return a;
     }
     if (!wide) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          a,
-          const SizedBox(height: 16),
-          b,
-          const SizedBox(height: 16),
-        ],
+        children: <Widget>[a, const SizedBox(height: 24), b],
       );
     }
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Expanded(child: a),
-          const SizedBox(width: 16),
-          Expanded(child: b),
-        ],
-      ),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Expanded(child: a),
+        const SizedBox(width: 16),
+        Expanded(child: b),
+      ],
     );
   }
-
-  Widget _notice(String text) => Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: SimfTokens.surface,
-          border: Border.all(color: SimfTokens.accent),
-          borderRadius: _radius4,
-        ),
-        child: Row(
-          children: <Widget>[
-            const Icon(Icons.info_outline, size: 18, color: SimfTokens.accent),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                text,
-                style:
-                    const TextStyle(fontSize: 12, color: SimfTokens.inputInk),
-              ),
-            ),
-          ],
-        ),
-      );
 
   Widget _textField(
     String label,
@@ -630,7 +656,7 @@ class _StaffRegisterVisitorScreenState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         _FieldLabel(label),
-        const SizedBox(height: 8),
+        const SizedBox(height: 16),
         TextFormField(
           controller: controller,
           keyboardType: keyboardType,
@@ -651,7 +677,7 @@ class _StaffRegisterVisitorScreenState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         _FieldLabel(l10n.genderLabel),
-        const SizedBox(height: 8),
+        const SizedBox(height: 16),
         Row(
           children: <Widget>[
             Expanded(
@@ -682,11 +708,12 @@ class _StaffRegisterVisitorScreenState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         _FieldLabel(l10n.nationalityLabel),
-        const SizedBox(height: 8),
+        const SizedBox(height: 16),
         DropdownButtonFormField<String>(
           initialValue: _nationalityCode,
           isExpanded: true,
           style: _inputStyle,
+          icon: const Icon(Icons.keyboard_arrow_down, color: SimfTokens.inputInk),
           decoration: _decoration(
             errorText: showError ? l10n.nationalityRequired : null,
           ),
@@ -721,7 +748,7 @@ class _StaffRegisterVisitorScreenState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           _FieldLabel(l10n.nationalIdLabel),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           TextFormField(
             controller: _nationalId,
             keyboardType: TextInputType.number,
@@ -738,7 +765,7 @@ class _StaffRegisterVisitorScreenState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         _FieldLabel(l10n.documentTypeLabel),
-        const SizedBox(height: 8),
+        const SizedBox(height: 16),
         Row(
           children: <Widget>[
             Expanded(
@@ -773,7 +800,7 @@ class _StaffRegisterVisitorScreenState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         _FieldLabel(l10n.documentNumberLabel),
-        const SizedBox(height: 8),
+        const SizedBox(height: 16),
         TextFormField(
           controller: _documentNumber,
           autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -792,11 +819,12 @@ class _StaffRegisterVisitorScreenState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         _FieldLabel(l10n.staffOrganisationLabel),
-        const SizedBox(height: 8),
+        const SizedBox(height: 16),
         DropdownButtonFormField<String>(
           initialValue: _organisationId,
           isExpanded: true,
           style: _inputStyle,
+          icon: const Icon(Icons.keyboard_arrow_down, color: SimfTokens.inputInk),
           decoration: _decoration(
             errorText: showError ? l10n.requiredField : null,
           ),
@@ -826,23 +854,37 @@ class _StaffRegisterVisitorScreenState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         _FieldLabel(label),
-        const SizedBox(height: 8),
+        const SizedBox(height: 16),
         InkWell(
           onTap: onTap,
           borderRadius: _radius4,
-          child: InputDecorator(
-            decoration: _decoration(
-              suffixIcon: const Icon(
-                Icons.add_circle_outline,
-                color: SimfTokens.accent,
-              ),
+          child: Container(
+            height: 56,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: SimfTokens.surface,
+              borderRadius: _radius4,
+              border: Border.all(color: SimfTokens.beigeBorder),
             ),
-            child: Text(
-              pickedName ?? action,
-              overflow: TextOverflow.ellipsis,
-              style: pickedName == null
-                  ? _inputStyle.copyWith(color: SimfTokens.greyText)
-                  : _inputStyle,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Flexible(
+                  child: Text(
+                    pickedName ?? action,
+                    overflow: TextOverflow.ellipsis,
+                    style: pickedName == null
+                        ? _inputStyle.copyWith(color: SimfTokens.greyText)
+                        : _inputStyle,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(
+                  Icons.add_circle_outline,
+                  color: SimfTokens.accent,
+                  size: 28,
+                ),
+              ],
             ),
           ),
         ),
@@ -882,7 +924,7 @@ class _StaffRegisterVisitorScreenState
       filled: true,
       fillColor: SimfTokens.surface,
       contentPadding:
-          const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       enabledBorder: OutlineInputBorder(
         borderRadius: _radius4,
         borderSide: const BorderSide(color: SimfTokens.beigeBorder),
@@ -895,8 +937,12 @@ class _StaffRegisterVisitorScreenState
     );
   }
 
-  static const TextStyle _inputStyle =
-      TextStyle(fontSize: 15, color: SimfTokens.inputInk);
+  static const TextStyle _inputStyle = TextStyle(
+    fontFamily: 'Inter',
+    fontFamilyFallback: <String>['Cairo'],
+    fontSize: 18,
+    color: SimfTokens.inputInk,
+  );
 }
 
 class _FieldLabel extends StatelessWidget {
@@ -908,10 +954,11 @@ class _FieldLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
+      textAlign: TextAlign.end,
       style: const TextStyle(
-        fontSize: 13,
-        fontWeight: FontWeight.w600,
-        color: SimfTokens.headlineInk,
+        fontSize: 22,
+        fontWeight: FontWeight.w500,
+        color: SimfTokens.navy,
       ),
     );
   }
@@ -930,24 +977,28 @@ class _Pill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Figma "Tabbing" half: selected = gold fill (radius 4), unselected = white
+    // with a thin navy hairline (radius 7); bold 20px label.
+    final radius = BorderRadius.circular(selected ? 4 : 7);
     return InkWell(
       onTap: onTap,
-      borderRadius: _radius4,
+      borderRadius: radius,
       child: Container(
         height: 48,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: selected ? SimfTokens.accent : SimfTokens.surface,
-          borderRadius: _radius4,
-          border: Border.all(
-            color: selected ? SimfTokens.accent : SimfTokens.beigeBorder,
-          ),
+          borderRadius: radius,
+          border: selected
+              ? null
+              : Border.all(color: SimfTokens.navy, width: 0.6),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: selected ? Colors.white : SimfTokens.inputInk,
+            color: selected ? Colors.white : SimfTokens.navyDeep,
             fontWeight: FontWeight.w700,
+            fontSize: 20,
           ),
         ),
       ),

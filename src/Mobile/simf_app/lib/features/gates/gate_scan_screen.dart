@@ -227,16 +227,48 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: SimfTokens.navy,
-        appBar: AppBar(
-          backgroundColor: SimfTokens.navy,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          centerTitle: true,
-          title: Text(title),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: _back,
+        backgroundColor: SimfTokens.navySurface,
+        // Figma puts the back button on the LEFT (LTR header) even in the RTL
+        // app; force the bar LTR so leading sits left, matching the frame.
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(kToolbarHeight),
+          child: Directionality(
+            textDirection: TextDirection.ltr,
+            child: AppBar(
+              backgroundColor: SimfTokens.navySurface,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              centerTitle: true,
+              title: Text(
+                title,
+                textDirection: TextDirection.rtl,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+              // Figma 758:4655 — circular navy back button (left).
+              leading: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Material(
+                  color: SimfTokens.navyDeep,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: _back,
+                    child: const Padding(
+                      padding: EdgeInsets.all(6),
+                      child: Icon(
+                        Icons.chevron_left,
+                        color: Colors.white,
+                        size: 26,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
         body: SafeArea(child: _body(l10n, isArabic)),
@@ -354,26 +386,26 @@ class _GateSetup extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           const Spacer(),
-          // QR glyph in a rounded gold-bordered tile (Figma 758:4655).
+          // QR glyph in a gold-tinted, gold-bordered tile (Figma 758:4658).
           Center(
             child: Container(
-              width: 140,
-              height: 140,
+              width: 134,
+              height: 134,
               decoration: BoxDecoration(
-                color: SimfTokens.navyDeep,
-                borderRadius: BorderRadius.circular(SimfTokens.radiusLg),
-                border: Border.all(color: SimfTokens.accent, width: 1.5),
+                color: SimfTokens.accent.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: SimfTokens.accent, width: 2),
               ),
               child: const Icon(
                 Icons.qr_code_2,
-                size: 76,
+                size: 60,
                 color: SimfTokens.accent,
               ),
             ),
           ),
           const Spacer(),
           _label(l10n.gateSelectGate),
-          const SizedBox(height: SimfTokens.space2),
+          const SizedBox(height: SimfTokens.space4),
           _GatePicker(
             l10n: l10n,
             isArabic: isArabic,
@@ -381,9 +413,9 @@ class _GateSetup extends StatelessWidget {
             gate: gate,
             onGate: onGate,
           ),
-          const SizedBox(height: SimfTokens.space4),
+          const SizedBox(height: SimfTokens.space6),
           _label(l10n.gateMovementType),
-          const SizedBox(height: SimfTokens.space2),
+          const SizedBox(height: SimfTokens.space4),
           Row(
             children: <Widget>[
               Expanded(
@@ -395,7 +427,7 @@ class _GateSetup extends StatelessWidget {
                   onTap: () => onDirection(ScanDirection.checkIn),
                 ),
               ),
-              const SizedBox(width: SimfTokens.space3),
+              const SizedBox(width: SimfTokens.space4),
               Expanded(
                 child: _DirectionButton(
                   label: l10n.gateDirectionOut,
@@ -409,35 +441,37 @@ class _GateSetup extends StatelessWidget {
             ],
           ),
           if (direction == null) ...<Widget>[
-            const SizedBox(height: SimfTokens.space3),
+            const SizedBox(height: SimfTokens.space4),
             Text(
               l10n.gateChooseDirectionFirst,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: SimfTokens.beigeBorder,
-                fontSize: SimfTokens.textSm,
+                color: Colors.white,
+                fontSize: SimfTokens.textMd,
               ),
             ),
           ],
           const Spacer(flex: 2),
-          FilledButton.icon(
-            onPressed: direction == null ? null : onScan,
-            style: FilledButton.styleFrom(
-              backgroundColor: SimfTokens.accent,
-              foregroundColor: SimfTokens.navy,
-              disabledBackgroundColor: SimfTokens.accent.withValues(alpha: 0.4),
-              disabledForegroundColor: SimfTokens.navy.withValues(alpha: 0.6),
-              minimumSize: const Size.fromHeight(56),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(SimfTokens.radius),
+          SizedBox(
+            height: 48,
+            child: FilledButton.icon(
+              onPressed: direction == null ? null : onScan,
+              style: FilledButton.styleFrom(
+                backgroundColor: SimfTokens.accent,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: SimfTokens.accent.withValues(alpha: 0.4),
+                disabledForegroundColor: Colors.white.withValues(alpha: 0.6),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+                ),
               ),
-            ),
-            icon: const Icon(Icons.photo_camera_outlined),
-            label: Text(
-              l10n.gateScanCode,
-              style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: SimfTokens.textMd,
+              icon: const Icon(Icons.photo_camera_outlined, size: 22),
+              label: Text(
+                l10n.gateScanCode,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: SimfTokens.textLg,
+                ),
               ),
             ),
           ),
@@ -448,11 +482,11 @@ class _GateSetup extends StatelessWidget {
 
   Widget _label(String text) => Text(
         text,
-        textAlign: TextAlign.start,
+        textAlign: TextAlign.end,
         style: const TextStyle(
           color: Colors.white,
-          fontSize: SimfTokens.textSm,
-          fontWeight: FontWeight.w600,
+          fontSize: SimfTokens.textLg,
+          fontWeight: FontWeight.w500,
         ),
       );
 }
@@ -474,37 +508,34 @@ class _DirectionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = selected
-        ? SimfTokens.navy
-        : (enabled ? Colors.white : SimfTokens.beigeBorder);
+    // Figma 758:4687/4693 — selected = gold fill, unselected = navy; both with a
+    // thin beige hairline and white bold label/icon. Radius 4.
     return Opacity(
       opacity: enabled ? 1 : 0.5,
       child: InkWell(
         onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
         child: Container(
-          height: 52,
+          height: 48,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: selected ? SimfTokens.accent : SimfTokens.navyDeep,
-            borderRadius: BorderRadius.circular(SimfTokens.radius),
-            border: Border.all(
-              color: selected ? SimfTokens.accent : SimfTokens.beigeBorder,
-            ),
+            color: selected ? SimfTokens.accent : SimfTokens.navy,
+            borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+            border: Border.all(color: SimfTokens.beigeBorder, width: 0.5),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               Text(
                 label,
-                style: TextStyle(
-                  color: fg,
+                style: const TextStyle(
+                  color: Colors.white,
                   fontWeight: FontWeight.w700,
-                  fontSize: SimfTokens.textMd,
+                  fontSize: SimfTokens.textLg,
                 ),
               ),
               const SizedBox(width: SimfTokens.space2),
-              Icon(icon, size: 18, color: fg),
+              Icon(icon, size: 18, color: Colors.white),
             ],
           ),
         ),
@@ -650,14 +681,30 @@ class _GatePicker extends StatelessWidget {
   Widget build(BuildContext context) {
     return DropdownButtonFormField<String>(
       initialValue: gate.gateId,
+      isExpanded: true,
       dropdownColor: SimfTokens.navyDeep,
-      style: const TextStyle(color: Colors.white),
-      decoration: const InputDecoration(
+      icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white),
+      style: const TextStyle(
+        color: Colors.white,
+        fontFamily: 'Inter',
+        fontFamilyFallback: <String>['Cairo'],
+        fontSize: 14,
+      ),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: SimfTokens.navyDeep,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: SimfTokens.beigeBorder),
+          borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+          borderSide: const BorderSide(color: SimfTokens.accent, width: 0.5),
         ),
         focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: SimfTokens.accent),
+          borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+          borderSide: const BorderSide(color: SimfTokens.accent),
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
         ),
       ),
       items: <DropdownMenuItem<String>>[
