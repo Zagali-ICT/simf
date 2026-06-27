@@ -715,11 +715,12 @@ class AppL10n {
   // white sub-line over the event photo.
   String get discoverBannerSubtitle =>
       _t('تعال واكتشف جديدك المفضل', 'Come discover your favourites');
-  // أحدث منشوراتنا — the latest-news teaser card on the signed-in home (frame
-  // 758:1134 node 758:1240). The post image now rides the D-357 NewsImage asset
-  // route (Phase 1); the engagement counts (758:1252) are admin-entered data
-  // landing in Phase 2 — the row stays hidden until the wire carries them.
-  String get latestPostsSection => _t('أحدث منشوراتنا', 'Latest posts');
+  // ابرز الاحداث — the highlights / latest-news teaser card on the signed-in
+  // home (frame 758:1134 node 758:1239). The post image rides the D-357
+  // NewsImage asset route (Phase 1); the engagement counts (758:1252) are
+  // admin-entered data landing in Phase 2 — the row stays hidden until the wire
+  // carries them.
+  String get featuredEventsSection => _t('ابرز الاحداث', 'Highlights');
   // The post-card source name + handle (frame 758:1246 / 758:1244).
   String get postSourceName => _t('الملتقى البحري', 'The Maritime Forum');
   String get postSourceHandle => '@SIMF';

@@ -12,6 +12,7 @@ import '../../app/theme/tokens.dart';
 import '../../app/widgets/confirm_external_link.dart';
 import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
+import '../../app/widgets/simf_svg_icon.dart';
 import '../../core/env/build_config.dart';
 import '../../core/site_settings/site_settings.dart';
 import '../myarea/data/myarea_models.dart';
@@ -23,9 +24,11 @@ import '../news/news_screen.dart' show newsListProvider;
 /// The signed-in home tile glyphs — the exact iconify SVGs from KSA frame
 /// 758:1134 (no 1:1 Material equivalent), bundled and tinted to the tile colour.
 class _HomeIcons {
-  // "عن الملتقى" group (758:1216/1220/1224 + 1052:12856).
-  static const String aboutSessions =
-      'assets/icons/home_about_sessions.svg'; // streamline:target-3
+  // "عن الملتقى" group (758:1216/1220/1224 + 1052:12856) — the exact Figma glyphs.
+  static const String aboutSessions = 'assets/icons/home_about_sessions.svg';
+  // ^ streamline-ultimate:team-meeting (node 1327:3446).
+  static const String delegations =
+      'assets/icons/home_delegations.svg'; // formkit:people (node 1408:10399)
   static const String booths = 'assets/icons/home_booths.svg'; // solar:chart
   static const String people = 'assets/icons/home_people.svg'; // bi:people
   static const String askModerator =
@@ -402,12 +405,11 @@ class _VisitorHome extends StatelessWidget {
                 iconAsset: _HomeIcons.booths,
                 onTap: () => context.pushNamed(RouteNames.booths),
               ),
-              // الوفود — delegations sits in the about row (frame 758:1220), not
-              // as a separate full-width tile; a group glyph like the design's
-              // formkit:people.
+              // الوفود — delegations sits in the about row (frame 758:1220) with
+              // the design's exact formkit:people glyph (node 1408:10399).
               KsaNavTile(
                 label: l10n.delegationsTitle,
-                icon: Icons.groups_outlined,
+                iconAsset: _HomeIcons.delegations,
                 onTap: () => context.pushNamed(RouteNames.delegations),
               ),
               KsaNavTile(
@@ -503,7 +505,8 @@ class _VisitorHome extends StatelessWidget {
           // أحدث منشوراتنا (frame node 758:1238) — hidden until a post exists.
           if (latestPost != null) ...<Widget>[
             const SizedBox(height: SimfTokens.space6),
-            KsaSectionHeader(title: l10n.latestPostsSection),
+            // Frame node 758:1239 — the section heading is "ابرز الاحداث".
+            KsaSectionHeader(title: l10n.featuredEventsSection),
             const SizedBox(height: SimfTokens.space4),
             _LatestPostCard(
               l10n: l10n,
@@ -571,7 +574,18 @@ class _GreetingHeader extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          KsaAvatar(name: name, currentUser: true),
+          // Tapping the avatar opens the user's profile / My Area (owner
+          // 2026-06-27). InkWell rides the KsaPage Scaffold's Material ancestor.
+          Semantics(
+            button: true,
+            label: l10n.navProfile,
+            child: InkWell(
+              onTap: () => context.pushNamed(RouteNames.myArea),
+              borderRadius:
+                  const BorderRadius.all(Radius.circular(SimfTokens.radius)),
+              child: KsaAvatar(name: name, currentUser: true),
+            ),
+          ),
           const SizedBox(width: SimfTokens.space2),
           Expanded(
             child: Column(
@@ -712,8 +726,26 @@ class _DiscoverHeroBanner extends StatelessWidget {
               fit: BoxFit.cover,
             ),
           ),
-          // The frame's 70% black scrim over the photo.
-          const Positioned.fill(child: ColoredBox(color: Color(0xB3000000))),
+          // A navy gradient over the photo (frame 758:1203) — darker at the
+          // text side (right = the RTL start) so "اكتشف" + the sub-line stay
+          // legible, fading lighter toward the left so the event photo shows
+          // through (the flat 70% black hid it).
+          const Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.centerRight,
+                  end: Alignment.centerLeft,
+                  colors: <Color>[
+                    Color(0xE601132D),
+                    Color(0x8001132D),
+                    Color(0x3301132D),
+                  ],
+                  stops: <double>[0.0, 0.5, 1.0],
+                ),
+              ),
+            ),
+          ),
           Material(
             color: Colors.transparent,
             child: InkWell(
@@ -941,27 +973,29 @@ class _SocialRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final social = ref.watch(siteSettingsProvider).valueOrNull?.social;
-    // (asset, url, accessible label) — the label names the icon-only button for
-    // screen readers (a11y review).
+    // (asset, url, accessible label) — the exact Figma social glyphs (beige
+    // monochrome SVGs, node 758:1186), rendered through SimfSvgIcon like the
+    // About-section icons. The label names the icon-only button for screen
+    // readers (a11y review).
     final links = <(String, String, String)>[
-      ('assets/images/social_x.png', social?.x ?? BuildConfig.socialXUrl, 'X'),
+      ('assets/icons/social_x.svg', social?.x ?? BuildConfig.socialXUrl, 'X'),
       (
-        'assets/images/social_instagram.png',
+        'assets/icons/social_instagram.svg',
         social?.instagram ?? BuildConfig.socialInstagramUrl,
         'Instagram',
       ),
       (
-        'assets/images/social_linkedin.png',
+        'assets/icons/social_linkedin.svg',
         social?.linkedin ?? BuildConfig.socialLinkedInUrl,
         'LinkedIn',
       ),
       (
-        'assets/images/social_youtube.png',
+        'assets/icons/social_youtube.svg',
         social?.youtube ?? BuildConfig.socialYouTubeUrl,
         'YouTube',
       ),
       (
-        'assets/images/social_tiktok.png',
+        'assets/icons/social_tiktok.svg',
         social?.tiktok ?? BuildConfig.socialTikTokUrl,
         'TikTok',
       ),
@@ -1006,8 +1040,16 @@ class _SocialButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         child: SizedBox(
           height: 48,
-          child: Center(
-            child: Image.asset(asset, width: 20, height: 20, semanticLabel: label),
+          child: Semantics(
+            button: true,
+            label: label,
+            child: Center(
+              child: SimfSvgIcon(
+                asset,
+                size: 20,
+                color: SimfTokens.beigeBorder,
+              ),
+            ),
           ),
         ),
       ),

@@ -13,13 +13,13 @@ import 'tokens.dart';
 class SimfTheme {
   SimfTheme._();
 
-  /// KSA-Project Figma type (D-454): **Inter** for Latin with **Cairo** as the
-  /// fallback so Arabic glyphs (which Inter lacks) render in Cairo — matching
-  /// the frames (Inter labels, Cairo Arabic). Both are bundled variable fonts
-  /// (assets/fonts, OFL). Set as each theme's `fontFamily` + `fontFamilyFallback`
-  /// so every inherited text style picks up the pair. (Superseded the D-329 IBM
-  /// Plex Sans Arabic default, still bundled.)
-  static const String fontFamily = 'Inter';
+  /// SIMF brand identity font (owner 2026-06-27): **FS Albert Arabic** — the
+  /// same family the Website ships, bundled under `assets/fonts` so the app's
+  /// Arabic + Latin text matches the brand identity. **Cairo** stays the glyph
+  /// fallback so any code-point FS Albert lacks still renders. Set as each
+  /// theme's `fontFamily` + `fontFamilyFallback` so every inherited text style
+  /// picks up the pair. (Superseded the D-454 Inter/Cairo pairing.)
+  static const String fontFamily = 'FSAlbertArabic';
   static const List<String> fontFamilyFallback = <String>['Cairo'];
 
   static AppBarTheme _appBar(Color bg, Color fg) => AppBarTheme(

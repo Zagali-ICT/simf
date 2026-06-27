@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/widgets/ksa_shell.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 import 'package:simf_app/core/site_settings/site_settings.dart';
 import 'package:simf_app/features/home/home_screen.dart';
 import 'package:simf_app/features/myarea/data/myarea_models.dart';
@@ -477,6 +478,15 @@ void main() {
       expect(find.text('NOTIFICATIONS'), findsOneWidget);
     });
 
+    testWidgets('tapping the greeting avatar opens My Area (owner 2026-06-27)',
+        (tester) async {
+      await _pump(tester, controller: _SignedInController());
+
+      await tester.tap(find.byType(KsaAvatar));
+      await tester.pumpAndSettle();
+      expect(find.text('MY-AREA'), findsOneWidget);
+    });
+
     testWidgets('the live banner opens the live broadcast', (tester) async {
       await _pump(tester, controller: _SignedInController());
 
@@ -486,7 +496,7 @@ void main() {
       expect(find.text('Smart features'), findsNothing);
     });
 
-    testWidgets('the social row renders all five brand buttons',
+    testWidgets('the social row renders all five brand glyphs (Figma SVGs)',
         (tester) async {
       await _pump(tester, controller: _SignedInController());
 
@@ -496,15 +506,17 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       await tester.pumpAndSettle();
-      final images = tester
-          .widgetList<Image>(find.byType(Image))
-          .map((w) => (w.image as AssetImage).assetName)
+      // The social icons are now the exact Figma beige SVGs rendered through
+      // SimfSvgIcon (the same pipeline as the About icons), not PNG Images.
+      final socials = tester
+          .widgetList<SimfSvgIcon>(find.byType(SimfSvgIcon))
+          .map((w) => w.asset)
           .where((n) => n.contains('social_'))
           .toList();
-      expect(images, hasLength(5));
+      expect(socials, hasLength(5));
     });
 
-    testWidgets('the أحدث منشوراتنا card renders the latest post '
+    testWidgets('the ابرز الاحداث card renders the latest post '
         '(frame 758:1240)', (tester) async {
       await _pump(
         tester,
@@ -513,11 +525,11 @@ void main() {
       );
 
       await tester.scrollUntilVisible(
-        find.text('Latest posts'),
+        find.text('Highlights'),
         120,
         scrollable: find.byType(Scrollable).first,
       );
-      expect(find.text('Latest posts'), findsOneWidget);
+      expect(find.text('Highlights'), findsOneWidget);
       // The frame's lead paragraph is the excerpt (not the title); the bold line
       // is the source name. Engagement counts are NOT shown (Phase 2 data).
       expect(find.text('The opening session begins now.'), findsOneWidget);
@@ -532,11 +544,11 @@ void main() {
       );
     });
 
-    testWidgets('no posts → the أحدث منشوراتنا section is hidden',
+    testWidgets('no posts → the ابرز الاحداث section is hidden',
         (tester) async {
       await _pump(tester, controller: _SignedInController());
       // Section is omitted entirely when there is no latest post.
-      expect(find.text('Latest posts'), findsNothing);
+      expect(find.text('Highlights'), findsNothing);
     });
 
     testWidgets('relative time buckets (homePostTime)', (tester) async {

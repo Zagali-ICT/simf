@@ -52,13 +52,16 @@ class SiteSocialLinks {
   final String? tiktok;
   final String? snapchat;
 
+  // The API serialises with camelCase (System.Text.Json), so the multi-word
+  // keys arrive as `linkedIn` / `youTube` / `tikTok` — read those exact keys,
+  // not all-lowercase, or the CP-set LinkedIn/YouTube/TikTok URLs silently drop.
   static SiteSocialLinks fromJson(Map<String, dynamic> json) => SiteSocialLinks(
         facebook: json['facebook'] as String?,
         x: json['x'] as String?,
         instagram: json['instagram'] as String?,
-        linkedin: json['linkedin'] as String?,
-        youtube: json['youtube'] as String?,
-        tiktok: json['tiktok'] as String?,
+        linkedin: json['linkedIn'] as String?,
+        youtube: json['youTube'] as String?,
+        tiktok: json['tikTok'] as String?,
         snapchat: json['snapchat'] as String?,
       );
 }
