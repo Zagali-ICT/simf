@@ -30,6 +30,13 @@ class SimfTokens {
   static const Color qAnswered = Color(0xFF16A34A);
   static const Color qStage = Color(0xFFF59E0B);
 
+  // Request-status colours — الطلبات chips + card borders (Figma 1408:9760+,
+  // Tailwind-500): accepted green / rejected red / cancelled grey. Pending
+  // reuses [qStage] (#F59E0B). Chips render the colour at 12% fill + 20% border.
+  static const Color statusAccepted = Color(0xFF22C55E);
+  static const Color statusRejected = Color(0xFFEF4444);
+  static const Color statusCancelled = Color(0xFF6B7280);
+
   // KSA-Project light-surface + auth-flow palette (D-358/D-359).
   static const Color navySurface = Color(0xFF102238); // elevated navy surface (login bg)
   static const Color navyHeader = Color(0xFF071832); // darker header block behind the forum title (Figma 1467:12565 / 1461:12565)

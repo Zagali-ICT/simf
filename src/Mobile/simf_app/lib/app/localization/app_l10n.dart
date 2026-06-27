@@ -1074,12 +1074,16 @@ class AppL10n {
   String get requestKindDocument => _t('طلب وثيقة المشاركة', 'Participation document request');
   String get requestKindBadge => _t('طلب تحديث البادج', 'Badge update request');
 
-  // Status chips.
-  String get requestStatusAll => _t('الكل', 'All');
+  // Status chips. (السجل serves "all"; there is no standalone "All" chip.)
   String get requestStatusPending => _t('قيد المراجعة', 'Under review');
   String get requestStatusAccepted => _t('مقبول', 'Accepted');
   String get requestStatusRejected => _t('مرفوض', 'Rejected');
   String get requestStatusCancelled => _t('ملغى', 'Cancelled');
+
+  // الطلبات top action row (Figma 1408:9736) — السجل = all requests (default),
+  // المقبولة = accepted filter shortcut.
+  String get requestsTabAccepted => _t('المقبولة', 'Accepted');
+  String get requestsTabLog => _t('السجل', 'Log');
 
   // New-request flow.
   String get requestNew => _t('طلب جديد', 'New request');
@@ -1116,7 +1120,13 @@ class AppL10n {
       _t('تعذّر إلغاء الطلب', 'Could not cancel the request');
 
   /// A request card's short date (locale-aware "12 يناير 2026" / "12 Jan 2026").
-  String requestDate(DateTime date) => _shortDate(date);
+  // الطلبات card date carries the year (Figma 1408:9782 — "12 يناير 2026").
+  // In Arabic an LRM (U+200E) sits before the year so the bidi algorithm does
+  // not pull the year across the Arabic month name (it stays day-month-year,
+  // left-to-right, as the frame shows) when the Text is pinned LTR.
+  String requestDate(DateTime date) => isArabic
+      ? '${_shortDate(date)} ‎${date.year}'
+      : '${_shortDate(date)} ${date.year}';
 
   // Booths (Page 022).
   String get boothsTitle => _t('الأجنحة', 'Booths');

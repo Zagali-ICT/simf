@@ -121,6 +121,78 @@ void main() {
       expect(find.text('Participation document request'), findsNothing);
     });
 
+    testWidgets('the المقبولة / السجل buttons filter the feed', (tester) async {
+      await _pump(
+        tester,
+        data: <AppRequestItem>[
+          _item(
+            kind: AppRequestKind.participationDocument,
+            id: '1',
+            title: 'Certificate',
+            status: AppRequestStatus.pending,
+          ),
+          _item(
+            kind: AppRequestKind.badgeUpdate,
+            id: '2',
+            title: 'Commander',
+            status: AppRequestStatus.accepted,
+          ),
+        ],
+      );
+
+      // السجل (Log) is the default → all cards.
+      expect(find.text('Participation document request'), findsOneWidget);
+      expect(find.text('Badge update request'), findsOneWidget);
+
+      // المقبولة (Accepted) button — the bare label, distinct from the
+      // "Accepted (1)" chip — filters to accepted only.
+      await tester.tap(find.text('Accepted'));
+      await tester.pumpAndSettle();
+      expect(find.text('Badge update request'), findsOneWidget);
+      expect(find.text('Participation document request'), findsNothing);
+
+      // السجل (Log) resets to all.
+      await tester.tap(find.text('Log'));
+      await tester.pumpAndSettle();
+      expect(find.text('Participation document request'), findsOneWidget);
+      expect(find.text('Badge update request'), findsOneWidget);
+    });
+
+    testWidgets('المقبولة is a no-op when there are no accepted requests',
+        (tester) async {
+      await _pump(
+        tester,
+        data: <AppRequestItem>[
+          _item(
+            kind: AppRequestKind.participationDocument,
+            id: '1',
+            title: 'Certificate',
+            status: AppRequestStatus.pending,
+          ),
+        ],
+      );
+      // Tapping the disabled المقبولة button must not strand the user on a
+      // blank view — the pending card stays.
+      await tester.tap(find.text('Accepted'));
+      await tester.pumpAndSettle();
+      expect(find.text('Participation document request'), findsOneWidget);
+    });
+
+    testWidgets('the card date carries the year (Figma 1408:9782)',
+        (tester) async {
+      await _pump(
+        tester,
+        data: <AppRequestItem>[
+          _item(
+            kind: AppRequestKind.badgeUpdate,
+            id: '1',
+            title: 'Commander',
+          ),
+        ],
+      );
+      expect(find.text('10 Jan 2026'), findsOneWidget);
+    });
+
     testWidgets('shows the error state on a wire failure', (tester) async {
       await _pump(tester, fail: true);
       expect(find.text('Could not load your requests'), findsOneWidget);
