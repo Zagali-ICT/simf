@@ -367,6 +367,7 @@ class KsaCard extends StatelessWidget {
     this.color = SimfTokens.navyDeep,
     this.borderColor = SimfTokens.beigeBorder,
     this.borderWidth = SimfTokens.hairline,
+    this.radius = SimfTokens.radiusSmall,
     super.key,
   });
 
@@ -376,20 +377,27 @@ class KsaCard extends StatelessWidget {
   final Color borderColor;
   final double borderWidth;
 
-  static const BorderRadius _radius =
-      BorderRadius.all(Radius.circular(SimfTokens.radiusSmall));
+  /// Corner radius — defaults to the W2 small radius; the exhibitor/sponsor
+  /// identity + about cards override to 8 and the link rows to 14 (Figma
+  /// 1439:11881).
+  final double radius;
 
   @override
   Widget build(BuildContext context) {
+    final BorderRadius br = BorderRadius.all(Radius.circular(radius));
     return Material(
       color: color,
       shape: RoundedRectangleBorder(
-        borderRadius: _radius,
-        side: BorderSide(color: borderColor, width: borderWidth),
+        borderRadius: br,
+        // width 0 in Flutter still paints a 1px hairline; a borderless card
+        // (the exhibitor/sponsor identity + about cards) needs BorderSide.none.
+        side: borderWidth <= 0
+            ? BorderSide.none
+            : BorderSide(color: borderColor, width: borderWidth),
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: _radius,
+        borderRadius: br,
         child: child,
       ),
     );
