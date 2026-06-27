@@ -335,10 +335,10 @@ class KsaLangThemeButtons extends ConsumerWidget {
 }
 
 /// The shared trailing action cluster on every in-app page's top nav (owner
-/// 2026-06-27): the notifications bell with its unread badge, the language
-/// globe, the inert dark-mode crescent, and the menu ☰ (opens the shell
-/// drawer). One component so the top nav is identical on the signed-in home
-/// greeting header and every [KsaPage] sub-page — same icons, same order.
+/// 2026-06-27): the notifications bell, the language globe, the inert dark-mode
+/// crescent (node 1049:2087) and the menu ☰ — each a **gold glyph in a navy
+/// rounded box** (frame 758:1136), so the top nav is identical on the signed-in
+/// home greeting header and every [KsaPage] sub-page.
 ///
 /// [showBell] is true on every signed-in surface; the guest home (frame
 /// 758:2910) sets it false — a guest has no personal notifications.
@@ -350,13 +350,15 @@ class KsaLangThemeButtons extends ConsumerWidget {
 /// just to render its header.
 class KsaHeaderActions extends ConsumerWidget {
   const KsaHeaderActions({
-    this.size = 24,
+    this.size = 34,
     this.showBell = true,
     this.showUnreadBadge = false,
     super.key,
   });
 
-  /// The glyph size — 24 in the standard header, 26 in the larger home header.
+  /// The action box edge length. Frame 758:1136 draws 42-px boxes for two
+  /// icons; with all four the boxes shrink to 34 so they fit beside the
+  /// greeting + avatar (owner 2026-06-27).
   final double size;
 
   /// Whether the notifications bell shows. False on the guest home (758:2910).
@@ -377,38 +379,82 @@ class KsaHeaderActions extends ConsumerWidget {
               orElse: () => 0,
             )
         : 0;
-    final bell = Icon(
-      Icons.notifications_none_outlined,
-      color: Colors.white,
-      size: size,
-    );
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        if (showBell)
-          IconButton(
-            tooltip: l10n.notificationsTooltip,
-            onPressed: () => context.pushNamed(RouteNames.notifications),
-            icon: showUnreadBadge
-                ? Badge.count(
-                    count: unread,
-                    isLabelVisible: unread > 0,
-                    child: bell,
-                  )
-                : bell,
+    Widget bellGlyph = const Icon(Icons.notifications_none_outlined);
+    if (showUnreadBadge && unread > 0) {
+      bellGlyph = Badge.count(count: unread, child: bellGlyph);
+    }
+    // The frame lays the boxes left→right (bell … menu); force LTR so the order
+    // is stable under either locale (like the social row).
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          if (showBell) ...<Widget>[
+            _box(
+              tooltip: l10n.notificationsTooltip,
+              onTap: () => context.pushNamed(RouteNames.notifications),
+              glyph: bellGlyph,
+            ),
+            const SizedBox(width: SimfTokens.space2),
+          ],
+          _box(
+            tooltip: l10n.languageToggleLabel,
+            onTap: () =>
+                unawaited(ref.read(localeControllerProvider.notifier).toggle()),
+            glyph: const Icon(Icons.language),
           ),
-        // The language globe + the inert dark-mode crescent (shared pair).
-        KsaLangThemeButtons(size: size),
-        // The drawer ☰ — opens the shell side menu via the nearest Scaffold
-        // (the Builder gives a context below KsaPage's Scaffold).
-        Builder(
-          builder: (ctx) => IconButton(
-            tooltip: l10n.moreTitle,
-            onPressed: () => Scaffold.of(ctx).openDrawer(),
-            icon: Icon(Icons.menu, color: Colors.white, size: size),
+          const SizedBox(width: SimfTokens.space2),
+          // Node 1049:2087 — the gold crescent, intentionally inert (navy-always).
+          _box(
+            tooltip: l10n.themeToggleTooltip,
+            onTap: null,
+            glyph: const Icon(Icons.dark_mode),
+          ),
+          const SizedBox(width: SimfTokens.space2),
+          Builder(
+            builder: (ctx) => _box(
+              tooltip: l10n.moreTitle,
+              onTap: () => Scaffold.of(ctx).openDrawer(),
+              glyph: const Icon(Icons.menu),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// One header action box: a gold glyph centred in a navy rounded square with
+  /// the beige hairline (frame 758:1136). Kept as an [IconButton] so tooltips +
+  /// the disabled (inert) state stay correct.
+  Widget _box({
+    required String tooltip,
+    required VoidCallback? onTap,
+    required Widget glyph,
+  }) {
+    return IconButton(
+      tooltip: tooltip,
+      onPressed: onTap,
+      iconSize: size * 0.55,
+      icon: glyph,
+      style: IconButton.styleFrom(
+        backgroundColor: SimfTokens.navyDeep,
+        disabledBackgroundColor: SimfTokens.navyDeep,
+        foregroundColor: SimfTokens.accent,
+        disabledForegroundColor: SimfTokens.accent,
+        fixedSize: Size(size, size),
+        minimumSize: Size(size, size),
+        maximumSize: Size(size, size),
+        padding: EdgeInsets.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radius)),
+          side: BorderSide(
+            color: SimfTokens.beigeBorder,
+            width: SimfTokens.hairline,
           ),
         ),
-      ],
+      ),
     );
   }
 }

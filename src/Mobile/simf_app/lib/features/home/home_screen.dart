@@ -600,8 +600,8 @@ class _GreetingHeader extends StatelessWidget {
           ),
           // The shared top-nav action cluster — identical to every sub-page:
           // the bell, the language globe, the dark-mode crescent, and the menu
-          // ☰. Home is the one surface that carries the live unread-count badge.
-          const KsaHeaderActions(size: 26, showUnreadBadge: true),
+          // ☰, each a gold glyph in a navy box. Home carries the unread badge.
+          const KsaHeaderActions(showUnreadBadge: true),
         ],
       ),
     );
@@ -676,7 +676,10 @@ class _LiveBanner extends StatelessWidget {
               const SizedBox(width: SimfTokens.space2),
               const Icon(
                 Icons.arrow_left,
-                // Frame 758:1134 — the live-banner arrow is white, not gold.
+                // Frame 758:1150 — the arrow points LEFT (the design's caret
+                // direction); force LTR so it does not mirror to the right
+                // under the app's RTL directionality.
+                textDirection: TextDirection.ltr,
                 color: Colors.white,
                 size: 24,
               ),
