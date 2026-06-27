@@ -63,6 +63,7 @@ import '../features/sessions/seat_picker_screen.dart';
 import '../features/sessions/session_detail_screen.dart';
 import '../features/sessions/session_presentations_screen.dart';
 import '../features/sessions/sessions_screen.dart';
+import '../features/staff/register_visitor_screen.dart';
 import '../features/sponsors/sponsor_detail_screen.dart';
 import '../features/sponsors/sponsors_screen.dart';
 import '../features/speakers/speaker_profile_screen.dart';
@@ -165,6 +166,9 @@ const List<_Route> _routes = <_Route>[
   // D-426 — exhibitor ("Other") lead capture (approved-only; server 403s visitors).
   _Route(number: 106, name: RouteNames.scanVisitor, path: '/exhibitor/scan', labelAr: 'مسح بطاقة زائر', labelEn: 'Scan visitor badge'),
   _Route(number: 107, name: RouteNames.myVisitors, path: '/exhibitor/visitors', labelAr: 'زواري', labelEn: 'My Visitors'),
+  // D-509 — staff walk-in visitor registration (approved Staff; server enforces
+  // Visitors.RegisterOnsite). Figma 1467:12357.
+  _Route(number: 114, name: RouteNames.staffRegisterVisitor, path: '/staff/register-visitor', labelAr: 'تسجيل زائر', labelEn: 'Register visitor'),
   // D-500 (Wave 5, الطلبات) — the unified requests feed (approved-only).
   _Route(number: 108, name: RouteNames.requests, path: '/requests', labelAr: 'الطلبات', labelEn: 'Requests'),
   // D-485 — the session-join flow (approved-only): the seat picker + the hub.
@@ -227,6 +231,7 @@ const Set<int> _authenticatedRoutes = <int>{
   103, // Identity verification — avatar liveness (D-404, from My Area)
   104, // Moderator session Q&A desk (D-405; also role-gated below)
   105, // Staff gate scanner (D-406; also role-gated below)
+  114, // Staff walk-in visitor registration (D-509; also role-gated below)
   106, // Exhibitor scan visitor badge (D-426; server 403s visitor-tier callers)
   107, // Exhibitor My Visitors (D-426)
   109, // Seat picker (D-485; approved-only — the seat endpoints 401/403 a guest)
@@ -242,6 +247,7 @@ const Set<int> _authenticatedRoutes = <int>{
 const Map<int, AppRole> _roleGatedRoutes = <int, AppRole>{
   104: AppRole.moderator, // Session Q&A desk — moderator (or higher)
   105: AppRole.staff, // Gate scanner — staff
+  114: AppRole.staff, // Walk-in visitor registration — staff
 };
 
 /// The five bottom-nav destinations, in reading order. They live inside a
@@ -453,6 +459,9 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.gateScanner) {
     return const GateScanScreen();
+  }
+  if (r.name == RouteNames.staffRegisterVisitor) {
+    return const StaffRegisterVisitorScreen();
   }
   if (r.name == RouteNames.scanVisitor) {
     return const ScanVisitorScreen();

@@ -13,13 +13,19 @@ import 'data/moderation_repository.dart';
 
 final DateFormat _hm = DateFormat('HH:mm');
 
-/// Moderator (محاور) per-session Q&A desk — Figma 758:5307 (D-405).
+/// Moderator (محاور) per-session Q&A desk — Figma 1461:12227 (D-405 / D-509).
 ///
-/// Lists the **approved** question queue for [sessionId] and lets the moderator
-/// mark a question **on stage** (يتم الإجابة → `push`) or **reject** it
-/// (مرفوض → `hide`). Backend-faithful subset: the API has no distinct
-/// "answered" status, so the chips are الكل / جديد / يتم الإجابة only (the
-/// Figma's تمت الإجابة state is flagged for backend follow-up).
+/// Lists the **approved** question queue for [sessionId] with the five filter
+/// chips (الكل / جديد / الأسئلة المقبولة / تمت الإجابة / مرفوض) and the three
+/// per-question actions: **مرفوض** (reject → `hide`, the moderator's tool for an
+/// invalid / not-in-hall question — owner directive), **يتم الإجابة** (push on
+/// stage), and **تمت الإجابة** (mark answered).
+///
+/// Backend-faithful mapping: the API exposes only Approved/Hidden + a `push`
+/// flag, so **reject** and **on-stage** hit the real endpoints, while
+/// **answered** and the **rejected list** are moderator-session-local (there is
+/// no distinct "answered" status, and a hidden row drops out of the approved
+/// queue) — see [ModeratorQueueFilter].
 ///
 /// Authority is the per-session `SessionModerator` grant (or Administrator),
 /// **not** the mobile `AppRole.moderator` — a moderator without the grant gets
@@ -39,6 +45,11 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
   bool _error = false;
   bool _forbidden = false;
   List<ModeratorQuestion> _all = const <ModeratorQuestion>[];
+  // Session-local moderator state (no backend status — see the class doc):
+  // questions marked answered, and the rows rejected this session (kept so the
+  // مرفوض tab still lists them after they drop out of the approved queue).
+  final Set<String> _answered = <String>{};
+  final List<ModeratorQuestion> _rejected = <ModeratorQuestion>[];
   ModeratorQueueFilter _filter = ModeratorQueueFilter.all;
 
   @override
@@ -76,59 +87,152 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
     }
   }
 
-  Future<void> _push(ModeratorQuestion q) => _act(
-        () => ref
-            .read(moderationRepositoryProvider)
-            .push(widget.sessionId, q.id),
-      );
+  bool _isRejected(ModeratorQuestion q) => _rejected.any((r) => r.id == q.id);
 
-  Future<void> _reject(ModeratorQuestion q) => _act(
-        () => ref.read(moderationRepositoryProvider).setHidden(
-              widget.sessionId,
-              q.id,
-              isHidden: true,
-            ),
-      );
+  /// يتم الإجابة — push the question on stage (real). If it was rejected this
+  /// session, restore it first.
+  Future<void> _push(ModeratorQuestion q) async {
+    if (_isRejected(q)) {
+      await _restore(q);
+    }
+    await _act(
+      () => ref.read(moderationRepositoryProvider).push(widget.sessionId, q.id),
+    );
+  }
 
-  Future<void> _act(Future<void> Function() action) async {
+  /// مرفوض — reject (real `hide`). The row is kept locally so it still lists
+  /// under the مرفوض tab; on the next reload the approved queue excludes it.
+  Future<void> _reject(ModeratorQuestion q) async {
+    setState(() {
+      _answered.remove(q.id);
+      if (!_isRejected(q)) {
+        _rejected.add(q);
+      }
+    });
+    final ok = await _act(
+      () => ref.read(moderationRepositoryProvider).setHidden(
+            widget.sessionId,
+            q.id,
+            isHidden: true,
+          ),
+    );
+    if (!ok && mounted) {
+      // The reject failed — undo the optimistic local move.
+      setState(() => _rejected.removeWhere((r) => r.id == q.id));
+    }
+  }
+
+  /// Restore a previously rejected question (un-hide) back into the queue.
+  Future<void> _restore(ModeratorQuestion q) async {
+    setState(() => _rejected.removeWhere((r) => r.id == q.id));
+    await _act(
+      () => ref.read(moderationRepositoryProvider).setHidden(
+            widget.sessionId,
+            q.id,
+            isHidden: false,
+          ),
+    );
+  }
+
+  /// تمت الإجابة — mark the question answered (session-local, toggles). If it was
+  /// rejected, restore it first so it lands back in the live queue as answered.
+  Future<void> _toggleAnswered(ModeratorQuestion q) async {
+    if (_isRejected(q)) {
+      await _restore(q);
+    }
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      if (!_answered.add(q.id)) {
+        _answered.remove(q.id);
+      }
+    });
+  }
+
+  /// Runs a repository action then reloads. Returns true on success; on failure
+  /// surfaces a toast and returns false (callers can roll back optimistic state).
+  Future<bool> _act(Future<void> Function() action) async {
     final messenger = ScaffoldMessenger.of(context);
     final l10n = AppL10n.of(context);
     try {
       await action();
       await _load();
+      return true;
     } on ApiFailure {
-      if (!mounted) {
-        return;
+      if (mounted) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.moderatorActionFailed)),
+        );
       }
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.moderatorActionFailed)),
-      );
+      return false;
     }
   }
+
+  int _count(ModeratorQueueFilter filter) => filterModeratorQueue(
+        _all,
+        filter,
+        answeredIds: _answered,
+        rejected: _rejected,
+      ).length;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     return Scaffold(
-      backgroundColor: SimfTokens.navy,
-      appBar: AppBar(
-        leading: const SimfBackButton(),
-        backgroundColor: SimfTokens.navy,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        title: Text(l10n.moderatorDeskTitle),
-        actions: <Widget>[
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: SimfTokens.space4,
-              vertical: SimfTokens.space3,
+      backgroundColor: SimfTokens.navySurface,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: <Widget>[
+            // Figma 1461:12565 — navy header block: back (left) + title (centre)
+            // + role pill (right). Forced LTR so back sits on the left as drawn.
+            Container(
+              color: SimfTokens.navyHeader,
+              padding: const EdgeInsets.fromLTRB(8, 4, 16, 16),
+              child: Row(
+                textDirection: TextDirection.ltr,
+                children: <Widget>[
+                  // Circular navy back button with a left chevron (Figma).
+                  Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Material(
+                      color: SimfTokens.navyDeep,
+                      shape: const CircleBorder(),
+                      child: InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: () => ksaBackOrHome(context),
+                        child: const Padding(
+                          padding: EdgeInsets.all(6),
+                          child: Icon(
+                            Icons.chevron_left,
+                            color: Colors.white,
+                            size: 26,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      l10n.moderatorDeskTitle,
+                      textAlign: TextAlign.center,
+                      textDirection: TextDirection.rtl,
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  _RolePill(label: l10n.moderatorBadge),
+                ],
+              ),
             ),
-            child: _RolePill(label: l10n.moderatorBadge),
-          ),
-        ],
+            Expanded(child: _body(l10n)),
+          ],
+        ),
       ),
-      body: SafeArea(top: false, child: _body(l10n)),
     );
   }
 
@@ -151,17 +255,21 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
         onRetry: () => unawaited(_load()),
       );
     }
-    final rows = filterModeratorQueue(_all, _filter);
+    final rows = filterModeratorQueue(
+      _all,
+      _filter,
+      answeredIds: _answered,
+      rejected: _rejected,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         _FilterBar(
           l10n: l10n,
           filter: _filter,
-          all: _all.length,
-          fresh: filterModeratorQueue(_all, ModeratorQueueFilter.fresh).length,
-          onStage:
-              filterModeratorQueue(_all, ModeratorQueueFilter.onStage).length,
+          counts: <ModeratorQueueFilter, int>{
+            for (final f in ModeratorQueueFilter.values) f: _count(f),
+          },
           onChanged: (f) => setState(() => _filter = f),
         ),
         Expanded(
@@ -180,8 +288,11 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
                     itemBuilder: (context, i) => _QuestionCard(
                       l10n: l10n,
                       question: rows[i],
-                      onPush: () => unawaited(_push(rows[i])),
+                      answered: _answered.contains(rows[i].id),
+                      rejected: _isRejected(rows[i]),
                       onReject: () => unawaited(_reject(rows[i])),
+                      onAnswered: () => unawaited(_toggleAnswered(rows[i])),
+                      onPush: () => unawaited(_push(rows[i])),
                     ),
                   ),
                 ),
@@ -200,20 +311,17 @@ class _RolePill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       alignment: Alignment.center,
-      padding: const EdgeInsets.symmetric(
-        horizontal: SimfTokens.space3,
-        vertical: SimfTokens.space1,
-      ),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(SimfTokens.radiusLg),
-        border: Border.all(color: SimfTokens.accent),
+        color: SimfTokens.accent,
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
       ),
       child: Text(
         label,
         style: const TextStyle(
-          color: SimfTokens.accent,
+          color: Colors.white,
           fontWeight: FontWeight.w700,
-          fontSize: SimfTokens.textSm,
+          fontSize: SimfTokens.textTitle,
         ),
       ),
     );
@@ -224,49 +332,49 @@ class _FilterBar extends StatelessWidget {
   const _FilterBar({
     required this.l10n,
     required this.filter,
-    required this.all,
-    required this.fresh,
-    required this.onStage,
+    required this.counts,
     required this.onChanged,
   });
 
   final AppL10n l10n;
   final ModeratorQueueFilter filter;
-  final int all;
-  final int fresh;
-  final int onStage;
+  final Map<ModeratorQueueFilter, int> counts;
   final ValueChanged<ModeratorQueueFilter> onChanged;
+
+  String _label(ModeratorQueueFilter f) {
+    switch (f) {
+      case ModeratorQueueFilter.all:
+        return l10n.moderatorChipAll;
+      case ModeratorQueueFilter.fresh:
+        return l10n.moderatorChipNew;
+      case ModeratorQueueFilter.accepted:
+        return l10n.moderatorChipAccepted;
+      case ModeratorQueueFilter.answered:
+        return l10n.moderatorChipAnswered;
+      case ModeratorQueueFilter.rejected:
+        return l10n.moderatorChipRejected;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(
-        horizontal: SimfTokens.space4,
-        vertical: SimfTokens.space3,
-      ),
+    // Figma 805:1876 — five equal-width chips filling the row (not a scroll).
+    final filters = ModeratorQueueFilter.values;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
       child: Row(
         children: <Widget>[
-          _Chip(
-            label: l10n.moderatorChipOnStage,
-            count: onStage,
-            active: filter == ModeratorQueueFilter.onStage,
-            onTap: () => onChanged(ModeratorQueueFilter.onStage),
-          ),
-          const SizedBox(width: SimfTokens.space2),
-          _Chip(
-            label: l10n.moderatorChipNew,
-            count: fresh,
-            active: filter == ModeratorQueueFilter.fresh,
-            onTap: () => onChanged(ModeratorQueueFilter.fresh),
-          ),
-          const SizedBox(width: SimfTokens.space2),
-          _Chip(
-            label: l10n.moderatorChipAll,
-            count: all,
-            active: filter == ModeratorQueueFilter.all,
-            onTap: () => onChanged(ModeratorQueueFilter.all),
-          ),
+          for (int i = 0; i < filters.length; i++) ...<Widget>[
+            if (i > 0) const SizedBox(width: SimfTokens.space4),
+            Expanded(
+              child: _Chip(
+                label: _label(filters[i]),
+                count: counts[filters[i]] ?? 0,
+                active: filter == filters[i],
+                onTap: () => onChanged(filters[i]),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -290,48 +398,50 @@ class _Chip extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(SimfTokens.radiusLg),
+      borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: SimfTokens.space3,
-          vertical: SimfTokens.space2,
-        ),
+        height: 58,
+        padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space2),
         decoration: BoxDecoration(
           color: active ? SimfTokens.accent : SimfTokens.navyDeep,
-          borderRadius: BorderRadius.circular(SimfTokens.radiusLg),
+          borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
           border: Border.all(
-            color: active ? SimfTokens.accent : SimfTokens.beigeBorder,
-            width: 0.5,
+            color: active ? SimfTokens.accent : SimfTokens.navyDisabledBorder,
+            width: 1.18,
           ),
         ),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text(
-              label,
-              style: TextStyle(
-                color: active ? SimfTokens.navy : Colors.white,
-                fontWeight: FontWeight.w600,
-                fontSize: SimfTokens.textSm,
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: active ? Colors.white : SimfTokens.beigeBorder,
+                  fontWeight: active ? FontWeight.w700 : FontWeight.w400,
+                  fontSize: SimfTokens.textTitle,
+                ),
               ),
             ),
             const SizedBox(width: SimfTokens.space2),
             Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: SimfTokens.space2,
-                vertical: 1,
-              ),
+              width: 28,
+              height: 28,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: active
-                    ? SimfTokens.navy.withValues(alpha: 0.15)
-                    : SimfTokens.navy,
-                borderRadius: BorderRadius.circular(SimfTokens.radiusLg),
+                    ? SimfTokens.navy.withValues(alpha: 0.3)
+                    : SimfTokens.navyDisabledBorder,
+                borderRadius: BorderRadius.circular(5),
               ),
               child: Text(
                 '$count',
                 style: TextStyle(
-                  color: active ? SimfTokens.navy : SimfTokens.accent,
+                  color: active ? Colors.white : SimfTokens.accent,
                   fontWeight: FontWeight.w700,
-                  fontSize: SimfTokens.textXs,
+                  fontSize: SimfTokens.textMd,
                 ),
               ),
             ),
@@ -346,29 +456,51 @@ class _QuestionCard extends StatelessWidget {
   const _QuestionCard({
     required this.l10n,
     required this.question,
-    required this.onPush,
+    required this.answered,
+    required this.rejected,
     required this.onReject,
+    required this.onAnswered,
+    required this.onPush,
   });
 
   final AppL10n l10n;
   final ModeratorQuestion question;
-  final VoidCallback onPush;
+  final bool answered;
+  final bool rejected;
   final VoidCallback onReject;
+  final VoidCallback onAnswered;
+  final VoidCallback onPush;
+
+  static String _initials(String name) {
+    final parts = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) {
+      return '؟';
+    }
+    if (parts.length == 1) {
+      final p = parts.first;
+      return p.length >= 2 ? p.substring(0, 2) : p;
+    }
+    return parts[0].substring(0, 1) + parts[1].substring(0, 1);
+  }
 
   @override
   Widget build(BuildContext context) {
+    // Figma 1462:12236 — navy card with an 8px gold TOP border, a header row
+    // (time left, name + gold initial-avatar right), a bordered question box,
+    // and three large action buttons.
     return Container(
       padding: const EdgeInsets.all(SimfTokens.space4),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: SimfTokens.navyDeep,
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
-        border: Border.all(
-          color: question.isOnStage ? SimfTokens.accent : SimfTokens.beigeBorder,
-          width: question.isOnStage ? 1 : 0.2,
-        ),
+        borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radius)),
+        border: Border(top: BorderSide(color: SimfTokens.accent, width: 8)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: <Widget>[
           Row(
             children: <Widget>[
@@ -376,12 +508,12 @@ class _QuestionCard extends StatelessWidget {
                 _hm.format(question.createdAt.toLocal()),
                 style: const TextStyle(
                   color: SimfTokens.beigeBorder,
-                  fontSize: SimfTokens.textXs,
+                  fontWeight: FontWeight.w600,
+                  fontSize: SimfTokens.textHero - 4, // 24
                 ),
               ),
               const Spacer(),
-              Expanded(
-                flex: 4,
+              Flexible(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: <Widget>[
@@ -393,7 +525,7 @@ class _QuestionCard extends StatelessWidget {
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
-                        fontSize: SimfTokens.textSm,
+                        fontSize: SimfTokens.textHero, // 28
                       ),
                     ),
                     if (question.recipient == QuestionRecipient.host)
@@ -401,44 +533,91 @@ class _QuestionCard extends StatelessWidget {
                         l10n.moderatorToHost,
                         style: const TextStyle(
                           color: SimfTokens.accent,
-                          fontSize: SimfTokens.textXs,
+                          fontSize: SimfTokens.textTitle,
                         ),
                       ),
                   ],
                 ),
               ),
-              const SizedBox(width: SimfTokens.space3),
-              KsaAvatar(name: question.submitterName, size: 40),
+              const SizedBox(width: SimfTokens.space5),
+              Container(
+                width: 80,
+                height: 80,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: SimfTokens.accent,
+                  borderRadius: BorderRadius.circular(SimfTokens.radiusLg),
+                ),
+                child: Text(
+                  _initials(question.submitterName),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: SimfTokens.textHero,
+                  ),
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: SimfTokens.space3),
-          Text(
-            question.questionText,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: SimfTokens.textMd,
-              height: 1.4,
+          const SizedBox(height: SimfTokens.space6),
+          // Question box — dark inset, gold border, asymmetric radii.
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(SimfTokens.space5),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.25),
+              border: Border.all(color: SimfTokens.accent, width: 2),
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(16),
+                topLeft: Radius.circular(8),
+                bottomLeft: Radius.circular(16),
+                bottomRight: Radius.circular(16),
+              ),
+            ),
+            child: Text(
+              question.questionText,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: SimfTokens.textHero, // 28
+                height: 1.5,
+              ),
             ),
           ),
-          const SizedBox(height: SimfTokens.space4),
+          const SizedBox(height: SimfTokens.space6),
           Row(
             children: <Widget>[
               Expanded(
                 child: _ActionButton(
                   label: l10n.moderatorActionReject,
                   icon: Icons.close,
-                  color: SimfTokens.danger,
-                  filled: false,
+                  color: SimfTokens.qReject,
+                  filled: rejected,
+                  primary: false,
                   onTap: onReject,
                 ),
               ),
-              const SizedBox(width: SimfTokens.space3),
+              const SizedBox(width: SimfTokens.space4),
+              Expanded(
+                child: _ActionButton(
+                  label: l10n.moderatorActionAnswered,
+                  icon: Icons.check,
+                  color: SimfTokens.qAnswered,
+                  filled: answered,
+                  primary: false,
+                  onTap: onAnswered,
+                ),
+              ),
+              const SizedBox(width: SimfTokens.space4),
               Expanded(
                 child: _ActionButton(
                   label: l10n.moderatorActionOnStage,
                   icon: Icons.access_time,
-                  color: SimfTokens.accent,
-                  filled: question.isOnStage,
+                  color: SimfTokens.qStage,
+                  filled: question.isOnStage && !answered && !rejected,
+                  // The on-stage CTA is drawn solid amber in the frame.
+                  primary: true,
                   onTap: onPush,
                 ),
               ),
@@ -456,6 +635,7 @@ class _ActionButton extends StatelessWidget {
     required this.icon,
     required this.color,
     required this.filled,
+    required this.primary,
     required this.onTap,
   });
 
@@ -463,34 +643,53 @@ class _ActionButton extends StatelessWidget {
   final IconData icon;
   final Color color;
   final bool filled;
+
+  /// The on-stage action is drawn solid by default (Figma); reject/answered are
+  /// outline until their state is active.
+  final bool primary;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final solid = filled || primary;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+      borderRadius: BorderRadius.circular(SimfTokens.radiusLg),
       child: Container(
-        height: 40,
+        height: 88,
         alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space2),
         decoration: BoxDecoration(
-          color: filled ? color : Colors.transparent,
-          borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-          border: Border.all(color: color),
+          color: solid ? color : color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(SimfTokens.radiusLg),
+          border: Border.all(color: color, width: 2),
+          boxShadow: primary
+              ? <BoxShadow>[
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.25),
+                    blurRadius: 10,
+                    offset: const Offset(0, 8),
+                  ),
+                ]
+              : null,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text(
-              label,
-              style: TextStyle(
-                color: filled ? SimfTokens.navy : color,
-                fontWeight: FontWeight.w700,
-                fontSize: SimfTokens.textSm,
+            Icon(icon, size: 30, color: solid ? Colors.white : color),
+            const SizedBox(width: SimfTokens.space3),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: solid ? Colors.white : color,
+                  fontWeight: FontWeight.w700,
+                  fontSize: SimfTokens.textHero - 4, // 24
+                ),
               ),
             ),
-            const SizedBox(width: SimfTokens.space2),
-            Icon(icon, size: 16, color: filled ? SimfTokens.navy : color),
           ],
         ),
       ),

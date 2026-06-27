@@ -242,9 +242,10 @@ class _GuestHome extends StatelessWidget {
               size: 32,
               color: SimfTokens.accent,
             ),
-            // No app FAQ endpoint exists yet — the about page carries the
-            // venue/event info this row promises (tracked follow-up).
-            onTap: () => context.pushNamed(RouteNames.aboutForum),
+            // Wave 1 added the public FAQ screen (GET /app/faq); the row opens
+            // it directly now (was temporarily pointed at About before the
+            // endpoint existed).
+            onTap: () => context.pushNamed(RouteNames.faq),
           ),
           const SizedBox(height: SimfTokens.space4),
           _DiscoverSaudiRow(l10n: l10n, outlined: true),

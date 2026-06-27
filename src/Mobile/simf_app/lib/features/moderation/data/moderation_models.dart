@@ -64,8 +64,16 @@ class ModeratorQuestion {
           .toList(growable: false);
 }
 
-/// The filter chips on the desk (Figma 758:5307, backend-faithful subset).
-enum ModeratorQueueFilter { all, fresh, onStage }
+/// The five filter chips on the desk (Figma 1461:12227).
+///
+/// Backend mapping (D-405 / D-509): the moderate endpoint returns only the
+/// **Approved** (non-hidden) queue and tracks a single `push` (on-stage) flag,
+/// so [fresh] / [accepted] are derived from the wire, while [answered] and
+/// [rejected] are **moderator-session-local** — there is no distinct "answered"
+/// status on the backend, and a rejected question is `hide`-d (real, persists)
+/// but then drops out of the approved queue, so the desk keeps the rejected
+/// rows locally to still list them under [rejected] for the rest of the session.
+enum ModeratorQueueFilter { all, fresh, accepted, answered, rejected }
 
 DateTime _utc(Object? value) {
   if (value is String && value.isNotEmpty) {
@@ -77,17 +85,37 @@ DateTime _utc(Object? value) {
   return DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
 }
 
-/// Applies a chip filter to the queue (pure — unit-testable).
+/// Applies a chip filter to the desk (pure — unit-testable). [approved] is the
+/// live (non-hidden) queue from the server; [answeredIds] and [rejected] are the
+/// moderator's session-local sets (see [ModeratorQueueFilter]). A question the
+/// moderator rejected this session is excluded from the live buckets and listed
+/// only under [ModeratorQueueFilter.rejected].
 List<ModeratorQuestion> filterModeratorQueue(
-  List<ModeratorQuestion> all,
-  ModeratorQueueFilter filter,
-) {
+  List<ModeratorQuestion> approved,
+  ModeratorQueueFilter filter, {
+  Set<String> answeredIds = const <String>{},
+  List<ModeratorQuestion> rejected = const <ModeratorQuestion>[],
+}) {
+  final rejectedIds = rejected.map((q) => q.id).toSet();
+  final live = approved
+      .where((q) => !rejectedIds.contains(q.id))
+      .toList(growable: false);
   switch (filter) {
     case ModeratorQueueFilter.all:
-      return all;
+      return <ModeratorQuestion>[...live, ...rejected];
     case ModeratorQueueFilter.fresh:
-      return all.where((q) => !q.isOnStage).toList(growable: false);
-    case ModeratorQueueFilter.onStage:
-      return all.where((q) => q.isOnStage).toList(growable: false);
+      return live
+          .where((q) => !q.isOnStage && !answeredIds.contains(q.id))
+          .toList(growable: false);
+    case ModeratorQueueFilter.accepted:
+      return live
+          .where((q) => q.isOnStage && !answeredIds.contains(q.id))
+          .toList(growable: false);
+    case ModeratorQueueFilter.answered:
+      return live
+          .where((q) => answeredIds.contains(q.id))
+          .toList(growable: false);
+    case ModeratorQueueFilter.rejected:
+      return rejected;
   }
 }

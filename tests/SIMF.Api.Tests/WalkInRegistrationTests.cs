@@ -171,6 +171,59 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Staff_app_walk_in_creates_pending_visitor_and_attaches_avatar()
+    {
+        // D-509 — the staff-app twin of the CP walk-in desk
+        // (POST /app/staff/visitors/register-onsite). An Administrator holds the
+        // Visitors.RegisterOnsite permission via the "*" wildcard, so the same
+        // token drives both surfaces. Creates a PendingApproval visitor (no QR);
+        // the staff avatar upload attaches the photo to the same subject.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var profileTypeId = await GetVisitorProfileTypeAsync();
+        var organisationId = await GetOrganisationIdAsync();
+
+        var email = $"staff-walkin-{Guid.NewGuid():N}@simf.test";
+        var reg = await PostAuthAsync(
+            "/api/v1/app/staff/visitors/register-onsite",
+            BuildRequest(profileTypeId, email, organisationId), adminToken);
+        Assert.Equal(HttpStatusCode.OK, reg.StatusCode);
+        var body = (await reg.Content
+            .ReadFromJsonAsync<ApiResult<AdminWalkInRegistrationResponse>>())!;
+        Assert.True(body.Success);
+        var subjectId = body.Data!.UserId;
+        Assert.NotEqual(Guid.Empty, subjectId);
+        // D-425 — a pending walk-in carries no QR until an admin approves it.
+        Assert.True(string.IsNullOrEmpty(body.Data.QrId));
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var user = await db.Users.SingleAsync(u => u.Id == subjectId);
+        Assert.Equal(AccountState.PendingApproval, user.AccountState);
+        Assert.Equal(UserType.Visitor, user.UserType);
+
+        // The staff avatar upload attaches the photo to the same subject.
+        using var form = new MultipartFormDataContent();
+        var file = new ByteArrayContent(OnePixelPng);
+        file.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        form.Add(file, "file", "avatar.png");
+        using var request = new HttpRequestMessage(
+            HttpMethod.Post,
+            $"/api/v1/app/staff/visitors/{subjectId}/avatar") { Content = form };
+        request.Headers.Authorization =
+            new AuthenticationHeaderValue("Bearer", adminToken);
+        var avatarResp = await _client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.OK, avatarResp.StatusCode);
+
+        // Fresh scope — re-read from the DB (the first `db` tracks the pre-upload
+        // entity, so a same-context re-query would return the stale instance).
+        using var verifyScope = _factory.Services.CreateScope();
+        var verifyDb =
+            verifyScope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var refreshed = await verifyDb.Users.SingleAsync(u => u.Id == subjectId);
+        Assert.False(string.IsNullOrEmpty(refreshed.AvatarRelativePath));
+    }
+
+    [Fact]
     public async Task Visitor_walk_in_persists_vip_fields()
     {
         // V-1 (D-429) — the VIP page sends the موج extras (Mawj ID, honorific,

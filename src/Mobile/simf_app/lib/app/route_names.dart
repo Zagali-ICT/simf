@@ -127,6 +127,9 @@ class RouteNames {
   // Staff gate-operator scanner (D-406; additive, drawer entry; role-gated to
   // Staff, server enforces the Gates.Operate grant).
   static const String gateScanner = 'gateScanner';
+  // Staff walk-in visitor registration (D-509; additive, drawer entry; role-gated
+  // to Staff, server enforces the Visitors.RegisterOnsite grant). Figma 1467:12357.
+  static const String staffRegisterVisitor = 'staffRegisterVisitor';
   // D-485 — the in-app session-join flow (additive, approved Visitor): the seat
   // picker (assigned-seat sessions) + the standalone "Join a session" hub (the
   // owner's "both" entry — the other is the Join CTA on the session page).

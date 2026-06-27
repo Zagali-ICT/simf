@@ -83,7 +83,8 @@ Future<void> _pump(
 
 void main() {
   group('SessionModerateScreen (D-405, frame 758:5307)', () {
-    testWidgets('renders the queue, the role pill and the chips', (tester) async {
+    testWidgets('renders the queue, the role pill and the five chips',
+        (tester) async {
       await _pump(
         tester,
         _FakeRepo(queue: <ModeratorQuestion>[_q('a'), _q('b', pushed: true)]),
@@ -93,9 +94,11 @@ void main() {
       expect(find.text('Moderator'), findsOneWidget); // محاوِر pill
       expect(find.text('Q a text'), findsOneWidget);
       expect(find.text('Q b text'), findsOneWidget);
-      // Chips with counts (All=2, New=1, Being answered=1).
+      // The five filter chips (Figma 1461:12227).
       expect(find.text('All'), findsOneWidget);
       expect(find.text('New'), findsWidgets);
+      expect(find.text('Accepted'), findsOneWidget);
+      expect(find.text('Rejected'), findsWidgets);
     });
 
     testWidgets('a 403 shows the not-a-moderator state', (tester) async {
@@ -129,18 +132,49 @@ void main() {
       expect(find.text('Q b text'), findsNothing);
     });
 
-    testWidgets('reject calls hide; on-stage calls push', (tester) async {
+    testWidgets('on-stage calls push', (tester) async {
       final repo = _FakeRepo(queue: <ModeratorQuestion>[_q('a')]);
       await _pump(tester, repo);
-
-      // Tap by icon — the chip and the action share the "Being answered" label.
-      await tester.tap(find.byIcon(Icons.close));
-      await tester.pumpAndSettle();
-      expect(repo.hideCalls, 1);
 
       await tester.tap(find.byIcon(Icons.access_time));
       await tester.pumpAndSettle();
       expect(repo.pushCalls, 1);
+    });
+
+    testWidgets('reject calls hide and moves the row to the Rejected tab',
+        (tester) async {
+      final repo = _FakeRepo(queue: <ModeratorQuestion>[_q('a')]);
+      await _pump(tester, repo);
+
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
+      expect(repo.hideCalls, 1);
+
+      // The rejected row still lists under the Rejected chip (session-local).
+      await tester.tap(find.text('Rejected').first);
+      await tester.pumpAndSettle();
+      expect(find.text('Q a text'), findsOneWidget);
+
+      // ...and is gone from the New tab.
+      await tester.tap(find.text('New').first);
+      await tester.pumpAndSettle();
+      expect(find.text('Q a text'), findsNothing);
+    });
+
+    testWidgets('answered marks the row (client-only) into the Answered tab',
+        (tester) async {
+      final repo = _FakeRepo(queue: <ModeratorQuestion>[_q('a')]);
+      await _pump(tester, repo);
+
+      await tester.tap(find.byIcon(Icons.check));
+      await tester.pumpAndSettle();
+      // No backend call for "answered" (no such status).
+      expect(repo.hideCalls, 0);
+      expect(repo.pushCalls, 0);
+
+      await tester.tap(find.text('Answered').first);
+      await tester.pumpAndSettle();
+      expect(find.text('Q a text'), findsOneWidget);
     });
   });
 }

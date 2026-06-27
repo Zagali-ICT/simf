@@ -219,6 +219,70 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Both_mode_gate_honours_the_operator_requested_direction()
+    {
+        // D-509 — on a Both-mode gate the operator's دخول/خروج choice is honoured
+        // even on cold start (where the alternation inference would say CheckIn).
+        var (token, _) = await CreateAdminAsync();
+        var gate = await CreateGateAsync(token, allowedProfileTypeIds: null,
+            ownAsOperator: true, mode: DirectionMode.Both);
+        var qrId = await CreateVisitorWithQrAsync(approved: true);
+
+        var response = await PostScanAsync(gate.Id, qr: qrId, token,
+            idempotencyKey: null, requestedDirection: ScanDirection.CheckOut);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+        Assert.Equal(ScanOutcome.Allowed, body.Outcome);
+        Assert.Equal(ScanDirection.CheckOut, body.Direction);
+    }
+
+    [Fact]
+    public async Task Both_mode_deliberate_direction_switch_is_not_absorbed()
+    {
+        // D-509 — a same-badge re-scan within the 5s window but with the OTHER
+        // direction is an intentional movement, so it records a NEW scan in the
+        // chosen direction (the duplicate window must not collapse it to the
+        // prior direction). A same-direction re-scan is still absorbed.
+        var (token, _) = await CreateAdminAsync();
+        var gate = await CreateGateAsync(token, allowedProfileTypeIds: null,
+            ownAsOperator: true, mode: DirectionMode.Both);
+        var qrId = await CreateVisitorWithQrAsync(approved: true);
+
+        var first = await PostScanAsync(gate.Id, qr: qrId, token,
+            idempotencyKey: null, requestedDirection: ScanDirection.CheckIn);
+        var firstBody = (await first.Content
+            .ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+        Assert.Equal(ScanDirection.CheckIn, firstBody.Direction);
+
+        var second = await PostScanAsync(gate.Id, qr: qrId, token,
+            idempotencyKey: null, requestedDirection: ScanDirection.CheckOut);
+        var secondBody = (await second.Content
+            .ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+        Assert.Equal(ScanDirection.CheckOut, secondBody.Direction);
+        // A new row, not the absorbed prior scan.
+        Assert.NotEqual(firstBody.ScanId, secondBody.ScanId);
+    }
+
+    [Fact]
+    public async Task Fixed_in_gate_ignores_the_operator_requested_direction()
+    {
+        // D-509 — a fixed In gate always records CheckIn, even if the operator
+        // (wrongly) asks for CheckOut.
+        var (token, _) = await CreateAdminAsync();
+        var gate = await CreateGateAsync(token, allowedProfileTypeIds: null,
+            ownAsOperator: true, mode: DirectionMode.In);
+        var qrId = await CreateVisitorWithQrAsync(approved: true);
+
+        var response = await PostScanAsync(gate.Id, qr: qrId, token,
+            idempotencyKey: null, requestedDirection: ScanDirection.CheckOut);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+        Assert.Equal(ScanDirection.CheckIn, body.Direction);
+    }
+
+    [Fact]
     public async Task Operator_can_list_their_own_assignments()
     {
         var (token, _) = await CreateAdminAsync();
@@ -252,16 +316,21 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
     // -- Helpers --------------------------------------------------------------
 
     private async Task<HttpResponseMessage> PostScanAsync(
-        Guid gateId, string qr, string token, string? idempotencyKey)
+        Guid gateId, string qr, string token, string? idempotencyKey,
+        ScanDirection? requestedDirection = null)
     {
+        // The wire DTO is the endpoint's PostScanRequest (field "direction"),
+        // not the service-layer GateScanRequest ("requestedDirection") — post the
+        // shape the endpoint actually binds.
         var request = new HttpRequestMessage(
             HttpMethod.Post, $"/api/v1/app/gates/{gateId}/scans")
         {
-            Content = JsonContent.Create(new GateScanRequest
+            Content = JsonContent.Create(new
             {
-                Qr = qr,
-                IdempotencyKey = idempotencyKey,
-                Source = ScanSource.Simulator,
+                qr,
+                idempotencyKey,
+                source = ScanSource.Simulator,
+                direction = requestedDirection,
             }),
         };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);

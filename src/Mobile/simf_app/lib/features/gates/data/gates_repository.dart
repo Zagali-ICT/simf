@@ -33,6 +33,7 @@ class GatesRepository {
     required String gateId,
     required String qr,
     required String idempotencyKey,
+    ScanDirection? direction,
   }) {
     return _client.post<GateScanResult>(
       '/app/gates/$gateId/scans',
@@ -40,6 +41,10 @@ class GatesRepository {
         'qr': qr,
         'idempotencyKey': idempotencyKey,
         'source': 1, // ScanSource.MobileApp
+        // D-509 — the operator's دخول/خروج choice; the server honours it only
+        // for a Both-mode gate (fixed In/Out gates ignore it).
+        if (direction != null)
+          'direction': direction == ScanDirection.checkOut ? 1 : 0,
       },
       decodeData: (data) => GateScanResult.fromJson(
         (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{},
