@@ -37,7 +37,7 @@
 | E2E-MOB040-004 | A per-question score rides the submission's answers[] | happy | P0 | authored ✓ (screen + API `Required_question_must_be_answered_to_submit`) |
 | E2E-MOB040-005 | Resubmitting upserts + the form prefills from the existing submission | happy | P1 | authored ✓ (API `Resubmitting_upserts_the_single_row_and_prefills`) |
 | E2E-MOB040-006 | Out-of-range overall (6) → 400 | validation | P1 | authored ✓ (API `Out_of_range_overall_is_rejected_with_400`) |
-| E2E-MOB040-007 | Required question unanswered → 400 (blocked client + server) | validation | P1 | authored ✓ (screen + API) |
+| E2E-MOB040-007 | Required question unanswered → 400 (blocked client + server) | validation | P1 | authored ✓ (screen `a session rating with an unanswered required question cannot be saved` — the client refuses to send it + API) |
 | E2E-MOB040-008 | Submit wire failure → error toast | resilience | P1 | authored ✓ (screen `a submit failure shows the error toast`) |
 | E2E-MOB040-009 | Per-session form without a target → 400 | validation | P1 | authored ✓ (API `Per_session_form_without_a_target_is_400`) |
 | E2E-MOB040-010 | Session deep-link from the "rate this session" notification opens the form | happy | P0 | authored ✓ (worker `SessionRatingPromptWorkerTests` + `notifications_screen_test` deep-link regression; **D-507** — the card must stay tappable after the inbox auto-marks it read) |
