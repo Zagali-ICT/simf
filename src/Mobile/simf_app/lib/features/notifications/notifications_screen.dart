@@ -102,12 +102,16 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   }
 
   Future<void> _onTapItem(NotificationItem item) async {
-    // Mark unread items read (best effort) before any navigation.
+    // Deep-link first so an actionable notification always navigates, even if
+    // the best-effort mark-read below leaves this screen unmounted (the prior
+    // `if (!mounted) return` after the await skipped the deep-link).
+    _maybeDeepLink(item);
+    // Mark unread items read (best effort).
     if (!item.isRead) {
       try {
         await ref.read(notificationsRepositoryProvider).markRead(item.id);
       } on ApiFailure {
-        // Best effort — leave the item unread on failure, but still deep-link.
+        // Best effort — leave the item unread on failure.
       }
       if (!mounted) {
         return;
@@ -121,7 +125,6 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             .toList(growable: false);
       });
     }
-    _maybeDeepLink(item);
   }
 
   /// Deep-links from an actionable notification. The end-of-session prompt
@@ -507,7 +510,11 @@ class _NotificationCard extends StatelessWidget {
       // category mark sits at the inline start and an unread card carries a
       // red dot at the top inline-end corner.
       child: KsaCard(
-        onTap: unread ? onTap : null,
+        // Actionable notifications must stay tappable after the inbox
+        // auto-marks them read (_openInbox), otherwise the SessionRatingRequest
+        // deep-link is unreachable. _onTapItem is a no-op for read,
+        // non-actionable rows.
+        onTap: onTap,
         color: SimfTokens.navyDeep,
         borderColor: Colors.transparent,
         borderWidth: 0,

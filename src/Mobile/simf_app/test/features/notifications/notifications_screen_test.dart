@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/notifications/data/notification_models.dart';
 import 'package:simf_app/features/notifications/data/notifications_repository.dart';
 import 'package:simf_app/features/notifications/notifications_screen.dart';
@@ -14,6 +16,8 @@ NotificationItem _item({
   String kind = 'SessionReminder',
   bool isRead = false,
   NotificationSeverity severity = NotificationSeverity.warning,
+  String? relatedEntityType,
+  String? relatedEntityId,
 }) {
   return NotificationItem(
     id: id,
@@ -24,6 +28,8 @@ NotificationItem _item({
     bodyArabic: '',
     severity: severity,
     isRead: isRead,
+    relatedEntityType: relatedEntityType,
+    relatedEntityId: relatedEntityId,
   );
 }
 
@@ -179,6 +185,74 @@ void main() {
       await _pump(tester, repo: repo);
       expect(repo.markAllCalls, 0);
       expect(find.text('Mark all read'), findsNothing);
+    });
+
+    testWidgets(
+        'tapping a read SessionRatingRequest deep-links to the Session rate '
+        'form', (tester) async {
+      // Regression: the inbox auto-marks everything read on open, so an
+      // actionable notification is already read by the time it is tapped. The
+      // card must stay tappable (not gated on `unread`) and deep-link to the
+      // per-session rating form — otherwise the end-of-session prompt is
+      // unreachable.
+      final repo = _FakeNotificationsRepository(
+        items: <NotificationItem>[
+          _item(
+            id: 'sr1',
+            title: 'Rate this session',
+            kind: 'SessionRatingRequest',
+            isRead: true,
+            severity: NotificationSeverity.info,
+            relatedEntityType: 'Session',
+            relatedEntityId: 'sess-7',
+          ),
+        ],
+      );
+      final router = GoRouter(
+        initialLocation: '/',
+        routes: <RouteBase>[
+          GoRoute(
+            name: RouteNames.notifications,
+            path: '/',
+            builder: (context, state) => const NotificationsScreen(),
+          ),
+          GoRoute(
+            name: RouteNames.rate,
+            path: '/rate',
+            builder: (context, state) => Text(
+              'RATE code=${state.uri.queryParameters['code']} '
+              'target=${state.uri.queryParameters['targetId']}',
+            ),
+          ),
+        ],
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: <Override>[
+            notificationsRepositoryProvider.overrideWithValue(repo),
+          ],
+          child: MaterialApp.router(
+            locale: const Locale('en'),
+            supportedLocales: AppL10n.supportedLocales,
+            localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+              ...AppL10n.localizationsDelegates,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            routerConfig: router,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Rate this session'), findsOneWidget);
+
+      await tester.tap(find.text('Rate this session'));
+      await tester.pumpAndSettle();
+
+      // Deep-linked into the reusable rate screen with the Session code + the
+      // notification's session id.
+      expect(find.text('RATE code=Session target=sess-7'), findsOneWidget);
     });
   });
 }
