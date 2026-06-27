@@ -20,6 +20,8 @@ class SessionFilterTabs extends StatelessWidget {
     required this.selectedIndex,
     required this.onSelected,
     this.equalWidth = false,
+    this.icons,
+    this.gap = SimfTokens.space4,
     super.key,
   });
 
@@ -27,6 +29,13 @@ class SessionFilterTabs extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onSelected;
   final bool equalWidth;
+
+  /// Optional per-tab leading glyphs (my-sessions 1388:9077 puts a 14px icon in
+  /// each pill). One per label, or null for a text-only bar (summaries).
+  final List<IconData>? icons;
+
+  /// The gap between equal-width pills (summaries 16, my-sessions 8).
+  final double gap;
 
   @override
   Widget build(BuildContext context) {
@@ -36,11 +45,12 @@ class SessionFilterTabs extends StatelessWidget {
         child: Row(
           children: <Widget>[
             for (var i = 0; i < labels.length; i++) ...<Widget>[
-              if (i > 0) const SizedBox(width: SimfTokens.space4), // gap-16
+              if (i > 0) SizedBox(width: gap),
               Expanded(
                 child: _Pill(
                   label: labels[i],
                   selected: i == selectedIndex,
+                  icon: icons != null && i < icons!.length ? icons![i] : null,
                   onTap: () => onSelected(i),
                 ),
               ),
@@ -74,14 +84,28 @@ class _Pill extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
+    this.icon,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
+    final Color fg = selected ? Colors.white : SimfTokens.beigeBorder;
+    final Widget text = Text(
+      label,
+      textAlign: TextAlign.center,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        color: fg,
+        fontSize: SimfTokens.textSm, // 12
+        fontWeight: FontWeight.w600,
+      ),
+    );
     return Material(
       color: selected ? SimfTokens.accent : Colors.transparent,
       shape: RoundedRectangleBorder(
@@ -98,17 +122,16 @@ class _Pill extends StatelessWidget {
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(SimfTokens.space2), // p-8
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: selected ? Colors.white : SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textSm, // 12
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          child: icon == null
+              ? text
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Flexible(child: text),
+                    const SizedBox(width: SimfTokens.space1), // gap-4
+                    Icon(icon, size: 14, color: fg),
+                  ],
+                ),
         ),
       ),
     );

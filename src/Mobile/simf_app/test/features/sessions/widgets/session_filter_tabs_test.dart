@@ -6,6 +6,8 @@ Future<void> _pump(
   WidgetTester tester, {
   required List<String> labels,
   bool equalWidth = false,
+  List<IconData>? icons,
+  double gap = 16,
   int selected = 0,
 }) async {
   var tapped = -1;
@@ -23,6 +25,8 @@ Future<void> _pump(
                 labels: labels,
                 selectedIndex: selected,
                 equalWidth: equalWidth,
+                icons: icons,
+                gap: gap,
                 onSelected: (i) => tapped = i,
               ),
             ),
@@ -47,6 +51,25 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text('الجميع'), findsOneWidget);
       expect(find.text('المفضلة'), findsOneWidget);
+    });
+
+    testWidgets('equal-width mode with 4 icon tabs (gap-8) does not overflow',
+        (tester) async {
+      await _pump(
+        tester,
+        labels: <String>['القادمة', 'حضرتها', 'فاتتني', 'الأرشيف'],
+        equalWidth: true,
+        gap: 8,
+        icons: const <IconData>[
+          Icons.upcoming_outlined,
+          Icons.event_available_outlined,
+          Icons.event_busy_outlined,
+          Icons.archive_outlined,
+        ],
+      );
+      expect(tester.takeException(), isNull);
+      expect(find.text('القادمة'), findsOneWidget);
+      expect(find.byIcon(Icons.archive_outlined), findsOneWidget);
     });
 
     testWidgets('scrollable mode shows many long tabs without overflowing',
