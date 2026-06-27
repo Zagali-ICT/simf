@@ -39,6 +39,10 @@ public sealed class PostScanRequest
     public string? IdempotencyKey { get; set; }
     public SIMF.Common.Enums.ScanSource Source { get; set; }
         = SIMF.Common.Enums.ScanSource.MobileApp;
+
+    /// <summary>D-509 — the operator's دخول/خروج choice (honoured only for a
+    /// Both-mode gate; fixed In/Out gates ignore it). Null = server infers.</summary>
+    public SIMF.Common.Enums.ScanDirection? Direction { get; set; }
 }
 
 public sealed class PostScanEndpoint(IGateOperatorService service)
@@ -74,6 +78,7 @@ public sealed class PostScanEndpoint(IGateOperatorService service)
                 ClientScannedAtUtc = req.ClientScannedAtUtc,
                 IdempotencyKey = req.IdempotencyKey,
                 Source = req.Source,
+                RequestedDirection = req.Direction,
             },
             CorrelationId = HttpContext.TraceIdentifier,
             IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),

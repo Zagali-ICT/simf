@@ -14,6 +14,17 @@ void main() {
       expect(g.gateId, 'g1');
       expect(g.localizedName(true), 'البوابة الرئيسية');
       expect(g.localizedName(false), 'Main Gate');
+      // No directionMode on the wire → the operator-switchable default (D-509).
+      expect(g.directionMode, GateDirectionMode.both);
+    });
+
+    test('decodes the gate direction mode (In=0, Out=1, Both=2)', () {
+      GateDirectionMode mode(int v) =>
+          OperatorGate.fromJson(<String, dynamic>{'directionMode': v})
+              .directionMode;
+      expect(mode(0), GateDirectionMode.inOnly);
+      expect(mode(1), GateDirectionMode.outOnly);
+      expect(mode(2), GateDirectionMode.both);
     });
 
     test('listFromData maps a bare list', () {

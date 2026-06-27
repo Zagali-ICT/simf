@@ -751,8 +751,13 @@ class AppL10n {
       _t('إدارة الأسئلة', 'Manage questions');
   String get moderatorChipAll => _t('الكل', 'All');
   String get moderatorChipNew => _t('جديد', 'New');
+  // Figma 1461:12227 — the five filter chips + the three per-question actions.
+  String get moderatorChipAccepted => _t('الأسئلة المقبولة', 'Accepted');
+  String get moderatorChipAnswered => _t('تمت الإجابة', 'Answered');
+  String get moderatorChipRejected => _t('مرفوض', 'Rejected');
   String get moderatorChipOnStage => _t('يتم الإجابة', 'Being answered');
   String get moderatorActionOnStage => _t('يتم الإجابة', 'Being answered');
+  String get moderatorActionAnswered => _t('تمت الإجابة', 'Answered');
   String get moderatorActionReject => _t('مرفوض', 'Reject');
   String get moderatorToHost => _t('إلى المضيف', 'To host');
   String get moderatorEmpty =>
@@ -768,9 +773,17 @@ class AppL10n {
   String get moderatorActionFailed =>
       _t('تعذّر تنفيذ الإجراء. حاول مرة أخرى.', 'Action failed. Try again.');
 
-  // Staff gate-operator console (Figma 758:4380/4651/4735/4819/4886, D-406).
+  // Staff gate-operator console (Figma 758:4380/4651/4735/4819/4886, D-406/D-509).
   String get gateScannerEntry => _t('مسح البوابة', 'Gate scanner');
+  String get gateScanTitle => _t('فحص رمز QR — موظف', 'QR scan — staff');
   String get gateSelectGate => _t('اختر البوابة', 'Select gate');
+  String get gateMovementType => _t('نوع الحركة', 'Movement type');
+  String get gateChooseDirectionFirst => _t(
+        'اختر نوع الحركة أولاً لتفعيل السكان',
+        'Choose the movement type first to enable scanning',
+      );
+  String get gateScanCode => _t('سكان الرمز', 'Scan code');
+  String get gateUnregistered => _t('غير مسجّل', 'Unregistered');
   String get gateScanHint =>
       _t('وجّه الكاميرا إلى رمز QR', 'Point the camera at the QR code');
   String get gateManualHint => _t('أدخل الرمز يدويًا', 'Enter the code manually');
@@ -806,6 +819,41 @@ class AppL10n {
       );
   String get gateRateLimited =>
       _t('محاولات كثيرة. انتظر قليلاً.', 'Too many attempts. Wait a moment.');
+
+  // Staff walk-in registration — "add a visitor at the exhibition" (Figma
+  // 1467:12357, D-509).
+  String get staffRegisterVisitorTitle =>
+      _t('إنشاء ملف زائر', 'Create visitor profile');
+  String get staffRegisterVisitorEntry =>
+      _t('تسجيل زائر', 'Register a visitor');
+  String get staffEmailLabel => _t('البريد الالكتروني', 'Email');
+  String get staffPhoneLabel => _t('رقم الجوال', 'Mobile number');
+  String get staffOrganisationLabel => _t('الجهة / المنظمة', 'Organisation');
+  String get staffAttachIdLabel => _t(
+        'المرفقات (صورة الهوية / الإقامة / الجواز)',
+        'Attachments (ID / Iqama / passport image)',
+      );
+  String get staffAttachPhotoLabel =>
+      _t('المرفقات (إرفاق صورة شخصية)', 'Attachments (personal photo)');
+  String get staffAttachFile => _t('إرفاق ملف', 'Attach file');
+  String get staffAttachPhoto => _t('إرفاق صورة شخصية', 'Attach personal photo');
+  String get staffCompletePrompt => _t(
+        'أكمل بيانات الزائر المطلوبة.',
+        "Complete the visitor's required details.",
+      );
+  String get staffRegisterSuccess => _t(
+        'تم تسجيل الزائر — بانتظار الاعتماد',
+        'Visitor registered — pending approval',
+      );
+  String get staffRegisterError => _t(
+        'تعذّر تسجيل الزائر. حاول مرة أخرى.',
+        'Could not register the visitor. Try again.',
+      );
+  String get staffProfileTypeUnavailable => _t(
+        'تعذّر تحميل تصنيف الزائر.',
+        'Could not load the visitor classification.',
+      );
+  String get staffRegisterAnother => _t('تسجيل زائر آخر', 'Register another');
   String get statBookedSessions => _t('جلسات محفوظة', 'Booked sessions');
   String get statMeetings => _t('مقابلات', 'Meetings');
   String get statisticsTitle => _t('الإحصائيات', 'Statistics');

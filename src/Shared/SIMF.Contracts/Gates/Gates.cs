@@ -20,6 +20,14 @@ public sealed class GateScanRequest
     public DateTimeOffset? ClientScannedAtUtc { get; set; }
     public string? IdempotencyKey { get; set; }
     public ScanSource Source { get; set; } = ScanSource.MobileApp;
+
+    /// <summary>D-509 — the operator's chosen movement direction (the
+    /// دخول/خروج toggle on the staff console). Honoured ONLY when the gate's
+    /// <see cref="DirectionMode"/> is <c>Both</c> (a dual-direction gate the
+    /// operator can switch in/out without a CP change); a fixed In / Out gate
+    /// ignores it and records its configured direction. Null = the server
+    /// infers direction from the holder's last allowed scan (legacy behaviour).</summary>
+    public ScanDirection? RequestedDirection { get; set; }
 }
 
 /// <summary>Response from `POST /api/v1/gates/{gateId}/scans`

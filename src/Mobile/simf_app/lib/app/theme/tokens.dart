@@ -22,6 +22,7 @@ class SimfTokens {
   static const Color field = Color(0xFFEEF1F4);
   static const Color danger = Color(0xFFA8182A);
   static const Color success = Color(0xFF2E7D32);
+  static const Color warning = Color(0xFFE8932A); // amber — "being answered" (Figma 1461:12227)
 
   // KSA-Project light-surface + auth-flow palette (D-358/D-359).
   static const Color navySurface = Color(0xFF102238); // elevated navy surface (login bg)

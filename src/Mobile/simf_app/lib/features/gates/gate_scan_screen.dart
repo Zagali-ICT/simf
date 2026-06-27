@@ -12,15 +12,17 @@ import '../../app/theme/tokens.dart';
 import 'data/gate_models.dart';
 import 'data/gates_repository.dart';
 
-/// Staff gate-operator console — Figma 758:4380/4651 (scan + manual),
-/// 758:4735 (scanning), 758:4819 (ممنوع / denied), 758:4886 (مسموح / allowed),
-/// D-406. Role-gated to `AppRole.staff`+ (router); the server additionally
-/// requires the `Gates.Operate` permission and a gate assignment.
+/// Staff gate-operator console — Figma 758:4651 (setup: pick gate + movement),
+/// 758:4819 (ممنوع / denied), 758:4886 (مسموح / allowed), D-406 / D-509.
+/// Role-gated to `AppRole.staff`+ (router); the server additionally requires the
+/// `Gates.Operate` permission and a gate assignment.
 ///
-/// Flow: load the operator's gate assignments → scan a QR (or enter it
-/// manually) → POST the scan → show the green **مسموح** or red **ممنوع** result
-/// with the holder/gate/direction → "scan again". **Hold** pauses auto-scanning
-/// (a client-only state — there is no server "hold" outcome, D-406).
+/// Flow (D-509): load the operator's gate assignments → **setup** screen (choose
+/// the gate + the دخول/خروج movement type) → tap **سكان الرمز** to open the
+/// camera (or type the code) → the green **مسموح** or red **ممنوع** result with
+/// the holder / gate / direction → "سكان مرة أخرى". The دخول/خروج choice is sent
+/// to the server and honoured for a **Both**-mode gate; a fixed In/Out gate
+/// locks the toggle to its one direction (no CP round-trip to switch).
 class GateScanScreen extends ConsumerStatefulWidget {
   const GateScanScreen({super.key, this.enableCamera = true});
 
@@ -36,14 +38,17 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
   bool _loading = true;
   bool _forbidden = false;
   bool _error = false;
-  // Camera paused by default (D-426): the operator's back / gate-picker / manual
-  // entry stay usable; "Resume" starts the camera (EMUI swallows input over a
-  // live camera, so opening paused keeps the console escapable).
-  bool _held = true;
   bool _busy = false;
+  // The console has two stages: the setup card (gate + movement) and, once the
+  // operator taps "Scan code", the live camera / manual-entry scanner.
+  bool _scanning = false;
   String _lastQr = '';
   List<OperatorGate> _gates = const <OperatorGate>[];
   OperatorGate? _gate;
+  // The operator's chosen movement type. Null on a Both-mode gate until the
+  // operator picks one (Figma 4651 — "choose the movement type first"); auto-set
+  // for a fixed In/Out gate.
+  ScanDirection? _direction;
   GateScanResult? _result;
 
   @override
@@ -72,6 +77,9 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
       setState(() {
         _gates = gates;
         _gate = gates.isEmpty ? null : gates.first;
+        if (_gate != null) {
+          _applyGateDefaults(_gate!);
+        }
         _loading = false;
       });
     } on ApiFailure catch (e) {
@@ -86,8 +94,28 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
     }
   }
 
+  /// A fixed In/Out gate locks the movement to its one direction; a Both gate
+  /// starts unset so the operator must choose (Figma 4651 hint).
+  void _applyGateDefaults(OperatorGate gate) {
+    switch (gate.directionMode) {
+      case GateDirectionMode.inOnly:
+        _direction = ScanDirection.checkIn;
+      case GateDirectionMode.outOnly:
+        _direction = ScanDirection.checkOut;
+      case GateDirectionMode.both:
+        _direction = null;
+    }
+  }
+
+  void _onGate(OperatorGate gate) {
+    setState(() {
+      _gate = gate;
+      _applyGateDefaults(gate);
+    });
+  }
+
   void _onScan(Code result) {
-    if (_held || _busy || !result.isValid) {
+    if (_busy || !result.isValid) {
       return;
     }
     final code = result.text?.trim();
@@ -98,6 +126,7 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
 
   Future<void> _scan(String qr) async {
     final gate = _gate;
+    final direction = _direction;
     final trimmed = qr.trim();
     if (gate == null || trimmed.isEmpty || _busy) {
       return;
@@ -114,9 +143,11 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
       final result = await ref.read(gatesRepositoryProvider).recordScan(
             gateId: gate.gateId,
             qr: trimmed,
-            // Derived from the code itself so a true rapid re-scan of the SAME
-            // badge collides server-side (idempotent replay), as documented.
-            idempotencyKey: '${gate.gateId}-$trimmed',
+            direction: direction,
+            // Derived from the gate + direction + code so a true rapid re-scan
+            // of the SAME badge in the SAME direction collides server-side
+            // (idempotent replay); switching direction is a fresh scan (D-509).
+            idempotencyKey: '${gate.gateId}-${direction?.name ?? 'auto'}-$trimmed',
           );
       if (!mounted) {
         return;
@@ -145,29 +176,54 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
     }
   }
 
+  /// "سكان مرة أخرى" — clears the result and returns to the live scanner with the
+  /// same gate + direction so the operator can scan the next holder.
   void _scanAgain() {
     setState(() {
       _result = null;
       _lastQr = '';
       _manual.clear();
+      _scanning = true;
     });
+  }
+
+  /// System / AppBar back walks the stages backwards (scanner/result → setup →
+  /// leave) rather than dropping straight out of the console.
+  void _back() {
+    if (_result != null) {
+      setState(() {
+        _result = null;
+        _lastQr = '';
+        _manual.clear();
+      });
+      return;
+    }
+    if (_scanning) {
+      setState(() => _scanning = false);
+      return;
+    }
+    _leave();
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     final isArabic = l10n.isArabic;
+    // The setup stage shows the screen title; once scanning, the bar shows the
+    // selected "gate • direction" (Figma 4819/4886).
+    final showContext = _scanning || _result != null;
     final gateName = _gate?.localizedName(isArabic) ?? l10n.gateScannerEntry;
-    final direction = _result == null
-        ? ''
-        : ' • ${_directionLabel(l10n, _result!.direction)}';
+    final directionForTitle = _result?.direction ?? _direction;
+    final title = showContext
+        ? '$gateName${directionForTitle == null ? '' : ' • ${_directionLabel(l10n, directionForTitle)}'}'
+        : l10n.gateScanTitle;
     return PopScope(
-      // Route the system back through _leave (go_router); raw pop can't exit
+      // Route the system back through _back (go_router); raw pop can't exit
       // this shell-pushed route (D-426).
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) {
-          _leave();
+          _back();
         }
       },
       child: Scaffold(
@@ -177,10 +233,10 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
           foregroundColor: Colors.white,
           elevation: 0,
           centerTitle: true,
-          title: Text('$gateName$direction'),
+          title: Text(title),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: _leave,
+            onPressed: _back,
           ),
         ),
         body: SafeArea(child: _body(l10n, isArabic)),
@@ -190,11 +246,8 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
 
   /// Leaves the gate console reliably even when it is the navigator root (deep
   /// link / route restore / a shell push that didn't stack) — pop when possible,
-  /// else go home. Without this the raw AppBar had no back and system-back exited
-  /// the app (D-423 follow-up).
+  /// else go home.
   void _leave() {
-    // go_router pop() removes this pushed page (goNamed only changes the URL and
-    // leaves the page on top; raw Navigator.pop desyncs the shell — D-426).
     final router = GoRouter.maybeOf(context);
     if (router == null) {
       if (Navigator.of(context).canPop()) {
@@ -242,19 +295,25 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
         onScanAgain: _scanAgain,
       );
     }
+    if (!_scanning) {
+      return _GateSetup(
+        l10n: l10n,
+        isArabic: isArabic,
+        gates: _gates,
+        gate: _gate!,
+        direction: _direction,
+        onGate: _onGate,
+        onDirection: (d) => setState(() => _direction = d),
+        onScan: () => setState(() => _scanning = true),
+      );
+    }
     return _Scanner(
       l10n: l10n,
-      isArabic: isArabic,
-      gates: _gates,
-      gate: _gate!,
       enableCamera: widget.enableCamera,
-      held: _held,
       manual: _manual,
       onScan: _onScan,
-      onLeave: _leave,
+      onBack: () => setState(() => _scanning = false),
       onManual: () => unawaited(_scan(_manual.text)),
-      onToggleHold: () => setState(() => _held = !_held),
-      onGate: (g) => setState(() => _gate = g),
     );
   }
 
@@ -262,34 +321,216 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
       d == ScanDirection.checkOut ? l10n.gateDirectionOut : l10n.gateDirectionIn;
 }
 
-class _Scanner extends StatelessWidget {
-  const _Scanner({
+/// Figma 758:4651 — the setup card: a QR glyph, the gate picker, the دخول/خروج
+/// movement toggle, and the big "سكان الرمز" button (enabled once a movement
+/// type is chosen).
+class _GateSetup extends StatelessWidget {
+  const _GateSetup({
     required this.l10n,
     required this.isArabic,
     required this.gates,
     required this.gate,
-    required this.enableCamera,
-    required this.held,
-    required this.manual,
-    required this.onScan,
-    required this.onLeave,
-    required this.onManual,
-    required this.onToggleHold,
+    required this.direction,
     required this.onGate,
+    required this.onDirection,
+    required this.onScan,
   });
 
   final AppL10n l10n;
   final bool isArabic;
   final List<OperatorGate> gates;
   final OperatorGate gate;
+  final ScanDirection? direction;
+  final ValueChanged<OperatorGate> onGate;
+  final ValueChanged<ScanDirection> onDirection;
+  final VoidCallback onScan;
+
+  @override
+  Widget build(BuildContext context) {
+    final locked = gate.directionMode != GateDirectionMode.both;
+    return Padding(
+      padding: const EdgeInsets.all(SimfTokens.space4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          const Spacer(),
+          // QR glyph in a rounded gold-bordered tile (Figma 758:4655).
+          Center(
+            child: Container(
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(
+                color: SimfTokens.navyDeep,
+                borderRadius: BorderRadius.circular(SimfTokens.radiusLg),
+                border: Border.all(color: SimfTokens.accent, width: 1.5),
+              ),
+              child: const Icon(
+                Icons.qr_code_2,
+                size: 76,
+                color: SimfTokens.accent,
+              ),
+            ),
+          ),
+          const Spacer(),
+          _label(l10n.gateSelectGate),
+          const SizedBox(height: SimfTokens.space2),
+          _GatePicker(
+            l10n: l10n,
+            isArabic: isArabic,
+            gates: gates,
+            gate: gate,
+            onGate: onGate,
+          ),
+          const SizedBox(height: SimfTokens.space4),
+          _label(l10n.gateMovementType),
+          const SizedBox(height: SimfTokens.space2),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: _DirectionButton(
+                  label: l10n.gateDirectionIn,
+                  icon: Icons.login,
+                  selected: direction == ScanDirection.checkIn,
+                  enabled: !locked || gate.directionMode == GateDirectionMode.inOnly,
+                  onTap: () => onDirection(ScanDirection.checkIn),
+                ),
+              ),
+              const SizedBox(width: SimfTokens.space3),
+              Expanded(
+                child: _DirectionButton(
+                  label: l10n.gateDirectionOut,
+                  icon: Icons.logout,
+                  selected: direction == ScanDirection.checkOut,
+                  enabled:
+                      !locked || gate.directionMode == GateDirectionMode.outOnly,
+                  onTap: () => onDirection(ScanDirection.checkOut),
+                ),
+              ),
+            ],
+          ),
+          if (direction == null) ...<Widget>[
+            const SizedBox(height: SimfTokens.space3),
+            Text(
+              l10n.gateChooseDirectionFirst,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: SimfTokens.beigeBorder,
+                fontSize: SimfTokens.textSm,
+              ),
+            ),
+          ],
+          const Spacer(flex: 2),
+          FilledButton.icon(
+            onPressed: direction == null ? null : onScan,
+            style: FilledButton.styleFrom(
+              backgroundColor: SimfTokens.accent,
+              foregroundColor: SimfTokens.navy,
+              disabledBackgroundColor: SimfTokens.accent.withValues(alpha: 0.4),
+              disabledForegroundColor: SimfTokens.navy.withValues(alpha: 0.6),
+              minimumSize: const Size.fromHeight(56),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(SimfTokens.radius),
+              ),
+            ),
+            icon: const Icon(Icons.photo_camera_outlined),
+            label: Text(
+              l10n.gateScanCode,
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: SimfTokens.textMd,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _label(String text) => Text(
+        text,
+        textAlign: TextAlign.start,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: SimfTokens.textSm,
+          fontWeight: FontWeight.w600,
+        ),
+      );
+}
+
+class _DirectionButton extends StatelessWidget {
+  const _DirectionButton({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = selected
+        ? SimfTokens.navy
+        : (enabled ? Colors.white : SimfTokens.beigeBorder);
+    return Opacity(
+      opacity: enabled ? 1 : 0.5,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(SimfTokens.radius),
+        child: Container(
+          height: 52,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: selected ? SimfTokens.accent : SimfTokens.navyDeep,
+            borderRadius: BorderRadius.circular(SimfTokens.radius),
+            border: Border.all(
+              color: selected ? SimfTokens.accent : SimfTokens.beigeBorder,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Text(
+                label,
+                style: TextStyle(
+                  color: fg,
+                  fontWeight: FontWeight.w700,
+                  fontSize: SimfTokens.textMd,
+                ),
+              ),
+              const SizedBox(width: SimfTokens.space2),
+              Icon(icon, size: 18, color: fg),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The live scanner stage — the ZXing camera (native, no Google Play Services,
+/// works on Huawei/HMS — D-426) plus the always-usable manual-entry path.
+class _Scanner extends StatelessWidget {
+  const _Scanner({
+    required this.l10n,
+    required this.enableCamera,
+    required this.manual,
+    required this.onScan,
+    required this.onBack,
+    required this.onManual,
+  });
+
+  final AppL10n l10n;
   final bool enableCamera;
-  final bool held;
   final TextEditingController manual;
   final void Function(Code) onScan;
-  final VoidCallback onLeave;
+  final VoidCallback onBack;
   final VoidCallback onManual;
-  final VoidCallback onToggleHold;
-  final ValueChanged<OperatorGate> onGate;
 
   @override
   Widget build(BuildContext context) {
@@ -298,16 +539,6 @@ class _Scanner extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          if (gates.length > 1) ...<Widget>[
-            _GatePicker(
-              l10n: l10n,
-              isArabic: isArabic,
-              gates: gates,
-              gate: gate,
-              onGate: onGate,
-            ),
-            const SizedBox(height: SimfTokens.space4),
-          ],
           Expanded(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(SimfTokens.radius),
@@ -320,9 +551,7 @@ class _Scanner extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: <Widget>[
-                    if (enableCamera && !held)
-                      // ZXing reader (native, no Google Play Services) — works
-                      // on Huawei/HMS where the ML-Kit camera was black (D-426).
+                    if (enableCamera)
                       ReaderWidget(
                         onScan: onScan,
                         codeFormat: Format.qrCode,
@@ -331,7 +560,7 @@ class _Scanner extends StatelessWidget {
                         tryInverted: true,
                         // Back inside flutter_zxing's overlay — tappable over the
                         // live camera where the AppBar back is swallowed (D-426).
-                        onActionSecondButton: onLeave,
+                        onActionSecondButton: onBack,
                         actionSecondButtonIcon: const Icon(Icons.arrow_back),
                         loading: const Center(
                           child: Icon(
@@ -342,9 +571,9 @@ class _Scanner extends StatelessWidget {
                         ),
                       )
                     else
-                      Center(
+                      const Center(
                         child: Icon(
-                          held ? Icons.pause_circle_outline : Icons.qr_code_2,
+                          Icons.qr_code_2,
                           size: 72,
                           color: SimfTokens.beigeBorder,
                         ),
@@ -354,7 +583,7 @@ class _Scanner extends StatelessWidget {
                       right: 0,
                       bottom: SimfTokens.space3,
                       child: Text(
-                        held ? l10n.gateHold : l10n.gateScanHint,
+                        l10n.gateScanHint,
                         textAlign: TextAlign.center,
                         style: const TextStyle(color: Colors.white),
                       ),
@@ -362,22 +591,6 @@ class _Scanner extends StatelessWidget {
                   ],
                 ),
               ),
-            ),
-          ),
-          const SizedBox(height: SimfTokens.space3),
-          OutlinedButton.icon(
-            onPressed: onToggleHold,
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(44),
-              side: const BorderSide(color: SimfTokens.accent),
-            ),
-            icon: Icon(
-              held ? Icons.play_arrow : Icons.pause,
-              color: SimfTokens.accent,
-            ),
-            label: Text(
-              held ? l10n.gateResume : l10n.gateHold,
-              style: const TextStyle(color: SimfTokens.accent),
             ),
           ),
           const SizedBox(height: SimfTokens.space3),
@@ -439,11 +652,12 @@ class _GatePicker extends StatelessWidget {
       initialValue: gate.gateId,
       dropdownColor: SimfTokens.navyDeep,
       style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        labelText: l10n.gateSelectGate,
-        labelStyle: const TextStyle(color: SimfTokens.beigeBorder),
-        enabledBorder: const OutlineInputBorder(
+      decoration: const InputDecoration(
+        enabledBorder: OutlineInputBorder(
           borderSide: BorderSide(color: SimfTokens.beigeBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: SimfTokens.accent),
         ),
       ),
       items: <DropdownMenuItem<String>>[
@@ -535,7 +749,12 @@ class _GateResult extends StatelessWidget {
               ),
               child: Column(
                 children: <Widget>[
-                  _row(l10n.gateFieldName, name ?? l10n.gateNone),
+                  _row(
+                    l10n.gateFieldName,
+                    (name?.trim().isNotEmpty ?? false)
+                        ? name!
+                        : l10n.gateUnregistered,
+                  ),
                   _row(
                     l10n.gateFieldReference,
                     reference.trim().isNotEmpty ? reference : l10n.gateNone,

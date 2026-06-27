@@ -1,7 +1,7 @@
 # E2E test catalogue — `Session moderation` (`sessionModerate`)
 
 > **Authority:** SIMF E2E test catalogue (D-133). Mobile catalogue — the
-> moderator (محاور) per-session Q&A desk (D-405, Figma 758:5307). Reached from a
+> moderator (محاور) per-session Q&A desk (D-405 / D-509, Figma 1461:12227). Reached from a
 > moderator-only action on the session-detail app bar. Backend already shipped
 > (`/app/sessions/{id}/questions/moderate|push|hide`); backend tests in
 > `tests/SIMF.Api.Tests/SessionQuestionsTests.cs`. App tests:
@@ -15,11 +15,15 @@
 | **Role/gate** | App: `AppRole.moderator`+ (router role-gate, D-405). Server: per-session `SessionModerator` grant or Administrator (403 otherwise) |
 | **Test runner** | Flutter widget/unit test |
 
-> **Backend-faithful subset (D-405):** the API supports only hide / push /
-> reorder. There is **no** distinct "answered (تمت الإجابة)" or "rejected"
-> *status*, so the chips are **الكل / جديد / يتم الإجابة** and the actions are
-> **مرفوض** (hide) + **يتم الإجابة** (push). The frame's answered state is
-> flagged for backend follow-up.
+> **D-509 re-skin (Figma 1461:12227):** the desk now shows the **five** filter
+> chips — **الكل / جديد / الأسئلة المقبولة / تمت الإجابة / مرفوض** — and three
+> per-question actions: **مرفوض** (reject), **تمت الإجابة** (answered) and
+> **يتم الإجابة** (on stage). Backend-faithful mapping: **reject** (`hide`) and
+> **on-stage** (`push`) hit the real endpoints; the API has no distinct
+> "answered" status and a hidden row drops out of the approved queue, so
+> **answered** and the **rejected list** are **moderator-session-local** (the
+> reject still persists server-side via `hide`). Owner directive: reject is the
+> moderator's tool for an invalid / not-in-hall question.
 
 ---
 
@@ -30,11 +34,15 @@ Scenario: A granted moderator works the queue
   Given a moderator opens a session they are granted to moderate
   When they tap the "إدارة الأسئلة" app-bar action on session detail
   Then the أسئلة الجلسة desk opens with the محاوِر pill
-  And the approved questions list with the الكل / جديد / يتم الإجابة chips
+  And the approved questions list with the five chips
+    (الكل / جديد / الأسئلة المقبولة / تمت الإجابة / مرفوض)
   When they tap "يتم الإجابة" on a question
-  Then PUT …/{id}/push is called and the question shows on-stage (gold)
+  Then PUT …/{id}/push is called and the question shows on-stage (amber)
+  When they tap "تمت الإجابة" on a question
+  Then it is marked answered (session-local) and moves to the تمت الإجابة tab
   When they tap "مرفوض" on a question
-  Then PUT …/{id}/hide {isHidden:true} is called and it drops from the queue
+  Then PUT …/{id}/hide {isHidden:true} is called, it drops from the approved
+    queue, and it still lists under the مرفوض tab for the rest of the session
 ```
 
 ### E2E-MOBMOD-002 — Role gate (app)
@@ -63,7 +71,9 @@ Scenario: A moderator without the per-session grant
 Scenario: Chip filters the queue
   Given the queue has new and on-stage questions
   When the user taps "جديد"
-  Then only the not-yet-pushed questions show
+  Then only the not-yet-pushed (and not answered/rejected) questions show
+  When the user taps "الأسئلة المقبولة"
+  Then only the on-stage (pushed) questions show
 
 Scenario: Empty queue
   Given GET …/moderate returns an empty list
@@ -84,4 +94,4 @@ Scenario: RTL
 
 ---
 
-_Last reviewed:_ `2026-06-14` by `SIMF Team`.
+_Last reviewed:_ `2026-06-27` by `SIMF Team`.

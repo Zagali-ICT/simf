@@ -83,13 +83,13 @@ internal sealed class GateOperatorService(
         {
             return await RecordDenialAsync(
                 context, qrIdAtScan: qr, denialCtx: DenialContext.Empty,
-                direction: ColdStartDirection(snapshot),
+                direction: ResolveDirection(snapshot, context.Request.RequestedDirection, null),
                 reason: DenialReasonCode.QrUnknown,
                 requestHash, idempotencyKey, cancellationToken);
         }
 
         var denialCtx = DenialContext.From(resolution);
-        var coldStart = ColdStartDirection(snapshot);
+        var coldStart = ResolveDirection(snapshot, context.Request.RequestedDirection, null);
 
         // Steps 5–9: per-row predicate → denial reason, ordered. Step 9.5
         // (time-window) and step 11.5 (booking-required) are reserved hooks
@@ -125,7 +125,19 @@ internal sealed class GateOperatorService(
             .OrderByDescending(s => s.ScannedAtUtc)
             .Select(s => new { s.Id, s.Direction, s.ScannedAtUtc })
             .FirstOrDefaultAsync(cancellationToken);
-        if (lastAllowed is not null && lastAllowed.ScannedAtUtc >= windowCutoff)
+        // D-509 — on a Both-mode gate the operator can deliberately switch
+        // دخول/خروج and re-scan the same badge within the window (e.g. a quick
+        // correction, or a fast in-then-out). That is an intentional new
+        // movement, NOT an accidental duplicate, so it must NOT be absorbed.
+        // Every other case (no explicit direction → inference; same direction
+        // re-scan; a fixed In/Out gate) is still absorbed as before.
+        var requestedDirection = context.Request.RequestedDirection;
+        var isDeliberateDirectionSwitch = snapshot.DirectionMode == DirectionMode.Both
+            && requestedDirection is { } requested
+            && lastAllowed is not null
+            && requested != lastAllowed.Direction;
+        if (lastAllowed is not null && lastAllowed.ScannedAtUtc >= windowCutoff
+            && !isDeliberateDirectionSwitch)
         {
             var replay = new GateScanResponse(
                 lastAllowed.Id, ScanOutcome.Allowed,
@@ -133,7 +145,8 @@ internal sealed class GateOperatorService(
                 denialCtx.ToProfile(), null, null);
             return new GateScanResult(GateScanResultKind.Recorded, replay, false, null);
         }
-        var direction = InferDirection(snapshot.DirectionMode, lastAllowed?.Direction);
+        var direction = ResolveDirection(
+            snapshot, requestedDirection, lastAllowed?.Direction);
 
         // Step 11 — allow-list. Empty raw list = pass; filtered-empty (L-15)
         // denies all.
@@ -301,14 +314,18 @@ internal sealed class GateOperatorService(
     private static GateScanResponse EmptyResponse(DateTimeOffset scannedAtUtc) =>
         new(0, ScanOutcome.Denied, ScanDirection.CheckIn, scannedAtUtc, null, null, null);
 
-    private static ScanDirection ColdStartDirection(GateConfigSnapshot snapshot) =>
-        snapshot.DirectionMode == DirectionMode.Out
-            ? ScanDirection.CheckOut : ScanDirection.CheckIn;
-
-    private static ScanDirection InferDirection(DirectionMode mode, ScanDirection? lastDirection)
+    /// <summary>D-509 — resolves the direction a scan records. A fixed In / Out
+    /// gate always records its configured direction. A <c>Both</c> gate honours
+    /// the operator's explicit <paramref name="requested"/> choice (the staff
+    /// console's دخول/خروج toggle); when the operator did not pick one it falls
+    /// back to the prior alternation inference (cold start = CheckIn, then
+    /// alternate from the holder's last allowed scan).</summary>
+    private static ScanDirection ResolveDirection(
+        GateConfigSnapshot snapshot, ScanDirection? requested, ScanDirection? lastDirection)
     {
-        if (mode == DirectionMode.In) { return ScanDirection.CheckIn; }
-        if (mode == DirectionMode.Out) { return ScanDirection.CheckOut; }
+        if (snapshot.DirectionMode == DirectionMode.In) { return ScanDirection.CheckIn; }
+        if (snapshot.DirectionMode == DirectionMode.Out) { return ScanDirection.CheckOut; }
+        if (requested is { } chosen) { return chosen; }
         return lastDirection switch
         {
             ScanDirection.CheckIn => ScanDirection.CheckOut,
@@ -584,7 +601,8 @@ internal sealed class GateOperatorService(
         };
 
     private static string HashRequest(Guid gateId, GateScanRequest request, string idempotencyKey) =>
-        OpaqueToken.Hash($"{gateId:N}|{idempotencyKey}|{request.Qr}|{request.Source}");
+        OpaqueToken.Hash(
+            $"{gateId:N}|{idempotencyKey}|{request.Qr}|{request.Source}|{request.RequestedDirection}");
 
     private static string HashResponse(GateScanResponse response) =>
         OpaqueToken.Hash(JsonSerializer.Serialize(response));

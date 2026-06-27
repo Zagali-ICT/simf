@@ -74,6 +74,17 @@ class MoreDrawer extends ConsumerWidget {
                         context.pushNamed(RouteNames.gateScanner);
                       },
                     ),
+                  // Staff-only walk-in visitor registration (D-509). Same UX
+                  // gate; the server enforces Visitors.RegisterOnsite.
+                  if (isStaff)
+                    _DrawerTile(
+                      icon: Icons.person_add_alt_1_outlined,
+                      title: l10n.staffRegisterVisitorEntry,
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        context.pushNamed(RouteNames.staffRegisterVisitor);
+                      },
+                    ),
                   // Exhibitor ("Other") only — captured-visitor list (D-426). The
                   // server 403s a visitor-tier caller; isVisitorProvider hides it
                   // (defaults visitor → hidden until the dashboard says Other).

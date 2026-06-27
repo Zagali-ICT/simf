@@ -43,25 +43,56 @@ void main() {
     });
   });
 
-  group('filterModeratorQueue', () {
-    final all = <ModeratorQuestion>[
-      ModeratorQuestion.fromJson(<String, dynamic>{'id': 'a', 'isPushed': false}),
-      ModeratorQuestion.fromJson(<String, dynamic>{'id': 'b', 'isPushed': true}),
-      ModeratorQuestion.fromJson(<String, dynamic>{'id': 'c', 'isPushed': false}),
+  group('filterModeratorQueue (Figma 1461:12227, five chips)', () {
+    ModeratorQuestion q(String id, {bool pushed = false}) =>
+        ModeratorQuestion.fromJson(<String, dynamic>{'id': id, 'isPushed': pushed});
+    final approved = <ModeratorQuestion>[
+      q('a'),
+      q('b', pushed: true),
+      q('c'),
     ];
 
-    test('all returns everything', () {
-      expect(filterModeratorQueue(all, ModeratorQueueFilter.all), hasLength(3));
+    test('all returns the live queue plus the rejected rows', () {
+      expect(filterModeratorQueue(approved, ModeratorQueueFilter.all), hasLength(3));
     });
 
-    test('fresh = not on stage', () {
-      final fresh = filterModeratorQueue(all, ModeratorQueueFilter.fresh);
+    test('fresh = approved, not on stage, not answered/rejected', () {
+      final fresh = filterModeratorQueue(approved, ModeratorQueueFilter.fresh);
       expect(fresh.map((q) => q.id), <String>['a', 'c']);
     });
 
-    test('onStage = pushed', () {
-      final onStage = filterModeratorQueue(all, ModeratorQueueFilter.onStage);
-      expect(onStage.map((q) => q.id), <String>['b']);
+    test('accepted = on stage (pushed)', () {
+      final accepted =
+          filterModeratorQueue(approved, ModeratorQueueFilter.accepted);
+      expect(accepted.map((q) => q.id), <String>['b']);
+    });
+
+    test('answered uses the session-local answered set, drops from fresh', () {
+      expect(
+        filterModeratorQueue(approved, ModeratorQueueFilter.answered,
+            answeredIds: <String>{'a'}).map((q) => q.id),
+        <String>['a'],
+      );
+      expect(
+        filterModeratorQueue(approved, ModeratorQueueFilter.fresh,
+            answeredIds: <String>{'a'}).map((q) => q.id),
+        <String>['c'],
+      );
+    });
+
+    test('rejected lists the rejected rows and excludes them from live buckets',
+        () {
+      final rejected = <ModeratorQuestion>[q('a')];
+      expect(
+        filterModeratorQueue(approved, ModeratorQueueFilter.rejected,
+            rejected: rejected).map((q) => q.id),
+        <String>['a'],
+      );
+      expect(
+        filterModeratorQueue(approved, ModeratorQueueFilter.fresh,
+            rejected: rejected).map((q) => q.id),
+        <String>['c'],
+      );
     });
   });
 }

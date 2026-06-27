@@ -7,6 +7,11 @@ enum ScanOutcome { allowed, denied }
 /// (CheckIn=0, CheckOut=1).
 enum ScanDirection { checkIn, checkOut }
 
+/// A gate's direction policy — mirrors `DirectionMode` (In=0, Out=1, Both=2).
+/// A `both` gate lets the operator switch دخول/خروج on the console (D-509); a
+/// fixed `inOnly` / `outOnly` gate locks the toggle to its one direction.
+enum GateDirectionMode { inOnly, outOnly, both }
+
 /// A gate the signed-in operator is assigned to — mirrors
 /// `OperatorGateAssignment` (`GET /app/gates/my-assignments`).
 @immutable
@@ -16,6 +21,7 @@ class OperatorGate {
     required this.code,
     required this.name,
     required this.nameArabic,
+    required this.directionMode,
     required this.isActive,
   });
 
@@ -23,6 +29,10 @@ class OperatorGate {
   final String code;
   final String name;
   final String nameArabic;
+
+  /// The gate's direction policy — drives whether the console's دخول/خروج
+  /// toggle is operator-switchable (`both`) or locked to one direction (D-509).
+  final GateDirectionMode directionMode;
   final bool isActive;
 
   String localizedName(bool isArabic) {
@@ -36,8 +46,22 @@ class OperatorGate {
         code: json['code'] as String? ?? '',
         name: json['name'] as String? ?? '',
         nameArabic: json['nameArabic'] as String? ?? '',
+        directionMode: _directionModeFromWire(json['directionMode']),
         isActive: json['isActive'] as bool? ?? false,
       );
+
+  /// Decodes `DirectionMode` (In=0, Out=1, Both=2); anything else → `both`
+  /// (the safe operator-switchable default).
+  static GateDirectionMode _directionModeFromWire(Object? value) {
+    switch ((value as num?)?.toInt()) {
+      case 0:
+        return GateDirectionMode.inOnly;
+      case 1:
+        return GateDirectionMode.outOnly;
+      default:
+        return GateDirectionMode.both;
+    }
+  }
 
   static List<OperatorGate> listFromData(Object? data) =>
       (data as List? ?? const <dynamic>[])

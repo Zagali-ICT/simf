@@ -13,13 +13,19 @@ import 'data/moderation_repository.dart';
 
 final DateFormat _hm = DateFormat('HH:mm');
 
-/// Moderator (محاور) per-session Q&A desk — Figma 758:5307 (D-405).
+/// Moderator (محاور) per-session Q&A desk — Figma 1461:12227 (D-405 / D-509).
 ///
-/// Lists the **approved** question queue for [sessionId] and lets the moderator
-/// mark a question **on stage** (يتم الإجابة → `push`) or **reject** it
-/// (مرفوض → `hide`). Backend-faithful subset: the API has no distinct
-/// "answered" status, so the chips are الكل / جديد / يتم الإجابة only (the
-/// Figma's تمت الإجابة state is flagged for backend follow-up).
+/// Lists the **approved** question queue for [sessionId] with the five filter
+/// chips (الكل / جديد / الأسئلة المقبولة / تمت الإجابة / مرفوض) and the three
+/// per-question actions: **مرفوض** (reject → `hide`, the moderator's tool for an
+/// invalid / not-in-hall question — owner directive), **يتم الإجابة** (push on
+/// stage), and **تمت الإجابة** (mark answered).
+///
+/// Backend-faithful mapping: the API exposes only Approved/Hidden + a `push`
+/// flag, so **reject** and **on-stage** hit the real endpoints, while
+/// **answered** and the **rejected list** are moderator-session-local (there is
+/// no distinct "answered" status, and a hidden row drops out of the approved
+/// queue) — see [ModeratorQueueFilter].
 ///
 /// Authority is the per-session `SessionModerator` grant (or Administrator),
 /// **not** the mobile `AppRole.moderator` — a moderator without the grant gets
@@ -39,6 +45,11 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
   bool _error = false;
   bool _forbidden = false;
   List<ModeratorQuestion> _all = const <ModeratorQuestion>[];
+  // Session-local moderator state (no backend status — see the class doc):
+  // questions marked answered, and the rows rejected this session (kept so the
+  // مرفوض tab still lists them after they drop out of the approved queue).
+  final Set<String> _answered = <String>{};
+  final List<ModeratorQuestion> _rejected = <ModeratorQuestion>[];
   ModeratorQueueFilter _filter = ModeratorQueueFilter.all;
 
   @override
@@ -76,35 +87,94 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
     }
   }
 
-  Future<void> _push(ModeratorQuestion q) => _act(
-        () => ref
-            .read(moderationRepositoryProvider)
-            .push(widget.sessionId, q.id),
-      );
+  bool _isRejected(ModeratorQuestion q) => _rejected.any((r) => r.id == q.id);
 
-  Future<void> _reject(ModeratorQuestion q) => _act(
-        () => ref.read(moderationRepositoryProvider).setHidden(
-              widget.sessionId,
-              q.id,
-              isHidden: true,
-            ),
-      );
+  /// يتم الإجابة — push the question on stage (real). If it was rejected this
+  /// session, restore it first.
+  Future<void> _push(ModeratorQuestion q) async {
+    if (_isRejected(q)) {
+      await _restore(q);
+    }
+    await _act(
+      () => ref.read(moderationRepositoryProvider).push(widget.sessionId, q.id),
+    );
+  }
 
-  Future<void> _act(Future<void> Function() action) async {
+  /// مرفوض — reject (real `hide`). The row is kept locally so it still lists
+  /// under the مرفوض tab; on the next reload the approved queue excludes it.
+  Future<void> _reject(ModeratorQuestion q) async {
+    setState(() {
+      _answered.remove(q.id);
+      if (!_isRejected(q)) {
+        _rejected.add(q);
+      }
+    });
+    final ok = await _act(
+      () => ref.read(moderationRepositoryProvider).setHidden(
+            widget.sessionId,
+            q.id,
+            isHidden: true,
+          ),
+    );
+    if (!ok && mounted) {
+      // The reject failed — undo the optimistic local move.
+      setState(() => _rejected.removeWhere((r) => r.id == q.id));
+    }
+  }
+
+  /// Restore a previously rejected question (un-hide) back into the queue.
+  Future<void> _restore(ModeratorQuestion q) async {
+    setState(() => _rejected.removeWhere((r) => r.id == q.id));
+    await _act(
+      () => ref.read(moderationRepositoryProvider).setHidden(
+            widget.sessionId,
+            q.id,
+            isHidden: false,
+          ),
+    );
+  }
+
+  /// تمت الإجابة — mark the question answered (session-local, toggles). If it was
+  /// rejected, restore it first so it lands back in the live queue as answered.
+  Future<void> _toggleAnswered(ModeratorQuestion q) async {
+    if (_isRejected(q)) {
+      await _restore(q);
+    }
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      if (!_answered.add(q.id)) {
+        _answered.remove(q.id);
+      }
+    });
+  }
+
+  /// Runs a repository action then reloads. Returns true on success; on failure
+  /// surfaces a toast and returns false (callers can roll back optimistic state).
+  Future<bool> _act(Future<void> Function() action) async {
     final messenger = ScaffoldMessenger.of(context);
     final l10n = AppL10n.of(context);
     try {
       await action();
       await _load();
+      return true;
     } on ApiFailure {
-      if (!mounted) {
-        return;
+      if (mounted) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.moderatorActionFailed)),
+        );
       }
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.moderatorActionFailed)),
-      );
+      return false;
     }
   }
+
+  int _count(ModeratorQueueFilter filter) => filterModeratorQueue(
+        _all,
+        filter,
+        answeredIds: _answered,
+        rejected: _rejected,
+      ).length;
 
   @override
   Widget build(BuildContext context) {
@@ -151,17 +221,21 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
         onRetry: () => unawaited(_load()),
       );
     }
-    final rows = filterModeratorQueue(_all, _filter);
+    final rows = filterModeratorQueue(
+      _all,
+      _filter,
+      answeredIds: _answered,
+      rejected: _rejected,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         _FilterBar(
           l10n: l10n,
           filter: _filter,
-          all: _all.length,
-          fresh: filterModeratorQueue(_all, ModeratorQueueFilter.fresh).length,
-          onStage:
-              filterModeratorQueue(_all, ModeratorQueueFilter.onStage).length,
+          counts: <ModeratorQueueFilter, int>{
+            for (final f in ModeratorQueueFilter.values) f: _count(f),
+          },
           onChanged: (f) => setState(() => _filter = f),
         ),
         Expanded(
@@ -180,8 +254,11 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
                     itemBuilder: (context, i) => _QuestionCard(
                       l10n: l10n,
                       question: rows[i],
-                      onPush: () => unawaited(_push(rows[i])),
+                      answered: _answered.contains(rows[i].id),
+                      rejected: _isRejected(rows[i]),
                       onReject: () => unawaited(_reject(rows[i])),
+                      onAnswered: () => unawaited(_toggleAnswered(rows[i])),
+                      onPush: () => unawaited(_push(rows[i])),
                     ),
                   ),
                 ),
@@ -205,13 +282,13 @@ class _RolePill extends StatelessWidget {
         vertical: SimfTokens.space1,
       ),
       decoration: BoxDecoration(
+        color: SimfTokens.accent,
         borderRadius: BorderRadius.circular(SimfTokens.radiusLg),
-        border: Border.all(color: SimfTokens.accent),
       ),
       child: Text(
         label,
         style: const TextStyle(
-          color: SimfTokens.accent,
+          color: SimfTokens.navy,
           fontWeight: FontWeight.w700,
           fontSize: SimfTokens.textSm,
         ),
@@ -224,18 +301,29 @@ class _FilterBar extends StatelessWidget {
   const _FilterBar({
     required this.l10n,
     required this.filter,
-    required this.all,
-    required this.fresh,
-    required this.onStage,
+    required this.counts,
     required this.onChanged,
   });
 
   final AppL10n l10n;
   final ModeratorQueueFilter filter;
-  final int all;
-  final int fresh;
-  final int onStage;
+  final Map<ModeratorQueueFilter, int> counts;
   final ValueChanged<ModeratorQueueFilter> onChanged;
+
+  String _label(ModeratorQueueFilter f) {
+    switch (f) {
+      case ModeratorQueueFilter.all:
+        return l10n.moderatorChipAll;
+      case ModeratorQueueFilter.fresh:
+        return l10n.moderatorChipNew;
+      case ModeratorQueueFilter.accepted:
+        return l10n.moderatorChipAccepted;
+      case ModeratorQueueFilter.answered:
+        return l10n.moderatorChipAnswered;
+      case ModeratorQueueFilter.rejected:
+        return l10n.moderatorChipRejected;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -247,26 +335,15 @@ class _FilterBar extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          _Chip(
-            label: l10n.moderatorChipOnStage,
-            count: onStage,
-            active: filter == ModeratorQueueFilter.onStage,
-            onTap: () => onChanged(ModeratorQueueFilter.onStage),
-          ),
-          const SizedBox(width: SimfTokens.space2),
-          _Chip(
-            label: l10n.moderatorChipNew,
-            count: fresh,
-            active: filter == ModeratorQueueFilter.fresh,
-            onTap: () => onChanged(ModeratorQueueFilter.fresh),
-          ),
-          const SizedBox(width: SimfTokens.space2),
-          _Chip(
-            label: l10n.moderatorChipAll,
-            count: all,
-            active: filter == ModeratorQueueFilter.all,
-            onTap: () => onChanged(ModeratorQueueFilter.all),
-          ),
+          for (final f in ModeratorQueueFilter.values) ...<Widget>[
+            _Chip(
+              label: _label(f),
+              count: counts[f] ?? 0,
+              active: filter == f,
+              onTap: () => onChanged(f),
+            ),
+            const SizedBox(width: SimfTokens.space2),
+          ],
         ],
       ),
     );
@@ -346,14 +423,33 @@ class _QuestionCard extends StatelessWidget {
   const _QuestionCard({
     required this.l10n,
     required this.question,
-    required this.onPush,
+    required this.answered,
+    required this.rejected,
     required this.onReject,
+    required this.onAnswered,
+    required this.onPush,
   });
 
   final AppL10n l10n;
   final ModeratorQuestion question;
-  final VoidCallback onPush;
+  final bool answered;
+  final bool rejected;
   final VoidCallback onReject;
+  final VoidCallback onAnswered;
+  final VoidCallback onPush;
+
+  Color get _statusColor {
+    if (rejected) {
+      return SimfTokens.danger;
+    }
+    if (answered) {
+      return SimfTokens.success;
+    }
+    if (question.isOnStage) {
+      return SimfTokens.warning;
+    }
+    return SimfTokens.accent;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -362,10 +458,7 @@ class _QuestionCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: SimfTokens.navyDeep,
         borderRadius: BorderRadius.circular(SimfTokens.radius),
-        border: Border.all(
-          color: question.isOnStage ? SimfTokens.accent : SimfTokens.beigeBorder,
-          width: question.isOnStage ? 1 : 0.2,
-        ),
+        border: Border.all(color: _statusColor, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -428,17 +521,27 @@ class _QuestionCard extends StatelessWidget {
                   label: l10n.moderatorActionReject,
                   icon: Icons.close,
                   color: SimfTokens.danger,
-                  filled: false,
+                  filled: rejected,
                   onTap: onReject,
                 ),
               ),
-              const SizedBox(width: SimfTokens.space3),
+              const SizedBox(width: SimfTokens.space2),
+              Expanded(
+                child: _ActionButton(
+                  label: l10n.moderatorActionAnswered,
+                  icon: Icons.check,
+                  color: SimfTokens.success,
+                  filled: answered,
+                  onTap: onAnswered,
+                ),
+              ),
+              const SizedBox(width: SimfTokens.space2),
               Expanded(
                 child: _ActionButton(
                   label: l10n.moderatorActionOnStage,
                   icon: Icons.access_time,
-                  color: SimfTokens.accent,
-                  filled: question.isOnStage,
+                  color: SimfTokens.warning,
+                  filled: question.isOnStage && !answered && !rejected,
                   onTap: onPush,
                 ),
               ),
@@ -473,6 +576,7 @@ class _ActionButton extends StatelessWidget {
       child: Container(
         height: 40,
         alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space1),
         decoration: BoxDecoration(
           color: filled ? color : Colors.transparent,
           borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
@@ -481,16 +585,20 @@ class _ActionButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text(
-              label,
-              style: TextStyle(
-                color: filled ? SimfTokens.navy : color,
-                fontWeight: FontWeight.w700,
-                fontSize: SimfTokens.textSm,
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: filled ? Colors.white : color,
+                  fontWeight: FontWeight.w700,
+                  fontSize: SimfTokens.textXs,
+                ),
               ),
             ),
-            const SizedBox(width: SimfTokens.space2),
-            Icon(icon, size: 16, color: filled ? SimfTokens.navy : color),
+            const SizedBox(width: SimfTokens.space1),
+            Icon(icon, size: 14, color: filled ? Colors.white : color),
           ],
         ),
       ),
