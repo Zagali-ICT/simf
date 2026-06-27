@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/accessibility/data/accessibility_controller.dart';
+import '../../features/notifications/data/notifications_repository.dart'
+    show unreadNotificationCountProvider;
 import '../../features/profile/data/profile_repository.dart'
     show myAvatarBytesProvider;
 import '../localization/app_l10n.dart';
@@ -66,6 +68,7 @@ class KsaPage extends StatelessWidget {
     this.onBack,
     this.tab,
     this.showSweep = false,
+    this.showNotificationsBell = true,
     super.key,
   });
 
@@ -87,6 +90,11 @@ class KsaPage extends StatelessWidget {
 
   /// Renders the decorative rotated sweep (the entry frames' 28.28° block).
   final bool showSweep;
+
+  /// Whether the default header's action cluster shows the notifications bell.
+  /// True on every signed-in surface; the guest home (frame 758:2910) passes
+  /// false — a guest has no personal notifications.
+  final bool showNotificationsBell;
 
   @override
   Widget build(BuildContext context) {
@@ -154,18 +162,11 @@ class KsaPage extends StatelessWidget {
               ),
             ),
           ),
-          // The shared trailing controller — language + dark-mode + the drawer
-          // ☰, the same on every shell page. No bell here: the Figma content
-          // frames carry no notifications icon (it lives only on the signed-in
-          // home greeting header), so a guest never sees one. The ☰ opens the
-          // side menu via the nearest Scaffold (the Builder gives a context
-          // below it).
-          const KsaLangThemeButtons(),
-          Builder(
-            builder: (ctx) => KsaMenuButton(
-              onTap: () => Scaffold.of(ctx).openDrawer(),
-            ),
-          ),
+          // The shared trailing action cluster — the SAME top-nav controls on
+          // every page (owner 2026-06-27): the notifications bell + its unread
+          // badge, the language globe, the inert dark-mode crescent, and the
+          // drawer ☰. One component so every page's top nav is identical.
+          KsaHeaderActions(showBell: showNotificationsBell),
         ],
       ),
     );
@@ -318,12 +319,93 @@ class KsaLangThemeButtons extends ConsumerWidget {
         ),
         IconButton(
           tooltip: l10n.themeToggleTooltip,
-          // Inert — navy-always (owner decision); no light theme yet.
+          // Node 1049:2087 — the gold crescent (iconamoon:mode-dark-fill).
+          // Intentionally inert: the app is navy-always (owner decision), no
+          // light theme yet, so the icon shows for parity but does nothing.
           onPressed: null,
           icon: Icon(
-            Icons.dark_mode_outlined,
-            color: SimfTokens.navyDisabledText,
+            Icons.dark_mode,
+            color: SimfTokens.accent,
             size: size,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The shared trailing action cluster on every in-app page's top nav (owner
+/// 2026-06-27): the notifications bell with its unread badge, the language
+/// globe, the inert dark-mode crescent, and the menu ☰ (opens the shell
+/// drawer). One component so the top nav is identical on the signed-in home
+/// greeting header and every [KsaPage] sub-page — same icons, same order.
+///
+/// [showBell] is true on every signed-in surface; the guest home (frame
+/// 758:2910) sets it false — a guest has no personal notifications.
+///
+/// [showUnreadBadge] gates the live unread-count badge. Only the signed-in home
+/// greeting header turns it on — that surface resolves the auth-scoped count
+/// provider. Sub-pages keep the bell as a plain navigation control (no badge),
+/// so a generic [KsaPage] never has to provide the auth/notifications wiring
+/// just to render its header.
+class KsaHeaderActions extends ConsumerWidget {
+  const KsaHeaderActions({
+    this.size = 24,
+    this.showBell = true,
+    this.showUnreadBadge = false,
+    super.key,
+  });
+
+  /// The glyph size — 24 in the standard header, 26 in the larger home header.
+  final double size;
+
+  /// Whether the notifications bell shows. False on the guest home (758:2910).
+  final bool showBell;
+
+  /// Whether the bell carries the live unread-count badge (home only).
+  final bool showUnreadBadge;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppL10n.of(context);
+    // Best-effort unread count — watched only where the badge shows (the home
+    // greeting header), so a generic page's header never depends on the
+    // auth-scoped count provider. Any wire error resolves to 0.
+    final unread = showBell && showUnreadBadge
+        ? ref.watch(unreadNotificationCountProvider).maybeWhen(
+              data: (count) => count,
+              orElse: () => 0,
+            )
+        : 0;
+    final bell = Icon(
+      Icons.notifications_none_outlined,
+      color: Colors.white,
+      size: size,
+    );
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        if (showBell)
+          IconButton(
+            tooltip: l10n.notificationsTooltip,
+            onPressed: () => context.pushNamed(RouteNames.notifications),
+            icon: showUnreadBadge
+                ? Badge.count(
+                    count: unread,
+                    isLabelVisible: unread > 0,
+                    child: bell,
+                  )
+                : bell,
+          ),
+        // The language globe + the inert dark-mode crescent (shared pair).
+        KsaLangThemeButtons(size: size),
+        // The drawer ☰ — opens the shell side menu via the nearest Scaffold
+        // (the Builder gives a context below KsaPage's Scaffold).
+        Builder(
+          builder: (ctx) => IconButton(
+            tooltip: l10n.moreTitle,
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+            icon: Icon(Icons.menu, color: Colors.white, size: size),
           ),
         ),
       ],

@@ -10,10 +10,10 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/localization/locale_controller.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/confirm_external_link.dart';
 import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import '../../core/env/build_config.dart';
-import '../../core/external_link.dart';
 import '../auth/sign_out.dart';
 import '../myarea/data/myarea_models.dart';
 import '../myarea/data/myarea_repository.dart';
@@ -94,7 +94,7 @@ class MoreScreen extends ConsumerWidget {
               _MoreRow(
                 title: l10n.moreVisitSaudi,
                 onTap: () => unawaited(
-                  launchExternalUri(Uri.parse(BuildConfig.visitSaudiUrl)),
+                  confirmThenLaunchExternal(context, BuildConfig.visitSaudiUrl),
                 ),
               ),
             ],

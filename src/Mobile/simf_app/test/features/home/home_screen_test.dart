@@ -71,6 +71,27 @@ class _SignedInEmailController extends AuthController {
       );
 }
 
+/// A signed-in account whose registration is still pending — it has no
+/// permissions, so Home shows the guest layout + the awaiting-approval note.
+class _UnapprovedController extends AuthController {
+  @override
+  AuthState build() => AuthStateSignedIn(
+        Session(
+          accessToken: 'A',
+          refreshToken: 'R',
+          accessTokenExpiresAt: DateTime.now().add(const Duration(minutes: 30)),
+          user: CurrentUser(
+            id: 'u3',
+            email: 'pending@example.sa',
+            displayName: 'Pending User',
+            appRole: AppRole.visitor,
+            preferredLanguage: PreferredLanguage.fromJson('ar'),
+            registrationStatus: RegistrationStatus.pending,
+          ),
+        ),
+      );
+}
+
 class _FakeNotificationsRepository implements NotificationsRepository {
   _FakeNotificationsRepository(this.count);
 
@@ -244,7 +265,8 @@ void main() {
       expect(find.byTooltip('Notifications'), findsNothing);
       expect(find.byIcon(Icons.menu), findsOneWidget);
       expect(find.byIcon(Icons.language), findsOneWidget);
-      expect(find.byIcon(Icons.dark_mode_outlined), findsOneWidget);
+      // Dark mode is now the gold crescent (node 1049:2087), still inert.
+      expect(find.byIcon(Icons.dark_mode), findsOneWidget);
     });
 
     testWidgets('a public tile navigates to its route', (tester) async {
@@ -293,6 +315,25 @@ void main() {
         Directionality.of(tester.element(find.text('المتحدثون'))),
         TextDirection.rtl,
       );
+    });
+
+    testWidgets('an unapproved (pending) account sees the guest layout with the '
+        'awaiting-approval note, not the sign-in button', (tester) async {
+      await _pump(tester, controller: _UnapprovedController());
+
+      // The guest tiles render…
+      expect(find.text('Sessions'), findsOneWidget);
+      expect(find.text('Speakers'), findsOneWidget);
+      // …and the awaiting-approval note replaces the sign-in CTA.
+      await tester.scrollUntilVisible(
+        find.textContaining('awaiting approval'),
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.textContaining('awaiting approval'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Sign in'), findsNothing);
+      // It is the guest layout, not the signed-in greeting header.
+      expect(find.textContaining('Pending User'), findsNothing);
     });
   });
 
@@ -536,14 +577,18 @@ void main() {
       );
     }
 
-    testWidgets('about tiles: المتحدثون (right) · المعرض · الجلسات (left)',
+    testWidgets(
+        'about tiles (4-up): المتحدثون · المعرض · الوفود · الجلسات (right→left)',
         (tester) async {
       await pumpTall(tester);
       final speakers = tester.getCenter(find.text('المتحدثون')).dx;
       final booths = tester.getCenter(find.text('المعرض')).dx;
+      final delegations = tester.getCenter(find.text('الوفود')).dx;
       final sessions = tester.getCenter(find.text('الجلسات')).dx;
+      // Right→left: المتحدثون (rightmost) > المعرض > الوفود > الجلسات (leftmost).
       expect(speakers, greaterThan(booths));
-      expect(booths, greaterThan(sessions));
+      expect(booths, greaterThan(delegations));
+      expect(delegations, greaterThan(sessions));
     });
 
     testWidgets('news tiles: اللقاءات الثنائية (right) · الأرشيف (left)',

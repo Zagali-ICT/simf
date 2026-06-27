@@ -205,7 +205,7 @@ void main() {
 
       // Both shared controls render on every shell page's header.
       expect(find.byIcon(Icons.language), findsOneWidget);
-      expect(find.byIcon(Icons.dark_mode_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.dark_mode), findsOneWidget);
 
       // The language globe is enabled (toggles AR ↔ EN via LocaleController).
       final langButton = tester.widget<IconButton>(
@@ -220,7 +220,7 @@ void main() {
       // icon is shown for parity but is not tappable until a light theme exists.
       final darkButton = tester.widget<IconButton>(
         find.ancestor(
-          of: find.byIcon(Icons.dark_mode_outlined),
+          of: find.byIcon(Icons.dark_mode),
           matching: find.byType(IconButton),
         ),
       );
@@ -272,17 +272,35 @@ void main() {
 
       // Natural direction (no forced LTR): leading = start = right in Arabic.
       final backDx = tester.getCenter(find.byType(KsaBackButton)).dx;
-      final menuDx = tester.getCenter(find.byType(KsaMenuButton)).dx;
+      // The ☰ is the last control in the shared action cluster (the end / left
+      // under RTL); it is a plain menu IconButton inside KsaHeaderActions now.
+      final menuDx = tester.getCenter(find.byIcon(Icons.menu)).dx;
       expect(backDx, greaterThan(menuDx));
     });
 
-    testWidgets('the standard header carries no notifications bell', (tester) async {
+    testWidgets('the standard header carries the notifications bell (owner '
+        '2026-06-27 — the same top nav on every signed-in page)',
+        (tester) async {
       await _pump(
         tester,
         KsaPage(title: 'My page', onBack: () {}, body: const Text('BODY')),
       );
-      // The bell lives only on the signed-in home greeting header (owner
-      // 2026-06-18); the shared header never shows one.
+      // The unified top nav (KsaHeaderActions) puts the bell on every page.
+      expect(find.byIcon(Icons.notifications_none_outlined), findsOneWidget);
+    });
+
+    testWidgets('showNotificationsBell:false hides the bell (guest home)',
+        (tester) async {
+      await _pump(
+        tester,
+        const KsaPage(
+          title: 'Guest',
+          showNotificationsBell: false,
+          body: Text('BODY'),
+        ),
+      );
+      // The guest home (frame 758:2910) carries no bell — a guest has no
+      // personal notifications.
       expect(find.byIcon(Icons.notifications_none_outlined), findsNothing);
     });
 

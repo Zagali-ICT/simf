@@ -6,8 +6,8 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/confirm_external_link.dart';
 import '../../app/widgets/ksa_shell.dart';
-import '../../core/external_link.dart';
 import '../../core/organization_profile/organization_profile.dart';
 import 'data/contact_us_repository.dart';
 
@@ -427,8 +427,9 @@ class _SocialCard extends StatelessWidget {
                   _SocialButton(
                     icon: links[i].$1,
                     label: links[i].$2,
-                    onTap: () =>
-                        unawaited(launchExternalUri(Uri.parse(links[i].$3!))),
+                    onTap: () => unawaited(
+                      confirmThenLaunchExternal(context, links[i].$3!),
+                    ),
                   ),
                 ],
               ],

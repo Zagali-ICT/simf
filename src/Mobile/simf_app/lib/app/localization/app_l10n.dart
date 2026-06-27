@@ -40,6 +40,20 @@ class AppL10n {
   String get backLabel => _t('رجوع', 'Back');
   String get continueLabel => _t('متابعة', 'Continue');
   String get cancelLabel => _t('إلغاء', 'Cancel');
+  // External-link confirmation (owner 2026-06-27) — every external link asks
+  // before it leaves the app.
+  String get externalLinkTitle => _t('فتح رابط خارجي', 'Open external link');
+  String get externalLinkBody => _t(
+        'سيتم نقلك خارج التطبيق إلى موقع خارجي. هل تريد المتابعة؟',
+        'This will take you out of the app to an external site. Continue?',
+      );
+  String get externalLinkOpen => _t('فتح', 'Open');
+  // Shown on the guest home when a signed-in account is not yet approved.
+  String get homePendingApprovalNote => _t(
+        'حسابك قيد المراجعة. ستُفعَّل كل الميزات بعد الموافقة على تسجيلك.',
+        'Your account is awaiting approval. Full features unlock once your '
+            'registration is approved.',
+      );
   String get retryLabel => _t('إعادة المحاولة', 'Retry');
   String get loadingLabel => _t('جارٍ التحميل…', 'Loading…');
   String get lookupLoadError =>

@@ -5,22 +5,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/confirm_external_link.dart';
 import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../core/env/build_config.dart';
-import '../../core/external_link.dart';
 import '../../core/site_settings/site_settings.dart';
 import '../myarea/data/myarea_models.dart';
 import '../myarea/data/myarea_repository.dart';
 import '../news/data/news_models.dart';
 import '../news/news_article_screen.dart';
 import '../news/news_screen.dart' show newsListProvider;
-import '../notifications/data/notifications_repository.dart';
 
 /// The signed-in home tile glyphs — the exact iconify SVGs from KSA frame
 /// 758:1134 (no 1:1 Material equivalent), bundled and tinted to the tile colour.
@@ -86,15 +84,15 @@ class HomeScreen extends ConsumerWidget {
     final auth = ref.watch(authControllerProvider);
     final user = auth is AuthStateSignedIn ? auth.session.user : null;
     final isGuest = (user?.appRole ?? AppRole.guest) == AppRole.guest;
+    // A signed-in but unapproved account (pending / rejected) has no
+    // permissions, so it sees the same guest layout (owner 2026-06-27, frame
+    // 758:2910) — with an "awaiting approval" note instead of the sign-in CTA.
+    final pendingApproval =
+        user != null && user.registrationStatus != RegistrationStatus.approved;
 
-    if (isGuest) {
-      return _GuestHome(l10n: l10n);
+    if (isGuest || pendingApproval) {
+      return _GuestHome(l10n: l10n, pendingApproval: pendingApproval);
     }
-    // Best-effort: any wire error resolves to 0 (Logic L-5).
-    final unread = ref.watch(unreadNotificationCountProvider).maybeWhen(
-          data: (count) => count,
-          orElse: () => 0,
-        );
     // Best-effort latest post for the أحدث منشوراتنا teaser — null while loading
     // / on error / when there are no posts, in which case the section is hidden.
     final latestPost = ref.watch(newsListProvider).maybeWhen(
@@ -116,7 +114,6 @@ class HomeScreen extends ConsumerWidget {
         profile?.identity.localizedName(l10n.isArabic),
         user?.displayName,
       ),
-      unread: unread,
       latestPost: latestPost,
       baseUrl: baseUrl,
     );
@@ -155,18 +152,19 @@ String homePostTime(AppL10n l10n, DateTime publishedUtc, DateTime nowUtc) {
   return l10n.postTimeDaysAgo(diff.inDays);
 }
 
-/// Opens a configured link in the external browser (best-effort, D-369).
-Future<void> _openLink(String url) =>
-    launchExternalUri(Uri.parse(url), mode: LaunchMode.externalApplication);
-
 // ---------------------------------------------------------------------------
-// Guest layout (frame 512:1492 — "الرئيسية • ضيف", 2×2 option)
+// Guest / unapproved layout (frame 758:2910 — "الرئيسية • ضيف", 2×2 tiles):
+// shown to a not-signed-in guest AND a signed-in but unapproved account.
 // ---------------------------------------------------------------------------
 
 class _GuestHome extends StatelessWidget {
-  const _GuestHome({required this.l10n});
+  const _GuestHome({required this.l10n, this.pendingApproval = false});
 
   final AppL10n l10n;
+
+  /// True when a signed-in but unapproved account is viewing this layout —
+  /// shows the "awaiting approval" note instead of the sign-in CTA.
+  final bool pendingApproval;
 
   @override
   Widget build(BuildContext context) {
@@ -177,6 +175,9 @@ class _GuestHome extends StatelessWidget {
           : context.pushNamed(RouteNames.signIn),
       tab: SimfTab.home,
       showSweep: true,
+      // The guest home carries no notifications bell (frame 758:2910) — a guest
+      // has no personal notifications.
+      showNotificationsBell: false,
       body: ListView(
         padding: const EdgeInsets.all(SimfTokens.space4),
         children: <Widget>[
@@ -211,15 +212,6 @@ class _GuestHome extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: SimfTokens.space2),
-          // D-499 (الوفود, Figma 1426:10771) — the delegations entry, public so a
-          // guest reaches it like the speakers / exhibition tiles above.
-          KsaNavTile(
-            label: l10n.delegationsTitle,
-            icon: Icons.flag_outlined,
-            minHeight: 80,
-            onTap: () => context.pushNamed(RouteNames.delegations),
-          ),
           const SizedBox(height: SimfTokens.space4),
           // The locked smart-badge card — a visual cue that signing in
           // unlocks it; never tappable as a guest.
@@ -250,9 +242,54 @@ class _GuestHome extends StatelessWidget {
           const SizedBox(height: SimfTokens.space4),
           _DiscoverSaudiRow(l10n: l10n, outlined: true),
           const SizedBox(height: SimfTokens.space6),
-          FilledButton(
-            onPressed: () => context.pushNamed(RouteNames.signIn),
-            child: Text(l10n.guestSignInCta),
+          // True guest → the sign-in CTA; signed-in-but-unapproved → the
+          // "awaiting approval" note (a sign-in button would be wrong).
+          if (pendingApproval)
+            _PendingApprovalNote(l10n: l10n)
+          else
+            FilledButton(
+              onPressed: () => context.pushNamed(RouteNames.signIn),
+              child: Text(l10n.guestSignInCta),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The "your account is awaiting approval" note shown in place of the sign-in
+/// CTA when an unapproved (pending / rejected) account lands on the guest home
+/// (owner 2026-06-27). The account is already signed in, so a sign-in button
+/// would be wrong; full features unlock once the registration is approved.
+class _PendingApprovalNote extends StatelessWidget {
+  const _PendingApprovalNote({required this.l10n});
+
+  final AppL10n l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(SimfTokens.space3),
+      decoration: BoxDecoration(
+        color: SimfTokens.navyDeep,
+        borderRadius: BorderRadius.circular(SimfTokens.radius),
+        border: Border.all(color: SimfTokens.accent, width: 0.5),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          const Icon(Icons.hourglass_top, color: SimfTokens.accent, size: 24),
+          const SizedBox(width: SimfTokens.space2),
+          Expanded(
+            child: Text(
+              l10n.homePendingApprovalNote,
+              textAlign: TextAlign.start,
+              style: const TextStyle(
+                color: SimfTokens.beigeBorder,
+                fontSize: SimfTokens.textMd,
+                height: 1.5,
+              ),
+            ),
           ),
         ],
       ),
@@ -311,14 +348,12 @@ class _VisitorHome extends StatelessWidget {
   const _VisitorHome({
     required this.l10n,
     required this.name,
-    required this.unread,
     required this.baseUrl,
     this.latestPost,
   });
 
   final AppL10n l10n;
   final String name;
-  final int unread;
   final String baseUrl;
   final NewsListItem? latestPost;
 
@@ -329,7 +364,6 @@ class _VisitorHome extends StatelessWidget {
       header: _GreetingHeader(
         l10n: l10n,
         name: name,
-        unread: unread,
       ),
       body: ListView(
         padding: const EdgeInsets.all(SimfTokens.space4),
@@ -352,7 +386,9 @@ class _VisitorHome extends StatelessWidget {
             onTap: () => context.pushNamed(RouteNames.aboutForum),
           ),
           const SizedBox(height: SimfTokens.space6),
-          // About tiles (758:1215, h72): right→left المتحدثون · الأجنحة · الجلسات.
+          // About tiles (frame 758:1215, h72) — a 4-up grid of the shared tile,
+          // the same KsaNavTile reused as grid columns. Right→left under RTL:
+          // المتحدثون · الأجنحة · الوفود · جلسات.
           KsaTileRow(
             children: <Widget>[
               KsaNavTile(
@@ -366,6 +402,14 @@ class _VisitorHome extends StatelessWidget {
                 iconAsset: _HomeIcons.booths,
                 onTap: () => context.pushNamed(RouteNames.booths),
               ),
+              // الوفود — delegations sits in the about row (frame 758:1220), not
+              // as a separate full-width tile; a group glyph like the design's
+              // formkit:people.
+              KsaNavTile(
+                label: l10n.delegationsTitle,
+                icon: Icons.groups_outlined,
+                onTap: () => context.pushNamed(RouteNames.delegations),
+              ),
               KsaNavTile(
                 label: l10n.tileSessions,
                 iconAsset: _HomeIcons.aboutSessions,
@@ -373,14 +417,15 @@ class _VisitorHome extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: SimfTokens.space6),
+          // 16px gap inside the "عن الملتقى" group (frame 1054:12864 gap-16).
+          const SizedBox(height: SimfTokens.space4),
           // The full-width "اسأل المحاور" tile (1052:12856) — send a question.
           KsaNavTile(
             label: l10n.tileAskModerator,
             iconAsset: _HomeIcons.askModerator,
             onTap: () => context.pushNamed(RouteNames.sendQuestion),
           ),
-          const SizedBox(height: SimfTokens.space2),
+          const SizedBox(height: SimfTokens.space6),
           // News tiles (758:1228, h80): right→left اللقاءات الثنائية · الأرشيف.
           KsaTileRow(
             children: <Widget>[
@@ -399,15 +444,6 @@ class _VisitorHome extends StatelessWidget {
                 onTap: () => context.pushNamed(RouteNames.archive),
               ),
             ],
-          ),
-          const SizedBox(height: SimfTokens.space2),
-          // D-499 (الوفود, Figma 1426:10771) — the delegations entry: the invited
-          // countries + their heads of delegation. Public (anonymous endpoint).
-          KsaNavTile(
-            label: l10n.delegationsTitle,
-            icon: Icons.flag_outlined,
-            minHeight: 80,
-            onTap: () => context.pushNamed(RouteNames.delegations),
           ),
           const SizedBox(height: SimfTokens.space6),
           // "الميزات الذكية" (758:1158) — header + the المزيد link → More.
@@ -518,12 +554,10 @@ class _GreetingHeader extends StatelessWidget {
   const _GreetingHeader({
     required this.l10n,
     required this.name,
-    required this.unread,
   });
 
   final AppL10n l10n;
   final String name;
-  final int unread;
 
   @override
   Widget build(BuildContext context) {
@@ -564,29 +598,10 @@ class _GreetingHeader extends StatelessWidget {
               ],
             ),
           ),
-          IconButton(
-            tooltip: l10n.notificationsTooltip,
-            onPressed: () => context.pushNamed(RouteNames.notifications),
-            icon: Badge.count(
-              count: unread,
-              isLabelVisible: unread > 0,
-              child: const Icon(
-                Icons.notifications_none_outlined,
-                color: Colors.white,
-                size: 26,
-              ),
-            ),
-          ),
-          // The shared language + (inert) dark-mode controls, the same pair as
-          // every other shell page's header.
-          const KsaLangThemeButtons(size: 26),
-          IconButton(
-            tooltip: l10n.moreTitle,
-            // Opens the shared side drawer (this header renders inside KsaPage's
-            // Scaffold, so the nearest Scaffold is the shell's).
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            icon: const Icon(Icons.menu, color: Colors.white, size: 26),
-          ),
+          // The shared top-nav action cluster — identical to every sub-page:
+          // the bell, the language globe, the dark-mode crescent, and the menu
+          // ☰. Home is the one surface that carries the live unread-count badge.
+          const KsaHeaderActions(size: 26, showUnreadBadge: true),
         ],
       ),
     );
@@ -982,7 +997,9 @@ class _SocialButton extends StatelessWidget {
         side: const BorderSide(color: SimfTokens.navyDeep, width: 0.8),
       ),
       child: InkWell(
-        onTap: url.isEmpty ? null : () => unawaited(_openLink(url)),
+        onTap: url.isEmpty
+            ? null
+            : () => unawaited(confirmThenLaunchExternal(context, url)),
         borderRadius: BorderRadius.circular(10),
         child: SizedBox(
           height: 48,
@@ -1023,7 +1040,9 @@ class _DiscoverSaudiRow extends StatelessWidget {
           fontWeight: outlined ? FontWeight.w800 : FontWeight.w600,
         ),
       ),
-      onTap: () => unawaited(_openLink(BuildConfig.visitSaudiUrl)),
+      onTap: () => unawaited(
+        confirmThenLaunchExternal(context, BuildConfig.visitSaudiUrl),
+      ),
     );
   }
 }
