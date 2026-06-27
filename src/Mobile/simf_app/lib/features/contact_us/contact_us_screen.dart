@@ -101,10 +101,10 @@ class _ContactUsScreenState extends ConsumerState<ContactUsScreen> {
             onSend: () => unawaited(_send()),
           ),
           if (profile != null) ...<Widget>[
-            const SizedBox(height: SimfTokens.space5),
+            const SizedBox(height: SimfTokens.space6), // gap-24
             _ContactInfoCard(profile: profile, isArabic: isArabic),
             if (_hasAnySocial(profile.social)) ...<Widget>[
-              const SizedBox(height: SimfTokens.space5),
+              const SizedBox(height: SimfTokens.space6), // gap-24
               _SocialCard(social: profile.social),
             ],
           ],
@@ -232,8 +232,8 @@ class _Field extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(
-            color: Colors.white,
-            fontSize: SimfTokens.textSm,
+            color: SimfTokens.beigeBorder, // Figma 1388:7778 — beige label
+            fontSize: SimfTokens.textSm, // 12
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -249,7 +249,8 @@ class _Field extends StatelessWidget {
             hintText: hint,
             hintStyle: const TextStyle(color: SimfTokens.beigeBorder),
             filled: true,
-            fillColor: SimfTokens.navy,
+            // Same fill as the card (border-only field) — Figma 1388:7779.
+            fillColor: SimfTokens.navyDeep,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: SimfTokens.space3,
               vertical: SimfTokens.space3,
@@ -301,11 +302,9 @@ class _ContactInfoCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           _CardHeading(l10n.contactInfoTitle),
-          const SizedBox(height: SimfTokens.space3),
-          for (final (index, (icon, value, sub, ltr)) in rows.indexed) ...<Widget>[
-            if (index > 0) const SizedBox(height: SimfTokens.space3),
+          const SizedBox(height: SimfTokens.space4), // gap-16
+          for (final (icon, value, sub, ltr) in rows)
             _InfoRow(icon: icon, value: value, sublabel: sub, valueLtr: ltr),
-          ],
         ],
       ),
     );
@@ -327,46 +326,58 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: <Widget>[
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                value,
-                textAlign: TextAlign.start,
-                textDirection: valueLtr ? TextDirection.ltr : null,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: SimfTokens.textMd,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: SimfTokens.space1),
-              Text(
-                sublabel,
-                style: const TextStyle(
-                  color: SimfTokens.beigeBorder,
-                  fontSize: SimfTokens.textSm,
-                ),
-              ),
-            ],
+    return Container(
+      // The frame walls each info row with a faint beige bottom divider
+      // (Figma 1388:7723 — beige @25%).
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: SimfTokens.beigeBorder.withValues(alpha: 0.25),
+            width: SimfTokens.hairline,
           ),
         ),
-        const SizedBox(width: SimfTokens.space3),
-        Container(
-          width: 40,
-          height: 40,
-          alignment: Alignment.center,
-          decoration: const BoxDecoration(
-            color: SimfTokens.accent,
-            borderRadius:
-                BorderRadius.all(Radius.circular(SimfTokens.radiusSmall)),
+      ),
+      padding: const EdgeInsets.all(SimfTokens.space2), // p-8
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  value,
+                  textAlign: TextAlign.start,
+                  textDirection: valueLtr ? TextDirection.ltr : null,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: SimfTokens.textMd, // 14
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: SimfTokens.space2), // gap-8
+                Text(
+                  sublabel,
+                  style: const TextStyle(
+                    color: SimfTokens.beigeBorder,
+                    fontSize: SimfTokens.textSm, // 12
+                  ),
+                ),
+              ],
+            ),
           ),
-          child: Icon(icon, color: SimfTokens.navy, size: 20),
-        ),
-      ],
+          const SizedBox(width: SimfTokens.space2),
+          Container(
+            width: 40,
+            height: 40,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              color: SimfTokens.accent,
+              borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radius)),
+            ),
+            child: Icon(icon, color: SimfTokens.navy, size: 18),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -397,20 +408,31 @@ class _SocialCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           _CardHeading(l10n.contactSocialTitle),
-          const SizedBox(height: SimfTokens.space3),
-          // Wrap (not Row) so all five links never overflow a narrow device.
-          Wrap(
-            spacing: SimfTokens.space3,
-            runSpacing: SimfTokens.space3,
-            children: <Widget>[
-              for (final (icon, label, url) in links)
-                _SocialButton(
-                  icon: icon,
-                  label: label,
-                  onTap: () =>
-                      unawaited(launchExternalUri(Uri.parse(url!))),
-                ),
-            ],
+          const SizedBox(height: SimfTokens.space4), // gap-16
+          // The frame lays the brand boxes left→right (X … TikTok); force LTR so
+          // they keep that order under RTL. Spread edge-to-edge only when the
+          // full five are set (the frame's layout); fewer links cluster at the
+          // start so a partial set never floats to opposite edges. (At most five
+          // social fields exist, so 5×48 always fits.)
+          Directionality(
+            textDirection: TextDirection.ltr,
+            child: Row(
+              mainAxisAlignment: links.length >= 5
+                  ? MainAxisAlignment.spaceBetween
+                  : MainAxisAlignment.start,
+              children: <Widget>[
+                for (var i = 0; i < links.length; i++) ...<Widget>[
+                  if (links.length < 5 && i > 0)
+                    const SizedBox(width: SimfTokens.space3),
+                  _SocialButton(
+                    icon: links[i].$1,
+                    label: links[i].$2,
+                    onTap: () =>
+                        unawaited(launchExternalUri(Uri.parse(links[i].$3!))),
+                  ),
+                ],
+              ],
+            ),
           ),
         ],
       ),
@@ -438,13 +460,16 @@ class _SocialButton extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
         child: Container(
-          width: 44,
-          height: 44,
+          width: 48,
+          height: 48,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: SimfTokens.navy,
-            borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-            border: Border.all(color: SimfTokens.beigeBorder),
+            borderRadius: BorderRadius.circular(SimfTokens.radius), // 8
+            border: Border.all(
+              color: SimfTokens.beigeBorder,
+              width: SimfTokens.hairline,
+            ),
           ),
           child: Icon(icon, color: Colors.white, size: 20),
         ),
@@ -463,7 +488,11 @@ class _Card extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(SimfTokens.space4),
+      // px-16 / py-8 (Figma card 1388:7774).
+      padding: const EdgeInsets.symmetric(
+        horizontal: SimfTokens.space4,
+        vertical: SimfTokens.space2,
+      ),
       decoration: BoxDecoration(
         color: SimfTokens.navyDeep,
         borderRadius: BorderRadius.circular(SimfTokens.radius),
@@ -485,8 +514,8 @@ class _CardHeading extends StatelessWidget {
       textAlign: TextAlign.start,
       style: const TextStyle(
         color: Colors.white,
-        fontSize: SimfTokens.textLg,
-        fontWeight: FontWeight.w700,
+        fontSize: SimfTokens.textLg, // 16
+        fontWeight: FontWeight.w500, // Medium (Figma 1388:7775)
       ),
     );
   }
