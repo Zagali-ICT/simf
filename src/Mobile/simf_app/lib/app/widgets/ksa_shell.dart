@@ -154,19 +154,21 @@ class KsaPage extends StatelessWidget {
         vertical: SimfTokens.space2,
       ),
       child: Row(
-        // Natural direction (owner 2026-06-18): the leading control sits at the
-        // inline START (physical right under RTL, left under LTR) and the
-        // trailing controls at the END — no forced LTR, so the bar mirrors with
-        // the locale.
+        // Forced LTR to match the Figma sub-page frames (758-1469 / 922-2824 /
+        // 908-1744 …): the back box sits on the LEFT and the title is centred,
+        // even under Arabic/RTL (owner 2026-06-28 "match figma in sub page nav";
+        // supersedes the 2026-06-18 natural-direction header). The title Text
+        // still renders its own RTL content.
+        textDirection: TextDirection.ltr,
         children: <Widget>[
-          // Leading: the 42×42 navy back box (Figma 758:1473) on pushed pages;
-          // an empty 42 box on a tab root keeps the title centred.
+          // Leading: the 42×42 navy back box (Figma 758:1473) on the LEFT; the
+          // chevron is not mirrored (the frame's chevron points left).
           SizedBox(
             width: 42,
             height: 42,
             child: onBack == null
                 ? null
-                : KsaBackButton(onBack: onBack!, mirrorInRtl: true),
+                : KsaBackButton(onBack: onBack!, mirrorInRtl: false),
           ),
           Expanded(
             child: Text(

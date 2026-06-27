@@ -74,47 +74,13 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
+    // DRY (owner 2026-06-28): the shared KsaPage standard nav now renders the
+    // Figma sub-page header (forced-LTR back-left + centred title + hairline),
+    // so the old per-screen header is gone.
     return KsaPage(
+      title: l10n.speakersTitle,
       onBack: () => ksaBackOrHome(context),
-      header: _buildHeader(l10n),
       body: _buildBody(l10n),
-    );
-  }
-
-  /// The frame's centred title flanked by the circled back chevron and a
-  /// balancing spacer (the speaker-profile header pattern, 908:2110), so the
-  /// title stays optically centred under the navy shell.
-  Widget _buildHeader(AppL10n l10n) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SimfTokens.space3,
-        vertical: SimfTokens.space2,
-      ),
-      child: Row(
-        textDirection: TextDirection.ltr,
-        children: <Widget>[
-          SizedBox(
-            width: 42,
-            height: 42,
-            child: KsaBackButton(onBack: () => ksaBackOrHome(context)),
-          ),
-          Expanded(
-            child: Text(
-              l10n.speakersTitle,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: SimfTokens.textTitle,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          // Balances the leading back button so the title stays centred.
-          const SizedBox(width: 42, height: 42),
-        ],
-      ),
     );
   }
 

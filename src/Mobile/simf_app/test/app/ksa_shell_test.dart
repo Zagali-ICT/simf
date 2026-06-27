@@ -261,8 +261,8 @@ void main() {
       expect(prefs.getString(StorageKeys.preferredLanguage), 'en');
     });
 
-    testWidgets('RTL: the leading back control sits at the inline start '
-        '(physical right); the trailing ☰ at the end (left)', (tester) async {
+    testWidgets('forced-LTR header (Figma): the back control sits on the LEFT, '
+        'the ☰ on the right, even under Arabic/RTL', (tester) async {
       await _pump(
         tester,
         KsaPage(
@@ -274,12 +274,11 @@ void main() {
         locale: const Locale('ar'),
       );
 
-      // Natural direction (no forced LTR): leading = start = right in Arabic.
+      // Forced LTR (owner 2026-06-28 "match figma in sub page nav"): back on the
+      // left, the trailing cluster (ending in ☰) on the right.
       final backDx = tester.getCenter(find.byType(KsaBackButton)).dx;
-      // The ☰ is the last control in the shared action cluster (the end / left
-      // under RTL); it is a plain menu IconButton inside KsaHeaderActions now.
       final menuDx = tester.getCenter(find.byIcon(Icons.menu)).dx;
-      expect(backDx, greaterThan(menuDx));
+      expect(backDx, lessThan(menuDx));
     });
 
     testWidgets('the standard sub-page header is back + title only — no action '
