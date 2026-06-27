@@ -41,16 +41,32 @@ class SponsorsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppL10n.of(context);
     final groups = ref.watch(sponsorGroupsProvider);
+    // Pull-to-refresh — re-fetch the tier-grouped sponsors. Invalidate the
+    // FutureProvider then await its next value so the spinner shows until the
+    // new read completes.
+    Future<void> onRefresh() async {
+      ref.invalidate(sponsorGroupsProvider);
+      await ref.read(sponsorGroupsProvider.future);
+    }
+
     return KsaPage(
       title: l10n.sponsorsTitle,
       onBack: () => ksaBackOrHome(context),
       showSweep: true,
       body: groups.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => KsaErrorState(
-          message: l10n.sponsorsError,
-          retryLabel: l10n.retryLabel,
-          onRetry: () => ref.invalidate(sponsorGroupsProvider),
+        error: (_, __) => KsaRefresh(
+          onRefresh: onRefresh,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: <Widget>[
+              KsaErrorState(
+                message: l10n.sponsorsError,
+                retryLabel: l10n.retryLabel,
+                onRetry: () => ref.invalidate(sponsorGroupsProvider),
+              ),
+            ],
+          ),
         ),
         data: (data) {
           final visibleGroups = <SponsorTierGroup>[
@@ -58,18 +74,29 @@ class SponsorsScreen extends ConsumerWidget {
               if (group.sponsors.isNotEmpty) group,
           ];
           if (visibleGroups.isEmpty) {
-            return KsaEmptyState(
-              icon: Icons.workspace_premium_outlined,
-              message: l10n.sponsorsEmpty,
+            return KsaRefresh(
+              onRefresh: onRefresh,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: <Widget>[
+                  KsaEmptyState(
+                    icon: Icons.workspace_premium_outlined,
+                    message: l10n.sponsorsEmpty,
+                  ),
+                ],
+              ),
             );
           }
           final isArabic = l10n.isArabic;
           // The logo image lives at {base}/app/assets/SponsorLogo/{id}/image (D-357).
           final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
           final lastIndex = visibleGroups.length - 1;
-          return ListView(
-            padding: const EdgeInsets.all(SimfTokens.space4),
-            children: <Widget>[
+          return KsaRefresh(
+            onRefresh: onRefresh,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(SimfTokens.space4),
+              children: <Widget>[
               for (var i = 0; i < visibleGroups.length; i++) ...<Widget>[
                 if (i > 0) const SizedBox(height: SimfTokens.space5),
                 _TierLabel(label: visibleGroups[i].tierName),
@@ -108,7 +135,8 @@ class SponsorsScreen extends ConsumerWidget {
                     const SizedBox(height: SimfTokens.space4),
                   ],
               ],
-            ],
+              ],
+            ),
           );
         },
       ),

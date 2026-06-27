@@ -218,16 +218,26 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     if (_error) {
-      return KsaErrorState(
-        message: l10n.notificationsError,
-        retryLabel: l10n.retryLabel,
-        onRetry: () => unawaited(_load()),
+      return KsaRefresh(
+        onRefresh: _load,
+        child: _PullableState(
+          child: KsaErrorState(
+            message: l10n.notificationsError,
+            retryLabel: l10n.retryLabel,
+            onRetry: () => unawaited(_load()),
+          ),
+        ),
       );
     }
     if (_items.isEmpty) {
-      return KsaEmptyState(
-        icon: Icons.notifications_none_outlined,
-        message: l10n.notificationsEmpty,
+      return KsaRefresh(
+        onRefresh: _load,
+        child: _PullableState(
+          child: KsaEmptyState(
+            icon: Icons.notifications_none_outlined,
+            message: l10n.notificationsEmpty,
+          ),
+        ),
       );
     }
     final isArabic = l10n.isArabic;
@@ -287,19 +297,48 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         ),
         const SizedBox(height: SimfTokens.space2),
         Expanded(
-          child: visible.isEmpty
-              ? KsaEmptyState(
-                  icon: Icons.search_off_outlined,
-                  message: l10n.notificationsNoMatches,
-                )
-              : _GroupedList(
-                  items: visible,
-                  isArabic: isArabic,
-                  l10n: l10n,
-                  onTap: (item) => unawaited(_onTapItem(item)),
-                ),
+          child: KsaRefresh(
+            onRefresh: _load,
+            child: visible.isEmpty
+                ? _PullableState(
+                    child: KsaEmptyState(
+                      icon: Icons.search_off_outlined,
+                      message: l10n.notificationsNoMatches,
+                    ),
+                  )
+                : _GroupedList(
+                    items: visible,
+                    isArabic: isArabic,
+                    l10n: l10n,
+                    onTap: (item) => unawaited(_onTapItem(item)),
+                  ),
+          ),
         ),
       ],
+    );
+  }
+}
+
+/// Hosts a non-scrollable state widget (empty / no-matches / error) inside an
+/// always-scrollable, viewport-tall box so the surrounding [KsaRefresh] can fire
+/// its pull-to-retry gesture even when the state itself does not scroll.
+class _PullableState extends StatelessWidget {
+  const _PullableState({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: child,
+          ),
+        );
+      },
     );
   }
 }
@@ -426,6 +465,7 @@ class _GroupedList extends StatelessWidget {
       }
     }
     return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
         SimfTokens.space4,
         0,

@@ -189,19 +189,32 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
       );
     }
     if (_notFound) {
-      return KsaEmptyState(
-        icon: Icons.person_off_outlined,
-        message: l10n.speakerNotFound,
+      return KsaRefresh(
+        onRefresh: _load,
+        child: _PullToRefreshState(
+          child: KsaEmptyState(
+            icon: Icons.person_off_outlined,
+            message: l10n.speakerNotFound,
+          ),
+        ),
       );
     }
     if (_error || _speaker == null) {
-      return KsaErrorState(
-        message: l10n.speakerProfileError,
-        retryLabel: l10n.retryLabel,
-        onRetry: () => unawaited(_load()),
+      return KsaRefresh(
+        onRefresh: _load,
+        child: _PullToRefreshState(
+          child: KsaErrorState(
+            message: l10n.speakerProfileError,
+            retryLabel: l10n.retryLabel,
+            onRetry: () => unawaited(_load()),
+          ),
+        ),
       );
     }
-    return _content(l10n, _speaker!);
+    return KsaRefresh(
+      onRefresh: _load,
+      child: _content(l10n, _speaker!),
+    );
   }
 
   Widget _content(AppL10n l10n, SpeakerDetail speaker) {
@@ -228,6 +241,7 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
     ];
 
     return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
         SimfTokens.space4,
         SimfTokens.space8 + SimfTokens.space6, // 56px — matches Figma large gap above avatar
@@ -287,6 +301,30 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
 }
 
 bool _has(String? value) => value != null && value.trim().isNotEmpty;
+
+/// Hosts a non-scrollable empty/error widget inside an always-scrollable,
+/// full-height viewport so a pull-down-from-the-top still fires the enclosing
+/// [KsaRefresh] (lets the user pull to retry), while keeping the message centred.
+class _PullToRefreshState extends StatelessWidget {
+  const _PullToRefreshState({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+}
 
 /// The frame's identity avatar (908:2110 `912:2270`): a 125px white circle
 /// ringed gold (2.77px). Renders the speaker's uploaded photo (the D-357

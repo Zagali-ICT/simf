@@ -107,16 +107,41 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     if (_error) {
-      return KsaErrorState(
-        message: l10n.sessionsError,
-        retryLabel: l10n.retryLabel,
-        onRetry: () => unawaited(_load()),
+      // Pull-to-retry: host the centred error state in a scrollable so the
+      // pull gesture fires even though the content is short.
+      return KsaRefresh(
+        onRefresh: _load,
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: KsaErrorState(
+                message: l10n.sessionsError,
+                retryLabel: l10n.retryLabel,
+                onRetry: () => unawaited(_load()),
+              ),
+            ),
+          ),
+        ),
       );
     }
     if (_days.isEmpty) {
-      return KsaEmptyState(
-        icon: Icons.event_busy_outlined,
-        message: l10n.sessionsEmpty,
+      // Pull-to-refresh also works on the empty state.
+      return KsaRefresh(
+        onRefresh: _load,
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: KsaEmptyState(
+                icon: Icons.event_busy_outlined,
+                message: l10n.sessionsEmpty,
+              ),
+            ),
+          ),
+        ),
       );
     }
 
@@ -149,63 +174,67 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
       return haystack.contains(needle);
     }).toList(growable: false);
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        SimfTokens.space4,
-        SimfTokens.space2,
-        SimfTokens.space4,
-        SimfTokens.space6,
+    return KsaRefresh(
+      onRefresh: _load,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+          SimfTokens.space4,
+          SimfTokens.space2,
+          SimfTokens.space4,
+          SimfTokens.space6,
+        ),
+        children: <Widget>[
+          _SearchField(
+            l10n: l10n,
+            onChanged: (value) => setState(() => _query = value),
+          ),
+          const SizedBox(height: SimfTokens.space4),
+          _DayStrip(
+            days: _days,
+            selectedId: selected.id,
+            onChanged: (id) => setState(() => _selectedDayId = id),
+          ),
+          const SizedBox(height: SimfTokens.space5),
+          // تفاصيل اليوم (883:2327 area) — the selected day's OWN title + its logo
+          // banner. The "تفاصيل اليوم" label carries the day title (owner: not a
+          // static label — it is the day's title).
+          KsaSectionHeader(title: selected.localizedTitle(isArabic)),
+          const SizedBox(height: SimfTokens.space3),
+          _DayBanner(imageUrl: dayImageUrl),
+          const SizedBox(height: SimfTokens.space5),
+          // Type tabs (883:2320): الكل / ورش العمل / جلسات / احداث.
+          _TypeTabs(
+            l10n: l10n,
+            active: _typeFilter,
+            onChanged: (type) => setState(() => _typeFilter = type),
+          ),
+          const SizedBox(height: SimfTokens.space5),
+          KsaSectionHeader(title: l10n.sessionsScheduleSection),
+          const SizedBox(height: SimfTokens.space3),
+          if (sessions.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: SimfTokens.space4),
+              child: Text(
+                l10n.sessionsEmpty,
+                style: const TextStyle(color: SimfTokens.beigeBorder),
+              ),
+            )
+          else
+            for (final (index, session) in sessions.indexed) ...<Widget>[
+              if (index > 0) const SizedBox(height: SimfTokens.space4),
+              _SessionRow(
+                session: session,
+                index: index + 1,
+                isArabic: isArabic,
+                // The first session of the day is featured — expanded with the
+                // day banner image (frame 1064:13222 / 1064:13233).
+                featuredImageUrl: index == 0 ? dayImageUrl : null,
+                onTap: () => _openSession(session),
+              ),
+            ],
+        ],
       ),
-      children: <Widget>[
-        _SearchField(
-          l10n: l10n,
-          onChanged: (value) => setState(() => _query = value),
-        ),
-        const SizedBox(height: SimfTokens.space4),
-        _DayStrip(
-          days: _days,
-          selectedId: selected.id,
-          onChanged: (id) => setState(() => _selectedDayId = id),
-        ),
-        const SizedBox(height: SimfTokens.space5),
-        // تفاصيل اليوم (883:2327 area) — the selected day's OWN title + its logo
-        // banner. The "تفاصيل اليوم" label carries the day title (owner: not a
-        // static label — it is the day's title).
-        KsaSectionHeader(title: selected.localizedTitle(isArabic)),
-        const SizedBox(height: SimfTokens.space3),
-        _DayBanner(imageUrl: dayImageUrl),
-        const SizedBox(height: SimfTokens.space5),
-        // Type tabs (883:2320): الكل / ورش العمل / جلسات / احداث.
-        _TypeTabs(
-          l10n: l10n,
-          active: _typeFilter,
-          onChanged: (type) => setState(() => _typeFilter = type),
-        ),
-        const SizedBox(height: SimfTokens.space5),
-        KsaSectionHeader(title: l10n.sessionsScheduleSection),
-        const SizedBox(height: SimfTokens.space3),
-        if (sessions.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: SimfTokens.space4),
-            child: Text(
-              l10n.sessionsEmpty,
-              style: const TextStyle(color: SimfTokens.beigeBorder),
-            ),
-          )
-        else
-          for (final (index, session) in sessions.indexed) ...<Widget>[
-            if (index > 0) const SizedBox(height: SimfTokens.space4),
-            _SessionRow(
-              session: session,
-              index: index + 1,
-              isArabic: isArabic,
-              // The first session of the day is featured — expanded with the
-              // day banner image (frame 1064:13222 / 1064:13233).
-              featuredImageUrl: index == 0 ? dayImageUrl : null,
-              onTap: () => _openSession(session),
-            ),
-          ],
-      ],
     );
   }
 }

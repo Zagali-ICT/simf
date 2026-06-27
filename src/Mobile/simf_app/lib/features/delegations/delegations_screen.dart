@@ -44,6 +44,11 @@ class _DelegationsScreenState extends ConsumerState<DelegationsScreen> {
     final isArabic = Directionality.of(context) == TextDirection.rtl;
     final delegations = ref.watch(delegationsProvider);
 
+    Future<void> onRefresh() async {
+      ref.invalidate(delegationsProvider);
+      await ref.read(delegationsProvider.future);
+    }
+
     return KsaPage(
       title: l10n.delegationsTitle,
       onBack: () => ksaBackOrHome(context),
@@ -51,18 +56,29 @@ class _DelegationsScreenState extends ConsumerState<DelegationsScreen> {
         loading: () => const Center(
           child: CircularProgressIndicator(color: SimfTokens.accent),
         ),
-        error: (_, __) => KsaErrorState(
-          message: l10n.delegationsError,
-          retryLabel: l10n.retryLabel,
-          onRetry: () => ref.invalidate(delegationsProvider),
+        error: (_, __) => KsaRefresh(
+          onRefresh: onRefresh,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: <Widget>[
+              KsaErrorState(
+                message: l10n.delegationsError,
+                retryLabel: l10n.retryLabel,
+                onRetry: () => ref.invalidate(delegationsProvider),
+              ),
+            ],
+          ),
         ),
-        data: (data) => _DelegationsBody(
-          data: data,
-          query: _query,
-          isArabic: isArabic,
-          l10n: l10n,
-          searchController: _searchController,
-          onQueryChanged: (value) => setState(() => _query = value),
+        data: (data) => KsaRefresh(
+          onRefresh: onRefresh,
+          child: _DelegationsBody(
+            data: data,
+            query: _query,
+            isArabic: isArabic,
+            l10n: l10n,
+            searchController: _searchController,
+            onQueryChanged: (value) => setState(() => _query = value),
+          ),
         ),
       ),
     );
@@ -96,6 +112,7 @@ class _DelegationsBody extends StatelessWidget {
         .toList(growable: false);
 
     return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(SimfTokens.space4),
       children: <Widget>[
         _StatsStrip(

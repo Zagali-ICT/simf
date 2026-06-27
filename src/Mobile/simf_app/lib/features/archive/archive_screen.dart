@@ -60,6 +60,16 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
   // The selected edition id; null until the editions arrive (then the first).
   String? _selectedId;
 
+  // Pull-to-refresh: drop the cached editions AND the selected edition's detail
+  // (the whole detail family, so whichever edition is shown — tapped or the
+  // default most-recent — re-fetches its summary/gallery/sessions too), then
+  // await the list re-fetch so the gold spinner stays until it arrives.
+  Future<void> _refresh() async {
+    ref.invalidate(archiveEditionsProvider);
+    ref.invalidate(archiveEditionDetailProvider);
+    await ref.read(archiveEditionsProvider.future);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
@@ -69,16 +79,34 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
       onBack: () => ksaBackOrHome(context),
       body: editions.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => KsaErrorState(
-          message: l10n.archiveError,
-          retryLabel: l10n.retryLabel,
-          onRetry: () => ref.invalidate(archiveEditionsProvider),
+        // Pull-to-retry: a scrollable error state under KsaRefresh.
+        error: (_, __) => KsaRefresh(
+          onRefresh: _refresh,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: <Widget>[
+              KsaErrorState(
+                message: l10n.archiveError,
+                retryLabel: l10n.retryLabel,
+                onRetry: () => ref.invalidate(archiveEditionsProvider),
+              ),
+            ],
+          ),
         ),
         data: (items) {
           if (items.isEmpty) {
-            return KsaEmptyState(
-              icon: Icons.bookmark_outline,
-              message: l10n.archiveEmpty,
+            // Pull-to-retry: a scrollable empty state under KsaRefresh.
+            return KsaRefresh(
+              onRefresh: _refresh,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: <Widget>[
+                  KsaEmptyState(
+                    icon: Icons.bookmark_outline,
+                    message: l10n.archiveEmpty,
+                  ),
+                ],
+              ),
             );
           }
           // Default the selection to the most-recent edition (the list is
@@ -87,11 +115,14 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
             (e) => e.id == _selectedId,
             orElse: () => items.first,
           );
-          return _ArchiveBody(
-            l10n: l10n,
-            editions: items,
-            selected: selected,
-            onSelect: (id) => setState(() => _selectedId = id),
+          return KsaRefresh(
+            onRefresh: _refresh,
+            child: _ArchiveBody(
+              l10n: l10n,
+              editions: items,
+              selected: selected,
+              onSelect: (id) => setState(() => _selectedId = id),
+            ),
           );
         },
       ),
@@ -126,6 +157,7 @@ class _ArchiveBody extends ConsumerWidget {
     final dateLabel = d?.localizedDateLabel(isArabic);
 
     return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
         SimfTokens.space4,
         SimfTokens.space2,

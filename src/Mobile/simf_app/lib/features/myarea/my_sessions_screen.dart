@@ -41,6 +41,11 @@ class _MySessionsScreenState extends ConsumerState<MySessionsScreen> {
       l10n.mySessionsTabArchive,
     ];
 
+    Future<void> onRefresh() async {
+      ref.invalidate(mySessionsProvider);
+      await ref.read(mySessionsProvider.future);
+    }
+
     return KsaPage(
       title: l10n.mySessionsTitle,
       onBack: () => ksaBackOrHome(context),
@@ -70,15 +75,26 @@ class _MySessionsScreenState extends ConsumerState<MySessionsScreen> {
               loading: () => const Center(
                 child: CircularProgressIndicator(color: SimfTokens.accent),
               ),
-              error: (_, __) => KsaErrorState(
-                message: l10n.mySessionsError,
-                retryLabel: l10n.retryLabel,
-                onRetry: () => ref.invalidate(mySessionsProvider),
+              error: (_, __) => KsaRefresh(
+                onRefresh: onRefresh,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: <Widget>[
+                    KsaErrorState(
+                      message: l10n.mySessionsError,
+                      retryLabel: l10n.retryLabel,
+                      onRetry: () => ref.invalidate(mySessionsProvider),
+                    ),
+                  ],
+                ),
               ),
-              data: (page) => _TabbedList(
-                items: _filter(page.items),
-                tabLabel: tabLabels[_MySessionsTab.values.indexOf(_tab)],
-                l10n: l10n,
+              data: (page) => KsaRefresh(
+                onRefresh: onRefresh,
+                child: _TabbedList(
+                  items: _filter(page.items),
+                  tabLabel: tabLabels[_MySessionsTab.values.indexOf(_tab)],
+                  l10n: l10n,
+                ),
               ),
             ),
           ),
@@ -118,13 +134,19 @@ class _TabbedList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
-      return KsaEmptyState(
-        icon: Icons.event_note_outlined,
-        message: l10n.mySessionsEmpty,
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: <Widget>[
+          KsaEmptyState(
+            icon: Icons.event_note_outlined,
+            message: l10n.mySessionsEmpty,
+          ),
+        ],
       );
     }
     final isArabic = l10n.isArabic;
     return ListView.separated(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
         SimfTokens.space4,
         0,

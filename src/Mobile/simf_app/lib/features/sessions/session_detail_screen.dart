@@ -282,42 +282,64 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
+    // The not-found / error states are hosted in an always-scrollable list so a
+    // pull-down still fires KsaRefresh (pull to retry) even though they render a
+    // short, centred surface.
     if (_notFound) {
-      return KsaEmptyState(
-        icon: Icons.event_busy_outlined,
-        message: l10n.sessionNotFound,
+      return KsaRefresh(
+        onRefresh: _load,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: <Widget>[
+            KsaEmptyState(
+              icon: Icons.event_busy_outlined,
+              message: l10n.sessionNotFound,
+            ),
+          ],
+        ),
       );
     }
     if (_error || _detail == null) {
-      return KsaErrorState(
-        message: l10n.sessionDetailError,
-        retryLabel: l10n.retryLabel,
-        onRetry: () => unawaited(_load()),
+      return KsaRefresh(
+        onRefresh: _load,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: <Widget>[
+            KsaErrorState(
+              message: l10n.sessionDetailError,
+              retryLabel: l10n.retryLabel,
+              onRetry: () => unawaited(_load()),
+            ),
+          ],
+        ),
       );
     }
     // The speaker avatars resolve `{base}/app/assets/SpeakerPhoto/{id}/image`
     // (the D-357 SpeakerPhoto asset); the base already includes `/api/v1`.
     final baseUrl = ref.read(simfDataConfigProvider).baseUrl;
-    return _Content(
-      detail: _detail!,
-      seatMap: _seatMap,
-      busy: _busy,
-      l10n: l10n,
-      baseUrl: baseUrl,
-      onAddToCalendar: () => unawaited(_addToCalendar(_detail!, l10n)),
-      onRemind: () => _remind(l10n),
-      onSessionLink: _openLive,
-      onSessionSummary: _openSummary,
-      onAskHost: _askHost,
-      onJoin: () => unawaited(_join(l10n)),
-      onCancelReservation: () => unawaited(_cancelReservation(l10n)),
-      onViewSeat: () => context.pushNamed(
-        RouteNames.mySeat,
-        pathParameters: <String, String>{'sessionId': widget.sessionId},
-      ),
-      onSpeaker: (speaker) => context.pushNamed(
-        RouteNames.speakerProfile,
-        pathParameters: <String, String>{'speakerId': speaker.id},
+    return KsaRefresh(
+      onRefresh: _load,
+      child: _Content(
+        detail: _detail!,
+        seatMap: _seatMap,
+        busy: _busy,
+        l10n: l10n,
+        baseUrl: baseUrl,
+        onAddToCalendar: () => unawaited(_addToCalendar(_detail!, l10n)),
+        onRemind: () => _remind(l10n),
+        onSessionLink: _openLive,
+        onSessionSummary: _openSummary,
+        onAskHost: _askHost,
+        onJoin: () => unawaited(_join(l10n)),
+        onCancelReservation: () => unawaited(_cancelReservation(l10n)),
+        onViewSeat: () => context.pushNamed(
+          RouteNames.mySeat,
+          pathParameters: <String, String>{'sessionId': widget.sessionId},
+        ),
+        onSpeaker: (speaker) => context.pushNamed(
+          RouteNames.speakerProfile,
+          pathParameters: <String, String>{'speakerId': speaker.id},
+        ),
       ),
     );
   }
@@ -433,6 +455,7 @@ class _Content extends StatelessWidget {
     final description = detail.localizedDescription(isArabic);
 
     return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
         SimfTokens.space4,
         SimfTokens.space2,

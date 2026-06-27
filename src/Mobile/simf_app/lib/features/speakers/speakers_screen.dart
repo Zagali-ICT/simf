@@ -125,43 +125,66 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
       );
     }
     if (_error) {
-      return KsaErrorState(
-        message: l10n.speakersError,
-        retryLabel: l10n.retryLabel,
-        onRetry: () => unawaited(_load()),
+      // Hosted in a scrollable so pull-to-refresh works in the error state
+      // (lets the user pull to retry).
+      return KsaRefresh(
+        onRefresh: _load,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: <Widget>[
+            KsaErrorState(
+              message: l10n.speakersError,
+              retryLabel: l10n.retryLabel,
+              onRetry: () => unawaited(_load()),
+            ),
+          ],
+        ),
       );
     }
     if (_speakers.isEmpty) {
-      return KsaEmptyState(
-        icon: Icons.groups_outlined,
-        message: l10n.speakersEmpty,
+      // Hosted in a scrollable so pull-to-refresh works in the empty state.
+      return KsaRefresh(
+        onRefresh: _load,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: <Widget>[
+            KsaEmptyState(
+              icon: Icons.groups_outlined,
+              message: l10n.speakersEmpty,
+            ),
+          ],
+        ),
       );
     }
     final isArabic = l10n.isArabic;
     // The card builds `{base}/app/assets/SpeakerPhoto/{id}/image` for the avatar.
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(
-        SimfTokens.space4,
-        SimfTokens.space4,
-        SimfTokens.space4,
-        SimfTokens.space6,
+    return KsaRefresh(
+      onRefresh: _load,
+      child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+          SimfTokens.space4,
+          SimfTokens.space4,
+          SimfTokens.space4,
+          SimfTokens.space6,
+        ),
+        itemCount: _speakers.length,
+        // Frame 908:1744 — cards pitch 76px (card 60 + 16 gap).
+        separatorBuilder: (_, __) => const SizedBox(height: SimfTokens.space4),
+        itemBuilder: (context, index) {
+          final speaker = _speakers[index];
+          return _SpeakerCard(
+            speaker: speaker,
+            isArabic: isArabic,
+            baseUrl: baseUrl,
+            onTap: () => context.pushNamed(
+              RouteNames.speakerProfile,
+              pathParameters: <String, String>{'speakerId': speaker.id},
+            ),
+          );
+        },
       ),
-      itemCount: _speakers.length,
-      // Frame 908:1744 — cards pitch 76px (card 60 + 16 gap).
-      separatorBuilder: (_, __) => const SizedBox(height: SimfTokens.space4),
-      itemBuilder: (context, index) {
-        final speaker = _speakers[index];
-        return _SpeakerCard(
-          speaker: speaker,
-          isArabic: isArabic,
-          baseUrl: baseUrl,
-          onTap: () => context.pushNamed(
-            RouteNames.speakerProfile,
-            pathParameters: <String, String>{'speakerId': speaker.id},
-          ),
-        );
-      },
     );
   }
 }

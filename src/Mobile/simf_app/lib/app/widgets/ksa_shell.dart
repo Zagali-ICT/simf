@@ -69,6 +69,7 @@ class KsaPage extends StatelessWidget {
     this.tab,
     this.showSweep = false,
     this.showNotificationsBell = true,
+    this.showHeaderActions = true,
     super.key,
   });
 
@@ -95,6 +96,13 @@ class KsaPage extends StatelessWidget {
   /// True on every signed-in surface; the guest home (frame 758:2910) passes
   /// false — a guest has no personal notifications.
   final bool showNotificationsBell;
+
+  /// Whether the default header shows the trailing action cluster (bell /
+  /// language / theme / menu). True preserves the every-page cluster (owner
+  /// 2026-06-18); the Figma standard inner-page nav (758-1469 / 922-2824) is
+  /// back + centred title + bottom hairline only, so in-scope pages pass false
+  /// and a 42-wide spacer balances the back box to keep the title centred.
+  final bool showHeaderActions;
 
   @override
   Widget build(BuildContext context) {
@@ -128,7 +136,18 @@ class KsaPage extends StatelessWidget {
   }
 
   Widget _defaultHeader(BuildContext context) {
-    return Padding(
+    // Figma standard top-nav (758-1469 / 922-2824): a fixed-height header with a
+    // bottom hairline, a 42×42 navy back box at the inline start, and a centred
+    // 18px SemiBold title. Reused across every inner page.
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: SimfTokens.beigeBorder,
+            width: SimfTokens.hairline,
+          ),
+        ),
+      ),
       padding: const EdgeInsets.symmetric(
         horizontal: SimfTokens.space3,
         vertical: SimfTokens.space2,
@@ -139,11 +158,11 @@ class KsaPage extends StatelessWidget {
         // trailing controls at the END — no forced LTR, so the bar mirrors with
         // the locale.
         children: <Widget>[
-          // Leading: the back chevron on pushed pages; nothing on a tab root
-          // (the ☰ in the trailing controller opens the menu instead).
+          // Leading: the 42×42 navy back box (Figma 758:1473) on pushed pages;
+          // an empty 42 box on a tab root keeps the title centred.
           SizedBox(
-            width: 40,
-            height: 40,
+            width: 42,
+            height: 42,
             child: onBack == null
                 ? null
                 : KsaBackButton(onBack: onBack!, mirrorInRtl: true),
@@ -162,11 +181,14 @@ class KsaPage extends StatelessWidget {
               ),
             ),
           ),
-          // The shared trailing action cluster — the SAME top-nav controls on
-          // every page (owner 2026-06-27): the notifications bell + its unread
-          // badge, the language globe, the inert dark-mode crescent, and the
-          // drawer ☰. One component so every page's top nav is identical.
-          KsaHeaderActions(showBell: showNotificationsBell),
+          // The shared trailing action cluster (bell + language + inert theme +
+          // drawer ☰) when [showHeaderActions]; otherwise a 42-wide spacer that
+          // balances the back box so the title stays truly centred — the Figma
+          // standard nav (758-1469 / 922-2824) is back + title + line only.
+          if (showHeaderActions)
+            KsaHeaderActions(showBell: showNotificationsBell)
+          else
+            const SizedBox(width: 42, height: 42),
         ],
       ),
     );
@@ -281,6 +303,31 @@ class KsaMenuButton extends StatelessWidget {
         shape: const CircleBorder(),
       ),
       icon: const Icon(Icons.menu, color: Colors.white, size: 20),
+    );
+  }
+}
+
+/// Pull-to-refresh wrapper — wrap any data page's scrollable body so a
+/// pull-down-from-top re-fetches it (owner rule 2026-06-28: every data page,
+/// not just home). The [child] must be (or contain) a scrollable that uses
+/// [AlwaysScrollableScrollPhysics] so the gesture fires even when content is
+/// short. Styled with the gold spinner on a navy puck to match the shell.
+class KsaRefresh extends StatelessWidget {
+  const KsaRefresh({required this.onRefresh, required this.child, super.key});
+
+  /// Called when the user pulls to refresh; should re-fetch the page's data.
+  final Future<void> Function() onRefresh;
+
+  /// The scrollable body to refresh.
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      color: SimfTokens.accent,
+      backgroundColor: SimfTokens.navyDeep,
+      child: child,
     );
   }
 }

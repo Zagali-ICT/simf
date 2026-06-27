@@ -129,10 +129,24 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     if (_error) {
-      return KsaErrorState(
-        message: l10n.boothsError,
-        retryLabel: l10n.retryLabel,
-        onRetry: () => unawaited(_load()),
+      // Pull-to-refresh also works in the error state so the user can pull to
+      // retry; the Center error widget is hosted in an always-scrollable view
+      // (with a min-height filler) so the gesture fires on the short content.
+      return KsaRefresh(
+        onRefresh: _load,
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: KsaErrorState(
+                message: l10n.boothsError,
+                retryLabel: l10n.retryLabel,
+                onRetry: () => unawaited(_load()),
+              ),
+            ),
+          ),
+        ),
       );
     }
 
@@ -156,35 +170,63 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
           ),
         ),
         Expanded(
-          child: _booths.isEmpty
-              ? KsaEmptyState(
-                  icon: Icons.storefront_outlined,
-                  message: l10n.boothsEmpty,
-                )
-              : filtered.isEmpty
-                  ? KsaEmptyState(
-                      icon: Icons.search_off_outlined,
-                      message: l10n.boothsNoMatch,
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(
-                        SimfTokens.space4,
-                        SimfTokens.space4,
-                        SimfTokens.space4,
-                        SimfTokens.space6,
-                      ),
-                      itemCount: filtered.length,
-                      separatorBuilder: (_, __) =>
-                          const SizedBox(height: SimfTokens.space4),
-                      itemBuilder: (context, index) => _BoothCard(
-                        booth: filtered[index],
-                        l10n: l10n,
-                        isArabic: isArabic,
-                        baseUrl: baseUrl,
-                        onTap: () => _openBooth(filtered[index]),
-                        onGuide: () => _openBoothMap(filtered[index]),
+          // Pull-down-from-the-top re-fetches the booths (onRefresh: _load).
+          // The empty / no-match states are hosted in an always-scrollable view
+          // (with a min-height filler) so the gesture fires on short content;
+          // the list itself uses AlwaysScrollableScrollPhysics for the same.
+          child: KsaRefresh(
+            onRefresh: _load,
+            child: _booths.isEmpty
+                ? LayoutBuilder(
+                    builder: (context, constraints) => SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: ConstrainedBox(
+                        constraints:
+                            BoxConstraints(minHeight: constraints.maxHeight),
+                        child: KsaEmptyState(
+                          icon: Icons.storefront_outlined,
+                          message: l10n.boothsEmpty,
+                        ),
                       ),
                     ),
+                  )
+                : filtered.isEmpty
+                    ? LayoutBuilder(
+                        builder: (context, constraints) =>
+                            SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              minHeight: constraints.maxHeight,
+                            ),
+                            child: KsaEmptyState(
+                              icon: Icons.search_off_outlined,
+                              message: l10n.boothsNoMatch,
+                            ),
+                          ),
+                        ),
+                      )
+                    : ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(
+                          SimfTokens.space4,
+                          SimfTokens.space4,
+                          SimfTokens.space4,
+                          SimfTokens.space6,
+                        ),
+                        itemCount: filtered.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(height: SimfTokens.space4),
+                        itemBuilder: (context, index) => _BoothCard(
+                          booth: filtered[index],
+                          l10n: l10n,
+                          isArabic: isArabic,
+                          baseUrl: baseUrl,
+                          onTap: () => _openBooth(filtered[index]),
+                          onGuide: () => _openBoothMap(filtered[index]),
+                        ),
+                      ),
+          ),
         ),
       ],
     );

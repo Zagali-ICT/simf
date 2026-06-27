@@ -215,10 +215,23 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
   }
 
   Widget _buildErrorState(AppL10n l10n) {
-    return KsaErrorState(
-      message: l10n.myAreaError,
-      retryLabel: l10n.retryLabel,
-      onRetry: () => unawaited(_load()),
+    // Pull-to-refresh also retries: the error surface is hosted in a scrollable
+    // so KsaRefresh's gesture fires even though the content is short.
+    return KsaRefresh(
+      onRefresh: _load,
+      child: LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: KsaErrorState(
+              message: l10n.myAreaError,
+              retryLabel: l10n.retryLabel,
+              onRetry: () => unawaited(_load()),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -227,7 +240,10 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
   Widget _buildLimited(AppL10n l10n) {
     final user = _currentUser;
     final name = user?.displayName ?? '';
-    return ListView(
+    return KsaRefresh(
+      onRefresh: _load,
+      child: ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(SimfTokens.space4),
       children: <Widget>[
         _IdentityCard(name: name, line: l10n.myAreaPendingNote),
@@ -238,6 +254,7 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
         ),
         // Sign-out lives in the shell's side drawer now (D-396).
       ],
+      ),
     );
   }
 
@@ -264,7 +281,10 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
     final meetings =
         dashboard.todaySchedule.where((i) => !i.isSession).toList();
 
-    return ListView(
+    return KsaRefresh(
+      onRefresh: _load,
+      child: ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(SimfTokens.space4),
       children: <Widget>[
         _IdentityCard(
@@ -399,6 +419,7 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
         // Calendar export + sign-out moved to the shell's side drawer (D-396),
         // matching frame 213:963 which ends المزيد at اعدادات الحساب.
       ],
+      ),
     );
   }
 }
