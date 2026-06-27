@@ -688,13 +688,13 @@ class _LiveBanner extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: SimfTokens.space2),
-              const Icon(
-                Icons.arrow_left,
-                // Frame 758:1150 — the arrow points LEFT (the design's caret
-                // direction); force LTR so it does not mirror to the right
-                // under the app's RTL directionality.
-                textDirection: TextDirection.ltr,
-                color: Colors.white,
+              // Owner 2026-06-27 — the LIVE (YouTube/broadcast) banner's caret
+              // must match the "عن الملتقى" / section rows: the same gold
+              // ic_caret_left.svg (not a white Material arrow). The bundled SVG
+              // points left and does not mirror under RTL.
+              const SimfSvgIcon(
+                'assets/icons/ic_caret_left.svg',
+                color: SimfTokens.accent,
                 size: 24,
               ),
             ],
@@ -716,13 +716,14 @@ class _DiscoverHeroBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Frame 758:1203 — a fixed 96-high banner whose photo fills the FULL width
-    // and height. The outer SizedBox gives the Stack a definite size and
-    // StackFit.expand forces every non-positioned child to that size, so the
-    // BoxFit.cover photo always fills edge-to-edge (no reliance on a single
-    // sizing child). The scrim is the design's flat 70% black (rgba(0,0,0,0.7)).
+    // اكتشف hero (frame 758:1203). Taller (160) so on a wide tablet the full
+    // photo is visible (96 made it an ultra-thin strip), and BoxFit.fill so the
+    // whole image stretches into the banner — "view the full image" (owner
+    // 2026-06-27). The outer SizedBox + StackFit.expand give the Stack a definite
+    // size so every layer fills edge-to-edge. Scrim lightened to ~50% so the
+    // photo reads clearly (the 70% black hid it).
     return SizedBox(
-      height: 96,
+      height: 160,
       width: double.infinity,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
@@ -731,9 +732,9 @@ class _DiscoverHeroBanner extends StatelessWidget {
           children: <Widget>[
             Image.asset(
               'assets/images/discover_hero.jpg',
-              fit: BoxFit.cover,
+              fit: BoxFit.fill,
             ),
-            const ColoredBox(color: Color(0xB3000000)),
+            const ColoredBox(color: Color(0x80000000)),
             Material(
               color: Colors.transparent,
               child: InkWell(
