@@ -145,6 +145,7 @@ Future<void> _pump(
         (RouteNames.gallery, '/media', 'GALLERY'),
         (RouteNames.archive, '/archive', 'ARCHIVE'),
         (RouteNames.aboutForum, '/about', 'ABOUT'),
+        (RouteNames.faq, '/faq', 'FAQ-PAGE'),
         (RouteNames.meetPeople, '/meet', 'MEET'),
         (RouteNames.chatbot, '/chatbot', 'CHATBOT'),
         (RouteNames.aiSummary, '/ai-summary', 'AI-SUMMARY'),
@@ -267,8 +268,7 @@ void main() {
       expect(find.text('SIGN-IN'), findsOneWidget);
     });
 
-    testWidgets('the FAQ row opens the about page (no app FAQ endpoint yet)',
-        (tester) async {
+    testWidgets('the FAQ row opens the FAQ page', (tester) async {
       await _pump(tester, controller: _GuestController());
 
       await tester.scrollUntilVisible(
@@ -278,7 +278,7 @@ void main() {
       );
       await tester.tap(find.text('FAQ'));
       await tester.pumpAndSettle();
-      expect(find.text('ABOUT'), findsOneWidget);
+      expect(find.text('FAQ-PAGE'), findsOneWidget);
     });
 
     testWidgets('renders right-to-left in Arabic', (tester) async {

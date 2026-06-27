@@ -7,7 +7,7 @@
 > **re-laid out to the LIVE Figma frame `758:1134` (exact-parity, D-446)** — the
 > guest layout stays on `512:1492`. Widget tests in
 > `src/Mobile/simf_app/test/features/home/home_screen_test.dart` cover: guest
-> banner + 2×2 tiles + locked بطاقتي card + sign-in CTA + FAQ→About row; the
+> banner + 2×2 tiles + locked بطاقتي card + sign-in CTA + FAQ→FAQ-screen row; the
 > signed-in greeting header + discover hero + live banner; the three **bordered
 > section bars** (عن الملتقى / الرعاة / الأخبار والتغطية, `KsaLinkRow`); the tile
 > groups (المتحدثون·المعرض·جلسات + اسأل المحاور; اللقاءات الثنائية·الأرشيف; the
@@ -42,7 +42,7 @@
 | E2E-MOB013-006 | Privilege from the cached auth session picks the layout | auth | P1 | authored ✓ (screen — signed-in greeting + 3 section bars + tile groups) |
 | E2E-MOB013-007 | RTL render of Home tiles + bell badge | i18n | P1 | authored ✓ (screen — Arabic RTL + badge hidden/shown) |
 | E2E-MOB013-008 | Locked بطاقتي card is visible but inert as a guest | auth | P1 | authored ✓ (screen — disabled tile ignores taps) |
-| E2E-MOB013-009 | FAQ row opens the About page (no app FAQ endpoint yet) | happy | P2 | authored ✓ (screen) |
+| E2E-MOB013-009 | FAQ row opens the FAQ screen (Wave 1 `GET /app/faq`) | happy | P2 | authored ✓ (screen) |
 | E2E-MOB013-010 | Social + Visit-Saudi links launch externally; unset URL = inert button | happy | P2 | authored ✓ (screen — 5 brand buttons render; D-369 contract) |
 | E2E-MOB013-011 | Greeting shows the App-profile name, never the email (frame 758:1134, D-408) | happy | P1 | authored ✓ (screen — profile name wins; email fallback suppressed) |
 | E2E-MOB013-012 | Discovery hero banner renders and opens News (node 758:1203, D-408) | happy | P2 | authored ✓ (screen — banner tap → News) |
@@ -166,15 +166,15 @@ Scenario: The بطاقتي card is locked for a guest
   And tapping it does nothing (no navigation, no dialog)
 ```
 
-### E2E-MOB013-009 — FAQ row → About
+### E2E-MOB013-009 — FAQ row → FAQ screen
 
 ```gherkin
-Scenario: The FAQ row opens the about page
+Scenario: The FAQ row opens the FAQ screen
   Given the guest home is open
   When the user taps the "الأسئلة الشائعة" row
-  Then the About page (عن الملتقى) opens
-  # A dedicated app FAQ screen + GET /app/faq endpoint is a tracked follow-up;
-  # the About page carries the venue/event info this row promises today.
+  Then the FAQ screen (الأسئلة الشائعة) opens
+  # Wave 1 shipped the FAQ screen + GET /app/faq; the row opens it directly
+  # (it was temporarily pointed at About before the endpoint existed).
 ```
 
 ### E2E-MOB013-010 — External links (config-driven)
