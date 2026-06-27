@@ -192,18 +192,20 @@ void main() {
       expect(backs, 1);
     });
 
-    testWidgets('the standard header carries the language + inert dark-mode '
-        'controls', (tester) async {
+    testWidgets('the action cluster (showHeaderActions:true) carries the '
+        'language + inert dark-mode controls', (tester) async {
       await _pump(
         tester,
         KsaPage(
           title: 'My page',
           onBack: () {},
+          showHeaderActions: true,
           body: const Text('BODY'),
         ),
       );
 
-      // Both shared controls render on every shell page's header.
+      // Both shared controls render when the cluster is opted in (Home / guest
+      // home); sub-pages default to back + title + line only (owner 2026-06-28).
       expect(find.byIcon(Icons.language), findsOneWidget);
       expect(find.byIcon(Icons.dark_mode), findsOneWidget);
 
@@ -235,6 +237,7 @@ void main() {
         KsaPage(
           title: 'My page',
           onBack: () {},
+          showHeaderActions: true,
           body: const Text('BODY'),
         ),
         overrides: <Override>[
@@ -265,6 +268,7 @@ void main() {
         KsaPage(
           title: 'صفحة',
           onBack: () {},
+          showHeaderActions: true,
           body: const Text('BODY'),
         ),
         locale: const Locale('ar'),
@@ -278,14 +282,28 @@ void main() {
       expect(backDx, greaterThan(menuDx));
     });
 
-    testWidgets('the standard header carries the notifications bell (owner '
-        '2026-06-27 — the same top nav on every signed-in page)',
-        (tester) async {
+    testWidgets('the standard sub-page header is back + title only — no action '
+        'cluster by default (Figma 758-1469, owner 2026-06-28)', (tester) async {
       await _pump(
         tester,
         KsaPage(title: 'My page', onBack: () {}, body: const Text('BODY')),
       );
-      // The unified top nav (KsaHeaderActions) puts the bell on every page.
+      // The Figma sub-page nav carries no bell / language / theme / menu.
+      expect(find.byIcon(Icons.notifications_none_outlined), findsNothing);
+      expect(find.byIcon(Icons.language), findsNothing);
+      expect(find.byIcon(Icons.menu), findsNothing);
+      expect(find.byIcon(Icons.dark_mode), findsNothing);
+
+      // Opting in (Home / guest home) brings the cluster back, with the bell.
+      await _pump(
+        tester,
+        KsaPage(
+          title: 'My page',
+          onBack: () {},
+          showHeaderActions: true,
+          body: const Text('BODY'),
+        ),
+      );
       expect(find.byIcon(Icons.notifications_none_outlined), findsOneWidget);
     });
 

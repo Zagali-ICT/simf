@@ -69,7 +69,7 @@ class KsaPage extends StatelessWidget {
     this.tab,
     this.showSweep = false,
     this.showNotificationsBell = true,
-    this.showHeaderActions = true,
+    this.showHeaderActions = false,
     super.key,
   });
 
@@ -98,10 +98,11 @@ class KsaPage extends StatelessWidget {
   final bool showNotificationsBell;
 
   /// Whether the default header shows the trailing action cluster (bell /
-  /// language / theme / menu). True preserves the every-page cluster (owner
-  /// 2026-06-18); the Figma standard inner-page nav (758-1469 / 922-2824) is
-  /// back + centred title + bottom hairline only, so in-scope pages pass false
-  /// and a 42-wide spacer balances the back box to keep the title centred.
+  /// language / theme / menu). Defaults to **false** (owner 2026-06-28): the
+  /// Figma standard sub-page nav (758-1469 / 922-2824) is back + centred title
+  /// + bottom hairline only, and a 42-wide spacer balances the back box to keep
+  /// the title centred. The cluster lives on the Home greeting header (which
+  /// builds its own [header]); a page may pass true to opt back in.
   final bool showHeaderActions;
 
   @override

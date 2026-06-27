@@ -172,9 +172,15 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
       messenger.showSnackBar(
         SnackBar(content: Text(l10n.bookingCancelledToast)),
       );
-    } on ApiFailure {
+    } on ApiFailure catch (failure) {
+      // Surface the backend's localized reason (e.g. "cannot cancel after the
+      // session has started", "you have no seat to release") instead of a
+      // generic failure — the generic toast is the reason cancel "looks broken".
+      final reason = failure.message.trim();
       messenger.showSnackBar(
-        SnackBar(content: Text(l10n.bookingCancelFailed)),
+        SnackBar(
+          content: Text(reason.isNotEmpty ? reason : l10n.bookingCancelFailed),
+        ),
       );
     } finally {
       if (mounted) {

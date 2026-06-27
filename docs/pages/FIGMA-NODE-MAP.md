@@ -28,7 +28,7 @@ Pixel-parity is proven per screen with a golden render at the Figma frame size
 - Back button: 42×42, bg `#192b41`, radius 22, gold/white chevron 24px, mirrors in RTL.
 - Title: centred, Inter/FS-Albert SemiBold 18px, white, single line ellipsis.
 - Fixed header height below the status bar (~56–66px).
-- **Open design question (flagged to owner):** the Figma standard nav shows back+title only — no bell/language/theme/menu cluster. The current app puts the cluster on every page (owner invariant 2026-06-18). Pending owner confirmation whether the cluster stays on inner pages or moves to home only.
+- **Resolved (owner 2026-06-28):** sub-page nav matches Figma — back + title + line only, **no** bell/language/theme/menu cluster. The cluster lives on the Home greeting header (the guest home opts in). Implemented as `KsaPage.showHeaderActions` (default **false**); the 2026-06-18 every-page-cluster invariant is superseded for sub-pages.
 
 ## Colour tokens (from 922-2824)
 - BG `#192B41` · Primary text `#FFFFFF` · Secondary/gold `#C9A84C` · Primary/deep `#01132D` · Paragraph `#C2B8A2`.

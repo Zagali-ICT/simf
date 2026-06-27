@@ -187,8 +187,11 @@ class _GuestHome extends StatelessWidget {
           : context.pushNamed(RouteNames.signIn),
       tab: SimfTab.home,
       showSweep: true,
-      // The guest home carries no notifications bell (frame 758:2910) — a guest
-      // has no personal notifications.
+      // The guest home is a Home variant (frame 758:2910), so it keeps the top
+      // action cluster (language + menu) — opting back in over the new default
+      // (sub-pages show back+title only). The bell is hidden: a guest has no
+      // personal notifications.
+      showHeaderActions: true,
       showNotificationsBell: false,
       body: ListView(
         padding: const EdgeInsets.all(SimfTokens.space4),
