@@ -1,0 +1,57 @@
+// Tests: SIMF.Api.Tests/PublicPresentationsTests.cs
+using Microsoft.EntityFrameworkCore;
+using SIMF.Application.Programme.Abstractions;
+using SIMF.Contracts.Programme;
+using SIMF.Infrastructure.Persistence;
+
+namespace SIMF.Infrastructure.Programme;
+
+/// <summary>Wave 2 (Figma 1388:7621 "عروض الجلسات") — the public, read-only view
+/// of speaker-presentation files for the app. Lists every active presentation on
+/// an active session (with the presenting speaker), time-ordered by session start
+/// so the app groups by day; the bytes come out-of-row via
+/// <see cref="ISpeakerPresentationStorage"/>. Speaker + Session are real FKs on
+/// <see cref="SimfAppDbContext"/>, so both are resolved in the same query.</summary>
+internal sealed class PublicSpeakerPresentationService(
+    SimfAppDbContext db,
+    ISpeakerPresentationStorage storage) : IPublicSpeakerPresentationService
+{
+    public async Task<PublicPresentations> ListAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var items = await db.SpeakerPresentations.AsNoTracking()
+            .Where(p => p.IsActive && p.Session!.IsActive)
+            .OrderBy(p => p.Session!.StartUtc)
+            .ThenBy(p => p.FileName)
+            .Select(p => new PublicPresentationItem(
+                p.Id,
+                p.SessionId,
+                p.Session!.Title,
+                p.Session.TitleArabic,
+                p.Session.StartUtc,
+                p.Speaker!.Name,
+                p.Speaker.NameArabic,
+                p.FileName,
+                p.ContentType,
+                p.SizeBytes))
+            .ToListAsync(cancellationToken);
+
+        return new PublicPresentations(items);
+    }
+
+    public async Task<(byte[] Content, string ContentType, string FileName)?> GetFileAsync(
+        Guid presentationId, CancellationToken cancellationToken = default)
+    {
+        var row = await db.SpeakerPresentations.AsNoTracking()
+            .Where(p => p.Id == presentationId && p.IsActive && p.Session!.IsActive)
+            .Select(p => new { p.StoredFileName, p.ContentType, p.FileName })
+            .SingleOrDefaultAsync(cancellationToken);
+        if (row is null)
+        {
+            return null;
+        }
+
+        var file = await storage.GetAsync(row.StoredFileName, row.ContentType, cancellationToken);
+        return file is null ? null : (file.Value.Content, file.Value.ContentType, row.FileName);
+    }
+}

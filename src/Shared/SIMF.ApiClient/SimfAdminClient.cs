@@ -5,6 +5,7 @@ using System.Text.Json;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
 using SIMF.Contracts.Ai;
+using SIMF.Contracts.Requests;
 using SIMF.Contracts.Archive;
 using SIMF.Contracts.Attendance;
 using SIMF.Contracts.Authentication;
@@ -2192,6 +2193,55 @@ public sealed class SimfAdminClient(HttpClient http)
         CancellationToken cancellationToken = default) =>
         SendAsync<AdminSpeakerMeetingRequestDetail>(
             HttpMethod.Put, $"speaker-meeting-requests/{id}/respond",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    // -- D-500 (Wave 5, الطلبات) — participation-document + badge-update request
+    //    desks (SIMF.Contracts.Requests) -------------------------------------
+
+    public Task<ApiCallResult<GridPage<AdminParticipationDocumentRequestRow>>> ListAdminParticipationDocumentRequestsAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminParticipationDocumentRequestRow>>(
+            HttpMethod.Post, "document-requests/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminParticipationDocumentRequestDetail>> GetAdminParticipationDocumentRequestAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminParticipationDocumentRequestDetail>(
+            HttpMethod.Get, $"document-requests/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminParticipationDocumentRequestDetail>> RespondToAdminParticipationDocumentRequestAsync(
+        Guid id, RespondToParticipationDocumentRequestRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminParticipationDocumentRequestDetail>(
+            HttpMethod.Put, $"document-requests/{id}/respond",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<GridPage<AdminBadgeUpdateRequestRow>>> ListAdminBadgeUpdateRequestsAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminBadgeUpdateRequestRow>>(
+            HttpMethod.Post, "badge-requests/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminBadgeUpdateRequestDetail>> GetAdminBadgeUpdateRequestAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminBadgeUpdateRequestDetail>(
+            HttpMethod.Get, $"badge-requests/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminBadgeUpdateRequestDetail>> RespondToAdminBadgeUpdateRequestAsync(
+        Guid id, RespondToBadgeUpdateRequestRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminBadgeUpdateRequestDetail>(
+            HttpMethod.Put, $"badge-requests/{id}/respond",
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 

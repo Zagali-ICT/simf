@@ -41,6 +41,7 @@
 | E2E-NWS-020 | Excel import: upload a workbook → rows created + result modal with per-row outcome (D-356) | happy | P1 | _to author_ |
 | E2E-NWS-021 | Excel import: a non-workbook / wrong-sheet upload → bilingual rejection, nothing created (D-356) | error | P1 | _to author_ |
 | E2E-NWS-022 | Image via the unified media-asset pipeline — upload then external link (D-357) | happy | P1 | _to author_ |
+| E2E-NWS-023 | Excel round-trip: BodyArabic + ExcerptArabic survive export and import (D-506) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -421,7 +422,8 @@ Scenario: Export the filtered grid (or selected rows) to an XLSX workbook
       rows are selected)
   And the browser saves a file named simf-news-{timestamp}.xlsx
   And the workbook's "News" sheet header row reads
-      Title | TitleArabic | Category | CategoryArabic | PublishedAt | DisplayOrder | IsActive
+      Title | TitleArabic | Category | CategoryArabic | PublishedAt | DisplayOrder | IsActive | BodyArabic | ExcerptArabic
+      (BodyArabic + ExcerptArabic appended last so the existing column order is unchanged — D-506)
   When they instead select two rows then click "Export"
   Then the request carries those two Ids and a null Query
   And the workbook contains exactly those two rows
@@ -502,6 +504,32 @@ Scenario: Upload image, then switch it to an external link
 0 console errors; audit `AssetUploaded` then `AssetLinked`. Validation: a non-image / over-5 MB /
 video upload is 400; deactivate->restore round-trips; restoring when a live (category,owner) asset
 already exists is 409 (covered by `tests/SIMF.Api.Tests/AssetEndpointsTests.cs`).
+
+### E2E-NWS-023 — Excel round-trip of BodyArabic + ExcerptArabic (D-506)
+
+```gherkin
+Scenario: The Arabic body and excerpt survive both export and import
+  Given the administrator is on /admin/news with an article whose
+      Body (Arabic)="نص الخبر بالعربية." and Excerpt (Arabic)="مقتطف عربي."
+  When they click the toolbar "Export" action
+  Then a POST /account/api/admin/news/export returns 200 with an .xlsx
+  And the "News" sheet header row now includes "BodyArabic" and "ExcerptArabic"
+      (appended after IsActive — earlier columns unmoved, D-506)
+  And that article's row carries "نص الخبر بالعربية." under BodyArabic
+      and "مقتطف عربي." under ExcerptArabic (the export no longer drops them)
+
+  When they import a workbook whose "News" sheet supplies Title, TitleArabic,
+      Body, BodyArabic, Category, CategoryArabic and an ExcerptArabic cell
+  Then a POST /account/api/admin/news/import returns 200 and creates the row
+  And GET /account/api/admin/news/{id} (and the grid summary) report the same
+      BodyArabic + ExcerptArabic values that were imported
+```
+
+**Evidence:** the exported workbook's header row + the article's BodyArabic/ExcerptArabic
+cells; the import result modal (1 created, 0 errors); the round-tripped list summary.
+Covered by `tests/SIMF.Api.Tests/NewsExcelTests.cs`
+(`Export_includes_the_body_arabic_and_excerpt_arabic_columns` +
+`Import_round_trips_the_body_arabic_and_excerpt_arabic`).
 
 ---
 

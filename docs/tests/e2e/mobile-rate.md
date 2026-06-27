@@ -37,10 +37,10 @@
 | E2E-MOB040-004 | A per-question score rides the submission's answers[] | happy | P0 | authored ✓ (screen + API `Required_question_must_be_answered_to_submit`) |
 | E2E-MOB040-005 | Resubmitting upserts + the form prefills from the existing submission | happy | P1 | authored ✓ (API `Resubmitting_upserts_the_single_row_and_prefills`) |
 | E2E-MOB040-006 | Out-of-range overall (6) → 400 | validation | P1 | authored ✓ (API `Out_of_range_overall_is_rejected_with_400`) |
-| E2E-MOB040-007 | Required question unanswered → 400 (blocked client + server) | validation | P1 | authored ✓ (screen + API) |
+| E2E-MOB040-007 | Required question unanswered → 400 (blocked client + server) | validation | P1 | authored ✓ (screen `a session rating with an unanswered required question cannot be saved` — the client refuses to send it + API) |
 | E2E-MOB040-008 | Submit wire failure → error toast | resilience | P1 | authored ✓ (screen `a submit failure shows the error toast`) |
 | E2E-MOB040-009 | Per-session form without a target → 400 | validation | P1 | authored ✓ (API `Per_session_form_without_a_target_is_400`) |
-| E2E-MOB040-010 | Session deep-link from the "rate this session" notification opens the form | happy | P0 | authored ✓ (worker `SessionRatingPromptWorkerTests` + screen tap-routing) |
+| E2E-MOB040-010 | Session deep-link from the "rate this session" notification opens the form | happy | P0 | authored ✓ (worker `SessionRatingPromptWorkerTests` + `notifications_screen_test` deep-link regression; **D-507** — the card must stay tappable after the inbox auto-marks it read) |
 | E2E-MOB040-011 | Guest → redirected to sign-in (route auth-gated) | auth | P0 | covered (route 40 in the authenticated set) |
 
 ## Scenarios
@@ -81,9 +81,10 @@ Scenario: Resubmitting prefills the form
 Scenario: A session rating is reached from the notification
   Given a session has ended and the visitor received a "Rate this session" notification
     (kind=SessionRatingRequest, relatedEntityId = the session id)
-  When they tap the notification
-  Then it marks read and navigates to /rate?code=Session&targetId={sessionId}
-  And the Session rating form loads for that session
+  And opening the inbox has already auto-marked the notification read (D-507)
+  When they tap the (now read) notification
+  Then it navigates to /rate?code=Session&targetId={sessionId}
+  And the Session rating form loads for that session (overall + Speaker/Sound/Light)
 
 Scenario: A guest cannot reach the page
   Given a signed-out user navigates to /rate
@@ -92,7 +93,10 @@ Scenario: A guest cannot reach the page
 
 **Evidence:** `rate_screen_test.dart` (4 widget tests, all green) + `FeedbackRatingsTests`
 (form/submit/upsert/validation/per-session) + `RatingConfigTests` (required-question) +
-`SessionRatingPromptWorkerTests` (the end-of-session prompt that drives the deep-link).
+`SessionRatingPromptWorkerTests` (the end-of-session prompt that drives the deep-link) +
+`notifications_screen_test.dart` (the deep-link tap-routing regression, D-507). On-device
+verified vs the local API (TXZ_W09): both the App form and the Session form (Speaker/Sound/
+Light) render, submit, and persist; the notification deep-link opens the Session form.
 The CP `/admin/ratings` grid surfaces the responses (see `cp-admin-ratings.md`); the
 config lives on `/admin/rating-config` (see `cp-admin-rating-config.md`).
 

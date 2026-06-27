@@ -1,0 +1,172 @@
+@* Contact-us inbox (Figma 1388:7567) — triage the inquiries the app's "تواصل
+   معنا" form submits via the public POST /app/contact-inquiry. Read-only
+   SimfDataGrid (server-paged); the per-row quiet action marks an inquiry
+   handled / reopens it (ContactInquiries.Manage). Mirrors DelegationMeetingsList. *@
+@page "/admin/contact-inquiries"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.ContactInquiries.View)]
+@using SIMF.Contracts.Support
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.ContactInquiries.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.ContactInquiries.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <SimfDataGrid TItem="AdminContactInquiryRow"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="false"
+                      RowKey="@(r => r.Id.ToString())"
+                      RowLabel="@(r => r.Name)"
+                      Caption="@L["Admin.ContactInquiries.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.ContactInquiries.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      ActionsHeader="@L["Grid.Actions"]"
+                      SelectAllLabel="@L["Grid.SelectAll"]"
+                      SelectRowLabel="@L["Grid.SelectRow"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminContactInquiryRow" Key="name"
+                                    Header="@L["Admin.ContactInquiries.Col.Name"]">
+                    <CellTemplate>@context.Name</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminContactInquiryRow" Key="email"
+                                    Header="@L["Admin.ContactInquiries.Col.Email"]">
+                    <CellTemplate>@context.Email</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminContactInquiryRow" Key="message"
+                                    Header="@L["Admin.ContactInquiries.Col.Message"]">
+                    <CellTemplate>@Truncate(context.Message)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminContactInquiryRow" Key="status"
+                                    Header="@L["Admin.ContactInquiries.Col.Status"]">
+                    <CellTemplate>
+                        @if (context.IsHandled)
+                        {
+                            <SimfPill Variant="on">@L["Admin.ContactInquiries.Status.Handled"]</SimfPill>
+                        }
+                        else
+                        {
+                            <SimfPill Variant="warn">@L["Admin.ContactInquiries.Status.Open"]</SimfPill>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminContactInquiryRow" Key="createdAt"
+                                    Header="@L["Admin.ContactInquiries.Col.Received"]" Sortable="true">
+                    <CellTemplate>@context.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <RowActions>
+                <AuthorizedAction Permission="@PermissionCatalog.ContactInquiries.Manage">
+                    @if (context.IsHandled)
+                    {
+                        <SimfToolbarButton Icon="rotate" Title="@L["Admin.ContactInquiries.Reopen"]"
+                                           OnClick="@(() => SetHandledAsync(context, false))" />
+                    }
+                    else
+                    {
+                        <SimfToolbarButton Icon="check" Title="@L["Admin.ContactInquiries.MarkHandled"]"
+                                           OnClick="@(() => SetHandledAsync(context, true))" />
+                    }
+                </AuthorizedAction>
+            </RowActions>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.ContactInquiries.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private GridQuery _query = new() { Top = 20 };
+    private GridPage<AdminContactInquiryRow> _page = new();
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private static string Truncate(string text) =>
+        text.Length <= 80 ? text : text[..77] + "…";
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminContactInquiryRow>>>(
+                "simfAccount.postJson",
+                "/account/api/admin/contact-inquiries/list", _query);
+            if (env is { Success: true, Data: not null })
+            {
+                _page = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.ContactInquiries.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task SetHandledAsync(AdminContactInquiryRow row, bool handled)
+    {
+        if (_busy) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.postJson",
+                $"/account/api/admin/contact-inquiries/{row.Id}/handled",
+                new { handled });
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success",
+                    handled ? L["Admin.ContactInquiries.Handled"]
+                            : L["Admin.ContactInquiries.Reopened"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.ContactInquiries.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+}

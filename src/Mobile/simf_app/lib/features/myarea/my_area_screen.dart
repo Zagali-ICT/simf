@@ -308,18 +308,19 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
         const SizedBox(height: SimfTokens.space3),
         KsaTileRow(
           children: <Widget>[
-            // Saved meetings / saved sessions are not built yet (owner
-            // 2026-06-21) — the tiles still show the live count but tap through
-            // to the ComingSoon placeholder.
+            // Wave 2 — the two counters now tap through to their real screens
+            // (owner spec, Figma): "my meetings request" → the read-only My
+            // meetings list (1408:9726); "my sessions" → the my-sessions list
+            // (1388:9067) with its القادمة / حضرتها / فاتتني / الأرشيف tabs.
             KsaStatTile(
               value: dashboard.counters.meetingsCount,
               label: l10n.statMeetings,
-              onTap: () => context.pushNamed(RouteNames.savedMeetings),
+              onTap: () => context.pushNamed(RouteNames.requests),
             ),
             KsaStatTile(
               value: dashboard.counters.bookedSessionsCount,
               label: l10n.statBookedSessions,
-              onTap: () => context.pushNamed(RouteNames.savedSessions),
+              onTap: () => context.pushNamed(RouteNames.myAreaSessions),
             ),
           ],
         ),
@@ -368,10 +369,10 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
           onTap: () => context.pushNamed(RouteNames.badge),
         ),
         const SizedBox(height: SimfTokens.space4),
-        // D-479 (#11 follow-up) — read-only list of the user's meetings.
+        // D-500 (Wave 5, الطلبات) — the unified requests feed.
         _MoreRow(
-          label: l10n.myMeetingsLink,
-          onTap: () => context.pushNamed(RouteNames.myMeetings),
+          label: l10n.requestsLink,
+          onTap: () => context.pushNamed(RouteNames.requests),
         ),
         const SizedBox(height: SimfTokens.space4),
         // D-485 — the standalone Join-a-session hub (the seat-booking flow; the

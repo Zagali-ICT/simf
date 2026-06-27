@@ -369,7 +369,35 @@ class AppL10n {
   String get regSuccessHeaderTitle => _t('تم التسجيل', 'Registered');
   String get referenceNumberLabel =>
       _t('رقم البطاقة المرجعي', 'Reference badge number');
-  String get contactUsTitle => _t('تواصل معانا', 'Contact us');
+  String get contactUsTitle => _t('تواصل معنا', 'Contact us');
+  // تواصل معنا — Contact us screen (Figma 1388-7711; POST /app/contact-inquiry).
+  String get contactSendTitle => _t('أرسل رسالة', 'Send a message');
+  String get contactNameLabel => _t('الاسم', 'Name');
+  String get contactNameHint => _t('أدخل اسمك الكامل', 'Enter your full name');
+  String get contactNameRequired => _t('الاسم مطلوب', 'Name is required');
+  String get contactEmailLabel => _t('البريد الإلكتروني', 'Email');
+  String get contactEmailHint => _t('example@email.com', 'example@email.com');
+  String get contactEmailInvalid =>
+      _t('بريد إلكتروني صالح مطلوب', 'A valid email is required');
+  String get contactMessageLabel => _t('الرسالة', 'Message');
+  String get contactMessageHint =>
+      _t('اكتب رسالتك هنا...', 'Write your message here…');
+  String get contactMessageRequired =>
+      _t('الرسالة مطلوبة', 'Message is required');
+  String get contactSendButton => _t('إرسال', 'Send');
+  String get contactInfoTitle => _t('معلومات التواصل', 'Contact information');
+  String get contactHotlineLabel => _t('الخط الساخن', 'Hotline');
+  String get contactLocationLabel => _t('الموقع', 'Location');
+  String get contactSocialTitle =>
+      _t('وسائل التواصل الاجتماعي', 'Social media');
+  String get contactSentToast => _t(
+        'تم إرسال رسالتك. شكراً لتواصلك معنا.',
+        'Your message has been sent. Thank you for contacting us.',
+      );
+  String get contactSendFailed => _t(
+        'تعذّر إرسال رسالتك. حاول مرة أخرى.',
+        'Could not send your message. Please try again.',
+      );
   String get simfSocialFooter => _t(
         '@SIMF_RSNF · الملتقى البحري السعودي الدولي',
         '@SIMF_RSNF · Saudi International Maritime Forum',
@@ -636,6 +664,13 @@ class AppL10n {
   String get faqRowTitle => _t('الأسئلة الشائعة', 'FAQ');
   String get faqRowSubtitle =>
       _t('FAQ • معلومات الموقع والفعالية', 'FAQ • Venue & event info');
+  // الأسئلة الشائعة — FAQ accordion (Figma 1388-7567; GET /app/faq).
+  String get faqEmpty =>
+      _t('لا توجد أسئلة شائعة بعد.', 'No frequently asked questions yet.');
+  String get faqError => _t(
+        'تعذّر تحميل الأسئلة الشائعة.',
+        'Could not load the FAQ.',
+      );
   String get discoverSaudiTitle => _t('روح السعودية', 'Spirit of Saudi');
   String get discoverSaudiSubtitle =>
       _t('زر السعودية · استكشف الرياض', 'Visit Saudi · Discover Riyadh');
@@ -973,18 +1008,67 @@ class AppL10n {
         'Could not send the request. Try again.',
       );
 
-  // D-479 (#11 follow-up) — the read-only "My meetings" screen.
-  String get myMeetingsTitle => _t('اجتماعاتي', 'My meetings');
-  String get myMeetingsLink => _t('اجتماعاتي', 'My meetings');
-  String get myMeetingsEmpty =>
-      _t('لا توجد اجتماعات بعد', 'You have no meetings yet');
-  String get myMeetingsError =>
-      _t('تعذّر تحميل اجتماعاتك', 'Could not load your meetings');
-  String get myMeetingKindSpeaker => _t('اجتماع متحدث', 'Speaker meeting');
-  String get myMeetingKindDelegation => _t('اجتماع وفد', 'Delegation meeting');
-  String get myMeetingStatusPending => _t('قيد الانتظار', 'Pending');
-  String get myMeetingStatusAccepted => _t('مقبول', 'Accepted');
-  String get myMeetingStatusRejected => _t('مرفوض', 'Rejected');
+  // D-500 (Wave 5, الطلبات 1408:9726) — the unified requests feed (supersedes the
+  // D-479 read-only My-meetings screen).
+  String get requestsTitle => _t('الطلبات', 'Requests');
+  String get requestsLink => _t('الطلبات', 'Requests');
+  String get requestsEmpty =>
+      _t('لا توجد طلبات بعد', 'You have no requests yet');
+  String get requestsNoResults =>
+      _t('لا توجد طلبات بهذه الحالة', 'No requests with this status');
+  String get requestsError =>
+      _t('تعذّر تحميل طلباتك', 'Could not load your requests');
+
+  // Type headlines (rendered from AppRequestKind).
+  String get requestKindSpeaker => _t('طلب لقاء مع متحدث', 'Speaker meeting request');
+  String get requestKindDelegation => _t('طلب اجتماع وفد', 'Delegation meeting request');
+  String get requestKindSession => _t('طلب حضور جلسة', 'Session attendance request');
+  String get requestKindDocument => _t('طلب وثيقة المشاركة', 'Participation document request');
+  String get requestKindBadge => _t('طلب تحديث البادج', 'Badge update request');
+
+  // Status chips.
+  String get requestStatusAll => _t('الكل', 'All');
+  String get requestStatusPending => _t('قيد المراجعة', 'Under review');
+  String get requestStatusAccepted => _t('مقبول', 'Accepted');
+  String get requestStatusRejected => _t('مرفوض', 'Rejected');
+  String get requestStatusCancelled => _t('ملغى', 'Cancelled');
+
+  // New-request flow.
+  String get requestNew => _t('طلب جديد', 'New request');
+  String get requestNewTitle => _t('نوع الطلب', 'Request type');
+  String get requestNewDocument => _t('طلب وثيقة المشاركة', 'Participation document');
+  String get requestNewBadge => _t('طلب تحديث البادج', 'Badge update');
+
+  // Document form.
+  String get requestDocTypeLabel => _t('نوع الوثيقة', 'Document type');
+  String get requestDocTypeAttendance =>
+      _t('شهادة حضور رسمية', 'Official attendance certificate');
+  String get requestDocTypeParticipation => _t('خطاب مشاركة', 'Participation letter');
+  String get requestDocTypeInvitation => _t('خطاب دعوة', 'Invitation letter');
+  String get requestNoteLabel => _t('ملاحظة (اختيارية)', 'Note (optional)');
+
+  // Badge form.
+  String get requestBadgeTitleLabel =>
+      _t('المسمى الوظيفي الجديد', 'New job title');
+  String get requestBadgeTitleRequired =>
+      _t('أدخل المسمى الوظيفي', 'Enter a job title');
+  String get requestBadgeReasonLabel => _t('السبب (اختياري)', 'Reason (optional)');
+
+  // Actions / toasts.
+  String get requestSubmit => _t('إرسال الطلب', 'Submit request');
+  String get requestSubmitted => _t('تم إرسال طلبك', 'Your request was submitted');
+  String get requestSubmitFailed =>
+      _t('تعذّر إرسال الطلب', 'Could not submit the request');
+  String get requestCancel => _t('إلغاء الطلب', 'Cancel request');
+  String get requestCancelConfirm =>
+      _t('هل تريد إلغاء هذا الطلب؟', 'Cancel this request?');
+  String get requestCancelKeep => _t('تراجع', 'Keep');
+  String get requestCancelled => _t('تم إلغاء الطلب', 'Request cancelled');
+  String get requestCancelFailed =>
+      _t('تعذّر إلغاء الطلب', 'Could not cancel the request');
+
+  /// A request card's short date (locale-aware "12 يناير 2026" / "12 Jan 2026").
+  String requestDate(DateTime date) => _shortDate(date);
 
   // Booths (Page 022).
   String get boothsTitle => _t('الأجنحة', 'Booths');
@@ -1298,6 +1382,46 @@ class AppL10n {
   String get moreForumGuide => _t('دليل الملتقى', 'Forum guide');
   String get morePresentations => _t('عروض الجلسات', 'Session presentations');
   String get moreVisitSaudi => _t('استكشف الرياض · VisitSaudi', 'Explore Riyadh · VisitSaudi');
+
+  // دليل الملتقى — Forum guide (Figma 1388-7493). Static in-app copy (no
+  // backend). The Arabic strings are reproduced verbatim from the design; the
+  // Figma leaves steps 3 & 5 with placeholder/duplicate copy (owner to supply
+  // final wording).
+  String get forumGuideTitle => _t('دليل الملتقى', 'Forum guide');
+  String get forumGuideIntro => _t(
+        'مرحبًا بك في ملتقى SIMF 2026. يهدف هذا الدليل إلى مساعدتك على الاستفادة القصوى من تجربتك في الملتقى.',
+        'Welcome to SIMF 2026. This guide is here to help you get the most out of your forum experience.',
+      );
+  String get forumGuideStep1Title =>
+      _t('التسجيل والدخول', 'Registration & sign-in');
+  String get forumGuideStep1Body => _t(
+        'قم بتسجيل الدخول باستخدام بريدك الإلكتروني وكلمة المرور المُرسلة إليك عند التسجيل في الملتقى.',
+        'Sign in with the email and password sent to you when you registered for the forum.',
+      );
+  String get forumGuideStep2Title =>
+      _t('استكشاف الجلسات', 'Explore the sessions');
+  String get forumGuideStep2Body => _t(
+        'تصفّح جدول الجلسات من الصفحة الرئيسية واختر الجلسة التي تودّ حضورها وأضفها إلى مفضلتك.',
+        'Browse the session schedule from the home page, pick the session you want to attend, and add it to your favourites.',
+      );
+  String get forumGuideStep3Title =>
+      _t('التسجيل الحضور والدخول', 'On-site registration & entry');
+  String get forumGuideStep3Body => _t(
+        'قم بتسجيل الدخول باستخدام بريدك الإلكتروني وكلمة المرور المُرسلة إليك عند التسجيل في الملتقى.',
+        'Sign in with the email and password sent to you when you registered for the forum.',
+      );
+  String get forumGuideStep4Title =>
+      _t('التواصل مع المتحدثين', 'Reach the speakers');
+  String get forumGuideStep4Body => _t(
+        'يمكنك إرسال أسئلتك للمتحدثين مباشرةً من خلال قسم الأسئلة في صفحة كل جلسة.',
+        'You can send your questions to the speakers directly from the questions section on each session page.',
+      );
+  String get forumGuideStep5Title =>
+      _t('التسجيل والدخول', 'Registration & sign-in');
+  String get forumGuideStep5Body => _t(
+        'قم بتسجيل الدخول باستخدام بريدك الإلكتروني وكلمة المرور المُرسلة إليك عند التسجيل في الملتقى.',
+        'Sign in with the email and password sent to you when you registered for the forum.',
+      );
   String get moreLanguage => _t('اللغة', 'Language');
   String get moreRateApp => _t('تقييم التطبيق', 'Rate the app');
   String get moreMyAreaCardTitle => _t('منطقتي', 'My area');
@@ -1345,6 +1469,195 @@ class AppL10n {
   String get aiSummarySaved => _t('تم الحفظ', 'Saved');
   String get aiSummaryNoSessions =>
       _t('لا توجد جلسات متاحة بعد.', 'No sessions available yet.');
+
+  // Wave 2 — session-summaries list (Figma 1388:8392): search + the three
+  // الجميع / جلساتي / المفضلة tabs over the cached programme.
+  String get sessionSummarySearchHint =>
+      _t('ابحث عن جلسة أو متحدث...', 'Search a session or speaker...');
+  String get sessionsTabAll => _t('الجميع', 'All');
+  String get sessionsTabMine => _t('جلساتي', 'My sessions');
+  String get sessionsTabFavourites => _t('المفضلة', 'Favourites');
+  String get sessionsNoFavourites =>
+      _t('لا توجد جلسات مفضلة بعد.', 'No favourite sessions yet.');
+  String get sessionsNoMine =>
+      _t('لا توجد جلسات محجوزة بعد.', 'No booked sessions yet.');
+  String get sessionsNoMatch =>
+      _t('لا توجد نتائج مطابقة.', 'No matching results.');
+  String get sessionRecordedBadge => _t('مسجل', 'Recorded');
+  String get favouriteToggleError =>
+      _t('تعذر تحديث المفضلة.', 'Could not update favourites.');
+  String sessionDurationMinutes(int minutes) =>
+      _t('$minutes دقيقة', '$minutes min');
+
+  // Wave 2 — "my sessions" list, App "تفاصيل الجلسات" (Figma 1388:9067), reached
+  // from the My-Area "my sessions" counter. Four tabs partition the user's
+  // booked / joined sessions.
+  String get mySessionsTitle => _t('تفاصيل الجلسات', 'Session details');
+  String get mySessionsTabUpcoming => _t('القادمة', 'Upcoming');
+  String get mySessionsTabAttended => _t('حضرتها', 'Attended');
+  String get mySessionsTabMissed => _t('فاتتني', 'Missed');
+  String get mySessionsTabArchive => _t('الأرشيف', 'Archive');
+  String get mySessionsError =>
+      _t('تعذر تحميل جلساتك.', 'Could not load your sessions.');
+  String get mySessionsEmpty =>
+      _t('لا توجد جلسات في هذه القائمة.', 'No sessions in this list.');
+  // The count subtitle, e.g. "3 جلسات قادمة" / "3 upcoming sessions".
+  String mySessionsCount(int count, String tabLabel) =>
+      _t('$count جلسة · $tabLabel', '$count · $tabLabel');
+
+  // Wave 4 — Delegations, App "الوفود" (Figma 1426:10771): the invited countries'
+  // delegations with head of delegation, date range and member count.
+  String get delegationsTitle => _t('الوفود', 'Delegations');
+  String get delegationsSearchHint =>
+      _t('ابحث عن دولة أو وفد...', 'Search for a country or delegation...');
+  String get delegationsError =>
+      _t('تعذر تحميل الوفود.', 'Could not load delegations.');
+  String get delegationsEmpty => _t('لا توجد وفود بعد.', 'No delegations yet.');
+  String get delegationsNoResults =>
+      _t('لا توجد نتائج مطابقة.', 'No matching results.');
+  String get delegationsCountriesStat =>
+      _t('دولة مشاركة', 'Participating countries');
+  String get delegationsParticipantsStat =>
+      _t('إجمالي المشاركين', 'Total participants');
+  String get delegationsHeadLabel => _t('رئيس الوفد', 'Head of delegation');
+
+  /// The member count, e.g. "12 عضو" / "12 members" (with the Arabic plural).
+  String delegationsMembers(int count) {
+    if (!isArabic) {
+      return count == 1 ? '1 member' : '$count members';
+    }
+    if (count == 1) {
+      return 'عضو واحد';
+    }
+    if (count == 2) {
+      return 'عضوان';
+    }
+    if (count >= 3 && count <= 10) {
+      return '$count أعضاء';
+    }
+    return '$count عضواً';
+  }
+
+  /// The delegation date range, e.g. "12 يناير – 15 يناير" / "12 Jan – 15 Jan".
+  /// Falls back to whichever single date is present; '' when neither is set.
+  String delegationsDateRange(DateTime? start, DateTime? end) {
+    final from = start == null ? null : _shortDate(start);
+    final to = end == null ? null : _shortDate(end);
+    if (from != null && to != null) {
+      return '$from – $to';
+    }
+    return from ?? to ?? '';
+  }
+
+  String _shortDate(DateTime date) {
+    const arabicMonths = <String>[
+      'يناير',
+      'فبراير',
+      'مارس',
+      'أبريل',
+      'مايو',
+      'يونيو',
+      'يوليو',
+      'أغسطس',
+      'سبتمبر',
+      'أكتوبر',
+      'نوفمبر',
+      'ديسمبر',
+    ];
+    const englishMonths = <String>[
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final month = (isArabic ? arabicMonths : englishMonths)[date.month - 1];
+    return '${date.day} $month';
+  }
+
+  // Wave 2 — session-presentations list, App "عروض الجلسات" (Figma 1388:7621):
+  // downloadable decks grouped by day, each with a تحميل button.
+  String get sessionPresentationsTitle =>
+      _t('عروض الجلسات', 'Session presentations');
+  String get presentationsEmpty =>
+      _t('لا توجد عروض متاحة بعد.', 'No presentations available yet.');
+  String get presentationsError =>
+      _t('تعذر تحميل العروض.', 'Could not load the presentations.');
+  String get presentationDownload => _t('تحميل', 'Download');
+  String get presentationDownloading => _t('جارٍ التحميل...', 'Downloading...');
+  String get presentationDownloadError =>
+      _t('تعذر تحميل الملف.', 'Could not download the file.');
+
+  // Event day group header, 1-based ("اليوم الأول" / "Day 1") — shared by the
+  // session-summaries (8392) + presentations (7621) day grouping.
+  String eventDayLabel(int dayIndex) {
+    const arabicOrdinals = <String>[
+      'الأول',
+      'الثاني',
+      'الثالث',
+      'الرابع',
+      'الخامس',
+      'السادس',
+      'السابع',
+    ];
+    if (isArabic) {
+      final ordinal = dayIndex >= 1 && dayIndex <= arabicOrdinals.length
+          ? arabicOrdinals[dayIndex - 1]
+          : '$dayIndex';
+      return 'اليوم $ordinal';
+    }
+    return 'Day $dayIndex';
+  }
+
+  // Wave 3 — exhibitor (Figma 1439:11881) + sponsor (1439:11826) detail screens
+  // (shared template). The tier pill prefixes a localized tier word onto the role.
+  String get exhibitorDetailTitle => _t('العارض', 'Exhibitor');
+  String get sponsorDetailTitle => _t('الراعي', 'Sponsor');
+  String get exhibitorAboutHeader =>
+      _t('نبذة عن العارض', 'About the exhibitor');
+  String get sponsorAboutHeader => _t('نبذة عن الراعي', 'About the sponsor');
+  String get standLocationLabel =>
+      _t('موقع الجناح على الخريطة', 'Booth location on the map');
+  String get websiteLabel => _t('الموقع الإلكتروني', 'Website');
+  String get entityDetailError =>
+      _t('تعذر تحميل التفاصيل.', 'Could not load the details.');
+
+  /// The exhibitor tier pill, e.g. "عارض بريميوم" / "Premium exhibitor".
+  String exhibitorTierPill(String tierName) =>
+      _t('عارض ${_tierWord(tierName)}', '${_tierWord(tierName)} exhibitor');
+
+  /// The sponsor tier pill, e.g. "رعاية بريميوم" / "Premium sponsor".
+  String sponsorTierPill(String tierName) =>
+      _t('رعاية ${_tierWord(tierName)}', '${_tierWord(tierName)} sponsor');
+
+  /// Maps the wire tier enum name (Premium/Platinum/Gold/Silver/Bronze) to its
+  /// localized word; an unknown value passes through unchanged.
+  String _tierWord(String tierName) {
+    if (!isArabic) {
+      return tierName;
+    }
+    switch (tierName) {
+      case 'Premium':
+        return 'بريميوم';
+      case 'Platinum':
+        return 'بلاتيني';
+      case 'Gold':
+        return 'ذهبي';
+      case 'Silver':
+        return 'فضي';
+      case 'Bronze':
+        return 'برونزي';
+      default:
+        return tierName;
+    }
+  }
 
   // Send a question (Page 026 — live Q&A composer).
   // Figma 934:3636 retitled the screen to "معلومات عن الجلسة" (Session

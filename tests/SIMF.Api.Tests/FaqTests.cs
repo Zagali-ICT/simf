@@ -118,6 +118,59 @@ public sealed class FaqTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Public_faq_returns_active_groups_with_their_entries_anonymously()
+    {
+        var token = await CreateAdminAsync();
+        var groupId = await CreateGroupAsync(token);
+        var addEntry = await PostAuthAsync("/api/v1/admin/faq/entries",
+            new CreateFaqEntryRequest
+            {
+                FaqGroupId = groupId,
+                Question = "How do I register?",
+                QuestionArabic = "كيف أسجل؟",
+                Answer = "Use the sign-up page.",
+                AnswerArabic = "استخدم صفحة التسجيل.",
+                DisplayOrder = 1,
+            }, token);
+        Assert.Equal(HttpStatusCode.OK, addEntry.StatusCode);
+
+        // Anonymous read — no Authorization header.
+        var response = await _client.GetAsync("/api/v1/app/faq");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var groups = (await response.Content
+            .ReadFromJsonAsync<ApiResult<List<PublicFaqGroup>>>())!.Data!;
+
+        var group = groups.Single(g => g.Id == groupId);
+        var entry = Assert.Single(group.Entries);
+        Assert.Equal("How do I register?", entry.Question);
+        Assert.Equal("كيف أسجل؟", entry.QuestionArabic);
+    }
+
+    [Fact]
+    public async Task Public_faq_hides_empty_and_deactivated_groups()
+    {
+        var token = await CreateAdminAsync();
+        // A group with no entries must not appear (no active entry).
+        var emptyGroupId = await CreateGroupAsync(token);
+        // A group with an entry, then deactivated, must not appear.
+        var deactivatedGroupId = await CreateGroupAsync(token);
+        await PostAuthAsync("/api/v1/admin/faq/entries",
+            new CreateFaqEntryRequest
+            {
+                FaqGroupId = deactivatedGroupId,
+                Question = "Q", QuestionArabic = "س",
+                Answer = "A", AnswerArabic = "ج", DisplayOrder = 0,
+            }, token);
+        await DeleteAuthAsync($"/api/v1/admin/faq/groups/{deactivatedGroupId}", token);
+
+        var response = await _client.GetAsync("/api/v1/app/faq");
+        var groups = (await response.Content
+            .ReadFromJsonAsync<ApiResult<List<PublicFaqGroup>>>())!.Data!;
+        Assert.DoesNotContain(groups, g => g.Id == emptyGroupId);
+        Assert.DoesNotContain(groups, g => g.Id == deactivatedGroupId);
+    }
+
     // -- Helpers ---------------------------------------------------------------
 
     private async Task<Guid> CreateGroupAsync(string token)

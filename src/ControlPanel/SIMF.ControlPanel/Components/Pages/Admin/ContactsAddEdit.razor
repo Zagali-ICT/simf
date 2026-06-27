@@ -61,6 +61,13 @@
                     Value="@_model.CountryId"
                     ValueChanged="@(v => _model.CountryId = v ?? string.Empty)"
                     Disabled="_busy" />
+        @* Optional bilingual city. *@
+        <SimfTextField Label="@L["Admin.Contacts.Field.CityAr"]"
+                       @bind-Value="_model.CityArabic"
+                       MaxLength="128" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Contacts.Field.City"]"
+                       @bind-Value="_model.City"
+                       MaxLength="128" Disabled="_busy" />
         <SimfTextField Label="@L["Admin.Contacts.Field.Latitude"]"
                        Helper="@L["Admin.Contacts.Field.LatLongHint"]"
                        Type="number"
@@ -126,6 +133,8 @@
             _model.LinkedInUrl = Initial.LinkedInUrl ?? string.Empty;
             _model.InstagramUrl = Initial.InstagramUrl ?? string.Empty;
             _model.CountryId = Initial.CountryId?.ToString() ?? string.Empty;
+            _model.City = Initial.City ?? string.Empty;
+            _model.CityArabic = Initial.CityArabic ?? string.Empty;
             _model.Latitude = Initial.Latitude?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
             _model.Longitude = Initial.Longitude?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
             _model.IsActive = Initial.IsActive;
@@ -211,6 +220,8 @@
                         XUrl = NullIfBlank(_model.XUrl),
                         LinkedInUrl = NullIfBlank(_model.LinkedInUrl),
                         InstagramUrl = NullIfBlank(_model.InstagramUrl),
+                        City = NullIfBlank(_model.City),
+                        CityArabic = NullIfBlank(_model.CityArabic),
                         Latitude = lat,
                         Longitude = lng,
                         CountryId = countryId,
@@ -233,6 +244,8 @@
                         XUrl = NullIfBlank(_model.XUrl),
                         LinkedInUrl = NullIfBlank(_model.LinkedInUrl),
                         InstagramUrl = NullIfBlank(_model.InstagramUrl),
+                        City = NullIfBlank(_model.City),
+                        CityArabic = NullIfBlank(_model.CityArabic),
                         Latitude = lat,
                         Longitude = lng,
                         CountryId = countryId,
@@ -299,6 +312,8 @@
         public string LinkedInUrl { get; set; } = string.Empty;
         public string InstagramUrl { get; set; } = string.Empty;
         public string CountryId { get; set; } = string.Empty;
+        public string City { get; set; } = string.Empty;
+        public string CityArabic { get; set; } = string.Empty;
         public string Latitude { get; set; } = string.Empty;
         public string Longitude { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;

@@ -247,6 +247,19 @@ public static class ErrorCodes
     public const string SpeakerMeetingRequestsNotAllowed = "SPEAKER_MEETING_REQUESTS_NOT_ALLOWED";
     public const string SpeakerMeetingRequestStatusInvalid = "SPEAKER_MEETING_REQUEST_STATUS_INVALID";
 
+    // Unified requests (D-500, Wave 5 — الطلبات 1408:9726).
+    public const string ParticipationDocumentRequestInvalid = "PARTICIPATION_DOCUMENT_REQUEST_INVALID";
+    public const string ParticipationDocumentRequestNotFound = "PARTICIPATION_DOCUMENT_REQUEST_NOT_FOUND";
+    public const string ParticipationDocumentRequestStatusInvalid = "PARTICIPATION_DOCUMENT_REQUEST_STATUS_INVALID";
+    public const string BadgeUpdateRequestInvalid = "BADGE_UPDATE_REQUEST_INVALID";
+    public const string BadgeUpdateRequestNotFound = "BADGE_UPDATE_REQUEST_NOT_FOUND";
+    public const string BadgeUpdateRequestStatusInvalid = "BADGE_UPDATE_REQUEST_STATUS_INVALID";
+    /// <summary>D-500 — self-cancel target not found / not owned by the caller.</summary>
+    public const string AppRequestNotFound = "APP_REQUEST_NOT_FOUND";
+    /// <summary>D-500 — the request kind is not self-cancellable, or it is no
+    /// longer Pending.</summary>
+    public const string AppRequestNotCancellable = "APP_REQUEST_NOT_CANCELLABLE";
+
     // Seat reservations (D-175, gap doc G11 — Mockup page 7).
     public const string SeatLayoutInvalid = "SEAT_LAYOUT_INVALID";
     public const string SeatLayoutMissing = "SEAT_LAYOUT_MISSING";

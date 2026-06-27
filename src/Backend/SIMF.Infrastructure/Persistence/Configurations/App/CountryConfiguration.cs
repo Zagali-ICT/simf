@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.Common;
+using SIMF.Domain.Profiles;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
@@ -25,6 +26,15 @@ internal sealed class CountryConfiguration : IEntityTypeConfiguration<Country>
 
         builder.HasIndex(country => country.Code).IsUnique();
         builder.HasIndex(country => new { country.IsActive, country.DisplayOrder });
+
+        // D-499 (الوفود) — the head-of-delegation pointer is a same-DB real FK to
+        // UserProfile (both live on SimfAppDbContext, so the D-157 no-cross-DB-FK
+        // rule is not engaged). Nullable with OnDelete.SetNull so removing a
+        // delegate profile simply clears the country's head, never cascades.
+        builder.HasOne<UserProfile>()
+            .WithMany()
+            .HasForeignKey(country => country.HeadOfDelegationUserProfileId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         // Seed snapshot — 2026-05-29 baseline. Frozen creation timestamp
         // so the migration is deterministic. The admin CP CRUD can add

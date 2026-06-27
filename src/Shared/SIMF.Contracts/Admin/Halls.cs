@@ -13,7 +13,14 @@ public sealed record AdminHallSummary(
     DateTimeOffset CreatedAt,
     // SIMF-FDS-013 — D-248: the hall's purpose (HallPurpose; 0 = General).
     // Appended (defaulted) so the wire contract stays append-only (D-219).
-    int Purpose = 0);
+    int Purpose = 0,
+    // D-506 — carried so the grid Excel export can round-trip them (not rendered
+    // as grid columns). Optional; the geofence triple is all-three-or-none.
+    string? EquipmentNotes = null,
+    double? GeofenceCenterLat = null,
+    double? GeofenceCenterLon = null,
+    double? GeofenceRadiusMeters = null,
+    int SeatSelectionMode = 0);
 
 /// <summary>Full hall detail (Details + Edit modals). P5.1 — D-240: the optional
 /// GPS geofence (centre lat/lon + radius in metres) is appended (all null when
@@ -52,7 +59,11 @@ public sealed class AdminCreateHallRequest
     public int SeatSelectionMode { get; set; }
 }
 
-public sealed class AdminUpdateHallRequest
+/// <summary>Not sealed: the admin update endpoint binds {id}+body via a derived
+/// route class (D-505, mirroring <c>UpdateExhibitorRoute</c>/<c>UpdateSponsorRoute</c>)
+/// so it cannot drop a field at bind time — the GPS geofence was being wiped on
+/// every edit because the old inline bind model omitted it.</summary>
+public class AdminUpdateHallRequest
 {
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;

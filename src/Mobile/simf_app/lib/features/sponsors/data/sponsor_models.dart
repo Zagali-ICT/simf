@@ -70,6 +70,91 @@ class Sponsor {
       );
 }
 
+/// The full sponsor detail — mirrors `SIMF.Contracts.Sponsors.PublicSponsorDetail`
+/// (`GET /app/sponsors/{id}`, Figma 1439:11826). Adds the "نبذة عن الراعي" about
+/// paragraph + the city to the card cluster; tier / website / country are the same
+/// fields the list carries.
+@immutable
+class SponsorDetail {
+  const SponsorDetail({
+    required this.id,
+    required this.nameEn,
+    required this.nameAr,
+    required this.tier,
+    required this.tierName,
+    this.logoRelativePath,
+    this.url,
+    this.about,
+    this.aboutArabic,
+    this.city,
+    this.cityArabic,
+    this.countryId,
+    this.countryNameEn,
+    this.countryNameAr,
+  });
+
+  final String id;
+  final String nameEn;
+  final String nameAr;
+  final int tier;
+  final String tierName;
+  final String? logoRelativePath;
+  final String? url;
+  final String? about;
+  final String? aboutArabic;
+  final String? city;
+  final String? cityArabic;
+  final int? countryId;
+  final String? countryNameEn;
+  final String? countryNameAr;
+
+  String localizedName(bool isArabic) =>
+      _pickRequired(nameAr, nameEn, isArabic);
+
+  String? localizedAbout(bool isArabic) =>
+      _pickOptional(aboutArabic, about, isArabic);
+
+  String? localizedCity(bool isArabic) =>
+      _pickOptional(cityArabic, city, isArabic);
+
+  String? localizedCountry(bool isArabic) =>
+      _pickOptional(countryNameAr, countryNameEn, isArabic);
+
+  static SponsorDetail fromData(Object? data) {
+    final json = (data as Map?)?.cast<String, dynamic>() ??
+        const <String, dynamic>{};
+    return SponsorDetail(
+      id: json['id'] as String? ?? '',
+      nameEn: json['nameEn'] as String? ?? '',
+      nameAr: json['nameAr'] as String? ?? '',
+      tier: (json['tier'] as num?)?.toInt() ?? 0,
+      tierName: json['tierName'] as String? ?? '',
+      logoRelativePath: json['logoRelativePath'] as String?,
+      url: json['url'] as String?,
+      about: json['about'] as String?,
+      aboutArabic: json['aboutArabic'] as String?,
+      city: json['city'] as String?,
+      cityArabic: json['cityArabic'] as String?,
+      countryId: (json['countryId'] as num?)?.toInt(),
+      countryNameEn: json['countryNameEn'] as String?,
+      countryNameAr: json['countryNameAr'] as String?,
+    );
+  }
+}
+
+String _pickRequired(String arabic, String english, bool isArabic) {
+  final ar = arabic.trim();
+  final en = english.trim();
+  return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+}
+
+String? _pickOptional(String? arabic, String? english, bool isArabic) {
+  final ar = arabic?.trim() ?? '';
+  final en = english?.trim() ?? '';
+  final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+  return value.isEmpty ? null : value;
+}
+
 /// A tier band of sponsors — mirrors `PublicSponsorTierGroup`.
 @immutable
 class SponsorTierGroup {

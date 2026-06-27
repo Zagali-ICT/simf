@@ -126,6 +126,159 @@ public sealed class SessionsExcelTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Export_includes_the_dropped_round_trip_columns()
+    {
+        // D-506 — the session Excel export must surface the eight fields the IO
+        // boundary previously dropped, not silently omit them.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var hallCode = await CreateHallAsync(adminToken);
+        var code = UniqueCode();
+
+        // Resolve the hall id so the create request can reference it.
+        var hallList = await PostAuthAsync(
+            "/api/v1/admin/halls/list",
+            new GridQuery { Top = 500, Search = hallCode }, adminToken);
+        var halls = (await hallList.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminHallSummary>>>())!.Data!;
+        var hallId = halls.Items.First(h =>
+            string.Equals(h.Code, hallCode, StringComparison.OrdinalIgnoreCase)).Id;
+
+        var create = await PostAuthAsync(
+            "/api/v1/admin/sessions",
+            new AdminCreateSessionRequest
+            {
+                Code = code,
+                Title = $"Export Fields {code}",
+                TitleArabic = $"تصدير {code}",
+                HallId = hallId,
+                StartUtc = DateTimeOffset.Parse(
+                    "2026-01-30T09:00:00Z", CultureInfo.InvariantCulture),
+                EndUtc = DateTimeOffset.Parse(
+                    "2026-01-30T10:00:00Z", CultureInfo.InvariantCulture),
+                Description = "An opening keynote.",
+                DescriptionArabic = "كلمة افتتاحية.",
+                LiveStreamUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                LiveSignLanguageUrl = "https://www.youtube.com/watch?v=aaaaaaaaaaa",
+                LiveCaptions = "Welcome.",
+                LiveCaptionsArabic = "مرحبا.",
+                Type = SessionType.Workshop,
+                SeatSelectionModeOverride = SeatSelectionMode.OpenSeating,
+            },
+            adminToken);
+        Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/sessions/export",
+            new AdminGridExportRequest { Query = new GridQuery { Top = 500 } },
+            adminToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+
+        using var stream = new MemoryStream(bytes);
+        using var workbook = new XLWorkbook(stream);
+        var sheet = workbook.Worksheet("Sessions");
+        var headers = sheet.Row(1).CellsUsed().Select(c => c.GetString()).ToList();
+        Assert.Contains("Type", headers);
+        Assert.Contains("SeatSelectionModeOverride", headers);
+        Assert.Contains("Description", headers);
+        Assert.Contains("DescriptionArabic", headers);
+        Assert.Contains("LiveStreamUrl", headers);
+        Assert.Contains("LiveSignLanguageUrl", headers);
+        Assert.Contains("LiveCaptions", headers);
+        Assert.Contains("LiveCaptionsArabic", headers);
+
+        var codeCol = headers.IndexOf("Code") + 1;
+        var typeCol = headers.IndexOf("Type") + 1;
+        var descCol = headers.IndexOf("Description") + 1;
+        var dataRow = sheet.RowsUsed().Skip(1)
+            .First(r => r.Cell(codeCol).GetString() == code);
+        Assert.Equal("Workshop", dataRow.Cell(typeCol).GetString());
+        Assert.Equal("An opening keynote.", dataRow.Cell(descCol).GetString());
+    }
+
+    [Fact]
+    public async Task Import_round_trips_the_dropped_fields()
+    {
+        // D-506 — an import workbook carrying the eight previously-dropped columns
+        // must persist them: Type + SeatSelectionModeOverride surface on the grid
+        // summary, the rest on the GET detail.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var hallCode = await CreateHallAsync(adminToken);
+        var code = UniqueCode();
+
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.Worksheets.Add("Sessions");
+        sheet.Cell(1, 1).Value = "Code";
+        sheet.Cell(1, 2).Value = "Title";
+        sheet.Cell(1, 3).Value = "TitleArabic";
+        sheet.Cell(1, 4).Value = "Hall";
+        sheet.Cell(1, 5).Value = "StartUtc";
+        sheet.Cell(1, 6).Value = "EndUtc";
+        sheet.Cell(1, 7).Value = "Type";
+        sheet.Cell(1, 8).Value = "SeatSelectionModeOverride";
+        sheet.Cell(1, 9).Value = "Description";
+        sheet.Cell(1, 10).Value = "DescriptionArabic";
+        sheet.Cell(1, 11).Value = "LiveStreamUrl";
+        sheet.Cell(1, 12).Value = "LiveSignLanguageUrl";
+        sheet.Cell(1, 13).Value = "LiveCaptions";
+        sheet.Cell(1, 14).Value = "LiveCaptionsArabic";
+        sheet.Cell(2, 1).Value = code;
+        sheet.Cell(2, 2).Value = $"Imported Fields {code}";
+        sheet.Cell(2, 3).Value = $"مستورد {code}";
+        sheet.Cell(2, 4).Value = hallCode;
+        sheet.Cell(2, 5).Value = "2026-01-30T09:00:00Z";
+        sheet.Cell(2, 6).Value = "2026-01-30T10:30:00Z";
+        sheet.Cell(2, 7).Value = "Event";
+        sheet.Cell(2, 8).Value = "OpenSeating";
+        sheet.Cell(2, 9).Value = "A closing session.";
+        sheet.Cell(2, 10).Value = "جلسة ختامية.";
+        sheet.Cell(2, 11).Value = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+        sheet.Cell(2, 12).Value = "https://www.youtube.com/watch?v=aaaaaaaaaaa";
+        sheet.Cell(2, 13).Value = "Goodbye.";
+        sheet.Cell(2, 14).Value = "وداعا.";
+        byte[] bytes;
+        using (var stream = new MemoryStream())
+        {
+            workbook.SaveAs(stream);
+            bytes = stream.ToArray();
+        }
+
+        var response = await PostFileAuthAsync(
+            "/api/v1/admin/sessions/import", bytes, adminToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminGridImportResult>>())!.Data!;
+        Assert.True(result.Created >= 1);
+        Assert.Empty(result.Errors);
+
+        // Type + SeatSelectionModeOverride surface on the grid summary.
+        var list = await PostAuthAsync(
+            "/api/v1/admin/sessions/list", new GridQuery { Top = 200 }, adminToken);
+        var page = (await list.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminSessionSummary>>>())!.Data!;
+        var summary = page.Items.Single(item => item.Code == code);
+        Assert.Equal(SessionType.Event, summary.Type);
+        Assert.Equal(SeatSelectionMode.OpenSeating, summary.SeatSelectionModeOverride);
+        Assert.Equal("A closing session.", summary.Description);
+        Assert.Equal("https://www.youtube.com/watch?v=dQw4w9WgXcQ", summary.LiveStreamUrl);
+
+        // The remaining fields round-trip through the GET detail.
+        var detailResponse = await GetAuthAsync(
+            $"/api/v1/admin/sessions/{summary.Id}", adminToken);
+        Assert.Equal(HttpStatusCode.OK, detailResponse.StatusCode);
+        var detail = (await detailResponse.Content
+            .ReadFromJsonAsync<ApiResult<AdminSessionDetail>>())!.Data!;
+        Assert.Equal("A closing session.", detail.Description);
+        Assert.Equal("جلسة ختامية.", detail.DescriptionArabic);
+        Assert.Equal("https://www.youtube.com/watch?v=dQw4w9WgXcQ", detail.LiveStreamUrl);
+        Assert.Equal("https://www.youtube.com/watch?v=aaaaaaaaaaa", detail.LiveSignLanguageUrl);
+        Assert.Equal("Goodbye.", detail.LiveCaptions);
+        Assert.Equal("وداعا.", detail.LiveCaptionsArabic);
+        Assert.Equal(SessionType.Event, detail.Type);
+        Assert.Equal(SeatSelectionMode.OpenSeating, detail.SeatSelectionModeOverride);
+    }
+
     // -- Helpers ---------------------------------------------------------------
 
     // A unique session/hall code within the 2–16 char / uppercase rule (the
@@ -251,6 +404,13 @@ public sealed class SessionsExcelTests : IClassFixture<SimfApiFactory>
         {
             Content = JsonContent.Create(body),
         };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
+
+    private Task<HttpResponseMessage> GetAuthAsync(string url, string token)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return _client.SendAsync(request);
     }

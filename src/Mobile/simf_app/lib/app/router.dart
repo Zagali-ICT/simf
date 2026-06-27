@@ -16,8 +16,12 @@ import '../features/auth/sign_up_form_screen.dart';
 import '../features/about/about_screen.dart';
 import '../features/archive/archive_screen.dart';
 import '../features/booths/booths_screen.dart';
+import '../features/booths/exhibitor_detail_screen.dart';
 import '../features/content/terms_screen.dart';
+import '../features/delegations/delegations_screen.dart';
+import '../features/faq/faq_screen.dart';
 import '../features/feedback/rate_screen.dart';
+import '../features/forum_guide/forum_guide_screen.dart';
 import '../features/gallery/gallery_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/media_partners/media_partners_screen.dart';
@@ -28,6 +32,7 @@ import '../features/ai_summary/session_summary_screen.dart';
 import '../features/badge/badge_screen.dart';
 import '../features/chatbot/chatbot_screen.dart';
 import '../features/comments/audience_comments_screen.dart';
+import '../features/contact_us/contact_us_screen.dart';
 import '../features/contacts/my_contacts_screen.dart';
 import '../features/contacts/scan_contact_screen.dart';
 import '../features/contacts/share_my_contact_screen.dart';
@@ -38,12 +43,13 @@ import '../features/more/more_screen.dart';
 import '../features/notifications/notifications_screen.dart';
 import '../features/questions/send_question_screen.dart';
 import '../features/exhibitor/my_visitors_screen.dart';
-import '../features/meetings/my_meetings_screen.dart';
+import '../features/requests/requests_screen.dart';
 import '../features/exhibitor/scan_visitor_screen.dart';
 import '../features/gates/gate_scan_screen.dart';
 import '../features/moderation/session_moderate_screen.dart';
 import '../features/myarea/identity_verification_screen.dart';
 import '../features/myarea/my_area_screen.dart';
+import '../features/myarea/my_sessions_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/venuemap/venue_map_screen.dart';
 import '../features/profile/data/profile_models.dart';
@@ -55,7 +61,9 @@ import '../features/sessions/join_session_hub_screen.dart';
 import '../features/sessions/my_seat_screen.dart';
 import '../features/sessions/seat_picker_screen.dart';
 import '../features/sessions/session_detail_screen.dart';
+import '../features/sessions/session_presentations_screen.dart';
 import '../features/sessions/sessions_screen.dart';
+import '../features/sponsors/sponsor_detail_screen.dart';
 import '../features/sponsors/sponsors_screen.dart';
 import '../features/speakers/speaker_profile_screen.dart';
 import '../features/speakers/speakers_screen.dart';
@@ -111,9 +119,13 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 19, name: RouteNames.speakers, path: '/speakers', labelAr: 'المتحدثون', labelEn: 'Speakers'),
   _Route(number: 20, name: RouteNames.speakerProfile, path: '/speakers/:speakerId', labelAr: 'القبطان البحري', labelEn: 'Speaker profile'),
 
-  // Section 3 — Content & activities (3 screens; 21 delegations removed — D-277)
+  // Section 3 — Content & activities. D-499 restored delegations (#21).
+  _Route(number: 21, name: RouteNames.delegations, path: '/delegations', labelAr: 'الوفود', labelEn: 'Delegations'),
   _Route(number: 22, name: RouteNames.booths, path: '/booths', labelAr: 'الأجنحة', labelEn: 'Booths'),
   _Route(number: 23, name: RouteNames.sponsors, path: '/sponsors', labelAr: 'الرعاة', labelEn: 'Sponsors'),
+  // Wave 3 (Figma 1439:11881 / 11826) — exhibitor + sponsor detail (public, pushed).
+  _Route(number: 220, name: RouteNames.exhibitorDetail, path: '/exhibitors/:boothId', labelAr: 'العارض', labelEn: 'Exhibitor'),
+  _Route(number: 221, name: RouteNames.sponsorDetail, path: '/sponsors/:sponsorId', labelAr: 'الراعي', labelEn: 'Sponsor'),
   _Route(number: 24, name: RouteNames.archive, path: '/archive', labelAr: 'الأرشيف', labelEn: 'Archive'),
 
   // Section 4 — Live & Q&A (3 screens; 27 request-interview removed — D-278)
@@ -153,8 +165,8 @@ const List<_Route> _routes = <_Route>[
   // D-426 — exhibitor ("Other") lead capture (approved-only; server 403s visitors).
   _Route(number: 106, name: RouteNames.scanVisitor, path: '/exhibitor/scan', labelAr: 'مسح بطاقة زائر', labelEn: 'Scan visitor badge'),
   _Route(number: 107, name: RouteNames.myVisitors, path: '/exhibitor/visitors', labelAr: 'زواري', labelEn: 'My Visitors'),
-  // D-479 (#11 follow-up) — read-only "My meetings" list (approved-only).
-  _Route(number: 108, name: RouteNames.myMeetings, path: '/my-meetings', labelAr: 'اجتماعاتي', labelEn: 'My meetings'),
+  // D-500 (Wave 5, الطلبات) — the unified requests feed (approved-only).
+  _Route(number: 108, name: RouteNames.requests, path: '/requests', labelAr: 'الطلبات', labelEn: 'Requests'),
   // D-485 — the session-join flow (approved-only): the seat picker + the hub.
   _Route(number: 109, name: RouteNames.seatPicker, path: '/sessions/:sessionId/pick-seat', labelAr: 'اختر مقعدك', labelEn: 'Select your seat'),
   _Route(number: 110, name: RouteNames.joinSessionHub, path: '/sessions/join', labelAr: 'احجز مقعداً', labelEn: 'Book a seat'),
@@ -162,6 +174,8 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 111, name: RouteNames.sessionSummaryList, path: '/session-summaries', labelAr: 'ملخص الجلسات', labelEn: 'Session summaries'),
   // #9 — venue map focused on a booth (booth "أرشدني" CTA; public, pushed).
   _Route(number: 112, name: RouteNames.boothMap, path: '/booths/:boothId/map', labelAr: 'الخريطة', labelEn: 'Venue map'),
+  // Wave 2 (Figma 1388:9067) — "my sessions" (approved-only; My-Area counter).
+  _Route(number: 113, name: RouteNames.myAreaSessions, path: '/my-area/sessions', labelAr: 'تفاصيل الجلسات', labelEn: 'Session details'),
 
   // D-464 — المزيد hub entries with no screen yet (Figma 1129:17224). Public;
   // they fall through to ComingSoonScreen (sentinel numbers 200+).
@@ -217,6 +231,8 @@ const Set<int> _authenticatedRoutes = <int>{
   107, // Exhibitor My Visitors (D-426)
   109, // Seat picker (D-485; approved-only — the seat endpoints 401/403 a guest)
   110, // Join-a-session hub (D-485; approved-only)
+  113, // My sessions (Wave 2; approved-only — /app/account/sessions 401/403 a guest)
+  202, // Session presentations (Wave 2; approved-only — /app/presentations 401/403 a guest)
 };
 
 /// Routes that additionally require a minimum app privilege (D-405/D-406). The
@@ -335,11 +351,24 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
       speakerId: state.pathParameters['speakerId'] ?? '',
     );
   }
+  if (r.name == RouteNames.delegations) {
+    return const DelegationsScreen();
+  }
   if (r.name == RouteNames.booths) {
     return const BoothsScreen();
   }
+  if (r.name == RouteNames.exhibitorDetail) {
+    return ExhibitorDetailScreen(
+      boothId: state.pathParameters['boothId'] ?? '',
+    );
+  }
   if (r.name == RouteNames.sponsors) {
     return const SponsorsScreen();
+  }
+  if (r.name == RouteNames.sponsorDetail) {
+    return SponsorDetailScreen(
+      sponsorId: state.pathParameters['sponsorId'] ?? '',
+    );
   }
   if (r.name == RouteNames.mediaPartners) {
     return const MediaPartnersScreen();
@@ -431,8 +460,23 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   if (r.name == RouteNames.myVisitors) {
     return const MyVisitorsScreen();
   }
-  if (r.name == RouteNames.myMeetings) {
-    return const MyMeetingsScreen();
+  if (r.name == RouteNames.requests) {
+    return const RequestsScreen();
+  }
+  if (r.name == RouteNames.forumGuide) {
+    return const ForumGuideScreen();
+  }
+  if (r.name == RouteNames.faq) {
+    return const FaqScreen();
+  }
+  if (r.name == RouteNames.contactUs) {
+    return const ContactUsScreen();
+  }
+  if (r.name == RouteNames.sessionPresentations) {
+    return const SessionPresentationsScreen();
+  }
+  if (r.name == RouteNames.myAreaSessions) {
+    return const MySessionsScreen();
   }
   return ComingSoonScreen(
     screenNumber: r.number,

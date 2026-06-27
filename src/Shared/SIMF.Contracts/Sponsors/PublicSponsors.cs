@@ -36,6 +36,28 @@ public sealed record PublicSponsor(
     string? CountryNameEn = null,
     string? CountryNameAr = null);
 
+/// <summary>Wave 3 (Figma 1439:11826 "الراعي") — the full sponsor-detail view
+/// served by <c>GET /api/v1/app/sponsors/{id}</c> (anonymous). Adds the
+/// "نبذة عن الراعي" about paragraph + the city to the card cluster; the website
+/// (<see cref="Url"/>), tier and country are the same fields the list carries.
+/// City + country are resolved from the linked <c>Contact</c>; the about is
+/// sponsor-owned. All optional fields are null when unset.</summary>
+public sealed record PublicSponsorDetail(
+    Guid Id,
+    string NameEn,
+    string NameAr,
+    int Tier,
+    string TierName,
+    string? LogoRelativePath,
+    string? Url,
+    string? About,
+    string? AboutArabic,
+    string? City,
+    string? CityArabic,
+    int? CountryId = null,
+    string? CountryNameEn = null,
+    string? CountryNameAr = null);
+
 /// <summary>One tier section on the public sponsors screen — the heading plus
 /// the sponsors that belong to it, already ordered.</summary>
 public sealed record PublicSponsorTierGroup(

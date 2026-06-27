@@ -44,6 +44,23 @@ public class Country
     /// defaults false (the admin marks the invited countries in the CP).</summary>
     public bool IsInvited { get; set; }
 
+    /// <summary>D-499 (Figma 1426:10771 الوفود) — the invited delegation's
+    /// arrival date for this event. Additive nullable; set by the admin on the
+    /// CP country form alongside <see cref="IsInvited"/>. Null until supplied.</summary>
+    public DateOnly? DelegationArrivalDate { get; set; }
+
+    /// <summary>D-499 (الوفود) — the invited delegation's departure date.
+    /// Additive nullable; rendered with the arrival date as the card's date
+    /// range ("12 يناير – 15 يناير").</summary>
+    public DateOnly? DelegationDepartureDate { get; set; }
+
+    /// <summary>D-499 (الوفود) — the <see cref="Profiles.UserProfile"/> id of the
+    /// delegate designated as this country's head of delegation (رئيس الوفد).
+    /// Same-DB real FK to UserProfile (both on <c>SimfAppDbContext</c>, so D-157
+    /// is not engaged); nullable, <c>OnDelete.SetNull</c>. Resolved on read to the
+    /// head's name + job title. Null until the admin picks one.</summary>
+    public Guid? HeadOfDelegationUserProfileId { get; set; }
+
     /// <summary>Soft-delete flag.</summary>
     public bool IsActive { get; set; } = true;
 

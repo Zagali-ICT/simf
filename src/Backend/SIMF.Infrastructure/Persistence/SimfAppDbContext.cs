@@ -19,6 +19,7 @@ using SIMF.Domain.Networking;
 using SIMF.Domain.Operations;
 using SIMF.Domain.Organisations;
 using SIMF.Domain.Organization;
+using SIMF.Domain.Support;
 using SIMF.Domain.Profiles;
 using SIMF.Domain.Programme;
 using SIMF.Domain.PublicRelations;
@@ -146,6 +147,13 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     // D-478 (#11, Group G phase 2) — delegation↔delegation (G2G) meeting requests.
     public DbSet<DelegationMeetingRequest> DelegationMeetingRequests => Set<DelegationMeetingRequest>();
 
+    // D-500 (Wave 5, الطلبات 1408:9726) — the two new standalone request types
+    // surfaced in the unified requests feed: participation-document + badge-update.
+    public DbSet<SIMF.Domain.Requests.ParticipationDocumentRequest> ParticipationDocumentRequests =>
+        Set<SIMF.Domain.Requests.ParticipationDocumentRequest>();
+    public DbSet<SIMF.Domain.Requests.BadgeUpdateRequest> BadgeUpdateRequests =>
+        Set<SIMF.Domain.Requests.BadgeUpdateRequest>();
+
     /// <summary>D-175 (gap doc G11, Mockup page 7) — per-hall seat
     /// grid layout (rows + seats-per-row). Optional 1:1 with Hall.</summary>
     public DbSet<HallSeatLayout> HallSeatLayouts => Set<HallSeatLayout>();
@@ -219,6 +227,14 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     // P2.1 (D-211) — two-level FAQ: groups own ordered question/answer entries.
     public DbSet<FaqGroup> FaqGroups => Set<FaqGroup>();
     public DbSet<FaqEntry> FaqEntries => Set<FaqEntry>();
+
+    // "تواصل معنا / Contact us" inbox (Figma 1388:7567) — app form submissions
+    // triaged in the Control Panel. Additive table; submitter is a bare Guid.
+    public DbSet<ContactInquiry> ContactInquiries => Set<ContactInquiry>();
+
+    // Session favourites (المفضلة) — the heart toggle on the session-summaries
+    // (1388:8392) + my-sessions (1388:9067) screens. One row per (user, session).
+    public DbSet<SessionFavourite> SessionFavourites => Set<SessionFavourite>();
 
     // D-495 — the singleton Organization / About profile + its two child lists
     // (the edition-generic forum config: name/dates/status/social/contact/about).

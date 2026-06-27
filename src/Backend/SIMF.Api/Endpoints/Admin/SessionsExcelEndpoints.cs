@@ -4,6 +4,7 @@ using SIMF.Api.Endpoints.Admin.Grid;
 using SIMF.Application.Excel;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
+using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Admin;
@@ -57,6 +58,18 @@ public sealed class ExportSessionsEndpoint(
         new("Capacity", row => row.Capacity),
         new("Status", row => row.Status.ToString()),
         new("IsActive", row => row.IsActive),
+        // D-506 — round-trip the eight fields the IO boundary dropped (appended
+        // so the existing column order is unchanged; import binds by header name).
+        // The two enums write their display name (blank when unset); import reads
+        // either the name or the raw int back.
+        new("Type", row => row.Type?.ToString()),
+        new("SeatSelectionModeOverride", row => row.SeatSelectionModeOverride?.ToString()),
+        new("Description", row => row.Description),
+        new("DescriptionArabic", row => row.DescriptionArabic),
+        new("LiveStreamUrl", row => row.LiveStreamUrl),
+        new("LiveSignLanguageUrl", row => row.LiveSignLanguageUrl),
+        new("LiveCaptions", row => row.LiveCaptions),
+        new("LiveCaptionsArabic", row => row.LiveCaptionsArabic),
     ];
 
     protected override async Task<IReadOnlyList<AdminSessionSummary>> ListAsync(
@@ -179,8 +192,71 @@ public sealed class ImportSessionsEndpoint(
             StartUtc = start,
             EndUtc = end,
             CapacityOverride = capacityOverride,
+            // D-506 — round-trip the eight fields the import previously dropped
+            // (the service trims and length-guards the strings; absent columns
+            // simply stay null). The two enums accept the display name or the raw
+            // int; blank → null; an unknown non-blank value is a per-row error.
+            Description = NullIfBlank(row.Cells.GetValueOrDefault("Description", string.Empty)),
+            DescriptionArabic = NullIfBlank(row.Cells.GetValueOrDefault("DescriptionArabic", string.Empty)),
+            LiveStreamUrl = NullIfBlank(row.Cells.GetValueOrDefault("LiveStreamUrl", string.Empty)),
+            LiveSignLanguageUrl = NullIfBlank(row.Cells.GetValueOrDefault("LiveSignLanguageUrl", string.Empty)),
+            LiveCaptions = NullIfBlank(row.Cells.GetValueOrDefault("LiveCaptions", string.Empty)),
+            LiveCaptionsArabic = NullIfBlank(row.Cells.GetValueOrDefault("LiveCaptionsArabic", string.Empty)),
+            Type = ParseType(row.Cells.GetValueOrDefault("Type", string.Empty)),
+            SeatSelectionModeOverride = ParseSeatSelectionMode(
+                row.Cells.GetValueOrDefault("SeatSelectionModeOverride", string.Empty)),
         }, ct);
         return GridRowApplyKind.Created;
+    }
+
+    // Maps a Type cell to its enum value, or null when blank (the type is
+    // optional). Accepts the display name (Workshop/Session/Event, as the export
+    // writes) or the raw int — keep aligned with SIMF.Common.Enums.SessionType.
+    private static SessionType? ParseType(string value)
+    {
+        var trimmed = value.Trim();
+        if (string.IsNullOrEmpty(trimmed))
+        {
+            return null;
+        }
+        if (int.TryParse(trimmed, out var raw) && Enum.IsDefined(typeof(SessionType), raw))
+        {
+            return (SessionType)raw;
+        }
+        return trimmed.ToLowerInvariant() switch
+        {
+            "workshop" => SessionType.Workshop,
+            "session" => SessionType.Session,
+            "event" => SessionType.Event,
+            _ => throw new DataValidationException(
+                "The type must be one of Workshop, Session or Event.",
+                "يجب أن يكون النوع إحدى: ورشة عمل أو جلسة أو حدث."),
+        };
+    }
+
+    // Maps a SeatSelectionModeOverride cell to its enum value, or null when blank
+    // (the override is optional — null inherits the hall). Accepts the display
+    // name (AssignedSeat/OpenSeating, as the export writes) or the raw int — keep
+    // aligned with SIMF.Common.Enums.SeatSelectionMode.
+    private static SeatSelectionMode? ParseSeatSelectionMode(string value)
+    {
+        var trimmed = value.Trim();
+        if (string.IsNullOrEmpty(trimmed))
+        {
+            return null;
+        }
+        if (int.TryParse(trimmed, out var raw) && Enum.IsDefined(typeof(SeatSelectionMode), raw))
+        {
+            return (SeatSelectionMode)raw;
+        }
+        return trimmed.ToLowerInvariant() switch
+        {
+            "assignedseat" => SeatSelectionMode.AssignedSeat,
+            "openseating" => SeatSelectionMode.OpenSeating,
+            _ => throw new DataValidationException(
+                "The seat-selection mode must be one of AssignedSeat or OpenSeating.",
+                "يجب أن يكون نمط اختيار المقعد إحدى: مقعد محدد أو جلوس مفتوح."),
+        };
     }
 
     // Resolves the mandatory Hall by its code (the value the export writes,
@@ -247,4 +323,7 @@ public sealed class ImportSessionsEndpoint(
         }
         return parsed.ToUniversalTime();
     }
+
+    private static string? NullIfBlank(string value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value;
 }

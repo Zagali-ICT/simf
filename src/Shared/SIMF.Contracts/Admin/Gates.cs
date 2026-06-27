@@ -12,7 +12,11 @@ public sealed record AdminGateSummary(
     int AllowedProfileTypeCount,
     int AssignedOperatorCount,
     bool IsActive,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    // D-506 — carried so the grid Excel export can round-trip the bilingual
+    // description (not rendered as grid columns). Optional; blank when unset.
+    string? Description = null,
+    string? DescriptionArabic = null);
 
 /// <summary>Full gate detail — Details + Edit modals
 /// (SIMF-API-GATES-001 §6.2).</summary>

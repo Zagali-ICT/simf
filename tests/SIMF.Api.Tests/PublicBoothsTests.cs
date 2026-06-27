@@ -228,6 +228,60 @@ public sealed class PublicBoothsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(expectedName, detail.CountryName);
     }
 
+    // Wave 3 (Figma 1439:11881) — the booth detail surfaces the exhibitor's
+    // website + tier and the city resolved from the exhibitor's Contact.
+    [Fact]
+    public async Task Public_booth_detail_carries_the_exhibitor_website_city_and_tier()
+    {
+        var contactId = Guid.NewGuid();
+        var exhibitorId = Guid.NewGuid();
+        var boothId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        var code = NewCode();
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            db.Set<Contact>().Add(new Contact
+            {
+                Id = contactId,
+                NameArabic = "أرامكو",
+                City = "Dhahran",
+                CityArabic = "الظهران",
+                IsActive = true,
+                CreatedAt = now,
+            });
+            db.Set<Exhibitor>().Add(new Exhibitor
+            {
+                Id = exhibitorId,
+                Name = "Aramco", NameArabic = "أرامكو",
+                ContactId = contactId,
+                Website = "https://aramco.com",
+                Tier = ExhibitorTier.Premium,
+                IsActive = true,
+                CreatedAt = now,
+            });
+            db.Set<Booth>().Add(new Booth
+            {
+                Id = boothId,
+                Code = code,
+                Name = "Aramco Booth", NameArabic = "جناح أرامكو",
+                ExhibitorId = exhibitorId,
+                IsActive = true,
+                CreatedAt = now,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var detail = (await (await _client.GetAsync($"/api/v1/app/booths/{boothId}"))
+            .Content.ReadFromJsonAsync<ApiResult<PublicBoothDetail>>())!.Data!;
+        Assert.Equal("https://aramco.com", detail.Website);
+        Assert.Equal("Dhahran", detail.City);
+        Assert.Equal("الظهران", detail.CityArabic);
+        Assert.Equal((int)ExhibitorTier.Premium, detail.Tier);
+        Assert.Equal("Premium", detail.TierName);
+    }
+
     [Fact]
     public async Task Public_detail_unknown_id_returns_404()
     {

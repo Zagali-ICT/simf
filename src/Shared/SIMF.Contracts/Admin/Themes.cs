@@ -10,7 +10,11 @@ public sealed record AdminThemeSummary(
     int DisplayOrder,
     string PageColor,
     bool IsActive,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    // D-506 — carry the bilingual descriptions so the Excel export can surface
+    // them (optional/defaulted so existing positional callers are unaffected).
+    string? Description = null,
+    string? DescriptionArabic = null);
 
 /// <summary>One full theme record (for the Edit / Details modals; adds
 /// the bilingual descriptions the grid summary omits).</summary>

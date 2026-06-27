@@ -342,9 +342,15 @@ public static class DependencyInjection
         // D-478 (#11, Group G phase 2) — delegation↔delegation meeting requests.
         services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.IDelegationMeetingRequestService,
             SIMF.Infrastructure.MeetingRequests.DelegationMeetingRequestService>();
-        // D-479 (#11 follow-up) — read-only "My meetings" feed for the mobile app.
-        services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.IMyMeetingsService,
-            SIMF.Infrastructure.MeetingRequests.MyMeetingsService>();
+        // D-500 (Wave 5, الطلبات) — the unified "My requests" feed (supersedes the
+        // old read-only My-meetings feed, D-479) + the two new standalone request
+        // types (participation-document + badge-update).
+        services.AddScoped<SIMF.Application.Requests.Abstractions.IMyRequestsService,
+            SIMF.Infrastructure.Requests.MyRequestsService>();
+        services.AddScoped<SIMF.Application.Requests.Abstractions.IParticipationDocumentRequestService,
+            SIMF.Infrastructure.Requests.ParticipationDocumentRequestService>();
+        services.AddScoped<SIMF.Application.Requests.Abstractions.IBadgeUpdateRequestService,
+            SIMF.Infrastructure.Requests.BadgeUpdateRequestService>();
         // D-175 (gap doc G11, Mockup page 7) — per-session seat
         // reservations (visitor self-pick + random + admin row blocks).
         services.AddScoped<SIMF.Application.SeatReservations.Abstractions.ISeatReservationService,
@@ -370,6 +376,18 @@ public static class DependencyInjection
         // P2.1 (D-211) — FAQ management (two-level group → entry).
         services.AddScoped<SIMF.Application.Faq.Abstractions.IAdminFaqService,
             SIMF.Infrastructure.Faq.AdminFaqService>();
+        // Public, anonymous FAQ read for the app accordion (Figma 1388:7567).
+        services.AddScoped<SIMF.Application.Faq.Abstractions.IPublicFaqService,
+            SIMF.Infrastructure.Faq.PublicFaqService>();
+        // Contact-us inquiries — public submit + CP inbox (Figma 1388:7567).
+        services.AddScoped<SIMF.Application.Support.Abstractions.IContactInquiryService,
+            SIMF.Infrastructure.Support.ContactInquiryService>();
+        // Session favourites (المفضلة) — heart toggle on summaries + my-sessions.
+        services.AddScoped<SIMF.Application.Programme.Abstractions.ISessionFavouriteService,
+            SIMF.Infrastructure.Programme.SessionFavouriteService>();
+        // Wave 2 — public read + download of speaker presentations (Figma 1388:7621).
+        services.AddScoped<SIMF.Application.Programme.Abstractions.IPublicSpeakerPresentationService,
+            SIMF.Infrastructure.Programme.PublicSpeakerPresentationService>();
         services.AddScoped<SIMF.Application.PublicRelations.Abstractions.IPublicMediaPartnerService,
             SIMF.Infrastructure.PublicRelations.PublicMediaPartnerService>();
         services.AddScoped<SIMF.Application.PublicRelations.Abstractions.IAdminMediaPartnerService,
@@ -410,6 +428,9 @@ public static class DependencyInjection
             SIMF.Infrastructure.Contacts.AdminContactService>();
         services.AddScoped<SIMF.Application.Sponsors.Abstractions.IPublicSponsorService,
             SIMF.Infrastructure.Sponsors.PublicSponsorService>();
+        // D-499 (الوفود) — anonymous public delegations view (invited countries).
+        services.AddScoped<SIMF.Application.Delegations.Abstractions.IPublicDelegationService,
+            SIMF.Infrastructure.Delegations.PublicDelegationService>();
         services.AddScoped<SIMF.Application.Sponsors.Abstractions.IAdminSponsorService,
             SIMF.Infrastructure.Sponsors.AdminSponsorService>();
         services.AddScoped<SIMF.Application.Archive.Abstractions.IPublicArchiveService,

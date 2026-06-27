@@ -1,3 +1,4 @@
+using SIMF.Common.Enums;
 using SIMF.Domain.Common;
 using SIMF.Domain.Contacts;
 
@@ -30,6 +31,11 @@ public sealed class Exhibitor : BaseAuditEntity
 
     /// <summary>Optional website (≤512 chars).</summary>
     public string? Website { get; set; }
+
+    /// <summary>Wave 3 (Figma 1439:11881) — the exhibitor's tier, shown as the
+    /// pill on the exhibitor-detail screen ("عارض بريميوم"). Null = no tier pill.
+    /// Additive (D-219).</summary>
+    public ExhibitorTier? Tier { get; set; }
 
     /// <summary>SIMF-FDS-014 (D-260) — optional link to the shared <c>Contact</c>
     /// directory record (logo / name / phones / social / website / location /

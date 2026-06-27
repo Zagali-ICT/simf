@@ -87,7 +87,15 @@ internal sealed class AdminSessionService(
                 session.CreatedAt,
                 session.CategoryId,
                 session.Status,
-                session.Type))
+                session.Type,
+                // D-506 — carried so the grid Excel export round-trips them.
+                session.Description,
+                session.DescriptionArabic,
+                session.LiveStreamUrl,
+                session.LiveSignLanguageUrl,
+                session.LiveCaptions,
+                session.LiveCaptionsArabic,
+                session.SeatSelectionModeOverride))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminSessionSummary>.Of(page, total,

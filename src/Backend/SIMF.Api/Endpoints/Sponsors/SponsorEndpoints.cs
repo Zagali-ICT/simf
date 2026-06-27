@@ -27,6 +27,31 @@ public sealed class ListPublicSponsorsEndpoint(IPublicSponsorService service)
             await service.ListAsync(ct)), ct);
 }
 
+/// <summary>Wave 3 (Figma 1439:11826 "الراعي") — public anonymous sponsor detail
+/// (about, city, website, tier, country). A 404 when the sponsor is missing /
+/// inactive.</summary>
+public sealed class GetPublicSponsorRequest { public Guid Id { get; set; } }
+
+public sealed class GetPublicSponsorEndpoint(IPublicSponsorService service)
+    : Endpoint<GetPublicSponsorRequest, ApiResult<PublicSponsorDetail>>
+{
+    public override void Configure()
+    {
+        Get("/app/sponsors/{id:guid}");
+        AllowAnonymous();
+        Tags("Public");
+    }
+
+    public override async Task HandleAsync(GetPublicSponsorRequest req, CancellationToken ct)
+    {
+        var detail = await service.GetAsync(req.Id, ct)
+            ?? throw new ApiException(ErrorCodes.SponsorNotFound, 404,
+                "The sponsor was not found.",
+                "لم يتم العثور على الراعي.");
+        await Send.OkAsync(ApiResult<PublicSponsorDetail>.Ok(detail), ct);
+    }
+}
+
 // -- Admin sponsor CRUD --
 
 public sealed class ListSponsorsEndpoint(IAdminSponsorService service)
@@ -92,21 +117,18 @@ public sealed class CreateSponsorEndpoint(IAdminSponsorService service)
     }
 }
 
-public sealed class UpdateSponsorRequest
+// D-504 — bind the route {id} + the JSON body via a derived route class that
+// INHERITS the contract (mirrors UpdateExhibitorRoute). Passing the bound req
+// straight to the service removes the old field-by-field remap, so a future
+// AdminUpdateSponsorRequest field can never again be silently dropped at bind
+// time (the D-432/D-501 tagline-drop class of bug).
+public sealed class UpdateSponsorRoute : AdminUpdateSponsorRequest
 {
     public Guid Id { get; set; }
-    public string NameEn { get; set; } = string.Empty;
-    public string NameAr { get; set; } = string.Empty;
-    public int Tier { get; set; }
-    public string? LogoRelativePath { get; set; }
-    public string? Url { get; set; }
-    public int DisplayOrder { get; set; }
-    public Guid? ContactId { get; set; }
-    public bool IsActive { get; set; } = true;
 }
 
 public sealed class UpdateSponsorEndpoint(IAdminSponsorService service)
-    : Endpoint<UpdateSponsorRequest, ApiResult<AdminSponsorDetail>>
+    : Endpoint<UpdateSponsorRoute, ApiResult<AdminSponsorDetail>>
 {
     public override void Configure()
     {
@@ -117,7 +139,7 @@ public sealed class UpdateSponsorEndpoint(IAdminSponsorService service)
         Tags("Admin");
     }
 
-    public override async Task HandleAsync(UpdateSponsorRequest req, CancellationToken ct)
+    public override async Task HandleAsync(UpdateSponsorRoute req, CancellationToken ct)
     {
         if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
         {
@@ -125,18 +147,7 @@ public sealed class UpdateSponsorEndpoint(IAdminSponsorService service)
             return;
         }
         await Send.OkAsync(ApiResult<AdminSponsorDetail>.Ok(
-            await service.UpdateAsync(actorId, req.Id,
-                new AdminUpdateSponsorRequest
-                {
-                    NameEn = req.NameEn,
-                    NameAr = req.NameAr,
-                    Tier = req.Tier,
-                    LogoRelativePath = req.LogoRelativePath,
-                    Url = req.Url,
-                    DisplayOrder = req.DisplayOrder,
-                    ContactId = req.ContactId,
-                    IsActive = req.IsActive,
-                }, ct)), ct);
+            await service.UpdateAsync(actorId, req.Id, req, ct)), ct);
     }
 }
 

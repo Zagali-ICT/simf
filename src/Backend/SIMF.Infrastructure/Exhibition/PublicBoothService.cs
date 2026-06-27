@@ -158,6 +158,32 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
                     .Where(c => db.Exhibitors.Any(e => e.Id == b.ExhibitorId
                         && e.Contact != null && e.Contact.CountryId == c.Id))
                     .Select(c => c.NameArabic).FirstOrDefault(),
+                // Wave 3 (Figma 1439:11881): the exhibitor-detail extras. Website
+                // is exhibitor-owned; City comes from the exhibitor's Contact; Tier
+                // from the exhibitor (TierName = the enum name, the app localizes).
+                Website = b.ExhibitorId == null
+                    ? null
+                    : db.Exhibitors.Where(e => e.Id == b.ExhibitorId)
+                        .Select(e => e.Website).FirstOrDefault(),
+                City = b.ExhibitorId == null
+                    ? null
+                    : db.Exhibitors.Where(e => e.Id == b.ExhibitorId)
+                        .Select(e => e.Contact != null ? e.Contact.City : null)
+                        .FirstOrDefault(),
+                CityArabic = b.ExhibitorId == null
+                    ? null
+                    : db.Exhibitors.Where(e => e.Id == b.ExhibitorId)
+                        .Select(e => e.Contact != null ? e.Contact.CityArabic : null)
+                        .FirstOrDefault(),
+                Tier = b.ExhibitorId == null
+                    ? null
+                    : db.Exhibitors.Where(e => e.Id == b.ExhibitorId)
+                        .Select(e => (int?)e.Tier).FirstOrDefault(),
+                TierName = b.ExhibitorId == null
+                    ? null
+                    : db.Exhibitors.Where(e => e.Id == b.ExhibitorId)
+                        .Select(e => e.Tier != null ? e.Tier.ToString() : null)
+                        .FirstOrDefault(),
             })
             .FirstOrDefaultAsync(cancellationToken);
 }

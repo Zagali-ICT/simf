@@ -1,4 +1,5 @@
 // Tests: SIMF.Api.Tests/CountriesExcelTests.cs
+using System.Globalization;
 using SIMF.Api.Endpoints.Admin.Grid;
 using SIMF.Application.Common.Abstractions;
 using SIMF.Application.Excel;
@@ -36,6 +37,12 @@ public sealed class ExportCountriesEndpoint(IAdminCountryService service, IGridE
         new("PhonePrefix", row => row.PhonePrefix),
         new("DisplayOrder", row => row.DisplayOrder),
         new("IsActive", row => row.IsActive),
+        // D-506 — round-trip the delegation flag + arrival/departure dates
+        // (appended so the existing column order is unchanged; import binds by
+        // header name). The dates are blank unless the country is invited.
+        new("IsInvited", row => row.IsInvited),
+        new("DelegationArrivalDate", row => row.DelegationArrivalDate),
+        new("DelegationDepartureDate", row => row.DelegationDepartureDate),
     ];
 
     protected override async Task<IReadOnlyList<AdminCountrySummary>> ListAsync(
@@ -55,6 +62,14 @@ public sealed class ExportCountriesEndpoint(IAdminCountryService service, IGridE
 /// and creates it (the service rejects a duplicate id/code and any invalid field
 /// with an <c>ApiException</c>, which the base records as a per-row error rather
 /// than aborting the batch).
+/// <para>D-506 — the delegation flag + arrival/departure dates round-trip through
+/// import (<c>IsInvited</c> accepts Yes/No or true/false; the dates ISO yyyy-MM-dd;
+/// the service drops the dates when the row is not invited).</para>
+/// <para><b>Omitted column:</b> <c>HeadOfDelegationUserProfileId</c> (the head of
+/// delegation, D-499) is a UserProfile directory FK chosen with the CP picker — a
+/// raw GUID is not sane flat-Excel content — so import always leaves it unset; an
+/// admin links the head afterwards via Edit (same reason ContactId is omitted on
+/// the Sponsor/Exhibitor imports).</para>
 /// </summary>
 public sealed class ImportCountriesEndpoint(IAdminCountryService service, IGridExcelImporter importer)
     : AdminGridImportEndpoint(importer)
@@ -112,7 +127,57 @@ public sealed class ImportCountriesEndpoint(IAdminCountryService service, IGridE
             PhonePrefix = string.IsNullOrWhiteSpace(phonePrefix) ? null : phonePrefix,
             DisplayOrder = int.TryParse(
                 row.Cells.GetValueOrDefault("DisplayOrder", string.Empty), out var order) ? order : 0,
+            // D-506 — round-trip the delegation flag + arrival/departure dates.
+            // The service clears the dates when IsInvited is false, so a date on a
+            // non-invited row is simply dropped (matching the CP Edit form).
+            IsInvited = ParseInvited(row.Cells.GetValueOrDefault("IsInvited", string.Empty)),
+            DelegationArrivalDate = ParseDate(
+                row.Cells.GetValueOrDefault("DelegationArrivalDate", string.Empty),
+                "DelegationArrivalDate"),
+            DelegationDepartureDate = ParseDate(
+                row.Cells.GetValueOrDefault("DelegationDepartureDate", string.Empty),
+                "DelegationDepartureDate"),
         }, ct);
         return GridRowApplyKind.Created;
+    }
+
+    // Maps an IsInvited cell to a bool. Accepts the export's "Yes"/"No" as well
+    // as "true"/"false"/"1"/"0"; blank → false (a not-invited country). Any other
+    // non-blank value is a per-row error rather than a silent default.
+    private static bool ParseInvited(string value)
+    {
+        var trimmed = value.Trim();
+        if (trimmed.Length == 0)
+        {
+            return false;
+        }
+        return trimmed.ToLowerInvariant() switch
+        {
+            "yes" or "true" or "1" => true,
+            "no" or "false" or "0" => false,
+            _ => throw new DataValidationException(
+                "IsInvited must be Yes or No.",
+                "يجب أن تكون قيمة \"مدعوة\" نعم أو لا."),
+        };
+    }
+
+    // Parses a delegation date cell. Blank → null (optional). A non-blank value
+    // must be a valid date (ISO yyyy-MM-dd preferred); an unparseable value is a
+    // per-row error naming the column rather than a silent drop.
+    private static DateOnly? ParseDate(string value, string columnName)
+    {
+        var trimmed = value.Trim();
+        if (trimmed.Length == 0)
+        {
+            return null;
+        }
+        if (DateOnly.TryParse(trimmed, CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out var date))
+        {
+            return date;
+        }
+        throw new DataValidationException(
+            $"{columnName} must be a valid date (yyyy-MM-dd).",
+            $"يجب أن يكون '{columnName}' تاريخاً صالحاً (yyyy-MM-dd).");
     }
 }

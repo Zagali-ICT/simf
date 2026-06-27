@@ -1,3 +1,5 @@
+using SIMF.Common.Enums;
+
 namespace SIMF.Contracts.Exhibitors;
 
 /// <summary>
@@ -12,7 +14,10 @@ public sealed record AdminExhibitorSummary(
     string? Website,
     int AccountCount,
     bool IsActive,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    // D-503 — carried so the grid Excel export can round-trip the tier (the grid
+    // does not render it as a column). Optional; null = no tier.
+    ExhibitorTier? Tier = null);
 
 /// <summary>D-199 #3 — full admin detail for one exhibitor.</summary>
 public sealed record AdminExhibitorDetail(
@@ -25,7 +30,9 @@ public sealed record AdminExhibitorDetail(
     bool IsActive,
     DateTimeOffset CreatedAt,
     DateTimeOffset? UpdatedAt,
-    Guid? ContactId);
+    Guid? ContactId,
+    // Wave 3 (Figma 1439:11881) — optional exhibitor tier; null renders no pill.
+    ExhibitorTier? Tier = null);
 
 /// <summary>
 /// D-199 #3 — body of <c>POST /api/v1/admin/exhibitors</c>. Creates the exhibitor
@@ -52,6 +59,9 @@ public sealed class CreateExhibitorRequest
     /// <summary>SIMF-FDS-014 (D-281) — optional link to a shared <c>Contact</c>
     /// directory record. Must reference an existing active contact.</summary>
     public Guid? ContactId { get; init; }
+
+    /// <summary>Optional exhibitor tier (null = no tier).</summary>
+    public ExhibitorTier? Tier { get; init; }
 }
 
 /// <summary>D-199 #3 — body of <c>PUT /api/v1/admin/exhibitors/{id}</c>.
@@ -76,6 +86,9 @@ public class UpdateExhibitorRequest
     /// <summary>SIMF-FDS-014 (D-281) — optional link to a shared <c>Contact</c>
     /// directory record. Must reference an existing active contact.</summary>
     public Guid? ContactId { get; init; }
+
+    /// <summary>Optional exhibitor tier (null = no tier).</summary>
+    public ExhibitorTier? Tier { get; init; }
 
     /// <summary>Soft-delete / restore flag.</summary>
     public bool IsActive { get; init; } = true;

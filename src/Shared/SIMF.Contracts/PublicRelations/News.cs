@@ -55,7 +55,12 @@ public sealed record AdminNewsSummary(
     DateTimeOffset PublishedAt,
     int DisplayOrder,
     bool IsActive,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    // D-506 — carried so the grid Excel export can round-trip them (not rendered
+    // as grid columns). Optional; the long-form body is required on the entity so
+    // BodyArabic is always present, ExcerptArabic is blank when unset.
+    string BodyArabic = "",
+    string? ExcerptArabic = null);
 
 /// <summary>Full article detail for the CP Details / Edit modal.</summary>
 public sealed record AdminNewsDetail(

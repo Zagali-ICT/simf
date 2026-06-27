@@ -1,0 +1,123 @@
+import 'package:flutter/foundation.dart';
+
+/// D-500 (Wave 5, الطلبات 1408:9726) — which kind a unified "My requests" row is.
+/// Mirrors the `AppRequestKind` contract (int on the wire). The app renders the
+/// type headline from this value.
+enum AppRequestKind {
+  speakerMeeting,
+  delegationMeeting,
+  sessionAttendance,
+  participationDocument,
+  badgeUpdate;
+
+  static AppRequestKind fromIndex(int? index) {
+    switch (index) {
+      case 1:
+        return AppRequestKind.delegationMeeting;
+      case 2:
+        return AppRequestKind.sessionAttendance;
+      case 3:
+        return AppRequestKind.participationDocument;
+      case 4:
+        return AppRequestKind.badgeUpdate;
+      default:
+        return AppRequestKind.speakerMeeting;
+    }
+  }
+
+  /// The wire int the cancel endpoint expects.
+  int get wireValue => index;
+}
+
+/// The unified display status — mirrors `MeetingRequestStatus`
+/// (Pending=0 / Accepted=1 / Rejected=2 / Cancelled=3). Unknown falls back to
+/// [pending].
+enum AppRequestStatus {
+  pending,
+  accepted,
+  rejected,
+  cancelled;
+
+  static AppRequestStatus fromIndex(int? index) {
+    switch (index) {
+      case 1:
+        return AppRequestStatus.accepted;
+      case 2:
+        return AppRequestStatus.rejected;
+      case 3:
+        return AppRequestStatus.cancelled;
+      default:
+        return AppRequestStatus.pending;
+    }
+  }
+}
+
+/// One row on the الطلبات screen — mirrors the `AppRequestItem` contract.
+@immutable
+class AppRequestItem {
+  const AppRequestItem({
+    required this.kind,
+    required this.id,
+    required this.title,
+    required this.titleArabic,
+    required this.status,
+    required this.createdAt,
+    required this.canCancel,
+    this.eventDateUtc,
+  });
+
+  final AppRequestKind kind;
+  final String id;
+  final String title;
+  final String titleArabic;
+  final AppRequestStatus status;
+  final DateTime? eventDateUtc;
+  final DateTime createdAt;
+  final bool canCancel;
+
+  /// The context line under the type headline, in the active locale (AR/EN with
+  /// a fallback).
+  String localizedSubtitle(bool isArabic) {
+    final ar = titleArabic.trim();
+    final en = title.trim();
+    return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+  }
+
+  /// The date shown on the card — the session/meeting slot, else the submit date.
+  DateTime get displayDate => eventDateUtc ?? createdAt;
+
+  static AppRequestItem fromJson(Map<String, dynamic> json) {
+    final eventRaw = json['eventDateUtc'] as String?;
+    final createdRaw = json['createdAt'] as String?;
+    return AppRequestItem(
+      kind: AppRequestKind.fromIndex(json['kind'] as int?),
+      id: json['id'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      titleArabic: json['titleArabic'] as String? ?? '',
+      status: AppRequestStatus.fromIndex(json['status'] as int?),
+      eventDateUtc:
+          eventRaw == null ? null : DateTime.tryParse(eventRaw)?.toUtc(),
+      createdAt:
+          (createdRaw == null ? null : DateTime.tryParse(createdRaw)?.toUtc()) ??
+              DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+      canCancel: json['canCancel'] as bool? ?? false,
+    );
+  }
+
+  /// Reads the bare `[ ... ]` list the endpoint returns.
+  static List<AppRequestItem> listFromData(Object? data) =>
+      (data as List? ?? const <dynamic>[])
+          .whereType<Map<dynamic, dynamic>>()
+          .map((e) => AppRequestItem.fromJson(e.cast<String, dynamic>()))
+          .toList(growable: false);
+}
+
+/// The participation-document kinds the app can request — mirrors
+/// `ParticipationDocumentType` (int on the wire).
+enum ParticipationDocumentType {
+  attendanceCertificate,
+  participationLetter,
+  invitationLetter;
+
+  int get wireValue => index;
+}

@@ -12,10 +12,23 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// A fake repository that returns a configured form and captures the submission.
 class _FakeFeedbackRepo implements FeedbackRepository {
-  _FakeFeedbackRepo({this.withQuestion = false, this.failSubmit = false});
+  _FakeFeedbackRepo({
+    this.withQuestion = false,
+    this.failSubmit = false,
+    this.session = false,
+    this.requiredQuestion = false,
+  });
 
   final bool withQuestion;
   final bool failSubmit;
+
+  /// Returns a per-session form (code=Session, with a target) instead of the
+  /// default App form.
+  final bool session;
+
+  /// The form's single question is `isRequired` — used to exercise the
+  /// client-side "must score every required question" block.
+  final bool requiredQuestion;
 
   int? lastOverall;
   Map<String, int>? lastAnswers;
@@ -27,24 +40,25 @@ class _FakeFeedbackRepo implements FeedbackRepository {
     String? ratingTypeId,
     String? targetId,
   }) async {
+    final hasQuestion = withQuestion || requiredQuestion;
     return RatingFormView(
-      ratingTypeId: 'type-app',
-      code: 'App',
-      name: 'App',
-      nameArabic: 'التطبيق',
+      ratingTypeId: session ? 'type-session' : 'type-app',
+      code: session ? 'Session' : 'App',
+      name: session ? 'Session' : 'App',
+      nameArabic: session ? 'الجلسة' : 'التطبيق',
       hasOverallStars: true,
       allowComment: true,
       commentLabel: null,
       commentLabelArabic: null,
-      targetId: null,
+      targetId: session ? (targetId ?? 'sess-1') : null,
       groups: const <RatingFormGroup>[],
-      ungroupedQuestions: withQuestion
-          ? const <RatingFormQuestion>[
+      ungroupedQuestions: hasQuestion
+          ? <RatingFormQuestion>[
               RatingFormQuestion(
-                id: 'q-org',
-                text: 'Organization',
-                textArabic: 'التنظيم',
-                isRequired: false,
+                id: session ? 'q-speaker' : 'q-org',
+                text: session ? 'Speaker' : 'Organization',
+                textArabic: session ? 'المتحدث' : 'التنظيم',
+                isRequired: requiredQuestion,
               ),
             ]
           : const <RatingFormQuestion>[],
@@ -69,7 +83,11 @@ class _FakeFeedbackRepo implements FeedbackRepository {
   }
 }
 
-Future<void> _pump(WidgetTester tester, FeedbackRepository repo) async {
+Future<void> _pump(
+  WidgetTester tester,
+  FeedbackRepository repo, {
+  Widget rateScreen = const RateScreen(),
+}) async {
   tester.view.physicalSize = const Size(375, 1800);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
@@ -78,7 +96,7 @@ Future<void> _pump(WidgetTester tester, FeedbackRepository repo) async {
   final router = GoRouter(
     initialLocation: '/rate',
     routes: <RouteBase>[
-      GoRoute(path: '/rate', builder: (_, __) => const RateScreen()),
+      GoRoute(path: '/rate', builder: (_, __) => rateScreen),
       for (final (name, path) in <(String, String)>[
         (RouteNames.home, '/'),
         (RouteNames.sessions, '/sessions'),
@@ -168,6 +186,32 @@ void main() {
       await tester.tap(find.text('Submit rating'));
       await tester.pumpAndSettle();
       expect(find.text('Could not submit. Try again.'), findsOneWidget);
+    });
+
+    testWidgets(
+        'a session rating with an unanswered required question cannot be saved',
+        (tester) async {
+      // The end-of-session form (code=Session, with a target) carries
+      // per-element questions; when one is required, the client must block the
+      // submit until it is scored — so the rating is never sent/saved.
+      final repo = _FakeFeedbackRepo(session: true, requiredQuestion: true);
+      await _pump(
+        tester,
+        repo,
+        rateScreen: const RateScreen(code: 'Session', targetId: 'sess-1'),
+      );
+      // The Session form rendered its required per-element question…
+      expect(find.text('Speaker'), findsOneWidget);
+      // Pick the overall stars so the no-stars guard passes first…
+      await tester.tap(_outlineStar.first); // overall = 1
+      await tester.pumpAndSettle();
+      // …but leave the required "Speaker" question unscored, then submit.
+      await tester.tap(find.text('Submit rating'));
+      await tester.pumpAndSettle();
+      // The save is blocked client-side and nothing is sent to the repository.
+      expect(find.text('Please answer all required questions'), findsOneWidget);
+      expect(repo.lastOverall, isNull);
+      expect(find.text('Thanks for your rating'), findsNothing);
     });
   });
 }

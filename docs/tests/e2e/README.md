@@ -85,6 +85,8 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/speaker-meeting-requests` | [`cp-admin-speaker-meeting-requests.md`](cp-admin-speaker-meeting-requests.md) | E2E-SMR-001..015 |
 | `/admin/speaker-availability` | [`cp-admin-speaker-availability.md`](cp-admin-speaker-availability.md) | E2E-SAV-001..006 |
 | `/admin/delegation-meetings` | [`cp-admin-delegation-meetings.md`](cp-admin-delegation-meetings.md) | E2E-DLM-001..006 |
+| `/admin/document-requests` | [`cp-document-requests.md`](cp-document-requests.md) | E2E-CPDR-001..008 |
+| `/admin/badge-requests` | [`cp-badge-requests.md`](cp-badge-requests.md) | E2E-CPBR-001..008 |
 | `/admin/meeting-tables` | [`cp-meeting-tables.md`](cp-meeting-tables.md) | E2E-MHT-001..013 |
 | `/admin/business-meetings` | [`cp-business-meetings.md`](cp-business-meetings.md) | E2E-BMT-001..016 |
 
@@ -209,6 +211,9 @@ API endpoints land (D-249). The per-screen design docs live under
 | #22 `booths` (`GET /app/booths` + `/{id}`) — #9: country name + أرشدني→map | [`mobile-booths.md`](mobile-booths.md) | E2E-MOB022-001..013 |
 | `boothMap` (`/booths/:id/map` → venue map focused on the booth) — #9 | [`mobile-booths.md`](mobile-booths.md) | E2E-MOB022-013 |
 | #23 `sponsors` (`GET /app/sponsors`) | [`mobile-sponsors.md`](mobile-sponsors.md) | E2E-MOB023-001..004 |
+| #21 `delegations` (`GET /app/delegations`) — Wave 4, Figma `1426:10771` (restored from D-277) | [`mobile-delegations.md`](mobile-delegations.md) | E2E-DEL-001..009 |
+| #220 `exhibitorDetail` (`GET /app/booths/{id}`) — Wave 3, Figma `1439:11881` | [`mobile-exhibitor-detail.md`](mobile-exhibitor-detail.md) | E2E-MOB220-001..007 |
+| #221 `sponsorDetail` (`GET /app/sponsors/{id}`) — Wave 3, Figma `1439:11826` | [`mobile-sponsor-detail.md`](mobile-sponsor-detail.md) | E2E-MOB221-001..007 |
 | #24 `archive` (`GET /app/archive` + `/{id}`) | [`mobile-archive.md`](mobile-archive.md) | E2E-MOB024-001..005 |
 | #29 `news` (`GET /app/news` + `/{id}`) | [`mobile-news.md`](mobile-news.md) | E2E-MOB029-001..005 |
 | #30 `gallery` (`GET /app/media`) | [`mobile-gallery.md`](mobile-gallery.md) | E2E-MOB030-001..004 |
@@ -221,7 +226,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #38 `accessibility` (no API) | [`mobile-accessibility.md`](mobile-accessibility.md) | E2E-MOB038-001..004 |
 | #41 `more` (no API) | [`mobile-more.md`](mobile-more.md) | E2E-MOB041-001..003 |
 | #34 `aiSummary` (`GET /app/programme/sessions/{id}/summary`) | [`mobile-ai-summary.md`](mobile-ai-summary.md) | E2E-MOB034-001..006 |
-| `sessionSummaryList` (`GET /app/programme/sessions`) — #1/#6 (home tile → list → #34 details) | [`mobile-ai-summary.md`](mobile-ai-summary.md) | E2E-MOB034-006 |
+| #111 `sessionSummaryList` (cached programme + favourites/booked overlay) — Wave 2 pixel pass, Figma `1388:8392` | [`mobile-session-summaries.md`](mobile-session-summaries.md) | E2E-MOB111-001..008 |
 | #26 `sendQuestion` (`POST /app/sessions/{id}/questions`) | [`mobile-send-question.md`](mobile-send-question.md) | E2E-MOB026-001..006 |
 | #28 `audienceComments` (`GET/POST /app/sessions/{id}/comments` + like) | [`mobile-audience-comments.md`](mobile-audience-comments.md) | E2E-MOB028-001..007 |
 | #32 `badge` (`GET /app/account/dashboard`) | [`mobile-badge.md`](mobile-badge.md) | E2E-MOB032-001..004 |
@@ -229,8 +234,13 @@ API endpoints land (D-249). The per-screen design docs live under
 | #36 `chatbot` (interim shell — no API) | [`mobile-chatbot.md`](mobile-chatbot.md) | E2E-MOB036-001..006 |
 | #24-01 `archiveDetail` (`GET /app/archive/{id}`) | [`mobile-archive-detail.md`](mobile-archive-detail.md) | E2E-MOB024D-001..009 |
 | `My Contacts` / `Share my contact` (`/app/account/share-token` + `/app/contacts/*`) | [`mobile-my-contacts.md`](mobile-my-contacts.md) | E2E-MMC-001..011 |
-| `My meetings` (`GET /app/my-meetings`) — D-479, additive read-only | [`mobile-my-meetings.md`](mobile-my-meetings.md) | E2E-MMM-001..006 |
+| `requests` (`GET /app/my-requests` + `POST …/document-requests` · `…/badge-requests` · `…/my-requests/cancel`) — Wave 5 (D-500), الطلبات, Figma `1408:9726`; supersedes `My meetings` | [`mobile-requests.md`](mobile-requests.md) | E2E-REQ-001..011 |
 | `Confirm Face ID` step-up (`POST /app/auth/device-keys/step-up` + gated register) — #7a biometric-enable | [`mobile-biometric-step-up.md`](mobile-biometric-step-up.md) | E2E-MBSU-001..011 |
+| #200 `forumGuide` (no API — static guide) — built from ComingSoon, Figma `1388:7493` | [`mobile-forum-guide.md`](mobile-forum-guide.md) | E2E-MOB200-001..005 |
+| #201 `faq` (`GET /app/faq` — public) — built from ComingSoon, Figma `1388:7567` | [`mobile-faq.md`](mobile-faq.md) | E2E-MOB201-001..006 |
+| #203 `contactUs` (`POST /app/contact-inquiry` + `GET /app/organization-profile`) — built from ComingSoon, Figma `1388:7711` | [`mobile-contact-us.md`](mobile-contact-us.md) | E2E-MOB203-001..007 |
+| #202 `sessionPresentations` (`GET /app/presentations` + `/{id}/file`) — built from ComingSoon, Figma `1388:7621` | [`mobile-session-presentations.md`](mobile-session-presentations.md) | E2E-MOB202-001..006 |
+| #113 `myAreaSessions` (`GET /app/account/sessions`) — Wave 2 my-sessions, Figma `1388:9067` | [`mobile-my-sessions.md`](mobile-my-sessions.md) | E2E-MOB113-001..007 |
 
 ## How to add a new catalogue file
 
@@ -273,3 +283,21 @@ API endpoints land (D-249). The per-screen design docs live under
   CrudShell conversions (Sponsors, Exhibitors, Speakers, Booths, Venue-map,
   Invitations, Sessions). Remaining `docs/pages/cp/*` "—" debt is unchanged
   (export-only/lookup pages) and stays tracked in `PAGE-INDEX.md`.
+
+### Update — 2026-06-26 (D-500 Wave 5 — الطلبات unified requests feed)
+
+- **New mobile catalogue:** `requests` (`mobile-requests.md`, E2E-REQ-001..011) —
+  the Wave-5 unified الطلبات feed (Figma `1408:9726`): five request kinds
+  (`SpeakerMeeting`, `DelegationMeeting` read-only, `SessionAttendance` from seat
+  bookings, `ParticipationDocument` new, `BadgeUpdate` new), document/badge submit,
+  status-chip filter, and self-cancel of own pending speaker/document/badge
+  requests.
+- **Two new CP desks catalogued:** `/admin/document-requests`
+  (`cp-document-requests.md`, E2E-CPDR-001..008) and `/admin/badge-requests`
+  (`cp-badge-requests.md`, E2E-CPBR-001..008) — both mirror
+  `/admin/speaker-meeting-requests` (SimfDataGrid + Respond modal; Accept/Reject +
+  note; Pending→Pending 400; list-omits-email PII; permission-gated). Accepting a
+  badge request applies the requested title to the user's profile `JobTitle`.
+- **Removed:** `mobile-my-meetings.md` (`E2E-MMM-*`, D-479) — the read-only
+  My-meetings screen is superseded by the requests feed; its ids retire and are
+  not reused.

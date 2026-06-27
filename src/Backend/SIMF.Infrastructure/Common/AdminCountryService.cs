@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/AdminCountriesTests.cs
+// Tests: SIMF.Api.Tests/AdminCountriesTests.cs, SIMF.Api.Tests/DelegationsTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -7,6 +7,7 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
 using SIMF.Domain.Common;
+using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Common;
@@ -60,7 +61,8 @@ internal sealed class AdminCountryService(
             .Select(country => new AdminCountrySummary(
                 country.Id, country.Code, country.Name, country.NameArabic,
                 country.PhonePrefix, country.DisplayOrder,
-                country.IsActive, country.CreatedAt, country.IsInvited))
+                country.IsActive, country.CreatedAt, country.IsInvited,
+                country.DelegationArrivalDate, country.DelegationDepartureDate))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminCountrySummary>.Of(page, total,
@@ -95,6 +97,17 @@ internal sealed class AdminCountryService(
                 $"يوجد بلد بالرمز '{code}' بالفعل.");
         }
 
+        // D-499 — delegation data (head + dates) only applies to an invited
+        // country; drop it otherwise so a non-invited row never stores orphaned
+        // head/date data that would silently resurface if it were re-invited. The
+        // head, when supplied, must be an active delegate of this country (none
+        // exist yet on create, so the CP create form never sends one — but guard
+        // anyway for API callers).
+        var (headId, arrival, departure) = NormalizeDelegation(request.IsInvited,
+            request.HeadOfDelegationUserProfileId,
+            request.DelegationArrivalDate, request.DelegationDepartureDate);
+        await ValidateHeadAsync(id, headId, cancellationToken);
+
         var now = timeProvider.GetUtcNow();
         var country = new Country
         {
@@ -106,6 +119,9 @@ internal sealed class AdminCountryService(
             DisplayOrder = displayOrder,
             IsActive = true,
             IsInvited = request.IsInvited,
+            DelegationArrivalDate = arrival,
+            DelegationDepartureDate = departure,
+            HeadOfDelegationUserProfileId = headId,
             CreatedAt = now,
         };
 
@@ -148,6 +164,13 @@ internal sealed class AdminCountryService(
             }
         }
 
+        // D-499 — normalize the delegation data (head + dates cleared when the
+        // country is not invited) and validate the head before persisting.
+        var (headId, arrival, departure) = NormalizeDelegation(request.IsInvited,
+            request.HeadOfDelegationUserProfileId,
+            request.DelegationArrivalDate, request.DelegationDepartureDate);
+        await ValidateHeadAsync(id, headId, cancellationToken);
+
         country.Code = code;
         country.Name = name;
         country.NameArabic = nameArabic;
@@ -155,6 +178,9 @@ internal sealed class AdminCountryService(
         country.DisplayOrder = displayOrder;
         country.IsActive = request.IsActive;
         country.IsInvited = request.IsInvited;
+        country.DelegationArrivalDate = arrival;
+        country.DelegationDepartureDate = departure;
+        country.HeadOfDelegationUserProfileId = headId;
         country.UpdatedAt = timeProvider.GetUtcNow();
 
         await appDbContext.SaveChangesAsync(cancellationToken);
@@ -239,8 +265,54 @@ internal sealed class AdminCountryService(
         return (idRaw, code, name, nameArabic, phonePrefix, displayOrderRaw);
     }
 
+    public async Task<IReadOnlyList<AdminCountryDelegateOption>> ListDelegatesAsync(
+        int countryId, CancellationToken cancellationToken = default) =>
+        await appDbContext.UserProfiles.AsNoTracking()
+            .Where(profile => profile.IsActive
+                && profile.IsDelegate
+                && profile.NationalityId == countryId)
+            .OrderBy(profile => profile.NameArabic)
+            .ThenBy(profile => profile.Name)
+            .Select(profile => new AdminCountryDelegateOption(
+                profile.Id, profile.Name, profile.NameArabic, profile.JobTitle))
+            .ToListAsync(cancellationToken);
+
+    /// <summary>D-499 — delegation data (head + arrival/departure dates) is only
+    /// meaningful for an invited country; this clears all three when the country
+    /// is not invited so a non-invited row never carries orphaned data.</summary>
+    private static (Guid? HeadId, DateOnly? Arrival, DateOnly? Departure) NormalizeDelegation(
+        bool invited, Guid? headId, DateOnly? arrival, DateOnly? departure) =>
+        invited ? (headId, arrival, departure) : (null, null, null);
+
+    /// <summary>D-499 — guards the head-of-delegation pointer: when supplied it
+    /// must reference an active delegate (<see cref="UserProfile.IsDelegate"/>)
+    /// whose nationality is this country. Keeps a country from pointing at an
+    /// arbitrary or non-delegate profile.</summary>
+    private async Task ValidateHeadAsync(int countryId, Guid? headProfileId, CancellationToken cancellationToken)
+    {
+        if (headProfileId is not { } id)
+        {
+            return;
+        }
+
+        var isEligible = await appDbContext.UserProfiles.AsNoTracking().AnyAsync(
+            profile => profile.Id == id
+                && profile.IsActive
+                && profile.IsDelegate
+                && profile.NationalityId == countryId,
+            cancellationToken);
+        if (!isEligible)
+        {
+            throw new ApiException(ErrorCodes.CountryInvalid, 400,
+                "The head of delegation must be an active delegate of this country.",
+                "يجب أن يكون رئيس الوفد عضو وفد نشطاً من هذا البلد.");
+        }
+    }
+
     private static AdminCountryDetail ToDetail(Country country) =>
         new(country.Id, country.Code, country.Name, country.NameArabic,
             country.PhonePrefix, country.DisplayOrder,
-            country.IsActive, country.CreatedAt, country.UpdatedAt, country.IsInvited);
+            country.IsActive, country.CreatedAt, country.UpdatedAt, country.IsInvited,
+            country.DelegationArrivalDate, country.DelegationDepartureDate,
+            country.HeadOfDelegationUserProfileId);
 }

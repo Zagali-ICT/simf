@@ -315,6 +315,22 @@ public static class PermissionCatalog
         public const string Manage = "DelegationMeetings.Manage";
     }
 
+    /// <summary>D-500 (Wave 5, الطلبات) — participation-document requests desk
+    /// (طلب وثيقة المشاركة). <c>View</c> lists/opens; <c>Manage</c> accepts/rejects.</summary>
+    public static class ParticipationDocumentRequests
+    {
+        public const string View = "ParticipationDocumentRequests.View";
+        public const string Manage = "ParticipationDocumentRequests.Manage";
+    }
+
+    /// <summary>D-500 (Wave 5, الطلبات) — badge-update requests desk
+    /// (طلب تحديث البادج). <c>View</c> lists/opens; <c>Manage</c> accepts/rejects.</summary>
+    public static class BadgeUpdateRequests
+    {
+        public const string View = "BadgeUpdateRequests.View";
+        public const string Manage = "BadgeUpdateRequests.Manage";
+    }
+
     public static class Speakers
     {
         public const string View = "Speakers.View";
@@ -528,6 +544,14 @@ public static class PermissionCatalog
         public const string Create = "Faq.Create";
         public const string Edit = "Faq.Edit";
         public const string Delete = "Faq.Delete";
+    }
+
+    /// <summary>Contact-us inbox (Figma 1388:7567) — triage the inquiries the
+    /// app's "تواصل معنا" form submits.</summary>
+    public static class ContactInquiries
+    {
+        public const string View = "ContactInquiries.View";
+        public const string Manage = "ContactInquiries.Manage";
     }
 
     public static class MediaPartners
@@ -797,6 +821,12 @@ public static class PermissionCatalog
         new(DelegationMeetings.View, "DelegationMeetings", "View", "View delegation meeting requests", AdminOnly),
         new(DelegationMeetings.Manage, "DelegationMeetings", "Manage", "Manage delegation meeting requests", AdminOnly),
 
+        new(ParticipationDocumentRequests.View, "ParticipationDocumentRequests", "View", "View participation document requests", AdminOnly),
+        new(ParticipationDocumentRequests.Manage, "ParticipationDocumentRequests", "Manage", "Manage participation document requests", AdminOnly),
+
+        new(BadgeUpdateRequests.View, "BadgeUpdateRequests", "View", "View badge update requests", AdminOnly),
+        new(BadgeUpdateRequests.Manage, "BadgeUpdateRequests", "Manage", "Manage badge update requests", AdminOnly),
+
         new(Speakers.View, "Speakers", "View", "View speakers", AdminOnly),
         new(Speakers.Create, "Speakers", "Create", "Create speakers", AdminOnly),
         new(Speakers.Edit, "Speakers", "Edit", "Edit speakers", AdminOnly),
@@ -917,6 +947,9 @@ public static class PermissionCatalog
         new(Faq.Create, "Faq", "Create", "Create FAQ groups + entries", AdminOnly),
         new(Faq.Edit, "Faq", "Edit", "Edit FAQ groups + entries", AdminOnly),
         new(Faq.Delete, "Faq", "Delete", "Delete FAQ groups + entries", AdminOnly),
+
+        new(ContactInquiries.View, "ContactInquiries", "View", "View contact-us inquiries", AdminOnly),
+        new(ContactInquiries.Manage, "ContactInquiries", "Manage", "Mark contact-us inquiries handled", AdminOnly),
 
         new(MediaPartners.View, "MediaPartners", "View", "View media partners", AdminOnly),
         new(MediaPartners.Create, "MediaPartners", "Create", "Create media partners", AdminOnly),

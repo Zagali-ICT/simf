@@ -107,6 +107,98 @@ public sealed class ExhibitorsExcelTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Excel_round_trips_the_tier()
+    {
+        // D-503 — import a workbook carrying a Tier column, confirm the list
+        // summary carries it, then export and confirm the Tier column round-trips
+        // (it was previously dropped on both the import and export sides).
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var nameEn = $"Tier Exhibitor {Guid.NewGuid():N}";
+
+        using var inWorkbook = new XLWorkbook();
+        var inSheet = inWorkbook.Worksheets.Add("Exhibitors");
+        inSheet.Cell(1, 1).Value = "NameEn";
+        inSheet.Cell(1, 2).Value = "NameAr";
+        inSheet.Cell(1, 3).Value = "Tier";
+        inSheet.Cell(2, 1).Value = nameEn;
+        inSheet.Cell(2, 2).Value = $"عارض {Guid.NewGuid():N}";
+        inSheet.Cell(2, 3).Value = "Premium";
+        byte[] importBytes;
+        using (var stream = new MemoryStream())
+        {
+            inWorkbook.SaveAs(stream);
+            importBytes = stream.ToArray();
+        }
+
+        var import = await PostFileAuthAsync(
+            "/api/v1/admin/exhibitors/import", importBytes, adminToken);
+        Assert.Equal(HttpStatusCode.OK, import.StatusCode);
+        var result = (await import.Content
+            .ReadFromJsonAsync<ApiResult<AdminGridImportResult>>())!.Data!;
+        Assert.Equal(1, result.Created);
+        Assert.Empty(result.Errors);
+
+        var list = await PostAuthAsync(
+            "/api/v1/admin/exhibitors/list", new GridQuery { Top = 200 }, adminToken);
+        var page = (await list.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminExhibitorSummary>>>())!.Data!;
+        var created = page.Items.Single(item => item.NameEn == nameEn);
+        Assert.Equal(ExhibitorTier.Premium, created.Tier);
+
+        var export = await PostAuthAsync(
+            "/api/v1/admin/exhibitors/export",
+            new AdminGridExportRequest { Query = new GridQuery { Top = 200 } },
+            adminToken);
+        Assert.Equal(HttpStatusCode.OK, export.StatusCode);
+        var bytes = await export.Content.ReadAsByteArrayAsync();
+        using var outStream = new MemoryStream(bytes);
+        using var outWorkbook = new XLWorkbook(outStream);
+        var sheet = outWorkbook.Worksheet("Exhibitors");
+        var headers = sheet.Row(1).CellsUsed().Select(c => c.GetString()).ToList();
+        Assert.Contains("Tier", headers);
+        var nameCol = headers.IndexOf("NameEn") + 1;
+        var tierCol = headers.IndexOf("Tier") + 1;
+        var dataRow = sheet.RowsUsed().Skip(1)
+            .First(r => r.Cell(nameCol).GetString() == nameEn);
+        Assert.Equal("Premium", dataRow.Cell(tierCol).GetString());
+    }
+
+    [Fact]
+    public async Task Import_reports_a_per_row_error_for_an_unknown_tier()
+    {
+        // D-503 — an unknown non-blank tier is a per-row error (not a batch abort);
+        // a blank tier is valid (null).
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var validRow = $"Blank Tier Exhibitor {Guid.NewGuid():N}";
+
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.Worksheets.Add("Exhibitors");
+        sheet.Cell(1, 1).Value = "NameEn";
+        sheet.Cell(1, 2).Value = "NameAr";
+        sheet.Cell(1, 3).Value = "Tier";
+        sheet.Cell(2, 1).Value = $"Bad Tier Exhibitor {Guid.NewGuid():N}";
+        sheet.Cell(2, 2).Value = $"عارض {Guid.NewGuid():N}";
+        sheet.Cell(2, 3).Value = "Diamond";
+        sheet.Cell(3, 1).Value = validRow;
+        sheet.Cell(3, 2).Value = $"عارض {Guid.NewGuid():N}";
+        sheet.Cell(3, 3).Value = string.Empty;
+        byte[] bytes;
+        using (var stream = new MemoryStream())
+        {
+            workbook.SaveAs(stream);
+            bytes = stream.ToArray();
+        }
+
+        var response = await PostFileAuthAsync(
+            "/api/v1/admin/exhibitors/import", bytes, adminToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminGridImportResult>>())!.Data!;
+        Assert.Equal(1, result.Created);
+        Assert.Single(result.Errors);
+    }
+
+    [Fact]
     public async Task Non_admin_caller_is_forbidden_from_export()
     {
         var tokens = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);

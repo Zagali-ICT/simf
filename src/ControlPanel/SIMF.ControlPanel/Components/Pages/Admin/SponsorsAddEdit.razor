@@ -56,6 +56,19 @@
                        ValueExpression="@(() => _model.Tagline)"
                        MaxLength="256"
                        Disabled="_busy" />
+        @* Optional bilingual about paragraph (longer than the tagline). *@
+        <SimfTextField Label="@L["Admin.Sponsors.Field.AboutAr"]"
+                       Value="@_model.AboutAr"
+                       ValueChanged="@(v => _model.AboutAr = v)"
+                       ValueExpression="@(() => _model.AboutAr)"
+                       MaxLength="2048"
+                       Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Sponsors.Field.About"]"
+                       Value="@_model.About"
+                       ValueChanged="@(v => _model.About = v)"
+                       ValueExpression="@(() => _model.About)"
+                       MaxLength="2048"
+                       Disabled="_busy" />
         <SimfTextField Label="@L["Admin.Sponsors.Field.Logo"]"
                        Value="@_model.LogoRelativePath"
                        ValueChanged="@(v => _model.LogoRelativePath = v)"
@@ -136,6 +149,8 @@
             _model.ContactId = Initial.ContactId;
             _model.Tagline = Initial.Tagline ?? string.Empty;
             _model.TaglineAr = Initial.TaglineArabic ?? string.Empty;
+            _model.About = Initial.About ?? string.Empty;
+            _model.AboutAr = Initial.AboutArabic ?? string.Empty;
             _model.IsActive = Initial.IsActive;
         }
         _editContext = new EditContext(_model);
@@ -170,6 +185,8 @@
                         ContactId = _model.ContactId,
                         Tagline = NullIfBlank(_model.Tagline),
                         TaglineArabic = NullIfBlank(_model.TaglineAr),
+                        About = NullIfBlank(_model.About),
+                        AboutArabic = NullIfBlank(_model.AboutAr),
                     });
             }
             else
@@ -187,6 +204,8 @@
                         ContactId = _model.ContactId,
                         Tagline = NullIfBlank(_model.Tagline),
                         TaglineArabic = NullIfBlank(_model.TaglineAr),
+                        About = NullIfBlank(_model.About),
+                        AboutArabic = NullIfBlank(_model.AboutAr),
                         IsActive = _model.IsActive,
                     });
             }
@@ -230,6 +249,8 @@
         public string Url { get; set; } = string.Empty;
         public string Tagline { get; set; } = string.Empty;
         public string TaglineAr { get; set; } = string.Empty;
+        public string About { get; set; } = string.Empty;
+        public string AboutAr { get; set; } = string.Empty;
         public int DisplayOrder { get; set; }
         public Guid? ContactId { get; set; }
         public bool IsActive { get; set; } = true;

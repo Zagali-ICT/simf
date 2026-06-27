@@ -125,6 +125,7 @@ internal sealed class AdminContactService(
             request.NameAr, request.NameEn, request.LogoRelativePath,
             request.PhonePrimary, request.PhoneSecondary, request.Email, request.Website,
             request.FacebookUrl, request.XUrl, request.LinkedInUrl, request.InstagramUrl,
+            request.City, request.CityArabic,
             request.Latitude, request.Longitude);
         await EnsureCountryActiveAsync(request.CountryId, ct);
 
@@ -143,6 +144,8 @@ internal sealed class AdminContactService(
             XUrl = v.XUrl,
             LinkedInUrl = v.LinkedInUrl,
             InstagramUrl = v.InstagramUrl,
+            City = v.City,
+            CityArabic = v.CityArabic,
             Latitude = request.Latitude,
             Longitude = request.Longitude,
             CountryId = request.CountryId,
@@ -181,6 +184,7 @@ internal sealed class AdminContactService(
             request.NameAr, request.NameEn, request.LogoRelativePath,
             request.PhonePrimary, request.PhoneSecondary, request.Email, request.Website,
             request.FacebookUrl, request.XUrl, request.LinkedInUrl, request.InstagramUrl,
+            request.City, request.CityArabic,
             request.Latitude, request.Longitude);
         await EnsureCountryActiveAsync(request.CountryId, ct);
 
@@ -205,6 +209,8 @@ internal sealed class AdminContactService(
         contact.XUrl = v.XUrl;
         contact.LinkedInUrl = v.LinkedInUrl;
         contact.InstagramUrl = v.InstagramUrl;
+        contact.City = v.City;
+        contact.CityArabic = v.CityArabic;
         contact.Latitude = request.Latitude;
         contact.Longitude = request.Longitude;
         contact.CountryId = request.CountryId;
@@ -337,7 +343,9 @@ internal sealed class AdminContactService(
             countryAr,
             c.IsActive,
             c.CreatedAt,
-            c.UpdatedAt);
+            c.UpdatedAt,
+            c.City,
+            c.CityArabic);
     }
 
     private async Task EnsureCountryActiveAsync(int? countryId, CancellationToken ct)
@@ -361,12 +369,14 @@ internal sealed class AdminContactService(
     private sealed record ContactDraft(
         string NameAr, string? NameEn, string? LogoRelativePath,
         string? PhonePrimary, string? PhoneSecondary, string? Email, string? Website,
-        string? FacebookUrl, string? XUrl, string? LinkedInUrl, string? InstagramUrl);
+        string? FacebookUrl, string? XUrl, string? LinkedInUrl, string? InstagramUrl,
+        string? City, string? CityArabic);
 
     private static ContactDraft ValidateAndNormalise(
         string nameArRaw, string? nameEnRaw, string? logoRaw,
         string? phonePrimaryRaw, string? phoneSecondaryRaw, string? emailRaw, string? websiteRaw,
         string? facebookRaw, string? xRaw, string? linkedInRaw, string? instagramRaw,
+        string? cityRaw, string? cityArabicRaw,
         double? latitude, double? longitude)
     {
         var nameAr = (nameArRaw ?? string.Empty).Trim();
@@ -389,6 +399,8 @@ internal sealed class AdminContactService(
         var x = OptionalText(xRaw, 256, "X URL", "رابط إكس");
         var linkedIn = OptionalText(linkedInRaw, 256, "LinkedIn URL", "رابط لينكدإن");
         var instagram = OptionalText(instagramRaw, 256, "Instagram URL", "رابط إنستغرام");
+        var city = OptionalText(cityRaw, 128, "City", "المدينة");
+        var cityArabic = OptionalText(cityArabicRaw, 128, "Arabic city", "المدينة بالعربية");
 
         // Map coordinates are set together, and within WGS84 bounds.
         if (latitude.HasValue != longitude.HasValue)
@@ -408,7 +420,7 @@ internal sealed class AdminContactService(
 
         return new ContactDraft(
             nameAr, nameEn, logo, phonePrimary, phoneSecondary, email, website,
-            facebook, x, linkedIn, instagram);
+            facebook, x, linkedIn, instagram, city, cityArabic);
     }
 
     private static string? OptionalText(string? raw, int maxLength, string fieldEn, string fieldAr)

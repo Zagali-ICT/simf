@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/AdminCountriesTests.cs
+// Tests: SIMF.Api.Tests/AdminCountriesTests.cs, SIMF.Api.Tests/DelegationsTests.cs
 using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Application.Common.Abstractions;
@@ -76,6 +76,21 @@ public sealed class UpdateCountryRequest
     public string? PhonePrefix { get; set; }
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; } = true;
+
+    /// <summary>D-473 (#10) — invited to send a delegation (وفد). (Threaded through
+    /// from D-499: this binding model previously omitted IsInvited, so editing a
+    /// country silently reset the flag to false — fixed here.)</summary>
+    public bool IsInvited { get; set; }
+
+    /// <summary>D-499 (الوفود) — the invited delegation's arrival date (optional).</summary>
+    public DateOnly? DelegationArrivalDate { get; set; }
+
+    /// <summary>D-499 (الوفود) — the invited delegation's departure date (optional).</summary>
+    public DateOnly? DelegationDepartureDate { get; set; }
+
+    /// <summary>D-499 (الوفود) — the UserProfile id of the head of delegation
+    /// (رئيس الوفد); must be an active delegate of this country (optional).</summary>
+    public Guid? HeadOfDelegationUserProfileId { get; set; }
 }
 
 public sealed class UpdateCountryEndpoint(IAdminCountryService service)
@@ -106,8 +121,30 @@ public sealed class UpdateCountryEndpoint(IAdminCountryService service)
                     PhonePrefix = req.PhonePrefix,
                     DisplayOrder = req.DisplayOrder,
                     IsActive = req.IsActive,
+                    IsInvited = req.IsInvited,
+                    DelegationArrivalDate = req.DelegationArrivalDate,
+                    DelegationDepartureDate = req.DelegationDepartureDate,
+                    HeadOfDelegationUserProfileId = req.HeadOfDelegationUserProfileId,
                 }, ct)), ct);
     }
+}
+
+/// <summary>D-499 (الوفود) — <c>GET /admin/countries/{id}/delegates</c>: the active
+/// delegates of a country, feeding the head-of-delegation picker on the CP country
+/// Edit form. Gated by <see cref="PermissionCatalog.Countries.View"/>.</summary>
+public sealed class ListCountryDelegatesEndpoint(IAdminCountryService service)
+    : Endpoint<GetCountryRequest, ApiResult<IReadOnlyList<AdminCountryDelegateOption>>>
+{
+    public override void Configure()
+    {
+        Get("/admin/countries/{id:int}/delegates");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Countries.View),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Tags("Admin");
+    }
+    public override async Task HandleAsync(GetCountryRequest req, CancellationToken ct) =>
+        await Send.OkAsync(ApiResult<IReadOnlyList<AdminCountryDelegateOption>>.Ok(
+            await service.ListDelegatesAsync(req.Id, ct)), ct);
 }
 
 public sealed class DeactivateCountryRequest { public int Id { get; set; } }

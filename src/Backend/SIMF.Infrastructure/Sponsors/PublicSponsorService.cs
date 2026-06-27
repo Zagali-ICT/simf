@@ -120,6 +120,73 @@ internal sealed class PublicSponsorService(SimfAppDbContext appDbContext)
         return new PublicSponsors(groups);
     }
 
+    public async Task<PublicSponsorDetail?> GetAsync(
+        Guid id, CancellationToken cancellationToken = default)
+    {
+        var row = await appDbContext.Sponsors.AsNoTracking()
+            .Where(sponsor => sponsor.IsActive && sponsor.Id == id)
+            .Select(sponsor => new
+            {
+                sponsor.Id,
+                sponsor.Name,
+                sponsor.NameArabic,
+                sponsor.Tier,
+                sponsor.LogoRelativePath,
+                sponsor.Url,
+                sponsor.ContactId,
+                // Wave 3 — the about is sponsor-owned (like the tagline).
+                sponsor.About,
+                sponsor.AboutArabic,
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+        if (row is null)
+        {
+            return null;
+        }
+
+        // SIMF-FDS-014 (D-281) — coalesce the card's name / logo / website over the
+        // linked active Contact; Wave 3 adds the city + country from that Contact.
+        var contact = row.ContactId is { } cid
+            ? await appDbContext.Contacts.AsNoTracking()
+                .Where(c => c.Id == cid && c.IsActive)
+                .Select(c => new
+                {
+                    c.Name,
+                    c.NameArabic,
+                    c.LogoRelativePath,
+                    c.Website,
+                    c.City,
+                    c.CityArabic,
+                    c.CountryId,
+                })
+                .FirstOrDefaultAsync(cancellationToken)
+            : null;
+
+        (string En, string Ar)? country = contact?.CountryId is { } cnid
+            ? await appDbContext.Countries.AsNoTracking()
+                .Where(c => c.Id == cnid)
+                .Select(c => new ValueTuple<string, string>(c.Name, c.NameArabic))
+                .Cast<(string En, string Ar)?>()
+                .FirstOrDefaultAsync(cancellationToken)
+            : null;
+
+        return new PublicSponsorDetail(
+            row.Id,
+            contact?.Name ?? row.Name,
+            contact?.NameArabic ?? row.NameArabic,
+            (int)row.Tier,
+            row.Tier.ToString(),
+            contact?.LogoRelativePath ?? row.LogoRelativePath,
+            contact?.Website ?? row.Url,
+            row.About,
+            row.AboutArabic,
+            contact?.City,
+            contact?.CityArabic,
+            contact?.CountryId,
+            country?.En,
+            country?.Ar);
+    }
+
     /// <summary>SIMF-FDS-014 (D-281) — the linked-Contact fields the public
     /// sponsor card coalesces over its own inline columns.</summary>
     private sealed record ContactCard(

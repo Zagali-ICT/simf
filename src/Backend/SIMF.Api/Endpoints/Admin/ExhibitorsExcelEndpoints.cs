@@ -4,6 +4,7 @@ using SIMF.Api.Endpoints.Admin.Grid;
 using SIMF.Application.Excel;
 using SIMF.Application.Exhibitors.Abstractions;
 using SIMF.Common;
+using SIMF.Common.Enums;
 using SIMF.Contracts.Exhibitors;
 
 namespace SIMF.Api.Endpoints.Admin;
@@ -35,6 +36,9 @@ public sealed class ExportExhibitorsEndpoint(IAdminExhibitorService service, IGr
         new("Website", row => row.Website),
         new("AccountCount", row => row.AccountCount),
         new("IsActive", row => row.IsActive),
+        // D-503 — round-trip the optional tier by display name (Premium/Gold/
+        // Silver/Bronze); blank when the exhibitor has no tier.
+        new("Tier", row => row.Tier?.ToString()),
     ];
 
     protected override async Task<IReadOnlyList<AdminExhibitorSummary>> ListAsync(
@@ -87,8 +91,37 @@ public sealed class ImportExhibitorsEndpoint(IAdminExhibitorService service, IGr
             ContactEmail = NullIfBlank(row.Cells.GetValueOrDefault("ContactEmail", string.Empty)),
             ContactPhone = NullIfBlank(row.Cells.GetValueOrDefault("ContactPhone", string.Empty)),
             Website = NullIfBlank(row.Cells.GetValueOrDefault("Website", string.Empty)),
+            // D-503 — optional tier (blank → null; unknown non-blank → per-row error).
+            Tier = ParseTier(row.Cells.GetValueOrDefault("Tier", string.Empty)),
         }, ct);
         return GridRowApplyKind.Created;
+    }
+
+    // Maps a Tier cell to its enum value, or null when blank (the tier is
+    // optional). Accepts the display name (Premium/Gold/Silver/Bronze, as the
+    // export writes) or the raw int — keep aligned with
+    // SIMF.Common.Enums.ExhibitorTier.
+    private static ExhibitorTier? ParseTier(string value)
+    {
+        var trimmed = value.Trim();
+        if (string.IsNullOrEmpty(trimmed))
+        {
+            return null;
+        }
+        if (int.TryParse(trimmed, out var raw) && Enum.IsDefined(typeof(ExhibitorTier), raw))
+        {
+            return (ExhibitorTier)raw;
+        }
+        return trimmed.ToLowerInvariant() switch
+        {
+            "premium" => ExhibitorTier.Premium,
+            "gold" => ExhibitorTier.Gold,
+            "silver" => ExhibitorTier.Silver,
+            "bronze" => ExhibitorTier.Bronze,
+            _ => throw new DataValidationException(
+                "The tier must be one of Premium, Gold, Silver or Bronze.",
+                "يجب أن تكون الفئة إحدى: بريميوم أو ذهبي أو فضي أو برونزي."),
+        };
     }
 
     private static string? NullIfBlank(string value) =>

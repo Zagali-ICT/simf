@@ -179,6 +179,94 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task My_sessions_lists_the_booked_session_with_per_user_flags()
+    {
+        // Wave 2 (Figma 1388:9067) — GET /app/account/sessions: the visitor's
+        // booked session shows with the attended (HallAttendance) + favourite flags.
+        var (token, userId) = await CreateApprovedVisitorAsync();
+        Guid sessionId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var app = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var now = scope.ServiceProvider.GetRequiredService<TimeProvider>().GetUtcNow();
+            var hall = new Hall
+            {
+                Id = Guid.NewGuid(),
+                Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+                Name = "Hall", NameArabic = "قاعة",
+                Capacity = 100, IsActive = true, CreatedAt = now,
+            };
+            app.Halls.Add(hall);
+            var session = new Session
+            {
+                Id = Guid.NewGuid(),
+                Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+                Title = "Booked Talk", TitleArabic = "جلسة محجوزة",
+                HallId = hall.Id,
+                StartUtc = now, EndUtc = now.AddHours(1),
+                IsActive = true, CreatedAt = now,
+            };
+            app.Sessions.Add(session);
+            sessionId = session.Id;
+            app.SeatReservations.Add(new SeatReservation
+            {
+                Id = Guid.NewGuid(),
+                SessionId = session.Id,
+                Kind = SeatReservationKind.UserBooking,
+                ReservedForUserId = userId,
+                CreatedByUserId = userId,
+                Status = BookingStatus.Approved,
+                ReleasedAt = null,
+                CreatedAt = now,
+            });
+            app.HallAttendances.Add(new HallAttendance
+            {
+                Id = Guid.NewGuid(),
+                SessionId = session.Id,
+                HallId = hall.Id,
+                UserId = userId,
+                Method = AttendanceMethod.QrScan,
+                EnterUtc = now,
+                CreatedAt = now,
+            });
+            app.SessionFavourites.Add(new SessionFavourite
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                SessionId = session.Id,
+                CreatedAt = now,
+            });
+            await app.SaveChangesAsync();
+        }
+
+        var response = await GetAuthAsync("/api/v1/app/account/sessions", token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var data = (await response.Content.ReadFromJsonAsync<ApiResult<MyAreaSessions>>())!.Data!;
+
+        var item = Assert.Single(data.Items, s => s.Id == sessionId);
+        Assert.Equal("Booked Talk", item.Title);
+        Assert.True(item.Attended);
+        Assert.True(item.IsFavourite);
+    }
+
+    [Fact]
+    public async Task My_sessions_is_empty_for_a_visitor_with_no_bookings()
+    {
+        var (token, _) = await CreateApprovedVisitorAsync();
+        var response = await GetAuthAsync("/api/v1/app/account/sessions", token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var data = (await response.Content.ReadFromJsonAsync<ApiResult<MyAreaSessions>>())!.Data!;
+        Assert.Empty(data.Items);
+    }
+
+    [Fact]
+    public async Task My_sessions_without_a_token_returns_401()
+    {
+        var response = await _client.GetAsync("/api/v1/app/account/sessions");
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Dashboard_for_a_not_yet_approved_account_is_forbidden()
     {
         // A verified-but-not-approved visitor holds a valid token but fails the

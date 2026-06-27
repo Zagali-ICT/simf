@@ -1,8 +1,10 @@
 // Tests: SIMF.Api.Tests/HallsExcelTests.cs
+using System.Globalization;
 using SIMF.Api.Endpoints.Admin.Grid;
 using SIMF.Application.Excel;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
+using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
 
 namespace SIMF.Api.Endpoints.Admin;
@@ -31,6 +33,15 @@ public sealed class ExportHallsEndpoint(IAdminHallService service, IGridExcelExp
         new("Capacity", row => row.Capacity),
         new("Floor", row => row.Floor),
         new("IsActive", row => row.IsActive),
+        // D-506 — round-trip the fields the grid summary now carries (appended so
+        // the existing column order is unchanged; import binds by header name).
+        // SeatSelectionMode is exported by its display name (AssignedSeat/
+        // OpenSeating); the geofence triple is all-three-or-none.
+        new("EquipmentNotes", row => row.EquipmentNotes),
+        new("GeofenceCenterLat", row => row.GeofenceCenterLat),
+        new("GeofenceCenterLon", row => row.GeofenceCenterLon),
+        new("GeofenceRadiusMeters", row => row.GeofenceRadiusMeters),
+        new("SeatSelectionMode", row => ((SeatSelectionMode)row.SeatSelectionMode).ToString()),
     ];
 
     protected override async Task<IReadOnlyList<AdminHallSummary>> ListAsync(
@@ -96,7 +107,63 @@ public sealed class ImportHallsEndpoint(IAdminHallService service, IGridExcelImp
             Floor = row.Cells.GetValueOrDefault("Floor", string.Empty) is { Length: > 0 } floor
                 ? floor
                 : null,
+            // D-506 — optional fields the grid summary now round-trips. The
+            // geofence triple is all-three-or-none; a partial geofence row is
+            // rejected by CreateAsync as a per-row error (not a batch abort).
+            EquipmentNotes = NullIfBlank(row.Cells.GetValueOrDefault("EquipmentNotes", string.Empty)),
+            GeofenceCenterLat = ParseGeo(row.Cells.GetValueOrDefault("GeofenceCenterLat", string.Empty)),
+            GeofenceCenterLon = ParseGeo(row.Cells.GetValueOrDefault("GeofenceCenterLon", string.Empty)),
+            GeofenceRadiusMeters = ParseGeo(row.Cells.GetValueOrDefault("GeofenceRadiusMeters", string.Empty)),
+            SeatSelectionMode = ParseSeatSelectionMode(
+                row.Cells.GetValueOrDefault("SeatSelectionMode", string.Empty)),
         }, ct);
         return GridRowApplyKind.Created;
     }
+
+    // Parses an optional geofence coordinate/radius. Blank → null (the geofence is
+    // all-three-or-none and the service validates the partial case). A non-blank,
+    // non-numeric value is a per-row error rather than a silent zero.
+    private static double? ParseGeo(string value)
+    {
+        var trimmed = value.Trim();
+        if (string.IsNullOrEmpty(trimmed))
+        {
+            return null;
+        }
+        if (double.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed))
+        {
+            return parsed;
+        }
+        throw new DataValidationException(
+            "The geofence latitude, longitude and radius must be numbers.",
+            "يجب أن تكون قيم خط العرض وخط الطول ونصف القطر للسياج أرقاماً.");
+    }
+
+    // Maps a SeatSelectionMode cell to its int value. Accepts the display name
+    // (AssignedSeat/OpenSeating, as the export writes) or the raw int; blank →
+    // 0 (AssignedSeat, the default). Unknown non-blank → a per-row error — keep
+    // aligned with SIMF.Common.Enums.SeatSelectionMode.
+    private static int ParseSeatSelectionMode(string value)
+    {
+        var trimmed = value.Trim();
+        if (string.IsNullOrEmpty(trimmed))
+        {
+            return (int)SeatSelectionMode.AssignedSeat;
+        }
+        if (int.TryParse(trimmed, out var raw) && Enum.IsDefined(typeof(SeatSelectionMode), raw))
+        {
+            return raw;
+        }
+        return trimmed.ToLowerInvariant() switch
+        {
+            "assignedseat" => (int)SeatSelectionMode.AssignedSeat,
+            "openseating" => (int)SeatSelectionMode.OpenSeating,
+            _ => throw new DataValidationException(
+                "The seat-selection mode must be one of AssignedSeat or OpenSeating.",
+                "يجب أن يكون وضع اختيار المقاعد إما AssignedSeat أو OpenSeating."),
+        };
+    }
+
+    private static string? NullIfBlank(string value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value;
 }

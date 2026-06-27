@@ -87,6 +87,102 @@ public sealed class NewsExcelTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Export_includes_the_body_arabic_and_excerpt_arabic_columns()
+    {
+        // D-506 — the news Excel export must surface the Arabic body + excerpt,
+        // not drop them at the IO boundary.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var title = $"Export Body {Guid.NewGuid():N}";
+        var create = await PostAuthAsync(
+            "/api/v1/admin/news",
+            new CreateNewsRequest
+            {
+                Title = title,
+                TitleArabic = $"عنوان {Guid.NewGuid():N}",
+                Excerpt = "English excerpt.",
+                ExcerptArabic = "مقتطف عربي.",
+                Body = "English body text.",
+                BodyArabic = "نص الخبر بالعربية.",
+                Category = "Press",
+                CategoryArabic = "صحافة",
+                PublishedAt = DateTimeOffset.UtcNow,
+                DisplayOrder = 0,
+            },
+            adminToken);
+        Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/news/export",
+            new AdminGridExportRequest { Query = new GridQuery { Top = 200 } },
+            adminToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+
+        using var stream = new MemoryStream(bytes);
+        using var workbook = new XLWorkbook(stream);
+        var sheet = workbook.Worksheet("News");
+        var headers = sheet.Row(1).CellsUsed().Select(c => c.GetString()).ToList();
+        Assert.Contains("BodyArabic", headers);
+        Assert.Contains("ExcerptArabic", headers);
+
+        var titleCol = headers.IndexOf("Title") + 1;
+        var bodyArabicCol = headers.IndexOf("BodyArabic") + 1;
+        var excerptArabicCol = headers.IndexOf("ExcerptArabic") + 1;
+        var dataRow = sheet.RowsUsed().Skip(1)
+            .First(r => r.Cell(titleCol).GetString() == title);
+        Assert.Equal("نص الخبر بالعربية.", dataRow.Cell(bodyArabicCol).GetString());
+        Assert.Equal("مقتطف عربي.", dataRow.Cell(excerptArabicCol).GetString());
+    }
+
+    [Fact]
+    public async Task Import_round_trips_the_body_arabic_and_excerpt_arabic()
+    {
+        // D-506 — an import workbook carrying BodyArabic/ExcerptArabic must persist
+        // them (the summary the list returns now carries them too).
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var title = $"Body XLSX {Guid.NewGuid():N}";
+
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.Worksheets.Add("News");
+        sheet.Cell(1, 1).Value = "Title";
+        sheet.Cell(1, 2).Value = "TitleArabic";
+        sheet.Cell(1, 3).Value = "Body";
+        sheet.Cell(1, 4).Value = "BodyArabic";
+        sheet.Cell(1, 5).Value = "Category";
+        sheet.Cell(1, 6).Value = "CategoryArabic";
+        sheet.Cell(1, 7).Value = "ExcerptArabic";
+        sheet.Cell(2, 1).Value = title;
+        sheet.Cell(2, 2).Value = $"عنوان {Guid.NewGuid():N}";
+        sheet.Cell(2, 3).Value = "English body text.";
+        sheet.Cell(2, 4).Value = "نص الخبر بالعربية.";
+        sheet.Cell(2, 5).Value = "Press";
+        sheet.Cell(2, 6).Value = "صحافة";
+        sheet.Cell(2, 7).Value = "مقتطف عربي.";
+        byte[] bytes;
+        using (var stream = new MemoryStream())
+        {
+            workbook.SaveAs(stream);
+            bytes = stream.ToArray();
+        }
+
+        var response = await PostFileAuthAsync(
+            "/api/v1/admin/news/import", bytes, adminToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminGridImportResult>>())!.Data!;
+        Assert.True(result.Created >= 1);
+        Assert.Empty(result.Errors);
+
+        var list = await PostAuthAsync(
+            "/api/v1/admin/news/list", new GridQuery { Top = 200 }, adminToken);
+        var page = (await list.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminNewsSummary>>>())!.Data!;
+        var created = page.Items.Single(item => item.Title == title);
+        Assert.Equal("نص الخبر بالعربية.", created.BodyArabic);
+        Assert.Equal("مقتطف عربي.", created.ExcerptArabic);
+    }
+
+    [Fact]
     public async Task Import_reports_a_per_row_error_for_a_duplicate_without_aborting()
     {
         var adminToken = await CreateAdministratorAndSignInAsync();

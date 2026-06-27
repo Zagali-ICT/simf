@@ -81,7 +81,7 @@ internal sealed class AdminExhibitorService(
                 c.ContactEmail, c.ContactPhone, c.Website,
                 appDbContext.Set<ExhibitorMembership>()
                     .Count(m => m.ExhibitorId == c.Id && m.IsActive),
-                c.IsActive, c.CreatedAt))
+                c.IsActive, c.CreatedAt, c.Tier))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminExhibitorSummary>.Of(page, total,
@@ -96,7 +96,7 @@ internal sealed class AdminExhibitorService(
             .Select(c => new AdminExhibitorDetail(
                 c.Id, c.Name, c.NameArabic,
                 c.ContactEmail, c.ContactPhone, c.Website,
-                c.IsActive, c.CreatedAt, c.UpdatedAt, c.ContactId))
+                c.IsActive, c.CreatedAt, c.UpdatedAt, c.ContactId, c.Tier))
             .SingleOrDefaultAsync(cancellationToken);
     }
 
@@ -105,7 +105,7 @@ internal sealed class AdminExhibitorService(
         CancellationToken cancellationToken = default)
     {
         Validate(request.NameEn, request.NameAr, request.ContactEmail,
-            request.ContactPhone, request.Website);
+            request.ContactPhone, request.Website, request.Tier);
         await EnsureContactIsValidAsync(request.ContactId, cancellationToken);
         var now = timeProvider.GetUtcNow();
         var exhibitor = new Exhibitor
@@ -117,6 +117,7 @@ internal sealed class AdminExhibitorService(
             ContactPhone = NormaliseOptional(request.ContactPhone),
             Website = NormaliseOptional(request.Website),
             ContactId = request.ContactId,
+            Tier = request.Tier,
             IsActive = true,
             CreatedAt = now,
         };
@@ -139,7 +140,7 @@ internal sealed class AdminExhibitorService(
         CancellationToken cancellationToken = default)
     {
         Validate(request.NameEn, request.NameAr, request.ContactEmail,
-            request.ContactPhone, request.Website);
+            request.ContactPhone, request.Website, request.Tier);
         await EnsureContactIsValidAsync(request.ContactId, cancellationToken);
         var exhibitor = await appDbContext.Exhibitors
             .SingleOrDefaultAsync(c => c.Id == id, cancellationToken)
@@ -154,6 +155,7 @@ internal sealed class AdminExhibitorService(
         exhibitor.ContactPhone = NormaliseOptional(request.ContactPhone);
         exhibitor.Website = NormaliseOptional(request.Website);
         exhibitor.ContactId = request.ContactId;
+        exhibitor.Tier = request.Tier;
         exhibitor.IsActive = request.IsActive;
         exhibitor.UpdatedAt = timeProvider.GetUtcNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
@@ -335,8 +337,15 @@ internal sealed class AdminExhibitorService(
 
     private static void Validate(
         string nameEn, string nameAr, string? contactEmail,
-        string? contactPhone, string? website)
+        string? contactPhone, string? website, ExhibitorTier? tier)
     {
+        if (tier.HasValue && !Enum.IsDefined(typeof(ExhibitorTier), tier.Value))
+        {
+            throw new ApiException(
+                ErrorCodes.ExhibitorInvalid, 400,
+                "Exhibitor tier is not a recognised value.",
+                "فئة العارض ليست قيمة معروفة.");
+        }
         if (string.IsNullOrWhiteSpace(nameEn) || nameEn.Length > 256
             || string.IsNullOrWhiteSpace(nameAr) || nameAr.Length > 256)
         {

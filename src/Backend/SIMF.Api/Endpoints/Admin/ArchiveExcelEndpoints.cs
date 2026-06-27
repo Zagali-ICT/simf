@@ -33,6 +33,16 @@ public sealed class ExportArchiveEndpoint(IAdminArchiveService service, IGridExc
         new("Sessions", row => row.Sessions),
         new("Speakers", row => row.Speakers),
         new("IsActive", row => row.IsActive),
+        // D-506 — round-trip the dropped edition fields (summary, location, date
+        // label, cover path; appended so the existing column order is unchanged;
+        // import binds by header name).
+        new("SummaryEn", row => row.SummaryEn),
+        new("SummaryAr", row => row.SummaryAr),
+        new("LocationEn", row => row.LocationEn),
+        new("LocationAr", row => row.LocationAr),
+        new("CoverImageRelativePath", row => row.CoverImageRelativePath),
+        new("DateLabelEn", row => row.DateLabelEn),
+        new("DateLabelAr", row => row.DateLabelAr),
     ];
 
     protected override async Task<IReadOnlyList<AdminArchiveEditionSummary>> ListAsync(
@@ -101,6 +111,15 @@ public sealed class ImportArchiveEndpoint(IAdminArchiveService service, IGridExc
                 row.Cells.GetValueOrDefault("Sessions", string.Empty), out var sessions) ? sessions : 0,
             Speakers = int.TryParse(
                 row.Cells.GetValueOrDefault("Speakers", string.Empty), out var speakers) ? speakers : 0,
+            // D-506 — round-trip the remaining dropped edition fields (location,
+            // date label, cover path; CreateAsync trims + length-guards them,
+            // absent columns simply stay null).
+            LocationEn = NullIfBlank(row.Cells.GetValueOrDefault("LocationEn", string.Empty)),
+            LocationAr = NullIfBlank(row.Cells.GetValueOrDefault("LocationAr", string.Empty)),
+            CoverImageRelativePath = NullIfBlank(
+                row.Cells.GetValueOrDefault("CoverImageRelativePath", string.Empty)),
+            DateLabelEn = NullIfBlank(row.Cells.GetValueOrDefault("DateLabelEn", string.Empty)),
+            DateLabelAr = NullIfBlank(row.Cells.GetValueOrDefault("DateLabelAr", string.Empty)),
         }, ct);
         return GridRowApplyKind.Created;
     }

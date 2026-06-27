@@ -80,6 +80,7 @@
 | E2E-ARC-022 | Excel import — workbook upload → rows created + per-row outcome modal (D-356) | happy | P1 | _to author_ |
 | E2E-ARC-023 | Excel import rejection — non-.xlsx / wrong-sheet upload → bilingual 400, nothing created (D-356) | error | P1 | _to author_ |
 | E2E-ARC-024 | Cover Image via the unified media-asset pipeline — upload then external link (D-357) | happy | P1 | _to author_ |
+| E2E-ARC-025 | Excel round-trip of the dropped edition fields — summary / location / date label / cover path survive export + import (D-506) | happy | P1 | authored ✓ (`Export_includes_the_dropped_edition_columns` + `Import_round_trips_the_dropped_edition_fields`) |
 
 ## Scenarios
 
@@ -482,6 +483,10 @@ Scenario: Export the filtered grid to an XLSX workbook
   And the browser saves a file named simf-archive-{timestamp}.xlsx
   And the workbook's "Archive" sheet header row is
       Year | TitleEn | TitleAr | Attendees | Sessions | Speakers | IsActive
+      | SummaryEn | SummaryAr | LocationEn | LocationAr | CoverImageRelativePath
+      | DateLabelEn | DateLabelAr
+      (the trailing summary/location/date-label/cover columns were appended in D-506
+       so the full edition round-trips through export + import)
   When they instead select two rows then click "Export"
   Then the request carries those two Ids and a null Query
   And the workbook contains exactly those two editions
@@ -556,9 +561,14 @@ Scenario: A bad or wrong-sheet upload is rejected without creating anything
   `src/Backend/SIMF.Api/Endpoints/Admin/ArchiveExcelEndpoints.cs`
   (`ExportArchiveEndpoint` gated by `Archive.Export`; `ImportArchiveEndpoint`
   gated by `Archive.Import`, insert-only, required headers `Year/TitleEn/TitleAr`,
-  duplicate-year 409 recorded as a per-row error). Lower-layer coverage:
-  `tests/SIMF.Api.Tests/ArchiveExcelTests.cs`. E2E-ARC-021..023 are the
-  browser-level proof.
+  duplicate-year 409 recorded as a per-row error). **D-506** appended the dropped
+  edition columns (`SummaryEn/SummaryAr/LocationEn/LocationAr/CoverImageRelativePath/DateLabelEn/DateLabelAr`)
+  to both the export `_columns` (after `IsActive`) and the import `ApplyRowAsync`
+  read set, so the full edition now survives a round-trip; required headers are
+  unchanged (the new columns are optional). Lower-layer coverage:
+  `tests/SIMF.Api.Tests/ArchiveExcelTests.cs` (`Export_includes_the_dropped_edition_columns`,
+  `Import_round_trips_the_dropped_edition_fields`). E2E-ARC-021..023 + E2E-ARC-025
+  are the browser-level proof.
 - **Delete is CrudShell + SimfConfirm (D-353), not a native confirm().** The
   earlier description of a native `confirm()` dialog on the row's Delete action is
   superseded — Delete now opens the `ArchiveViewDelete` form inside `CrudShell`
@@ -584,6 +594,33 @@ Scenario: Upload cover image, then switch it to an external link
 video upload is 400; deactivate->restore round-trips; restoring when a live (category,owner) asset
 already exists is 409 (covered by `tests/SIMF.Api.Tests/AssetEndpointsTests.cs`).
 
+### E2E-ARC-025 — Excel round-trip of the dropped edition fields (D-506)
+
+```gherkin
+Scenario: Summary, location, date label and cover path survive export + import
+  Given the administrator is on /admin/archive
+  And an edition exists with SummaryEn/SummaryAr, LocationEn/LocationAr,
+      DateLabelEn/DateLabelAr and a CoverImageRelativePath all set
+  When they click the toolbar "Export" action
+  Then the "Archive" sheet header row carries the appended columns
+      SummaryEn | SummaryAr | LocationEn | LocationAr | CoverImageRelativePath
+      | DateLabelEn | DateLabelAr (after Year..IsActive)
+  And that edition's data row holds the real summary / location / date-label /
+      cover-path values (not blanks)
+
+  When they import a workbook whose "Archive" sheet carries those same columns
+      for a brand-new year
+  Then a POST /account/api/admin/archive/import creates the row (0 errors)
+  And the created edition's grid summary (and GET detail) carries every one of
+      SummaryEn, SummaryAr, LocationEn, LocationAr, CoverImageRelativePath,
+      DateLabelEn and DateLabelAr — none are dropped at the IO boundary
+  And an absent (omitted) optional column simply stays null
+```
+
+**Evidence:** `tests/SIMF.Api.Tests/ArchiveExcelTests.cs` —
+`Export_includes_the_dropped_edition_columns` +
+`Import_round_trips_the_dropped_edition_fields` (green).
+
 ---
 
-_Last reviewed:_ 2026-06-10 by SIMF Team (D-356 Phase 5 — Excel export/import + D-353 Page↔Popup toggle: E2E-ARC-018..023; corrected the stale native-confirm() delete copy in ARC-001/ARC-009).
+_Last reviewed:_ 2026-06-26 by SIMF Team (D-506 — Excel export/import now round-trips the dropped edition fields: E2E-ARC-025; export header list in ARC-021 + the Excel implementation note refreshed). Prior: 2026-06-10 (D-356 Phase 5 — Excel export/import + D-353 Page↔Popup toggle: E2E-ARC-018..023; corrected the stale native-confirm() delete copy in ARC-001/ARC-009).

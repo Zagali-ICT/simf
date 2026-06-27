@@ -99,7 +99,11 @@ internal sealed class AdminSponsorService(
                 sponsor.Url,
                 sponsor.DisplayOrder,
                 sponsor.IsActive,
-                sponsor.CreatedAt))
+                sponsor.CreatedAt,
+                sponsor.Tagline,
+                sponsor.TaglineArabic,
+                sponsor.About,
+                sponsor.AboutArabic))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminSponsorSummary>.Of(page, total,
@@ -150,6 +154,8 @@ internal sealed class AdminSponsorService(
             ContactId = request.ContactId,
             Tagline = NormaliseTagline(request.Tagline),
             TaglineArabic = NormaliseTagline(request.TaglineArabic),
+            About = NormaliseAbout(request.About),
+            AboutArabic = NormaliseAbout(request.AboutArabic),
             IsActive = true,
             CreatedAt = now,
         };
@@ -211,6 +217,8 @@ internal sealed class AdminSponsorService(
         sponsor.ContactId = request.ContactId;
         sponsor.Tagline = NormaliseTagline(request.Tagline);
         sponsor.TaglineArabic = NormaliseTagline(request.TaglineArabic);
+        sponsor.About = NormaliseAbout(request.About);
+        sponsor.AboutArabic = NormaliseAbout(request.AboutArabic);
         sponsor.IsActive = request.IsActive;
         sponsor.UpdatedAt = timeProvider.GetUtcNow();
 
@@ -339,7 +347,9 @@ internal sealed class AdminSponsorService(
             sponsor.UpdatedAt,
             sponsor.ContactId,
             sponsor.Tagline,
-            sponsor.TaglineArabic);
+            sponsor.TaglineArabic,
+            sponsor.About,
+            sponsor.AboutArabic);
 
     // D-432 — trim a tagline to null when blank; enforce the 256-char limit
     // (mirrors SponsorConfiguration.HasMaxLength + the CP MaxLength) so a direct
@@ -356,6 +366,25 @@ internal sealed class AdminSponsorService(
             throw new ApiException(ErrorCodes.SponsorInvalid, 400,
                 "Tagline must be at most 256 characters.",
                 "يجب ألا يتجاوز النص التعريفي 256 حرفًا.");
+        }
+        return trimmed;
+    }
+
+    // Trim an about paragraph to null when blank; enforce the 2048-char limit
+    // (mirrors SponsorConfiguration.HasMaxLength + the CP MaxLength) so a direct
+    // API call gets a clean 400 instead of a DB error.
+    private static string? NormaliseAbout(string? value)
+    {
+        var trimmed = value?.Trim();
+        if (string.IsNullOrEmpty(trimmed))
+        {
+            return null;
+        }
+        if (trimmed.Length > 2048)
+        {
+            throw new ApiException(ErrorCodes.SponsorInvalid, 400,
+                "About must be at most 2048 characters.",
+                "يجب ألا يتجاوز النص التعريفي 2048 حرفًا.");
         }
         return trimmed;
     }

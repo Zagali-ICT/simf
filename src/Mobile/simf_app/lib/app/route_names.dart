@@ -44,10 +44,18 @@ class RouteNames {
   static const String speakers = 'speakers';
   static const String speakerProfile = 'speakerProfile';
 
-  // Section 3 — Content & activities (3 screens; 21 delegations removed — D-277)
+  // Section 3 — Content & activities. D-499 (الوفود, Figma 1426:10771) restored
+  // delegations (#21) as a real screen — the invited countries + their heads of
+  // delegation, public (anonymous GET /app/delegations).
   static const String booths = 'booths';
   static const String sponsors = 'sponsors';
+  static const String delegations = 'delegations';
   static const String archive = 'archive';
+
+  // Wave 3 (Figma 1439:11881 / 11826) — the exhibitor + sponsor detail screens
+  // (shared template), opened by tapping a booth / sponsor in their lists.
+  static const String exhibitorDetail = 'exhibitorDetail';
+  static const String sponsorDetail = 'sponsorDetail';
 
   // Section 4 — Live & Q&A (3 screens; 27 request-interview removed — D-278)
   static const String liveBroadcast = 'liveBroadcast';
@@ -85,9 +93,14 @@ class RouteNames {
   static const String sessionPresentations = 'sessionPresentations';
   static const String contactUs = 'contactUs';
 
-  // D-479 (#11 follow-up) — read-only "My meetings" list (additive, reached from
-  // My Area; Approved account). Delegation meetings are managed on the CP.
-  static const String myMeetings = 'myMeetings';
+  // D-500 (Wave 5, الطلبات 1408:9726) — the unified requests feed (reached from My
+  // Area; Approved account). Supersedes the D-479 read-only My-meetings route.
+  static const String requests = 'requests';
+
+  // Wave 2 (Figma 1388:9067) — "my sessions" (تفاصيل الجلسات): the caller's
+  // booked / joined sessions with القادمة / حضرتها / فاتتني / الأرشيف tabs,
+  // reached from the My-Area "my sessions" counter (Approved account).
+  static const String myAreaSessions = 'myAreaSessions';
 
   // Owner batch (2026-06-21) — entry points whose feature is not designed/built
   // yet, so they render the ComingSoon placeholder (sentinel numbers 200+):

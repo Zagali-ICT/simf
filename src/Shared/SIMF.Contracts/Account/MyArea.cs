@@ -1,3 +1,5 @@
+using SIMF.Common.Enums;
+
 namespace SIMF.Contracts.Account;
 
 /// <summary>
@@ -74,6 +76,46 @@ public sealed record MyAreaCalendarEvent(
     DateTimeOffset? EndUtc,
     string Summary,
     string? Location);
+
+/// <summary>
+/// The "my sessions" list — App "تفاصيل الجلسات" (Figma 1388:9067), reached from
+/// the My-Area "my sessions" counter. The user's booked / joined sessions (the
+/// same active seat-bookings the dashboard counts), each enriched with the
+/// per-user heart (<see cref="IsFavourite"/>) and whether the user actually
+/// arrived (<see cref="Attended"/>, derived from <c>HallAttendance</c> — no
+/// schema). The app partitions these into the four tabs client-side from the
+/// device clock: القادمة (upcoming = <see cref="StartUtc"/> in the future),
+/// حضرتها (<see cref="Attended"/>), فاتتني (ended &amp; not attended), and الأرشيف
+/// (recorded / published — <see cref="Status"/>). Read-only aggregate, own
+/// <c>sub</c>; no migration (D-249 pattern). <see cref="SessionFavourite"/>
+/// powers the heart.
+/// </summary>
+public sealed record MyAreaSessions(IReadOnlyList<MyAreaSessionItem> Items);
+
+/// <summary>
+/// One card on the "my sessions" list (Figma 1388:9067). The card shows the
+/// title, the day/time line + the category chip, and the primary speaker
+/// (name + <see cref="SpeakerTitle"/> rank) with the hall. Bilingual fields are
+/// paired (the app picks per locale); the hall / category / speaker fields are
+/// null when the session has none. <see cref="Attended"/> and
+/// <see cref="IsFavourite"/> are the two per-user flags.
+/// </summary>
+public sealed record MyAreaSessionItem(
+    Guid Id,
+    string Title,
+    string TitleArabic,
+    DateTimeOffset StartUtc,
+    DateTimeOffset EndUtc,
+    string? HallNameEn,
+    string? HallNameAr,
+    string? CategoryNameEn,
+    string? CategoryNameAr,
+    string? SpeakerNameEn,
+    string? SpeakerNameAr,
+    string? SpeakerTitle,
+    SessionStatus Status,
+    bool Attended,
+    bool IsFavourite);
 
 /// <summary>
 /// The vCard data for the <c>contact-card.vcf</c> export (Page_014 E3) and the

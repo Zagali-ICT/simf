@@ -30,6 +30,11 @@ internal sealed class ContactConfiguration : IEntityTypeConfiguration<Contact>
         builder.Property(contact => contact.LinkedInUrl).HasMaxLength(256);
         builder.Property(contact => contact.InstagramUrl).HasMaxLength(256);
 
+        // Wave 3 — optional bilingual city (≤128, mirrors the CP MaxLength).
+        // Additive nullable columns (D-219 freeze-lift).
+        builder.Property(contact => contact.City).HasMaxLength(128);
+        builder.Property(contact => contact.CityArabic).HasMaxLength(128);
+
         // Real same-DB FK to Country. Restrict matches the soft-delete policy
         // (admins deactivate countries via IsActive=false; they never hard-delete
         // a row a contact points at). HasForeignKey creates the FK index.

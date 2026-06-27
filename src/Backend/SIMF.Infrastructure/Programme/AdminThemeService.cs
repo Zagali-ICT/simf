@@ -63,7 +63,9 @@ internal sealed class AdminThemeService(
             .Select(theme => new AdminThemeSummary(
                 theme.Id, theme.Code, theme.Name, theme.NameArabic,
                 theme.DisplayOrder, theme.PageColor, theme.IsActive,
-                theme.CreatedAt))
+                theme.CreatedAt,
+                // D-506 — round-trip the bilingual descriptions through export.
+                theme.Description, theme.DescriptionArabic))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminThemeSummary>.Of(page, total,

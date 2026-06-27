@@ -86,6 +86,100 @@ public sealed class SponsorsExcelTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Export_includes_the_tagline_and_about_columns()
+    {
+        // D-502 — the sponsor Excel export must surface the bilingual tagline +
+        // about, not drop them at the IO boundary.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var nameEn = $"Export Tagline {Guid.NewGuid():N}";
+        var create = await PostAuthAsync(
+            "/api/v1/admin/sponsors",
+            new AdminCreateSponsorRequest
+            {
+                NameEn = nameEn,
+                NameAr = $"شعار {Guid.NewGuid():N}",
+                Tier = 20,
+                DisplayOrder = 0,
+                Tagline = "Strategic Partner",
+                About = "A global energy leader.",
+            },
+            adminToken);
+        Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/sponsors/export",
+            new AdminGridExportRequest { Query = new GridQuery { Top = 200 } },
+            adminToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+
+        using var stream = new MemoryStream(bytes);
+        using var workbook = new XLWorkbook(stream);
+        var sheet = workbook.Worksheet("Sponsors");
+        var headers = sheet.Row(1).CellsUsed().Select(c => c.GetString()).ToList();
+        Assert.Contains("Tagline", headers);
+        Assert.Contains("TaglineArabic", headers);
+        Assert.Contains("About", headers);
+        Assert.Contains("AboutArabic", headers);
+
+        var nameCol = headers.IndexOf("NameEn") + 1;
+        var tagCol = headers.IndexOf("Tagline") + 1;
+        var dataRow = sheet.RowsUsed().Skip(1)
+            .First(r => r.Cell(nameCol).GetString() == nameEn);
+        Assert.Equal("Strategic Partner", dataRow.Cell(tagCol).GetString());
+    }
+
+    [Fact]
+    public async Task Import_round_trips_the_tagline_and_about()
+    {
+        // D-502 — an import workbook carrying Tagline/TaglineArabic/About/AboutArabic
+        // must persist them (the summary the list returns now carries them too).
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var nameEn = $"Tagline XLSX {Guid.NewGuid():N}";
+
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.Worksheets.Add("Sponsors");
+        sheet.Cell(1, 1).Value = "NameEn";
+        sheet.Cell(1, 2).Value = "NameAr";
+        sheet.Cell(1, 3).Value = "Tier";
+        sheet.Cell(1, 4).Value = "Tagline";
+        sheet.Cell(1, 5).Value = "TaglineArabic";
+        sheet.Cell(1, 6).Value = "About";
+        sheet.Cell(1, 7).Value = "AboutArabic";
+        sheet.Cell(2, 1).Value = nameEn;
+        sheet.Cell(2, 2).Value = $"شعار {Guid.NewGuid():N}";
+        sheet.Cell(2, 3).Value = "Gold";
+        sheet.Cell(2, 4).Value = "Strategic Partner";
+        sheet.Cell(2, 5).Value = "الشريك الاستراتيجي";
+        sheet.Cell(2, 6).Value = "A global energy leader.";
+        sheet.Cell(2, 7).Value = "شركة طاقة عالمية.";
+        byte[] bytes;
+        using (var stream = new MemoryStream())
+        {
+            workbook.SaveAs(stream);
+            bytes = stream.ToArray();
+        }
+
+        var response = await PostFileAuthAsync(
+            "/api/v1/admin/sponsors/import", bytes, adminToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminGridImportResult>>())!.Data!;
+        Assert.True(result.Created >= 1);
+        Assert.Empty(result.Errors);
+
+        var list = await PostAuthAsync(
+            "/api/v1/admin/sponsors/list", new GridQuery { Top = 200 }, adminToken);
+        var page = (await list.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminSponsorSummary>>>())!.Data!;
+        var created = page.Items.Single(item => item.NameEn == nameEn);
+        Assert.Equal("Strategic Partner", created.Tagline);
+        Assert.Equal("الشريك الاستراتيجي", created.TaglineArabic);
+        Assert.Equal("A global energy leader.", created.About);
+        Assert.Equal("شركة طاقة عالمية.", created.AboutArabic);
+    }
+
+    [Fact]
     public async Task Non_admin_caller_is_forbidden_from_export()
     {
         var tokens = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);

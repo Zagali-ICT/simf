@@ -1,0 +1,243 @@
+// Tests: SIMF.Api.Tests/ParticipationDocumentRequestsTests.cs
+using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using SIMF.Application.Auditing;
+using SIMF.Application.Requests.Abstractions;
+using SIMF.Common;
+using SIMF.Common.Enums;
+using SIMF.Contracts.Requests;
+using SIMF.Domain.Requests;
+using SIMF.Infrastructure.Persistence;
+
+namespace SIMF.Infrastructure.Requests;
+
+/// <summary>D-500 (Wave 5, الطلبات "طلب وثيقة المشاركة") — participation-document
+/// request service. Submission is request-only (no document is generated this
+/// wave); an admin Accepts/Rejects with an optional note. Requester name is
+/// resolved from the App-DB profile; the email is resolved on read from the
+/// Identity DB (no cross-DB JOIN, D-157). Mirrors
+/// <c>SpeakerMeetingRequestService</c>.</summary>
+internal sealed class ParticipationDocumentRequestService(
+    SimfAppDbContext appDbContext,
+    SimfIdentityDbContext identityDbContext,
+    IAuditLog auditLog,
+    TimeProvider timeProvider,
+    ILogger<ParticipationDocumentRequestService> logger)
+    : IParticipationDocumentRequestService
+{
+    public async Task<ParticipationDocumentRequestSubmitted> SubmitAsync(
+        Guid requesterUserId, SubmitParticipationDocumentRequestBody request,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Enum.IsDefined(request.DocumentType))
+        {
+            throw new ApiException(
+                ErrorCodes.ParticipationDocumentRequestInvalid, 400,
+                "Unknown document type.",
+                "نوع وثيقة غير معروف.");
+        }
+        var note = string.IsNullOrWhiteSpace(request.Note) ? null : request.Note.Trim();
+        if (note is { Length: > 1000 })
+        {
+            throw new ApiException(
+                ErrorCodes.ParticipationDocumentRequestInvalid, 400,
+                "Note must be 1000 characters or fewer.",
+                "يجب ألا يتجاوز طول الملاحظة 1000 حرف.");
+        }
+
+        var now = timeProvider.GetUtcNow();
+        var req = new ParticipationDocumentRequest
+        {
+            Id = Guid.NewGuid(),
+            RequestedByUserId = requesterUserId,
+            DocumentType = request.DocumentType,
+            Note = note,
+            Status = MeetingRequestStatus.Pending,
+            CreatedAt = now,
+        };
+        appDbContext.ParticipationDocumentRequests.Add(req);
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.ParticipationDocumentRequestSubmitted,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = requesterUserId,
+            Detail = JsonSerializer.Serialize(new
+            {
+                participationDocumentRequestId = req.Id,
+                documentType = req.DocumentType.ToString(),
+            }),
+        }, cancellationToken);
+
+        logger.LogInformation(
+            "Participation document request {Id} ({Type}) submitted by {Actor}",
+            req.Id, req.DocumentType, requesterUserId);
+
+        return new ParticipationDocumentRequestSubmitted(
+            req.Id, req.DocumentType, req.Status, req.CreatedAt);
+    }
+
+    public async Task<GridPage<AdminParticipationDocumentRequestRow>> ListAllAsync(
+        Guid actorUserId, GridQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        var skip = Math.Max(0, query.Skip);
+        var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
+
+        var rows = appDbContext.ParticipationDocumentRequests.AsNoTracking().AsQueryable();
+        var statusFilter = string.Empty;
+        if (query.Filters.TryGetValue("status", out var statusRaw)
+            && Enum.TryParse<MeetingRequestStatus>(statusRaw, ignoreCase: true, out var status))
+        {
+            rows = rows.Where(r => r.Status == status);
+            statusFilter = status.ToString();
+        }
+        if (query.Filters.TryGetValue("documentType", out var typeRaw)
+            && Enum.TryParse<ParticipationDocumentType>(typeRaw, ignoreCase: true, out var docType))
+        {
+            rows = rows.Where(r => r.DocumentType == docType);
+        }
+
+        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
+        {
+            ("status", false) => rows.OrderBy(r => r.Status),
+            ("status", true) => rows.OrderByDescending(r => r.Status),
+            ("createdat", false) => rows.OrderBy(r => r.CreatedAt),
+            ("respondedat", false) => rows.OrderBy(r => r.RespondedAt),
+            ("respondedat", true) => rows.OrderByDescending(r => r.RespondedAt),
+            _ => rows.OrderByDescending(r => r.CreatedAt),
+        };
+
+        var total = await rows.CountAsync(cancellationToken);
+        var pageRows = await rows.Skip(skip).Take(top).ToListAsync(cancellationToken);
+
+        var names = await ResolveRequesterNamesAsync(
+            pageRows.Select(r => r.RequestedByUserId), cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.AdminParticipationDocumentRequestsListed,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = JsonSerializer.Serialize(new { count = pageRows.Count, total, top, skip, statusFilter }),
+        }, cancellationToken);
+
+        var items = pageRows.Select(r => new AdminParticipationDocumentRequestRow(
+            r.Id, r.RequestedByUserId, names.GetValueOrDefault(r.RequestedByUserId),
+            r.DocumentType, r.Note, r.Status, r.ResponseNote, r.CreatedAt, r.RespondedAt))
+            .ToList();
+        return GridPage<AdminParticipationDocumentRequestRow>.Of(items, total,
+            new GridQuery { Skip = skip, Top = top });
+    }
+
+    public async Task<AdminParticipationDocumentRequestDetail> GetAsync(
+        Guid actorUserId, Guid id, CancellationToken cancellationToken = default)
+    {
+        var detail = await LoadDetailAsync(id, cancellationToken);
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.AdminParticipationDocumentRequestViewed,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = JsonSerializer.Serialize(new { participationDocumentRequestId = id }),
+        }, cancellationToken);
+        return detail;
+    }
+
+    public async Task<AdminParticipationDocumentRequestDetail> RespondAsync(
+        Guid actorUserId, Guid id,
+        RespondToParticipationDocumentRequestRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request.Status is not (MeetingRequestStatus.Accepted or MeetingRequestStatus.Rejected))
+        {
+            throw new ApiException(
+                ErrorCodes.ParticipationDocumentRequestStatusInvalid, 400,
+                "Response status must be Accepted or Rejected.",
+                "يجب أن تكون حالة الردّ مقبولة أو مرفوضة.");
+        }
+        var req = await appDbContext.ParticipationDocumentRequests
+            .SingleOrDefaultAsync(r => r.Id == id, cancellationToken)
+            ?? throw new ApiException(
+                ErrorCodes.ParticipationDocumentRequestNotFound, 404,
+                "Participation document request not found.",
+                "لم يتم العثور على طلب وثيقة المشاركة.");
+
+        var responseNote = string.IsNullOrWhiteSpace(request.ResponseNote)
+            ? null : request.ResponseNote.Trim();
+        if (responseNote is { Length: > 2000 })
+        {
+            throw new ApiException(
+                ErrorCodes.ParticipationDocumentRequestInvalid, 400,
+                "Response note must be 2000 characters or fewer.",
+                "يجب ألا يتجاوز طول ملاحظة الردّ 2000 حرف.");
+        }
+
+        req.Status = request.Status;
+        req.ResponseNote = responseNote;
+        req.RespondedAt = timeProvider.GetUtcNow();
+        req.RespondedByUserId = actorUserId;
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.ParticipationDocumentRequestResponded,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = JsonSerializer.Serialize(new { participationDocumentRequestId = req.Id, status = req.Status.ToString() }),
+        }, cancellationToken);
+        // One Viewed event for the email disclosure the respond detail returns (D-185).
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.AdminParticipationDocumentRequestViewed,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = JsonSerializer.Serialize(new { participationDocumentRequestId = req.Id }),
+        }, cancellationToken);
+
+        return await LoadDetailAsync(id, cancellationToken);
+    }
+
+    private async Task<AdminParticipationDocumentRequestDetail> LoadDetailAsync(
+        Guid id, CancellationToken cancellationToken)
+    {
+        var req = await appDbContext.ParticipationDocumentRequests.AsNoTracking()
+            .SingleOrDefaultAsync(r => r.Id == id, cancellationToken)
+            ?? throw new ApiException(
+                ErrorCodes.ParticipationDocumentRequestNotFound, 404,
+                "Participation document request not found.",
+                "لم يتم العثور على طلب وثيقة المشاركة.");
+
+        var name = await appDbContext.UserProfiles.AsNoTracking()
+            .Where(p => p.UserId == req.RequestedByUserId)
+            .Select(p => p.Name)
+            .SingleOrDefaultAsync(cancellationToken);
+        var email = await identityDbContext.Users.AsNoTracking()
+            .Where(u => u.Id == req.RequestedByUserId)
+            .Select(u => u.Email)
+            .SingleOrDefaultAsync(cancellationToken);
+
+        return new AdminParticipationDocumentRequestDetail(
+            req.Id, req.RequestedByUserId, name, email,
+            req.DocumentType, req.Note, req.Status, req.ResponseNote,
+            req.CreatedAt, req.RespondedAt);
+    }
+
+    // Batch-resolve display names for a page of requesters from the App-DB
+    // profile (no email — that stays on the detail, the D-185 bulk-PII pattern).
+    private async Task<Dictionary<Guid, string>> ResolveRequesterNamesAsync(
+        IEnumerable<Guid> userIds, CancellationToken cancellationToken)
+    {
+        var ids = userIds.Distinct().ToList();
+        if (ids.Count == 0)
+        {
+            return new Dictionary<Guid, string>();
+        }
+        return await appDbContext.UserProfiles.AsNoTracking()
+            .Where(p => ids.Contains(p.UserId))
+            .Select(p => new { p.UserId, p.Name })
+            .ToDictionaryAsync(p => p.UserId, p => p.Name, cancellationToken);
+    }
+}

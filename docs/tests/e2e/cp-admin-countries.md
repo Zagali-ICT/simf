@@ -37,6 +37,7 @@
 | E2E-CTY-018 | Excel export: toolbar Export downloads an .xlsx of the filtered grid (D-356) | happy | P1 | _to author_ |
 | E2E-CTY-019 | Excel import: upload a workbook → rows created/updated + result modal (D-356) | happy | P1 | _to author_ |
 | E2E-CTY-020 | Excel import: a non-workbook / wrong-sheet upload → bilingual rejection, nothing changed (D-356) | error | P1 | _to author_ |
+| E2E-CTY-021 | Excel round-trip: `IsInvited` + delegation arrival/departure dates survive export → import (D-506) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -340,8 +341,8 @@ Scenario: Export the country lookup to an XLSX workbook
   And the API caps the export at 5000 rows
   And the browser saves a file named simf-countries-{timestamp}.xlsx
   And the workbook's "Countries" sheet has a header row with the country
-    columns (ISO id, Code, Name (English), Name (Arabic), Dial code,
-    Display order, Active)
+    columns: Id, Code, Name, NameArabic, PhonePrefix, DisplayOrder, IsActive,
+    plus (D-506) IsInvited, DelegationArrivalDate, DelegationDepartureDate
   When they instead select two rows then click "Export"
   Then the POST still sends an empty Ids list (Country ids are int, not the
     Guid the generic export contract carries), so the export always covers the
@@ -391,6 +392,35 @@ Scenario: A bad or wrong-sheet upload is rejected without changing anything
   And the grid is unchanged
 ```
 
+### E2E-CTY-021 — Excel round-trip of the delegation fields (D-506)
+
+```gherkin
+Scenario: IsInvited and the delegation dates survive export then re-import
+  Given the administrator is on /admin/countries
+  When they import a "Countries" workbook with one row carrying
+    Id=920, Code="A0", Name="Delegationland", NameArabic="وفد",
+    IsInvited="Yes", DelegationArrivalDate="2027-01-15",
+    DelegationDepartureDate="2027-01-20"
+  Then a POST /account/api/admin/countries/import returns 200 with "1 created"
+  And the created row's GET /account/api/admin/countries/920 detail returns
+    IsInvited=true, DelegationArrivalDate=2027-01-15, DelegationDepartureDate=2027-01-20
+  When they click the toolbar "Export"
+  Then the downloaded "Countries" sheet header row now also includes the
+    IsInvited, DelegationArrivalDate and DelegationDepartureDate columns
+  And the Delegationland data row carries those same three values
+  # IsInvited accepts "Yes"/"No" (the export form) or "true"/"false"; the dates
+  # are ISO yyyy-MM-dd. A date on a not-invited row is dropped by the service
+  # (same as the CP Edit form). HeadOfDelegationUserProfileId is NOT imported —
+  # it is a UserProfile directory FK linked afterwards via Edit.
+```
+
+**Evidence captured:**
+- Network: POST `/account/api/admin/countries/import` (200, 1 created), GET
+  `/account/api/admin/countries/920` (200, the three fields populated), POST
+  `/account/api/admin/countries/export` (200, .xlsx with the three new headers)
+- Backed at the integration layer by
+  `CountriesExcelTests.Excel_round_trips_the_delegation_flag_and_dates`
+
 ---
 
 ## Implementation notes
@@ -416,8 +446,18 @@ Scenario: A bad or wrong-sheet upload is rejected without changing anything
 - **API integration tests** at `tests/SIMF.Api.Tests/AdminCountriesTests.cs`
   cover the same surface at a lower layer (no browser) — list/get/create/update/
   deactivate plus the duplicate-id, duplicate-code, not-found and validation
-  paths. During the transition, keep both.
+  paths. During the transition, keep both. The Excel engine is covered by
+  `tests/SIMF.Api.Tests/CountriesExcelTests.cs` (export/import round-trip,
+  upload-defence, the Export permission gate, and the D-506 delegation-field
+  round-trip).
+- **Excel columns (D-506).** The export/import grid now carries `IsInvited`,
+  `DelegationArrivalDate` and `DelegationDepartureDate` so the delegation data
+  round-trips. `IsInvited` exports as Yes/No and imports Yes/No or true/false;
+  the dates are ISO `yyyy-MM-dd`. `HeadOfDelegationUserProfileId` is deliberately
+  NOT in the workbook — it is a UserProfile directory FK chosen via the CP picker,
+  not sane flat-Excel content (same reason ContactId is omitted on Sponsors).
 
 ---
 
-_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle).
+_Last reviewed:_ 2026-06-26 by Claude (D-506 — delegation-field Excel round-trip;
+prior D-356 Phase 5 — Excel + toggle).

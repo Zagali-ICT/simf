@@ -79,6 +79,17 @@ public sealed class PublicBoothDetail
     // PublicBoothSummary.
     public string? CountryName { get; set; }
     public string? CountryNameArabic { get; set; }
+
+    // Wave 3 (Figma 1439:11881) — appended (append-only). The exhibitor-detail
+    // screen's location line (City، Country), tier pill, about + website.
+    // City is resolved Exhibitor → Contact.City; Website from Exhibitor.Website;
+    // Tier from Exhibitor.Tier (TierName = the enum name, the app localizes it).
+    // All null when the exhibitor / its Contact has no value.
+    public string? City { get; set; }
+    public string? CityArabic { get; set; }
+    public int? Tier { get; set; }
+    public string? TierName { get; set; }
+    public string? Website { get; set; }
 }
 
 /// <summary>D-199 — admin grid row. B1 — D-222: the exhibitor is now the

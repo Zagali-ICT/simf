@@ -9,7 +9,11 @@ using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Sponsors;
+using SIMF.Domain.Common;
+using SIMF.Domain.Contacts;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Sponsors;
+using SIMF.Infrastructure.Persistence;
 using Xunit;
 
 namespace SIMF.Api.Tests;
@@ -141,6 +145,149 @@ public sealed class SponsorsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Public_sponsor_detail_returns_about_tier_and_website()
+    {
+        // Wave 3 (Figma 1439:11826) — GET /app/sponsors/{id} surfaces the about
+        // paragraph + tier + website for the sponsor-detail screen.
+        var admin = await CreateAdministratorAndSignInAsync();
+        var create = await PostAuthAsync(
+            "/api/v1/admin/sponsors",
+            new AdminCreateSponsorRequest
+            {
+                NameEn = "Aramco", NameAr = "أرامكو",
+                Tier = (int)SponsorTier.Platinum,
+                Url = "https://aramco.com",
+                About = "A global energy company.",
+                AboutArabic = "شركة طاقة عالمية.",
+                DisplayOrder = 0,
+            }, admin);
+        var created = (await create.Content
+            .ReadFromJsonAsync<ApiResult<AdminSponsorDetail>>())!.Data!;
+
+        var response = await _client.GetAsync($"/api/v1/app/sponsors/{created.Id}");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var detail = (await response.Content
+            .ReadFromJsonAsync<ApiResult<PublicSponsorDetail>>())!.Data!;
+        Assert.Equal("أرامكو", detail.NameAr);
+        Assert.Equal((int)SponsorTier.Platinum, detail.Tier);
+        Assert.Equal("Platinum", detail.TierName);
+        Assert.Equal("A global energy company.", detail.About);
+        Assert.Equal("شركة طاقة عالمية.", detail.AboutArabic);
+        Assert.Equal("https://aramco.com", detail.Url);
+    }
+
+    [Fact]
+    public async Task Public_sponsor_detail_for_an_unknown_id_returns_404()
+    {
+        var response = await _client.GetAsync($"/api/v1/app/sponsors/{Guid.NewGuid()}");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Public_sponsor_detail_resolves_city_and_country_from_the_linked_contact()
+    {
+        // Wave 3 — the city + country on the sponsor detail come from the linked
+        // Contact (exercises the Contact-with-country resolve path).
+        const int countryId = 682; // SA
+        var contactId = Guid.NewGuid();
+        var sponsorId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        string expectedCountryEn;
+        string expectedCountryAr;
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var country = await db.Set<Country>().FindAsync(countryId);
+            if (country is null)
+            {
+                country = new Country
+                {
+                    Id = countryId, Code = "SA",
+                    Name = "Saudi Arabia", NameArabic = "السعودية",
+                    IsActive = true, CreatedAt = now,
+                };
+                db.Add(country);
+            }
+            expectedCountryEn = country.Name;
+            expectedCountryAr = country.NameArabic;
+
+            db.Set<Contact>().Add(new Contact
+            {
+                Id = contactId,
+                NameArabic = "أرامكو المرتبطة",
+                City = "Dhahran",
+                CityArabic = "الظهران",
+                CountryId = countryId,
+                IsActive = true,
+                CreatedAt = now,
+            });
+            db.Set<Sponsor>().Add(new Sponsor
+            {
+                Id = sponsorId,
+                // Unique name+tier so it does not collide with the other
+                // Platinum-"أرامكو" sponsor in this class (the duplicate guard).
+                Name = "Aramco Linked", NameArabic = "أرامكو المرتبطة",
+                Tier = SponsorTier.Platinum,
+                ContactId = contactId,
+                About = "A global energy company.",
+                IsActive = true,
+                CreatedAt = now,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var detail = (await (await _client.GetAsync($"/api/v1/app/sponsors/{sponsorId}"))
+            .Content.ReadFromJsonAsync<ApiResult<PublicSponsorDetail>>())!.Data!;
+        Assert.Equal("Dhahran", detail.City);
+        Assert.Equal("الظهران", detail.CityArabic);
+        Assert.Equal(countryId, detail.CountryId);
+        Assert.Equal(expectedCountryEn, detail.CountryNameEn);
+        Assert.Equal(expectedCountryAr, detail.CountryNameAr);
+    }
+
+    [Fact]
+    public async Task Admin_update_preserves_the_tagline()
+    {
+        // D-501 regression — editing a sponsor used to wipe its bilingual tagline:
+        // the inline UpdateSponsorRequest bind model had no Tagline/TaglineArabic
+        // property, so FastEndpoints dropped them and UpdateAsync overwrote the
+        // stored value with null. This must round-trip through the HTTP bind layer
+        // (a service-level test passes despite the bug — the drop is at binding).
+        var admin = await CreateAdministratorAndSignInAsync();
+        var create = await PostAuthAsync(
+            "/api/v1/admin/sponsors",
+            new AdminCreateSponsorRequest
+            {
+                NameEn = "Tagline Co", NameAr = "شركة الشعار",
+                Tier = (int)SponsorTier.Gold, DisplayOrder = 0,
+                Tagline = "Strategic Partner",
+                TaglineArabic = "الشريك الاستراتيجي",
+            }, admin);
+        var created = (await create.Content
+            .ReadFromJsonAsync<ApiResult<AdminSponsorDetail>>())!.Data!;
+        Assert.Equal("Strategic Partner", created.Tagline);
+
+        // Edit changing only the display order, resending the same tagline exactly
+        // as the CP form posts it.
+        var update = await PutAuthAsync(
+            $"/api/v1/admin/sponsors/{created.Id}",
+            new AdminUpdateSponsorRequest
+            {
+                NameEn = "Tagline Co", NameAr = "شركة الشعار",
+                Tier = (int)SponsorTier.Gold, DisplayOrder = 5,
+                Tagline = "Strategic Partner",
+                TaglineArabic = "الشريك الاستراتيجي",
+                IsActive = true,
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+        var updated = (await update.Content
+            .ReadFromJsonAsync<ApiResult<AdminSponsorDetail>>())!.Data!;
+        Assert.Equal("Strategic Partner", updated.Tagline);
+        Assert.Equal("الشريك الاستراتيجي", updated.TaglineArabic);
+    }
+
+    [Fact]
     public async Task Non_admin_caller_is_forbidden_on_create()
     {
         var visitor = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
@@ -190,6 +337,17 @@ public sealed class SponsorsTests : IClassFixture<SimfApiFactory>
         string url, TBody body, string token) where TBody : class
     {
         var request = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Content = JsonContent.Create(body),
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
+
+    private Task<HttpResponseMessage> PutAuthAsync<TBody>(
+        string url, TBody body, string token) where TBody : class
+    {
+        var request = new HttpRequestMessage(HttpMethod.Put, url)
         {
             Content = JsonContent.Create(body),
         };

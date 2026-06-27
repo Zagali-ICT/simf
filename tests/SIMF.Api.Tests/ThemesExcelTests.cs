@@ -89,6 +89,107 @@ public sealed class ThemesExcelTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Export_includes_the_description_columns()
+    {
+        // D-506 — the theme Excel export must surface the bilingual descriptions,
+        // not drop them at the IO boundary.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var code = NewCode();
+        var name = $"Export Desc {Guid.NewGuid():N}";
+        var create = await PostAuthAsync(
+            "/api/v1/admin/themes",
+            new AdminCreateThemeRequest
+            {
+                Code = code,
+                Name = name,
+                NameArabic = "محور الوصف",
+                PageColor = "#102A43",
+                DisplayOrder = 0,
+                Description = "Maritime security track.",
+                DescriptionArabic = "مسار الأمن البحري.",
+            },
+            adminToken);
+        Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/themes/export",
+            new AdminGridExportRequest { Query = new GridQuery { Top = 200 } },
+            adminToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+
+        using var stream = new MemoryStream(bytes);
+        using var workbook = new XLWorkbook(stream);
+        var sheet = workbook.Worksheet("Themes");
+        var headers = sheet.Row(1).CellsUsed().Select(c => c.GetString()).ToList();
+        Assert.Contains("Description", headers);
+        Assert.Contains("DescriptionArabic", headers);
+
+        var codeCol = headers.IndexOf("Code") + 1;
+        var descCol = headers.IndexOf("Description") + 1;
+        var dataRow = sheet.RowsUsed().Skip(1)
+            .First(r => r.Cell(codeCol).GetString() == code);
+        Assert.Equal("Maritime security track.", dataRow.Cell(descCol).GetString());
+    }
+
+    [Fact]
+    public async Task Import_round_trips_the_description()
+    {
+        // D-506 — an import workbook carrying Description/DescriptionArabic must
+        // persist them; the GET detail then surfaces them back.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var code = NewCode();
+        var name = $"Desc XLSX {Guid.NewGuid():N}";
+
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.Worksheets.Add("Themes");
+        sheet.Cell(1, 1).Value = "Code";
+        sheet.Cell(1, 2).Value = "Name";
+        sheet.Cell(1, 3).Value = "NameArabic";
+        sheet.Cell(1, 4).Value = "PageColor";
+        sheet.Cell(1, 5).Value = "Description";
+        sheet.Cell(1, 6).Value = "DescriptionArabic";
+        sheet.Cell(2, 1).Value = code;
+        sheet.Cell(2, 2).Value = name;
+        sheet.Cell(2, 3).Value = "محور مستورد";
+        sheet.Cell(2, 4).Value = "#0B7285";
+        sheet.Cell(2, 5).Value = "Maritime security track.";
+        sheet.Cell(2, 6).Value = "مسار الأمن البحري.";
+        byte[] bytes;
+        using (var stream = new MemoryStream())
+        {
+            workbook.SaveAs(stream);
+            bytes = stream.ToArray();
+        }
+
+        var response = await PostFileAuthAsync(
+            "/api/v1/admin/themes/import", bytes, adminToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminGridImportResult>>())!.Data!;
+        Assert.True(result.Created >= 1);
+        Assert.Empty(result.Errors);
+
+        // Find the created row in the grid (the summary now carries the
+        // descriptions too) then read the GET detail to assert both.
+        var list = await PostAuthAsync(
+            "/api/v1/admin/themes/list", new GridQuery { Top = 200 }, adminToken);
+        var page = (await list.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminThemeSummary>>>())!.Data!;
+        var created = page.Items.Single(item => item.Code == code);
+        Assert.Equal("Maritime security track.", created.Description);
+        Assert.Equal("مسار الأمن البحري.", created.DescriptionArabic);
+
+        var detail = await GetAuthAsync(
+            $"/api/v1/admin/themes/{created.Id}", adminToken);
+        Assert.Equal(HttpStatusCode.OK, detail.StatusCode);
+        var theme = (await detail.Content
+            .ReadFromJsonAsync<ApiResult<AdminThemeDetail>>())!.Data!;
+        Assert.Equal("Maritime security track.", theme.Description);
+        Assert.Equal("مسار الأمن البحري.", theme.DescriptionArabic);
+    }
+
+    [Fact]
     public async Task Import_reports_a_per_row_error_for_a_duplicate_without_aborting()
     {
         var adminToken = await CreateAdministratorAndSignInAsync();
@@ -251,6 +352,13 @@ public sealed class ThemesExcelTests : IClassFixture<SimfApiFactory>
         file.Headers.ContentType = new MediaTypeHeaderValue(XlsxContentType);
         content.Add(file, "file", "import.xlsx");
         var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = content };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
+
+    private Task<HttpResponseMessage> GetAuthAsync(string url, string token)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return _client.SendAsync(request);
     }

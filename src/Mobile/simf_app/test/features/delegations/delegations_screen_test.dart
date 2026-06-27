@@ -1,0 +1,161 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/features/delegations/data/delegation_models.dart';
+import 'package:simf_app/features/delegations/data/delegations_repository.dart';
+import 'package:simf_app/features/delegations/delegations_screen.dart';
+
+DelegationItem _item({
+  required int id,
+  required String code,
+  required String name,
+  required String nameAr,
+  int members = 1,
+  String? head,
+  String? headAr,
+  String? title,
+  DateTime? arrival,
+  DateTime? departure,
+}) =>
+    DelegationItem(
+      countryId: id,
+      countryCode: code,
+      countryName: name,
+      countryNameArabic: nameAr,
+      memberCount: members,
+      headName: head,
+      headNameArabic: headAr,
+      headTitle: title,
+      arrivalDate: arrival,
+      departureDate: departure,
+    );
+
+Future<void> _pump(
+  WidgetTester tester, {
+  Delegations? data,
+  bool fail = false,
+}) async {
+  final router = GoRouter(
+    initialLocation: '/delegations',
+    routes: <RouteBase>[
+      GoRoute(
+        path: '/delegations',
+        name: RouteNames.delegations,
+        builder: (_, __) => const DelegationsScreen(),
+      ),
+    ],
+  );
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: <Override>[
+        delegationsProvider.overrideWith((ref) async {
+          if (fail) {
+            throw Exception('boom');
+          }
+          return data ??
+              const Delegations(
+                countryCount: 0,
+                totalParticipants: 0,
+                items: <DelegationItem>[],
+              );
+        }),
+      ],
+      child: MaterialApp.router(
+        routerConfig: router,
+        locale: const Locale('en'),
+        supportedLocales: AppL10n.supportedLocales,
+        localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+          ...AppL10n.localizationsDelegates,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
+void main() {
+  group('DelegationsScreen (Figma 1426:10771)', () {
+    testWidgets('renders a delegation card with head, member count and stats',
+        (tester) async {
+      await _pump(
+        tester,
+        data: Delegations(
+          countryCount: 1,
+          totalParticipants: 3,
+          items: <DelegationItem>[
+            _item(
+              id: 840,
+              code: 'US',
+              name: 'United States',
+              nameAr: 'الولايات المتحدة',
+              members: 3,
+              head: 'James Mitchell',
+              headAr: 'جيمس ميتشل',
+              title: 'Ambassador',
+              arrival: DateTime(2026, 1, 12),
+              departure: DateTime(2026, 1, 15),
+            ),
+          ],
+        ),
+      );
+
+      expect(find.text('United States'), findsOneWidget);
+      expect(find.text('James Mitchell'), findsOneWidget);
+      expect(find.text('Ambassador'), findsOneWidget);
+      expect(find.text('3 members'), findsOneWidget);
+      expect(find.text('Participating countries'), findsOneWidget);
+      expect(find.text('Total participants'), findsOneWidget);
+    });
+
+    testWidgets('shows the empty state when there are no delegations',
+        (tester) async {
+      await _pump(tester);
+      expect(find.text('No delegations yet.'), findsOneWidget);
+    });
+
+    testWidgets('the search box filters the cards', (tester) async {
+      await _pump(
+        tester,
+        data: Delegations(
+          countryCount: 2,
+          totalParticipants: 2,
+          items: <DelegationItem>[
+            _item(
+              id: 840,
+              code: 'US',
+              name: 'United States',
+              nameAr: 'الولايات المتحدة',
+            ),
+            _item(
+              id: 682,
+              code: 'SA',
+              name: 'Saudi Arabia',
+              nameAr: 'السعودية',
+            ),
+          ],
+        ),
+      );
+
+      expect(find.text('United States'), findsOneWidget);
+      expect(find.text('Saudi Arabia'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'Saudi');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Saudi Arabia'), findsOneWidget);
+      expect(find.text('United States'), findsNothing);
+    });
+
+    testWidgets('shows the error state on a wire failure', (tester) async {
+      await _pump(tester, fail: true);
+      expect(find.text('Could not load delegations.'), findsOneWidget);
+    });
+  });
+}

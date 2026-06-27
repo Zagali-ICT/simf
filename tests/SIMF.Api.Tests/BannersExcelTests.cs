@@ -89,6 +89,76 @@ public sealed class BannersExcelTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Export_includes_the_body_image_and_link_columns()
+    {
+        // D-506 — the export must now carry Body/BodyArabic/ImageUrl/LinkUrl so a
+        // round-trip through import does not drop them.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        await CreateBannerAsync(adminToken, $"Export cols {Guid.NewGuid():N}");
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/banners/export",
+            new AdminGridExportRequest { Query = new GridQuery { Top = 100 } },
+            adminToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+
+        using var stream = new MemoryStream(bytes);
+        using var workbook = new XLWorkbook(stream);
+        var sheet = workbook.Worksheet("Banners");
+        var headers = sheet.Row(1).CellsUsed().Select(c => c.GetString()).ToList();
+        Assert.Contains("Body", headers);
+        Assert.Contains("BodyArabic", headers);
+        Assert.Contains("ImageUrl", headers);
+        Assert.Contains("LinkUrl", headers);
+    }
+
+    [Fact]
+    public async Task Import_round_trips_the_body_image_and_link()
+    {
+        // D-506 — a workbook carrying Body/BodyArabic/ImageUrl/LinkUrl must persist
+        // all four onto the created banner (the GET detail proves they are not
+        // dropped on import).
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var start = DateTimeOffset.UtcNow;
+        var end = start.AddDays(7);
+        var title = $"Round trip {Guid.NewGuid():N}";
+        const string body = "Round-trip body";
+        const string bodyArabic = "نص الجولة";
+        const string imageUrl = "https://example.test/banner.png";
+        const string linkUrl = "https://example.test/landing";
+        var workbook = BuildBannersWorkbook("Banners",
+            (title, "مستورد", body, bodyArabic, imageUrl, linkUrl, start, end, 5));
+
+        var response = await PostFileAuthAsync(
+            "/api/v1/admin/banners/import", workbook, adminToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminGridImportResult>>())!.Data!;
+        Assert.Equal(1, result.Created);
+        Assert.Empty(result.Errors);
+
+        // Find the created banner via the list, then load its detail.
+        var list = await PostAuthAsync(
+            "/api/v1/admin/banners/list", new GridQuery { Top = 200 }, adminToken);
+        var page = (await list.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminBannerSummary>>>())!.Data!;
+        var summary = Assert.Single(page.Items, item => item.Title == title);
+
+        var detailResponse = await GetAuthAsync(
+            $"/api/v1/admin/banners/{summary.Id}", adminToken);
+        Assert.Equal(HttpStatusCode.OK, detailResponse.StatusCode);
+        var detail = (await detailResponse.Content
+            .ReadFromJsonAsync<ApiResult<AdminBannerDetail>>())!.Data!;
+        Assert.Equal(body, detail.Body);
+        Assert.Equal(bodyArabic, detail.BodyArabic);
+        Assert.Equal(imageUrl, detail.ImageUrl);
+        Assert.Equal(linkUrl, detail.LinkUrl);
+    }
+
+    [Fact]
     public async Task Import_reports_a_per_row_error_for_an_invalid_window_without_aborting()
     {
         var adminToken = await CreateAdministratorAndSignInAsync();
@@ -158,6 +228,17 @@ public sealed class BannersExcelTests : IClassFixture<SimfApiFactory>
     private static byte[] BuildBannersWorkbook(
         string sheetName,
         params (string Title, string TitleArabic, string Body, string BodyArabic,
+            DateTimeOffset StartUtc, DateTimeOffset EndUtc, int DisplayOrder)[] rows) =>
+        BuildBannersWorkbook(sheetName,
+            rows.Select(r => (r.Title, r.TitleArabic, r.Body, r.BodyArabic,
+                (string?)null, (string?)null, r.StartUtc, r.EndUtc, r.DisplayOrder)).ToArray());
+
+    // D-506 — overload that also writes the optional ImageUrl + LinkUrl columns
+    // so the import round-trip test can carry them.
+    private static byte[] BuildBannersWorkbook(
+        string sheetName,
+        params (string Title, string TitleArabic, string Body, string BodyArabic,
+            string? ImageUrl, string? LinkUrl,
             DateTimeOffset StartUtc, DateTimeOffset EndUtc, int DisplayOrder)[] rows)
     {
         using var workbook = new XLWorkbook();
@@ -166,18 +247,22 @@ public sealed class BannersExcelTests : IClassFixture<SimfApiFactory>
         sheet.Cell(1, 2).Value = "TitleArabic";
         sheet.Cell(1, 3).Value = "Body";
         sheet.Cell(1, 4).Value = "BodyArabic";
-        sheet.Cell(1, 5).Value = "StartUtc";
-        sheet.Cell(1, 6).Value = "EndUtc";
-        sheet.Cell(1, 7).Value = "DisplayOrder";
+        sheet.Cell(1, 5).Value = "ImageUrl";
+        sheet.Cell(1, 6).Value = "LinkUrl";
+        sheet.Cell(1, 7).Value = "StartUtc";
+        sheet.Cell(1, 8).Value = "EndUtc";
+        sheet.Cell(1, 9).Value = "DisplayOrder";
         for (var i = 0; i < rows.Length; i++)
         {
             sheet.Cell(i + 2, 1).Value = rows[i].Title;
             sheet.Cell(i + 2, 2).Value = rows[i].TitleArabic;
             sheet.Cell(i + 2, 3).Value = rows[i].Body;
             sheet.Cell(i + 2, 4).Value = rows[i].BodyArabic;
-            sheet.Cell(i + 2, 5).Value = rows[i].StartUtc.UtcDateTime.ToString("O");
-            sheet.Cell(i + 2, 6).Value = rows[i].EndUtc.UtcDateTime.ToString("O");
-            sheet.Cell(i + 2, 7).Value = rows[i].DisplayOrder;
+            sheet.Cell(i + 2, 5).Value = rows[i].ImageUrl ?? string.Empty;
+            sheet.Cell(i + 2, 6).Value = rows[i].LinkUrl ?? string.Empty;
+            sheet.Cell(i + 2, 7).Value = rows[i].StartUtc.UtcDateTime.ToString("O");
+            sheet.Cell(i + 2, 8).Value = rows[i].EndUtc.UtcDateTime.ToString("O");
+            sheet.Cell(i + 2, 9).Value = rows[i].DisplayOrder;
         }
         using var stream = new MemoryStream();
         workbook.SaveAs(stream);
@@ -246,6 +331,13 @@ public sealed class BannersExcelTests : IClassFixture<SimfApiFactory>
         {
             Content = JsonContent.Create(body),
         };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
+
+    private Task<HttpResponseMessage> GetAuthAsync(string url, string token)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return _client.SendAsync(request);
     }

@@ -68,14 +68,6 @@ const _other = BoothSummary(
   sector: 'Aerospace',
 );
 
-const _detail = BoothDetail(
-  id: 'b1',
-  code: 'A-12',
-  name: 'SAMI',
-  nameArabic: 'سامي',
-  description: 'World-class maritime systems.',
-);
-
 class _FakeRepo implements VenueMapRepository {
   _FakeRepo({
     this.booths = const <BoothSummary>[],
@@ -171,14 +163,47 @@ void main() {
       expect(find.text('SAMI'), findsNothing);
     });
 
-    testWidgets('tapping a booth opens the detail sheet', (tester) async {
-      await _pump(
-        tester,
-        repo: _FakeRepo(booths: const <BoothSummary>[_sami], detail: _detail),
+    testWidgets('tapping a booth navigates to the exhibitor detail',
+        (tester) async {
+      // Wave 3 — the booth tap now opens the full exhibitor detail screen
+      // (Figma 1439:11881), not the earlier description bottom sheet.
+      final router = GoRouter(
+        initialLocation: '/booths',
+        routes: <RouteBase>[
+          GoRoute(path: '/booths', builder: (_, __) => const BoothsScreen()),
+          GoRoute(
+            path: '/exhibitors/:boothId',
+            name: RouteNames.exhibitorDetail,
+            builder: (_, s) =>
+                Scaffold(body: Text('EXHIBITOR ${s.pathParameters['boothId']}')),
+          ),
+        ],
       );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: <Override>[
+            simfDataConfigProvider.overrideWithValue(_testConfig),
+            venueMapRepositoryProvider.overrideWithValue(
+              _FakeRepo(booths: const <BoothSummary>[_sami]),
+            ),
+          ],
+          child: MaterialApp.router(
+            routerConfig: router,
+            supportedLocales: AppL10n.supportedLocales,
+            localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+              ...AppL10n.localizationsDelegates,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
       await tester.tap(find.text('SAMI'));
       await tester.pumpAndSettle();
-      expect(find.text('World-class maritime systems.'), findsOneWidget);
+      expect(find.text('EXHIBITOR b1'), findsOneWidget);
     });
 
     testWidgets('empty list shows the empty state', (tester) async {

@@ -7,4 +7,10 @@ public enum MeetingRequestStatus
     Pending = 0,
     Accepted = 1,
     Rejected = 2,
+
+    /// <summary>D-500 (Wave 5, الطلبات 1408:9726) — the requester cancelled
+    /// their own still-pending request from the app. Additive value
+    /// (append-only, the frozen-enum rule); stored as an int, so the existing
+    /// rows and the wire contract are untouched.</summary>
+    Cancelled = 3,
 }

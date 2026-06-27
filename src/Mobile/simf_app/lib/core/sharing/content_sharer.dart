@@ -21,3 +21,22 @@ Future<void> shareTextContent({
     mimeType: mimeType,
   );
 }
+
+/// Shares binary [bytes] (a downloaded file) with the OS share sheet,
+/// cross-platform — the تحميل path on the session-presentations screen
+/// (Figma 1388:7621). On a filesystem platform it writes [bytes] to a temp file
+/// named [filename] of [mimeType] and shares the file (the OS sheet offers
+/// Save-to-Files / Open); on web it shares the in-memory bytes via the browser
+/// share API. Keeps every call site `dart:io`-free so the project compiles for
+/// web.
+Future<void> shareBinaryContent({
+  required List<int> bytes,
+  required String filename,
+  required String mimeType,
+}) {
+  return platform.shareBinaryContent(
+    bytes: bytes,
+    filename: filename,
+    mimeType: mimeType,
+  );
+}
