@@ -524,27 +524,9 @@ class _VisitorHome extends StatelessWidget {
           KsaSectionHeader(title: l10n.discoverSection),
           const SizedBox(height: SimfTokens.space4),
           _DiscoverSaudiRow(l10n: l10n),
-          const SizedBox(height: SimfTokens.space6),
-          // "تابعنا" (758:1183) — header + the brand row + the handle line. The
-          // brand row stays LTR (X · Instagram · LinkedIn · YouTube · TikTok)
-          // regardless of locale.
-          KsaSectionHeader(title: l10n.followUsSection),
-          const SizedBox(height: SimfTokens.space4),
-          const Directionality(
-            textDirection: TextDirection.ltr,
-            child: _SocialRow(),
-          ),
-          const SizedBox(height: SimfTokens.space2),
-          Text(
-            l10n.followUsHandle,
-            textAlign: TextAlign.center,
-            // Frame 758:1202 — handle line is Medium, beige.
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textSm,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          // "تابعنا" (758:1183) — header + brand row + handle. Self-hiding when
+          // no social link is set (owner 2026-06-27); owns its leading gap.
+          _FollowUsSection(l10n: l10n),
         ],
       ),
     );
@@ -949,23 +931,25 @@ class _PostImage extends StatelessWidget {
   }
 }
 
-/// The follow-us row (frame node 522:2215): five bordered buttons with the
-/// design's brand glyphs. The URLs come from the CP-editable site-settings
-/// (D-461), falling back to the build-time config; a button with no URL is
-/// inert (D-369).
-class _SocialRow extends ConsumerWidget {
-  const _SocialRow();
+/// The "تابعنا" follow-us section (frame node 758:1183): the header, the brand
+/// row and the @handle line. The links come from the CP-editable Organization
+/// profile (downloaded at app start, cached, shared with About / Contact).
+///
+/// Owner 2026-06-27: a platform with **no URL is hidden** (not a dead/inert
+/// button), and when **no** social link is set the whole section disappears
+/// (header + row + handle). A set link, when tapped, asks to confirm leaving the
+/// app, then opens it externally. Owns its leading gap so the layout stays tidy
+/// whether it shows or hides.
+class _FollowUsSection extends ConsumerWidget {
+  const _FollowUsSection({required this.l10n});
+
+  final AppL10n l10n;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Social links come from the CP-editable Organization profile, downloaded
-    // at app start (warmed at the splash) and shared with the About / Contact
-    // screens (owner 2026-06-27). A link stays inert until its URL is set.
     final social = ref.watch(orgProfileProvider)?.social;
-    // (asset, url, accessible label) — the exact Figma social glyphs (beige
-    // monochrome SVGs, node 758:1186), rendered through SimfSvgIcon like the
-    // About-section icons. The label names the icon-only button for screen
-    // readers (a11y review).
+    // (asset, url, label) — the exact Figma beige glyphs (node 758:1186); kept
+    // only when the URL is set so an unconfigured platform is hidden, not inert.
     final links = <(String, String, String)>[
       ('assets/icons/social_x.svg', social?.x ?? BuildConfig.socialXUrl, 'X'),
       (
@@ -988,13 +972,45 @@ class _SocialRow extends ConsumerWidget {
         social?.tiktok ?? BuildConfig.socialTikTokUrl,
         'TikTok',
       ),
-    ];
-    return Row(
+    ].where((l) => l.$2.trim().isNotEmpty).toList();
+
+    // No social link set → hide the entire section.
+    if (links.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        for (final (index, (asset, url, label)) in links.indexed) ...<Widget>[
-          if (index > 0) const SizedBox(width: SimfTokens.space4),
-          Expanded(child: _SocialButton(asset: asset, url: url, label: label)),
-        ],
+        const SizedBox(height: SimfTokens.space6),
+        KsaSectionHeader(title: l10n.followUsSection),
+        const SizedBox(height: SimfTokens.space4),
+        // The brand row stays LTR (X · Instagram · … · TikTok) in any locale.
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Row(
+            children: <Widget>[
+              for (final (index, (asset, url, label)) in links.indexed)
+                ...<Widget>[
+                if (index > 0) const SizedBox(width: SimfTokens.space4),
+                Expanded(
+                  child: _SocialButton(asset: asset, url: url, label: label),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: SimfTokens.space2),
+        Text(
+          l10n.followUsHandle,
+          textAlign: TextAlign.center,
+          // Frame 758:1202 — handle line is Medium, beige.
+          style: const TextStyle(
+            color: SimfTokens.beigeBorder,
+            fontSize: SimfTokens.textSm,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
       ],
     );
   }

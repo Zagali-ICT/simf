@@ -93,12 +93,38 @@ class _UnapprovedController extends AuthController {
       );
 }
 
-/// A fixed (empty) org profile so the social row never fires a real fetch /
-/// touches prefs in tests.
+/// A fixed org profile so the social row never fires a real fetch / touches
+/// prefs in tests; [profile] null means "not loaded yet".
 class _FakeOrgProfileController extends OrgProfileController {
+  _FakeOrgProfileController(this.profile);
+
+  final OrgProfile? profile;
+
   @override
-  OrgProfile? build() => null;
+  OrgProfile? build() => profile;
 }
+
+/// Five social links all set — the configured case (the follow-us section
+/// shows its five buttons).
+const _allSocial = OrgSocial(
+  x: 'https://x.com/simf',
+  instagram: 'https://instagram.com/simf',
+  linkedin: 'https://linkedin.com/company/simf',
+  youtube: 'https://youtube.com/@simf',
+  tiktok: 'https://tiktok.com/@simf',
+);
+
+OrgProfile _orgProfile(OrgSocial social) => OrgProfile(
+      name: '',
+      nameArabic: '',
+      title: '',
+      titleArabic: '',
+      currentYear: 0,
+      status: '',
+      social: social,
+      aboutItems: const <OrgAboutItem>[],
+      details: const <OrgDetail>[],
+    );
 
 class _FakeNotificationsRepository implements NotificationsRepository {
   _FakeNotificationsRepository(this.count);
@@ -156,6 +182,7 @@ Future<void> _pump(
   List<NewsListItem> news = const <NewsListItem>[],
   MyAreaDashboard? profile,
   Locale locale = const Locale('en'),
+  OrgSocial social = _allSocial,
 }) async {
   final router = GoRouter(
     initialLocation: '/',
@@ -205,8 +232,10 @@ Future<void> _pump(
         newsListProvider.overrideWith((ref) async => news),
         homeProfileProvider.overrideWith((ref) async => profile),
         // The social row reads the CP org profile (warmed at splash) — override
-        // it with an empty profile so no real fetch / prefs access happens.
-        orgProfileProvider.overrideWith(_FakeOrgProfileController.new),
+        // it with a fixed profile (social set by default) so no real fetch /
+        // prefs access happens.
+        orgProfileProvider
+            .overrideWith(() => _FakeOrgProfileController(_orgProfile(social))),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -516,6 +545,51 @@ void main() {
           .where((n) => n.contains('social_'))
           .toList();
       expect(socials, hasLength(5));
+    });
+
+    testWidgets('no social set → the تابعنا section is hidden (owner 2026-06-27)',
+        (tester) async {
+      await _pump(
+        tester,
+        controller: _SignedInController(),
+        social: const OrgSocial(),
+      );
+      // Scroll to the discover row (just above where تابعنا would be); the
+      // follow-us section is hidden, so its header never appears.
+      await tester.scrollUntilVisible(
+        find.text('Spirit of Saudi'),
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Follow us'), findsNothing);
+      final none = tester
+          .widgetList<SimfSvgIcon>(find.byType(SimfSvgIcon))
+          .where((w) => w.asset.contains('social_'))
+          .toList();
+      expect(none, isEmpty);
+    });
+
+    testWidgets('only the set platforms render (2 of 5 set)', (tester) async {
+      await _pump(
+        tester,
+        controller: _SignedInController(),
+        social: const OrgSocial(
+          x: 'https://x.com/simf',
+          youtube: 'https://youtube.com/@simf',
+        ),
+      );
+      await tester.scrollUntilVisible(
+        find.text('Follow us'),
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('Follow us'), findsOneWidget);
+      final two = tester
+          .widgetList<SimfSvgIcon>(find.byType(SimfSvgIcon))
+          .where((w) => w.asset.contains('social_'))
+          .toList();
+      expect(two, hasLength(2));
     });
 
     testWidgets('the ابرز الاحداث card renders the latest post '
