@@ -92,10 +92,7 @@ class _FaqTileState extends State<_FaqTile> {
     return KsaCard(
       onTap: () => setState(() => _expanded = !_expanded),
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: SimfTokens.space3,
-          vertical: SimfTokens.space3,
-        ),
+        padding: const EdgeInsets.all(SimfTokens.space2), // p-8 (Figma 1388:7577)
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
@@ -106,9 +103,9 @@ class _FaqTileState extends State<_FaqTile> {
                     question,
                     textAlign: TextAlign.start,
                     style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: SimfTokens.textMd,
-                      fontWeight: FontWeight.w600,
+                      color: SimfTokens.beigeBorder, // Figma 1388:7582 — beige
+                      fontSize: SimfTokens.textMd, // 14
+                      fontWeight: FontWeight.w500, // Medium
                     ),
                   ),
                 ),
@@ -118,24 +115,24 @@ class _FaqTileState extends State<_FaqTile> {
                       ? Icons.keyboard_arrow_up_rounded
                       : Icons.keyboard_arrow_down_rounded,
                   color: SimfTokens.accent,
-                  size: 24,
+                  size: 20,
                 ),
               ],
             ),
             if (_expanded) ...<Widget>[
-              const SizedBox(height: SimfTokens.space3),
+              const SizedBox(height: SimfTokens.space2),
               const Divider(
                 height: 1,
                 thickness: SimfTokens.hairline,
                 color: SimfTokens.beigeBorder,
               ),
-              const SizedBox(height: SimfTokens.space3),
+              const SizedBox(height: SimfTokens.space2),
               Text(
                 answer,
                 textAlign: TextAlign.start,
                 style: const TextStyle(
                   color: SimfTokens.beigeBorder,
-                  fontSize: SimfTokens.textSm,
+                  fontSize: SimfTokens.textMd, // 14
                   height: 1.5,
                 ),
               ),
