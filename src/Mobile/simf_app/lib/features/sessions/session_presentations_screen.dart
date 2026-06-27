@@ -112,10 +112,16 @@ class _Body extends StatelessWidget {
             itemCount: visible.length,
             separatorBuilder: (_, __) =>
                 const SizedBox(height: SimfTokens.space3),
-            itemBuilder: (context, index) => _PresentationCard(
-              item: visible[index],
-              isArabic: isArabic,
-            ),
+            itemBuilder: (context, index) {
+              final item = visible[index];
+              final dayIndex =
+                  days.indexWhere((d) => _sameDay(item.sessionStartLocal, d));
+              return _PresentationCard(
+                item: item,
+                isArabic: isArabic,
+                dayLabel: dayIndex >= 0 ? l10n.eventDayLabel(dayIndex + 1) : '',
+              );
+            },
           ),
         ),
       ],
@@ -140,10 +146,15 @@ class _Body extends StatelessWidget {
 
 /// One presentation card with its own download-in-progress state.
 class _PresentationCard extends ConsumerStatefulWidget {
-  const _PresentationCard({required this.item, required this.isArabic});
+  const _PresentationCard({
+    required this.item,
+    required this.isArabic,
+    required this.dayLabel,
+  });
 
   final PresentationItem item;
   final bool isArabic;
+  final String dayLabel;
 
   @override
   ConsumerState<_PresentationCard> createState() => _PresentationCardState();
@@ -160,28 +171,56 @@ class _PresentationCardState extends ConsumerState<_PresentationCard> {
 
     return KsaCard(
       child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space3),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.all(SimfTokens.space2), // p-8 (Figma 1388:7640)
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            const _FileIcon(),
-            const SizedBox(width: SimfTokens.space3),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    item.localizedSessionTitle(widget.isArabic),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: SimfTokens.textLg,
-                    ),
+            // Title + speaker on the right, the file icon on the left.
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      Text(
+                        item.localizedSessionTitle(widget.isArabic),
+                        textAlign: TextAlign.start,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w500,
+                          fontSize: SimfTokens.textMd, // 14
+                        ),
+                      ),
+                      if (speaker != null) ...<Widget>[
+                        const SizedBox(height: SimfTokens.space2),
+                        Text(
+                          speaker,
+                          textAlign: TextAlign.start,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: SimfTokens.beigeBorder,
+                            fontSize: SimfTokens.textSm,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                  if (speaker != null) ...<Widget>[
-                    const SizedBox(height: SimfTokens.space1),
-                    Text(
-                      speaker,
+                ),
+                const SizedBox(width: SimfTokens.space3),
+                const _FileIcon(),
+              ],
+            ),
+            const SizedBox(height: SimfTokens.space6), // gap-24
+            // Download button on the left, the event-day label on the right.
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                if (widget.dayLabel.isNotEmpty)
+                  Flexible(
+                    child: Text(
+                      widget.dayLabel,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -189,17 +228,17 @@ class _PresentationCardState extends ConsumerState<_PresentationCard> {
                         fontSize: SimfTokens.textSm,
                       ),
                     ),
-                  ],
-                  const SizedBox(height: SimfTokens.space3),
-                  _DownloadButton(
-                    downloading: _downloading,
-                    label: _downloading
-                        ? l10n.presentationDownloading
-                        : l10n.presentationDownload,
-                    onTap: _downloading ? null : () => _download(l10n),
-                  ),
-                ],
-              ),
+                  )
+                else
+                  const SizedBox.shrink(),
+                _DownloadButton(
+                  downloading: _downloading,
+                  label: _downloading
+                      ? l10n.presentationDownloading
+                      : l10n.presentationDownload,
+                  onTap: _downloading ? null : () => _download(l10n),
+                ),
+              ],
             ),
           ],
         ),
@@ -231,21 +270,19 @@ class _PresentationCardState extends ConsumerState<_PresentationCard> {
   }
 }
 
+/// The 32px navy file-icon box (Figma 1388:7643 — no border, a 20px beige glyph).
 class _FileIcon extends StatelessWidget {
   const _FileIcon();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 40,
-      height: 40,
+      width: 32,
+      height: 32,
+      alignment: Alignment.center,
       decoration: BoxDecoration(
         color: SimfTokens.navy,
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        border: Border.all(
-          color: SimfTokens.beigeBorder,
-          width: SimfTokens.hairline,
-        ),
       ),
       child: const Icon(
         Icons.description_outlined,
@@ -277,10 +314,7 @@ class _DownloadButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: SimfTokens.space3,
-            vertical: SimfTokens.space2,
-          ),
+          padding: const EdgeInsets.all(SimfTokens.space2), // p-8
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
@@ -290,20 +324,20 @@ class _DownloadButton extends StatelessWidget {
                   height: 14,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: SimfTokens.navy,
+                    color: Colors.white,
                   ),
                 )
               else
                 const Icon(
                   Icons.download_rounded,
-                  size: 16,
-                  color: SimfTokens.navy,
+                  size: 14,
+                  color: Colors.white,
                 ),
               const SizedBox(width: SimfTokens.space1),
               Text(
                 label,
                 style: const TextStyle(
-                  color: SimfTokens.navy,
+                  color: Colors.white,
                   fontSize: SimfTokens.textSm,
                   fontWeight: FontWeight.w600,
                 ),
