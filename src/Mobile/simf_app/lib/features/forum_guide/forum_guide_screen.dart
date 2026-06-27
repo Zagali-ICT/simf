@@ -37,9 +37,9 @@ class ForumGuideScreen extends StatelessWidget {
         ),
         children: <Widget>[
           _IntroBanner(text: l10n.forumGuideIntro),
-          const SizedBox(height: SimfTokens.space5),
+          const SizedBox(height: SimfTokens.space4), // gap-16
           for (final (index, (title, body)) in steps.indexed) ...<Widget>[
-            if (index > 0) const SizedBox(height: SimfTokens.space3),
+            if (index > 0) const SizedBox(height: SimfTokens.space4), // gap-16
             _GuideStep(number: index + 1, title: title, body: body),
           ],
         ],
@@ -58,7 +58,7 @@ class _IntroBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(SimfTokens.space3),
+      padding: const EdgeInsets.all(SimfTokens.space2), // p-8 (Figma 1388:7503)
       decoration: BoxDecoration(
         color: SimfTokens.accent,
         borderRadius:
@@ -87,7 +87,7 @@ class _IntroBanner extends StatelessWidget {
           const Icon(
             Icons.menu_book_outlined,
             color: Colors.white,
-            size: 20,
+            size: 14,
           ),
         ],
       ),
@@ -112,7 +112,7 @@ class _GuideStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(SimfTokens.space3),
+      padding: const EdgeInsets.all(SimfTokens.space2), // p-8 (Figma 1388:7512)
       decoration: BoxDecoration(
         color: SimfTokens.navyDeep,
         borderRadius:
@@ -138,12 +138,12 @@ class _GuideStep extends StatelessWidget {
               '$number',
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: SimfTokens.textMd,
+                fontSize: SimfTokens.textMd, // 14
                 fontWeight: FontWeight.w700,
               ),
             ),
           ),
-          const SizedBox(width: SimfTokens.space3),
+          const SizedBox(width: SimfTokens.space2), // gap-8 (number → text)
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,7 +153,7 @@ class _GuideStep extends StatelessWidget {
                   textAlign: TextAlign.start,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: SimfTokens.textMd,
+                    fontSize: SimfTokens.textMd, // 14
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -163,14 +163,14 @@ class _GuideStep extends StatelessWidget {
                   textAlign: TextAlign.start,
                   style: const TextStyle(
                     color: SimfTokens.beigeBorder,
-                    fontSize: SimfTokens.textSm,
+                    fontSize: SimfTokens.textSm, // 12
                     height: 1.4,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: SimfTokens.space2),
+          const SizedBox(width: 18), // gap-18 (content → caret, Figma 1426:11374)
           const SimfSvgIcon(
             'assets/icons/ic_caret_left.svg',
             color: SimfTokens.accent,
