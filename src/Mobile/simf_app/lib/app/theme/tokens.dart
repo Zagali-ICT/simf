@@ -30,10 +30,18 @@ class SimfTokens {
   static const Color qAnswered = Color(0xFF16A34A);
   static const Color qStage = Color(0xFFF59E0B);
 
+  // Request-status colours — الطلبات chips + card borders (Figma 1408:9760+,
+  // Tailwind-500): accepted green / rejected red / cancelled grey. Pending
+  // reuses [qStage] (#F59E0B). Chips render the colour at 12% fill + 20% border.
+  static const Color statusAccepted = Color(0xFF22C55E);
+  static const Color statusRejected = Color(0xFFEF4444);
+  static const Color statusCancelled = Color(0xFF6B7280);
+
   // KSA-Project light-surface + auth-flow palette (D-358/D-359).
   static const Color navySurface = Color(0xFF102238); // elevated navy surface (login bg)
   static const Color navyHeader = Color(0xFF071832); // darker header block behind the forum title (Figma 1467:12565 / 1461:12565)
   static const Color beigeBorder = Color(0xFFC2B8A2); // "Pragraph Color" — borders + on-navy paragraph text
+  static const Color beigeFill10 = Color(0x1AC2B8A2); // beige 10% — tier-pill + link-row icon-box fill (Figma rgba(194,184,162,0.1))
   static const Color cardBeige = Color(0xFFF1ECE4); // light card surface
   static const Color goldSoft = Color(0xFFD0AC77); // secondary gold text/icons
   static const Color headlineInk = Color(0xFF111827); // headings on light surfaces
@@ -90,6 +98,7 @@ class SimfTokens {
   static const double radius = 8;
   static const double radiusLarge = 12;
   static const double radiusLg = 16; // W2 cards / nav bar top corners
+  static const double radius14 = 14; // exhibitor/sponsor link rows (Figma 1439:11904/11917)
   static const double radiusXl = 20;
 
   // Hairline border weights (the KSA frames' 0.2px card hairline and the
@@ -105,5 +114,6 @@ class SimfTokens {
   static const double textLg = 16;
   static const double textTitle = 18; // KSA "Sub-title 18" (Phase-0 type scale)
   static const double textXl = 20;
+  static const double textXxl = 22; // exhibitor/sponsor name (Figma 1439:11894)
   static const double textHero = 28;
 }

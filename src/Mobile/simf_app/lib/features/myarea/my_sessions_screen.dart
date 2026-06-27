@@ -53,6 +53,16 @@ class _MySessionsScreenState extends ConsumerState<MySessionsScreen> {
             selectedIndex: _MySessionsTab.values.indexOf(_tab),
             onSelected: (i) =>
                 setState(() => _tab = _MySessionsTab.values[i]),
+            // The frame (1388:9077) has 4 equal-width tabs (gap-8) each with a
+            // leading glyph.
+            equalWidth: true,
+            gap: SimfTokens.space2,
+            icons: const <IconData>[
+              Icons.upcoming_outlined, // القادمة
+              Icons.event_available_outlined, // حضرتها
+              Icons.event_busy_outlined, // فاتتني
+              Icons.archive_outlined, // الأرشيف
+            ],
           ),
           const SizedBox(height: SimfTokens.space3),
           Expanded(
@@ -131,8 +141,8 @@ class _TabbedList extends StatelessWidget {
               l10n.mySessionsCount(items.length, tabLabel),
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: SimfTokens.textLg,
-                fontWeight: FontWeight.w600,
+                fontSize: SimfTokens.textLg, // 16
+                fontWeight: FontWeight.w500,
               ),
             ),
           );
@@ -157,6 +167,10 @@ class _MySessionCard extends StatelessWidget {
     final category = item.localizedCategory(isArabic);
     final speaker = item.localizedSpeaker(isArabic);
     final hall = item.localizedHall(isArabic);
+    final timeText = (category != null && category.isNotEmpty)
+        ? '$time · $category'
+        : time;
+    final hasMeta = speaker != null || (hall != null && hall.isNotEmpty);
 
     return KsaCard(
       onTap: () => context.pushNamed(
@@ -164,50 +178,64 @@ class _MySessionCard extends StatelessWidget {
         pathParameters: <String, String>{'sessionId': item.id},
       ),
       child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space3),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.all(SimfTokens.space2), // p-8 (Figma 1388:9115)
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            // Title + time·category on the right, the favourite heart on the left.
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      Text(
+                        item.localizedTitle(isArabic),
+                        textAlign: TextAlign.start,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w500,
+                          fontSize: SimfTokens.textMd, // 14
+                        ),
+                      ),
+                      const SizedBox(height: SimfTokens.space2),
+                      _IconLine(icon: Icons.access_time, text: timeText),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: SimfTokens.space2),
+                FavouriteHeartButton(sessionId: item.id),
+              ],
+            ),
+            // Speaker (right) + hall (left), each in a beige icon-box group.
+            if (hasMeta) ...<Widget>[
+              const SizedBox(height: SimfTokens.space4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
-                  Text(
-                    item.localizedTitle(isArabic),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: SimfTokens.textLg,
+                  if (speaker != null)
+                    Flexible(
+                      child: _MetaGroup(
+                        icon: Icons.person_outline,
+                        text: _speakerText(speaker),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: SimfTokens.space2),
-                  _MetaLine(
-                    icon: Icons.access_time,
-                    text: '$time · ${l10nDuration(context)}',
-                    trailingChip: category,
-                  ),
-                  if (speaker != null) ...<Widget>[
-                    const SizedBox(height: SimfTokens.space1),
-                    _MetaLine(
-                      icon: Icons.person_outline,
-                      text: _speakerText(speaker),
-                      trailingChip: hall,
-                      chipBordered: false,
+                  if (hall != null && hall.isNotEmpty)
+                    Flexible(
+                      child: _MetaGroup(
+                        icon: Icons.location_on_outlined,
+                        text: hall,
+                      ),
                     ),
-                  ],
                 ],
               ),
-            ),
-            const SizedBox(width: SimfTokens.space3),
-            FavouriteHeartButton(sessionId: item.id),
+            ],
           ],
         ),
       ),
     );
   }
-
-  String l10nDuration(BuildContext context) =>
-      AppL10n.of(context).sessionDurationMinutes(item.durationMinutes);
 
   String _speakerText(String speaker) {
     final title = item.speakerTitle?.trim();
@@ -215,27 +243,20 @@ class _MySessionCard extends StatelessWidget {
   }
 }
 
-/// A muted icon + text line with an optional trailing label (a bordered chip
-/// for the category, a plain muted label for the hall).
-class _MetaLine extends StatelessWidget {
-  const _MetaLine({
-    required this.icon,
-    required this.text,
-    this.trailingChip,
-    this.chipBordered = true,
-  });
+/// The clock·time·category line under the title (Figma 1388:9121): a 12px glyph
+/// + a beige 12px label.
+class _IconLine extends StatelessWidget {
+  const _IconLine({required this.icon, required this.text});
 
   final IconData icon;
   final String text;
-  final String? trailingChip;
-  final bool chipBordered;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: <Widget>[
-        Icon(icon, size: 14, color: SimfTokens.beigeBorder),
-        const SizedBox(width: SimfTokens.space1),
+        Icon(icon, size: 12, color: SimfTokens.beigeBorder),
+        const SizedBox(width: SimfTokens.space2),
         Expanded(
           child: Text(
             text,
@@ -247,51 +268,47 @@ class _MetaLine extends StatelessWidget {
             ),
           ),
         ),
-        if (trailingChip != null && trailingChip!.isNotEmpty) ...<Widget>[
-          const SizedBox(width: SimfTokens.space2),
-          if (chipBordered)
-            _CategoryChip(label: trailingChip!)
-          else
-            Text(
-              trailingChip!,
-              style: const TextStyle(
-                color: SimfTokens.beigeBorder,
-                fontSize: SimfTokens.textSm,
-              ),
-            ),
-        ],
       ],
     );
   }
 }
 
-/// The bordered category pill (e.g. "تعليم والتنمية") on a session card.
-class _CategoryChip extends StatelessWidget {
-  const _CategoryChip({required this.label});
+/// A speaker / hall meta group (Figma 1388:9127 / 9135): a 24px beige icon box
+/// (navy glyph) leading (right in RTL), then the beige 12px label.
+class _MetaGroup extends StatelessWidget {
+  const _MetaGroup({required this.icon, required this.text});
 
-  final String label;
+  final IconData icon;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SimfTokens.space2,
-        vertical: SimfTokens.space1,
-      ),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        border: Border.all(
-          color: SimfTokens.beigeBorder,
-          width: SimfTokens.hairline,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Container(
+          width: 24,
+          height: 24,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: SimfTokens.beigeBorder,
+            borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+          ),
+          child: Icon(icon, size: 12, color: SimfTokens.navy),
         ),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: SimfTokens.beigeBorder,
-          fontSize: SimfTokens.textXs,
+        const SizedBox(width: SimfTokens.space2),
+        Flexible(
+          child: Text(
+            text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: SimfTokens.beigeBorder,
+              fontSize: SimfTokens.textSm,
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 }

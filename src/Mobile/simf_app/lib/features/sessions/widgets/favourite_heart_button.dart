@@ -7,10 +7,10 @@ import '../../../app/theme/tokens.dart';
 import '../data/session_favourites.dart';
 
 /// The المفضلة heart toggle shown on a session card (Figma 1388:8392 / 1388:9067)
-/// — a gold square with a filled heart when favourited, a navy square with an
-/// outline heart otherwise. Watches the shared [sessionFavouritesProvider] so a
-/// toggle here updates every card across both screens; reverts + shows a toast
-/// if the server rejects the change.
+/// — a 32px gold square: solid gold + a filled white heart when favourited, a
+/// gold-50% square + an outline white heart otherwise (the frame's two states).
+/// Watches the shared [sessionFavouritesProvider] so a toggle here updates every
+/// card across both screens; reverts + shows a toast if the server rejects it.
 class FavouriteHeartButton extends ConsumerWidget {
   const FavouriteHeartButton({required this.sessionId, super.key});
 
@@ -22,23 +22,22 @@ class FavouriteHeartButton extends ConsumerWidget {
     final isFavourite = favourites.valueOrNull?.contains(sessionId) ?? false;
 
     return Material(
-      color: isFavourite ? SimfTokens.accent : SimfTokens.navyDeep,
+      color: isFavourite
+          ? SimfTokens.accent
+          : SimfTokens.accent.withValues(alpha: 0.5),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        side: const BorderSide(
-          color: SimfTokens.beigeBorder,
-          width: SimfTokens.hairline,
-        ),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
         onTap: () => _toggle(context, ref),
-        child: Padding(
-          padding: const EdgeInsets.all(SimfTokens.space2),
+        child: SizedBox(
+          width: 32,
+          height: 32,
           child: Icon(
             isFavourite ? Icons.favorite : Icons.favorite_border,
-            size: 18,
-            color: isFavourite ? Colors.white : SimfTokens.beigeBorder,
+            size: 16,
+            color: Colors.white,
           ),
         ),
       ),

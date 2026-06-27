@@ -5,10 +5,11 @@ import '../../app/widgets/ksa_shell.dart';
 import '../../core/country_flag.dart';
 
 /// The shared exhibitor / sponsor detail layout — Figma **1439:11881 "العارض"**
-/// and **1439:11826 "الراعي"** (the owner: reuse one template for both). A navy
-/// identity card (logo, name, city·country line, tier pill, optional
-/// stand-code→map row) over a "نبذة عن…" about card and a website row. Each
-/// caller (exhibitor / sponsor) resolves its fields and passes them in.
+/// and **1439:11826 "الراعي"** (the owner: reuse one template for both). A
+/// borderless `navyDeep` identity card (logo, name, city·country line, full-
+/// width tier pill, optional stand-code→map row) over a "نبذة عن…" about card
+/// (header + beige divider + paragraph) and a website row. Each caller resolves
+/// its fields and passes them in. Pixel spec verified against Figma 1439:11881.
 class EntityDetailScaffold extends StatelessWidget {
   const EntityDetailScaffold({
     required this.headerTitle,
@@ -95,6 +96,13 @@ class EntityDetailScaffold extends StatelessWidget {
               value: website!.trim(),
               icon: Icons.public,
               onTap: onWebsite,
+              // Website row (Figma 1439:11917): navyDeep fill, label above value,
+              // label Bold-12, value SemiBold-14.
+              background: SimfTokens.navyDeep,
+              valueOnTop: false,
+              valueSize: SimfTokens.textMd,
+              valueWeight: FontWeight.w600,
+              labelWeight: FontWeight.w700,
             ),
           ],
         ],
@@ -127,27 +135,30 @@ class _IdentityCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return KsaCard(
+      radius: SimfTokens.radius, // 8
+      borderWidth: 0, // borderless (Figma 1439:11891)
       child: Padding(
         padding: const EdgeInsets.all(SimfTokens.space4),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            SizedBox(width: 96, height: 96, child: logo),
-            const SizedBox(height: SimfTokens.space3),
+            Center(child: SizedBox(width: 108, height: 108, child: logo)),
+            const SizedBox(height: SimfTokens.space4),
             Text(
               name,
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w700,
-                fontSize: SimfTokens.textXl,
+                fontSize: SimfTokens.textXxl, // 22
               ),
             ),
             if ((locationLine ?? '').trim().isNotEmpty) ...<Widget>[
-              const SizedBox(height: SimfTokens.space2),
+              const SizedBox(height: SimfTokens.space4),
               _LocationLine(text: locationLine!.trim(), countryId: countryId),
             ],
             if ((tierPill ?? '').trim().isNotEmpty) ...<Widget>[
-              const SizedBox(height: SimfTokens.space3),
+              const SizedBox(height: SimfTokens.space4),
               _TierPill(label: tierPill!.trim()),
             ],
             if ((standCode ?? '').trim().isNotEmpty) ...<Widget>[
@@ -157,6 +168,13 @@ class _IdentityCard extends StatelessWidget {
                 value: standCode!.trim(),
                 icon: Icons.place_outlined,
                 onTap: onMap,
+                // Stand→map row (Figma 1439:11904): navy fill, value above
+                // label, value Bold-16, label Medium-12.
+                background: SimfTokens.navy,
+                valueOnTop: true,
+                valueSize: SimfTokens.textLg,
+                valueWeight: FontWeight.w700,
+                labelWeight: FontWeight.w500,
               ),
             ],
           ],
@@ -166,7 +184,8 @@ class _IdentityCard extends StatelessWidget {
   }
 }
 
-/// The gold "City، Country" line with the country flag (Figma 11881).
+/// The gold "City، Country" line with the country flag (Figma 1439:11895):
+/// SemiBold-14 gold city, 20px flag, 8px gap, flag on the left (RTL).
 class _LocationLine extends StatelessWidget {
   const _LocationLine({required this.text, required this.countryId});
 
@@ -185,16 +204,17 @@ class _LocationLine extends StatelessWidget {
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: SimfTokens.accent,
-              fontSize: SimfTokens.textMd,
+              fontSize: SimfTokens.textMd, // 14
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),
         if (flag != null) ...<Widget>[
-          const SizedBox(width: SimfTokens.space1),
+          const SizedBox(width: SimfTokens.space2),
           Text(
             flag,
             textDirection: TextDirection.ltr,
-            style: const TextStyle(fontSize: SimfTokens.textMd, height: 1),
+            style: const TextStyle(fontSize: SimfTokens.textXl, height: 1), // 20
           ),
         ],
       ],
@@ -202,7 +222,8 @@ class _LocationLine extends StatelessWidget {
   }
 }
 
-/// The bordered tier pill with a medal glyph (Figma "عارض بريميوم").
+/// The full-width tier pill (Figma 1439:11898): beige-10% fill, beige hairline,
+/// radius-8, px-20/py-8; gold Bold-14 text on the right, medal glyph on the left.
 class _TierPill extends StatelessWidget {
   const _TierPill({required this.label});
 
@@ -212,33 +233,38 @@ class _TierPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: SimfTokens.space4,
-        vertical: SimfTokens.space2,
+        horizontal: SimfTokens.space5, // 20
+        vertical: SimfTokens.space2, // 8
       ),
       decoration: BoxDecoration(
-        color: SimfTokens.navy,
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
+        color: SimfTokens.beigeFill10,
+        borderRadius: BorderRadius.circular(SimfTokens.radius), // 8
         border: Border.all(
           color: SimfTokens.beigeBorder,
           width: SimfTokens.hairline,
         ),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
+          Flexible(
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: SimfTokens.accent,
+                fontSize: SimfTokens.textMd, // 14
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(width: SimfTokens.space2),
           const Icon(
             Icons.workspace_premium_outlined,
             size: 16,
             color: SimfTokens.accent,
-          ),
-          const SizedBox(width: SimfTokens.space2),
-          Text(
-            label,
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textSm,
-              fontWeight: FontWeight.w600,
-            ),
           ),
         ],
       ),
@@ -246,7 +272,9 @@ class _TierPill extends StatelessWidget {
   }
 }
 
-/// The "نبذة عن…" about card: a header over the paragraph, on the navy surface.
+/// The "نبذة عن…" about card (Figma 1439:11931): borderless navyDeep, radius-8;
+/// white Medium-16 right-aligned header, a beige hairline divider, then the
+/// beige Regular-14 paragraph at line-height 1.5, right-aligned.
 class _AboutCard extends StatelessWidget {
   const _AboutCard({required this.header, required this.body});
 
@@ -256,6 +284,8 @@ class _AboutCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return KsaCard(
+      radius: SimfTokens.radius, // 8
+      borderWidth: 0,
       child: Padding(
         padding: const EdgeInsets.all(SimfTokens.space4),
         child: Column(
@@ -263,19 +293,26 @@ class _AboutCard extends StatelessWidget {
           children: <Widget>[
             Text(
               header,
-              textAlign: TextAlign.center,
+              textAlign: TextAlign.start,
               style: const TextStyle(
                 color: Colors.white,
-                fontWeight: FontWeight.w600,
-                fontSize: SimfTokens.textLg,
+                fontWeight: FontWeight.w500,
+                fontSize: SimfTokens.textLg, // 16
               ),
             ),
-            const SizedBox(height: SimfTokens.space3),
+            const SizedBox(height: SimfTokens.space3), // 12
+            Container(
+              height: SimfTokens.hairlineBold,
+              color: SimfTokens.beigeBorder,
+            ),
+            const SizedBox(height: SimfTokens.space2), // 8
             Text(
               body,
+              textAlign: TextAlign.start,
               style: const TextStyle(
                 color: SimfTokens.beigeBorder,
-                height: 1.6,
+                fontSize: SimfTokens.textMd, // 14
+                height: 1.5,
               ),
             ),
           ],
@@ -285,14 +322,21 @@ class _AboutCard extends StatelessWidget {
   }
 }
 
-/// A label-over-value row with a leading icon button + a trailing chevron — the
-/// shared shape of the stand-code→map row and the website row (Figma 11881).
+/// A label/value row with a beige-fill icon box on one end and a chevron on the
+/// other — the shared shape of the stand-code→map row (Figma 1439:11904) and the
+/// website row (1439:11917). The two differ only in fill, line order and weights,
+/// passed in by the caller.
 class _LinkRow extends StatelessWidget {
   const _LinkRow({
     required this.label,
     required this.value,
     required this.icon,
     required this.onTap,
+    required this.background,
+    required this.valueOnTop,
+    required this.valueSize,
+    required this.valueWeight,
+    required this.labelWeight,
   });
 
   final String label;
@@ -300,67 +344,110 @@ class _LinkRow extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onTap;
 
+  /// The card fill (navy for the map row, navyDeep for the website row).
+  final Color background;
+
+  /// true → value above label (map row); false → label above value (website row).
+  final bool valueOnTop;
+  final double valueSize;
+  final FontWeight valueWeight;
+  final FontWeight labelWeight;
+
   @override
   Widget build(BuildContext context) {
+    // TextAlign.start (not a hardcoded .right) so the row tracks the locale:
+    // right in the Arabic design target, left when the language toggle flips to
+    // English — matching the shared KsaLinkRow. Codes/URLs are Latin runs so
+    // they keep reading order without a forced textDirection.
+    final Widget valueText = Text(
+      value,
+      textAlign: TextAlign.start,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        color: SimfTokens.accent,
+        fontWeight: valueWeight,
+        fontSize: valueSize,
+      ),
+    );
+    final bool hasLabel = label.isNotEmpty;
+    final Widget labelText = Text(
+      label,
+      textAlign: TextAlign.start,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        color: SimfTokens.beigeBorder,
+        fontWeight: labelWeight,
+        fontSize: SimfTokens.textSm, // 12
+      ),
+    );
+    // Guard the label (an empty one would add a blank line + an 8px gap).
+    final List<Widget> lines = valueOnTop
+        ? <Widget>[
+            valueText,
+            if (hasLabel) const SizedBox(height: SimfTokens.space2),
+            if (hasLabel) labelText,
+          ]
+        : <Widget>[
+            if (hasLabel) labelText,
+            if (hasLabel) const SizedBox(height: SimfTokens.space2),
+            valueText,
+          ];
     return KsaCard(
-      color: SimfTokens.navy,
+      color: background,
+      radius: SimfTokens.radius14, // 14
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space3),
+        padding: const EdgeInsets.all(SimfTokens.space4), // 16
         child: Row(
           children: <Widget>[
-            Container(
-              width: 44,
-              height: 44,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: SimfTokens.navyDeep,
-                borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-                border: Border.all(
-                  color: SimfTokens.beigeBorder,
-                  width: SimfTokens.hairline,
-                ),
-              ),
-              child: Icon(icon, size: 20, color: SimfTokens.accent),
-            ),
-            const SizedBox(width: SimfTokens.space3),
+            _IconBox(icon: icon),
+            const SizedBox(width: SimfTokens.space3), // 12
             Expanded(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: <Widget>[
-                  if (label.isNotEmpty)
-                    Text(
-                      label,
-                      style: const TextStyle(
-                        color: SimfTokens.beigeBorder,
-                        fontSize: SimfTokens.textXs,
-                      ),
-                    ),
-                  Text(
-                    value,
-                    textDirection: TextDirection.ltr,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: SimfTokens.accent,
-                      fontWeight: FontWeight.w700,
-                      fontSize: SimfTokens.textMd,
-                    ),
-                  ),
-                ],
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: lines,
               ),
             ),
             const SizedBox(width: SimfTokens.space2),
-            Icon(
-              Directionality.of(context) == TextDirection.rtl
-                  ? Icons.chevron_left
-                  : Icons.chevron_right,
-              size: 20,
+            // Fixed left-caret — like the shared KsaLinkRow / KsaListRow, the
+            // design's caret does not auto-mirror under RTL.
+            const Icon(
+              Icons.chevron_left,
+              size: 18,
               color: SimfTokens.beigeBorder,
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// The 44×44 beige-fill icon box (Figma 1439:11913 / 11926): beige-10% fill,
+/// beige hairline, radius-4, with a 20px gold glyph centred.
+class _IconBox extends StatelessWidget {
+  const _IconBox({required this.icon});
+
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 44,
+      height: 44,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: SimfTokens.beigeFill10,
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall), // 4
+        border: Border.all(
+          color: SimfTokens.beigeBorder,
+          width: SimfTokens.hairline,
+        ),
+      ),
+      child: Icon(icon, size: 20, color: SimfTokens.accent),
     );
   }
 }

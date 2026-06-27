@@ -54,6 +54,9 @@ void main() {
       expect(find.text('Download'), findsOneWidget);
       // The الكل / All day tab is present.
       expect(find.text('All'), findsOneWidget);
+      // "Day 1" appears as both the day tab and the card's event-day label
+      // (Figma 1388:7664) — the card label is the one this re-skin added.
+      expect(find.text('Day 1'), findsNWidgets(2));
     });
 
     testWidgets('shows the empty state when there are no presentations',

@@ -118,7 +118,16 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
     return ListView(
       padding: const EdgeInsets.all(SimfTokens.space4),
       children: <Widget>[
-        _NewRequestButton(label: l10n.requestNew, onTap: () => unawaited(_openNewRequest())),
+        _TopActionRow(
+          l10n: l10n,
+          filter: effectiveFilter,
+          // المقبولة can only filter when at least one accepted request exists
+          // (else the zero-count fallback would make it a silent dead-tap).
+          acceptedEnabled:
+              items.any((i) => i.status == AppRequestStatus.accepted),
+          onNew: () => unawaited(_openNewRequest()),
+          onSelect: (status) => setState(() => _filter = status),
+        ),
         const SizedBox(height: SimfTokens.space4),
         if (items.isNotEmpty)
           _StatusChips(
@@ -162,37 +171,125 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
   }
 }
 
-/// The gold "طلب جديد" call-to-action.
-class _NewRequestButton extends StatelessWidget {
-  const _NewRequestButton({required this.label, required this.onTap});
+/// The top action row (Figma 1408:9736): three equal buttons — "طلب جديد"
+/// (opens the new-request sheet), "المقبولة" (filter → accepted) and "السجل"
+/// (filter → all). The active filter button is gold-filled (white text), the
+/// rest are beige-outlined. "طلب جديد" is an action, never the active state.
+class _TopActionRow extends StatelessWidget {
+  const _TopActionRow({
+    required this.l10n,
+    required this.filter,
+    required this.acceptedEnabled,
+    required this.onNew,
+    required this.onSelect,
+  });
 
-  final String label;
-  final VoidCallback onTap;
+  final AppL10n l10n;
+  final AppRequestStatus? filter;
+  final bool acceptedEnabled;
+  final VoidCallback onNew;
+  final ValueChanged<AppRequestStatus?> onSelect;
 
   @override
   Widget build(BuildContext context) {
+    // The Figma lays this row left→right (طلب جديد · المقبولة · السجل) — a fixed
+    // LTR control row in the mock — so force LTR to match it exactly rather than
+    // letting the RTL shell mirror it.
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: _ActionButton(
+              label: l10n.requestNew,
+              icon: Icons.note_add_outlined,
+              active: false,
+              onTap: onNew,
+            ),
+          ),
+          const SizedBox(width: SimfTokens.space4),
+          Expanded(
+            child: _ActionButton(
+              label: l10n.requestsTabAccepted,
+              icon: Icons.thumb_up_outlined,
+              active: filter == AppRequestStatus.accepted,
+              enabled: acceptedEnabled,
+              onTap: () => onSelect(AppRequestStatus.accepted),
+            ),
+          ),
+          const SizedBox(width: SimfTokens.space4),
+          Expanded(
+            child: _ActionButton(
+              label: l10n.requestsTabLog,
+              icon: Icons.history,
+              active: filter == null,
+              onTap: () => onSelect(null),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One equal-width pill in the [_TopActionRow]: gold-filled when [active], else
+/// a beige-hairline outline. Label SemiBold-12 over a 14px leading icon.
+class _ActionButton extends StatelessWidget {
+  const _ActionButton({
+    required this.label,
+    required this.icon,
+    required this.active,
+    required this.onTap,
+    this.enabled = true,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool active;
+  final VoidCallback onTap;
+
+  /// false → dimmed, not tappable (e.g. المقبولة with no accepted requests).
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color base = active ? Colors.white : SimfTokens.beigeBorder;
+    final Color fg = enabled ? base : base.withValues(alpha: 0.4);
+    final Color borderColor =
+        enabled ? SimfTokens.beigeBorder : SimfTokens.beigeBorder.withValues(alpha: 0.4);
     return InkWell(
-      onTap: onTap,
+      onTap: enabled ? onTap : null,
       borderRadius: BorderRadius.circular(SimfTokens.radius),
       child: Container(
-        height: 46,
+        padding: const EdgeInsets.all(SimfTokens.space2),
         decoration: BoxDecoration(
-          color: SimfTokens.accent,
+          color: active ? SimfTokens.accent : Colors.transparent,
           borderRadius: BorderRadius.circular(SimfTokens.radius),
+          border: active
+              ? null
+              : Border.all(
+                  color: borderColor,
+                  width: SimfTokens.hairline,
+                ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Icon(Icons.add, size: 18, color: SimfTokens.navy),
-            const SizedBox(width: SimfTokens.space2),
-            Text(
-              label,
-              style: const TextStyle(
-                color: SimfTokens.navy,
-                fontSize: SimfTokens.textMd,
-                fontWeight: FontWeight.w700,
+            Flexible(
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: fg,
+                  fontSize: SimfTokens.textSm, // 12
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
+            const SizedBox(width: SimfTokens.space1),
+            Icon(icon, size: 14, color: fg),
           ],
         ),
       ),
@@ -200,8 +297,8 @@ class _NewRequestButton extends StatelessWidget {
   }
 }
 
-/// The horizontally-scrolling status filter chips (All + each populated status,
-/// with counts), matching the الطلبات chip row.
+/// The horizontally-scrolling status filter chips — each populated status with
+/// its count (no "All" chip; السجل in the top row serves "all"). Figma chip row.
 class _StatusChips extends StatelessWidget {
   const _StatusChips({
     required this.items,
@@ -217,50 +314,58 @@ class _StatusChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final chips = <Widget>[
-      _chip(label: l10n.requestStatusAll, count: items.length, status: null),
-    ];
-    for (final status in AppRequestStatus.values) {
+    final chips = <Widget>[];
+    for (final status in _chipOrder) {
       final count = items.where((i) => i.status == status).length;
       if (count == 0) {
         continue;
       }
-      chips.add(const SizedBox(width: SimfTokens.space2));
-      chips.add(_chip(label: _statusLabel(l10n, status), count: count, status: status));
+      if (chips.isNotEmpty) {
+        chips.add(const SizedBox(width: SimfTokens.space4));
+      }
+      chips.add(
+        _chip(label: _statusLabel(l10n, status), count: count, status: status),
+      );
     }
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(children: chips),
+    // The Figma lays the chips left→right (ملغى … مقبول) — match that order.
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(children: chips),
+      ),
     );
   }
 
+  /// A status pill (Figma 1408:9761+): the status colour at 12% fill + 20%
+  /// border, radius-4, h-32; the colour at full strength for the text. Tapping
+  /// toggles the filter (a stronger fill marks the selected chip).
   Widget _chip({
     required String label,
     required int count,
-    required AppRequestStatus? status,
+    required AppRequestStatus status,
   }) {
+    final color = _statusColor(status);
     final active = selected == status;
     return InkWell(
-      onTap: () => onSelect(status),
-      borderRadius: BorderRadius.circular(SimfTokens.radiusLarge),
+      onTap: () => onSelect(active ? null : status),
+      borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: SimfTokens.space3,
-          vertical: SimfTokens.space2,
-        ),
+        height: 32,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 13),
         decoration: BoxDecoration(
-          color: active ? SimfTokens.accent : SimfTokens.navyDeep,
-          borderRadius: BorderRadius.circular(SimfTokens.radiusLarge),
+          color: color.withValues(alpha: active ? 0.24 : 0.12),
+          borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
           border: Border.all(
-            color: active ? SimfTokens.accent : SimfTokens.line,
-            width: SimfTokens.hairline,
+            color: color.withValues(alpha: active ? 1 : 0.2),
           ),
         ),
         child: Text(
           '$label ($count)',
           style: TextStyle(
-            color: active ? SimfTokens.navy : SimfTokens.beigeBorder,
-            fontSize: SimfTokens.textSm,
+            color: color,
+            fontSize: SimfTokens.textSm, // 12
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -285,15 +390,24 @@ String _statusLabel(AppL10n l10n, AppRequestStatus status) {
 Color _statusColor(AppRequestStatus status) {
   switch (status) {
     case AppRequestStatus.accepted:
-      return SimfTokens.success;
+      return SimfTokens.statusAccepted;
     case AppRequestStatus.rejected:
-      return SimfTokens.danger;
+      return SimfTokens.statusRejected;
     case AppRequestStatus.cancelled:
-      return SimfTokens.beigeBorder;
+      return SimfTokens.statusCancelled;
     case AppRequestStatus.pending:
-      return SimfTokens.accent;
+      return SimfTokens.qStage; // amber #F59E0B (Figma قيد المراجعة)
   }
 }
+
+/// The display order of the status chips (Figma 1408:9760): cancelled, rejected,
+/// pending, accepted — only those with at least one request are shown.
+const List<AppRequestStatus> _chipOrder = <AppRequestStatus>[
+  AppRequestStatus.cancelled,
+  AppRequestStatus.rejected,
+  AppRequestStatus.pending,
+  AppRequestStatus.accepted,
+];
 
 String _kindHeadline(AppL10n l10n, AppRequestKind kind) {
   switch (kind) {
@@ -359,53 +473,59 @@ class _RequestCardState extends State<_RequestCard> {
     return Container(
       decoration: BoxDecoration(
         color: SimfTokens.navyDeep,
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
-        border: Border(left: BorderSide(color: statusColor, width: 3)),
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        // Full status-coloured hairline (Figma 1408:9773 — 0.5px all round).
+        border: Border.all(color: statusColor, width: SimfTokens.hairlineBold),
       ),
       child: Column(
         children: <Widget>[
           InkWell(
             onTap: () => setState(() => _expanded = !_expanded),
-            borderRadius: BorderRadius.circular(SimfTokens.radius),
+            borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
             child: Padding(
-              padding: const EdgeInsets.all(SimfTokens.space3),
+              padding: const EdgeInsets.all(SimfTokens.space2),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   _IconBox(icon: _kindIcon(item.kind)),
-                  const SizedBox(width: SimfTokens.space3),
+                  const SizedBox(width: SimfTokens.space2),
                   Expanded(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
                         Text(
                           _kindHeadline(l10n, item.kind),
+                          textAlign: TextAlign.start,
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: SimfTokens.textMd,
-                            fontWeight: FontWeight.w700,
+                            fontSize: SimfTokens.textMd, // 14
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                         if (subtitle.isNotEmpty) ...<Widget>[
-                          const SizedBox(height: SimfTokens.space1),
+                          const SizedBox(height: SimfTokens.space2),
                           Text(
                             subtitle,
+                            textAlign: TextAlign.start,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               color: SimfTokens.beigeBorder,
-                              fontSize: SimfTokens.textSm,
-                              height: 1.4,
+                              fontSize: SimfTokens.textSm, // 12
                             ),
                           ),
                         ],
-                        const SizedBox(height: SimfTokens.space1),
+                        const SizedBox(height: SimfTokens.space2),
                         Text(
                           l10n.requestDate(item.displayDate.toLocal()),
+                          // Pinned LTR + the LRM in requestDate keep the date as
+                          // "12 يناير 2026" (Figma 1408:9782); align to the
+                          // trailing edge under the right-aligned title.
                           textDirection: TextDirection.ltr,
+                          textAlign: TextAlign.end,
                           style: const TextStyle(
-                            color: SimfTokens.timestampMuted,
-                            fontSize: SimfTokens.textXs,
+                            color: SimfTokens.beigeBorder,
+                            fontSize: SimfTokens.textXs, // ~10
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
@@ -413,7 +533,10 @@ class _RequestCardState extends State<_RequestCard> {
                   ),
                   const SizedBox(width: SimfTokens.space2),
                   Icon(
-                    _expanded ? Icons.expand_less : Icons.expand_more,
+                    _expanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                    size: 20,
                     color: SimfTokens.beigeBorder,
                   ),
                 ],
@@ -482,7 +605,8 @@ class _RequestCardState extends State<_RequestCard> {
   }
 }
 
-/// The gold rounded type-icon box at the inline start of a card.
+/// The gold rounded type-icon box at the inline start of a card (Figma
+/// 1408:9783 — 32px, radius-4, a 16px navy glyph).
 class _IconBox extends StatelessWidget {
   const _IconBox({required this.icon});
 
@@ -491,13 +615,14 @@ class _IconBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 36,
-      height: 36,
+      width: 32,
+      height: 32,
+      alignment: Alignment.center,
       decoration: BoxDecoration(
         color: SimfTokens.accent,
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
       ),
-      child: Icon(icon, size: 18, color: SimfTokens.navy),
+      child: Icon(icon, size: 16, color: SimfTokens.navy),
     );
   }
 }

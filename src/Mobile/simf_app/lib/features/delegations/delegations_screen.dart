@@ -289,10 +289,14 @@ class _SearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Figma 1426:10819: the search glyph + hint sit at the inline start (right
+    // in RTL) and the filter glyph in a 40px divider-walled cell at the inline
+    // end (left in RTL). radius-4, beige hairline.
     return Container(
+      height: 48,
       decoration: BoxDecoration(
         color: SimfTokens.navyDeep,
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
         border: Border.all(
           color: SimfTokens.beigeBorder,
           width: SimfTokens.hairline,
@@ -301,8 +305,8 @@ class _SearchField extends StatelessWidget {
       child: Row(
         children: <Widget>[
           const Padding(
-            padding: EdgeInsets.only(left: SimfTokens.space3),
-            child: Icon(Icons.tune, color: SimfTokens.beigeBorder, size: 18),
+            padding: EdgeInsetsDirectional.only(start: SimfTokens.space3),
+            child: Icon(Icons.search, color: SimfTokens.beigeBorder, size: 16),
           ),
           Expanded(
             child: TextField(
@@ -314,20 +318,32 @@ class _SearchField extends StatelessWidget {
                 hintText: hint,
                 hintStyle: const TextStyle(
                   color: SimfTokens.beigeBorder,
-                  fontSize: 13,
+                  fontSize: 14,
                 ),
                 isDense: true,
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: SimfTokens.space3,
-                  vertical: SimfTokens.space3,
+                  vertical: SimfTokens.space2,
                 ),
               ),
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.only(right: SimfTokens.space3),
-            child: Icon(Icons.search, color: SimfTokens.beigeBorder, size: 18),
+          Container(
+            width: 40,
+            // Fill the 48-high field so the divider is a full-height wall, not a
+            // short stub (a bare Row centres children on the cross axis).
+            height: double.infinity,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              border: BorderDirectional(
+                start: BorderSide(
+                  color: SimfTokens.beigeBorder,
+                  width: SimfTokens.hairline,
+                ),
+              ),
+            ),
+            child: const Icon(Icons.tune, color: SimfTokens.beigeBorder, size: 16),
           ),
         ],
       ),
@@ -351,6 +367,8 @@ class _DelegationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return KsaCard(
+      radius: SimfTokens.radius, // 8 (Figma 1426:10838)
+      borderWidth: 0, // borderless
       child: Padding(
         padding: const EdgeInsets.all(SimfTokens.space4),
         child: Column(
@@ -396,7 +414,7 @@ class _DelegationCard extends StatelessWidget {
                 ),
               ),
               if (showSubtitle) ...<Widget>[
-                const SizedBox(height: SimfTokens.space1),
+                const SizedBox(height: SimfTokens.space2), // 8 (Figma 1426:10840)
                 Text(
                   subtitle,
                   maxLines: 1,
@@ -509,7 +527,7 @@ class _FlagBox extends StatelessWidget {
         border: Border.all(color: SimfTokens.line),
         borderRadius: BorderRadius.circular(SimfTokens.radiusLarge),
       ),
-      child: Text(emoji, style: const TextStyle(fontSize: 26)),
+      child: Text(emoji, style: const TextStyle(fontSize: 28)),
     );
   }
 }
@@ -597,10 +615,10 @@ class _MemberChip extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: SimfTokens.space1),
+          const SizedBox(width: 6),
           const Icon(
             Icons.groups_outlined,
-            size: 14,
+            size: 12,
             color: SimfTokens.beigeBorder,
           ),
         ],
@@ -632,7 +650,7 @@ class _DateGroup extends StatelessWidget {
           ),
         ),
         const SizedBox(width: SimfTokens.space1),
-        const Icon(Icons.schedule, size: 14, color: SimfTokens.beigeBorder),
+        const Icon(Icons.schedule, size: 12, color: SimfTokens.beigeBorder),
       ],
     );
   }
