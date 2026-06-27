@@ -235,43 +235,81 @@ void main() {
     });
   });
 
-  group('role gate (D-405)', () {
+  group('role gate (D-519 — explicit allowed-roles sets)', () {
     const moderate = '/sessions/:sessionId/moderate';
+    const gate = '/gates/scan';
+    const register = '/staff/register-visitor';
+    const scanVisitor = '/exhibitor/scan';
+    const badge = '/badge';
+    const meet = '/meet';
 
-    test('requiredRoleForPath returns moderator for the Q&A desk', () {
-      expect(requiredRoleForPath(moderate), AppRole.moderator);
-      expect(requiredRoleForPath('/badge'), isNull);
-    });
-
-    test('a visitor hitting a moderator route is sent home', () {
-      expect(
-        redirectDecision(
+    // The redirect for a signed-in role hitting a route pattern.
+    String? hit(String fullPath, AppRole role) => redirectDecision(
           isInitial: false,
           isSignedIn: true,
-          goingTo: '/sessions/s1/moderate',
-          fullPath: moderate,
-          appRole: AppRole.visitor,
-        ),
-        '/',
+          goingTo: fullPath,
+          fullPath: fullPath,
+          appRole: role,
+        );
+
+    test('allowedRolesForPath returns the route\'s set (or null when open)', () {
+      expect(allowedRolesForPath(moderate), <AppRole>{AppRole.moderator});
+      expect(allowedRolesForPath(gate), <AppRole>{AppRole.staff});
+      expect(allowedRolesForPath(register), <AppRole>{AppRole.staff});
+      expect(allowedRolesForPath(scanVisitor), <AppRole>{AppRole.exhibitor});
+      expect(
+        allowedRolesForPath(meet),
+        <AppRole>{AppRole.visitor, AppRole.exhibitor},
       );
+      // Universal-auth + public routes carry no role restriction.
+      expect(allowedRolesForPath(badge), isNull);
+      expect(allowedRolesForPath('/sessions'), isNull);
     });
 
-    test('a moderator (or staff, higher) is allowed through', () {
-      for (final role in <AppRole>[AppRole.moderator, AppRole.staff]) {
-        expect(
-          redirectDecision(
-            isInitial: false,
-            isSignedIn: true,
-            goingTo: '/sessions/s1/moderate',
-            fullPath: moderate,
-            appRole: role,
-          ),
-          isNull,
-        );
+    test('the moderator desk is moderator-EXCLUSIVE (staff no longer inherits)',
+        () {
+      expect(hit(moderate, AppRole.moderator), isNull); // allowed
+      expect(hit(moderate, AppRole.staff), '/'); // D-519: staff bounced
+      expect(hit(moderate, AppRole.visitor), '/');
+      expect(hit(moderate, AppRole.exhibitor), '/');
+    });
+
+    test('the gate + register pages are staff-exclusive', () {
+      for (final p in <String>[gate, register]) {
+        expect(hit(p, AppRole.staff), isNull, reason: p);
+        expect(hit(p, AppRole.moderator), '/', reason: p);
+        expect(hit(p, AppRole.visitor), '/', reason: p);
+        expect(hit(p, AppRole.exhibitor), '/', reason: p);
       }
     });
 
-    test('signed-out on a moderator route still goes to sign-in first', () {
+    test('the exhibitor pages are exhibitor-exclusive', () {
+      expect(hit(scanVisitor, AppRole.exhibitor), isNull);
+      expect(hit(scanVisitor, AppRole.visitor), '/');
+      expect(hit(scanVisitor, AppRole.staff), '/');
+      expect(hit(scanVisitor, AppRole.moderator), '/');
+    });
+
+    test('attendee features allow Visitor + Exhibitor, exclude Staff/Moderator',
+        () {
+      expect(hit(meet, AppRole.visitor), isNull);
+      expect(hit(meet, AppRole.exhibitor), isNull);
+      expect(hit(meet, AppRole.staff), '/'); // focused
+      expect(hit(meet, AppRole.moderator), '/'); // focused
+    });
+
+    test('the badge tab is universal — every signed-in role keeps it', () {
+      for (final role in <AppRole>[
+        AppRole.visitor,
+        AppRole.exhibitor,
+        AppRole.moderator,
+        AppRole.staff,
+      ]) {
+        expect(hit(badge, role), isNull, reason: role.wireName);
+      }
+    });
+
+    test('signed-out on a role-gated route still goes to sign-in first', () {
       expect(
         redirectDecision(
           isInitial: false,
@@ -283,29 +321,22 @@ void main() {
       );
     });
 
-    test('the gate scanner requires staff exactly', () {
-      expect(requiredRoleForPath('/gates/scan'), AppRole.staff);
-      // A moderator (below staff) is sent home; staff is allowed.
+    test('routeAllowsRole drives the nav visibility per role', () {
+      expect(routeAllowsRole(RouteNames.gateScanner, AppRole.staff), isTrue);
+      expect(routeAllowsRole(RouteNames.gateScanner, AppRole.visitor), isFalse);
+      expect(routeAllowsRole(RouteNames.myVisitors, AppRole.exhibitor), isTrue);
+      expect(routeAllowsRole(RouteNames.myVisitors, AppRole.visitor), isFalse);
       expect(
-        redirectDecision(
-          isInitial: false,
-          isSignedIn: true,
-          goingTo: '/gates/scan',
-          fullPath: '/gates/scan',
-          appRole: AppRole.moderator,
-        ),
-        '/',
+        routeAllowsRole(RouteNames.sessionModerate, AppRole.moderator),
+        isTrue,
       );
       expect(
-        redirectDecision(
-          isInitial: false,
-          isSignedIn: true,
-          goingTo: '/gates/scan',
-          fullPath: '/gates/scan',
-          appRole: AppRole.staff,
-        ),
-        isNull,
+        routeAllowsRole(RouteNames.sessionModerate, AppRole.staff),
+        isFalse,
       );
+      // Unrestricted entries show for everyone (including a null/guest role).
+      expect(routeAllowsRole(RouteNames.aboutForum, AppRole.staff), isTrue);
+      expect(routeAllowsRole(RouteNames.aboutForum, null), isTrue);
     });
   });
 }

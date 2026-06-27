@@ -1829,6 +1829,9 @@ class AppL10n {
   String get scanVisitorError =>
       _t('تعذر مسح البطاقة. حاول مرة أخرى.', 'Could not scan the badge. Try again.');
 
+  /// D-519 — the exhibitor home's lead-capture tools section header.
+  String get exhibitorToolsSection => _t('أدوات العارض', 'Exhibitor tools');
+
   // Live broadcast (Page 025). liveNowLabel already exists (reused for the badge).
   String get liveBroadcastTitle => _t('البث المباشر', 'Live broadcast');
   // D-433 — live broadcast + ask-question + media-coverage re-skins

@@ -9,6 +9,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/localization/locale_controller.dart';
 import '../../app/route_names.dart';
+import '../../app/router.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/confirm_external_link.dart';
 import '../../app/widgets/ksa_shell.dart';
@@ -46,6 +47,9 @@ class MoreScreen extends ConsumerWidget {
     final l10n = AppL10n.of(context);
     final auth = ref.watch(authControllerProvider);
     final signedIn = auth is AuthStateSignedIn;
+    // D-519 — role-filter the attendee-only rows so a focused Staff/Moderator
+    // never sees a dead link here (the slide-in MoreDrawer filters identically).
+    final role = signedIn ? auth.session.user.appRole : AppRole.guest;
     final profile = signedIn
         ? ref.watch(_moreProfileProvider).asData?.value
         : null;
@@ -87,10 +91,12 @@ class MoreScreen extends ConsumerWidget {
                 title: l10n.faqRowTitle,
                 onTap: () => context.pushNamed(RouteNames.faq),
               ),
-              _MoreRow(
-                title: l10n.morePresentations,
-                onTap: () => context.pushNamed(RouteNames.sessionPresentations),
-              ),
+              if (routeAllowsRole(RouteNames.sessionPresentations, role))
+                _MoreRow(
+                  title: l10n.morePresentations,
+                  onTap: () =>
+                      context.pushNamed(RouteNames.sessionPresentations),
+                ),
               _MoreRow(
                 title: l10n.moreVisitSaudi,
                 onTap: () => unawaited(
@@ -136,10 +142,11 @@ class MoreScreen extends ConsumerWidget {
                 title: l10n.contactUsTitle,
                 onTap: () => context.pushNamed(RouteNames.contactUs),
               ),
-              _MoreRow(
-                title: l10n.moreRateApp,
-                onTap: () => context.pushNamed(RouteNames.rate),
-              ),
+              if (routeAllowsRole(RouteNames.rate, role))
+                _MoreRow(
+                  title: l10n.moreRateApp,
+                  onTap: () => context.pushNamed(RouteNames.rate),
+                ),
             ],
           ),
 

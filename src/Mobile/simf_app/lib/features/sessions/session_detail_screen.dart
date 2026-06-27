@@ -252,9 +252,11 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     final role = auth is AuthStateSignedIn
         ? auth.session.user.appRole
         : AppRole.guest;
-    // Moderator (محاور) entry to the Q&A desk (D-405). UX gate only — the
-    // server still enforces the per-session SessionModerator grant (403).
-    final canModerate = role.isAtLeast(AppRole.moderator);
+    // Moderator (محاور) entry to the Q&A desk (D-405). Moderator-EXCLUSIVE
+    // (D-519): Staff no longer inherits it (the focused role model dropped the
+    // isAtLeast ladder). UX gate only — the server still enforces the
+    // per-session SessionModerator grant (403).
+    final canModerate = role == AppRole.moderator;
     return KsaPage(
       tab: SimfTab.sessions,
       // The frame's chrome is the standard circled back + centred title; the

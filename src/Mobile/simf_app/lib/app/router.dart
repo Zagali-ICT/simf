@@ -209,45 +209,56 @@ const List<_Route> _auxRoutes = <_Route>[
   _Route(number: 0, name: RouteNames.biometricStepUp, path: '/auth/biometric-step-up', labelAr: 'تأكيد بصمة الوجه', labelEn: 'Confirm Face ID'),
 ];
 
-/// Screen numbers that need a signed-in user (Visitor or higher). Until
-/// SIMF-RPM-001 closes (SIMF-MAA-001 OI-3) this list is conservative —
-/// Phase 1 only gates the few obvious cases. Phase 2 / Phase 3 may extend.
+/// Screen numbers that need a signed-in user of **any** role (including a
+/// pending/unapproved account, which resolves to [AppRole.guest]). These are the
+/// universal onboarding + account routes everyone signed-in shares; role-specific
+/// pages live in [_routeRoles] instead (a route there is also auth-gated).
 const Set<int> _authenticatedRoutes = <int>{
   7, // Sign up — visitor profile data (AUTH-only, Page_007 L-1)
   701, // Sign up — interests + the single save (AUTH-only, Page_007-01, D-332)
   10, // Registration success (signed-in, pending; Page_010)
   11, // Registration status (signed-in, not-yet-approved gate; Page_011 L-1)
-  14, // My area
-  18, // My seat
-  26, // Send question
-  28, // Audience comments (approved-only, D-319)
-  32, // Badge / QR
-  33, // Notifications
-  35, // Meet people
-  40, // Rate (feedback — approved-only, D-310)
-  100, // My Contacts (FDS-014, approved-only — D-286)
-  101, // Share my contact (FDS-014, approved-only — D-286)
-  102, // Scan contact QR (FDS-014, approved-only — D-286)
-  103, // Identity verification — avatar liveness (D-404, from My Area)
-  104, // Moderator session Q&A desk (D-405; also role-gated below)
-  105, // Staff gate scanner (D-406; also role-gated below)
-  114, // Staff walk-in visitor registration (D-509; also role-gated below)
-  106, // Exhibitor scan visitor badge (D-426; server 403s visitor-tier callers)
-  107, // Exhibitor My Visitors (D-426)
-  109, // Seat picker (D-485; approved-only — the seat endpoints 401/403 a guest)
-  110, // Join-a-session hub (D-485; approved-only)
-  113, // My sessions (Wave 2; approved-only — /app/account/sessions 401/403 a guest)
-  202, // Session presentations (Wave 2; approved-only — /app/presentations 401/403 a guest)
+  14, // My area / profile — every signed-in role
+  32, // Badge / QR — every signed-in role's own entry pass (a bottom-nav tab, so
+  // it must not bounce for Staff/Moderator; the server returns their own badge)
+  33, // Notifications — every signed-in role
 };
 
-/// Routes that additionally require a minimum app privilege (D-405/D-406). The
-/// server is still the real authority (per-session grant / GateOperator role);
-/// this is a UX gate so the wrong role never opens the screen. A signed-in user
-/// whose role is below the minimum is redirected home.
-const Map<int, AppRole> _roleGatedRoutes = <int, AppRole>{
-  104: AppRole.moderator, // Session Q&A desk — moderator (or higher)
-  105: AppRole.staff, // Gate scanner — staff
-  114: AppRole.staff, // Walk-in visitor registration — staff
+/// The clean role→page model (D-519): the explicit set of [AppRole]s allowed to
+/// open each role-restricted route. A route here is **also** auth-gated (it needs
+/// sign-in). A signed-in user whose role is **not in the set** is redirected
+/// home. The server stays the real authority (per-session grant / GateOperator /
+/// Visitors.RegisterOnsite); this is the UX gate that keeps the wrong role out
+/// of the screen AND lets the nav surfaces show only the role's own pages. This
+/// replaced the old min-role `isAtLeast` ladder, which could not express
+/// "Exhibitor = Visitor + extras" or "Staff/Moderator are focused, NOT a
+/// visitor superset".
+const Set<AppRole> _attendee = <AppRole>{AppRole.visitor, AppRole.exhibitor};
+const Map<int, Set<AppRole>> _routeRoles = <int, Set<AppRole>>{
+  // Attendee features — Visitor + Exhibitor (NOT Staff/Moderator: D-519 focused).
+  18: _attendee, // My seat
+  26: _attendee, // Send question
+  28: _attendee, // Audience comments (D-319)
+  35: _attendee, // Meet people
+  40: _attendee, // Rate / feedback (D-310)
+  100: _attendee, // My Contacts (FDS-014)
+  101: _attendee, // Share my contact (FDS-014)
+  102: _attendee, // Scan contact QR (FDS-014)
+  103: _attendee, // Identity verification — avatar liveness (D-404)
+  108: _attendee, // Requests feed (D-500, approved-only)
+  109: _attendee, // Seat picker (D-485)
+  110: _attendee, // Join-a-session hub (D-485)
+  113: _attendee, // My sessions (Wave 2)
+  202: _attendee, // Session presentations (Wave 2)
+  // Exhibitor-only — lead capture (D-426).
+  106: <AppRole>{AppRole.exhibitor}, // Scan visitor badge
+  107: <AppRole>{AppRole.exhibitor}, // My Visitors
+  // Staff-only — the gate operations (D-406 / D-509).
+  105: <AppRole>{AppRole.staff}, // Gate scanner
+  114: <AppRole>{AppRole.staff}, // Walk-in visitor registration
+  // Moderator-only — the session Q&A desk (D-405). Moderator-EXCLUSIVE now
+  // (D-519): Staff no longer inherits it (the old isAtLeast made Staff >= Moderator).
+  104: <AppRole>{AppRole.moderator}, // Session Q&A desk
 };
 
 /// The five bottom-nav destinations, in reading order. They live inside a
@@ -255,6 +266,13 @@ const Map<int, AppRole> _roleGatedRoutes = <int, AppRole>{
 /// keeps the bottom bar fixed, swaps the body with **no page transition**, and
 /// preserves each tab's state — instead of pushing a fresh page each tap (D-422,
 /// the owner's "keep the button fixed, pages render inside" requirement).
+///
+/// D-519 — these five tabs stay **universal** for every signed-in role
+/// (including the focused Staff/Moderator): home is role-aware, sessions/map are
+/// public, my-area is universal-auth, and badge is universal-auth (so the tab
+/// never bounces). "Focused" trims the home body + the drawer/More entries for
+/// Staff/Moderator, **not** the bottom bar — a deliberate choice so the bar is
+/// never per-role and a tab can never dead-bounce.
 const List<String> _tabRouteNames = <String>[
   RouteNames.home,
   RouteNames.sessions,
@@ -628,14 +646,43 @@ int? routeNumberForPath(String? fullPath) {
   return null;
 }
 
-/// Whether the matched route pattern needs a signed-in user (the auth gate).
-bool routePathRequiresAuth(String? fullPath) =>
-    _authenticatedRoutes.contains(routeNumberForPath(fullPath));
+/// Whether the matched route pattern needs a signed-in user (the auth gate). A
+/// route is auth-gated if it is in [_authenticatedRoutes] (universal signed-in)
+/// OR in [_routeRoles] (role-restricted routes are signed-in by definition).
+bool routePathRequiresAuth(String? fullPath) {
+  final number = routeNumberForPath(fullPath);
+  return _authenticatedRoutes.contains(number) ||
+      _routeRoles.containsKey(number);
+}
 
-/// The minimum app privilege a route pattern requires (D-405), or null when the
-/// route has no role gate.
-AppRole? requiredRoleForPath(String? fullPath) =>
-    _roleGatedRoutes[routeNumberForPath(fullPath)];
+/// The set of [AppRole]s allowed on a route *pattern* (D-519), or null when the
+/// route has no role restriction (public or universal-signed-in).
+Set<AppRole>? allowedRolesForPath(String? fullPath) =>
+    _routeRoles[routeNumberForPath(fullPath)];
+
+/// The set of [AppRole]s allowed on a route by its **name** (D-519), or null
+/// when the route has no role restriction.
+Set<AppRole>? allowedRolesForRouteName(String name) {
+  for (final r in _routes) {
+    if (r.name == name) {
+      return _routeRoles[r.number];
+    }
+  }
+  return null;
+}
+
+/// Whether [role] may open/see the route [name] (D-519). A route with no role
+/// restriction returns true for everyone (including a null/guest role); a
+/// role-restricted route returns true only when [role] is in its allowed set.
+/// The nav surfaces (home tiles, side drawer) use this so a role sees only its
+/// own pages. (This is a role check only — auth/sign-in is handled separately.)
+bool routeAllowsRole(String name, AppRole? role) {
+  final allowed = allowedRolesForRouteName(name);
+  if (allowed == null) {
+    return true;
+  }
+  return role != null && allowed.contains(role);
+}
 
 /// The pure auth-gate redirect decision (testable in isolation, like
 /// [routePathRequiresAuth]). Returns the path to redirect to, or null to allow
@@ -667,13 +714,15 @@ String? redirectDecision({
   if (routePathRequiresAuth(fullPath) && !isSignedIn) {
     return '/sign-in';
   }
-  // The role gate (D-405): a signed-in user whose privilege is below the route's
-  // minimum is sent home. The server's per-session / GateOperator grant is the
-  // real authority; this just keeps the wrong role out of the screen.
-  final required = requiredRoleForPath(fullPath);
+  // The role gate (D-519): a signed-in user whose role is not in the route's
+  // allowed set is sent home (Home is role-aware, so a focused Staff/Moderator
+  // lands on their own home). The server's per-session / GateOperator /
+  // Visitors.RegisterOnsite grant is the real authority; this keeps the wrong
+  // role out of the screen and lets the nav show only the role's own pages.
+  final allowed = allowedRolesForPath(fullPath);
   if (isSignedIn &&
-      required != null &&
-      (appRole == null || !appRole.isAtLeast(required))) {
+      allowed != null &&
+      (appRole == null || !allowed.contains(appRole))) {
     return '/';
   }
   return null;

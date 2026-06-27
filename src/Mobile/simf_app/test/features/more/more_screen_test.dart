@@ -135,7 +135,9 @@ void main() {
   group('MoreScreen (Page 041 — frame 1129:17224)', () {
     testWidgets('renders the three grouped sections and their rows',
         (tester) async {
-      await _pump(tester, router: _router());
+      // Signed-in Visitor sees every row — including the attendee-only
+      // Presentations + Rate (D-519 role-filters those off the guest view).
+      await _pump(tester, router: _router(), signedIn: true);
       // Section headers.
       expect(find.text('Forum information'), findsOneWidget);
       expect(find.text('Settings'), findsOneWidget);
@@ -166,6 +168,13 @@ void main() {
       await _pump(tester, router: _router());
       expect(find.text('My area'), findsNothing);
       expect(find.text('Sign out'), findsNothing);
+      // D-519 — the attendee-only rows are role-filtered off the guest view
+      // (a guest cannot reach them; tapping would bounce to sign-in).
+      expect(find.text('Session presentations'), findsNothing);
+      expect(find.text('Rate the app'), findsNothing);
+      // The public rows remain.
+      expect(find.text('About the forum'), findsOneWidget);
+      expect(find.text('FAQ'), findsOneWidget);
     });
 
     testWidgets('signed-in shows the منطقتي profile card + sign-out',

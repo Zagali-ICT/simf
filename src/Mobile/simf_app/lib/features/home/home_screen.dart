@@ -86,15 +86,23 @@ class HomeScreen extends ConsumerWidget {
     final l10n = AppL10n.of(context);
     final auth = ref.watch(authControllerProvider);
     final user = auth is AuthStateSignedIn ? auth.session.user : null;
-    final isGuest = (user?.appRole ?? AppRole.guest) == AppRole.guest;
+    final role = user?.appRole ?? AppRole.guest;
     // A signed-in but unapproved account (pending / rejected) has no
     // permissions, so it sees the same guest layout (owner 2026-06-27, frame
     // 758:2910) — with an "awaiting approval" note instead of the sign-in CTA.
     final pendingApproval =
         user != null && user.registrationStatus != RegistrationStatus.approved;
 
-    if (isGuest || pendingApproval) {
+    if (role == AppRole.guest || pendingApproval) {
       return _GuestHome(l10n: l10n, pendingApproval: pendingApproval);
+    }
+    // Focused operational roles (D-519): each lands on a home that surfaces only
+    // its own pages, not the visitor experience.
+    if (role == AppRole.staff) {
+      return _StaffHome(l10n: l10n);
+    }
+    if (role == AppRole.moderator) {
+      return _ModeratorHome(l10n: l10n);
     }
     // Best-effort latest post for the أحدث منشوراتنا teaser — null while loading
     // / on error / when there are no posts, in which case the section is hidden.
@@ -119,6 +127,7 @@ class HomeScreen extends ConsumerWidget {
       ),
       latestPost: latestPost,
       baseUrl: baseUrl,
+      isExhibitor: role == AppRole.exhibitor,
     );
   }
 }
@@ -344,6 +353,86 @@ class _GuestBanner extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
+// Focused operational homes (D-519) — Staff + Moderator land here instead of the
+// attendee home; each surfaces only its own pages.
+// ---------------------------------------------------------------------------
+
+/// Staff (gate) home — the two gate operations: scan a badge + register a
+/// walk-in visitor. The attendee experience is intentionally absent.
+class _StaffHome extends StatelessWidget {
+  const _StaffHome({required this.l10n});
+
+  final AppL10n l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    return KsaPage(
+      tab: SimfTab.home,
+      title: l10n.homeTitle,
+      body: ListView(
+        padding: const EdgeInsets.all(SimfTokens.space4),
+        children: <Widget>[
+          KsaListRow(
+            title: l10n.gateScannerEntry,
+            badgeOutlined: true,
+            badge: const Icon(
+              Icons.qr_code_scanner,
+              size: 32,
+              color: SimfTokens.accent,
+            ),
+            onTap: () => context.pushNamed(RouteNames.gateScanner),
+          ),
+          const SizedBox(height: SimfTokens.space4),
+          KsaListRow(
+            title: l10n.staffRegisterVisitorEntry,
+            badgeOutlined: true,
+            badge: const Icon(
+              Icons.person_add_alt_1_outlined,
+              size: 32,
+              color: SimfTokens.accent,
+            ),
+            onTap: () => context.pushNamed(RouteNames.staffRegisterVisitor),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Moderator (محاور) home — a single entry into the sessions list, where the
+/// moderator opens their session and runs its Q&A desk (reached from the session
+/// detail; the server still enforces the per-session grant).
+class _ModeratorHome extends StatelessWidget {
+  const _ModeratorHome({required this.l10n});
+
+  final AppL10n l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    return KsaPage(
+      tab: SimfTab.home,
+      title: l10n.homeTitle,
+      body: ListView(
+        padding: const EdgeInsets.all(SimfTokens.space4),
+        children: <Widget>[
+          KsaListRow(
+            title: l10n.tileSessions,
+            subtitle: l10n.moderatorManageQuestions,
+            badgeOutlined: true,
+            badge: const Icon(
+              Icons.forum_outlined,
+              size: 32,
+              color: SimfTokens.accent,
+            ),
+            onTap: () => context.pushNamed(RouteNames.sessions),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Signed-in layout (frame 758:1134 — greeting home, exact parity)
 // ---------------------------------------------------------------------------
 
@@ -353,12 +442,17 @@ class _VisitorHome extends StatelessWidget {
     required this.name,
     required this.baseUrl,
     this.latestPost,
+    this.isExhibitor = false,
   });
 
   final AppL10n l10n;
   final String name;
   final String baseUrl;
   final NewsListItem? latestPost;
+
+  /// Exhibitor (العارض) — the attendee home plus the lead-capture tools section
+  /// (scan a visitor's QR + my visitors). D-519.
+  final bool isExhibitor;
 
   @override
   Widget build(BuildContext context) {
@@ -383,6 +477,29 @@ class _VisitorHome extends StatelessWidget {
             onTap: () => context.pushNamed(RouteNames.liveBroadcast),
           ),
           const SizedBox(height: SimfTokens.space6),
+          // Exhibitor (العارض) lead-capture tools — D-519. Shown only to the
+          // Exhibitor role, above the shared attendee content.
+          if (isExhibitor) ...<Widget>[
+            KsaSectionHeader(title: l10n.exhibitorToolsSection),
+            const SizedBox(height: SimfTokens.space4),
+            KsaTileRow(
+              children: <Widget>[
+                KsaNavTile(
+                  label: l10n.scanVisitorTitle,
+                  icon: Icons.qr_code_scanner,
+                  minHeight: 80,
+                  onTap: () => context.pushNamed(RouteNames.scanVisitor),
+                ),
+                KsaNavTile(
+                  label: l10n.myVisitorsTitle,
+                  icon: Icons.groups_outlined,
+                  minHeight: 80,
+                  onTap: () => context.pushNamed(RouteNames.myVisitors),
+                ),
+              ],
+            ),
+            const SizedBox(height: SimfTokens.space6),
+          ],
           // "عن الملتقى" section bar (758:1207) — opens About the forum.
           KsaLinkRow(
             title: l10n.homeAboutSection,

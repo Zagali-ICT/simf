@@ -219,6 +219,7 @@
   <data name="Admin.ProfileTypes.MobileAppRole.Visitor" xml:space="preserve"><value>زائر</value></data>
   <data name="Admin.ProfileTypes.MobileAppRole.Staff" xml:space="preserve"><value>موظف — تشغيل البوابات</value></data>
   <data name="Admin.ProfileTypes.MobileAppRole.Moderator" xml:space="preserve"><value>مشرف — صلاحية المحتوى والمستخدمين</value></data>
+  <data name="Admin.ProfileTypes.MobileAppRole.Exhibitor" xml:space="preserve"><value>عارض — التقاط الزوار (مسح + زواري)</value></data>
   <data name="Admin.ProfileTypes.Field.IsActive" xml:space="preserve"><value>مرئي في القوائم (نشط)</value></data>
   <data name="Admin.ProfileTypes.Field.NameInvalid" xml:space="preserve"><value>يجب أن يتراوح الاسم بين 1 و128 حرفًا.</value></data>
   <data name="Admin.ProfileTypes.Field.NameArabicInvalid" xml:space="preserve"><value>يجب أن يتراوح الاسم العربي بين 1 و128 حرفًا.</value></data>

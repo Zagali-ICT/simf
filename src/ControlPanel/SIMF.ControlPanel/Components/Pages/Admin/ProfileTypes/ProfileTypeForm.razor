@@ -116,9 +116,12 @@
 
     // D-161 — picker options. "Visitor" is omitted because the backend
     // rejects it (the Visitor app role is computed from UserType, not
-    // assignable per ProfileType row).
+    // assignable per ProfileType row). D-519 added "Exhibitor" (the
+    // العارض app role: Visitor + lead-capture tools); without it an admin
+    // could not assign the role AND editing the seeded Exhibitor row would
+    // silently downgrade its MobileAppRole.
     private static readonly string[] MobileAppRoleOptions =
-        new[] { "None", "Staff", "Moderator" };
+        new[] { "None", "Staff", "Moderator", "Exhibitor" };
 
     // D-186: the MobileAppRole picker is only meaningful on the
     // partner side (audience profile types resolve to MobileAppRole

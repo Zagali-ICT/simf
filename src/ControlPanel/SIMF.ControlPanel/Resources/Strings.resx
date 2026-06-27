@@ -222,6 +222,7 @@
   <data name="Admin.ProfileTypes.MobileAppRole.Visitor" xml:space="preserve"><value>Visitor</value></data>
   <data name="Admin.ProfileTypes.MobileAppRole.Staff" xml:space="preserve"><value>Staff — gate operations</value></data>
   <data name="Admin.ProfileTypes.MobileAppRole.Moderator" xml:space="preserve"><value>Moderator — content &amp; user authority</value></data>
+  <data name="Admin.ProfileTypes.MobileAppRole.Exhibitor" xml:space="preserve"><value>Exhibitor — lead capture (scan + My Visitors)</value></data>
   <data name="Admin.ProfileTypes.Field.IsActive" xml:space="preserve"><value>Visible in pickers (active)</value></data>
   <data name="Admin.ProfileTypes.Field.NameInvalid" xml:space="preserve"><value>Name must be 1–128 characters.</value></data>
   <data name="Admin.ProfileTypes.Field.NameArabicInvalid" xml:space="preserve"><value>Arabic name must be 1–128 characters.</value></data>

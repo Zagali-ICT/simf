@@ -188,6 +188,52 @@ public sealed class MobileAppRoleTests : IClassFixture<SimfApiFactory>
         Assert.Equal(MobileAppRole.Staff, resolved);
     }
 
+    // D-519 — an Approved user on a partner (IsVisitor=false) profile type whose
+    // MobileAppRole is Exhibitor resolves to the new Exhibitor app role (not the
+    // None→Visitor floor). Proves the resolver returns the additive value.
+    [Fact]
+    public async Task Approved_with_partner_Exhibitor_profile_resolves_to_Exhibitor()
+    {
+        var userId = await SeedVisitorWithPartnerProfileAsync(
+            MobileAppRole.Exhibitor, AccountState.Approved);
+
+        using var scope = _factory.Services.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<IUserProfileService>();
+        var resolved = await service.ResolveMobileAppRoleAsync(userId);
+
+        Assert.Equal(MobileAppRole.Exhibitor, resolved);
+    }
+
+    // D-519 — the CP can now assign the Exhibitor role: the admin ProfileType
+    // create accepts "Exhibitor" (ParseMobileAppRole no longer rejects it) and it
+    // round-trips, so editing the seeded Exhibitor row no longer downgrades it.
+    [Fact]
+    public async Task ProfileType_create_with_Exhibitor_MobileAppRole_round_trips()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var create = await PostAuthAsync(
+            "/api/v1/admin/profile-types",
+            new AdminCreateProfileTypeRequest
+            {
+                UserType = "Visitor",
+                IsVisitor = false,
+                Name = $"Exhibitor {Guid.NewGuid():N}",
+                NameArabic = "عارض",
+                PageColor = "#0891B2",
+                MobileAppRole = "Exhibitor",
+            },
+            token);
+        var created = (await create.Content
+            .ReadFromJsonAsync<ApiResult<AdminProfileTypeSummary>>())!.Data!;
+        Assert.Equal("Exhibitor", created.MobileAppRole);
+
+        var get = await GetAuthAsync(
+            $"/api/v1/admin/profile-types/{created.Id}", token);
+        var got = (await get.Content
+            .ReadFromJsonAsync<ApiResult<AdminProfileTypeSummary>>())!.Data!;
+        Assert.Equal("Exhibitor", got.MobileAppRole);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     // Seeds a Visitor user with a partner (IsVisitor=false) profile type
