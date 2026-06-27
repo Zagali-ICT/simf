@@ -7,7 +7,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/widgets/ksa_shell.dart';
 import 'package:simf_app/app/widgets/simf_svg_icon.dart';
-import 'package:simf_app/core/site_settings/site_settings.dart';
+import 'package:simf_app/core/organization_profile/organization_profile.dart';
 import 'package:simf_app/features/home/home_screen.dart';
 import 'package:simf_app/features/myarea/data/myarea_models.dart';
 import 'package:simf_app/features/news/data/news_models.dart';
@@ -91,6 +91,13 @@ class _UnapprovedController extends AuthController {
           ),
         ),
       );
+}
+
+/// A fixed (empty) org profile so the social row never fires a real fetch /
+/// touches prefs in tests.
+class _FakeOrgProfileController extends OrgProfileController {
+  @override
+  OrgProfile? build() => null;
 }
 
 class _FakeNotificationsRepository implements NotificationsRepository {
@@ -197,14 +204,9 @@ Future<void> _pump(
             .overrideWithValue(_FakeNotificationsRepository(unread)),
         newsListProvider.overrideWith((ref) async => news),
         homeProfileProvider.overrideWith((ref) async => profile),
-        // D-461 — fixed site-settings so the social row never fires a real fetch.
-        siteSettingsProvider.overrideWith(
-          (ref) => const SiteSettings(
-            registrationMessageAr: '',
-            registrationMessageEn: '',
-            social: SiteSocialLinks(),
-          ),
-        ),
+        // The social row reads the CP org profile (warmed at splash) — override
+        // it with an empty profile so no real fetch / prefs access happens.
+        orgProfileProvider.overrideWith(_FakeOrgProfileController.new),
       ],
       child: MaterialApp.router(
         routerConfig: router,

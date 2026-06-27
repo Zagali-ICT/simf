@@ -14,7 +14,7 @@ import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import '../../core/env/build_config.dart';
-import '../../core/site_settings/site_settings.dart';
+import '../../core/organization_profile/organization_profile.dart';
 import '../myarea/data/myarea_models.dart';
 import '../myarea/data/myarea_repository.dart';
 import '../news/data/news_models.dart';
@@ -957,7 +957,10 @@ class _SocialRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final social = ref.watch(siteSettingsProvider).valueOrNull?.social;
+    // Social links come from the CP-editable Organization profile, downloaded
+    // at app start (warmed at the splash) and shared with the About / Contact
+    // screens (owner 2026-06-27). A link stays inert until its URL is set.
+    final social = ref.watch(orgProfileProvider)?.social;
     // (asset, url, accessible label) — the exact Figma social glyphs (beige
     // monochrome SVGs, node 758:1186), rendered through SimfSvgIcon like the
     // About-section icons. The label names the icon-only button for screen
