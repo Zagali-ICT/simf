@@ -716,43 +716,28 @@ class _DiscoverHeroBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-      child: Stack(
-        children: <Widget>[
-          Positioned.fill(
-            child: Image.asset(
+    // Frame 758:1203 — a fixed 96-high banner whose photo fills the FULL width
+    // and height. The outer SizedBox gives the Stack a definite size and
+    // StackFit.expand forces every non-positioned child to that size, so the
+    // BoxFit.cover photo always fills edge-to-edge (no reliance on a single
+    // sizing child). The scrim is the design's flat 70% black (rgba(0,0,0,0.7)).
+    return SizedBox(
+      height: 96,
+      width: double.infinity,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        child: Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            Image.asset(
               'assets/images/discover_hero.jpg',
               fit: BoxFit.cover,
             ),
-          ),
-          // A navy gradient over the photo (frame 758:1203) — darker at the
-          // text side (right = the RTL start) so "اكتشف" + the sub-line stay
-          // legible, fading lighter toward the left so the event photo shows
-          // through (the flat 70% black hid it).
-          const Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.centerRight,
-                  end: Alignment.centerLeft,
-                  colors: <Color>[
-                    Color(0xE601132D),
-                    Color(0x8001132D),
-                    Color(0x3301132D),
-                  ],
-                  stops: <double>[0.0, 0.5, 1.0],
-                ),
-              ),
-            ),
-          ),
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onTap,
-              child: SizedBox(
-                height: 96,
-                width: double.infinity,
+            const ColoredBox(color: Color(0xB3000000)),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onTap,
                 child: Padding(
                   padding: const EdgeInsets.all(SimfTokens.space2),
                   child: Column(
@@ -781,8 +766,8 @@ class _DiscoverHeroBanner extends StatelessWidget {
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
