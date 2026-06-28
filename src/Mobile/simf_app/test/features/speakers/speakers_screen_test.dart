@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 import 'package:simf_app/features/speakers/data/speaker_models.dart';
 import 'package:simf_app/features/speakers/data/speakers_repository.dart';
@@ -18,7 +19,7 @@ const _speakers = <SpeakerSummary>[
     nameArabic: 'القبطان ريف',
     displayOrder: 0,
     rank: 'Sea captain',
-    countryId: 682, // Saudi Arabia → 🇸🇦 flag badge on the avatar corner
+    countryId: 682, // Saudi Arabia → 🇸🇦 flag inline beside the name (908:1744)
     countryNameEn: 'RSNF',
   ),
   SpeakerSummary(
@@ -133,11 +134,11 @@ void main() {
       expect(find.text('Capt. Reef'), findsOneWidget);
       expect(find.text('Dr Wave'), findsOneWidget);
       expect(find.text('Brig. Anchor'), findsOneWidget);
-      // The sub-line is now the rank only — the country shows as a flag badge on
-      // the avatar's top-left corner (D-453 follow-up), not as text.
+      // The sub-line is now the rank only — the country shows as a flag glyph
+      // INLINE beside the name (Figma 908:1744, node 1318:3392), not as text.
       expect(find.text('Sea captain'), findsOneWidget);
       expect(find.text('Sea captain · RSNF'), findsNothing);
-      // The country flag badge (sp1 = Saudi Arabia, countryId 682 → 🇸🇦).
+      // The inline country flag (sp1 = Saudi Arabia, countryId 682 → 🇸🇦).
       expect(find.text('\u{1F1F8}\u{1F1E6}'), findsOneWidget);
     });
 
@@ -180,16 +181,16 @@ void main() {
       // comparison is unambiguous (not a header/nav SVG).
       final nameDx = tester.getCenter(find.text('القبطان ريف')).dx;
       final anchorDx = tester.getCenter(find.byIcon(Icons.anchor).first).dx;
-      // The caret SVG that shares the first card's row (same dy as the name).
+      // The card caret is now the iconamoon thin chevron (ic_back.svg) in GOLD;
+      // filter on the accent colour so the page header's back button (also
+      // ic_back, but white) is excluded — leaving the first card's row caret.
       final nameDy = tester.getCenter(find.text('القبطان ريف')).dy;
-      final caretDx = tester
-          .getCenter(find.byWidgetPredicate((w) =>
-              w is SimfSvgIcon && w.asset.contains('caret')).first)
-          .dx;
-      final caretDy = tester
-          .getCenter(find.byWidgetPredicate((w) =>
-              w is SimfSvgIcon && w.asset.contains('caret')).first)
-          .dy;
+      final caretFinder = find.byWidgetPredicate((w) =>
+          w is SimfSvgIcon &&
+          w.asset.contains('back') &&
+          w.color == SimfTokens.accent);
+      final caretDx = tester.getCenter(caretFinder.first).dx;
+      final caretDy = tester.getCenter(caretFinder.first).dy;
       // Figma (Arabic/RTL frame 908:1744): the gold anchor tile is the right-
       // most element (right of the name), the caret is the left-most.
       expect(anchorDx, greaterThan(nameDx),

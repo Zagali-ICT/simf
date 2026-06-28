@@ -21,14 +21,15 @@ import 'golden_fonts.dart';
 ///   flutter test --update-goldens test/golden/booths_golden_test.dart
 ///
 /// Frame parity expected: centred header (المعرض), a bordered search field, then
-/// one exhibitor card per booth — company header (gold short name + beige full
-/// name + square logo tile with the corner flag), a gold code pill (A-12) beside
-/// the deep-navy hall box, and a full-width gold guide-me CTA; RTL throughout.
-/// The logo tile falls back to initials here (no network in tests); in
-/// production it hosts the CP-uploaded CompanyLogo asset (D-357).
+/// one exhibitor card per booth — company header (the 48×48 logo tile at the
+/// inline-start/right, the gold short name over the beige full name in the
+/// middle, the country **flag tile** at the inline-end/left), a gold code pill
+/// (A-12) beside the deep-navy hall box, and a full-width gold guide-me CTA; RTL
+/// throughout. The logo tile falls back to the short name here (no network in
+/// tests); in production it hosts the CP-uploaded CompanyLogo asset (D-357).
 
-// Three identical SAMI booths matching the frame. countryId drives the corner
-// flag on the logo; countryName is left null so no extra country line renders
+// Three identical SAMI booths matching the frame. countryId drives the inline-end
+// flag tile; countryName is left null so no extra country text line renders
 // (the frame shows only the gold short name over the full Arabic name).
 const _booths = <BoothSummary>[
   BoothSummary(

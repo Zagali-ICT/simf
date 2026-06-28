@@ -927,7 +927,12 @@ class _SpeakerCard extends StatelessWidget {
                         const SizedBox(width: SimfTokens.space2),
                         Text(
                           flag,
-                          style: const TextStyle(fontSize: SimfTokens.textMd),
+                          textDirection: TextDirection.ltr,
+                          // Frame 1060:12898 — the inline flag glyph is 12px.
+                          style: const TextStyle(
+                            fontSize: SimfTokens.textSm,
+                            height: 1,
+                          ),
                         ),
                       ],
                     ],

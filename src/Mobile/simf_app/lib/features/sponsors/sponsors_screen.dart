@@ -285,7 +285,9 @@ class _SponsorCard extends StatelessWidget {
               ),
               const SizedBox(width: SimfTokens.space2),
               SimfSvgIcon(
-                'assets/icons/ic_caret_left.svg',
+                // Frame 925:2990 — the iconamoon thin chevron (navy on the gold
+                // hero card, gold on a premium card), NOT a filled triangle.
+                'assets/icons/ic_back.svg',
                 size: 20,
                 color: hero ? SimfTokens.navy : SimfTokens.accent,
               ),

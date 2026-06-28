@@ -232,34 +232,32 @@ void main() {
       expect(_networkImageUrls(tester), isEmpty);
     });
 
-    testWidgets('PAR-B3 — RTL: the company logo tile is at the inline end '
-        '(left) of the company name', (tester) async {
+    testWidgets('PAR-B3 — RTL: the company logo tile is at the inline start '
+        '(right) of the company name', (tester) async {
       await _pump(
         tester,
         repo: _FakeRepo(booths: const <BoothSummary>[_samiWithLogo]),
         locale: const Locale('ar'),
       );
-      // Frame 922:2556 — the logo tile (a network Image) sits at the inline end
-      // (physical left), to the left of the company name 'سامي'. The short name
-      // renders twice (badge box + gold name); compare against the gold name.
+      // Frame 922:2560 — the logo tile (a network Image) sits at the inline
+      // start (physical right), to the right of the company name 'سامي'.
       final logoDx = tester.getCenter(find.byType(Image)).dx;
       final nameDx = tester.getCenter(find.text('سامي').last).dx;
-      expect(logoDx, lessThan(nameDx));
+      expect(logoDx, greaterThan(nameDx));
     });
 
-    testWidgets('booth country + flag are NOT shown — Figma 922:2458 has none',
-        (tester) async {
+    testWidgets('booth country FLAG is shown (Figma 1062:12911 flag tile) — '
+        'but no country text line', (tester) async {
       await _pump(
         tester,
         repo: _FakeRepo(booths: const <BoothSummary>[_samiWithCountry]),
       );
-      // Per the Figma booths frame there is no flag/country node, so the card
-      // shows neither the country name nor the flag — even for a booth that
-      // carries a country (the prior "#9" country line was removed to match
-      // Figma exactly).
+      // Figma 922:2556 shows the country as a FLAG tile at the inline-end (left)
+      // of the header — NOT a text line. The flag glyph renders; the country
+      // name text does not.
+      expect(find.text('\u{1F1F8}\u{1F1E6}'), findsOneWidget);
       expect(find.text('Saudi Arabia'), findsNothing);
       expect(find.text('السعودية'), findsNothing);
-      expect(find.text('\u{1F1F8}\u{1F1E6}'), findsNothing);
     });
 
     testWidgets('#9 — tapping أرشدني opens the venue map for that booth',
