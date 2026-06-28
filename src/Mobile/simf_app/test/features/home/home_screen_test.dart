@@ -592,8 +592,8 @@ void main() {
       expect(two, hasLength(2));
     });
 
-    testWidgets('the ابرز الاحداث card renders the latest post '
-        '(frame 758:1240)', (tester) async {
+    testWidgets('the ابرز الاحداث carousel renders the post title '
+        '(frame 758:1239)', (tester) async {
       await _pump(
         tester,
         controller: _SignedInController(),
@@ -606,14 +606,13 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       expect(find.text('Highlights'), findsOneWidget);
-      // The frame's lead paragraph is the excerpt (not the title); the bold line
-      // is the source name. Engagement counts are NOT shown (Phase 2 data).
-      expect(find.text('The opening session begins now.'), findsOneWidget);
-      expect(find.text('The Maritime Forum'), findsOneWidget);
-      // The card is tappable (→ the article screen, same push as the news list).
+      // The carousel slide shows the post title (image + text only — the old
+      // single card's source chip / excerpt / engagement counts are gone).
+      expect(find.text('Forum opens 2026'), findsOneWidget);
+      // The slide is tappable (→ the article screen, same push as the list).
       expect(
         find.ancestor(
-          of: find.text('The opening session begins now.'),
+          of: find.text('Forum opens 2026'),
           matching: find.byType(InkWell),
         ),
         findsWidgets,

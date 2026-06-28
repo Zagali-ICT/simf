@@ -104,11 +104,14 @@ class HomeScreen extends ConsumerWidget {
     if (role == AppRole.moderator) {
       return _ModeratorHome(l10n: l10n);
     }
-    // Best-effort latest post for the أحدث منشوراتنا teaser — null while loading
-    // / on error / when there are no posts, in which case the section is hidden.
-    final latestPost = ref.watch(newsListProvider).maybeWhen(
-          data: (items) => items.isEmpty ? null : items.first,
-          orElse: () => null,
+    // ابرز الاحداث (758:1239) — the highlights carousel slides: the most recent
+    // news items (image + title), shown as an animated carousel. Empty while
+    // loading / on error / when there are no posts (the section then hides).
+    // News is already CP-managed + persisted (/admin/news), so the carousel
+    // needs no new table or API — it just renders the existing list.
+    final highlights = ref.watch(newsListProvider).maybeWhen(
+          data: (items) => items.take(6).toList(),
+          orElse: () => const <NewsListItem>[],
         );
     // The greeting name + avatar come from the App profile (frame shows the
     // person's name, not the email). Best-effort: null until it loads.
@@ -125,7 +128,7 @@ class HomeScreen extends ConsumerWidget {
         profile?.identity.localizedName(l10n.isArabic),
         user?.displayName,
       ),
-      latestPost: latestPost,
+      highlights: highlights,
       baseUrl: baseUrl,
       isExhibitor: role == AppRole.exhibitor,
     );
@@ -444,14 +447,14 @@ class _VisitorHome extends StatelessWidget {
     required this.l10n,
     required this.name,
     required this.baseUrl,
-    this.latestPost,
+    this.highlights = const <NewsListItem>[],
     this.isExhibitor = false,
   });
 
   final AppL10n l10n;
   final String name;
   final String baseUrl;
-  final NewsListItem? latestPost;
+  final List<NewsListItem> highlights;
 
   /// Exhibitor (العارض) — the attendee home plus the lead-capture tools section
   /// (scan a visitor's QR + my visitors). D-519.
@@ -622,19 +625,19 @@ class _VisitorHome extends StatelessWidget {
             title: l10n.tileNews,
             onTap: () => context.pushNamed(RouteNames.news),
           ),
-          // أحدث منشوراتنا (frame node 758:1238) — hidden until a post exists.
-          if (latestPost != null) ...<Widget>[
+          // ابرز الاحداث (frame node 758:1239) — the highlights carousel
+          // (image + title slides, auto-advancing); hidden until a post exists.
+          if (highlights.isNotEmpty) ...<Widget>[
             const SizedBox(height: SimfTokens.space6),
-            // Frame node 758:1239 — the section heading is "ابرز الاحداث".
             KsaSectionHeader(title: l10n.featuredEventsSection),
             const SizedBox(height: SimfTokens.space4),
-            _LatestPostCard(
+            _HighlightsCarousel(
               l10n: l10n,
-              post: latestPost!,
+              items: highlights,
               baseUrl: baseUrl,
-              onTap: () => Navigator.of(context).push(
+              onTap: (post) => Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (_) => NewsArticleScreen(newsId: latestPost!.id),
+                  builder: (_) => NewsArticleScreen(newsId: post.id),
                 ),
               ),
             ),
@@ -876,177 +879,215 @@ class _DiscoverHeroBanner extends StatelessWidget {
   }
 }
 
-/// The أحدث منشوراتنا teaser (frame node 758:1240): the source row (the gold
-/// SIMF chip + the source name at the inline end, the @handle + relative time at
-/// the inline start), the lead paragraph, and the post image. The image rides
-/// the article's `NewsImage` asset via the D-357 anonymous route (navy fallback
-/// when none). The frame's engagement counts (758:1252) are admin-entered data
-/// deferred to Phase 2 — not faked here.
-class _LatestPostCard extends StatelessWidget {
-  const _LatestPostCard({
+/// ابرز الاحداث — the highlights carousel (frame node 758:1239): an
+/// auto-advancing, swipeable PageView of image+title slides drawn from the most
+/// recent news items (CP-managed via /admin/news). A row of dots tracks the
+/// position. Owner spec (2026-06-28): "multiple slides, image and text only,
+/// animated, entered via the Control Panel" — the old single image becomes a
+/// gallery; news already backs it, so no new table or API is needed.
+class _HighlightsCarousel extends StatefulWidget {
+  const _HighlightsCarousel({
     required this.l10n,
-    required this.post,
+    required this.items,
     required this.baseUrl,
     required this.onTap,
   });
 
   final AppL10n l10n;
-  final NewsListItem post;
+  final List<NewsListItem> items;
   final String baseUrl;
+  final void Function(NewsListItem) onTap;
+
+  @override
+  State<_HighlightsCarousel> createState() => _HighlightsCarouselState();
+}
+
+class _HighlightsCarouselState extends State<_HighlightsCarousel> {
+  static const double _slideHeight = 170;
+  static const Duration _interval = Duration(seconds: 4);
+
+  late final PageController _controller;
+  Timer? _timer;
+  int _index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = PageController();
+    _startAutoAdvance();
+  }
+
+  // Auto-advance to the next slide every [_interval], wrapping at the end. Only
+  // runs when there is more than one slide.
+  void _startAutoAdvance() {
+    if (widget.items.length <= 1) {
+      return;
+    }
+    _timer = Timer.periodic(_interval, (_) {
+      if (!mounted || !_controller.hasClients) {
+        return;
+      }
+      final next = (_index + 1) % widget.items.length;
+      _controller.animateToPage(
+        next,
+        duration: const Duration(milliseconds: 450),
+        curve: Curves.easeInOut,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: <Widget>[
+        SizedBox(
+          height: _slideHeight,
+          child: PageView.builder(
+            controller: _controller,
+            onPageChanged: (i) => setState(() => _index = i),
+            itemCount: widget.items.length,
+            itemBuilder: (context, i) {
+              final post = widget.items[i];
+              return _HighlightSlide(
+                title: post.localizedTitle(widget.l10n.isArabic),
+                imageUrl:
+                    '${widget.baseUrl}/app/assets/NewsImage/${post.id}/image',
+                onTap: () => widget.onTap(post),
+              );
+            },
+          ),
+        ),
+        if (widget.items.length > 1) ...<Widget>[
+          const SizedBox(height: SimfTokens.space3),
+          _CarouselDots(count: widget.items.length, index: _index),
+        ],
+      ],
+    );
+  }
+}
+
+/// One carousel slide (758:1239): the news image filling a rounded card with a
+/// bottom scrim and the title overlaid — image + text only. Tapping opens the
+/// article. The image rides the D-357 anonymous `NewsImage` route; a spinner
+/// shows while it loads and a navy image-glyph box is the no-image fall-back.
+class _HighlightSlide extends StatelessWidget {
+  const _HighlightSlide({
+    required this.title,
+    required this.imageUrl,
+    required this.onTap,
+  });
+
+  final String title;
+  final String imageUrl;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final isArabic = l10n.isArabic;
-    // The frame shows one lead paragraph (the bold line is the source name, not
-    // the article title); prefer the excerpt, fall back to the title.
-    final body =
-        post.localizedExcerpt(isArabic) ?? post.localizedTitle(isArabic);
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(SimfTokens.radius),
-      child: Container(
-        // Frame 758:1240 — px16 / py8, borderless navy card.
-        padding: const EdgeInsets.symmetric(
-          horizontal: SimfTokens.space4,
-          vertical: SimfTokens.space2,
-        ),
-        decoration: BoxDecoration(
-          color: SimfTokens.navyDeep,
+    return Padding(
+      // A small inset so the neighbouring slides peek at the edges.
+      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space1),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(SimfTokens.radius),
+        child: ClipRRect(
           borderRadius: BorderRadius.circular(SimfTokens.radius),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            const SizedBox(height: SimfTokens.space2),
-            // Source row (758:1243): the gold chip + source name at the inline
-            // end (right under RTL); the @handle + relative time at the start.
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    // The round gold chip with white "SIMF" (758:1247).
-                    Container(
-                      width: 44,
-                      height: 44,
-                      alignment: Alignment.center,
-                      decoration: const BoxDecoration(
-                        color: SimfTokens.accent,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Text(
-                        'SIMF',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: SimfTokens.textMd,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: SimfTokens.space2),
-                    // Source name 14px Bold (758:1246).
-                    Text(
-                      l10n.postSourceName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: SimfTokens.textMd,
-                      ),
-                    ),
-                  ],
-                ),
-                // @handle · relative time (758:1244) — beige 12px.
-                Flexible(
-                  child: Text(
-                    '${l10n.postSourceHandle} · '
-                    '${homePostTime(l10n, post.publishedAt, DateTime.now().toUtc())}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+          child: Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              ColoredBox(
+                color: SimfTokens.navy,
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  gaplessPlayback: true,
+                  loadingBuilder: (context, child, progress) =>
+                      progress == null
+                          ? child
+                          : const Center(
+                              child: SizedBox(
+                                width: 18,
+                                height: 18,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            ),
+                  errorBuilder: (context, error, stackTrace) => const Center(
+                    child: Icon(
+                      Icons.image_outlined,
+                      size: 28,
                       color: SimfTokens.beigeBorder,
-                      fontSize: SimfTokens.textSm,
                     ),
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: SimfTokens.space4),
-            // Lead paragraph (758:1249) — beige 14px, up to 3 lines.
-            Text(
-              body,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: SimfTokens.beigeBorder,
-                fontSize: SimfTokens.textMd,
-                height: 1.5,
               ),
-            ),
-            const SizedBox(height: SimfTokens.space4),
-            // The post image (758:1250) — the NewsImage asset, navy fallback.
-            _PostImage(
-              imageUrl: '$baseUrl/app/assets/NewsImage/${post.id}/image',
-            ),
-            const SizedBox(height: SimfTokens.space2),
-          ],
+              // Bottom scrim so the white title reads over any image.
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.center,
+                    end: Alignment.bottomCenter,
+                    colors: <Color>[Colors.transparent, Color(0xCC01132D)],
+                  ),
+                ),
+              ),
+              Positioned(
+                left: SimfTokens.space4,
+                right: SimfTokens.space4,
+                bottom: SimfTokens.space3,
+                child: Text(
+                  title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: SimfTokens.textLg,
+                    height: 1.3,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// The latest-post image (frame node 758:1250): the article's `NewsImage` asset
-/// (public anonymous D-357 route) in a 120-high navy box with a faint white
-/// hairline and the frame's 4-radius corners. A spinner shows while it loads; a
-/// navy image-glyph box is the no-image / fetch-failure fall-back (prod has no
-/// uploaded news images yet, so the fall-back is the designed empty state).
-class _PostImage extends StatelessWidget {
-  const _PostImage({required this.imageUrl});
+/// The carousel position dots — the active one is a wider gold pill, the rest
+/// are faint beige.
+class _CarouselDots extends StatelessWidget {
+  const _CarouselDots({required this.count, required this.index});
 
-  final String imageUrl;
+  final int count;
+  final int index;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 120,
-      clipBehavior: Clip.antiAlias,
-      decoration: const BoxDecoration(
-        color: SimfTokens.navy,
-        borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radiusSmall)),
-      ),
-      foregroundDecoration: BoxDecoration(
-        border: Border.all(color: SimfTokens.line2),
-        borderRadius: const BorderRadius.all(
-          Radius.circular(SimfTokens.radiusSmall),
-        ),
-      ),
-      child: Image.network(
-        imageUrl,
-        fit: BoxFit.cover,
-        width: double.infinity,
-        gaplessPlayback: true,
-        loadingBuilder: (context, child, progress) {
-          if (progress == null) {
-            return child;
-          }
-          return const Center(
-            child: SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          );
-        },
-        errorBuilder: (context, error, stackTrace) => const Center(
-          child: Icon(
-            Icons.image_outlined,
-            size: 28,
-            color: SimfTokens.beigeBorder,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List<Widget>.generate(count, (i) {
+        final active = i == index;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          margin: const EdgeInsets.symmetric(horizontal: 3),
+          width: active ? 16 : 6,
+          height: 6,
+          decoration: BoxDecoration(
+            color: active
+                ? SimfTokens.accent
+                : SimfTokens.beigeBorder.withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(3),
           ),
-        ),
-      ),
+        );
+      }),
     );
   }
 }
