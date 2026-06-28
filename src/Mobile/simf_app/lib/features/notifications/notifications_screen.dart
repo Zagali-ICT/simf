@@ -9,8 +9,8 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/ksa_search_field.dart';
 import '../../app/widgets/ksa_shell.dart';
-import '../../app/widgets/simf_svg_icon.dart';
 import 'data/notification_models.dart';
 import 'data/notifications_repository.dart';
 
@@ -253,9 +253,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             SimfTokens.space4,
             SimfTokens.space2,
           ),
-          child: _SearchField(
+          child: KsaSearchField(
             hint: l10n.notificationsSearchHint,
             onChanged: (v) => setState(() => _query = v),
+            showTuningIcon: true,
           ),
         ),
         Padding(
@@ -339,55 +340,6 @@ class _PullableState extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-/// The navy rounded search field (frame node — magnifier at the inline end).
-class _SearchField extends StatelessWidget {
-  const _SearchField({required this.hint, required this.onChanged});
-
-  final String hint;
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      onChanged: onChanged,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: Colors.white, fontSize: SimfTokens.textSm),
-        // Frame 758:2491 — magnifier at the inline start (right), a tuning/
-        // filter glyph at the inline end (left).
-        prefixIcon: const SimfSvgIcon(
-          'assets/icons/ic_search.svg',
-          size: 18,
-          color: SimfTokens.beigeBorder,
-        ),
-        prefixIconConstraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-        suffixIcon: const SimfSvgIcon(
-          'assets/icons/ic_tuning.svg',
-          size: 18,
-          color: SimfTokens.beigeBorder,
-        ),
-        suffixIconConstraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-        filled: true,
-        fillColor: SimfTokens.navyDeep,
-        contentPadding: const EdgeInsets.symmetric(vertical: 4),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(SimfTokens.radius),
-          borderSide: const BorderSide(color: SimfTokens.beigeBorder, width: 0.5),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(SimfTokens.radius),
-          borderSide: const BorderSide(color: SimfTokens.beigeBorder, width: 0.5),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(SimfTokens.radius),
-          borderSide: const BorderSide(color: SimfTokens.accent, width: 1),
-        ),
-      ),
     );
   }
 }
