@@ -65,6 +65,7 @@ diffed against the frame. Regenerate with
 | Speakers | `test/golden/goldens/speakers_908-1744.png` | `908-1744` | initials avatars (no network needed) |
 | Sponsors | `test/golden/goldens/sponsors_922-2824.png` | `922-2824` | logo badges fall back to initials (real `SponsorLogo` loads over the network in production) |
 | Booths | `test/golden/goldens/booths_922-2458.png` | `922-2458` | logo tile = initials fallback (real `CompanyLogo` in prod); corner flag is a tofu box in goldens (colour-emoji font not loaded); hall box shows the single localized name per D-432 (frame's "· HALL A" bilingual label simplified) |
+| Notifications | `test/golden/goldens/notifications_758-2491.png` | `758-2491` | proves the D-531 **per-kind** category palette (gold ticket / green check + card / coral star + busy-mark) + unread dots + الكل·جلسات·VIP chips; the fake repo throws from `markAllRead` so the screen's open-time auto-mark-read doesn't strip the unread dots before the shot |
 
 Known golden limitations: `Image.network` always falls back (no HTTP in tests)
 and colour-emoji glyphs (flags) render as tofu — both are render-environment
