@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart' show DateFormat;
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
@@ -14,12 +13,6 @@ import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import 'data/session_models.dart';
 import 'data/sessions_repository.dart';
-
-// The time-chip's two lines, formatted once (hoisted off the build path).
-// Pinned to 'en' so the chip shows Western digits + Latin AM/PM in both locales
-// (frame 1064:13230 — "08:00 / PM", not Arabic-Indic digits or ص/م).
-final DateFormat _chipHourFormat = DateFormat('hh:mm', 'en');
-final DateFormat _chipPeriodFormat = DateFormat('a', 'en');
 
 /// Page 016 — برنامج الملتقى · Sessions (#16, `/sessions`), rebuilt to the LIVE
 /// KSA frame **883:2308** (D-452).
@@ -225,10 +218,9 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
               if (index > 0) const SizedBox(height: SimfTokens.space4),
               _SessionRow(
                 session: session,
-                index: index + 1,
                 isArabic: isArabic,
                 // The first session of the day is featured — expanded with the
-                // day banner image (frame 1064:13222 / 1064:13233).
+                // day banner image (frame 1310:3232).
                 featuredImageUrl: index == 0 ? dayImageUrl : null,
                 onTap: () => _openSession(session),
               ),
@@ -478,7 +470,9 @@ class _DayStrip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(SimfTokens.space2),
       decoration: const BoxDecoration(
-        color: SimfTokens.calendarBand,
+        // Frame 883:2327 — the day strip is a WHITE band (the old grey
+        // calendarBand was the superseded design).
+        color: SimfTokens.surface,
         borderRadius:
             BorderRadius.all(Radius.circular(SimfTokens.radiusSmall)),
       ),
@@ -575,19 +569,27 @@ class _DayCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // #4 — selected = black; a day with sessions ("active") = white; an empty
-    // in-between day = muted grey (transparent, so the band shows through).
+    // Frame 883:2327 — on the white band: the selected day is a navy pill with
+    // white text; a day with sessions shows navy text (no fill); an empty
+    // in-between day is muted grey (#C2C2C2). Weekend weekday labels (SAT/SUN)
+    // render red on non-selected days.
+    final bool isWeekend =
+        date.weekday == DateTime.saturday || date.weekday == DateTime.sunday;
     final Color fill;
-    final Color textColor;
+    final Color numberColor;
+    final Color weekdayColor;
     if (selected) {
-      fill = SimfTokens.navy; // near-black
-      textColor = Colors.white;
+      fill = SimfTokens.navy;
+      numberColor = Colors.white;
+      weekdayColor = Colors.white;
     } else if (hasSessions) {
-      fill = SimfTokens.surface; // white
-      textColor = SimfTokens.navy;
+      fill = Colors.transparent;
+      numberColor = SimfTokens.navy;
+      weekdayColor = isWeekend ? SimfTokens.danger : SimfTokens.navy;
     } else {
       fill = Colors.transparent;
-      textColor = SimfTokens.greyText;
+      numberColor = SimfTokens.dayInactive;
+      weekdayColor = isWeekend ? SimfTokens.danger : SimfTokens.dayInactive;
     }
     return InkWell(
       onTap: onTap,
@@ -604,7 +606,7 @@ class _DayCell extends StatelessWidget {
             Text(
               _weekdayEn(date),
               style: TextStyle(
-                color: textColor,
+                color: weekdayColor,
                 fontSize: SimfTokens.textXs,
                 fontWeight: FontWeight.w600,
               ),
@@ -613,7 +615,7 @@ class _DayCell extends StatelessWidget {
               date.day.toString(),
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: textColor,
+                color: numberColor,
                 fontSize: SimfTokens.textMd,
                 fontWeight: FontWeight.w700,
               ),
@@ -625,21 +627,22 @@ class _DayCell extends StatelessWidget {
   }
 }
 
-/// One agenda row (frame nodes 883:2364 collapsed / 1064:13222 featured): the
-/// numbered gold title + grey description with a two-line time chip and a gold
-/// chevron. The **featured** first row (when [featuredImageUrl] is set) also
-/// shows the day banner image between the title and the description.
+/// One المواعيد timeline row (frame 1310:3213 collapsed / 1310:3232 featured):
+/// a navy radius-8 card holding, inline-start→end, the content column (a 14px
+/// gold calendar icon + the gold right-aligned title, the day banner on the
+/// featured row, then the grey description) and a trailing vertical **time rail**
+/// (start time over a hairline connector over the end time). No leading number,
+/// no trailing chevron (the updated frame dropped both). The whole row taps
+/// through to the session detail.
 class _SessionRow extends StatelessWidget {
   const _SessionRow({
     required this.session,
-    required this.index,
     required this.isArabic,
     required this.onTap,
     this.featuredImageUrl,
   });
 
   final SessionListItem session;
-  final int index;
   final bool isArabic;
   final VoidCallback onTap;
   final String? featuredImageUrl;
@@ -647,152 +650,138 @@ class _SessionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final description = session.localizedDescription(isArabic);
-    final titleRow = Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: <Widget>[
-        _TimeChip(local: session.startLocal),
-        const SizedBox(width: SimfTokens.space4),
-        Expanded(
-          child: Text.rich(
-            TextSpan(
-              children: <InlineSpan>[
-                TextSpan(
-                  text: index.toString().padLeft(2, '0'),
-                  style: const TextStyle(
-                    fontSize: SimfTokens.textLg,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const TextSpan(text: ' '),
-                TextSpan(text: session.localizedTitle(isArabic)),
-              ],
-            ),
-            style: const TextStyle(
-              color: SimfTokens.accent,
-              fontSize: SimfTokens.textMd,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-        const SizedBox(width: SimfTokens.space2),
-        // Frame 883:2308 — gold iconamoon chevron, not a white Material one.
-        const SimfSvgIcon(
-          'assets/icons/ic_back.svg',
-          size: 20,
-          color: SimfTokens.accent,
-        ),
-      ],
-    );
-
     final descriptionText = description == null
         ? null
         : Text(
             description,
-            maxLines: featuredImageUrl != null ? 3 : 2,
+            textAlign: TextAlign.start,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               color: SimfTokens.beigeBorder,
               fontSize: SimfTokens.textSm,
-              height: 1.5,
+              height: 1.4,
             ),
           );
 
     return KsaCard(
       onTap: onTap,
+      // Frame 1310:3213 — radius 8, navy fill, no visible border.
+      radius: SimfTokens.radius,
+      borderWidth: 0,
       child: Padding(
         padding: const EdgeInsets.symmetric(
-          horizontal: SimfTokens.space2,
-          vertical: SimfTokens.space4,
+          horizontal: SimfTokens.space4,
+          vertical: SimfTokens.space3,
         ),
-        child: featuredImageUrl != null
-            // Featured: title row + the day banner image + description below.
-            ? Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  titleRow,
-                  const SizedBox(height: SimfTokens.space3),
-                  _DayBanner(imageUrl: featuredImageUrl),
-                  if (descriptionText != null) ...<Widget>[
-                    const SizedBox(height: SimfTokens.space3),
-                    descriptionText,
-                  ],
-                ],
-              )
-            // Collapsed: time chip + numbered title + description, chevron at end.
-            : Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: <Widget>[
-                  _TimeChip(local: session.startLocal),
-                  const SizedBox(width: SimfTokens.space4),
-                  Expanded(
-                    child: Column(
+        // IntrinsicHeight lets the trailing time rail's connector stretch to the
+        // full row height (title → description / banner).
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    // Title line: 14px gold calendar glyph at the inline-start
+                    // (right under RTL) + the gold right-aligned title.
+                    Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        Text.rich(
-                          TextSpan(
-                            children: <InlineSpan>[
-                              TextSpan(
-                                text: index.toString().padLeft(2, '0'),
-                                style: const TextStyle(
-                                  fontSize: SimfTokens.textLg,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const TextSpan(text: ' '),
-                              TextSpan(text: session.localizedTitle(isArabic)),
-                            ],
-                          ),
-                          style: const TextStyle(
+                        const Padding(
+                          padding: EdgeInsets.only(top: 1),
+                          child: Icon(
+                            Icons.calendar_today_outlined,
+                            size: 14,
                             color: SimfTokens.accent,
-                            fontSize: SimfTokens.textMd,
-                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                        if (descriptionText != null) ...<Widget>[
-                          const SizedBox(height: SimfTokens.space2),
-                          descriptionText,
-                        ],
+                        const SizedBox(width: SimfTokens.space2),
+                        Expanded(
+                          child: Text(
+                            session.localizedTitle(isArabic),
+                            textAlign: TextAlign.start,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: SimfTokens.accent,
+                              fontSize: SimfTokens.textMd,
+                              fontWeight: FontWeight.w500,
+                              height: 1.3,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
-                  ),
-                  const SizedBox(width: SimfTokens.space2),
-                  const SimfSvgIcon(
-                    'assets/icons/ic_back.svg',
-                    size: 20,
-                    color: SimfTokens.accent,
-                  ),
-                ],
+                    if (featuredImageUrl != null) ...<Widget>[
+                      const SizedBox(height: SimfTokens.space3),
+                      _DayBanner(imageUrl: featuredImageUrl),
+                    ],
+                    if (descriptionText != null) ...<Widget>[
+                      const SizedBox(height: SimfTokens.space2),
+                      descriptionText,
+                    ],
+                  ],
+                ),
               ),
+              const SizedBox(width: SimfTokens.space3),
+              _TimeRail(start: session.startLocal, end: session.endLocal),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
-/// The two-line bordered time chip (frame node 1064:13230): `08:00` over `PM`.
-class _TimeChip extends StatelessWidget {
-  const _TimeChip({required this.local});
+/// The trailing vertical time rail (frame 1310:3241): the start time at the top
+/// (beige SemiBold), a thin beige connector down the middle, and the end time at
+/// the bottom (white). Clock values stay LTR. 34px wide, full row height.
+class _TimeRail extends StatelessWidget {
+  const _TimeRail({required this.start, required this.end});
 
-  final DateTime local;
+  final DateTime start;
+  final DateTime end;
+
+  static String _hhmm(DateTime t) =>
+      '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
   @override
   Widget build(BuildContext context) {
-    return KsaCard(
-      child: SizedBox(
-        width: 52,
-        height: 48,
-        child: Center(
-          child: Text(
-            '${_chipHourFormat.format(local)}\n${_chipPeriodFormat.format(local)}',
-            textAlign: TextAlign.center,
+    return SizedBox(
+      width: 34,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: <Widget>[
+          Text(
+            _hhmm(start),
+            textDirection: TextDirection.ltr,
+            style: const TextStyle(
+              color: SimfTokens.beigeBorder,
+              fontSize: SimfTokens.textSm,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const Expanded(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: SimfTokens.space1),
+              child: SizedBox(
+                width: 1,
+                child: ColoredBox(color: SimfTokens.beigeBorder40),
+              ),
+            ),
+          ),
+          Text(
+            _hhmm(end),
             textDirection: TextDirection.ltr,
             style: const TextStyle(
               color: Colors.white,
               fontSize: SimfTokens.textSm,
-              fontWeight: FontWeight.w700,
-              height: 1.4,
+              fontWeight: FontWeight.w400,
             ),
           ),
-        ),
+        ],
       ),
     );
   }

@@ -538,7 +538,10 @@ class _VisitorHome extends StatelessWidget {
               KsaNavTile(
                 label: l10n.tileSessions,
                 iconAsset: _HomeIcons.aboutSessions,
-                onTap: () => context.pushNamed(RouteNames.sessions),
+                // Owner 2026-06-29: the home "جلسات" tile opens the session
+                // summaries list (ملخص الجلسات, Figma 1388:8392) — the agenda
+                // itself stays reachable from the bottom-nav الأجندة tab.
+                onTap: () => context.pushNamed(RouteNames.sessionSummaryList),
               ),
             ],
           ),

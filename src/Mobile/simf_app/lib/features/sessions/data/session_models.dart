@@ -209,6 +209,10 @@ class SessionListItem {
   /// The session's start in the device-local zone (the wire value is UTC).
   DateTime get startLocal => startUtc.toLocal();
 
+  /// The session's end in the device-local zone — drives the agenda time-rail's
+  /// bottom value (Figma 883:2308) and the summary card's duration (1072:13518).
+  DateTime get endLocal => endUtc.toLocal();
+
   String localizedTitle(bool isArabic) =>
       _pickRequired(titleArabic, title, isArabic);
 

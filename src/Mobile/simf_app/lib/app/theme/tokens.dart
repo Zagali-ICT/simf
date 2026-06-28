@@ -42,6 +42,7 @@ class SimfTokens {
   static const Color navyHeader = Color(0xFF071832); // darker header block behind the forum title (Figma 1467:12565 / 1461:12565)
   static const Color beigeBorder = Color(0xFFC2B8A2); // "Pragraph Color" — borders + on-navy paragraph text
   static const Color beigeFill10 = Color(0x1AC2B8A2); // beige 10% — tier-pill + link-row icon-box fill (Figma rgba(194,184,162,0.1))
+  static const Color beigeBorder40 = Color(0x66C2B8A2); // beige 40% — agenda timeline row divider (Figma 1310:3239 rgba(194,184,162,0.4))
   static const Color cardBeige = Color(0xFFF1ECE4); // light card surface
   static const Color goldSoft = Color(0xFFD0AC77); // secondary gold text/icons
   static const Color headlineInk = Color(0xFF111827); // headings on light surfaces
@@ -62,6 +63,12 @@ class SimfTokens {
   static const Color navInactive = Color(0xFF5E584B); // bottom-nav inactive icon (758:1476)
   static const Color chatBubbleText = Color(0xFFF0F4FF); // assistant chat-bubble text (1064:13278)
   static const Color captionText = Color(0xFFDDE4F0); // live AI-caption placeholder text (934:3613)
+  // Live-broadcast player band (Figma 934:3450): the LIVE pill is a brighter
+  // brick-red than the semantic [danger]; the language chip is a translucent
+  // dark glassy pill; the resting play button is a translucent-white circle.
+  static const Color liveRed = Color(0xFFC0392B); // LIVE badge fill (934:3609)
+  static const Color scrimBlack55 = Color(0x8C000000); // language chip fill rgba(0,0,0,0.55) (934:3604)
+  static const Color playScrim = Color(0x26FFFFFF); // play-circle fill rgba(255,255,255,0.15) (934:3595)
 
   // KSA main-shell disabled palette (W2 frames 512:1492 / 512:1780): the
   // "بطاقتي" locked card and the disabled theme tile render on these.
@@ -100,6 +107,7 @@ class SimfTokens {
 
   // Radii.
   static const double radiusSmall = 4;
+  static const double radius6 = 6; // LIVE badge (Figma 934:3609)
   static const double radius = 8;
   static const double radiusLarge = 12;
   static const double radiusLg = 16; // W2 cards / nav bar top corners
