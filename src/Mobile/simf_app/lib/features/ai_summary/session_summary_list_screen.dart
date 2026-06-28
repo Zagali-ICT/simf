@@ -150,10 +150,11 @@ class _SessionSummaryListScreenState
               ),
               child: Text(
                 l10n.eventDayLabel(dayIndex + 1),
+                // Frame 1388:8428 — day header is Inter Medium (w500), not w600.
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: SimfTokens.textLg,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
@@ -337,7 +338,10 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final time = TimeOfDay.fromDateTime(item.startLocal).format(context);
+    // Frame 1388:8439 — 24h "HH:mm" (e.g. 09:00), not the locale's 12h ص/م.
+    final start = item.startLocal;
+    final time = '${start.hour.toString().padLeft(2, '0')}:'
+        '${start.minute.toString().padLeft(2, '0')}';
     final speaker = _speakerText();
     final hall = item.localizedHall(isArabic);
     final category = item.localizedCategory(isArabic);

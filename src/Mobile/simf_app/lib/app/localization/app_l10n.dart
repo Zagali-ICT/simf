@@ -1565,7 +1565,7 @@ class AppL10n {
       _t('لا توجد جلسات محجوزة بعد.', 'No booked sessions yet.');
   String get sessionsNoMatch =>
       _t('لا توجد نتائج مطابقة.', 'No matching results.');
-  String get sessionRecordedBadge => _t('مسجل', 'Recorded');
+  String get sessionRecordedBadge => _t('مسجّل', 'Recorded');
   String get favouriteToggleError =>
       _t('تعذر تحديث المفضلة.', 'Could not update favourites.');
   String sessionDurationMinutes(int minutes) =>
