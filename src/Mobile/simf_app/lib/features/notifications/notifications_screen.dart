@@ -517,7 +517,7 @@ class _NotificationCard extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  _CategoryIcon(severity: item.severity),
+                  _CategoryIcon(kind: item.kind, severity: item.severity),
                   const SizedBox(width: SimfTokens.space3),
                   Expanded(
                     child: Column(
@@ -587,30 +587,22 @@ class _UnreadDot extends StatelessWidget {
   }
 }
 
-/// The solid colour-coded circular category mark — severity drives the colour
-/// (success=green, error=red, warning/info=gold) and the glyph.
+/// The solid colour-coded circular category mark. Per Figma 758:2491 the icon is
+/// styled **per notification kind** (a decorative colour + glyph), not per
+/// severity — a gold ticket for an approved account, a green check for a session
+/// reminder, a green card for a confirmed meeting, and a coral mark for a VIP
+/// invitation. Kinds the frame does not document are grouped by meaning
+/// (positive = green, alert/negative = coral, info/account = gold); any unknown /
+/// future kind falls back to its severity colour so the wire stays forward-safe.
 class _CategoryIcon extends StatelessWidget {
-  const _CategoryIcon({required this.severity});
+  const _CategoryIcon({required this.kind, required this.severity});
 
+  final String kind;
   final NotificationSeverity severity;
 
   @override
   Widget build(BuildContext context) {
-    final (color, icon) = switch (severity) {
-      NotificationSeverity.success => (
-          SimfTokens.success,
-          Icons.check_rounded,
-        ),
-      NotificationSeverity.error => (SimfTokens.danger, Icons.close_rounded),
-      NotificationSeverity.warning => (
-          SimfTokens.accent,
-          Icons.priority_high_rounded,
-        ),
-      NotificationSeverity.info => (
-          SimfTokens.accent,
-          Icons.mail_outline_rounded,
-        ),
-    };
+    final (color, icon) = _styleFor(kind, severity);
     return Container(
       width: 40,
       height: 40,
@@ -618,4 +610,78 @@ class _CategoryIcon extends StatelessWidget {
       child: Icon(icon, size: 20, color: Colors.white),
     );
   }
+
+  /// (colour, glyph) for a notification kind (`NotificationKind` enum names,
+  /// D-053). The four kinds the frame (758:2491) documents are matched exactly on
+  /// colour; their glyphs match too, except the VIP card — the mockup shows a ✕
+  /// (close-circle) on a *positive* VIP invitation, which reads as an error, so a
+  /// star is used instead (the one deliberate deviation; swap to
+  /// `Icons.cancel_rounded` to mirror the mockup literally).
+  static (Color, IconData) _styleFor(
+    String kind,
+    NotificationSeverity severity,
+  ) {
+    switch (kind) {
+      // ---- Figma 758:2491 documented kinds (exact colour) ----
+      case 'AccountApproved': // gold ticket — "your badge is ready"
+        return (SimfTokens.accent, Icons.confirmation_number_rounded);
+      case 'SessionReminder': // green check
+        return (SimfTokens.notifGreen, Icons.check_circle_rounded);
+      case 'MeetingScheduled': // green card
+        return (SimfTokens.notifGreen, Icons.credit_card_rounded);
+      case 'InvitationReceived': // coral — VIP special (star, see note)
+      case 'VipBroadcast':
+        return (SimfTokens.notifCoral, Icons.star_rounded);
+      // ---- positive / confirmations / completions (green) ----
+      case 'BookingConfirmed':
+        return (SimfTokens.notifGreen, Icons.event_available_rounded);
+      case 'AccountWelcome':
+        return (SimfTokens.notifGreen, Icons.celebration_rounded);
+      case 'AccountPasswordChanged':
+      case 'AccountPasswordResetCompleted':
+        return (SimfTokens.notifGreen, Icons.lock_reset_rounded);
+      // ---- alerts / rejections / cancellations (coral) ----
+      case 'BookingRejected':
+      case 'MeetingCancelled':
+        return (SimfTokens.notifCoral, Icons.event_busy_rounded);
+      case 'AccountRejected':
+        return (SimfTokens.notifCoral, Icons.cancel_rounded);
+      // ---- account / admin / credential info (gold) ----
+      case 'AccountProfileSubmitted':
+      case 'AdminPendingVisitor':
+      case 'AdminPendingApproval':
+        return (SimfTokens.accent, Icons.how_to_reg_rounded);
+      case 'AccountTwoFactorReset':
+        return (SimfTokens.accent, Icons.shield_rounded);
+      case 'CredentialEmailVerificationSent':
+      case 'CredentialEmailVerificationResent':
+        return (SimfTokens.accent, Icons.mark_email_unread_rounded);
+      case 'CredentialSignInOtpSent':
+        return (SimfTokens.accent, Icons.password_rounded);
+      case 'CredentialPasswordResetRequested':
+        return (SimfTokens.accent, Icons.lock_open_rounded);
+      case 'SessionRatingRequest':
+        return (SimfTokens.accent, Icons.star_outline_rounded);
+      default:
+        return _severityStyle(severity);
+    }
+  }
+
+  /// Fallback for an unknown / future kind — the original severity-driven style.
+  static (Color, IconData) _severityStyle(NotificationSeverity severity) =>
+      switch (severity) {
+        NotificationSeverity.success => (
+            SimfTokens.success,
+            Icons.check_rounded,
+          ),
+        NotificationSeverity.error => (SimfTokens.danger, Icons.close_rounded),
+        NotificationSeverity.warning => (
+            SimfTokens.accent,
+            Icons.priority_high_rounded,
+          ),
+        NotificationSeverity.info => (
+            SimfTokens.accent,
+            Icons.mail_outline_rounded,
+          ),
+      };
 }

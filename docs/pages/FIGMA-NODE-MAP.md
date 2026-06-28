@@ -20,7 +20,7 @@ Pixel-parity is proven per screen with a golden render at the Figma frame size
 | Programme schedule (برنامج الملتقى) | `lib/features/sessions/sessions_screen.dart` | `883-2308` | Search + day strip + "تفاصيل اليوم" banner + filter chips + المواعيد timeline; tap a session → `889-2450` |
 | Session detail (تفاصيل الجلسة) | `lib/features/sessions/session_detail_screen.dart` | `889-2450` | Index badge + date/time + summary/link btns + description + speakers + ask-host + my-seat + reminder/add-to-calendar |
 | My sessions / session presentations (عروض الجلسات) | `lib/features/myarea/my_sessions_screen.dart` | `1388-7621` | Day filter chips + cards with تحميل / قريبا; reached from My-Area dashboard session count |
-| Notifications (الاشعارات) | `lib/features/notifications/notifications_screen.dart` | `758-2491` | Search + chips (الكل/جلسات/VIP) + day groups (اليوم/أمس) + typed circular icons + unread dot |
+| Notifications (الاشعارات) | `lib/features/notifications/notifications_screen.dart` | `758-2491` | Search + chips (الكل/جلسات/VIP) + day groups (اليوم/أمس) + **per-kind** circular category icons (colour+glyph) + unread dot. Palette: green `#13C296`, coral `#FF6347`, gold `#C9A84C`. One deviation: the VIP card uses a **star** (mockup shows a ✕ close-circle on a positive VIP invite — reads as an error); unknown/future kinds fall back to the severity colour |
 | Delegations (الوفود) | `lib/features/delegations/delegations_screen.dart` | `1426-10771` | Country-level aggregate; data added via CP (mark Country invited + register delegates) |
 
 ## Standard top-nav spec (from 758-1469 / 922-2824)

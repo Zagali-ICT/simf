@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/features/notifications/data/notification_models.dart';
 import 'package:simf_app/features/notifications/data/notifications_repository.dart';
 import 'package:simf_app/features/notifications/notifications_screen.dart';
@@ -253,6 +254,102 @@ void main() {
       // Deep-linked into the reusable rate screen with the Session code + the
       // notification's session id.
       expect(find.text('RATE code=Session target=sess-7'), findsOneWidget);
+    });
+  });
+
+  // The category icon is styled per notification kind (Figma 758:2491), not per
+  // severity. The colour of the 40x40 circle behind a given glyph.
+  Color iconColor(WidgetTester tester, IconData glyph) {
+    final container = tester.widget<Container>(
+      find
+          .ancestor(of: find.byIcon(glyph), matching: find.byType(Container))
+          .first,
+    );
+    return (container.decoration! as BoxDecoration).color!;
+  }
+
+  group('category icon — per-kind colour + glyph (Figma 758:2491)', () {
+    testWidgets('AccountApproved → gold ticket', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeNotificationsRepository(
+          items: <NotificationItem>[_item(kind: 'AccountApproved')],
+        ),
+      );
+      expect(find.byIcon(Icons.confirmation_number_rounded), findsOneWidget);
+      expect(
+        iconColor(tester, Icons.confirmation_number_rounded),
+        SimfTokens.accent,
+      );
+    });
+
+    testWidgets('SessionReminder → green check', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeNotificationsRepository(
+          items: <NotificationItem>[_item(kind: 'SessionReminder')],
+        ),
+      );
+      expect(find.byIcon(Icons.check_circle_rounded), findsOneWidget);
+      expect(
+        iconColor(tester, Icons.check_circle_rounded),
+        SimfTokens.notifGreen,
+      );
+    });
+
+    testWidgets('MeetingScheduled → green card', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeNotificationsRepository(
+          items: <NotificationItem>[_item(kind: 'MeetingScheduled')],
+        ),
+      );
+      expect(find.byIcon(Icons.credit_card_rounded), findsOneWidget);
+      expect(
+        iconColor(tester, Icons.credit_card_rounded),
+        SimfTokens.notifGreen,
+      );
+    });
+
+    testWidgets('VIP invitation → coral (star, not the mockup ✕)',
+        (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeNotificationsRepository(
+          items: <NotificationItem>[_item(kind: 'VipBroadcast')],
+        ),
+      );
+      expect(find.byIcon(Icons.star_rounded), findsOneWidget);
+      expect(iconColor(tester, Icons.star_rounded), SimfTokens.notifCoral);
+    });
+
+    testWidgets('a rejection → coral alert glyph', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeNotificationsRepository(
+          items: <NotificationItem>[_item(kind: 'BookingRejected')],
+        ),
+      );
+      expect(find.byIcon(Icons.event_busy_rounded), findsOneWidget);
+      expect(
+        iconColor(tester, Icons.event_busy_rounded),
+        SimfTokens.notifCoral,
+      );
+    });
+
+    testWidgets('an unknown/future kind falls back to its severity style',
+        (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeNotificationsRepository(
+          items: <NotificationItem>[
+            _item(kind: 'SomeFutureKind', severity: NotificationSeverity.error),
+          ],
+        ),
+      );
+      // Severity fallback: error → danger + close glyph (not a per-kind colour).
+      expect(find.byIcon(Icons.close_rounded), findsOneWidget);
+      expect(iconColor(tester, Icons.close_rounded), SimfTokens.danger);
     });
   });
 }
