@@ -339,9 +339,22 @@ class _DownloadButton extends StatelessWidget {
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(SimfTokens.space2), // p-8
+          // Frame 1388:7657 — the download glyph leads at the inline-end (LEFT in
+          // RTL), with "تحميل" to its right. A plain RTL Row [icon, text] would
+          // put the icon on the right, so the label leads and the icon/spinner
+          // trails to land on the left, matching the frame.
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: SimfTokens.textSm,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: SimfTokens.space1),
               if (downloading)
                 const SizedBox(
                   width: 14,
@@ -357,15 +370,6 @@ class _DownloadButton extends StatelessWidget {
                   size: 14,
                   color: Colors.white,
                 ),
-              const SizedBox(width: SimfTokens.space1),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: SimfTokens.textSm,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
             ],
           ),
         ),

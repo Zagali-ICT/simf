@@ -558,9 +558,10 @@ class _VisitorHome extends StatelessWidget {
                 label: l10n.tileBilateralMeetings,
                 iconAsset: _HomeIcons.bilateral,
                 minHeight: 80,
-                // اللقاءات الثنائية is not designed yet (owner 2026-06-21) — the
-                // tile lands on the ComingSoon placeholder, not the gallery.
-                onTap: () => context.pushNamed(RouteNames.bilateralMeetings),
+                // اللقاءات الثنائية opens the الطلبات Requests feed (1408:9726) —
+                // where bilateral / meeting requests live (owner 2026-06-29: keep
+                // the tile label, link it to Requests instead of the ComingSoon).
+                onTap: () => context.pushNamed(RouteNames.requests),
               ),
               KsaNavTile(
                 label: l10n.tileArchive,
