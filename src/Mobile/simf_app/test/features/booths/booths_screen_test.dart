@@ -244,15 +244,19 @@ void main() {
       expect(logoDx, greaterThan(nameDx));
     });
 
-    testWidgets('#9 — shows the booth country (flag + name)', (tester) async {
+    testWidgets('booth country + flag are NOT shown — Figma 922:2458 has none',
+        (tester) async {
       await _pump(
         tester,
         repo: _FakeRepo(booths: const <BoothSummary>[_samiWithCountry]),
       );
-      // The country name renders on the card (under the company name).
-      expect(find.text('Saudi Arabia'), findsOneWidget);
-      // The SA flag emoji appears (the logo corner badge + the country line).
-      expect(find.text('\u{1F1F8}\u{1F1E6}'), findsWidgets);
+      // Per the Figma booths frame there is no flag/country node, so the card
+      // shows neither the country name nor the flag — even for a booth that
+      // carries a country (the prior "#9" country line was removed to match
+      // Figma exactly).
+      expect(find.text('Saudi Arabia'), findsNothing);
+      expect(find.text('السعودية'), findsNothing);
+      expect(find.text('\u{1F1F8}\u{1F1E6}'), findsNothing);
     });
 
     testWidgets('#9 — tapping أرشدني opens the venue map for that booth',

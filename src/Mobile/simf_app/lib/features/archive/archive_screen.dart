@@ -4,7 +4,6 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/country_flag_badge.dart';
 import '../../app/widgets/ksa_shell.dart';
 import 'data/archive_models.dart';
 
@@ -368,7 +367,6 @@ class _PastSpeakersRow extends StatelessWidget {
           _PastSpeakerCard(
             name: s.localized(isArabic),
             photoUrl: s.photoRelativePath,
-            countryId: s.countryId,
           ),
         if (overflow > 0)
           _PastSpeakerOverflow(count: overflow, label: l10n.archiveOthersLabel),
@@ -381,11 +379,10 @@ class _PastSpeakersRow extends StatelessWidget {
 /// — the real avatar when [photoUrl] is an absolute http(s) url, else the gold
 /// initials — over a centred white 12px SemiBold name.
 class _PastSpeakerCard extends StatelessWidget {
-  const _PastSpeakerCard({required this.name, this.photoUrl, this.countryId});
+  const _PastSpeakerCard({required this.name, this.photoUrl});
 
   final String name;
   final String? photoUrl;
-  final int? countryId;
 
   @override
   Widget build(BuildContext context) {
@@ -406,29 +403,26 @@ class _PastSpeakerCard extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          CountryFlagBadge(
-            countryId: countryId,
-            child: Container(
-              width: 72,
-              height: 72,
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                color: SimfTokens.navyDeep,
-                borderRadius: BorderRadius.circular(SimfTokens.radius),
-              ),
-              child: showPhoto
-                  ? Image.network(
-                      photoUrl!,
-                      width: 72,
-                      height: 72,
-                      fit: BoxFit.cover,
-                      gaplessPlayback: true,
-                      loadingBuilder: (context, child, progress) =>
-                          progress == null ? child : fallback,
-                      errorBuilder: (context, error, stackTrace) => fallback,
-                    )
-                  : fallback,
+          Container(
+            width: 72,
+            height: 72,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: SimfTokens.navyDeep,
+              borderRadius: BorderRadius.circular(SimfTokens.radius),
             ),
+            child: showPhoto
+                ? Image.network(
+                    photoUrl!,
+                    width: 72,
+                    height: 72,
+                    fit: BoxFit.cover,
+                    gaplessPlayback: true,
+                    loadingBuilder: (context, child, progress) =>
+                        progress == null ? child : fallback,
+                    errorBuilder: (context, error, stackTrace) => fallback,
+                  )
+                : fallback,
           ),
           const SizedBox(height: SimfTokens.space2),
           Text(

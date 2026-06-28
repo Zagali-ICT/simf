@@ -11,7 +11,6 @@ import '../../app/theme/tokens.dart';
 import '../../app/widgets/ksa_search_field.dart';
 import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_svg_icon.dart';
-import '../../core/country_flag.dart';
 import '../venuemap/data/venue_map_models.dart';
 import '../venuemap/data/venue_map_repository.dart';
 
@@ -357,56 +356,11 @@ class _CompanyHeader extends StatelessWidget {
                     ),
                   ),
                 ],
-                // #9 — show the booth's country (flag + name) under the company.
-                if (booth.localizedCountry(isArabic) != null) ...<Widget>[
-                  const SizedBox(height: SimfTokens.space1),
-                  _CountryLine(
-                    countryId: booth.countryId,
-                    name: booth.localizedCountry(isArabic)!,
-                  ),
-                ],
               ],
             ),
           ),
         ],
       ),
-    );
-  }
-}
-
-/// #9 — a small "flag · country name" line under the company name so the booth
-/// shows its country (the corner flag badge on the logo alone is subtle).
-class _CountryLine extends StatelessWidget {
-  const _CountryLine({required this.countryId, required this.name});
-
-  final int? countryId;
-  final String name;
-
-  @override
-  Widget build(BuildContext context) {
-    final flag = countryFlagEmoji(countryId);
-    return Row(
-      children: <Widget>[
-        if (flag != null) ...<Widget>[
-          Text(
-            flag,
-            textDirection: TextDirection.ltr,
-            style: const TextStyle(fontSize: SimfTokens.textSm, height: 1),
-          ),
-          const SizedBox(width: SimfTokens.space1),
-        ],
-        Flexible(
-          child: Text(
-            name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textXs,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
