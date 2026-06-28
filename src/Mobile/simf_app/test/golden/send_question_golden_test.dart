@@ -13,7 +13,6 @@ import 'package:simf_app/features/questions/data/questions_repository.dart';
 import 'package:simf_app/features/questions/send_question_screen.dart';
 import 'package:simf_app/features/sessions/data/session_detail_repository.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
-import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import 'golden_fonts.dart';
 

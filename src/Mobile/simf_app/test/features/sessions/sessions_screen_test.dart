@@ -151,7 +151,7 @@ ProgrammeDay _dayOne(List<SessionListItem> sessions) =>
 
 void main() {
   group('SessionsScreen (Page 016 — KSA frame 883:2308)', () {
-    testWidgets('renders the header, day title banner, type tabs and numbered '
+    testWidgets('renders the header, day title banner, type tabs and session '
         'rows', (tester) async {
       await _pump(
         tester,
@@ -172,9 +172,9 @@ void main() {
       expect(find.text('Events'), findsOneWidget);
       expect(find.textContaining('Opening'), findsOneWidget);
       expect(find.textContaining('Panel'), findsOneWidget);
-      // Gold row indices (the trailing space keeps the matcher off "02:00").
-      expect(find.textContaining('01 '), findsOneWidget);
-      expect(find.textContaining('02 '), findsOneWidget);
+      // The updated rows lead with a gold calendar glyph (no numbered prefix /
+      // trailing chevron) and carry a start/end time rail.
+      expect(find.byIcon(Icons.calendar_today_outlined), findsWidgets);
     });
 
     testWidgets('the search box filters the list', (tester) async {
