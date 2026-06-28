@@ -270,8 +270,12 @@ class _SponsorCard extends StatelessWidget {
                     if (secondary != null &&
                         secondary!.trim().isNotEmpty) ...<Widget>[
                       const SizedBox(height: SimfTokens.space1),
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 215),
+                      // Responsive (owner 2026-06-28): fill the available column
+                      // width instead of the frame's fixed 215px so the tagline
+                      // stretches on a tablet; textAlign.right keeps the wrapped
+                      // lines flush to the badge.
+                      SizedBox(
+                        width: double.infinity,
                         child: Text(
                           secondary!,
                           textAlign: TextAlign.right,
