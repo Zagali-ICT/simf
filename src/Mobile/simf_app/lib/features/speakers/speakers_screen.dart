@@ -8,7 +8,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/country_flag_badge.dart';
+import '../../core/country_flag.dart';
 import '../../app/widgets/ksa_search_field.dart';
 import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_svg_icon.dart';
@@ -305,8 +305,10 @@ class _SpeakerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // The country now shows as a small flag badge on the avatar's top-left
-    // corner (owner, ref node 889:2722), so the sub-line carries only the rank.
+    // Figma 908:1744 (node 1318:3391): the country flag is an inline glyph at the
+    // trailing (left, in RTL) edge of the name — NOT a badge on the avatar — and
+    // the sub-line carries only the rank.
+    final flag = countryFlagEmoji(speaker.countryId);
     final label = (speaker.rank != null && speaker.rank!.trim().isNotEmpty)
         ? speaker.rank!.trim()
         : '';
@@ -323,7 +325,6 @@ class _SpeakerCard extends StatelessWidget {
           children: <Widget>[
             _SpeakerAvatar(
               imageUrl: '$baseUrl/app/assets/SpeakerPhoto/${speaker.id}/image',
-              countryId: speaker.countryId,
             ),
             const SizedBox(width: SimfTokens.space4),
             Expanded(
@@ -331,14 +332,37 @@ class _SpeakerCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Text(
-                    speaker.localizedName(isArabic),
-                    textAlign: TextAlign.start,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: SimfTokens.textLg,
-                    ),
+                  // Name with the country flag inline at its trailing (left, in
+                  // RTL) edge — Figma node 1318:3391 (flag left of the name, an
+                  // 8px gap), right-aligned in the column.
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Flexible(
+                        child: Text(
+                          speaker.localizedName(isArabic),
+                          textAlign: TextAlign.start,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: SimfTokens.textLg,
+                          ),
+                        ),
+                      ),
+                      if (flag != null) ...<Widget>[
+                        const SizedBox(width: SimfTokens.space2),
+                        Text(
+                          flag,
+                          textDirection: TextDirection.ltr,
+                          style: const TextStyle(
+                            fontSize: SimfTokens.textMd,
+                            height: 1,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   if (label.isNotEmpty) ...<Widget>[
                     const SizedBox(height: SimfTokens.space2),
@@ -373,19 +397,17 @@ class _SpeakerCard extends StatelessWidget {
 /// on a solid gold hairline showing the speaker's uploaded **photo** (the D-357
 /// `SpeakerPhoto` asset) clipped to the tile, falling back to the design's gold
 /// **anchor** glyph while it loads or when no photo is set (the asset route
-/// 204s). The speaker's **country flag** (from [countryId]) renders as a small
-/// badge on the **top-left corner** (owner request); absent when the speaker has
-/// no recorded country.
+/// 204s). Per Figma 908:1744 the **country flag is inline beside the name** (see
+/// _SpeakerCard), not a badge on the avatar — so this tile is a clean photo.
 class _SpeakerAvatar extends StatelessWidget {
-  const _SpeakerAvatar({required this.imageUrl, this.countryId});
+  const _SpeakerAvatar({required this.imageUrl});
 
   final String imageUrl;
-  final int? countryId;
 
   @override
   Widget build(BuildContext context) {
     const fallback = Icon(Icons.anchor, size: 20, color: SimfTokens.accent);
-    final avatar = Container(
+    return Container(
       width: 44,
       height: 44,
       alignment: Alignment.center,
@@ -407,7 +429,5 @@ class _SpeakerAvatar extends StatelessWidget {
         errorBuilder: (context, error, stackTrace) => fallback,
       ),
     );
-    // The country flag renders as a small badge on the avatar's top-left corner.
-    return CountryFlagBadge(countryId: countryId, child: avatar);
   }
 }
