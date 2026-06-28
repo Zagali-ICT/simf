@@ -200,6 +200,36 @@ void main() {
           reason: 'caret shares the first card row');
     });
 
+    testWidgets('the search box filters the list to matching speakers (908:1744)',
+        (tester) async {
+      await _pump(tester, repo: _FakeSpeakersRepo(list: _speakers));
+      expect(find.text('Capt. Reef'), findsOneWidget);
+      expect(find.text('Dr Wave'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'wave');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Dr Wave'), findsOneWidget);
+      expect(find.text('Capt. Reef'), findsNothing);
+      expect(find.text('Brig. Anchor'), findsNothing);
+    });
+
+    testWidgets('the sort control orders the list A→Z; default keeps API order '
+        '(908:1744)', (tester) async {
+      await _pump(tester, repo: _FakeSpeakersRepo(list: _speakers));
+      double dyOf(String name) => tester.getCenter(find.text(name)).dy;
+
+      // Default = API/displayOrder: Capt. Reef (0), Dr Wave (1), Brig. Anchor (2).
+      expect(dyOf('Capt. Reef'), lessThan(dyOf('Dr Wave')));
+      expect(dyOf('Dr Wave'), lessThan(dyOf('Brig. Anchor')));
+
+      // Tap the sort control → A→Z: Brig. Anchor, Capt. Reef, Dr Wave.
+      await tester.tap(find.text('Sort alphabetically'));
+      await tester.pumpAndSettle();
+      expect(dyOf('Brig. Anchor'), lessThan(dyOf('Capt. Reef')));
+      expect(dyOf('Capt. Reef'), lessThan(dyOf('Dr Wave')));
+    });
+
     testWidgets('tapping a card opens the profile', (tester) async {
       await _pump(tester, repo: _FakeSpeakersRepo(list: _speakers));
       await tester.tap(find.text('Capt. Reef'));

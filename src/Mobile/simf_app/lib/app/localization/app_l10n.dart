@@ -1032,6 +1032,12 @@ class AppL10n {
   String get speakersError =>
       _t('تعذّر تحميل المتحدثين.', 'Could not load the speakers.');
   String get speakersEmpty => _t('لا يوجد متحدثون', 'No speakers');
+  // Frame 908:1744 — the search box + sort control above the speaker list.
+  String get speakersSearchHint => _t('ما الذي تبحث عنه', 'What are you after');
+  String get speakersSortAlpha =>
+      _t('ترتيب حسب الابجدية', 'Sort alphabetically');
+  String get speakersNoMatches =>
+      _t('لا نتائج مطابقة', 'No matching speakers');
 
   // Speaker profile (Page 020).
   String get speakerProfileTitle => _t('ملف المتحدث', 'Speaker profile');

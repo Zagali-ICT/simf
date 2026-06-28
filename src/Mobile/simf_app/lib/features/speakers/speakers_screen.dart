@@ -9,6 +9,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/country_flag_badge.dart';
+import '../../app/widgets/ksa_search_field.dart';
 import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import 'data/speaker_models.dart';
@@ -39,6 +40,11 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
   bool _loading = true;
   bool _error = false;
   List<SpeakerSummary> _speakers = const <SpeakerSummary>[];
+  // Frame 908:1744 — client-side search + alphabetical sort over the loaded
+  // list. Default preserves the API's curated order; the sort control toggles
+  // an A→Z alphabetical sort.
+  String _query = '';
+  bool _alphaSorted = false;
 
   @override
   void initState() {
@@ -125,31 +131,153 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
     final isArabic = l10n.isArabic;
     // The card builds `{base}/app/assets/SpeakerPhoto/{id}/image` for the avatar.
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
-    return KsaRefresh(
-      onRefresh: _load,
-      child: ListView.separated(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(
-          SimfTokens.space4,
-          SimfTokens.space4,
-          SimfTokens.space4,
-          SimfTokens.space6,
+    final visible = _visibleSpeakers(isArabic);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        // Frame 908:1744 — the search box (start/right) + the sort control
+        // (end/left). Width-flexible: the search Expands to fill the remaining
+        // width on any screen (owner responsive + DRY 2026-06-28).
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            SimfTokens.space4,
+            SimfTokens.space4,
+            SimfTokens.space4,
+            SimfTokens.space2,
+          ),
+          child: Row(
+            children: <Widget>[
+              Expanded(
+                child: KsaSearchField(
+                  hint: l10n.speakersSearchHint,
+                  onChanged: (v) => setState(() => _query = v),
+                ),
+              ),
+              const SizedBox(width: SimfTokens.space2),
+              _SortControl(
+                label: l10n.speakersSortAlpha,
+                selected: _alphaSorted,
+                onTap: () => setState(() => _alphaSorted = !_alphaSorted),
+              ),
+            ],
+          ),
         ),
-        itemCount: _speakers.length,
-        // Frame 908:1744 — cards pitch 76px (card 60 + 16 gap).
-        separatorBuilder: (_, __) => const SizedBox(height: SimfTokens.space4),
-        itemBuilder: (context, index) {
-          final speaker = _speakers[index];
-          return _SpeakerCard(
-            speaker: speaker,
-            isArabic: isArabic,
-            baseUrl: baseUrl,
-            onTap: () => context.pushNamed(
-              RouteNames.speakerProfile,
-              pathParameters: <String, String>{'speakerId': speaker.id},
-            ),
-          );
-        },
+        Expanded(
+          child: KsaRefresh(
+            onRefresh: _load,
+            child: visible.isEmpty
+                ? ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: <Widget>[
+                      KsaEmptyState(
+                        icon: Icons.search_off_outlined,
+                        message: l10n.speakersNoMatches,
+                      ),
+                    ],
+                  )
+                : ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(
+                      SimfTokens.space4,
+                      SimfTokens.space2,
+                      SimfTokens.space4,
+                      SimfTokens.space6,
+                    ),
+                    itemCount: visible.length,
+                    // Frame 908:1744 — cards pitch 76px (card 60 + 16 gap).
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(height: SimfTokens.space4),
+                    itemBuilder: (context, index) {
+                      final speaker = visible[index];
+                      return _SpeakerCard(
+                        speaker: speaker,
+                        isArabic: isArabic,
+                        baseUrl: baseUrl,
+                        onTap: () => context.pushNamed(
+                          RouteNames.speakerProfile,
+                          pathParameters: <String, String>{
+                            'speakerId': speaker.id,
+                          },
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// The loaded speakers after the search query + alphabetical sort (908:1744).
+  List<SpeakerSummary> _visibleSpeakers(bool isArabic) {
+    final q = _query.trim().toLowerCase();
+    final list = _speakers.where((s) {
+      if (q.isEmpty) {
+        return true;
+      }
+      final name = s.localizedName(isArabic).toLowerCase();
+      final rank = (s.rank ?? '').toLowerCase();
+      return name.contains(q) || rank.contains(q);
+    }).toList();
+    if (_alphaSorted) {
+      list.sort(
+        (a, b) => a.localizedName(isArabic).compareTo(b.localizedName(isArabic)),
+      );
+    }
+    return list;
+  }
+}
+
+/// The frame's sort control (908:1744) — a navy rounded box with a sort glyph,
+/// the "ترتيب حسب الابجدية" label and a direction chevron; tapping flips the
+/// alphabetical order of the list.
+class _SortControl extends StatelessWidget {
+  const _SortControl({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+
+  /// Whether the alphabetical sort is currently applied (gold-highlighted).
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tint = selected ? SimfTokens.accent : SimfTokens.beigeBorder;
+    return Material(
+      color: SimfTokens.navyDeep,
+      borderRadius: BorderRadius.circular(SimfTokens.radius),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(SimfTokens.radius),
+        child: Container(
+          height: 48,
+          padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space3),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(SimfTokens.radius),
+            border: Border.all(color: tint, width: selected ? 1 : 0.5),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Icon(Icons.swap_vert, size: 18, color: tint),
+              const SizedBox(width: SimfTokens.space2),
+              Text(
+                label,
+                maxLines: 1,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: SimfTokens.textSm,
+                ),
+              ),
+              const SizedBox(width: SimfTokens.space1),
+              Icon(Icons.keyboard_arrow_down, size: 18, color: tint),
+            ],
+          ),
+        ),
       ),
     );
   }
