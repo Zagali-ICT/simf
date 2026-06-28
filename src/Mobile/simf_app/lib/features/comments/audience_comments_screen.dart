@@ -176,34 +176,48 @@ class _AudienceCommentsScreenState
       return const Center(child: CircularProgressIndicator());
     }
     if (_error) {
-      return _ErrorState(
-        message: l10n.commentsError,
-        onRetry: () => unawaited(_load()),
+      return KsaRefresh(
+        onRefresh: _load,
+        child: KsaPullable(
+          child: _ErrorState(
+            message: l10n.commentsError,
+            onRetry: () => unawaited(_load()),
+          ),
+        ),
       );
     }
     if (_comments.isEmpty) {
-      return _EmptyState(
-        icon: Icons.forum_outlined,
-        message: l10n.commentsEmpty,
+      return KsaRefresh(
+        onRefresh: _load,
+        child: KsaPullable(
+          child: _EmptyState(
+            icon: Icons.forum_outlined,
+            message: l10n.commentsEmpty,
+          ),
+        ),
       );
     }
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(
-        SimfTokens.space4,
-        SimfTokens.space3,
-        SimfTokens.space4,
-        SimfTokens.space4,
+    return KsaRefresh(
+      onRefresh: _load,
+      child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+          SimfTokens.space4,
+          SimfTokens.space3,
+          SimfTokens.space4,
+          SimfTokens.space4,
+        ),
+        itemCount: _comments.length,
+        separatorBuilder: (context, index) =>
+            const SizedBox(height: SimfTokens.space2),
+        itemBuilder: (context, index) {
+          final comment = _comments[index];
+          return _CommentCard(
+            comment: comment,
+            onLike: () => unawaited(_toggleLike(comment)),
+          );
+        },
       ),
-      itemCount: _comments.length,
-      separatorBuilder: (context, index) =>
-          const SizedBox(height: SimfTokens.space2),
-      itemBuilder: (context, index) {
-        final comment = _comments[index];
-        return _CommentCard(
-          comment: comment,
-          onLike: () => unawaited(_toggleLike(comment)),
-        );
-      },
     );
   }
 }

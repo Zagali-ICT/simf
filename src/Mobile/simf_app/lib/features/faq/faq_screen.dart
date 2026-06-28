@@ -24,33 +24,52 @@ class FaqScreen extends ConsumerWidget {
     final isArabic = l10n.isArabic;
     final faq = ref.watch(faqProvider);
 
+    // Pull-to-refresh — re-fetch the FAQ catalogue (invalidate + await next).
+    Future<void> onRefresh() async {
+      ref.invalidate(faqProvider);
+      await ref.read(faqProvider.future);
+    }
+
     return KsaPage(
       title: l10n.faqRowTitle,
       onBack: () => ksaBackOrHome(context),
       body: faq.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => KsaErrorState(
-          message: l10n.faqError,
-          retryLabel: l10n.retryLabel,
-          onRetry: () => ref.invalidate(faqProvider),
+        error: (_, __) => KsaRefresh(
+          onRefresh: onRefresh,
+          child: KsaPullable(
+            child: KsaErrorState(
+              message: l10n.faqError,
+              retryLabel: l10n.retryLabel,
+              onRetry: () => ref.invalidate(faqProvider),
+            ),
+          ),
         ),
         data: (groups) {
           final hasEntries = groups.any((g) => g.entries.isNotEmpty);
           if (!hasEntries) {
-            return KsaEmptyState(
-              icon: Icons.help_outline,
-              message: l10n.faqEmpty,
+            return KsaRefresh(
+              onRefresh: onRefresh,
+              child: KsaPullable(
+                child: KsaEmptyState(
+                  icon: Icons.help_outline,
+                  message: l10n.faqEmpty,
+                ),
+              ),
             );
           }
           final showGroupHeaders = groups.length > 1;
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(
-              SimfTokens.space4,
-              SimfTokens.space4,
-              SimfTokens.space4,
-              SimfTokens.space6,
-            ),
-            children: <Widget>[
+          return KsaRefresh(
+            onRefresh: onRefresh,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(
+                SimfTokens.space4,
+                SimfTokens.space4,
+                SimfTokens.space4,
+                SimfTokens.space6,
+              ),
+              children: <Widget>[
               for (final group in groups)
                 if (group.entries.isNotEmpty) ...<Widget>[
                   if (showGroupHeaders) ...<Widget>[
@@ -62,7 +81,8 @@ class FaqScreen extends ConsumerWidget {
                     const SizedBox(height: SimfTokens.space3),
                   ],
                 ],
-            ],
+              ],
+            ),
           );
         },
       ),

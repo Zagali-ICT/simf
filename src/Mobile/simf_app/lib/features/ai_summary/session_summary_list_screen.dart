@@ -35,6 +35,12 @@ class _SessionSummaryListScreenState
   _SummaryTab _tab = _SummaryTab.all;
   String _query = '';
 
+  /// Pull-to-refresh — re-fetch the programme (invalidate + await next).
+  Future<void> _refresh() async {
+    ref.invalidate(aiSummarySessionsProvider);
+    await ref.read(aiSummarySessionsProvider.future);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
@@ -74,10 +80,15 @@ class _SessionSummaryListScreenState
               loading: () => const Center(
                 child: CircularProgressIndicator(color: SimfTokens.accent),
               ),
-              error: (_, __) => KsaErrorState(
-                message: l10n.aiSummaryError,
-                retryLabel: l10n.retryLabel,
-                onRetry: () => ref.invalidate(aiSummarySessionsProvider),
+              error: (_, __) => KsaRefresh(
+                onRefresh: _refresh,
+                child: KsaPullable(
+                  child: KsaErrorState(
+                    message: l10n.aiSummaryError,
+                    retryLabel: l10n.retryLabel,
+                    onRetry: () => ref.invalidate(aiSummarySessionsProvider),
+                  ),
+                ),
               ),
               data: (items) => _buildList(context, l10n, items),
             ),
@@ -100,22 +111,30 @@ class _SessionSummaryListScreenState
     final isArabic = l10n.isArabic;
     final filtered = _filter(items);
     if (filtered.isEmpty) {
-      return KsaEmptyState(
-        icon: Icons.summarize_outlined,
-        message: _emptyMessage(l10n, items.isEmpty),
+      return KsaRefresh(
+        onRefresh: _refresh,
+        child: KsaPullable(
+          child: KsaEmptyState(
+            icon: Icons.summarize_outlined,
+            message: _emptyMessage(l10n, items.isEmpty),
+          ),
+        ),
       );
     }
 
     final days = _distinctDays(filtered);
 
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(
-        SimfTokens.space4,
-        0,
-        SimfTokens.space4,
-        SimfTokens.space5,
-      ),
-      itemCount: days.length,
+    return KsaRefresh(
+      onRefresh: _refresh,
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+          SimfTokens.space4,
+          0,
+          SimfTokens.space4,
+          SimfTokens.space5,
+        ),
+        itemCount: days.length,
       itemBuilder: (context, dayIndex) {
         final day = days[dayIndex];
         final dayItems = filtered
@@ -152,7 +171,8 @@ class _SessionSummaryListScreenState
               ),
           ],
         );
-      },
+        },
+      ),
     );
   }
 

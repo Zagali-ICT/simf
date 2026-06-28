@@ -115,6 +115,12 @@ class GalleryScreen extends ConsumerWidget {
     // The data-package base URL already includes `/api/v1`; the tile builds
     // `{base}/app/media/{id}/(thumbnail|image)` from it.
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
+    // Pull-to-refresh — re-fetch the media items (invalidate + await next).
+    Future<void> onRefresh() async {
+      ref.invalidate(mediaItemsProvider);
+      await ref.read(mediaItemsProvider.future);
+    }
+
     return KsaPage(
       title: l10n.mediaCoverageTitle,
       onBack: () => ksaBackOrHome(context),
@@ -133,24 +139,37 @@ class GalleryScreen extends ConsumerWidget {
             child: media.when(
               loading: () =>
                   const Center(child: CircularProgressIndicator()),
-              error: (_, __) => KsaErrorState(
-                message: l10n.galleryError,
-                retryLabel: l10n.retryLabel,
-                onRetry: () => ref.invalidate(mediaItemsProvider),
+              error: (_, __) => KsaRefresh(
+                onRefresh: onRefresh,
+                child: KsaPullable(
+                  child: KsaErrorState(
+                    message: l10n.galleryError,
+                    retryLabel: l10n.retryLabel,
+                    onRetry: () => ref.invalidate(mediaItemsProvider),
+                  ),
+                ),
               ),
               data: (items) {
                 if (items.isEmpty) {
-                  return KsaEmptyState(
-                    icon: Icons.photo_library_outlined,
-                    message: l10n.galleryEmpty,
+                  return KsaRefresh(
+                    onRefresh: onRefresh,
+                    child: KsaPullable(
+                      child: KsaEmptyState(
+                        icon: Icons.photo_library_outlined,
+                        message: l10n.galleryEmpty,
+                      ),
+                    ),
                   );
                 }
-                return _GalleryBody(
-                  items: items,
-                  isArabic: l10n.isArabic,
-                  baseUrl: baseUrl,
-                  imagesLabel: l10n.galleryImagesSection,
-                  videosLabel: l10n.galleryVideosSection,
+                return KsaRefresh(
+                  onRefresh: onRefresh,
+                  child: _GalleryBody(
+                    items: items,
+                    isArabic: l10n.isArabic,
+                    baseUrl: baseUrl,
+                    imagesLabel: l10n.galleryImagesSection,
+                    videosLabel: l10n.galleryVideosSection,
+                  ),
                 );
               },
             ),
@@ -279,6 +298,7 @@ class _GalleryBody extends StatelessWidget {
         .where((m) => m.kind == MediaKind.video)
         .toList(growable: false);
     return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
         SimfTokens.space4,
         0,

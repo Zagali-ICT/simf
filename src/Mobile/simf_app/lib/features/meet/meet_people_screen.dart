@@ -35,20 +35,34 @@ class MeetPeopleScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppL10n.of(context);
     final matches = ref.watch(meetRecommendationsProvider);
+    // Pull-to-refresh — re-fetch the recommendations (invalidate + await next).
+    Future<void> onRefresh() async {
+      ref.invalidate(meetRecommendationsProvider);
+      await ref.read(meetRecommendationsProvider.future);
+    }
+
     return KsaPage(
       title: l10n.meetPeopleTitle,
       onBack: () => ksaBackOrHome(context),
       body: matches.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => _Error(
-          message: l10n.meetPeopleError,
-          onRetry: () => ref.invalidate(meetRecommendationsProvider),
+        error: (_, __) => KsaRefresh(
+          onRefresh: onRefresh,
+          child: KsaPullable(
+            child: _Error(
+              message: l10n.meetPeopleError,
+              onRetry: () => ref.invalidate(meetRecommendationsProvider),
+            ),
+          ),
         ),
         data: (data) {
           final isArabic = l10n.isArabic;
-          return ListView(
-            padding: const EdgeInsets.all(SimfTokens.space4),
-            children: <Widget>[
+          return KsaRefresh(
+            onRefresh: onRefresh,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(SimfTokens.space4),
+              children: <Widget>[
               _HeaderCard(l10n: l10n),
               const SizedBox(height: SimfTokens.space4),
               if (data.isEmpty)
@@ -58,7 +72,8 @@ class MeetPeopleScreen extends ConsumerWidget {
                   _MatchCard(match: match, isArabic: isArabic, l10n: l10n),
                   const SizedBox(height: SimfTokens.space4),
                 ],
-            ],
+              ],
+            ),
           );
         },
       ),

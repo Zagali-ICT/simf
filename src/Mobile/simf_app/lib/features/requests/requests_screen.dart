@@ -84,6 +84,12 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
     }
   }
 
+  /// Pull-to-refresh — re-fetch the requests feed (invalidate + await next).
+  Future<void> _refresh() async {
+    ref.invalidate(myRequestsProvider);
+    await ref.read(myRequestsProvider.future);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
@@ -92,10 +98,15 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
       onBack: () => ksaBackOrHome(context),
       body: ref.watch(myRequestsProvider).when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => KsaErrorState(
-              message: l10n.requestsError,
-              retryLabel: l10n.retryLabel,
-              onRetry: () => ref.invalidate(myRequestsProvider),
+            error: (_, __) => KsaRefresh(
+              onRefresh: _refresh,
+              child: KsaPullable(
+                child: KsaErrorState(
+                  message: l10n.requestsError,
+                  retryLabel: l10n.retryLabel,
+                  onRetry: () => ref.invalidate(myRequestsProvider),
+                ),
+              ),
             ),
             data: (items) => _buildBody(l10n, items),
           ),
@@ -115,10 +126,13 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
         ? items
         : items.where((i) => i.status == effectiveFilter).toList();
 
-    return ListView(
-      padding: const EdgeInsets.all(SimfTokens.space4),
-      children: <Widget>[
-        _TopActionRow(
+    return KsaRefresh(
+      onRefresh: _refresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(SimfTokens.space4),
+        children: <Widget>[
+          _TopActionRow(
           l10n: l10n,
           filter: effectiveFilter,
           // المقبولة can only filter when at least one accepted request exists
@@ -166,7 +180,8 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
                 onCancel: () => unawaited(_cancel(item)),
               ),
             ),
-      ],
+        ],
+      ),
     );
   }
 }

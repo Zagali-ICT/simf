@@ -80,6 +80,29 @@ void main() {
       expect(find.text('Register on the official website.'), findsOneWidget);
     });
 
+    testWidgets('pull-to-refresh re-fetches the FAQ catalogue',
+        (tester) async {
+      var calls = 0;
+      await _pump(
+        tester,
+        faqOverride: faqProvider.overrideWith((ref) async {
+          calls++;
+          return _sample();
+        }),
+      );
+      expect(calls, 1); // initial load
+
+      // Pull down on the always-scrollable list to fire the RefreshIndicator.
+      await tester.fling(
+        find.text('How do I register for the forum?'),
+        const Offset(0, 400),
+        1000,
+      );
+      await tester.pumpAndSettle();
+
+      expect(calls, 2); // refreshed → the provider re-ran
+    });
+
     testWidgets('shows the empty state when there are no entries',
         (tester) async {
       await _pump(

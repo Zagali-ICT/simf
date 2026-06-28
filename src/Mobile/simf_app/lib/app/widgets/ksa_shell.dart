@@ -335,6 +335,32 @@ class KsaRefresh extends StatelessWidget {
   }
 }
 
+/// Hosts a non-scrolling state (empty / error / a single card) inside a
+/// viewport-tall, always-scrollable box so a wrapping [KsaRefresh] can still
+/// fire its pull-to-refresh gesture on short content. Pair as
+/// `KsaRefresh(onRefresh: …, child: KsaPullable(child: KsaEmptyState(…)))`.
+class KsaPullable extends StatelessWidget {
+  const KsaPullable({required this.child, super.key});
+
+  /// The non-scrolling state widget to host (centred, viewport-tall).
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+}
+
 /// The shared header actions added to every in-app app-bar — the standard
 /// [KsaPage] header and the home greeting header: the language globe (toggles
 /// AR ↔ EN, persisted via [LocaleController]) and the dark-mode icon.

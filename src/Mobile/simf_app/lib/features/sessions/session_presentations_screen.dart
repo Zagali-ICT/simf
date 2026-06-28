@@ -27,6 +27,12 @@ class _SessionPresentationsScreenState
   // 0 = الكل (all); 1..n = the nth distinct event day.
   int _dayTab = 0;
 
+  /// Pull-to-refresh — re-fetch the presentations (invalidate + await next).
+  Future<void> _refresh() async {
+    ref.invalidate(presentationsProvider);
+    await ref.read(presentationsProvider.future);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
@@ -39,15 +45,21 @@ class _SessionPresentationsScreenState
         loading: () => const Center(
           child: CircularProgressIndicator(color: SimfTokens.accent),
         ),
-        error: (_, __) => KsaErrorState(
-          message: l10n.presentationsError,
-          retryLabel: l10n.retryLabel,
-          onRetry: () => ref.invalidate(presentationsProvider),
+        error: (_, __) => KsaRefresh(
+          onRefresh: _refresh,
+          child: KsaPullable(
+            child: KsaErrorState(
+              message: l10n.presentationsError,
+              retryLabel: l10n.retryLabel,
+              onRetry: () => ref.invalidate(presentationsProvider),
+            ),
+          ),
         ),
         data: (page) => _Body(
           items: page.items,
           dayTab: _dayTab,
           onDayTab: (i) => setState(() => _dayTab = i),
+          onRefresh: _refresh,
           l10n: l10n,
         ),
       ),
@@ -60,20 +72,27 @@ class _Body extends StatelessWidget {
     required this.items,
     required this.dayTab,
     required this.onDayTab,
+    required this.onRefresh,
     required this.l10n,
   });
 
   final List<PresentationItem> items;
   final int dayTab;
   final ValueChanged<int> onDayTab;
+  final Future<void> Function() onRefresh;
   final AppL10n l10n;
 
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
-      return KsaEmptyState(
-        icon: Icons.description_outlined,
-        message: l10n.presentationsEmpty,
+      return KsaRefresh(
+        onRefresh: onRefresh,
+        child: KsaPullable(
+          child: KsaEmptyState(
+            icon: Icons.description_outlined,
+            message: l10n.presentationsEmpty,
+          ),
+        ),
       );
     }
 
@@ -102,26 +121,31 @@ class _Body extends StatelessWidget {
         ),
         const SizedBox(height: SimfTokens.space3),
         Expanded(
-          child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(
-              SimfTokens.space4,
-              0,
-              SimfTokens.space4,
-              SimfTokens.space5,
+          child: KsaRefresh(
+            onRefresh: onRefresh,
+            child: ListView.separated(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(
+                SimfTokens.space4,
+                0,
+                SimfTokens.space4,
+                SimfTokens.space5,
+              ),
+              itemCount: visible.length,
+              separatorBuilder: (_, __) =>
+                  const SizedBox(height: SimfTokens.space3),
+              itemBuilder: (context, index) {
+                final item = visible[index];
+                final dayIndex =
+                    days.indexWhere((d) => _sameDay(item.sessionStartLocal, d));
+                return _PresentationCard(
+                  item: item,
+                  isArabic: isArabic,
+                  dayLabel:
+                      dayIndex >= 0 ? l10n.eventDayLabel(dayIndex + 1) : '',
+                );
+              },
             ),
-            itemCount: visible.length,
-            separatorBuilder: (_, __) =>
-                const SizedBox(height: SimfTokens.space3),
-            itemBuilder: (context, index) {
-              final item = visible[index];
-              final dayIndex =
-                  days.indexWhere((d) => _sameDay(item.sessionStartLocal, d));
-              return _PresentationCard(
-                item: item,
-                isArabic: isArabic,
-                dayLabel: dayIndex >= 0 ? l10n.eventDayLabel(dayIndex + 1) : '',
-              );
-            },
           ),
         ),
       ],
