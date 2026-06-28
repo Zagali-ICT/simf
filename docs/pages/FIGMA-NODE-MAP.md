@@ -53,5 +53,23 @@ or API**. The engagement counts in the frame are admin-entered data deferred to
 Phase 2 and are **not faked**. A Figma-pixel golden does **not** apply to this
 section; behaviour is covered by `test/features/home/home_screen_test.dart`.
 
+## Golden-render coverage (pixel-parity proof)
+
+Committed golden tests render the screen at its exact Figma frame size with the
+real brand fonts loaded (`test/golden/golden_fonts.dart`), so the PNG can be
+diffed against the frame. Regenerate with
+`flutter test --update-goldens test/golden/<screen>_golden_test.dart`.
+
+| Screen | Golden | Figma frame | Notes |
+|---|---|---|---|
+| Speakers | `test/golden/goldens/speakers_908-1744.png` | `908-1744` | initials avatars (no network needed) |
+| Sponsors | `test/golden/goldens/sponsors_922-2824.png` | `922-2824` | logo badges fall back to initials (real `SponsorLogo` loads over the network in production) |
+| Booths | `test/golden/goldens/booths_922-2458.png` | `922-2458` | logo tile = initials fallback (real `CompanyLogo` in prod); corner flag is a tofu box in goldens (colour-emoji font not loaded); hall box shows the single localized name per D-432 (frame's "· HALL A" bilingual label simplified) |
+
+Known golden limitations: `Image.network` always falls back (no HTTP in tests)
+and colour-emoji glyphs (flags) render as tofu — both are render-environment
+artifacts, not layout drift. The goldens prove **layout/structure/colour/RTL**
+parity; image/flag *content* is data/asset-driven.
+
 ## Colour tokens (from 922-2824)
 - BG `#192B41` · Primary text `#FFFFFF` · Secondary/gold `#C9A84C` · Primary/deep `#01132D` · Paragraph `#C2B8A2`.

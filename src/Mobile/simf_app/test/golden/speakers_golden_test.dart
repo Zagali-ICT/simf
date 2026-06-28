@@ -1,10 +1,7 @@
 @Tags(<String>['golden'])
 library;
 
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,6 +13,8 @@ import 'package:simf_app/features/speakers/data/speaker_models.dart';
 import 'package:simf_app/features/speakers/data/speakers_repository.dart';
 import 'package:simf_app/features/speakers/speakers_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
+
+import 'golden_fonts.dart';
 
 /// Golden-render harness (owner 2026-06-28, verification option 2): renders a
 /// screen at its exact Figma frame size with the real brand fonts loaded, so the
@@ -84,42 +83,8 @@ class _FakeSpeakersRepo implements SpeakersRepository {
       throw UnimplementedError();
 }
 
-Future<void> _loadFonts() async {
-  Future<void> load(String family, List<String> assets) async {
-    final loader = FontLoader(family);
-    for (final path in assets) {
-      loader.addFont(rootBundle.load(path));
-    }
-    await loader.load();
-  }
-
-  await load('FSAlbertArabic', <String>[
-    'assets/fonts/fs-albert-arabic-web-regular.ttf',
-    'assets/fonts/fs-albert-arabic-web-bold.ttf',
-    'assets/fonts/fs-albert-arabic-web-extrabold.ttf',
-  ]);
-  await load('Cairo', <String>['assets/fonts/Cairo.ttf']);
-  await load('Inter', <String>['assets/fonts/Inter.ttf']);
-
-  // MaterialIcons ships with the Flutter SDK (not an app asset) — load it from
-  // the SDK cache so Icons.* glyphs (sort/anchor/chevron) render, not boxes.
-  for (final candidate in <String>[
-    r'D:\dev\flutter\bin\cache\artifacts\material_fonts\materialicons-regular.otf',
-    r'D:\dev\flutter\bin\cache\artifacts\material_fonts\MaterialIcons-Regular.otf',
-  ]) {
-    final file = File(candidate);
-    if (file.existsSync()) {
-      final bytes = await file.readAsBytes();
-      final loader = FontLoader('MaterialIcons')
-        ..addFont(Future<ByteData>.value(ByteData.sublistView(bytes)));
-      await loader.load();
-      break;
-    }
-  }
-}
-
 void main() {
-  setUpAll(_loadFonts);
+  setUpAll(loadGoldenFonts);
 
   testWidgets('Speakers @375x939 — Figma 908:1744 (Arabic)', (tester) async {
     tester.view.physicalSize = const Size(375, 939);
