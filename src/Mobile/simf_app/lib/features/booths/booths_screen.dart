@@ -9,6 +9,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/country_flag_badge.dart';
+import '../../app/widgets/ksa_search_field.dart';
 import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import '../../core/country_flag.dart';
@@ -164,8 +165,8 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
             SimfTokens.space4,
             0,
           ),
-          child: _SearchField(
-            l10n: l10n,
+          child: KsaSearchField(
+            hint: l10n.boothsSearchHint,
             onChanged: (value) => setState(() => _query = value),
           ),
         ),
@@ -229,57 +230,6 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
           ),
         ),
       ],
-    );
-  }
-}
-
-/// The bordered search field (frame node 922:2549): a navy box with the
-/// beige bold hairline, the muted hint, and a leading (inline-start) search
-/// glyph.
-class _SearchField extends StatelessWidget {
-  const _SearchField({required this.l10n, required this.onChanged});
-
-  final AppL10n l10n;
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      onChanged: onChanged,
-      textInputAction: TextInputAction.search,
-      style: const TextStyle(color: Colors.white, fontSize: SimfTokens.textSm),
-      decoration: InputDecoration(
-        isDense: true,
-        filled: true,
-        fillColor: SimfTokens.navyDeep,
-        hintText: l10n.boothsSearchHint,
-        hintStyle: const TextStyle(
-          color: SimfTokens.beigeBorder,
-          fontSize: SimfTokens.textSm,
-        ),
-        // Frame 922:2549 — the search glyph sits at the inline start (physical
-        // right under RTL), so it is a prefix, not a suffix.
-        prefixIcon: const SimfSvgIcon(
-          'assets/icons/ic_search.svg',
-          size: 18,
-          color: Colors.white,
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: SimfTokens.space3,
-          vertical: SimfTokens.space4,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(SimfTokens.radius),
-          borderSide: const BorderSide(
-            color: SimfTokens.beigeBorder,
-            width: SimfTokens.hairlineBold,
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(SimfTokens.radius),
-          borderSide: const BorderSide(color: SimfTokens.accent),
-        ),
-      ),
     );
   }
 }

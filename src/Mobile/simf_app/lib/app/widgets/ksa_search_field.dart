@@ -37,8 +37,11 @@ class KsaSearchField extends StatelessWidget {
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle:
-            const TextStyle(color: Colors.white, fontSize: SimfTokens.textSm),
+        // Muted beige placeholder (matches the Figma search frames 908/922/758).
+        hintStyle: const TextStyle(
+          color: SimfTokens.beigeBorder,
+          fontSize: SimfTokens.textSm,
+        ),
         prefixIcon: const SimfSvgIcon(
           'assets/icons/ic_search.svg',
           size: 18,
