@@ -323,13 +323,37 @@ class _CompanyHeader extends StatelessWidget {
           ),
         ),
       ),
+      // Frame 922:2556 — RTL order: the short-name badge box at the inline-start
+      // (right), the name column in the middle, the company logo tile at the
+      // inline-end (left).
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
-          _LogoTile(
-            contactId: booth.exhibitorContactId,
-            baseUrl: baseUrl,
-            initials: _initials(name),
+          // Frame 922:2560 — 48x48 bordered box with the short name centred.
+          Container(
+            width: 48,
+            height: 48,
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space1),
+            decoration: BoxDecoration(
+              color: SimfTokens.navyDeep,
+              borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+              border: Border.all(
+                color: SimfTokens.beigeBorder,
+                width: SimfTokens.hairline,
+              ),
+            ),
+            child: Text(
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: SimfTokens.textMd,
+              ),
+            ),
           ),
           const SizedBox(width: SimfTokens.space2),
           Expanded(
@@ -358,6 +382,13 @@ class _CompanyHeader extends StatelessWidget {
                 ],
               ],
             ),
+          ),
+          const SizedBox(width: SimfTokens.space2),
+          // Frame 1062:12911 — company logo tile at the inline-end (left).
+          _LogoTile(
+            contactId: booth.exhibitorContactId,
+            baseUrl: baseUrl,
+            initials: _initials(name),
           ),
         ],
       ),
@@ -393,8 +424,9 @@ class _LogoTile extends StatelessWidget {
     );
     final id = contactId?.trim() ?? '';
     return Container(
-      width: 48,
-      height: 48,
+      // Frame 1062:12911 — the logo tile is 40x40 ('Size/Square' token).
+      width: 40,
+      height: 40,
       alignment: Alignment.center,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
@@ -409,8 +441,8 @@ class _LogoTile extends StatelessWidget {
           ? fallback
           : Image.network(
               '$baseUrl/app/assets/CompanyLogo/$id/image',
-              width: 48,
-              height: 48,
+              width: 40,
+              height: 40,
               fit: BoxFit.cover,
               gaplessPlayback: true,
               loadingBuilder: (context, child, progress) =>
@@ -443,16 +475,18 @@ class _HallRow extends StatelessWidget {
     // Both children are a fixed 48 high; the row must NOT stretch — inside the
     // card Column (unbounded height) CrossAxisAlignment.stretch would size the
     // row to infinite height and crash layout. Centre-align the two 48px boxes.
+    // Frame 922:2626 — RTL: the hall box at the inline start (right); the A-12
+    // code pill at the inline end (left).
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
-        if (code.isNotEmpty) ...<Widget>[
-          _CodePill(code: code),
-          const SizedBox(width: SimfTokens.space4),
-        ],
         Expanded(
           child: _HallBox(label: hallLabel),
         ),
+        if (code.isNotEmpty) ...<Widget>[
+          const SizedBox(width: SimfTokens.space4),
+          _CodePill(code: code),
+        ],
       ],
     );
   }

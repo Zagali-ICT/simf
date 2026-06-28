@@ -582,12 +582,10 @@ class _HeaderCard extends StatelessWidget {
           // the session code (e.g. "02"); the ordinal is the localized title's
           // implicit position — we lead with the code on the badge and the
           // session title below, matching the frame's number/name pairing.
+          // Frame 889:2706 — RTL: the title leads at the inline-start (right);
+          // the gold index badge trails at the inline-end (left).
           Row(
             children: <Widget>[
-              if (detail.code.isNotEmpty) ...<Widget>[
-                _IndexBadge(code: detail.code),
-                const SizedBox(width: SimfTokens.space2),
-              ],
               Expanded(
                 child: Text(
                   detail.localizedTitle(isArabic),
@@ -602,6 +600,10 @@ class _HeaderCard extends StatelessWidget {
                   ),
                 ),
               ),
+              if (detail.code.isNotEmpty) ...<Widget>[
+                const SizedBox(width: SimfTokens.space2),
+                _IndexBadge(code: detail.code),
+              ],
             ],
           ),
           const SizedBox(height: SimfTokens.space4),
@@ -758,8 +760,10 @@ class _MetaRow extends StatelessWidget {
         ),
         const Text(
           '·',
+          // Frame 889:2702 — the separator dot is white (#FFFFFF), brighter than
+          // the beige time/date items beside it.
           style: TextStyle(
-            color: SimfTokens.beigeBorder,
+            color: Colors.white,
             fontWeight: FontWeight.w900,
             fontSize: SimfTokens.textLg,
           ),
@@ -1011,6 +1015,9 @@ class _AskHostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = enabled ? Colors.white : SimfTokens.navyDisabledText;
+    // Frame 1056:12876 — the user glyph is gold (accent) over a white label.
+    final iconColor =
+        enabled ? SimfTokens.accent : SimfTokens.navyDisabledText;
     return KsaCard(
       onTap: enabled ? onTap : null,
       child: Padding(
@@ -1021,7 +1028,7 @@ class _AskHostCard extends StatelessWidget {
             Icon(
               Icons.person_outline,
               size: 24,
-              color: color,
+              color: iconColor,
             ),
             const SizedBox(height: SimfTokens.space2),
             Text(
@@ -1248,10 +1255,13 @@ class _CtaRow extends StatelessWidget {
     // RTL: the first child is at the inline start (physical right). The frame
     // puts أضف إلى تقويمي (gold) on the right and تذكير (outlined) on the left,
     // so the gold Expanded button leads and the reminder button trails.
+    // Frame 897:2872 — in each button the label leads (inline-start, right) and
+    // the icon trails (inline-end, left). A plain Row [label, gap, icon] under
+    // RTL puts the icon on the left, unlike the .icon constructor.
     return Row(
       children: <Widget>[
         Expanded(
-          child: FilledButton.icon(
+          child: FilledButton(
             onPressed: onAddToCalendar,
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(48),
@@ -1260,19 +1270,33 @@ class _CtaRow extends StatelessWidget {
                 borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
               ),
             ),
-            icon: const Icon(Icons.calendar_today_outlined, size: 24),
-            label: Text(
-              l10n.addToCalendar,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: SimfTokens.textLg,
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Flexible(
+                  child: Text(
+                    l10n.addToCalendar,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: SimfTokens.textLg,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: SimfTokens.space2),
+                const Icon(
+                  Icons.calendar_today_outlined,
+                  size: 24,
+                  color: Colors.white,
+                ),
+              ],
             ),
           ),
         ),
         const SizedBox(width: SimfTokens.space4),
-        OutlinedButton.icon(
+        OutlinedButton(
           onPressed: onRemind,
           style: OutlinedButton.styleFrom(
             // Height 48, width sized to content — this is a non-Expanded child
@@ -1286,14 +1310,28 @@ class _CtaRow extends StatelessWidget {
               borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
             ),
           ),
-          icon: const Icon(Icons.schedule_outlined, size: 24),
-          label: Text(
-            l10n.reminder,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: SimfTokens.textLg,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Flexible(
+                child: Text(
+                  l10n.reminder,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: SimfTokens.textLg,
+                  ),
+                ),
+              ),
+              const SizedBox(width: SimfTokens.space2),
+              const Icon(
+                Icons.schedule_outlined,
+                size: 24,
+                color: Colors.white,
+              ),
+            ],
           ),
         ),
       ],

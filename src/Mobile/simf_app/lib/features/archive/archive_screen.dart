@@ -260,7 +260,8 @@ class _GalleryRow extends StatelessWidget {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: items.length,
-        separatorBuilder: (_, __) => const SizedBox(width: SimfTokens.space2),
+        // Frame 926:3299 — ~16px gap between the 104px gallery tiles.
+        separatorBuilder: (_, __) => const SizedBox(width: SimfTokens.space4),
         itemBuilder: (context, index) =>
             _GalleryTile(item: items[index], isArabic: isArabic),
       ),
@@ -752,10 +753,12 @@ class _PlaceTimeRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          // Frame 926:3284 — RTL: الزمن (time) at the inline start (right),
+          // المكان (place) at the inline end (left).
           Expanded(
             child: _LabelledBullet(
-              label: l10n.archivePlaceLabel,
-              value: location,
+              label: l10n.archiveTimeLabel,
+              value: dateLabel,
             ),
           ),
           Container(
@@ -765,8 +768,8 @@ class _PlaceTimeRow extends StatelessWidget {
           ),
           Expanded(
             child: _LabelledBullet(
-              label: l10n.archiveTimeLabel,
-              value: dateLabel,
+              label: l10n.archivePlaceLabel,
+              value: location,
             ),
           ),
         ],
@@ -810,21 +813,21 @@ class _StatRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // RTL: the first child is at the inline start (physical right) — الفعاليات,
-    // then المتحدثون at the inline end (left), mirroring the frame's two tiles.
+    // Frame 926:3285 — RTL: المتحدثون (speakers) at the inline start (right),
+    // الفعاليات (activities) at the inline end (left).
     return Row(
       children: <Widget>[
         Expanded(
           child: _StatTile(
-            value: edition.sessions,
-            label: l10n.archiveStatSessions,
+            value: edition.speakers,
+            label: l10n.archiveStatSpeakers,
           ),
         ),
         const SizedBox(width: SimfTokens.space4),
         Expanded(
           child: _StatTile(
-            value: edition.speakers,
-            label: l10n.archiveStatSpeakers,
+            value: edition.sessions,
+            label: l10n.archiveStatSessions,
           ),
         ),
       ],

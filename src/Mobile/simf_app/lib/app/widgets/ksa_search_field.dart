@@ -44,7 +44,8 @@ class KsaSearchField extends StatelessWidget {
         ),
         prefixIcon: const SimfSvgIcon(
           'assets/icons/ic_search.svg',
-          size: 18,
+          // Figma search frames (1341:3565 etc.) — 14px magnifier.
+          size: 14,
           color: SimfTokens.beigeBorder,
         ),
         prefixIconConstraints:
@@ -58,18 +59,23 @@ class KsaSearchField extends StatelessWidget {
             : null,
         suffixIconConstraints:
             const BoxConstraints(minWidth: 44, minHeight: 44),
-        filled: true,
-        fillColor: SimfTokens.navyDeep,
+        // Figma search frames (908/922/758) — an unfilled box with a 0.2px
+        // beige hairline; the navy page shows through (no card-like fill).
+        filled: false,
         contentPadding: const EdgeInsets.symmetric(vertical: 4),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(SimfTokens.radius),
-          borderSide:
-              const BorderSide(color: SimfTokens.beigeBorder, width: 0.5),
+          borderSide: const BorderSide(
+            color: SimfTokens.beigeBorder,
+            width: SimfTokens.hairline,
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(SimfTokens.radius),
-          borderSide:
-              const BorderSide(color: SimfTokens.beigeBorder, width: 0.5),
+          borderSide: const BorderSide(
+            color: SimfTokens.beigeBorder,
+            width: SimfTokens.hairline,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(SimfTokens.radius),

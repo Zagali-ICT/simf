@@ -97,7 +97,7 @@ class SponsorsScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(SimfTokens.space4),
               children: <Widget>[
               for (var i = 0; i < visibleGroups.length; i++) ...<Widget>[
-                if (i > 0) const SizedBox(height: SimfTokens.space5),
+                if (i > 0) const SizedBox(height: SimfTokens.space6),
                 _TierLabel(label: visibleGroups[i].tierName),
                 const SizedBox(height: SimfTokens.space4),
                 // Frame 922:2824 — three bands: the top tier is the gold hero

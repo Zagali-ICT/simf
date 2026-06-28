@@ -218,7 +218,7 @@ void main() {
       expect(urls, isNot(contains('archive/2024/legacy.jpg')));
     });
 
-    testWidgets('PAR-A1 — RTL: the two stat tiles run activities → speakers '
+    testWidgets('PAR-A1 — RTL: the two stat tiles run speakers → activities '
         '(right → left), matching the frame', (tester) async {
       await _pump(
         tester,
@@ -229,11 +229,11 @@ void main() {
         ],
         locale: const Locale('ar'),
       );
-      // sessions=30 (الفعاليات) leads at the inline start (right); speakers=250
-      // (المتحدثون) is at the inline end (left).
+      // Frame 926:3285 — speakers=250 (المتحدثون) leads at the inline start
+      // (right); sessions=30 (الفعاليات) is at the inline end (left).
       final eventsDx = tester.getCenter(find.text('30')).dx;
       final speakersDx = tester.getCenter(find.text('250')).dx;
-      expect(eventsDx, greaterThan(speakersDx));
+      expect(speakersDx, greaterThan(eventsDx));
     });
 
     testWidgets('empty shows the empty state', (tester) async {

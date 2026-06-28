@@ -255,10 +255,14 @@ class _SortControl extends StatelessWidget {
         borderRadius: BorderRadius.circular(SimfTokens.radius),
         child: Container(
           height: 48,
-          padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space3),
+          // Frame 1341:3583 — 8px horizontal padding, 0.2px beige hairline.
+          padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space2),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(SimfTokens.radius),
-            border: Border.all(color: tint, width: selected ? 1 : 0.5),
+            border: Border.all(
+              color: tint,
+              width: selected ? 1 : SimfTokens.hairline,
+            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -268,8 +272,10 @@ class _SortControl extends StatelessWidget {
               Text(
                 label,
                 maxLines: 1,
-                style: const TextStyle(
-                  color: Colors.white,
+                // Frame 1341:3582 — Inter Medium 12px, beige (#C2B8A2).
+                style: TextStyle(
+                  color: tint,
+                  fontWeight: FontWeight.w500,
                   fontSize: SimfTokens.textSm,
                 ),
               ),
@@ -356,8 +362,9 @@ class _SpeakerCard extends StatelessWidget {
                         Text(
                           flag,
                           textDirection: TextDirection.ltr,
+                          // Frame 1318:3392 — the flag glyph is 12px.
                           style: const TextStyle(
-                            fontSize: SimfTokens.textMd,
+                            fontSize: SimfTokens.textSm,
                             height: 1,
                           ),
                         ),
@@ -413,10 +420,15 @@ class _SpeakerAvatar extends StatelessWidget {
       alignment: Alignment.center,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: SimfTokens.accent.withValues(alpha: 0.15),
+        // Frame 908:2004 — navy tile with a 0.2px beige hairline (no gold fill);
+        // the photo covers it, the gold anchor is only the fallback glyph.
+        color: SimfTokens.navyDeep,
         borderRadius:
             const BorderRadius.all(Radius.circular(SimfTokens.radiusSmall)),
-        border: Border.all(color: SimfTokens.accent),
+        border: Border.all(
+          color: SimfTokens.beigeBorder,
+          width: SimfTokens.hairline,
+        ),
       ),
       child: Image.network(
         imageUrl,
