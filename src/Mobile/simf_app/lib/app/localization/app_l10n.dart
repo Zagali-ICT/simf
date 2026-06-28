@@ -1542,6 +1542,10 @@ class AppL10n {
   String get aiSummaryRecommendationsHeading =>
       _t('التوصيات', 'Recommendations');
   String get aiSummarySpeakersHeading => _t('المتحدثون', 'Speakers');
+  // Figma 1072:13518 — the redesigned session-summary screen.
+  String get aiSummarySessionLabel => _t('الجلسة', 'Session');
+  String get aiSummaryGenerateButton =>
+      _t('توليد ملخص للجلسة', 'Generate session summary');
   String get aiSummaryFullTextHeading => _t('النص الكامل', 'Full text');
   String get aiSummaryShare => _t('مشاركة', 'Share');
   String get aiSummarySave => _t('حفظ', 'Save');

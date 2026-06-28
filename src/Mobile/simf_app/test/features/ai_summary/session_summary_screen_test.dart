@@ -131,29 +131,56 @@ Future<void> _pump(
 void main() {
   group('AiSummaryScreen (Page 034 — KSA frame 1072:13518)', () {
     testWidgets(
-        'with a sessionId it is details-only (no picker) — AI banner + the '
-        'stacked summary cards (frame 1078:14952 — no tabs)', (tester) async {
+        'details: info card, tabs (Key points active), generate paragraph',
+        (tester) async {
       final repo = _FakeSummaryRepo(summary: _summary());
       await _pump(tester, repo: repo, sessions: _sessions, sessionId: 's1');
 
       expect(repo.calls, 1);
-      // #1/#6 — opened with a sessionId, the picker is hidden (details-only).
+      // The "الجلسة"/Session info-card label.
+      expect(find.text('Session'), findsOneWidget);
+      // No old picker / banner / action row.
       expect(find.text('Choose the session'), findsNothing);
-      expect(find.text('Auto-generated summary'), findsOneWidget);
-      // The three section headings now stack as cards (no tabs).
-      expect(find.text('Key points'), findsOneWidget);
-      expect(find.text('Recommendations'), findsOneWidget);
-      expect(find.text('Speakers'), findsOneWidget);
-      // The action row.
-      expect(find.text('Full text'), findsOneWidget);
-      expect(find.text('Share'), findsOneWidget);
-      expect(find.text('Save'), findsOneWidget);
-      // All sections' content is shown at once (no tab gating).
+      expect(find.text('Auto-generated summary'), findsNothing);
+      expect(find.text('Share'), findsNothing);
+      expect(find.text('Save'), findsNothing);
+      // The default tab (Key points) shows its bullets; other tabs' content is
+      // gated until selected.
       expect(find.text('Coral cover rising'), findsOneWidget);
       expect(find.text('New survey method'), findsOneWidget);
+      expect(find.text('Scale the reef programme'), findsNothing);
+      // The generate button + the published paragraph (expanded by default).
+      expect(find.text('Generate session summary'), findsOneWidget);
+      expect(
+        find.text('The session covered reef restoration progress.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('tapping a tab switches the active content', (tester) async {
+      final repo = _FakeSummaryRepo(summary: _summary());
+      await _pump(tester, repo: repo, sessions: _sessions, sessionId: 's1');
+
+      await tester.tap(find.text('Recommendations'));
+      await tester.pumpAndSettle();
       expect(find.text('Scale the reef programme'), findsOneWidget);
-      // Speakers render as a single "·"-joined line.
+      expect(find.text('Coral cover rising'), findsNothing);
+
+      await tester.tap(find.text('Speakers'));
+      await tester.pumpAndSettle();
       expect(find.text('Dr Reef, Cmdr Tide'), findsOneWidget);
+    });
+
+    testWidgets('the generate button collapses / expands the paragraph',
+        (tester) async {
+      final repo = _FakeSummaryRepo(summary: _summary());
+      await _pump(tester, repo: repo, sessions: _sessions, sessionId: 's1');
+
+      const paragraph = 'The session covered reef restoration progress.';
+      expect(find.text(paragraph), findsOneWidget);
+      await tester.tap(find.text('Generate session summary'));
+      await tester.pumpAndSettle();
+      expect(find.text(paragraph), findsNothing);
     });
 
     testWidgets('with no sessionId it auto-selects the first session',
@@ -162,21 +189,19 @@ void main() {
       await _pump(tester, repo: repo, sessions: _sessions);
 
       expect(repo.calls, 1);
-      // Without a sessionId the picker is shown (legacy fallback) + auto-selects.
-      expect(find.text('Choose the session'), findsOneWidget);
-      expect(find.text('Auto-generated summary'), findsOneWidget);
+      expect(find.text('Choose the session'), findsNothing);
+      expect(find.text('Generate session summary'), findsOneWidget);
     });
 
-    testWidgets('a 404 shows the no-published-summary state', (tester) async {
+    testWidgets('a 404 shows the no-published-summary note', (tester) async {
       await _pump(
         tester,
         repo: _FakeSummaryRepo(status: 404),
         sessions: _sessions,
         sessionId: 's1',
       );
-      expect(find.text('No published summary yet.'), findsOneWidget);
-      // #1/#6 — details-only (a sessionId was passed): no picker; the user goes
-      // back to the summaries list to pick another session.
+      // The empty note appears in the tab content and the (expanded) paragraph.
+      expect(find.text('No published summary yet.'), findsWidgets);
       expect(find.text('Choose the session'), findsNothing);
     });
 
