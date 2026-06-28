@@ -125,10 +125,14 @@ class _FakeDetailRepo implements SessionDetailRepository {
 }
 
 class _FakeSeatRepo implements SeatMapRepository {
-  _FakeSeatRepo({this.map});
+  _FakeSeatRepo({this.map, this.releaseFailure});
 
   /// Null → getSeatMap throws (e.g. a pending 403) so the join section hides.
   final SessionSeatMap? map;
+
+  /// When set, [releaseMine] throws it — drives the cancel-reservation
+  /// failure path (the D-485/this-session fix that surfaces the backend reason).
+  final ApiFailure? releaseFailure;
   int joinCalls = 0;
   int reserveCalls = 0;
   int releaseCalls = 0;
@@ -181,6 +185,10 @@ class _FakeSeatRepo implements SeatMapRepository {
   @override
   Future<void> releaseMine(String sessionId) async {
     releaseCalls++;
+    final failure = releaseFailure;
+    if (failure != null) {
+      throw failure;
+    }
   }
 }
 
@@ -195,6 +203,7 @@ Future<void> _pump(
   required SessionDetailRepository repo,
   required AuthController controller,
   SessionSeatMap? seatMap,
+  SeatMapRepository? seatRepo,
   SessionCalendar? calendar,
   Locale locale = const Locale('en'),
 }) async {
@@ -254,7 +263,8 @@ Future<void> _pump(
       overrides: <Override>[
         simfDataConfigProvider.overrideWithValue(_testConfig),
         sessionDetailRepositoryProvider.overrideWithValue(repo),
-        seatMapRepositoryProvider.overrideWithValue(_FakeSeatRepo(map: seatMap)),
+        seatMapRepositoryProvider
+            .overrideWithValue(seatRepo ?? _FakeSeatRepo(map: seatMap)),
         sessionCalendarProvider
             .overrideWithValue(calendar ?? _FakeCalendar()),
         authControllerProvider.overrideWith(() => controller),
@@ -401,6 +411,108 @@ void main() {
       );
       expect(find.widgetWithText(OutlinedButton, 'Reminder'), findsOneWidget);
       expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('#1 — Cancel booking confirms then releases the seat and shows '
+        'the success toast', (tester) async {
+      final seatRepo = _FakeSeatRepo(map: _seatMap(myCell: _mySeatCell));
+      await _pump(
+        tester,
+        repo: _FakeDetailRepo(detail: _detail()),
+        seatRepo: seatRepo,
+        controller: _SignedInController(),
+      );
+
+      // Open the confirm dialog from the booking card's cancel button.
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel booking'));
+      await tester.pumpAndSettle();
+      expect(find.text('Cancel booking?'), findsOneWidget);
+
+      // Confirm — the dialog's gold action releases the seat.
+      await tester.tap(find.widgetWithText(FilledButton, 'Cancel booking'));
+      await tester.pumpAndSettle();
+
+      expect(seatRepo.releaseCalls, 1);
+      expect(find.text('Booking cancelled'), findsOneWidget);
+    });
+
+    testWidgets('#1 — dismissing the cancel dialog does NOT release the seat',
+        (tester) async {
+      final seatRepo = _FakeSeatRepo(map: _seatMap(myCell: _mySeatCell));
+      await _pump(
+        tester,
+        repo: _FakeDetailRepo(detail: _detail()),
+        seatRepo: seatRepo,
+        controller: _SignedInController(),
+      );
+
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel booking'));
+      await tester.pumpAndSettle();
+      // Tap the dialog's dismiss (Cancel) button.
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(seatRepo.releaseCalls, 0);
+      expect(find.text('Booking cancelled'), findsNothing);
+    });
+
+    testWidgets('#1 fix — a cancel failure surfaces the backend reason '
+        '(not the generic toast)', (tester) async {
+      // The exact failure the owner saw: cancel "looks broken" because the
+      // real 409 reason was swallowed behind a generic toast.
+      final seatRepo = _FakeSeatRepo(
+        map: _seatMap(myCell: _mySeatCell),
+        releaseFailure: ApiFailure(
+          code: ApiErrorCodes.clientNetwork,
+          message: 'You cannot cancel after the session has started',
+          httpStatus: 409,
+        ),
+      );
+      await _pump(
+        tester,
+        repo: _FakeDetailRepo(detail: _detail()),
+        seatRepo: seatRepo,
+        controller: _SignedInController(),
+      );
+
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel booking'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Cancel booking'));
+      await tester.pumpAndSettle();
+
+      expect(seatRepo.releaseCalls, 1);
+      // The real backend reason is shown verbatim …
+      expect(
+        find.text('You cannot cancel after the session has started'),
+        findsOneWidget,
+      );
+      // … not the generic fallback.
+      expect(find.text("Couldn't cancel the booking"), findsNothing);
+    });
+
+    testWidgets('#1 fix — a reason-less cancel failure falls back to the '
+        'generic toast', (tester) async {
+      final seatRepo = _FakeSeatRepo(
+        map: _seatMap(myCell: _mySeatCell),
+        releaseFailure: ApiFailure(
+          code: ApiErrorCodes.clientNetwork,
+          message: '   ', // whitespace-only → no usable reason
+          httpStatus: 500,
+        ),
+      );
+      await _pump(
+        tester,
+        repo: _FakeDetailRepo(detail: _detail()),
+        seatRepo: seatRepo,
+        controller: _SignedInController(),
+      );
+
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel booking'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Cancel booking'));
+      await tester.pumpAndSettle();
+
+      expect(find.text("Couldn't cancel the booking"), findsOneWidget);
     });
 
     testWidgets('PAR-D2/D-extra — RTL: the gold CTA and the speaker photo lead '

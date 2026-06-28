@@ -12,7 +12,7 @@ Pixel-parity is proven per screen with a golden render at the Figma frame size
 |---|---|---|---|
 | Standard top-nav (spec source) | `lib/app/widgets/ksa_shell.dart` (`KsaPage._defaultHeader`) | `758-1469` (badge), `922-2824` (sponsors) | Back btn (42×42 navy `#192b41` rounded) + centred 18px SemiBold title + bottom hairline; fixed height; reusable across all non-home pages |
 | Home (responsive) | `lib/features/home/home_screen.dart` | `758-1134` | Greeting header + action cluster + highlights carousel |
-| Home — highlights (ابرز الاحداث) | `lib/features/home/home_screen.dart` (`_FollowUsSection`/featured) | `922-2824` (referenced) | Multi-slide carousel of image+text, animated, CP-managed (was single image) |
+| Home — highlights (ابرز الاحداث) | `lib/features/home/home_screen.dart` (`_HighlightsCarousel`) | `758-1239` (title) / `758-1238` (container) | **Deliberate deviation** — see the note below: multi-slide image+text carousel, animated, CP-managed (supersedes the static single-card Figma frame) |
 | Sponsors (الرعاة) | `lib/features/sponsors/sponsors_screen.dart` | `922-2824` | Strategic/Premium/Gold tiers; responsive grid; standard top-nav |
 | Exhibition / Booths (المعرض) | `lib/features/booths/booths_screen.dart` | `922-2458` | Booth cards: flag + company + code (A-12) + HALL badge + "أرشدني إلى الجناح" CTA |
 | Speakers (المتحدثون) | `lib/features/speakers/speakers_screen.dart` | `908-1744` | Sort + search row; speaker cards (photo, name, title, gold chevron, verified badge) |
@@ -29,6 +29,29 @@ Pixel-parity is proven per screen with a golden render at the Figma frame size
 - Title: centred, Inter/FS-Albert SemiBold 18px, white, single line ellipsis.
 - Fixed header height below the status bar (~56–66px).
 - **Resolved (owner 2026-06-28):** sub-page nav matches Figma — back + title + line only, **no** bell/language/theme/menu cluster. The cluster lives on the Home greeting header (the guest home opts in). Implemented as `KsaPage.showHeaderActions` (default **false**); the 2026-06-18 every-page-cluster invariant is superseded for sub-pages.
+
+## Highlights carousel — deliberate deviation from Figma 758-1238 (owner 2026-06-28)
+
+The Figma frame `758-1238` ("ابرز الاحداث") shows the **old** design: a single
+news card with a source row (`SIMF@ · قبل ساعة`), an avatar box, a separate image
+container (`758-1250`), and an engagement-counts row (`58` repost / `340` comment /
+`1.2k` heart — `758-1252`).
+
+The owner explicitly redefined this section on 2026-06-28:
+
+> "في الاول كانت صورة واحدة امنا الان فهو معرض صور" — *before it was a single
+> image, now it is an image gallery* … "عرض شرايح متعددة / الصورة والنص فقط وه
+> متحرك ومدخل عبر لوحة التحكم" — *multiple slides / image and text only / animated
+> / entered via the Control Panel.*
+
+So the shipped `_HighlightsCarousel` (D-527) **intentionally** drops the source
+row, the avatar, and the engagement counts ("image and text only"), and replaces
+the single card with an auto-advancing, swipeable PageView of image+title slides
+plus position dots. It reuses the existing CP-managed news list (`/admin/news` →
+`GET /app/news`, image via the anonymous D-357 `NewsImage` route) — **no new table
+or API**. The engagement counts in the frame are admin-entered data deferred to
+Phase 2 and are **not faked**. A Figma-pixel golden does **not** apply to this
+section; behaviour is covered by `test/features/home/home_screen_test.dart`.
 
 ## Colour tokens (from 922-2824)
 - BG `#192B41` · Primary text `#FFFFFF` · Secondary/gold `#C9A84C` · Primary/deep `#01132D` · Paragraph `#C2B8A2`.
