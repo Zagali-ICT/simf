@@ -20,10 +20,13 @@ import 'plate_validation.dart';
 import 'saudi_regions.dart';
 import 'widgets/beige_tabs.dart';
 import 'widgets/complete_profile_notice.dart';
+import 'widgets/date_of_birth_field.dart';
 import 'widgets/field_label.dart';
 import 'widgets/lookup_search_sheet.dart';
+import 'widgets/mobile_field.dart';
 import 'widgets/profile_field_style.dart';
 import 'widgets/radio_pill.dart';
+import 'widgets/sign_up_visitor_header_avatar.dart';
 import 'widgets/terms_and_next_buttons.dart';
 
 const Color _sweepTint = Color(0x0AFFFFFF);
@@ -776,7 +779,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                         ),
                         // The captured face photo replaces the placeholder
                         // person icon at the top once taken (owner follow-up).
-                        _buildHeaderAvatar(),
+                        SignUpVisitorHeaderAvatar(bytes: _faceImageBytes),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -848,9 +851,22 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     // drives national-ID vs iqama/passport (SA → national ID).
                     ..._buildDocumentFields(l10n),
                     const SizedBox(height: 16),
-                    _buildMobileField(l10n),
+                    MobileField(
+                      saudi: _isSaudi,
+                      controller:
+                          _isSaudi ? _saudiMobile : _internationalMobile,
+                      validator: _isSaudi
+                          ? _validateSaudiMobile
+                          : _validateInternationalMobile,
+                    ),
                     const SizedBox(height: 16),
-                    _buildDateOfBirthField(l10n),
+                    DateOfBirthField(
+                      displayValue: _dateOfBirth == null
+                          ? '—'
+                          : _formatDate(_dateOfBirth!),
+                      hasError: _triedSubmit && _dateOfBirth == null,
+                      onTap: () => unawaited(_pickDateOfBirth()),
+                    ),
                     const SizedBox(height: 16),
                     _buildPlaceOfBirthField(l10n),
                     const SizedBox(height: 16),
@@ -1471,75 +1487,6 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       // an unrelated edit doesn't wipe it (the server re-validates on save).
       _plate.text = canonical;
     }
-  }
-
-  Widget _buildMobileField(AppL10n l10n) {
-    final saudi = _isSaudi;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        FieldLabel(
-          saudi ? l10n.saudiMobileLabel : l10n.internationalMobileLabel,
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: saudi ? _saudiMobile : _internationalMobile,
-          keyboardType: TextInputType.phone,
-          textDirection: TextDirection.ltr,
-          style: profileInputStyle,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          validator:
-              saudi ? _validateSaudiMobile : _validateInternationalMobile,
-          decoration: profileFieldDecoration(),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDateOfBirthField(AppL10n l10n) {
-    final hasError = _triedSubmit && _dateOfBirth == null;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        FieldLabel(l10n.dateOfBirthLabel),
-        const SizedBox(height: 8),
-        InkWell(
-          onTap: () => unawaited(_pickDateOfBirth()),
-          borderRadius: _radius4,
-          child: InputDecorator(
-            decoration: profileFieldDecoration(
-              errorText: hasError ? l10n.dateOfBirthRequired : null,
-              suffixIcon: const Icon(
-                Icons.calendar_today_outlined,
-                color: SimfTokens.greyText,
-                size: 18,
-              ),
-            ),
-            child: Text(
-              _dateOfBirth == null ? '—' : _formatDate(_dateOfBirth!),
-              style: profileInputStyle,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// The card-head avatar: the captured face photo once taken (owner follow-up
-  /// — "show at top by replacing the icon with the real profile photo"), else
-  /// the placeholder person icon.
-  Widget _buildHeaderAvatar() {
-    final bytes = _faceImageBytes;
-    if (bytes == null) {
-      return const Icon(
-        Icons.account_circle_outlined,
-        size: 40,
-        color: SimfTokens.headlineInk,
-      );
-    }
-    return ClipOval(
-      child: Image.memory(bytes, width: 40, height: 40, fit: BoxFit.cover),
-    );
   }
 
   /// The empty 56 px bordered attach box (shared by the ID + face fields):
