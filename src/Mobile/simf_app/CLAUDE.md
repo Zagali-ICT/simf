@@ -24,6 +24,12 @@ tablets), not landscape/two-pane.
 - Riverpod is the ONLY state management. Never add Provider/Bloc/GetX.
 - UI never calls the network. Data goes through `data/` repositories and
   `simf_data_pkg`. No `http`/`dio`/API calls in any widget or `*_screen.dart`.
+- **Data-layer boundary (SIMF-MAA-001 §5/§6/§9.1; D-545).** `simf_data_pkg` holds
+  the *transport only* — the one `dio` client, interceptors, `ApiResult`/`ApiFailure`,
+  storage — and is the only place that depends on `dio`. Each feature's **repository
+  + DTOs stay in `features/<f>/data/`**: the repo calls `SimfApiClient` and owns its
+  endpoint path + `fromJson` mapping. Do NOT move repositories/DTOs into the package,
+  and never let a feature import `dio`.
 - Doc comments that record a design decision, a Figma node, or a backend
   contract (e.g. "D-368", node ids) stay. Never delete them.
 - `AppL10n` is the localization system. Do not migrate to gen_l10n/.arb unless
