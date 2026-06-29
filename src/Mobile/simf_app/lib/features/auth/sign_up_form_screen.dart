@@ -11,16 +11,15 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_logo.dart';
 import '../../core/widgets/simf_field_label.dart';
+import '../../core/widgets/simf_field_style.dart';
 
 // Screen-local shorthands for the KSA-Project design tokens (Phase 0, D-359).
 const Color _bgNavy = SimfTokens.navySurface;
 const Color _card = SimfTokens.cardBeige;
-const Color _fieldBorder = SimfTokens.beigeBorder;
 const Color _gold = SimfTokens.accent;
 const Color _headline = SimfTokens.headlineInk;
 const Color _grey = SimfTokens.greyText;
 const Color _linkNavy = SimfTokens.linkNavy;
-const Color _inputText = SimfTokens.inputInk;
 const Color _danger = SimfTokens.danger;
 const Color _sweepTint = SimfTokens.surfaceTint;
 
@@ -288,10 +287,10 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
               textAlign: TextAlign.left,
               maxLength: 50,
               enabled: !_busy,
-              style: _inputStyle,
+              style: simfInputStyle,
               autovalidateMode: AutovalidateMode.onUserInteraction,
               validator: _validateEmail,
-              decoration: _inputDecoration(),
+              decoration: simfFieldDecoration(counterText: ''),
             ),
             const SizedBox(height: 16),
             SimfFieldLabel(l10n.passwordLabel),
@@ -301,10 +300,11 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
               obscureText: _obscure,
               maxLength: 32,
               enabled: !_busy,
-              style: _inputStyle,
+              style: simfInputStyle,
               autovalidateMode: AutovalidateMode.onUserInteraction,
               validator: _validatePassword,
-              decoration: _inputDecoration(
+              decoration: simfFieldDecoration(
+                counterText: '',
                 suffixIcon: _visibilityToggle(
                   l10n,
                   obscured: _obscure,
@@ -320,11 +320,12 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
               obscureText: _obscureConfirm,
               maxLength: 32,
               enabled: !_busy,
-              style: _inputStyle,
+              style: simfInputStyle,
               autovalidateMode: AutovalidateMode.onUserInteraction,
               validator: _validateConfirm,
               onFieldSubmitted: (_) => unawaited(_submit()),
-              decoration: _inputDecoration(
+              decoration: simfFieldDecoration(
+                counterText: '',
                 suffixIcon: _visibilityToggle(
                   l10n,
                   obscured: _obscureConfirm,
@@ -403,34 +404,6 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  static const TextStyle _inputStyle = TextStyle(
-    fontSize: 14,
-    fontWeight: FontWeight.w500,
-    color: _inputText,
-  );
-
-  static const OutlineInputBorder _restingBorder = OutlineInputBorder(
-    borderRadius: SimfTokens.borderRadiusSmall,
-    borderSide: BorderSide(color: _fieldBorder),
-  );
-  static const OutlineInputBorder _focusedBorder = OutlineInputBorder(
-    borderRadius: SimfTokens.borderRadiusSmall,
-    borderSide: BorderSide(color: _gold),
-  );
-
-  InputDecoration _inputDecoration({Widget? suffixIcon}) {
-    return InputDecoration(
-      counterText: '',
-      isDense: true,
-      filled: false,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
-      enabledBorder: _restingBorder,
-      focusedBorder: _focusedBorder,
-      disabledBorder: _restingBorder,
-      suffixIcon: suffixIcon,
     );
   }
 

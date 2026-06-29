@@ -15,6 +15,7 @@ import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_logo.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import '../../core/widgets/simf_field_label.dart';
+import '../../core/widgets/simf_field_style.dart';
 import 'biometric_auth.dart';
 import 'post_auth_route.dart';
 
@@ -29,7 +30,6 @@ const Color _goldText = SimfTokens.goldSoft;
 const Color _headline = SimfTokens.headlineInk;
 const Color _grey = SimfTokens.greyText;
 const Color _linkNavy = SimfTokens.linkNavy;
-const Color _inputText = SimfTokens.inputInk;
 const Color _danger = SimfTokens.danger;
 const Color _sweepTint = SimfTokens.surfaceTint;
 
@@ -400,8 +400,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             maxLength: 50,
             enabled: !_busy,
             onChanged: (_) => setState(() {}),
-            style: _inputStyle,
-            decoration: _inputDecoration(),
+            style: simfInputStyle,
+            decoration: simfFieldDecoration(counterText: ''),
           ),
           const SizedBox(height: 16),
           SimfFieldLabel(l10n.passwordLabel, color: SimfTokens.navy),
@@ -417,8 +417,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 unawaited(_submit());
               }
             },
-            style: _inputStyle,
-            decoration: _inputDecoration(
+            style: simfInputStyle,
+            decoration: simfFieldDecoration(
+              counterText: '',
               suffixIcon: IconButton(
                 tooltip: _obscure
                     ? l10n.showPasswordTooltip
@@ -642,40 +643,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     );
   }
 
-  static const TextStyle _inputStyle = TextStyle(
-    fontSize: 14,
-    fontWeight: FontWeight.w500,
-    color: _inputText,
-  );
-
-  static const OutlineInputBorder _restingBorder = OutlineInputBorder(
-    borderRadius: SimfTokens.borderRadiusSmall,
-    borderSide: BorderSide(color: _fieldBorder),
-  );
-  static const OutlineInputBorder _focusedBorder = OutlineInputBorder(
-    borderRadius: SimfTokens.borderRadiusSmall,
-    borderSide: BorderSide(color: _gold),
-  );
-
   static ButtonStyle _linkButtonStyle(Color color) => TextButton.styleFrom(
         padding: EdgeInsets.zero,
         minimumSize: Size.zero,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         foregroundColor: color,
       );
-
-  InputDecoration _inputDecoration({Widget? suffixIcon}) {
-    return InputDecoration(
-      counterText: '',
-      isDense: true,
-      filled: false,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
-      enabledBorder: _restingBorder,
-      focusedBorder: _focusedBorder,
-      disabledBorder: _restingBorder,
-      suffixIcon: suffixIcon,
-    );
-  }
 }
 
 /// Forum logo + name header (logo sits at the inline start — the right under
