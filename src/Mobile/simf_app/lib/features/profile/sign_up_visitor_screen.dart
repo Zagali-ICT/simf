@@ -19,9 +19,11 @@ import 'phone_validation.dart';
 import 'plate_validation.dart';
 import 'saudi_regions.dart';
 import 'widgets/beige_tabs.dart';
+import 'widgets/complete_profile_notice.dart';
 import 'widgets/field_label.dart';
 import 'widgets/lookup_search_sheet.dart';
 import 'widgets/radio_pill.dart';
+import 'widgets/terms_and_next_buttons.dart';
 
 const Color _sweepTint = Color(0x0AFFFFFF);
 const BorderRadius _radius4 =
@@ -777,36 +779,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    // D-434 — a clear notice that this is the complete-profile
-                    // step, so the user pays attention to the required items
-                    // (white-on-beige + gold border to stand out from the card).
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: SimfTokens.surface,
-                        border: Border.all(color: SimfTokens.accent),
-                        borderRadius: _radius4,
-                      ),
-                      child: Row(
-                        children: <Widget>[
-                          const Icon(
-                            Icons.info_outline,
-                            size: 18,
-                            color: SimfTokens.accent,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              l10n.completeProfilePrompt,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: SimfTokens.inputInk,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    const CompleteProfileNotice(),
                     const SizedBox(height: 24),
                     // نوع التسجيل (Visitor / Other) — beige tabs (Figma 505:1075).
                     BeigeTabs(
@@ -887,37 +860,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     const SizedBox(height: 16),
                     _buildFacePhotoField(l10n),
                     const SizedBox(height: 16),
-                    // Underlined terms link (Figma 522:2179) — opens Page 009.
-                    Center(
-                      child: TextButton(
-                        onPressed: () => context.pushNamed(RouteNames.terms),
-                        style: TextButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          foregroundColor: SimfTokens.navy,
-                        ),
-                        child: Text(
-                          l10n.termsAgreeQuestion,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    FilledButton(
-                      onPressed: () => _next(),
-                      child: Text(
-                        l10n.nextLabel,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
+                    TermsAndNextButtons(onNext: _next),
                   ],
                 ),
               ),
