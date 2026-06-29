@@ -1277,14 +1277,13 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   /// unchanged (D-471 fix). Letters-then-digits is the default for fresh entry.
   /// Empty when nothing is picked — the plate is optional.
   void _syncPlate() {
-    final String letters =
-        '${_plateLetter1 ?? ''}${_plateLetter2 ?? ''}${_plateLetter3 ?? ''}';
-    final String digits = _plateDigits.text.trim();
-    if (letters.isEmpty && digits.isEmpty) {
-      _plate.text = '';
-    } else {
-      _plate.text = _plateDigitsFirst ? '$digits$letters' : '$letters$digits';
-    }
+    _plate.text = assemblePlate(
+      letter1: _plateLetter1,
+      letter2: _plateLetter2,
+      letter3: _plateLetter3,
+      digits: _plateDigits.text,
+      digitsFirst: _plateDigitsFirst,
+    );
   }
 
   /// Splits a stored plate code into the three letter dropdowns + the digits
@@ -1293,42 +1292,17 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   /// a value the 17-letter dropdowns can't represent is kept verbatim in [_plate]
   /// so an unrelated profile edit never silently erases it (D-468 review).
   void _setPlateFromCode(String? code) {
-    _plateLetter1 = null;
-    _plateLetter2 = null;
-    _plateLetter3 = null;
-    _plateDigits.text = '';
-    _plateDigitsFirst = false;
-    final raw = code?.trim() ?? '';
-    if (raw.isEmpty) {
-      _plate.text = '';
-      return;
-    }
-    final canonical = normalizePlate(raw) ?? raw;
-    final List<String> letters = <String>[];
-    final StringBuffer digits = StringBuffer();
-    for (final int rune in canonical.runes) {
-      if (rune >= 0x30 && rune <= 0x39) {
-        digits.writeCharCode(rune);
-      } else {
-        letters.add(String.fromCharCode(rune).toUpperCase());
-      }
-    }
-    final Set<String> codes =
-        saudiPlateLetters.map((SaudiPlateLetter l) => l.code).toSet();
-    if (letters.length == 3 && letters.every(codes.contains)) {
-      _plateLetter1 = letters[0];
-      _plateLetter2 = letters[1];
-      _plateLetter3 = letters[2];
-      _plateDigits.text = digits.toString();
-      // Preserve the stored order: a leading digit means digits-then-letters
-      // (e.g. "1234ABJ"); _syncPlate re-emits in that same order (D-471 fix).
-      final int firstRune = canonical.runes.first;
-      _plateDigitsFirst = firstRune >= 0x30 && firstRune <= 0x39;
-      _syncPlate();
+    final PlateParts parts = parsePlate(code);
+    _plateLetter1 = parts.letter1;
+    _plateLetter2 = parts.letter2;
+    _plateLetter3 = parts.letter3;
+    _plateDigits.text = parts.digits;
+    _plateDigitsFirst = parts.digitsFirst;
+    final String? override = parts.rawOverride;
+    if (override != null) {
+      _plate.text = override;
     } else {
-      // Legacy / non-conforming code the dropdowns can't represent — keep it so
-      // an unrelated edit doesn't wipe it (the server re-validates on save).
-      _plate.text = canonical;
+      _syncPlate();
     }
   }
 

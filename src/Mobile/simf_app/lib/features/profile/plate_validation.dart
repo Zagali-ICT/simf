@@ -122,3 +122,83 @@ String? toArabicPlate(String value) {
   }
   return buffer.toString();
 }
+
+/// The three letter picks + digits a Saudi plate splits into, for the sign-up
+/// form's letter dropdowns + digit field.
+class PlateParts {
+  const PlateParts({
+    this.letter1,
+    this.letter2,
+    this.letter3,
+    this.digits = '',
+    this.digitsFirst = false,
+    this.rawOverride,
+  });
+
+  final String? letter1;
+  final String? letter2;
+  final String? letter3;
+  final String digits;
+
+  /// True when the stored plate led with digits ("1234ABJ"); [assemblePlate]
+  /// re-emits in that order so a digits-first plate round-trips (D-471).
+  final bool digitsFirst;
+
+  /// Non-null when the code did not parse into 3 dropdown letters — the value
+  /// to keep verbatim in the plate field (empty string clears it; a legacy /
+  /// non-conforming code is kept so an unrelated edit never erases it, D-468).
+  final String? rawOverride;
+}
+
+/// Re-assembles a plate string from the dropdown letter picks + digits,
+/// preserving [digitsFirst] order. Empty when nothing is set (the plate is
+/// optional). The pure form of the sign-up screen's `_syncPlate`.
+String assemblePlate({
+  String? letter1,
+  String? letter2,
+  String? letter3,
+  required String digits,
+  required bool digitsFirst,
+}) {
+  final String letters = '${letter1 ?? ''}${letter2 ?? ''}${letter3 ?? ''}';
+  final String d = digits.trim();
+  if (letters.isEmpty && d.isEmpty) {
+    return '';
+  }
+  return digitsFirst ? '$d$letters' : '$letters$d';
+}
+
+/// Splits a stored plate [code] into the three dropdown letters + digits (the
+/// pure form of the sign-up screen's `_setPlateFromCode`). The value is first
+/// normalised to the canonical Latin code, so an Arabic-script or pre-D-459
+/// plate still parses; a code the 17-letter dropdowns can't represent comes
+/// back as [PlateParts.rawOverride]. Blank → an empty override (clears it).
+PlateParts parsePlate(String? code) {
+  final String raw = code?.trim() ?? '';
+  if (raw.isEmpty) {
+    return const PlateParts(rawOverride: '');
+  }
+  final String canonical = normalizePlate(raw) ?? raw;
+  final List<String> letters = <String>[];
+  final StringBuffer digits = StringBuffer();
+  for (final int rune in canonical.runes) {
+    if (rune >= 0x30 && rune <= 0x39) {
+      digits.writeCharCode(rune);
+    } else {
+      letters.add(String.fromCharCode(rune).toUpperCase());
+    }
+  }
+  final Set<String> codes =
+      saudiPlateLetters.map((SaudiPlateLetter l) => l.code).toSet();
+  if (letters.length == 3 && letters.every(codes.contains)) {
+    final int firstRune = canonical.runes.first;
+    return PlateParts(
+      letter1: letters[0],
+      letter2: letters[1],
+      letter3: letters[2],
+      digits: digits.toString(),
+      digitsFirst: firstRune >= 0x30 && firstRune <= 0x39,
+    );
+  }
+  return PlateParts(rawOverride: canonical);
+}

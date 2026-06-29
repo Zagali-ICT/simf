@@ -44,4 +44,101 @@ void main() {
       expect(toArabicPlate(''), isNull);
     });
   });
+
+  group('assemblePlate', () {
+    test('joins letters then digits by default', () {
+      expect(
+        assemblePlate(
+          letter1: 'A',
+          letter2: 'B',
+          letter3: 'J',
+          digits: '1234',
+          digitsFirst: false,
+        ),
+        'ABJ1234',
+      );
+    });
+
+    test('re-emits digits-first when the stored order led with digits', () {
+      expect(
+        assemblePlate(
+          letter1: 'A',
+          letter2: 'B',
+          letter3: 'J',
+          digits: '1234',
+          digitsFirst: true,
+        ),
+        '1234ABJ',
+      );
+    });
+
+    test('is empty when nothing is set (the plate is optional)', () {
+      expect(assemblePlate(digits: '', digitsFirst: false), '');
+      expect(assemblePlate(digits: '   ', digitsFirst: false), '');
+    });
+
+    test('trims surrounding whitespace on the digits', () {
+      expect(
+        assemblePlate(
+          letter1: 'A',
+          letter2: 'B',
+          letter3: 'J',
+          digits: ' 12 ',
+          digitsFirst: false,
+        ),
+        'ABJ12',
+      );
+    });
+  });
+
+  group('parsePlate', () {
+    test('splits a letters-first plate into the dropdowns + digits', () {
+      final PlateParts p = parsePlate('ABJ1234');
+      expect(p.letter1, 'A');
+      expect(p.letter2, 'B');
+      expect(p.letter3, 'J');
+      expect(p.digits, '1234');
+      expect(p.digitsFirst, isFalse);
+      expect(p.rawOverride, isNull);
+    });
+
+    test('records digits-first order so it round-trips (D-471)', () {
+      final PlateParts p = parsePlate('1234ABJ');
+      expect(p.digitsFirst, isTrue);
+      expect(
+        assemblePlate(
+          letter1: p.letter1,
+          letter2: p.letter2,
+          letter3: p.letter3,
+          digits: p.digits,
+          digitsFirst: p.digitsFirst,
+        ),
+        '1234ABJ',
+      );
+    });
+
+    test('normalises an Arabic-script plate to the Latin dropdown codes', () {
+      final PlateParts p = parsePlate('ابح١٢٣٤');
+      expect(p.letter1, 'A');
+      expect(p.letter2, 'B');
+      expect(p.letter3, 'J');
+      expect(p.digits, '1234');
+      expect(p.rawOverride, isNull);
+    });
+
+    test('blank → an empty override that clears the field', () {
+      final PlateParts p = parsePlate('');
+      expect(p.rawOverride, '');
+      expect(p.letter1, isNull);
+      expect(p.digits, '');
+    });
+
+    test('keeps a non-conforming code verbatim as rawOverride (D-468)', () {
+      // 'C' is not one of the 17 plate letters, so the dropdowns can't
+      // represent it — the value is kept rather than silently erased.
+      final PlateParts p = parsePlate('ABC1234');
+      expect(p.rawOverride, isNotNull);
+      expect(p.letter1, isNull);
+    });
+  });
 }
