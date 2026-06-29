@@ -183,8 +183,9 @@ void main() {
       // (Navigator.push, D-426) — the camera screen can't be built in a widget
       // test, so here we assert the action button is present and wired; the
       // scanner itself is covered by its own tests + live verification.
+      // Frame 758:1469 — the primary add-person action is the gold FILLED button.
       expect(
-        find.widgetWithText(OutlinedButton, 'Scan to add a contact'),
+        find.widgetWithText(FilledButton, 'Scan to add a contact'),
         findsOneWidget,
       );
     });

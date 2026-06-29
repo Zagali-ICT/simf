@@ -303,6 +303,9 @@ class _Badge extends StatelessWidget {
         // visitor badges into My Visitors.
         if (identity.isVisitor) ...<Widget>[
           _actionButton(
+            // Frame 758:1469 — the primary "امسح لإضافة شخص" action is the
+            // gold-FILLED button; the share action below it stays outlined.
+            filled: true,
             icon: const SimfSvgIcon(
               'assets/icons/badge_scan.svg',
               size: 24,
@@ -339,12 +342,37 @@ class _Badge extends StatelessWidget {
     );
   }
 
-  /// One full-width gold-bordered QR-page action button (frame 758:1469 style).
+  /// One full-width QR-page action button (frame 758:1469). [filled] = the gold
+  /// primary button (امسح لإضافة شخص); otherwise the gold-bordered outlined
+  /// variant (the share action).
   Widget _actionButton({
     required Widget icon,
     required String label,
     required VoidCallback onTap,
+    bool filled = false,
   }) {
+    final labelText = Text(
+      label,
+      style: const TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.w700,
+        fontSize: SimfTokens.textLg,
+      ),
+    );
+    if (filled) {
+      return FilledButton.icon(
+        onPressed: onTap,
+        style: FilledButton.styleFrom(
+          minimumSize: const Size.fromHeight(48),
+          backgroundColor: SimfTokens.accent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+          ),
+        ),
+        icon: icon,
+        label: labelText,
+      );
+    }
     return OutlinedButton.icon(
       onPressed: onTap,
       style: OutlinedButton.styleFrom(
@@ -355,14 +383,7 @@ class _Badge extends StatelessWidget {
         ),
       ),
       icon: icon,
-      label: Text(
-        label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w700,
-          fontSize: SimfTokens.textLg,
-        ),
-      ),
+      label: labelText,
     );
   }
 }
