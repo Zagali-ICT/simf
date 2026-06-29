@@ -11,6 +11,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_form_scaffold.dart';
+import '../../core/responsive/max_width_body.dart';
 import '../../core/widgets/simf_field_label.dart';
 import '../../core/widgets/simf_field_style.dart';
 import '../../core/widgets/simf_labeled_text_field.dart';
@@ -31,8 +32,6 @@ import 'widgets/mobile_field.dart';
 import 'widgets/sign_up_visitor_header_avatar.dart';
 import 'widgets/terms_and_next_buttons.dart';
 
-const Color _sweepTint = Color(0x0AFFFFFF);
-
 /// Page 007 — إنشاء ملف شخصى · Sign up — profile **data**. The KSA-Project
 /// Figma design (node 168:2972 — D-368): the login-style navy header (logo +
 /// forum name, back chevron + the wired globe language toggle) over the beige
@@ -50,6 +49,11 @@ const Color _sweepTint = Color(0x0AFFFFFF);
 /// no backend field and is NOT rendered; date of birth, place of birth and
 /// the Saudi national-ID path are kept (API-required) in the same styling
 /// even though the frame omits them.
+///
+/// **FROZEN — clean-code D-546 (2026-06-30).** Decomposed to the per-page DoD
+/// (golden `sign_up_visitor_168-2972.png`); see
+/// `docs/pages/mobile/sign-up-visitor/README.md`. No rework without owner
+/// approval (§13.3).
 class SignUpVisitorScreen extends ConsumerStatefulWidget {
   const SignUpVisitorScreen({super.key});
 
@@ -648,7 +652,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
             width: 313,
             height: 323,
             decoration: BoxDecoration(
-              color: _sweepTint,
+              color: SimfTokens.surfaceTint,
               borderRadius: BorderRadius.circular(40),
             ),
           ),
@@ -672,128 +676,128 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       key: _formKey,
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
-            // A Material (not a decorated Container) so the ListTile/switch
-            // ink inside the card renders above the beige fill.
-            child: Material(
-              color: SimfTokens.cardBeige,
-              borderRadius: SimfTokens.borderRadiusSmall,
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    // Card head (Figma 522:2186): avatar badge + title.
-                    Row(
-                      children: <Widget>[
-                        Expanded(
-                          child: Text(
-                            l10n.createProfileTitle,
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w600,
-                              color: SimfTokens.headlineInk,
-                            ),
+        // §13.7 — form content caps at the 560 form width (MaxWidthBody), so it
+        // fills a phone but doesn't stretch edge-to-edge on a tablet.
+        child: MaxWidthBody(
+          maxWidth: 560,
+          // A Material (not a decorated Container) so the ListTile/switch
+          // ink inside the card renders above the beige fill.
+          child: Material(
+            color: SimfTokens.cardBeige,
+            borderRadius: SimfTokens.borderRadiusSmall,
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  // Card head (Figma 522:2186): avatar badge + title.
+                  Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Text(
+                          l10n.createProfileTitle,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w600,
+                            color: SimfTokens.headlineInk,
                           ),
                         ),
-                        // The captured face photo replaces the placeholder
-                        // person icon at the top once taken (owner follow-up).
-                        SignUpVisitorHeaderAvatar(bytes: _faceImageBytes),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    const CompleteProfileNotice(),
-                    const SizedBox(height: 24),
-                    // نوع التسجيل (Visitor / Other) — beige tabs (Figma 505:1075).
-                    BeigeTabs(
-                      options: <String>[
-                        l10n.signUpTypeVisitor,
-                        l10n.signUpTypeOther,
-                      ],
-                      selectedIndex: _isVisitorType ? 0 : 1,
-                      onChanged: (index) =>
-                          unawaited(_onTypeChanged(index == 0)),
-                    ),
-                    const SizedBox(height: 24),
-                    _buildProfileTypeField(l10n),
-                    const SizedBox(height: 16),
-                    SimfLabeledTextField(
-                      label: l10n.arabicNameLabel,
-                      controller: _arabicName,
-                      maxLength: 256,
-                      // Arabic letters + spaces only — block other scripts at
-                      // the keystroke so the field can never hold mixed text.
-                      inputFormatters: <TextInputFormatter>[
-                        FilteringTextInputFormatter.allow(RegExp(r'[ء-ي\s]')),
-                      ],
-                      validator: _validateArabicName,
-                    ),
-                    const SizedBox(height: 16),
-                    SimfLabeledTextField(
-                      label: l10n.englishNameLabel,
-                      controller: _englishName,
-                      maxLength: 256,
-                      textDirection: TextDirection.ltr,
-                      // Latin letters + spaces only.
-                      inputFormatters: <TextInputFormatter>[
-                        FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z\s]')),
-                      ],
-                      validator: _validateEnglishName,
-                    ),
-                    const SizedBox(height: 16),
-                    SimfFieldLabel(l10n.genderLabel),
-                    const SizedBox(height: 8),
-                    GenderPillsField(
-                      gender: _gender,
-                      onChanged: (value) =>
-                          setState(() => _gender = value),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildOrganisationField(l10n),
-                    const SizedBox(height: 16),
-                    SimfLabeledTextField(
-                      label: l10n.jobTitleLabel,
-                      controller: _jobTitle,
-                      maxLength: 128,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildNationalityField(l10n),
-                    const SizedBox(height: 16),
-                    // D-373 — the Saudi switch is gone: the nationality pick
-                    // drives national-ID vs iqama/passport (SA → national ID).
-                    ..._buildDocumentFields(l10n),
-                    const SizedBox(height: 16),
-                    MobileField(
-                      saudi: _isSaudi,
-                      controller:
-                          _isSaudi ? _saudiMobile : _internationalMobile,
-                      validator: _isSaudi
-                          ? _validateSaudiMobile
-                          : _validateInternationalMobile,
-                    ),
-                    const SizedBox(height: 16),
-                    DateOfBirthField(
-                      displayValue: _dateOfBirth == null
-                          ? '—'
-                          : _formatDate(_dateOfBirth!),
-                      hasError: _triedSubmit && _dateOfBirth == null,
-                      onTap: () => unawaited(_pickDateOfBirth()),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildPlaceOfBirthField(l10n),
-                    const SizedBox(height: 16),
-                    // D-373 — the plate is the last input before the attach.
-                    _buildPlateField(l10n),
-                    const SizedBox(height: 16),
-                    _buildIdImageField(l10n),
-                    const SizedBox(height: 16),
-                    _buildFacePhotoField(l10n),
-                    const SizedBox(height: 16),
-                    TermsAndNextButtons(onNext: _next),
-                  ],
-                ),
+                      ),
+                      // The captured face photo replaces the placeholder
+                      // person icon at the top once taken (owner follow-up).
+                      SignUpVisitorHeaderAvatar(bytes: _faceImageBytes),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const CompleteProfileNotice(),
+                  const SizedBox(height: 24),
+                  // نوع التسجيل (Visitor / Other) — beige tabs (Figma 505:1075).
+                  BeigeTabs(
+                    options: <String>[
+                      l10n.signUpTypeVisitor,
+                      l10n.signUpTypeOther,
+                    ],
+                    selectedIndex: _isVisitorType ? 0 : 1,
+                    onChanged: (index) =>
+                        unawaited(_onTypeChanged(index == 0)),
+                  ),
+                  const SizedBox(height: 24),
+                  _buildProfileTypeField(l10n),
+                  const SizedBox(height: 16),
+                  SimfLabeledTextField(
+                    label: l10n.arabicNameLabel,
+                    controller: _arabicName,
+                    maxLength: 256,
+                    // Arabic letters + spaces only — block other scripts at
+                    // the keystroke so the field can never hold mixed text.
+                    inputFormatters: <TextInputFormatter>[
+                      FilteringTextInputFormatter.allow(RegExp(r'[ء-ي\s]')),
+                    ],
+                    validator: _validateArabicName,
+                  ),
+                  const SizedBox(height: 16),
+                  SimfLabeledTextField(
+                    label: l10n.englishNameLabel,
+                    controller: _englishName,
+                    maxLength: 256,
+                    textDirection: TextDirection.ltr,
+                    // Latin letters + spaces only.
+                    inputFormatters: <TextInputFormatter>[
+                      FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z\s]')),
+                    ],
+                    validator: _validateEnglishName,
+                  ),
+                  const SizedBox(height: 16),
+                  SimfFieldLabel(l10n.genderLabel),
+                  const SizedBox(height: 8),
+                  GenderPillsField(
+                    gender: _gender,
+                    onChanged: (value) =>
+                        setState(() => _gender = value),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildOrganisationField(l10n),
+                  const SizedBox(height: 16),
+                  SimfLabeledTextField(
+                    label: l10n.jobTitleLabel,
+                    controller: _jobTitle,
+                    maxLength: 128,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildNationalityField(l10n),
+                  const SizedBox(height: 16),
+                  // D-373 — the Saudi switch is gone: the nationality pick
+                  // drives national-ID vs iqama/passport (SA → national ID).
+                  ..._buildDocumentFields(l10n),
+                  const SizedBox(height: 16),
+                  MobileField(
+                    saudi: _isSaudi,
+                    controller:
+                        _isSaudi ? _saudiMobile : _internationalMobile,
+                    validator: _isSaudi
+                        ? _validateSaudiMobile
+                        : _validateInternationalMobile,
+                  ),
+                  const SizedBox(height: 16),
+                  DateOfBirthField(
+                    displayValue: _dateOfBirth == null
+                        ? '—'
+                        : _formatDate(_dateOfBirth!),
+                    hasError: _triedSubmit && _dateOfBirth == null,
+                    onTap: () => unawaited(_pickDateOfBirth()),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildPlaceOfBirthField(l10n),
+                  const SizedBox(height: 16),
+                  // D-373 — the plate is the last input before the attach.
+                  _buildPlateField(l10n),
+                  const SizedBox(height: 16),
+                  _buildIdImageField(l10n),
+                  const SizedBox(height: 16),
+                  _buildFacePhotoField(l10n),
+                  const SizedBox(height: 16),
+                  TermsAndNextButtons(onNext: _next),
+                ],
               ),
             ),
           ),

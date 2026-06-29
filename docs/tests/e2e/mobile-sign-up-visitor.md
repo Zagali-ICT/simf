@@ -4,13 +4,18 @@
 > **data** form (mockup 05). **Reworked under D-332:** the interests sub-step + the
 > save moved to [`mobile-sign-up-interests`](mobile-sign-up-interests.md) (Page 007‑01);
 > this screen now ends with **Next**, and a **نوع التسجيل (Visitor/Other)** chip filters
-> the ProfileType picker. Spec: [`Page_007`](../../App/Page_007/README.md).
+> the ProfileType picker. Spec: [`mobile/sign-up-visitor/`](../../pages/mobile/sign-up-visitor/README.md).
 >
 > **Status note:** the D-332 rebuild shipped and the D-368 redesign restyled it;
 > `sign_up_visitor_screen_test.dart` covers the type filter, validation,
 > Saudi/non-Saudi document branches, the organisation gate and the Next→draft
 > hand-off on the **new** screen. Scenario wording that says "chips" reads as
 > the design's segmented tabs since D-368.
+>
+> **Clean-code freeze (D-546, 2026-06-30):** the screen was decomposed (behaviour
+> unchanged) and locked by the golden `sign_up_visitor_168-2972.png`; this catalogue
+> still applies verbatim. Full per-page doc:
+> [`mobile/sign-up-visitor/`](../../pages/mobile/sign-up-visitor/README.md).
 
 | | |
 |--|--|
