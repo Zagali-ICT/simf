@@ -13,7 +13,7 @@ import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_form_scaffold.dart';
 import '../../core/widgets/simf_field_label.dart';
 import '../../core/widgets/simf_field_style.dart';
-import '../../core/widgets/simf_radio_pill.dart';
+import '../../core/widgets/simf_picker_field.dart';
 import '../myarea/identity_verification_screen.dart' show CapturedSelfie;
 import 'data/profile_models.dart';
 import 'data/profile_repository.dart';
@@ -23,6 +23,7 @@ import 'saudi_regions.dart';
 import 'widgets/beige_tabs.dart';
 import 'widgets/complete_profile_notice.dart';
 import 'widgets/date_of_birth_field.dart';
+import 'widgets/gender_pills_field.dart';
 import 'widgets/lookup_search_sheet.dart';
 import 'widgets/mobile_field.dart';
 import 'widgets/sign_up_visitor_header_avatar.dart';
@@ -750,7 +751,11 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     const SizedBox(height: 16),
                     SimfFieldLabel(l10n.genderLabel),
                     const SizedBox(height: 8),
-                    _buildGenderPills(l10n),
+                    GenderPillsField(
+                      gender: _gender,
+                      onChanged: (value) =>
+                          setState(() => _gender = value),
+                    ),
                     const SizedBox(height: 16),
                     _buildOrganisationField(l10n),
                     const SizedBox(height: 16),
@@ -917,7 +922,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       children: <Widget>[
         SimfFieldLabel(l10n.profileTypeLabel),
         const SizedBox(height: 8),
-        _searchPickerField(
+        SimfPickerField(
           fieldKey: 'profileTypePicker',
           displayText: label,
           isPlaceholder: !hasValue,
@@ -925,69 +930,6 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           errorText: showError ? l10n.profileTypeRequired : null,
         ),
       ],
-    );
-  }
-
-  /// Gender as the design's two radio pills (Figma 522:2150) — white pills on
-  /// the beige card, an 18 px gold-ringed radio that fills when selected.
-  Widget _buildGenderPills(AppL10n l10n) {
-    return Row(
-      children: <Widget>[
-        Expanded(
-          child: SimfRadioPill(
-            label: l10n.genderMale,
-            selected: _gender == AppGender.male,
-            onTap: () => setState(() => _gender = AppGender.male),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: SimfRadioPill(
-            label: l10n.genderFemale,
-            selected: _gender == AppGender.female,
-            onTap: () => setState(() => _gender = AppGender.female),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// The shared "tap to open the searchable sheet" field chrome — the same look
-  /// (beige field + down-arrow) the nationality, birth-region and plate-letter
-  /// pickers all use (D-373/D-469/D-470). [displayText] is the selected label or
-  /// the placeholder ([isPlaceholder] greys it).
-  Widget _searchPickerField({
-    required String fieldKey,
-    required String displayText,
-    required bool isPlaceholder,
-    required VoidCallback onTap,
-    String? errorText,
-    bool showChevron = true,
-  }) {
-    return InkWell(
-      key: ValueKey<String>(fieldKey),
-      onTap: onTap,
-      borderRadius: SimfTokens.borderRadiusSmall,
-      child: InputDecorator(
-        decoration: simfFieldDecoration(
-          errorText: errorText,
-          // The narrow plate-letter boxes drop the arrow so the picked
-          // "Arabic · Latin" letter has the full width to show (D-459).
-          suffixIcon: showChevron
-              ? const Icon(
-                  Icons.keyboard_arrow_down,
-                  color: SimfTokens.greyText,
-                )
-              : null,
-        ),
-        child: Text(
-          displayText,
-          style: isPlaceholder
-              ? simfInputStyle.copyWith(color: SimfTokens.greyText)
-              : simfInputStyle,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ),
     );
   }
 
@@ -1029,7 +971,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       children: <Widget>[
         SimfFieldLabel(l10n.nationalityLabel),
         const SizedBox(height: 8),
-        _searchPickerField(
+        SimfPickerField(
           fieldKey: 'nationalityPicker',
           displayText: label,
           isPlaceholder: !hasValue,
@@ -1186,7 +1128,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         SimfFieldLabel(l10n.placeOfBirthLabel),
         const SizedBox(height: 8),
         if (_isSaudi)
-          _searchPickerField(
+          SimfPickerField(
             fieldKey: 'birthRegionPicker',
             displayText: _birthRegionCode == null
                 ? l10n.placeOfBirthRegionHint
@@ -1297,7 +1239,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     final letter = value == null ? null : _plateLetterByCode(value);
     return Semantics(
       label: '${l10n.plateLetterHint} $position',
-      child: _searchPickerField(
+      child: SimfPickerField(
         fieldKey: 'plateLetter$position',
         displayText: letter == null
             ? l10n.plateLetterHint
