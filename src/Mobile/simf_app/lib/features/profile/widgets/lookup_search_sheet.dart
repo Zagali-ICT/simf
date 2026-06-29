@@ -77,6 +77,9 @@ class _LookupSearchSheetState extends State<LookupSearchSheet> {
                     hintStyle: const TextStyle(color: SimfTokens.greyText),
                     prefixIcon:
                         const Icon(Icons.search, color: SimfTokens.greyText),
+                    // Radius uses OutlineInputBorder's default (circular 4 ==
+                    // SimfTokens.radiusSmall); passing it trips
+                    // avoid_redundant_argument_values.
                     enabledBorder: const OutlineInputBorder(
                       borderSide: BorderSide(color: SimfTokens.beigeBorder),
                     ),

@@ -52,7 +52,7 @@ side is blank. RTL-correct (start-aligned text, directional insets).
 - **E2E**: [`docs/tests/e2e/mobile-faq.md`](../../../tests/e2e/mobile-faq.md).
 
 ## 7. Clean-code DoD (Phase 0g pilot — 2026-06-29)
-- [x] ≤400 lines (165); one public widget per file; shell/cards reused (no copy)
+- [x] ≤400 lines (158); one public widget per file; shell/cards reused (no copy)
 - [x] flexible width (0 fixed content widths); pull-to-refresh; RTL-correct
 - [x] 0 raw `Color(0x…)`; 0 inline `TextStyle` (→ named `SimfTokens` styles)
 - [x] Figma node `1388:7567` bound; golden locks parity
