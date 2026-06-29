@@ -22,6 +22,7 @@ import 'widgets/beige_tabs.dart';
 import 'widgets/complete_profile_notice.dart';
 import 'widgets/field_label.dart';
 import 'widgets/lookup_search_sheet.dart';
+import 'widgets/profile_field_style.dart';
 import 'widgets/radio_pill.dart';
 import 'widgets/terms_and_next_buttons.dart';
 
@@ -799,7 +800,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     TextFormField(
                       controller: _arabicName,
                       maxLength: 256,
-                      style: _inputStyle,
+                      style: profileInputStyle,
                       autovalidateMode: AutovalidateMode.onUserInteraction,
                       // Arabic letters + spaces only — block other scripts at
                       // the keystroke so the field can never hold mixed text.
@@ -807,7 +808,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                         FilteringTextInputFormatter.allow(RegExp(r'[ء-ي\s]')),
                       ],
                       validator: _validateArabicName,
-                      decoration: _fieldDecoration(counterText: ''),
+                      decoration: profileFieldDecoration(counterText: ''),
                     ),
                     const SizedBox(height: 16),
                     FieldLabel(l10n.englishNameLabel),
@@ -816,14 +817,14 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                       controller: _englishName,
                       maxLength: 256,
                       textDirection: TextDirection.ltr,
-                      style: _inputStyle,
+                      style: profileInputStyle,
                       autovalidateMode: AutovalidateMode.onUserInteraction,
                       // Latin letters + spaces only.
                       inputFormatters: <TextInputFormatter>[
                         FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z\s]')),
                       ],
                       validator: _validateEnglishName,
-                      decoration: _fieldDecoration(counterText: ''),
+                      decoration: profileFieldDecoration(counterText: ''),
                     ),
                     const SizedBox(height: 16),
                     FieldLabel(l10n.genderLabel),
@@ -837,8 +838,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     TextFormField(
                       controller: _jobTitle,
                       maxLength: 128,
-                      style: _inputStyle,
-                      decoration: _fieldDecoration(counterText: ''),
+                      style: profileInputStyle,
+                      decoration: profileFieldDecoration(counterText: ''),
                     ),
                     const SizedBox(height: 16),
                     _buildNationalityField(l10n),
@@ -909,7 +910,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           FieldLabel(l10n.profileTypeLabel),
           const SizedBox(height: 8),
           InputDecorator(
-            decoration: _fieldDecoration(),
+            decoration: profileFieldDecoration(),
             child: Row(
               children: <Widget>[
                 const SizedBox(
@@ -941,7 +942,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           FieldLabel(l10n.profileTypeLabel),
           const SizedBox(height: 8),
           InputDecorator(
-            decoration: _fieldDecoration(),
+            decoration: profileFieldDecoration(),
             child: Row(
               children: <Widget>[
                 Expanded(
@@ -1034,7 +1035,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       onTap: onTap,
       borderRadius: _radius4,
       child: InputDecorator(
-        decoration: _fieldDecoration(
+        decoration: profileFieldDecoration(
           errorText: errorText,
           // The narrow plate-letter boxes drop the arrow so the picked
           // "Arabic · Latin" letter has the full width to show (D-459).
@@ -1048,8 +1049,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         child: Text(
           displayText,
           style: isPlaceholder
-              ? _inputStyle.copyWith(color: SimfTokens.greyText)
-              : _inputStyle,
+              ? profileInputStyle.copyWith(color: SimfTokens.greyText)
+              : profileInputStyle,
           overflow: TextOverflow.ellipsis,
         ),
       ),
@@ -1198,10 +1199,10 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           controller: _nationalId,
           keyboardType: TextInputType.number,
           maxLength: 10,
-          style: _inputStyle,
+          style: profileInputStyle,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           validator: _validateNationalId,
-          decoration: _fieldDecoration(counterText: ''),
+          decoration: profileFieldDecoration(counterText: ''),
         ),
       ];
     }
@@ -1222,10 +1223,10 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       TextFormField(
         controller: _documentNumber,
         maxLength: _docType == _DocType.iqama ? 10 : 9,
-        style: _inputStyle,
+        style: profileInputStyle,
         autovalidateMode: AutovalidateMode.onUserInteraction,
         validator: _validateDocumentNumber,
-        decoration: _fieldDecoration(counterText: ''),
+        decoration: profileFieldDecoration(counterText: ''),
       ),
     ];
   }
@@ -1264,8 +1265,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           TextFormField(
             controller: _placeOfBirth,
             maxLength: 128,
-            style: _inputStyle,
-            decoration: _fieldDecoration(
+            style: profileInputStyle,
+            decoration: profileFieldDecoration(
               counterText: '',
               hintText: l10n.placeOfBirthPassportHint,
             ),
@@ -1331,11 +1332,11 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                   inputFormatters: <TextInputFormatter>[
                     FilteringTextInputFormatter.digitsOnly,
                   ],
-                  style: _inputStyle,
+                  style: profileInputStyle,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   onChanged: (_) => setState(_syncPlate),
                   validator: (_) => _validatePlate(_plate.text),
-                  decoration: _fieldDecoration(
+                  decoration: profileFieldDecoration(
                     counterText: '',
                     hintText: l10n.plateDigitsHint,
                   ),
@@ -1485,11 +1486,11 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           controller: saudi ? _saudiMobile : _internationalMobile,
           keyboardType: TextInputType.phone,
           textDirection: TextDirection.ltr,
-          style: _inputStyle,
+          style: profileInputStyle,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           validator:
               saudi ? _validateSaudiMobile : _validateInternationalMobile,
-          decoration: _fieldDecoration(),
+          decoration: profileFieldDecoration(),
         ),
       ],
     );
@@ -1506,7 +1507,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           onTap: () => unawaited(_pickDateOfBirth()),
           borderRadius: _radius4,
           child: InputDecorator(
-            decoration: _fieldDecoration(
+            decoration: profileFieldDecoration(
               errorText: hasError ? l10n.dateOfBirthRequired : null,
               suffixIcon: const Icon(
                 Icons.calendar_today_outlined,
@@ -1516,7 +1517,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
             ),
             child: Text(
               _dateOfBirth == null ? '—' : _formatDate(_dateOfBirth!),
-              style: _inputStyle,
+              style: profileInputStyle,
             ),
           ),
         ),
@@ -1736,13 +1737,13 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           FieldLabel(l10n.organisationLabel),
           const SizedBox(height: 8),
           InputDecorator(
-            decoration: _fieldDecoration(),
+            decoration: profileFieldDecoration(),
             child: Row(
               children: <Widget>[
                 Expanded(
                   child: Text(
                     _organisationLabel ?? l10n.organisationSelected,
-                    style: _inputStyle,
+                    style: profileInputStyle,
                   ),
                 ),
                 TextButton(
@@ -1764,8 +1765,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         const SizedBox(height: 8),
         TextField(
           controller: _organisationSearch,
-          style: _inputStyle,
-          decoration: _fieldDecoration(
+          style: profileInputStyle,
+          decoration: profileFieldDecoration(
             hintText: l10n.organisationSearchHint,
             prefixIcon:
                 const Icon(Icons.search, color: SimfTokens.greyText, size: 18),
@@ -1858,47 +1859,6 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                 ),
         ],
       ],
-    );
-  }
-
-  // ---- Styling (the login-card field language — Figma 168:2972) ------------
-
-  static const TextStyle _inputStyle = TextStyle(
-    fontSize: 14,
-    fontWeight: FontWeight.w500,
-    color: SimfTokens.inputInk,
-  );
-
-  static const OutlineInputBorder _restingBorder = OutlineInputBorder(
-    borderRadius: _radius4,
-    borderSide: BorderSide(color: SimfTokens.beigeBorder),
-  );
-  static const OutlineInputBorder _focusedBorder = OutlineInputBorder(
-    borderRadius: _radius4,
-    borderSide: BorderSide(color: SimfTokens.accent),
-  );
-
-  InputDecoration _fieldDecoration({
-    String? counterText,
-    String? hintText,
-    String? errorText,
-    Widget? prefixIcon,
-    Widget? suffixIcon,
-  }) {
-    return InputDecoration(
-      counterText: counterText,
-      hintText: hintText,
-      errorText: errorText,
-      prefixIcon: prefixIcon,
-      suffixIcon: suffixIcon,
-      isDense: true,
-      filled: false,
-      hintStyle: const TextStyle(color: SimfTokens.greyText),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
-      border: _restingBorder,
-      enabledBorder: _restingBorder,
-      focusedBorder: _focusedBorder,
-      disabledBorder: _restingBorder,
     );
   }
 
