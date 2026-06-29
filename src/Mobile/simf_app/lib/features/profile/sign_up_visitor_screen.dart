@@ -20,6 +20,7 @@ import 'data/profile_repository.dart';
 import 'phone_validation.dart';
 import 'plate_validation.dart';
 import 'saudi_regions.dart';
+import 'widgets/attachment_field.dart';
 import 'widgets/beige_tabs.dart';
 import 'widgets/complete_profile_notice.dart';
 import 'widgets/date_of_birth_field.dart';
@@ -1349,110 +1350,22 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     }
   }
 
-  /// The empty 56 px bordered attach box (shared by the ID + face fields):
-  /// a centred label + trailing icon that triggers [onTap] when tapped.
-  Widget _attachBox({
-    required String label,
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: SimfTokens.borderRadiusSmall,
-      child: Container(
-        height: 56,
-        decoration: BoxDecoration(
-          border: Border.all(color: SimfTokens.beigeBorder),
-          borderRadius: SimfTokens.borderRadiusSmall,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              label,
-              style: const TextStyle(
-                color: SimfTokens.inputInk,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Icon(icon, size: 24, color: SimfTokens.greyText),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// "Upload ID" — the ID DOCUMENT attach box (gallery pick): a 56 px bordered
-  /// row with the plus mark; once attached it shows the thumbnail + name +
-  /// remove. Mandatory for EVERY registrant — the "required" hint shows up
-  /// front, escalating to danger after a blocked Next.
+  /// "Upload ID" — the mandatory ID-document attachment. The "required" hint
+  /// shows up front, escalating to danger after a blocked Next.
   Widget _buildIdImageField(AppL10n l10n) {
-    final bytes = _idImageBytes;
-    final needsImage = bytes == null && !_hasExistingIdImage;
-    final triedAndMissing = _triedSubmit && needsImage;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        SimfFieldLabel(l10n.attachmentsLabel),
-        const SizedBox(height: 8),
-        if (needsImage) ...<Widget>[
-          Text(
-            l10n.idImageRequired,
-            style: TextStyle(
-              color: triedAndMissing ? SimfTokens.danger : SimfTokens.greyText,
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 8),
-        ],
-        if (bytes == null)
-          _attachBox(
-            label: l10n.attachFileLabel,
-            icon: Icons.add_circle_outline,
-            onTap: () => unawaited(_pickIdImage()),
-          )
-        else
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              border: Border.all(color: SimfTokens.beigeBorder),
-              borderRadius: SimfTokens.borderRadiusSmall,
-            ),
-            child: Row(
-              children: <Widget>[
-                ClipRRect(
-                  borderRadius: SimfTokens.borderRadiusSmall,
-                  child: Image.memory(
-                    bytes,
-                    width: 40,
-                    height: 40,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    _idImageName ?? l10n.idImageAttachedLabel,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: SimfTokens.inputInk,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: _removeIdImage,
-                  style: TextButton.styleFrom(
-                    foregroundColor: SimfTokens.accent,
-                  ),
-                  child: Text(l10n.removeLabel),
-                ),
-              ],
-            ),
-          ),
-      ],
+    final needsImage = _idImageBytes == null && !_hasExistingIdImage;
+    return AttachmentField(
+      label: l10n.attachmentsLabel,
+      hintText: needsImage ? l10n.idImageRequired : null,
+      hintDanger: _triedSubmit && needsImage,
+      bytes: _idImageBytes,
+      round: false,
+      attachLabel: l10n.attachFileLabel,
+      attachIcon: Icons.add_circle_outline,
+      onAttach: () => unawaited(_pickIdImage()),
+      attachedName: _idImageName ?? l10n.idImageAttachedLabel,
+      actionLabel: l10n.removeLabel,
+      onAction: _removeIdImage,
     );
   }
 
@@ -1463,76 +1376,24 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   /// hint.
   Widget _buildFacePhotoField(AppL10n l10n) {
     final bytes = _faceImageBytes;
-    final maleNeedsFace = _gender == AppGender.male &&
-        bytes == null &&
-        !_hasExistingAvatar;
-    final triedAndMissing = _triedSubmit && maleNeedsFace;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        SimfFieldLabel(l10n.facePhotoLabel),
-        const SizedBox(height: 8),
-        if (maleNeedsFace) ...<Widget>[
-          Text(
-            l10n.facePhotoRequiredForMen,
-            style: TextStyle(
-              color: triedAndMissing ? SimfTokens.danger : SimfTokens.greyText,
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 8),
-        ] else if (bytes == null && !_hasExistingAvatar) ...<Widget>[
-          Text(
-            l10n.facePhotoOptionalForWomen,
-            style: const TextStyle(color: SimfTokens.greyText, fontSize: 12),
-          ),
-          const SizedBox(height: 8),
-        ],
-        if (bytes == null)
-          _attachBox(
-            label: l10n.facePhotoCaptureLabel,
-            icon: Icons.photo_camera_outlined,
-            onTap: () => unawaited(_pickFacePhoto()),
-          )
-        else
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              border: Border.all(color: SimfTokens.beigeBorder),
-              borderRadius: SimfTokens.borderRadiusSmall,
-            ),
-            child: Row(
-              children: <Widget>[
-                ClipOval(
-                  child: Image.memory(
-                    bytes,
-                    width: 40,
-                    height: 40,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    l10n.facePhotoCaptured,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: SimfTokens.inputInk,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => unawaited(_pickFacePhoto()),
-                  style: TextButton.styleFrom(
-                    foregroundColor: SimfTokens.accent,
-                  ),
-                  child: Text(l10n.retakeLabel),
-                ),
-              ],
-            ),
-          ),
-      ],
+    final maleNeedsFace =
+        _gender == AppGender.male && bytes == null && !_hasExistingAvatar;
+    final showOptionalHint =
+        bytes == null && !_hasExistingAvatar && !maleNeedsFace;
+    return AttachmentField(
+      label: l10n.facePhotoLabel,
+      hintText: maleNeedsFace
+          ? l10n.facePhotoRequiredForMen
+          : (showOptionalHint ? l10n.facePhotoOptionalForWomen : null),
+      hintDanger: _triedSubmit && maleNeedsFace,
+      bytes: bytes,
+      round: true,
+      attachLabel: l10n.facePhotoCaptureLabel,
+      attachIcon: Icons.photo_camera_outlined,
+      onAttach: () => unawaited(_pickFacePhoto()),
+      attachedName: l10n.facePhotoCaptured,
+      actionLabel: l10n.retakeLabel,
+      onAction: () => unawaited(_pickFacePhoto()),
     );
   }
 
