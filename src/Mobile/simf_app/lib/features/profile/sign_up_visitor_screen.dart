@@ -13,6 +13,7 @@ import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_form_scaffold.dart';
 import '../../core/widgets/simf_field_label.dart';
 import '../../core/widgets/simf_field_style.dart';
+import '../../core/widgets/simf_labeled_text_field.dart';
 import '../../core/widgets/simf_picker_field.dart';
 import '../myarea/identity_verification_screen.dart' show CapturedSelfie;
 import 'data/profile_models.dart';
@@ -718,36 +719,28 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     const SizedBox(height: 24),
                     _buildProfileTypeField(l10n),
                     const SizedBox(height: 16),
-                    SimfFieldLabel(l10n.arabicNameLabel),
-                    const SizedBox(height: 8),
-                    TextFormField(
+                    SimfLabeledTextField(
+                      label: l10n.arabicNameLabel,
                       controller: _arabicName,
                       maxLength: 256,
-                      style: simfInputStyle,
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
                       // Arabic letters + spaces only — block other scripts at
                       // the keystroke so the field can never hold mixed text.
                       inputFormatters: <TextInputFormatter>[
                         FilteringTextInputFormatter.allow(RegExp(r'[ء-ي\s]')),
                       ],
                       validator: _validateArabicName,
-                      decoration: simfFieldDecoration(counterText: ''),
                     ),
                     const SizedBox(height: 16),
-                    SimfFieldLabel(l10n.englishNameLabel),
-                    const SizedBox(height: 8),
-                    TextFormField(
+                    SimfLabeledTextField(
+                      label: l10n.englishNameLabel,
                       controller: _englishName,
                       maxLength: 256,
                       textDirection: TextDirection.ltr,
-                      style: simfInputStyle,
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
                       // Latin letters + spaces only.
                       inputFormatters: <TextInputFormatter>[
                         FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z\s]')),
                       ],
                       validator: _validateEnglishName,
-                      decoration: simfFieldDecoration(counterText: ''),
                     ),
                     const SizedBox(height: 16),
                     SimfFieldLabel(l10n.genderLabel),
@@ -760,13 +753,10 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     const SizedBox(height: 16),
                     _buildOrganisationField(l10n),
                     const SizedBox(height: 16),
-                    SimfFieldLabel(l10n.jobTitleLabel),
-                    const SizedBox(height: 8),
-                    TextFormField(
+                    SimfLabeledTextField(
+                      label: l10n.jobTitleLabel,
                       controller: _jobTitle,
                       maxLength: 128,
-                      style: simfInputStyle,
-                      decoration: simfFieldDecoration(counterText: ''),
                     ),
                     const SizedBox(height: 16),
                     _buildNationalityField(l10n),
@@ -1070,16 +1060,12 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   List<Widget> _buildDocumentFields(AppL10n l10n) {
     if (_isSaudi) {
       return <Widget>[
-        SimfFieldLabel(l10n.nationalIdLabel),
-        const SizedBox(height: 8),
-        TextFormField(
+        SimfLabeledTextField(
+          label: l10n.nationalIdLabel,
           controller: _nationalId,
           keyboardType: TextInputType.number,
           maxLength: 10,
-          style: simfInputStyle,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
           validator: _validateNationalId,
-          decoration: simfFieldDecoration(counterText: ''),
         ),
       ];
     }
@@ -1095,15 +1081,11 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         }),
       ),
       const SizedBox(height: 16),
-      SimfFieldLabel(l10n.documentNumberLabel),
-      const SizedBox(height: 8),
-      TextFormField(
+      SimfLabeledTextField(
+        label: l10n.documentNumberLabel,
         controller: _documentNumber,
         maxLength: _docType == _DocType.iqama ? 10 : 9,
-        style: simfInputStyle,
-        autovalidateMode: AutovalidateMode.onUserInteraction,
         validator: _validateDocumentNumber,
-        decoration: simfFieldDecoration(counterText: ''),
       ),
     ];
   }
