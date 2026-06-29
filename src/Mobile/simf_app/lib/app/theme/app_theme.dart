@@ -47,6 +47,8 @@ class SimfTheme {
             borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
           ),
           textStyle: const TextStyle(
+            fontFamily: fontFamily,
+            fontFamilyFallback: fontFamilyFallback,
             fontWeight: FontWeight.w700,
             fontSize: SimfTokens.textMd,
           ),
