@@ -13,6 +13,7 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_logo.dart';
 import '../../core/widgets/simf_field_label.dart';
+import '../../core/widgets/simf_field_style.dart';
 import '../../core/widgets/simf_radio_pill.dart';
 import '../myarea/identity_verification_screen.dart' show CapturedSelfie;
 import 'data/profile_models.dart';
@@ -25,7 +26,6 @@ import 'widgets/complete_profile_notice.dart';
 import 'widgets/date_of_birth_field.dart';
 import 'widgets/lookup_search_sheet.dart';
 import 'widgets/mobile_field.dart';
-import 'widgets/profile_field_style.dart';
 import 'widgets/sign_up_visitor_header_avatar.dart';
 import 'widgets/terms_and_next_buttons.dart';
 
@@ -801,7 +801,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     TextFormField(
                       controller: _arabicName,
                       maxLength: 256,
-                      style: profileInputStyle,
+                      style: simfInputStyle,
                       autovalidateMode: AutovalidateMode.onUserInteraction,
                       // Arabic letters + spaces only — block other scripts at
                       // the keystroke so the field can never hold mixed text.
@@ -809,7 +809,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                         FilteringTextInputFormatter.allow(RegExp(r'[ء-ي\s]')),
                       ],
                       validator: _validateArabicName,
-                      decoration: profileFieldDecoration(counterText: ''),
+                      decoration: simfFieldDecoration(counterText: ''),
                     ),
                     const SizedBox(height: 16),
                     SimfFieldLabel(l10n.englishNameLabel),
@@ -818,14 +818,14 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                       controller: _englishName,
                       maxLength: 256,
                       textDirection: TextDirection.ltr,
-                      style: profileInputStyle,
+                      style: simfInputStyle,
                       autovalidateMode: AutovalidateMode.onUserInteraction,
                       // Latin letters + spaces only.
                       inputFormatters: <TextInputFormatter>[
                         FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z\s]')),
                       ],
                       validator: _validateEnglishName,
-                      decoration: profileFieldDecoration(counterText: ''),
+                      decoration: simfFieldDecoration(counterText: ''),
                     ),
                     const SizedBox(height: 16),
                     SimfFieldLabel(l10n.genderLabel),
@@ -839,8 +839,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     TextFormField(
                       controller: _jobTitle,
                       maxLength: 128,
-                      style: profileInputStyle,
-                      decoration: profileFieldDecoration(counterText: ''),
+                      style: simfInputStyle,
+                      decoration: simfFieldDecoration(counterText: ''),
                     ),
                     const SizedBox(height: 16),
                     _buildNationalityField(l10n),
@@ -924,7 +924,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           SimfFieldLabel(l10n.profileTypeLabel),
           const SizedBox(height: 8),
           InputDecorator(
-            decoration: profileFieldDecoration(),
+            decoration: simfFieldDecoration(),
             child: Row(
               children: <Widget>[
                 const SizedBox(
@@ -956,7 +956,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           SimfFieldLabel(l10n.profileTypeLabel),
           const SizedBox(height: 8),
           InputDecorator(
-            decoration: profileFieldDecoration(),
+            decoration: simfFieldDecoration(),
             child: Row(
               children: <Widget>[
                 Expanded(
@@ -1049,7 +1049,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       onTap: onTap,
       borderRadius: SimfTokens.borderRadiusSmall,
       child: InputDecorator(
-        decoration: profileFieldDecoration(
+        decoration: simfFieldDecoration(
           errorText: errorText,
           // The narrow plate-letter boxes drop the arrow so the picked
           // "Arabic · Latin" letter has the full width to show (D-459).
@@ -1063,8 +1063,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         child: Text(
           displayText,
           style: isPlaceholder
-              ? profileInputStyle.copyWith(color: SimfTokens.greyText)
-              : profileInputStyle,
+              ? simfInputStyle.copyWith(color: SimfTokens.greyText)
+              : simfInputStyle,
           overflow: TextOverflow.ellipsis,
         ),
       ),
@@ -1213,10 +1213,10 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           controller: _nationalId,
           keyboardType: TextInputType.number,
           maxLength: 10,
-          style: profileInputStyle,
+          style: simfInputStyle,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           validator: _validateNationalId,
-          decoration: profileFieldDecoration(counterText: ''),
+          decoration: simfFieldDecoration(counterText: ''),
         ),
       ];
     }
@@ -1237,10 +1237,10 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       TextFormField(
         controller: _documentNumber,
         maxLength: _docType == _DocType.iqama ? 10 : 9,
-        style: profileInputStyle,
+        style: simfInputStyle,
         autovalidateMode: AutovalidateMode.onUserInteraction,
         validator: _validateDocumentNumber,
-        decoration: profileFieldDecoration(counterText: ''),
+        decoration: simfFieldDecoration(counterText: ''),
       ),
     ];
   }
@@ -1279,8 +1279,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           TextFormField(
             controller: _placeOfBirth,
             maxLength: 128,
-            style: profileInputStyle,
-            decoration: profileFieldDecoration(
+            style: simfInputStyle,
+            decoration: simfFieldDecoration(
               counterText: '',
               hintText: l10n.placeOfBirthPassportHint,
             ),
@@ -1346,11 +1346,11 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                   inputFormatters: <TextInputFormatter>[
                     FilteringTextInputFormatter.digitsOnly,
                   ],
-                  style: profileInputStyle,
+                  style: simfInputStyle,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   onChanged: (_) => setState(_syncPlate),
                   validator: (_) => _validatePlate(_plate.text),
-                  decoration: profileFieldDecoration(
+                  decoration: simfFieldDecoration(
                     counterText: '',
                     hintText: l10n.plateDigitsHint,
                   ),
@@ -1682,13 +1682,13 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           SimfFieldLabel(l10n.organisationLabel),
           const SizedBox(height: 8),
           InputDecorator(
-            decoration: profileFieldDecoration(),
+            decoration: simfFieldDecoration(),
             child: Row(
               children: <Widget>[
                 Expanded(
                   child: Text(
                     _organisationLabel ?? l10n.organisationSelected,
-                    style: profileInputStyle,
+                    style: simfInputStyle,
                   ),
                 ),
                 TextButton(
@@ -1710,8 +1710,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         const SizedBox(height: 8),
         TextField(
           controller: _organisationSearch,
-          style: profileInputStyle,
-          decoration: profileFieldDecoration(
+          style: simfInputStyle,
+          decoration: simfFieldDecoration(
             hintText: l10n.organisationSearchHint,
             prefixIcon:
                 const Icon(Icons.search, color: SimfTokens.greyText, size: 18),

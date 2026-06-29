@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../app/localization/app_l10n.dart';
 import '../../../core/widgets/simf_field_label.dart';
-import 'profile_field_style.dart';
+import '../../../core/widgets/simf_field_style.dart';
 
 /// The mobile-number field. The label, keyboard and [validator] switch on
 /// [saudi]; the screen owns the controllers and validators and passes the
@@ -33,10 +33,10 @@ class MobileField extends StatelessWidget {
           controller: controller,
           keyboardType: TextInputType.phone,
           textDirection: TextDirection.ltr,
-          style: profileInputStyle,
+          style: simfInputStyle,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           validator: validator,
-          decoration: profileFieldDecoration(),
+          decoration: simfFieldDecoration(),
         ),
       ],
     );

@@ -10,6 +10,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../core/widgets/simf_field_label.dart';
+import '../../core/widgets/simf_field_style.dart';
 import 'widgets/auth_chrome.dart';
 
 /// Part B (D-430) — activate a passwordless badge account: verify an emailed
@@ -213,8 +214,8 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
           textAlign: TextAlign.left,
           enabled: !_busy,
           onChanged: (_) => setState(() {}),
-          style: authInputTextStyle,
-          decoration: authInputDecoration(),
+          style: simfInputStyle,
+          decoration: simfFieldDecoration(counterText: ''),
         ),
         const SizedBox(height: 24),
         AuthSubmitButton(
@@ -240,8 +241,8 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
             FilteringTextInputFormatter.digitsOnly,
           ],
           onChanged: (_) => setState(() {}),
-          style: authInputTextStyle,
-          decoration: authInputDecoration(),
+          style: simfInputStyle,
+          decoration: simfFieldDecoration(counterText: ''),
         ),
         const SizedBox(height: 16),
         SimfFieldLabel(l10n.newPasswordLabel),
@@ -252,8 +253,8 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
           maxLength: 32,
           enabled: !_busy,
           onChanged: (_) => setState(() {}),
-          style: authInputTextStyle,
-          decoration: authInputDecoration(suffixIcon: _passwordToggle(l10n)),
+          style: simfInputStyle,
+          decoration: simfFieldDecoration(counterText: '', suffixIcon: _passwordToggle(l10n)),
         ),
         const SizedBox(height: 16),
         SimfFieldLabel(l10n.confirmPasswordLabel),
@@ -269,8 +270,8 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
               unawaited(_complete());
             }
           },
-          style: authInputTextStyle,
-          decoration: authInputDecoration(),
+          style: simfInputStyle,
+          decoration: simfFieldDecoration(counterText: ''),
         ),
         const SizedBox(height: 24),
         AuthSubmitButton(

@@ -9,36 +9,6 @@ import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_page_shell.dart';
 import '../../../app/widgets/simf_logo.dart';
 
-/// Shared KSA field/button styling for screens built on [AuthPageShell]
-/// (the same shapes the sign-in/sign-up cards use).
-const TextStyle authInputTextStyle = TextStyle(
-  fontSize: 14,
-  fontWeight: FontWeight.w500,
-  color: SimfTokens.inputInk,
-);
-
-const OutlineInputBorder _authRestingBorder = OutlineInputBorder(
-  borderRadius: SimfTokens.borderRadiusSmall,
-  borderSide: BorderSide(color: SimfTokens.beigeBorder),
-);
-const OutlineInputBorder _authFocusedBorder = OutlineInputBorder(
-  borderRadius: SimfTokens.borderRadiusSmall,
-  borderSide: BorderSide(color: SimfTokens.accent),
-);
-
-InputDecoration authInputDecoration({Widget? suffixIcon}) {
-  return InputDecoration(
-    counterText: '',
-    isDense: true,
-    filled: false,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
-    enabledBorder: _authRestingBorder,
-    focusedBorder: _authFocusedBorder,
-    disabledBorder: _authRestingBorder,
-    suffixIcon: suffixIcon,
-  );
-}
-
 final ButtonStyle authSubmitButtonStyle = FilledButton.styleFrom(
   backgroundColor: SimfTokens.accent,
   disabledBackgroundColor: SimfTokens.accent.withValues(alpha: 0.5),

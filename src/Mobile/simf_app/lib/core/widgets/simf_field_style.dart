@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import '../../app/theme/tokens.dart';
 
-/// The shared "login-card" field language for the sign-up / profile form
-/// (Figma 168:2972): the value text style + the standard [InputDecoration]
-/// (beige resting border, gold focus border, dense, no fill). Used by the
-/// screen and every extracted profile field widget so they look identical.
+/// The one shared form-field styling for every bordered SIMF input — login,
+/// sign-up, profile and any other form. The value text style + the standard
+/// [InputDecoration] (beige resting border, gold focus border, dense, no fill).
+/// Replaces the former per-feature `authInput*` / `profileField*` copies.
 
-/// Text style for the value typed into a profile form field.
-const TextStyle profileInputStyle = TextStyle(
+/// Text style for the value typed into a SIMF form field.
+const TextStyle simfInputStyle = TextStyle(
   fontSize: 14,
   fontWeight: FontWeight.w500,
   color: SimfTokens.inputInk,
@@ -23,8 +23,9 @@ const OutlineInputBorder _focusedBorder = OutlineInputBorder(
   borderSide: BorderSide(color: SimfTokens.accent),
 );
 
-/// The standard [InputDecoration] for a profile form field.
-InputDecoration profileFieldDecoration({
+/// The standard [InputDecoration] for a SIMF form field. Pass [counterText] `''`
+/// to hide the maxLength counter (the auth screens' convention).
+InputDecoration simfFieldDecoration({
   String? counterText,
   String? hintText,
   String? errorText,
