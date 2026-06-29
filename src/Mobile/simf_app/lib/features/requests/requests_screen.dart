@@ -6,7 +6,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import 'data/request_models.dart';
 import 'data/requests_repository.dart';
 import 'new_request_sheet.dart';
@@ -93,15 +93,15 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.requestsTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: ref.watch(myRequestsProvider).when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => KsaRefresh(
+            error: (_, __) => SimfPullToRefresh(
               onRefresh: _refresh,
-              child: KsaPullable(
-                child: KsaErrorState(
+              child: SimfPullableHost(
+                child: SimfErrorState(
                   message: l10n.requestsError,
                   retryLabel: l10n.retryLabel,
                   onRetry: () => ref.invalidate(myRequestsProvider),
@@ -126,7 +126,7 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
         ? items
         : items.where((i) => i.status == effectiveFilter).toList();
 
-    return KsaRefresh(
+    return SimfPullToRefresh(
       onRefresh: _refresh,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -152,7 +152,7 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
           ),
         const SizedBox(height: SimfTokens.space4),
         if (items.isEmpty)
-          KsaEmptyState(
+          SimfEmptyState(
             icon: Icons.inbox_outlined,
             message: l10n.requestsEmpty,
           )

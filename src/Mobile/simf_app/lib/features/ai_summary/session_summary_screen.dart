@@ -7,7 +7,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../sessions/data/session_models.dart';
 import '../sessions/data/sessions_repository.dart';
 import '../sessions/widgets/session_filter_tabs.dart';
@@ -168,9 +168,9 @@ class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     final sessions = ref.watch(aiSummarySessionsProvider);
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.aiSummaryTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: sessions.when(
         loading: () => const Center(
           child: CircularProgressIndicator(color: SimfTokens.accent),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../core/country_flag.dart';
 
 /// The shared exhibitor / sponsor detail layout — Figma **1439:11881 "العارض"**
@@ -64,9 +64,9 @@ class EntityDetailScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return KsaPage(
+    return SimfPageShell(
       title: headerTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           SimfTokens.space4,
@@ -134,7 +134,7 @@ class _IdentityCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return KsaCard(
+    return SimfCard(
       radius: SimfTokens.radius, // 8
       borderWidth: 0, // borderless (Figma 1439:11891)
       child: Padding(
@@ -283,7 +283,7 @@ class _AboutCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return KsaCard(
+    return SimfCard(
       radius: SimfTokens.radius, // 8
       borderWidth: 0,
       child: Padding(
@@ -357,7 +357,7 @@ class _LinkRow extends StatelessWidget {
   Widget build(BuildContext context) {
     // TextAlign.start (not a hardcoded .right) so the row tracks the locale:
     // right in the Arabic design target, left when the language toggle flips to
-    // English — matching the shared KsaLinkRow. Codes/URLs are Latin runs so
+    // English — matching the shared SimfLinkRow. Codes/URLs are Latin runs so
     // they keep reading order without a forced textDirection.
     final Widget valueText = Text(
       value,
@@ -394,7 +394,7 @@ class _LinkRow extends StatelessWidget {
             if (hasLabel) const SizedBox(height: SimfTokens.space2),
             valueText,
           ];
-    return KsaCard(
+    return SimfCard(
       color: background,
       radius: SimfTokens.radius14, // 14
       onTap: onTap,
@@ -412,7 +412,7 @@ class _LinkRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: SimfTokens.space2),
-            // Fixed left-caret — like the shared KsaLinkRow / KsaListRow, the
+            // Fixed left-caret — like the shared SimfLinkRow / SimfListRow, the
             // design's caret does not auto-mirror under RTL.
             const Icon(
               Icons.chevron_left,

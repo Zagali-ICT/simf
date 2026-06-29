@@ -4,7 +4,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import 'data/archive_models.dart';
 
 /// `GET /app/archive` → the past editions (public, D-273).
@@ -73,18 +73,18 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     final editions = ref.watch(archiveEditionsProvider);
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.archiveTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: editions.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        // Pull-to-retry: a scrollable error state under KsaRefresh.
-        error: (_, __) => KsaRefresh(
+        // Pull-to-retry: a scrollable error state under SimfPullToRefresh.
+        error: (_, __) => SimfPullToRefresh(
           onRefresh: _refresh,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
             children: <Widget>[
-              KsaErrorState(
+              SimfErrorState(
                 message: l10n.archiveError,
                 retryLabel: l10n.retryLabel,
                 onRetry: () => ref.invalidate(archiveEditionsProvider),
@@ -94,13 +94,13 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
         ),
         data: (items) {
           if (items.isEmpty) {
-            // Pull-to-retry: a scrollable empty state under KsaRefresh.
-            return KsaRefresh(
+            // Pull-to-retry: a scrollable empty state under SimfPullToRefresh.
+            return SimfPullToRefresh(
               onRefresh: _refresh,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 children: <Widget>[
-                  KsaEmptyState(
+                  SimfEmptyState(
                     icon: Icons.bookmark_outline,
                     message: l10n.archiveEmpty,
                   ),
@@ -114,7 +114,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
             (e) => e.id == _selectedId,
             orElse: () => items.first,
           );
-          return KsaRefresh(
+          return SimfPullToRefresh(
             onRefresh: _refresh,
             child: _ArchiveBody(
               l10n: l10n,

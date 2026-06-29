@@ -11,7 +11,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import '../../core/sharing/content_sharer.dart';
@@ -191,9 +191,9 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
     final l10n = AppL10n.of(context);
     // The ID line is the reference number (SIMF-2026-…), not the qrId.
     final referenceNumber = ref.watch(referenceNumberProvider).asData?.value;
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.myAreaTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       tab: SimfTab.profile,
       showSweep: true,
       body: _buildBody(l10n, referenceNumber),
@@ -216,15 +216,15 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
 
   Widget _buildErrorState(AppL10n l10n) {
     // Pull-to-refresh also retries: the error surface is hosted in a scrollable
-    // so KsaRefresh's gesture fires even though the content is short.
-    return KsaRefresh(
+    // so SimfPullToRefresh's gesture fires even though the content is short.
+    return SimfPullToRefresh(
       onRefresh: _load,
       child: LayoutBuilder(
         builder: (context, constraints) => SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: KsaErrorState(
+            child: SimfErrorState(
               message: l10n.myAreaError,
               retryLabel: l10n.retryLabel,
               onRetry: () => unawaited(_load()),
@@ -240,7 +240,7 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
   Widget _buildLimited(AppL10n l10n) {
     final user = _currentUser;
     final name = user?.displayName ?? '';
-    return KsaRefresh(
+    return SimfPullToRefresh(
       onRefresh: _load,
       child: ListView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -281,7 +281,7 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
     final meetings =
         dashboard.todaySchedule.where((i) => !i.isSession).toList();
 
-    return KsaRefresh(
+    return SimfPullToRefresh(
       onRefresh: _load,
       child: ListView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -324,20 +324,20 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
         const SizedBox(height: SimfTokens.space6),
         // الإحصائيات (frame 213:963). الأرشيف has no API counter, so the right
         // tile keeps the real مقابلات مؤكدة count (D-396); جلسات محفوظة = booked.
-        KsaSectionHeader(title: l10n.statisticsTitle),
+        SimfSectionHeader(title: l10n.statisticsTitle),
         const SizedBox(height: SimfTokens.space3),
-        KsaTileRow(
+        SimfTileRow(
           children: <Widget>[
             // Wave 2 — the two counters now tap through to their real screens
             // (owner spec, Figma): "my meetings request" → the read-only My
             // meetings list (1408:9726); "my sessions" → the my-sessions list
             // (1388:9067) with its القادمة / حضرتها / فاتتني / الأرشيف tabs.
-            KsaStatTile(
+            SimfStatTile(
               value: dashboard.counters.meetingsCount,
               label: l10n.statMeetings,
               onTap: () => context.pushNamed(RouteNames.requests),
             ),
-            KsaStatTile(
+            SimfStatTile(
               value: dashboard.counters.bookedSessionsCount,
               label: l10n.statBookedSessions,
               onTap: () => context.pushNamed(RouteNames.myAreaSessions),
@@ -345,7 +345,7 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
           ],
         ),
         const SizedBox(height: SimfTokens.space6),
-        KsaSectionHeader(title: l10n.todayScheduleTitle),
+        SimfSectionHeader(title: l10n.todayScheduleTitle),
         const SizedBox(height: SimfTokens.space3),
         if (sessions.isEmpty && meetings.isEmpty)
           Padding(
@@ -382,7 +382,7 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
                 ),
             ],
         const SizedBox(height: SimfTokens.space3),
-        KsaSectionHeader(title: l10n.moreSectionSettings),
+        SimfSectionHeader(title: l10n.moreSectionSettings),
         const SizedBox(height: SimfTokens.space3),
         _MoreRow(
           label: l10n.smartBadgeLink,
@@ -561,7 +561,7 @@ class _TappableAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final avatar = KsaAvatar(name: name, currentUser: true, size: 64);
+    final avatar = SimfAvatar(name: name, currentUser: true, size: 64);
     if (onTap == null) {
       return avatar;
     }
@@ -618,7 +618,7 @@ class _ScheduleRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final time = _timeFormat.format(item.startUtc.toLocal());
     final hall = item.localizedHall(isArabic);
-    return KsaCard(
+    return SimfCard(
       onTap: onTap,
       child: Padding(
           padding: const EdgeInsets.symmetric(
@@ -708,7 +708,7 @@ class _MoreRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return KsaCard(
+    return SimfCard(
       onTap: onTap,
       child: Padding(
           padding: const EdgeInsets.symmetric(
@@ -754,7 +754,7 @@ class _ShareTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return KsaCard(
+    return SimfCard(
       onTap: onTap,
       child: SizedBox(
         height: 48,

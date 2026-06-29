@@ -165,7 +165,7 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
     // The email step shows only when the account has no email AND we haven't
     // sent a code yet; otherwise we're on the code + password step.
     final emailStep = widget.needsEmail && !_codeSent;
-    return KsaAuthScaffold(
+    return AuthPageShell(
       busy: _busy,
       onBack: _back,
       child: Column(
@@ -203,7 +203,7 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
   }
 
   List<Widget> _emailStep(AppL10n l10n) => <Widget>[
-        KsaFieldLabel(text: l10n.emailLabelGeneric),
+        FormFieldLabel(text: l10n.emailLabelGeneric),
         const SizedBox(height: 8),
         TextField(
           controller: _email,
@@ -212,11 +212,11 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
           textAlign: TextAlign.left,
           enabled: !_busy,
           onChanged: (_) => setState(() {}),
-          style: ksaInputTextStyle,
-          decoration: ksaInputDecoration(),
+          style: authInputTextStyle,
+          decoration: authInputDecoration(),
         ),
         const SizedBox(height: 24),
-        KsaSubmitButton(
+        AuthSubmitButton(
           label: l10n.badgeSendCodeButton,
           busy: _busy,
           onPressed: _email.text.trim().isNotEmpty && !_busy
@@ -226,7 +226,7 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
       ];
 
   List<Widget> _codeStep(AppL10n l10n) => <Widget>[
-        KsaFieldLabel(text: l10n.otpLabel),
+        FormFieldLabel(text: l10n.otpLabel),
         const SizedBox(height: 8),
         TextField(
           controller: _code,
@@ -239,11 +239,11 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
             FilteringTextInputFormatter.digitsOnly,
           ],
           onChanged: (_) => setState(() {}),
-          style: ksaInputTextStyle,
-          decoration: ksaInputDecoration(),
+          style: authInputTextStyle,
+          decoration: authInputDecoration(),
         ),
         const SizedBox(height: 16),
-        KsaFieldLabel(text: l10n.newPasswordLabel),
+        FormFieldLabel(text: l10n.newPasswordLabel),
         const SizedBox(height: 8),
         TextField(
           controller: _password,
@@ -251,11 +251,11 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
           maxLength: 32,
           enabled: !_busy,
           onChanged: (_) => setState(() {}),
-          style: ksaInputTextStyle,
-          decoration: ksaInputDecoration(suffixIcon: _passwordToggle(l10n)),
+          style: authInputTextStyle,
+          decoration: authInputDecoration(suffixIcon: _passwordToggle(l10n)),
         ),
         const SizedBox(height: 16),
-        KsaFieldLabel(text: l10n.confirmPasswordLabel),
+        FormFieldLabel(text: l10n.confirmPasswordLabel),
         const SizedBox(height: 8),
         TextField(
           controller: _confirm,
@@ -268,11 +268,11 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
               unawaited(_complete());
             }
           },
-          style: ksaInputTextStyle,
-          decoration: ksaInputDecoration(),
+          style: authInputTextStyle,
+          decoration: authInputDecoration(),
         ),
         const SizedBox(height: 24),
-        KsaSubmitButton(
+        AuthSubmitButton(
           label: l10n.badgeActivateButton,
           busy: _busy,
           onPressed: _canComplete ? () => unawaited(_complete()) : null,

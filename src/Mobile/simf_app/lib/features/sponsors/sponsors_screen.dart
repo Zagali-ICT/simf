@@ -6,7 +6,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import 'data/sponsor_models.dart';
 
@@ -48,18 +48,18 @@ class SponsorsScreen extends ConsumerWidget {
       await ref.read(sponsorGroupsProvider.future);
     }
 
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.sponsorsTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       showSweep: true,
       body: groups.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => KsaRefresh(
+        error: (_, __) => SimfPullToRefresh(
           onRefresh: onRefresh,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
             children: <Widget>[
-              KsaErrorState(
+              SimfErrorState(
                 message: l10n.sponsorsError,
                 retryLabel: l10n.retryLabel,
                 onRetry: () => ref.invalidate(sponsorGroupsProvider),
@@ -73,12 +73,12 @@ class SponsorsScreen extends ConsumerWidget {
               if (group.sponsors.isNotEmpty) group,
           ];
           if (visibleGroups.isEmpty) {
-            return KsaRefresh(
+            return SimfPullToRefresh(
               onRefresh: onRefresh,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 children: <Widget>[
-                  KsaEmptyState(
+                  SimfEmptyState(
                     icon: Icons.workspace_premium_outlined,
                     message: l10n.sponsorsEmpty,
                   ),
@@ -90,7 +90,7 @@ class SponsorsScreen extends ConsumerWidget {
           // The logo image lives at {base}/app/assets/SponsorLogo/{id}/image (D-357).
           final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
           final lastIndex = visibleGroups.length - 1;
-          return KsaRefresh(
+          return SimfPullToRefresh(
             onRefresh: onRefresh,
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -211,7 +211,7 @@ class _SponsorCard extends StatelessWidget {
     // line changes colour with the card.
     const Color nameColor = Colors.white;
     final Color subColor = hero ? SimfTokens.navyDeep : SimfTokens.beigeBorder;
-    return KsaCard(
+    return SimfCard(
       onTap: onTap,
       color: hero ? SimfTokens.accent : SimfTokens.navyDeep,
       borderColor: SimfTokens.beigeBorder,

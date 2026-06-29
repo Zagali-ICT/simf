@@ -26,7 +26,7 @@ import 'simf_svg_icon.dart';
 /// repeated frame element — pages never copy-paste shell markup.
 
 /// The standard back action: pop when possible, else land on home.
-void ksaBackOrHome(BuildContext context) {
+void backOrHome(BuildContext context) {
   if (context.canPop()) {
     context.pop();
   } else {
@@ -37,7 +37,7 @@ void ksaBackOrHome(BuildContext context) {
 /// A standard AppBar leading back button for raw-`AppBar` screens. Always shows
 /// (unlike the auto-leading, which vanishes when the screen is the navigator
 /// root after a resume / deep-link, trapping the user) and always works:
-/// [ksaBackOrHome] pops when it can, else lands on home. Use as
+/// [backOrHome] pops when it can, else lands on home. Use as
 /// `appBar: AppBar(leading: const SimfBackButton(), ...)`. (D-426)
 class SimfBackButton extends StatelessWidget {
   const SimfBackButton({super.key});
@@ -47,7 +47,7 @@ class SimfBackButton extends StatelessWidget {
     return IconButton(
       icon: const Icon(Icons.arrow_back),
       tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-      onPressed: () => ksaBackOrHome(context),
+      onPressed: () => backOrHome(context),
     );
   }
 }
@@ -60,8 +60,8 @@ class SimfBackButton extends StatelessWidget {
 /// pass [header] instead of [title]; with no [header], [title] and [onBack]
 /// the header row collapses entirely (full-bleed pages like the map).
 /// [onBack] null hides the back button.
-class KsaPage extends StatelessWidget {
-  const KsaPage({
+class SimfPageShell extends StatelessWidget {
+  const SimfPageShell({
     required this.body,
     this.title,
     this.header,
@@ -113,12 +113,12 @@ class KsaPage extends StatelessWidget {
       backgroundColor: SimfTokens.navySurface,
       // The shared shell's side menu — the same المزيد drawer on every page
       // that uses this scaffold (opened by the header ☰; RTL slides from the
-      // right). Detail/secondary pages inherit it as they migrate onto KsaPage.
+      // right). Detail/secondary pages inherit it as they migrate onto SimfPageShell.
       drawer: const MoreDrawer(),
       bottomNavigationBar: SimfBottomNav(current: tab),
       body: Stack(
         children: <Widget>[
-          if (showSweep) const KsaSweep(),
+          if (showSweep) const SimfSweepBackground(),
           // Page-038 screen-reader assist: announces this page's title once on
           // mount when the user has enabled it (invisible; self-guards).
           _ScreenAnnouncer(title: title),
@@ -168,7 +168,7 @@ class KsaPage extends StatelessWidget {
             height: 42,
             child: onBack == null
                 ? null
-                : KsaBackButton(onBack: onBack!, mirrorInRtl: false),
+                : SimfCircledBackButton(onBack: onBack!, mirrorInRtl: false),
           ),
           Expanded(
             child: Text(
@@ -189,7 +189,7 @@ class KsaPage extends StatelessWidget {
           // balances the back box so the title stays truly centred — the Figma
           // standard nav (758-1469 / 922-2824) is back + title + line only.
           if (showHeaderActions)
-            KsaHeaderActions(showBell: showNotificationsBell)
+            SimfHeaderActions(showBell: showNotificationsBell)
           else
             const SizedBox(width: 42, height: 42),
         ],
@@ -200,7 +200,7 @@ class KsaPage extends StatelessWidget {
 
 /// Announces the page [title] once on mount through the platform accessibility
 /// channel, but only when the Page-038 screen-reader assist is enabled. Renders
-/// nothing; lives invisibly in the [KsaPage] stack so every shell page that
+/// nothing; lives invisibly in the [SimfPageShell] stack so every shell page that
 /// carries a title participates without per-screen wiring.
 class _ScreenAnnouncer extends ConsumerStatefulWidget {
   const _ScreenAnnouncer({required this.title});
@@ -227,7 +227,7 @@ class _ScreenAnnouncerState extends ConsumerState<_ScreenAnnouncer> {
       try {
         assist = ref.read(accessibilityControllerProvider).screenReaderAssist;
       } catch (_) {
-        // Accessibility DI not wired (e.g. a widget test that builds a KsaPage
+        // Accessibility DI not wired (e.g. a widget test that builds a SimfPageShell
         // without overriding the controller). The announcer is best-effort and
         // must never break a page, so skip silently.
         return;
@@ -251,11 +251,11 @@ class _ScreenAnnouncerState extends ConsumerState<_ScreenAnnouncer> {
 /// The circled back chevron (dark circle, white chevron). By default the glyph
 /// always points left — the D-363 forced-LTR header pattern still used by the
 /// speakers / session-detail / speaker-profile headers. In the shared
-/// natural-direction [KsaPage] header [mirrorInRtl] is set, so the chevron
+/// natural-direction [SimfPageShell] header [mirrorInRtl] is set, so the chevron
 /// mirrors to point right under RTL, where the leading control sits at the
 /// inline start (physical right).
-class KsaBackButton extends StatelessWidget {
-  const KsaBackButton({
+class SimfCircledBackButton extends StatelessWidget {
+  const SimfCircledBackButton({
     required this.onBack,
     this.mirrorInRtl = false,
     super.key,
@@ -289,10 +289,10 @@ class KsaBackButton extends StatelessWidget {
   }
 }
 
-/// The circled drawer ☰ control (same dark circle as [KsaBackButton]) — opens
+/// The circled drawer ☰ control (same dark circle as [SimfCircledBackButton]) — opens
 /// the shell's side menu. Lives in the shared header's trailing controller.
-class KsaMenuButton extends StatelessWidget {
-  const KsaMenuButton({required this.onTap, super.key});
+class SimfMenuButton extends StatelessWidget {
+  const SimfMenuButton({required this.onTap, super.key});
 
   final VoidCallback onTap;
 
@@ -315,8 +315,8 @@ class KsaMenuButton extends StatelessWidget {
 /// not just home). The [child] must be (or contain) a scrollable that uses
 /// [AlwaysScrollableScrollPhysics] so the gesture fires even when content is
 /// short. Styled with the gold spinner on a navy puck to match the shell.
-class KsaRefresh extends StatelessWidget {
-  const KsaRefresh({required this.onRefresh, required this.child, super.key});
+class SimfPullToRefresh extends StatelessWidget {
+  const SimfPullToRefresh({required this.onRefresh, required this.child, super.key});
 
   /// Called when the user pulls to refresh; should re-fetch the page's data.
   final Future<void> Function() onRefresh;
@@ -336,11 +336,11 @@ class KsaRefresh extends StatelessWidget {
 }
 
 /// Hosts a non-scrolling state (empty / error / a single card) inside a
-/// viewport-tall, always-scrollable box so a wrapping [KsaRefresh] can still
+/// viewport-tall, always-scrollable box so a wrapping [SimfPullToRefresh] can still
 /// fire its pull-to-refresh gesture on short content. Pair as
-/// `KsaRefresh(onRefresh: …, child: KsaPullable(child: KsaEmptyState(…)))`.
-class KsaPullable extends StatelessWidget {
-  const KsaPullable({required this.child, super.key});
+/// `SimfPullToRefresh(onRefresh: …, child: SimfPullableHost(child: SimfEmptyState(…)))`.
+class SimfPullableHost extends StatelessWidget {
+  const SimfPullableHost({required this.child, super.key});
 
   /// The non-scrolling state widget to host (centred, viewport-tall).
   final Widget child;
@@ -362,7 +362,7 @@ class KsaPullable extends StatelessWidget {
 }
 
 /// The shared header actions added to every in-app app-bar — the standard
-/// [KsaPage] header and the home greeting header: the language globe (toggles
+/// [SimfPageShell] header and the home greeting header: the language globe (toggles
 /// AR ↔ EN, persisted via [LocaleController]) and the dark-mode icon.
 ///
 /// Dark mode is intentionally **inert** for now: the app is navy-always (the
@@ -374,9 +374,9 @@ class KsaPullable extends StatelessWidget {
 /// `watch`ed at build), so this control adds no build-time dependency on
 /// [localeControllerProvider]: screens render without overriding it in tests.
 /// (Tapping the globe does resolve the provider, so a test that exercises the
-/// toggle must still override it — see ksa_shell_test.)
-class KsaLangThemeButtons extends ConsumerWidget {
-  const KsaLangThemeButtons({this.size = 22, super.key});
+/// toggle must still override it — see simf_page_shell_test.)
+class SimfLangThemeButtons extends ConsumerWidget {
+  const SimfLangThemeButtons({this.size = 22, super.key});
 
   /// The glyph size — 22 in the standard header, 26 in the larger home header.
   final double size;
@@ -414,7 +414,7 @@ class KsaLangThemeButtons extends ConsumerWidget {
 /// 2026-06-27): the notifications bell, the language globe, the inert dark-mode
 /// crescent (node 1049:2087) and the menu ☰ — each a **gold glyph in a navy
 /// rounded box** (frame 758:1136), so the top nav is identical on the signed-in
-/// home greeting header and every [KsaPage] sub-page.
+/// home greeting header and every [SimfPageShell] sub-page.
 ///
 /// [showBell] is true on every signed-in surface; the guest home (frame
 /// 758:2910) sets it false — a guest has no personal notifications.
@@ -422,10 +422,10 @@ class KsaLangThemeButtons extends ConsumerWidget {
 /// [showUnreadBadge] gates the live unread-count badge. Only the signed-in home
 /// greeting header turns it on — that surface resolves the auth-scoped count
 /// provider. Sub-pages keep the bell as a plain navigation control (no badge),
-/// so a generic [KsaPage] never has to provide the auth/notifications wiring
+/// so a generic [SimfPageShell] never has to provide the auth/notifications wiring
 /// just to render its header.
-class KsaHeaderActions extends ConsumerWidget {
-  const KsaHeaderActions({
+class SimfHeaderActions extends ConsumerWidget {
+  const SimfHeaderActions({
     this.size = 34,
     this.showBell = true,
     this.showUnreadBadge = false,
@@ -538,8 +538,8 @@ class KsaHeaderActions extends ConsumerWidget {
 /// The decorative rotated sweep block from the KSA entry frames (28.28°,
 /// white-4% fill) — the single home for the transform (the auth chrome
 /// consumes it too).
-class KsaSweep extends StatelessWidget {
-  const KsaSweep({super.key});
+class SimfSweepBackground extends StatelessWidget {
+  const SimfSweepBackground({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -564,8 +564,8 @@ class KsaSweep extends StatelessWidget {
 /// The W2 base card chrome — the `navyDeep` fill with the beige hairline on
 /// the small radius — shared by every tile/row in the batch so the border /
 /// fill / radius have one owner. [onTap] null renders a plain surface.
-class KsaCard extends StatelessWidget {
-  const KsaCard({
+class SimfCard extends StatelessWidget {
+  const SimfCard({
     required this.child,
     this.onTap,
     this.color = SimfTokens.navyDeep,
@@ -610,8 +610,8 @@ class KsaCard extends StatelessWidget {
 
 /// A section title row (e.g. "معلومات مفتوحة للجميع", "عن الملتقى · المحاور")
 /// with an optional trailing "more" action.
-class KsaSectionHeader extends StatelessWidget {
-  const KsaSectionHeader({
+class SimfSectionHeader extends StatelessWidget {
+  const SimfSectionHeader({
     required this.title,
     this.moreLabel,
     this.onMore,
@@ -668,17 +668,17 @@ class KsaSectionHeader extends StatelessWidget {
 /// (frames 758:1207 / 1049:12844 / 758:1211 "عن الملتقى" / "الرعاة" /
 /// "الأخبار والتغطية"): a transparent 48-high box with the beige hairline, the
 /// title at the inline end (physical right under RTL) and a gold caret at the
-/// inline start. Tappable. Distinct from [KsaSectionHeader] (a plain text label)
-/// and [KsaListRow] (which carries a gold badge box + subtitle).
-class KsaLinkRow extends StatelessWidget {
-  const KsaLinkRow({required this.title, required this.onTap, super.key});
+/// inline start. Tappable. Distinct from [SimfSectionHeader] (a plain text label)
+/// and [SimfListRow] (which carries a gold badge box + subtitle).
+class SimfLinkRow extends StatelessWidget {
+  const SimfLinkRow({required this.title, required this.onTap, super.key});
 
   final String title;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return KsaCard(
+    return SimfCard(
       onTap: onTap,
       color: Colors.transparent,
       borderColor: SimfTokens.beigeBorder,
@@ -705,7 +705,7 @@ class KsaLinkRow extends StatelessWidget {
               const SizedBox(width: SimfTokens.space2),
               // The frame's gold left-caret (eva:arrow-up-fill rotated). The
               // bundled SVG does not auto-mirror under RTL, so it stays pointing
-              // left as the design shows (same as [KsaListRow]).
+              // left as the design shows (same as [SimfListRow]).
               const SimfSvgIcon(
                 'assets/icons/ic_caret_left.svg',
                 color: SimfTokens.accent,
@@ -721,8 +721,8 @@ class KsaLinkRow extends StatelessWidget {
 
 /// A row of equally sized tiles with the standard gap between them — the
 /// frames' 2- and 3-up tile rows (home sections, profile grid).
-class KsaTileRow extends StatelessWidget {
-  const KsaTileRow({required this.children, super.key});
+class SimfTileRow extends StatelessWidget {
+  const SimfTileRow({required this.children, super.key});
 
   final List<Widget> children;
 
@@ -743,8 +743,8 @@ class KsaTileRow extends StatelessWidget {
 /// card with a gold icon over a small white label. [enabled] false renders
 /// the locked variant (the "بطاقتي" card / the disabled theme tile) on the
 /// disabled palette with no tap.
-class KsaNavTile extends StatelessWidget {
-  const KsaNavTile({
+class SimfNavTile extends StatelessWidget {
+  const SimfNavTile({
     required this.label,
     this.icon,
     this.iconAsset,
@@ -754,7 +754,7 @@ class KsaNavTile extends StatelessWidget {
     super.key,
   }) : assert(
           icon != null || iconAsset != null,
-          'KsaNavTile needs either a Material icon or an SVG iconAsset.',
+          'SimfNavTile needs either a Material icon or an SVG iconAsset.',
         );
 
   final String label;
@@ -783,7 +783,7 @@ class KsaNavTile extends StatelessWidget {
     final Widget top = asset != null
         ? SimfSvgIcon(asset, size: 24, color: foreground)
         : Icon(icon, size: 24, color: foreground);
-    return KsaCard(
+    return SimfCard(
       onTap: enabled ? onTap : null,
       color: enabled ? SimfTokens.navyDeep : SimfTokens.navyDisabled,
       borderColor: enabled
@@ -801,9 +801,9 @@ class KsaNavTile extends StatelessWidget {
 }
 
 /// A stat tile (frames 512:1780 / 213:963): a big gold number over its label,
-/// on the same card chrome as [KsaNavTile].
-class KsaStatTile extends StatelessWidget {
-  const KsaStatTile({
+/// on the same card chrome as [SimfNavTile].
+class SimfStatTile extends StatelessWidget {
+  const SimfStatTile({
     required this.value,
     required this.label,
     this.onTap,
@@ -814,12 +814,12 @@ class KsaStatTile extends StatelessWidget {
   final String label;
 
   /// Optional tap target. Null (the default) keeps the tile inert — a plain
-  /// statistic; non-null makes the whole card tappable via [KsaCard]'s InkWell.
+  /// statistic; non-null makes the whole card tappable via [SimfCard]'s InkWell.
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return KsaCard(
+    return SimfCard(
       onTap: onTap,
       child: _TileBody(
         top: Text(
@@ -887,8 +887,8 @@ class _TileBody extends StatelessWidget {
 /// `Image.network` can't load it) and refreshed immediately after an upload via
 /// the avatar bust token. Otherwise — and whenever no photo is available — it
 /// renders the brand-mark fallback. [name] drives the accessibility label only.
-class KsaAvatar extends ConsumerWidget {
-  const KsaAvatar({
+class SimfAvatar extends ConsumerWidget {
+  const SimfAvatar({
     required this.name,
     this.currentUser = false,
     this.size = 42,
@@ -955,8 +955,8 @@ class _AvatarFallback extends StatelessWidget {
 /// One navy list row (frames' FAQ / روح السعودية / المزيد rows): a gold badge
 /// box at the inline start, a bold title + muted subtitle, and a gold
 /// forward arrow at the inline end.
-class KsaListRow extends StatelessWidget {
-  const KsaListRow({
+class SimfListRow extends StatelessWidget {
+  const SimfListRow({
     required this.title,
     required this.onTap,
     this.subtitle,
@@ -980,7 +980,7 @@ class KsaListRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return KsaCard(
+    return SimfCard(
       onTap: onTap,
       borderColor: SimfTokens.goldSoft,
       borderWidth: SimfTokens.hairlineBold,
@@ -1049,8 +1049,8 @@ class KsaListRow extends StatelessWidget {
 
 /// The standard error surface: the message over a gold retry button — one
 /// home for the retry chrome instead of a per-screen copy.
-class KsaErrorState extends StatelessWidget {
-  const KsaErrorState({
+class SimfErrorState extends StatelessWidget {
+  const SimfErrorState({
     required this.message,
     required this.retryLabel,
     required this.onRetry,
@@ -1084,8 +1084,8 @@ class KsaErrorState extends StatelessWidget {
 }
 
 /// The standard empty / pending surface: a muted icon over the message.
-class KsaEmptyState extends StatelessWidget {
-  const KsaEmptyState({required this.icon, required this.message, super.key});
+class SimfEmptyState extends StatelessWidget {
+  const SimfEmptyState({required this.icon, required this.message, super.key});
 
   final IconData icon;
   final String message;

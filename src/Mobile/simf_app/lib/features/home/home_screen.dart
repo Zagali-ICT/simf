@@ -10,7 +10,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/confirm_external_link.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import '../../core/env/build_config.dart';
@@ -183,7 +183,7 @@ class _GuestHome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.homeGuestTitle,
       onBack: () => context.canPop()
           ? context.pop()
@@ -201,14 +201,14 @@ class _GuestHome extends StatelessWidget {
         children: <Widget>[
           _GuestBanner(l10n: l10n),
           const SizedBox(height: SimfTokens.space4),
-          KsaTileRow(
+          SimfTileRow(
             children: <Widget>[
-              KsaNavTile(
+              SimfNavTile(
                 label: l10n.tileSessions,
                 iconAsset: _HomeIcons.sessions,
                 onTap: () => context.pushNamed(RouteNames.sessions),
               ),
-              KsaNavTile(
+              SimfNavTile(
                 label: l10n.tileSpeakers,
                 iconAsset: _HomeIcons.speakers,
                 onTap: () => context.pushNamed(RouteNames.speakers),
@@ -216,14 +216,14 @@ class _GuestHome extends StatelessWidget {
             ],
           ),
           const SizedBox(height: SimfTokens.space2),
-          KsaTileRow(
+          SimfTileRow(
             children: <Widget>[
-              KsaNavTile(
+              SimfNavTile(
                 label: l10n.tileVenueMap,
                 iconAsset: _HomeIcons.venueMap,
                 onTap: () => context.pushNamed(RouteNames.venueMap),
               ),
-              KsaNavTile(
+              SimfNavTile(
                 label: l10n.tileExhibition,
                 iconAsset: _HomeIcons.exhibition,
                 onTap: () => context.pushNamed(RouteNames.booths),
@@ -233,15 +233,15 @@ class _GuestHome extends StatelessWidget {
           const SizedBox(height: SimfTokens.space4),
           // The locked smart-badge card — a visual cue that signing in
           // unlocks it; never tappable as a guest.
-          KsaNavTile(
+          SimfNavTile(
             label: l10n.tileMyBadgeShort,
             iconAsset: _HomeIcons.badge,
             enabled: false,
           ),
           const SizedBox(height: SimfTokens.space6),
-          KsaSectionHeader(title: l10n.homeOpenInfoSection),
+          SimfSectionHeader(title: l10n.homeOpenInfoSection),
           const SizedBox(height: SimfTokens.space3),
-          KsaListRow(
+          SimfListRow(
             title: l10n.faqRowTitle,
             subtitle: l10n.faqRowSubtitle,
             // Frame 758:2910 — the FAQ badge is the outlined (gold hairline)
@@ -372,13 +372,13 @@ class _StaffHome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return KsaPage(
+    return SimfPageShell(
       tab: SimfTab.home,
       title: l10n.homeTitle,
       body: ListView(
         padding: const EdgeInsets.all(SimfTokens.space4),
         children: <Widget>[
-          KsaListRow(
+          SimfListRow(
             title: l10n.gateScannerEntry,
             badgeOutlined: true,
             badge: const Icon(
@@ -389,7 +389,7 @@ class _StaffHome extends StatelessWidget {
             onTap: () => context.pushNamed(RouteNames.gateScanner),
           ),
           const SizedBox(height: SimfTokens.space4),
-          KsaListRow(
+          SimfListRow(
             title: l10n.staffRegisterVisitorEntry,
             badgeOutlined: true,
             badge: const Icon(
@@ -415,13 +415,13 @@ class _ModeratorHome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return KsaPage(
+    return SimfPageShell(
       tab: SimfTab.home,
       title: l10n.homeTitle,
       body: ListView(
         padding: const EdgeInsets.all(SimfTokens.space4),
         children: <Widget>[
-          KsaListRow(
+          SimfListRow(
             title: l10n.tileSessions,
             subtitle: l10n.moderatorManageQuestions,
             badgeOutlined: true,
@@ -462,7 +462,7 @@ class _VisitorHome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return KsaPage(
+    return SimfPageShell(
       tab: SimfTab.home,
       header: _GreetingHeader(
         l10n: l10n,
@@ -486,17 +486,17 @@ class _VisitorHome extends StatelessWidget {
           // Exhibitor (العارض) lead-capture tools — D-519. Shown only to the
           // Exhibitor role, above the shared attendee content.
           if (isExhibitor) ...<Widget>[
-            KsaSectionHeader(title: l10n.exhibitorToolsSection),
+            SimfSectionHeader(title: l10n.exhibitorToolsSection),
             const SizedBox(height: SimfTokens.space4),
-            KsaTileRow(
+            SimfTileRow(
               children: <Widget>[
-                KsaNavTile(
+                SimfNavTile(
                   label: l10n.scanVisitorTitle,
                   icon: Icons.qr_code_scanner,
                   minHeight: 80,
                   onTap: () => context.pushNamed(RouteNames.scanVisitor),
                 ),
-                KsaNavTile(
+                SimfNavTile(
                   label: l10n.myVisitorsTitle,
                   icon: Icons.groups_outlined,
                   minHeight: 80,
@@ -507,22 +507,22 @@ class _VisitorHome extends StatelessWidget {
             const SizedBox(height: SimfTokens.space6),
           ],
           // "عن الملتقى" section bar (758:1207) — opens About the forum.
-          KsaLinkRow(
+          SimfLinkRow(
             title: l10n.homeAboutSection,
             onTap: () => context.pushNamed(RouteNames.aboutForum),
           ),
           const SizedBox(height: SimfTokens.space6),
           // About tiles (frame 758:1215, h72) — a 4-up grid of the shared tile,
-          // the same KsaNavTile reused as grid columns. Right→left under RTL:
+          // the same SimfNavTile reused as grid columns. Right→left under RTL:
           // المتحدثون · الأجنحة · الوفود · جلسات.
-          KsaTileRow(
+          SimfTileRow(
             children: <Widget>[
-              KsaNavTile(
+              SimfNavTile(
                 label: l10n.tileSpeakers,
                 iconAsset: _HomeIcons.people,
                 onTap: () => context.pushNamed(RouteNames.speakers),
               ),
-              KsaNavTile(
+              SimfNavTile(
                 // Home button title matches the screen header ("المعرض").
                 label: l10n.tileExhibition,
                 iconAsset: _HomeIcons.booths,
@@ -530,12 +530,12 @@ class _VisitorHome extends StatelessWidget {
               ),
               // الوفود — delegations sits in the about row (frame 758:1220) with
               // the design's exact formkit:people glyph (node 1408:10399).
-              KsaNavTile(
+              SimfNavTile(
                 label: l10n.delegationsTitle,
                 iconAsset: _HomeIcons.delegations,
                 onTap: () => context.pushNamed(RouteNames.delegations),
               ),
-              KsaNavTile(
+              SimfNavTile(
                 label: l10n.tileSessions,
                 iconAsset: _HomeIcons.aboutSessions,
                 // Owner 2026-06-29: the home "جلسات" tile opens the session
@@ -548,16 +548,16 @@ class _VisitorHome extends StatelessWidget {
           // 16px gap inside the "عن الملتقى" group (frame 1054:12864 gap-16).
           const SizedBox(height: SimfTokens.space4),
           // The full-width "اسأل المحاور" tile (1052:12856) — send a question.
-          KsaNavTile(
+          SimfNavTile(
             label: l10n.tileAskModerator,
             iconAsset: _HomeIcons.askModerator,
             onTap: () => context.pushNamed(RouteNames.sendQuestion),
           ),
           const SizedBox(height: SimfTokens.space6),
           // News tiles (758:1228, h80): right→left اللقاءات الثنائية · الأرشيف.
-          KsaTileRow(
+          SimfTileRow(
             children: <Widget>[
-              KsaNavTile(
+              SimfNavTile(
                 label: l10n.tileBilateralMeetings,
                 iconAsset: _HomeIcons.bilateral,
                 minHeight: 80,
@@ -566,7 +566,7 @@ class _VisitorHome extends StatelessWidget {
                 // the tile label, link it to Requests instead of the ComingSoon).
                 onTap: () => context.pushNamed(RouteNames.requests),
               ),
-              KsaNavTile(
+              SimfNavTile(
                 label: l10n.tileArchive,
                 iconAsset: _HomeIcons.archive,
                 minHeight: 80,
@@ -576,21 +576,21 @@ class _VisitorHome extends StatelessWidget {
           ),
           const SizedBox(height: SimfTokens.space6),
           // "الميزات الذكية" (758:1158) — header + the المزيد link → More.
-          KsaSectionHeader(
+          SimfSectionHeader(
             title: l10n.homeSmartSection,
             moreLabel: l10n.moreTitle,
             onMore: () => context.pushNamed(RouteNames.more),
           ),
           const SizedBox(height: SimfTokens.space4),
-          KsaTileRow(
+          SimfTileRow(
             children: <Widget>[
-              KsaNavTile(
+              SimfNavTile(
                 label: l10n.tileMeetPeople,
                 iconAsset: _HomeIcons.meetPeople,
                 minHeight: 80,
                 onTap: () => context.pushNamed(RouteNames.meetPeople),
               ),
-              KsaNavTile(
+              SimfNavTile(
                 label: l10n.chatbotTitle,
                 iconAsset: _HomeIcons.aiAssistant,
                 minHeight: 80,
@@ -599,9 +599,9 @@ class _VisitorHome extends StatelessWidget {
             ],
           ),
           const SizedBox(height: SimfTokens.space2),
-          KsaTileRow(
+          SimfTileRow(
             children: <Widget>[
-              KsaNavTile(
+              SimfNavTile(
                 label: l10n.tileSessionSummary,
                 iconAsset: _HomeIcons.sessionSummary,
                 minHeight: 80,
@@ -609,7 +609,7 @@ class _VisitorHome extends StatelessWidget {
                 // its AI-summary details page (was: straight to the picker screen).
                 onTap: () => context.pushNamed(RouteNames.sessionSummaryList),
               ),
-              KsaNavTile(
+              SimfNavTile(
                 label: l10n.tileEntryBadge,
                 iconAsset: _HomeIcons.badge,
                 minHeight: 80,
@@ -619,13 +619,13 @@ class _VisitorHome extends StatelessWidget {
           ),
           const SizedBox(height: SimfTokens.space6),
           // "الرعاة" section bar (1049:12844) — opens Sponsors.
-          KsaLinkRow(
+          SimfLinkRow(
             title: l10n.tileSponsors,
             onTap: () => context.pushNamed(RouteNames.sponsors),
           ),
           const SizedBox(height: SimfTokens.space6),
           // "الأخبار والتغطية" section bar (758:1211) — opens News.
-          KsaLinkRow(
+          SimfLinkRow(
             title: l10n.tileNews,
             onTap: () => context.pushNamed(RouteNames.news),
           ),
@@ -633,7 +633,7 @@ class _VisitorHome extends StatelessWidget {
           // (image + title slides, auto-advancing); hidden until a post exists.
           if (highlights.isNotEmpty) ...<Widget>[
             const SizedBox(height: SimfTokens.space6),
-            KsaSectionHeader(title: l10n.featuredEventsSection),
+            SimfSectionHeader(title: l10n.featuredEventsSection),
             const SizedBox(height: SimfTokens.space4),
             _HighlightsCarousel(
               l10n: l10n,
@@ -648,7 +648,7 @@ class _VisitorHome extends StatelessWidget {
           ],
           const SizedBox(height: SimfTokens.space6),
           // "اكتشف" (758:1270) — header + the روح السعودية discover row.
-          KsaSectionHeader(title: l10n.discoverSection),
+          SimfSectionHeader(title: l10n.discoverSection),
           const SizedBox(height: SimfTokens.space4),
           _DiscoverSaudiRow(l10n: l10n),
           // "تابعنا" (758:1183) — header + brand row + handle. Self-hiding when
@@ -684,7 +684,7 @@ class _GreetingHeader extends StatelessWidget {
       child: Row(
         children: <Widget>[
           // Tapping the avatar opens the user's profile / My Area (owner
-          // 2026-06-27). InkWell rides the KsaPage Scaffold's Material ancestor.
+          // 2026-06-27). InkWell rides the SimfPageShell Scaffold's Material ancestor.
           Semantics(
             button: true,
             label: l10n.navProfile,
@@ -692,7 +692,7 @@ class _GreetingHeader extends StatelessWidget {
               onTap: () => context.pushNamed(RouteNames.myArea),
               borderRadius:
                   const BorderRadius.all(Radius.circular(SimfTokens.radius)),
-              child: KsaAvatar(name: name, currentUser: true),
+              child: SimfAvatar(name: name, currentUser: true),
             ),
           ),
           const SizedBox(width: SimfTokens.space2),
@@ -724,7 +724,7 @@ class _GreetingHeader extends StatelessWidget {
           // The shared top-nav action cluster — identical to every sub-page:
           // the bell, the language globe, the dark-mode crescent, and the menu
           // ☰, each a gold glyph in a navy box. Home carries the unread badge.
-          const KsaHeaderActions(showUnreadBadge: true),
+          const SimfHeaderActions(showUnreadBadge: true),
         ],
       ),
     );
@@ -1148,7 +1148,7 @@ class _FollowUsSection extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         const SizedBox(height: SimfTokens.space6),
-        KsaSectionHeader(title: l10n.followUsSection),
+        SimfSectionHeader(title: l10n.followUsSection),
         const SizedBox(height: SimfTokens.space4),
         // The brand row stays LTR (X · Instagram · … · TikTok) in any locale.
         Directionality(
@@ -1240,7 +1240,7 @@ class _DiscoverSaudiRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return KsaListRow(
+    return SimfListRow(
       title: l10n.discoverSaudiTitle,
       subtitle: l10n.discoverSaudiSubtitle,
       badgeOutlined: outlined,

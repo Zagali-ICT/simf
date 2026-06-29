@@ -7,12 +7,12 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/confirm_external_link.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../core/organization_profile/organization_profile.dart';
 import 'data/contact_us_repository.dart';
 
 /// Page 203 — تواصل معنا · Contact us (`/contact-us`, public). Pixel-parity to
-/// KSA Figma frame **1388:7711**: the navy [KsaPage] shell over a "أرسل رسالة"
+/// KSA Figma frame **1388:7711**: the navy [SimfPageShell] shell over a "أرسل رسالة"
 /// form (name / email / message + send), a "معلومات التواصل" panel (phone /
 /// email / location from the shared org profile) and the social-links row.
 /// Previously a ComingSoon placeholder (D-464).
@@ -81,9 +81,9 @@ class _ContactUsScreenState extends ConsumerState<ContactUsScreen> {
     final isArabic = l10n.isArabic;
     final profile = ref.watch(orgProfileProvider);
 
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.contactUsTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           SimfTokens.space4,

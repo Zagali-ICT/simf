@@ -3,12 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import 'data/faq_models.dart';
 import 'data/faq_repository.dart';
 
 /// Page 201 — الأسئلة الشائعة · FAQ (`/faq`, public). Pixel-parity to KSA Figma
-/// frame **1388:7567**: the navy [KsaPage] shell over an accordion of
+/// frame **1388:7567**: the navy [SimfPageShell] shell over an accordion of
 /// question/answer cards (tap a question to expand its answer). Data-driven from
 /// the public `GET /app/faq` (the D-211 FAQ tables); previously a ComingSoon
 /// placeholder (D-464).
@@ -30,15 +30,15 @@ class FaqScreen extends ConsumerWidget {
       await ref.read(faqProvider.future);
     }
 
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.faqRowTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: faq.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => KsaRefresh(
+        error: (_, __) => SimfPullToRefresh(
           onRefresh: onRefresh,
-          child: KsaPullable(
-            child: KsaErrorState(
+          child: SimfPullableHost(
+            child: SimfErrorState(
               message: l10n.faqError,
               retryLabel: l10n.retryLabel,
               onRetry: () => ref.invalidate(faqProvider),
@@ -48,10 +48,10 @@ class FaqScreen extends ConsumerWidget {
         data: (groups) {
           final hasEntries = groups.any((g) => g.entries.isNotEmpty);
           if (!hasEntries) {
-            return KsaRefresh(
+            return SimfPullToRefresh(
               onRefresh: onRefresh,
-              child: KsaPullable(
-                child: KsaEmptyState(
+              child: SimfPullableHost(
+                child: SimfEmptyState(
                   icon: Icons.help_outline,
                   message: l10n.faqEmpty,
                 ),
@@ -59,7 +59,7 @@ class FaqScreen extends ConsumerWidget {
             );
           }
           final showGroupHeaders = groups.length > 1;
-          return KsaRefresh(
+          return SimfPullToRefresh(
             onRefresh: onRefresh,
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -73,7 +73,7 @@ class FaqScreen extends ConsumerWidget {
               for (final group in groups)
                 if (group.entries.isNotEmpty) ...<Widget>[
                   if (showGroupHeaders) ...<Widget>[
-                    KsaSectionHeader(title: group.localizedName(isArabic)),
+                    SimfSectionHeader(title: group.localizedName(isArabic)),
                     const SizedBox(height: SimfTokens.space3),
                   ],
                   for (final entry in group.entries) ...<Widget>[
@@ -109,7 +109,7 @@ class _FaqTileState extends State<_FaqTile> {
   Widget build(BuildContext context) {
     final question = widget.entry.localizedQuestion(widget.isArabic);
     final answer = widget.entry.localizedAnswer(widget.isArabic);
-    return KsaCard(
+    return SimfCard(
       onTap: () => setState(() => _expanded = !_expanded),
       child: Padding(
         padding: const EdgeInsets.all(SimfTokens.space2), // p-8 (Figma 1388:7577)

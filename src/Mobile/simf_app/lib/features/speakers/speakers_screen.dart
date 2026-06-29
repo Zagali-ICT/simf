@@ -9,8 +9,8 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../core/country_flag.dart';
-import '../../app/widgets/ksa_search_field.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_search_field.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import 'data/speaker_models.dart';
 import 'data/speakers_repository.dart';
@@ -22,7 +22,7 @@ import 'data/speakers_repository.dart';
 /// tapping a card opens the profile (Page 020). Frame mapping: the navy shell
 /// with the centred header المتحدثون + circled back chevron (the profile's
 /// header pattern, 908:2110), then a vertical list of cards — each a navy
-/// `#192B41` card on the beige `0.2px` hairline (the shared [KsaCard]) carrying,
+/// `#192B41` card on the beige `0.2px` hairline (the shared [SimfCard]) carrying,
 /// in RTL: a 44×44 gold-bordered tile holding an anchor glyph at the inline
 /// start (right), the white name (16/SemiBold) over the beige rank·affiliation
 /// line (12/Regular), and a small beige caret at the inline end (left).
@@ -80,12 +80,12 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    // DRY (owner 2026-06-28): the shared KsaPage standard nav now renders the
+    // DRY (owner 2026-06-28): the shared SimfPageShell standard nav now renders the
     // Figma sub-page header (forced-LTR back-left + centred title + hairline),
     // so the old per-screen header is gone.
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.speakersTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: _buildBody(l10n),
     );
   }
@@ -99,12 +99,12 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
     if (_error) {
       // Hosted in a scrollable so pull-to-refresh works in the error state
       // (lets the user pull to retry).
-      return KsaRefresh(
+      return SimfPullToRefresh(
         onRefresh: _load,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           children: <Widget>[
-            KsaErrorState(
+            SimfErrorState(
               message: l10n.speakersError,
               retryLabel: l10n.retryLabel,
               onRetry: () => unawaited(_load()),
@@ -115,12 +115,12 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
     }
     if (_speakers.isEmpty) {
       // Hosted in a scrollable so pull-to-refresh works in the empty state.
-      return KsaRefresh(
+      return SimfPullToRefresh(
         onRefresh: _load,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           children: <Widget>[
-            KsaEmptyState(
+            SimfEmptyState(
               icon: Icons.groups_outlined,
               message: l10n.speakersEmpty,
             ),
@@ -148,7 +148,7 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
           child: Row(
             children: <Widget>[
               Expanded(
-                child: KsaSearchField(
+                child: SimfSearchField(
                   hint: l10n.speakersSearchHint,
                   onChanged: (v) => setState(() => _query = v),
                 ),
@@ -163,13 +163,13 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
           ),
         ),
         Expanded(
-          child: KsaRefresh(
+          child: SimfPullToRefresh(
             onRefresh: _load,
             child: visible.isEmpty
                 ? ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     children: <Widget>[
-                      KsaEmptyState(
+                      SimfEmptyState(
                         icon: Icons.search_off_outlined,
                         message: l10n.speakersNoMatches,
                       ),
@@ -289,7 +289,7 @@ class _SortControl extends StatelessWidget {
   }
 }
 
-/// One speaker card (frame 908:1999): the navy [KsaCard] chrome carrying — in
+/// One speaker card (frame 908:1999): the navy [SimfCard] chrome carrying — in
 /// RTL — a 44×44 gold-bordered anchor tile at the inline start (right), the
 /// white name over the beige rank·affiliation line, and a small beige caret at
 /// the inline end (left). D-432: the host/speaker distinction is per-session
@@ -319,7 +319,7 @@ class _SpeakerCard extends StatelessWidget {
         ? speaker.rank!.trim()
         : '';
 
-    return KsaCard(
+    return SimfCard(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.all(SimfTokens.space2),

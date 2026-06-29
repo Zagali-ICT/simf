@@ -6,7 +6,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 
 /// One media partner — mirrors `PublicMediaPartnerItem` (`name`/`nameArabic`).
 @immutable
@@ -100,11 +100,11 @@ class MediaPartnersScreen extends ConsumerWidget {
       await ref.read(mediaPartnersProvider.future);
     }
 
-    return KsaPage(
+    return SimfPageShell(
       // Frame header — the container is "التغطية الإعلامية" (Media coverage),
       // not the bare "الشركاء الإعلاميون" tab label.
       title: l10n.mediaCoverageTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
@@ -121,10 +121,10 @@ class MediaPartnersScreen extends ConsumerWidget {
             child: partners.when(
               loading: () =>
                   const Center(child: CircularProgressIndicator()),
-              error: (_, __) => KsaRefresh(
+              error: (_, __) => SimfPullToRefresh(
                 onRefresh: onRefresh,
-                child: KsaPullable(
-                  child: KsaErrorState(
+                child: SimfPullableHost(
+                  child: SimfErrorState(
                     message: l10n.mediaPartnersError,
                     retryLabel: l10n.retryLabel,
                     onRetry: () => ref.invalidate(mediaPartnersProvider),
@@ -133,10 +133,10 @@ class MediaPartnersScreen extends ConsumerWidget {
               ),
               data: (items) {
                 if (items.isEmpty) {
-                  return KsaRefresh(
+                  return SimfPullToRefresh(
                     onRefresh: onRefresh,
-                    child: KsaPullable(
-                      child: KsaEmptyState(
+                    child: SimfPullableHost(
+                      child: SimfEmptyState(
                         icon: Icons.campaign_outlined,
                         message: l10n.mediaPartnersEmpty,
                       ),
@@ -146,7 +146,7 @@ class MediaPartnersScreen extends ConsumerWidget {
                 final isArabic = l10n.isArabic;
                 // Frame 958:2388 — a 2-column grid of 163.5×104 partner cards
                 // with a 16px gap (≈1.57 aspect).
-                return KsaRefresh(
+                return SimfPullToRefresh(
                   onRefresh: onRefresh,
                   child: GridView.builder(
                     physics: const AlwaysScrollableScrollPhysics(),
@@ -276,7 +276,7 @@ class _PartnerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return KsaCard(
+    return SimfCard(
       child: Padding(
         padding: const EdgeInsets.all(SimfTokens.space2),
         child: Column(

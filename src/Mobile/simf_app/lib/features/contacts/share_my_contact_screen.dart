@@ -7,7 +7,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../core/sharing/content_sharer.dart';
 import '../myarea/data/myarea_repository.dart';
 import 'data/contacts_repository.dart';

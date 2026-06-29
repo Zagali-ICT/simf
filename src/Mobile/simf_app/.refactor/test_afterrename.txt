@@ -1,0 +1,786 @@
+Resolving dependencies...
+Downloading packages...
+  add_2_calendar 3.1.0 (3.1.1 available)
+  camera 0.11.4 (0.12.0+1 available)
+  camera_android_camerax 0.6.30 (0.7.2+1 available)
+  camera_avfoundation 0.9.23+2 (0.10.1 available)
+  cli_util 0.4.2 (0.5.1 available)
+  dio 5.9.2 (5.10.0 available)
+  flutter_riverpod 2.6.1 (3.3.2 available)
+  flutter_secure_storage 9.2.4 (10.3.1 available)
+  flutter_secure_storage_linux 1.2.3 (3.0.1 available)
+  flutter_secure_storage_macos 3.1.3 (4.0.0 available)
+  flutter_secure_storage_platform_interface 1.1.2 (2.0.1 available)
+  flutter_secure_storage_web 1.2.1 (2.1.1 available)
+  flutter_secure_storage_windows 3.1.2 (4.2.2 available)
+  go_router 14.8.1 (17.3.0 available)
+! intl 0.20.2 (overridden in .\pubspec_overrides.yaml) (0.20.3 available)
+  js 0.6.7 (0.7.2 available)
+  local_auth 2.3.0 (3.0.1 available)
+  local_auth_android 1.0.56 (2.0.9 available)
+  local_auth_darwin 1.6.1 (2.0.3 available)
+  local_auth_windows 1.0.11 (2.0.1 available)
+  matcher 0.12.19 (0.12.20 available)
+  meta 1.18.0 (1.18.3 available)
+  package_config 2.2.0 (3.0.0 available)
+  path_provider 2.1.5 (2.1.6 available)
+  path_provider_linux 2.2.1 (2.2.2 available)
+  path_provider_platform_interface 2.1.2 (2.1.3 available)
+  pointycastle 3.9.1 (4.0.0 available)
+  qr 3.0.2 (4.0.0 available)
+  riverpod 2.6.1 (3.3.2 available)
+  share_plus 10.1.4 (13.2.0 available)
+  share_plus_platform_interface 5.0.2 (7.1.0 available)
+  test_api 0.7.11 (0.7.13 available)
+  vector_graphics_compiler 1.2.5 (1.2.6 available)
+  vector_math 2.2.0 (2.4.0 available)
+  video_player_android 2.9.6 (2.9.7 available)
+  video_player_avfoundation 2.9.7 (2.10.0 available)
+  video_player_platform_interface 6.7.0 (6.8.0 available)
+  win32 5.15.0 (6.3.0 available)
+Got dependencies!
+38 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+00:00 +0: loading D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/auth_token_wiring_test.dart
+00:00 +0: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/auth_token_wiring_test.dart: after signIn, the follow-up /users/me request carries the Authorization header (main.dart wiring)
+00:01 +1: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/router_gate_test.dart: routePathRequiresAuth (auth gate, SIMF-MAA-001 §8) the My-seat sub-route requires auth (not shadowed by session detail)
+00:01 +2: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/router_gate_test.dart: routePathRequiresAuth (auth gate, SIMF-MAA-001 §8) the session detail itself is open (Guest)
+00:01 +3: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/router_gate_test.dart: routePathRequiresAuth (auth gate, SIMF-MAA-001 §8) the explicitly gated screens require auth
+00:01 +4: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/router_gate_test.dart: routePathRequiresAuth (auth gate, SIMF-MAA-001 §8) guest-accessible content is not gated
+00:01 +5: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/router_gate_test.dart: routePathRequiresAuth (auth gate, SIMF-MAA-001 §8) an unknown or null pattern is never gated
+00:01 +6: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/router_gate_test.dart: routePathRequiresAuth (auth gate, SIMF-MAA-001 §8) routeNumberForPath matches the pattern exactly
+00:01 +7: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/router_gate_test.dart: redirectDecision (auth-gate redirect) a signed-in user on /sign-in is NOT bounced — SignInScreen owns the post-sign-in route (D-295)
+00:01 +8: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/router_gate_test.dart: redirectDecision (auth-gate redirect) cold-start holds a protected route on the splash (D-295)
+00:01 +9: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/router_gate_test.dart: redirectDecision (auth-gate redirect) cold-start does NOT pin a public route on the splash (D-295)
+00:01 +10: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/router_gate_test.dart: redirectDecision (auth-gate redirect) a protected route while signed out redirects to sign-in
+00:01 +11: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/router_gate_test.dart: redirectDecision (auth-gate redirect) a protected route while signed in is allowed
+00:01 +12: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/router_gate_test.dart: redirectDecision (auth-gate redirect) a public route is always allowed
+00:01 +13: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/router_gate_test.dart: StatefulShellRoute auth gate (D-422 — fixed-bar shell) session ends on the /badge tab → bounced to /sign-in
+00:02 +14: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/simf_page_shell_test.dart: SimfBottomNav (KSA Wave-2 shell) shows only the active tab label
+00:02 +15: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/simf_page_shell_test.dart: SimfBottomNav (KSA Wave-2 shell) shows only the active tab label
+00:02 +16: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/simf_page_shell_test.dart: SimfBottomNav (KSA Wave-2 shell) shows only the active tab label
+00:02 +17: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/simf_page_shell_test.dart: SimfBottomNav (KSA Wave-2 shell) shows only the active tab label
+00:02 +18: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/simf_page_shell_test.dart: SimfBottomNav (KSA Wave-2 shell) shows only the active tab label
+00:02 +19: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/simf_page_shell_test.dart: SimfBottomNav (KSA Wave-2 shell) shows only the active tab label
+00:02 +20: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/simf_page_shell_test.dart: SimfBottomNav (KSA Wave-2 shell) shows only the active tab label
+00:02 +21: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/simf_page_shell_test.dart: SimfBottomNav (KSA Wave-2 shell) shows only the active tab label
+00:02 +22: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/simf_page_shell_test.dart: SimfBottomNav (KSA Wave-2 shell) shows only the active tab label
+00:02 +23: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/simf_page_shell_test.dart: SimfBottomNav (KSA Wave-2 shell) shows only the active tab label
+00:03 +24: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/simf_page_shell_test.dart: SimfBottomNav (KSA Wave-2 shell) shows only the active tab label
+00:03 +25: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/simf_page_shell_test.dart: SimfBottomNav (KSA Wave-2 shell) shows only the active tab label
+00:03 +26: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/simf_page_shell_test.dart: SimfBottomNav (KSA Wave-2 shell) shows only the active tab label
+00:03 +27: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/simf_page_shell_test.dart: SimfBottomNav (KSA Wave-2 shell) shows only the active tab label
+00:03 +28: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/simf_page_shell_test.dart: SimfBottomNav (KSA Wave-2 shell) shows only the active tab label
+00:04 +29: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/widgets/more_drawer_test.dart: MoreDrawer (shared shell side menu) signed-in shows the nav hub + language/theme/calendar/logout
+00:04 +30: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/widgets/more_drawer_test.dart: MoreDrawer (shared shell side menu) signed-in shows the nav hub + language/theme/calendar/logout
+00:04 +31: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/widgets/more_drawer_test.dart: MoreDrawer (shared shell side menu) signed-in shows the nav hub + language/theme/calendar/logout
+00:04 +32: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/widgets/more_drawer_test.dart: MoreDrawer (shared shell side menu) signed-in shows the nav hub + language/theme/calendar/logout
+00:04 +33: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/widgets/more_drawer_test.dart: MoreDrawer (shared shell side menu) signed-in shows the nav hub + language/theme/calendar/logout
+00:04 +34: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/widgets/more_drawer_test.dart: MoreDrawer (shared shell side menu) signed-in shows the nav hub + language/theme/calendar/logout
+00:04 +35: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/widgets/more_drawer_test.dart: MoreDrawer (shared shell side menu) signed-in shows the nav hub + language/theme/calendar/logout
+00:04 +36: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/widgets/more_drawer_test.dart: MoreDrawer (shared shell side menu) signed-in shows the nav hub + language/theme/calendar/logout
+00:05 +37: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/widgets/more_drawer_test.dart: MoreDrawer (shared shell side menu) signed-in shows the nav hub + language/theme/calendar/logout
+00:05 +38: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/widgets/more_drawer_test.dart: MoreDrawer (shared shell side menu) signed-in shows the nav hub + language/theme/calendar/logout
+00:05 +39: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/widgets/more_drawer_test.dart: MoreDrawer (shared shell side menu) signed-in shows the nav hub + language/theme/calendar/logout
+00:05 +40: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/widgets/more_drawer_test.dart: MoreDrawer (shared shell side menu) signed-in shows the nav hub + language/theme/calendar/logout
+00:05 +41: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/widgets/more_drawer_test.dart: MoreDrawer (shared shell side menu) signed-in shows the nav hub + language/theme/calendar/logout
+00:05 +42: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/widgets/more_drawer_test.dart: MoreDrawer (shared shell side menu) signed-in shows the nav hub + language/theme/calendar/logout
+00:05 +43: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/widgets/more_drawer_test.dart: MoreDrawer (shared shell side menu) signed-in shows the nav hub + language/theme/calendar/logout
+00:05 +44: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/widgets/more_drawer_test.dart: MoreDrawer (shared shell side menu) signed-in shows the nav hub + language/theme/calendar/logout
+00:05 +45: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/widgets/more_drawer_test.dart: MoreDrawer (shared shell side menu) signed-in shows the nav hub + language/theme/calendar/logout
+00:05 +46: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/widgets/more_drawer_test.dart: MoreDrawer (shared shell side menu) signed-in shows the nav hub + language/theme/calendar/logout
+00:05 +47: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/simf_page_shell_test.dart: SimfPageShell tapping the language globe flips the locale AR → EN and persists it
+00:06 +48: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/app/simf_page_shell_test.dart: SimfPageShell tapping the language globe flips the locale AR → EN and persists it
+00:06 +49: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/about/about_screen_test.dart: AboutScreen (Page 037 — KSA frame 1082:15307) renders the heading, the CMS paragraph and the four themes
+00:06 +50: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/about/about_screen_test.dart: AboutScreen (Page 037 — KSA frame 1082:15307) renders the heading, the CMS paragraph and the four themes
+00:06 +51: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/about/about_screen_test.dart: AboutScreen (Page 037 — KSA frame 1082:15307) renders the heading, the CMS paragraph and the four themes
+00:06 +52: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/about/about_screen_test.dart: AboutScreen (Page 037 — KSA frame 1082:15307) renders the heading, the CMS paragraph and the four themes
+00:06 +53: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/about/about_screen_test.dart: AboutScreen (Page 037 — KSA frame 1082:15307) renders the heading, the CMS paragraph and the four themes
+00:06 +54: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/about/about_screen_test.dart: AboutScreen (Page 037 — KSA frame 1082:15307) renders the heading, the CMS paragraph and the four themes
+00:06 +55: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/about/about_screen_test.dart: AboutScreen (Page 037 — KSA frame 1082:15307) renders the heading, the CMS paragraph and the four themes
+00:06 +56: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/about/about_screen_test.dart: AboutScreen (Page 037 — KSA frame 1082:15307) renders the heading, the CMS paragraph and the four themes
+00:06 +57: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/about/about_screen_test.dart: AboutScreen (Page 037 — KSA frame 1082:15307) renders the heading, the CMS paragraph and the four themes
+00:06 +58: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/about/about_screen_test.dart: AboutScreen (Page 037 — KSA frame 1082:15307) renders the heading, the CMS paragraph and the four themes
+00:06 +59: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/about/about_screen_test.dart: AboutScreen (Page 037 — KSA frame 1082:15307) renders the heading, the CMS paragraph and the four themes
+00:06 +60: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/about/about_screen_test.dart: AboutScreen (Page 037 — KSA frame 1082:15307) renders the heading, the CMS paragraph and the four themes
+00:07 +61: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/about/about_screen_test.dart: AboutScreen (Page 037 — KSA frame 1082:15307) renders the heading, the CMS paragraph and the four themes
+00:07 +62: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/about/about_screen_test.dart: AboutScreen (Page 037 — KSA frame 1082:15307) renders the heading, the CMS paragraph and the four themes
+00:07 +63: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/about/about_screen_test.dart: AboutScreen (Page 037 — KSA frame 1082:15307) renders the heading, the CMS paragraph and the four themes
+00:07 +64: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/about/about_screen_test.dart: AboutScreen (Page 037 — KSA frame 1082:15307) renders the heading, the CMS paragraph and the four themes
+00:07 +65: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/about/about_screen_test.dart: AboutScreen (Page 037 — KSA frame 1082:15307) renders the heading, the CMS paragraph and the four themes
+00:07 +66: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/about/about_screen_test.dart: AboutScreen (Page 037 — KSA frame 1082:15307) renders the heading, the CMS paragraph and the four themes
+00:07 +67: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/about/about_screen_test.dart: AboutScreen (Page 037 — KSA frame 1082:15307) renders the heading, the CMS paragraph and the four themes
+00:07 +68: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/about/about_screen_test.dart: AboutScreen (Page 037 — KSA frame 1082:15307) renders the heading, the CMS paragraph and the four themes
+00:08 +69: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/about/about_screen_test.dart: AboutScreen (Page 037 — KSA frame 1082:15307) renders the heading, the CMS paragraph and the four themes
+00:08 +70: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/about/about_screen_test.dart: AboutScreen (Page 037 — KSA frame 1082:15307) renders the heading, the CMS paragraph and the four themes
+00:08 +71: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/about/about_screen_test.dart: AboutScreen (Page 037 — KSA frame 1082:15307) renders the heading, the CMS paragraph and the four themes
+00:08 +72: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/about/about_screen_test.dart: AboutScreen (Page 037 — KSA frame 1082:15307) renders the heading, the CMS paragraph and the four themes
+00:08 +73: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/about/about_screen_test.dart: AboutScreen (Page 037 — KSA frame 1082:15307) renders the heading, the CMS paragraph and the four themes
+00:08 +74: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/about/about_screen_test.dart: AboutScreen (Page 037 — KSA frame 1082:15307) renders the heading, the CMS paragraph and the four themes
+00:08 +75: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/about/about_screen_test.dart: AboutScreen (Page 037 — KSA frame 1082:15307) renders the heading, the CMS paragraph and the four themes
+00:08 +76: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/about/about_screen_test.dart: AboutScreen (Page 037 — KSA frame 1082:15307) renders the heading, the CMS paragraph and the four themes
+00:09 +77: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/about/about_screen_test.dart: AboutScreen (Page 037 — KSA frame 1082:15307) renders the heading, the CMS paragraph and the four themes
+00:09 +78: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/about/about_screen_test.dart: AboutScreen (Page 037 — KSA frame 1082:15307) renders the heading, the CMS paragraph and the four themes
+00:09 +79: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/accessibility/accessibility_screen_test.dart: AccessibilityScreen (Page 038 — frame 1116:16630) renders the display + sound sections and their controls
+00:09 +80: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/accessibility/accessibility_screen_test.dart: AccessibilityScreen (Page 038 — frame 1116:16630) renders the display + sound sections and their controls
+00:09 +81: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/accessibility/accessibility_screen_test.dart: AccessibilityScreen (Page 038 — frame 1116:16630) renders the display + sound sections and their controls
+00:10 +82: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/accessibility/accessibility_screen_test.dart: AccessibilityScreen (Page 038 — frame 1116:16630) renders the display + sound sections and their controls
+00:10 +83: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/accessibility/accessibility_screen_test.dart: AccessibilityScreen (Page 038 — frame 1116:16630) renders the display + sound sections and their controls
+00:10 +84: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/ai_summary/session_summary_list_screen_test.dart: SessionSummaryListScreen (Figma 1388:8392) the All tab lists sessions; tapping one opens its summary
+00:10 +85: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/ai_summary/session_summary_list_screen_test.dart: SessionSummaryListScreen (Figma 1388:8392) the All tab lists sessions; tapping one opens its summary
+00:11 +86: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/ai_summary/session_summary_list_screen_test.dart: SessionSummaryListScreen (Figma 1388:8392) the All tab lists sessions; tapping one opens its summary
+00:11 +87: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/ai_summary/session_summary_list_screen_test.dart: SessionSummaryListScreen (Figma 1388:8392) the All tab lists sessions; tapping one opens its summary
+00:11 +88: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/ai_summary/session_summary_list_screen_test.dart: SessionSummaryListScreen (Figma 1388:8392) the All tab lists sessions; tapping one opens its summary
+00:11 +89: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/ai_summary/session_summary_screen_test.dart: AiSummaryScreen (Page 034 — KSA frame 1072:13518) details: info card, tabs (Key points active), generate paragraph
+00:11 +90: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/ai_summary/session_summary_screen_test.dart: AiSummaryScreen (Page 034 — KSA frame 1072:13518) details: info card, tabs (Key points active), generate paragraph
+00:12 +91: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/ai_summary/session_summary_screen_test.dart: AiSummaryScreen (Page 034 — KSA frame 1072:13518) details: info card, tabs (Key points active), generate paragraph
+00:12 +92: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/ai_summary/session_summary_screen_test.dart: AiSummaryScreen (Page 034 — KSA frame 1072:13518) details: info card, tabs (Key points active), generate paragraph
+00:12 +93: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/ai_summary/session_summary_screen_test.dart: AiSummaryScreen (Page 034 — KSA frame 1072:13518) details: info card, tabs (Key points active), generate paragraph
+00:12 +94: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/archive/archive_screen_test.dart: ArchiveScreen (Page 024 — KSA frame 925:3079) renders the notice, an edition pill per edition, the selected edition detail and its stats
+00:13 +95: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/archive/archive_screen_test.dart: ArchiveScreen (Page 024 — KSA frame 925:3079) renders the notice, an edition pill per edition, the selected edition detail and its stats
+00:13 +96: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/badge_auth_screens_test.dart: manual-entry resolve of a has-password badge routes to sign-in
+00:13 +97: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/badge_auth_screens_test.dart: manual-entry resolve of a has-password badge routes to sign-in
+00:13 +98: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/badge_auth_screens_test.dart: manual-entry resolve of a has-password badge routes to sign-in
+00:13 +99: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/badge_auth_screens_test.dart: manual-entry resolve of a has-password badge routes to sign-in
+00:14 +100: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/badge_auth_screens_test.dart: manual-entry resolve of a has-password badge routes to sign-in
+00:14 +101: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/badge_auth_screens_test.dart: manual-entry resolve of a has-password badge routes to sign-in
+00:14 +102: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/badge_auth_screens_test.dart: manual-entry resolve of a has-password badge routes to sign-in
+00:14 +103: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/badge_auth_screens_test.dart: manual-entry resolve of a has-password badge routes to sign-in
+00:14 +104: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/sign_in_screen_test.dart: SignInScreen (Page 003 — KSA design, D-360) successful sign-in with a complete profile routes home and stores the email (remember-me default on)
+00:14 +105: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/sign_in_screen_test.dart: SignInScreen (Page 003 — KSA design, D-360) successful sign-in with a complete profile routes home and stores the email (remember-me default on)
+00:14 +106: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/sign_in_screen_test.dart: SignInScreen (Page 003 — KSA design, D-360) successful sign-in with a complete profile routes home and stores the email (remember-me default on)
+00:14 +107: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/sign_in_screen_test.dart: SignInScreen (Page 003 — KSA design, D-360) successful sign-in with a complete profile routes home and stores the email (remember-me default on)
+00:14 +108: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/sign_in_screen_test.dart: SignInScreen (Page 003 — KSA design, D-360) successful sign-in with a complete profile routes home and stores the email (remember-me default on)
+00:14 +109: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/sign_in_screen_test.dart: SignInScreen (Page 003 — KSA design, D-360) successful sign-in with a complete profile routes home and stores the email (remember-me default on)
+00:14 +110: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/sign_in_screen_test.dart: SignInScreen (Page 003 — KSA design, D-360) successful sign-in with a complete profile routes home and stores the email (remember-me default on)
+00:14 +111: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/sign_in_screen_test.dart: SignInScreen (Page 003 — KSA design, D-360) successful sign-in with a complete profile routes home and stores the email (remember-me default on)
+00:14 +112: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/sign_up_form_screen_test.dart: SignUpFormScreen (Page 005 — KSA design, D-370) valid input creates the account and routes to the email-OTP screen carrying the trimmed/lower-cased email
+00:14 +113: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/sign_up_form_screen_test.dart: SignUpFormScreen (Page 005 — KSA design, D-370) valid input creates the account and routes to the email-OTP screen carrying the trimmed/lower-cased email
+00:14 +114: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/sign_up_form_screen_test.dart: SignUpFormScreen (Page 005 — KSA design, D-370) valid input creates the account and routes to the email-OTP screen carrying the trimmed/lower-cased email
+00:14 +115: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/sign_up_form_screen_test.dart: SignUpFormScreen (Page 005 — KSA design, D-370) valid input creates the account and routes to the email-OTP screen carrying the trimmed/lower-cased email
+00:14 +116: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/sign_up_form_screen_test.dart: SignUpFormScreen (Page 005 — KSA design, D-370) valid input creates the account and routes to the email-OTP screen carrying the trimmed/lower-cased email
+00:14 +117: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/sign_up_form_screen_test.dart: SignUpFormScreen (Page 005 — KSA design, D-370) valid input creates the account and routes to the email-OTP screen carrying the trimmed/lower-cased email
+00:14 +118: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/sign_up_form_screen_test.dart: SignUpFormScreen (Page 005 — KSA design, D-370) valid input creates the account and routes to the email-OTP screen carrying the trimmed/lower-cased email
+00:14 +119: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/sign_up_form_screen_test.dart: SignUpFormScreen (Page 005 — KSA design, D-370) valid input creates the account and routes to the email-OTP screen carrying the trimmed/lower-cased email
+00:14 +120: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/sign_up_form_screen_test.dart: SignUpFormScreen (Page 005 — KSA design, D-370) valid input creates the account and routes to the email-OTP screen carrying the trimmed/lower-cased email
+00:14 +121: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/sign_up_form_screen_test.dart: SignUpFormScreen (Page 005 — KSA design, D-370) valid input creates the account and routes to the email-OTP screen carrying the trimmed/lower-cased email
+00:14 +122: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/sign_up_form_screen_test.dart: SignUpFormScreen (Page 005 — KSA design, D-370) valid input creates the account and routes to the email-OTP screen carrying the trimmed/lower-cased email
+00:14 +123: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/sign_up_form_screen_test.dart: SignUpFormScreen (Page 005 — KSA design, D-370) valid input creates the account and routes to the email-OTP screen carrying the trimmed/lower-cased email
+00:14 +124: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/sign_up_form_screen_test.dart: SignUpFormScreen (Page 005 — KSA design, D-370) valid input creates the account and routes to the email-OTP screen carrying the trimmed/lower-cased email
+00:14 +125: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/sign_up_form_screen_test.dart: SignUpFormScreen (Page 005 — KSA design, D-370) valid input creates the account and routes to the email-OTP screen carrying the trimmed/lower-cased email
+00:14 +126: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/sign_up_form_screen_test.dart: SignUpFormScreen (Page 005 — KSA design, D-370) valid input creates the account and routes to the email-OTP screen carrying the trimmed/lower-cased email
+00:14 +127: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/sign_up_form_screen_test.dart: SignUpFormScreen (Page 005 — KSA design, D-370) valid input creates the account and routes to the email-OTP screen carrying the trimmed/lower-cased email
+00:14 +128: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/auth/sign_up_form_screen_test.dart: SignUpFormScreen (Page 005 — KSA design, D-370) valid input creates the account and routes to the email-OTP screen carrying the trimmed/lower-cased email
+00:14 +129: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/badge/badge_screen_test.dart: BadgeScreen (Page 032 — KSA frame 221:769) an issued qrId renders the QR card, identity strip and the add-person action
+00:14 +130: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/badge/badge_screen_test.dart: BadgeScreen (Page 032 — KSA frame 221:769) an issued qrId renders the QR card, identity strip and the add-person action
+00:14 +131: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/badge/badge_screen_test.dart: BadgeScreen (Page 032 — KSA frame 221:769) an issued qrId renders the QR card, identity strip and the add-person action
+00:15 +132: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/badge/badge_screen_test.dart: BadgeScreen (Page 032 — KSA frame 221:769) an issued qrId renders the QR card, identity strip and the add-person action
+00:15 +133: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/badge/badge_screen_test.dart: BadgeScreen (Page 032 — KSA frame 221:769) an issued qrId renders the QR card, identity strip and the add-person action
+00:15 +134: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/badge/badge_screen_test.dart: BadgeScreen (Page 032 — KSA frame 221:769) an issued qrId renders the QR card, identity strip and the add-person action
+00:15 +135: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/badge/badge_screen_test.dart: BadgeScreen (Page 032 — KSA frame 221:769) an issued qrId renders the QR card, identity strip and the add-person action
+00:15 +136: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/badge/badge_screen_test.dart: BadgeScreen (Page 032 — KSA frame 221:769) an issued qrId renders the QR card, identity strip and the add-person action
+00:15 +137: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/badge/badge_screen_test.dart: BadgeScreen (Page 032 — KSA frame 221:769) an issued qrId renders the QR card, identity strip and the add-person action
+00:15 +138: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/badge/badge_screen_test.dart: BadgeScreen (Page 032 — KSA frame 221:769) an issued qrId renders the QR card, identity strip and the add-person action
+00:15 +139: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/badge/badge_screen_test.dart: BadgeScreen (Page 032 — KSA frame 221:769) an issued qrId renders the QR card, identity strip and the add-person action
+00:15 +140: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/badge/badge_screen_test.dart: BadgeScreen (Page 032 — KSA frame 221:769) an issued qrId renders the QR card, identity strip and the add-person action
+00:15 +141: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/chatbot/chatbot_screen_test.dart: ChatbotScreen (Page 036 — KSA frame 1064:13066) opens with the scripted Figma transcript
+00:15 +142: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/chatbot/chatbot_screen_test.dart: ChatbotScreen (Page 036 — KSA frame 1064:13066) opens with the scripted Figma transcript
+00:15 +143: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/chatbot/chatbot_screen_test.dart: ChatbotScreen (Page 036 — KSA frame 1064:13066) opens with the scripted Figma transcript
+00:15 +144: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/contact_card_test.dart: ContactCard (FDS-014) renders the name + only the channels that are set
+00:15 +145: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/contact_card_test.dart: ContactCard (FDS-014) renders the name + only the channels that are set
+00:15 +146: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/contact_card_test.dart: ContactCard (FDS-014) renders the name + only the channels that are set
+00:15 +147: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/contact_card_test.dart: ContactCard (FDS-014) renders the name + only the channels that are set
+00:15 +148: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/contact_card_test.dart: ContactCard (FDS-014) renders the name + only the channels that are set
+00:15 +149: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/contact_card_test.dart: ContactCard (FDS-014) renders the name + only the channels that are set
+00:15 +150: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/contact_card_test.dart: ContactCard (FDS-014) renders the name + only the channels that are set
+00:15 +151: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/my_contacts_screen_test.dart: MyContactsScreen (FDS-014) renders the saved-contact rows
+00:15 +152: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/my_contacts_screen_test.dart: MyContactsScreen (FDS-014) renders the saved-contact rows
+00:15 +153: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/my_contacts_screen_test.dart: MyContactsScreen (FDS-014) renders the saved-contact rows
+00:16 +154: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/my_contacts_screen_test.dart: MyContactsScreen (FDS-014) renders the saved-contact rows
+00:16 +155: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/my_contacts_screen_test.dart: MyContactsScreen (FDS-014) renders the saved-contact rows
+00:16 +156: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/my_contacts_screen_test.dart: MyContactsScreen (FDS-014) renders the saved-contact rows
+00:16 +157: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/my_contacts_screen_test.dart: MyContactsScreen (FDS-014) renders the saved-contact rows
+00:16 +158: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/my_contacts_screen_test.dart: MyContactsScreen (FDS-014) renders the saved-contact rows
+00:16 +159: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/my_contacts_screen_test.dart: MyContactsScreen (FDS-014) renders the saved-contact rows
+00:16 +160: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/my_contacts_screen_test.dart: MyContactsScreen (FDS-014) renders the saved-contact rows
+00:16 +161: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/my_contacts_screen_test.dart: MyContactsScreen (FDS-014) renders the saved-contact rows
+00:16 +162: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/my_contacts_screen_test.dart: MyContactsScreen (FDS-014) renders the saved-contact rows
+00:16 +163: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/my_contacts_screen_test.dart: MyContactsScreen (FDS-014) renders the saved-contact rows
+00:16 +164: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/my_contacts_screen_test.dart: MyContactsScreen (FDS-014) renders the saved-contact rows
+00:16 +165: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/my_contacts_screen_test.dart: MyContactsScreen (FDS-014) renders the saved-contact rows
+00:16 +166: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/my_contacts_screen_test.dart: MyContactsScreen (FDS-014) renders the saved-contact rows
+00:16 +167: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/my_contacts_screen_test.dart: MyContactsScreen (FDS-014) renders the saved-contact rows
+00:16 +168: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/my_contacts_screen_test.dart: MyContactsScreen (FDS-014) renders the saved-contact rows
+00:16 +169: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/scan_contact_screen_test.dart: ScanContactScreen (FDS-014) manual look-up resolves + previews the card
+00:16 +170: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/scan_contact_screen_test.dart: ScanContactScreen (FDS-014) manual look-up resolves + previews the card
+00:16 +171: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/scan_contact_screen_test.dart: ScanContactScreen (FDS-014) manual look-up resolves + previews the card
+00:16 +172: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/scan_contact_screen_test.dart: ScanContactScreen (FDS-014) manual look-up resolves + previews the card
+00:16 +173: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/scan_contact_screen_test.dart: ScanContactScreen (FDS-014) manual look-up resolves + previews the card
+00:16 +174: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/scan_contact_screen_test.dart: ScanContactScreen (FDS-014) manual look-up resolves + previews the card
+00:16 +175: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/scan_contact_screen_test.dart: ScanContactScreen (FDS-014) manual look-up resolves + previews the card
+00:16 +176: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/scan_contact_screen_test.dart: ScanContactScreen (FDS-014) manual look-up resolves + previews the card
+00:16 +177: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/scan_contact_screen_test.dart: ScanContactScreen (FDS-014) manual look-up resolves + previews the card
+00:16 +178: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/scan_contact_screen_test.dart: ScanContactScreen (FDS-014) manual look-up resolves + previews the card
+00:17 +179: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/scan_contact_screen_test.dart: ScanContactScreen (FDS-014) manual look-up resolves + previews the card
+00:17 +180: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/scan_contact_screen_test.dart: ScanContactScreen (FDS-014) manual look-up resolves + previews the card
+00:17 +181: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/scan_contact_screen_test.dart: ScanContactScreen (FDS-014) manual look-up resolves + previews the card
+00:17 +182: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/scan_contact_screen_test.dart: ScanContactScreen (FDS-014) manual look-up resolves + previews the card
+00:17 +183: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/scan_contact_screen_test.dart: ScanContactScreen (FDS-014) manual look-up resolves + previews the card
+00:17 +184: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/scan_contact_screen_test.dart: ScanContactScreen (FDS-014) manual look-up resolves + previews the card
+00:17 +185: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/scan_contact_screen_test.dart: ScanContactScreen (FDS-014) manual look-up resolves + previews the card
+00:17 +186: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/scan_contact_screen_test.dart: ScanContactScreen (FDS-014) manual look-up resolves + previews the card
+00:17 +187: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/scan_contact_screen_test.dart: ScanContactScreen (FDS-014) manual look-up resolves + previews the card
+00:17 +188: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/scan_contact_screen_test.dart: ScanContactScreen (FDS-014) manual look-up resolves + previews the card
+00:17 +189: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/scan_contact_screen_test.dart: ScanContactScreen (FDS-014) manual look-up resolves + previews the card
+00:17 +190: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contacts/scan_contact_screen_test.dart: ScanContactScreen (FDS-014) manual look-up resolves + previews the card
+00:17 +191: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contact_us/contact_us_screen_test.dart: ContactUsScreen (Page 203 — KSA frame 1388:7711) renders the form + contact-info panel from the profile
+00:17 +192: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contact_us/contact_us_screen_test.dart: ContactUsScreen (Page 203 — KSA frame 1388:7711) renders the form + contact-info panel from the profile
+00:17 +193: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contact_us/contact_us_screen_test.dart: ContactUsScreen (Page 203 — KSA frame 1388:7711) renders the form + contact-info panel from the profile
+00:17 +194: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contact_us/contact_us_screen_test.dart: ContactUsScreen (Page 203 — KSA frame 1388:7711) renders the form + contact-info panel from the profile
+00:18 +195: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contact_us/contact_us_screen_test.dart: ContactUsScreen (Page 203 — KSA frame 1388:7711) renders the form + contact-info panel from the profile
+00:18 +196: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contact_us/contact_us_screen_test.dart: ContactUsScreen (Page 203 — KSA frame 1388:7711) renders the form + contact-info panel from the profile
+00:18 +197: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contact_us/contact_us_screen_test.dart: ContactUsScreen (Page 203 — KSA frame 1388:7711) renders the form + contact-info panel from the profile
+00:18 +198: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contact_us/contact_us_screen_test.dart: ContactUsScreen (Page 203 — KSA frame 1388:7711) renders the form + contact-info panel from the profile
+00:18 +199: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contact_us/contact_us_screen_test.dart: ContactUsScreen (Page 203 — KSA frame 1388:7711) renders the form + contact-info panel from the profile
+00:18 +200: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contact_us/contact_us_screen_test.dart: ContactUsScreen (Page 203 — KSA frame 1388:7711) renders the form + contact-info panel from the profile
+00:18 +201: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contact_us/contact_us_screen_test.dart: ContactUsScreen (Page 203 — KSA frame 1388:7711) renders the form + contact-info panel from the profile
+00:18 +202: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contact_us/contact_us_screen_test.dart: ContactUsScreen (Page 203 — KSA frame 1388:7711) renders the form + contact-info panel from the profile
+00:18 +203: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contact_us/contact_us_screen_test.dart: ContactUsScreen (Page 203 — KSA frame 1388:7711) renders the form + contact-info panel from the profile
+00:18 +204: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contact_us/contact_us_screen_test.dart: ContactUsScreen (Page 203 — KSA frame 1388:7711) renders the form + contact-info panel from the profile
+00:18 +205: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contact_us/contact_us_screen_test.dart: ContactUsScreen (Page 203 — KSA frame 1388:7711) renders the form + contact-info panel from the profile
+00:18 +206: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contact_us/contact_us_screen_test.dart: ContactUsScreen (Page 203 — KSA frame 1388:7711) renders the form + contact-info panel from the profile
+00:18 +207: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contact_us/contact_us_screen_test.dart: ContactUsScreen (Page 203 — KSA frame 1388:7711) renders the form + contact-info panel from the profile
+00:18 +208: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contact_us/contact_us_screen_test.dart: ContactUsScreen (Page 203 — KSA frame 1388:7711) renders the form + contact-info panel from the profile
+00:18 +209: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contact_us/contact_us_screen_test.dart: ContactUsScreen (Page 203 — KSA frame 1388:7711) renders the form + contact-info panel from the profile
+00:18 +210: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/contact_us/contact_us_screen_test.dart: ContactUsScreen (Page 203 — KSA frame 1388:7711) renders the form + contact-info panel from the profile
+00:18 +211: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/content/terms_screen_test.dart: TermsScreen (Page 009) standalone mode renders the body, no last-updated line, and the always-visible Agree button (D-375 — frame 505:1553)
+00:18 +212: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/content/terms_screen_test.dart: TermsScreen (Page 009) standalone mode renders the body, no last-updated line, and the always-visible Agree button (D-375 — frame 505:1553)
+00:18 +213: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/content/terms_screen_test.dart: TermsScreen (Page 009) standalone mode renders the body, no last-updated line, and the always-visible Agree button (D-375 — frame 505:1553)
+00:18 +214: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/content/terms_screen_test.dart: TermsScreen (Page 009) standalone mode renders the body, no last-updated line, and the always-visible Agree button (D-375 — frame 505:1553)
+00:18 +215: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/delegations/delegations_screen_test.dart: DelegationsScreen (Figma 1426:10771) renders a delegation card with head, member count and stats
+00:18 +216: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/delegations/delegations_screen_test.dart: DelegationsScreen (Figma 1426:10771) renders a delegation card with head, member count and stats
+00:18 +217: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/delegations/delegations_screen_test.dart: DelegationsScreen (Figma 1426:10771) renders a delegation card with head, member count and stats
+00:18 +218: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/delegations/delegations_screen_test.dart: DelegationsScreen (Figma 1426:10771) renders a delegation card with head, member count and stats
+00:18 +219: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/delegations/delegations_screen_test.dart: DelegationsScreen (Figma 1426:10771) renders a delegation card with head, member count and stats
+00:18 +220: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/delegations/delegations_screen_test.dart: DelegationsScreen (Figma 1426:10771) renders a delegation card with head, member count and stats
+00:18 +221: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/delegations/delegations_screen_test.dart: DelegationsScreen (Figma 1426:10771) renders a delegation card with head, member count and stats
+00:18 +222: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/delegations/delegations_screen_test.dart: DelegationsScreen (Figma 1426:10771) renders a delegation card with head, member count and stats
+00:18 +223: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/delegations/delegations_screen_test.dart: DelegationsScreen (Figma 1426:10771) renders a delegation card with head, member count and stats
+00:19 +224: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/delegations/delegations_screen_test.dart: DelegationsScreen (Figma 1426:10771) renders a delegation card with head, member count and stats
+00:19 +225: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/delegations/delegations_screen_test.dart: DelegationsScreen (Figma 1426:10771) renders a delegation card with head, member count and stats
+00:19 +226: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/delegations/delegations_screen_test.dart: DelegationsScreen (Figma 1426:10771) renders a delegation card with head, member count and stats
+00:19 +227: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/delegations/delegations_screen_test.dart: DelegationsScreen (Figma 1426:10771) renders a delegation card with head, member count and stats
+00:19 +228: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/delegations/delegations_screen_test.dart: DelegationsScreen (Figma 1426:10771) renders a delegation card with head, member count and stats
+00:19 +229: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/delegations/delegations_screen_test.dart: DelegationsScreen (Figma 1426:10771) renders a delegation card with head, member count and stats
+00:19 +230: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/exhibition/entity_detail_scaffold_test.dart: EntityDetailScaffold (Figma 1439:11881 / 1439:11826) renders the full card stack for an exhibitor
+00:19 +231: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/exhibition/entity_detail_scaffold_test.dart: EntityDetailScaffold (Figma 1439:11881 / 1439:11826) renders the full card stack for an exhibitor
+00:19 +232: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/exhibition/entity_detail_scaffold_test.dart: EntityDetailScaffold (Figma 1439:11881 / 1439:11826) renders the full card stack for an exhibitor
+00:19 +233: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/exhibition/entity_detail_scaffold_test.dart: EntityDetailScaffold (Figma 1439:11881 / 1439:11826) renders the full card stack for an exhibitor
+00:19 +234: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/exhibitor/my_visitors_screen_test.dart: empty state when no visitors captured
+00:19 +235: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/exhibitor/my_visitors_screen_test.dart: empty state when no visitors captured
+00:20 +236: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/exhibitor/my_visitors_screen_test.dart: empty state when no visitors captured
+00:20 +237: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/exhibitor/my_visitors_screen_test.dart: empty state when no visitors captured
+00:20 +238: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/faq/faq_screen_test.dart: FaqScreen (Page 201 — KSA frame 1388:7567) renders the questions collapsed, then expands on tap
+00:20 +239: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/faq/faq_screen_test.dart: FaqScreen (Page 201 — KSA frame 1388:7567) renders the questions collapsed, then expands on tap
+00:20 +240: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/faq/faq_screen_test.dart: FaqScreen (Page 201 — KSA frame 1388:7567) renders the questions collapsed, then expands on tap
+00:20 +241: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/faq/faq_screen_test.dart: FaqScreen (Page 201 — KSA frame 1388:7567) renders the questions collapsed, then expands on tap
+00:20 +242: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/faq/faq_screen_test.dart: FaqScreen (Page 201 — KSA frame 1388:7567) renders the questions collapsed, then expands on tap
+00:20 +243: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/faq/faq_screen_test.dart: FaqScreen (Page 201 — KSA frame 1388:7567) renders the questions collapsed, then expands on tap
+00:20 +244: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/faq/faq_screen_test.dart: FaqScreen (Page 201 — KSA frame 1388:7567) renders the questions collapsed, then expands on tap
+00:20 +245: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/faq/faq_screen_test.dart: FaqScreen (Page 201 — KSA frame 1388:7567) renders the questions collapsed, then expands on tap
+00:20 +246: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/faq/faq_screen_test.dart: FaqScreen (Page 201 — KSA frame 1388:7567) renders the questions collapsed, then expands on tap
+00:20 +247: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/faq/faq_screen_test.dart: FaqScreen (Page 201 — KSA frame 1388:7567) renders the questions collapsed, then expands on tap
+00:20 +248: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/faq/faq_screen_test.dart: FaqScreen (Page 201 — KSA frame 1388:7567) renders the questions collapsed, then expands on tap
+00:20 +249: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/faq/faq_screen_test.dart: FaqScreen (Page 201 — KSA frame 1388:7567) renders the questions collapsed, then expands on tap
+00:20 +250: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/faq/faq_screen_test.dart: FaqScreen (Page 201 — KSA frame 1388:7567) renders the questions collapsed, then expands on tap
+00:21 +251: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/faq/faq_screen_test.dart: FaqScreen (Page 201 — KSA frame 1388:7567) renders the questions collapsed, then expands on tap
+00:21 +252: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/feedback/rate_screen_test.dart: RateScreen (Page 040 — dynamic form) submitting with no overall stars prompts for a rating
+00:21 +253: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/feedback/rate_screen_test.dart: RateScreen (Page 040 — dynamic form) submitting with no overall stars prompts for a rating
+00:21 +254: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/feedback/rate_screen_test.dart: RateScreen (Page 040 — dynamic form) submitting with no overall stars prompts for a rating
+00:21 +255: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/feedback/rate_screen_test.dart: RateScreen (Page 040 — dynamic form) submitting with no overall stars prompts for a rating
+00:21 +256: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/forum_guide/forum_guide_screen_test.dart: ForumGuideScreen (Page 200 — KSA frame 1388:7493) renders the title, intro banner and five numbered steps
+00:21 +257: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/gallery/gallery_screen_test.dart: GalleryScreen (Page 030 — KSA frame 947:3764) renders the coverage header, the three tabs and the two media sections
+00:21 +258: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/gallery/gallery_screen_test.dart: GalleryScreen (Page 030 — KSA frame 947:3764) renders the coverage header, the three tabs and the two media sections
+00:21 +259: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/gallery/gallery_screen_test.dart: GalleryScreen (Page 030 — KSA frame 947:3764) renders the coverage header, the three tabs and the two media sections
+00:22 +260: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/gates/gate_scan_screen_test.dart: GateScanScreen (D-406/D-509, staff gate operator) Both gate: a movement type is required before scanning
+00:22 +261: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/gates/gate_scan_screen_test.dart: GateScanScreen (D-406/D-509, staff gate operator) Both gate: a movement type is required before scanning
+00:22 +262: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/gates/gate_scan_screen_test.dart: GateScanScreen (D-406/D-509, staff gate operator) Both gate: a movement type is required before scanning
+00:22 +263: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/gates/gate_scan_screen_test.dart: GateScanScreen (D-406/D-509, staff gate operator) Both gate: a movement type is required before scanning
+00:22 +264: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/gates/gate_scan_screen_test.dart: GateScanScreen (D-406/D-509, staff gate operator) Both gate: a movement type is required before scanning
+00:22 +265: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/gates/gate_scan_screen_test.dart: GateScanScreen (D-406/D-509, staff gate operator) Both gate: a movement type is required before scanning
+00:22 +266: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/gates/gate_scan_screen_test.dart: GateScanScreen (D-406/D-509, staff gate operator) Both gate: a movement type is required before scanning
+00:22 +267: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/gates/gate_scan_screen_test.dart: GateScanScreen (D-406/D-509, staff gate operator) Both gate: a movement type is required before scanning
+00:22 +268: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/gates/gate_scan_screen_test.dart: GateScanScreen (D-406/D-509, staff gate operator) Both gate: a movement type is required before scanning
+00:22 +269: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/gates/gate_scan_screen_test.dart: GateScanScreen (D-406/D-509, staff gate operator) Both gate: a movement type is required before scanning
+00:22 +270: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/gates/gate_scan_screen_test.dart: GateScanScreen (D-406/D-509, staff gate operator) Both gate: a movement type is required before scanning
+00:22 +271: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/gates/gate_scan_screen_test.dart: GateScanScreen (D-406/D-509, staff gate operator) Both gate: a movement type is required before scanning
+00:22 +272: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/gates/gate_scan_screen_test.dart: GateScanScreen (D-406/D-509, staff gate operator) Both gate: a movement type is required before scanning
+00:22 +273: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/gates/gate_scan_screen_test.dart: GateScanScreen (D-406/D-509, staff gate operator) Both gate: a movement type is required before scanning
+00:22 +274: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/gates/gate_scan_screen_test.dart: GateScanScreen (D-406/D-509, staff gate operator) Both gate: a movement type is required before scanning
+00:22 +275: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/gates/gate_scan_screen_test.dart: GateScanScreen (D-406/D-509, staff gate operator) Both gate: a movement type is required before scanning
+00:22 +276: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/gates/gate_scan_screen_test.dart: GateScanScreen (D-406/D-509, staff gate operator) Both gate: a movement type is required before scanning
+00:22 +277: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/gates/gate_scan_screen_test.dart: GateScanScreen (D-406/D-509, staff gate operator) Both gate: a movement type is required before scanning
+00:22 +278: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/gates/gate_scan_screen_test.dart: GateScanScreen (D-406/D-509, staff gate operator) Both gate: a movement type is required before scanning
+00:22 +279: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/gates/gate_scan_screen_test.dart: GateScanScreen (D-406/D-509, staff gate operator) Both gate: a movement type is required before scanning
+00:22 +280: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/gates/gate_scan_screen_test.dart: GateScanScreen (D-406/D-509, staff gate operator) Both gate: a movement type is required before scanning
+00:22 +281: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/gates/gate_scan_screen_test.dart: GateScanScreen (D-406/D-509, staff gate operator) Both gate: a movement type is required before scanning
+00:22 +282: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/gates/gate_scan_screen_test.dart: GateScanScreen (D-406/D-509, staff gate operator) Both gate: a movement type is required before scanning
+00:22 +283: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/gates/gate_scan_screen_test.dart: GateScanScreen (D-406/D-509, staff gate operator) Both gate: a movement type is required before scanning
+00:22 +284: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/home/home_screen_test.dart: HomeScreen — guest layout (frame 512:1492) shows the guest banner, public tiles, locked badge card and the sign-in button
+00:22 +285: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/home/home_screen_test.dart: HomeScreen — guest layout (frame 512:1492) shows the guest banner, public tiles, locked badge card and the sign-in button
+00:23 +286: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/home/home_screen_test.dart: HomeScreen — guest layout (frame 512:1492) shows the guest banner, public tiles, locked badge card and the sign-in button
+00:23 +287: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/home/home_screen_test.dart: HomeScreen — guest layout (frame 512:1492) shows the guest banner, public tiles, locked badge card and the sign-in button
+00:23 +288: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/home/home_screen_test.dart: HomeScreen — guest layout (frame 512:1492) shows the guest banner, public tiles, locked badge card and the sign-in button
+00:23 +289: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/home/home_screen_test.dart: HomeScreen — guest layout (frame 512:1492) shows the guest banner, public tiles, locked badge card and the sign-in button
+00:23 +290: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/home/home_screen_test.dart: HomeScreen — guest layout (frame 512:1492) shows the guest banner, public tiles, locked badge card and the sign-in button
+00:23 +291: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/home/home_screen_test.dart: HomeScreen — guest layout (frame 512:1492) shows the guest banner, public tiles, locked badge card and the sign-in button
+00:23 +292: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/home/home_screen_test.dart: HomeScreen — guest layout (frame 512:1492) shows the guest banner, public tiles, locked badge card and the sign-in button
+00:23 +293: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/home/home_screen_test.dart: HomeScreen — guest layout (frame 512:1492) shows the guest banner, public tiles, locked badge card and the sign-in button
+00:23 +294: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/home/home_screen_test.dart: HomeScreen — guest layout (frame 512:1492) shows the guest banner, public tiles, locked badge card and the sign-in button
+00:23 +295: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/home/home_screen_test.dart: HomeScreen — guest layout (frame 512:1492) shows the guest banner, public tiles, locked badge card and the sign-in button
+00:23 +296: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/home/home_screen_test.dart: HomeScreen — guest layout (frame 512:1492) shows the guest banner, public tiles, locked badge card and the sign-in button
+00:23 +297: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/home/home_screen_test.dart: HomeScreen — guest layout (frame 512:1492) shows the guest banner, public tiles, locked badge card and the sign-in button
+00:23 +298: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/home/home_screen_test.dart: HomeScreen — guest layout (frame 512:1492) shows the guest banner, public tiles, locked badge card and the sign-in button
+00:23 +299: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/home/home_screen_test.dart: HomeScreen — guest layout (frame 512:1492) shows the guest banner, public tiles, locked badge card and the sign-in button
+00:23 +300: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/home/home_screen_test.dart: HomeScreen — guest layout (frame 512:1492) shows the guest banner, public tiles, locked badge card and the sign-in button
+00:23 +301: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/media_partners/media_partners_screen_test.dart: MediaPartnersScreen (Page 031 — KSA frame 947:3764) renders the media-center header, the two tabs and the partners
+00:23 +302: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/media_partners/media_partners_screen_test.dart: MediaPartnersScreen (Page 031 — KSA frame 947:3764) renders the media-center header, the two tabs and the partners
+00:23 +303: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/media_partners/media_partners_screen_test.dart: MediaPartnersScreen (Page 031 — KSA frame 947:3764) renders the media-center header, the two tabs and the partners
+00:23 +304: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/media_partners/media_partners_screen_test.dart: MediaPartnersScreen (Page 031 — KSA frame 947:3764) renders the media-center header, the two tabs and the partners
+00:24 +305: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/media_partners/media_partners_screen_test.dart: MediaPartnersScreen (Page 031 — KSA frame 947:3764) renders the media-center header, the two tabs and the partners
+00:24 +306: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/media_partners/media_partners_screen_test.dart: MediaPartnersScreen (Page 031 — KSA frame 947:3764) renders the media-center header, the two tabs and the partners
+00:24 +307: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/media_partners/media_partners_screen_test.dart: MediaPartnersScreen (Page 031 — KSA frame 947:3764) renders the media-center header, the two tabs and the partners
+00:24 +308: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/media_partners/media_partners_screen_test.dart: MediaPartnersScreen (Page 031 — KSA frame 947:3764) renders the media-center header, the two tabs and the partners
+00:24 +309: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/media_partners/media_partners_screen_test.dart: MediaPartnersScreen (Page 031 — KSA frame 947:3764) renders the media-center header, the two tabs and the partners
+00:24 +310: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/media_partners/media_partners_screen_test.dart: MediaPartnersScreen (Page 031 — KSA frame 947:3764) renders the media-center header, the two tabs and the partners
+00:24 +311: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/media_partners/media_partners_screen_test.dart: MediaPartnersScreen (Page 031 — KSA frame 947:3764) renders the media-center header, the two tabs and the partners
+00:24 +312: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/media_partners/media_partners_screen_test.dart: MediaPartnersScreen (Page 031 — KSA frame 947:3764) renders the media-center header, the two tabs and the partners
+00:24 +313: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/media_partners/media_partners_screen_test.dart: MediaPartnersScreen (Page 031 — KSA frame 947:3764) renders the media-center header, the two tabs and the partners
+00:24 +314: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/media_partners/media_partners_screen_test.dart: MediaPartnersScreen (Page 031 — KSA frame 947:3764) renders the media-center header, the two tabs and the partners
+00:24 +315: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/media_partners/media_partners_screen_test.dart: MediaPartnersScreen (Page 031 — KSA frame 947:3764) renders the media-center header, the two tabs and the partners
+00:24 +316: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/media_partners/media_partners_screen_test.dart: MediaPartnersScreen (Page 031 — KSA frame 947:3764) renders the media-center header, the two tabs and the partners
+00:24 +317: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/media_partners/media_partners_screen_test.dart: MediaPartnersScreen (Page 031 — KSA frame 947:3764) renders the media-center header, the two tabs and the partners
+00:24 +318: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/media_partners/media_partners_screen_test.dart: MediaPartnersScreen (Page 031 — KSA frame 947:3764) renders the media-center header, the two tabs and the partners
+00:24 +319: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/media_partners/media_partners_screen_test.dart: MediaPartnersScreen (Page 031 — KSA frame 947:3764) renders the media-center header, the two tabs and the partners
+00:24 +320: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/media_partners/media_partners_screen_test.dart: MediaPartnersScreen (Page 031 — KSA frame 947:3764) renders the media-center header, the two tabs and the partners
+00:24 +321: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/media_partners/media_partners_screen_test.dart: MediaPartnersScreen (Page 031 — KSA frame 947:3764) renders the media-center header, the two tabs and the partners
+00:24 +322: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/media_partners/media_partners_screen_test.dart: MediaPartnersScreen (Page 031 — KSA frame 947:3764) renders the media-center header, the two tabs and the partners
+00:24 +323: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/meet/meet_people_screen_test.dart: MeetPeopleScreen (Page 035 — KSA frame 1072:13409) renders the smart header and a match card with the % score
+00:24 +324: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/meet/meet_people_screen_test.dart: MeetPeopleScreen (Page 035 — KSA frame 1072:13409) renders the smart header and a match card with the % score
+00:24 +325: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/meet/meet_people_screen_test.dart: MeetPeopleScreen (Page 035 — KSA frame 1072:13409) renders the smart header and a match card with the % score
+00:24 +326: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/meet/meet_people_screen_test.dart: MeetPeopleScreen (Page 035 — KSA frame 1072:13409) renders the smart header and a match card with the % score
+00:24 +327: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/meet/meet_people_screen_test.dart: MeetPeopleScreen (Page 035 — KSA frame 1072:13409) renders the smart header and a match card with the % score
+00:25 +328: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/meet/meet_people_screen_test.dart: MeetPeopleScreen (Page 035 — KSA frame 1072:13409) renders the smart header and a match card with the % score
+00:25 +329: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/meet/meet_people_screen_test.dart: MeetPeopleScreen (Page 035 — KSA frame 1072:13409) renders the smart header and a match card with the % score
+00:25 +330: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/meet/meet_people_screen_test.dart: MeetPeopleScreen (Page 035 — KSA frame 1072:13409) renders the smart header and a match card with the % score
+00:25 +331: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/meet/meet_people_screen_test.dart: MeetPeopleScreen (Page 035 — KSA frame 1072:13409) renders the smart header and a match card with the % score
+00:25 +332: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/meet/meet_people_screen_test.dart: MeetPeopleScreen (Page 035 — KSA frame 1072:13409) renders the smart header and a match card with the % score
+00:25 +333: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/meet/meet_people_screen_test.dart: MeetPeopleScreen (Page 035 — KSA frame 1072:13409) renders the smart header and a match card with the % score
+00:25 +334: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/meet/meet_people_screen_test.dart: MeetPeopleScreen (Page 035 — KSA frame 1072:13409) renders the smart header and a match card with the % score
+00:25 +335: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/meet/meet_people_screen_test.dart: MeetPeopleScreen (Page 035 — KSA frame 1072:13409) renders the smart header and a match card with the % score
+00:25 +336: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/meet/meet_people_screen_test.dart: MeetPeopleScreen (Page 035 — KSA frame 1072:13409) renders the smart header and a match card with the % score
+00:25 +337: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/meet/meet_people_screen_test.dart: MeetPeopleScreen (Page 035 — KSA frame 1072:13409) renders the smart header and a match card with the % score
+00:25 +338: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/moderation/session_moderate_screen_test.dart: SessionModerateScreen (D-405, frame 758:5307) renders the queue, the role pill and the five chips
+00:25 +339: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/moderation/session_moderate_screen_test.dart: SessionModerateScreen (D-405, frame 758:5307) renders the queue, the role pill and the five chips
+00:25 +340: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/moderation/session_moderate_screen_test.dart: SessionModerateScreen (D-405, frame 758:5307) renders the queue, the role pill and the five chips
+00:25 +341: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/moderation/session_moderate_screen_test.dart: SessionModerateScreen (D-405, frame 758:5307) renders the queue, the role pill and the five chips
+00:25 +342: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/moderation/session_moderate_screen_test.dart: SessionModerateScreen (D-405, frame 758:5307) renders the queue, the role pill and the five chips
+00:25 +343: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/moderation/session_moderate_screen_test.dart: SessionModerateScreen (D-405, frame 758:5307) renders the queue, the role pill and the five chips
+00:25 +344: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/moderation/session_moderate_screen_test.dart: SessionModerateScreen (D-405, frame 758:5307) renders the queue, the role pill and the five chips
+00:25 +345: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/moderation/session_moderate_screen_test.dart: SessionModerateScreen (D-405, frame 758:5307) renders the queue, the role pill and the five chips
+00:25 +346: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/moderation/session_moderate_screen_test.dart: SessionModerateScreen (D-405, frame 758:5307) renders the queue, the role pill and the five chips
+00:25 +347: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/moderation/session_moderate_screen_test.dart: SessionModerateScreen (D-405, frame 758:5307) renders the queue, the role pill and the five chips
+00:25 +348: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/moderation/session_moderate_screen_test.dart: SessionModerateScreen (D-405, frame 758:5307) renders the queue, the role pill and the five chips
+00:25 +349: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/moderation/session_moderate_screen_test.dart: SessionModerateScreen (D-405, frame 758:5307) renders the queue, the role pill and the five chips
+00:25 +350: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/moderation/session_moderate_screen_test.dart: SessionModerateScreen (D-405, frame 758:5307) renders the queue, the role pill and the five chips
+00:25 +351: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/home/home_screen_test.dart: HomeScreen — signed-in layout (frame 758:1134) shows the greeting header, live banner, the section bars and every tile section
+00:25 +352: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/home/home_screen_test.dart: HomeScreen — signed-in layout (frame 758:1134) shows the greeting header, live banner, the section bars and every tile section
+00:25 +353: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/more/more_screen_test.dart: MoreScreen (Page 041 — frame 1129:17224) renders the three grouped sections and their rows
+00:26 +354: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/more/more_screen_test.dart: MoreScreen (Page 041 — frame 1129:17224) renders the three grouped sections and their rows
+00:26 +355: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/more/more_screen_test.dart: MoreScreen (Page 041 — frame 1129:17224) renders the three grouped sections and their rows
+00:26 +356: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/more/more_screen_test.dart: MoreScreen (Page 041 — frame 1129:17224) renders the three grouped sections and their rows
+00:26 +357: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/more/more_screen_test.dart: MoreScreen (Page 041 — frame 1129:17224) renders the three grouped sections and their rows
+00:26 +358: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/more/more_screen_test.dart: MoreScreen (Page 041 — frame 1129:17224) renders the three grouped sections and their rows
+00:26 +359: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/more/more_screen_test.dart: MoreScreen (Page 041 — frame 1129:17224) renders the three grouped sections and their rows
+00:26 +360: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/more/more_screen_test.dart: MoreScreen (Page 041 — frame 1129:17224) renders the three grouped sections and their rows
+00:26 +361: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/more/more_screen_test.dart: MoreScreen (Page 041 — frame 1129:17224) renders the three grouped sections and their rows
+00:26 +362: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/more/more_screen_test.dart: MoreScreen (Page 041 — frame 1129:17224) renders the three grouped sections and their rows
+00:26 +363: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/more/more_screen_test.dart: MoreScreen (Page 041 — frame 1129:17224) renders the three grouped sections and their rows
+00:26 +364: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/more/more_screen_test.dart: MoreScreen (Page 041 — frame 1129:17224) renders the three grouped sections and their rows
+00:26 +365: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/more/more_screen_test.dart: MoreScreen (Page 041 — frame 1129:17224) renders the three grouped sections and their rows
+00:26 +366: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/more/more_screen_test.dart: MoreScreen (Page 041 — frame 1129:17224) renders the three grouped sections and their rows
+00:26 +367: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/more/more_screen_test.dart: MoreScreen (Page 041 — frame 1129:17224) renders the three grouped sections and their rows
+00:26 +368: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/more/more_screen_test.dart: MoreScreen (Page 041 — frame 1129:17224) renders the three grouped sections and their rows
+00:26 +369: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/more/more_screen_test.dart: MoreScreen (Page 041 — frame 1129:17224) renders the three grouped sections and their rows
+00:26 +370: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/more/more_screen_test.dart: MoreScreen (Page 041 — frame 1129:17224) renders the three grouped sections and their rows
+00:26 +371: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/more/more_screen_test.dart: MoreScreen (Page 041 — frame 1129:17224) renders the three grouped sections and their rows
+00:26 +372: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/myarea/my_area_screen_test.dart: MyAreaScreen (Page 014 — KSA frame 213:963) approved visitor sees the identity card, tiles, stats and schedule
+00:26 +373: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/myarea/my_area_screen_test.dart: MyAreaScreen (Page 014 — KSA frame 213:963) approved visitor sees the identity card, tiles, stats and schedule
+00:26 +374: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/myarea/my_area_screen_test.dart: MyAreaScreen (Page 014 — KSA frame 213:963) approved visitor sees the identity card, tiles, stats and schedule
+00:26 +375: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/myarea/my_area_screen_test.dart: MyAreaScreen (Page 014 — KSA frame 213:963) approved visitor sees the identity card, tiles, stats and schedule
+00:27 +376: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/myarea/my_area_screen_test.dart: MyAreaScreen (Page 014 — KSA frame 213:963) approved visitor sees the identity card, tiles, stats and schedule
+00:27 +377: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/myarea/my_area_screen_test.dart: MyAreaScreen (Page 014 — KSA frame 213:963) approved visitor sees the identity card, tiles, stats and schedule
+00:27 +378: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/myarea/my_area_screen_test.dart: MyAreaScreen (Page 014 — KSA frame 213:963) approved visitor sees the identity card, tiles, stats and schedule
+00:27 +379: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/myarea/my_area_screen_test.dart: MyAreaScreen (Page 014 — KSA frame 213:963) approved visitor sees the identity card, tiles, stats and schedule
+00:27 +380: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/myarea/my_area_screen_test.dart: MyAreaScreen (Page 014 — KSA frame 213:963) approved visitor sees the identity card, tiles, stats and schedule
+00:27 +381: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/myarea/my_area_screen_test.dart: MyAreaScreen (Page 014 — KSA frame 213:963) approved visitor sees the identity card, tiles, stats and schedule
+00:27 +382: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/myarea/my_area_screen_test.dart: MyAreaScreen (Page 014 — KSA frame 213:963) approved visitor sees the identity card, tiles, stats and schedule
+00:27 +383: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/myarea/my_area_screen_test.dart: MyAreaScreen (Page 014 — KSA frame 213:963) approved visitor sees the identity card, tiles, stats and schedule
+00:28 +384: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/myarea/my_area_screen_test.dart: MyAreaScreen (Page 014 — KSA frame 213:963) approved visitor sees the identity card, tiles, stats and schedule
+00:28 +385: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/myarea/my_area_screen_test.dart: MyAreaScreen (Page 014 — KSA frame 213:963) approved visitor sees the identity card, tiles, stats and schedule
+00:28 +386: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/myarea/my_area_screen_test.dart: MyAreaScreen (Page 014 — KSA frame 213:963) approved visitor sees the identity card, tiles, stats and schedule
+00:28 +387: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/myarea/my_area_screen_test.dart: MyAreaScreen (Page 014 — KSA frame 213:963) approved visitor sees the identity card, tiles, stats and schedule
+00:28 +388: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/myarea/my_area_screen_test.dart: MyAreaScreen (Page 014 — KSA frame 213:963) approved visitor sees the identity card, tiles, stats and schedule
+00:28 +389: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/myarea/my_sessions_screen_test.dart: MySessionsScreen (Figma 1388:9067) the Upcoming tab lists the session; tap opens its detail
+00:28 +390: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/myarea/my_sessions_screen_test.dart: MySessionsScreen (Figma 1388:9067) the Upcoming tab lists the session; tap opens its detail
+00:28 +391: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/myarea/my_sessions_screen_test.dart: MySessionsScreen (Figma 1388:9067) the Upcoming tab lists the session; tap opens its detail
+00:28 +392: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/myarea/my_sessions_screen_test.dart: MySessionsScreen (Figma 1388:9067) the Upcoming tab lists the session; tap opens its detail
+00:28 +393: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/news/news_screen_test.dart: NewsScreen (Page 029 — KSA frame 1049:12629) renders the media-center tabs and a news card
+00:28 +394: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/news/news_screen_test.dart: NewsScreen (Page 029 — KSA frame 1049:12629) renders the media-center tabs and a news card
+00:28 +395: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/news/news_screen_test.dart: NewsScreen (Page 029 — KSA frame 1049:12629) renders the media-center tabs and a news card
+00:28 +396: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/news/news_screen_test.dart: NewsScreen (Page 029 — KSA frame 1049:12629) renders the media-center tabs and a news card
+00:28 +397: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/news/news_screen_test.dart: NewsScreen (Page 029 — KSA frame 1049:12629) renders the media-center tabs and a news card
+00:28 +398: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/news/news_screen_test.dart: NewsScreen (Page 029 — KSA frame 1049:12629) renders the media-center tabs and a news card
+00:28 +399: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/news/news_screen_test.dart: NewsScreen (Page 029 — KSA frame 1049:12629) renders the media-center tabs and a news card
+00:28 +400: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/news/news_screen_test.dart: NewsScreen (Page 029 — KSA frame 1049:12629) renders the media-center tabs and a news card
+00:28 +401: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/news/news_screen_test.dart: NewsScreen (Page 029 — KSA frame 1049:12629) renders the media-center tabs and a news card
+00:29 +402: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/news/news_screen_test.dart: NewsScreen (Page 029 — KSA frame 1049:12629) renders the media-center tabs and a news card
+00:29 +403: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/news/news_screen_test.dart: NewsScreen (Page 029 — KSA frame 1049:12629) renders the media-center tabs and a news card
+00:29 +404: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/news/news_screen_test.dart: NewsScreen (Page 029 — KSA frame 1049:12629) renders the media-center tabs and a news card
+00:29 +405: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/notifications/notifications_screen_test.dart: NotificationsScreen (Page 033 — KSA frame 223:4264) renders the notification list
+00:29 +406: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/notifications/notifications_screen_test.dart: NotificationsScreen (Page 033 — KSA frame 223:4264) renders the notification list
+00:29 +407: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/notifications/notifications_screen_test.dart: NotificationsScreen (Page 033 — KSA frame 223:4264) renders the notification list
+00:29 +408: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/notifications/notifications_screen_test.dart: NotificationsScreen (Page 033 — KSA frame 223:4264) renders the notification list
+00:29 +409: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/notifications/notifications_screen_test.dart: NotificationsScreen (Page 033 — KSA frame 223:4264) renders the notification list
+00:29 +410: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/notifications/notifications_screen_test.dart: NotificationsScreen (Page 033 — KSA frame 223:4264) renders the notification list
+00:29 +411: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/notifications/notifications_screen_test.dart: NotificationsScreen (Page 033 — KSA frame 223:4264) renders the notification list
+00:29 +412: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/notifications/notifications_screen_test.dart: NotificationsScreen (Page 033 — KSA frame 223:4264) renders the notification list
+00:29 +413: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/notifications/notifications_screen_test.dart: NotificationsScreen (Page 033 — KSA frame 223:4264) renders the notification list
+00:29 +414: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/notifications/notifications_screen_test.dart: NotificationsScreen (Page 033 — KSA frame 223:4264) renders the notification list
+00:29 +415: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/notifications/notifications_screen_test.dart: NotificationsScreen (Page 033 — KSA frame 223:4264) renders the notification list
+00:29 +416: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/notifications/notifications_screen_test.dart: NotificationsScreen (Page 033 — KSA frame 223:4264) renders the notification list
+00:29 +417: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/notifications/notifications_screen_test.dart: NotificationsScreen (Page 033 — KSA frame 223:4264) renders the notification list
+00:29 +418: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/notifications/notifications_screen_test.dart: NotificationsScreen (Page 033 — KSA frame 223:4264) renders the notification list
+00:29 +419: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/notifications/notifications_screen_test.dart: NotificationsScreen (Page 033 — KSA frame 223:4264) renders the notification list
+00:29 +420: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/notifications/notifications_screen_test.dart: NotificationsScreen (Page 033 — KSA frame 223:4264) renders the notification list
+00:29 +421: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/notifications/notifications_screen_test.dart: NotificationsScreen (Page 033 — KSA frame 223:4264) renders the notification list
+00:29 +422: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/notifications/notifications_screen_test.dart: NotificationsScreen (Page 033 — KSA frame 223:4264) renders the notification list
+00:29 +423: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/notifications/notifications_screen_test.dart: NotificationsScreen (Page 033 — KSA frame 223:4264) renders the notification list
+00:30 +424: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/notifications/notifications_screen_test.dart: NotificationsScreen (Page 033 — KSA frame 223:4264) renders the notification list
+00:30 +425: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/onboarding/onboarding_screen_test.dart: OnboardingScreen (Page 002 — KSA design, D-362) Skip sets the first-run flag and routes to sign-in
+00:30 +426: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/onboarding/onboarding_screen_test.dart: OnboardingScreen (Page 002 — KSA design, D-362) Skip sets the first-run flag and routes to sign-in
+00:30 +427: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/onboarding/onboarding_screen_test.dart: OnboardingScreen (Page 002 — KSA design, D-362) Skip sets the first-run flag and routes to sign-in
+00:30 +428: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/onboarding/onboarding_screen_test.dart: OnboardingScreen (Page 002 — KSA design, D-362) Skip sets the first-run flag and routes to sign-in
+00:30 +429: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/onboarding/onboarding_screen_test.dart: OnboardingScreen (Page 002 — KSA design, D-362) Skip sets the first-run flag and routes to sign-in
+00:30 +430: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/onboarding/onboarding_screen_test.dart: OnboardingScreen (Page 002 — KSA design, D-362) Skip sets the first-run flag and routes to sign-in
+00:30 +431: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/onboarding/onboarding_screen_test.dart: OnboardingScreen (Page 002 — KSA design, D-362) Skip sets the first-run flag and routes to sign-in
+00:30 +432: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/onboarding/onboarding_screen_test.dart: OnboardingScreen (Page 002 — KSA design, D-362) Skip sets the first-run flag and routes to sign-in
+00:30 +433: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/onboarding/onboarding_screen_test.dart: OnboardingScreen (Page 002 — KSA design, D-362) Skip sets the first-run flag and routes to sign-in
+00:30 +434: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/onboarding/onboarding_screen_test.dart: OnboardingScreen (Page 002 — KSA design, D-362) Skip sets the first-run flag and routes to sign-in
+00:30 +435: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/onboarding/onboarding_screen_test.dart: OnboardingScreen (Page 002 — KSA design, D-362) Skip sets the first-run flag and routes to sign-in
+00:30 +436: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/onboarding/onboarding_screen_test.dart: OnboardingScreen (Page 002 — KSA design, D-362) Skip sets the first-run flag and routes to sign-in
+00:30 +437: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/onboarding/onboarding_screen_test.dart: OnboardingScreen (Page 002 — KSA design, D-362) Skip sets the first-run flag and routes to sign-in
+00:30 +438: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/onboarding/onboarding_screen_test.dart: OnboardingScreen (Page 002 — KSA design, D-362) Skip sets the first-run flag and routes to sign-in
+00:30 +439: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/onboarding/onboarding_screen_test.dart: OnboardingScreen (Page 002 — KSA design, D-362) Skip sets the first-run flag and routes to sign-in
+00:30 +440: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/onboarding/onboarding_screen_test.dart: OnboardingScreen (Page 002 — KSA design, D-362) Skip sets the first-run flag and routes to sign-in
+00:30 +441: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/onboarding/onboarding_screen_test.dart: OnboardingScreen (Page 002 — KSA design, D-362) Skip sets the first-run flag and routes to sign-in
+00:30 +442: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/notifications/notifications_screen_test.dart: NotificationsScreen (Page 033 — KSA frame 223:4264) search filters by title
+00:30 +443: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/myarea/my_area_screen_test.dart: MyAreaScreen (Page 014 — KSA frame 213:963) جدولي اليوم splits into جلسات then مقابلات groups (758:1283)
+00:30 +444: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/myarea/my_area_screen_test.dart: MyAreaScreen (Page 014 — KSA frame 213:963) جدولي اليوم splits into جلسات then مقابلات groups (758:1283)
+00:30 +445: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/myarea/my_area_screen_test.dart: MyAreaScreen (Page 014 — KSA frame 213:963) جدولي اليوم splits into جلسات then مقابلات groups (758:1283)
+00:30 +446: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/myarea/my_area_screen_test.dart: MyAreaScreen (Page 014 — KSA frame 213:963) جدولي اليوم splits into جلسات then مقابلات groups (758:1283)
+00:30 +447: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/myarea/my_area_screen_test.dart: MyAreaScreen (Page 014 — KSA frame 213:963) جدولي اليوم splits into جلسات then مقابلات groups (758:1283)
+00:30 +448: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/notifications/notifications_screen_test.dart: NotificationsScreen (Page 033 — KSA frame 223:4264) opening marks every unread notification read (#13/#14)
+00:30 +449: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/profile/sign_up_interests_screen_test.dart: SignUpInterestsScreen (Page 007‑01) renders interests + counter; Save disabled until one picked
+00:31 +450: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/profile/sign_up_interests_screen_test.dart: SignUpInterestsScreen (Page 007‑01) renders interests + counter; Save disabled until one picked
+00:31 +451: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/profile/sign_up_interests_screen_test.dart: SignUpInterestsScreen (Page 007‑01) renders interests + counter; Save disabled until one picked
+00:31 +452: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/profile/sign_up_interests_screen_test.dart: SignUpInterestsScreen (Page 007‑01) renders interests + counter; Save disabled until one picked
+00:31 +453: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/profile/sign_up_interests_screen_test.dart: SignUpInterestsScreen (Page 007‑01) renders interests + counter; Save disabled until one picked
+00:31 +454: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/profile/sign_up_interests_screen_test.dart: SignUpInterestsScreen (Page 007‑01) renders interests + counter; Save disabled until one picked
+00:31 +455: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/profile/sign_up_interests_screen_test.dart: SignUpInterestsScreen (Page 007‑01) renders interests + counter; Save disabled until one picked
+00:31 +456: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/profile/sign_up_interests_screen_test.dart: SignUpInterestsScreen (Page 007‑01) renders interests + counter; Save disabled until one picked
+00:31 +457: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/profile/sign_up_interests_screen_test.dart: SignUpInterestsScreen (Page 007‑01) renders interests + counter; Save disabled until one picked
+00:31 +458: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/profile/sign_up_interests_screen_test.dart: SignUpInterestsScreen (Page 007‑01) renders interests + counter; Save disabled until one picked
+00:31 +459: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/profile/sign_up_interests_screen_test.dart: SignUpInterestsScreen (Page 007‑01) renders interests + counter; Save disabled until one picked
+00:31 +460: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/profile/sign_up_interests_screen_test.dart: SignUpInterestsScreen (Page 007‑01) renders interests + counter; Save disabled until one picked
+00:32 +461: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/profile/sign_up_visitor_screen_test.dart: SignUpVisitorScreen (Page 007 — profile data) renders the type filter + data sections and a Next button
+00:32 +462: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/profile/sign_up_visitor_screen_test.dart: SignUpVisitorScreen (Page 007 — profile data) renders the type filter + data sections and a Next button
+00:32 +463: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/profile/sign_up_visitor_screen_test.dart: SignUpVisitorScreen (Page 007 — profile data) renders the type filter + data sections and a Next button
+00:32 +464: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/profile/sign_up_visitor_screen_test.dart: SignUpVisitorScreen (Page 007 — profile data) renders the type filter + data sections and a Next button
+00:32 +465: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/profile/sign_up_visitor_screen_test.dart: SignUpVisitorScreen (Page 007 — profile data) renders the type filter + data sections and a Next button
+00:32 +466: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/questions/send_question_screen_test.dart: SendQuestionScreen (Page 026, Figma 934:3636) golden render — label, question box, submit, note
+00:32 +467: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/questions/send_question_screen_test.dart: SendQuestionScreen (Page 026, Figma 934:3636) golden render — label, question box, submit, note
+00:32 +468: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/questions/send_question_screen_test.dart: SendQuestionScreen (Page 026, Figma 934:3636) golden render — label, question box, submit, note
+00:32 +469: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/questions/send_question_screen_test.dart: SendQuestionScreen (Page 026, Figma 934:3636) golden render — label, question box, submit, note
+00:32 +470: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/questions/send_question_screen_test.dart: SendQuestionScreen (Page 026, Figma 934:3636) golden render — label, question box, submit, note
+00:32 +471: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/questions/send_question_screen_test.dart: SendQuestionScreen (Page 026, Figma 934:3636) golden render — label, question box, submit, note
+00:32 +472: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/questions/send_question_screen_test.dart: SendQuestionScreen (Page 026, Figma 934:3636) golden render — label, question box, submit, note
+00:32 +473: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/questions/send_question_screen_test.dart: SendQuestionScreen (Page 026, Figma 934:3636) golden render — label, question box, submit, note
+00:32 +474: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/questions/send_question_screen_test.dart: SendQuestionScreen (Page 026, Figma 934:3636) golden render — label, question box, submit, note
+00:32 +475: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/questions/send_question_screen_test.dart: SendQuestionScreen (Page 026, Figma 934:3636) golden render — label, question box, submit, note
+00:32 +476: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/questions/send_question_screen_test.dart: SendQuestionScreen (Page 026, Figma 934:3636) golden render — label, question box, submit, note
+00:32 +477: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/questions/send_question_screen_test.dart: SendQuestionScreen (Page 026, Figma 934:3636) golden render — label, question box, submit, note
+00:33 +478: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/questions/send_question_screen_test.dart: SendQuestionScreen (Page 026, Figma 934:3636) golden render — label, question box, submit, note
+00:33 +479: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/registration/registration_success_screen_test.dart: RegistrationSuccessScreen (Page 010) renders the confirmation + both actions
+00:33 +480: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/registration/registration_success_screen_test.dart: RegistrationSuccessScreen (Page 010) renders the confirmation + both actions
+00:33 +481: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/registration/registration_success_screen_test.dart: RegistrationSuccessScreen (Page 010) renders the confirmation + both actions
+00:33 +482: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/registration/registration_success_screen_test.dart: RegistrationSuccessScreen (Page 010) renders the confirmation + both actions
+00:33 +483: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/registration/registration_success_screen_test.dart: RegistrationSuccessScreen (Page 010) renders the confirmation + both actions
+00:33 +484: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/requests/requests_screen_test.dart: RequestsScreen (Figma 1408:9726) renders a request card with its type headline and subtitle
+00:33 +485: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/requests/requests_screen_test.dart: RequestsScreen (Figma 1408:9726) renders a request card with its type headline and subtitle
+00:33 +486: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/requests/requests_screen_test.dart: RequestsScreen (Figma 1408:9726) renders a request card with its type headline and subtitle
+00:33 +487: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/requests/requests_screen_test.dart: RequestsScreen (Figma 1408:9726) renders a request card with its type headline and subtitle
+00:33 +488: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/requests/requests_screen_test.dart: RequestsScreen (Figma 1408:9726) renders a request card with its type headline and subtitle
+00:33 +489: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/requests/requests_screen_test.dart: RequestsScreen (Figma 1408:9726) renders a request card with its type headline and subtitle
+00:33 +490: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/requests/requests_screen_test.dart: RequestsScreen (Figma 1408:9726) renders a request card with its type headline and subtitle
+00:33 +491: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/requests/requests_screen_test.dart: RequestsScreen (Figma 1408:9726) renders a request card with its type headline and subtitle
+00:33 +492: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/requests/requests_screen_test.dart: RequestsScreen (Figma 1408:9726) renders a request card with its type headline and subtitle
+00:33 +493: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/requests/requests_screen_test.dart: RequestsScreen (Figma 1408:9726) renders a request card with its type headline and subtitle
+00:33 +494: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/requests/requests_screen_test.dart: RequestsScreen (Figma 1408:9726) renders a request card with its type headline and subtitle
+00:33 +495: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/requests/requests_screen_test.dart: RequestsScreen (Figma 1408:9726) renders a request card with its type headline and subtitle
+00:33 +496: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/requests/requests_screen_test.dart: RequestsScreen (Figma 1408:9726) renders a request card with its type headline and subtitle
+00:33 +497: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/requests/requests_screen_test.dart: RequestsScreen (Figma 1408:9726) renders a request card with its type headline and subtitle
+00:34 +498: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/requests/requests_screen_test.dart: RequestsScreen (Figma 1408:9726) renders a request card with its type headline and subtitle
+00:34 +499: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/requests/requests_screen_test.dart: RequestsScreen (Figma 1408:9726) renders a request card with its type headline and subtitle
+00:34 +500: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/requests/requests_screen_test.dart: RequestsScreen (Figma 1408:9726) renders a request card with its type headline and subtitle
+00:34 +501: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/requests/requests_screen_test.dart: RequestsScreen (Figma 1408:9726) renders a request card with its type headline and subtitle
+00:34 +502: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/join_session_hub_screen_test.dart: JoinSessionHubScreen (D-485) lists the sessions; tapping one opens its detail
+00:34 +503: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/join_session_hub_screen_test.dart: JoinSessionHubScreen (D-485) lists the sessions; tapping one opens its detail
+00:34 +504: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/join_session_hub_screen_test.dart: JoinSessionHubScreen (D-485) lists the sessions; tapping one opens its detail
+00:34 +505: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/join_session_hub_screen_test.dart: JoinSessionHubScreen (D-485) lists the sessions; tapping one opens its detail
+00:34 +506: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/join_session_hub_screen_test.dart: JoinSessionHubScreen (D-485) lists the sessions; tapping one opens its detail
+00:34 +507: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/join_session_hub_screen_test.dart: JoinSessionHubScreen (D-485) lists the sessions; tapping one opens its detail
+00:34 +508: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/join_session_hub_screen_test.dart: JoinSessionHubScreen (D-485) lists the sessions; tapping one opens its detail
+00:34 +509: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/join_session_hub_screen_test.dart: JoinSessionHubScreen (D-485) lists the sessions; tapping one opens its detail
+00:34 +510: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/join_session_hub_screen_test.dart: JoinSessionHubScreen (D-485) lists the sessions; tapping one opens its detail
+00:34 +511: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/join_session_hub_screen_test.dart: JoinSessionHubScreen (D-485) lists the sessions; tapping one opens its detail
+00:34 +512: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/join_session_hub_screen_test.dart: JoinSessionHubScreen (D-485) lists the sessions; tapping one opens its detail
+00:34 +513: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/join_session_hub_screen_test.dart: JoinSessionHubScreen (D-485) lists the sessions; tapping one opens its detail
+00:34 +514: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/join_session_hub_screen_test.dart: JoinSessionHubScreen (D-485) lists the sessions; tapping one opens its detail
+00:34 +515: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/join_session_hub_screen_test.dart: JoinSessionHubScreen (D-485) lists the sessions; tapping one opens its detail
+00:34 +516: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/join_session_hub_screen_test.dart: JoinSessionHubScreen (D-485) lists the sessions; tapping one opens its detail
+00:34 +517: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/join_session_hub_screen_test.dart: JoinSessionHubScreen (D-485) lists the sessions; tapping one opens its detail
+00:34 +518: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/join_session_hub_screen_test.dart: JoinSessionHubScreen (D-485) lists the sessions; tapping one opens its detail
+00:34 +519: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/join_session_hub_screen_test.dart: JoinSessionHubScreen (D-485) lists the sessions; tapping one opens its detail
+00:34 +520: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/join_session_hub_screen_test.dart: JoinSessionHubScreen (D-485) lists the sessions; tapping one opens its detail
+00:34 +521: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/join_session_hub_screen_test.dart: JoinSessionHubScreen (D-485) lists the sessions; tapping one opens its detail
+00:34 +522: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/my_seat_screen_test.dart: MySeatScreen (Page 018) renders the session card + grid + legend
+00:35 +523: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/my_seat_screen_test.dart: MySeatScreen (Page 018) renders the session card + grid + legend
+00:35 +524: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/my_seat_screen_test.dart: MySeatScreen (Page 018) renders the session card + grid + legend
+00:35 +525: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/my_seat_screen_test.dart: MySeatScreen (Page 018) renders the session card + grid + legend
+00:35 +526: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/seat_picker_screen_test.dart: SeatPickerScreen (D-485) renders the grid + hint, and the auto-pick CTA
+00:35 +527: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/seat_picker_screen_test.dart: SeatPickerScreen (D-485) renders the grid + hint, and the auto-pick CTA
+00:35 +528: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/seat_picker_screen_test.dart: SeatPickerScreen (D-485) renders the grid + hint, and the auto-pick CTA
+00:35 +529: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/seat_picker_screen_test.dart: SeatPickerScreen (D-485) renders the grid + hint, and the auto-pick CTA
+00:35 +530: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/seat_picker_screen_test.dart: SeatPickerScreen (D-485) renders the grid + hint, and the auto-pick CTA
+00:35 +531: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/seat_picker_screen_test.dart: SeatPickerScreen (D-485) renders the grid + hint, and the auto-pick CTA
+00:35 +532: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/seat_picker_screen_test.dart: SeatPickerScreen (D-485) renders the grid + hint, and the auto-pick CTA
+00:35 +533: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/seat_picker_screen_test.dart: SeatPickerScreen (D-485) renders the grid + hint, and the auto-pick CTA
+00:35 +534: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/seat_picker_screen_test.dart: SeatPickerScreen (D-485) renders the grid + hint, and the auto-pick CTA
+00:35 +535: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/seat_picker_screen_test.dart: SeatPickerScreen (D-485) renders the grid + hint, and the auto-pick CTA
+00:35 +536: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/seat_picker_screen_test.dart: SeatPickerScreen (D-485) renders the grid + hint, and the auto-pick CTA
+00:36 +537: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/seat_picker_screen_test.dart: SeatPickerScreen (D-485) renders the grid + hint, and the auto-pick CTA
+00:36 +538: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/seat_picker_screen_test.dart: SeatPickerScreen (D-485) renders the grid + hint, and the auto-pick CTA
+00:36 +539: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/seat_picker_screen_test.dart: SeatPickerScreen (D-485) renders the grid + hint, and the auto-pick CTA
+00:36 +540: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/seat_picker_screen_test.dart: SeatPickerScreen (D-485) renders the grid + hint, and the auto-pick CTA
+00:36 +541: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/seat_picker_screen_test.dart: SeatPickerScreen (D-485) renders the grid + hint, and the auto-pick CTA
+00:36 +542: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/seat_picker_screen_test.dart: SeatPickerScreen (D-485) renders the grid + hint, and the auto-pick CTA
+00:36 +543: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/seat_picker_screen_test.dart: SeatPickerScreen (D-485) renders the grid + hint, and the auto-pick CTA
+00:36 +544: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/seat_picker_screen_test.dart: SeatPickerScreen (D-485) renders the grid + hint, and the auto-pick CTA
+00:36 +545: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/seat_picker_screen_test.dart: SeatPickerScreen (D-485) renders the grid + hint, and the auto-pick CTA
+00:36 +546: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/seat_picker_screen_test.dart: SeatPickerScreen (D-485) renders the grid + hint, and the auto-pick CTA
+00:36 +547: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/seat_picker_screen_test.dart: SeatPickerScreen (D-485) renders the grid + hint, and the auto-pick CTA
+00:36 +548: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/seat_picker_screen_test.dart: SeatPickerScreen (D-485) renders the grid + hint, and the auto-pick CTA
+00:36 +549: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/seat_picker_screen_test.dart: SeatPickerScreen (D-485) renders the grid + hint, and the auto-pick CTA
+00:36 +550: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/seat_picker_screen_test.dart: SeatPickerScreen (D-485) renders the grid + hint, and the auto-pick CTA
+00:36 +551: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/seat_picker_screen_test.dart: SeatPickerScreen (D-485) renders the grid + hint, and the auto-pick CTA
+00:36 +552: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/sessions_screen_test.dart: SessionsScreen (Page 016 — KSA frame 883:2308) renders the header, day title banner, type tabs and session rows
+00:36 +553: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/sessions_screen_test.dart: SessionsScreen (Page 016 — KSA frame 883:2308) renders the header, day title banner, type tabs and session rows
+00:36 +554: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/sessions_screen_test.dart: SessionsScreen (Page 016 — KSA frame 883:2308) renders the header, day title banner, type tabs and session rows
+00:36 +555: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/sessions_screen_test.dart: SessionsScreen (Page 016 — KSA frame 883:2308) renders the header, day title banner, type tabs and session rows
+00:36 +556: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/session_detail_screen_test.dart: SessionDetailScreen (Page 017) renders the KSA detail (header card, summary button, description, speaker, ask-host, CTAs)
+00:36 +557: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/session_detail_screen_test.dart: SessionDetailScreen (Page 017) renders the KSA detail (header card, summary button, description, speaker, ask-host, CTAs)
+00:36 +558: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/session_detail_screen_test.dart: SessionDetailScreen (Page 017) renders the KSA detail (header card, summary button, description, speaker, ask-host, CTAs)
+00:37 +559: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/session_detail_screen_test.dart: SessionDetailScreen (Page 017) renders the KSA detail (header card, summary button, description, speaker, ask-host, CTAs)
+00:37 +560: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/session_detail_screen_test.dart: SessionDetailScreen (Page 017) renders the KSA detail (header card, summary button, description, speaker, ask-host, CTAs)
+00:37 +561: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/session_detail_screen_test.dart: SessionDetailScreen (Page 017) renders the KSA detail (header card, summary button, description, speaker, ask-host, CTAs)
+00:37 +562: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/session_presentations_screen_test.dart: SessionPresentationsScreen (Figma 1388:7621) lists the decks with the speaker and a Download button
+00:37 +563: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/session_presentations_screen_test.dart: SessionPresentationsScreen (Figma 1388:7621) lists the decks with the speaker and a Download button
+00:37 +564: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/session_presentations_screen_test.dart: SessionPresentationsScreen (Figma 1388:7621) lists the decks with the speaker and a Download button
+00:37 +565: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/session_presentations_screen_test.dart: SessionPresentationsScreen (Figma 1388:7621) lists the decks with the speaker and a Download button
+00:37 +566: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/session_presentations_screen_test.dart: SessionPresentationsScreen (Figma 1388:7621) lists the decks with the speaker and a Download button
+00:37 +567: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/session_presentations_screen_test.dart: SessionPresentationsScreen (Figma 1388:7621) lists the decks with the speaker and a Download button
+00:37 +568: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/session_presentations_screen_test.dart: SessionPresentationsScreen (Figma 1388:7621) lists the decks with the speaker and a Download button
+00:37 +569: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/session_presentations_screen_test.dart: SessionPresentationsScreen (Figma 1388:7621) lists the decks with the speaker and a Download button
+00:37 +570: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/session_presentations_screen_test.dart: SessionPresentationsScreen (Figma 1388:7621) lists the decks with the speaker and a Download button
+00:37 +571: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/session_presentations_screen_test.dart: SessionPresentationsScreen (Figma 1388:7621) lists the decks with the speaker and a Download button
+00:37 +572: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/session_presentations_screen_test.dart: SessionPresentationsScreen (Figma 1388:7621) lists the decks with the speaker and a Download button
+00:37 +573: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/session_presentations_screen_test.dart: SessionPresentationsScreen (Figma 1388:7621) lists the decks with the speaker and a Download button
+00:37 +574: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/session_presentations_screen_test.dart: SessionPresentationsScreen (Figma 1388:7621) lists the decks with the speaker and a Download button
+00:37 +575: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/session_presentations_screen_test.dart: SessionPresentationsScreen (Figma 1388:7621) lists the decks with the speaker and a Download button
+00:37 +576: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sessions/session_presentations_screen_test.dart: SessionPresentationsScreen (Figma 1388:7621) lists the decks with the speaker and a Download button
+00:38 +577: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speakers_screen_test.dart: SpeakersScreen (Page 019) renders the header title and a card per speaker
+00:38 +578: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speakers_screen_test.dart: SpeakersScreen (Page 019) renders the header title and a card per speaker
+00:38 +579: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speakers_screen_test.dart: SpeakersScreen (Page 019) renders the header title and a card per speaker
+00:38 +580: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speakers_screen_test.dart: SpeakersScreen (Page 019) renders the header title and a card per speaker
+00:38 +581: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speakers_screen_test.dart: SpeakersScreen (Page 019) renders the header title and a card per speaker
+00:38 +582: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speakers_screen_test.dart: SpeakersScreen (Page 019) renders the header title and a card per speaker
+00:38 +583: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speakers_screen_test.dart: SpeakersScreen (Page 019) renders the header title and a card per speaker
+00:38 +584: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speakers_screen_test.dart: SpeakersScreen (Page 019) renders the header title and a card per speaker
+00:38 +585: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speakers_screen_test.dart: SpeakersScreen (Page 019) renders the header title and a card per speaker
+00:38 +586: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speakers_screen_test.dart: SpeakersScreen (Page 019) renders the header title and a card per speaker
+00:38 +587: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speakers_screen_test.dart: SpeakersScreen (Page 019) renders the header title and a card per speaker
+00:38 +588: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speakers_screen_test.dart: SpeakersScreen (Page 019) renders the header title and a card per speaker
+00:38 +589: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speakers_screen_test.dart: SpeakersScreen (Page 019) renders the header title and a card per speaker
+00:38 +590: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speakers_screen_test.dart: SpeakersScreen (Page 019) renders the header title and a card per speaker
+00:38 +591: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speakers_screen_test.dart: SpeakersScreen (Page 019) renders the header title and a card per speaker
+00:38 +592: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speakers_screen_test.dart: SpeakersScreen (Page 019) renders the header title and a card per speaker
+00:38 +593: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speakers_screen_test.dart: SpeakersScreen (Page 019) renders the header title and a card per speaker
+00:38 +594: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speakers_screen_test.dart: SpeakersScreen (Page 019) renders the header title and a card per speaker
+00:38 +595: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speakers_screen_test.dart: SpeakersScreen (Page 019) renders the header title and a card per speaker
+00:38 +596: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speakers_screen_test.dart: SpeakersScreen (Page 019) renders the header title and a card per speaker
+00:38 +597: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speaker_profile_screen_test.dart: SpeakerProfileScreen (Page 020) renders the header, avatar, CV tabs, bio + sessions
+00:39 +598: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speaker_profile_screen_test.dart: SpeakerProfileScreen (Page 020) renders the header, avatar, CV tabs, bio + sessions
+00:39 +599: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speaker_profile_screen_test.dart: SpeakerProfileScreen (Page 020) renders the header, avatar, CV tabs, bio + sessions
+00:39 +600: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speaker_profile_screen_test.dart: SpeakerProfileScreen (Page 020) renders the header, avatar, CV tabs, bio + sessions
+00:39 +601: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speaker_profile_screen_test.dart: SpeakerProfileScreen (Page 020) renders the header, avatar, CV tabs, bio + sessions
+00:39 +602: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speaker_profile_screen_test.dart: SpeakerProfileScreen (Page 020) renders the header, avatar, CV tabs, bio + sessions
+00:39 +603: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speaker_profile_screen_test.dart: SpeakerProfileScreen (Page 020) renders the header, avatar, CV tabs, bio + sessions
+00:39 +604: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speaker_profile_screen_test.dart: SpeakerProfileScreen (Page 020) renders the header, avatar, CV tabs, bio + sessions
+00:39 +605: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speaker_profile_screen_test.dart: SpeakerProfileScreen (Page 020) renders the header, avatar, CV tabs, bio + sessions
+00:39 +606: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speaker_profile_screen_test.dart: SpeakerProfileScreen (Page 020) renders the header, avatar, CV tabs, bio + sessions
+00:39 +607: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speaker_profile_screen_test.dart: SpeakerProfileScreen (Page 020) renders the header, avatar, CV tabs, bio + sessions
+00:39 +608: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speaker_profile_screen_test.dart: SpeakerProfileScreen (Page 020) renders the header, avatar, CV tabs, bio + sessions
+00:39 +609: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/speakers/speaker_profile_screen_test.dart: SpeakerProfileScreen (Page 020) renders the header, avatar, CV tabs, bio + sessions
+00:39 +610: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/splash/splash_screen_test.dart: SplashScreen (Page 001 — KSA design, D-361) renders the brand lock-up while booting
+00:39 +611: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/splash/splash_screen_test.dart: SplashScreen (Page 001 — KSA design, D-361) renders the brand lock-up while booting
+00:39 +612: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sponsors/sponsors_screen_test.dart: SponsorsScreen (Page 023) renders tier headers + sponsor cards (strategic + premium)
+00:39 +613: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sponsors/sponsors_screen_test.dart: SponsorsScreen (Page 023) renders tier headers + sponsor cards (strategic + premium)
+00:39 +614: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sponsors/sponsors_screen_test.dart: SponsorsScreen (Page 023) renders tier headers + sponsor cards (strategic + premium)
+00:39 +615: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sponsors/sponsors_screen_test.dart: SponsorsScreen (Page 023) renders tier headers + sponsor cards (strategic + premium)
+00:39 +616: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sponsors/sponsors_screen_test.dart: SponsorsScreen (Page 023) renders tier headers + sponsor cards (strategic + premium)
+00:39 +617: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sponsors/sponsors_screen_test.dart: SponsorsScreen (Page 023) renders tier headers + sponsor cards (strategic + premium)
+00:39 +618: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sponsors/sponsors_screen_test.dart: SponsorsScreen (Page 023) renders tier headers + sponsor cards (strategic + premium)
+00:40 +619: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sponsors/sponsors_screen_test.dart: SponsorsScreen (Page 023) renders tier headers + sponsor cards (strategic + premium)
+00:40 +620: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sponsors/sponsors_screen_test.dart: SponsorsScreen (Page 023) renders tier headers + sponsor cards (strategic + premium)
+00:40 +621: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sponsors/sponsors_screen_test.dart: SponsorsScreen (Page 023) renders tier headers + sponsor cards (strategic + premium)
+00:40 +622: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sponsors/sponsors_screen_test.dart: SponsorsScreen (Page 023) renders tier headers + sponsor cards (strategic + premium)
+00:40 +623: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sponsors/sponsors_screen_test.dart: SponsorsScreen (Page 023) renders tier headers + sponsor cards (strategic + premium)
+00:40 +624: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sponsors/sponsors_screen_test.dart: SponsorsScreen (Page 023) renders tier headers + sponsor cards (strategic + premium)
+00:40 +625: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sponsors/sponsors_screen_test.dart: SponsorsScreen (Page 023) renders tier headers + sponsor cards (strategic + premium)
+00:40 +626: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sponsors/sponsors_screen_test.dart: SponsorsScreen (Page 023) renders tier headers + sponsor cards (strategic + premium)
+00:40 +627: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sponsors/sponsors_screen_test.dart: SponsorsScreen (Page 023) renders tier headers + sponsor cards (strategic + premium)
+00:40 +628: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sponsors/sponsors_screen_test.dart: SponsorsScreen (Page 023) renders tier headers + sponsor cards (strategic + premium)
+00:40 +629: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sponsors/sponsors_screen_test.dart: SponsorsScreen (Page 023) renders tier headers + sponsor cards (strategic + premium)
+00:40 +630: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sponsors/sponsors_screen_test.dart: SponsorsScreen (Page 023) renders tier headers + sponsor cards (strategic + premium)
+00:40 +631: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sponsors/sponsors_screen_test.dart: SponsorsScreen (Page 023) renders tier headers + sponsor cards (strategic + premium)
+00:40 +632: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sponsors/sponsors_screen_test.dart: SponsorsScreen (Page 023) renders tier headers + sponsor cards (strategic + premium)
+00:40 +633: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sponsors/sponsors_screen_test.dart: SponsorsScreen (Page 023) renders tier headers + sponsor cards (strategic + premium)
+00:40 +634: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sponsors/sponsors_screen_test.dart: SponsorsScreen (Page 023) renders tier headers + sponsor cards (strategic + premium)
+00:40 +635: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/sponsors/sponsors_screen_test.dart: SponsorsScreen (Page 023) renders tier headers + sponsor cards (strategic + premium)
+00:40 +636: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/staff/register_visitor_screen_test.dart: StaffRegisterVisitorScreen (D-509, walk-in registration) renders the form after the lookups load
+00:40 +637: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/staff/register_visitor_screen_test.dart: StaffRegisterVisitorScreen (D-509, walk-in registration) renders the form after the lookups load
+00:40 +638: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/staff/register_visitor_screen_test.dart: StaffRegisterVisitorScreen (D-509, walk-in registration) renders the form after the lookups load
+00:40 +639: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/staff/register_visitor_screen_test.dart: StaffRegisterVisitorScreen (D-509, walk-in registration) renders the form after the lookups load
+00:40 +640: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/staff/register_visitor_screen_test.dart: StaffRegisterVisitorScreen (D-509, walk-in registration) renders the form after the lookups load
+00:40 +641: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/staff/register_visitor_screen_test.dart: StaffRegisterVisitorScreen (D-509, walk-in registration) renders the form after the lookups load
+00:40 +641: loading D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/archive_golden_test.dart
+Warning: A tag was used that wasn't specified in dart_test.yaml.
+  golden was used in the suite itself
+
+00:40 +642: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/staff/register_visitor_screen_test.dart: StaffRegisterVisitorScreen (D-509, walk-in registration) renders the form after the lookups load
+00:40 +643: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/staff/register_visitor_screen_test.dart: StaffRegisterVisitorScreen (D-509, walk-in registration) renders the form after the lookups load
+00:41 +644: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/staff/register_visitor_screen_test.dart: StaffRegisterVisitorScreen (D-509, walk-in registration) renders the form after the lookups load
+00:41 +645: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/staff/register_visitor_screen_test.dart: StaffRegisterVisitorScreen (D-509, walk-in registration) renders the form after the lookups load
+00:41 +646: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/staff/register_visitor_screen_test.dart: StaffRegisterVisitorScreen (D-509, walk-in registration) renders the form after the lookups load
+00:41 +647: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/staff/register_visitor_screen_test.dart: StaffRegisterVisitorScreen (D-509, walk-in registration) renders the form after the lookups load
+00:41 +648: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/staff/register_visitor_screen_test.dart: StaffRegisterVisitorScreen (D-509, walk-in registration) renders the form after the lookups load
+00:41 +649: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/venuemap/venue_map_screen_test.dart: VenueMapScreen (Page 015 — KSA frame 215:562, venue plane) renders a marker per node + the floating map controls
+00:41 +649: loading D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/booths_golden_test.dart
+Warning: A tag was used that wasn't specified in dart_test.yaml.
+  golden was used in the suite itself
+
+00:41 +650: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/venuemap/venue_map_screen_test.dart: VenueMapScreen (Page 015 — KSA frame 215:562, venue plane) renders a marker per node + the floating map controls
+00:41 +650: loading D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/delegations_golden_test.dart
+Warning: A tag was used that wasn't specified in dart_test.yaml.
+  golden was used in the suite itself
+
+00:41 +650: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/features/venuemap/venue_map_screen_test.dart: VenueMapScreen (Page 015 — KSA frame 215:562, venue plane) renders a marker per node + the floating map controls
+00:41 +651: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/archive_golden_test.dart: Archive @375x1293 — Figma 925:3079 (Arabic)
+00:41 +652: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/archive_golden_test.dart: Archive @375x1293 — Figma 925:3079 (Arabic)
+00:42 +653: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/archive_golden_test.dart: Archive @375x1293 — Figma 925:3079 (Arabic)
+00:42 +653: loading D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/my_sessions_golden_test.dart
+Warning: A tag was used that wasn't specified in dart_test.yaml.
+  golden was used in the suite itself
+
+00:42 +653: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/archive_golden_test.dart: Archive @375x1293 — Figma 925:3079 (Arabic)
+00:42 +654: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/archive_golden_test.dart: Archive @375x1293 — Figma 925:3079 (Arabic)
+00:42 +654: loading D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/notifications_golden_test.dart
+Warning: A tag was used that wasn't specified in dart_test.yaml.
+  golden was used in the suite itself
+
+00:42 +655: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/archive_golden_test.dart: Archive @375x1293 — Figma 925:3079 (Arabic)
+00:42 +656: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/archive_golden_test.dart: Archive @375x1293 — Figma 925:3079 (Arabic)
+00:42 +657: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/booths_golden_test.dart: Booths @375x1031 — Figma 922:2458 (Arabic)
+00:42 +658: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/booths_golden_test.dart: Booths @375x1031 — Figma 922:2458 (Arabic)
+00:42 +659: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/booths_golden_test.dart: Booths @375x1031 — Figma 922:2458 (Arabic)
+00:42 +659: loading D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/send_question_golden_test.dart
+Warning: A tag was used that wasn't specified in dart_test.yaml.
+  golden was used in the suite itself
+
+00:42 +660: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/booths_golden_test.dart: Booths @375x1031 — Figma 922:2458 (Arabic)
+00:42 +661: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/booths_golden_test.dart: Booths @375x1031 — Figma 922:2458 (Arabic)
+00:43 +662: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/delegations_golden_test.dart: Delegations @375x1075 — Figma 1426:10771 (Arabic)
+00:43 +662: loading D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/sessions_golden_test.dart
+Warning: A tag was used that wasn't specified in dart_test.yaml.
+  golden was used in the suite itself
+
+00:43 +662: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/delegations_golden_test.dart: Delegations @375x1075 — Figma 1426:10771 (Arabic)
+00:43 +663: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/my_sessions_golden_test.dart: My-Sessions @375x1000 — Figma 1388:9067 (Arabic)
+00:43 +663: loading D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/session_detail_golden_test.dart
+Warning: A tag was used that wasn't specified in dart_test.yaml.
+  golden was used in the suite itself
+
+00:43 +663: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/my_sessions_golden_test.dart: My-Sessions @375x1000 — Figma 1388:9067 (Arabic)
+00:43 +664: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/notifications_golden_test.dart: Notifications @375x1000 — Figma 758:2491 (Arabic)
+00:43 +664: loading D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/session_presentations_golden_test.dart
+Warning: A tag was used that wasn't specified in dart_test.yaml.
+  golden was used in the suite itself
+
+00:43 +664: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/notifications_golden_test.dart: Notifications @375x1000 — Figma 758:2491 (Arabic)
+00:44 +665: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/send_question_golden_test.dart: Send-question @375x880 — Figma 934:3636 (Arabic)
+00:44 +665: loading D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/session_summary_golden_test.dart
+Warning: A tag was used that wasn't specified in dart_test.yaml.
+  golden was used in the suite itself
+
+00:44 +665: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/send_question_golden_test.dart: Send-question @375x880 — Figma 934:3636 (Arabic)
+00:44 +666: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/sessions_golden_test.dart: Sessions @375x1300 — Figma 883:2308 (Arabic)
+00:44 +666: loading D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/session_summary_list_golden_test.dart
+Warning: A tag was used that wasn't specified in dart_test.yaml.
+  golden was used in the suite itself
+
+00:44 +666: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/sessions_golden_test.dart: Sessions @375x1300 — Figma 883:2308 (Arabic)
+00:44 +667: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/session_detail_golden_test.dart: Session-detail @375x1500 — Figma 889:2450 (Arabic)
+00:45 +667: loading D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/speakers_golden_test.dart
+Warning: A tag was used that wasn't specified in dart_test.yaml.
+  golden was used in the suite itself
+
+00:45 +668: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/session_presentations_golden_test.dart: Session-presentations @375x812 — Figma 1388:7621 (Arabic)
+00:45 +669: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/session_summary_golden_test.dart: Session-summary @375x1280 — Figma 1072:13518 (Arabic)
+00:45 +669: loading D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/speaker_profile_golden_test.dart
+Warning: A tag was used that wasn't specified in dart_test.yaml.
+  golden was used in the suite itself
+
+00:45 +669: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/session_summary_golden_test.dart: Session-summary @375x1280 — Figma 1072:13518 (Arabic)
+00:45 +669: loading D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/sponsors_golden_test.dart
+Warning: A tag was used that wasn't specified in dart_test.yaml.
+  golden was used in the suite itself
+
+00:45 +670: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/session_summary_list_golden_test.dart: Session-summaries @375x1150 — Figma 1388:8392 (Arabic)
+00:45 +671: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/session_summary_list_golden_test.dart: Session-summaries @375x1150 — Figma 1388:8392 (Arabic)
+00:45 +672: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/session_summary_list_golden_test.dart: Session-summaries @375x1150 — Figma 1388:8392 (Arabic)
+00:46 +673: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/speakers_golden_test.dart: Speakers @375x939 — Figma 908:1744 (Arabic)
+00:46 +674: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/speaker_profile_golden_test.dart: Speaker-profile @375x812 — Figma 908:2110 (Arabic)
+00:46 +675: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/sponsors_golden_test.dart: Sponsors @375x908 — Figma 922:2824 (Arabic)
+00:47 +676: D:/SIMF/System/V1.0.0/src/Mobile/simf_app/test/golden/sponsors_golden_test.dart: (tearDownAll)
+00:47 +676: All tests passed!

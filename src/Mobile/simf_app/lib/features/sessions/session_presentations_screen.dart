@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../core/sharing/content_sharer.dart';
 import 'data/presentation_models.dart';
 import 'data/presentation_repository.dart';
@@ -38,17 +38,17 @@ class _SessionPresentationsScreenState
     final l10n = AppL10n.of(context);
     final presentations = ref.watch(presentationsProvider);
 
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.sessionPresentationsTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: presentations.when(
         loading: () => const Center(
           child: CircularProgressIndicator(color: SimfTokens.accent),
         ),
-        error: (_, __) => KsaRefresh(
+        error: (_, __) => SimfPullToRefresh(
           onRefresh: _refresh,
-          child: KsaPullable(
-            child: KsaErrorState(
+          child: SimfPullableHost(
+            child: SimfErrorState(
               message: l10n.presentationsError,
               retryLabel: l10n.retryLabel,
               onRetry: () => ref.invalidate(presentationsProvider),
@@ -85,10 +85,10 @@ class _Body extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
-      return KsaRefresh(
+      return SimfPullToRefresh(
         onRefresh: onRefresh,
-        child: KsaPullable(
-          child: KsaEmptyState(
+        child: SimfPullableHost(
+          child: SimfEmptyState(
             icon: Icons.description_outlined,
             message: l10n.presentationsEmpty,
           ),
@@ -121,7 +121,7 @@ class _Body extends StatelessWidget {
         ),
         const SizedBox(height: SimfTokens.space3),
         Expanded(
-          child: KsaRefresh(
+          child: SimfPullToRefresh(
             onRefresh: onRefresh,
             child: ListView.separated(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -193,7 +193,7 @@ class _PresentationCardState extends ConsumerState<_PresentationCard> {
     final item = widget.item;
     final speaker = item.localizedSpeaker(widget.isArabic);
 
-    return KsaCard(
+    return SimfCard(
       child: Padding(
         padding: const EdgeInsets.all(SimfTokens.space2), // p-8 (Figma 1388:7640)
         child: Column(

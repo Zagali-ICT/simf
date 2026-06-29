@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../myarea/data/my_sessions_repository.dart';
 import '../sessions/data/session_favourites.dart';
 import '../sessions/data/session_models.dart';
@@ -52,9 +52,9 @@ class _SessionSummaryListScreenState
       l10n.sessionsTabFavourites,
     ];
 
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.sessionSummariesTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
@@ -80,10 +80,10 @@ class _SessionSummaryListScreenState
               loading: () => const Center(
                 child: CircularProgressIndicator(color: SimfTokens.accent),
               ),
-              error: (_, __) => KsaRefresh(
+              error: (_, __) => SimfPullToRefresh(
                 onRefresh: _refresh,
-                child: KsaPullable(
-                  child: KsaErrorState(
+                child: SimfPullableHost(
+                  child: SimfErrorState(
                     message: l10n.aiSummaryError,
                     retryLabel: l10n.retryLabel,
                     onRetry: () => ref.invalidate(aiSummarySessionsProvider),
@@ -111,10 +111,10 @@ class _SessionSummaryListScreenState
     final isArabic = l10n.isArabic;
     final filtered = _filter(items);
     if (filtered.isEmpty) {
-      return KsaRefresh(
+      return SimfPullToRefresh(
         onRefresh: _refresh,
-        child: KsaPullable(
-          child: KsaEmptyState(
+        child: SimfPullableHost(
+          child: SimfEmptyState(
             icon: Icons.summarize_outlined,
             message: _emptyMessage(l10n, items.isEmpty),
           ),
@@ -124,7 +124,7 @@ class _SessionSummaryListScreenState
 
     final days = _distinctDays(filtered);
 
-    return KsaRefresh(
+    return SimfPullToRefresh(
       onRefresh: _refresh,
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -349,7 +349,7 @@ class _SummaryCard extends StatelessWidget {
         item.status == SessionStatus.published;
 
     final hasMeta = speaker != null || (hall != null && hall.isNotEmpty);
-    return KsaCard(
+    return SimfCard(
       onTap: () => context.pushNamed(
         RouteNames.aiSummary,
         queryParameters: <String, String>{'sessionId': item.id},

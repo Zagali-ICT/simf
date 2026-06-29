@@ -6,7 +6,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import 'data/venue_map_models.dart';
 import 'data/venue_map_repository.dart';
@@ -219,8 +219,8 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    // Full-bleed page: no title/back → the KsaPage header collapses.
-    return KsaPage(
+    // Full-bleed page: no title/back → the SimfPageShell header collapses.
+    return SimfPageShell(
       tab: SimfTab.map,
       body: _buildBody(l10n),
     );
@@ -240,7 +240,7 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
   }
 
   Widget _buildError(AppL10n l10n) {
-    return KsaErrorState(
+    return SimfErrorState(
       message: l10n.venueMapError,
       retryLabel: l10n.retryLabel,
       onRetry: () => unawaited(_load()),
@@ -248,7 +248,7 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
   }
 
   Widget _buildEmpty(AppL10n l10n) {
-    return KsaEmptyState(icon: Icons.map_outlined, message: l10n.venueMapEmpty);
+    return SimfEmptyState(icon: Icons.map_outlined, message: l10n.venueMapEmpty);
   }
 
   Widget _buildMap(AppL10n l10n) {

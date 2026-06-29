@@ -11,7 +11,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/localization/locale_controller.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../core/organization_profile/organization_profile.dart';
 import '../accessibility/data/accessibility_controller.dart';
@@ -156,9 +156,9 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.liveBroadcastTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       tab: SimfTab.sessions,
       body: _buildBody(l10n),
     );
@@ -174,7 +174,7 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
       if (profile != null && globalUrl != null && globalUrl.isNotEmpty) {
         return _content(l10n, _globalLiveSession(profile, globalUrl));
       }
-      return KsaEmptyState(
+      return SimfEmptyState(
         icon: Icons.live_tv_outlined,
         message: l10n.liveNoSessionSelected,
       );
@@ -183,13 +183,13 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     if (_notFound) {
-      return KsaEmptyState(
+      return SimfEmptyState(
         icon: Icons.live_tv_outlined,
         message: l10n.sessionNotFound,
       );
     }
     if (_error || _session == null) {
-      return KsaErrorState(
+      return SimfErrorState(
         message: l10n.liveBroadcastError,
         retryLabel: l10n.retryLabel,
         onRetry: () => unawaited(_load()),
@@ -341,7 +341,7 @@ class _UpcomingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return KsaCard(
+    return SimfCard(
       child: Padding(
         // Frame 934:3621 — px8 / py16 on the radius-4 navy card.
         padding: const EdgeInsets.symmetric(
@@ -733,7 +733,7 @@ class _TogglePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return KsaCard(
+    return SimfCard(
       onTap: active ? null : onTap,
       color: active ? SimfTokens.accent : SimfTokens.navyDeep,
       borderColor: active ? SimfTokens.accent : SimfTokens.beigeBorder,

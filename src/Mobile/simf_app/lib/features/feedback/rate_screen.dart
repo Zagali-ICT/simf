@@ -6,7 +6,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import 'data/feedback_repository.dart';
 import 'data/rating_models.dart';
 
@@ -162,9 +162,9 @@ class _RateScreenState extends ConsumerState<RateScreen> {
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     final form = _form;
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.rateTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: _loading
           ? const Center(
               child: CircularProgressIndicator(color: SimfTokens.accent),

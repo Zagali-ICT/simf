@@ -8,8 +8,8 @@ import 'simf_svg_icon.dart';
 /// inline end. Extracted (owner DRY, 2026-06-28) so notifications (758-2491),
 /// speakers (908-1744), delegations, booths and the schedule all share one
 /// search affordance instead of each re-declaring a private TextField.
-class KsaSearchField extends StatelessWidget {
-  const KsaSearchField({
+class SimfSearchField extends StatelessWidget {
+  const SimfSearchField({
     required this.hint,
     required this.onChanged,
     this.showTuningIcon = false,

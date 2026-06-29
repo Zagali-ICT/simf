@@ -10,7 +10,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import '../contacts/scan_contact_screen.dart';
@@ -99,9 +99,9 @@ class _BadgeScreenState extends ConsumerState<BadgeScreen> {
     // The displayed ID is the reference number (SIMF-2026-…), not the qrId the
     // QR encodes. Best-effort; falls back to the qrId tail while it loads.
     final referenceNumber = ref.watch(referenceNumberProvider).asData?.value;
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.badgeTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       tab: SimfTab.badge,
       showSweep: true,
       body: _buildBody(l10n, referenceNumber),
@@ -114,14 +114,14 @@ class _BadgeScreenState extends ConsumerState<BadgeScreen> {
     }
     if (_notApproved) {
       // Signed-in but not approved — show "account not approved", not the QR.
-      return KsaEmptyState(
+      return SimfEmptyState(
         icon: Icons.lock_outline,
         message: l10n.badgeNotApprovedBody,
       );
     }
     final identity = _identity;
     if (_error || identity == null) {
-      return KsaErrorState(
+      return SimfErrorState(
         message: l10n.badgeError,
         retryLabel: l10n.retryLabel,
         onRetry: () => unawaited(_load()),
@@ -130,7 +130,7 @@ class _BadgeScreenState extends ConsumerState<BadgeScreen> {
     final qrId = identity.qrId?.trim() ?? '';
     if (qrId.isEmpty) {
       // Pending approval — the badge is issued once approved (Page_014 L-1).
-      return KsaEmptyState(
+      return SimfEmptyState(
         icon: Icons.qr_code_2_outlined,
         message: l10n.badgePendingBody,
       );
@@ -246,7 +246,7 @@ class _Badge extends StatelessWidget {
                     // Frame 758:1469 — a 64-px rounded box; the SIMF brand-mark
                     // fallback on its navy box stays visible on the gold strip,
                     // replaced by the photo when present.
-                    KsaAvatar(
+                    SimfAvatar(
                       name: name,
                       currentUser: true,
                       size: 64,

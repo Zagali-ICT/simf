@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:simf_app/app/widgets/ksa_shell.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/app/widgets/simf_logo.dart';
 import 'package:simf_app/features/profile/data/profile_repository.dart';
 
@@ -26,10 +26,10 @@ Widget _host(Widget child, {List<Override> overrides = const <Override>[]}) {
 }
 
 void main() {
-  group('KsaAvatar default fallback (D-402 — SIMF logo, not initials)', () {
+  group('SimfAvatar default fallback (D-402 — SIMF logo, not initials)', () {
     testWidgets('renders the SIMF brand mark when there is no photo',
         (tester) async {
-      await tester.pumpWidget(_host(const KsaAvatar(name: 'Raed Al-Salem', size: 64)));
+      await tester.pumpWidget(_host(const SimfAvatar(name: 'Raed Al-Salem', size: 64)));
 
       // The fallback is the brand mark on a navy box — never name initials.
       expect(find.byType(SimfLogo), findsOneWidget);
@@ -37,27 +37,27 @@ void main() {
     });
 
     testWidgets('exposes the name as the accessibility label', (tester) async {
-      await tester.pumpWidget(_host(const KsaAvatar(name: 'Raed Al-Salem')));
+      await tester.pumpWidget(_host(const SimfAvatar(name: 'Raed Al-Salem')));
 
       expect(find.bySemanticsLabel('Raed Al-Salem'), findsOneWidget);
     });
 
     testWidgets('still shows the brand mark even for an empty name',
         (tester) async {
-      await tester.pumpWidget(_host(const KsaAvatar(name: '')));
+      await tester.pumpWidget(_host(const SimfAvatar(name: '')));
 
       expect(find.byType(SimfLogo), findsOneWidget);
     });
   });
 
-  group('KsaAvatar current-user photo (D-422 — authenticated bytes)', () {
+  group('SimfAvatar current-user photo (D-422 — authenticated bytes)', () {
     testWidgets('a non-current-user avatar never fetches — always the fallback',
         (tester) async {
       // currentUser:false (e.g. a question submitter) must not read the
       // signed-in user's avatar; it stays the brand mark.
       await tester.pumpWidget(
         _host(
-          const KsaAvatar(name: 'Other Person', size: 40),
+          const SimfAvatar(name: 'Other Person', size: 40),
           overrides: <Override>[
             myAvatarBytesProvider.overrideWith((ref) async => _onePixelPng),
           ],
@@ -73,7 +73,7 @@ void main() {
         (tester) async {
       await tester.pumpWidget(
         _host(
-          const KsaAvatar(name: 'Me', currentUser: true),
+          const SimfAvatar(name: 'Me', currentUser: true),
           overrides: <Override>[
             myAvatarBytesProvider.overrideWith((ref) async => _onePixelPng),
           ],
@@ -89,7 +89,7 @@ void main() {
         (tester) async {
       await tester.pumpWidget(
         _host(
-          const KsaAvatar(name: 'Me', currentUser: true),
+          const SimfAvatar(name: 'Me', currentUser: true),
           overrides: <Override>[
             myAvatarBytesProvider.overrideWith((ref) async => null),
           ],

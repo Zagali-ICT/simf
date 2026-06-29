@@ -6,52 +6,52 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/localization/locale_controller.dart';
 import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/ksa_shell.dart';
+import '../../../app/widgets/simf_page_shell.dart';
 import '../../../app/widgets/simf_logo.dart';
 
-/// Shared KSA field/button styling for screens built on [KsaAuthScaffold]
+/// Shared KSA field/button styling for screens built on [AuthPageShell]
 /// (the same shapes the sign-in/sign-up cards use).
-const TextStyle ksaInputTextStyle = TextStyle(
+const TextStyle authInputTextStyle = TextStyle(
   fontSize: 14,
   fontWeight: FontWeight.w500,
   color: SimfTokens.inputInk,
 );
 
-const OutlineInputBorder _ksaRestingBorder = OutlineInputBorder(
-  borderRadius: KsaAuthScaffold._radius4,
+const OutlineInputBorder _authRestingBorder = OutlineInputBorder(
+  borderRadius: AuthPageShell._radius4,
   borderSide: BorderSide(color: SimfTokens.beigeBorder),
 );
-const OutlineInputBorder _ksaFocusedBorder = OutlineInputBorder(
-  borderRadius: KsaAuthScaffold._radius4,
+const OutlineInputBorder _authFocusedBorder = OutlineInputBorder(
+  borderRadius: AuthPageShell._radius4,
   borderSide: BorderSide(color: SimfTokens.accent),
 );
 
-InputDecoration ksaInputDecoration({Widget? suffixIcon}) {
+InputDecoration authInputDecoration({Widget? suffixIcon}) {
   return InputDecoration(
     counterText: '',
     isDense: true,
     filled: false,
     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
-    enabledBorder: _ksaRestingBorder,
-    focusedBorder: _ksaFocusedBorder,
-    disabledBorder: _ksaRestingBorder,
+    enabledBorder: _authRestingBorder,
+    focusedBorder: _authFocusedBorder,
+    disabledBorder: _authRestingBorder,
     suffixIcon: suffixIcon,
   );
 }
 
-final ButtonStyle ksaGoldButtonStyle = FilledButton.styleFrom(
+final ButtonStyle authSubmitButtonStyle = FilledButton.styleFrom(
   backgroundColor: SimfTokens.accent,
   disabledBackgroundColor: SimfTokens.accent.withValues(alpha: 0.5),
   minimumSize: const Size.fromHeight(48),
   shape: const RoundedRectangleBorder(
-    borderRadius: KsaAuthScaffold._radius4,
+    borderRadius: AuthPageShell._radius4,
   ),
 );
 
 /// The KSA card's gold submit button with the busy spinner — shared by the
 /// forgot/reset screens so the spinner/typography stays in one place.
-class KsaSubmitButton extends StatelessWidget {
-  const KsaSubmitButton({
+class AuthSubmitButton extends StatelessWidget {
+  const AuthSubmitButton({
     required this.label,
     required this.busy,
     required this.onPressed,
@@ -68,7 +68,7 @@ class KsaSubmitButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return FilledButton(
       onPressed: onPressed,
-      style: ksaGoldButtonStyle,
+      style: authSubmitButtonStyle,
       child: busy
           ? const SizedBox(
               width: 20,
@@ -91,8 +91,8 @@ class KsaSubmitButton extends StatelessWidget {
 }
 
 /// A small field label aligned to the inline start (right under RTL).
-class KsaFieldLabel extends StatelessWidget {
-  const KsaFieldLabel({required this.text, super.key});
+class FormFieldLabel extends StatelessWidget {
+  const FormFieldLabel({required this.text, super.key});
 
   final String text;
 
@@ -118,8 +118,8 @@ class KsaFieldLabel extends StatelessWidget {
 /// card holding [child]. First consumers: the rebuilt forgot/reset-password
 /// screens; migrating the earlier auth screens onto it is the parked
 /// chrome-extraction follow-up (D-370 simplify note).
-class KsaAuthScaffold extends ConsumerWidget {
-  const KsaAuthScaffold({
+class AuthPageShell extends ConsumerWidget {
+  const AuthPageShell({
     required this.child,
     required this.onBack,
     this.busy = false,
@@ -155,7 +155,7 @@ class KsaAuthScaffold extends ConsumerWidget {
       body: Stack(
         children: <Widget>[
           // Decorative diagonal sweep — the shared shell owns the transform.
-          const KsaSweep(),
+          const SimfSweepBackground(),
           SafeArea(
             child: Stack(
               children: <Widget>[

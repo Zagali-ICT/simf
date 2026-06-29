@@ -6,7 +6,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../sessions/data/session_detail_repository.dart';
 import '../sessions/data/session_models.dart';
 import 'data/questions_repository.dart';
@@ -160,15 +160,15 @@ class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.sessionInfoTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: _hasSession ? _form(l10n) : _empty(l10n),
     );
   }
 
   Widget _empty(AppL10n l10n) {
-    return KsaEmptyState(
+    return SimfEmptyState(
       icon: Icons.live_help_outlined,
       message: l10n.sendQuestionNoSession,
     );

@@ -7,7 +7,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/localization/locale_controller.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
-import 'package:simf_app/app/widgets/ksa_shell.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/app/widgets/simf_bottom_nav.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -83,7 +83,7 @@ Future<void> _pump(
   );
 
   await tester.pumpWidget(
-    // The shared header now carries [KsaLangThemeButtons] (a ConsumerWidget),
+    // The shared header now carries [SimfLangThemeButtons] (a ConsumerWidget),
     // so the shell needs a ProviderScope just like the running app (main.dart).
     ProviderScope(
       overrides: overrides,
@@ -168,13 +168,13 @@ void main() {
     });
   });
 
-  group('KsaPage', () {
+  group('SimfPageShell', () {
     testWidgets('renders the centred title, fires onBack, carries the nav',
         (tester) async {
       var backs = 0;
       await _pump(
         tester,
-        KsaPage(
+        SimfPageShell(
           title: 'My page',
           onBack: () => backs++,
           tab: SimfTab.map,
@@ -188,7 +188,7 @@ void main() {
       // The map tab is active → its label shows.
       expect(find.text('Venue map'), findsOneWidget);
 
-      await tester.tap(find.byType(KsaBackButton));
+      await tester.tap(find.byType(SimfCircledBackButton));
       expect(backs, 1);
     });
 
@@ -196,7 +196,7 @@ void main() {
         'language + inert dark-mode controls', (tester) async {
       await _pump(
         tester,
-        KsaPage(
+        SimfPageShell(
           title: 'My page',
           onBack: () {},
           showHeaderActions: true,
@@ -234,7 +234,7 @@ void main() {
       final prefs = _FakePrefs();
       await _pump(
         tester,
-        KsaPage(
+        SimfPageShell(
           title: 'My page',
           onBack: () {},
           showHeaderActions: true,
@@ -265,7 +265,7 @@ void main() {
         'the ☰ on the right, even under Arabic/RTL', (tester) async {
       await _pump(
         tester,
-        KsaPage(
+        SimfPageShell(
           title: 'صفحة',
           onBack: () {},
           showHeaderActions: true,
@@ -276,7 +276,7 @@ void main() {
 
       // Forced LTR (owner 2026-06-28 "match figma in sub page nav"): back on the
       // left, the trailing cluster (ending in ☰) on the right.
-      final backDx = tester.getCenter(find.byType(KsaBackButton)).dx;
+      final backDx = tester.getCenter(find.byType(SimfCircledBackButton)).dx;
       final menuDx = tester.getCenter(find.byIcon(Icons.menu)).dx;
       expect(backDx, lessThan(menuDx));
     });
@@ -285,7 +285,7 @@ void main() {
         'cluster by default (Figma 758-1469, owner 2026-06-28)', (tester) async {
       await _pump(
         tester,
-        KsaPage(title: 'My page', onBack: () {}, body: const Text('BODY')),
+        SimfPageShell(title: 'My page', onBack: () {}, body: const Text('BODY')),
       );
       // The Figma sub-page nav carries no bell / language / theme / menu.
       expect(find.byIcon(Icons.notifications_none_outlined), findsNothing);
@@ -296,7 +296,7 @@ void main() {
       // Opting in (Home / guest home) brings the cluster back, with the bell.
       await _pump(
         tester,
-        KsaPage(
+        SimfPageShell(
           title: 'My page',
           onBack: () {},
           showHeaderActions: true,
@@ -310,7 +310,7 @@ void main() {
         (tester) async {
       await _pump(
         tester,
-        const KsaPage(
+        const SimfPageShell(
           title: 'Guest',
           showNotificationsBell: false,
           body: Text('BODY'),
@@ -325,34 +325,34 @@ void main() {
         (tester) async {
       await _pump(
         tester,
-        const KsaPage(
+        const SimfPageShell(
           header: Text('CUSTOM-HEADER'),
           body: SizedBox.shrink(),
         ),
       );
 
-      expect(find.byType(KsaBackButton), findsNothing);
+      expect(find.byType(SimfCircledBackButton), findsNothing);
       expect(find.text('CUSTOM-HEADER'), findsOneWidget);
     });
 
     testWidgets('no header, title or onBack → the header row collapses',
         (tester) async {
-      await _pump(tester, const KsaPage(body: Text('FULL-BLEED')));
+      await _pump(tester, const SimfPageShell(body: Text('FULL-BLEED')));
 
-      expect(find.byType(KsaBackButton), findsNothing);
+      expect(find.byType(SimfCircledBackButton), findsNothing);
       expect(find.text('FULL-BLEED'), findsOneWidget);
       // The bar is always carried by the page.
       expect(find.byType(SimfBottomNav), findsOneWidget);
     });
   });
 
-  group('KsaNavTile / KsaStatTile / KsaListRow', () {
+  group('SimfNavTile / SimfStatTile / SimfListRow', () {
     testWidgets('enabled tile fires onTap', (tester) async {
       var taps = 0;
       await _pump(
         tester,
         Scaffold(
-          body: KsaNavTile(
+          body: SimfNavTile(
             label: 'Speakers',
             icon: Icons.mic_none,
             onTap: () => taps++,
@@ -370,7 +370,7 @@ void main() {
       await _pump(
         tester,
         Scaffold(
-          body: KsaNavTile(
+          body: SimfNavTile(
             label: 'My badge',
             icon: Icons.badge_outlined,
             enabled: false,
@@ -394,7 +394,7 @@ void main() {
         (tester) async {
       await _pump(
         tester,
-        const Scaffold(body: KsaStatTile(value: 6, label: 'Booked')),
+        const Scaffold(body: SimfStatTile(value: 6, label: 'Booked')),
       );
 
       expect(find.text('6'), findsOneWidget);
@@ -406,7 +406,7 @@ void main() {
       await _pump(
         tester,
         Scaffold(
-          body: KsaStatTile(value: 6, label: 'Booked', onTap: () => taps++),
+          body: SimfStatTile(value: 6, label: 'Booked', onTap: () => taps++),
         ),
       );
 
@@ -421,7 +421,7 @@ void main() {
       await _pump(
         tester,
         Scaffold(
-          body: KsaListRow(
+          body: SimfListRow(
             title: 'FAQ',
             subtitle: 'Venue & event info',
             badge: const Icon(Icons.help_outline),
@@ -444,8 +444,8 @@ void main() {
         Scaffold(
           body: Column(
             children: <Widget>[
-              KsaListRow(title: 'Filled', badge: const Text('A'), onTap: () {}),
-              KsaListRow(
+              SimfListRow(title: 'Filled', badge: const Text('A'), onTap: () {}),
+              SimfListRow(
                 title: 'Outlined',
                 badge: const Text('B'),
                 badgeOutlined: true,

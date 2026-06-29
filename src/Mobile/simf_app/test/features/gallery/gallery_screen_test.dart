@@ -41,7 +41,7 @@ Future<void> _pump(
         builder: (_, __) => const GalleryScreen(),
       ),
       // The shell back-target + the two sibling coverage tabs the tab bar
-      // navigates to. Plus the bottom-nav destinations KsaPage renders.
+      // navigates to. Plus the bottom-nav destinations SimfPageShell renders.
       for (final (name, path, label) in <(String, String, String)>[
         (RouteNames.home, '/', 'HOME'),
         (RouteNames.news, '/news', 'NEWS'),

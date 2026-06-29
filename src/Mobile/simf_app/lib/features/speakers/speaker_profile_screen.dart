@@ -10,7 +10,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import 'data/speaker_models.dart';
 import 'data/speakers_repository.dart';
@@ -112,8 +112,8 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return KsaPage(
-      onBack: () => ksaBackOrHome(context),
+    return SimfPageShell(
+      onBack: () => backOrHome(context),
       header: _buildHeader(l10n),
       body: _buildBody(l10n),
     );
@@ -142,7 +142,7 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
           SizedBox(
             width: 42,
             height: 42,
-            child: KsaBackButton(onBack: () => ksaBackOrHome(context)),
+            child: SimfCircledBackButton(onBack: () => backOrHome(context)),
           ),
           Expanded(
             child: Column(
@@ -209,10 +209,10 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
       );
     }
     if (_notFound) {
-      return KsaRefresh(
+      return SimfPullToRefresh(
         onRefresh: _load,
         child: _PullToRefreshState(
-          child: KsaEmptyState(
+          child: SimfEmptyState(
             icon: Icons.person_off_outlined,
             message: l10n.speakerNotFound,
           ),
@@ -220,10 +220,10 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
       );
     }
     if (_error || _speaker == null) {
-      return KsaRefresh(
+      return SimfPullToRefresh(
         onRefresh: _load,
         child: _PullToRefreshState(
-          child: KsaErrorState(
+          child: SimfErrorState(
             message: l10n.speakerProfileError,
             retryLabel: l10n.retryLabel,
             onRetry: () => unawaited(_load()),
@@ -231,7 +231,7 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
         ),
       );
     }
-    return KsaRefresh(
+    return SimfPullToRefresh(
       onRefresh: _load,
       child: _content(l10n, _speaker!),
     );
@@ -324,7 +324,7 @@ bool _has(String? value) => value != null && value.trim().isNotEmpty;
 
 /// Hosts a non-scrollable empty/error widget inside an always-scrollable,
 /// full-height viewport so a pull-down-from-the-top still fires the enclosing
-/// [KsaRefresh] (lets the user pull to retry), while keeping the message centred.
+/// [SimfPullToRefresh] (lets the user pull to retry), while keeping the message centred.
 class _PullToRefreshState extends StatelessWidget {
   const _PullToRefreshState({required this.child});
 
@@ -527,7 +527,7 @@ class _SessionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hall = session.localizedHall(isArabic);
-    return KsaCard(
+    return SimfCard(
       onTap: () => context.pushNamed(
         RouteNames.sessionDetail,
         pathParameters: <String, String>{'sessionId': session.id},

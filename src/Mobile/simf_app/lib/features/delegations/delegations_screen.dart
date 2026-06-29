@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import 'data/delegation_models.dart';
 import 'data/delegations_repository.dart';
 
@@ -49,19 +49,19 @@ class _DelegationsScreenState extends ConsumerState<DelegationsScreen> {
       await ref.read(delegationsProvider.future);
     }
 
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.delegationsTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: delegations.when(
         loading: () => const Center(
           child: CircularProgressIndicator(color: SimfTokens.accent),
         ),
-        error: (_, __) => KsaRefresh(
+        error: (_, __) => SimfPullToRefresh(
           onRefresh: onRefresh,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
             children: <Widget>[
-              KsaErrorState(
+              SimfErrorState(
                 message: l10n.delegationsError,
                 retryLabel: l10n.retryLabel,
                 onRetry: () => ref.invalidate(delegationsProvider),
@@ -69,7 +69,7 @@ class _DelegationsScreenState extends ConsumerState<DelegationsScreen> {
             ],
           ),
         ),
-        data: (data) => KsaRefresh(
+        data: (data) => SimfPullToRefresh(
           onRefresh: onRefresh,
           child: _DelegationsBody(
             data: data,
@@ -131,7 +131,7 @@ class _DelegationsBody extends StatelessWidget {
         if (filtered.isEmpty)
           Padding(
             padding: const EdgeInsets.only(top: SimfTokens.space8),
-            child: KsaEmptyState(
+            child: SimfEmptyState(
               icon: Icons.flag_outlined,
               message: data.items.isEmpty
                   ? l10n.delegationsEmpty
@@ -383,7 +383,7 @@ class _DelegationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return KsaCard(
+    return SimfCard(
       radius: SimfTokens.radius, // 8 (Figma 1426:10838)
       borderWidth: 0, // borderless
       child: Padding(

@@ -6,7 +6,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import 'data/comment_models.dart';
 import 'data/comments_repository.dart';
 
@@ -176,9 +176,9 @@ class _AudienceCommentsScreenState
       return const Center(child: CircularProgressIndicator());
     }
     if (_error) {
-      return KsaRefresh(
+      return SimfPullToRefresh(
         onRefresh: _load,
-        child: KsaPullable(
+        child: SimfPullableHost(
           child: _ErrorState(
             message: l10n.commentsError,
             onRetry: () => unawaited(_load()),
@@ -187,9 +187,9 @@ class _AudienceCommentsScreenState
       );
     }
     if (_comments.isEmpty) {
-      return KsaRefresh(
+      return SimfPullToRefresh(
         onRefresh: _load,
-        child: KsaPullable(
+        child: SimfPullableHost(
           child: _EmptyState(
             icon: Icons.forum_outlined,
             message: l10n.commentsEmpty,
@@ -197,7 +197,7 @@ class _AudienceCommentsScreenState
         ),
       );
     }
-    return KsaRefresh(
+    return SimfPullToRefresh(
       onRefresh: _load,
       child: ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),

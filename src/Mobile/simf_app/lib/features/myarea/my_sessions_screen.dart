@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../sessions/widgets/favourite_heart_button.dart';
 import '../sessions/widgets/session_filter_tabs.dart';
 import 'data/my_sessions_models.dart';
@@ -46,9 +46,9 @@ class _MySessionsScreenState extends ConsumerState<MySessionsScreen> {
       await ref.read(mySessionsProvider.future);
     }
 
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.mySessionsTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
@@ -75,12 +75,12 @@ class _MySessionsScreenState extends ConsumerState<MySessionsScreen> {
               loading: () => const Center(
                 child: CircularProgressIndicator(color: SimfTokens.accent),
               ),
-              error: (_, __) => KsaRefresh(
+              error: (_, __) => SimfPullToRefresh(
                 onRefresh: onRefresh,
                 child: ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   children: <Widget>[
-                    KsaErrorState(
+                    SimfErrorState(
                       message: l10n.mySessionsError,
                       retryLabel: l10n.retryLabel,
                       onRetry: () => ref.invalidate(mySessionsProvider),
@@ -88,7 +88,7 @@ class _MySessionsScreenState extends ConsumerState<MySessionsScreen> {
                   ],
                 ),
               ),
-              data: (page) => KsaRefresh(
+              data: (page) => SimfPullToRefresh(
                 onRefresh: onRefresh,
                 child: _TabbedList(
                   items: _filter(page.items),
@@ -137,7 +137,7 @@ class _TabbedList extends StatelessWidget {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         children: <Widget>[
-          KsaEmptyState(
+          SimfEmptyState(
             icon: Icons.event_note_outlined,
             message: l10n.mySessionsEmpty,
           ),
@@ -194,7 +194,7 @@ class _MySessionCard extends StatelessWidget {
         : time;
     final hasMeta = speaker != null || (hall != null && hall.isNotEmpty);
 
-    return KsaCard(
+    return SimfCard(
       onTap: () => context.pushNamed(
         RouteNames.sessionDetail,
         pathParameters: <String, String>{'sessionId': item.id},

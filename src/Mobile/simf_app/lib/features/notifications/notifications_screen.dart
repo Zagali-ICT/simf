@@ -9,8 +9,8 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_search_field.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_search_field.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import 'data/notification_models.dart';
 import 'data/notifications_repository.dart';
 
@@ -206,9 +206,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.notificationsTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: _buildBody(l10n),
     );
   }
@@ -218,10 +218,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     if (_error) {
-      return KsaRefresh(
+      return SimfPullToRefresh(
         onRefresh: _load,
         child: _PullableState(
-          child: KsaErrorState(
+          child: SimfErrorState(
             message: l10n.notificationsError,
             retryLabel: l10n.retryLabel,
             onRetry: () => unawaited(_load()),
@@ -230,10 +230,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       );
     }
     if (_items.isEmpty) {
-      return KsaRefresh(
+      return SimfPullToRefresh(
         onRefresh: _load,
         child: _PullableState(
-          child: KsaEmptyState(
+          child: SimfEmptyState(
             icon: Icons.notifications_none_outlined,
             message: l10n.notificationsEmpty,
           ),
@@ -253,7 +253,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             SimfTokens.space4,
             SimfTokens.space2,
           ),
-          child: KsaSearchField(
+          child: SimfSearchField(
             hint: l10n.notificationsSearchHint,
             onChanged: (v) => setState(() => _query = v),
             showTuningIcon: true,
@@ -298,11 +298,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         ),
         const SizedBox(height: SimfTokens.space2),
         Expanded(
-          child: KsaRefresh(
+          child: SimfPullToRefresh(
             onRefresh: _load,
             child: visible.isEmpty
                 ? _PullableState(
-                    child: KsaEmptyState(
+                    child: SimfEmptyState(
                       icon: Icons.search_off_outlined,
                       message: l10n.notificationsNoMatches,
                     ),
@@ -321,7 +321,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 }
 
 /// Hosts a non-scrollable state widget (empty / no-matches / error) inside an
-/// always-scrollable, viewport-tall box so the surrounding [KsaRefresh] can fire
+/// always-scrollable, viewport-tall box so the surrounding [SimfPullToRefresh] can fire
 /// its pull-to-retry gesture even when the state itself does not scroll.
 class _PullableState extends StatelessWidget {
   const _PullableState({required this.child});
@@ -501,7 +501,7 @@ class _NotificationCard extends StatelessWidget {
       // Frame 758:2491 — every card is the navyDeep fill, borderless; the
       // category mark sits at the inline start and an unread card carries a
       // red dot at the top inline-end corner.
-      child: KsaCard(
+      child: SimfCard(
         // Actionable notifications must stay tappable after the inbox
         // auto-marks them read (_openInbox), otherwise the SessionRatingRequest
         // deep-link is unreachable. _onTapItem is a no-op for read,

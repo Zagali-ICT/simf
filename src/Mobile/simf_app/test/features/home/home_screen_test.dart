@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
-import 'package:simf_app/app/widgets/ksa_shell.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 import 'package:simf_app/core/organization_profile/organization_profile.dart';
 import 'package:simf_app/features/home/home_screen.dart';
@@ -377,7 +377,7 @@ void main() {
       expect(find.textContaining('Ahmed Mohammed'), findsOneWidget);
       expect(find.byTooltip('Notifications'), findsOneWidget);
       expect(find.text('LIVE'), findsOneWidget);
-      // "عن الملتقى" is now a bordered nav row (KsaLinkRow), not a text header.
+      // "عن الملتقى" is now a bordered nav row (SimfLinkRow), not a text header.
       // (The full three-bar count is asserted on a tall surface in the RTL
       // group, where every off-screen bar is built.)
       expect(find.text('About the forum'), findsOneWidget);
@@ -513,7 +513,7 @@ void main() {
         (tester) async {
       await _pump(tester, controller: _SignedInController());
 
-      await tester.tap(find.byType(KsaAvatar));
+      await tester.tap(find.byType(SimfAvatar));
       await tester.pumpAndSettle();
       expect(find.text('MY-AREA'), findsOneWidget);
     });
@@ -698,7 +698,7 @@ void main() {
         (tester) async {
       await pumpTall(tester);
       // The three bordered bars exist with the correct Arabic titles.
-      expect(find.byType(KsaLinkRow), findsNWidgets(3));
+      expect(find.byType(SimfLinkRow), findsNWidgets(3));
       expect(find.text('عن الملتقى'), findsOneWidget);
       expect(find.text('الرعاة'), findsOneWidget);
       expect(find.text('الأخبار والتغطية'), findsOneWidget);

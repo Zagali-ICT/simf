@@ -119,7 +119,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return KsaAuthScaffold(
+    return AuthPageShell(
       busy: _busy,
       onBack: _back,
       child: Column(
@@ -144,7 +144,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          KsaFieldLabel(text: l10n.otpLabel),
+          FormFieldLabel(text: l10n.otpLabel),
           const SizedBox(height: 8),
           TextField(
             controller: _code,
@@ -157,11 +157,11 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
               FilteringTextInputFormatter.digitsOnly,
             ],
             onChanged: (_) => setState(() {}),
-            style: ksaInputTextStyle,
-            decoration: ksaInputDecoration(),
+            style: authInputTextStyle,
+            decoration: authInputDecoration(),
           ),
           const SizedBox(height: 16),
-          KsaFieldLabel(text: l10n.newPasswordLabel),
+          FormFieldLabel(text: l10n.newPasswordLabel),
           const SizedBox(height: 8),
           TextField(
             controller: _password,
@@ -169,11 +169,11 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             maxLength: 32,
             enabled: !_busy,
             onChanged: (_) => setState(() {}),
-            style: ksaInputTextStyle,
-            decoration: ksaInputDecoration(suffixIcon: _passwordToggle(l10n)),
+            style: authInputTextStyle,
+            decoration: authInputDecoration(suffixIcon: _passwordToggle(l10n)),
           ),
           const SizedBox(height: 16),
-          KsaFieldLabel(text: l10n.confirmPasswordLabel),
+          FormFieldLabel(text: l10n.confirmPasswordLabel),
           const SizedBox(height: 8),
           TextField(
             controller: _confirm,
@@ -186,8 +186,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 unawaited(_submit());
               }
             },
-            style: ksaInputTextStyle,
-            decoration: ksaInputDecoration(),
+            style: authInputTextStyle,
+            decoration: authInputDecoration(),
           ),
           if (_error != null) ...<Widget>[
             const SizedBox(height: 12),
@@ -197,7 +197,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             ),
           ],
           const SizedBox(height: 24),
-          KsaSubmitButton(
+          AuthSubmitButton(
             label: l10n.resetPasswordButton,
             busy: _busy,
             onPressed: _canSubmit ? () => unawaited(_submit()) : null,

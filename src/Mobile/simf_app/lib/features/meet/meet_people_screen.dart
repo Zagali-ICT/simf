@@ -4,7 +4,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import 'data/meet_models.dart';
 
 /// `GET /app/account/recommendations/meet-like-you` → the visitor's "meet
@@ -21,7 +21,7 @@ final meetRecommendationsProvider =
 /// Page 035 — قابل أشخاص مثلك · Meet people (#35, `/meet`, approved account).
 ///
 /// **Auth-gated** (route 35). Pixel-parity to KSA Figma frame `1072:13409`: the
-/// navy [KsaPage] shell, a smart-suggestions header card (title + subtitle + the
+/// navy [SimfPageShell] shell, a smart-suggestions header card (title + subtitle + the
 /// three topic chips, frame `1082:15269`) and a per-match card (frame
 /// `1082:15273`) — the gold **% match** (from the scorer's `score`) over the
 /// `تطابق` label, the name, the profile-type line, the match reason and a gold
@@ -41,14 +41,14 @@ class MeetPeopleScreen extends ConsumerWidget {
       await ref.read(meetRecommendationsProvider.future);
     }
 
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.meetPeopleTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: matches.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => KsaRefresh(
+        error: (_, __) => SimfPullToRefresh(
           onRefresh: onRefresh,
-          child: KsaPullable(
+          child: SimfPullableHost(
             child: _Error(
               message: l10n.meetPeopleError,
               onRetry: () => ref.invalidate(meetRecommendationsProvider),
@@ -57,7 +57,7 @@ class MeetPeopleScreen extends ConsumerWidget {
         ),
         data: (data) {
           final isArabic = l10n.isArabic;
-          return KsaRefresh(
+          return SimfPullToRefresh(
             onRefresh: onRefresh,
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),

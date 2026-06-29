@@ -6,7 +6,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 
 /// Media kind — mirrors `MediaKind` (int wire: Image=0, Video=1).
 enum MediaKind {
@@ -121,9 +121,9 @@ class GalleryScreen extends ConsumerWidget {
       await ref.read(mediaItemsProvider.future);
     }
 
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.mediaCoverageTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: Column(
         children: <Widget>[
           Padding(
@@ -139,10 +139,10 @@ class GalleryScreen extends ConsumerWidget {
             child: media.when(
               loading: () =>
                   const Center(child: CircularProgressIndicator()),
-              error: (_, __) => KsaRefresh(
+              error: (_, __) => SimfPullToRefresh(
                 onRefresh: onRefresh,
-                child: KsaPullable(
-                  child: KsaErrorState(
+                child: SimfPullableHost(
+                  child: SimfErrorState(
                     message: l10n.galleryError,
                     retryLabel: l10n.retryLabel,
                     onRetry: () => ref.invalidate(mediaItemsProvider),
@@ -151,17 +151,17 @@ class GalleryScreen extends ConsumerWidget {
               ),
               data: (items) {
                 if (items.isEmpty) {
-                  return KsaRefresh(
+                  return SimfPullToRefresh(
                     onRefresh: onRefresh,
-                    child: KsaPullable(
-                      child: KsaEmptyState(
+                    child: SimfPullableHost(
+                      child: SimfEmptyState(
                         icon: Icons.photo_library_outlined,
                         message: l10n.galleryEmpty,
                       ),
                     ),
                   );
                 }
-                return KsaRefresh(
+                return SimfPullToRefresh(
                   onRefresh: onRefresh,
                   child: _GalleryBody(
                     items: items,
@@ -240,7 +240,7 @@ class _CoverageTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return KsaCard(
+    return SimfCard(
       onTap: onTap,
       color: active ? SimfTokens.accent : SimfTokens.navyDeep,
       borderColor: active ? SimfTokens.accent : SimfTokens.beigeBorder,

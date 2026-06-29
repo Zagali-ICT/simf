@@ -6,7 +6,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import 'data/seat_map_models.dart';
 import 'data/seat_map_repository.dart';
@@ -114,9 +114,9 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.seatPickerTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       tab: SimfTab.sessions,
       body: _buildBody(l10n),
     );
@@ -129,13 +129,13 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
       );
     }
     if (_notFound) {
-      return KsaEmptyState(
+      return SimfEmptyState(
         icon: Icons.event_busy_outlined,
         message: l10n.sessionNotFound,
       );
     }
     if (_error || _map == null) {
-      return KsaErrorState(
+      return SimfErrorState(
         message: l10n.seatMapError,
         retryLabel: l10n.retryLabel,
         onRetry: () => unawaited(_load()),
@@ -143,7 +143,7 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
     }
     final map = _map!;
     if (!map.hasLayout) {
-      return KsaEmptyState(
+      return SimfEmptyState(
         icon: Icons.event_seat_outlined,
         message: l10n.seatMapUnavailable,
       );

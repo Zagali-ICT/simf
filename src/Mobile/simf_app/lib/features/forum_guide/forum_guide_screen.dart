@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 
 /// Page 200 — دليل الملتقى · Forum guide (`/forum-guide`, public). Pixel-parity
-/// to KSA Figma frame **1388:7493**: the navy [KsaPage] shell, a gold intro
+/// to KSA Figma frame **1388:7493**: the navy [SimfPageShell] shell, a gold intro
 /// banner, then five numbered step cards (gold index badge + title + muted
 /// description) on the navy-deep card chrome.
 ///
@@ -25,9 +25,9 @@ class ForumGuideScreen extends StatelessWidget {
       (l10n.forumGuideStep4Title, l10n.forumGuideStep4Body),
       (l10n.forumGuideStep5Title, l10n.forumGuideStep5Body),
     ];
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.forumGuideTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           SimfTokens.space4,

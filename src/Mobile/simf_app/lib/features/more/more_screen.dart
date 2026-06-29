@@ -12,7 +12,7 @@ import '../../app/route_names.dart';
 import '../../app/router.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/confirm_external_link.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import '../../core/env/build_config.dart';
 import '../auth/sign_out.dart';
@@ -33,7 +33,7 @@ final _moreProfileProvider =
 });
 
 /// Page 041 — المزيد · More (#41, `/more`, public). Pixel-parity to KSA Figma
-/// frame `1129:17224`: the navy [KsaPage] shell, a منطقتي profile header card
+/// frame `1129:17224`: the navy [SimfPageShell] shell, a منطقتي profile header card
 /// (signed-in), three grouped sections (معلومات الملتقى / الإعدادات / قانوني)
 /// of bordered nav rows, the تسجيل الخروج link (signed-in) and the static
 /// version line. Unbuilt entries (Forum guide / FAQ / presentations / Contact
@@ -54,9 +54,9 @@ class MoreScreen extends ConsumerWidget {
         ? ref.watch(_moreProfileProvider).asData?.value
         : null;
 
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.moreTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           SimfTokens.space4,
@@ -236,7 +236,7 @@ class _ProfileCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: SimfTokens.space3),
-              KsaAvatar(name: name, currentUser: true, size: 42),
+              SimfAvatar(name: name, currentUser: true, size: 42),
               const SizedBox(width: SimfTokens.space2),
               const SimfSvgIcon(
                 'assets/icons/ic_caret_left.svg',

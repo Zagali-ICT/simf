@@ -6,7 +6,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import 'data/news_models.dart';
 import 'news_article_screen.dart';
 
@@ -49,11 +49,11 @@ class NewsScreen extends ConsumerWidget {
     // The card builds `{base}/app/assets/NewsImage/{id}/image` for the
     // thumbnail; the base already includes `/api/v1`.
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
-    return KsaPage(
+    return SimfPageShell(
       // Frame header — the container is "التغطية الإعلامية" (Media coverage),
       // not the bare "الأخبار" tab label.
       title: l10n.mediaCoverageTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       // News left the bottom nav in the KSA Wave-2 shell (the Profile tab took
       // its slot) — the bar stays, with no destination highlighted.
       body: Column(
@@ -77,10 +77,10 @@ class NewsScreen extends ConsumerWidget {
               // viewport-filling scroll view so the gesture fires on short
               // content. onRefresh invalidates [newsListProvider] and awaits
               // the re-fetch.
-              error: (_, __) => KsaRefresh(
+              error: (_, __) => SimfPullToRefresh(
                 onRefresh: () => _refresh(ref),
                 child: _RefreshableCentered(
-                  child: KsaErrorState(
+                  child: SimfErrorState(
                     message: l10n.newsError,
                     retryLabel: l10n.retryLabel,
                     onRetry: () => ref.invalidate(newsListProvider),
@@ -89,10 +89,10 @@ class NewsScreen extends ConsumerWidget {
               ),
               data: (items) {
                 if (items.isEmpty) {
-                  return KsaRefresh(
+                  return SimfPullToRefresh(
                     onRefresh: () => _refresh(ref),
                     child: _RefreshableCentered(
-                      child: KsaEmptyState(
+                      child: SimfEmptyState(
                         icon: Icons.article_outlined,
                         message: l10n.newsEmpty,
                       ),
@@ -100,7 +100,7 @@ class NewsScreen extends ConsumerWidget {
                   );
                 }
                 final isArabic = l10n.isArabic;
-                return KsaRefresh(
+                return SimfPullToRefresh(
                   onRefresh: () => _refresh(ref),
                   child: ListView.separated(
                     physics: const AlwaysScrollableScrollPhysics(),
@@ -138,7 +138,7 @@ class NewsScreen extends ConsumerWidget {
 }
 
 /// Hosts a centred state (error / empty) inside a viewport-filling scroll view
-/// so [KsaRefresh] can drive a pull-to-refresh even when the content is short.
+/// so [SimfPullToRefresh] can drive a pull-to-refresh even when the content is short.
 /// The [AlwaysScrollableScrollPhysics] makes the pull gesture fire regardless
 /// of content height; the min-height constraint keeps the child vertically
 /// centred in the available space.

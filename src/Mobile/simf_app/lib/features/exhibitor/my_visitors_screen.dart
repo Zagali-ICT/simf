@@ -6,7 +6,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../contacts/widgets/contact_card.dart';
 import 'data/exhibitor_models.dart';
 import 'data/exhibitor_repository.dart';
@@ -66,9 +66,9 @@ class _MyVisitorsScreenState extends ConsumerState<MyVisitorsScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.myVisitorsTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: _buildBody(l10n),
     );
   }
@@ -81,7 +81,7 @@ class _MyVisitorsScreenState extends ConsumerState<MyVisitorsScreen> {
       return _Centered(text: l10n.scanVisitorForbidden);
     }
     if (_error) {
-      return KsaErrorState(
+      return SimfErrorState(
         message: l10n.scanVisitorError,
         retryLabel: l10n.retryLabel,
         onRetry: () => unawaited(_load()),

@@ -9,7 +9,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../core/country_flag.dart';
 import 'data/seat_map_models.dart';
@@ -263,13 +263,13 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     // isAtLeast ladder). UX gate only — the server still enforces the
     // per-session SessionModerator grant (403).
     final canModerate = role == AppRole.moderator;
-    return KsaPage(
+    return SimfPageShell(
       tab: SimfTab.sessions,
       // The frame's chrome is the standard circled back + centred title; the
       // moderator Q&A action is kept as a trailing control on the same row.
       header: _Header(
         title: l10n.sessionDetailTitle,
-        onBack: () => ksaBackOrHome(context),
+        onBack: () => backOrHome(context),
         moderateTooltip: canModerate ? l10n.moderatorManageQuestions : null,
         onModerate: canModerate
             ? () => context.pushNamed(
@@ -289,15 +289,15 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     // The not-found / error states are hosted in an always-scrollable list so a
-    // pull-down still fires KsaRefresh (pull to retry) even though they render a
+    // pull-down still fires SimfPullToRefresh (pull to retry) even though they render a
     // short, centred surface.
     if (_notFound) {
-      return KsaRefresh(
+      return SimfPullToRefresh(
         onRefresh: _load,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           children: <Widget>[
-            KsaEmptyState(
+            SimfEmptyState(
               icon: Icons.event_busy_outlined,
               message: l10n.sessionNotFound,
             ),
@@ -306,12 +306,12 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
       );
     }
     if (_error || _detail == null) {
-      return KsaRefresh(
+      return SimfPullToRefresh(
         onRefresh: _load,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           children: <Widget>[
-            KsaErrorState(
+            SimfErrorState(
               message: l10n.sessionDetailError,
               retryLabel: l10n.retryLabel,
               onRetry: () => unawaited(_load()),
@@ -323,7 +323,7 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     // The speaker avatars resolve `{base}/app/assets/SpeakerPhoto/{id}/image`
     // (the D-357 SpeakerPhoto asset); the base already includes `/api/v1`.
     final baseUrl = ref.read(simfDataConfigProvider).baseUrl;
-    return KsaRefresh(
+    return SimfPullToRefresh(
       onRefresh: _load,
       child: _Content(
         detail: _detail!,
@@ -381,7 +381,7 @@ class _Header extends StatelessWidget {
           SizedBox(
             width: 40,
             height: 40,
-            child: KsaBackButton(onBack: onBack),
+            child: SimfCircledBackButton(onBack: onBack),
           ),
           Expanded(
             child: Text(
@@ -891,7 +891,7 @@ class _SpeakerCard extends StatelessWidget {
       if (isHost) hostLabel,
     ];
 
-    return KsaCard(
+    return SimfCard(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.all(SimfTokens.space2),
@@ -1023,7 +1023,7 @@ class _AskHostCard extends StatelessWidget {
     // Frame 1056:12876 — the user glyph is gold (accent) over a white label.
     final iconColor =
         enabled ? SimfTokens.accent : SimfTokens.navyDisabledText;
-    return KsaCard(
+    return SimfCard(
       onTap: enabled ? onTap : null,
       child: Padding(
         padding: const EdgeInsets.all(SimfTokens.space2),
@@ -1090,7 +1090,7 @@ class _ReservationCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        KsaCard(
+        SimfCard(
           onTap: onView,
           child: Padding(
             padding: const EdgeInsets.all(SimfTokens.space2),

@@ -583,7 +583,7 @@ GoRouter buildRouter(Ref ref) {
       // The five bottom-nav destinations share one persistent shell: an
       // IndexedStack of branches. Switching tabs swaps the visible branch with
       // no transition and keeps every tab's state alive — the bottom bar stays
-      // fixed (each branch renders the same bar via KsaPage, so it never
+      // fixed (each branch renders the same bar via SimfPageShell, so it never
       // animates). Sub-pages stay flat routes (pushed full-screen) below.
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) => navigationShell,

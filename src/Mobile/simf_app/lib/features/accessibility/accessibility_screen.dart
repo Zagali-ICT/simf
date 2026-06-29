@@ -4,12 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import 'data/accessibility_controller.dart';
 
 /// Page 038 — إمكانية الوصول · Accessibility (#38, `/settings/accessibility`).
 ///
-/// Pixel-parity to KSA Figma frame `1116:16630`: the navy [KsaPage] shell and
+/// Pixel-parity to KSA Figma frame `1116:16630`: the navy [SimfPageShell] shell and
 /// two grouped sections — **العرض** (font size: صغير / متوسط / كبير / أكبر, the
 /// high-contrast switch and the reduce-motion switch) and **الصوت والقراءة**
 /// (the screen-reader switch and the session-captions switch).
@@ -27,9 +27,9 @@ class AccessibilityScreen extends ConsumerWidget {
     final l10n = AppL10n.of(context);
     final settings = ref.watch(accessibilityControllerProvider);
     final controller = ref.read(accessibilityControllerProvider.notifier);
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.accessibilityTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: ListView(
         padding: const EdgeInsets.all(SimfTokens.space4),
         children: <Widget>[

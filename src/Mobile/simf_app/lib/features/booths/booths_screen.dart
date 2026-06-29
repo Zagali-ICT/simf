@@ -9,8 +9,8 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../core/country_flag.dart';
-import '../../app/widgets/ksa_search_field.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_search_field.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import '../venuemap/data/venue_map_models.dart';
 import '../venuemap/data/venue_map_repository.dart';
@@ -24,7 +24,7 @@ import '../venuemap/data/venue_map_repository.dart';
 /// 1439:11881).
 ///
 /// Frame mapping: the navy scaffold + centred header (الأجنحة) and the shared
-/// bottom nav from [KsaPage]; a bordered search field (ابحث عن جناح أو شركة);
+/// bottom nav from [SimfPageShell]; a bordered search field (ابحث عن جناح أو شركة);
 /// then one exhibitor card per booth — a company header row (short name + full
 /// name beside the square logo tile, gold-hairline divider), the gold-bordered
 /// **code pill** (A-12) beside the deep-navy **hall box**, the booth-officer row
@@ -116,10 +116,10 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return KsaPage(
+    return SimfPageShell(
       // Frame 922:2464 titles the screen "المعرض" (the nav tile/route stay "الأجنحة").
       title: l10n.boothsExhibitionTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: _buildBody(l10n),
     );
   }
@@ -132,14 +132,14 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
       // Pull-to-refresh also works in the error state so the user can pull to
       // retry; the Center error widget is hosted in an always-scrollable view
       // (with a min-height filler) so the gesture fires on the short content.
-      return KsaRefresh(
+      return SimfPullToRefresh(
         onRefresh: _load,
         child: LayoutBuilder(
           builder: (context, constraints) => SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             child: ConstrainedBox(
               constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: KsaErrorState(
+              child: SimfErrorState(
                 message: l10n.boothsError,
                 retryLabel: l10n.retryLabel,
                 onRetry: () => unawaited(_load()),
@@ -164,7 +164,7 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
             SimfTokens.space4,
             0,
           ),
-          child: KsaSearchField(
+          child: SimfSearchField(
             hint: l10n.boothsSearchHint,
             onChanged: (value) => setState(() => _query = value),
           ),
@@ -174,7 +174,7 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
           // The empty / no-match states are hosted in an always-scrollable view
           // (with a min-height filler) so the gesture fires on short content;
           // the list itself uses AlwaysScrollableScrollPhysics for the same.
-          child: KsaRefresh(
+          child: SimfPullToRefresh(
             onRefresh: _load,
             child: _booths.isEmpty
                 ? LayoutBuilder(
@@ -183,7 +183,7 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
                       child: ConstrainedBox(
                         constraints:
                             BoxConstraints(minHeight: constraints.maxHeight),
-                        child: KsaEmptyState(
+                        child: SimfEmptyState(
                           icon: Icons.storefront_outlined,
                           message: l10n.boothsEmpty,
                         ),
@@ -199,7 +199,7 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
                             constraints: BoxConstraints(
                               minHeight: constraints.maxHeight,
                             ),
-                            child: KsaEmptyState(
+                            child: SimfEmptyState(
                               icon: Icons.search_off_outlined,
                               message: l10n.boothsNoMatch,
                             ),
@@ -259,7 +259,7 @@ class _BoothCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return KsaCard(
+    return SimfCard(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.all(SimfTokens.space2),

@@ -82,7 +82,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return KsaAuthScaffold(
+    return AuthPageShell(
       busy: _busy,
       onBack: _back,
       child: Column(
@@ -107,7 +107,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          KsaFieldLabel(text: l10n.emailLabel),
+          FormFieldLabel(text: l10n.emailLabel),
           const SizedBox(height: 8),
           TextField(
             controller: _email,
@@ -122,8 +122,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 unawaited(_submit());
               }
             },
-            style: ksaInputTextStyle,
-            decoration: ksaInputDecoration(),
+            style: authInputTextStyle,
+            decoration: authInputDecoration(),
           ),
           if (_error != null) ...<Widget>[
             const SizedBox(height: 12),
@@ -133,7 +133,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             ),
           ],
           const SizedBox(height: 24),
-          KsaSubmitButton(
+          AuthSubmitButton(
             label: l10n.sendCodeButton,
             busy: _busy,
             onPressed: _canSubmit ? () => unawaited(_submit()) : null,

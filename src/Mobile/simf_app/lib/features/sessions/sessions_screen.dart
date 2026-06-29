@@ -8,7 +8,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import 'data/session_models.dart';
@@ -84,11 +84,11 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return KsaPage(
+    return SimfPageShell(
       // Frame 883:2314 — the screen header is "برنامج الملتقى" (the bottom-nav
       // tab keeps its own "الأجندة" label).
       title: l10n.sessionsProgrammeTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       tab: SimfTab.sessions,
       showSweep: true,
       body: _buildBody(l10n),
@@ -102,14 +102,14 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
     if (_error) {
       // Pull-to-retry: host the centred error state in a scrollable so the
       // pull gesture fires even though the content is short.
-      return KsaRefresh(
+      return SimfPullToRefresh(
         onRefresh: _load,
         child: LayoutBuilder(
           builder: (context, constraints) => SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             child: ConstrainedBox(
               constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: KsaErrorState(
+              child: SimfErrorState(
                 message: l10n.sessionsError,
                 retryLabel: l10n.retryLabel,
                 onRetry: () => unawaited(_load()),
@@ -121,14 +121,14 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
     }
     if (_days.isEmpty) {
       // Pull-to-refresh also works on the empty state.
-      return KsaRefresh(
+      return SimfPullToRefresh(
         onRefresh: _load,
         child: LayoutBuilder(
           builder: (context, constraints) => SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             child: ConstrainedBox(
               constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: KsaEmptyState(
+              child: SimfEmptyState(
                 icon: Icons.event_busy_outlined,
                 message: l10n.sessionsEmpty,
               ),
@@ -167,7 +167,7 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
       return haystack.contains(needle);
     }).toList(growable: false);
 
-    return KsaRefresh(
+    return SimfPullToRefresh(
       onRefresh: _load,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -192,7 +192,7 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
           // تفاصيل اليوم (883:2327 area) — the selected day's OWN title + its logo
           // banner. The "تفاصيل اليوم" label carries the day title (owner: not a
           // static label — it is the day's title).
-          KsaSectionHeader(title: selected.localizedTitle(isArabic)),
+          SimfSectionHeader(title: selected.localizedTitle(isArabic)),
           const SizedBox(height: SimfTokens.space3),
           _DayBanner(imageUrl: dayImageUrl),
           const SizedBox(height: SimfTokens.space5),
@@ -203,7 +203,7 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
             onChanged: (type) => setState(() => _typeFilter = type),
           ),
           const SizedBox(height: SimfTokens.space5),
-          KsaSectionHeader(title: l10n.sessionsScheduleSection),
+          SimfSectionHeader(title: l10n.sessionsScheduleSection),
           const SizedBox(height: SimfTokens.space3),
           if (sessions.isEmpty)
             Padding(
@@ -337,7 +337,7 @@ class _TypeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return KsaCard(
+    return SimfCard(
       onTap: active ? null : onTap,
       color: active ? SimfTokens.accent : SimfTokens.navyDeep,
       borderColor: active ? SimfTokens.accent : SimfTokens.beigeBorder,
@@ -665,7 +665,7 @@ class _SessionRow extends StatelessWidget {
             ),
           );
 
-    return KsaCard(
+    return SimfCard(
       onTap: onTap,
       // Frame 1310:3213 — radius 8, navy fill, no visible border.
       radius: SimfTokens.radius,
