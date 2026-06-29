@@ -8,10 +8,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
-import '../../app/localization/locale_controller.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_logo.dart';
+import '../../app/widgets/simf_form_scaffold.dart';
 import '../../core/widgets/simf_field_label.dart';
 import '../../core/widgets/simf_field_style.dart';
 import '../../core/widgets/simf_radio_pill.dart';
@@ -619,16 +618,6 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         : AppL10n.of(context).plateNumberInvalid;
   }
 
-  /// The globe button toggles AR ↔ EN and persists the choice (D-363 pattern).
-  void _toggleLanguage() {
-    final isArabic = ref.read(localeControllerProvider).languageCode == 'ar';
-    unawaited(
-      ref
-          .read(localeControllerProvider.notifier)
-          .setLanguage(isArabic ? 'en' : 'ar'),
-    );
-  }
-
   void _back() {
     if (context.canPop()) {
       context.pop();
@@ -642,96 +631,27 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return Scaffold(
-      backgroundColor: SimfTokens.navySurface,
-      body: Stack(
-        children: <Widget>[
-          // Decorative diagonal sweep behind the header (Figma 168:3180).
-          Positioned(
-            top: -180,
-            right: -40,
-            child: Transform.rotate(
-              angle: 0.4936, // 28.28°
-              child: Container(
-                width: 313,
-                height: 323,
-                decoration: BoxDecoration(
-                  color: _sweepTint,
-                  borderRadius: BorderRadius.circular(40),
-                ),
-              ),
+    return SimfFormScaffold(
+      pinnedHeader: true,
+      onBack: _back,
+      // The profile screen's decorative sweep sits differently from the
+      // auth default, so it is passed in explicitly.
+      sweep: Positioned(
+        top: -180,
+        right: -40,
+        child: Transform.rotate(
+          angle: 0.4936, // 28.28°
+          child: Container(
+            width: 313,
+            height: 323,
+            decoration: BoxDecoration(
+              color: _sweepTint,
+              borderRadius: BorderRadius.circular(40),
             ),
           ),
-          SafeArea(
-            child: Column(
-              children: <Widget>[
-                // Top controls (Figma 627:2398): chevron left, language toggle
-                // right — forced LTR so the sides match the frame under RTL.
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  child: Row(
-                    textDirection: TextDirection.ltr,
-                    children: <Widget>[
-                      IconButton(
-                        onPressed: _back,
-                        icon: const Icon(
-                          Icons.arrow_back_ios_new,
-                          color: Colors.white,
-                          size: 20,
-                          textDirection: TextDirection.ltr,
-                        ),
-                      ),
-                      const Spacer(),
-                      SizedBox(
-                        width: 40,
-                        height: 40,
-                        child: IconButton(
-                          tooltip: l10n.languageToggleLabel,
-                          onPressed: _toggleLanguage,
-                          style: IconButton.styleFrom(
-                            backgroundColor: SimfTokens.navyDeep,
-                            shape: const RoundedRectangleBorder(
-                              borderRadius: SimfTokens.borderRadiusSmall,
-                            ),
-                          ),
-                          icon: const Icon(
-                            Icons.language,
-                            color: SimfTokens.accent,
-                            size: 24,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Forum header (Figma 168:2974) — logo at the inline start.
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    const SimfLogo(size: 44),
-                    const SizedBox(width: 16),
-                    Flexible(
-                      child: Text(
-                        l10n.signInForumTitle,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Expanded(child: _buildBody(l10n)),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
+      child: _buildBody(l10n),
     );
   }
 
