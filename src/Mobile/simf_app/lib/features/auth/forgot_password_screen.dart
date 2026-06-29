@@ -8,6 +8,7 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/simf_form_scaffold.dart';
 import '../../core/widgets/simf_field_label.dart';
 import '../../core/widgets/simf_field_style.dart';
 import 'widgets/auth_chrome.dart';
@@ -84,7 +85,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return AuthPageShell(
+    return SimfFormScaffold(
       busy: _busy,
       onBack: _back,
       child: Column(

@@ -9,6 +9,7 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/simf_form_scaffold.dart';
 import '../../core/widgets/simf_field_label.dart';
 import '../../core/widgets/simf_field_style.dart';
 import 'widgets/auth_chrome.dart';
@@ -167,7 +168,7 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
     // The email step shows only when the account has no email AND we haven't
     // sent a code yet; otherwise we're on the code + password step.
     final emailStep = widget.needsEmail && !_codeSent;
-    return AuthPageShell(
+    return SimfFormScaffold(
       busy: _busy,
       onBack: _back,
       child: Column(
