@@ -122,11 +122,8 @@ class _FaqTileState extends State<_FaqTile> {
                   child: Text(
                     question,
                     textAlign: TextAlign.start,
-                    style: const TextStyle(
-                      color: SimfTokens.beigeBorder, // Figma 1388:7582 — beige
-                      fontSize: SimfTokens.textMd, // 14
-                      fontWeight: FontWeight.w500, // Medium
-                    ),
+                    // beige Medium 14 — Figma 1388:7582
+                    style: SimfTokens.labelBeigeMedium,
                   ),
                 ),
                 const SizedBox(width: SimfTokens.space2),
@@ -150,11 +147,7 @@ class _FaqTileState extends State<_FaqTile> {
               Text(
                 answer,
                 textAlign: TextAlign.start,
-                style: const TextStyle(
-                  color: SimfTokens.beigeBorder,
-                  fontSize: SimfTokens.textMd, // 14
-                  height: 1.5,
-                ),
+                style: SimfTokens.bodyBeige, // beige 14, line-height 1.5
               ),
             ],
           ],

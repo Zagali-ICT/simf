@@ -130,4 +130,19 @@ class SimfTokens {
   static const double textXl = 20;
   static const double textXxl = 22; // exhibitor/sponsor name (Figma 1439:11894)
   static const double textHero = 28;
+
+  // Named text styles — built incrementally per screen (§5.1). The font family
+  // comes from the theme; these bundle only colour/size/weight/line-height so a
+  // widget never constructs a raw TextStyle. First two land with the faq pilot
+  // (the on-navy beige "Paragraph Color" body, Figma 1388:7582).
+  static const TextStyle bodyBeige = TextStyle(
+    color: beigeBorder,
+    fontSize: textMd,
+    height: 1.5,
+  );
+  static const TextStyle labelBeigeMedium = TextStyle(
+    color: beigeBorder,
+    fontSize: textMd,
+    fontWeight: FontWeight.w500,
+  );
 }
