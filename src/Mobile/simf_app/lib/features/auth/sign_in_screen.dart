@@ -14,6 +14,7 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_logo.dart';
 import '../../app/widgets/simf_svg_icon.dart';
+import '../../core/widgets/simf_field_label.dart';
 import 'biometric_auth.dart';
 import 'post_auth_route.dart';
 
@@ -389,7 +390,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          _FieldLabel(text: l10n.emailLabel),
+          SimfFieldLabel(l10n.emailLabel, color: SimfTokens.navy),
           const SizedBox(height: 8),
           TextField(
             controller: _email,
@@ -403,7 +404,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             decoration: _inputDecoration(),
           ),
           const SizedBox(height: 16),
-          _FieldLabel(text: l10n.passwordLabel),
+          SimfFieldLabel(l10n.passwordLabel, color: SimfTokens.navy),
           const SizedBox(height: 8),
           TextField(
             controller: _password,
@@ -706,25 +707,3 @@ class _Header extends StatelessWidget {
   }
 }
 
-/// A small field label aligned to the inline start (right under RTL).
-class _FieldLabel extends StatelessWidget {
-  const _FieldLabel({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: AlignmentDirectional.centerStart,
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          // Figma 758:2566 / 758:2575 — field labels are navy #01132D, not grey.
-          color: SimfTokens.navy,
-        ),
-      ),
-    );
-  }
-}

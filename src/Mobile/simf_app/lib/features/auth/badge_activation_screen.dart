@@ -9,6 +9,7 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../core/widgets/simf_field_label.dart';
 import 'widgets/auth_chrome.dart';
 
 /// Part B (D-430) — activate a passwordless badge account: verify an emailed
@@ -203,7 +204,7 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
   }
 
   List<Widget> _emailStep(AppL10n l10n) => <Widget>[
-        FormFieldLabel(text: l10n.emailLabelGeneric),
+        SimfFieldLabel(l10n.emailLabelGeneric),
         const SizedBox(height: 8),
         TextField(
           controller: _email,
@@ -226,7 +227,7 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
       ];
 
   List<Widget> _codeStep(AppL10n l10n) => <Widget>[
-        FormFieldLabel(text: l10n.otpLabel),
+        SimfFieldLabel(l10n.otpLabel),
         const SizedBox(height: 8),
         TextField(
           controller: _code,
@@ -243,7 +244,7 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
           decoration: authInputDecoration(),
         ),
         const SizedBox(height: 16),
-        FormFieldLabel(text: l10n.newPasswordLabel),
+        SimfFieldLabel(l10n.newPasswordLabel),
         const SizedBox(height: 8),
         TextField(
           controller: _password,
@@ -255,7 +256,7 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
           decoration: authInputDecoration(suffixIcon: _passwordToggle(l10n)),
         ),
         const SizedBox(height: 16),
-        FormFieldLabel(text: l10n.confirmPasswordLabel),
+        SimfFieldLabel(l10n.confirmPasswordLabel),
         const SizedBox(height: 8),
         TextField(
           controller: _confirm,

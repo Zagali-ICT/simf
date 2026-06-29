@@ -90,28 +90,6 @@ class AuthSubmitButton extends StatelessWidget {
   }
 }
 
-/// A small field label aligned to the inline start (right under RTL).
-class FormFieldLabel extends StatelessWidget {
-  const FormFieldLabel({required this.text, super.key});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: AlignmentDirectional.centerStart,
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          color: SimfTokens.greyText,
-        ),
-      ),
-    );
-  }
-}
-
 /// D-374 — the KSA entry chrome as a shared scaffold: the navy surface with
 /// the rotated sweep, the forced-LTR back-chevron + globe language-toggle
 /// row (the D-363 pattern), the logo + forum-name header, and the beige

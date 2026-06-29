@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
-import 'field_label.dart';
+import '../../../core/widgets/simf_field_label.dart';
 import 'profile_field_style.dart';
 
 /// The read-only date-of-birth field: tapping it runs [onTap] (the screen's
@@ -26,7 +26,7 @@ class DateOfBirthField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        FieldLabel(l10n.dateOfBirthLabel),
+        SimfFieldLabel(l10n.dateOfBirthLabel),
         const SizedBox(height: 8),
         InkWell(
           onTap: onTap,

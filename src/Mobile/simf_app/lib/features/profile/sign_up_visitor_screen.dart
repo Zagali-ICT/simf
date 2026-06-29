@@ -12,6 +12,8 @@ import '../../app/localization/locale_controller.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_logo.dart';
+import '../../core/widgets/simf_field_label.dart';
+import '../../core/widgets/simf_radio_pill.dart';
 import '../myarea/identity_verification_screen.dart' show CapturedSelfie;
 import 'data/profile_models.dart';
 import 'data/profile_repository.dart';
@@ -21,11 +23,9 @@ import 'saudi_regions.dart';
 import 'widgets/beige_tabs.dart';
 import 'widgets/complete_profile_notice.dart';
 import 'widgets/date_of_birth_field.dart';
-import 'widgets/field_label.dart';
 import 'widgets/lookup_search_sheet.dart';
 import 'widgets/mobile_field.dart';
 import 'widgets/profile_field_style.dart';
-import 'widgets/radio_pill.dart';
 import 'widgets/sign_up_visitor_header_avatar.dart';
 import 'widgets/terms_and_next_buttons.dart';
 
@@ -796,7 +796,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     const SizedBox(height: 24),
                     _buildProfileTypeField(l10n),
                     const SizedBox(height: 16),
-                    FieldLabel(l10n.arabicNameLabel),
+                    SimfFieldLabel(l10n.arabicNameLabel),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _arabicName,
@@ -812,7 +812,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                       decoration: profileFieldDecoration(counterText: ''),
                     ),
                     const SizedBox(height: 16),
-                    FieldLabel(l10n.englishNameLabel),
+                    SimfFieldLabel(l10n.englishNameLabel),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _englishName,
@@ -828,13 +828,13 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                       decoration: profileFieldDecoration(counterText: ''),
                     ),
                     const SizedBox(height: 16),
-                    FieldLabel(l10n.genderLabel),
+                    SimfFieldLabel(l10n.genderLabel),
                     const SizedBox(height: 8),
                     _buildGenderPills(l10n),
                     const SizedBox(height: 16),
                     _buildOrganisationField(l10n),
                     const SizedBox(height: 16),
-                    FieldLabel(l10n.jobTitleLabel),
+                    SimfFieldLabel(l10n.jobTitleLabel),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _jobTitle,
@@ -921,7 +921,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          FieldLabel(l10n.profileTypeLabel),
+          SimfFieldLabel(l10n.profileTypeLabel),
           const SizedBox(height: 8),
           InputDecorator(
             decoration: profileFieldDecoration(),
@@ -953,7 +953,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          FieldLabel(l10n.profileTypeLabel),
+          SimfFieldLabel(l10n.profileTypeLabel),
           const SizedBox(height: 8),
           InputDecorator(
             decoration: profileFieldDecoration(),
@@ -995,7 +995,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        FieldLabel(l10n.profileTypeLabel),
+        SimfFieldLabel(l10n.profileTypeLabel),
         const SizedBox(height: 8),
         _searchPickerField(
           fieldKey: 'profileTypePicker',
@@ -1014,7 +1014,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     return Row(
       children: <Widget>[
         Expanded(
-          child: RadioPill(
+          child: SimfRadioPill(
             label: l10n.genderMale,
             selected: _gender == AppGender.male,
             onTap: () => setState(() => _gender = AppGender.male),
@@ -1022,7 +1022,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: RadioPill(
+          child: SimfRadioPill(
             label: l10n.genderFemale,
             selected: _gender == AppGender.female,
             onTap: () => setState(() => _gender = AppGender.female),
@@ -1107,7 +1107,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        FieldLabel(l10n.nationalityLabel),
+        SimfFieldLabel(l10n.nationalityLabel),
         const SizedBox(height: 8),
         _searchPickerField(
           fieldKey: 'nationalityPicker',
@@ -1207,7 +1207,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   List<Widget> _buildDocumentFields(AppL10n l10n) {
     if (_isSaudi) {
       return <Widget>[
-        FieldLabel(l10n.nationalIdLabel),
+        SimfFieldLabel(l10n.nationalIdLabel),
         const SizedBox(height: 8),
         TextFormField(
           controller: _nationalId,
@@ -1221,7 +1221,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       ];
     }
     return <Widget>[
-      FieldLabel(l10n.documentTypeLabel),
+      SimfFieldLabel(l10n.documentTypeLabel),
       const SizedBox(height: 8),
       BeigeTabs(
         options: <String>[l10n.iqamaSegment, l10n.passportSegment],
@@ -1232,7 +1232,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         }),
       ),
       const SizedBox(height: 16),
-      FieldLabel(l10n.documentNumberLabel),
+      SimfFieldLabel(l10n.documentNumberLabel),
       const SizedBox(height: 8),
       TextFormField(
         controller: _documentNumber,
@@ -1263,7 +1263,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        FieldLabel(l10n.placeOfBirthLabel),
+        SimfFieldLabel(l10n.placeOfBirthLabel),
         const SizedBox(height: 8),
         if (_isSaudi)
           _searchPickerField(
@@ -1297,7 +1297,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        FieldLabel(l10n.plateNumberLabel),
+        SimfFieldLabel(l10n.plateNumberLabel),
         const SizedBox(height: 8),
         Row(
           textDirection: TextDirection.ltr,
@@ -1533,7 +1533,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        FieldLabel(l10n.attachmentsLabel),
+        SimfFieldLabel(l10n.attachmentsLabel),
         const SizedBox(height: 8),
         if (needsImage) ...<Widget>[
           Text(
@@ -1608,7 +1608,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        FieldLabel(l10n.facePhotoLabel),
+        SimfFieldLabel(l10n.facePhotoLabel),
         const SizedBox(height: 8),
         if (maleNeedsFace) ...<Widget>[
           Text(
@@ -1679,7 +1679,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          FieldLabel(l10n.organisationLabel),
+          SimfFieldLabel(l10n.organisationLabel),
           const SizedBox(height: 8),
           InputDecorator(
             decoration: profileFieldDecoration(),
@@ -1706,7 +1706,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        FieldLabel(l10n.organisationLabel),
+        SimfFieldLabel(l10n.organisationLabel),
         const SizedBox(height: 8),
         TextField(
           controller: _organisationSearch,

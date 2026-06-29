@@ -8,6 +8,7 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../core/widgets/simf_field_label.dart';
 import 'widgets/auth_chrome.dart';
 
 /// Page 003 — Forgot password (Logic L-6), rebuilt on the KSA entry chrome
@@ -107,7 +108,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          FormFieldLabel(text: l10n.emailLabel),
+          SimfFieldLabel(l10n.emailLabel),
           const SizedBox(height: 8),
           TextField(
             controller: _email,

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
+import '../../app/theme/tokens.dart';
 
-/// One of the design's gender radio pills (Figma 522:2151): a white pill with
-/// the label and an 18 px gold-ringed radio that fills when selected.
-class RadioPill extends StatelessWidget {
-  const RadioPill({
+/// A selectable radio pill (Figma 522:2151): a white pill with the [label] and
+/// an 18px gold-ringed radio that fills when [selected]. Shared form primitive.
+class SimfRadioPill extends StatelessWidget {
+  const SimfRadioPill({
     required this.label,
     required this.selected,
     required this.onTap,

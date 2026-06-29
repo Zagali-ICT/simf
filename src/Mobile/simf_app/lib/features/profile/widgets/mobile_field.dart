@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/localization/app_l10n.dart';
-import 'field_label.dart';
+import '../../../core/widgets/simf_field_label.dart';
 import 'profile_field_style.dart';
 
 /// The mobile-number field. The label, keyboard and [validator] switch on
@@ -25,7 +25,7 @@ class MobileField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        FieldLabel(
+        SimfFieldLabel(
           saudi ? l10n.saudiMobileLabel : l10n.internationalMobileLabel,
         ),
         const SizedBox(height: 8),

@@ -10,6 +10,7 @@ import '../../app/localization/locale_controller.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_logo.dart';
+import '../../core/widgets/simf_field_label.dart';
 
 // Screen-local shorthands for the KSA-Project design tokens (Phase 0, D-359).
 const Color _bgNavy = SimfTokens.navySurface;
@@ -278,7 +279,7 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            _FieldLabel(text: l10n.emailLabel),
+            SimfFieldLabel(l10n.emailLabel),
             const SizedBox(height: 8),
             TextFormField(
               controller: _email,
@@ -293,7 +294,7 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
               decoration: _inputDecoration(),
             ),
             const SizedBox(height: 16),
-            _FieldLabel(text: l10n.passwordLabel),
+            SimfFieldLabel(l10n.passwordLabel),
             const SizedBox(height: 8),
             TextFormField(
               controller: _password,
@@ -312,7 +313,7 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            _FieldLabel(text: l10n.confirmPasswordLabel),
+            SimfFieldLabel(l10n.confirmPasswordLabel),
             const SizedBox(height: 8),
             TextFormField(
               controller: _confirm,
@@ -480,24 +481,3 @@ class _Header extends StatelessWidget {
   }
 }
 
-/// A small field label aligned to the inline start (right under RTL).
-class _FieldLabel extends StatelessWidget {
-  const _FieldLabel({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: AlignmentDirectional.centerStart,
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          color: _grey,
-        ),
-      ),
-    );
-  }
-}
