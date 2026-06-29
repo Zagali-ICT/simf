@@ -20,7 +20,8 @@ speaker list and are referenced by sessions. Each speaker carries a **Code**
 (the programme team's stable identifier, e.g. "SPK-001"), a bilingual name,
 an optional rank / title, an optional country, bilingual rich-text (bio,
 qualifications, training & experience, awards), consent flags (allows meeting
-requests / allows data sharing), social URLs (Facebook / LinkedIn / X), a
+requests / allows data sharing), social + website URLs (Facebook / LinkedIn / X
+/ Website — D-544), a
 display-order key, and an active flag. An optional link to the shared Contact
 directory (SIMF-FDS-014 / D-281..D-283) and an optional `UserProfileId` are
 also persisted.
@@ -83,7 +84,7 @@ and the create/update path.
 | Awards (English / Arabic) | no | 1024 | optional |
 | Allows meeting requests | no | bool | checkbox |
 | Allows data sharing | no | bool | checkbox |
-| Facebook / LinkedIn / X URL | no | 256 each | each ≤ 256 chars server-side |
+| Facebook / LinkedIn / X / Website URL | no | 256 each | each ≤ 256 chars server-side (`ValidateSocialUrls`); Website added D-544; all four are surfaced on the public profile only when **Allows data sharing** is ticked |
 | Contact | no | n/a | optional `ContactPicker` link to the shared Contact directory; must reference an existing **active** Contact |
 | Display order | yes | n/a | integer ≥ 0 |
 | Active | (Edit only) | bool | shown only in Edit mode |

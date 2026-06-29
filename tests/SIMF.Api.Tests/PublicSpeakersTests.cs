@@ -165,6 +165,7 @@ public sealed class PublicSpeakersTests : IClassFixture<SimfApiFactory>
                 FacebookUrl = "https://facebook.com/private",
                 LinkedInUrl = "https://linkedin.com/in/private",
                 XUrl = "https://x.com/private",
+                WebsiteUrl = "https://example.com/private",
                 DisplayOrder = 50,
             },
             token);
@@ -177,6 +178,7 @@ public sealed class PublicSpeakersTests : IClassFixture<SimfApiFactory>
         Assert.Null(hidden.FacebookUrl);
         Assert.Null(hidden.LinkedInUrl);
         Assert.Null(hidden.XUrl);
+        Assert.Null(hidden.WebsiteUrl);
 
         // Speaker B — has consented: the URLs are published.
         var sharing = await PostAuthAsync(
@@ -189,6 +191,7 @@ public sealed class PublicSpeakersTests : IClassFixture<SimfApiFactory>
                 AllowsDataSharing = true,
                 FacebookUrl = "https://facebook.com/sharing",
                 XUrl = "https://x.com/sharing",
+                WebsiteUrl = "https://example.com/sharing",
                 DisplayOrder = 51,
             },
             token);
@@ -200,6 +203,7 @@ public sealed class PublicSpeakersTests : IClassFixture<SimfApiFactory>
             .ReadFromJsonAsync<ApiResult<PublicSpeakerDetail>>())!.Data!;
         Assert.Equal("https://facebook.com/sharing", shown.FacebookUrl);
         Assert.Equal("https://x.com/sharing", shown.XUrl);
+        Assert.Equal("https://example.com/sharing", shown.WebsiteUrl);
     }
 
     // -- Helpers --------------------------------------------------------------

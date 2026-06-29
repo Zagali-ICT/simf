@@ -66,6 +66,11 @@ public class Speaker : BaseAuditEntity
     /// <summary>D-153 — optional X (formerly Twitter) profile URL.</summary>
     public string? XUrl { get; set; }
 
+    /// <summary>D-544 — optional personal / organisation website URL the
+    /// speaker has chosen to publish. Surfaced on the public profile under
+    /// the same data-sharing consent gate as the social URLs.</summary>
+    public string? WebsiteUrl { get; set; }
+
     public string? PhotoRelativePath { get; set; }
 
     /// <summary>SIMF-FDS-014 (D-260) — optional link to the shared <c>Contact</c>

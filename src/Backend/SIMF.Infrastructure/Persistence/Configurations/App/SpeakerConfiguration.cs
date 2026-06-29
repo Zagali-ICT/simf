@@ -36,6 +36,7 @@ internal sealed class SpeakerConfiguration : IEntityTypeConfiguration<Speaker>
         builder.Property(speaker => speaker.FacebookUrl).HasMaxLength(256);
         builder.Property(speaker => speaker.LinkedInUrl).HasMaxLength(256);
         builder.Property(speaker => speaker.XUrl).HasMaxLength(256);
+        builder.Property(speaker => speaker.WebsiteUrl).HasMaxLength(256);
 
         builder.Property(speaker => speaker.PhotoRelativePath).HasMaxLength(256);
 

@@ -44,6 +44,7 @@ public sealed record AdminSpeakerDetail(
     string? FacebookUrl,
     string? LinkedInUrl,
     string? XUrl,
+    string? WebsiteUrl,
     string? PhotoRelativePath,
     int DisplayOrder,
     bool IsActive,
@@ -77,6 +78,7 @@ public sealed class AdminCreateSpeakerRequest
     public string? FacebookUrl { get; set; }
     public string? LinkedInUrl { get; set; }
     public string? XUrl { get; set; }
+    public string? WebsiteUrl { get; set; }
     public int DisplayOrder { get; set; }
 
     /// <summary>SIMF-FDS-014 (D-281) — optional link to a shared <c>Contact</c>
@@ -105,6 +107,7 @@ public sealed class AdminUpdateSpeakerRequest
     public string? FacebookUrl { get; set; }
     public string? LinkedInUrl { get; set; }
     public string? XUrl { get; set; }
+    public string? WebsiteUrl { get; set; }
     public int DisplayOrder { get; set; }
 
     /// <summary>SIMF-FDS-014 (D-281) — optional link to a shared <c>Contact</c>

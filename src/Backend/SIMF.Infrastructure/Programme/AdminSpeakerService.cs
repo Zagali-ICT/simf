@@ -135,7 +135,8 @@ internal sealed class AdminSpeakerService(
                 "Display order must be zero or a positive integer.",
                 "يجب أن يكون ترتيب العرض صفراً أو عدداً صحيحاً موجباً.");
         }
-        ValidateSocialUrls(request.FacebookUrl, request.LinkedInUrl, request.XUrl);
+        ValidateSocialUrls(
+            request.FacebookUrl, request.LinkedInUrl, request.XUrl, request.WebsiteUrl);
         await EnsureCountryIsValidAsync(request.CountryId, cancellationToken);
         await EnsureContactIsValidAsync(request.ContactId, cancellationToken);
 
@@ -173,6 +174,7 @@ internal sealed class AdminSpeakerService(
             FacebookUrl = NullIfBlank(request.FacebookUrl),
             LinkedInUrl = NullIfBlank(request.LinkedInUrl),
             XUrl = NullIfBlank(request.XUrl),
+            WebsiteUrl = NullIfBlank(request.WebsiteUrl),
             ContactId = request.ContactId,
             DisplayOrder = request.DisplayOrder,
             IsActive = true,
@@ -219,7 +221,8 @@ internal sealed class AdminSpeakerService(
                 "Display order must be zero or a positive integer.",
                 "يجب أن يكون ترتيب العرض صفراً أو عدداً صحيحاً موجباً.");
         }
-        ValidateSocialUrls(request.FacebookUrl, request.LinkedInUrl, request.XUrl);
+        ValidateSocialUrls(
+            request.FacebookUrl, request.LinkedInUrl, request.XUrl, request.WebsiteUrl);
         await EnsureCountryIsValidAsync(request.CountryId, cancellationToken);
         await EnsureContactIsValidAsync(request.ContactId, cancellationToken);
 
@@ -256,6 +259,7 @@ internal sealed class AdminSpeakerService(
         speaker.FacebookUrl = NullIfBlank(request.FacebookUrl);
         speaker.LinkedInUrl = NullIfBlank(request.LinkedInUrl);
         speaker.XUrl = NullIfBlank(request.XUrl);
+        speaker.WebsiteUrl = NullIfBlank(request.WebsiteUrl);
         speaker.ContactId = request.ContactId;
         speaker.DisplayOrder = request.DisplayOrder;
         speaker.IsActive = request.IsActive;
@@ -334,9 +338,10 @@ internal sealed class AdminSpeakerService(
         return (code, name, nameArabic);
     }
 
-    private static void ValidateSocialUrls(string? facebook, string? linkedIn, string? x)
+    private static void ValidateSocialUrls(
+        string? facebook, string? linkedIn, string? x, string? website)
     {
-        foreach (var url in new[] { facebook, linkedIn, x })
+        foreach (var url in new[] { facebook, linkedIn, x, website })
         {
             if (!string.IsNullOrWhiteSpace(url) && url.Length > 256)
             {
@@ -410,6 +415,7 @@ internal sealed class AdminSpeakerService(
             speaker.Awards, speaker.AwardsArabic,
             speaker.AllowsMeetingRequests, speaker.AllowsDataSharing,
             speaker.FacebookUrl, speaker.LinkedInUrl, speaker.XUrl,
+            speaker.WebsiteUrl,
             speaker.PhotoRelativePath,
             speaker.DisplayOrder, speaker.IsActive,
             speaker.CreatedAt, speaker.UpdatedAt,

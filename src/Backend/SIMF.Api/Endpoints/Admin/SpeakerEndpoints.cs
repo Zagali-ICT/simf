@@ -95,6 +95,7 @@ public sealed class UpdateSpeakerRequest
     public string? FacebookUrl { get; set; }
     public string? LinkedInUrl { get; set; }
     public string? XUrl { get; set; }
+    public string? WebsiteUrl { get; set; }
     public int DisplayOrder { get; set; }
     public Guid? ContactId { get; set; }
     public bool IsActive { get; set; } = true;
@@ -142,6 +143,7 @@ public sealed class UpdateSpeakerEndpoint(IAdminSpeakerService service)
                     FacebookUrl = req.FacebookUrl,
                     LinkedInUrl = req.LinkedInUrl,
                     XUrl = req.XUrl,
+                    WebsiteUrl = req.WebsiteUrl,
                     DisplayOrder = req.DisplayOrder,
                     ContactId = req.ContactId,
                     IsActive = req.IsActive,

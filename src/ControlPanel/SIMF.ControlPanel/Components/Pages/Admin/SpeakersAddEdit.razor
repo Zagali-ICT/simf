@@ -92,6 +92,9 @@
         <SimfTextField Label="@L["Admin.Speakers.Field.XUrl"]"
                        MaxLength="256"
                        @bind-Value="_model.XUrl" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Speakers.Field.WebsiteUrl"]"
+                       MaxLength="256"
+                       @bind-Value="_model.WebsiteUrl" Disabled="_busy" />
 
         @* SIMF-FDS-014 (D-283) — optional link to a shared Contact directory record. *@
         <ContactPicker Value="_contactId" ValueChanged="@(v => _contactId = v)" Disabled="_busy" />
@@ -170,6 +173,7 @@
             _model.FacebookUrl = Initial.FacebookUrl ?? string.Empty;
             _model.LinkedInUrl = Initial.LinkedInUrl ?? string.Empty;
             _model.XUrl = Initial.XUrl ?? string.Empty;
+            _model.WebsiteUrl = Initial.WebsiteUrl ?? string.Empty;
             _contactId = Initial.ContactId;
             _model.IsActive = Initial.IsActive;
             _displayOrderInput = Initial.DisplayOrder.ToString();
@@ -271,6 +275,7 @@
                         FacebookUrl = NullIfBlank(_model.FacebookUrl),
                         LinkedInUrl = NullIfBlank(_model.LinkedInUrl),
                         XUrl = NullIfBlank(_model.XUrl),
+                        WebsiteUrl = NullIfBlank(_model.WebsiteUrl),
                         ContactId = _contactId,
                         DisplayOrder = order,
                     });
@@ -300,6 +305,7 @@
                         FacebookUrl = NullIfBlank(_model.FacebookUrl),
                         LinkedInUrl = NullIfBlank(_model.LinkedInUrl),
                         XUrl = NullIfBlank(_model.XUrl),
+                        WebsiteUrl = NullIfBlank(_model.WebsiteUrl),
                         ContactId = _contactId,
                         DisplayOrder = order,
                         IsActive = _model.IsActive,
@@ -345,6 +351,7 @@
         public string FacebookUrl { get; set; } = string.Empty;
         public string LinkedInUrl { get; set; } = string.Empty;
         public string XUrl { get; set; } = string.Empty;
+        public string WebsiteUrl { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
     }
 }

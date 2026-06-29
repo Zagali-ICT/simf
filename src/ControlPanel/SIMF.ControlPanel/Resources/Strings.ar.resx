@@ -570,6 +570,7 @@
   <data name="Admin.Speakers.Field.FacebookUrl" xml:space="preserve"><value>رابط فيسبوك</value></data>
   <data name="Admin.Speakers.Field.LinkedInUrl" xml:space="preserve"><value>رابط لينكدإن</value></data>
   <data name="Admin.Speakers.Field.XUrl" xml:space="preserve"><value>رابط X</value></data>
+  <data name="Admin.Speakers.Field.WebsiteUrl" xml:space="preserve"><value>رابط الموقع الإلكتروني</value></data>
   <data name="Admin.Speakers.Field.DisplayOrder" xml:space="preserve"><value>ترتيب العرض</value></data>
   <data name="Admin.Speakers.Field.DisplayOrderInvalid" xml:space="preserve"><value>يجب أن يكون ترتيب العرض صفراً أو عدداً صحيحاً موجباً.</value></data>
   <data name="Admin.Speakers.Field.IsActive" xml:space="preserve"><value>مفعّل — عرضه في القائمة العامة للمتحدّثين</value></data>
