@@ -28,3 +28,8 @@ pubspec.lock
 # OS
 .DS_Store
 Thumbs.db
+
+# Clean-code refactor scratch — regenerable analyze/test dumps + helper script.
+# The HANDOFF.md + census.md ledger stay tracked; the raw stdout captures don't.
+.refactor/*.txt
+.refactor/*.sed
