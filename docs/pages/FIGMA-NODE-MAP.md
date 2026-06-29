@@ -4,24 +4,49 @@ Figma file: `PSXHhY0UVTAPSaIOf9uNKd` (KSA-Project).
 Every app screen below is bound to its authoritative Figma node. Open a node with
 `https://www.figma.com/design/PSXHhY0UVTAPSaIOf9uNKd/KSA-Project?node-id=<NODE>`.
 
-This map is the source of truth for the 2026-06-28 pixel-parity + responsive batch.
+This map is the source of truth for the 2026-06-29 pixel-parity + responsive batch.
 Pixel-parity is proven per screen with a golden render at the Figma frame size
 (see the golden recipe in the team memory) plus an on-device render.
 
 | App screen | File | Figma node | Notes |
 |---|---|---|---|
-| Standard top-nav (spec source) | `lib/app/widgets/ksa_shell.dart` (`KsaPage._defaultHeader`) | `758-1469` (badge), `922-2824` (sponsors) | Back btn (42×42 navy `#192b41` rounded) + centred 18px SemiBold title + bottom hairline; fixed height; reusable across all non-home pages |
-| Home (responsive) | `lib/features/home/home_screen.dart` | `758-1134` | Greeting header + action cluster + highlights carousel |
+| Standard top-nav (spec source) | `lib/app/widgets/ksa_shell.dart` (`KsaPage._defaultHeader`) | `758-1469` (badge screen — see Badge QR row below), `922-2824` (sponsors) | Back btn (42×42 navy `#192b41` rounded) + centred 18px SemiBold title + bottom hairline; fixed height; reusable across all non-home pages |
+| Bottom nav component | `lib/app/widgets/ksa_shell.dart` | `206-1732` | Tab bar shell component |
+| Home — signed-in (responsive) | `lib/features/home/home_screen.dart` | `758-1134` | Greeting header + action cluster + highlights carousel |
+| Home — guest | `lib/features/home/home_screen.dart` | `758-2910` | Guest variant of Home; same screen, signed-in content hidden |
 | Home — highlights (ابرز الاحداث) | `lib/features/home/home_screen.dart` (`_HighlightsCarousel`) | `758-1239` (title) / `758-1238` (container) | **Deliberate deviation** — see the note below: multi-slide image+text carousel, animated, CP-managed (supersedes the static single-card Figma frame) |
+| My Area (منطقتي) | — | `758-1283` | Profile / attendee dashboard |
+| Venue Map (الخريطة) | — | `758-1358` | Google Map demo (Phase 1) |
+| Badge QR (بطاقة الدخول) | — | `758-1469` | Entry badge + QR code. Same node as top-nav spec source — the top-nav spec was derived by inspecting this frame |
 | Sponsors (الرعاة) | `lib/features/sponsors/sponsors_screen.dart` | `922-2824` | Strategic/Premium/Gold tiers; responsive grid; standard top-nav |
 | Exhibition / Booths (المعرض) | `lib/features/booths/booths_screen.dart` | `922-2458` | Booth cards: flag + company + code (A-12) + HALL badge + "أرشدني إلى الجناح" CTA |
 | Speakers (المتحدثون) | `lib/features/speakers/speakers_screen.dart` | `908-1744` | Sort + search row; speaker cards (photo, name, title, gold chevron, verified badge) |
 | Speaker profile | `lib/features/speakers/speaker_profile_screen.dart` | `908-2110` | "About Speaker": two-line header (white name over beige rank) + circled back, 125px white avatar ringed gold (anchor placeholder), 4 CV pills (active نبذة عنه gold on the right, the rest border-only/no-fill), navy `#192B41` CV card with right-aligned white body, **text-only** gold طلب مقابلة CTA. Header shows the nationality flag (🇸🇦) leading the name (D-542 — from the existing `countryId`→flag helper `lib/core/country_flag.dart`, the same one the speaker list uses; no backend change) |
 | Programme schedule (برنامج الملتقى) | `lib/features/sessions/sessions_screen.dart` | `883-2308` | Search + day strip + "تفاصيل اليوم" banner + filter chips + المواعيد timeline; tap a session → `889-2450` |
 | Session detail (تفاصيل الجلسة) | `lib/features/sessions/session_detail_screen.dart` | `889-2450` | Index badge + date/time + summary/link btns + description + speakers + ask-host + my-seat + reminder/add-to-calendar |
+| Archive + Archive detail (الأرشيف) | — | `925-3079` | Single combined frame covering archive list (#24) and edition detail (#24-01) |
+| Live broadcast (البث المباشر) | — | `934-3450` | Session live feed screen |
+| Send question (إرسال سؤال) | — | `934-3636` | Q&A send-question sheet (during live session) |
 | My sessions / session presentations (عروض الجلسات) | `lib/features/myarea/my_sessions_screen.dart` | `1388-7621` | Day filter chips + cards with تحميل / قريبا; reached from My-Area dashboard session count |
 | Notifications (الاشعارات) | `lib/features/notifications/notifications_screen.dart` | `758-2491` | Search + chips (الكل/جلسات/VIP) + day groups (اليوم/أمس) + **per-kind** circular category icons (colour+glyph) + unread dot. Palette: green `#13C296`, coral `#FF6347`, gold `#C9A84C`. One deviation: the VIP card uses a **star** (mockup shows a ✕ close-circle on a positive VIP invite — reads as an error); unknown/future kinds fall back to the severity colour |
 | Delegations (الوفود) | `lib/features/delegations/delegations_screen.dart` | `1426-10771` | Country-level aggregate; data added via CP (mark Country invited + register delegates) |
+| Scan contact (مسح QR — FDS-014) | — | `758-4380` · `758-4735` | Two states: scan view + result/preview |
+
+## TBD — no KSA frame assigned yet
+
+| App screen | Notes |
+|---|---|
+| Registration status (#11) | Pending Figma frame |
+| Share my contact (FDS-014) | Pending Figma frame |
+| My contacts (FDS-014) | Pending Figma frame |
+
+## Removed / dissolved screens
+
+| App screen | Decision | Notes |
+|---|---|---|
+| Media gallery (#30) | Dissolved — content embedded in Home page | No standalone screen in V1 |
+| Audience comments (#28) | Removed from app | — |
+| Guest mode (#12) | Not a separate screen — guest users see Home (`758-2910`) directly | — |
 
 ## Standard top-nav spec (from 758-1469 / 922-2824)
 - Header container: full width, bottom hairline border (`#c9a84c` ~0.1px / beige hairline).
