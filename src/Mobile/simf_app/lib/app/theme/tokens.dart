@@ -60,6 +60,7 @@ class SimfTokens {
   static const Color codeBoxBeige = Color(0xCCFFF4DC); // pale-beige code chip fill (venue map 758:1358, #FFF4DC @ 80%)
   static const Color cardShadow = Color(0x29111827); // soft card drop-shadow (headlineInk @ ~16%)
   static const Color dayInactive = Color(0xFFC2C2C2); // calendar day with no sessions (758:1415)
+  static const Color bannerScrim = Color(0xCC001030); // day-banner bottom gradient #001030 @ 80% (Figma 1310:3232 / 1064:13240)
   static const Color navInactive = Color(0xFF5E584B); // bottom-nav inactive icon (758:1476)
   static const Color chatBubbleText = Color(0xFFF0F4FF); // assistant chat-bubble text (1064:13278)
   static const Color captionText = Color(0xFFDDE4F0); // live AI-caption placeholder text (934:3613)

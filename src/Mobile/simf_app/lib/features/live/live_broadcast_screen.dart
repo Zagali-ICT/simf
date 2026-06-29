@@ -1029,8 +1029,9 @@ class _LiveBadge extends StatelessWidget {
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        // Latin pill: the "LIVE" label leads and the ~7px white pulse dot trails
-        // it (frame 934:3609/3610), regardless of the surrounding RTL direction.
+        // The live label leads and the ~7px white pulse dot trails it (frame
+        // 934:3609/3610); forced LTR keeps the dot on the trailing side. (The
+        // frame's Latin "LIVE" is localized to مباشر via l10n.liveNowLabel.)
         textDirection: TextDirection.ltr,
         children: <Widget>[
           Text(

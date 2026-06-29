@@ -1534,10 +1534,6 @@ class AppL10n {
       _t('لا يوجد ملخص منشور بعد.', 'No published summary yet.');
   String get aiSummaryError =>
       _t('تعذر تحميل الملخص.', 'Could not load the summary.');
-  String get aiSummaryChooseSession => _t('اختر الجلسة', 'Choose the session');
-  // Figma banner copy (frame 1072:14633): "an automatic summary was generated".
-  String get aiSummaryGeneratedBanner =>
-      _t('تم توليد ملخص تلقائي', 'Auto-generated summary');
   String get aiSummaryKeyPointsHeading => _t('أبرز النقاط', 'Key points');
   String get aiSummaryRecommendationsHeading =>
       _t('التوصيات', 'Recommendations');
@@ -1546,10 +1542,6 @@ class AppL10n {
   String get aiSummarySessionLabel => _t('الجلسة', 'Session');
   String get aiSummaryGenerateButton =>
       _t('توليد ملخص للجلسة', 'Generate session summary');
-  String get aiSummaryFullTextHeading => _t('النص الكامل', 'Full text');
-  String get aiSummaryShare => _t('مشاركة', 'Share');
-  String get aiSummarySave => _t('حفظ', 'Save');
-  String get aiSummarySaved => _t('تم الحفظ', 'Saved');
   String get aiSummaryNoSessions =>
       _t('لا توجد جلسات متاحة بعد.', 'No sessions available yet.');
 

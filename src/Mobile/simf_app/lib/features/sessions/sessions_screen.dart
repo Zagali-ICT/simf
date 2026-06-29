@@ -402,14 +402,15 @@ class _DayBanner extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.center,
                   end: Alignment.bottomCenter,
-                  colors: <Color>[Colors.transparent, Color(0xCC001030)],
+                  colors: <Color>[Colors.transparent, SimfTokens.bannerScrim],
                 ),
               ),
             ),
-            // The gold anchor badge (frame node 1064:13249).
+            // The gold anchor badge (frame 1064:13249) — inline-start (physical
+            // right under RTL), matching the frame.
             PositionedDirectional(
               top: SimfTokens.space2,
-              end: SimfTokens.space2,
+              start: SimfTokens.space2,
               child: Container(
                 width: 32,
                 height: 32,
@@ -674,12 +675,16 @@ class _SessionRow extends StatelessWidget {
           horizontal: SimfTokens.space4,
           vertical: SimfTokens.space3,
         ),
-        // IntrinsicHeight lets the trailing time rail's connector stretch to the
+        // IntrinsicHeight lets the leading time rail's connector stretch to the
         // full row height (title → description / banner).
         child: IntrinsicHeight(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
+              // Frame 883:2308 — the start/end time rail LEADS (inline-start =
+              // physical right under RTL), with the content to its left.
+              _TimeRail(start: session.startLocal, end: session.endLocal),
+              const SizedBox(width: SimfTokens.space3),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -725,8 +730,6 @@ class _SessionRow extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: SimfTokens.space3),
-              _TimeRail(start: session.startLocal, end: session.endLocal),
             ],
           ),
         ),

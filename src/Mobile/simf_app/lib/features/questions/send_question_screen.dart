@@ -206,7 +206,8 @@ class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
               // aligned to the inline end (right in RTL).
               Text(
                 l10n.sendQuestionSectionLabel,
-                textAlign: TextAlign.end,
+                // TextAlign.start = right under RTL (TextAlign.end would be left).
+                textAlign: TextAlign.start,
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w500,
@@ -367,7 +368,8 @@ class _SessionDataBlock extends StatelessWidget {
       children: <Widget>[
         Text(
           label,
-          textAlign: TextAlign.end,
+          // TextAlign.start = right under RTL (TextAlign.end would be left).
+          textAlign: TextAlign.start,
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w500,
