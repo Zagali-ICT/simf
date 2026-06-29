@@ -401,12 +401,13 @@ class _SpeakerCard extends StatelessWidget {
   }
 }
 
-/// The 44×44 speaker avatar (frame 908:2004): a **circular** navy tile on a
-/// 0.2px beige hairline showing the speaker's uploaded **photo** (the D-357
-/// `SpeakerPhoto` asset) clipped to the circle, falling back to the design's gold
-/// **anchor** glyph while it loads or when no photo is set (the asset route
-/// 204s). Per Figma 908:1744 the **country flag is inline beside the name** (see
-/// _SpeakerCard), not a badge on the avatar — so this tile is a clean photo.
+/// The 44×44 speaker avatar (frame 908:2004): a **rounded-square (4px)** navy
+/// tile on a 0.2px beige hairline showing the speaker's uploaded **photo** (the
+/// D-357 `SpeakerPhoto` asset) clipped to the same 4px rounding, falling back to
+/// the design's gold **anchor** glyph while it loads or when no photo is set (the
+/// asset route 204s). Per Figma 908:1744 the **country flag is inline beside the
+/// name** (see _SpeakerCard), not a badge on the avatar — so this tile is a clean
+/// photo.
 class _SpeakerAvatar extends StatelessWidget {
   const _SpeakerAvatar({required this.imageUrl});
 
@@ -421,10 +422,11 @@ class _SpeakerAvatar extends StatelessWidget {
       alignment: Alignment.center,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        // Frame 908:2004 — CIRCULAR navy tile with a 0.2px beige hairline (no
-        // gold fill); the photo covers it, the gold anchor is the fallback glyph.
+        // Frame 908:2004 — rounded-square (4px) navy tile with a 0.2px beige
+        // hairline (no gold fill); the photo covers it (clipped to the same 4px
+        // rounding), the gold anchor is the fallback glyph.
         color: SimfTokens.navyDeep,
-        shape: BoxShape.circle,
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
         border: Border.all(
           color: SimfTokens.beigeBorder,
           width: SimfTokens.hairline,
