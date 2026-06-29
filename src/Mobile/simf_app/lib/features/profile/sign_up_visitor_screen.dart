@@ -18,6 +18,10 @@ import 'data/profile_repository.dart';
 import 'phone_validation.dart';
 import 'plate_validation.dart';
 import 'saudi_regions.dart';
+import 'widgets/beige_tabs.dart';
+import 'widgets/field_label.dart';
+import 'widgets/lookup_search_sheet.dart';
+import 'widgets/radio_pill.dart';
 
 const Color _sweepTint = Color(0x0AFFFFFF);
 const BorderRadius _radius4 =
@@ -805,7 +809,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     ),
                     const SizedBox(height: 24),
                     // نوع التسجيل (Visitor / Other) — beige tabs (Figma 505:1075).
-                    _BeigeTabs(
+                    BeigeTabs(
                       options: <String>[
                         l10n.signUpTypeVisitor,
                         l10n.signUpTypeOther,
@@ -817,7 +821,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     const SizedBox(height: 24),
                     _buildProfileTypeField(l10n),
                     const SizedBox(height: 16),
-                    _FieldLabel(l10n.arabicNameLabel),
+                    FieldLabel(l10n.arabicNameLabel),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _arabicName,
@@ -833,7 +837,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                       decoration: _fieldDecoration(counterText: ''),
                     ),
                     const SizedBox(height: 16),
-                    _FieldLabel(l10n.englishNameLabel),
+                    FieldLabel(l10n.englishNameLabel),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _englishName,
@@ -849,13 +853,13 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                       decoration: _fieldDecoration(counterText: ''),
                     ),
                     const SizedBox(height: 16),
-                    _FieldLabel(l10n.genderLabel),
+                    FieldLabel(l10n.genderLabel),
                     const SizedBox(height: 8),
                     _buildGenderPills(l10n),
                     const SizedBox(height: 16),
                     _buildOrganisationField(l10n),
                     const SizedBox(height: 16),
-                    _FieldLabel(l10n.jobTitleLabel),
+                    FieldLabel(l10n.jobTitleLabel),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _jobTitle,
@@ -959,7 +963,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          _FieldLabel(l10n.profileTypeLabel),
+          FieldLabel(l10n.profileTypeLabel),
           const SizedBox(height: 8),
           InputDecorator(
             decoration: _fieldDecoration(),
@@ -991,7 +995,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          _FieldLabel(l10n.profileTypeLabel),
+          FieldLabel(l10n.profileTypeLabel),
           const SizedBox(height: 8),
           InputDecorator(
             decoration: _fieldDecoration(),
@@ -1033,7 +1037,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        _FieldLabel(l10n.profileTypeLabel),
+        FieldLabel(l10n.profileTypeLabel),
         const SizedBox(height: 8),
         _searchPickerField(
           fieldKey: 'profileTypePicker',
@@ -1052,7 +1056,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     return Row(
       children: <Widget>[
         Expanded(
-          child: _RadioPill(
+          child: RadioPill(
             label: l10n.genderMale,
             selected: _gender == AppGender.male,
             onTap: () => setState(() => _gender = AppGender.male),
@@ -1060,7 +1064,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: _RadioPill(
+          child: RadioPill(
             label: l10n.genderFemale,
             selected: _gender == AppGender.female,
             onTap: () => setState(() => _gender = AppGender.female),
@@ -1111,7 +1115,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
 
   /// Opens the shared searchable picker sheet and returns the picked value.
   Future<String?> _openLookupSheet({
-    required List<_PickerOption> options,
+    required List<PickerOption> options,
     required String searchHint,
     Key? searchFieldKey,
   }) {
@@ -1122,7 +1126,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
       ),
-      builder: (_) => _LookupSearchSheet(
+      builder: (_) => LookupSearchSheet(
         options: options,
         searchHint: searchHint,
         searchFieldKey: searchFieldKey,
@@ -1145,7 +1149,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        _FieldLabel(l10n.nationalityLabel),
+        FieldLabel(l10n.nationalityLabel),
         const SizedBox(height: 8),
         _searchPickerField(
           fieldKey: 'nationalityPicker',
@@ -1163,9 +1167,9 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   /// derived document section consistent (D-373).
   Future<void> _pickNationality(AppL10n l10n) async {
     final pickedCode = await _openLookupSheet(
-      options: <_PickerOption>[
+      options: <PickerOption>[
         for (final CountryItem c in _countries)
-          _PickerOption(
+          PickerOption(
             value: c.code,
             label: l10n.isArabic ? c.nameArabic : c.name,
             search: '${c.name} ${c.nameArabic}',
@@ -1200,9 +1204,9 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   /// and stores the picked region's localized name in [_placeOfBirth].
   Future<void> _pickBirthRegion(AppL10n l10n, bool isArabic) async {
     final pickedCode = await _openLookupSheet(
-      options: <_PickerOption>[
+      options: <PickerOption>[
         for (final SaudiRegion r in saudiRegions)
-          _PickerOption(
+          PickerOption(
             value: r.code,
             label: r.name(isArabic: isArabic),
             search: '${r.arabic} ${r.english}',
@@ -1225,9 +1229,9 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   /// pickers so every lookup field uses the identical sheet.
   Future<void> _pickProfileType(AppL10n l10n) async {
     final picked = await _openLookupSheet(
-      options: <_PickerOption>[
+      options: <PickerOption>[
         for (final ProfileTypeItem t in _profileTypes)
-          _PickerOption(
+          PickerOption(
             value: t.id,
             label: l10n.isArabic ? t.nameArabic : t.name,
             search: '${t.name} ${t.nameArabic}',
@@ -1245,7 +1249,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   List<Widget> _buildDocumentFields(AppL10n l10n) {
     if (_isSaudi) {
       return <Widget>[
-        _FieldLabel(l10n.nationalIdLabel),
+        FieldLabel(l10n.nationalIdLabel),
         const SizedBox(height: 8),
         TextFormField(
           controller: _nationalId,
@@ -1259,9 +1263,9 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       ];
     }
     return <Widget>[
-      _FieldLabel(l10n.documentTypeLabel),
+      FieldLabel(l10n.documentTypeLabel),
       const SizedBox(height: 8),
-      _BeigeTabs(
+      BeigeTabs(
         options: <String>[l10n.iqamaSegment, l10n.passportSegment],
         selectedIndex: _docType == _DocType.iqama ? 0 : 1,
         onChanged: (index) => setState(() {
@@ -1270,7 +1274,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         }),
       ),
       const SizedBox(height: 16),
-      _FieldLabel(l10n.documentNumberLabel),
+      FieldLabel(l10n.documentNumberLabel),
       const SizedBox(height: 8),
       TextFormField(
         controller: _documentNumber,
@@ -1301,7 +1305,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        _FieldLabel(l10n.placeOfBirthLabel),
+        FieldLabel(l10n.placeOfBirthLabel),
         const SizedBox(height: 8),
         if (_isSaudi)
           _searchPickerField(
@@ -1335,7 +1339,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        _FieldLabel(l10n.plateNumberLabel),
+        FieldLabel(l10n.plateNumberLabel),
         const SizedBox(height: 8),
         Row(
           textDirection: TextDirection.ltr,
@@ -1445,9 +1449,9 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     ValueChanged<String?> onPicked,
   ) async {
     final pickedCode = await _openLookupSheet(
-      options: <_PickerOption>[
+      options: <PickerOption>[
         for (final SaudiPlateLetter letter in saudiPlateLetters)
-          _PickerOption(
+          PickerOption(
             value: letter.code,
             label: '${letter.arabic} · ${letter.english}',
             search: '${letter.arabic} ${letter.english} ${letter.code}',
@@ -1530,7 +1534,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        _FieldLabel(
+        FieldLabel(
           saudi ? l10n.saudiMobileLabel : l10n.internationalMobileLabel,
         ),
         const SizedBox(height: 8),
@@ -1553,7 +1557,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        _FieldLabel(l10n.dateOfBirthLabel),
+        FieldLabel(l10n.dateOfBirthLabel),
         const SizedBox(height: 8),
         InkWell(
           onTap: () => unawaited(_pickDateOfBirth()),
@@ -1640,7 +1644,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        _FieldLabel(l10n.attachmentsLabel),
+        FieldLabel(l10n.attachmentsLabel),
         const SizedBox(height: 8),
         if (needsImage) ...<Widget>[
           Text(
@@ -1715,7 +1719,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        _FieldLabel(l10n.facePhotoLabel),
+        FieldLabel(l10n.facePhotoLabel),
         const SizedBox(height: 8),
         if (maleNeedsFace) ...<Widget>[
           Text(
@@ -1786,7 +1790,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          _FieldLabel(l10n.organisationLabel),
+          FieldLabel(l10n.organisationLabel),
           const SizedBox(height: 8),
           InputDecorator(
             decoration: _fieldDecoration(),
@@ -1813,7 +1817,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        _FieldLabel(l10n.organisationLabel),
+        FieldLabel(l10n.organisationLabel),
         const SizedBox(height: 8),
         TextField(
           controller: _organisationSearch,
@@ -1990,256 +1994,5 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       doubleDigit = !doubleDigit;
     }
     return sum % 10 == 0;
-  }
-}
-
-/// A field caption above its input — the design's 12-grey label
-/// (Figma "Title" rows).
-class _FieldLabel extends StatelessWidget {
-  const _FieldLabel(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: AlignmentDirectional.centerStart,
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: SimfTokens.greyText,
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-}
-
-/// The design's beige segmented tabs (Figma 505:1075 / 505:1030) — D-373
-/// owner fix: the **selected** segment is a **white pill** with navy text
-/// (the old selected-beige-on-beige rendered invisible); the unselected
-/// segment stays on the container beige with white text.
-class _BeigeTabs extends StatelessWidget {
-  const _BeigeTabs({
-    required this.options,
-    required this.selectedIndex,
-    required this.onChanged,
-  });
-
-  final List<String> options;
-  final int selectedIndex;
-  final ValueChanged<int> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(
-        color: SimfTokens.beigeBorder,
-        borderRadius: _radius4,
-      ),
-      child: Row(
-        children: <Widget>[
-          for (int i = 0; i < options.length; i++) ...<Widget>[
-            if (i > 0) const SizedBox(width: 1),
-            Expanded(
-              child: InkWell(
-                onTap: () => onChanged(i),
-                borderRadius: _radius4,
-                child: Container(
-                  height: 34,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: i == selectedIndex
-                        ? Colors.white
-                        : Colors.transparent,
-                    borderRadius: _radius4,
-                  ),
-                  child: Text(
-                    options[i],
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight:
-                          i == selectedIndex ? FontWeight.w600 : FontWeight.w500,
-                      color:
-                          i == selectedIndex ? SimfTokens.navy : Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-/// One option for the shared [_LookupSearchSheet]: a stable [value], a display
-/// [label], and the [search] text matched against the query (defaults to the
-/// label).
-class _PickerOption {
-  const _PickerOption({
-    required this.value,
-    required this.label,
-    String? search,
-  }) : search = search ?? label;
-
-  final String value;
-  final String label;
-  final String search;
-}
-
-/// D-373/D-469/D-470 — the shared searchable picker sheet used by the
-/// nationality, birth-region and plate-letter fields: one beige type-to-filter
-/// list so all three look and behave identically. Pops the picked
-/// [_PickerOption.value].
-class _LookupSearchSheet extends StatefulWidget {
-  const _LookupSearchSheet({
-    required this.options,
-    required this.searchHint,
-    this.searchFieldKey,
-  });
-
-  final List<_PickerOption> options;
-  final String searchHint;
-  final Key? searchFieldKey;
-
-  @override
-  State<_LookupSearchSheet> createState() => _LookupSearchSheetState();
-}
-
-class _LookupSearchSheetState extends State<_LookupSearchSheet> {
-  static const TextStyle _itemStyle = TextStyle(
-    fontSize: 14,
-    fontWeight: FontWeight.w500,
-    color: SimfTokens.inputInk,
-  );
-
-  String _query = '';
-
-  @override
-  Widget build(BuildContext context) {
-    final term = _query.trim().toLowerCase();
-    final filtered = term.isEmpty
-        ? widget.options
-        : widget.options
-            .where((o) => o.search.toLowerCase().contains(term))
-            .toList();
-    return SafeArea(
-      child: Padding(
-        // Keeps the search field above the soft keyboard.
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.viewInsetsOf(context).bottom,
-        ),
-        child: SizedBox(
-          height: MediaQuery.sizeOf(context).height * 0.7,
-          child: Column(
-            children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: TextField(
-                  key: widget.searchFieldKey,
-                  autofocus: true,
-                  style: _itemStyle,
-                  onChanged: (value) => setState(() => _query = value),
-                  decoration: InputDecoration(
-                    isDense: true,
-                    hintText: widget.searchHint,
-                    hintStyle: const TextStyle(color: SimfTokens.greyText),
-                    prefixIcon:
-                        const Icon(Icons.search, color: SimfTokens.greyText),
-                    enabledBorder: const OutlineInputBorder(
-                      borderRadius: _radius4,
-                      borderSide: BorderSide(color: SimfTokens.beigeBorder),
-                    ),
-                    focusedBorder: const OutlineInputBorder(
-                      borderRadius: _radius4,
-                      borderSide: BorderSide(color: SimfTokens.accent),
-                    ),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) {
-                    final option = filtered[index];
-                    return ListTile(
-                      dense: true,
-                      title: Text(option.label, style: _itemStyle),
-                      onTap: () => Navigator.of(context).pop(option.value),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// One of the design's gender radio pills (Figma 522:2151): a white pill with
-/// the label and an 18 px gold-ringed radio that fills when selected.
-class _RadioPill extends StatelessWidget {
-  const _RadioPill({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: _radius4,
-      child: Container(
-        height: 48,
-        decoration: const BoxDecoration(
-          color: Color(0xE6FFFFFF), // white at 90% over the beige card
-          borderRadius: _radius4,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: SimfTokens.navy,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Container(
-              width: 18,
-              height: 18,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: SimfTokens.accent, width: 1.2),
-              ),
-              alignment: Alignment.center,
-              child: selected
-                  ? Container(
-                      width: 10,
-                      height: 10,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: SimfTokens.accent,
-                      ),
-                    )
-                  : null,
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
