@@ -40,6 +40,30 @@ Pixel-parity is proven per screen with a golden render at the Figma frame size
 | Share my contact (FDS-014) | Pending Figma frame |
 | My contacts (FDS-014) | Pending Figma frame |
 
+## Additional bindings (merged from SIMF-App-Pages-Figma-NodeIDs.docx, 2026-06-27)
+
+The companion `docs/SIMF-App-Pages-Figma-NodeIDs.docx` carries the per-screen node
+ id read from each screen's class doc-comment (file `PSXHhY0UVTAPSaIOf9uNKd`). It
+is the comprehensive per-screen source; the bindings below fill screens this
+curated map omitted. For any screen not here, consult that docx before guessing.
+
+| App screen | File | Figma node | Source |
+|---|---|---|---|
+| FAQ (الأسئلة الشائعة) | `lib/features/faq/faq_screen.dart` | `1388-7567` | docx #28 (shipped D-517 parity) |
+| Sign-up visitor / profile data | `lib/features/profile/sign_up_visitor_screen.dart` | `168-2972` (profile) · `168-3454` (form) · `758-2616` (email-OTP) | docx #48 (Page 007) |
+| Gate-operator console (staff) | `lib/features/gates/gate_scan_screen.dart` | `758-4651` | docx #32 |
+| Moderator Q&A desk | `lib/features/moderation/session_moderate_screen.dart` | `1461-12227` | docx #38 (D-405/D-509) |
+| Staff register visitor on-site | `lib/features/staff/register_visitor_screen.dart` | `1467-12357` | docx #64 (D-509) |
+| About (عن الملتقى) | `lib/features/about/about_screen.dart` | `1116-16448` | docx #1 |
+| AI assistant / chatbot | `lib/features/chatbot/chatbot_screen.dart` | `1064-13066` | docx #18 |
+| Contact us | `lib/features/contact_us/contact_us_screen.dart` | `1388-7711` | docx #20 (shipped D-516) |
+| Exhibitor detail | `lib/features/booths/exhibitor_detail_screen.dart` | `1439-11881` | docx #17 |
+
+Still genuinely unbound in the docx too (truly ASK / pending): badge-activation,
+badge-sign-in, biometric-step-up, forgot/reset-password (auth flow — frozen
+chrome), audience-comments (removed), my-contacts / scan-contact / share-my-contact
+(FDS-014), registration-status (#11).
+
 ## Removed / dissolved screens
 
 | App screen | Decision | Notes |

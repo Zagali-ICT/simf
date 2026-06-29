@@ -46,8 +46,13 @@ session_summary_list, sessions, speaker_profile, speakers, sponsors.
 `lib/app/widgets/simf_page_shell.dart` (1,113) · `core/responsive/` · `core/widgets/`
 · `app/theme/tokens.dart` · `lib/app/localization/app_l10n.dart` (2,008).
 
-## Open ASK items (node id not in FIGMA-NODE-MAP — never guess)
-profile/sign_up_visitor, staff/register_visitor, gates/gate_scan,
-moderation/session_moderate, and any long-tail screen lacking a bound node.
-faq + about were shipped to parity (D-517 / earlier) but are not in the node map
-— confirm their node ids before re-touching their layout.
+## Node ids — RESOLVED via SIMF-App-Pages-Figma-NodeIDs.docx (2026-06-29)
+Merged into FIGMA-NODE-MAP.md: faq `1388-7567`, profile/sign_up_visitor `168-2972`,
+gates `758-4651`, moderation `1461-12227`, staff `1467-12357`, about `1116-16448`,
+chatbot `1064-13066`, contact_us `1388-7711`, exhibitor_detail `1439-11881`.
+
+Still genuinely unbound (ASK only if their layout is touched): auth-secondary
+(badge-activation/sign-in, biometric-step-up, forgot/reset-password — frozen
+chrome), audience-comments (removed), contacts FDS-014 (my-contacts/scan/share),
+registration-status (#11). Typography: text-style tokens are built **incrementally
+per screen** (owner 2026-06-29) — no upfront type ramp.
