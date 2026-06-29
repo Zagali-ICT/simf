@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
 
-const BorderRadius _radius4 =
-    BorderRadius.all(Radius.circular(SimfTokens.radiusSmall));
-
 /// One of the design's gender radio pills (Figma 522:2151): a white pill with
 /// the label and an 18 px gold-ringed radio that fills when selected.
 class RadioPill extends StatelessWidget {
@@ -23,12 +20,12 @@ class RadioPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: _radius4,
+      borderRadius: SimfTokens.borderRadiusSmall,
       child: Container(
         height: 48,
         decoration: const BoxDecoration(
           color: Color(0xE6FFFFFF), // white at 90% over the beige card
-          borderRadius: _radius4,
+          borderRadius: SimfTokens.borderRadiusSmall,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,

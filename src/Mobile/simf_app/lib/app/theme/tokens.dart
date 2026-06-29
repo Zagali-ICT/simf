@@ -115,6 +115,11 @@ class SimfTokens {
   static const double radius14 = 14; // exhibitor/sponsor link rows (Figma 1439:11904/11917)
   static const double radiusXl = 20;
 
+  /// Ready-made [BorderRadius] for the default 4px corner (fields, cards,
+  /// pills). Use this instead of re-wrapping [radiusSmall] in every widget.
+  static const BorderRadius borderRadiusSmall =
+      BorderRadius.all(Radius.circular(radiusSmall));
+
   // Hairline border weights (the KSA frames' 0.2px card hairline and the
   // 0.5px emphasised hairline).
   static const double hairline = 0.2;

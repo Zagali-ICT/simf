@@ -18,11 +18,11 @@ const TextStyle authInputTextStyle = TextStyle(
 );
 
 const OutlineInputBorder _authRestingBorder = OutlineInputBorder(
-  borderRadius: AuthPageShell._radius4,
+  borderRadius: SimfTokens.borderRadiusSmall,
   borderSide: BorderSide(color: SimfTokens.beigeBorder),
 );
 const OutlineInputBorder _authFocusedBorder = OutlineInputBorder(
-  borderRadius: AuthPageShell._radius4,
+  borderRadius: SimfTokens.borderRadiusSmall,
   borderSide: BorderSide(color: SimfTokens.accent),
 );
 
@@ -44,7 +44,7 @@ final ButtonStyle authSubmitButtonStyle = FilledButton.styleFrom(
   disabledBackgroundColor: SimfTokens.accent.withValues(alpha: 0.5),
   minimumSize: const Size.fromHeight(48),
   shape: const RoundedRectangleBorder(
-    borderRadius: AuthPageShell._radius4,
+    borderRadius: SimfTokens.borderRadiusSmall,
   ),
 );
 
@@ -135,8 +135,6 @@ class AuthPageShell extends ConsumerWidget {
   /// Disables the chrome controls while a request runs.
   final bool busy;
 
-  static const BorderRadius _radius4 =
-      BorderRadius.all(Radius.circular(SimfTokens.radiusSmall));
 
   void _toggleLanguage(WidgetRef ref) {
     final isArabic = ref.read(localeControllerProvider).languageCode == 'ar';
@@ -184,7 +182,7 @@ class AuthPageShell extends ConsumerWidget {
                           style: IconButton.styleFrom(
                             backgroundColor: SimfTokens.navyDeep,
                             shape: const RoundedRectangleBorder(
-                              borderRadius: _radius4,
+                              borderRadius: SimfTokens.borderRadiusSmall,
                             ),
                           ),
                           icon: const Icon(
@@ -231,7 +229,7 @@ class AuthPageShell extends ConsumerWidget {
                             padding: const EdgeInsets.all(24),
                             decoration: const BoxDecoration(
                               color: SimfTokens.cardBeige,
-                              borderRadius: _radius4,
+                              borderRadius: SimfTokens.borderRadiusSmall,
                             ),
                             child: child,
                           ),

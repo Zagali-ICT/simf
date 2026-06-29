@@ -18,9 +18,6 @@ import '../profile/phone_validation.dart';
 import 'data/staff_models.dart';
 import 'data/staff_repository.dart';
 
-const BorderRadius _radius4 =
-    BorderRadius.all(Radius.circular(SimfTokens.radiusSmall));
-
 /// D-509 — "إنشاء ملف زائر" / add a visitor at the exhibition (staff). Figma
 /// 1467:12357 — the navy header (logo + forum name + back + globe) over a beige
 /// card holding a two-column form (single column on phones). Staff fill in the
@@ -446,7 +443,7 @@ class _StaffRegisterVisitorScreenState
         padding: const EdgeInsets.all(24),
         child: Material(
           color: SimfTokens.cardBeige,
-          borderRadius: _radius4,
+          borderRadius: SimfTokens.borderRadiusSmall,
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: LayoutBuilder(
@@ -597,7 +594,7 @@ class _StaffRegisterVisitorScreenState
             style: FilledButton.styleFrom(
               backgroundColor: SimfTokens.accent,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: _radius4),
+              shape: RoundedRectangleBorder(borderRadius: SimfTokens.borderRadiusSmall),
             ),
             child: _submitting
                 ? const SizedBox(
@@ -857,13 +854,13 @@ class _StaffRegisterVisitorScreenState
         const SizedBox(height: 16),
         InkWell(
           onTap: onTap,
-          borderRadius: _radius4,
+          borderRadius: SimfTokens.borderRadiusSmall,
           child: Container(
             height: 56,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
               color: SimfTokens.surface,
-              borderRadius: _radius4,
+              borderRadius: SimfTokens.borderRadiusSmall,
               border: Border.all(color: SimfTokens.beigeBorder),
             ),
             child: Row(
@@ -926,14 +923,14 @@ class _StaffRegisterVisitorScreenState
       contentPadding:
           const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       enabledBorder: OutlineInputBorder(
-        borderRadius: _radius4,
+        borderRadius: SimfTokens.borderRadiusSmall,
         borderSide: const BorderSide(color: SimfTokens.beigeBorder),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: _radius4,
+        borderRadius: SimfTokens.borderRadiusSmall,
         borderSide: const BorderSide(color: SimfTokens.accent),
       ),
-      border: const OutlineInputBorder(borderRadius: _radius4),
+      border: const OutlineInputBorder(borderRadius: SimfTokens.borderRadiusSmall),
     );
   }
 

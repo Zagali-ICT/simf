@@ -30,8 +30,6 @@ import 'widgets/sign_up_visitor_header_avatar.dart';
 import 'widgets/terms_and_next_buttons.dart';
 
 const Color _sweepTint = Color(0x0AFFFFFF);
-const BorderRadius _radius4 =
-    BorderRadius.all(Radius.circular(SimfTokens.radiusSmall));
 
 /// Page 007 — إنشاء ملف شخصى · Sign up — profile **data**. The KSA-Project
 /// Figma design (node 168:2972 — D-368): the login-style navy header (logo +
@@ -696,7 +694,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                           style: IconButton.styleFrom(
                             backgroundColor: SimfTokens.navyDeep,
                             shape: const RoundedRectangleBorder(
-                              borderRadius: _radius4,
+                              borderRadius: SimfTokens.borderRadiusSmall,
                             ),
                           ),
                           icon: const Icon(
@@ -758,7 +756,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
             // ink inside the card renders above the beige fill.
             child: Material(
               color: SimfTokens.cardBeige,
-              borderRadius: _radius4,
+              borderRadius: SimfTokens.borderRadiusSmall,
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Column(
@@ -1049,7 +1047,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     return InkWell(
       key: ValueKey<String>(fieldKey),
       onTap: onTap,
-      borderRadius: _radius4,
+      borderRadius: SimfTokens.borderRadiusSmall,
       child: InputDecorator(
         decoration: profileFieldDecoration(
           errorText: errorText,
@@ -1498,12 +1496,12 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: _radius4,
+      borderRadius: SimfTokens.borderRadiusSmall,
       child: Container(
         height: 56,
         decoration: BoxDecoration(
           border: Border.all(color: SimfTokens.beigeBorder),
-          borderRadius: _radius4,
+          borderRadius: SimfTokens.borderRadiusSmall,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -1558,12 +1556,12 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               border: Border.all(color: SimfTokens.beigeBorder),
-              borderRadius: _radius4,
+              borderRadius: SimfTokens.borderRadiusSmall,
             ),
             child: Row(
               children: <Widget>[
                 ClipRRect(
-                  borderRadius: _radius4,
+                  borderRadius: SimfTokens.borderRadiusSmall,
                   child: Image.memory(
                     bytes,
                     width: 40,
@@ -1639,7 +1637,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               border: Border.all(color: SimfTokens.beigeBorder),
-              borderRadius: _radius4,
+              borderRadius: SimfTokens.borderRadiusSmall,
             ),
             child: Row(
               children: <Widget>[

@@ -41,9 +41,6 @@ const String _icEye = 'assets/icons/auth_eye.svg'; // iconamoon:eye
 const String _icFaceId = 'assets/icons/auth_faceid.svg'; // mingcute:faceid-line
 
 // The design's card / field / button corner radius.
-const BorderRadius _radius4 =
-    BorderRadius.all(Radius.circular(SimfTokens.radiusSmall));
-
 /// Page 003 — تسجيل الدخول · Sign in. The KSA-Project Figma design (node
 /// 168:2800), promoted from the D-358 preview to the official sign-in
 /// (D-360); the previous mockup screen is parked in `_legacy_mockup/`.
@@ -324,7 +321,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                           style: IconButton.styleFrom(
                             backgroundColor: SimfTokens.navyDeep,
                             shape: const RoundedRectangleBorder(
-                              borderRadius: _radius4,
+                              borderRadius: SimfTokens.borderRadiusSmall,
                             ),
                           ),
                           icon: const SimfSvgIcon(
@@ -377,7 +374,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       padding: const EdgeInsets.all(24),
       decoration: const BoxDecoration(
         color: _card,
-        borderRadius: _radius4,
+        borderRadius: SimfTokens.borderRadiusSmall,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -453,7 +450,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         activeColor: _gold,
                         side: const BorderSide(color: _grey, width: 1.5),
                         shape: const RoundedRectangleBorder(
-                          borderRadius: _radius4,
+                          borderRadius: SimfTokens.borderRadiusSmall,
                         ),
                         materialTapTargetSize:
                             MaterialTapTargetSize.shrinkWrap,
@@ -497,7 +494,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               backgroundColor: _gold,
               disabledBackgroundColor: const Color(0x80C9A84C),
               minimumSize: const Size.fromHeight(48),
-              shape: const RoundedRectangleBorder(borderRadius: _radius4),
+              shape: const RoundedRectangleBorder(borderRadius: SimfTokens.borderRadiusSmall),
             ),
             child: _busy
                 ? const SizedBox(
@@ -568,7 +565,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: _fieldBorder),
                 minimumSize: const Size.fromHeight(48),
-                shape: const RoundedRectangleBorder(borderRadius: _radius4),
+                shape: const RoundedRectangleBorder(borderRadius: SimfTokens.borderRadiusSmall),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -598,7 +595,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             style: OutlinedButton.styleFrom(
               side: const BorderSide(color: _fieldBorder),
               minimumSize: const Size.fromHeight(48),
-              shape: const RoundedRectangleBorder(borderRadius: _radius4),
+              shape: const RoundedRectangleBorder(borderRadius: SimfTokens.borderRadiusSmall),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -651,11 +648,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   );
 
   static const OutlineInputBorder _restingBorder = OutlineInputBorder(
-    borderRadius: _radius4,
+    borderRadius: SimfTokens.borderRadiusSmall,
     borderSide: BorderSide(color: _fieldBorder),
   );
   static const OutlineInputBorder _focusedBorder = OutlineInputBorder(
-    borderRadius: _radius4,
+    borderRadius: SimfTokens.borderRadiusSmall,
     borderSide: BorderSide(color: _gold),
   );
 

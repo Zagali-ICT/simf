@@ -3,9 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
 
-const BorderRadius _radius4 =
-    BorderRadius.all(Radius.circular(SimfTokens.radiusSmall));
-
 /// D-434 — a clear notice that this is the complete-profile step, so the user
 /// pays attention to the required items (white-on-beige + gold border to stand
 /// out from the card).
@@ -20,7 +17,7 @@ class CompleteProfileNotice extends StatelessWidget {
       decoration: BoxDecoration(
         color: SimfTokens.surface,
         border: Border.all(color: SimfTokens.accent),
-        borderRadius: _radius4,
+        borderRadius: SimfTokens.borderRadiusSmall,
       ),
       child: Row(
         children: <Widget>[

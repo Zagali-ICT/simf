@@ -5,9 +5,6 @@ import '../../../app/theme/tokens.dart';
 import 'field_label.dart';
 import 'profile_field_style.dart';
 
-const BorderRadius _radius4 =
-    BorderRadius.all(Radius.circular(SimfTokens.radiusSmall));
-
 /// The read-only date-of-birth field: tapping it runs [onTap] (the screen's
 /// date picker). [displayValue] is the already-formatted date (or '—'); the
 /// screen owns the value and the formatting.
@@ -33,7 +30,7 @@ class DateOfBirthField extends StatelessWidget {
         const SizedBox(height: 8),
         InkWell(
           onTap: onTap,
-          borderRadius: _radius4,
+          borderRadius: SimfTokens.borderRadiusSmall,
           child: InputDecorator(
             decoration: profileFieldDecoration(
               errorText: hasError ? l10n.dateOfBirthRequired : null,

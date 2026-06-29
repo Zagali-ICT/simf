@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
 
-const BorderRadius _radius4 =
-    BorderRadius.all(Radius.circular(SimfTokens.radiusSmall));
-
 /// The design's beige segmented tabs (Figma 505:1075 / 505:1030) — D-373
 /// owner fix: the **selected** segment is a **white pill** with navy text
 /// (the old selected-beige-on-beige rendered invisible); the unselected
@@ -27,7 +24,7 @@ class BeigeTabs extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: const BoxDecoration(
         color: SimfTokens.beigeBorder,
-        borderRadius: _radius4,
+        borderRadius: SimfTokens.borderRadiusSmall,
       ),
       child: Row(
         children: <Widget>[
@@ -36,7 +33,7 @@ class BeigeTabs extends StatelessWidget {
             Expanded(
               child: InkWell(
                 onTap: () => onChanged(i),
-                borderRadius: _radius4,
+                borderRadius: SimfTokens.borderRadiusSmall,
                 child: Container(
                   height: 34,
                   alignment: Alignment.center,
@@ -44,7 +41,7 @@ class BeigeTabs extends StatelessWidget {
                     color: i == selectedIndex
                         ? Colors.white
                         : Colors.transparent,
-                    borderRadius: _radius4,
+                    borderRadius: SimfTokens.borderRadiusSmall,
                   ),
                   child: Text(
                     options[i],

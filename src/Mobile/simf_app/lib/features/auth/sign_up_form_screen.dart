@@ -24,9 +24,6 @@ const Color _danger = SimfTokens.danger;
 const Color _sweepTint = SimfTokens.surfaceTint;
 
 // The design's card / field / button corner radius.
-const BorderRadius _radius4 =
-    BorderRadius.all(Radius.circular(SimfTokens.radiusSmall));
-
 /// Page 005 — إنشاء حساب · Sign up. The KSA-Project Figma design (node
 /// 168:3454), replacing the mockup screen at the official `/sign-up`
 /// (D-370, app redesign programme Wave 2); the previous screen is parked
@@ -218,7 +215,7 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
                           style: IconButton.styleFrom(
                             backgroundColor: SimfTokens.navyDeep,
                             shape: const RoundedRectangleBorder(
-                              borderRadius: _radius4,
+                              borderRadius: SimfTokens.borderRadiusSmall,
                             ),
                           ),
                           icon: const Icon(
@@ -264,7 +261,7 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
       padding: const EdgeInsets.all(24),
       decoration: const BoxDecoration(
         color: _card,
-        borderRadius: _radius4,
+        borderRadius: SimfTokens.borderRadiusSmall,
       ),
       child: Form(
         key: _formKey,
@@ -349,7 +346,7 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
                 backgroundColor: _gold,
                 disabledBackgroundColor: const Color(0x80C9A84C),
                 minimumSize: const Size.fromHeight(48),
-                shape: const RoundedRectangleBorder(borderRadius: _radius4),
+                shape: const RoundedRectangleBorder(borderRadius: SimfTokens.borderRadiusSmall),
               ),
               child: _busy
                   ? const SizedBox(
@@ -415,11 +412,11 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
   );
 
   static const OutlineInputBorder _restingBorder = OutlineInputBorder(
-    borderRadius: _radius4,
+    borderRadius: SimfTokens.borderRadiusSmall,
     borderSide: BorderSide(color: _fieldBorder),
   );
   static const OutlineInputBorder _focusedBorder = OutlineInputBorder(
-    borderRadius: _radius4,
+    borderRadius: SimfTokens.borderRadiusSmall,
     borderSide: BorderSide(color: _gold),
   );
 
