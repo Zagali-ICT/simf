@@ -617,9 +617,17 @@ class _MemberChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
       ),
       padding: const EdgeInsets.all(SimfTokens.space2),
+      // Figma 1426:10862 — the groups glyph leads (inline-start = right in RTL),
+      // the count text trails to its left.
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
+          const Icon(
+            Icons.groups_outlined,
+            size: 12,
+            color: SimfTokens.beigeBorder,
+          ),
+          const SizedBox(width: 6),
           Flexible(
             child: Text(
               text,
@@ -631,12 +639,6 @@ class _MemberChip extends StatelessWidget {
                 color: SimfTokens.beigeBorder,
               ),
             ),
-          ),
-          const SizedBox(width: 6),
-          const Icon(
-            Icons.groups_outlined,
-            size: 12,
-            color: SimfTokens.beigeBorder,
           ),
         ],
       ),
@@ -651,9 +653,13 @@ class _DateGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Figma 1426:10856 — the clock glyph leads (inline-start = right in RTL),
+    // the date range trails to its left.
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
+        const Icon(Icons.schedule, size: 12, color: SimfTokens.beigeBorder),
+        const SizedBox(width: SimfTokens.space1),
         Flexible(
           child: Text(
             text,
@@ -666,8 +672,6 @@ class _DateGroup extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: SimfTokens.space1),
-        const Icon(Icons.schedule, size: 12, color: SimfTokens.beigeBorder),
       ],
     );
   }

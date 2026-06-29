@@ -266,10 +266,10 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
         ],
         if (speaker.allowsMeetingRequests) ...<Widget>[
           const SizedBox(height: SimfTokens.space5),
-          FilledButton.icon(
+          // Figma 1049:2302 — a text-only gold CTA (no leading icon).
+          FilledButton(
             onPressed: () => _onRequestMeeting(speaker, l10n),
-            icon: const Icon(Icons.handshake_outlined),
-            label: Text(l10n.requestMeeting),
+            child: Text(l10n.requestMeeting),
           ),
         ],
         if (socials.isNotEmpty) ...<Widget>[
@@ -435,7 +435,9 @@ class _CvTab extends StatelessWidget {
         alignment: Alignment.center,
         padding: const EdgeInsets.all(SimfTokens.space2),
         decoration: BoxDecoration(
-          color: selected ? SimfTokens.accent : SimfTokens.navyDeep,
+          // Figma 912:2312 — the inactive pill is border-only (no fill); it
+          // reads the navySurface scaffold through, the active pill is gold.
+          color: selected ? SimfTokens.accent : Colors.transparent,
           borderRadius: BorderRadius.circular(SimfTokens.radius),
           border: selected
               ? null
@@ -472,8 +474,9 @@ class _CvCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
+      // Figma 912:2331 — px-8 / py-16 inside the navy card.
       padding: const EdgeInsets.symmetric(
-        horizontal: SimfTokens.space4,
+        horizontal: SimfTokens.space2,
         vertical: SimfTokens.space4,
       ),
       decoration: const BoxDecoration(
