@@ -20,16 +20,19 @@ import 'golden_fonts.dart';
 /// (ملف المتحدث / "About Speaker"). Compare to the frame:
 ///   flutter test --update-goldens test/golden/speaker_profile_golden_test.dart
 ///
-/// Proves the two-line header (white name over the beige rank, circled back
-/// chevron), the 125px white avatar ringed gold (anchor placeholder), the four
-/// CV pills in one row — the active نبذة عنه pill gold on the **right**, the
-/// other three border-only (no fill) running to the left — the navy #192B41 CV
-/// card with right-aligned white body text, and the **text-only** gold
-/// طلب مقابلة CTA (Figma 1049:2302 has no leading icon). RTL throughout.
+/// Proves the two-line header (the nationality flag leading the white name over
+/// the beige rank, circled back chevron — Figma 1327:3461), the 125px white
+/// avatar ringed gold (anchor placeholder), the four CV pills in one row — the
+/// active نبذة عنه pill gold on the **right**, the other three border-only (no
+/// fill) running to the left — the navy #192B41 CV card with right-aligned white
+/// body text, and the **text-only** gold طلب مقابلة CTA (Figma 1049:2302 has no
+/// leading icon). RTL throughout.
 ///
 /// Fixed data only, so the PNG is stable. Known golden-env artifacts (NOT layout
 /// defects): the avatar photo is Image.network → the anchor SVG placeholder (no
-/// HTTP in tests); the FilledButton label may render with reduced Arabic glyph
+/// HTTP in tests); the nationality flag (🇸🇦) is a colour-emoji glyph → renders
+/// as tofu (no colour-emoji font loaded), but its position (leading the name) is
+/// verifiable; the FilledButton label may render with reduced Arabic glyph
 /// coverage in the headless env — the string is asserted correct by the widget
 /// test, and it renders on device.
 

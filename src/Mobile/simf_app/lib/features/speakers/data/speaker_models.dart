@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/country_flag.dart';
+
 /// One row in the public speakers list — mirrors
 /// `SIMF.Contracts.Programme.PublicSpeakerSummary` (`GET /app/speakers`). The
 /// card shows the avatar (from [photoRelativePath]), the bilingual name, the rank
@@ -146,6 +148,13 @@ class SpeakerDetail {
   String localizedName(bool isArabic) => _pick(nameArabic, name, isArabic);
   String? localizedCountry(bool isArabic) =>
       _pickOpt(countryNameAr, countryNameEn, isArabic);
+
+  /// The nationality flag emoji for the profile header (Figma 908-2110),
+  /// resolved from the ISO 3166-1 numeric [countryId] via the shared
+  /// [countryFlagEmoji] helper. Null when no country is set / unknown — the same
+  /// helper the speaker list card uses.
+  String? get flagEmoji => countryFlagEmoji(countryId);
+
   String? localizedBio(bool isArabic) => _pickOpt(bioArabic, bio, isArabic);
   String? localizedQualifications(bool isArabic) =>
       _pickOpt(qualificationsArabic, qualifications, isArabic);
