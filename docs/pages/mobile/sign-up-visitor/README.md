@@ -4,11 +4,11 @@
 |---|---|
 | Route | `/sign-up/visitor` (`RouteNames.signUpVisitor`) · **AUTH-only** (any signed-in account; no role / no permission, D7) |
 | Surface | Mobile (Flutter) |
-| Screen | `lib/features/profile/sign_up_visitor_screen.dart` (`SignUpVisitorScreen`) |
+| Screen | `lib/features/account/sign_up_visitor_screen.dart` (`SignUpVisitorScreen`) |
 | Figma node | `168:2972` (KSA-Project, file `PSXHhY0UVTAPSaIOf9uNKd`; D-368) |
 | Shell | `SimfFormScaffold` (`pinnedHeader: true`) — the shared account/entry scaffold (back + globe toggle, logo + forum name) |
 | Providers | `profileRepositoryProvider` → `ProfileRepository` (pre-fill + 3 lookups) |
-| Tests | `test/features/profile/sign_up_visitor_screen_test.dart` (widget, 23 cases) · `plate_validation_test.dart` · `phone_validation_test.dart` · `profile_models_test.dart` · golden `test/golden/sign_up_visitor_golden_test.dart` (`goldens/sign_up_visitor_168-2972.png`) · E2E [`mobile-sign-up-visitor.md`](../../../tests/e2e/mobile-sign-up-visitor.md) (E2E-MOB007-001..022) |
+| Tests | `test/features/account/sign_up_visitor_screen_test.dart` (widget, 23 cases) · `plate_validation_test.dart` · `phone_validation_test.dart` · `profile_models_test.dart` · golden `test/golden/sign_up_visitor_golden_test.dart` (`goldens/sign_up_visitor_168-2972.png`) · E2E [`mobile-sign-up-visitor.md`](../../../tests/e2e/mobile-sign-up-visitor.md) (E2E-MOB007-001..022) |
 | Status | ✅ Real — D-332 (rework: save moved to interests) → D-368 (Figma 168:2972) → D-371/D-373/D-374/D-375 amendments → **clean-code frozen (D-546, 2026-06-30)** |
 | Legacy detail | `docs/App/Page_007/` (Function / Logic / API / Design) — retained as the detailed historical spec |
 
@@ -95,7 +95,7 @@ the D-545 theme fix (see Changelog).
 
 ## 8. Clean-code DoD (D-546 freeze — 2026-06-30)
 - [x] Screen 2245 → ~1530 lines; 9 presentational widgets extracted to
-      `features/profile/widgets/`; pure plate logic to `plate_validation.dart`
+      `features/account/widgets/`; pure plate logic to `plate_validation.dart`
 - [x] Shared, not copied: `SimfFormScaffold`, `SimfFieldLabel`, `SimfFieldStyle`,
       `SimfLabeledTextField`, `SimfPickerField`, `GenderPillsField`, `AttachmentField`
 - [x] Flexible width via `MaxWidthBody(560)`; 0 raw `Color(0x…)` (sweep → `SimfTokens.surfaceTint`)

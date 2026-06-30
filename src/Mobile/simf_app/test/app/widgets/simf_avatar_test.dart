@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/app/widgets/simf_logo.dart';
-import 'package:simf_app/features/profile/data/profile_repository.dart';
+import 'package:simf_app/features/account/data/profile_repository.dart';
 
 /// A minimal valid 1×1 PNG so the `currentUser` bytes path decodes without
 /// tripping the error builder.

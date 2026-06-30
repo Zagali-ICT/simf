@@ -8,7 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/accessibility/data/accessibility_controller.dart';
 import '../../features/notifications/data/notifications_repository.dart'
     show unreadNotificationCountProvider;
-import '../../features/profile/data/profile_repository.dart'
+import '../../features/account/data/profile_repository.dart'
     show myAvatarBytesProvider;
 import '../localization/app_l10n.dart';
 import '../localization/locale_controller.dart';

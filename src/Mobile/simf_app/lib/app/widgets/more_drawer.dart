@@ -7,7 +7,7 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../core/sharing/content_sharer.dart';
-import '../../features/auth/biometric_auth.dart';
+import '../../features/account/biometric_auth.dart';
 import '../../features/more/more_menu_items.dart';
 import '../../features/myarea/data/myarea_repository.dart';
 import '../localization/app_l10n.dart';

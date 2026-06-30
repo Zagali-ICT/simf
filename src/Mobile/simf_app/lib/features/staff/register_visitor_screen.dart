@@ -12,9 +12,9 @@ import '../../app/localization/locale_controller.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_logo.dart';
-import '../profile/data/profile_models.dart';
-import '../profile/data/profile_repository.dart';
-import '../profile/phone_validation.dart';
+import '../account/data/profile_models.dart';
+import '../account/data/profile_repository.dart';
+import '../account/phone_validation.dart';
 import 'data/staff_models.dart';
 import 'data/staff_repository.dart';
 

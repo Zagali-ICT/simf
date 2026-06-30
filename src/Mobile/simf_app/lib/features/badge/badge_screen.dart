@@ -16,7 +16,7 @@ import '../../app/widgets/simf_svg_icon.dart';
 import '../contacts/scan_contact_screen.dart';
 import '../myarea/data/myarea_models.dart';
 import '../myarea/data/myarea_repository.dart';
-import '../profile/data/profile_repository.dart' show referenceNumberProvider;
+import '../account/data/profile_repository.dart' show referenceNumberProvider;
 
 /// Page 032 — بطاقة الدخول · Entry badge (#32, `/badge`), rebuilt to the
 /// KSA frame **758:1469 "QR"** on the shared shell.

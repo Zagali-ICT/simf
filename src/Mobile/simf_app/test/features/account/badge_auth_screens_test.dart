@@ -5,8 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
-import 'package:simf_app/features/auth/badge_activation_screen.dart';
-import 'package:simf_app/features/auth/badge_sign_in_screen.dart';
+import 'package:simf_app/features/account/badge_activation_screen.dart';
+import 'package:simf_app/features/account/badge_sign_in_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
 /// Part B (D-430) — widget tests for the badge-QR sign-in / activation screens:

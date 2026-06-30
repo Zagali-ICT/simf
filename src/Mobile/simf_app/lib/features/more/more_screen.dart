@@ -15,7 +15,7 @@ import '../../app/widgets/confirm_external_link.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import '../../core/env/build_config.dart';
-import '../auth/sign_out.dart';
+import '../account/sign_out.dart';
 import '../myarea/data/myarea_models.dart';
 import '../myarea/data/myarea_repository.dart';
 

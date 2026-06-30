@@ -9,7 +9,7 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/router.dart';
 import 'package:simf_app/features/accessibility/accessibility_screen.dart';
 import 'package:simf_app/features/accessibility/data/accessibility_controller.dart';
-import 'package:simf_app/features/auth/sign_in_screen.dart';
+import 'package:simf_app/features/account/sign_in_screen.dart';
 import 'package:simf_app/features/contacts/data/contact_models.dart';
 import 'package:simf_app/features/contacts/data/contacts_repository.dart';
 import 'package:simf_app/features/contacts/my_contacts_screen.dart';

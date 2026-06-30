@@ -9,9 +9,9 @@ import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/app_theme.dart';
-import 'package:simf_app/features/profile/data/profile_models.dart';
-import 'package:simf_app/features/profile/data/profile_repository.dart';
-import 'package:simf_app/features/profile/sign_up_visitor_screen.dart';
+import 'package:simf_app/features/account/data/profile_models.dart';
+import 'package:simf_app/features/account/data/profile_repository.dart';
+import 'package:simf_app/features/account/sign_up_visitor_screen.dart';
 
 import 'golden_fonts.dart';
 

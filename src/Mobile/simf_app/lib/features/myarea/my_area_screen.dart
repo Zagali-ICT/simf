@@ -15,8 +15,8 @@ import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import '../../core/sharing/content_sharer.dart';
-import '../auth/biometric_auth.dart';
-import '../profile/data/profile_repository.dart'
+import '../account/biometric_auth.dart';
+import '../account/data/profile_repository.dart'
     show avatarBustProvider, profileRepositoryProvider, referenceNumberProvider;
 import 'data/myarea_models.dart';
 import 'data/myarea_repository.dart';

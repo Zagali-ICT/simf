@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:simf_app/features/profile/plate_validation.dart';
+import 'package:simf_app/features/account/plate_validation.dart';
 
 /// C6 (D-459) — the same cases as the server's `UserProfileTests` plate
 /// theories, so the client/server mirror stays visibly in lockstep.

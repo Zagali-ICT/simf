@@ -7,9 +7,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
-import 'package:simf_app/features/profile/data/profile_models.dart';
-import 'package:simf_app/features/profile/data/profile_repository.dart';
-import 'package:simf_app/features/profile/sign_up_interests_screen.dart';
+import 'package:simf_app/features/account/data/profile_models.dart';
+import 'package:simf_app/features/account/data/profile_repository.dart';
+import 'package:simf_app/features/account/sign_up_interests_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// A fake profile repository for the interests screen (Page 007‑01) — returns

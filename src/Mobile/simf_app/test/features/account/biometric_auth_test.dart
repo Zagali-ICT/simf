@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
-import 'package:simf_app/features/auth/biometric_auth.dart';
+import 'package:simf_app/features/account/biometric_auth.dart';
 
 /// A controllable [BiometricAuth] — `implements` ignores the real constructor
 /// (which needs a Ref + local_auth), so the nudge and the toggle can be driven

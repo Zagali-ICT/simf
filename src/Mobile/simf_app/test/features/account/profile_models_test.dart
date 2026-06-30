@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:simf_app/features/profile/data/profile_models.dart';
+import 'package:simf_app/features/account/data/profile_models.dart';
 
 void main() {
   group('UpsertUserProfileRequest.toJson', () {

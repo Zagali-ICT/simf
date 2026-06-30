@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:simf_app/features/profile/data/profile_repository.dart';
+import 'package:simf_app/features/account/data/profile_repository.dart';
 
 void main() {
   group('ProfileRepository.mimeForFilename', () {
