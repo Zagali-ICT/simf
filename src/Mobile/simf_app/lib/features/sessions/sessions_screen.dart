@@ -720,20 +720,13 @@ class _SessionRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
-                    // Title line: 14px gold calendar glyph at the inline-start
-                    // (right under RTL) + the gold right-aligned title.
+                    // Title line (Figma 1310:3215): the gold right-aligned title
+                    // LEADS at the inline-start (physical right); the 14px gold
+                    // calendar glyph TRAILS at the inline-end (physical left,
+                    // next to the divider) — owner 2026-06-30.
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        const Padding(
-                          padding: EdgeInsets.only(top: 1),
-                          child: Icon(
-                            Icons.calendar_today_outlined,
-                            size: 14,
-                            color: SimfTokens.accent,
-                          ),
-                        ),
-                        const SizedBox(width: SimfTokens.space2),
                         Expanded(
                           child: Text(
                             session.localizedTitle(isArabic),
@@ -746,6 +739,15 @@ class _SessionRow extends StatelessWidget {
                               fontWeight: FontWeight.w500,
                               height: 1.3,
                             ),
+                          ),
+                        ),
+                        const SizedBox(width: SimfTokens.space2),
+                        const Padding(
+                          padding: EdgeInsets.only(top: 1),
+                          child: Icon(
+                            Icons.calendar_today_outlined,
+                            size: 14,
+                            color: SimfTokens.accent,
                           ),
                         ),
                       ],
