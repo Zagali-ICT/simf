@@ -951,6 +951,10 @@ class AppL10n {
   String get joinSectionHeading => _t('الانضمام للجلسة', 'Join this session');
   String get joinSeatCta => _t('اختر مقعدي', 'Select my seat');
   String get joinOpenCta => _t('انضم إلى الجلسة', 'Join this session');
+  // The single gold join button on the session detail (Figma 889:2450, owner
+  // 2026-06-30): one label for both seating modes — open-seating joins in place,
+  // assigned-seat opens the seat picker.
+  String get joinSessionCta => _t('الانضمام إلى الجلسة', 'Join the session');
   String get joinSeatHint =>
       _t('اختر مقعدك ثم انتظر موافقة الإدارة', 'Pick your seat, then await approval');
   String get joinOpenHint =>

@@ -501,8 +501,11 @@ class _Content extends StatelessWidget {
           // rather than a hint pointing at a join affordance they can't see.
           disabledHint: seatMap != null ? l10n.askHostJoinFirst : null,
         ),
-        // D-485 — the join section (approved account only): a held reservation
-        // shows the booking card + Cancel; otherwise the mode-branched Join CTA.
+        // D-485 / owner 2026-06-30 — the join section (approved account only).
+        // Not booked: the single gold "الانضمام إلى الجلسة" button. Booked: the
+        // مقعدي seat card; its cancel is NOT in the card — it sits on its own
+        // line as plain white text after the reminder/calendar row (the
+        // corrected Figma 889:2450 bottom).
         if (seatMap?.myCell != null) ...<Widget>[
           const SizedBox(height: SimfTokens.space5),
           _SectionHeading(l10n.mySeatHeading),
@@ -510,8 +513,6 @@ class _Content extends StatelessWidget {
           _ReservationCard(
             cell: seatMap!.myCell!,
             l10n: l10n,
-            busy: busy,
-            onCancel: onCancelReservation,
             // An open-seating join has no seat to view on the hall map.
             onView: seatMap!.myCell!.kind == SeatReservationKind.openSeating
                 ? null
@@ -519,14 +520,7 @@ class _Content extends StatelessWidget {
           ),
         ] else if (seatMap != null) ...<Widget>[
           const SizedBox(height: SimfTokens.space5),
-          _SectionHeading(l10n.joinSectionHeading),
-          const SizedBox(height: SimfTokens.space4),
-          _JoinCard(
-            mode: seatMap!.mode,
-            busy: busy,
-            l10n: l10n,
-            onJoin: onJoin,
-          ),
+          _JoinCard(busy: busy, l10n: l10n, onJoin: onJoin),
         ],
         const SizedBox(height: SimfTokens.space6),
         _CtaRow(
@@ -534,6 +528,16 @@ class _Content extends StatelessWidget {
           onAddToCalendar: onAddToCalendar,
           onRemind: onRemind,
         ),
+        // Booked only — cancel on its own line under reminder/calendar, plain
+        // white text (owner 2026-06-30), not the old red ✕ link.
+        if (seatMap?.myCell != null) ...<Widget>[
+          const SizedBox(height: SimfTokens.space3),
+          _CancelReservationLink(
+            label: l10n.cancelLabel,
+            busy: busy,
+            onCancel: onCancelReservation,
+          ),
+        ],
       ],
     );
   }
@@ -1055,22 +1059,20 @@ class _AskHostCard extends StatelessWidget {
 }
 
 /// D-485 — the reservation card: the held seat (الصف · مقعد) or "general
-/// admission" for an open-seating join, the pending-approval hint, and a Cancel
-/// action. A seat-specific booking is tappable to open the seat map (18); an
-/// open-seating join has no seat to view, so the card is inert (no chevron).
+/// admission" for an open-seating join, plus the pending-approval hint. A
+/// seat-specific booking is tappable to open the seat map (18); an open-seating
+/// join has no seat to view, so the card is inert (no chevron). The cancel
+/// action is a separate white line below the CTA row (owner 2026-06-30), so the
+/// card carries no Cancel itself.
 class _ReservationCard extends StatelessWidget {
   const _ReservationCard({
     required this.cell,
     required this.l10n,
-    required this.busy,
-    required this.onCancel,
     this.onView,
   });
 
   final SeatCell cell;
   final AppL10n l10n;
-  final bool busy;
-  final VoidCallback onCancel;
   final VoidCallback? onView;
 
   @override
@@ -1079,128 +1081,125 @@ class _ReservationCard extends StatelessWidget {
     final title = isOpen
         ? l10n.generalAdmissionLabel
         : l10n.seatLocation(cell.rowLabel, cell.seatNumber);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        SimfCard(
-          onTap: onView,
-          child: Padding(
-            padding: const EdgeInsets.all(SimfTokens.space2),
-            child: Row(
-              children: <Widget>[
-                Semantics(
-                  button: onView != null,
-                  label: l10n.seatViewLink,
-                  child: const _SeatMarker(),
-                ),
-                const SizedBox(width: SimfTokens.space4),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: SimfTokens.textLg,
-                        ),
-                      ),
-                      const SizedBox(height: SimfTokens.space2),
-                      Text(
-                        l10n.reservationPendingHint,
-                        style: const TextStyle(
-                          color: SimfTokens.beigeBorder,
-                          fontSize: SimfTokens.textSm,
-                        ),
-                      ),
-                    ],
+    return SimfCard(
+      onTap: onView,
+      child: Padding(
+        padding: const EdgeInsets.all(SimfTokens.space2),
+        child: Row(
+          children: <Widget>[
+            Semantics(
+              button: onView != null,
+              label: l10n.seatViewLink,
+              child: const _SeatMarker(),
+            ),
+            const SizedBox(width: SimfTokens.space4),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: SimfTokens.textLg,
+                    ),
                   ),
-                ),
-                if (onView != null) ...<Widget>[
-                  const SizedBox(width: SimfTokens.space2),
-                  Icon(
-                    Directionality.of(context) == TextDirection.rtl
-                        ? Icons.chevron_left
-                        : Icons.chevron_right,
-                    size: 20,
-                    color: SimfTokens.beigeBorder,
+                  const SizedBox(height: SimfTokens.space2),
+                  Text(
+                    l10n.reservationPendingHint,
+                    style: const TextStyle(
+                      color: SimfTokens.beigeBorder,
+                      fontSize: SimfTokens.textSm,
+                    ),
                   ),
                 ],
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: SimfTokens.space3),
-        Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: TextButton.icon(
-            onPressed: busy ? null : onCancel,
-            icon: const Icon(Icons.close, size: 18, color: SimfTokens.danger),
-            label: Text(
-              l10n.cancelBookingCta,
-              style: const TextStyle(
-                color: SimfTokens.danger,
-                fontWeight: FontWeight.w600,
               ),
             ),
-          ),
+            if (onView != null) ...<Widget>[
+              const SizedBox(width: SimfTokens.space2),
+              Icon(
+                Directionality.of(context) == TextDirection.rtl
+                    ? Icons.chevron_left
+                    : Icons.chevron_right,
+                size: 20,
+                color: SimfTokens.beigeBorder,
+              ),
+            ],
+          ],
         ),
-      ],
+      ),
     );
   }
 }
 
-/// D-485 — the Join CTA, shown to an approved account that holds no reservation.
-/// An open-seating session is a one-tap join (confirmed in a dialog upstream); an
-/// assigned-seat session opens the seat picker. The label + hint follow the mode.
+/// The cancel-reservation action (owner 2026-06-30): a centred, plain white
+/// text button sitting on its own line under the reminder/calendar row —
+/// replaces the old red ✕ "إلغاء الحجز" link inside the seat card.
+class _CancelReservationLink extends StatelessWidget {
+  const _CancelReservationLink({
+    required this.label,
+    required this.busy,
+    required this.onCancel,
+  });
+
+  final String label;
+  final bool busy;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: TextButton(
+        onPressed: busy ? null : onCancel,
+        child: Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: SimfTokens.textMd,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Owner 2026-06-30 — the Join CTA for an approved account holding no
+/// reservation: a single full-width gold "الانضمام إلى الجلسة" button (no hint,
+/// no icon, no section heading). The seating behaviour is decided in `_join()`
+/// (open-seating joins in place with a confirm; assigned-seat opens the picker),
+/// so the button needs no mode of its own.
 class _JoinCard extends StatelessWidget {
   const _JoinCard({
-    required this.mode,
     required this.busy,
     required this.l10n,
     required this.onJoin,
   });
 
-  final SeatSelectionMode mode;
   final bool busy;
   final AppL10n l10n;
   final VoidCallback onJoin;
 
   @override
   Widget build(BuildContext context) {
-    final open = mode.isOpenSeating;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        Text(
-          open ? l10n.joinOpenHint : l10n.joinSeatHint,
-          style: const TextStyle(
-            color: SimfTokens.beigeBorder,
-            fontSize: SimfTokens.textSm,
-          ),
+    return FilledButton(
+      onPressed: busy ? null : onJoin,
+      style: FilledButton.styleFrom(
+        minimumSize: const Size.fromHeight(48),
+        backgroundColor: SimfTokens.accent,
+        foregroundColor: SimfTokens.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
         ),
-        const SizedBox(height: SimfTokens.space3),
-        FilledButton.icon(
-          onPressed: busy ? null : onJoin,
-          style: FilledButton.styleFrom(
-            minimumSize: const Size.fromHeight(48),
-            backgroundColor: SimfTokens.accent,
-            foregroundColor: SimfTokens.surface,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-            ),
-          ),
-          icon: Icon(open ? Icons.how_to_reg : Icons.event_seat, size: 20),
-          label: Text(
-            open ? l10n.joinOpenCta : l10n.joinSeatCta,
-            style: const TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: SimfTokens.textLg,
-            ),
-          ),
+      ),
+      child: Text(
+        l10n.joinSessionCta,
+        style: const TextStyle(
+          fontWeight: FontWeight.w700,
+          fontSize: SimfTokens.textLg,
         ),
-      ],
+      ),
     );
   }
 }

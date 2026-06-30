@@ -171,9 +171,12 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
       onRefresh: _load,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
+        // Top gap below the header matches Figma 883:2308 (title row → search ≈
+        // 32px; the shell header adds its own 8px, so the body adds ~24px) —
+        // owner 2026-06-30: the header's bottom space was too small.
         padding: const EdgeInsets.fromLTRB(
           SimfTokens.space4,
-          SimfTokens.space2,
+          SimfTokens.space6,
           SimfTokens.space4,
           SimfTokens.space6,
         ),
@@ -253,14 +256,25 @@ class _SearchField extends StatelessWidget {
           color: Colors.white,
           fontSize: SimfTokens.textSm,
         ),
-        suffixIcon: const SimfSvgIcon(
-          'assets/icons/ic_search.svg',
-          size: 18,
-          color: Colors.white,
+        // Frame 883:2316 — the 18px magnifier hugs the inline-start (physical
+        // right under RTL), packed next to the hint (8px from the edge, 8px
+        // before the text); the rest of the field is empty. A prefixIcon lands
+        // at the inline-start in RTL (a suffixIcon would push it to the left).
+        prefixIcon: const Padding(
+          padding: EdgeInsetsDirectional.only(
+            start: SimfTokens.space2,
+            end: SimfTokens.space2,
+          ),
+          child: SimfSvgIcon(
+            'assets/icons/ic_search.svg',
+            size: 18,
+            color: Colors.white,
+          ),
         ),
+        prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: SimfTokens.space3,
-          vertical: SimfTokens.space4,
+          vertical: SimfTokens.space3,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(SimfTokens.radius),
@@ -343,7 +357,8 @@ class _TypeTab extends StatelessWidget {
       color: active ? SimfTokens.accent : SimfTokens.navyDeep,
       borderColor: active ? SimfTokens.accent : SimfTokens.beigeBorder,
       child: SizedBox(
-        height: 44,
+        // Figma tab cell 883:2321 — 41px tall.
+        height: 41,
         child: Center(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space1),
@@ -481,7 +496,10 @@ class _DayStrip extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           const double gap = SimfTokens.space1;
-          const double minCell = 44.0;
+          // Comfortable per-day width (owner 2026-06-30 — the strip was cramped);
+          // when the full date range exceeds the width the band scrolls
+          // horizontally rather than squeezing every day.
+          const double minCell = 52;
           final width = entries.length * minCell + (entries.length - 1) * gap;
           // Guard the unbounded-width case (e.g. if ever placed outside a
           // width-bounded parent) so the Expanded row can't throw.
@@ -597,7 +615,11 @@ class _DayCell extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: SimfTokens.space2),
+        // Figma day-picker cell 883:2328 — px-8 / py-4.
+        padding: const EdgeInsets.symmetric(
+          horizontal: SimfTokens.space2,
+          vertical: SimfTokens.space1,
+        ),
         decoration: BoxDecoration(
           color: fill,
           borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
@@ -684,9 +706,16 @@ class _SessionRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               // Frame 883:2308 — the start/end time rail LEADS (inline-start =
-              // physical right under RTL), with the content to its left.
+              // physical right under RTL), then a full-height beige hairline
+              // (Figma 1310:3239 / 1313:3355 — beige #C2B8A2 @ 40%) divides it
+              // from the content, with an 8px gap each side (gap-[8px]).
               _TimeRail(start: session.startLocal, end: session.endLocal),
-              const SizedBox(width: SimfTokens.space3),
+              const SizedBox(width: SimfTokens.space2),
+              const SizedBox(
+                width: 1,
+                child: ColoredBox(color: SimfTokens.beigeBorder40),
+              ),
+              const SizedBox(width: SimfTokens.space2),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -754,14 +783,21 @@ class _TimeRail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The rail is sized to fit "HH:MM" on ONE line (owner 2026-06-30 — the 34px
+    // rail wrapped the time into two rows); the row's content gets the rest of
+    // the width via Expanded. The timeline reads from (top) → connector line →
+    // to (bottom).
     return SizedBox(
-      width: 34,
+      width: 48,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
           Text(
             _hhmm(start),
             textDirection: TextDirection.ltr,
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.visible,
             style: const TextStyle(
               color: SimfTokens.beigeBorder,
               fontSize: SimfTokens.textSm,
@@ -773,13 +809,19 @@ class _TimeRail extends StatelessWidget {
               padding: EdgeInsets.symmetric(vertical: SimfTokens.space1),
               child: SizedBox(
                 width: 1,
-                child: ColoredBox(color: SimfTokens.beigeBorder40),
+                // Figma 1310:3244 — the in-rail "from → to" connector is SOLID
+                // beige (#C2B8A2), the timeline feel the owner asked for. (The
+                // faint 40% line is the separate content/rail divider below.)
+                child: ColoredBox(color: SimfTokens.beigeBorder),
               ),
             ),
           ),
           Text(
             _hhmm(end),
             textDirection: TextDirection.ltr,
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.visible,
             style: const TextStyle(
               color: Colors.white,
               fontSize: SimfTokens.textSm,
