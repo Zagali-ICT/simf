@@ -2,10 +2,12 @@
 
 > **Authority:** SIMF E2E catalogue (D-133 / D-245). Mobile screen #3 and the
 > linked auth flow (email-OTP, forgot-password, reset-password). Spec:
-> [`Page_003`](../../App/Page_003/README.md). Runner-agnostic Gherkin. The screen
+> [`mobile/sign-in/README.md`](../../pages/mobile/sign-in/README.md) (legacy
+> [`Page_003`](../../App/Page_003/README.md)). Runner-agnostic Gherkin. The screen
 > glue is widget-tested in
-> `src/Mobile/simf_app/test/features/auth/sign_in_screen_test.dart`; the auth
-> controller (sign-in hydration, email-OTP, refresh) in
+> `src/Mobile/simf_app/test/features/account/sign_in_screen_test.dart` + the golden
+> `test/golden/sign_in_screen_golden_test.dart` (168:2800); the auth controller
+> (sign-in hydration, email-OTP, refresh) in
 > `src/Mobile/packages/simf_auth_pkg/test/auth_controller_signin_test.dart`.
 
 | | |
@@ -15,7 +17,7 @@
 | **APIs** | `POST /app/auth/sign-in` · `verify-otp` · `forgot-password` · `reset-password` · `refresh` (+ device-key for biometric) |
 | **Surface** | Mobile (Flutter) — Guest entry; promotes to Visitor/Moderator/Staff on success |
 | **Auth setup** | A registered visitor (approved / pending / 2FA-on as the scenario needs). OTP codes via the email channel; **no literal secrets**. |
-| **Last reviewed** | 2026-06-11 |
+| **Last reviewed** | 2026-06-30 (clean-code freeze D-549; behaviour unchanged) |
 
 > **KSA-Project redesign (D-358/D-360/D-363, Figma 168:2800):** the screen is
 > the navy + beige-card design — no app bar; back chevron top-left and a

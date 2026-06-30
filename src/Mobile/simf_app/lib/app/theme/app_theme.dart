@@ -126,7 +126,13 @@ class SimfTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
           ),
+          // An explicit button textStyle does NOT inherit the theme's
+          // fontFamily — carry the brand font (+ Arabic fallback) here, or
+          // Arabic outlined-button labels render off-font / tofu (mirrors the
+          // FilledButton _accentButton fix; D-549).
           textStyle: const TextStyle(
+            fontFamily: fontFamily,
+            fontFamilyFallback: fontFamilyFallback,
             fontWeight: FontWeight.w700,
             fontSize: SimfTokens.textMd,
           ),

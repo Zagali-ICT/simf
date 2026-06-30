@@ -410,8 +410,8 @@ void main() {
       final prefs = _FakePrefs();
       await _pump(tester, _Outcome.success, prefs);
 
-      // Back is the first IconButton (top row); the icon is now an exact SVG.
-      await tester.tap(find.byType(IconButton).first);
+      // Back control carries a stable key (it sits on top of the scroll body).
+      await tester.tap(find.byKey(const ValueKey<String>('signInBack')));
       await tester.pumpAndSettle();
 
       expect(find.text('ONBOARDING'), findsOneWidget);
@@ -435,8 +435,8 @@ void main() {
       await _pump(tester, _Outcome.success, prefs);
 
       // Empty prefs boot the controller in Arabic; the toggle flips to EN.
-      // The globe is the second IconButton (top row); the icon is now an SVG.
-      await tester.tap(find.byType(IconButton).at(1));
+      // The language globe carries a stable key (it sits on top of the body).
+      await tester.tap(find.byKey(const ValueKey<String>('signInLanguage')));
       await tester.pumpAndSettle();
 
       expect(prefs.getString(StorageKeys.preferredLanguage), equals('en'));
