@@ -15,7 +15,7 @@
 | **APIs** | `GET /api/v1/app/account/interests` (lookup); **`POST /api/v1/app/account/user-profile`** (the single upsert: Page-007 data **+** `interestIds`); `POST …/user-profile/id-image` (multipart, optional, after the row exists). Signed-in, no role/permission (D7). |
 | **Surface** | Mobile (Flutter) — Visitor (signed-in, profile-incomplete), arriving from Page 007 |
 | **Auth setup** | A signed-in Visitor token (own `sub`). Obtain via the standard app sign-in; never a literal secret. |
-| **Last reviewed** | 2026-06-11 |
+| **Last reviewed** | 2026-06-30 (clean-code freeze D-550; behaviour unchanged) |
 
 > **KSA-Project redesign (D-365, Figma 505:1083):** the screen now renders the
 > two-column pill grid (gold selected / `navyDeep`+border unselected), the

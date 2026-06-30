@@ -8,12 +8,10 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../core/responsive/max_width_body.dart';
 import 'data/profile_models.dart';
 import 'data/profile_repository.dart';
-
-// Interests-frame colours (Figma 505:1083) not yet shared by a second screen.
-const Color _chipBorder = Color(0xFF2A4066);
-const Color _sweepTint = Color(0x0AFFFFFF);
+import 'widgets/interest_chip.dart';
 
 /// Page 007‑01 — اهتماماتي · Sign up — interests. The KSA-Project Figma design
 /// (node 505:1083 — D-365): navy surface + sweep, custom header, the
@@ -27,6 +25,11 @@ const Color _sweepTint = Color(0x0AFFFFFF);
 /// **single** `POST /app/account/user-profile` (draft + interestIds), uploads
 /// the optional ID image, then routes to Page 010. AUTH-only; a draft-less
 /// deep link shows the recover state back to the profile-data screen.
+///
+/// Clean-code frozen (D-550, Phase 3): screen-local colour consts dropped for
+/// `SimfTokens` (`chipBorderNavy` added); the pill extracted to [InterestChip];
+/// header to `_buildHeader`; the body capped by [MaxWidthBody]. Behaviour +
+/// render unchanged — the 505:1083 golden locks it.
 class SignUpInterestsScreen extends ConsumerStatefulWidget {
   const SignUpInterestsScreen({super.key, this.draft});
 
@@ -215,7 +218,7 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
                 width: 313,
                 height: 323,
                 decoration: BoxDecoration(
-                  color: _sweepTint,
+                  color: SimfTokens.surfaceTint,
                   borderRadius: BorderRadius.circular(40),
                 ),
               ),
@@ -224,40 +227,44 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
           SafeArea(
             child: Column(
               children: <Widget>[
-                // Header band (Figma 505:1190): chevron left, centred title.
-                SizedBox(
-                  height: 56,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: <Widget>[
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 8),
-                          child: IconButton(
-                            onPressed: _submitting ? null : _back,
-                            icon: const Icon(
-                              Icons.arrow_back_ios_new,
-                              color: Colors.white,
-                              size: 20,
-                              textDirection: TextDirection.ltr,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Text(
-                        l10n.interestsTitle,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                _buildHeader(l10n),
                 Expanded(child: _buildBody(l10n)),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Header band (Figma 505:1190): back chevron at the start, centred title.
+  Widget _buildHeader(AppL10n l10n) {
+    return SizedBox(
+      height: 56,
+      child: Stack(
+        alignment: Alignment.center,
+        children: <Widget>[
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: IconButton(
+                onPressed: _submitting ? null : _back,
+                icon: const Icon(
+                  Icons.arrow_back_ios_new,
+                  color: Colors.white,
+                  size: 20,
+                  textDirection: TextDirection.ltr,
+                ),
+              ),
+            ),
+          ),
+          Text(
+            l10n.interestsTitle,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -303,8 +310,8 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
+            child: MaxWidthBody(
+              maxWidth: 560,
               child: Column(
                 children: <Widget>[
                   const SizedBox(height: 24),
@@ -362,28 +369,31 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-          child: SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: (_submitting || _selected.isEmpty)
-                  ? null
-                  : () => unawaited(_save()),
-              child: _submitting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
+          child: MaxWidthBody(
+            maxWidth: 560,
+            child: SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: (_submitting || _selected.isEmpty)
+                    ? null
+                    : () => unawaited(_save()),
+                child: _submitting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(
+                        l10n.continueLabel,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    )
-                  : Text(
-                      l10n.continueLabel,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+              ),
             ),
           ),
         ),
@@ -435,32 +445,10 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
       itemCount: _interests.length,
       itemBuilder: (context, index) {
         final interest = _interests[index];
-        final selected = _selected.contains(interest.id);
-        return InkWell(
+        return InterestChip(
+          label: l10n.isArabic ? interest.nameArabic : interest.name,
+          selected: _selected.contains(interest.id),
           onTap: _submitting ? null : () => _toggleInterest(interest.id, l10n),
-          borderRadius: BorderRadius.circular(999),
-          child: Container(
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: selected ? SimfTokens.accent : SimfTokens.navyDeep,
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(
-                width: 1.2,
-                color: selected ? SimfTokens.accent : _chipBorder,
-              ),
-            ),
-            child: Text(
-              l10n.isArabic ? interest.nameArabic : interest.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
         );
       },
     );
