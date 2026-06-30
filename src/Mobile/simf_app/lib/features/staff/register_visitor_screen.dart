@@ -31,6 +31,13 @@ import 'data/staff_repository.dart';
 /// (ProfileType) is required by the API but not shown in the frame, so it is
 /// auto-assigned to the seeded "Normal" audience tier (parity with self-service
 /// sign-up); the server re-validates everything and returns a bilingual message.
+///
+/// Route: `RouteNames.staffRegisterVisitor` (`/staff/register-visitor`, #114),
+/// from the staff-only drawer. Data: `profileRepository` (countries / visitor
+/// profile-types / organisations) + `staffRepository.registerVisitor` (+ the
+/// optional id-document / avatar uploads). Perf: one eager lookup load, no
+/// scrolling list. Contract: `StaffWalkInRequest` / `StaffWalkInResult` JSON
+/// is frozen (D-219).
 class StaffRegisterVisitorScreen extends ConsumerStatefulWidget {
   const StaffRegisterVisitorScreen({super.key});
 
@@ -322,90 +329,94 @@ class _StaffRegisterVisitorScreenState
         bottom: false,
         child: Column(
           children: <Widget>[
-            // Navy header block (Figma 1467:12565 — #071832): back + globe row,
-            // then the centred forum title with the crest.
-            Container(
-              color: SimfTokens.navyHeader,
-              padding: const EdgeInsets.only(bottom: 24),
-              child: Column(
-                children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-                    child: Row(
-                      textDirection: TextDirection.ltr,
-                      children: <Widget>[
-                        // Circular navy back button with a left chevron (Figma).
-                        Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Material(
-                            color: SimfTokens.navyDeep,
-                            shape: const CircleBorder(),
-                            child: InkWell(
-                              customBorder: const CircleBorder(),
-                              onTap: _back,
-                              child: const Padding(
-                                padding: EdgeInsets.all(10),
-                                child: Icon(
-                                  Icons.chevron_left,
-                                  color: Colors.white,
-                                  size: 26,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const Spacer(),
-                        SizedBox(
-                          width: 56,
-                          height: 56,
-                          child: IconButton(
-                            tooltip: l10n.languageToggleLabel,
-                            onPressed: _toggleLanguage,
-                            style: IconButton.styleFrom(
-                              backgroundColor: SimfTokens.navyDeep,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                            ),
-                            icon: const Icon(
-                              Icons.language,
-                              color: SimfTokens.accent,
-                              size: 30,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Center(
-                    child: Row(
-                      textDirection: TextDirection.ltr,
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Flexible(
-                          child: Text(
-                            l10n.signInForumTitle,
-                            textAlign: TextAlign.center,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        const SimfLogo(size: 44),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _buildHeader(l10n),
             Expanded(child: _buildBody(l10n)),
           ],
         ),
+      ),
+    );
+  }
+
+  /// The navy header block (Figma 1467:12565 — #071832): the forced-LTR back +
+  /// globe row, then the centred forum title with the crest.
+  Widget _buildHeader(AppL10n l10n) {
+    return Container(
+      color: SimfTokens.navyHeader,
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+            child: Row(
+              textDirection: TextDirection.ltr,
+              children: <Widget>[
+                // Circular navy back button with a left chevron (Figma).
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Material(
+                    color: SimfTokens.navyDeep,
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: _back,
+                      child: const Padding(
+                        padding: EdgeInsets.all(10),
+                        child: Icon(
+                          Icons.chevron_left,
+                          color: Colors.white,
+                          size: 26,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                SizedBox(
+                  width: 56,
+                  height: 56,
+                  child: IconButton(
+                    tooltip: l10n.languageToggleLabel,
+                    onPressed: _toggleLanguage,
+                    style: IconButton.styleFrom(
+                      backgroundColor: SimfTokens.navyDeep,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                    icon: const Icon(
+                      Icons.language,
+                      color: SimfTokens.accent,
+                      size: 30,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Center(
+            child: Row(
+              textDirection: TextDirection.ltr,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Flexible(
+                  child: Text(
+                    l10n.signInForumTitle,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const SimfLogo(size: 44),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
