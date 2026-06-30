@@ -258,6 +258,10 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
         _SocialLink(Icons.business_center_outlined, speaker.linkedInUrl!),
       if (speaker.allowsDataSharing && _has(speaker.xUrl))
         _SocialLink(Icons.alternate_email, speaker.xUrl!),
+      // D-544 — the opted-in personal/professional website, shown as a 4th
+      // chip alongside the socials (the field postdates the 908-2110 frame).
+      if (speaker.allowsDataSharing && _has(speaker.websiteUrl))
+        _SocialLink(Icons.language, speaker.websiteUrl!),
     ];
 
     return ListView(

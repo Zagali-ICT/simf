@@ -118,6 +118,7 @@ class SpeakerDetail {
     this.facebookUrl,
     this.linkedInUrl,
     this.xUrl,
+    this.websiteUrl,
     this.photoRelativePath,
   });
 
@@ -141,6 +142,10 @@ class SpeakerDetail {
   final String? facebookUrl;
   final String? linkedInUrl;
   final String? xUrl;
+
+  /// Personal/professional website (D-544) — a 4th opted-in link, gated by
+  /// [allowsDataSharing] like the social URLs. Wire key `websiteUrl`.
+  final String? websiteUrl;
   final String? photoRelativePath;
   final int displayOrder;
   final List<SpeakerSession> sessions;
@@ -184,6 +189,7 @@ class SpeakerDetail {
         facebookUrl: json['facebookUrl'] as String?,
         linkedInUrl: json['linkedInUrl'] as String?,
         xUrl: json['xUrl'] as String?,
+        websiteUrl: json['websiteUrl'] as String?,
         photoRelativePath: json['photoRelativePath'] as String?,
         displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
         sessions: (json['sessions'] as List? ?? const <dynamic>[])
