@@ -580,7 +580,20 @@ public static class DependencyInjection
         // value converter on UserProfile (SimfAppDbContext.OnModelCreating).
         services.AddSingleton<SIMF.Application.Abstractions.IPiiEncryptor, AesGcmPiiEncryptor>();
         // A6-18 — upload malware scanner (EICAR default; swap for ClamAV/Defender).
-        services.AddSingleton<SIMF.Application.Abstractions.IUploadScanner, DefaultUploadScanner>();
+        // A6-18 (NCA) / D-568 — the malware-scan engine. "ClamAV" wires the real
+        // clamd daemon (production); anything else keeps the built-in EICAR
+        // detector. The centralized file pipeline runs whichever is registered
+        // fail-closed in Production (D-494).
+        var scanEngine = configuration.GetSection(UploadScanningOptions.SectionName)["Engine"];
+        if (string.Equals(scanEngine, "ClamAV", StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddSingleton<SIMF.Application.Abstractions.IUploadScanner,
+                SIMF.Infrastructure.Files.ClamAvUploadScanner>();
+        }
+        else
+        {
+            services.AddSingleton<SIMF.Application.Abstractions.IUploadScanner, DefaultUploadScanner>();
+        }
 
         // D-568 — the centralized file store: one envelope cipher + one storage
         // provider behind the single StoredFile pipeline. The cipher boot-fails on

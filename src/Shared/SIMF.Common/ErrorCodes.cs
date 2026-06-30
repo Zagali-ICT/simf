@@ -16,6 +16,10 @@ public static class ErrorCodes
     // A6-18 (NCA) — an uploaded file failed the malware scan.
     public const string UploadMalwareDetected = "UPLOAD_MALWARE_DETECTED";
 
+    // D-568 / D-494 — the malware scanner is unavailable and the pipeline is
+    // fail-closed, so the upload was rejected rather than stored unscanned.
+    public const string UploadScanUnavailable = "UPLOAD_SCAN_UNAVAILABLE";
+
     // Authentication (SIMF-API-001 section 12.6 and Amendment A)
     public const string AuthEmailAlreadyRegistered = "AUTH_EMAIL_ALREADY_REGISTERED";
     public const string AuthAccountNotFound = "AUTH_ACCOUNT_NOT_FOUND";
