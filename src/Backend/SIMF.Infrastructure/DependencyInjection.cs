@@ -581,6 +581,17 @@ public static class DependencyInjection
         services.AddSingleton<SIMF.Application.Abstractions.IPiiEncryptor, AesGcmPiiEncryptor>();
         // A6-18 — upload malware scanner (EICAR default; swap for ClamAV/Defender).
         services.AddSingleton<SIMF.Application.Abstractions.IUploadScanner, DefaultUploadScanner>();
+
+        // D-568 — the centralized file store: one envelope cipher + one storage
+        // provider behind the single StoredFile pipeline. The cipher boot-fails on
+        // a missing/invalid KEK the first time it is resolved (same posture as the
+        // ID-document key). Both are stateless singletons.
+        services.Configure<FileStorageOptions>(
+            configuration.GetSection(FileStorageOptions.SectionName));
+        services.AddSingleton<SIMF.Application.Files.Abstractions.IFileCipher,
+            SIMF.Infrastructure.Files.AesGcmEnvelopeCipher>();
+        services.AddSingleton<SIMF.Application.Files.Abstractions.IFileStorageProvider,
+            SIMF.Infrastructure.Files.FilesystemFileStorageProvider>();
         services.AddSingleton<ILogFileService, LogFileService>();
         services.AddSingleton<IJwtTokenService, JwtTokenService>();
         services.AddSingleton<ITotpVerifier, TotpVerifier>();
