@@ -3,7 +3,8 @@
 > **Authority:** SIMF E2E catalogue (D-133 / D-245). Mobile screen #5 — sign-up
 > step 1 (credentials). Spec: [`Page_005`](../../App/Page_005/README.md). Runner-agnostic
 > Gherkin. The screen glue is widget-tested in
-> `src/Mobile/simf_app/test/features/auth/sign_up_form_screen_test.dart`; the
+> `src/Mobile/simf_app/test/features/account/sign_up_form_screen_test.dart` (+ the
+> golden `test/golden/sign_up_form_golden_test.dart`, 168:3454); the
 > controller delegation in
 > `src/Mobile/packages/simf_auth_pkg/test/auth_controller_signup_test.dart`; the
 > repository contract in
@@ -16,7 +17,7 @@
 | **APIs** | `POST /api/v1/app/auth/sign-up` — `SignUpRequest { email, password, confirmPassword }` → **generic 201** `SignUpResponse { email, codeExpiresInSeconds }` (enumeration-resistant, D-198/D-270) |
 | **Surface** | Mobile (Flutter) — Guest (creates the account; does **not** sign in) |
 | **Auth setup** | None. No token, no `Authorization` header — this screen creates a Guest account. |
-| **Last reviewed** | 2026-06-12 |
+| **Last reviewed** | 2026-06-30 (clean-code freeze D-551; behaviour unchanged, icons → SVG glyphs) |
 
 > **Redesigned (D-370, 2026-06-12):** the screen now wears the KSA-Project
 > login chrome (Figma 168:3454) — navy surface + sweep, back chevron + globe
