@@ -571,9 +571,14 @@
         // Load profile types for this kind + interests + countries +
         // organisations in parallel — the desk shouldn't wait for sequential
         // round-trips.
+        // D-561 — every ProfileType is Visitor-scope post-D-186; "Other" is no
+        // longer a valid UserType, so fetching with userType=Other returned an
+        // EMPTY picker (the Others desk showed "no profile types defined"). Fetch
+        // under the valid Visitor scope and split audience vs partner client-side
+        // by IsVisitor below; Kind still drives that split + the submit routing.
         var profileTypesTask = JS.InvokeAsync<ApiResult<IReadOnlyList<AdminProfileTypeSummary>>>(
             "simfAccount.getJson",
-            $"/account/api/admin/profile-types?userType={Uri.EscapeDataString(Kind)}").AsTask();
+            "/account/api/admin/profile-types?userType=Visitor").AsTask();
         var countriesTask = JS.InvokeAsync<ApiResult<CountryListResponse>>(
             "simfAccount.getJson",
             "/account/api/admin/walk-in/countries").AsTask();

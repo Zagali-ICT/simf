@@ -169,6 +169,14 @@ public sealed class IdentitySeeder(
         await EnsureProfileTypeAsync(
             "Staff", "فريق", "#10B981",
             isVisitor: false, MobileAppRole.Staff, cancellationToken);
+        // D-562 — seed the canonical Moderator partner profile type alongside
+        // Staff (MobileAppRole.Moderator = Staff + content/user moderation), so a
+        // moderator app account is creatable out of the box. The seeder note above
+        // ("Programme Coordinator / Operations Lead → Moderator") still lets admins
+        // add further Moderator-mapped types at runtime; this is the canonical one.
+        await EnsureProfileTypeAsync(
+            "Moderator", "منسّق", "#6366F1", // indigo — distinct from Staff green
+            isVisitor: false, MobileAppRole.Moderator, cancellationToken);
         // D-163 (PDF §2.5) — partner-tier seed expanded to ship Media
         // and Sponsor as canonical operational types. Both default to
         // MobileAppRole.None — they are display categories, not

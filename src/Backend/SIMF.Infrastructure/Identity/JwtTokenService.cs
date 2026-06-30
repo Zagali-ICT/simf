@@ -51,11 +51,18 @@ internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider
         };
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
-        // Issue-1 — the resolved permission codes (or the single wildcard "*"
-        // for an Administrator), minted as `perm` claims so the authorization
+        // Issue-1 + D-563 — the resolved permission codes (or the single wildcard
+        // "*" for an Administrator) UNION the operational perms the user's
+        // MobileAppRole confers, minted as `perm` claims so the authorization
         // handler can gate per page-and-action without a per-request DB lookup
-        // (PermissionCatalog.ClaimType).
-        claims.AddRange(permissions.Select(code => new Claim(PermissionCatalog.ClaimType, code)));
+        // (PermissionCatalog.ClaimType). App Staff / Moderator attendees gain
+        // gate-scan + walk-in + moderation purely from their ProfileType's
+        // MobileAppRole — never an admin RBAC role (option A) — so the same
+        // permission gate authorises both the CP desk and the staff app screen.
+        var effectivePermissions = permissions
+            .Concat(PermissionCatalog.OperationalPermissionsForAppRole(mobileAppRole))
+            .Distinct(StringComparer.Ordinal);
+        claims.AddRange(effectivePermissions.Select(code => new Claim(PermissionCatalog.ClaimType, code)));
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.SigningKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
