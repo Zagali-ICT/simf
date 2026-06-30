@@ -87,6 +87,20 @@ internal sealed partial class AdminAccountService
 
         var emailChanged = !string.Equals(
             target.Email, trimmedEmail, StringComparison.OrdinalIgnoreCase);
+
+        // D-563 — a ProfileType change is a PRIVILEGE change: the type's
+        // MobileAppRole now sources the app's operational perm claims, so a
+        // demotion (e.g. Moderator → a no-authority type) must invalidate any
+        // live access token — otherwise the old perms survive until the token
+        // expires. Detect it here so the stamp roll below covers it exactly like
+        // an email change.
+        var currentProfileTypeId = await appDbContext.UserProfiles
+            .AsNoTracking()
+            .Where(profile => profile.UserId == target.Id)
+            .Select(profile => profile.ProfileTypeId)
+            .SingleOrDefaultAsync(cancellationToken);
+        var profileTypeChanged = currentProfileTypeId != resolvedProfileTypeId;
+
         var now = timeProvider.GetUtcNow();
 
         await transactionRunner.ExecuteAsync(async (innerCt) =>
@@ -104,9 +118,12 @@ internal sealed partial class AdminAccountService
                     "تعذّر تحديث الحساب.");
             }
 
-            // A login-email change is an identity change: roll the stamp and
-            // revoke sessions so the old email cannot keep an active session.
-            if (emailChanged)
+            // A login-email change OR a profile-type change is an identity /
+            // privilege change: roll the stamp and revoke sessions so a stale
+            // session cannot keep the old identity, and so a demoted user loses
+            // their elevated app authority at the next request instead of when
+            // the access token happens to expire (D-563).
+            if (emailChanged || profileTypeChanged)
             {
                 await accounts.UpdateSecurityStampAsync(target);
                 await refreshTokenRepository.RevokeAllForUserAsync(
@@ -123,7 +140,9 @@ internal sealed partial class AdminAccountService
                 SubjectUserId = target.Id,
                 ActorUserId = actorUserId,
                 Detail = $"scope={(expectedIsVisitor ? "visitor" : "other")}; "
-                    + $"emailChanged={emailChanged}; profileType={resolvedProfileTypeId}",
+                    + $"emailChanged={emailChanged}; "
+                    + $"profileTypeChanged={profileTypeChanged}; "
+                    + $"profileType={resolvedProfileTypeId}",
             }, innerCt);
         }, cancellationToken);
 

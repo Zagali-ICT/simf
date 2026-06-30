@@ -1,3 +1,5 @@
+using SIMF.Common.Enums;
+
 namespace SIMF.Common;
 
 /// <summary>
@@ -1006,4 +1008,51 @@ public static class PermissionCatalog
         new(Vips.Notify, "Vips", "Notify", "Notify VIPs", PublicRelations),
         new(Vips.Export, "Vips", "Export", "Export the VIP list", PublicRelations),
     ];
+
+    // ── App operational permissions by MobileAppRole (D-563) ──────────────
+    // The capability a partner-side app user carries comes from their
+    // ProfileType.MobileAppRole — NOT an admin RBAC role. ResolveMobileAppRole
+    // only returns Staff/Moderator for an APPROVED partner account, so these
+    // grants are gated by that admin-curated assignment + approval.
+
+    /// <summary>Staff (gate operations + walk-in registration + look-ups).
+    /// Scoped to exactly the staff app screens — `Others.RegisterOnsite` is
+    /// deliberately NOT granted (no app screen registers partner "Other"
+    /// accounts; that lives only on the CP desk), keeping least-privilege.</summary>
+    private static readonly IReadOnlyList<string> StaffAppPermissions =
+    [
+        Gates.Operate,           // /app/gates scans + my-assignments
+        Gates.ViewOwnReports,    // /app/gates visitor list + my reports
+        Visitors.RegisterOnsite, // /app/staff/visitors/register-onsite
+    ];
+
+    /// <summary>Moderator = Staff + content/user moderation.</summary>
+    private static readonly IReadOnlyList<string> ModeratorAppPermissions =
+    [
+        Gates.Operate,
+        Gates.ViewOwnReports,
+        Visitors.RegisterOnsite,
+        Questions.View,
+        Questions.Moderate,
+        SessionModeration.Moderate,
+        Comments.Moderate,
+    ];
+
+    /// <summary>
+    /// D-563 — the operational permission codes an APP user receives purely from
+    /// their resolved <see cref="MobileAppRole"/> (set on the user's ProfileType,
+    /// never an admin RBAC role). This is how a partner-side Staff / Moderator
+    /// attendee gains the on-ground capabilities their app screens need (gate
+    /// scan, walk-in registration, moderation) without being a Control-Panel
+    /// admin. Empty for None / Visitor / Exhibitor (the exhibitor lead-capture
+    /// endpoints gate on the approved account only, no perm claim).
+    /// </summary>
+    public static IReadOnlyList<string> OperationalPermissionsForAppRole(
+        MobileAppRole role) =>
+        role switch
+        {
+            MobileAppRole.Staff => StaffAppPermissions,
+            MobileAppRole.Moderator => ModeratorAppPermissions,
+            _ => [],
+        };
 }
