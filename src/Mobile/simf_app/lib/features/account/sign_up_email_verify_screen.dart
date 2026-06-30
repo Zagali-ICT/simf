@@ -8,9 +8,9 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../core/responsive/max_width_body.dart';
+import 'widgets/auth_chrome.dart';
 import 'widgets/otp_code_boxes.dart';
-
-const Color _sweepTint = Color(0x0AFFFFFF);
 
 /// Page 006 — التحقق بالبريد · Email verification. The KSA-Project Figma
 /// design (node 505:837 — D-364): navy surface with the decorative sweep, a
@@ -22,6 +22,12 @@ const Color _sweepTint = Color(0x0AFFFFFF);
 /// { email, code }` (anonymous); success routes to sign-in (verify-email
 /// issues no session). **Resend** re-issues via `POST /app/auth/resend-code`
 /// and restarts the cooldown from the returned `codeExpiresInSeconds`.
+///
+/// Clean-code frozen (D-553, Phase 3): the lone sweep-tint const dropped for
+/// `SimfTokens.surfaceTint`; the long `build` split into `_buildHeader` /
+/// `_buildContent` / `_buildBottomActions`; the resend link reuses the shared
+/// [authLinkButtonStyle]; the body + actions capped by [MaxWidthBody].
+/// Behaviour + render unchanged — the 505:837 golden locks it.
 class SignUpEmailVerifyScreen extends ConsumerStatefulWidget {
   const SignUpEmailVerifyScreen({required this.email, super.key});
 
@@ -180,7 +186,7 @@ class _SignUpEmailVerifyScreenState
                 width: 313,
                 height: 323,
                 decoration: BoxDecoration(
-                  color: _sweepTint,
+                  color: SimfTokens.surfaceTint,
                   borderRadius: BorderRadius.circular(40),
                 ),
               ),
@@ -189,196 +195,202 @@ class _SignUpEmailVerifyScreenState
           SafeArea(
             child: Column(
               children: <Widget>[
-                // Header band (Figma 505:919): chevron left, centred title.
-                SizedBox(
-                  height: 56,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: <Widget>[
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 8),
-                          child: IconButton(
-                            onPressed: _busy ? null : _back,
-                            icon: const Icon(
-                              Icons.arrow_back_ios_new,
-                              color: Colors.white,
-                              size: 20,
-                              textDirection: TextDirection.ltr,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Text(
-                        l10n.emailVerifyTitle,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 400),
-                      child: Column(
-                        children: <Widget>[
-                          const SizedBox(height: 48),
-                          // Gold-ringed mail mark (Figma 505:969).
-                          const OtpMark(icon: Icons.mail_outline),
-                          const SizedBox(height: 24),
-                          Text(
-                            l10n.enterOtpTitle,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          Text(
-                            l10n.emailVerifySentTo,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: SimfTokens.beigeBorder,
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            widget.email,
-                            textDirection: TextDirection.ltr,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: SimfTokens.accent,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 48),
-                          OtpCodeBoxes(
-                            controller: _code,
-                            focusNode: _codeFocus,
-                            enabled: !_busy,
-                            onChanged: () => setState(() {}),
-                            onSubmitted: () {
-                              if (_canVerify) {
-                                unawaited(_verify());
-                              }
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          if (_cooldown > 0)
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: <Widget>[
-                                Text(
-                                  l10n.resendInLabel,
-                                  style: const TextStyle(
-                                    color: otpMutedBlue,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  _formatCooldown(_cooldown),
-                                  textDirection: TextDirection.ltr,
-                                  style: const TextStyle(
-                                    color: SimfTokens.accent,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          if (_error != null) ...<Widget>[
-                            const SizedBox(height: 12),
-                            Text(
-                              _error!,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color: SimfTokens.danger,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                          const SizedBox(height: 24),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                // Bottom actions (Figma 505:1003).
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: <Widget>[
-                      FilledButton(
-                        onPressed:
-                            _canVerify ? () => unawaited(_verify()) : null,
-                        child: _busy
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : Text(
-                                l10n.verifyButton,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          Text(
-                            l10n.noCodeQuestion,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          TextButton(
-                            onPressed:
-                                _canResend ? () => unawaited(_resend()) : null,
-                            style: TextButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              foregroundColor: SimfTokens.accent,
-                            ),
-                            child: Text(
-                              l10n.resendAction,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+                _buildHeader(l10n),
+                Expanded(child: _buildContent(l10n)),
+                _buildBottomActions(l10n),
                 const SizedBox(height: 24),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Header band (Figma 505:919): back chevron at the start, centred title.
+  Widget _buildHeader(AppL10n l10n) {
+    return SizedBox(
+      height: 56,
+      child: Stack(
+        alignment: Alignment.center,
+        children: <Widget>[
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: IconButton(
+                onPressed: _busy ? null : _back,
+                icon: const Icon(
+                  Icons.arrow_back_ios_new,
+                  color: Colors.white,
+                  size: 20,
+                  textDirection: TextDirection.ltr,
+                ),
+              ),
+            ),
+          ),
+          Text(
+            l10n.emailVerifyTitle,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContent(AppL10n l10n) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: MaxWidthBody(
+        maxWidth: 560,
+        child: Column(
+          children: <Widget>[
+            const SizedBox(height: 48),
+            // Gold-ringed mail mark (Figma 505:969).
+            const OtpMark(icon: Icons.mail_outline),
+            const SizedBox(height: 24),
+            Text(
+              l10n.enterOtpTitle,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              l10n.emailVerifySentTo,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: SimfTokens.beigeBorder,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              widget.email,
+              textDirection: TextDirection.ltr,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: SimfTokens.accent,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 48),
+            OtpCodeBoxes(
+              controller: _code,
+              focusNode: _codeFocus,
+              enabled: !_busy,
+              onChanged: () => setState(() {}),
+              onSubmitted: () {
+                if (_canVerify) {
+                  unawaited(_verify());
+                }
+              },
+            ),
+            const SizedBox(height: 16),
+            if (_cooldown > 0) _buildCooldownRow(l10n),
+            if (_error != null) ...<Widget>[
+              const SizedBox(height: 12),
+              Text(
+                _error!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: SimfTokens.danger,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCooldownRow(AppL10n l10n) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        Text(
+          l10n.resendInLabel,
+          style: const TextStyle(color: otpMutedBlue, fontSize: 14),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          _formatCooldown(_cooldown),
+          textDirection: TextDirection.ltr,
+          style: const TextStyle(
+            color: SimfTokens.accent,
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Bottom actions (Figma 505:1003): the gold verify CTA + the resend row.
+  Widget _buildBottomActions(AppL10n l10n) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: MaxWidthBody(
+        maxWidth: 560,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            FilledButton(
+              onPressed: _canVerify ? () => unawaited(_verify()) : null,
+              child: _busy
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Text(
+                      l10n.verifyButton,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Text(
+                  l10n.noCodeQuestion,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                TextButton(
+                  onPressed: _canResend ? () => unawaited(_resend()) : null,
+                  style: authLinkButtonStyle(SimfTokens.accent),
+                  child: Text(
+                    l10n.resendAction,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
