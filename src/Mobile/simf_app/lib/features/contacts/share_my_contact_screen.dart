@@ -7,6 +7,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/simf_confirm_dialog.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import '../../core/sharing/content_sharer.dart';
 import '../myarea/data/myarea_repository.dart';
@@ -75,24 +76,13 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
 
   Future<void> _rotate() async {
     final l10n = AppL10n.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.shareMyContactRotateConfirmTitle),
-        content: Text(l10n.shareMyContactRotateConfirmBody),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(l10n.cancelLabel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(l10n.shareMyContactRotate),
-          ),
-        ],
-      ),
+    final confirmed = await SimfConfirmDialog.show(
+      context,
+      title: l10n.shareMyContactRotateConfirmTitle,
+      message: l10n.shareMyContactRotateConfirmBody,
+      confirmLabel: l10n.shareMyContactRotate,
     );
-    if (confirmed != true || !mounted) {
+    if (!confirmed || !mounted) {
       return;
     }
     setState(() => _rotating = true);

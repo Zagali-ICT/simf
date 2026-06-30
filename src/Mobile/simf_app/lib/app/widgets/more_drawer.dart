@@ -15,6 +15,7 @@ import '../localization/locale_controller.dart';
 import '../route_names.dart';
 import '../router.dart';
 import '../theme/tokens.dart';
+import 'simf_confirm_dialog.dart';
 
 /// The shell's side drawer — the المزيد menu as a slide-in panel, opened by the
 /// shared top bar's ☰ (in RTL it slides from the right). Holds the navigation
@@ -192,24 +193,14 @@ class MoreDrawer extends ConsumerWidget {
   ) async {
     final router = GoRouter.of(context);
     final auth = ref.read(authControllerProvider.notifier);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.signOutLink),
-        content: Text(l10n.signOutConfirmBody),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(l10n.cancelLabel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(l10n.signOutLink),
-          ),
-        ],
-      ),
+    final confirmed = await SimfConfirmDialog.show(
+      context,
+      title: l10n.signOutLink,
+      message: l10n.signOutConfirmBody,
+      confirmLabel: l10n.signOutLink,
+      isDestructive: true,
     );
-    if (confirmed != true) {
+    if (!confirmed) {
       return;
     }
     await auth.signOut();

@@ -9,6 +9,7 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/simf_confirm_dialog.dart';
 
 /// One home for the device's biometric (Face-ID / fingerprint) sign-in: the OS
 /// capability check (`local_auth`) plus the device-key lifecycle (query / revoke)
@@ -218,48 +219,25 @@ class _FaceIdToggleTileState extends ConsumerState<FaceIdToggleTile> {
   }
 
   /// #7a — confirms intent before starting the emailed-OTP enable flow.
-  Future<bool> _confirmEnable(AppL10n l10n) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.biometricEnableConfirmTitle),
-        content: Text(l10n.biometricEnableConfirmBody),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(l10n.cancelLabel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(l10n.biometricEnableConfirmAction),
-          ),
-        ],
-      ),
+  Future<bool> _confirmEnable(AppL10n l10n) {
+    return SimfConfirmDialog.show(
+      context,
+      title: l10n.biometricEnableConfirmTitle,
+      message: l10n.biometricEnableConfirmBody,
+      confirmLabel: l10n.biometricEnableConfirmAction,
     );
-    return confirmed ?? false;
   }
 
   /// Confirms the destructive disable: revoking the device key deletes the local
   /// biometric credential permanently (it can only be re-enrolled, not restored).
   /// Returns true only when the user explicitly taps Delete.
-  Future<bool> _confirmDisable(AppL10n l10n) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.biometricDisableConfirmTitle),
-        content: Text(l10n.biometricDisableConfirmBody),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(l10n.cancelLabel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(l10n.biometricDisableConfirmAction),
-          ),
-        ],
-      ),
+  Future<bool> _confirmDisable(AppL10n l10n) {
+    return SimfConfirmDialog.show(
+      context,
+      title: l10n.biometricDisableConfirmTitle,
+      message: l10n.biometricDisableConfirmBody,
+      confirmLabel: l10n.biometricDisableConfirmAction,
+      isDestructive: true,
     );
-    return confirmed ?? false;
   }
 }

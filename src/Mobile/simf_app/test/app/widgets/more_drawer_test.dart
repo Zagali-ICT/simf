@@ -193,8 +193,8 @@ void main() {
       await _scrollTo(tester, find.text('Sign out'));
       await tester.tap(find.text('Sign out'));
       await tester.pumpAndSettle();
-      // Confirm dialog up.
-      expect(find.byType(AlertDialog), findsOneWidget);
+      // Confirm dialog up (shared SimfConfirmDialog renders a Dialog).
+      expect(find.byType(Dialog), findsOneWidget);
 
       await tester.tap(find.widgetWithText(FilledButton, 'Sign out'));
       await tester.pumpAndSettle();

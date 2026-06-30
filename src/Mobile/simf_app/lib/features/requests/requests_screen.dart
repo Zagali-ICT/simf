@@ -6,6 +6,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/simf_confirm_dialog.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import 'data/request_models.dart';
 import 'data/requests_repository.dart';
@@ -44,30 +45,14 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
 
   Future<void> _cancel(AppRequestItem item) async {
     final l10n = AppL10n.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: SimfTokens.navyDeep,
-        title: Text(
-          l10n.requestCancelConfirm,
-          style: const TextStyle(color: Colors.white),
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(l10n.requestCancelKeep),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(
-              l10n.requestCancel,
-              style: const TextStyle(color: SimfTokens.danger),
-            ),
-          ),
-        ],
-      ),
+    final confirmed = await SimfConfirmDialog.show(
+      context,
+      title: l10n.requestCancelConfirm,
+      confirmLabel: l10n.requestCancel,
+      cancelLabel: l10n.requestCancelKeep,
+      isDestructive: true,
     );
-    if (confirmed != true) {
+    if (!confirmed) {
       return;
     }
     try {
