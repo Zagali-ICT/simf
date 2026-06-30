@@ -152,12 +152,18 @@ class SeatCell {
     required this.seatNumber,
     required this.kind,
     this.reservationId,
+    this.status = BookingStatus.pending,
   });
 
   final String? reservationId;
   final String rowLabel;
   final int seatNumber;
   final SeatReservationKind kind;
+
+  /// D-572 — the booking's approval state (append-only wire key `status`),
+  /// used by the "my seat" card to switch its hint. Defaults to [pending] so an
+  /// older server that omits the field reads as awaiting approval.
+  final BookingStatus status;
 
   /// A stable `row:seat` key for set membership (status derivation, L-2).
   String get key => '$rowLabel:$seatNumber';
@@ -167,6 +173,7 @@ class SeatCell {
         rowLabel: json['rowLabel'] as String? ?? '',
         seatNumber: (json['seatNumber'] as num?)?.toInt() ?? 0,
         kind: SeatReservationKind.fromJson(json['kind']),
+        status: BookingStatus.fromJson(json['status']),
       );
 }
 

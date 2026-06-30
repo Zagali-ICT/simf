@@ -972,6 +972,10 @@ class AppL10n {
   String get generalAdmissionLabel => _t('دخول عام', 'General admission');
   String get reservationPendingHint =>
       _t('بانتظار موافقة الإدارة', 'Pending approval');
+  // D-572 — the approved-booking hint (Figma 889:2766): once the Control Panel
+  // approves the seat the card swaps the pending line for this.
+  String get seatShowBadgeHint =>
+      _t('تأكد من إبراز بطاقتك عند الدخول', 'Show your badge at entry');
   String get cancelBookingCta => _t('إلغاء الحجز', 'Cancel booking');
   String get cancelBookingConfirmTitle => _t('إلغاء الحجز', 'Cancel booking?');
   String get cancelBookingConfirmBody => _t(

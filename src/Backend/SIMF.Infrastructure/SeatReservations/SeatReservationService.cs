@@ -40,11 +40,14 @@ internal sealed class SeatReservationService(
             .Select(r => new
             {
                 r.Id, r.RowLabel, r.SeatNumber, r.Kind, r.ReservedForUserId,
+                // D-572 — carry the booking status so MyCell can drive the app's
+                // seat-card hint (Pending → await approval / Approved → show badge).
+                r.Status,
             })
             .ToListAsync(cancellationToken);
 
         var cells = reservations.Select(r => new SessionSeatCell(
-            r.Id, r.RowLabel, r.SeatNumber, r.Kind)).ToList();
+            r.Id, r.RowLabel, r.SeatNumber, r.Kind, r.Status)).ToList();
 
         SessionSeatCell? mine = null;
         if (actorUserId is { } actor)
@@ -53,7 +56,8 @@ internal sealed class SeatReservationService(
             if (ownRow is not null)
             {
                 mine = new SessionSeatCell(
-                    ownRow.Id, ownRow.RowLabel, ownRow.SeatNumber, ownRow.Kind);
+                    ownRow.Id, ownRow.RowLabel, ownRow.SeatNumber, ownRow.Kind,
+                    ownRow.Status);
             }
         }
 

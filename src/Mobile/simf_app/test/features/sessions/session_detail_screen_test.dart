@@ -52,12 +52,21 @@ const _testConfig = SimfDataConfig(
   deviceType: SimfDeviceType.android,
 );
 
-// D-485 — the caller's own seat cell (an assigned-seat booking).
+// D-485 — the caller's own seat cell (an assigned-seat booking, still pending).
 const _mySeatCell = SeatCell(
   reservationId: 'r1',
   rowLabel: 'B',
   seatNumber: 12,
   kind: SeatReservationKind.userBooking,
+);
+
+// D-572 — the same seat once the Control Panel has APPROVED the booking.
+const _myApprovedSeatCell = SeatCell(
+  reservationId: 'r1',
+  rowLabel: 'B',
+  seatNumber: 12,
+  kind: SeatReservationKind.userBooking,
+  status: BookingStatus.approved,
 );
 
 SessionSeatMap _seatMap({
@@ -417,6 +426,20 @@ void main() {
       );
       expect(find.widgetWithText(OutlinedButton, 'Reminder'), findsOneWidget);
       expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('D-572 — an APPROVED booking shows the show-badge hint, not the '
+        'pending line', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeDetailRepo(detail: _detail()),
+        seatMap: _seatMap(myCell: _myApprovedSeatCell),
+        controller: _SignedInController(),
+      );
+
+      expect(find.text('Row B · Seat 12'), findsOneWidget);
+      expect(find.text('Show your badge at entry'), findsOneWidget);
+      expect(find.text('Pending approval'), findsNothing);
     });
 
     testWidgets('#1 — Cancel booking confirms then releases the seat and shows '

@@ -28,12 +28,16 @@ public sealed record SessionSeatMap(
     SeatSelectionMode Mode = SeatSelectionMode.AssignedSeat);
 
 /// <summary>D-175 — one occupied seat in the grid. D-485: <see cref="RowLabel"/>
-/// and <see cref="SeatNumber"/> are null for an OpenSeating join.</summary>
+/// and <see cref="SeatNumber"/> are null for an OpenSeating join. D-572 appends
+/// <see cref="Status"/> (append-only wire) so the app's "my seat" card can switch
+/// its hint — Pending → "await approval", Approved → "show your badge at entry";
+/// default Pending keeps older callers safe.</summary>
 public sealed record SessionSeatCell(
     Guid ReservationId,
     string? RowLabel,
     int? SeatNumber,
-    SeatReservationKind Kind);
+    SeatReservationKind Kind,
+    BookingStatus Status = BookingStatus.Pending);
 
 /// <summary>D-175 — visitor self-pick request. Pass row+seat from
 /// the grid the app rendered against the <see cref="SessionSeatMap"/>.

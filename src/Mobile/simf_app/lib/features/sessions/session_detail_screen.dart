@@ -1084,6 +1084,12 @@ class _ReservationCard extends StatelessWidget {
     final title = isOpen
         ? l10n.generalAdmissionLabel
         : l10n.seatLocation(cell.rowLabel, cell.seatNumber);
+    // D-572 — once the booking is approved the card swaps the pending line for
+    // the "show your badge at entry" hint (Figma 889:2766); otherwise it stays
+    // "awaiting approval".
+    final hint = cell.status == BookingStatus.approved
+        ? l10n.seatShowBadgeHint
+        : l10n.reservationPendingHint;
     return SimfCard(
       onTap: onView,
       child: Padding(
@@ -1110,7 +1116,7 @@ class _ReservationCard extends StatelessWidget {
                   ),
                   const SizedBox(height: SimfTokens.space2),
                   Text(
-                    l10n.reservationPendingHint,
+                    hint,
                     style: const TextStyle(
                       color: SimfTokens.beigeBorder,
                       fontSize: SimfTokens.textSm,

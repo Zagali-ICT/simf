@@ -226,6 +226,46 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Seat_map_my_cell_carries_the_booking_status_pending_then_approved()
+    {
+        // D-572 — the app switches the مقعدي hint on the booking status, so the
+        // seat map's MyCell must carry it: Pending until the CP approves, then
+        // Approved (the card then shows "show your badge at entry").
+        var (session, _) = await SeedSessionWithLayoutAsync(new[] { "A" }, seatsPerRow: 3);
+        var visitor = await SignInApprovedVisitorAsync();
+
+        var pick = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 1 }, visitor);
+        Assert.Equal(HttpStatusCode.OK, pick.StatusCode);
+        var reservation = (await pick.Content
+            .ReadFromJsonAsync<ApiResult<MySeatReservation>>())!.Data!;
+
+        // Fresh booking → MyCell is Pending.
+        var pendingMap = (await (await GetAuthAsync(
+                $"/api/v1/app/sessions/{session.Id}/seats", visitor))
+            .Content.ReadFromJsonAsync<ApiResult<SessionSeatMap>>())!.Data!;
+        Assert.NotNull(pendingMap.MyCell);
+        Assert.Equal(BookingStatus.Pending, pendingMap.MyCell!.Status);
+
+        // Approve the booking directly; the map then reflects Approved.
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var booking = await db.SeatReservations
+                .SingleAsync(r => r.Id == reservation.ReservationId);
+            booking.Status = BookingStatus.Approved;
+            await db.SaveChangesAsync();
+        }
+
+        var approvedMap = (await (await GetAuthAsync(
+                $"/api/v1/app/sessions/{session.Id}/seats", visitor))
+            .Content.ReadFromJsonAsync<ApiResult<SessionSeatMap>>())!.Data!;
+        Assert.NotNull(approvedMap.MyCell);
+        Assert.Equal(BookingStatus.Approved, approvedMap.MyCell!.Status);
+    }
+
+    [Fact]
     public async Task Seat_map_my_cell_is_null_for_a_caller_without_a_reservation()
     {
         // Page_017 — a signed-in approved account with no booking sees no card:
