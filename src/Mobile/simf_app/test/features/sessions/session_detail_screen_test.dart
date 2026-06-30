@@ -407,7 +407,9 @@ void main() {
       expect(find.text('Row B · Seat 12'), findsOneWidget);
       // D-485 — the pending-approval hint replaced the badge hint.
       expect(find.text('Pending approval'), findsOneWidget);
-      expect(find.text('Cancel booking'), findsOneWidget);
+      // Owner 2026-06-30 — cancel is now a plain white "Cancel" line under the
+      // CTA row (was the red "Cancel booking" link inside the card).
+      expect(find.text('Cancel'), findsOneWidget);
       expect(
         find.widgetWithText(FilledButton, 'Add to calendar'),
         findsOneWidget,
@@ -426,8 +428,8 @@ void main() {
         controller: _SignedInController(),
       );
 
-      // Open the confirm dialog from the booking card's cancel button.
-      await tester.tap(find.widgetWithText(TextButton, 'Cancel booking'));
+      // Open the confirm dialog from the white "Cancel" link under the CTA row.
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
       await tester.pumpAndSettle();
       expect(find.text('Cancel booking?'), findsOneWidget);
 
@@ -449,10 +451,16 @@ void main() {
         controller: _SignedInController(),
       );
 
-      await tester.tap(find.widgetWithText(TextButton, 'Cancel booking'));
-      await tester.pumpAndSettle();
-      // Tap the dialog's dismiss (Cancel) button.
       await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.pumpAndSettle();
+      // Tap the dialog's dismiss (Cancel) button — scoped to the dialog so it
+      // doesn't collide with the screen's own white "Cancel" link.
+      await tester.tap(
+        find.descendant(
+          of: find.byType(Dialog),
+          matching: find.widgetWithText(TextButton, 'Cancel'),
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(seatRepo.releaseCalls, 0);
@@ -478,7 +486,7 @@ void main() {
         controller: _SignedInController(),
       );
 
-      await tester.tap(find.widgetWithText(TextButton, 'Cancel booking'));
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(FilledButton, 'Cancel booking'));
       await tester.pumpAndSettle();
@@ -510,7 +518,7 @@ void main() {
         controller: _SignedInController(),
       );
 
-      await tester.tap(find.widgetWithText(TextButton, 'Cancel booking'));
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(FilledButton, 'Cancel booking'));
       await tester.pumpAndSettle();
@@ -556,7 +564,7 @@ void main() {
       // The guest path never calls the seat endpoint → no card, no Join CTA.
       expect(find.text('My seat'), findsNothing);
       expect(find.textContaining('Seat 12'), findsNothing);
-      expect(find.text('Join this session'), findsNothing);
+      expect(find.text('Join the session'), findsNothing);
     });
 
     testWidgets('signed-in, assigned-seat, no reservation → the Select-my-seat '
@@ -569,8 +577,9 @@ void main() {
       );
 
       expect(find.text('My seat'), findsNothing);
-      expect(find.text('Join this session'), findsOneWidget); // section heading
-      final cta = find.widgetWithText(FilledButton, 'Select my seat');
+      // Owner 2026-06-30 — no section heading now; one gold join button, unified
+      // label for both modes. Assigned-seat still opens the picker.
+      final cta = find.widgetWithText(FilledButton, 'Join the session');
       expect(cta, findsOneWidget);
       await tester.tap(cta);
       await tester.pumpAndSettle();
@@ -611,7 +620,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final cta = find.widgetWithText(FilledButton, 'Join this session');
+      final cta = find.widgetWithText(FilledButton, 'Join the session');
       expect(cta, findsOneWidget);
       await tester.tap(cta);
       await tester.pumpAndSettle();

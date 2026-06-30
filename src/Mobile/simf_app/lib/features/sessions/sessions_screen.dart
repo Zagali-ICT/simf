@@ -253,14 +253,25 @@ class _SearchField extends StatelessWidget {
           color: Colors.white,
           fontSize: SimfTokens.textSm,
         ),
-        suffixIcon: const SimfSvgIcon(
-          'assets/icons/ic_search.svg',
-          size: 18,
-          color: Colors.white,
+        // Frame 883:2316 — the 18px magnifier hugs the inline-start (physical
+        // right under RTL), packed next to the hint (8px from the edge, 8px
+        // before the text); the rest of the field is empty. A prefixIcon lands
+        // at the inline-start in RTL (a suffixIcon would push it to the left).
+        prefixIcon: const Padding(
+          padding: EdgeInsetsDirectional.only(
+            start: SimfTokens.space2,
+            end: SimfTokens.space2,
+          ),
+          child: SimfSvgIcon(
+            'assets/icons/ic_search.svg',
+            size: 18,
+            color: Colors.white,
+          ),
         ),
+        prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: SimfTokens.space3,
-          vertical: SimfTokens.space4,
+          vertical: SimfTokens.space3,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(SimfTokens.radius),
