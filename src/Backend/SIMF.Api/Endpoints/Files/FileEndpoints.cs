@@ -55,7 +55,7 @@ public sealed class FileUploadEndpoint(
 {
     public override void Configure()
     {
-        Post("/api/v1/files");
+        Post("/files");
         AllowFileUploads();
         Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Files.Upload),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
@@ -110,7 +110,7 @@ public sealed class FileDownloadEndpoint(IFileService service)
 {
     public override void Configure()
     {
-        Get("/api/v1/files/{id:guid}");
+        Get("/files/{id:guid}");
         AllowAnonymous();
         Tags("Files");
     }
@@ -168,7 +168,7 @@ public sealed class FileDeleteEndpoint(IFileService service)
 {
     public override void Configure()
     {
-        Delete("/api/v1/files/{id:guid}");
+        Delete("/files/{id:guid}");
         Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Files.Delete),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
