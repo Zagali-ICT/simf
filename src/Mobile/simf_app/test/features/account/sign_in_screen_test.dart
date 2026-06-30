@@ -212,16 +212,55 @@ void main() {
         '(#7)', (tester) async {
       await _pump(tester, _Outcome.success, _FakePrefs());
 
-      await tester.enterText(find.byType(TextField).at(0), 'not-an-email');
-      await tester.enterText(find.byType(TextField).at(1), 'Password1');
+      await tester.enterText(find.byType(TextFormField).at(0), 'not-an-email');
+      await tester.enterText(find.byType(TextFormField).at(1), 'Password1');
       await tester.pump();
       await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
       await tester.pumpAndSettle();
 
-      // Client-side validation blocks the round-trip: the inline error shows
-      // and the screen never navigates (signIn was not called).
+      // The Form validator blocks the round-trip: the inline error shows and
+      // the screen never navigates (signIn was not called).
       expect(find.text('Invalid email'), findsOneWidget);
       expect(find.text('HOME'), findsNothing);
+    });
+
+    testWidgets('an empty password keeps the submit button disabled and blocks '
+        'sign-in', (tester) async {
+      await _pump(tester, _Outcome.success, _FakePrefs());
+
+      // Valid email, but no password → the submit gate keeps the button
+      // disabled, so the Form never validates and the screen never navigates.
+      await tester.enterText(
+        find.byType(TextFormField).at(0),
+        'visitor@example.sa',
+      );
+      await tester.pump();
+
+      final button = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'Sign in'),
+      );
+      expect(button.onPressed, isNull);
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+      await tester.pumpAndSettle();
+      expect(find.text('HOME'), findsNothing);
+    });
+
+    testWidgets('a blank password field reports the required validator error',
+        (tester) async {
+      await _pump(tester, _Outcome.success, _FakePrefs());
+
+      // Type then clear the password so the on-interaction autovalidate fires
+      // the field-level required rule (proving the validator is wired).
+      await tester.enterText(
+        find.byType(TextFormField).at(1),
+        'x',
+      );
+      await tester.pump();
+      await tester.enterText(find.byType(TextFormField).at(1), '');
+      await tester.pumpAndSettle();
+
+      expect(find.text('This field is required'), findsOneWidget);
     });
 
     testWidgets('the Face-ID button is hidden when the device has no biometric',

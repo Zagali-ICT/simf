@@ -10,6 +10,9 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_form_scaffold.dart';
+import '../../core/validation/email_validation.dart';
+import '../../core/validation/password_validation.dart';
+import '../../core/validation/required_validation.dart';
 import '../../core/widgets/simf_field_label.dart';
 import '../../core/widgets/simf_field_style.dart';
 import 'widgets/auth_chrome.dart';
@@ -37,6 +40,7 @@ class BadgeActivationScreen extends ConsumerStatefulWidget {
 }
 
 class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _email = TextEditingController();
   final TextEditingController _code = TextEditingController();
   final TextEditingController _password = TextEditingController();
@@ -70,6 +74,12 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
 
   Future<void> _start() async {
     final l10n = AppL10n.of(context);
+    // Validate only the manual email-entry step; the auto-send path (an account
+    // that already has an email) has no email field to validate and must not be
+    // blocked by the still-empty code/password fields.
+    if (widget.needsEmail && !(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
     setState(() {
       _busy = true;
       _error = null;
@@ -104,8 +114,7 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
 
   Future<void> _complete() async {
     final l10n = AppL10n.of(context);
-    if (_password.text != _confirm.text) {
-      setState(() => _error = l10n.passwordsDoNotMatch);
+    if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
     setState(() {
@@ -171,7 +180,9 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
     return SimfFormScaffold(
       busy: _busy,
       onBack: _back,
-      child: Column(
+      child: Form(
+        key: _formKey,
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Text(
@@ -201,6 +212,7 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
             ),
           ],
         ],
+        ),
       ),
     );
   }
@@ -208,15 +220,25 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
   List<Widget> _emailStep(AppL10n l10n) => <Widget>[
         SimfFieldLabel(l10n.emailLabelGeneric),
         const SizedBox(height: 8),
-        TextField(
+        TextFormField(
           controller: _email,
           keyboardType: TextInputType.emailAddress,
           textDirection: TextDirection.ltr,
           textAlign: TextAlign.left,
+          maxLength: 50,
           enabled: !_busy,
           onChanged: (_) => setState(() {}),
           style: simfInputStyle,
           decoration: simfFieldDecoration(counterText: ''),
+          validator: (value) {
+            if (isBlank(value)) {
+              return l10n.requiredField;
+            }
+            if (!isValidEmail(value!.trim())) {
+              return l10n.invalidEmail;
+            }
+            return null;
+          },
         ),
         const SizedBox(height: 24),
         AuthSubmitButton(
@@ -231,7 +253,7 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
   List<Widget> _codeStep(AppL10n l10n) => <Widget>[
         SimfFieldLabel(l10n.otpLabel),
         const SizedBox(height: 8),
-        TextField(
+        TextFormField(
           controller: _code,
           keyboardType: TextInputType.number,
           textDirection: TextDirection.ltr,
@@ -244,11 +266,12 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
           onChanged: (_) => setState(() {}),
           style: simfInputStyle,
           decoration: simfFieldDecoration(counterText: ''),
+          validator: (value) => isBlank(value) ? l10n.requiredField : null,
         ),
         const SizedBox(height: 16),
         SimfFieldLabel(l10n.newPasswordLabel),
         const SizedBox(height: 8),
-        TextField(
+        TextFormField(
           controller: _password,
           obscureText: _obscure,
           maxLength: 32,
@@ -256,23 +279,34 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
           onChanged: (_) => setState(() {}),
           style: simfInputStyle,
           decoration: simfFieldDecoration(counterText: '', suffixIcon: _passwordToggle(l10n)),
+          validator: (value) {
+            if (isBlank(value)) {
+              return l10n.requiredField;
+            }
+            if (!isValidPassword(value!)) {
+              return l10n.passwordPolicyError;
+            }
+            return null;
+          },
         ),
         const SizedBox(height: 16),
         SimfFieldLabel(l10n.confirmPasswordLabel),
         const SizedBox(height: 8),
-        TextField(
+        TextFormField(
           controller: _confirm,
           obscureText: _obscure,
           maxLength: 32,
           enabled: !_busy,
           onChanged: (_) => setState(() {}),
-          onSubmitted: (_) {
+          onFieldSubmitted: (_) {
             if (_canComplete) {
               unawaited(_complete());
             }
           },
           style: simfInputStyle,
           decoration: simfFieldDecoration(counterText: ''),
+          validator: (value) =>
+              value == _password.text ? null : l10n.passwordsDoNotMatch,
         ),
         const SizedBox(height: 24),
         AuthSubmitButton(

@@ -9,6 +9,8 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_form_scaffold.dart';
+import '../../core/validation/email_validation.dart';
+import '../../core/validation/required_validation.dart';
 import '../../core/widgets/simf_field_label.dart';
 import '../../core/widgets/simf_field_style.dart';
 import 'widgets/auth_chrome.dart';
@@ -27,6 +29,7 @@ class ForgotPasswordScreen extends ConsumerStatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _email = TextEditingController();
   bool _busy = false;
   String? _error;
@@ -40,10 +43,12 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   bool get _canSubmit => _email.text.trim().isNotEmpty && !_busy;
 
   Future<void> _submit() async {
-    final email = _email.text.trim();
-    if (email.isEmpty) {
+    // Client-side validation (required + email shape) gates the round-trip; the
+    // inline field error renders via the shared decoration's error border.
+    if (!_formKey.currentState!.validate()) {
       return;
     }
+    final email = _email.text.trim();
     final l10n = AppL10n.of(context);
     setState(() {
       _busy = true;
@@ -88,7 +93,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     return SimfFormScaffold(
       busy: _busy,
       onBack: _back,
-      child: Column(
+      child: Form(
+        key: _formKey,
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Text(
@@ -112,15 +119,25 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           const SizedBox(height: 24),
           SimfFieldLabel(l10n.emailLabel),
           const SizedBox(height: 8),
-          TextField(
+          TextFormField(
             controller: _email,
             keyboardType: TextInputType.emailAddress,
             textDirection: TextDirection.ltr,
             textAlign: TextAlign.left,
             maxLength: 50,
             enabled: !_busy,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            validator: (value) {
+              if (isBlank(value)) {
+                return AppL10n.of(context).requiredField;
+              }
+              if (!isValidEmail(value!.trim())) {
+                return AppL10n.of(context).invalidEmail;
+              }
+              return null;
+            },
             onChanged: (_) => setState(() {}),
-            onSubmitted: (_) {
+            onFieldSubmitted: (_) {
               if (_canSubmit) {
                 unawaited(_submit());
               }
@@ -142,6 +159,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             onPressed: _canSubmit ? () => unawaited(_submit()) : null,
           ),
         ],
+        ),
       ),
     );
   }

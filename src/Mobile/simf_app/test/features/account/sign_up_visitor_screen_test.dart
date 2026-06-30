@@ -8,6 +8,7 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/account/data/profile_models.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/account/sign_up_visitor_screen.dart';
+import 'package:simf_app/features/account/widgets/mobile_field.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// A fake profile repository — returns canned lookups + a configurable profile,
@@ -694,6 +695,31 @@ void main() {
       await _tapNext(tester);
 
       expect(find.text('INTERESTS'), findsOneWidget);
+    });
+
+    testWidgets('the mobile field caps its length at 16 (maxLength set)',
+        (tester) async {
+      final repo = _FakeProfileRepository(profile: _completeProfile());
+      await _pump(tester, repo);
+
+      // The shared MobileField wraps a TextFormField whose inner TextField has
+      // maxLength 16 (covers Saudi 05XXXXXXXX / +9665XXXXXXXX and E.164).
+      final mobileFinder = find.descendant(
+        of: find.byType(MobileField),
+        matching: find.byType(TextField),
+      );
+      expect(mobileFinder, findsOneWidget);
+      final mobile = tester.widget<TextField>(mobileFinder);
+      expect(mobile.maxLength, 16);
+
+      // Over-long input is truncated to the cap.
+      final mobileFormField = find.descendant(
+        of: find.byType(MobileField),
+        matching: find.byType(TextFormField),
+      );
+      await tester.enterText(mobileFormField, '0' * 30);
+      await tester.pump();
+      expect(mobile.controller!.text.length, 16);
     });
 
     testWidgets('a load failure shows the retry, which reloads the form',

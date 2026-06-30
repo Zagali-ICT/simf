@@ -15,6 +15,7 @@ import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_logo.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import '../../core/validation/email_validation.dart';
+import '../../core/validation/required_validation.dart';
 import '../../core/widgets/simf_field_label.dart';
 import '../../core/widgets/simf_field_style.dart';
 import 'biometric_auth.dart';
@@ -63,6 +64,7 @@ class SignInScreen extends ConsumerStatefulWidget {
 }
 
 class _SignInScreenState extends ConsumerState<SignInScreen> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _email = TextEditingController();
   final TextEditingController _password = TextEditingController();
   final LocalAuthentication _localAuth = LocalAuthentication();
@@ -95,19 +97,31 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   bool get _canSubmit =>
       _email.text.trim().isNotEmpty && _password.text.isNotEmpty && !_busy;
 
+  /// #7 — empty → required; otherwise the malformed-email shape is rejected
+  /// before the network round-trip, with an inline bilingual error.
+  String? _validateEmail(String? value) {
+    final email = value?.trim() ?? '';
+    final l10n = AppL10n.of(context);
+    if (isBlank(email)) {
+      return l10n.requiredField;
+    }
+    return isValidEmail(email) ? null : l10n.invalidEmail;
+  }
+
+  /// Sign-in only requires a non-empty password — it does NOT enforce the
+  /// sign-up password policy (any existing password must be allowed to sign in;
+  /// the server authenticates it).
+  String? _validatePassword(String? value) {
+    return isBlank(value) ? AppL10n.of(context).requiredField : null;
+  }
+
   Future<void> _submit() async {
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
     final email = _email.text.trim();
     final password = _password.text;
     final l10n = AppL10n.of(context);
-    if (email.isEmpty || password.isEmpty) {
-      return;
-    }
-    // #7 — reject a malformed email before the network round-trip, with an
-    // inline bilingual error (the field had no validation before).
-    if (!isValidEmail(email)) {
-      setState(() => _error = l10n.invalidEmail);
-      return;
-    }
     setState(() {
       _busy = true;
       _error = null;
@@ -374,9 +388,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         color: _card,
         borderRadius: SimfTokens.borderRadiusSmall,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
           Text(
             l10n.signInTitle,
             textAlign: TextAlign.center,
@@ -389,7 +405,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           const SizedBox(height: 24),
           SimfFieldLabel(l10n.emailLabel, color: SimfTokens.navy),
           const SizedBox(height: 8),
-          TextField(
+          TextFormField(
             controller: _email,
             keyboardType: TextInputType.emailAddress,
             textDirection: TextDirection.ltr,
@@ -398,23 +414,27 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             enabled: !_busy,
             onChanged: (_) => setState(() {}),
             style: simfInputStyle,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            validator: _validateEmail,
             decoration: simfFieldDecoration(counterText: ''),
           ),
           const SizedBox(height: 16),
           SimfFieldLabel(l10n.passwordLabel, color: SimfTokens.navy),
           const SizedBox(height: 8),
-          TextField(
+          TextFormField(
             controller: _password,
             obscureText: _obscure,
             maxLength: 32,
             enabled: !_busy,
             onChanged: (_) => setState(() {}),
-            onSubmitted: (_) {
+            onFieldSubmitted: (_) {
               if (_canSubmit) {
                 unawaited(_submit());
               }
             },
             style: simfInputStyle,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            validator: _validatePassword,
             decoration: simfFieldDecoration(
               counterText: '',
               suffixIcon: IconButton(
@@ -636,6 +656,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             ),
           ),
         ],
+        ),
       ),
     );
   }

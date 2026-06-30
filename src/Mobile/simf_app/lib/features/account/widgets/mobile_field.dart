@@ -33,10 +33,12 @@ class MobileField extends StatelessWidget {
           controller: controller,
           keyboardType: TextInputType.phone,
           textDirection: TextDirection.ltr,
+          // Covers Saudi 05XXXXXXXX / +9665XXXXXXXX and E.164 +[1-9]\d{7,14}.
+          maxLength: 16,
           style: simfInputStyle,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           validator: validator,
-          decoration: simfFieldDecoration(),
+          decoration: simfFieldDecoration(counterText: ''),
         ),
       ],
     );

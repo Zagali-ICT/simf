@@ -502,12 +502,14 @@ class _StaffRegisterVisitorScreenState
             _email,
             keyboardType: TextInputType.emailAddress,
             ltr: true,
+            maxLength: 50,
           ),
           _textField(
             l10n.staffPhoneLabel,
             _phone,
             keyboardType: TextInputType.phone,
             ltr: true,
+            maxLength: 16,
             validator: _validatePhone,
           ),
         ),
@@ -517,6 +519,7 @@ class _StaffRegisterVisitorScreenState
           _textField(
             l10n.arabicNameLabel,
             _arabicName,
+            maxLength: 256,
             validator: (v) => _required(l10n, v),
             inputFormatters: <TextInputFormatter>[
               FilteringTextInputFormatter.allow(RegExp(r'[ء-ي\s]')),
@@ -526,6 +529,7 @@ class _StaffRegisterVisitorScreenState
             l10n.englishNameLabel,
             _englishName,
             ltr: true,
+            maxLength: 256,
             validator: (v) => _required(l10n, v),
             inputFormatters: <TextInputFormatter>[
               FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z\s]')),
@@ -801,6 +805,7 @@ class _StaffRegisterVisitorScreenState
         const SizedBox(height: 16),
         TextFormField(
           controller: _documentNumber,
+          maxLength: 10,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           validator: (v) => _required(l10n, v),
           style: _inputStyle,

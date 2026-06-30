@@ -12,6 +12,8 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_form_scaffold.dart';
+import '../../core/validation/password_validation.dart';
+import '../../core/validation/required_validation.dart';
 import '../../core/widgets/simf_field_label.dart';
 import '../../core/widgets/simf_field_style.dart';
 import 'widgets/auth_chrome.dart';
@@ -32,6 +34,7 @@ class ResetPasswordScreen extends ConsumerStatefulWidget {
 }
 
 class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _code = TextEditingController();
   final TextEditingController _password = TextEditingController();
   final TextEditingController _confirm = TextEditingController();
@@ -55,8 +58,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
 
   Future<void> _submit() async {
     final l10n = AppL10n.of(context);
-    if (_password.text != _confirm.text) {
-      setState(() => _error = l10n.passwordsDoNotMatch);
+    // Client-side validation (required + password policy + confirm-match) gates
+    // the round-trip; the inline errors render in the fields' own error border.
+    if (!_formKey.currentState!.validate()) {
       return;
     }
     setState(() {
@@ -125,7 +129,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     return SimfFormScaffold(
       busy: _busy,
       onBack: _back,
-      child: Column(
+      child: Form(
+        key: _formKey,
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Text(
@@ -149,7 +155,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
           const SizedBox(height: 24),
           SimfFieldLabel(l10n.otpLabel),
           const SizedBox(height: 8),
-          TextField(
+          TextFormField(
             controller: _code,
             keyboardType: TextInputType.number,
             textDirection: TextDirection.ltr,
@@ -160,35 +166,51 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
               FilteringTextInputFormatter.digitsOnly,
             ],
             onChanged: (_) => setState(() {}),
+            // No dedicated "6-digit code" l10n key exists; reuse requiredField
+            // for both the empty and the wrong-length case (reported to owner).
+            validator: (value) =>
+                isBlank(value) || value!.trim().length != 6
+                    ? l10n.requiredField
+                    : null,
             style: simfInputStyle,
             decoration: simfFieldDecoration(counterText: ''),
           ),
           const SizedBox(height: 16),
           SimfFieldLabel(l10n.newPasswordLabel),
           const SizedBox(height: 8),
-          TextField(
+          TextFormField(
             controller: _password,
             obscureText: _obscure,
             maxLength: 32,
             enabled: !_busy,
             onChanged: (_) => setState(() {}),
+            // Reset SETS a new password, so apply the policy here.
+            validator: (value) {
+              if (isBlank(value)) {
+                return l10n.requiredField;
+              }
+              return isValidPassword(value!) ? null : l10n.passwordPolicyError;
+            },
             style: simfInputStyle,
             decoration: simfFieldDecoration(counterText: '', suffixIcon: _passwordToggle(l10n)),
           ),
           const SizedBox(height: 16),
           SimfFieldLabel(l10n.confirmPasswordLabel),
           const SizedBox(height: 8),
-          TextField(
+          TextFormField(
             controller: _confirm,
             obscureText: _obscure,
             maxLength: 32,
             enabled: !_busy,
             onChanged: (_) => setState(() {}),
-            onSubmitted: (_) {
+            onFieldSubmitted: (_) {
               if (_canSubmit) {
                 unawaited(_submit());
               }
             },
+            // Must equal the new password typed above.
+            validator: (value) =>
+                value == _password.text ? null : l10n.passwordsDoNotMatch,
             style: simfInputStyle,
             decoration: simfFieldDecoration(counterText: ''),
           ),
@@ -206,6 +228,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             onPressed: _canSubmit ? () => unawaited(_submit()) : null,
           ),
         ],
+        ),
       ),
     );
   }
