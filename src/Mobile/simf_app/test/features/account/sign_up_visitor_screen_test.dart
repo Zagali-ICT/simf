@@ -7,6 +7,7 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/account/data/profile_models.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
+import 'package:simf_app/features/account/data/region_repository.dart';
 import 'package:simf_app/features/account/sign_up_visitor_screen.dart';
 import 'package:simf_app/features/account/widgets/mobile_field.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
@@ -130,10 +131,41 @@ class _FakeProfileRepository implements ProfileRepository {
 /// The draft Next carried to the interests stub route (null until Next runs).
 SignUpProfileDraft? capturedDraft;
 
+/// The 13 official Saudi regions the API serves (D-547), matching the const
+/// `saudiRegions` codes so a prefilled region resolves under either source.
+const List<RegionItem> _apiRegions = <RegionItem>[
+  RegionItem(code: 'riyadh', name: 'Riyadh', nameArabic: 'منطقة الرياض'),
+  RegionItem(code: 'makkah', name: 'Makkah', nameArabic: 'منطقة مكة المكرمة'),
+  RegionItem(
+    code: 'madinah',
+    name: 'Al Madinah',
+    nameArabic: 'منطقة المدينة المنورة',
+  ),
+  RegionItem(
+    code: 'eastern',
+    name: 'Eastern Province',
+    nameArabic: 'المنطقة الشرقية',
+  ),
+  RegionItem(code: 'asir', name: 'Asir', nameArabic: 'منطقة عسير'),
+  RegionItem(code: 'tabuk', name: 'Tabuk', nameArabic: 'منطقة تبوك'),
+  RegionItem(code: 'hail', name: 'Hail', nameArabic: 'منطقة حائل'),
+  RegionItem(
+    code: 'northern',
+    name: 'Northern Borders',
+    nameArabic: 'منطقة الحدود الشمالية',
+  ),
+  RegionItem(code: 'jazan', name: 'Jazan', nameArabic: 'منطقة جازان'),
+  RegionItem(code: 'najran', name: 'Najran', nameArabic: 'منطقة نجران'),
+  RegionItem(code: 'bahah', name: 'Al Bahah', nameArabic: 'منطقة الباحة'),
+  RegionItem(code: 'jawf', name: 'Al Jawf', nameArabic: 'منطقة الجوف'),
+  RegionItem(code: 'qassim', name: 'Al Qassim', nameArabic: 'منطقة القصيم'),
+];
+
 Future<void> _pump(
   WidgetTester tester,
   _FakeProfileRepository repo, {
   Locale locale = const Locale('en'),
+  Override? regionsOverride,
 }) async {
   capturedDraft = null;
   final router = GoRouter(
@@ -162,6 +194,11 @@ Future<void> _pump(
     ProviderScope(
       overrides: <Override>[
         profileRepositoryProvider.overrideWithValue(repo),
+        // D-547 — the place-of-birth picker reads regionsProvider; default to
+        // the 13 API regions so it resolves deterministically. A test can pass
+        // its own override to exercise the const-list fallback on error.
+        regionsOverride ??
+            regionsProvider.overrideWith((ref) async => _apiRegions),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -354,6 +391,60 @@ void main() {
       await tester.pumpAndSettle();
 
       // The field now shows the picked region.
+      expect(find.text('Eastern Province'), findsOneWidget);
+    });
+
+    testWidgets(
+        'the birth-region picker lists the API regions when regionsProvider has '
+        'data (D-547)', (tester) async {
+      // The sheet lists the API regions — use a region whose API English name
+      // differs from the const list so the source is observable.
+      final repo =
+          _FakeProfileRepository(profile: _completeProfile(placeOfBirth: ''));
+      await _pump(
+        tester,
+        repo,
+        regionsOverride: regionsProvider.overrideWith(
+          (ref) async => const <RegionItem>[
+            RegionItem(
+              code: 'eastern',
+              name: 'Eastern API Region',
+              nameArabic: 'المنطقة الشرقية',
+            ),
+          ],
+        ),
+      );
+
+      const picker = ValueKey<String>('birthRegionPicker');
+      await tester.ensureVisible(find.byKey(picker));
+      await tester.tap(find.byKey(picker));
+      await tester.pumpAndSettle();
+
+      // The API name (not the const "Eastern Province") is what the sheet shows.
+      expect(find.text('Eastern API Region'), findsOneWidget);
+      expect(find.text('Eastern Province'), findsNothing);
+    });
+
+    testWidgets(
+        'the birth-region picker falls back to the const list when '
+        'regionsProvider errors — it does not throw on build (D-547)',
+        (tester) async {
+      final repo =
+          _FakeProfileRepository(profile: _completeProfile(placeOfBirth: ''));
+      await _pump(
+        tester,
+        repo,
+        regionsOverride: regionsProvider.overrideWith(
+          (ref) async => throw const ApiFailure(code: 'X', message: 'boom'),
+        ),
+      );
+
+      const picker = ValueKey<String>('birthRegionPicker');
+      await tester.ensureVisible(find.byKey(picker));
+      await tester.tap(find.byKey(picker));
+      await tester.pumpAndSettle();
+
+      // The const saudiRegions fallback is shown (its canonical English names).
       expect(find.text('Eastern Province'), findsOneWidget);
     });
 

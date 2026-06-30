@@ -23,6 +23,7 @@ import '../../core/widgets/simf_picker_field.dart';
 import '../myarea/identity_verification_screen.dart' show CapturedSelfie;
 import 'data/profile_models.dart';
 import 'data/profile_repository.dart';
+import 'data/region_repository.dart';
 import 'saudi_regions.dart';
 import 'widgets/attachment_field.dart';
 import 'widgets/beige_tabs.dart';
@@ -633,6 +634,10 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
+    // D-547 — watch the region lookup here so the place-of-birth picker rebuilds
+    // when the API list lands (the picker reads it via ref.read in its handler,
+    // so build must own the dependency for the closed-field name to refresh).
+    ref.watch(regionsProvider);
     return SimfFormScaffold(
       pinnedHeader: true,
       onBack: _back,
@@ -1010,12 +1015,56 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     });
   }
 
-  /// D-469/D-470 — opens the shared searchable sheet over the 13 Saudi regions
-  /// and stores the picked region's localized name in [_placeOfBirth].
+  /// D-547 — the active regions for the birth-location picker. Owner decision:
+  /// the data SOURCE is now `GET /app/regions` (the seeded 13 regions), with the
+  /// const [saudiRegions] kept as an OFFLINE FALLBACK. On [AsyncData] with a
+  /// non-empty list, the API regions win; on loading / error / empty, the const
+  /// list is used so the picker never throws on build. Each entry maps to the
+  /// shared display shape (code + ar/en names) so the picker + display label
+  /// stay identical regardless of source.
+  List<_BirthRegionOption> _activeBirthRegions() {
+    // ref.read (not watch): this runs from both build helpers and the picker's
+    // async handler. build() owns the watch so the field still rebuilds on data.
+    final List<RegionItem>? api =
+        ref.read(regionsProvider).asData?.value;
+    if (api != null && api.isNotEmpty) {
+      return <_BirthRegionOption>[
+        for (final RegionItem r in api)
+          _BirthRegionOption(
+            code: r.code,
+            // English uses name ?? nameArabic, mirroring SaudiRegion.name.
+            english: r.name ?? r.nameArabic,
+            arabic: r.nameArabic,
+          ),
+      ];
+    }
+    return <_BirthRegionOption>[
+      for (final SaudiRegion r in saudiRegions)
+        _BirthRegionOption(code: r.code, english: r.english, arabic: r.arabic),
+    ];
+  }
+
+  /// The active region matching [code] (API or fallback), or null.
+  _BirthRegionOption? _birthRegionByCode(String? code) {
+    if (code == null) {
+      return null;
+    }
+    for (final _BirthRegionOption r in _activeBirthRegions()) {
+      if (r.code == code) {
+        return r;
+      }
+    }
+    return null;
+  }
+
+  /// D-469/D-470 — opens the shared searchable sheet over the active regions
+  /// (D-547: API with const fallback) and stores the picked region's localized
+  /// name in [_placeOfBirth].
   Future<void> _pickBirthRegion(AppL10n l10n, bool isArabic) async {
+    final regions = _activeBirthRegions();
     final pickedCode = await _openLookupSheet(
       options: <PickerOption>[
-        for (final SaudiRegion r in saudiRegions)
+        for (final _BirthRegionOption r in regions)
           PickerOption(
             value: r.code,
             label: r.name(isArabic: isArabic),
@@ -1030,7 +1079,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     }
     setState(() {
       _birthRegionCode = pickedCode;
-      _placeOfBirth.text = regionByCode(pickedCode)?.name(isArabic: isArabic) ?? '';
+      _placeOfBirth.text =
+          _birthRegionByCode(pickedCode)?.name(isArabic: isArabic) ?? '';
     });
   }
 
@@ -1099,7 +1149,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     // language toggle re-syncs the submitted value (the dropdown is code-keyed).
     if (_isSaudi && _birthRegionCode != null) {
       final String name =
-          regionByCode(_birthRegionCode)?.name(isArabic: isArabic) ?? '';
+          _birthRegionByCode(_birthRegionCode)?.name(isArabic: isArabic) ?? '';
       if (_placeOfBirth.text != name) {
         _placeOfBirth.text = name;
       }
@@ -1114,7 +1164,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
             fieldKey: 'birthRegionPicker',
             displayText: _birthRegionCode == null
                 ? l10n.placeOfBirthRegionHint
-                : (regionByCode(_birthRegionCode)?.name(isArabic: isArabic) ??
+                : (_birthRegionByCode(_birthRegionCode)
+                        ?.name(isArabic: isArabic) ??
                     l10n.placeOfBirthRegionHint),
             isPlaceholder: _birthRegionCode == null,
             onTap: () => unawaited(_pickBirthRegion(l10n, isArabic)),
@@ -1498,4 +1549,23 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     final day = date.day.toString().padLeft(2, '0');
     return '$year-$month-$day';
   }
+}
+
+/// A single birth-location region for the picker, unifying the API [RegionItem]
+/// (D-547) and the const [SaudiRegion] fallback behind one display shape so the
+/// picker + label rendering is identical whatever the source. Mirrors
+/// `SaudiRegion.name(isArabic:)`.
+@immutable
+class _BirthRegionOption {
+  const _BirthRegionOption({
+    required this.code,
+    required this.english,
+    required this.arabic,
+  });
+
+  final String code;
+  final String english;
+  final String arabic;
+
+  String name({required bool isArabic}) => isArabic ? arabic : english;
 }

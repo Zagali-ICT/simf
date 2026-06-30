@@ -11,6 +11,7 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/app_theme.dart';
 import 'package:simf_app/features/account/data/profile_models.dart';
 import 'package:simf_app/features/account/data/profile_repository.dart';
+import 'package:simf_app/features/account/data/region_repository.dart';
 import 'package:simf_app/features/account/sign_up_visitor_screen.dart';
 
 import 'golden_fonts.dart';
@@ -128,6 +129,10 @@ void main() {
       ProviderScope(
         overrides: <Override>[
           profileRepositoryProvider.overrideWithValue(_FakeProfileRepository()),
+          // D-547 — the place-of-birth picker reads regionsProvider; resolve it
+          // deterministically. The default (visitor, empty) render shows the
+          // picker's placeholder hint, so the source does not alter the golden.
+          regionsProvider.overrideWith((ref) async => const <RegionItem>[]),
         ],
         child: MaterialApp.router(
           debugShowCheckedModeBanner: false,

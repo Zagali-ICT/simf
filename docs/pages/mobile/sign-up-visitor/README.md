@@ -105,6 +105,11 @@ the D-545 theme fix (see Changelog).
 - [x] `flutter analyze` 0 errors / 0 warnings; full suite green; wire contract unchanged
 
 ## 9. Changelog
+- **2026-06-30 (Phase 2, D-548):** moved to `lib/features/account/` (auth+profile
+  consolidation); place-of-birth now reads the D-547 region API (`regionsProvider`)
+  with the const list as offline fallback; mobile maxLength via the shared
+  `MobileField`; validators delegate to the shared `lib/core/validation/` predicates.
+  Behaviour + golden unchanged (page re-freezes in Phase 3).
 - **2026-06-30 (clean-code D-546 freeze):** decomposed the screen (Slices A/B/C);
   wired `MaxWidthBody(560)` (was `ConstrainedBox(400)`); tokenised the sweep tint;
   added the golden `sign_up_visitor_168-2972.png` + this consolidated doc.
