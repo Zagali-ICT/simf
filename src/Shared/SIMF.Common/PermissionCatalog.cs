@@ -175,6 +175,16 @@ public static class PermissionCatalog
         public const string Export = "Organisations.Export";
     }
 
+    /// <summary>Administrative-regions lookup (the 13 official Saudi regions);
+    /// the app region picker reads from this reference table.</summary>
+    public static class Regions
+    {
+        public const string View = "Regions.View";
+        public const string Create = "Regions.Create";
+        public const string Edit = "Regions.Edit";
+        public const string Delete = "Regions.Delete";
+    }
+
     /// <summary>SIMF-FDS-014 (D-261) — the shared, de-duplicated contact
     /// directory (logo / name / phones / social / website / location / country)
     /// referenced by Company / Sponsor / MediaPartner / Speaker / Booth. Edit
@@ -742,6 +752,12 @@ public static class PermissionCatalog
         new(Organisations.Delete, "Organisations", "Delete", "Delete organisations", AdminOnly),
         new(Organisations.Import, "Organisations", "Import", "Import organisations from Excel", AdminOnly),
         new(Organisations.Export, "Organisations", "Export", "Export organisations", AdminOnly),
+
+        // Administrative-regions lookup (the app region picker reads this table).
+        new(Regions.View, "Regions", "View", "View regions", AdminOnly),
+        new(Regions.Create, "Regions", "Create", "Create regions", AdminOnly),
+        new(Regions.Edit, "Regions", "Edit", "Edit regions", AdminOnly),
+        new(Regions.Delete, "Regions", "Delete", "Delete regions", AdminOnly),
 
         // SIMF-FDS-014 — D-261: shared contact directory.
         new(Contacts.View, "Contacts", "View", "View contacts", AdminOnly),

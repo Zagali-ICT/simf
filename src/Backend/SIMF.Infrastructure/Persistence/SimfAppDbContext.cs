@@ -23,6 +23,7 @@ using SIMF.Domain.Support;
 using SIMF.Domain.Profiles;
 using SIMF.Domain.Programme;
 using SIMF.Domain.PublicRelations;
+using SIMF.Domain.Regions;
 using SIMF.Domain.SeatReservations;
 using SIMF.Domain.SessionComments;
 using SIMF.Domain.SessionQuestions;
@@ -210,6 +211,11 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     // B3 (D-220) — Saudi-companies lookup, bulk-loaded from a government Excel
     // sheet; the visitor الجهة (UserProfile.OrganisationId) picker reads from it.
     public DbSet<Organisation> Organisations => Set<Organisation>();
+
+    // Administrative-regions lookup (the 13 official Saudi regions). Additive
+    // reference table under the D-219 freeze-lift; the app reads it for the
+    // region picker. Seeded from SaudiRegions in every environment.
+    public DbSet<Region> Regions => Set<Region>();
 
     // SIMF-FDS-014 — D-260: shared, de-duplicated contact directory referenced by
     // Company / Sponsor / MediaPartner / Speaker / Booth (nullable ContactId FK).

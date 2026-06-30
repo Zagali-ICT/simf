@@ -389,6 +389,11 @@ public static class ErrorCodes
     public const string OrganisationNotFound = "ORGANISATION_NOT_FOUND";
     public const string OrganisationImportFailed = "ORGANISATION_IMPORT_FAILED";
 
+    // Regions (administrative-regions lookup; the app region picker reads this
+    // table). Code is the stable unique lookup key.
+    public const string RegionInvalid = "REGION_INVALID";
+    public const string RegionNotFound = "REGION_NOT_FOUND";
+
     // Networking connections (B6 / D-224 — visitor-to-visitor request/accept).
     public const string ConnectionInvalid = "CONNECTION_INVALID";
     public const string ConnectionNotFound = "CONNECTION_NOT_FOUND";

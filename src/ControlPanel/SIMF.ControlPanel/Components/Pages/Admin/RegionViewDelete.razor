@@ -1,0 +1,93 @@
+@* D-353 — reusable Region View/Delete form, hosted by CrudShell (as a popup or
+   a full page) from RegionsList.razor. Inherits CrudViewDeleteFormBase so it
+   exposes the standard parameter surface (IsDelete / Initial / OnDeleted /
+   OnCancel). Read-only details always show (including SortOrder + the created /
+   updated timestamps the grid summary omits); when IsDelete=true a Deactivate
+   button appears and a SimfConfirm gates the destructive call. Mirrors the
+   Organisation View/Delete form. *@
+@inherits CrudViewDeleteFormBase<AdminRegionDetail>
+@using SIMF.Contracts.Regions
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+@if (Initial is not null)
+{
+    <dl class="simf-dl">
+        <dt>@L["Admin.Regions.Col.Code"]</dt>
+        <dd>@Initial.Code</dd>
+        <dt>@L["Admin.Regions.Col.NameAr"]</dt>
+        <dd>@Initial.NameArabic</dd>
+        <dt>@L["Admin.Regions.Col.NameEn"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.Name) ? "—" : Initial.Name)</dd>
+        <dt>@L["Admin.Regions.Field.SortOrder"]</dt>
+        <dd>@Initial.SortOrder</dd>
+        <dt>@L["Admin.Regions.Col.Active"]</dt>
+        <dd>@(Initial.IsActive ? L["Grid.Active"] : L["Grid.Inactive"])</dd>
+    </dl>
+
+    <div class="simf-form__actions">
+        @if (IsDelete)
+        {
+            <SimfButton Type="button" Variant="danger"
+                        Disabled="_busy" OnClick="@(() => _confirming = true)">
+                @L["Admin.Regions.Action.Deactivate"]
+            </SimfButton>
+        }
+        <SimfButton Type="button" Variant="secondary"
+                    Disabled="_busy" OnClick="OnCancel">
+            @L["Admin.Regions.Details.Close"]
+        </SimfButton>
+    </div>
+
+    <SimfConfirm Open="_confirming"
+                 Title="@L["Admin.Regions.Delete.Title"]"
+                 Message="@string.Format(L["Admin.Regions.Delete.Message"], Initial.NameArabic)"
+                 ConfirmLabel="@L["Admin.Regions.Action.Deactivate"]"
+                 CancelLabel="@L["Admin.Regions.Cancel"]"
+                 Danger="true"
+                 Busy="_busy"
+                 OnConfirm="ConfirmDeleteAsync"
+                 OnCancel="@(() => _confirming = false)" />
+}
+
+@code {
+    private bool _busy;
+    private bool _confirming;
+    private string? _error;
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_busy || Initial is null) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson", $"/account/api/admin/regions/{Initial.Id}");
+            if (envelope is { Success: true })
+            {
+                _confirming = false;
+                await OnDeleted.InvokeAsync(Initial);
+            }
+            else
+            {
+                // Close the confirm first so the error lands on the visible
+                // form body, not behind the (still-open) confirm overlay.
+                _confirming = false;
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Regions.LoadFailed"];
+            }
+        }
+        catch (Exception)
+        {
+            _confirming = false;
+            _error = L["Admin.Regions.LoadFailed"];
+        }
+        finally { _busy = false; }
+    }
+}

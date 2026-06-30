@@ -140,6 +140,11 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         // migration InsertData), so the test fixture invokes the seeder too.
         services.GetRequiredService<SIMF.Infrastructure.Feedback.RatingSeeder>()
             .SeedAsync().GetAwaiter().GetResult();
+        // Regions are required reference data the app GET /app/regions depends on,
+        // seeded at runtime (skipped under Testing), so the fixture invokes it too
+        // — mirrors Program.cs (D-547). Idempotent.
+        services.GetRequiredService<SIMF.Infrastructure.Regions.RegionSeeder>()
+            .SeedAsync().GetAwaiter().GetResult();
     }
 
     protected override void Dispose(bool disposing)

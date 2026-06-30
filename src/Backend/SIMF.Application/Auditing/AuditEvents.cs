@@ -464,4 +464,9 @@ public static class AuditEvents
     public const string OrganisationUpdated = "organisation.updated";
     public const string OrganisationDeactivated = "organisation.deactivated";
     public const string OrganisationImported = "organisation.imported";
+
+    // Regions (administrative-regions lookup; the app region picker reads this table).
+    public const string RegionCreated = "region.created";
+    public const string RegionUpdated = "region.updated";
+    public const string RegionDeactivated = "region.deactivated";
 }
