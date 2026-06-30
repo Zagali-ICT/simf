@@ -606,27 +606,25 @@ class _HeaderCard extends StatelessWidget {
           const SizedBox(height: SimfTokens.space4),
           _MetaRow(detail: detail, isArabic: isArabic),
           const SizedBox(height: SimfTokens.space4),
-          // Frame 889:2715 — the two action buttons. رابط الجلسة (live link,
-          // beige hairline) only appears when the session has a live feed; it
-          // leads (inline-start / physical right under RTL) so ملخص الجلسة
-          // (gold hairline) trails, matching the frame.
+          // Frame 889:2715 — the two action buttons are ALWAYS both shown
+          // (owner 2026-06-30). ملخص الجلسة (gold hairline) leads at the
+          // inline-start (physical right under RTL); رابط الجلسة (beige
+          // hairline) trails at the inline-end (left) — matching the frame.
           Row(
             children: <Widget>[
-              if (detail.hasLiveStream) ...<Widget>[
-                Expanded(
-                  child: _HeaderActionButton(
-                    label: l10n.sessionLink,
-                    accented: false,
-                    onTap: onSessionLink,
-                  ),
-                ),
-                const SizedBox(width: SimfTokens.space2),
-              ],
               Expanded(
                 child: _HeaderActionButton(
                   label: l10n.sessionSummary,
                   accented: true,
                   onTap: onSessionSummary,
+                ),
+              ),
+              const SizedBox(width: SimfTokens.space2),
+              Expanded(
+                child: _HeaderActionButton(
+                  label: l10n.sessionLink,
+                  accented: false,
+                  onTap: onSessionLink,
                 ),
               ),
             ],
@@ -731,7 +729,10 @@ class _IndexBadge extends StatelessWidget {
 }
 
 /// The meta line (frame 889:2698): a clock + time range, a separator dot, and a
-/// calendar + weekday/day, in beige paragraph text.
+/// calendar + weekday/day, in beige paragraph text. Laid **LTR** so each segment
+/// is icon→text (icon leads at the left, owner 2026-06-30) and the time reads
+/// "09:00 — 10:30" start→end; the time segment sits left, the date segment right
+/// (matching the frame). The Arabic date still renders RTL within its own box.
 class _MetaRow extends StatelessWidget {
   const _MetaRow({required this.detail, required this.isArabic});
 
@@ -742,51 +743,46 @@ class _MetaRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final start = detail.startLocal;
     final end = detail.endLocal;
-    return Wrap(
-      alignment: WrapAlignment.start,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: SimfTokens.space3,
-      runSpacing: SimfTokens.space1,
-      children: <Widget>[
-        _MetaItem(
-          icon: Icons.schedule_outlined,
-          // Times are clock values — keep them LTR so "09:00 — 10:30" reads
-          // left-to-right even inside the RTL line.
-          label: '${_time(start)} — ${_time(end)}',
-          forceLtr: true,
-        ),
-        const Text(
-          '·',
-          // Frame 889:2702 — the separator dot is white (#FFFFFF), brighter than
-          // the beige time/date items beside it.
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w900,
-            fontSize: SimfTokens.textLg,
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Wrap(
+        alignment: WrapAlignment.start,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: SimfTokens.space3,
+        runSpacing: SimfTokens.space1,
+        children: <Widget>[
+          _MetaItem(
+            icon: Icons.schedule_outlined,
+            label: '${_time(start)} — ${_time(end)}',
           ),
-        ),
-        _MetaItem(
-          icon: Icons.calendar_today_outlined,
-          label: '${_weekday(start.weekday, isArabic)} · '
-              '${start.day.toString().padLeft(2, '0')} '
-              '${_month(start.month, isArabic)}',
-        ),
-      ],
+          const Text(
+            '·',
+            // Frame 889:2702 — the separator dot is white (#FFFFFF), heavier than
+            // the beige time/date items beside it.
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: SimfTokens.textLg,
+            ),
+          ),
+          _MetaItem(
+            icon: Icons.calendar_today_outlined,
+            label: '${_weekday(start.weekday, isArabic)} · '
+                '${start.day.toString().padLeft(2, '0')} '
+                '${_month(start.month, isArabic)}',
+          ),
+        ],
+      ),
     );
   }
 }
 
 /// One icon + label pair in the meta line (frame 889:2687/889:2686).
 class _MetaItem extends StatelessWidget {
-  const _MetaItem({
-    required this.icon,
-    required this.label,
-    this.forceLtr = false,
-  });
+  const _MetaItem({required this.icon, required this.label});
 
   final IconData icon;
   final String label;
-  final bool forceLtr;
 
   @override
   Widget build(BuildContext context) {
@@ -797,10 +793,13 @@ class _MetaItem extends StatelessWidget {
         const SizedBox(width: SimfTokens.space2),
         Text(
           label,
-          textDirection: forceLtr ? TextDirection.ltr : null,
+          // SemiBold (owner 2026-06-30): the time/date numbers read bolder than
+          // the frame's Regular. The ambient Directionality is LTR so the time
+          // digits read start→end and the icon leads on the left.
           style: const TextStyle(
             color: SimfTokens.beigeBorder,
             fontSize: SimfTokens.textSm,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
@@ -1127,11 +1126,12 @@ class _ReservationCard extends StatelessWidget {
             ),
             if (onView != null) ...<Widget>[
               const SizedBox(width: SimfTokens.space2),
-              // Figma 889:2762 — the my-seat arrow is the iconamoon chevron
-              // (left-pointing). Material's chevron_left auto-mirrors under RTL
-              // and wrongly points right; the bundled SVG never mirrors.
+              // Figma 889:2762 — the my-seat arrow is a thin STROKED chevron
+              // (left-pointing "‹"), NOT the filled triangle of ic_caret_left.
+              // ic_back.svg is that stroked chevron; SimfSvgIcon never mirrors,
+              // so it stays left-pointing in RTL (same fix as speakers_screen).
               const SimfSvgIcon(
-                'assets/icons/ic_caret_left.svg',
+                'assets/icons/ic_back.svg',
                 size: 20,
                 color: SimfTokens.beigeBorder,
               ),

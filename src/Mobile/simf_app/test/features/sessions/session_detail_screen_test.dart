@@ -312,10 +312,10 @@ void main() {
       // The gold index badge shows the day-ordinal "02" (D-567), not the code.
       expect(find.text('02'), findsOneWidget);
       expect(find.text('OP-1'), findsNothing);
-      // Header action buttons: the summary button always shows; the live link
-      // is hidden because this detail has no liveStreamUrl (Figma 889:2715).
+      // Header action buttons: BOTH always show now (owner 2026-06-30) —
+      // ملخص الجلسة (summary) + رابط الجلسة (session link), per Figma 889:2715.
       expect(find.text('Session summary'), findsOneWidget);
-      expect(find.text('Session link'), findsNothing);
+      expect(find.text('Session link'), findsOneWidget);
       // Description card + heading.
       expect(find.text('Description'), findsOneWidget);
       expect(find.text('Welcome address'), findsOneWidget);
@@ -332,8 +332,7 @@ void main() {
       expect(find.widgetWithText(OutlinedButton, 'Reminder'), findsOneWidget);
     });
 
-    testWidgets('the live link shows only when the session has a feed, and '
-        'opens the live screen', (tester) async {
+    testWidgets('the session link opens the live screen', (tester) async {
       await _pump(
         tester,
         repo: _FakeDetailRepo(
@@ -573,14 +572,17 @@ void main() {
       final outlinedDx = tester.getCenter(find.byType(OutlinedButton)).dx;
       expect(filledDx, greaterThan(outlinedDx));
 
-      // The reservation-card chevron (the bundled left caret SVG) sits at the
-      // inline end (far left).
+      // The reservation-card chevron (the thin stroked left chevron,
+      // ic_back.svg per Figma 889:2762 — not the filled triangle) sits at the
+      // inline end (far left). The header back button uses the same asset at
+      // size 24; the seat chevron is the size-20 one.
       final chevronDx = tester
           .getCenter(
             find.byWidgetPredicate(
               (w) =>
                   w is SimfSvgIcon &&
-                  w.asset == 'assets/icons/ic_caret_left.svg',
+                  w.asset == 'assets/icons/ic_back.svg' &&
+                  w.size == 20,
             ),
           )
           .dx;
