@@ -113,6 +113,7 @@ internal sealed class PublicSpeakerService(SimfAppDbContext dbContext)
                 row.FacebookUrl,
                 row.LinkedInUrl,
                 row.XUrl,
+                row.WebsiteUrl,
                 row.PhotoRelativePath,
                 row.DisplayOrder,
             })
@@ -180,6 +181,7 @@ internal sealed class PublicSpeakerService(SimfAppDbContext dbContext)
             publishSocial ? speaker.FacebookUrl : null,
             publishSocial ? speaker.LinkedInUrl : null,
             publishSocial ? speaker.XUrl : null,
+            publishSocial ? speaker.WebsiteUrl : null,
             speaker.PhotoRelativePath,
             speaker.DisplayOrder,
             sessions);

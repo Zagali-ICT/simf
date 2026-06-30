@@ -6,7 +6,8 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_confirm_dialog.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import 'data/request_models.dart';
 import 'data/requests_repository.dart';
 import 'new_request_sheet.dart';
@@ -44,30 +45,14 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
 
   Future<void> _cancel(AppRequestItem item) async {
     final l10n = AppL10n.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: SimfTokens.navyDeep,
-        title: Text(
-          l10n.requestCancelConfirm,
-          style: const TextStyle(color: Colors.white),
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(l10n.requestCancelKeep),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(
-              l10n.requestCancel,
-              style: const TextStyle(color: SimfTokens.danger),
-            ),
-          ),
-        ],
-      ),
+    final confirmed = await SimfConfirmDialog.show(
+      context,
+      title: l10n.requestCancelConfirm,
+      confirmLabel: l10n.requestCancel,
+      cancelLabel: l10n.requestCancelKeep,
+      isDestructive: true,
     );
-    if (confirmed != true) {
+    if (!confirmed) {
       return;
     }
     try {
@@ -84,18 +69,29 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
     }
   }
 
+  /// Pull-to-refresh — re-fetch the requests feed (invalidate + await next).
+  Future<void> _refresh() async {
+    ref.invalidate(myRequestsProvider);
+    await ref.read(myRequestsProvider.future);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.requestsTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: ref.watch(myRequestsProvider).when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => KsaErrorState(
-              message: l10n.requestsError,
-              retryLabel: l10n.retryLabel,
-              onRetry: () => ref.invalidate(myRequestsProvider),
+            error: (_, __) => SimfPullToRefresh(
+              onRefresh: _refresh,
+              child: SimfPullableHost(
+                child: SimfErrorState(
+                  message: l10n.requestsError,
+                  retryLabel: l10n.retryLabel,
+                  onRetry: () => ref.invalidate(myRequestsProvider),
+                ),
+              ),
             ),
             data: (items) => _buildBody(l10n, items),
           ),
@@ -115,10 +111,13 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
         ? items
         : items.where((i) => i.status == effectiveFilter).toList();
 
-    return ListView(
-      padding: const EdgeInsets.all(SimfTokens.space4),
-      children: <Widget>[
-        _TopActionRow(
+    return SimfPullToRefresh(
+      onRefresh: _refresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(SimfTokens.space4),
+        children: <Widget>[
+          _TopActionRow(
           l10n: l10n,
           filter: effectiveFilter,
           // المقبولة can only filter when at least one accepted request exists
@@ -138,7 +137,7 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
           ),
         const SizedBox(height: SimfTokens.space4),
         if (items.isEmpty)
-          KsaEmptyState(
+          SimfEmptyState(
             icon: Icons.inbox_outlined,
             message: l10n.requestsEmpty,
           )
@@ -166,7 +165,8 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
                 onCancel: () => unawaited(_cancel(item)),
               ),
             ),
-      ],
+        ],
+      ),
     );
   }
 }

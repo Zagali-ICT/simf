@@ -1,0 +1,154 @@
+@* D-353 — reusable Region Add/Edit form, hosted by CrudShell (as a popup or a
+   full page) from RegionsList.razor. Inherits CrudAddEditFormBase so it exposes
+   the standard CRUD-form parameter surface (IsEdit / Initial / OnSuccess /
+   OnCancel). IsEdit=false runs Create (POST); IsEdit=true runs Edit (PUT
+   against Initial) and shows the IsActive checkbox. Mirrors the Organisation
+   Add/Edit form. The bilingual lookup carries SortOrder + timestamps in the
+   full detail (not the grid summary), so the list page fetches the full detail
+   before opening this form in Edit mode. *@
+@inherits CrudAddEditFormBase<AdminRegionDetail>
+@using SIMF.Contracts.Regions
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+<EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
+    <div class="simf-form__fields">
+        <SimfTextField Label="@L["Admin.Regions.Field.Code"]"
+                       MaxLength="16"
+                       @bind-Value="_model.Code" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Regions.Field.NameAr"]"
+                       MaxLength="256"
+                       @bind-Value="_model.NameArabic" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Regions.Field.NameEn"]"
+                       MaxLength="256"
+                       @bind-Value="_model.Name" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Regions.Field.SortOrder"]"
+                       Type="number"
+                       Value="@_sortOrderInput"
+                       ValueChanged="@(v => _sortOrderInput = v)"
+                       ValueExpression="@(() => _sortOrderInput)"
+                       Disabled="_busy" />
+
+        @if (IsEdit)
+        {
+            <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">
+                @L["Admin.Regions.Field.IsActive"]
+            </SimfCheckbox>
+        }
+    </div>
+    <div class="simf-form__actions">
+        <SimfButton Loading="_busy" LoadingLabel="@L["Admin.Regions.Save"]">
+            @L["Admin.Regions.Save"]
+        </SimfButton>
+        @if (OnCancel.HasDelegate)
+        {
+            <SimfButton Type="button" Variant="secondary"
+                        Disabled="_busy" OnClick="OnCancel">
+                @L["Admin.Regions.Cancel"]
+            </SimfButton>
+        }
+    </div>
+</EditForm>
+
+@code {
+    private readonly Model _model = new();
+    private string _sortOrderInput = "0";
+    private EditContext _editContext = default!;
+    private bool _busy;
+    private string? _error;
+
+    protected override void OnInitialized()
+    {
+        if (Initial is not null)
+        {
+            _model.Code = Initial.Code;
+            _model.NameArabic = Initial.NameArabic;
+            _model.Name = Initial.Name ?? string.Empty;
+            _model.IsActive = Initial.IsActive;
+            _sortOrderInput = Initial.SortOrder.ToString();
+        }
+        _editContext = new EditContext(_model);
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (_busy) return;
+        _error = null;
+
+        // Code + Arabic name are the required fields (server-side
+        // FluentValidation is the source of truth; this stops an obviously-empty
+        // submit).
+        if (string.IsNullOrWhiteSpace(_model.Code) || string.IsNullOrWhiteSpace(_model.NameArabic))
+        {
+            _error = L["Admin.Regions.Required"]; return;
+        }
+        if (!int.TryParse(_sortOrderInput, out var order) || order < 0)
+        {
+            order = 0;
+        }
+
+        _busy = true;
+        try
+        {
+            ApiResult<AdminRegionDetail>? envelope;
+            if (!IsEdit)
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminRegionDetail>>(
+                    "simfAccount.postJson", "/account/api/admin/regions",
+                    new CreateRegionRequest
+                    {
+                        Code = _model.Code.Trim(),
+                        Name = NullIfBlank(_model.Name),
+                        NameArabic = _model.NameArabic.Trim(),
+                        SortOrder = order,
+                    });
+            }
+            else
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminRegionDetail>>(
+                    "simfAccount.putJson", $"/account/api/admin/regions/{Initial!.Id}",
+                    new UpdateRegionRequest
+                    {
+                        Code = _model.Code.Trim(),
+                        Name = NullIfBlank(_model.Name),
+                        NameArabic = _model.NameArabic.Trim(),
+                        SortOrder = order,
+                        IsActive = _model.IsActive,
+                    });
+            }
+
+            if (envelope is { Success: true, Data: not null })
+            {
+                await OnSuccess.InvokeAsync(envelope.Data);
+            }
+            else
+            {
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Regions.LoadFailed"];
+            }
+        }
+        catch (Exception)
+        {
+            _error = L["Admin.Regions.LoadFailed"];
+        }
+        finally { _busy = false; }
+    }
+
+    // The English name is nullable on the wire — send null rather than an empty
+    // string when the admin leaves it blank.
+    private static string? NullIfBlank(string value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private sealed class Model
+    {
+        public string Code { get; set; } = string.Empty;
+        public string NameArabic { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public bool IsActive { get; set; } = true;
+    }
+}

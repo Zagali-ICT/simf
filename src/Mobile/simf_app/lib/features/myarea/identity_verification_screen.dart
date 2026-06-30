@@ -11,7 +11,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 
 /// The selfie the flow returns to the My-Area caller, which uploads it via the
 /// existing `POST /app/account/avatar`.

@@ -212,6 +212,8 @@ public static class CpNavigation
             new("Module.AdminCountries", "/admin/countries", RequiredPermission: PermissionCatalog.Countries.View, Icon: "globe"),
             // B3 (D-220) — Saudi-companies lookup (gov Excel import) feeding the visitor الجهة picker.
             new("Module.Organisations", "/admin/organisations", RequiredPermission: PermissionCatalog.Organisations.View, Icon: "building"),
+            // Administrative-regions lookup (the 13 official Saudi regions), seeded from SaudiRegions.All.
+            new("Module.Regions", "/admin/regions", RequiredPermission: PermissionCatalog.Regions.View, Icon: "map"),
             // SIMF-FDS-014 (D-281/C2) — shared Contact directory reused by Sponsors /
             // Exhibitors / MediaPartners / Speakers / Booth officers.
             new("Module.Contacts", "/admin/contacts", RequiredPermission: PermissionCatalog.Contacts.View, Icon: "phone"),

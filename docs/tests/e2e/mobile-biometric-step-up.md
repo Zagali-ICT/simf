@@ -4,9 +4,10 @@
 > step-up that confirms a signed-in user wants to **enable** biometric (Face-ID)
 > sign-in before a device key is enrolled. Runner-agnostic Gherkin. The screen
 > glue is widget-tested in
-> `src/Mobile/simf_app/test/features/auth/biometric_step_up_screen_test.dart`;
+> `src/Mobile/simf_app/test/features/account/biometric_step_up_screen_test.dart`
+> (+ the render-lock golden `test/golden/biometric_step_up_golden_test.dart`);
 > the toggle + nudge launch in
-> `src/Mobile/simf_app/test/features/auth/biometric_auth_test.dart`; the backend
+> `src/Mobile/simf_app/test/features/account/biometric_auth_test.dart`; the backend
 > gate in `tests/SIMF.Api.Tests/DeviceKeyStepUpTests.cs`.
 
 | | |
@@ -16,7 +17,7 @@
 | **Surface** | Mobile (Flutter) — signed-in, Approved account; the device must have a usable OS biometric |
 | **Permissions** | `RequireApprovedAccount` (both endpoints); not a CP/admin action |
 | **Auth setup** | A signed-in approved visitor on a biometric-capable device. Codes via the email channel; **no literal secrets**. Server gate `DeviceKey:RequireStepUpForEnrol` is ON in production. |
-| **Last reviewed** | 2026-06-21 |
+| **Last reviewed** | 2026-06-30 (clean-code freeze D-554; behaviour unchanged) |
 
 > **#7a design:** enrolling a biometric credential is a sensitive action — a
 > borrowed-but-unlocked phone could otherwise silently bind a new device key. So

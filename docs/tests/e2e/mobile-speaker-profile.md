@@ -27,7 +27,7 @@
 | ID | Scenario | Type | Priority | Status |
 |----|----------|------|----------|--------|
 | E2E-MOB020-001 | Anonymous profile renders name/rank + the 4 CV tabs + sessions | happy | P0 | authored ✓ (`PublicSpeakersTests`) |
-| E2E-MOB020-002 | Social links shown only when `allowsDataSharing` | edge | P1 | authored ✓ (screen) |
+| E2E-MOB020-002 | Social links (incl. website, D-544) shown only when `allowsDataSharing` | edge | P1 | authored ✓ (screen) |
 | E2E-MOB020-003 | Unknown / soft-deleted speaker → 404 `SPEAKER_NOT_FOUND` | edge | P0 | authored ✓ (`PublicSpeakersTests`) |
 | E2E-MOB020-004 | Request-meeting button hidden when `allowsMeetingRequests` is false | edge | P0 | authored ✓ (screen) |
 | E2E-MOB020-005 | Approved visitor submits to a speaker that allows meetings → 200 Pending | happy | P0 | authored ✓ (`Submit_to_a_speaker_that_allows_meetings_returns_pending`) |
@@ -70,11 +70,16 @@ Scenario: The profile returns the speaker, the four CV tabs and the sessions
 
 ```gherkin
 Scenario: Social links appear only when the speaker allows data sharing
-  Given a speaker with facebookUrl, linkedInUrl and xUrl set
+  Given a speaker with facebookUrl, linkedInUrl, xUrl and websiteUrl set
   When the profile is fetched and allowsDataSharing is true
-  Then the Facebook, LinkedIn and X links are shown
+  Then the Facebook, LinkedIn, X and Website (globe) links are shown
   And when allowsDataSharing is false the social links are hidden
 ```
+
+> **D-544 — website link.** The opted-in `websiteUrl` renders as a 4th
+> copy-to-clipboard chip (globe icon, `Icons.language`) beside the socials,
+> gated by `allowsDataSharing` like the other links. The field postdates the
+> 908:2110 frame, so it follows the existing social-chip pattern.
 
 ### E2E-MOB020-003 — Unknown / soft-deleted speaker
 

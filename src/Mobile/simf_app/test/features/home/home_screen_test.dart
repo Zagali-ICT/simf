@@ -5,8 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
-import 'package:simf_app/app/widgets/ksa_shell.dart';
-import 'package:simf_app/core/site_settings/site_settings.dart';
+import 'package:simf_app/app/widgets/simf_page_shell.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
+import 'package:simf_app/core/organization_profile/organization_profile.dart';
 import 'package:simf_app/features/home/home_screen.dart';
 import 'package:simf_app/features/myarea/data/myarea_models.dart';
 import 'package:simf_app/features/news/data/news_models.dart';
@@ -71,6 +72,60 @@ class _SignedInEmailController extends AuthController {
       );
 }
 
+/// A signed-in account whose registration is still pending — it has no
+/// permissions, so Home shows the guest layout + the awaiting-approval note.
+class _UnapprovedController extends AuthController {
+  @override
+  AuthState build() => AuthStateSignedIn(
+        Session(
+          accessToken: 'A',
+          refreshToken: 'R',
+          accessTokenExpiresAt: DateTime.now().add(const Duration(minutes: 30)),
+          user: CurrentUser(
+            id: 'u3',
+            email: 'pending@example.sa',
+            displayName: 'Pending User',
+            appRole: AppRole.visitor,
+            preferredLanguage: PreferredLanguage.fromJson('ar'),
+            registrationStatus: RegistrationStatus.pending,
+          ),
+        ),
+      );
+}
+
+/// A fixed org profile so the social row never fires a real fetch / touches
+/// prefs in tests; [profile] null means "not loaded yet".
+class _FakeOrgProfileController extends OrgProfileController {
+  _FakeOrgProfileController(this.profile);
+
+  final OrgProfile? profile;
+
+  @override
+  OrgProfile? build() => profile;
+}
+
+/// Five social links all set — the configured case (the follow-us section
+/// shows its five buttons).
+const _allSocial = OrgSocial(
+  x: 'https://x.com/simf',
+  instagram: 'https://instagram.com/simf',
+  linkedin: 'https://linkedin.com/company/simf',
+  youtube: 'https://youtube.com/@simf',
+  tiktok: 'https://tiktok.com/@simf',
+);
+
+OrgProfile _orgProfile(OrgSocial social) => OrgProfile(
+      name: '',
+      nameArabic: '',
+      title: '',
+      titleArabic: '',
+      currentYear: 0,
+      status: '',
+      social: social,
+      aboutItems: const <OrgAboutItem>[],
+      details: const <OrgDetail>[],
+    );
+
 class _FakeNotificationsRepository implements NotificationsRepository {
   _FakeNotificationsRepository(this.count);
 
@@ -127,6 +182,7 @@ Future<void> _pump(
   List<NewsListItem> news = const <NewsListItem>[],
   MyAreaDashboard? profile,
   Locale locale = const Locale('en'),
+  OrgSocial social = _allSocial,
 }) async {
   final router = GoRouter(
     initialLocation: '/',
@@ -175,14 +231,11 @@ Future<void> _pump(
             .overrideWithValue(_FakeNotificationsRepository(unread)),
         newsListProvider.overrideWith((ref) async => news),
         homeProfileProvider.overrideWith((ref) async => profile),
-        // D-461 — fixed site-settings so the social row never fires a real fetch.
-        siteSettingsProvider.overrideWith(
-          (ref) => const SiteSettings(
-            registrationMessageAr: '',
-            registrationMessageEn: '',
-            social: SiteSocialLinks(),
-          ),
-        ),
+        // The social row reads the CP org profile (warmed at splash) — override
+        // it with a fixed profile (social set by default) so no real fetch /
+        // prefs access happens.
+        orgProfileProvider
+            .overrideWith(() => _FakeOrgProfileController(_orgProfile(social))),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -244,7 +297,8 @@ void main() {
       expect(find.byTooltip('Notifications'), findsNothing);
       expect(find.byIcon(Icons.menu), findsOneWidget);
       expect(find.byIcon(Icons.language), findsOneWidget);
-      expect(find.byIcon(Icons.dark_mode_outlined), findsOneWidget);
+      // Dark mode is now the gold crescent (node 1049:2087), still inert.
+      expect(find.byIcon(Icons.dark_mode), findsOneWidget);
     });
 
     testWidgets('a public tile navigates to its route', (tester) async {
@@ -294,6 +348,25 @@ void main() {
         TextDirection.rtl,
       );
     });
+
+    testWidgets('an unapproved (pending) account sees the guest layout with the '
+        'awaiting-approval note, not the sign-in button', (tester) async {
+      await _pump(tester, controller: _UnapprovedController());
+
+      // The guest tiles render…
+      expect(find.text('Sessions'), findsOneWidget);
+      expect(find.text('Speakers'), findsOneWidget);
+      // …and the awaiting-approval note replaces the sign-in CTA.
+      await tester.scrollUntilVisible(
+        find.textContaining('awaiting approval'),
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.textContaining('awaiting approval'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Sign in'), findsNothing);
+      // It is the guest layout, not the signed-in greeting header.
+      expect(find.textContaining('Pending User'), findsNothing);
+    });
   });
 
   group('HomeScreen — signed-in layout (frame 758:1134)', () {
@@ -304,7 +377,7 @@ void main() {
       expect(find.textContaining('Ahmed Mohammed'), findsOneWidget);
       expect(find.byTooltip('Notifications'), findsOneWidget);
       expect(find.text('LIVE'), findsOneWidget);
-      // "عن الملتقى" is now a bordered nav row (KsaLinkRow), not a text header.
+      // "عن الملتقى" is now a bordered nav row (SimfLinkRow), not a text header.
       // (The full three-bar count is asserted on a tall surface in the RTL
       // group, where every off-screen bar is built.)
       expect(find.text('About the forum'), findsOneWidget);
@@ -436,6 +509,15 @@ void main() {
       expect(find.text('NOTIFICATIONS'), findsOneWidget);
     });
 
+    testWidgets('tapping the greeting avatar opens My Area (owner 2026-06-27)',
+        (tester) async {
+      await _pump(tester, controller: _SignedInController());
+
+      await tester.tap(find.byType(SimfAvatar));
+      await tester.pumpAndSettle();
+      expect(find.text('MY-AREA'), findsOneWidget);
+    });
+
     testWidgets('the live banner opens the live broadcast', (tester) async {
       await _pump(tester, controller: _SignedInController());
 
@@ -445,7 +527,7 @@ void main() {
       expect(find.text('Smart features'), findsNothing);
     });
 
-    testWidgets('the social row renders all five brand buttons',
+    testWidgets('the social row renders all five brand glyphs (Figma SVGs)',
         (tester) async {
       await _pump(tester, controller: _SignedInController());
 
@@ -455,16 +537,63 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       await tester.pumpAndSettle();
-      final images = tester
-          .widgetList<Image>(find.byType(Image))
-          .map((w) => (w.image as AssetImage).assetName)
+      // The social icons are now the exact Figma beige SVGs rendered through
+      // SimfSvgIcon (the same pipeline as the About icons), not PNG Images.
+      final socials = tester
+          .widgetList<SimfSvgIcon>(find.byType(SimfSvgIcon))
+          .map((w) => w.asset)
           .where((n) => n.contains('social_'))
           .toList();
-      expect(images, hasLength(5));
+      expect(socials, hasLength(5));
     });
 
-    testWidgets('the أحدث منشوراتنا card renders the latest post '
-        '(frame 758:1240)', (tester) async {
+    testWidgets('no social set → the تابعنا section is hidden (owner 2026-06-27)',
+        (tester) async {
+      await _pump(
+        tester,
+        controller: _SignedInController(),
+        social: const OrgSocial(),
+      );
+      // Scroll to the discover row (just above where تابعنا would be); the
+      // follow-us section is hidden, so its header never appears.
+      await tester.scrollUntilVisible(
+        find.text('Spirit of Saudi'),
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Follow us'), findsNothing);
+      final none = tester
+          .widgetList<SimfSvgIcon>(find.byType(SimfSvgIcon))
+          .where((w) => w.asset.contains('social_'))
+          .toList();
+      expect(none, isEmpty);
+    });
+
+    testWidgets('only the set platforms render (2 of 5 set)', (tester) async {
+      await _pump(
+        tester,
+        controller: _SignedInController(),
+        social: const OrgSocial(
+          x: 'https://x.com/simf',
+          youtube: 'https://youtube.com/@simf',
+        ),
+      );
+      await tester.scrollUntilVisible(
+        find.text('Follow us'),
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('Follow us'), findsOneWidget);
+      final two = tester
+          .widgetList<SimfSvgIcon>(find.byType(SimfSvgIcon))
+          .where((w) => w.asset.contains('social_'))
+          .toList();
+      expect(two, hasLength(2));
+    });
+
+    testWidgets('the ابرز الاحداث carousel renders the post title '
+        '(frame 758:1239)', (tester) async {
       await _pump(
         tester,
         controller: _SignedInController(),
@@ -472,30 +601,29 @@ void main() {
       );
 
       await tester.scrollUntilVisible(
-        find.text('Latest posts'),
+        find.text('Highlights'),
         120,
         scrollable: find.byType(Scrollable).first,
       );
-      expect(find.text('Latest posts'), findsOneWidget);
-      // The frame's lead paragraph is the excerpt (not the title); the bold line
-      // is the source name. Engagement counts are NOT shown (Phase 2 data).
-      expect(find.text('The opening session begins now.'), findsOneWidget);
-      expect(find.text('The Maritime Forum'), findsOneWidget);
-      // The card is tappable (→ the article screen, same push as the news list).
+      expect(find.text('Highlights'), findsOneWidget);
+      // The carousel slide shows the post title (image + text only — the old
+      // single card's source chip / excerpt / engagement counts are gone).
+      expect(find.text('Forum opens 2026'), findsOneWidget);
+      // The slide is tappable (→ the article screen, same push as the list).
       expect(
         find.ancestor(
-          of: find.text('The opening session begins now.'),
+          of: find.text('Forum opens 2026'),
           matching: find.byType(InkWell),
         ),
         findsWidgets,
       );
     });
 
-    testWidgets('no posts → the أحدث منشوراتنا section is hidden',
+    testWidgets('no posts → the ابرز الاحداث section is hidden',
         (tester) async {
       await _pump(tester, controller: _SignedInController());
       // Section is omitted entirely when there is no latest post.
-      expect(find.text('Latest posts'), findsNothing);
+      expect(find.text('Highlights'), findsNothing);
     });
 
     testWidgets('relative time buckets (homePostTime)', (tester) async {
@@ -536,14 +664,18 @@ void main() {
       );
     }
 
-    testWidgets('about tiles: المتحدثون (right) · المعرض · الجلسات (left)',
+    testWidgets(
+        'about tiles (4-up): المتحدثون · المعرض · الوفود · الجلسات (right→left)',
         (tester) async {
       await pumpTall(tester);
       final speakers = tester.getCenter(find.text('المتحدثون')).dx;
       final booths = tester.getCenter(find.text('المعرض')).dx;
+      final delegations = tester.getCenter(find.text('الوفود')).dx;
       final sessions = tester.getCenter(find.text('الجلسات')).dx;
+      // Right→left: المتحدثون (rightmost) > المعرض > الوفود > الجلسات (leftmost).
       expect(speakers, greaterThan(booths));
-      expect(booths, greaterThan(sessions));
+      expect(booths, greaterThan(delegations));
+      expect(delegations, greaterThan(sessions));
     });
 
     testWidgets('news tiles: اللقاءات الثنائية (right) · الأرشيف (left)',
@@ -566,7 +698,7 @@ void main() {
         (tester) async {
       await pumpTall(tester);
       // The three bordered bars exist with the correct Arabic titles.
-      expect(find.byType(KsaLinkRow), findsNWidgets(3));
+      expect(find.byType(SimfLinkRow), findsNWidgets(3));
       expect(find.text('عن الملتقى'), findsOneWidget);
       expect(find.text('الرعاة'), findsOneWidget);
       expect(find.text('الأخبار والتغطية'), findsOneWidget);

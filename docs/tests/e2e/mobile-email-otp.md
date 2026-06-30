@@ -3,7 +3,8 @@
 > **Authority:** SIMF E2E catalogue (D-133 / D-245). Mobile screen #6 — sign-up
 > step 2 (email-OTP). Spec: [`Page_006`](../../App/Page_006/README.md). Runner-agnostic
 > Gherkin. The screen glue is widget-tested in
-> `src/Mobile/simf_app/test/features/auth/sign_up_email_verify_screen_test.dart`;
+> `src/Mobile/simf_app/test/features/account/sign_up_email_verify_screen_test.dart`
+> (+ the golden `test/golden/sign_up_email_verify_golden_test.dart`, 505:837);
 > the controller delegation in
 > `src/Mobile/packages/simf_auth_pkg/test/auth_controller_email_verify_test.dart`;
 > the repository contract in
@@ -16,7 +17,7 @@
 | **APIs** | `POST /api/v1/app/auth/verify-email` (`{ email, code }` → `{ email, emailVerified }`) · `POST /api/v1/app/auth/resend-code` (`{ email }` → `{ email, codeExpiresInSeconds }`) — both `AllowAnonymous`, `auth` limiter |
 | **Surface** | Mobile (Flutter) — Anonymous (mid sign-up, no token yet) |
 | **Auth setup** | None. No token / `Authorization` header — identity is asserted by email + the emailed 6-digit code. The code is read at run time from `SIMF_Identity.AccountCodes` (`Purpose = EmailVerification`, latest unconsumed) — **never** a literal code. |
-| **Last reviewed** | 2026-06-11 |
+| **Last reviewed** | 2026-06-30 (clean-code freeze D-553; behaviour unchanged) |
 
 > **KSA-Project redesign (D-364, Figma 505:837):** the sign-up verify screen
 > now renders six segmented code boxes (one invisible capture field), the

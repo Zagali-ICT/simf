@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import 'data/delegation_models.dart';
 import 'data/delegations_repository.dart';
 
@@ -44,25 +44,41 @@ class _DelegationsScreenState extends ConsumerState<DelegationsScreen> {
     final isArabic = Directionality.of(context) == TextDirection.rtl;
     final delegations = ref.watch(delegationsProvider);
 
-    return KsaPage(
+    Future<void> onRefresh() async {
+      ref.invalidate(delegationsProvider);
+      await ref.read(delegationsProvider.future);
+    }
+
+    return SimfPageShell(
       title: l10n.delegationsTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: delegations.when(
         loading: () => const Center(
           child: CircularProgressIndicator(color: SimfTokens.accent),
         ),
-        error: (_, __) => KsaErrorState(
-          message: l10n.delegationsError,
-          retryLabel: l10n.retryLabel,
-          onRetry: () => ref.invalidate(delegationsProvider),
+        error: (_, __) => SimfPullToRefresh(
+          onRefresh: onRefresh,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: <Widget>[
+              SimfErrorState(
+                message: l10n.delegationsError,
+                retryLabel: l10n.retryLabel,
+                onRetry: () => ref.invalidate(delegationsProvider),
+              ),
+            ],
+          ),
         ),
-        data: (data) => _DelegationsBody(
-          data: data,
-          query: _query,
-          isArabic: isArabic,
-          l10n: l10n,
-          searchController: _searchController,
-          onQueryChanged: (value) => setState(() => _query = value),
+        data: (data) => SimfPullToRefresh(
+          onRefresh: onRefresh,
+          child: _DelegationsBody(
+            data: data,
+            query: _query,
+            isArabic: isArabic,
+            l10n: l10n,
+            searchController: _searchController,
+            onQueryChanged: (value) => setState(() => _query = value),
+          ),
         ),
       ),
     );
@@ -96,6 +112,7 @@ class _DelegationsBody extends StatelessWidget {
         .toList(growable: false);
 
     return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(SimfTokens.space4),
       children: <Widget>[
         _StatsStrip(
@@ -114,7 +131,7 @@ class _DelegationsBody extends StatelessWidget {
         if (filtered.isEmpty)
           Padding(
             padding: const EdgeInsets.only(top: SimfTokens.space8),
-            child: KsaEmptyState(
+            child: SimfEmptyState(
               icon: Icons.flag_outlined,
               message: data.items.isEmpty
                   ? l10n.delegationsEmpty
@@ -366,7 +383,7 @@ class _DelegationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return KsaCard(
+    return SimfCard(
       radius: SimfTokens.radius, // 8 (Figma 1426:10838)
       borderWidth: 0, // borderless
       child: Padding(
@@ -600,9 +617,17 @@ class _MemberChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
       ),
       padding: const EdgeInsets.all(SimfTokens.space2),
+      // Figma 1426:10862 — the groups glyph leads (inline-start = right in RTL),
+      // the count text trails to its left.
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
+          const Icon(
+            Icons.groups_outlined,
+            size: 12,
+            color: SimfTokens.beigeBorder,
+          ),
+          const SizedBox(width: 6),
           Flexible(
             child: Text(
               text,
@@ -614,12 +639,6 @@ class _MemberChip extends StatelessWidget {
                 color: SimfTokens.beigeBorder,
               ),
             ),
-          ),
-          const SizedBox(width: 6),
-          const Icon(
-            Icons.groups_outlined,
-            size: 12,
-            color: SimfTokens.beigeBorder,
           ),
         ],
       ),
@@ -634,9 +653,13 @@ class _DateGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Figma 1426:10856 — the clock glyph leads (inline-start = right in RTL),
+    // the date range trails to its left.
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
+        const Icon(Icons.schedule, size: 12, color: SimfTokens.beigeBorder),
+        const SizedBox(width: SimfTokens.space1),
         Flexible(
           child: Text(
             text,
@@ -649,8 +672,6 @@ class _DateGroup extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: SimfTokens.space1),
-        const Icon(Icons.schedule, size: 12, color: SimfTokens.beigeBorder),
       ],
     );
   }

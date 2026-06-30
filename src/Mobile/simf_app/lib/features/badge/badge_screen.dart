@@ -10,13 +10,13 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import '../contacts/scan_contact_screen.dart';
 import '../myarea/data/myarea_models.dart';
 import '../myarea/data/myarea_repository.dart';
-import '../profile/data/profile_repository.dart' show referenceNumberProvider;
+import '../account/data/profile_repository.dart' show referenceNumberProvider;
 
 /// Page 032 — بطاقة الدخول · Entry badge (#32, `/badge`), rebuilt to the
 /// KSA frame **758:1469 "QR"** on the shared shell.
@@ -99,9 +99,9 @@ class _BadgeScreenState extends ConsumerState<BadgeScreen> {
     // The displayed ID is the reference number (SIMF-2026-…), not the qrId the
     // QR encodes. Best-effort; falls back to the qrId tail while it loads.
     final referenceNumber = ref.watch(referenceNumberProvider).asData?.value;
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.badgeTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       tab: SimfTab.badge,
       showSweep: true,
       body: _buildBody(l10n, referenceNumber),
@@ -114,14 +114,14 @@ class _BadgeScreenState extends ConsumerState<BadgeScreen> {
     }
     if (_notApproved) {
       // Signed-in but not approved — show "account not approved", not the QR.
-      return KsaEmptyState(
+      return SimfEmptyState(
         icon: Icons.lock_outline,
         message: l10n.badgeNotApprovedBody,
       );
     }
     final identity = _identity;
     if (_error || identity == null) {
-      return KsaErrorState(
+      return SimfErrorState(
         message: l10n.badgeError,
         retryLabel: l10n.retryLabel,
         onRetry: () => unawaited(_load()),
@@ -130,7 +130,7 @@ class _BadgeScreenState extends ConsumerState<BadgeScreen> {
     final qrId = identity.qrId?.trim() ?? '';
     if (qrId.isEmpty) {
       // Pending approval — the badge is issued once approved (Page_014 L-1).
-      return KsaEmptyState(
+      return SimfEmptyState(
         icon: Icons.qr_code_2_outlined,
         message: l10n.badgePendingBody,
       );
@@ -246,7 +246,7 @@ class _Badge extends StatelessWidget {
                     // Frame 758:1469 — a 64-px rounded box; the SIMF brand-mark
                     // fallback on its navy box stays visible on the gold strip,
                     // replaced by the photo when present.
-                    KsaAvatar(
+                    SimfAvatar(
                       name: name,
                       currentUser: true,
                       size: 64,
@@ -303,6 +303,9 @@ class _Badge extends StatelessWidget {
         // visitor badges into My Visitors.
         if (identity.isVisitor) ...<Widget>[
           _actionButton(
+            // Frame 758:1469 — the primary "امسح لإضافة شخص" action is the
+            // gold-FILLED button; the share action below it stays outlined.
+            filled: true,
             icon: const SimfSvgIcon(
               'assets/icons/badge_scan.svg',
               size: 24,
@@ -339,12 +342,37 @@ class _Badge extends StatelessWidget {
     );
   }
 
-  /// One full-width gold-bordered QR-page action button (frame 758:1469 style).
+  /// One full-width QR-page action button (frame 758:1469). [filled] = the gold
+  /// primary button (امسح لإضافة شخص); otherwise the gold-bordered outlined
+  /// variant (the share action).
   Widget _actionButton({
     required Widget icon,
     required String label,
     required VoidCallback onTap,
+    bool filled = false,
   }) {
+    final labelText = Text(
+      label,
+      style: const TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.w700,
+        fontSize: SimfTokens.textLg,
+      ),
+    );
+    if (filled) {
+      return FilledButton.icon(
+        onPressed: onTap,
+        style: FilledButton.styleFrom(
+          minimumSize: const Size.fromHeight(48),
+          backgroundColor: SimfTokens.accent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+          ),
+        ),
+        icon: icon,
+        label: labelText,
+      );
+    }
     return OutlinedButton.icon(
       onPressed: onTap,
       style: OutlinedButton.styleFrom(
@@ -355,14 +383,7 @@ class _Badge extends StatelessWidget {
         ),
       ),
       icon: icon,
-      label: Text(
-        label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w700,
-          fontSize: SimfTokens.textLg,
-        ),
-      ),
+      label: labelText,
     );
   }
 }

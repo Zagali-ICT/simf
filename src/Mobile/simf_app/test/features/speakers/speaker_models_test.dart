@@ -36,6 +36,7 @@ void main() {
         'allowsMeetingRequests': true,
         'allowsDataSharing': true,
         'facebookUrl': 'https://fb/x',
+        'websiteUrl': 'https://reef.example.sa',
         'sessions': <dynamic>[
           <String, dynamic>{
             'id': 'se1',
@@ -56,6 +57,7 @@ void main() {
       expect(d.allowsMeetingRequests, isTrue);
       expect(d.allowsDataSharing, isTrue);
       expect(d.facebookUrl, 'https://fb/x');
+      expect(d.websiteUrl, 'https://reef.example.sa'); // D-544
       expect(d.sessions, hasLength(1));
       expect(d.sessions.single.localizedTitle(true), 'حديث');
       expect(d.sessions.single.startUtc.isUtc, isTrue);

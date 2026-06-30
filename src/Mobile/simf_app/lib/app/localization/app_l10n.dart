@@ -40,6 +40,20 @@ class AppL10n {
   String get backLabel => _t('رجوع', 'Back');
   String get continueLabel => _t('متابعة', 'Continue');
   String get cancelLabel => _t('إلغاء', 'Cancel');
+  // External-link confirmation (owner 2026-06-27) — every external link asks
+  // before it leaves the app.
+  String get externalLinkTitle => _t('فتح رابط خارجي', 'Open external link');
+  String get externalLinkBody => _t(
+        'سيتم نقلك خارج التطبيق إلى موقع خارجي. هل تريد المتابعة؟',
+        'This will take you out of the app to an external site. Continue?',
+      );
+  String get externalLinkOpen => _t('فتح', 'Open');
+  // Shown on the guest home when a signed-in account is not yet approved.
+  String get homePendingApprovalNote => _t(
+        'حسابك قيد المراجعة. ستُفعَّل كل الميزات بعد الموافقة على تسجيلك.',
+        'Your account is awaiting approval. Full features unlock once your '
+            'registration is approved.',
+      );
   String get retryLabel => _t('إعادة المحاولة', 'Retry');
   String get loadingLabel => _t('جارٍ التحميل…', 'Loading…');
   String get lookupLoadError =>
@@ -701,11 +715,12 @@ class AppL10n {
   // white sub-line over the event photo.
   String get discoverBannerSubtitle =>
       _t('تعال واكتشف جديدك المفضل', 'Come discover your favourites');
-  // أحدث منشوراتنا — the latest-news teaser card on the signed-in home (frame
-  // 758:1134 node 758:1240). The post image now rides the D-357 NewsImage asset
-  // route (Phase 1); the engagement counts (758:1252) are admin-entered data
-  // landing in Phase 2 — the row stays hidden until the wire carries them.
-  String get latestPostsSection => _t('أحدث منشوراتنا', 'Latest posts');
+  // ابرز الاحداث — the highlights / latest-news teaser card on the signed-in
+  // home (frame 758:1134 node 758:1239). The post image rides the D-357
+  // NewsImage asset route (Phase 1); the engagement counts (758:1252) are
+  // admin-entered data landing in Phase 2 — the row stays hidden until the wire
+  // carries them.
+  String get featuredEventsSection => _t('ابرز الاحداث', 'Highlights');
   // The post-card source name + handle (frame 758:1246 / 758:1244).
   String get postSourceName => _t('الملتقى البحري', 'The Maritime Forum');
   String get postSourceHandle => '@SIMF';
@@ -1017,6 +1032,12 @@ class AppL10n {
   String get speakersError =>
       _t('تعذّر تحميل المتحدثين.', 'Could not load the speakers.');
   String get speakersEmpty => _t('لا يوجد متحدثون', 'No speakers');
+  // Frame 908:1744 — the search box + sort control above the speaker list.
+  String get speakersSearchHint => _t('ما الذي تبحث عنه', 'What are you after');
+  String get speakersSortAlpha =>
+      _t('ترتيب حسب الابجدية', 'Sort alphabetically');
+  String get speakersNoMatches =>
+      _t('لا نتائج مطابقة', 'No matching speakers');
 
   // Speaker profile (Page 020).
   String get speakerProfileTitle => _t('ملف المتحدث', 'Speaker profile');
@@ -1513,18 +1534,14 @@ class AppL10n {
       _t('لا يوجد ملخص منشور بعد.', 'No published summary yet.');
   String get aiSummaryError =>
       _t('تعذر تحميل الملخص.', 'Could not load the summary.');
-  String get aiSummaryChooseSession => _t('اختر الجلسة', 'Choose the session');
-  // Figma banner copy (frame 1072:14633): "an automatic summary was generated".
-  String get aiSummaryGeneratedBanner =>
-      _t('تم توليد ملخص تلقائي', 'Auto-generated summary');
   String get aiSummaryKeyPointsHeading => _t('أبرز النقاط', 'Key points');
   String get aiSummaryRecommendationsHeading =>
       _t('التوصيات', 'Recommendations');
   String get aiSummarySpeakersHeading => _t('المتحدثون', 'Speakers');
-  String get aiSummaryFullTextHeading => _t('النص الكامل', 'Full text');
-  String get aiSummaryShare => _t('مشاركة', 'Share');
-  String get aiSummarySave => _t('حفظ', 'Save');
-  String get aiSummarySaved => _t('تم الحفظ', 'Saved');
+  // Figma 1072:13518 — the redesigned session-summary screen.
+  String get aiSummarySessionLabel => _t('الجلسة', 'Session');
+  String get aiSummaryGenerateButton =>
+      _t('توليد ملخص للجلسة', 'Generate session summary');
   String get aiSummaryNoSessions =>
       _t('لا توجد جلسات متاحة بعد.', 'No sessions available yet.');
 
@@ -1544,7 +1561,7 @@ class AppL10n {
       _t('لا توجد جلسات محجوزة بعد.', 'No booked sessions yet.');
   String get sessionsNoMatch =>
       _t('لا توجد نتائج مطابقة.', 'No matching results.');
-  String get sessionRecordedBadge => _t('مسجل', 'Recorded');
+  String get sessionRecordedBadge => _t('مسجّل', 'Recorded');
   String get favouriteToggleError =>
       _t('تعذر تحديث المفضلة.', 'Could not update favourites.');
   String sessionDurationMinutes(int minutes) =>
@@ -1813,6 +1830,9 @@ class AppL10n {
       );
   String get scanVisitorError =>
       _t('تعذر مسح البطاقة. حاول مرة أخرى.', 'Could not scan the badge. Try again.');
+
+  /// D-519 — the exhibitor home's lead-capture tools section header.
+  String get exhibitorToolsSection => _t('أدوات العارض', 'Exhibitor tools');
 
   // Live broadcast (Page 025). liveNowLabel already exists (reused for the badge).
   String get liveBroadcastTitle => _t('البث المباشر', 'Live broadcast');

@@ -19,6 +19,7 @@
 *@
 @using SIMF.Contracts.UserProfile
 @using SIMF.Contracts.Organisations
+@using SIMF.Contracts.Regions
 @using SIMF.Common
 @implements IDisposable
 @inject IStringLocalizer<Strings> L
@@ -163,12 +164,14 @@
                     <div class="simf-field__control">
                         @* Keyed on the stable region code (not the localized name) so a
                            record stored in the other language still selects correctly
-                           when the CP UI culture differs. *@
+                           when the CP UI culture differs. D-547 — the option list is the
+                           DB-backed regions lookup, falling back to the offline
+                           SaudiRegions constant when the fetch fails / returns empty. *@
                         <select id="walkin-birth-region" class="simf-field__input"
-                                value="@(SaudiRegions.ByName(_model.PlaceOfBirth)?.Code ?? string.Empty)"
+                                value="@(RegionCodeForName(_model.PlaceOfBirth))"
                                 @onchange="OnBirthRegionChanged">
                             <option value="">@L["Admin.WalkIn.Field.PlaceOfBirth.Select"]</option>
-                            @foreach (var region in SaudiRegions.All)
+                            @foreach (var region in _regions)
                             {
                                 <option value="@region.Code">@RegionName(region)</option>
                             }
@@ -511,6 +514,11 @@
     private AdminProfileTypeSummary[] _profileTypes = Array.Empty<AdminProfileTypeSummary>();
     private CountryDto[] _countries = Array.Empty<CountryDto>();
     private InterestDto[] _interests = Array.Empty<InterestDto>();
+    // D-547 — birth-region options. Loaded from the DB-backed regions lookup
+    // (/admin/regions/list, active only) in OnInitializedAsync; seeded up-front
+    // from the offline SaudiRegions constant so the picker is never empty and so
+    // it stays populated if the fetch fails or returns nothing.
+    private RegionOption[] _regions = FallbackRegions;
     private string _idKind = "Iqama";
     private string? _idDocumentName;
     private string? _avatarName;
@@ -577,6 +585,17 @@
         var organisationsTask = JS.InvokeAsync<ApiResult<IReadOnlyList<OrganisationPickerItem>>>(
             "simfAccount.getJson",
             "/account/api/admin/walk-in/organisations?top=20").AsTask();
+        // D-547 — birth-region options from the DB-backed lookup. Active only
+        // (isActive filter), a large page (Top=200, well above the 13 regions),
+        // ordered by SortOrder server-side — the same source the app picker uses.
+        var regionsTask = JS.InvokeAsync<ApiResult<GridPage<AdminRegionSummary>>>(
+            "simfAccount.postJson",
+            "/account/api/admin/regions/list",
+            new GridQuery
+            {
+                Top = 200,
+                Filters = new Dictionary<string, string> { ["isActive"] = "true" },
+            }).AsTask();
 
         Task<ApiResult<InterestListResponse>>? interestsTask = null;
         if (string.Equals(Kind, "Visitor", StringComparison.OrdinalIgnoreCase))
@@ -617,6 +636,31 @@
         if (oEnvelope is { Success: true, Data: not null })
         {
             _orgResults = oEnvelope.Data.ToArray();
+        }
+
+        // D-547 — swap the birth-region options to the DB-backed lookup. Keep the
+        // offline SaudiRegions fallback (already seeded into _regions) if the fetch
+        // fails or comes back empty, so the picker is never empty.
+        try
+        {
+            var rEnvelope = await regionsTask;
+            if (rEnvelope is { Success: true, Data: not null }
+                && rEnvelope.Data.Items.Count > 0)
+            {
+                _regions = rEnvelope.Data.Items
+                    .Where(r => r.IsActive)
+                    .Select(r => new RegionOption(r.Code, r.NameArabic, r.Name))
+                    .ToArray();
+                if (_regions.Length == 0)
+                {
+                    _regions = FallbackRegions;
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // Network / JS-interop failure — keep the offline fallback.
+            _regions = FallbackRegions;
         }
 
         if (interestsTask is not null)
@@ -710,18 +754,35 @@
             : $"{letters}{_plateDigits}";
     }
 
-    // D-469 — birth-location region (Saudi only). The stored value is the
-    // region's localized name (the existing free-text PlaceOfBirth column).
-    private static string RegionName(SaudiRegions.Region region) =>
+    // D-469 / D-547 — birth-location region (Saudi only). The stored value is the
+    // region's localized name (the existing free-text PlaceOfBirth column). The
+    // option list is the DB-backed lookup (RegionOption) with the offline
+    // SaudiRegions fallback; the English name can be blank for a DB row, so fall
+    // back to the Arabic name when the UI is English but no English name exists.
+    private static string RegionName(RegionOption region) =>
         CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
-            ? region.Arabic
-            : region.English;
+            ? region.NameArabic
+            : (string.IsNullOrWhiteSpace(region.Name) ? region.NameArabic : region.Name!);
+
+    // The <select> is keyed on the stable region code. Map a stored localized
+    // place-of-birth name back to its option code so the dropdown survives a
+    // UI-culture switch; "" (no match) leaves the placeholder selected.
+    private string RegionCodeForName(string? placeOfBirth)
+    {
+        var n = placeOfBirth?.Trim() ?? string.Empty;
+        if (n.Length == 0) { return string.Empty; }
+        var match = _regions.FirstOrDefault(
+            r => r.NameArabic == n
+                 || (!string.IsNullOrWhiteSpace(r.Name) && r.Name == n));
+        return match?.Code ?? string.Empty;
+    }
 
     private void OnBirthRegionChanged(ChangeEventArgs e)
     {
         // The <option> values are region codes; store the localized name back into
         // the free-text column so it round-trips identically to the app.
-        var region = SaudiRegions.ByCode(e.Value?.ToString());
+        var code = e.Value?.ToString();
+        var region = _regions.FirstOrDefault(r => r.Code == code);
         _model.PlaceOfBirth = region is null ? string.Empty : RegionName(region);
     }
 
@@ -1079,6 +1140,21 @@
         _orgSearchCts?.Cancel();
         _orgSearchCts?.Dispose();
     }
+
+    // D-547 — one birth-region option. Shared shape for both the DB-backed
+    // lookup row (AdminRegionSummary) and the offline SaudiRegions fallback, so
+    // the markup and the round-trip helpers don't branch on the source. Code is
+    // the stable <option> value; Name (English) may be null for a DB row.
+    private sealed record RegionOption(string Code, string NameArabic, string? Name);
+
+    // The offline fallback — the same 13 official Saudi regions baked into
+    // SIMF.Common.SaudiRegions. Used until the DB-backed list loads, and kept if
+    // the fetch fails or returns nothing (owner decision: do not delete the
+    // hardcoded list; it is the offline fallback).
+    private static readonly RegionOption[] FallbackRegions =
+        SaudiRegions.All
+            .Select(r => new RegionOption(r.Code, r.Arabic, r.English))
+            .ToArray();
 
     private sealed class Model
     {

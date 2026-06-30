@@ -1,18 +1,140 @@
-include: package:flutter_lints/flutter.yaml
+# analysis_options.yaml — SIMF Flutter App
+# Strict analyzer config — the END-STATE target for the clean-code program.
+#
+# Base: very_good_analysis (industry-strict). To adopt:
+#   flutter pub add --dev very_good_analysis
+#   flutter pub get                       # then pin the EXACT version it resolved in pubspec
+#   # remove flutter_lints from dev_dependencies — it conflicts/duplicates very_good
+#
+# ───────────────────────────────────────────────────────────────────────────
+# ADOPTION — DO NOT drop the `errors:` promotions below in on day one.
+# This is a mature 46.9k-line codebase: ~445 relative imports (0 package: imports)
+# + 526 inline TextStyle + thousands of missing-const sites mean a global
+# error-flip throws thousands of analyzer errors immediately, and the program's
+# own "analyze clean before a module is done" gate becomes unsatisfiable while
+# "never a repo-wide diff" forbids the only fix.
+#
+# Instead RATCHET:
+#   1. Adopt this file with the `errors:` block COMMENTED OUT (very_good defaults
+#      = info/warning). Record the baseline: `flutter analyze > .refactor/analyze_before.txt`.
+#   2. The per-module gate is "ZERO NEW issues + ZERO issues in the touched
+#      module's files" — never repo-wide zero, until the very end.
+#   3. Un-comment each `errors:` line only once that rule reaches zero repo-wide
+#      (usually after the relevant module sweep). By Phase 6 the whole block is on.
+# ───────────────────────────────────────────────────────────────────────────
+
+include: package:very_good_analysis/analysis_options.yaml
 
 analyzer:
   language:
     strict-casts: true
     strict-inference: true
     strict-raw-types: true
+
+  # errors: — END-STATE promotions. Keep COMMENTED until each rule is repo-wide
+  # clean (see ADOPTION above), then enable one line at a time.
+  # errors:
+  #   avoid_print: error
+  #   avoid_dynamic_calls: error
+  #   unawaited_futures: error
+  #   always_use_package_imports: error      # ~445 relative imports today — enable LAST
+  #   prefer_const_constructors: error
+  #   prefer_const_literals_to_create_immutables: error
+  #   use_build_context_synchronously: error # async-gap BuildContext misuse
+  #   dead_code: error
+  #   unused_import: error
+  #   unused_local_variable: error
+  #   unused_element: error
+  #   unused_field: error
   errors:
-    invalid_annotation_target: ignore
+    todo: warning                          # TODOs are visible, not silent — safe to keep on from day one
+
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "build/**"
+    # NOTE: this repo uses hand-written Riverpod + a hand-written router (no codegen),
+    # and has no `_legacy_mockup/` folder. Removed the *.gr.dart and _legacy_mockup
+    # excludes (dead config). Re-add a codegen exclude only if codegen is introduced.
 
 linter:
   rules:
-    avoid_print: true
-    prefer_single_quotes: true
-    require_trailing_commas: true
-    sort_constructors_first: true
+    # --- correctness / safety ---
+    always_declare_return_types: true
+    avoid_dynamic_calls: true
+    avoid_empty_else: true
+    avoid_slow_async_io: true
+    avoid_type_to_string: true
+    cancel_subscriptions: true
+    close_sinks: true
+    discarded_futures: true
+    no_adjacent_strings_in_list: true
+    no_duplicate_case_values: true
+    throw_in_finally: true
     unawaited_futures: true
-    use_super_parameters: true
+    unnecessary_statements: true
+    use_build_context_synchronously: true
+
+    # --- Flutter performance / widgets ---
+    prefer_const_constructors: true
+    prefer_const_constructors_in_immutables: true
+    prefer_const_declarations: true
+    prefer_const_literals_to_create_immutables: true
+    sized_box_for_whitespace: true
+    sized_box_shrink_expand: true
+    use_colored_box: true
+    use_decorated_box: true
+    avoid_unnecessary_containers: true
+    use_key_in_widget_constructors: true
+    use_full_hex_values_for_flutter_colors: true
+
+    # --- structure / readability (clean code) ---
+    always_use_package_imports: true        # NB: drives the eventual no-relative-imports error
+    directives_ordering: true
+    sort_constructors_first: true
+    sort_unnamed_constructors_first: true
+    cascade_invocations: true
+    combinators_ordering: true
+    prefer_final_locals: true
+    prefer_final_in_for_each: true
+    prefer_final_fields: true
+    unnecessary_lambdas: true
+    unnecessary_parenthesis: true
+    unnecessary_late: true
+    unnecessary_null_checks: true
+    unnecessary_null_aware_assignments: true
+    avoid_redundant_argument_values: true
+    require_trailing_commas: true           # hand-write commas; NEVER run `dart format .` (it strips them)
+    sort_child_properties_last: true
+
+    # --- naming / API design ---
+    camel_case_types: true
+    camel_case_extensions: true
+    library_names: true
+    file_names: true
+    non_constant_identifier_names: true
+    constant_identifier_names: true
+    avoid_positional_boolean_parameters: true
+    use_named_constants: true
+    avoid_setters_without_getters: true
+
+    # --- docs / dead code ---
+    public_member_api_docs: false          # full doc coverage is heavy; flip to true per-package if desired
+    package_api_docs: false
+    avoid_returning_this: true
+    only_throw_errors: true
+
+    # --- i18n / RTL discipline ---
+    # (no built-in lint forbids left/right padding; CLAUDE.md §3 + §13 enforce it in review;
+    #  use the grep pre-commit check in REFACTOR_PLAN.md to make it semi-mechanical)
+
+    # --- misc hygiene ---
+    avoid_print: true
+    # avoid_relative_lib_imports — REMOVED: redundant with always_use_package_imports above
+    prefer_single_quotes: true
+    unnecessary_brace_in_string_interps: true
+    use_string_buffers: true
+    prefer_interpolation_to_compose_strings: true
+    leading_newlines_in_multiline_strings: true
+    join_return_with_assignment: true
+    eol_at_end_of_file: true

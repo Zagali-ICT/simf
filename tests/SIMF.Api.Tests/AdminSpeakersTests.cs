@@ -51,6 +51,7 @@ public sealed class AdminSpeakersTests : IClassFixture<SimfApiFactory>
                 FacebookUrl = "https://facebook.com/jdoe",
                 LinkedInUrl = "https://linkedin.com/in/jdoe",
                 XUrl = "https://x.com/jdoe",
+                WebsiteUrl = "https://example.com/jdoe",
                 DisplayOrder = 10,
             },
             token);
@@ -63,6 +64,27 @@ public sealed class AdminSpeakersTests : IClassFixture<SimfApiFactory>
         Assert.True(detail.AllowsMeetingRequests);
         Assert.False(detail.AllowsDataSharing);
         Assert.Equal("https://x.com/jdoe", detail.XUrl);
+        Assert.Equal("https://example.com/jdoe", detail.WebsiteUrl);
+    }
+
+    [Fact]
+    public async Task Create_with_an_overlong_WebsiteUrl_is_400_SPEAKER_INVALID()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var response = await PostAuthAsync(
+            "/api/v1/admin/speakers",
+            new AdminCreateSpeakerRequest
+            {
+                Code = NewCode(),
+                Name = "W",
+                NameArabic = "و",
+                // 257 chars — one past the 256 cap ValidateSocialUrls enforces.
+                WebsiteUrl = "https://example.com/" + new string('a', 257),
+            },
+            token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SpeakerInvalid, body.Error!.Code);
     }
 
     [Fact]
@@ -128,6 +150,7 @@ public sealed class AdminSpeakersTests : IClassFixture<SimfApiFactory>
                 AllowsMeetingRequests = true,
                 AllowsDataSharing = true,
                 LinkedInUrl = "https://linkedin.com/in/z",
+                WebsiteUrl = "https://example.com/z",
                 DisplayOrder = 0,
                 IsActive = true,
             },
@@ -138,6 +161,7 @@ public sealed class AdminSpeakersTests : IClassFixture<SimfApiFactory>
         Assert.True(updated.AllowsMeetingRequests);
         Assert.True(updated.AllowsDataSharing);
         Assert.Equal("https://linkedin.com/in/z", updated.LinkedInUrl);
+        Assert.Equal("https://example.com/z", updated.WebsiteUrl);
     }
 
     [Fact]

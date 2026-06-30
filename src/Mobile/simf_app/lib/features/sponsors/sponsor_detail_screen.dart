@@ -6,8 +6,8 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
-import '../../core/external_link.dart';
+import '../../app/widgets/confirm_external_link.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../exhibition/entity_detail_scaffold.dart';
 import '../exhibition/entity_logo_image.dart';
 import 'data/sponsor_models.dart';
@@ -39,17 +39,17 @@ class SponsorDetailScreen extends ConsumerWidget {
     final detail = ref.watch(sponsorDetailProvider(sponsorId));
 
     return detail.when(
-      loading: () => KsaPage(
+      loading: () => SimfPageShell(
         title: l10n.sponsorDetailTitle,
-        onBack: () => ksaBackOrHome(context),
+        onBack: () => backOrHome(context),
         body: const Center(
           child: CircularProgressIndicator(color: SimfTokens.accent),
         ),
       ),
-      error: (_, __) => KsaPage(
+      error: (_, __) => SimfPageShell(
         title: l10n.sponsorDetailTitle,
-        onBack: () => ksaBackOrHome(context),
-        body: KsaErrorState(
+        onBack: () => backOrHome(context),
+        body: SimfErrorState(
           message: l10n.entityDetailError,
           retryLabel: l10n.retryLabel,
           onRetry: () => ref.invalidate(sponsorDetailProvider(sponsorId)),
@@ -89,14 +89,14 @@ class SponsorDetailScreen extends ConsumerWidget {
           : l10n.sponsorTierPill(sponsor.tierName),
       about: sponsor.localizedAbout(isArabic),
       website: sponsor.url,
-      onWebsite: () => _openWebsite(sponsor.url),
+      onWebsite: () => _openWebsite(context, sponsor.url),
     );
   }
 
-  void _openWebsite(String? url) {
+  void _openWebsite(BuildContext context, String? url) {
     final uri = _httpUri(url);
     if (uri != null) {
-      unawaited(launchExternalUri(uri));
+      unawaited(confirmThenLaunchExternal(context, uri.toString()));
     }
   }
 }

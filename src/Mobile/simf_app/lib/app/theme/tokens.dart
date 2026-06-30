@@ -40,8 +40,10 @@ class SimfTokens {
   // KSA-Project light-surface + auth-flow palette (D-358/D-359).
   static const Color navySurface = Color(0xFF102238); // elevated navy surface (login bg)
   static const Color navyHeader = Color(0xFF071832); // darker header block behind the forum title (Figma 1467:12565 / 1461:12565)
+  static const Color chipBorderNavy = Color(0xFF2A4066); // muted navy border on unselected pills (interests grid, Figma 505:1222)
   static const Color beigeBorder = Color(0xFFC2B8A2); // "Pragraph Color" — borders + on-navy paragraph text
   static const Color beigeFill10 = Color(0x1AC2B8A2); // beige 10% — tier-pill + link-row icon-box fill (Figma rgba(194,184,162,0.1))
+  static const Color beigeBorder40 = Color(0x66C2B8A2); // beige 40% — agenda timeline row divider (Figma 1310:3239 rgba(194,184,162,0.4))
   static const Color cardBeige = Color(0xFFF1ECE4); // light card surface
   static const Color goldSoft = Color(0xFFD0AC77); // secondary gold text/icons
   static const Color headlineInk = Color(0xFF111827); // headings on light surfaces
@@ -51,12 +53,24 @@ class SimfTokens {
   static const Color inputInk = Color(0xCC111827); // input text on light surfaces (#111827 at 80%)
   static const Color onGoldMuted = Color(0xFFF0F0F0); // muted text on the gold identity strip (badge 758:1469)
   static const Color timestampMuted = Color(0xFF4C555F); // notification timestamp (758:2491)
+  // Per-kind notification category-icon colours (Figma 758:2491 palette). Kept
+  // distinct from the semantic success/danger so the icons match the mockup's
+  // decorative per-kind styling exactly.
+  static const Color notifGreen = Color(0xFF13C296); // Figma "Green/green-500"
+  static const Color notifCoral = Color(0xFFFF6347); // Figma "Primary/primary-500"
   static const Color codeBoxBeige = Color(0xCCFFF4DC); // pale-beige code chip fill (venue map 758:1358, #FFF4DC @ 80%)
   static const Color cardShadow = Color(0x29111827); // soft card drop-shadow (headlineInk @ ~16%)
   static const Color dayInactive = Color(0xFFC2C2C2); // calendar day with no sessions (758:1415)
+  static const Color bannerScrim = Color(0xCC001030); // day-banner bottom gradient #001030 @ 80% (Figma 1310:3232 / 1064:13240)
   static const Color navInactive = Color(0xFF5E584B); // bottom-nav inactive icon (758:1476)
   static const Color chatBubbleText = Color(0xFFF0F4FF); // assistant chat-bubble text (1064:13278)
   static const Color captionText = Color(0xFFDDE4F0); // live AI-caption placeholder text (934:3613)
+  // Live-broadcast player band (Figma 934:3450): the LIVE pill is a brighter
+  // brick-red than the semantic [danger]; the language chip is a translucent
+  // dark glassy pill; the resting play button is a translucent-white circle.
+  static const Color liveRed = Color(0xFFC0392B); // LIVE badge fill (934:3609)
+  static const Color scrimBlack55 = Color(0x8C000000); // language chip fill rgba(0,0,0,0.55) (934:3604)
+  static const Color playScrim = Color(0x26FFFFFF); // play-circle fill rgba(255,255,255,0.15) (934:3595)
 
   // KSA main-shell disabled palette (W2 frames 512:1492 / 512:1780): the
   // "بطاقتي" locked card and the disabled theme tile render on these.
@@ -95,11 +109,17 @@ class SimfTokens {
 
   // Radii.
   static const double radiusSmall = 4;
+  static const double radius6 = 6; // LIVE badge (Figma 934:3609)
   static const double radius = 8;
   static const double radiusLarge = 12;
   static const double radiusLg = 16; // W2 cards / nav bar top corners
   static const double radius14 = 14; // exhibitor/sponsor link rows (Figma 1439:11904/11917)
   static const double radiusXl = 20;
+
+  /// Ready-made [BorderRadius] for the default 4px corner (fields, cards,
+  /// pills). Use this instead of re-wrapping [radiusSmall] in every widget.
+  static const BorderRadius borderRadiusSmall =
+      BorderRadius.all(Radius.circular(radiusSmall));
 
   // Hairline border weights (the KSA frames' 0.2px card hairline and the
   // 0.5px emphasised hairline).
@@ -116,4 +136,19 @@ class SimfTokens {
   static const double textXl = 20;
   static const double textXxl = 22; // exhibitor/sponsor name (Figma 1439:11894)
   static const double textHero = 28;
+
+  // Named text styles — built incrementally per screen (§5.1). The font family
+  // comes from the theme; these bundle only colour/size/weight/line-height so a
+  // widget never constructs a raw TextStyle. First two land with the faq pilot
+  // (the on-navy beige "Paragraph Color" body, Figma 1388:7582).
+  static const TextStyle bodyBeige = TextStyle(
+    color: beigeBorder,
+    fontSize: textMd,
+    height: 1.5,
+  );
+  static const TextStyle labelBeigeMedium = TextStyle(
+    color: beigeBorder,
+    fontSize: textMd,
+    fontWeight: FontWeight.w500,
+  );
 }

@@ -6,7 +6,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import 'data/news_models.dart';
 import 'news_article_screen.dart';
 
@@ -34,6 +34,14 @@ final newsListProvider =
 class NewsScreen extends ConsumerWidget {
   const NewsScreen({super.key});
 
+  /// Pull-to-refresh handler — re-fetch the news list by invalidating
+  /// [newsListProvider] and awaiting its next value so the gold spinner stays
+  /// until the new data has loaded.
+  Future<void> _refresh(WidgetRef ref) async {
+    ref.invalidate(newsListProvider);
+    await ref.read(newsListProvider.future);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppL10n.of(context);
@@ -41,11 +49,11 @@ class NewsScreen extends ConsumerWidget {
     // The card builds `{base}/app/assets/NewsImage/{id}/image` for the
     // thumbnail; the base already includes `/api/v1`.
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
-    return KsaPage(
+    return SimfPageShell(
       // Frame header — the container is "التغطية الإعلامية" (Media coverage),
       // not the bare "الأخبار" tab label.
       title: l10n.mediaCoverageTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       // News left the bottom nav in the KSA Wave-2 shell (the Profile tab took
       // its slot) — the bar stays, with no destination highlighted.
       body: Column(
@@ -64,48 +72,93 @@ class NewsScreen extends ConsumerWidget {
             child: news.when(
               loading: () =>
                   const Center(child: CircularProgressIndicator()),
-              error: (_, __) => KsaErrorState(
-                message: l10n.newsError,
-                retryLabel: l10n.retryLabel,
-                onRetry: () => ref.invalidate(newsListProvider),
+              // Pull-to-refresh also works in the error/empty states so the
+              // user can pull to retry; both centred states are hosted in a
+              // viewport-filling scroll view so the gesture fires on short
+              // content. onRefresh invalidates [newsListProvider] and awaits
+              // the re-fetch.
+              error: (_, __) => SimfPullToRefresh(
+                onRefresh: () => _refresh(ref),
+                child: _RefreshableCentered(
+                  child: SimfErrorState(
+                    message: l10n.newsError,
+                    retryLabel: l10n.retryLabel,
+                    onRetry: () => ref.invalidate(newsListProvider),
+                  ),
+                ),
               ),
               data: (items) {
                 if (items.isEmpty) {
-                  return KsaEmptyState(
-                    icon: Icons.article_outlined,
-                    message: l10n.newsEmpty,
+                  return SimfPullToRefresh(
+                    onRefresh: () => _refresh(ref),
+                    child: _RefreshableCentered(
+                      child: SimfEmptyState(
+                        icon: Icons.article_outlined,
+                        message: l10n.newsEmpty,
+                      ),
+                    ),
                   );
                 }
                 final isArabic = l10n.isArabic;
-                return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(
-                    SimfTokens.space4,
-                    SimfTokens.space2,
-                    SimfTokens.space4,
-                    SimfTokens.space6,
-                  ),
-                  itemCount: items.length,
-                  separatorBuilder: (_, __) =>
-                      const SizedBox(height: SimfTokens.space4),
-                  itemBuilder: (context, index) {
-                    final item = items[index];
-                    return _NewsCard(
-                      item: item,
-                      isArabic: isArabic,
-                      baseUrl: baseUrl,
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => NewsArticleScreen(newsId: item.id),
+                return SimfPullToRefresh(
+                  onRefresh: () => _refresh(ref),
+                  child: ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(
+                      SimfTokens.space4,
+                      SimfTokens.space2,
+                      SimfTokens.space4,
+                      SimfTokens.space6,
+                    ),
+                    itemCount: items.length,
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(height: SimfTokens.space4),
+                    itemBuilder: (context, index) {
+                      final item = items[index];
+                      return _NewsCard(
+                        item: item,
+                        isArabic: isArabic,
+                        baseUrl: baseUrl,
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => NewsArticleScreen(newsId: item.id),
+                          ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 );
               },
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Hosts a centred state (error / empty) inside a viewport-filling scroll view
+/// so [SimfPullToRefresh] can drive a pull-to-refresh even when the content is short.
+/// The [AlwaysScrollableScrollPhysics] makes the pull gesture fire regardless
+/// of content height; the min-height constraint keeps the child vertically
+/// centred in the available space.
+class _RefreshableCentered extends StatelessWidget {
+  const _RefreshableCentered({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: child,
+          ),
+        );
+      },
     );
   }
 }

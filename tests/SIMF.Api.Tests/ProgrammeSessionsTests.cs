@@ -256,6 +256,33 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Detail_carries_the_day_ordinal()
+    {
+        // D-567 — the gold index badge shows the session's 1-based position
+        // within its day (ordered by start time). Two sessions on a unique day:
+        // the earlier resolves to ordinal 1, the later to ordinal 2.
+        var admin = await CreateAdminAsync();
+        var hallId = await CreateHallAsync(admin);
+        var speakerId = await CreateSpeakerAsync(admin);
+        var day = DateTimeOffset.UtcNow.AddDays(40).Date;
+
+        var first = await CreateSessionAsync(admin, hallId, speakerId,
+            Array.Empty<Guid>(), day.AddHours(9), day.AddHours(10));
+        var second = await CreateSessionAsync(admin, hallId, speakerId,
+            Array.Empty<Guid>(), day.AddHours(11), day.AddHours(12));
+
+        var firstDetail = (await (await _client.GetAsync(
+                $"/api/v1/app/programme/sessions/{first.Id}")).Content
+            .ReadFromJsonAsync<ApiResult<PublicSessionDetail>>())!.Data!;
+        var secondDetail = (await (await _client.GetAsync(
+                $"/api/v1/app/programme/sessions/{second.Id}")).Content
+            .ReadFromJsonAsync<ApiResult<PublicSessionDetail>>())!.Data!;
+
+        Assert.Equal(1, firstDetail.DisplayOrder);
+        Assert.Equal(2, secondDetail.DisplayOrder);
+    }
+
+    [Fact]
     public async Task Capacity_override_drives_the_seat_summary_capacity()
     {
         var admin = await CreateAdminAsync();

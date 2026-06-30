@@ -109,7 +109,12 @@ public sealed record PublicSessionDetail(
     // this text; null = the placeholder hint. Bilingual; provider stubbed (manual
     // CP entry for the POC). Appended (append-only, D-219).
     string? LiveCaptions = null,
-    string? LiveCaptionsArabic = null);
+    string? LiveCaptionsArabic = null,
+    // D-567 (Figma 889:2604 gold index badge): the session's 1-based position
+    // within its day (sessions ordered by StartUtc), e.g. 2 → the badge shows
+    // "02". Computed by the service; 0 = unknown (an older API → the app falls
+    // back to the code on the badge). Appended (append-only, D-219).
+    int DisplayOrder = 0);
 
 /// <summary>D-199 — one theme/pillar tag on a public session. Order
 /// follows the session's theme order; the first is the primary pillar

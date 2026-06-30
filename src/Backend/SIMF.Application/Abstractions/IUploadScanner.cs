@@ -55,4 +55,30 @@ public static class UploadScannerExtensions
                 "فشل فحص الملف بحثًا عن البرمجيات الخبيثة وتم رفضه.");
         }
     }
+
+    /// <summary>D-568 / D-494 — the fail-closed variant used by the centralized
+    /// file pipeline. Rejects an infected file (400) and, when
+    /// <paramref name="failClosed"/> is true, also rejects a
+    /// <see cref="UploadScanVerdict.Skipped"/> / scanner-unavailable verdict (409)
+    /// rather than storing the file unscanned.</summary>
+    public static async Task EnsureCleanFailClosedAsync(
+        this IUploadScanner scanner, byte[] content, string fileName, bool failClosed,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await scanner.ScanAsync(content, fileName, cancellationToken);
+        if (result.IsInfected)
+        {
+            throw new SIMF.Common.ApiException(
+                SIMF.Common.ErrorCodes.UploadMalwareDetected, 400,
+                "The file failed a malware scan and was rejected.",
+                "فشل فحص الملف بحثًا عن البرمجيات الخبيثة وتم رفضه.");
+        }
+        if (failClosed && result.Verdict == UploadScanVerdict.Skipped)
+        {
+            throw new SIMF.Common.ApiException(
+                SIMF.Common.ErrorCodes.UploadScanUnavailable, 409,
+                "The file could not be scanned for malware right now; please try again shortly.",
+                "تعذّر فحص الملف بحثًا عن البرمجيات الخبيثة حاليًا؛ يرجى المحاولة بعد قليل.");
+        }
+    }
 }

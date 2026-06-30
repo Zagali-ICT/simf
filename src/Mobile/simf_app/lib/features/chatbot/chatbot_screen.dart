@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 
 /// The seam that turns a user prompt into an assistant reply.
 ///
@@ -49,7 +49,7 @@ class _ChatMessage {
 /// Page 036 — المساعد الذكي · AI assistant (#36, `/chatbot`, Guest+).
 ///
 /// **Public.** Pixel-parity to KSA Figma frame `1064:13066`: the navy
-/// [KsaPage] shell, a scrolling transcript (assistant bubbles left + gold "AI"
+/// [SimfPageShell] shell, a scrolling transcript (assistant bubbles left + gold "AI"
 /// badge, user bubbles right + gold fill), the horizontal quick-reply chips
 /// (frame `1070:13389`) and the bottom input bar (frame `1070:13398`). The
 /// opening transcript is the scripted demo the Figma shows — there is **no
@@ -125,9 +125,9 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     final messages = <_ChatMessage>[..._seed(l10n), ..._added];
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.chatbotTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[

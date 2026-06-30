@@ -5,29 +5,30 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/confirm_external_link.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
+import '../../app/widgets/simf_svg_icon.dart';
 import '../../core/env/build_config.dart';
-import '../../core/external_link.dart';
-import '../../core/site_settings/site_settings.dart';
+import '../../core/organization_profile/organization_profile.dart';
 import '../myarea/data/myarea_models.dart';
 import '../myarea/data/myarea_repository.dart';
 import '../news/data/news_models.dart';
 import '../news/news_article_screen.dart';
 import '../news/news_screen.dart' show newsListProvider;
-import '../notifications/data/notifications_repository.dart';
 
 /// The signed-in home tile glyphs — the exact iconify SVGs from KSA frame
 /// 758:1134 (no 1:1 Material equivalent), bundled and tinted to the tile colour.
 class _HomeIcons {
-  // "عن الملتقى" group (758:1216/1220/1224 + 1052:12856).
-  static const String aboutSessions =
-      'assets/icons/home_about_sessions.svg'; // streamline:target-3
+  // "عن الملتقى" group (758:1216/1220/1224 + 1052:12856) — the exact Figma glyphs.
+  static const String aboutSessions = 'assets/icons/home_about_sessions.svg';
+  // ^ streamline-ultimate:team-meeting (node 1327:3446).
+  static const String delegations =
+      'assets/icons/home_delegations.svg'; // formkit:people (node 1408:10399)
   static const String booths = 'assets/icons/home_booths.svg'; // solar:chart
   static const String people = 'assets/icons/home_people.svg'; // bi:people
   static const String askModerator =
@@ -85,21 +86,32 @@ class HomeScreen extends ConsumerWidget {
     final l10n = AppL10n.of(context);
     final auth = ref.watch(authControllerProvider);
     final user = auth is AuthStateSignedIn ? auth.session.user : null;
-    final isGuest = (user?.appRole ?? AppRole.guest) == AppRole.guest;
+    final role = user?.appRole ?? AppRole.guest;
+    // A signed-in but unapproved account (pending / rejected) has no
+    // permissions, so it sees the same guest layout (owner 2026-06-27, frame
+    // 758:2910) — with an "awaiting approval" note instead of the sign-in CTA.
+    final pendingApproval =
+        user != null && user.registrationStatus != RegistrationStatus.approved;
 
-    if (isGuest) {
-      return _GuestHome(l10n: l10n);
+    if (role == AppRole.guest || pendingApproval) {
+      return _GuestHome(l10n: l10n, pendingApproval: pendingApproval);
     }
-    // Best-effort: any wire error resolves to 0 (Logic L-5).
-    final unread = ref.watch(unreadNotificationCountProvider).maybeWhen(
-          data: (count) => count,
-          orElse: () => 0,
-        );
-    // Best-effort latest post for the أحدث منشوراتنا teaser — null while loading
-    // / on error / when there are no posts, in which case the section is hidden.
-    final latestPost = ref.watch(newsListProvider).maybeWhen(
-          data: (items) => items.isEmpty ? null : items.first,
-          orElse: () => null,
+    // Focused operational roles (D-519): each lands on a home that surfaces only
+    // its own pages, not the visitor experience.
+    if (role == AppRole.staff) {
+      return _StaffHome(l10n: l10n);
+    }
+    if (role == AppRole.moderator) {
+      return _ModeratorHome(l10n: l10n);
+    }
+    // ابرز الاحداث (758:1239) — the highlights carousel slides: the most recent
+    // news items (image + title), shown as an animated carousel. Empty while
+    // loading / on error / when there are no posts (the section then hides).
+    // News is already CP-managed + persisted (/admin/news), so the carousel
+    // needs no new table or API — it just renders the existing list.
+    final highlights = ref.watch(newsListProvider).maybeWhen(
+          data: (items) => items.take(6).toList(),
+          orElse: () => const <NewsListItem>[],
         );
     // The greeting name + avatar come from the App profile (frame shows the
     // person's name, not the email). Best-effort: null until it loads.
@@ -116,9 +128,9 @@ class HomeScreen extends ConsumerWidget {
         profile?.identity.localizedName(l10n.isArabic),
         user?.displayName,
       ),
-      unread: unread,
-      latestPost: latestPost,
+      highlights: highlights,
       baseUrl: baseUrl,
+      isExhibitor: role == AppRole.exhibitor,
     );
   }
 }
@@ -155,41 +167,48 @@ String homePostTime(AppL10n l10n, DateTime publishedUtc, DateTime nowUtc) {
   return l10n.postTimeDaysAgo(diff.inDays);
 }
 
-/// Opens a configured link in the external browser (best-effort, D-369).
-Future<void> _openLink(String url) =>
-    launchExternalUri(Uri.parse(url), mode: LaunchMode.externalApplication);
-
 // ---------------------------------------------------------------------------
-// Guest layout (frame 512:1492 — "الرئيسية • ضيف", 2×2 option)
+// Guest / unapproved layout (frame 758:2910 — "الرئيسية • ضيف", 2×2 tiles):
+// shown to a not-signed-in guest AND a signed-in but unapproved account.
 // ---------------------------------------------------------------------------
 
 class _GuestHome extends StatelessWidget {
-  const _GuestHome({required this.l10n});
+  const _GuestHome({required this.l10n, this.pendingApproval = false});
 
   final AppL10n l10n;
 
+  /// True when a signed-in but unapproved account is viewing this layout —
+  /// shows the "awaiting approval" note instead of the sign-in CTA.
+  final bool pendingApproval;
+
   @override
   Widget build(BuildContext context) {
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.homeGuestTitle,
       onBack: () => context.canPop()
           ? context.pop()
           : context.pushNamed(RouteNames.signIn),
       tab: SimfTab.home,
       showSweep: true,
+      // The guest home is a Home variant (frame 758:2910), so it keeps the top
+      // action cluster (language + menu) — opting back in over the new default
+      // (sub-pages show back+title only). The bell is hidden: a guest has no
+      // personal notifications.
+      showHeaderActions: true,
+      showNotificationsBell: false,
       body: ListView(
         padding: const EdgeInsets.all(SimfTokens.space4),
         children: <Widget>[
           _GuestBanner(l10n: l10n),
           const SizedBox(height: SimfTokens.space4),
-          KsaTileRow(
+          SimfTileRow(
             children: <Widget>[
-              KsaNavTile(
+              SimfNavTile(
                 label: l10n.tileSessions,
                 iconAsset: _HomeIcons.sessions,
                 onTap: () => context.pushNamed(RouteNames.sessions),
               ),
-              KsaNavTile(
+              SimfNavTile(
                 label: l10n.tileSpeakers,
                 iconAsset: _HomeIcons.speakers,
                 onTap: () => context.pushNamed(RouteNames.speakers),
@@ -197,41 +216,32 @@ class _GuestHome extends StatelessWidget {
             ],
           ),
           const SizedBox(height: SimfTokens.space2),
-          KsaTileRow(
+          SimfTileRow(
             children: <Widget>[
-              KsaNavTile(
+              SimfNavTile(
                 label: l10n.tileVenueMap,
                 iconAsset: _HomeIcons.venueMap,
                 onTap: () => context.pushNamed(RouteNames.venueMap),
               ),
-              KsaNavTile(
+              SimfNavTile(
                 label: l10n.tileExhibition,
                 iconAsset: _HomeIcons.exhibition,
                 onTap: () => context.pushNamed(RouteNames.booths),
               ),
             ],
           ),
-          const SizedBox(height: SimfTokens.space2),
-          // D-499 (الوفود, Figma 1426:10771) — the delegations entry, public so a
-          // guest reaches it like the speakers / exhibition tiles above.
-          KsaNavTile(
-            label: l10n.delegationsTitle,
-            icon: Icons.flag_outlined,
-            minHeight: 80,
-            onTap: () => context.pushNamed(RouteNames.delegations),
-          ),
           const SizedBox(height: SimfTokens.space4),
           // The locked smart-badge card — a visual cue that signing in
           // unlocks it; never tappable as a guest.
-          KsaNavTile(
+          SimfNavTile(
             label: l10n.tileMyBadgeShort,
             iconAsset: _HomeIcons.badge,
             enabled: false,
           ),
           const SizedBox(height: SimfTokens.space6),
-          KsaSectionHeader(title: l10n.homeOpenInfoSection),
+          SimfSectionHeader(title: l10n.homeOpenInfoSection),
           const SizedBox(height: SimfTokens.space3),
-          KsaListRow(
+          SimfListRow(
             title: l10n.faqRowTitle,
             subtitle: l10n.faqRowSubtitle,
             // Frame 758:2910 — the FAQ badge is the outlined (gold hairline)
@@ -250,9 +260,54 @@ class _GuestHome extends StatelessWidget {
           const SizedBox(height: SimfTokens.space4),
           _DiscoverSaudiRow(l10n: l10n, outlined: true),
           const SizedBox(height: SimfTokens.space6),
-          FilledButton(
-            onPressed: () => context.pushNamed(RouteNames.signIn),
-            child: Text(l10n.guestSignInCta),
+          // True guest → the sign-in CTA; signed-in-but-unapproved → the
+          // "awaiting approval" note (a sign-in button would be wrong).
+          if (pendingApproval)
+            _PendingApprovalNote(l10n: l10n)
+          else
+            FilledButton(
+              onPressed: () => context.pushNamed(RouteNames.signIn),
+              child: Text(l10n.guestSignInCta),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The "your account is awaiting approval" note shown in place of the sign-in
+/// CTA when an unapproved (pending / rejected) account lands on the guest home
+/// (owner 2026-06-27). The account is already signed in, so a sign-in button
+/// would be wrong; full features unlock once the registration is approved.
+class _PendingApprovalNote extends StatelessWidget {
+  const _PendingApprovalNote({required this.l10n});
+
+  final AppL10n l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(SimfTokens.space3),
+      decoration: BoxDecoration(
+        color: SimfTokens.navyDeep,
+        borderRadius: BorderRadius.circular(SimfTokens.radius),
+        border: Border.all(color: SimfTokens.accent, width: 0.5),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          const Icon(Icons.hourglass_top, color: SimfTokens.accent, size: 24),
+          const SizedBox(width: SimfTokens.space2),
+          Expanded(
+            child: Text(
+              l10n.homePendingApprovalNote,
+              textAlign: TextAlign.start,
+              style: const TextStyle(
+                color: SimfTokens.beigeBorder,
+                fontSize: SimfTokens.textMd,
+                height: 1.5,
+              ),
+            ),
           ),
         ],
       ),
@@ -304,6 +359,86 @@ class _GuestBanner extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
+// Focused operational homes (D-519) — Staff + Moderator land here instead of the
+// attendee home; each surfaces only its own pages.
+// ---------------------------------------------------------------------------
+
+/// Staff (gate) home — the two gate operations: scan a badge + register a
+/// walk-in visitor. The attendee experience is intentionally absent.
+class _StaffHome extends StatelessWidget {
+  const _StaffHome({required this.l10n});
+
+  final AppL10n l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    return SimfPageShell(
+      tab: SimfTab.home,
+      title: l10n.homeTitle,
+      body: ListView(
+        padding: const EdgeInsets.all(SimfTokens.space4),
+        children: <Widget>[
+          SimfListRow(
+            title: l10n.gateScannerEntry,
+            badgeOutlined: true,
+            badge: const Icon(
+              Icons.qr_code_scanner,
+              size: 32,
+              color: SimfTokens.accent,
+            ),
+            onTap: () => context.pushNamed(RouteNames.gateScanner),
+          ),
+          const SizedBox(height: SimfTokens.space4),
+          SimfListRow(
+            title: l10n.staffRegisterVisitorEntry,
+            badgeOutlined: true,
+            badge: const Icon(
+              Icons.person_add_alt_1_outlined,
+              size: 32,
+              color: SimfTokens.accent,
+            ),
+            onTap: () => context.pushNamed(RouteNames.staffRegisterVisitor),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Moderator (محاور) home — a single entry into the sessions list, where the
+/// moderator opens their session and runs its Q&A desk (reached from the session
+/// detail; the server still enforces the per-session grant).
+class _ModeratorHome extends StatelessWidget {
+  const _ModeratorHome({required this.l10n});
+
+  final AppL10n l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    return SimfPageShell(
+      tab: SimfTab.home,
+      title: l10n.homeTitle,
+      body: ListView(
+        padding: const EdgeInsets.all(SimfTokens.space4),
+        children: <Widget>[
+          SimfListRow(
+            title: l10n.tileSessions,
+            subtitle: l10n.moderatorManageQuestions,
+            badgeOutlined: true,
+            badge: const Icon(
+              Icons.forum_outlined,
+              size: 32,
+              color: SimfTokens.accent,
+            ),
+            onTap: () => context.pushNamed(RouteNames.sessions),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Signed-in layout (frame 758:1134 — greeting home, exact parity)
 // ---------------------------------------------------------------------------
 
@@ -311,25 +446,27 @@ class _VisitorHome extends StatelessWidget {
   const _VisitorHome({
     required this.l10n,
     required this.name,
-    required this.unread,
     required this.baseUrl,
-    this.latestPost,
+    this.highlights = const <NewsListItem>[],
+    this.isExhibitor = false,
   });
 
   final AppL10n l10n;
   final String name;
-  final int unread;
   final String baseUrl;
-  final NewsListItem? latestPost;
+  final List<NewsListItem> highlights;
+
+  /// Exhibitor (العارض) — the attendee home plus the lead-capture tools section
+  /// (scan a visitor's QR + my visitors). D-519.
+  final bool isExhibitor;
 
   @override
   Widget build(BuildContext context) {
-    return KsaPage(
+    return SimfPageShell(
       tab: SimfTab.home,
       header: _GreetingHeader(
         l10n: l10n,
         name: name,
-        unread: unread,
       ),
       body: ListView(
         padding: const EdgeInsets.all(SimfTokens.space4),
@@ -346,53 +483,90 @@ class _VisitorHome extends StatelessWidget {
             onTap: () => context.pushNamed(RouteNames.liveBroadcast),
           ),
           const SizedBox(height: SimfTokens.space6),
+          // Exhibitor (العارض) lead-capture tools — D-519. Shown only to the
+          // Exhibitor role, above the shared attendee content.
+          if (isExhibitor) ...<Widget>[
+            SimfSectionHeader(title: l10n.exhibitorToolsSection),
+            const SizedBox(height: SimfTokens.space4),
+            SimfTileRow(
+              children: <Widget>[
+                SimfNavTile(
+                  label: l10n.scanVisitorTitle,
+                  icon: Icons.qr_code_scanner,
+                  minHeight: 80,
+                  onTap: () => context.pushNamed(RouteNames.scanVisitor),
+                ),
+                SimfNavTile(
+                  label: l10n.myVisitorsTitle,
+                  icon: Icons.groups_outlined,
+                  minHeight: 80,
+                  onTap: () => context.pushNamed(RouteNames.myVisitors),
+                ),
+              ],
+            ),
+            const SizedBox(height: SimfTokens.space6),
+          ],
           // "عن الملتقى" section bar (758:1207) — opens About the forum.
-          KsaLinkRow(
+          SimfLinkRow(
             title: l10n.homeAboutSection,
             onTap: () => context.pushNamed(RouteNames.aboutForum),
           ),
           const SizedBox(height: SimfTokens.space6),
-          // About tiles (758:1215, h72): right→left المتحدثون · الأجنحة · الجلسات.
-          KsaTileRow(
+          // About tiles (frame 758:1215, h72) — a 4-up grid of the shared tile,
+          // the same SimfNavTile reused as grid columns. Right→left under RTL:
+          // المتحدثون · الأجنحة · الوفود · جلسات.
+          SimfTileRow(
             children: <Widget>[
-              KsaNavTile(
+              SimfNavTile(
                 label: l10n.tileSpeakers,
                 iconAsset: _HomeIcons.people,
                 onTap: () => context.pushNamed(RouteNames.speakers),
               ),
-              KsaNavTile(
+              SimfNavTile(
                 // Home button title matches the screen header ("المعرض").
                 label: l10n.tileExhibition,
                 iconAsset: _HomeIcons.booths,
                 onTap: () => context.pushNamed(RouteNames.booths),
               ),
-              KsaNavTile(
+              // الوفود — delegations sits in the about row (frame 758:1220) with
+              // the design's exact formkit:people glyph (node 1408:10399).
+              SimfNavTile(
+                label: l10n.delegationsTitle,
+                iconAsset: _HomeIcons.delegations,
+                onTap: () => context.pushNamed(RouteNames.delegations),
+              ),
+              SimfNavTile(
                 label: l10n.tileSessions,
                 iconAsset: _HomeIcons.aboutSessions,
-                onTap: () => context.pushNamed(RouteNames.sessions),
+                // Owner 2026-06-29: the home "جلسات" tile opens the session
+                // summaries list (ملخص الجلسات, Figma 1388:8392) — the agenda
+                // itself stays reachable from the bottom-nav الأجندة tab.
+                onTap: () => context.pushNamed(RouteNames.sessionSummaryList),
               ),
             ],
           ),
-          const SizedBox(height: SimfTokens.space6),
+          // 16px gap inside the "عن الملتقى" group (frame 1054:12864 gap-16).
+          const SizedBox(height: SimfTokens.space4),
           // The full-width "اسأل المحاور" tile (1052:12856) — send a question.
-          KsaNavTile(
+          SimfNavTile(
             label: l10n.tileAskModerator,
             iconAsset: _HomeIcons.askModerator,
             onTap: () => context.pushNamed(RouteNames.sendQuestion),
           ),
-          const SizedBox(height: SimfTokens.space2),
+          const SizedBox(height: SimfTokens.space6),
           // News tiles (758:1228, h80): right→left اللقاءات الثنائية · الأرشيف.
-          KsaTileRow(
+          SimfTileRow(
             children: <Widget>[
-              KsaNavTile(
+              SimfNavTile(
                 label: l10n.tileBilateralMeetings,
                 iconAsset: _HomeIcons.bilateral,
                 minHeight: 80,
-                // اللقاءات الثنائية is not designed yet (owner 2026-06-21) — the
-                // tile lands on the ComingSoon placeholder, not the gallery.
-                onTap: () => context.pushNamed(RouteNames.bilateralMeetings),
+                // اللقاءات الثنائية opens the الطلبات Requests feed (1408:9726) —
+                // where bilateral / meeting requests live (owner 2026-06-29: keep
+                // the tile label, link it to Requests instead of the ComingSoon).
+                onTap: () => context.pushNamed(RouteNames.requests),
               ),
-              KsaNavTile(
+              SimfNavTile(
                 label: l10n.tileArchive,
                 iconAsset: _HomeIcons.archive,
                 minHeight: 80,
@@ -400,32 +574,23 @@ class _VisitorHome extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: SimfTokens.space2),
-          // D-499 (الوفود, Figma 1426:10771) — the delegations entry: the invited
-          // countries + their heads of delegation. Public (anonymous endpoint).
-          KsaNavTile(
-            label: l10n.delegationsTitle,
-            icon: Icons.flag_outlined,
-            minHeight: 80,
-            onTap: () => context.pushNamed(RouteNames.delegations),
-          ),
           const SizedBox(height: SimfTokens.space6),
           // "الميزات الذكية" (758:1158) — header + the المزيد link → More.
-          KsaSectionHeader(
+          SimfSectionHeader(
             title: l10n.homeSmartSection,
             moreLabel: l10n.moreTitle,
             onMore: () => context.pushNamed(RouteNames.more),
           ),
           const SizedBox(height: SimfTokens.space4),
-          KsaTileRow(
+          SimfTileRow(
             children: <Widget>[
-              KsaNavTile(
+              SimfNavTile(
                 label: l10n.tileMeetPeople,
                 iconAsset: _HomeIcons.meetPeople,
                 minHeight: 80,
                 onTap: () => context.pushNamed(RouteNames.meetPeople),
               ),
-              KsaNavTile(
+              SimfNavTile(
                 label: l10n.chatbotTitle,
                 iconAsset: _HomeIcons.aiAssistant,
                 minHeight: 80,
@@ -434,9 +599,9 @@ class _VisitorHome extends StatelessWidget {
             ],
           ),
           const SizedBox(height: SimfTokens.space2),
-          KsaTileRow(
+          SimfTileRow(
             children: <Widget>[
-              KsaNavTile(
+              SimfNavTile(
                 label: l10n.tileSessionSummary,
                 iconAsset: _HomeIcons.sessionSummary,
                 minHeight: 80,
@@ -444,7 +609,7 @@ class _VisitorHome extends StatelessWidget {
                 // its AI-summary details page (was: straight to the picker screen).
                 onTap: () => context.pushNamed(RouteNames.sessionSummaryList),
               ),
-              KsaNavTile(
+              SimfNavTile(
                 label: l10n.tileEntryBadge,
                 iconAsset: _HomeIcons.badge,
                 minHeight: 80,
@@ -454,58 +619,41 @@ class _VisitorHome extends StatelessWidget {
           ),
           const SizedBox(height: SimfTokens.space6),
           // "الرعاة" section bar (1049:12844) — opens Sponsors.
-          KsaLinkRow(
+          SimfLinkRow(
             title: l10n.tileSponsors,
             onTap: () => context.pushNamed(RouteNames.sponsors),
           ),
           const SizedBox(height: SimfTokens.space6),
           // "الأخبار والتغطية" section bar (758:1211) — opens News.
-          KsaLinkRow(
+          SimfLinkRow(
             title: l10n.tileNews,
             onTap: () => context.pushNamed(RouteNames.news),
           ),
-          // أحدث منشوراتنا (frame node 758:1238) — hidden until a post exists.
-          if (latestPost != null) ...<Widget>[
+          // ابرز الاحداث (frame node 758:1239) — the highlights carousel
+          // (image + title slides, auto-advancing); hidden until a post exists.
+          if (highlights.isNotEmpty) ...<Widget>[
             const SizedBox(height: SimfTokens.space6),
-            KsaSectionHeader(title: l10n.latestPostsSection),
+            SimfSectionHeader(title: l10n.featuredEventsSection),
             const SizedBox(height: SimfTokens.space4),
-            _LatestPostCard(
+            _HighlightsCarousel(
               l10n: l10n,
-              post: latestPost!,
+              items: highlights,
               baseUrl: baseUrl,
-              onTap: () => Navigator.of(context).push(
+              onTap: (post) => Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (_) => NewsArticleScreen(newsId: latestPost!.id),
+                  builder: (_) => NewsArticleScreen(newsId: post.id),
                 ),
               ),
             ),
           ],
           const SizedBox(height: SimfTokens.space6),
           // "اكتشف" (758:1270) — header + the روح السعودية discover row.
-          KsaSectionHeader(title: l10n.discoverSection),
+          SimfSectionHeader(title: l10n.discoverSection),
           const SizedBox(height: SimfTokens.space4),
           _DiscoverSaudiRow(l10n: l10n),
-          const SizedBox(height: SimfTokens.space6),
-          // "تابعنا" (758:1183) — header + the brand row + the handle line. The
-          // brand row stays LTR (X · Instagram · LinkedIn · YouTube · TikTok)
-          // regardless of locale.
-          KsaSectionHeader(title: l10n.followUsSection),
-          const SizedBox(height: SimfTokens.space4),
-          const Directionality(
-            textDirection: TextDirection.ltr,
-            child: _SocialRow(),
-          ),
-          const SizedBox(height: SimfTokens.space2),
-          Text(
-            l10n.followUsHandle,
-            textAlign: TextAlign.center,
-            // Frame 758:1202 — handle line is Medium, beige.
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textSm,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          // "تابعنا" (758:1183) — header + brand row + handle. Self-hiding when
+          // no social link is set (owner 2026-06-27); owns its leading gap.
+          _FollowUsSection(l10n: l10n),
         ],
       ),
     );
@@ -518,12 +666,10 @@ class _GreetingHeader extends StatelessWidget {
   const _GreetingHeader({
     required this.l10n,
     required this.name,
-    required this.unread,
   });
 
   final AppL10n l10n;
   final String name;
-  final int unread;
 
   @override
   Widget build(BuildContext context) {
@@ -537,7 +683,18 @@ class _GreetingHeader extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          KsaAvatar(name: name, currentUser: true),
+          // Tapping the avatar opens the user's profile / My Area (owner
+          // 2026-06-27). InkWell rides the SimfPageShell Scaffold's Material ancestor.
+          Semantics(
+            button: true,
+            label: l10n.navProfile,
+            child: InkWell(
+              onTap: () => context.pushNamed(RouteNames.myArea),
+              borderRadius:
+                  const BorderRadius.all(Radius.circular(SimfTokens.radius)),
+              child: SimfAvatar(name: name, currentUser: true),
+            ),
+          ),
           const SizedBox(width: SimfTokens.space2),
           Expanded(
             child: Column(
@@ -564,29 +721,10 @@ class _GreetingHeader extends StatelessWidget {
               ],
             ),
           ),
-          IconButton(
-            tooltip: l10n.notificationsTooltip,
-            onPressed: () => context.pushNamed(RouteNames.notifications),
-            icon: Badge.count(
-              count: unread,
-              isLabelVisible: unread > 0,
-              child: const Icon(
-                Icons.notifications_none_outlined,
-                color: Colors.white,
-                size: 26,
-              ),
-            ),
-          ),
-          // The shared language + (inert) dark-mode controls, the same pair as
-          // every other shell page's header.
-          const KsaLangThemeButtons(size: 26),
-          IconButton(
-            tooltip: l10n.moreTitle,
-            // Opens the shared side drawer (this header renders inside KsaPage's
-            // Scaffold, so the nearest Scaffold is the shell's).
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            icon: const Icon(Icons.menu, color: Colors.white, size: 26),
-          ),
+          // The shared top-nav action cluster — identical to every sub-page:
+          // the bell, the language globe, the dark-mode crescent, and the menu
+          // ☰, each a gold glyph in a navy box. Home carries the unread badge.
+          const SimfHeaderActions(showUnreadBadge: true),
         ],
       ),
     );
@@ -659,10 +797,13 @@ class _LiveBanner extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: SimfTokens.space2),
-              const Icon(
-                Icons.arrow_left,
-                // Frame 758:1134 — the live-banner arrow is white, not gold.
-                color: Colors.white,
+              // Owner 2026-06-27 — the LIVE (YouTube/broadcast) banner's caret
+              // must match the "عن الملتقى" / section rows: the same gold
+              // ic_caret_left.svg (not a white Material arrow). The bundled SVG
+              // points left and does not mirror under RTL.
+              const SimfSvgIcon(
+                'assets/icons/ic_caret_left.svg',
+                color: SimfTokens.accent,
                 size: 24,
               ),
             ],
@@ -684,25 +825,29 @@ class _DiscoverHeroBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-      child: Stack(
-        children: <Widget>[
-          Positioned.fill(
-            child: Image.asset(
+    // اكتشف hero (frame 758:1203). Taller (160) so on a wide tablet the full
+    // photo is visible (96 made it an ultra-thin strip), and BoxFit.fill so the
+    // whole image stretches into the banner — "view the full image" (owner
+    // 2026-06-27). The outer SizedBox + StackFit.expand give the Stack a definite
+    // size so every layer fills edge-to-edge. Scrim lightened to ~50% so the
+    // photo reads clearly (the 70% black hid it).
+    return SizedBox(
+      height: 160,
+      width: double.infinity,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        child: Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            Image.asset(
               'assets/images/discover_hero.jpg',
-              fit: BoxFit.cover,
+              fit: BoxFit.fill,
             ),
-          ),
-          // The frame's 70% black scrim over the photo.
-          const Positioned.fill(child: ColoredBox(color: Color(0xB3000000))),
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onTap,
-              child: SizedBox(
-                height: 96,
-                width: double.infinity,
+            const ColoredBox(color: Color(0x80000000)),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onTap,
                 child: Padding(
                   padding: const EdgeInsets.all(SimfTokens.space2),
                   child: Column(
@@ -731,127 +876,6 @@ class _DiscoverHeroBanner extends StatelessWidget {
                 ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// The أحدث منشوراتنا teaser (frame node 758:1240): the source row (the gold
-/// SIMF chip + the source name at the inline end, the @handle + relative time at
-/// the inline start), the lead paragraph, and the post image. The image rides
-/// the article's `NewsImage` asset via the D-357 anonymous route (navy fallback
-/// when none). The frame's engagement counts (758:1252) are admin-entered data
-/// deferred to Phase 2 — not faked here.
-class _LatestPostCard extends StatelessWidget {
-  const _LatestPostCard({
-    required this.l10n,
-    required this.post,
-    required this.baseUrl,
-    required this.onTap,
-  });
-
-  final AppL10n l10n;
-  final NewsListItem post;
-  final String baseUrl;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final isArabic = l10n.isArabic;
-    // The frame shows one lead paragraph (the bold line is the source name, not
-    // the article title); prefer the excerpt, fall back to the title.
-    final body =
-        post.localizedExcerpt(isArabic) ?? post.localizedTitle(isArabic);
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(SimfTokens.radius),
-      child: Container(
-        // Frame 758:1240 — px16 / py8, borderless navy card.
-        padding: const EdgeInsets.symmetric(
-          horizontal: SimfTokens.space4,
-          vertical: SimfTokens.space2,
-        ),
-        decoration: BoxDecoration(
-          color: SimfTokens.navyDeep,
-          borderRadius: BorderRadius.circular(SimfTokens.radius),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            const SizedBox(height: SimfTokens.space2),
-            // Source row (758:1243): the gold chip + source name at the inline
-            // end (right under RTL); the @handle + relative time at the start.
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    // The round gold chip with white "SIMF" (758:1247).
-                    Container(
-                      width: 44,
-                      height: 44,
-                      alignment: Alignment.center,
-                      decoration: const BoxDecoration(
-                        color: SimfTokens.accent,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Text(
-                        'SIMF',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: SimfTokens.textMd,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: SimfTokens.space2),
-                    // Source name 14px Bold (758:1246).
-                    Text(
-                      l10n.postSourceName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: SimfTokens.textMd,
-                      ),
-                    ),
-                  ],
-                ),
-                // @handle · relative time (758:1244) — beige 12px.
-                Flexible(
-                  child: Text(
-                    '${l10n.postSourceHandle} · '
-                    '${homePostTime(l10n, post.publishedAt, DateTime.now().toUtc())}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: SimfTokens.beigeBorder,
-                      fontSize: SimfTokens.textSm,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: SimfTokens.space4),
-            // Lead paragraph (758:1249) — beige 14px, up to 3 lines.
-            Text(
-              body,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: SimfTokens.beigeBorder,
-                fontSize: SimfTokens.textMd,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: SimfTokens.space4),
-            // The post image (758:1250) — the NewsImage asset, navy fallback.
-            _PostImage(
-              imageUrl: '$baseUrl/app/assets/NewsImage/${post.id}/image',
-            ),
-            const SizedBox(height: SimfTokens.space2),
           ],
         ),
       ),
@@ -859,53 +883,181 @@ class _LatestPostCard extends StatelessWidget {
   }
 }
 
-/// The latest-post image (frame node 758:1250): the article's `NewsImage` asset
-/// (public anonymous D-357 route) in a 120-high navy box with a faint white
-/// hairline and the frame's 4-radius corners. A spinner shows while it loads; a
-/// navy image-glyph box is the no-image / fetch-failure fall-back (prod has no
-/// uploaded news images yet, so the fall-back is the designed empty state).
-class _PostImage extends StatelessWidget {
-  const _PostImage({required this.imageUrl});
+/// ابرز الاحداث — the highlights carousel (frame node 758:1239): an
+/// auto-advancing, swipeable PageView of image+title slides drawn from the most
+/// recent news items (CP-managed via /admin/news). A row of dots tracks the
+/// position. Owner spec (2026-06-28): "multiple slides, image and text only,
+/// animated, entered via the Control Panel" — the old single image becomes a
+/// gallery; news already backs it, so no new table or API is needed.
+class _HighlightsCarousel extends StatefulWidget {
+  const _HighlightsCarousel({
+    required this.l10n,
+    required this.items,
+    required this.baseUrl,
+    required this.onTap,
+  });
 
-  final String imageUrl;
+  final AppL10n l10n;
+  final List<NewsListItem> items;
+  final String baseUrl;
+  final void Function(NewsListItem) onTap;
+
+  @override
+  State<_HighlightsCarousel> createState() => _HighlightsCarouselState();
+}
+
+class _HighlightsCarouselState extends State<_HighlightsCarousel> {
+  static const double _slideHeight = 170;
+  static const Duration _interval = Duration(seconds: 4);
+
+  late final PageController _controller;
+  Timer? _timer;
+  int _index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = PageController();
+    _startAutoAdvance();
+  }
+
+  // Auto-advance to the next slide every [_interval], wrapping at the end. Only
+  // runs when there is more than one slide.
+  void _startAutoAdvance() {
+    if (widget.items.length <= 1) {
+      return;
+    }
+    _timer = Timer.periodic(_interval, (_) {
+      if (!mounted || !_controller.hasClients) {
+        return;
+      }
+      final next = (_index + 1) % widget.items.length;
+      _controller.animateToPage(
+        next,
+        duration: const Duration(milliseconds: 450),
+        curve: Curves.easeInOut,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 120,
-      clipBehavior: Clip.antiAlias,
-      decoration: const BoxDecoration(
-        color: SimfTokens.navy,
-        borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radiusSmall)),
-      ),
-      foregroundDecoration: BoxDecoration(
-        border: Border.all(color: SimfTokens.line2),
-        borderRadius: const BorderRadius.all(
-          Radius.circular(SimfTokens.radiusSmall),
+    return Column(
+      children: <Widget>[
+        SizedBox(
+          height: _slideHeight,
+          child: PageView.builder(
+            controller: _controller,
+            onPageChanged: (i) => setState(() => _index = i),
+            itemCount: widget.items.length,
+            itemBuilder: (context, i) {
+              final post = widget.items[i];
+              return _HighlightSlide(
+                title: post.localizedTitle(widget.l10n.isArabic),
+                imageUrl:
+                    '${widget.baseUrl}/app/assets/NewsImage/${post.id}/image',
+                onTap: () => widget.onTap(post),
+              );
+            },
+          ),
         ),
-      ),
-      child: Image.network(
-        imageUrl,
-        fit: BoxFit.cover,
-        width: double.infinity,
-        gaplessPlayback: true,
-        loadingBuilder: (context, child, progress) {
-          if (progress == null) {
-            return child;
-          }
-          return const Center(
-            child: SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          );
-        },
-        errorBuilder: (context, error, stackTrace) => const Center(
-          child: Icon(
-            Icons.image_outlined,
-            size: 28,
-            color: SimfTokens.beigeBorder,
+        if (widget.items.length > 1) ...<Widget>[
+          const SizedBox(height: SimfTokens.space3),
+          _CarouselDots(count: widget.items.length, index: _index),
+        ],
+      ],
+    );
+  }
+}
+
+/// One carousel slide (758:1239): the news image filling a rounded card with a
+/// bottom scrim and the title overlaid — image + text only. Tapping opens the
+/// article. The image rides the D-357 anonymous `NewsImage` route; a spinner
+/// shows while it loads and a navy image-glyph box is the no-image fall-back.
+class _HighlightSlide extends StatelessWidget {
+  const _HighlightSlide({
+    required this.title,
+    required this.imageUrl,
+    required this.onTap,
+  });
+
+  final String title;
+  final String imageUrl;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      // A small inset so the neighbouring slides peek at the edges.
+      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space1),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(SimfTokens.radius),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(SimfTokens.radius),
+          child: Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              ColoredBox(
+                color: SimfTokens.navy,
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  gaplessPlayback: true,
+                  loadingBuilder: (context, child, progress) =>
+                      progress == null
+                          ? child
+                          : const Center(
+                              child: SizedBox(
+                                width: 18,
+                                height: 18,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            ),
+                  errorBuilder: (context, error, stackTrace) => const Center(
+                    child: Icon(
+                      Icons.image_outlined,
+                      size: 28,
+                      color: SimfTokens.beigeBorder,
+                    ),
+                  ),
+                ),
+              ),
+              // Bottom scrim so the white title reads over any image.
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.center,
+                    end: Alignment.bottomCenter,
+                    colors: <Color>[Colors.transparent, Color(0xCC01132D)],
+                  ),
+                ),
+              ),
+              Positioned(
+                left: SimfTokens.space4,
+                right: SimfTokens.space4,
+                bottom: SimfTokens.space3,
+                child: Text(
+                  title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: SimfTokens.textLg,
+                    height: 1.3,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -913,47 +1065,117 @@ class _PostImage extends StatelessWidget {
   }
 }
 
-/// The follow-us row (frame node 522:2215): five bordered buttons with the
-/// design's brand glyphs. The URLs come from the CP-editable site-settings
-/// (D-461), falling back to the build-time config; a button with no URL is
-/// inert (D-369).
-class _SocialRow extends ConsumerWidget {
-  const _SocialRow();
+/// The carousel position dots — the active one is a wider gold pill, the rest
+/// are faint beige.
+class _CarouselDots extends StatelessWidget {
+  const _CarouselDots({required this.count, required this.index});
+
+  final int count;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List<Widget>.generate(count, (i) {
+        final active = i == index;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          margin: const EdgeInsets.symmetric(horizontal: 3),
+          width: active ? 16 : 6,
+          height: 6,
+          decoration: BoxDecoration(
+            color: active
+                ? SimfTokens.accent
+                : SimfTokens.beigeBorder.withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(3),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+/// The "تابعنا" follow-us section (frame node 758:1183): the header, the brand
+/// row and the @handle line. The links come from the CP-editable Organization
+/// profile (downloaded at app start, cached, shared with About / Contact).
+///
+/// Owner 2026-06-27: a platform with **no URL is hidden** (not a dead/inert
+/// button), and when **no** social link is set the whole section disappears
+/// (header + row + handle). A set link, when tapped, asks to confirm leaving the
+/// app, then opens it externally. Owns its leading gap so the layout stays tidy
+/// whether it shows or hides.
+class _FollowUsSection extends ConsumerWidget {
+  const _FollowUsSection({required this.l10n});
+
+  final AppL10n l10n;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final social = ref.watch(siteSettingsProvider).valueOrNull?.social;
-    // (asset, url, accessible label) — the label names the icon-only button for
-    // screen readers (a11y review).
+    final social = ref.watch(orgProfileProvider)?.social;
+    // (asset, url, label) — the exact Figma beige glyphs (node 758:1186); kept
+    // only when the URL is set so an unconfigured platform is hidden, not inert.
     final links = <(String, String, String)>[
-      ('assets/images/social_x.png', social?.x ?? BuildConfig.socialXUrl, 'X'),
+      ('assets/icons/social_x.svg', social?.x ?? BuildConfig.socialXUrl, 'X'),
       (
-        'assets/images/social_instagram.png',
+        'assets/icons/social_instagram.svg',
         social?.instagram ?? BuildConfig.socialInstagramUrl,
         'Instagram',
       ),
       (
-        'assets/images/social_linkedin.png',
+        'assets/icons/social_linkedin.svg',
         social?.linkedin ?? BuildConfig.socialLinkedInUrl,
         'LinkedIn',
       ),
       (
-        'assets/images/social_youtube.png',
+        'assets/icons/social_youtube.svg',
         social?.youtube ?? BuildConfig.socialYouTubeUrl,
         'YouTube',
       ),
       (
-        'assets/images/social_tiktok.png',
+        'assets/icons/social_tiktok.svg',
         social?.tiktok ?? BuildConfig.socialTikTokUrl,
         'TikTok',
       ),
-    ];
-    return Row(
+    ].where((l) => l.$2.trim().isNotEmpty).toList();
+
+    // No social link set → hide the entire section.
+    if (links.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        for (final (index, (asset, url, label)) in links.indexed) ...<Widget>[
-          if (index > 0) const SizedBox(width: SimfTokens.space4),
-          Expanded(child: _SocialButton(asset: asset, url: url, label: label)),
-        ],
+        const SizedBox(height: SimfTokens.space6),
+        SimfSectionHeader(title: l10n.followUsSection),
+        const SizedBox(height: SimfTokens.space4),
+        // The brand row stays LTR (X · Instagram · … · TikTok) in any locale.
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Row(
+            children: <Widget>[
+              for (final (index, (asset, url, label)) in links.indexed)
+                ...<Widget>[
+                if (index > 0) const SizedBox(width: SimfTokens.space4),
+                Expanded(
+                  child: _SocialButton(asset: asset, url: url, label: label),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: SimfTokens.space2),
+        Text(
+          l10n.followUsHandle,
+          textAlign: TextAlign.center,
+          // Frame 758:1202 — handle line is Medium, beige.
+          style: const TextStyle(
+            color: SimfTokens.beigeBorder,
+            fontSize: SimfTokens.textSm,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
       ],
     );
   }
@@ -982,12 +1204,22 @@ class _SocialButton extends StatelessWidget {
         side: const BorderSide(color: SimfTokens.navyDeep, width: 0.8),
       ),
       child: InkWell(
-        onTap: url.isEmpty ? null : () => unawaited(_openLink(url)),
+        onTap: url.isEmpty
+            ? null
+            : () => unawaited(confirmThenLaunchExternal(context, url)),
         borderRadius: BorderRadius.circular(10),
         child: SizedBox(
           height: 48,
-          child: Center(
-            child: Image.asset(asset, width: 20, height: 20, semanticLabel: label),
+          child: Semantics(
+            button: true,
+            label: label,
+            child: Center(
+              child: SimfSvgIcon(
+                asset,
+                size: 20,
+                color: SimfTokens.beigeBorder,
+              ),
+            ),
           ),
         ),
       ),
@@ -1008,7 +1240,7 @@ class _DiscoverSaudiRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return KsaListRow(
+    return SimfListRow(
       title: l10n.discoverSaudiTitle,
       subtitle: l10n.discoverSaudiSubtitle,
       badgeOutlined: outlined,
@@ -1023,7 +1255,9 @@ class _DiscoverSaudiRow extends StatelessWidget {
           fontWeight: outlined ? FontWeight.w800 : FontWeight.w600,
         ),
       ),
-      onTap: () => unawaited(_openLink(BuildConfig.visitSaudiUrl)),
+      onTap: () => unawaited(
+        confirmThenLaunchExternal(context, BuildConfig.visitSaudiUrl),
+      ),
     );
   }
 }

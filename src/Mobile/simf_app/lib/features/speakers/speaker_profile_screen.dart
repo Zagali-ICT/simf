@@ -10,7 +10,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import 'data/speaker_models.dart';
 import 'data/speakers_repository.dart';
@@ -112,8 +112,8 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return KsaPage(
-      onBack: () => ksaBackOrHome(context),
+    return SimfPageShell(
+      onBack: () => backOrHome(context),
       header: _buildHeader(l10n),
       body: _buildBody(l10n),
     );
@@ -130,6 +130,7 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
     final rank = (speaker?.rank != null && speaker!.rank!.trim().isNotEmpty)
         ? speaker.rank!.trim()
         : null;
+    final flag = speaker?.flagEmoji ?? '';
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: SimfTokens.space3,
@@ -141,23 +142,13 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
           SizedBox(
             width: 42,
             height: 42,
-            child: KsaBackButton(onBack: () => ksaBackOrHome(context)),
+            child: SimfCircledBackButton(onBack: () => backOrHome(context)),
           ),
           Expanded(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: SimfTokens.textTitle,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
+                _nameLine(title, flag),
                 if (rank != null) ...<Widget>[
                   const SizedBox(height: SimfTokens.space1),
                   Text(
@@ -182,6 +173,35 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
     );
   }
 
+  /// The header name line. Figma 1327:3461 — when the speaker has a nationality
+  /// the flag sits at the inline-start of the name (physical left in this
+  /// LTR-forced header), 8px before it; the name ellipsises if it is too long.
+  Widget _nameLine(String title, String flag) {
+    final nameText = Text(
+      title,
+      textAlign: TextAlign.center,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: const TextStyle(
+        fontSize: SimfTokens.textTitle,
+        fontWeight: FontWeight.w600,
+        color: Colors.white,
+      ),
+    );
+    if (flag.isEmpty) {
+      return nameText;
+    }
+    return Row(
+      textDirection: TextDirection.ltr,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        Text(flag, style: const TextStyle(fontSize: SimfTokens.textTitle)),
+        const SizedBox(width: SimfTokens.space2),
+        Flexible(child: nameText),
+      ],
+    );
+  }
+
   Widget _buildBody(AppL10n l10n) {
     if (_loading) {
       return const Center(
@@ -189,19 +209,32 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
       );
     }
     if (_notFound) {
-      return KsaEmptyState(
-        icon: Icons.person_off_outlined,
-        message: l10n.speakerNotFound,
+      return SimfPullToRefresh(
+        onRefresh: _load,
+        child: _PullToRefreshState(
+          child: SimfEmptyState(
+            icon: Icons.person_off_outlined,
+            message: l10n.speakerNotFound,
+          ),
+        ),
       );
     }
     if (_error || _speaker == null) {
-      return KsaErrorState(
-        message: l10n.speakerProfileError,
-        retryLabel: l10n.retryLabel,
-        onRetry: () => unawaited(_load()),
+      return SimfPullToRefresh(
+        onRefresh: _load,
+        child: _PullToRefreshState(
+          child: SimfErrorState(
+            message: l10n.speakerProfileError,
+            retryLabel: l10n.retryLabel,
+            onRetry: () => unawaited(_load()),
+          ),
+        ),
       );
     }
-    return _content(l10n, _speaker!);
+    return SimfPullToRefresh(
+      onRefresh: _load,
+      child: _content(l10n, _speaker!),
+    );
   }
 
   Widget _content(AppL10n l10n, SpeakerDetail speaker) {
@@ -225,9 +258,14 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
         _SocialLink(Icons.business_center_outlined, speaker.linkedInUrl!),
       if (speaker.allowsDataSharing && _has(speaker.xUrl))
         _SocialLink(Icons.alternate_email, speaker.xUrl!),
+      // D-544 — the opted-in personal/professional website, shown as a 4th
+      // chip alongside the socials (the field postdates the 908-2110 frame).
+      if (speaker.allowsDataSharing && _has(speaker.websiteUrl))
+        _SocialLink(Icons.language, speaker.websiteUrl!),
     ];
 
     return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
         SimfTokens.space4,
         SimfTokens.space8 + SimfTokens.space6, // 56px — matches Figma large gap above avatar
@@ -252,10 +290,10 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
         ],
         if (speaker.allowsMeetingRequests) ...<Widget>[
           const SizedBox(height: SimfTokens.space5),
-          FilledButton.icon(
+          // Figma 1049:2302 — a text-only gold CTA (no leading icon).
+          FilledButton(
             onPressed: () => _onRequestMeeting(speaker, l10n),
-            icon: const Icon(Icons.handshake_outlined),
-            label: Text(l10n.requestMeeting),
+            child: Text(l10n.requestMeeting),
           ),
         ],
         if (socials.isNotEmpty) ...<Widget>[
@@ -287,6 +325,30 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
 }
 
 bool _has(String? value) => value != null && value.trim().isNotEmpty;
+
+/// Hosts a non-scrollable empty/error widget inside an always-scrollable,
+/// full-height viewport so a pull-down-from-the-top still fires the enclosing
+/// [SimfPullToRefresh] (lets the user pull to retry), while keeping the message centred.
+class _PullToRefreshState extends StatelessWidget {
+  const _PullToRefreshState({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+}
 
 /// The frame's identity avatar (908:2110 `912:2270`): a 125px white circle
 /// ringed gold (2.77px). Renders the speaker's uploaded photo (the D-357
@@ -397,7 +459,9 @@ class _CvTab extends StatelessWidget {
         alignment: Alignment.center,
         padding: const EdgeInsets.all(SimfTokens.space2),
         decoration: BoxDecoration(
-          color: selected ? SimfTokens.accent : SimfTokens.navyDeep,
+          // Figma 912:2312 — the inactive pill is border-only (no fill); it
+          // reads the navySurface scaffold through, the active pill is gold.
+          color: selected ? SimfTokens.accent : Colors.transparent,
           borderRadius: BorderRadius.circular(SimfTokens.radius),
           border: selected
               ? null
@@ -434,8 +498,9 @@ class _CvCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
+      // Figma 912:2331 — px-8 / py-16 inside the navy card.
       padding: const EdgeInsets.symmetric(
-        horizontal: SimfTokens.space4,
+        horizontal: SimfTokens.space2,
         vertical: SimfTokens.space4,
       ),
       decoration: const BoxDecoration(
@@ -466,7 +531,7 @@ class _SessionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hall = session.localizedHall(isArabic);
-    return KsaCard(
+    return SimfCard(
       onTap: () => context.pushNamed(
         RouteNames.sessionDetail,
         pathParameters: <String, String>{'sessionId': session.id},

@@ -394,6 +394,10 @@ if (!app.Environment.IsEnvironment("Testing"))
     // The built-in rating types (App + Session) must exist in every environment
     // so the app + the end-of-session worker resolve them by code. Idempotent.
     await services.GetRequiredService<SIMF.Infrastructure.Feedback.RatingSeeder>().SeedAsync();
+    // The administrative-regions lookup (the 13 official Saudi regions) is
+    // required reference data the app's region picker reads, so it must exist in
+    // every environment. Idempotent (keyed on Code).
+    await services.GetRequiredService<SIMF.Infrastructure.Regions.RegionSeeder>().SeedAsync();
 
     // B3 — D-221 — in Development only, seed a few sample organisations so the
     // registration organisation picker has data before the gov Excel import.

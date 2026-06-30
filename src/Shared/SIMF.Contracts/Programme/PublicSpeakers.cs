@@ -62,6 +62,9 @@ public sealed record PublicSpeakerDetail(
     string? FacebookUrl,
     string? LinkedInUrl,
     string? XUrl,
+    // D-544 — opted-in website URL, gated by AllowsDataSharing like the social
+    // URLs. Name-keyed JSON, so older app builds simply ignore it (wire-safe).
+    string? WebsiteUrl,
     string? PhotoRelativePath,
     int DisplayOrder,
     IReadOnlyList<PublicSpeakerSession> Sessions);

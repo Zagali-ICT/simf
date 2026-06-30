@@ -9,12 +9,13 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/localization/locale_controller.dart';
 import '../../app/route_names.dart';
+import '../../app/router.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/confirm_external_link.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import '../../core/env/build_config.dart';
-import '../../core/external_link.dart';
-import '../auth/sign_out.dart';
+import '../account/sign_out.dart';
 import '../myarea/data/myarea_models.dart';
 import '../myarea/data/myarea_repository.dart';
 
@@ -32,7 +33,7 @@ final _moreProfileProvider =
 });
 
 /// Page 041 — المزيد · More (#41, `/more`, public). Pixel-parity to KSA Figma
-/// frame `1129:17224`: the navy [KsaPage] shell, a منطقتي profile header card
+/// frame `1129:17224`: the navy [SimfPageShell] shell, a منطقتي profile header card
 /// (signed-in), three grouped sections (معلومات الملتقى / الإعدادات / قانوني)
 /// of bordered nav rows, the تسجيل الخروج link (signed-in) and the static
 /// version line. Unbuilt entries (Forum guide / FAQ / presentations / Contact
@@ -46,13 +47,16 @@ class MoreScreen extends ConsumerWidget {
     final l10n = AppL10n.of(context);
     final auth = ref.watch(authControllerProvider);
     final signedIn = auth is AuthStateSignedIn;
+    // D-519 — role-filter the attendee-only rows so a focused Staff/Moderator
+    // never sees a dead link here (the slide-in MoreDrawer filters identically).
+    final role = signedIn ? auth.session.user.appRole : AppRole.guest;
     final profile = signedIn
         ? ref.watch(_moreProfileProvider).asData?.value
         : null;
 
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.moreTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           SimfTokens.space4,
@@ -87,14 +91,16 @@ class MoreScreen extends ConsumerWidget {
                 title: l10n.faqRowTitle,
                 onTap: () => context.pushNamed(RouteNames.faq),
               ),
-              _MoreRow(
-                title: l10n.morePresentations,
-                onTap: () => context.pushNamed(RouteNames.sessionPresentations),
-              ),
+              if (routeAllowsRole(RouteNames.sessionPresentations, role))
+                _MoreRow(
+                  title: l10n.morePresentations,
+                  onTap: () =>
+                      context.pushNamed(RouteNames.sessionPresentations),
+                ),
               _MoreRow(
                 title: l10n.moreVisitSaudi,
                 onTap: () => unawaited(
-                  launchExternalUri(Uri.parse(BuildConfig.visitSaudiUrl)),
+                  confirmThenLaunchExternal(context, BuildConfig.visitSaudiUrl),
                 ),
               ),
             ],
@@ -136,10 +142,11 @@ class MoreScreen extends ConsumerWidget {
                 title: l10n.contactUsTitle,
                 onTap: () => context.pushNamed(RouteNames.contactUs),
               ),
-              _MoreRow(
-                title: l10n.moreRateApp,
-                onTap: () => context.pushNamed(RouteNames.rate),
-              ),
+              if (routeAllowsRole(RouteNames.rate, role))
+                _MoreRow(
+                  title: l10n.moreRateApp,
+                  onTap: () => context.pushNamed(RouteNames.rate),
+                ),
             ],
           ),
 
@@ -229,7 +236,7 @@ class _ProfileCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: SimfTokens.space3),
-              KsaAvatar(name: name, currentUser: true, size: 42),
+              SimfAvatar(name: name, currentUser: true, size: 42),
               const SizedBox(width: SimfTokens.space2),
               const SimfSvgIcon(
                 'assets/icons/ic_caret_left.svg',

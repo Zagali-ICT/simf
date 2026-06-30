@@ -11,7 +11,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/localization/locale_controller.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../core/organization_profile/organization_profile.dart';
 import '../accessibility/data/accessibility_controller.dart';
@@ -156,9 +156,9 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.liveBroadcastTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       tab: SimfTab.sessions,
       body: _buildBody(l10n),
     );
@@ -174,7 +174,7 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
       if (profile != null && globalUrl != null && globalUrl.isNotEmpty) {
         return _content(l10n, _globalLiveSession(profile, globalUrl));
       }
-      return KsaEmptyState(
+      return SimfEmptyState(
         icon: Icons.live_tv_outlined,
         message: l10n.liveNoSessionSelected,
       );
@@ -183,13 +183,13 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     if (_notFound) {
-      return KsaEmptyState(
+      return SimfEmptyState(
         icon: Icons.live_tv_outlined,
         message: l10n.sessionNotFound,
       );
     }
     if (_error || _session == null) {
-      return KsaErrorState(
+      return SimfErrorState(
         message: l10n.liveBroadcastError,
         retryLabel: l10n.retryLabel,
         onRetry: () => unawaited(_load()),
@@ -268,6 +268,8 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
                 text: session.localizedTitle(isArabic),
                 color: SimfTokens.accent,
                 fontWeight: FontWeight.w600,
+                // Frame 934:3616 — the session title bullet is 16px.
+                fontSize: SimfTokens.textLg,
               ),
               // D-433 — the speakers / participants line (frame 934:3617).
               if (session.localizedSpeakers(isArabic) != null) ...<Widget>[
@@ -339,7 +341,7 @@ class _UpcomingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return KsaCard(
+    return SimfCard(
       child: Padding(
         // Frame 934:3621 — px8 / py16 on the radius-4 navy card.
         padding: const EdgeInsets.symmetric(
@@ -354,10 +356,11 @@ class _UpcomingCard extends StatelessWidget {
                 textAlign: TextAlign.right,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
+                // Frame 934:3626 — the upcoming-session title is 14px Bold.
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: SimfTokens.textMd,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ),
@@ -434,7 +437,18 @@ class _PlayerSurface extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            _LivePlayer(url: url, liveLabel: liveLabel),
+            // Frame 934:3612 — the badges sit in a flex row at the top of the
+            // black band (LIVE at the inline-start / right, the language chip at
+            // the inline-end / left), not overlaid on the video.
+            Row(
+              children: <Widget>[
+                _LiveBadge(label: liveLabel),
+                const Spacer(),
+                const _LanguageChip(),
+              ],
+            ),
+            const SizedBox(height: SimfTokens.space4),
+            _LivePlayer(url: url),
             const SizedBox(height: SimfTokens.space4),
             _CaptionStrip(caption: caption, hint: captionHint),
           ],
@@ -524,10 +538,9 @@ class _CaptionStrip extends ConsumerWidget {
 /// `video_player`. The parent rebuilds this with a new `ValueKey(url)` to switch
 /// feeds, so this widget only ever binds one URL for its lifetime.
 class _LivePlayer extends StatefulWidget {
-  const _LivePlayer({required this.url, required this.liveLabel});
+  const _LivePlayer({required this.url});
 
   final String url;
-  final String liveLabel;
 
   @override
   State<_LivePlayer> createState() => _LivePlayerState();
@@ -627,15 +640,11 @@ class _LivePlayerState extends State<_LivePlayer> {
     }
     final youtube = _youtube;
     if (youtube != null) {
-      return _YoutubeView(controller: youtube, liveLabel: widget.liveLabel);
+      return _YoutubeView(controller: youtube);
     }
     final video = _video;
     if (video != null && _videoReady) {
-      return _Player(
-        controller: video,
-        onToggle: _toggleVideoPlay,
-        liveLabel: widget.liveLabel,
-      );
+      return _Player(controller: video, onToggle: _toggleVideoPlay);
     }
     return const _PlayerLoading();
   }
@@ -645,33 +654,17 @@ class _LivePlayerState extends State<_LivePlayer> {
 /// supplies its own play/pause + CC controls (the latter covers الترجمة الفورية
 /// for YouTube feeds), so no extra play FAB is added here.
 class _YoutubeView extends StatelessWidget {
-  const _YoutubeView({required this.controller, required this.liveLabel});
+  const _YoutubeView({required this.controller});
 
   final YoutubePlayerController controller;
-  final String liveLabel;
 
   @override
   Widget build(BuildContext context) {
+    // The LIVE badge + language chip live in the surface's top row (934:3612),
+    // not overlaid on the video, so the player is just the rounded feed.
     return ClipRRect(
       borderRadius: BorderRadius.circular(SimfTokens.radius),
-      child: Stack(
-        alignment: AlignmentDirectional.topStart,
-        children: <Widget>[
-          YoutubePlayer(controller: controller, aspectRatio: 16 / 9),
-          PositionedDirectional(
-            top: SimfTokens.space2,
-            start: SimfTokens.space2,
-            child: _LiveBadge(label: liveLabel),
-          ),
-          // Figma 934:3450 — language chip pinned top-END (left in RTL),
-          // mirroring the LIVE badge; wired to the app-language toggle.
-          const PositionedDirectional(
-            top: SimfTokens.space2,
-            end: SimfTokens.space2,
-            child: _LanguageChip(),
-          ),
-        ],
-      ),
+      child: YoutubePlayer(controller: controller, aspectRatio: 16 / 9),
     );
   }
 }
@@ -740,7 +733,7 @@ class _TogglePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return KsaCard(
+    return SimfCard(
       onTap: active ? null : onTap,
       color: active ? SimfTokens.accent : SimfTokens.navyDeep,
       borderColor: active ? SimfTokens.accent : SimfTokens.beigeBorder,
@@ -779,11 +772,13 @@ class _GoldBullet extends StatelessWidget {
     required this.text,
     required this.color,
     this.fontWeight = FontWeight.w500,
+    this.fontSize = SimfTokens.textMd,
   });
 
   final String text;
   final Color color;
   final FontWeight fontWeight;
+  final double fontSize;
 
   @override
   Widget build(BuildContext context) {
@@ -796,7 +791,7 @@ class _GoldBullet extends StatelessWidget {
             textAlign: TextAlign.right,
             style: TextStyle(
               color: color,
-              fontSize: SimfTokens.textMd,
+              fontSize: fontSize,
               fontWeight: fontWeight,
               height: 1.5,
             ),
@@ -892,21 +887,17 @@ class _AskQuestionButton extends StatelessWidget {
 /// The `video_player` surface: a 16:9-aware [VideoPlayer] with a LIVE badge
 /// overlay and a play/pause FAB (the HLS/MP4 fallback path).
 class _Player extends StatelessWidget {
-  const _Player({
-    required this.controller,
-    required this.onToggle,
-    required this.liveLabel,
-  });
+  const _Player({required this.controller, required this.onToggle});
 
   final VideoPlayerController controller;
   final VoidCallback onToggle;
-  final String liveLabel;
 
   @override
   Widget build(BuildContext context) {
     final ratio = controller.value.aspectRatio == 0
         ? 16 / 9
         : controller.value.aspectRatio;
+    // The LIVE badge + language chip live in the surface's top row (934:3612).
     return ClipRRect(
       borderRadius: BorderRadius.circular(SimfTokens.radius),
       child: Stack(
@@ -915,18 +906,6 @@ class _Player extends StatelessWidget {
           AspectRatio(
             aspectRatio: ratio,
             child: VideoPlayer(controller),
-          ),
-          PositionedDirectional(
-            top: SimfTokens.space2,
-            start: SimfTokens.space2,
-            child: _LiveBadge(label: liveLabel),
-          ),
-          // Figma 934:3450 — language chip pinned top-END (left in RTL),
-          // mirroring the LIVE badge; wired to the app-language toggle.
-          const PositionedDirectional(
-            top: SimfTokens.space2,
-            end: SimfTokens.space2,
-            child: _LanguageChip(),
           ),
           Padding(
             padding: const EdgeInsets.all(SimfTokens.space3),
@@ -952,6 +931,8 @@ class _PlayerLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Frame 934:3595 — the resting/poster affordance: a 52px translucent-white
+    // circle holding a 22px white play triangle (shown until the feed renders).
     return AspectRatio(
       aspectRatio: 16 / 9,
       child: DecoratedBox(
@@ -959,7 +940,18 @@ class _PlayerLoading extends StatelessWidget {
           color: Colors.black,
           borderRadius: BorderRadius.circular(SimfTokens.radius),
         ),
-        child: const Center(child: CircularProgressIndicator()),
+        child: Center(
+          child: Container(
+            width: 52,
+            height: 52,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              color: SimfTokens.playScrim,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.play_arrow, size: 22, color: Colors.white),
+          ),
+        ),
       ),
     );
   }
@@ -1026,23 +1018,22 @@ class _LiveBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      // Frame 934:3609 — px10 py4 on a brick-red (#C0392B) pill, radius 6.
       padding: const EdgeInsets.symmetric(
-        horizontal: SimfTokens.space2,
+        horizontal: 10,
         vertical: SimfTokens.space1,
       ),
       decoration: BoxDecoration(
-        color: SimfTokens.danger,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        color: SimfTokens.liveRed,
+        borderRadius: BorderRadius.circular(SimfTokens.radius6),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
+        // The live label leads and the ~7px white pulse dot trails it (frame
+        // 934:3609/3610); forced LTR keeps the dot on the trailing side. (The
+        // frame's Latin "LIVE" is localized to مباشر via l10n.liveNowLabel.)
+        textDirection: TextDirection.ltr,
         children: <Widget>[
-          const Icon(
-            Icons.fiber_manual_record,
-            size: 10,
-            color: SimfTokens.surface,
-          ),
-          const SizedBox(width: SimfTokens.space1),
           Text(
             label,
             style: const TextStyle(
@@ -1050,6 +1041,15 @@ class _LiveBadge extends StatelessWidget {
               fontWeight: FontWeight.w700,
               // Frame 934:3611 — 12px Bold.
               fontSize: SimfTokens.textSm,
+            ),
+          ),
+          const SizedBox(width: 5),
+          Container(
+            width: 7,
+            height: 7,
+            decoration: const BoxDecoration(
+              color: SimfTokens.surface,
+              shape: BoxShape.circle,
             ),
           ),
         ],
@@ -1068,16 +1068,24 @@ class _LanguageChip extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isArabic = AppL10n.of(context).isArabic;
     return Material(
-      color: SimfTokens.surface,
-      borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+      // Frame 934:3604 — a translucent dark glassy pill with a gold hairline and
+      // white text/icon (was a solid white chip with navy glyphs).
+      color: SimfTokens.scrimBlack55,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        side: const BorderSide(
+          color: SimfTokens.accent,
+          width: SimfTokens.hairline,
+        ),
+      ),
       child: InkWell(
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
         onTap: () =>
             unawaited(ref.read(localeControllerProvider.notifier).toggle()),
         child: Padding(
           padding: const EdgeInsets.symmetric(
-            horizontal: SimfTokens.space2,
-            vertical: SimfTokens.space1,
+            horizontal: 10,
+            vertical: 5,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -1085,13 +1093,13 @@ class _LanguageChip extends ConsumerWidget {
               Text(
                 isArabic ? 'العربية' : 'English',
                 style: const TextStyle(
-                  color: SimfTokens.navy,
-                  fontWeight: FontWeight.w600,
-                  fontSize: SimfTokens.textXs,
+                  color: SimfTokens.surface,
+                  fontWeight: FontWeight.w400,
+                  fontSize: SimfTokens.textSm,
                 ),
               ),
-              const SizedBox(width: SimfTokens.space1),
-              const Icon(Icons.language, size: 14, color: SimfTokens.navy),
+              const SizedBox(width: 5),
+              const Icon(Icons.language, size: 14, color: SimfTokens.surface),
             ],
           ),
         ),

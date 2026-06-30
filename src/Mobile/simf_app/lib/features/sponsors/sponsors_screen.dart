@@ -6,8 +6,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/country_flag_badge.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import 'data/sponsor_models.dart';
 
@@ -41,16 +40,32 @@ class SponsorsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppL10n.of(context);
     final groups = ref.watch(sponsorGroupsProvider);
-    return KsaPage(
+    // Pull-to-refresh — re-fetch the tier-grouped sponsors. Invalidate the
+    // FutureProvider then await its next value so the spinner shows until the
+    // new read completes.
+    Future<void> onRefresh() async {
+      ref.invalidate(sponsorGroupsProvider);
+      await ref.read(sponsorGroupsProvider.future);
+    }
+
+    return SimfPageShell(
       title: l10n.sponsorsTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       showSweep: true,
       body: groups.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => KsaErrorState(
-          message: l10n.sponsorsError,
-          retryLabel: l10n.retryLabel,
-          onRetry: () => ref.invalidate(sponsorGroupsProvider),
+        error: (_, __) => SimfPullToRefresh(
+          onRefresh: onRefresh,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: <Widget>[
+              SimfErrorState(
+                message: l10n.sponsorsError,
+                retryLabel: l10n.retryLabel,
+                onRetry: () => ref.invalidate(sponsorGroupsProvider),
+              ),
+            ],
+          ),
         ),
         data: (data) {
           final visibleGroups = <SponsorTierGroup>[
@@ -58,20 +73,31 @@ class SponsorsScreen extends ConsumerWidget {
               if (group.sponsors.isNotEmpty) group,
           ];
           if (visibleGroups.isEmpty) {
-            return KsaEmptyState(
-              icon: Icons.workspace_premium_outlined,
-              message: l10n.sponsorsEmpty,
+            return SimfPullToRefresh(
+              onRefresh: onRefresh,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: <Widget>[
+                  SimfEmptyState(
+                    icon: Icons.workspace_premium_outlined,
+                    message: l10n.sponsorsEmpty,
+                  ),
+                ],
+              ),
             );
           }
           final isArabic = l10n.isArabic;
           // The logo image lives at {base}/app/assets/SponsorLogo/{id}/image (D-357).
           final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
           final lastIndex = visibleGroups.length - 1;
-          return ListView(
-            padding: const EdgeInsets.all(SimfTokens.space4),
-            children: <Widget>[
+          return SimfPullToRefresh(
+            onRefresh: onRefresh,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(SimfTokens.space4),
+              children: <Widget>[
               for (var i = 0; i < visibleGroups.length; i++) ...<Widget>[
-                if (i > 0) const SizedBox(height: SimfTokens.space5),
+                if (i > 0) const SizedBox(height: SimfTokens.space6),
                 _TierLabel(label: visibleGroups[i].tierName),
                 const SizedBox(height: SimfTokens.space4),
                 // Frame 922:2824 — three bands: the top tier is the gold hero
@@ -96,7 +122,6 @@ class SponsorsScreen extends ConsumerWidget {
                       secondary:
                           sponsor.localizedTagline(isArabic) ?? sponsor.url,
                       hero: i == 0,
-                      countryId: sponsor.countryId,
                       // Wave 3 — tap → the sponsor detail (Figma 1439:11826).
                       onTap: () => context.pushNamed(
                         RouteNames.sponsorDetail,
@@ -108,7 +133,8 @@ class SponsorsScreen extends ConsumerWidget {
                     const SizedBox(height: SimfTokens.space4),
                   ],
               ],
-            ],
+              ],
+            ),
           );
         },
       ),
@@ -167,7 +193,6 @@ class _SponsorCard extends StatelessWidget {
     required this.badge,
     required this.secondary,
     required this.hero,
-    required this.countryId,
     required this.onTap,
   });
 
@@ -177,7 +202,6 @@ class _SponsorCard extends StatelessWidget {
   final String badge;
   final String? secondary;
   final bool hero;
-  final int? countryId;
   final VoidCallback onTap;
 
   @override
@@ -187,7 +211,7 @@ class _SponsorCard extends StatelessWidget {
     // line changes colour with the card.
     const Color nameColor = Colors.white;
     final Color subColor = hero ? SimfTokens.navyDeep : SimfTokens.beigeBorder;
-    return KsaCard(
+    return SimfCard(
       onTap: onTap,
       color: hero ? SimfTokens.accent : SimfTokens.navyDeep,
       borderColor: SimfTokens.beigeBorder,
@@ -202,16 +226,13 @@ class _SponsorCard extends StatelessWidget {
               // it, and the forward chevron on the far inline-end (physical
               // left). The bundled caret does not auto-mirror, so it keeps
               // pointing left as the design shows.
-              CountryFlagBadge(
-                countryId: countryId,
-                child: _BadgeBox(
+              _BadgeBox(
+                hero: hero,
+                child: _SponsorLogo(
+                  id: id,
+                  baseUrl: baseUrl,
+                  fallbackInitials: badge,
                   hero: hero,
-                  child: _SponsorLogo(
-                    id: id,
-                    baseUrl: baseUrl,
-                    fallbackInitials: badge,
-                    hero: hero,
-                  ),
                 ),
               ),
               const SizedBox(width: SimfTokens.space2),
@@ -242,8 +263,12 @@ class _SponsorCard extends StatelessWidget {
                     if (secondary != null &&
                         secondary!.trim().isNotEmpty) ...<Widget>[
                       const SizedBox(height: SimfTokens.space1),
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 215),
+                      // Responsive (owner 2026-06-28): fill the available column
+                      // width instead of the frame's fixed 215px so the tagline
+                      // stretches on a tablet; textAlign.right keeps the wrapped
+                      // lines flush to the badge.
+                      SizedBox(
+                        width: double.infinity,
                         child: Text(
                           secondary!,
                           textAlign: TextAlign.right,
@@ -260,7 +285,9 @@ class _SponsorCard extends StatelessWidget {
               ),
               const SizedBox(width: SimfTokens.space2),
               SimfSvgIcon(
-                'assets/icons/ic_caret_left.svg',
+                // Frame 925:2990 — the iconamoon thin chevron (navy on the gold
+                // hero card, gold on a premium card), NOT a filled triangle.
+                'assets/icons/ic_back.svg',
                 size: 20,
                 color: hero ? SimfTokens.navy : SimfTokens.accent,
               ),
@@ -385,7 +412,6 @@ class _SponsorGrid extends StatelessWidget {
         baseUrl: baseUrl,
         name: sponsors[i].localizedName(isArabic),
         initials: SponsorsScreen._badgeText(sponsors[i], isArabic),
-        countryId: sponsors[i].countryId,
         // Wave 3 — tap → the sponsor detail (Figma 1439:11826).
         onTap: () => context.pushNamed(
           RouteNames.sponsorDetail,
@@ -405,7 +431,6 @@ class _SponsorGridTile extends StatelessWidget {
     required this.baseUrl,
     required this.name,
     required this.initials,
-    required this.countryId,
     required this.onTap,
   });
 
@@ -413,52 +438,48 @@ class _SponsorGridTile extends StatelessWidget {
   final String baseUrl;
   final String name;
   final String initials;
-  final int? countryId;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return CountryFlagBadge(
-      countryId: countryId,
-      child: Material(
-        color: SimfTokens.navyDeep,
-        clipBehavior: Clip.antiAlias,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-          side: const BorderSide(
-            color: SimfTokens.beigeBorder,
-            width: SimfTokens.hairline,
-          ),
+    return Material(
+      color: SimfTokens.navyDeep,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        side: const BorderSide(
+          color: SimfTokens.beigeBorder,
+          width: SimfTokens.hairline,
         ),
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(SimfTokens.space2),
-            child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          Expanded(
-            child: _SponsorLogo(
-              id: id,
-              baseUrl: baseUrl,
-              fallbackInitials: initials,
-              hero: false,
-            ),
-          ),
-          const SizedBox(height: SimfTokens.space2),
-          Text(
-            name,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-              fontSize: SimfTokens.textSm,
-            ),
-          ),
-              ],
-            ),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(SimfTokens.space2),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Expanded(
+                child: _SponsorLogo(
+                  id: id,
+                  baseUrl: baseUrl,
+                  fallbackInitials: initials,
+                  hero: false,
+                ),
+              ),
+              const SizedBox(height: SimfTokens.space2),
+              Text(
+                name,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: SimfTokens.textSm,
+                ),
+              ),
+            ],
           ),
         ),
       ),

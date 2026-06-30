@@ -3,8 +3,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
-import 'package:simf_app/features/profile/data/profile_models.dart';
-import 'package:simf_app/features/profile/data/profile_repository.dart';
+import 'package:simf_app/features/account/data/profile_models.dart';
+import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/staff/data/staff_models.dart';
 import 'package:simf_app/features/staff/data/staff_repository.dart';
 import 'package:simf_app/features/staff/register_visitor_screen.dart';
@@ -138,6 +138,34 @@ void main() {
       // SnackBar + the no-call rather than the shared text.)
       expect(find.byType(SnackBar), findsOneWidget);
       expect(staff.registerCalls, 0);
+    });
+
+    testWidgets('every text input caps its length (maxLength set)',
+        (tester) async {
+      await _pump(tester, profile: _FakeProfileRepo(), staff: _FakeStaffRepo());
+
+      // Saudi default field order: email, phone, arabicName, englishName,
+      // nationalId. Each carries a sensible maxLength so over-long input can
+      // never reach the server. (maxLength lives on the inner TextField that
+      // TextFormField builds.)
+      final inputs =
+          tester.widgetList<TextField>(find.byType(TextField)).toList();
+      expect(inputs, isNotEmpty);
+      expect(
+        inputs.every((f) => f.maxLength != null),
+        isTrue,
+        reason: 'every staff register input must declare a maxLength',
+      );
+
+      // The email field truncates input beyond its 50-char cap.
+      final email = find.byType(TextFormField).at(0);
+      await tester.enterText(email, 'a' * 80);
+      await tester.pump();
+      final emailState = tester.widget<TextField>(find.descendant(
+        of: email,
+        matching: find.byType(TextField),
+      ));
+      expect(emailState.controller!.text.length, 50);
     });
 
     testWidgets('a filled form posts the walk-in registration', (tester) async {

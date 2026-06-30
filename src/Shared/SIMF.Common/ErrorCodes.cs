@@ -16,6 +16,10 @@ public static class ErrorCodes
     // A6-18 (NCA) — an uploaded file failed the malware scan.
     public const string UploadMalwareDetected = "UPLOAD_MALWARE_DETECTED";
 
+    // D-568 / D-494 — the malware scanner is unavailable and the pipeline is
+    // fail-closed, so the upload was rejected rather than stored unscanned.
+    public const string UploadScanUnavailable = "UPLOAD_SCAN_UNAVAILABLE";
+
     // Authentication (SIMF-API-001 section 12.6 and Amendment A)
     public const string AuthEmailAlreadyRegistered = "AUTH_EMAIL_ALREADY_REGISTERED";
     public const string AuthAccountNotFound = "AUTH_ACCOUNT_NOT_FOUND";
@@ -388,6 +392,11 @@ public static class ErrorCodes
     public const string OrganisationInvalid = "ORGANISATION_INVALID";
     public const string OrganisationNotFound = "ORGANISATION_NOT_FOUND";
     public const string OrganisationImportFailed = "ORGANISATION_IMPORT_FAILED";
+
+    // Regions (administrative-regions lookup; the app region picker reads this
+    // table). Code is the stable unique lookup key.
+    public const string RegionInvalid = "REGION_INVALID";
+    public const string RegionNotFound = "REGION_NOT_FOUND";
 
     // Networking connections (B6 / D-224 — visitor-to-visitor request/accept).
     public const string ConnectionInvalid = "CONNECTION_INVALID";

@@ -2871,6 +2871,101 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.ToTable("RatingTypes", (string)null);
                 });
 
+            modelBuilder.Entity("SIMF.Domain.Files.StoredFile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte>("CipherFormatVersion")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("ContentType")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ExternalUrl")
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
+
+                    b.Property<int>("FileType")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeletable")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsEncrypted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("OriginalFileName")
+                        .HasMaxLength(260)
+                        .HasColumnType("nvarchar(260)");
+
+                    b.Property<Guid?>("OwnerEntityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("OwnerEntityType")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("RetainUntilUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("SecureDestroyedUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("SensitivityTier")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Service")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Sha256")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<long?>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("SourceType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StorageKey")
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("RetainUntilUtc")
+                        .HasFilter("[IsActive] = 1 AND [RetainUntilUtc] IS NOT NULL");
+
+                    b.HasIndex("OwnerEntityType", "OwnerEntityId")
+                        .HasFilter("[IsActive] = 1");
+
+                    b.HasIndex("Service", "IsActive");
+
+                    b.ToTable("StoredFiles", (string)null);
+                });
+
             modelBuilder.Entity("SIMF.Domain.Media.MediaItem", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4251,6 +4346,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid?>("UserProfileId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("WebsiteUrl")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
                     b.Property<string>("XUrl")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -4581,6 +4680,57 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasIndex("IsActive", "PublishedAt");
 
                     b.ToTable("News", (string)null);
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Regions.Region", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("NameArabic")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("IsActive", "SortOrder");
+
+                    b.ToTable("Regions", (string)null);
                 });
 
             modelBuilder.Entity("SIMF.Domain.Requests.BadgeUpdateRequest", b =>

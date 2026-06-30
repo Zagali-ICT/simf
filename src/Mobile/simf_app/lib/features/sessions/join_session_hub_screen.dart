@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import 'data/session_models.dart';
 import 'data/sessions_repository.dart';
@@ -27,21 +27,21 @@ class JoinSessionHubScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppL10n.of(context);
     final sessions = ref.watch(joinHubSessionsProvider);
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.joinHubTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       tab: SimfTab.sessions,
       body: sessions.when(
         loading: () => const Center(
           child: CircularProgressIndicator(color: SimfTokens.accent),
         ),
-        error: (_, __) => KsaErrorState(
+        error: (_, __) => SimfErrorState(
           message: l10n.sessionsError,
           retryLabel: l10n.retryLabel,
           onRetry: () => ref.invalidate(joinHubSessionsProvider),
         ),
         data: (items) => items.isEmpty
-            ? KsaEmptyState(
+            ? SimfEmptyState(
                 icon: Icons.event_busy_outlined,
                 message: l10n.sessionsEmpty,
               )
@@ -118,7 +118,7 @@ class _HubRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return KsaCard(
+    return SimfCard(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.all(SimfTokens.space3),

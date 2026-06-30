@@ -222,6 +222,7 @@
   <data name="Admin.ProfileTypes.MobileAppRole.Visitor" xml:space="preserve"><value>Visitor</value></data>
   <data name="Admin.ProfileTypes.MobileAppRole.Staff" xml:space="preserve"><value>Staff — gate operations</value></data>
   <data name="Admin.ProfileTypes.MobileAppRole.Moderator" xml:space="preserve"><value>Moderator — content &amp; user authority</value></data>
+  <data name="Admin.ProfileTypes.MobileAppRole.Exhibitor" xml:space="preserve"><value>Exhibitor — lead capture (scan + My Visitors)</value></data>
   <data name="Admin.ProfileTypes.Field.IsActive" xml:space="preserve"><value>Visible in pickers (active)</value></data>
   <data name="Admin.ProfileTypes.Field.NameInvalid" xml:space="preserve"><value>Name must be 1–128 characters.</value></data>
   <data name="Admin.ProfileTypes.Field.NameArabicInvalid" xml:space="preserve"><value>Arabic name must be 1–128 characters.</value></data>
@@ -572,6 +573,7 @@
   <data name="Admin.Speakers.Field.FacebookUrl" xml:space="preserve"><value>Facebook URL</value></data>
   <data name="Admin.Speakers.Field.LinkedInUrl" xml:space="preserve"><value>LinkedIn URL</value></data>
   <data name="Admin.Speakers.Field.XUrl" xml:space="preserve"><value>X URL</value></data>
+  <data name="Admin.Speakers.Field.WebsiteUrl" xml:space="preserve"><value>Website URL</value></data>
   <data name="Admin.Speakers.Field.DisplayOrder" xml:space="preserve"><value>Display order</value></data>
   <data name="Admin.Speakers.Field.DisplayOrderInvalid" xml:space="preserve"><value>Display order must be zero or a positive integer.</value></data>
   <data name="Admin.Speakers.Field.IsActive" xml:space="preserve"><value>Active — show in the public speaker list</value></data>
@@ -2668,6 +2670,37 @@
   <data name="Admin.Organisations.Import.Result" xml:space="preserve"><value>Rows read: {0} · Inserted: {1} · Updated: {2} · Skipped: {3}</value></data>
   <data name="Admin.Organisations.Import.Done" xml:space="preserve"><value>Import complete — {0} inserted, {1} updated, {2} skipped.</value></data>
   <data name="Admin.Organisations.Import.Failed" xml:space="preserve"><value>Excel import failed.</value></data>
+
+  <!-- Region lookup (the 13 official Saudi administrative regions) -->
+  <data name="Module.Regions" xml:space="preserve"><value>Regions</value></data>
+  <data name="Admin.Regions.Title" xml:space="preserve"><value>Regions</value></data>
+  <data name="Admin.Regions.Search" xml:space="preserve"><value>Search</value></data>
+  <data name="Admin.Regions.Search.Placeholder" xml:space="preserve"><value>Search by code or name</value></data>
+  <data name="Admin.Regions.Search.Apply" xml:space="preserve"><value>Search</value></data>
+  <data name="Admin.Regions.Loading" xml:space="preserve"><value>Loading regions…</value></data>
+  <data name="Admin.Regions.None" xml:space="preserve"><value>No regions found</value></data>
+  <data name="Admin.Regions.Col.Code" xml:space="preserve"><value>Code</value></data>
+  <data name="Admin.Regions.Col.NameAr" xml:space="preserve"><value>Name (Arabic)</value></data>
+  <data name="Admin.Regions.Col.NameEn" xml:space="preserve"><value>Name (English)</value></data>
+  <data name="Admin.Regions.Col.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.Regions.Add.Title" xml:space="preserve"><value>Add region</value></data>
+  <data name="Admin.Regions.Edit.Title" xml:space="preserve"><value>Edit region</value></data>
+  <data name="Admin.Regions.Field.Code" xml:space="preserve"><value>Code</value></data>
+  <data name="Admin.Regions.Field.NameAr" xml:space="preserve"><value>Name (Arabic)</value></data>
+  <data name="Admin.Regions.Field.NameEn" xml:space="preserve"><value>Name (English)</value></data>
+  <data name="Admin.Regions.Field.SortOrder" xml:space="preserve"><value>Sort order</value></data>
+  <data name="Admin.Regions.Field.IsActive" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.Regions.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.Regions.Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Admin.Regions.Required" xml:space="preserve"><value>Code and Arabic name are required.</value></data>
+  <data name="Admin.Regions.Saved" xml:space="preserve"><value>Region saved.</value></data>
+  <data name="Admin.Regions.Deleted" xml:space="preserve"><value>Region deactivated.</value></data>
+  <data name="Admin.Regions.LoadFailed" xml:space="preserve"><value>Could not load regions.</value></data>
+  <data name="Admin.Regions.Details.Title" xml:space="preserve"><value>Region details</value></data>
+  <data name="Admin.Regions.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Regions.Delete.Title" xml:space="preserve"><value>Deactivate region</value></data>
+  <data name="Admin.Regions.Delete.Message" xml:space="preserve"><value>Deactivate “{0}”? It will be removed from the public lookup.</value></data>
+  <data name="Admin.Regions.Action.Deactivate" xml:space="preserve"><value>Deactivate</value></data>
 
   <!-- SIMF-FDS-013 (D-248) — flexible hall config + B2B/B2C business meetings -->
   <data name="Module.MeetingTables" xml:space="preserve"><value>Meeting Tables</value></data>

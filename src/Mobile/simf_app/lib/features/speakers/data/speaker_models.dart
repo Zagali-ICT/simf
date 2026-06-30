@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/country_flag.dart';
+
 /// One row in the public speakers list — mirrors
 /// `SIMF.Contracts.Programme.PublicSpeakerSummary` (`GET /app/speakers`). The
 /// card shows the avatar (from [photoRelativePath]), the bilingual name, the rank
@@ -116,6 +118,7 @@ class SpeakerDetail {
     this.facebookUrl,
     this.linkedInUrl,
     this.xUrl,
+    this.websiteUrl,
     this.photoRelativePath,
   });
 
@@ -139,6 +142,10 @@ class SpeakerDetail {
   final String? facebookUrl;
   final String? linkedInUrl;
   final String? xUrl;
+
+  /// Personal/professional website (D-544) — a 4th opted-in link, gated by
+  /// [allowsDataSharing] like the social URLs. Wire key `websiteUrl`.
+  final String? websiteUrl;
   final String? photoRelativePath;
   final int displayOrder;
   final List<SpeakerSession> sessions;
@@ -146,6 +153,13 @@ class SpeakerDetail {
   String localizedName(bool isArabic) => _pick(nameArabic, name, isArabic);
   String? localizedCountry(bool isArabic) =>
       _pickOpt(countryNameAr, countryNameEn, isArabic);
+
+  /// The nationality flag emoji for the profile header (Figma 908-2110),
+  /// resolved from the ISO 3166-1 numeric [countryId] via the shared
+  /// [countryFlagEmoji] helper. Null when no country is set / unknown — the same
+  /// helper the speaker list card uses.
+  String? get flagEmoji => countryFlagEmoji(countryId);
+
   String? localizedBio(bool isArabic) => _pickOpt(bioArabic, bio, isArabic);
   String? localizedQualifications(bool isArabic) =>
       _pickOpt(qualificationsArabic, qualifications, isArabic);
@@ -175,6 +189,7 @@ class SpeakerDetail {
         facebookUrl: json['facebookUrl'] as String?,
         linkedInUrl: json['linkedInUrl'] as String?,
         xUrl: json['xUrl'] as String?,
+        websiteUrl: json['websiteUrl'] as String?,
         photoRelativePath: json['photoRelativePath'] as String?,
         displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
         sessions: (json['sessions'] as List? ?? const <dynamic>[])

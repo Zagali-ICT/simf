@@ -21,7 +21,7 @@ class _FakeResponder implements ChatbotResponder {
   }
 }
 
-// KsaPage renders the bottom nav + the المزيد drawer, which read the data
+// SimfPageShell renders the bottom nav + the المزيد drawer, which read the data
 // config; the destinations are stubbed so the shell builds.
 const _testConfig = SimfDataConfig(
   baseUrl: 'http://test.local/api/v1',

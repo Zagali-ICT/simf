@@ -8,8 +8,8 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
-import '../../core/external_link.dart';
+import '../../app/widgets/confirm_external_link.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../exhibition/entity_detail_scaffold.dart';
 import '../exhibition/entity_logo_image.dart';
 import '../venuemap/data/venue_map_models.dart';
@@ -37,17 +37,17 @@ class ExhibitorDetailScreen extends ConsumerWidget {
     final detail = ref.watch(exhibitorDetailProvider(boothId));
 
     return detail.when(
-      loading: () => KsaPage(
+      loading: () => SimfPageShell(
         title: l10n.exhibitorDetailTitle,
-        onBack: () => ksaBackOrHome(context),
+        onBack: () => backOrHome(context),
         body: const Center(
           child: CircularProgressIndicator(color: SimfTokens.accent),
         ),
       ),
-      error: (_, __) => KsaPage(
+      error: (_, __) => SimfPageShell(
         title: l10n.exhibitorDetailTitle,
-        onBack: () => ksaBackOrHome(context),
-        body: KsaErrorState(
+        onBack: () => backOrHome(context),
+        body: SimfErrorState(
           message: l10n.entityDetailError,
           retryLabel: l10n.retryLabel,
           onRetry: () => ref.invalidate(exhibitorDetailProvider(boothId)),
@@ -97,14 +97,14 @@ class ExhibitorDetailScreen extends ConsumerWidget {
               ),
       about: booth.localizedDescription(isArabic),
       website: booth.website,
-      onWebsite: () => _openWebsite(booth.website),
+      onWebsite: () => _openWebsite(context, booth.website),
     );
   }
 
-  void _openWebsite(String? url) {
+  void _openWebsite(BuildContext context, String? url) {
     final uri = _httpUri(url);
     if (uri != null) {
-      unawaited(launchExternalUri(uri));
+      unawaited(confirmThenLaunchExternal(context, uri.toString()));
     }
   }
 }

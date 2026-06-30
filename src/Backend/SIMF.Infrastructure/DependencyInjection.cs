@@ -423,6 +423,13 @@ public static class DependencyInjection
         // B3 — D-221 — dev-only sample-organisation seeder (Program.cs runs it in
         // Development only; production uses the gov Excel import).
         services.AddScoped<SIMF.Infrastructure.Organisations.OrganisationSeeder>();
+        // Region lookup — admin CRUD + public app picker read (the 13 official
+        // Saudi regions). Seeded in every environment (required reference data).
+        services.AddScoped<SIMF.Application.Regions.Abstractions.IAdminRegionService,
+            SIMF.Infrastructure.Regions.AdminRegionService>();
+        services.AddScoped<SIMF.Application.Regions.Abstractions.IPublicRegionService,
+            SIMF.Infrastructure.Regions.PublicRegionService>();
+        services.AddScoped<SIMF.Infrastructure.Regions.RegionSeeder>();
         // SIMF-FDS-014 (D-261) — shared Contact directory admin CRUD.
         services.AddScoped<SIMF.Application.Contacts.Abstractions.IAdminContactService,
             SIMF.Infrastructure.Contacts.AdminContactService>();
@@ -573,7 +580,33 @@ public static class DependencyInjection
         // value converter on UserProfile (SimfAppDbContext.OnModelCreating).
         services.AddSingleton<SIMF.Application.Abstractions.IPiiEncryptor, AesGcmPiiEncryptor>();
         // A6-18 — upload malware scanner (EICAR default; swap for ClamAV/Defender).
-        services.AddSingleton<SIMF.Application.Abstractions.IUploadScanner, DefaultUploadScanner>();
+        // A6-18 (NCA) / D-568 — the malware-scan engine. "ClamAV" wires the real
+        // clamd daemon (production); anything else keeps the built-in EICAR
+        // detector. The centralized file pipeline runs whichever is registered
+        // fail-closed in Production (D-494).
+        var scanEngine = configuration.GetSection(UploadScanningOptions.SectionName)["Engine"];
+        if (string.Equals(scanEngine, "ClamAV", StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddSingleton<SIMF.Application.Abstractions.IUploadScanner,
+                SIMF.Infrastructure.Files.ClamAvUploadScanner>();
+        }
+        else
+        {
+            services.AddSingleton<SIMF.Application.Abstractions.IUploadScanner, DefaultUploadScanner>();
+        }
+
+        // D-568 — the centralized file store: one envelope cipher + one storage
+        // provider behind the single StoredFile pipeline. The cipher boot-fails on
+        // a missing/invalid KEK the first time it is resolved (same posture as the
+        // ID-document key). Both are stateless singletons.
+        services.Configure<FileStorageOptions>(
+            configuration.GetSection(FileStorageOptions.SectionName));
+        services.AddSingleton<SIMF.Application.Files.Abstractions.IFileCipher,
+            SIMF.Infrastructure.Files.AesGcmEnvelopeCipher>();
+        services.AddSingleton<SIMF.Application.Files.Abstractions.IFileStorageProvider,
+            SIMF.Infrastructure.Files.FilesystemFileStorageProvider>();
+        services.AddScoped<SIMF.Application.Files.Abstractions.IFileService,
+            SIMF.Infrastructure.Files.StoredFileService>();
         services.AddSingleton<ILogFileService, LogFileService>();
         services.AddSingleton<IJwtTokenService, JwtTokenService>();
         services.AddSingleton<ITotpVerifier, TotpVerifier>();

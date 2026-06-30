@@ -92,8 +92,8 @@ dev_dependencies:
   # via `flutter test integration_test/`, or on a device with `-d <id>`.
   integration_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
   mocktail: ^1.0.4
+  very_good_analysis: ^10.3.0
 
 # D-373 / D-388 — the SIMF app icon (the white brand mark on the navy brand
 # colour). Android/iOS are applied by `dart run flutter_launcher_icons` against
@@ -129,6 +129,23 @@ flutter:
   # platform incl. web (no runtime font fetch). Applied app-wide by SimfTheme
   # via `fontFamily` so the UI matches the approved design (D-329).
   fonts:
+    # SIMF brand identity font (owner 2026-06-27): FS Albert Arabic — the same
+    # type family the Website ships (wwwroot/assets/fonts). Bundled here so the
+    # app's Arabic + Latin text matches the brand identity. Five weights ship
+    # (100/300/400/700/800 — no 500/600; Flutter maps the nearest). Applied
+    # app-wide by SimfTheme via `fontFamily`; Cairo stays the glyph fallback.
+    - family: FSAlbertArabic
+      fonts:
+        - asset: assets/fonts/fs-albert-arabic-web-thin.ttf
+          weight: 100
+        - asset: assets/fonts/fs-albert-arabic-web-light.ttf
+          weight: 300
+        - asset: assets/fonts/fs-albert-arabic-web-regular.ttf
+          weight: 400
+        - asset: assets/fonts/fs-albert-arabic-web-bold.ttf
+          weight: 700
+        - asset: assets/fonts/fs-albert-arabic-web-extrabold.ttf
+          weight: 800
     - family: IBMPlexSansArabic
       fonts:
         - asset: assets/fonts/IBMPlexSansArabic-Regular.ttf

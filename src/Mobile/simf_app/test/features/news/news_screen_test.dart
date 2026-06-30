@@ -30,7 +30,7 @@ const _testConfig = SimfDataConfig(
   deviceType: SimfDeviceType.android,
 );
 
-/// Pumps the News screen inside a GoRouter, mirroring the shell: KsaPage and
+/// Pumps the News screen inside a GoRouter, mirroring the shell: SimfPageShell and
 /// SimfBottomNav resolve route names, and the inactive media-coverage tabs need
 /// the media-partners + gallery destinations to exist.
 Future<void> _pump(

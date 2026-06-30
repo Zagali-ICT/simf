@@ -9,7 +9,8 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_confirm_dialog.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../core/country_flag.dart';
 import 'data/seat_map_models.dart';
@@ -172,9 +173,15 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
       messenger.showSnackBar(
         SnackBar(content: Text(l10n.bookingCancelledToast)),
       );
-    } on ApiFailure {
+    } on ApiFailure catch (failure) {
+      // Surface the backend's localized reason (e.g. "cannot cancel after the
+      // session has started", "you have no seat to release") instead of a
+      // generic failure — the generic toast is the reason cancel "looks broken".
+      final reason = failure.message.trim();
       messenger.showSnackBar(
-        SnackBar(content: Text(l10n.bookingCancelFailed)),
+        SnackBar(
+          content: Text(reason.isNotEmpty ? reason : l10n.bookingCancelFailed),
+        ),
       );
     } finally {
       if (mounted) {
@@ -185,22 +192,11 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
   }
 
   Future<bool?> _confirm(String title, String body, String action) {
-    return showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(title),
-        content: Text(body),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(AppL10n.of(dialogContext).cancelLabel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(action),
-          ),
-        ],
-      ),
+    return SimfConfirmDialog.show(
+      context,
+      title: title,
+      message: body,
+      confirmLabel: action,
     );
   }
 
@@ -252,16 +248,18 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     final role = auth is AuthStateSignedIn
         ? auth.session.user.appRole
         : AppRole.guest;
-    // Moderator (محاور) entry to the Q&A desk (D-405). UX gate only — the
-    // server still enforces the per-session SessionModerator grant (403).
-    final canModerate = role.isAtLeast(AppRole.moderator);
-    return KsaPage(
+    // Moderator (محاور) entry to the Q&A desk (D-405). Moderator-EXCLUSIVE
+    // (D-519): Staff no longer inherits it (the focused role model dropped the
+    // isAtLeast ladder). UX gate only — the server still enforces the
+    // per-session SessionModerator grant (403).
+    final canModerate = role == AppRole.moderator;
+    return SimfPageShell(
       tab: SimfTab.sessions,
       // The frame's chrome is the standard circled back + centred title; the
       // moderator Q&A action is kept as a trailing control on the same row.
       header: _Header(
         title: l10n.sessionDetailTitle,
-        onBack: () => ksaBackOrHome(context),
+        onBack: () => backOrHome(context),
         moderateTooltip: canModerate ? l10n.moderatorManageQuestions : null,
         onModerate: canModerate
             ? () => context.pushNamed(
@@ -280,42 +278,64 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
+    // The not-found / error states are hosted in an always-scrollable list so a
+    // pull-down still fires SimfPullToRefresh (pull to retry) even though they render a
+    // short, centred surface.
     if (_notFound) {
-      return KsaEmptyState(
-        icon: Icons.event_busy_outlined,
-        message: l10n.sessionNotFound,
+      return SimfPullToRefresh(
+        onRefresh: _load,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: <Widget>[
+            SimfEmptyState(
+              icon: Icons.event_busy_outlined,
+              message: l10n.sessionNotFound,
+            ),
+          ],
+        ),
       );
     }
     if (_error || _detail == null) {
-      return KsaErrorState(
-        message: l10n.sessionDetailError,
-        retryLabel: l10n.retryLabel,
-        onRetry: () => unawaited(_load()),
+      return SimfPullToRefresh(
+        onRefresh: _load,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: <Widget>[
+            SimfErrorState(
+              message: l10n.sessionDetailError,
+              retryLabel: l10n.retryLabel,
+              onRetry: () => unawaited(_load()),
+            ),
+          ],
+        ),
       );
     }
     // The speaker avatars resolve `{base}/app/assets/SpeakerPhoto/{id}/image`
     // (the D-357 SpeakerPhoto asset); the base already includes `/api/v1`.
     final baseUrl = ref.read(simfDataConfigProvider).baseUrl;
-    return _Content(
-      detail: _detail!,
-      seatMap: _seatMap,
-      busy: _busy,
-      l10n: l10n,
-      baseUrl: baseUrl,
-      onAddToCalendar: () => unawaited(_addToCalendar(_detail!, l10n)),
-      onRemind: () => _remind(l10n),
-      onSessionLink: _openLive,
-      onSessionSummary: _openSummary,
-      onAskHost: _askHost,
-      onJoin: () => unawaited(_join(l10n)),
-      onCancelReservation: () => unawaited(_cancelReservation(l10n)),
-      onViewSeat: () => context.pushNamed(
-        RouteNames.mySeat,
-        pathParameters: <String, String>{'sessionId': widget.sessionId},
-      ),
-      onSpeaker: (speaker) => context.pushNamed(
-        RouteNames.speakerProfile,
-        pathParameters: <String, String>{'speakerId': speaker.id},
+    return SimfPullToRefresh(
+      onRefresh: _load,
+      child: _Content(
+        detail: _detail!,
+        seatMap: _seatMap,
+        busy: _busy,
+        l10n: l10n,
+        baseUrl: baseUrl,
+        onAddToCalendar: () => unawaited(_addToCalendar(_detail!, l10n)),
+        onRemind: () => _remind(l10n),
+        onSessionLink: _openLive,
+        onSessionSummary: _openSummary,
+        onAskHost: _askHost,
+        onJoin: () => unawaited(_join(l10n)),
+        onCancelReservation: () => unawaited(_cancelReservation(l10n)),
+        onViewSeat: () => context.pushNamed(
+          RouteNames.mySeat,
+          pathParameters: <String, String>{'sessionId': widget.sessionId},
+        ),
+        onSpeaker: (speaker) => context.pushNamed(
+          RouteNames.speakerProfile,
+          pathParameters: <String, String>{'speakerId': speaker.id},
+        ),
       ),
     );
   }
@@ -351,7 +371,7 @@ class _Header extends StatelessWidget {
           SizedBox(
             width: 40,
             height: 40,
-            child: KsaBackButton(onBack: onBack),
+            child: SimfCircledBackButton(onBack: onBack),
           ),
           Expanded(
             child: Text(
@@ -431,6 +451,7 @@ class _Content extends StatelessWidget {
     final description = detail.localizedDescription(isArabic);
 
     return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
         SimfTokens.space4,
         SimfTokens.space2,
@@ -538,6 +559,12 @@ class _HeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // D-567 (Figma 889:2604) — the gold badge shows the session's 1-based
+    // position within its day, zero-padded ("02"); it falls back to the session
+    // code until the API supplies the ordinal (displayOrder 0, e.g. an older API).
+    final badgeText = detail.displayOrder > 0
+        ? detail.displayOrder.toString().padLeft(2, '0')
+        : detail.code;
     return Container(
       padding: const EdgeInsets.all(SimfTokens.space4),
       decoration: BoxDecoration(
@@ -547,22 +574,16 @@ class _HeaderCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          // Ordinal label + gold index badge (frame 889:2706). The badge shows
-          // the session code (e.g. "02"); the ordinal is the localized title's
-          // implicit position — we lead with the code on the badge and the
-          // session title below, matching the frame's number/name pairing.
+          // Frame 889:2706 — RTL: the session title leads at the inline-start
+          // (right); the gold index badge (the day-ordinal "02", D-567) trails
+          // at the inline-end (left).
           Row(
             children: <Widget>[
-              if (detail.code.isNotEmpty) ...<Widget>[
-                _IndexBadge(code: detail.code),
-                const SizedBox(width: SimfTokens.space2),
-              ],
               Expanded(
                 child: Text(
                   detail.localizedTitle(isArabic),
                   textAlign: TextAlign.start,
-                  // Frame 889:2705 — 16px SemiBold white ordinal line; here it
-                  // carries the session title (the real bilingual data).
+                  // Frame 889:2705 — 16px SemiBold white title line.
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
@@ -571,6 +592,10 @@ class _HeaderCard extends StatelessWidget {
                   ),
                 ),
               ),
+              if (badgeText.isNotEmpty) ...<Widget>[
+                const SizedBox(width: SimfTokens.space2),
+                _IndexBadge(text: badgeText),
+              ],
             ],
           ),
           const SizedBox(height: SimfTokens.space4),
@@ -659,12 +684,12 @@ class _HeaderActionButton extends StatelessWidget {
 }
 
 /// The gold index badge (frame 889:2604): a 40×40 gold rounded square with the
-/// session code in white extrabold, always LTR (e.g. "02"); a longer real code
-/// scales down to fit rather than overflowing the badge.
+/// day-ordinal in white extrabold, always LTR (e.g. "02"); a longer fallback
+/// code scales down to fit rather than overflowing the badge.
 class _IndexBadge extends StatelessWidget {
-  const _IndexBadge({required this.code});
+  const _IndexBadge({required this.text});
 
-  final String code;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
@@ -678,13 +703,13 @@ class _IndexBadge extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4),
-        // A two-digit ordinal ("02") shows at full size; a longer real code
+        // A two-digit ordinal ("02") shows at full size; a longer fallback code
         // ("S-001" / "S-TODAY") scales down to fit the 40×40 badge instead of
         // overflowing or wrapping.
         child: FittedBox(
           fit: BoxFit.scaleDown,
           child: Text(
-            code,
+            text,
             textDirection: TextDirection.ltr,
             maxLines: 1,
             softWrap: false,
@@ -727,8 +752,10 @@ class _MetaRow extends StatelessWidget {
         ),
         const Text(
           '·',
+          // Frame 889:2702 — the separator dot is white (#FFFFFF), brighter than
+          // the beige time/date items beside it.
           style: TextStyle(
-            color: SimfTokens.beigeBorder,
+            color: Colors.white,
             fontWeight: FontWeight.w900,
             fontSize: SimfTokens.textLg,
           ),
@@ -856,7 +883,7 @@ class _SpeakerCard extends StatelessWidget {
       if (isHost) hostLabel,
     ];
 
-    return KsaCard(
+    return SimfCard(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.all(SimfTokens.space2),
@@ -892,7 +919,12 @@ class _SpeakerCard extends StatelessWidget {
                         const SizedBox(width: SimfTokens.space2),
                         Text(
                           flag,
-                          style: const TextStyle(fontSize: SimfTokens.textMd),
+                          textDirection: TextDirection.ltr,
+                          // Frame 1060:12898 — the inline flag glyph is 12px.
+                          style: const TextStyle(
+                            fontSize: SimfTokens.textSm,
+                            height: 1,
+                          ),
                         ),
                       ],
                     ],
@@ -980,7 +1012,10 @@ class _AskHostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = enabled ? Colors.white : SimfTokens.navyDisabledText;
-    return KsaCard(
+    // Frame 1056:12876 — the user glyph is gold (accent) over a white label.
+    final iconColor =
+        enabled ? SimfTokens.accent : SimfTokens.navyDisabledText;
+    return SimfCard(
       onTap: enabled ? onTap : null,
       child: Padding(
         padding: const EdgeInsets.all(SimfTokens.space2),
@@ -990,7 +1025,7 @@ class _AskHostCard extends StatelessWidget {
             Icon(
               Icons.person_outline,
               size: 24,
-              color: color,
+              color: iconColor,
             ),
             const SizedBox(height: SimfTokens.space2),
             Text(
@@ -1047,7 +1082,7 @@ class _ReservationCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        KsaCard(
+        SimfCard(
           onTap: onView,
           child: Padding(
             padding: const EdgeInsets.all(SimfTokens.space2),
@@ -1217,10 +1252,13 @@ class _CtaRow extends StatelessWidget {
     // RTL: the first child is at the inline start (physical right). The frame
     // puts أضف إلى تقويمي (gold) on the right and تذكير (outlined) on the left,
     // so the gold Expanded button leads and the reminder button trails.
+    // Frame 897:2872 — in each button the label leads (inline-start, right) and
+    // the icon trails (inline-end, left). A plain Row [label, gap, icon] under
+    // RTL puts the icon on the left, unlike the .icon constructor.
     return Row(
       children: <Widget>[
         Expanded(
-          child: FilledButton.icon(
+          child: FilledButton(
             onPressed: onAddToCalendar,
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(48),
@@ -1229,19 +1267,33 @@ class _CtaRow extends StatelessWidget {
                 borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
               ),
             ),
-            icon: const Icon(Icons.calendar_today_outlined, size: 24),
-            label: Text(
-              l10n.addToCalendar,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: SimfTokens.textLg,
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Flexible(
+                  child: Text(
+                    l10n.addToCalendar,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: SimfTokens.textLg,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: SimfTokens.space2),
+                const Icon(
+                  Icons.calendar_today_outlined,
+                  size: 24,
+                  color: Colors.white,
+                ),
+              ],
             ),
           ),
         ),
         const SizedBox(width: SimfTokens.space4),
-        OutlinedButton.icon(
+        OutlinedButton(
           onPressed: onRemind,
           style: OutlinedButton.styleFrom(
             // Height 48, width sized to content — this is a non-Expanded child
@@ -1255,14 +1307,28 @@ class _CtaRow extends StatelessWidget {
               borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
             ),
           ),
-          icon: const Icon(Icons.schedule_outlined, size: 24),
-          label: Text(
-            l10n.reminder,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: SimfTokens.textLg,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Flexible(
+                child: Text(
+                  l10n.reminder,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: SimfTokens.textLg,
+                  ),
+                ),
+              ),
+              const SizedBox(width: SimfTokens.space2),
+              const Icon(
+                Icons.schedule_outlined,
+                size: 24,
+                color: Colors.white,
+              ),
+            ],
           ),
         ),
       ],

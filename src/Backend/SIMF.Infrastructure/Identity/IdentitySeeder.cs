@@ -164,7 +164,8 @@ public sealed class IdentitySeeder(
         // operations, look up attendees, print badges). Admins seed the
         // remaining operational types (Volunteer → Staff,
         // Programme Coordinator / Operations Lead → Moderator,
-        // Exhibitor / Sponsor / Speaker → None) via the CP runtime.
+        // Sponsor / Speaker → None; Exhibitor → Exhibitor, D-519) via the
+        // CP runtime.
         await EnsureProfileTypeAsync(
             "Staff", "فريق", "#10B981",
             isVisitor: false, MobileAppRole.Staff, cancellationToken);
@@ -188,6 +189,14 @@ public sealed class IdentitySeeder(
         await EnsureProfileTypeAsync(
             "Sponsor", "راعي", "#8B5CF6", // purple
             isVisitor: false, MobileAppRole.None, cancellationToken);
+        // D-519 — the canonical exhibitor (العارض) partner type. Unlike the
+        // display-only Media / Sponsor types, an exhibitor carries the
+        // operational Exhibitor app role so the lead-capture tools (scan a
+        // visitor's QR + "My Visitors") gate to it. Booth-officer accounts are
+        // assigned this type so they resolve to AppRole.exhibitor in the app.
+        await EnsureProfileTypeAsync(
+            "Exhibitor", "عارض", "#0891B2", // cyan
+            isVisitor: false, MobileAppRole.Exhibitor, cancellationToken);
         // V-1 — the VVIP / VIP audience tiers used by the dedicated VIP
         // registration page + the موج (Mawj) welcome-message export. Both
         // are audience-side (IsForVisitor=true) so they appear in the

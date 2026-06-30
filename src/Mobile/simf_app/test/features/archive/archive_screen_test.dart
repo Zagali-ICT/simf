@@ -229,11 +229,12 @@ void main() {
         ],
         locale: const Locale('ar'),
       );
-      // sessions=30 (الفعاليات) leads at the inline start (right); speakers=250
-      // (المتحدثون) is at the inline end (left).
+      // Frame 926:3285 (verified against the rendered frame) — الفعاليات=30
+      // (activities) leads at the inline start (right); المتحدثون=250 (speakers)
+      // is at the inline end (left).
       final eventsDx = tester.getCenter(find.text('30')).dx;
       final speakersDx = tester.getCenter(find.text('250')).dx;
-      expect(eventsDx, greaterThan(speakersDx));
+      expect(speakersDx, lessThan(eventsDx));
     });
 
     testWidgets('empty shows the empty state', (tester) async {

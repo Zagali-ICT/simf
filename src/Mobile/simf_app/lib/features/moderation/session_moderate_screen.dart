@@ -7,7 +7,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import 'data/moderation_models.dart';
 import 'data/moderation_repository.dart';
 
@@ -201,7 +201,7 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
                       shape: const CircleBorder(),
                       child: InkWell(
                         customBorder: const CircleBorder(),
-                        onTap: () => ksaBackOrHome(context),
+                        onTap: () => backOrHome(context),
                         child: const Padding(
                           padding: EdgeInsets.all(6),
                           child: Icon(
@@ -243,13 +243,13 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
       );
     }
     if (_forbidden) {
-      return KsaEmptyState(
+      return SimfEmptyState(
         icon: Icons.lock_outline,
         message: l10n.moderatorForbidden,
       );
     }
     if (_error) {
-      return KsaErrorState(
+      return SimfErrorState(
         message: l10n.moderatorError,
         retryLabel: l10n.retryLabel,
         onRetry: () => unawaited(_load()),
@@ -274,7 +274,7 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
         ),
         Expanded(
           child: rows.isEmpty
-              ? KsaEmptyState(
+              ? SimfEmptyState(
                   icon: Icons.forum_outlined,
                   message: l10n.moderatorEmpty,
                 )

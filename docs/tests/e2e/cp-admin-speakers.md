@@ -28,8 +28,9 @@
 > (picker, optional — loaded from `/account/api/admin/countries/list`), bilingual
 > **Bio** (≤2048), **Qualifications** (≤1024), **Training & experience** (≤1024),
 > **Awards** (≤1024) textareas, **Allows meeting requests** + **Allows data
-> sharing** checkboxes, **Facebook / LinkedIn / X URL** (≤256 each), **Display
-> order** (≥0 integer), and — Edit only — an **Active** checkbox.
+> sharing** checkboxes, **Facebook / LinkedIn / X / Website URL** (≤256 each —
+> D-544 adds Website), **Display order** (≥0 integer), and — Edit only — an
+> **Active** checkbox.
 >
 > **Permission gate:** `@attribute [RequirePermission(PermissionCatalog.Speakers.View)]`
 > (`Speakers.View`). The four CRUD actions map to `Speakers.View` /
@@ -158,6 +159,7 @@ Scenario: A fully-populated speaker round-trips through Details intact
   And fills Facebook URL="https://facebook.com/sarah.lin"
   And fills LinkedIn URL="https://linkedin.com/in/sarahlin"
   And fills X URL="https://x.com/sarahlin"
+  And fills Website URL="https://sarahlin.example.com"
   And ticks "Allows meeting requests"
   And ticks "Allows data sharing"
   And fills Display order="5"
@@ -165,8 +167,12 @@ Scenario: A fully-populated speaker round-trips through Details intact
   Then the POST returns HTTP 200 and the modal closes
   And the grid row shows Country resolved to the selected country's localized name
   When the administrator opens the Details modal for that row
-  Then Country, Bio, Qualifications, Facebook/LinkedIn/X URL, Allows meeting
-    requests = "Yes", Allows data sharing = "Yes" all render the saved values
+  Then Country, Bio, Qualifications, Facebook/LinkedIn/X/Website URL, Allows
+    meeting requests = "Yes", Allows data sharing = "Yes" all render the saved
+    values
+  And on the PUBLIC profile (GET /app/speakers/{id}) the Website URL is surfaced
+    only because "Allows data sharing" is ticked (D-544 consent gate; verified by
+    PublicSpeakersTests)
 ```
 
 ### E2E-SPK-003 — Empty list
@@ -249,7 +255,7 @@ Scenario: Details modal is read-only and closes cleanly
   And every field is rendered in a description list (dl/dt/dd) with no inputs:
     Code, Name, Name (Arabic), Rank, Country, Bio (En/Ar), Qualifications (En/Ar),
     Training & experience (En/Ar), Awards (En/Ar), Allows meeting requests,
-    Allows data sharing, Facebook/LinkedIn/X URL, Display order, Active
+    Allows data sharing, Facebook/LinkedIn/X/Website URL, Display order, Active
   And blank optional fields render the em dash "—"
   When they click "Close"
   Then the modal closes and no save/network call fires

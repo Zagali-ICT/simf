@@ -1,0 +1,397 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:simf_auth_pkg/simf_auth_pkg.dart';
+
+import '../../app/localization/app_l10n.dart';
+import '../../app/route_names.dart';
+import '../../app/theme/tokens.dart';
+import '../../core/responsive/max_width_body.dart';
+import 'widgets/auth_chrome.dart';
+import 'widgets/otp_code_boxes.dart';
+
+/// Page 006 — التحقق بالبريد · Email verification. The KSA-Project Figma
+/// design (node 505:837 — D-364): navy surface with the decorative sweep, a
+/// gold-ringed mail mark, six segmented code boxes, the gold تحقق button and
+/// the "لم يصلك الرمز؟ إعادة الإرسال" footer. The previous screen is parked in
+/// `_legacy_mockup/`.
+///
+/// Contract unchanged — sign-up **step 2**: `POST /app/auth/verify-email
+/// { email, code }` (anonymous); success routes to sign-in (verify-email
+/// issues no session). **Resend** re-issues via `POST /app/auth/resend-code`
+/// and restarts the cooldown from the returned `codeExpiresInSeconds`.
+///
+/// Clean-code frozen (D-553, Phase 3): the lone sweep-tint const dropped for
+/// `SimfTokens.surfaceTint`; the long `build` split into `_buildHeader` /
+/// `_buildContent` / `_buildBottomActions`; the resend link reuses the shared
+/// [authLinkButtonStyle]; the body + actions capped by [MaxWidthBody].
+/// Behaviour + render unchanged — the 505:837 golden locks it.
+class SignUpEmailVerifyScreen extends ConsumerStatefulWidget {
+  const SignUpEmailVerifyScreen({required this.email, super.key});
+
+  /// The address the code was sent to (navigation argument from Page 005).
+  final String email;
+
+  @override
+  ConsumerState<SignUpEmailVerifyScreen> createState() =>
+      _SignUpEmailVerifyScreenState();
+}
+
+class _SignUpEmailVerifyScreenState
+    extends ConsumerState<SignUpEmailVerifyScreen> {
+  final TextEditingController _code = TextEditingController();
+  final FocusNode _codeFocus = FocusNode();
+  bool _busy = false;
+  String? _error;
+  int _cooldown = 0;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    // The focused-box highlight follows the hidden field's focus.
+    _codeFocus.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _codeFocus.dispose();
+    _code.dispose();
+    super.dispose();
+  }
+
+  bool get _canVerify => _code.text.trim().length == 6 && !_busy;
+  bool get _canResend => _cooldown == 0 && !_busy;
+
+  void _startCooldown(int seconds) {
+    _timer?.cancel();
+    setState(() => _cooldown = seconds);
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      setState(() {
+        _cooldown = _cooldown <= 1 ? 0 : _cooldown - 1;
+      });
+      if (_cooldown == 0) {
+        timer.cancel();
+      }
+    });
+  }
+
+  Future<void> _verify() async {
+    final code = _code.text.trim();
+    if (code.length != 6) {
+      return;
+    }
+    final l10n = AppL10n.of(context);
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await ref.read(authControllerProvider.notifier).verifyEmail(
+            email: widget.email,
+            code: code,
+          );
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(l10n.emailVerifiedToast)));
+      // verify-email issues no session; the authenticated profile step needs a
+      // token, so the verified user signs in next (Page_006 Function).
+      context.goNamed(RouteNames.signIn);
+    } on AuthFailure catch (failure) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _error = failure is NetworkUnavailable
+            ? l10n.networkErrorBody
+            : failure.source.message;
+        _code.clear();
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
+  }
+
+  Future<void> _resend() async {
+    final l10n = AppL10n.of(context);
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final seconds =
+          await ref.read(authControllerProvider.notifier).resendCode(
+                email: widget.email,
+              );
+      if (!mounted) {
+        return;
+      }
+      _startCooldown(seconds > 0 ? seconds : 60);
+    } on AuthFailure catch (failure) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _error = failure is NetworkUnavailable
+            ? l10n.networkErrorBody
+            : failure.source.message;
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
+  }
+
+  void _back() {
+    if (context.canPop()) {
+      context.pop();
+      return;
+    }
+    context.goNamed(RouteNames.signUpForm);
+  }
+
+  String _formatCooldown(int seconds) {
+    final m = (seconds ~/ 60).toString().padLeft(2, '0');
+    final s = (seconds % 60).toString().padLeft(2, '0');
+    return '$m:$s';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    return Scaffold(
+      backgroundColor: SimfTokens.navySurface,
+      body: Stack(
+        children: <Widget>[
+          // Decorative diagonal sweep (Figma 505:887, top-right area).
+          Positioned(
+            top: -180,
+            right: -80,
+            child: Transform.rotate(
+              angle: 0.4936, // 28.28°
+              child: Container(
+                width: 313,
+                height: 323,
+                decoration: BoxDecoration(
+                  color: SimfTokens.surfaceTint,
+                  borderRadius: BorderRadius.circular(40),
+                ),
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Column(
+              children: <Widget>[
+                _buildHeader(l10n),
+                Expanded(child: _buildContent(l10n)),
+                _buildBottomActions(l10n),
+                const SizedBox(height: 24),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Header band (Figma 505:919): back chevron at the start, centred title.
+  Widget _buildHeader(AppL10n l10n) {
+    return SizedBox(
+      height: 56,
+      child: Stack(
+        alignment: Alignment.center,
+        children: <Widget>[
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: IconButton(
+                onPressed: _busy ? null : _back,
+                icon: const Icon(
+                  Icons.arrow_back_ios_new,
+                  color: Colors.white,
+                  size: 20,
+                  textDirection: TextDirection.ltr,
+                ),
+              ),
+            ),
+          ),
+          Text(
+            l10n.emailVerifyTitle,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContent(AppL10n l10n) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: MaxWidthBody(
+        maxWidth: 560,
+        child: Column(
+          children: <Widget>[
+            const SizedBox(height: 48),
+            // Gold-ringed mail mark (Figma 505:969).
+            const OtpMark(icon: Icons.mail_outline),
+            const SizedBox(height: 24),
+            Text(
+              l10n.enterOtpTitle,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              l10n.emailVerifySentTo,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: SimfTokens.beigeBorder,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              widget.email,
+              textDirection: TextDirection.ltr,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: SimfTokens.accent,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 48),
+            OtpCodeBoxes(
+              controller: _code,
+              focusNode: _codeFocus,
+              enabled: !_busy,
+              onChanged: () => setState(() {}),
+              onSubmitted: () {
+                if (_canVerify) {
+                  unawaited(_verify());
+                }
+              },
+            ),
+            const SizedBox(height: 16),
+            if (_cooldown > 0) _buildCooldownRow(l10n),
+            if (_error != null) ...<Widget>[
+              const SizedBox(height: 12),
+              Text(
+                _error!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: SimfTokens.danger,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCooldownRow(AppL10n l10n) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        Text(
+          l10n.resendInLabel,
+          style: const TextStyle(color: otpMutedBlue, fontSize: 14),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          _formatCooldown(_cooldown),
+          textDirection: TextDirection.ltr,
+          style: const TextStyle(
+            color: SimfTokens.accent,
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Bottom actions (Figma 505:1003): the gold verify CTA + the resend row.
+  Widget _buildBottomActions(AppL10n l10n) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: MaxWidthBody(
+        maxWidth: 560,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            FilledButton(
+              onPressed: _canVerify ? () => unawaited(_verify()) : null,
+              child: _busy
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Text(
+                      l10n.verifyButton,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Text(
+                  l10n.noCodeQuestion,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                TextButton(
+                  onPressed: _canResend ? () => unawaited(_resend()) : null,
+                  style: authLinkButtonStyle(SimfTokens.accent),
+                  child: Text(
+                    l10n.resendAction,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

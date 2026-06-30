@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../core/sharing/content_sharer.dart';
 import 'data/presentation_models.dart';
 import 'data/presentation_repository.dart';
@@ -27,27 +27,39 @@ class _SessionPresentationsScreenState
   // 0 = الكل (all); 1..n = the nth distinct event day.
   int _dayTab = 0;
 
+  /// Pull-to-refresh — re-fetch the presentations (invalidate + await next).
+  Future<void> _refresh() async {
+    ref.invalidate(presentationsProvider);
+    await ref.read(presentationsProvider.future);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     final presentations = ref.watch(presentationsProvider);
 
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.sessionPresentationsTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: presentations.when(
         loading: () => const Center(
           child: CircularProgressIndicator(color: SimfTokens.accent),
         ),
-        error: (_, __) => KsaErrorState(
-          message: l10n.presentationsError,
-          retryLabel: l10n.retryLabel,
-          onRetry: () => ref.invalidate(presentationsProvider),
+        error: (_, __) => SimfPullToRefresh(
+          onRefresh: _refresh,
+          child: SimfPullableHost(
+            child: SimfErrorState(
+              message: l10n.presentationsError,
+              retryLabel: l10n.retryLabel,
+              onRetry: () => ref.invalidate(presentationsProvider),
+            ),
+          ),
         ),
         data: (page) => _Body(
           items: page.items,
           dayTab: _dayTab,
           onDayTab: (i) => setState(() => _dayTab = i),
+          onRefresh: _refresh,
           l10n: l10n,
         ),
       ),
@@ -60,20 +72,27 @@ class _Body extends StatelessWidget {
     required this.items,
     required this.dayTab,
     required this.onDayTab,
+    required this.onRefresh,
     required this.l10n,
   });
 
   final List<PresentationItem> items;
   final int dayTab;
   final ValueChanged<int> onDayTab;
+  final Future<void> Function() onRefresh;
   final AppL10n l10n;
 
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
-      return KsaEmptyState(
-        icon: Icons.description_outlined,
-        message: l10n.presentationsEmpty,
+      return SimfPullToRefresh(
+        onRefresh: onRefresh,
+        child: SimfPullableHost(
+          child: SimfEmptyState(
+            icon: Icons.description_outlined,
+            message: l10n.presentationsEmpty,
+          ),
+        ),
       );
     }
 
@@ -102,26 +121,31 @@ class _Body extends StatelessWidget {
         ),
         const SizedBox(height: SimfTokens.space3),
         Expanded(
-          child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(
-              SimfTokens.space4,
-              0,
-              SimfTokens.space4,
-              SimfTokens.space5,
+          child: SimfPullToRefresh(
+            onRefresh: onRefresh,
+            child: ListView.separated(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(
+                SimfTokens.space4,
+                0,
+                SimfTokens.space4,
+                SimfTokens.space5,
+              ),
+              itemCount: visible.length,
+              separatorBuilder: (_, __) =>
+                  const SizedBox(height: SimfTokens.space3),
+              itemBuilder: (context, index) {
+                final item = visible[index];
+                final dayIndex =
+                    days.indexWhere((d) => _sameDay(item.sessionStartLocal, d));
+                return _PresentationCard(
+                  item: item,
+                  isArabic: isArabic,
+                  dayLabel:
+                      dayIndex >= 0 ? l10n.eventDayLabel(dayIndex + 1) : '',
+                );
+              },
             ),
-            itemCount: visible.length,
-            separatorBuilder: (_, __) =>
-                const SizedBox(height: SimfTokens.space3),
-            itemBuilder: (context, index) {
-              final item = visible[index];
-              final dayIndex =
-                  days.indexWhere((d) => _sameDay(item.sessionStartLocal, d));
-              return _PresentationCard(
-                item: item,
-                isArabic: isArabic,
-                dayLabel: dayIndex >= 0 ? l10n.eventDayLabel(dayIndex + 1) : '',
-              );
-            },
           ),
         ),
       ],
@@ -169,7 +193,7 @@ class _PresentationCardState extends ConsumerState<_PresentationCard> {
     final item = widget.item;
     final speaker = item.localizedSpeaker(widget.isArabic);
 
-    return KsaCard(
+    return SimfCard(
       child: Padding(
         padding: const EdgeInsets.all(SimfTokens.space2), // p-8 (Figma 1388:7640)
         child: Column(
@@ -315,9 +339,22 @@ class _DownloadButton extends StatelessWidget {
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(SimfTokens.space2), // p-8
+          // Frame 1388:7657 — the download glyph leads at the inline-end (LEFT in
+          // RTL), with "تحميل" to its right. A plain RTL Row [icon, text] would
+          // put the icon on the right, so the label leads and the icon/spinner
+          // trails to land on the left, matching the frame.
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: SimfTokens.textSm,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: SimfTokens.space1),
               if (downloading)
                 const SizedBox(
                   width: 14,
@@ -333,15 +370,6 @@ class _DownloadButton extends StatelessWidget {
                   size: 14,
                   color: Colors.white,
                 ),
-              const SizedBox(width: SimfTokens.space1),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: SimfTokens.textSm,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
             ],
           ),
         ),

@@ -219,6 +219,7 @@
   <data name="Admin.ProfileTypes.MobileAppRole.Visitor" xml:space="preserve"><value>زائر</value></data>
   <data name="Admin.ProfileTypes.MobileAppRole.Staff" xml:space="preserve"><value>موظف — تشغيل البوابات</value></data>
   <data name="Admin.ProfileTypes.MobileAppRole.Moderator" xml:space="preserve"><value>مشرف — صلاحية المحتوى والمستخدمين</value></data>
+  <data name="Admin.ProfileTypes.MobileAppRole.Exhibitor" xml:space="preserve"><value>عارض — التقاط الزوار (مسح + زواري)</value></data>
   <data name="Admin.ProfileTypes.Field.IsActive" xml:space="preserve"><value>مرئي في القوائم (نشط)</value></data>
   <data name="Admin.ProfileTypes.Field.NameInvalid" xml:space="preserve"><value>يجب أن يتراوح الاسم بين 1 و128 حرفًا.</value></data>
   <data name="Admin.ProfileTypes.Field.NameArabicInvalid" xml:space="preserve"><value>يجب أن يتراوح الاسم العربي بين 1 و128 حرفًا.</value></data>
@@ -569,6 +570,7 @@
   <data name="Admin.Speakers.Field.FacebookUrl" xml:space="preserve"><value>رابط فيسبوك</value></data>
   <data name="Admin.Speakers.Field.LinkedInUrl" xml:space="preserve"><value>رابط لينكدإن</value></data>
   <data name="Admin.Speakers.Field.XUrl" xml:space="preserve"><value>رابط X</value></data>
+  <data name="Admin.Speakers.Field.WebsiteUrl" xml:space="preserve"><value>رابط الموقع الإلكتروني</value></data>
   <data name="Admin.Speakers.Field.DisplayOrder" xml:space="preserve"><value>ترتيب العرض</value></data>
   <data name="Admin.Speakers.Field.DisplayOrderInvalid" xml:space="preserve"><value>يجب أن يكون ترتيب العرض صفراً أو عدداً صحيحاً موجباً.</value></data>
   <data name="Admin.Speakers.Field.IsActive" xml:space="preserve"><value>مفعّل — عرضه في القائمة العامة للمتحدّثين</value></data>
@@ -2661,6 +2663,37 @@
   <data name="Admin.Organisations.Import.Result" xml:space="preserve"><value>الصفوف المقروءة: {0} · المُضافة: {1} · المُحدَّثة: {2} · المتجاهَلة: {3}</value></data>
   <data name="Admin.Organisations.Import.Done" xml:space="preserve"><value>اكتمل الاستيراد — {0} مُضافة، {1} مُحدَّثة، {2} متجاهَلة.</value></data>
   <data name="Admin.Organisations.Import.Failed" xml:space="preserve"><value>فشل استيراد Excel.</value></data>
+
+  <!-- مناطق المملكة (المناطق الإدارية الثلاث عشرة الرسمية) -->
+  <data name="Module.Regions" xml:space="preserve"><value>المناطق</value></data>
+  <data name="Admin.Regions.Title" xml:space="preserve"><value>المناطق</value></data>
+  <data name="Admin.Regions.Search" xml:space="preserve"><value>بحث</value></data>
+  <data name="Admin.Regions.Search.Placeholder" xml:space="preserve"><value>ابحث بالرمز أو الاسم</value></data>
+  <data name="Admin.Regions.Search.Apply" xml:space="preserve"><value>بحث</value></data>
+  <data name="Admin.Regions.Loading" xml:space="preserve"><value>جارٍ تحميل المناطق…</value></data>
+  <data name="Admin.Regions.None" xml:space="preserve"><value>لا توجد مناطق</value></data>
+  <data name="Admin.Regions.Col.Code" xml:space="preserve"><value>الرمز</value></data>
+  <data name="Admin.Regions.Col.NameAr" xml:space="preserve"><value>الاسم (عربي)</value></data>
+  <data name="Admin.Regions.Col.NameEn" xml:space="preserve"><value>الاسم (إنجليزي)</value></data>
+  <data name="Admin.Regions.Col.Active" xml:space="preserve"><value>مفعّل</value></data>
+  <data name="Admin.Regions.Add.Title" xml:space="preserve"><value>إضافة منطقة</value></data>
+  <data name="Admin.Regions.Edit.Title" xml:space="preserve"><value>تعديل منطقة</value></data>
+  <data name="Admin.Regions.Field.Code" xml:space="preserve"><value>الرمز</value></data>
+  <data name="Admin.Regions.Field.NameAr" xml:space="preserve"><value>الاسم (عربي)</value></data>
+  <data name="Admin.Regions.Field.NameEn" xml:space="preserve"><value>الاسم (إنجليزي)</value></data>
+  <data name="Admin.Regions.Field.SortOrder" xml:space="preserve"><value>ترتيب العرض</value></data>
+  <data name="Admin.Regions.Field.IsActive" xml:space="preserve"><value>مفعّل</value></data>
+  <data name="Admin.Regions.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.Regions.Save" xml:space="preserve"><value>حفظ</value></data>
+  <data name="Admin.Regions.Required" xml:space="preserve"><value>الرمز والاسم بالعربية مطلوبان.</value></data>
+  <data name="Admin.Regions.Saved" xml:space="preserve"><value>تم حفظ المنطقة.</value></data>
+  <data name="Admin.Regions.Deleted" xml:space="preserve"><value>تم تعطيل المنطقة.</value></data>
+  <data name="Admin.Regions.LoadFailed" xml:space="preserve"><value>تعذّر تحميل المناطق.</value></data>
+  <data name="Admin.Regions.Details.Title" xml:space="preserve"><value>تفاصيل المنطقة</value></data>
+  <data name="Admin.Regions.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Regions.Delete.Title" xml:space="preserve"><value>تعطيل المنطقة</value></data>
+  <data name="Admin.Regions.Delete.Message" xml:space="preserve"><value>تعطيل ”{0}“؟ ستُزال من قائمة البحث العامة.</value></data>
+  <data name="Admin.Regions.Action.Deactivate" xml:space="preserve"><value>تعطيل</value></data>
 
   <!-- SIMF-FDS-013 (D-248) — التهيئة المرنة للقاعات + اجتماعات B2B/B2C -->
   <data name="Module.MeetingTables" xml:space="preserve"><value>طاولات الاجتماعات</value></data>

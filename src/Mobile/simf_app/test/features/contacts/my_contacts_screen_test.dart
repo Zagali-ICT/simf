@@ -91,7 +91,7 @@ void main() {
       // Confirm in the dialog.
       await tester.tap(
         find.descendant(
-          of: find.byType(AlertDialog),
+          of: find.byType(Dialog),
           matching: find.widgetWithText(FilledButton, 'Remove'),
         ),
       );

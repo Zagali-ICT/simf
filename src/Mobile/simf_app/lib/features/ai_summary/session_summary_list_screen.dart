@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../myarea/data/my_sessions_repository.dart';
 import '../sessions/data/session_favourites.dart';
 import '../sessions/data/session_models.dart';
@@ -35,6 +35,12 @@ class _SessionSummaryListScreenState
   _SummaryTab _tab = _SummaryTab.all;
   String _query = '';
 
+  /// Pull-to-refresh — re-fetch the programme (invalidate + await next).
+  Future<void> _refresh() async {
+    ref.invalidate(aiSummarySessionsProvider);
+    await ref.read(aiSummarySessionsProvider.future);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
@@ -46,9 +52,9 @@ class _SessionSummaryListScreenState
       l10n.sessionsTabFavourites,
     ];
 
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.sessionSummariesTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
@@ -74,10 +80,15 @@ class _SessionSummaryListScreenState
               loading: () => const Center(
                 child: CircularProgressIndicator(color: SimfTokens.accent),
               ),
-              error: (_, __) => KsaErrorState(
-                message: l10n.aiSummaryError,
-                retryLabel: l10n.retryLabel,
-                onRetry: () => ref.invalidate(aiSummarySessionsProvider),
+              error: (_, __) => SimfPullToRefresh(
+                onRefresh: _refresh,
+                child: SimfPullableHost(
+                  child: SimfErrorState(
+                    message: l10n.aiSummaryError,
+                    retryLabel: l10n.retryLabel,
+                    onRetry: () => ref.invalidate(aiSummarySessionsProvider),
+                  ),
+                ),
               ),
               data: (items) => _buildList(context, l10n, items),
             ),
@@ -100,22 +111,30 @@ class _SessionSummaryListScreenState
     final isArabic = l10n.isArabic;
     final filtered = _filter(items);
     if (filtered.isEmpty) {
-      return KsaEmptyState(
-        icon: Icons.summarize_outlined,
-        message: _emptyMessage(l10n, items.isEmpty),
+      return SimfPullToRefresh(
+        onRefresh: _refresh,
+        child: SimfPullableHost(
+          child: SimfEmptyState(
+            icon: Icons.summarize_outlined,
+            message: _emptyMessage(l10n, items.isEmpty),
+          ),
+        ),
       );
     }
 
     final days = _distinctDays(filtered);
 
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(
-        SimfTokens.space4,
-        0,
-        SimfTokens.space4,
-        SimfTokens.space5,
-      ),
-      itemCount: days.length,
+    return SimfPullToRefresh(
+      onRefresh: _refresh,
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+          SimfTokens.space4,
+          0,
+          SimfTokens.space4,
+          SimfTokens.space5,
+        ),
+        itemCount: days.length,
       itemBuilder: (context, dayIndex) {
         final day = days[dayIndex];
         final dayItems = filtered
@@ -131,10 +150,11 @@ class _SessionSummaryListScreenState
               ),
               child: Text(
                 l10n.eventDayLabel(dayIndex + 1),
+                // Frame 1388:8428 — day header is Inter Medium (w500), not w600.
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: SimfTokens.textLg,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
@@ -152,7 +172,8 @@ class _SessionSummaryListScreenState
               ),
           ],
         );
-      },
+        },
+      ),
     );
   }
 
@@ -317,7 +338,10 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final time = TimeOfDay.fromDateTime(item.startLocal).format(context);
+    // Frame 1388:8439 — 24h "HH:mm" (e.g. 09:00), not the locale's 12h ص/م.
+    final start = item.startLocal;
+    final time = '${start.hour.toString().padLeft(2, '0')}:'
+        '${start.minute.toString().padLeft(2, '0')}';
     final speaker = _speakerText();
     final hall = item.localizedHall(isArabic);
     final category = item.localizedCategory(isArabic);
@@ -325,7 +349,7 @@ class _SummaryCard extends StatelessWidget {
         item.status == SessionStatus.published;
 
     final hasMeta = speaker != null || (hall != null && hall.isNotEmpty);
-    return KsaCard(
+    return SimfCard(
       onTap: () => context.pushNamed(
         RouteNames.aiSummary,
         queryParameters: <String, String>{'sessionId': item.id},

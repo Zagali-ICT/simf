@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../sessions/widgets/favourite_heart_button.dart';
 import '../sessions/widgets/session_filter_tabs.dart';
 import 'data/my_sessions_models.dart';
@@ -41,9 +41,14 @@ class _MySessionsScreenState extends ConsumerState<MySessionsScreen> {
       l10n.mySessionsTabArchive,
     ];
 
-    return KsaPage(
+    Future<void> onRefresh() async {
+      ref.invalidate(mySessionsProvider);
+      await ref.read(mySessionsProvider.future);
+    }
+
+    return SimfPageShell(
       title: l10n.mySessionsTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
@@ -70,15 +75,26 @@ class _MySessionsScreenState extends ConsumerState<MySessionsScreen> {
               loading: () => const Center(
                 child: CircularProgressIndicator(color: SimfTokens.accent),
               ),
-              error: (_, __) => KsaErrorState(
-                message: l10n.mySessionsError,
-                retryLabel: l10n.retryLabel,
-                onRetry: () => ref.invalidate(mySessionsProvider),
+              error: (_, __) => SimfPullToRefresh(
+                onRefresh: onRefresh,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: <Widget>[
+                    SimfErrorState(
+                      message: l10n.mySessionsError,
+                      retryLabel: l10n.retryLabel,
+                      onRetry: () => ref.invalidate(mySessionsProvider),
+                    ),
+                  ],
+                ),
               ),
-              data: (page) => _TabbedList(
-                items: _filter(page.items),
-                tabLabel: tabLabels[_MySessionsTab.values.indexOf(_tab)],
-                l10n: l10n,
+              data: (page) => SimfPullToRefresh(
+                onRefresh: onRefresh,
+                child: _TabbedList(
+                  items: _filter(page.items),
+                  tabLabel: tabLabels[_MySessionsTab.values.indexOf(_tab)],
+                  l10n: l10n,
+                ),
               ),
             ),
           ),
@@ -118,13 +134,19 @@ class _TabbedList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
-      return KsaEmptyState(
-        icon: Icons.event_note_outlined,
-        message: l10n.mySessionsEmpty,
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: <Widget>[
+          SimfEmptyState(
+            icon: Icons.event_note_outlined,
+            message: l10n.mySessionsEmpty,
+          ),
+        ],
       );
     }
     final isArabic = l10n.isArabic;
     return ListView.separated(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
         SimfTokens.space4,
         0,
@@ -172,7 +194,7 @@ class _MySessionCard extends StatelessWidget {
         : time;
     final hasMeta = speaker != null || (hall != null && hall.isNotEmpty);
 
-    return KsaCard(
+    return SimfCard(
       onTap: () => context.pushNamed(
         RouteNames.sessionDetail,
         pathParameters: <String, String>{'sessionId': item.id},

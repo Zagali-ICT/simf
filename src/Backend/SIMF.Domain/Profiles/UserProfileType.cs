@@ -62,8 +62,9 @@ public sealed class UserProfileType : BaseAuditEntity
     /// <summary>D-161 — the mobile-app authority any user assigned to this
     /// profile type carries into the Flutter app (SIMF-FDS-002 §8.5).
     /// <see cref="MobileAppRole.None"/> for Visitor-tier profile types and
-    /// for Other-tier types with no operational authority (Exhibitor,
-    /// Sponsor, Speaker, Press, …). Admin-curated at runtime — adding a
+    /// for Other-tier types with no operational authority (Sponsor,
+    /// Speaker, Press, …; D-519: Exhibitor now carries its own role).
+    /// Admin-curated at runtime — adding a
     /// new operational profile type is a row insert + an admin checkbox,
     /// not a code change.</summary>
     public MobileAppRole MobileAppRole { get; set; } = MobileAppRole.None; 

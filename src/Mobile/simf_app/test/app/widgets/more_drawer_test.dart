@@ -13,7 +13,7 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
 import '../../features/accessibility/_fake_prefs.dart';
 
-Session _session() => Session(
+Session _session({AppRole role = AppRole.visitor}) => Session(
       accessToken: 'A',
       refreshToken: 'R',
       accessTokenExpiresAt: DateTime.now().add(const Duration(minutes: 30)),
@@ -21,7 +21,7 @@ Session _session() => Session(
         id: 'u1',
         email: 'v@example.sa',
         displayName: 'Raed',
-        appRole: AppRole.visitor,
+        appRole: role,
         preferredLanguage: PreferredLanguage.fromJson('ar'),
         registrationStatus: RegistrationStatus.approved,
       ),
@@ -29,14 +29,16 @@ Session _session() => Session(
 
 /// Records sign-out so the logout flow can be asserted without a real revoke.
 class _RecordingAuthController extends AuthController {
-  _RecordingAuthController({required this.signedIn});
+  _RecordingAuthController({required this.signedIn, this.role = AppRole.visitor});
 
   final bool signedIn;
+  final AppRole role;
   int signOutCalls = 0;
 
   @override
-  AuthState build() =>
-      signedIn ? AuthStateSignedIn(_session()) : const AuthStateSignedOut();
+  AuthState build() => signedIn
+      ? AuthStateSignedIn(_session(role: role))
+      : const AuthStateSignedOut();
 
   @override
   Future<void> signOut() async {
@@ -92,6 +94,11 @@ Future<void> _pump(
         (RouteNames.myContacts, '/contacts', 'CONTACTS'),
         (RouteNames.mediaPartners, '/media-partners', 'PARTNERS'),
         (RouteNames.signIn, '/sign-in', 'SIGN-IN'),
+        // D-519 role-specific entries.
+        (RouteNames.gateScanner, '/gates/scan', 'GATE'),
+        (RouteNames.staffRegisterVisitor, '/staff/register-visitor', 'REGISTER'),
+        (RouteNames.scanVisitor, '/exhibitor/scan', 'SCAN-VISITOR'),
+        (RouteNames.myVisitors, '/exhibitor/visitors', 'MY-VISITORS'),
       ])
         GoRoute(
           name: name,
@@ -186,8 +193,8 @@ void main() {
       await _scrollTo(tester, find.text('Sign out'));
       await tester.tap(find.text('Sign out'));
       await tester.pumpAndSettle();
-      // Confirm dialog up.
-      expect(find.byType(AlertDialog), findsOneWidget);
+      // Confirm dialog up (shared SimfConfirmDialog renders a Dialog).
+      expect(find.byType(Dialog), findsOneWidget);
 
       await tester.tap(find.widgetWithText(FilledButton, 'Sign out'));
       await tester.pumpAndSettle();
@@ -209,6 +216,58 @@ void main() {
 
       expect(auth.signOutCalls, 0);
       expect(find.text('SIGN-IN'), findsNothing);
+    });
+  });
+
+  // D-519 — the drawer's role-conditional entries (gate scan / register visitor
+  // for Staff, scan-visitor / my-visitors for Exhibitor). A tall viewport so the
+  // whole list builds and `findsNothing` reliably means "not rendered".
+  group('MoreDrawer role filtering (D-519)', () {
+    Future<void> pumpRole(WidgetTester tester, AppRole role) async {
+      tester.view.physicalSize = const Size(500, 2200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await _pump(
+        tester,
+        auth: _RecordingAuthController(signedIn: true, role: role),
+      );
+    }
+
+    testWidgets('Staff sees the gate + register entries, not the exhibitor ones',
+        (tester) async {
+      await pumpRole(tester, AppRole.staff);
+      expect(find.text('Gate scanner'), findsOneWidget);
+      expect(find.text('Register a visitor'), findsOneWidget);
+      expect(find.text('Scan visitor badge'), findsNothing);
+      expect(find.text('My Visitors'), findsNothing);
+    });
+
+    testWidgets('Exhibitor sees the scan + my-visitors entries, not the staff ones',
+        (tester) async {
+      await pumpRole(tester, AppRole.exhibitor);
+      expect(find.text('Scan visitor badge'), findsOneWidget);
+      expect(find.text('My Visitors'), findsOneWidget);
+      expect(find.text('Gate scanner'), findsNothing);
+      expect(find.text('Register a visitor'), findsNothing);
+    });
+
+    testWidgets('Moderator sees neither the staff nor the exhibitor entries',
+        (tester) async {
+      await pumpRole(tester, AppRole.moderator);
+      expect(find.text('About the forum'), findsOneWidget); // hub still present
+      expect(find.text('Gate scanner'), findsNothing);
+      expect(find.text('Register a visitor'), findsNothing);
+      expect(find.text('Scan visitor badge'), findsNothing);
+      expect(find.text('My Visitors'), findsNothing);
+    });
+
+    testWidgets('Visitor sees none of the operational entries', (tester) async {
+      await pumpRole(tester, AppRole.visitor);
+      expect(find.text('Gate scanner'), findsNothing);
+      expect(find.text('Register a visitor'), findsNothing);
+      expect(find.text('Scan visitor badge'), findsNothing);
+      expect(find.text('My Visitors'), findsNothing);
     });
   });
 }

@@ -6,7 +6,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../sessions/data/session_detail_repository.dart';
 import '../sessions/data/session_models.dart';
 import 'data/questions_repository.dart';
@@ -160,15 +160,15 @@ class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.sessionInfoTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: _hasSession ? _form(l10n) : _empty(l10n),
     );
   }
 
   Widget _empty(AppL10n l10n) {
-    return KsaEmptyState(
+    return SimfEmptyState(
       icon: Icons.live_help_outlined,
       message: l10n.sendQuestionNoSession,
     );
@@ -179,102 +179,134 @@ class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
     final dataLines = detail == null
         ? const <String>[]
         : _dataLines(detail.localizedDescription(l10n.isArabic));
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        SimfTokens.space4,
-        SimfTokens.space5,
-        SimfTokens.space4,
-        SimfTokens.space6,
-      ),
+    // Frame 934:3636 — the data block + composer occupy the top (scrollable so a
+    // long description + the keyboard never overflow), and the submit + note are
+    // pinned to the bottom of the screen (943:3751), not flowed under the box.
+    return Column(
       children: <Widget>[
-        // Frame 1049:12590 — the "بيانات الجلسة" session-data block over the
-        // composer. Hidden until the optional detail read lands with a body.
-        if (dataLines.isNotEmpty) ...<Widget>[
-          _SessionDataBlock(label: l10n.sessionDataLabel, lines: dataLines),
-          const SizedBox(height: SimfTokens.space6),
-        ],
-        // Frame 945:3756 — the "الاسئلة" section label: white, Medium, aligned
-        // to the inline end (right in RTL).
-        Text(
-          l10n.sendQuestionSectionLabel,
-          textAlign: TextAlign.end,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w500,
-            fontSize: SimfTokens.textLg,
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(
+              SimfTokens.space4,
+              SimfTokens.space5,
+              SimfTokens.space4,
+              SimfTokens.space4,
+            ),
+            children: <Widget>[
+              // Frame 1049:12590 — the "بيانات الجلسة" session-data block over
+              // the composer. Hidden until the optional detail read lands.
+              if (dataLines.isNotEmpty) ...<Widget>[
+                _SessionDataBlock(
+                  label: l10n.sessionDataLabel,
+                  lines: dataLines,
+                ),
+                const SizedBox(height: SimfTokens.space6),
+              ],
+              // Frame 945:3756 — the "الاسئلة" section label: white, Medium,
+              // aligned to the inline end (right in RTL).
+              Text(
+                l10n.sendQuestionSectionLabel,
+                // TextAlign.start = right under RTL (TextAlign.end would be left).
+                textAlign: TextAlign.start,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                  fontSize: SimfTokens.textLg,
+                ),
+              ),
+              const SizedBox(height: SimfTokens.space2),
+              // Frame 934:3668 — the fixed 100px tinted question box: navyDeep
+              // fill on the 8px radius (no border), placeholder pinned to the
+              // top, beige + inline-end aligned.
+              Container(
+                height: 100,
+                decoration: BoxDecoration(
+                  color: SimfTokens.navyDeep,
+                  borderRadius: BorderRadius.circular(SimfTokens.radius),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SimfTokens.space2,
+                  vertical: SimfTokens.space3,
+                ),
+                child: TextField(
+                  controller: _question,
+                  maxLength: 500,
+                  maxLines: null,
+                  expands: true,
+                  textAlign: TextAlign.right,
+                  textAlignVertical: TextAlignVertical.top,
+                  textInputAction: TextInputAction.newline,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: SimfTokens.textSm,
+                  ),
+                  cursorColor: SimfTokens.accent,
+                  decoration: InputDecoration(
+                    isCollapsed: true,
+                    border: InputBorder.none,
+                    counterText: '',
+                    hintText: l10n.sendQuestionHint,
+                    hintStyle: const TextStyle(
+                      color: SimfTokens.beigeBorder,
+                      fontSize: SimfTokens.textSm,
+                    ),
+                    errorText: _inlineError,
+                    errorStyle: const TextStyle(color: SimfTokens.danger),
+                  ),
+                  onChanged: (_) {
+                    if (_inlineError != null) {
+                      setState(() => _inlineError = null);
+                    }
+                  },
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: SimfTokens.space2),
-        // Frame 934:3668 — the tinted multiline question box: navyDeep fill on
-        // the 8px radius (no border in the frame), the placeholder beige and
-        // inline-end aligned.
-        Container(
-          decoration: BoxDecoration(
-            color: SimfTokens.navyDeep,
-            borderRadius: BorderRadius.circular(SimfTokens.radius),
+        // Frame 943:3751 — the bottom-pinned submit + reviewed-before-air note.
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            SimfTokens.space4,
+            SimfTokens.space4,
+            SimfTokens.space4,
+            SimfTokens.space6,
           ),
-          padding: const EdgeInsets.symmetric(
-            horizontal: SimfTokens.space2,
-            vertical: SimfTokens.space3,
-          ),
-          child: TextField(
-            controller: _question,
-            maxLength: 500,
-            minLines: 4,
-            maxLines: 6,
-            textAlign: TextAlign.right,
-            textInputAction: TextInputAction.newline,
-            style: const TextStyle(color: Colors.white, fontSize: SimfTokens.textSm),
-            cursorColor: SimfTokens.accent,
-            decoration: InputDecoration(
-              isCollapsed: true,
-              border: InputBorder.none,
-              counterText: '',
-              hintText: l10n.sendQuestionHint,
-              hintStyle: const TextStyle(
-                color: SimfTokens.beigeBorder,
-                fontSize: SimfTokens.textSm,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              // Frame 942:3746 — the gold full-width submit: white SemiBold label
+              // on the 4px-radius accent fill.
+              SizedBox(
+                width: double.infinity,
+                height: 44,
+                child: FilledButton(
+                  onPressed:
+                      _submitting ? null : () => unawaited(_submit(l10n)),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: SimfTokens.accent,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: SimfTokens.textSm,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  child: Text(
+                    _submitting ? l10n.loadingLabel : l10n.sendQuestionSubmit,
+                  ),
+                ),
               ),
-              errorText: _inlineError,
-              errorStyle: const TextStyle(color: SimfTokens.danger),
-            ),
-            onChanged: (_) {
-              if (_inlineError != null) {
-                setState(() => _inlineError = null);
-              }
-            },
-          ),
-        ),
-        const SizedBox(height: SimfTokens.space6),
-        // Frame 942:3746 — the gold full-width submit: white SemiBold label on
-        // the 4px-radius accent fill.
-        SizedBox(
-          height: 44,
-          child: FilledButton(
-            onPressed: _submitting ? null : () => unawaited(_submit(l10n)),
-            style: FilledButton.styleFrom(
-              backgroundColor: SimfTokens.accent,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius:
-                    BorderRadius.circular(SimfTokens.radiusSmall),
+              const SizedBox(height: SimfTokens.space4),
+              // Frame 943:3750 — the centred bulleted note: "ملاحظة" gold/SemiBold,
+              // "سيتم مراجعته قبل العرض المباشر" beige.
+              _ReviewNote(
+                label: l10n.sendQuestionNoteLabel,
+                body: l10n.sendQuestionWindowHint,
               ),
-              textStyle: const TextStyle(
-                fontSize: SimfTokens.textSm,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            child: Text(
-              _submitting ? l10n.loadingLabel : l10n.sendQuestionSubmit,
-            ),
+            ],
           ),
-        ),
-        const SizedBox(height: SimfTokens.space4),
-        // Frame 943:3750 — the centred bulleted note: "ملاحظة" gold/SemiBold,
-        // "سيتم مراجعته قبل العرض المباشر" beige.
-        _ReviewNote(
-          label: l10n.sendQuestionNoteLabel,
-          body: l10n.sendQuestionWindowHint,
         ),
       ],
     );
@@ -336,16 +368,18 @@ class _SessionDataBlock extends StatelessWidget {
       children: <Widget>[
         Text(
           label,
-          textAlign: TextAlign.end,
+          // TextAlign.start = right under RTL (TextAlign.end would be left).
+          textAlign: TextAlign.start,
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w500,
             fontSize: SimfTokens.textLg,
           ),
         ),
-        const SizedBox(height: SimfTokens.space3),
+        // Frame 1049:12590 — 8px under the label, 16px between data lines.
+        const SizedBox(height: SimfTokens.space2),
         for (var i = 0; i < lines.length; i++) ...<Widget>[
-          if (i != 0) const SizedBox(height: SimfTokens.space3),
+          if (i != 0) const SizedBox(height: SimfTokens.space4),
           _NumberedLine(index: i + 1, text: lines[i]),
         ],
       ],
@@ -366,7 +400,8 @@ class _NumberedLine extends StatelessWidget {
     color: SimfTokens.beigeBorder,
     fontSize: SimfTokens.textMd,
     fontWeight: FontWeight.w500,
-    height: 1.5,
+    // Frame 1049:12591 — leading ~normal (1.3), tighter than the old 1.5.
+    height: 1.3,
   );
 
   @override

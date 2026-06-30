@@ -117,13 +117,16 @@ class OrgSocial {
   final String? tiktok;
   final String? snapchat;
 
+  // The API serialises with camelCase (System.Text.Json) → linkedIn/youTube/
+  // tikTok. Read those exact keys, not all-lowercase, or CP-set LinkedIn/
+  // YouTube/TikTok links silently drop (same fix as SiteSocialLinks).
   static OrgSocial fromJson(Map<String, dynamic> json) => OrgSocial(
         facebook: json['facebook'] as String?,
         x: json['x'] as String?,
         instagram: json['instagram'] as String?,
-        linkedin: json['linkedin'] as String?,
-        youtube: json['youtube'] as String?,
-        tiktok: json['tiktok'] as String?,
+        linkedin: json['linkedIn'] as String?,
+        youtube: json['youTube'] as String?,
+        tiktok: json['tikTok'] as String?,
         snapchat: json['snapchat'] as String?,
       );
 }

@@ -7,13 +7,15 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../core/sharing/content_sharer.dart';
-import '../../features/auth/biometric_auth.dart';
+import '../../features/account/biometric_auth.dart';
 import '../../features/more/more_menu_items.dart';
 import '../../features/myarea/data/myarea_repository.dart';
 import '../localization/app_l10n.dart';
 import '../localization/locale_controller.dart';
 import '../route_names.dart';
+import '../router.dart';
 import '../theme/tokens.dart';
+import 'simf_confirm_dialog.dart';
 
 /// The shell's side drawer — the المزيد menu as a slide-in panel, opened by the
 /// shared top bar's ☰ (in RTL it slides from the right). Holds the navigation
@@ -30,9 +32,6 @@ class MoreDrawer extends ConsumerWidget {
     final auth = ref.watch(authControllerProvider);
     final signedIn = auth is AuthStateSignedIn;
     final role = signedIn ? auth.session.user.appRole : AppRole.guest;
-    // Staff-only gate-operator scanner entry (D-406). UX gate only — the router
-    // role-gates the route and the server enforces the Gates.Operate grant.
-    final isStaff = role.isAtLeast(AppRole.staff);
     return Drawer(
       backgroundColor: SimfTokens.navySurface,
       child: SafeArea(
@@ -56,16 +55,21 @@ class MoreDrawer extends ConsumerWidget {
                 padding:
                     const EdgeInsets.symmetric(vertical: SimfTokens.space2),
                 children: <Widget>[
+                  // Navigation-hub entries, filtered to the role's own pages
+                  // (D-519): unrestricted entries show for everyone; the
+                  // attendee-only ones (rate, contacts) hide for Staff/Moderator.
                   for (final entry in moreMenuEntries(l10n))
-                    _DrawerTile(
-                      icon: entry.icon,
-                      title: entry.title,
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        context.pushNamed(entry.routeName);
-                      },
-                    ),
-                  if (isStaff)
+                    if (routeAllowsRole(entry.routeName, role))
+                      _DrawerTile(
+                        icon: entry.icon,
+                        title: entry.title,
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          context.pushNamed(entry.routeName);
+                        },
+                      ),
+                  // Staff gate operations (D-406 / D-509) — Staff role only.
+                  if (routeAllowsRole(RouteNames.gateScanner, role))
                     _DrawerTile(
                       icon: Icons.qr_code_scanner,
                       title: l10n.gateScannerEntry,
@@ -74,9 +78,7 @@ class MoreDrawer extends ConsumerWidget {
                         context.pushNamed(RouteNames.gateScanner);
                       },
                     ),
-                  // Staff-only walk-in visitor registration (D-509). Same UX
-                  // gate; the server enforces Visitors.RegisterOnsite.
-                  if (isStaff)
+                  if (routeAllowsRole(RouteNames.staffRegisterVisitor, role))
                     _DrawerTile(
                       icon: Icons.person_add_alt_1_outlined,
                       title: l10n.staffRegisterVisitorEntry,
@@ -85,14 +87,18 @@ class MoreDrawer extends ConsumerWidget {
                         context.pushNamed(RouteNames.staffRegisterVisitor);
                       },
                     ),
-                  // Exhibitor ("Other") only — captured-visitor list (D-426). The
-                  // server 403s a visitor-tier caller; isVisitorProvider hides it
-                  // (defaults visitor → hidden until the dashboard says Other).
-                  if (signedIn &&
-                      ref.watch(isVisitorProvider).maybeWhen(
-                            data: (isVisitor) => !isVisitor,
-                            orElse: () => false,
-                          ))
+                  // Exhibitor lead capture (D-426 / D-519) — Exhibitor role only
+                  // (the JWT role drives it now, replacing the dashboard probe).
+                  if (routeAllowsRole(RouteNames.scanVisitor, role))
+                    _DrawerTile(
+                      icon: Icons.qr_code_scanner,
+                      title: l10n.scanVisitorTitle,
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        context.pushNamed(RouteNames.scanVisitor);
+                      },
+                    ),
+                  if (routeAllowsRole(RouteNames.myVisitors, role))
                     _DrawerTile(
                       icon: Icons.groups_outlined,
                       title: l10n.myVisitorsTitle,
@@ -187,24 +193,14 @@ class MoreDrawer extends ConsumerWidget {
   ) async {
     final router = GoRouter.of(context);
     final auth = ref.read(authControllerProvider.notifier);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.signOutLink),
-        content: Text(l10n.signOutConfirmBody),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(l10n.cancelLabel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(l10n.signOutLink),
-          ),
-        ],
-      ),
+    final confirmed = await SimfConfirmDialog.show(
+      context,
+      title: l10n.signOutLink,
+      message: l10n.signOutConfirmBody,
+      confirmLabel: l10n.signOutLink,
+      isDestructive: true,
     );
-    if (confirmed != true) {
+    if (!confirmed) {
       return;
     }
     await auth.signOut();

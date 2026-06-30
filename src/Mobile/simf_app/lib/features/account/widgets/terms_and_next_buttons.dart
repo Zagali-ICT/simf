@@ -1,0 +1,55 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../app/localization/app_l10n.dart';
+import '../../../app/route_names.dart';
+import '../../../app/theme/tokens.dart';
+
+/// The underlined terms-agreement link (Figma 522:2179 — opens Page 009) above
+/// the primary Next button that submits the step. [onNext] runs the screen's
+/// validate-and-advance logic.
+class TermsAndNextButtons extends StatelessWidget {
+  const TermsAndNextButtons({required this.onNext, super.key});
+
+  final VoidCallback onNext;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Center(
+          child: TextButton(
+            onPressed: () => context.pushNamed(RouteNames.terms),
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.zero,
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              foregroundColor: SimfTokens.navy,
+            ),
+            child: Text(
+              l10n.termsAgreeQuestion,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                decoration: TextDecoration.underline,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        FilledButton(
+          onPressed: onNext,
+          child: Text(
+            l10n.nextLabel,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}

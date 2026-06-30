@@ -31,6 +31,7 @@ SpeakerDetail _detail({bool allowsMeeting = true, bool allowsData = true}) {
     displayOrder: 0,
     bio: 'A maritime leader.',
     facebookUrl: allowsData ? 'https://fb/x' : null,
+    websiteUrl: allowsData ? 'https://reef.example.sa' : null,
     sessions: <SpeakerSession>[
       SpeakerSession(
         id: 'se1',
@@ -254,6 +255,26 @@ void main() {
       await tester.pumpAndSettle();
       // The sheet offers the VIP slot dropdown sourced from the speaker's free slots.
       expect(find.byType(DropdownButtonFormField<SpeakerSlot>), findsOneWidget);
+    });
+
+    testWidgets('shows a website chip when the speaker shared a website (D-544)',
+        (tester) async {
+      tester.view.physicalSize = const Size(1200, 2600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await _pump(tester, repo: _FakeRepo(detail: _detail()), controller: _Guest());
+      expect(find.widgetWithIcon(ActionChip, Icons.language), findsOneWidget);
+    });
+
+    testWidgets('no website chip when the speaker did not share data',
+        (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeRepo(detail: _detail(allowsData: false)),
+        controller: _Guest(),
+      );
+      expect(find.widgetWithIcon(ActionChip, Icons.language), findsNothing);
     });
 
     testWidgets('no meeting button when the speaker opted out', (tester) async {

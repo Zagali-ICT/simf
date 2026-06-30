@@ -8,10 +8,10 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/country_flag_badge.dart';
-import '../../app/widgets/ksa_shell.dart';
-import '../../app/widgets/simf_svg_icon.dart';
 import '../../core/country_flag.dart';
+import '../../app/widgets/simf_search_field.dart';
+import '../../app/widgets/simf_page_shell.dart';
+import '../../app/widgets/simf_svg_icon.dart';
 import '../venuemap/data/venue_map_models.dart';
 import '../venuemap/data/venue_map_repository.dart';
 
@@ -24,7 +24,7 @@ import '../venuemap/data/venue_map_repository.dart';
 /// 1439:11881).
 ///
 /// Frame mapping: the navy scaffold + centred header (الأجنحة) and the shared
-/// bottom nav from [KsaPage]; a bordered search field (ابحث عن جناح أو شركة);
+/// bottom nav from [SimfPageShell]; a bordered search field (ابحث عن جناح أو شركة);
 /// then one exhibitor card per booth — a company header row (short name + full
 /// name beside the square logo tile, gold-hairline divider), the gold-bordered
 /// **code pill** (A-12) beside the deep-navy **hall box**, the booth-officer row
@@ -116,10 +116,10 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return KsaPage(
+    return SimfPageShell(
       // Frame 922:2464 titles the screen "المعرض" (the nav tile/route stay "الأجنحة").
       title: l10n.boothsExhibitionTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: _buildBody(l10n),
     );
   }
@@ -129,10 +129,24 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     if (_error) {
-      return KsaErrorState(
-        message: l10n.boothsError,
-        retryLabel: l10n.retryLabel,
-        onRetry: () => unawaited(_load()),
+      // Pull-to-refresh also works in the error state so the user can pull to
+      // retry; the Center error widget is hosted in an always-scrollable view
+      // (with a min-height filler) so the gesture fires on the short content.
+      return SimfPullToRefresh(
+        onRefresh: _load,
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: SimfErrorState(
+                message: l10n.boothsError,
+                retryLabel: l10n.retryLabel,
+                onRetry: () => unawaited(_load()),
+              ),
+            ),
+          ),
+        ),
       );
     }
 
@@ -150,94 +164,71 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
             SimfTokens.space4,
             0,
           ),
-          child: _SearchField(
-            l10n: l10n,
+          child: SimfSearchField(
+            hint: l10n.boothsSearchHint,
             onChanged: (value) => setState(() => _query = value),
           ),
         ),
         Expanded(
-          child: _booths.isEmpty
-              ? KsaEmptyState(
-                  icon: Icons.storefront_outlined,
-                  message: l10n.boothsEmpty,
-                )
-              : filtered.isEmpty
-                  ? KsaEmptyState(
-                      icon: Icons.search_off_outlined,
-                      message: l10n.boothsNoMatch,
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(
-                        SimfTokens.space4,
-                        SimfTokens.space4,
-                        SimfTokens.space4,
-                        SimfTokens.space6,
-                      ),
-                      itemCount: filtered.length,
-                      separatorBuilder: (_, __) =>
-                          const SizedBox(height: SimfTokens.space4),
-                      itemBuilder: (context, index) => _BoothCard(
-                        booth: filtered[index],
-                        l10n: l10n,
-                        isArabic: isArabic,
-                        baseUrl: baseUrl,
-                        onTap: () => _openBooth(filtered[index]),
-                        onGuide: () => _openBoothMap(filtered[index]),
+          // Pull-down-from-the-top re-fetches the booths (onRefresh: _load).
+          // The empty / no-match states are hosted in an always-scrollable view
+          // (with a min-height filler) so the gesture fires on short content;
+          // the list itself uses AlwaysScrollableScrollPhysics for the same.
+          child: SimfPullToRefresh(
+            onRefresh: _load,
+            child: _booths.isEmpty
+                ? LayoutBuilder(
+                    builder: (context, constraints) => SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: ConstrainedBox(
+                        constraints:
+                            BoxConstraints(minHeight: constraints.maxHeight),
+                        child: SimfEmptyState(
+                          icon: Icons.storefront_outlined,
+                          message: l10n.boothsEmpty,
+                        ),
                       ),
                     ),
-        ),
-      ],
-    );
-  }
-}
-
-/// The bordered search field (frame node 922:2549): a navy box with the
-/// beige bold hairline, the muted hint, and a leading (inline-start) search
-/// glyph.
-class _SearchField extends StatelessWidget {
-  const _SearchField({required this.l10n, required this.onChanged});
-
-  final AppL10n l10n;
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      onChanged: onChanged,
-      textInputAction: TextInputAction.search,
-      style: const TextStyle(color: Colors.white, fontSize: SimfTokens.textSm),
-      decoration: InputDecoration(
-        isDense: true,
-        filled: true,
-        fillColor: SimfTokens.navyDeep,
-        hintText: l10n.boothsSearchHint,
-        hintStyle: const TextStyle(
-          color: SimfTokens.beigeBorder,
-          fontSize: SimfTokens.textSm,
-        ),
-        // Frame 922:2549 — the search glyph sits at the inline start (physical
-        // right under RTL), so it is a prefix, not a suffix.
-        prefixIcon: const SimfSvgIcon(
-          'assets/icons/ic_search.svg',
-          size: 18,
-          color: Colors.white,
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: SimfTokens.space3,
-          vertical: SimfTokens.space4,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(SimfTokens.radius),
-          borderSide: const BorderSide(
-            color: SimfTokens.beigeBorder,
-            width: SimfTokens.hairlineBold,
+                  )
+                : filtered.isEmpty
+                    ? LayoutBuilder(
+                        builder: (context, constraints) =>
+                            SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              minHeight: constraints.maxHeight,
+                            ),
+                            child: SimfEmptyState(
+                              icon: Icons.search_off_outlined,
+                              message: l10n.boothsNoMatch,
+                            ),
+                          ),
+                        ),
+                      )
+                    : ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(
+                          SimfTokens.space4,
+                          SimfTokens.space4,
+                          SimfTokens.space4,
+                          SimfTokens.space6,
+                        ),
+                        itemCount: filtered.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(height: SimfTokens.space4),
+                        itemBuilder: (context, index) => _BoothCard(
+                          booth: filtered[index],
+                          l10n: l10n,
+                          isArabic: isArabic,
+                          baseUrl: baseUrl,
+                          onTap: () => _openBooth(filtered[index]),
+                          onGuide: () => _openBoothMap(filtered[index]),
+                        ),
+                      ),
           ),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(SimfTokens.radius),
-          borderSide: const BorderSide(color: SimfTokens.accent),
-        ),
-      ),
+      ],
     );
   }
 }
@@ -268,7 +259,7 @@ class _BoothCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return KsaCard(
+    return SimfCard(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.all(SimfTokens.space2),
@@ -304,10 +295,12 @@ class _BoothCard extends StatelessWidget {
   }
 }
 
-/// The card header (frame node 922:2789): the square logo-initials tile on the
-/// inline start (physical right) with the company short name (gold) over its
-/// full name (beige) beside it, under a gold hairline rule — matching the
-/// frame's logo-right / text-left RTL layout.
+/// The card header (frame node 922:2556): the company **logo tile** on the
+/// inline start (physical right) — the real CompanyLogo, short-name fallback —
+/// with the company short name (gold) over its full name (beige) in the middle
+/// and the exhibitor's **country flag** at the inline end (physical left), under
+/// a gold hairline rule. Matches the frame's logo-right / flag-left RTL layout
+/// (the flag is the Figma "Group" image; the app renders the country emoji).
 class _CompanyHeader extends StatelessWidget {
   const _CompanyHeader({
     required this.booth,
@@ -323,6 +316,7 @@ class _CompanyHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final name = booth.localizedName(isArabic);
     final fullName = booth.localizedExhibitor(isArabic);
+    final flag = countryFlagEmoji(booth.countryId);
     return Container(
       padding: const EdgeInsets.only(bottom: SimfTokens.space2),
       decoration: const BoxDecoration(
@@ -333,16 +327,18 @@ class _CompanyHeader extends StatelessWidget {
           ),
         ),
       ),
+      // Frame 922:2556 — RTL order: the company logo tile at the inline-start
+      // (right), the name column in the middle, the country flag at the
+      // inline-end (left).
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
-          CountryFlagBadge(
-            countryId: booth.countryId,
-            child: _LogoTile(
-              contactId: booth.exhibitorContactId,
-              baseUrl: baseUrl,
-              initials: _initials(name),
-            ),
+          // Frame 922:2560 — the 48×48 logo tile (real CompanyLogo, short-name
+          // fallback) at the inline-start (right).
+          _LogoTile(
+            contactId: booth.exhibitorContactId,
+            baseUrl: baseUrl,
+            fallback: name,
           ),
           const SizedBox(width: SimfTokens.space2),
           Expanded(
@@ -369,80 +365,72 @@ class _CompanyHeader extends StatelessWidget {
                     ),
                   ),
                 ],
-                // #9 — show the booth's country (flag + name) under the company.
-                if (booth.localizedCountry(isArabic) != null) ...<Widget>[
-                  const SizedBox(height: SimfTokens.space1),
-                  _CountryLine(
-                    countryId: booth.countryId,
-                    name: booth.localizedCountry(isArabic)!,
-                  ),
-                ],
               ],
             ),
           ),
+          // Frame 1062:12911 — the country flag tile at the inline-end (left),
+          // shown only when the booth carries a resolved country.
+          if (flag != null) ...<Widget>[
+            const SizedBox(width: SimfTokens.space2),
+            _CountryFlagTile(flag: flag),
+          ],
         ],
       ),
     );
   }
 }
 
-/// #9 — a small "flag · country name" line under the company name so the booth
-/// shows its country (the corner flag badge on the logo alone is subtle).
-class _CountryLine extends StatelessWidget {
-  const _CountryLine({required this.countryId, required this.name});
+/// The booth country flag tile (frame node 1062:12911): a 40×40 rounded tile at
+/// the inline-end (left) of the header. Figma renders a full flag image; the app
+/// renders the country **emoji** (its only flag form), centred on the navy tile.
+class _CountryFlagTile extends StatelessWidget {
+  const _CountryFlagTile({required this.flag});
 
-  final int? countryId;
-  final String name;
+  final String flag;
 
   @override
   Widget build(BuildContext context) {
-    final flag = countryFlagEmoji(countryId);
-    return Row(
-      children: <Widget>[
-        if (flag != null) ...<Widget>[
-          Text(
-            flag,
-            textDirection: TextDirection.ltr,
-            style: const TextStyle(fontSize: SimfTokens.textSm, height: 1),
-          ),
-          const SizedBox(width: SimfTokens.space1),
-        ],
-        Flexible(
-          child: Text(
-            name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textXs,
-            ),
-          ),
-        ),
-      ],
+    return Container(
+      width: 40,
+      height: 40,
+      alignment: Alignment.center,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: SimfTokens.navyDeep,
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+      ),
+      child: Text(
+        flag,
+        textDirection: TextDirection.ltr,
+        style: const TextStyle(fontSize: 28, height: 1),
+      ),
     );
   }
 }
 
-/// The square company-logo tile (frame node 922:2793): a 48×48 navy square with
+/// The square company-logo tile (frame node 922:2560): a 48×48 navy square with
 /// a beige hairline. P6 — D-440: renders the exhibitor's real CompanyLogo (the
-/// D-357 asset owned by [contactId]) clipped to fill, falling back to the booth
-/// initials while it loads or when the exhibitor has no linked Contact / logo.
+/// D-357 asset owned by [contactId]) clipped to fill, falling back to the
+/// company **short name** (centred, as the frame shows "SAMI") while it loads or
+/// when the exhibitor has no linked Contact / logo.
 class _LogoTile extends StatelessWidget {
   const _LogoTile({
     required this.contactId,
     required this.baseUrl,
-    required this.initials,
+    required this.fallback,
   });
 
   final String? contactId;
   final String baseUrl;
-  final String initials;
+  final String fallback;
 
   @override
   Widget build(BuildContext context) {
-    final fallback = Text(
-      initials,
-      textDirection: TextDirection.ltr,
+    final fallbackText = Text(
+      fallback,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      textAlign: TextAlign.center,
       style: const TextStyle(
         color: Colors.white,
         fontWeight: FontWeight.w600,
@@ -451,9 +439,11 @@ class _LogoTile extends StatelessWidget {
     );
     final id = contactId?.trim() ?? '';
     return Container(
+      // Frame 922:2560 — the logo tile is 48×48 ('Size/Square' token).
       width: 48,
       height: 48,
       alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space1),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: SimfTokens.navyDeep,
@@ -464,7 +454,7 @@ class _LogoTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
       ),
       child: id.isEmpty
-          ? fallback
+          ? fallbackText
           : Image.network(
               '$baseUrl/app/assets/CompanyLogo/$id/image',
               width: 48,
@@ -472,8 +462,8 @@ class _LogoTile extends StatelessWidget {
               fit: BoxFit.cover,
               gaplessPlayback: true,
               loadingBuilder: (context, child, progress) =>
-                  progress == null ? child : fallback,
-              errorBuilder: (context, error, stackTrace) => fallback,
+                  progress == null ? child : fallbackText,
+              errorBuilder: (context, error, stackTrace) => fallbackText,
             ),
     );
   }
@@ -501,16 +491,18 @@ class _HallRow extends StatelessWidget {
     // Both children are a fixed 48 high; the row must NOT stretch — inside the
     // card Column (unbounded height) CrossAxisAlignment.stretch would size the
     // row to infinite height and crash layout. Centre-align the two 48px boxes.
+    // Frame 922:2626 — RTL: the hall box at the inline start (right); the A-12
+    // code pill at the inline end (left).
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
-        if (code.isNotEmpty) ...<Widget>[
-          _CodePill(code: code),
-          const SizedBox(width: SimfTokens.space4),
-        ],
         Expanded(
           child: _HallBox(label: hallLabel),
         ),
+        if (code.isNotEmpty) ...<Widget>[
+          const SizedBox(width: SimfTokens.space4),
+          _CodePill(code: code),
+        ],
       ],
     );
   }

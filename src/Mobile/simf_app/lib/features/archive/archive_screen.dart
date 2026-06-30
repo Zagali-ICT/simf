@@ -4,8 +4,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/country_flag_badge.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import 'data/archive_models.dart';
 
 /// `GET /app/archive` → the past editions (public, D-273).
@@ -60,25 +59,53 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
   // The selected edition id; null until the editions arrive (then the first).
   String? _selectedId;
 
+  // Pull-to-refresh: drop the cached editions AND the selected edition's detail
+  // (the whole detail family, so whichever edition is shown — tapped or the
+  // default most-recent — re-fetches its summary/gallery/sessions too), then
+  // await the list re-fetch so the gold spinner stays until it arrives.
+  Future<void> _refresh() async {
+    ref.invalidate(archiveEditionsProvider);
+    ref.invalidate(archiveEditionDetailProvider);
+    await ref.read(archiveEditionsProvider.future);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     final editions = ref.watch(archiveEditionsProvider);
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.archiveTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: editions.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => KsaErrorState(
-          message: l10n.archiveError,
-          retryLabel: l10n.retryLabel,
-          onRetry: () => ref.invalidate(archiveEditionsProvider),
+        // Pull-to-retry: a scrollable error state under SimfPullToRefresh.
+        error: (_, __) => SimfPullToRefresh(
+          onRefresh: _refresh,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: <Widget>[
+              SimfErrorState(
+                message: l10n.archiveError,
+                retryLabel: l10n.retryLabel,
+                onRetry: () => ref.invalidate(archiveEditionsProvider),
+              ),
+            ],
+          ),
         ),
         data: (items) {
           if (items.isEmpty) {
-            return KsaEmptyState(
-              icon: Icons.bookmark_outline,
-              message: l10n.archiveEmpty,
+            // Pull-to-retry: a scrollable empty state under SimfPullToRefresh.
+            return SimfPullToRefresh(
+              onRefresh: _refresh,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: <Widget>[
+                  SimfEmptyState(
+                    icon: Icons.bookmark_outline,
+                    message: l10n.archiveEmpty,
+                  ),
+                ],
+              ),
             );
           }
           // Default the selection to the most-recent edition (the list is
@@ -87,11 +114,14 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
             (e) => e.id == _selectedId,
             orElse: () => items.first,
           );
-          return _ArchiveBody(
-            l10n: l10n,
-            editions: items,
-            selected: selected,
-            onSelect: (id) => setState(() => _selectedId = id),
+          return SimfPullToRefresh(
+            onRefresh: _refresh,
+            child: _ArchiveBody(
+              l10n: l10n,
+              editions: items,
+              selected: selected,
+              onSelect: (id) => setState(() => _selectedId = id),
+            ),
           );
         },
       ),
@@ -126,6 +156,7 @@ class _ArchiveBody extends ConsumerWidget {
     final dateLabel = d?.localizedDateLabel(isArabic);
 
     return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
         SimfTokens.space4,
         SimfTokens.space2,
@@ -229,7 +260,8 @@ class _GalleryRow extends StatelessWidget {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: items.length,
-        separatorBuilder: (_, __) => const SizedBox(width: SimfTokens.space2),
+        // Frame 926:3299 — ~16px gap between the 104px gallery tiles.
+        separatorBuilder: (_, __) => const SizedBox(width: SimfTokens.space4),
         itemBuilder: (context, index) =>
             _GalleryTile(item: items[index], isArabic: isArabic),
       ),
@@ -336,7 +368,6 @@ class _PastSpeakersRow extends StatelessWidget {
           _PastSpeakerCard(
             name: s.localized(isArabic),
             photoUrl: s.photoRelativePath,
-            countryId: s.countryId,
           ),
         if (overflow > 0)
           _PastSpeakerOverflow(count: overflow, label: l10n.archiveOthersLabel),
@@ -349,11 +380,10 @@ class _PastSpeakersRow extends StatelessWidget {
 /// — the real avatar when [photoUrl] is an absolute http(s) url, else the gold
 /// initials — over a centred white 12px SemiBold name.
 class _PastSpeakerCard extends StatelessWidget {
-  const _PastSpeakerCard({required this.name, this.photoUrl, this.countryId});
+  const _PastSpeakerCard({required this.name, this.photoUrl});
 
   final String name;
   final String? photoUrl;
-  final int? countryId;
 
   @override
   Widget build(BuildContext context) {
@@ -374,29 +404,26 @@ class _PastSpeakerCard extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          CountryFlagBadge(
-            countryId: countryId,
-            child: Container(
-              width: 72,
-              height: 72,
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                color: SimfTokens.navyDeep,
-                borderRadius: BorderRadius.circular(SimfTokens.radius),
-              ),
-              child: showPhoto
-                  ? Image.network(
-                      photoUrl!,
-                      width: 72,
-                      height: 72,
-                      fit: BoxFit.cover,
-                      gaplessPlayback: true,
-                      loadingBuilder: (context, child, progress) =>
-                          progress == null ? child : fallback,
-                      errorBuilder: (context, error, stackTrace) => fallback,
-                    )
-                  : fallback,
+          Container(
+            width: 72,
+            height: 72,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: SimfTokens.navyDeep,
+              borderRadius: BorderRadius.circular(SimfTokens.radius),
             ),
+            child: showPhoto
+                ? Image.network(
+                    photoUrl!,
+                    width: 72,
+                    height: 72,
+                    fit: BoxFit.cover,
+                    gaplessPlayback: true,
+                    loadingBuilder: (context, child, progress) =>
+                        progress == null ? child : fallback,
+                    errorBuilder: (context, error, stackTrace) => fallback,
+                  )
+                : fallback,
           ),
           const SizedBox(height: SimfTokens.space2),
           Text(
@@ -726,6 +753,9 @@ class _PlaceTimeRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          // Frame 926:3284 — RTL, verified against the rendered frame: المكان
+          // (place) at the inline start (right), الزمن (time) at the inline end
+          // (left).
           Expanded(
             child: _LabelledBullet(
               label: l10n.archivePlaceLabel,
@@ -784,8 +814,9 @@ class _StatRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // RTL: the first child is at the inline start (physical right) — الفعاليات,
-    // then المتحدثون at the inline end (left), mirroring the frame's two tiles.
+    // Frame 926:3285 — RTL, verified against the rendered frame: الفعاليات
+    // (activities) at the inline start (right), المتحدثون (speakers) at the
+    // inline end (left).
     return Row(
       children: <Widget>[
         Expanded(

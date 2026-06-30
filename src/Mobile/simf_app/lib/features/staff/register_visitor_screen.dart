@@ -12,14 +12,12 @@ import '../../app/localization/locale_controller.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_logo.dart';
-import '../profile/data/profile_models.dart';
-import '../profile/data/profile_repository.dart';
-import '../profile/phone_validation.dart';
+import '../../core/validation/phone_validation.dart';
+import '../../core/validation/required_validation.dart';
+import '../account/data/profile_models.dart';
+import '../account/data/profile_repository.dart';
 import 'data/staff_models.dart';
 import 'data/staff_repository.dart';
-
-const BorderRadius _radius4 =
-    BorderRadius.all(Radius.circular(SimfTokens.radiusSmall));
 
 /// D-509 — "إنشاء ملف زائر" / add a visitor at the exhibition (staff). Figma
 /// 1467:12357 — the navy header (logo + forum name + back + globe) over a beige
@@ -33,6 +31,13 @@ const BorderRadius _radius4 =
 /// (ProfileType) is required by the API but not shown in the frame, so it is
 /// auto-assigned to the seeded "Normal" audience tier (parity with self-service
 /// sign-up); the server re-validates everything and returns a bilingual message.
+///
+/// Route: `RouteNames.staffRegisterVisitor` (`/staff/register-visitor`, #114),
+/// from the staff-only drawer. Data: `profileRepository` (countries / visitor
+/// profile-types / organisations) + `staffRepository.registerVisitor` (+ the
+/// optional id-document / avatar uploads). Perf: one eager lookup load, no
+/// scrolling list. Contract: `StaffWalkInRequest` / `StaffWalkInResult` JSON
+/// is frozen (D-219).
 class StaffRegisterVisitorScreen extends ConsumerStatefulWidget {
   const StaffRegisterVisitorScreen({super.key});
 
@@ -324,90 +329,94 @@ class _StaffRegisterVisitorScreenState
         bottom: false,
         child: Column(
           children: <Widget>[
-            // Navy header block (Figma 1467:12565 — #071832): back + globe row,
-            // then the centred forum title with the crest.
-            Container(
-              color: SimfTokens.navyHeader,
-              padding: const EdgeInsets.only(bottom: 24),
-              child: Column(
-                children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-                    child: Row(
-                      textDirection: TextDirection.ltr,
-                      children: <Widget>[
-                        // Circular navy back button with a left chevron (Figma).
-                        Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Material(
-                            color: SimfTokens.navyDeep,
-                            shape: const CircleBorder(),
-                            child: InkWell(
-                              customBorder: const CircleBorder(),
-                              onTap: _back,
-                              child: const Padding(
-                                padding: EdgeInsets.all(10),
-                                child: Icon(
-                                  Icons.chevron_left,
-                                  color: Colors.white,
-                                  size: 26,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const Spacer(),
-                        SizedBox(
-                          width: 56,
-                          height: 56,
-                          child: IconButton(
-                            tooltip: l10n.languageToggleLabel,
-                            onPressed: _toggleLanguage,
-                            style: IconButton.styleFrom(
-                              backgroundColor: SimfTokens.navyDeep,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                            ),
-                            icon: const Icon(
-                              Icons.language,
-                              color: SimfTokens.accent,
-                              size: 30,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Center(
-                    child: Row(
-                      textDirection: TextDirection.ltr,
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Flexible(
-                          child: Text(
-                            l10n.signInForumTitle,
-                            textAlign: TextAlign.center,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        const SimfLogo(size: 44),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _buildHeader(l10n),
             Expanded(child: _buildBody(l10n)),
           ],
         ),
+      ),
+    );
+  }
+
+  /// The navy header block (Figma 1467:12565 — #071832): the forced-LTR back +
+  /// globe row, then the centred forum title with the crest.
+  Widget _buildHeader(AppL10n l10n) {
+    return Container(
+      color: SimfTokens.navyHeader,
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+            child: Row(
+              textDirection: TextDirection.ltr,
+              children: <Widget>[
+                // Circular navy back button with a left chevron (Figma).
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Material(
+                    color: SimfTokens.navyDeep,
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: _back,
+                      child: const Padding(
+                        padding: EdgeInsets.all(10),
+                        child: Icon(
+                          Icons.chevron_left,
+                          color: Colors.white,
+                          size: 26,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                SizedBox(
+                  width: 56,
+                  height: 56,
+                  child: IconButton(
+                    tooltip: l10n.languageToggleLabel,
+                    onPressed: _toggleLanguage,
+                    style: IconButton.styleFrom(
+                      backgroundColor: SimfTokens.navyDeep,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                    icon: const Icon(
+                      Icons.language,
+                      color: SimfTokens.accent,
+                      size: 30,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Center(
+            child: Row(
+              textDirection: TextDirection.ltr,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Flexible(
+                  child: Text(
+                    l10n.signInForumTitle,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const SimfLogo(size: 44),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -446,7 +455,7 @@ class _StaffRegisterVisitorScreenState
         padding: const EdgeInsets.all(24),
         child: Material(
           color: SimfTokens.cardBeige,
-          borderRadius: _radius4,
+          borderRadius: SimfTokens.borderRadiusSmall,
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: LayoutBuilder(
@@ -504,12 +513,14 @@ class _StaffRegisterVisitorScreenState
             _email,
             keyboardType: TextInputType.emailAddress,
             ltr: true,
+            maxLength: 50,
           ),
           _textField(
             l10n.staffPhoneLabel,
             _phone,
             keyboardType: TextInputType.phone,
             ltr: true,
+            maxLength: 16,
             validator: _validatePhone,
           ),
         ),
@@ -519,6 +530,7 @@ class _StaffRegisterVisitorScreenState
           _textField(
             l10n.arabicNameLabel,
             _arabicName,
+            maxLength: 256,
             validator: (v) => _required(l10n, v),
             inputFormatters: <TextInputFormatter>[
               FilteringTextInputFormatter.allow(RegExp(r'[ء-ي\s]')),
@@ -528,6 +540,7 @@ class _StaffRegisterVisitorScreenState
             l10n.englishNameLabel,
             _englishName,
             ltr: true,
+            maxLength: 256,
             validator: (v) => _required(l10n, v),
             inputFormatters: <TextInputFormatter>[
               FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z\s]')),
@@ -597,7 +610,7 @@ class _StaffRegisterVisitorScreenState
             style: FilledButton.styleFrom(
               backgroundColor: SimfTokens.accent,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: _radius4),
+              shape: RoundedRectangleBorder(borderRadius: SimfTokens.borderRadiusSmall),
             ),
             child: _submitting
                 ? const SizedBox(
@@ -803,6 +816,7 @@ class _StaffRegisterVisitorScreenState
         const SizedBox(height: 16),
         TextFormField(
           controller: _documentNumber,
+          maxLength: 10,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           validator: (v) => _required(l10n, v),
           style: _inputStyle,
@@ -857,13 +871,13 @@ class _StaffRegisterVisitorScreenState
         const SizedBox(height: 16),
         InkWell(
           onTap: onTap,
-          borderRadius: _radius4,
+          borderRadius: SimfTokens.borderRadiusSmall,
           child: Container(
             height: 56,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
               color: SimfTokens.surface,
-              borderRadius: _radius4,
+              borderRadius: SimfTokens.borderRadiusSmall,
               border: Border.all(color: SimfTokens.beigeBorder),
             ),
             child: Row(
@@ -893,7 +907,7 @@ class _StaffRegisterVisitorScreenState
   }
 
   String? _required(AppL10n l10n, String? value) =>
-      (value == null || value.trim().isEmpty) ? l10n.requiredField : null;
+      isBlank(value) ? l10n.requiredField : null;
 
   /// Phone is required server-side (Saudi or international); validate inline like
   /// every other required field, with the same standard shapes as self-service.
@@ -926,14 +940,14 @@ class _StaffRegisterVisitorScreenState
       contentPadding:
           const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       enabledBorder: OutlineInputBorder(
-        borderRadius: _radius4,
+        borderRadius: SimfTokens.borderRadiusSmall,
         borderSide: const BorderSide(color: SimfTokens.beigeBorder),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: _radius4,
+        borderRadius: SimfTokens.borderRadiusSmall,
         borderSide: const BorderSide(color: SimfTokens.accent),
       ),
-      border: const OutlineInputBorder(borderRadius: _radius4),
+      border: const OutlineInputBorder(borderRadius: SimfTokens.borderRadiusSmall),
     );
   }
 

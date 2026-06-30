@@ -128,8 +128,9 @@ void main() {
     testWidgets('renders the booth card header + code pill + hall box',
         (tester) async {
       await _pump(tester, repo: _FakeRepo(booths: const <BoothSummary>[_sami]));
-      // Company header: short name + full name.
-      expect(find.text('SAMI'), findsOneWidget);
+      // Company header: the short name appears in BOTH the badge box and the
+      // gold name (Figma 922:2556), plus the full name once.
+      expect(find.text('SAMI'), findsNWidgets(2));
       expect(
         find.text('Saudi Arabian Military Industries'),
         findsOneWidget,
@@ -145,14 +146,15 @@ void main() {
         tester,
         repo: _FakeRepo(booths: const <BoothSummary>[_sami, _other]),
       );
-      expect(find.text('SAMI'), findsOneWidget);
-      expect(find.text('Lockheed'), findsOneWidget);
+      // Each company short name renders twice (badge box + gold name).
+      expect(find.text('SAMI'), findsNWidgets(2));
+      expect(find.text('Lockheed'), findsNWidgets(2));
 
       await tester.enterText(find.byType(TextField), 'lockheed');
       await tester.pumpAndSettle();
 
       expect(find.text('SAMI'), findsNothing);
-      expect(find.text('Lockheed'), findsOneWidget);
+      expect(find.text('Lockheed'), findsNWidgets(2));
     });
 
     testWidgets('search with no match shows the no-match state',
@@ -201,7 +203,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('SAMI'));
+      await tester.tap(find.text('SAMI').first);
       await tester.pumpAndSettle();
       expect(find.text('EXHIBITOR b1'), findsOneWidget);
     });
@@ -230,29 +232,32 @@ void main() {
       expect(_networkImageUrls(tester), isEmpty);
     });
 
-    testWidgets('PAR-B3 — RTL: the company logo tile leads at the inline start '
+    testWidgets('PAR-B3 — RTL: the company logo tile is at the inline start '
         '(right) of the company name', (tester) async {
       await _pump(
         tester,
         repo: _FakeRepo(booths: const <BoothSummary>[_samiWithLogo]),
         locale: const Locale('ar'),
       );
-      // The logo tile (a network Image) must sit to the inline start (physical
-      // right) of the company name 'سامي', per frame 922:2789.
+      // Frame 922:2560 — the logo tile (a network Image) sits at the inline
+      // start (physical right), to the right of the company name 'سامي'.
       final logoDx = tester.getCenter(find.byType(Image)).dx;
-      final nameDx = tester.getCenter(find.text('سامي')).dx;
+      final nameDx = tester.getCenter(find.text('سامي').last).dx;
       expect(logoDx, greaterThan(nameDx));
     });
 
-    testWidgets('#9 — shows the booth country (flag + name)', (tester) async {
+    testWidgets('booth country FLAG is shown (Figma 1062:12911 flag tile) — '
+        'but no country text line', (tester) async {
       await _pump(
         tester,
         repo: _FakeRepo(booths: const <BoothSummary>[_samiWithCountry]),
       );
-      // The country name renders on the card (under the company name).
-      expect(find.text('Saudi Arabia'), findsOneWidget);
-      // The SA flag emoji appears (the logo corner badge + the country line).
-      expect(find.text('\u{1F1F8}\u{1F1E6}'), findsWidgets);
+      // Figma 922:2556 shows the country as a FLAG tile at the inline-end (left)
+      // of the header — NOT a text line. The flag glyph renders; the country
+      // name text does not.
+      expect(find.text('\u{1F1F8}\u{1F1E6}'), findsOneWidget);
+      expect(find.text('Saudi Arabia'), findsNothing);
+      expect(find.text('السعودية'), findsNothing);
     });
 
     testWidgets('#9 — tapping أرشدني opens the venue map for that booth',

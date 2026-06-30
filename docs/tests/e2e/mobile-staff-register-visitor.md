@@ -7,7 +7,12 @@
 > `…/{id}/avatar`), reusing the shared on-site provisioning service; backend
 > tests in `tests/SIMF.Api.Tests/WalkInRegistrationTests.cs`
 > (`Staff_app_walk_in_*`). App tests:
-> `src/Mobile/simf_app/test/features/staff/`.
+> `src/Mobile/simf_app/test/features/staff/register_visitor_screen_test.dart`
+> (widget, 5 cases) + the render-lock golden
+> `test/golden/staff_register_visitor_golden_test.dart`
+> (`goldens/staff_register_visitor_1467-12357.png` @1024×1314). Clean-code
+> reviewed + frozen (D-559, 2026-06-30); per-page doc
+> [`docs/pages/mobile/staff-register-visitor/`](../../pages/mobile/staff-register-visitor/README.md).
 
 | | |
 |--|--|
@@ -99,4 +104,4 @@ Scenario: RTL
 
 ---
 
-_Last reviewed:_ `2026-06-27` by `SIMF Team`.
+_Last reviewed:_ `2026-06-30` by `SIMF Team`.

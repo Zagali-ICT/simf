@@ -6,7 +6,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../core/organization_profile/organization_profile.dart';
 import '../content/data/content_models.dart';
 import '../content/data/content_repository.dart';
@@ -14,7 +14,7 @@ import '../content/data/content_repository.dart';
 /// Page 037 — عن الملتقى · About the forum (#37, `/about`, Guest+).
 ///
 /// **Public.** Pixel-parity to the restructured KSA Figma frame `1116:16448`:
-/// the navy [KsaPage] shell, the anchor-mark header, the **الرسالة** (mission)
+/// the navy [SimfPageShell] shell, the anchor-mark header, the **الرسالة** (mission)
 /// and **الرؤية** (vision) cards, the **تفاصيل الملتقى** details card
 /// (year / date / location) and the **المحاور الرئيسية** themes card with the
 /// four fixed forum themes. The vision paragraph is hydrated from the CMS
@@ -124,9 +124,9 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
       ('04', l10n.aboutTheme4Title, l10n.aboutTheme4Body),
     ];
 
-    return KsaPage(
+    return SimfPageShell(
       title: l10n.aboutTitle,
-      onBack: () => ksaBackOrHome(context),
+      onBack: () => backOrHome(context),
       body: ListView(
         padding: const EdgeInsets.all(SimfTokens.space4),
         children: <Widget>[
