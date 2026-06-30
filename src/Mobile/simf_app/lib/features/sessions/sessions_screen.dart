@@ -292,13 +292,14 @@ class _TypeTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Frame order (RTL, right→left): ورش العمل · جلسات · احداث · الكل. A Row lays
-    // children start→end, so the order here is workshops → sessions → events → all.
+    // Frame 883:2320 (verified against the render): الكل (All) leads at the
+    // inline-start — rightmost in RTL — then احداث · جلسات · ورش العمل. A Row
+    // lays children start→end, so All is the first entry.
     final tabs = <(String, SessionType?)>[
-      (l10n.sessionTypeWorkshop, SessionType.workshop),
-      (l10n.sessionTypeSession, SessionType.session),
-      (l10n.sessionTypeEvent, SessionType.event),
       (l10n.sessionTypeAll, null),
+      (l10n.sessionTypeEvent, SessionType.event),
+      (l10n.sessionTypeSession, SessionType.session),
+      (l10n.sessionTypeWorkshop, SessionType.workshop),
     ];
     return Container(
       padding: const EdgeInsets.all(SimfTokens.space2),
@@ -618,7 +619,8 @@ class _DayCell extends StatelessWidget {
               style: TextStyle(
                 color: numberColor,
                 fontSize: SimfTokens.textMd,
-                fontWeight: FontWeight.w700,
+                // Frame 883:2331 "Subheadline/semibold 14" — SemiBold, not bold.
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
