@@ -14,6 +14,7 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_logo.dart';
 import '../../app/widgets/simf_svg_icon.dart';
+import '../../core/validation/email_validation.dart';
 import '../../core/widgets/simf_field_label.dart';
 import '../../core/widgets/simf_field_style.dart';
 import 'biometric_auth.dart';
@@ -73,10 +74,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   bool _rememberMe = !kIsWeb;
   String? _error;
 
-  // Same shape check as the sign-up form (D-332) — reused so sign-in rejects a
-  // malformed address before the round-trip, with the shared `invalidEmail` copy.
-  static final RegExp _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-
   @override
   void initState() {
     super.initState();
@@ -107,7 +104,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     }
     // #7 — reject a malformed email before the network round-trip, with an
     // inline bilingual error (the field had no validation before).
-    if (!_emailPattern.hasMatch(email)) {
+    if (!isValidEmail(email)) {
       setState(() => _error = l10n.invalidEmail);
       return;
     }

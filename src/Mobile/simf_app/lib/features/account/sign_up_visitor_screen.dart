@@ -12,6 +12,10 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_form_scaffold.dart';
 import '../../core/responsive/max_width_body.dart';
+import '../../core/validation/name_validation.dart';
+import '../../core/validation/phone_validation.dart';
+import '../../core/validation/plate_validation.dart';
+import '../../core/validation/saudi_id_validation.dart';
 import '../../core/widgets/simf_field_label.dart';
 import '../../core/widgets/simf_field_style.dart';
 import '../../core/widgets/simf_labeled_text_field.dart';
@@ -19,8 +23,6 @@ import '../../core/widgets/simf_picker_field.dart';
 import '../myarea/identity_verification_screen.dart' show CapturedSelfie;
 import 'data/profile_models.dart';
 import 'data/profile_repository.dart';
-import 'phone_validation.dart';
-import 'plate_validation.dart';
 import 'saudi_regions.dart';
 import 'widgets/attachment_field.dart';
 import 'widgets/beige_tabs.dart';
@@ -534,25 +536,20 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
 
   // ---- Validators (client mirror of UpsertUserProfileRequestValidator) -----
 
-  // Name rules (mirror UpsertUserProfileRequestValidator): the Arabic name must
-  // be Arabic letters only, the English name Latin letters only, and a "full
-  // name" is 2 to 4 whitespace-separated parts (in that one language).
-  static final RegExp _arabicLettersOnly = RegExp(r'^[ء-ي\s]+$');
-  static final RegExp _englishLettersOnly = RegExp(r'^[A-Za-z\s]+$');
-
-  /// Shared name rule for both scripts: required, [lettersOnly] only, and 2–4
-  /// whitespace-separated parts. [lettersOnlyMsg] is the per-script message.
+  /// Shared name rule for both scripts (mirror UpsertUserProfileRequestValidator):
+  /// required, [lettersOnly] only, and 2–4 whitespace-separated parts. The pure
+  /// shape rules live in `core/validation/name_validation.dart`; this keeps the
+  /// per-script l10n message ([lettersOnlyMsg]) and the order of checks.
   String? _validateName(String? value, RegExp lettersOnly, String lettersOnlyMsg) {
     final l10n = AppL10n.of(context);
     final name = value?.trim() ?? '';
     if (name.isEmpty) {
       return l10n.requiredField;
     }
-    if (!lettersOnly.hasMatch(name)) {
+    if (!isNameLettersOnly(name, lettersOnly)) {
       return lettersOnlyMsg;
     }
-    final parts = name.split(RegExp(r'\s+')).length;
-    if (parts < 2 || parts > 4) {
+    if (!hasFullNameParts(name)) {
       return l10n.fullNameFourParts;
     }
     return null;
@@ -560,20 +557,21 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
 
   String? _validateArabicName(String? value) => _validateName(
         value,
-        _arabicLettersOnly,
+        arabicNameLettersOnly,
         AppL10n.of(context).arabicNameLettersOnly,
       );
 
   String? _validateEnglishName(String? value) => _validateName(
         value,
-        _englishLettersOnly,
+        englishNameLettersOnly,
         AppL10n.of(context).englishNameLettersOnly,
       );
 
   String? _validateNationalId(String? value) {
     final id = value?.trim() ?? '';
-    final valid = RegExp(r'^1\d{9}$').hasMatch(id) && _isValidLuhn(id);
-    return valid ? null : AppL10n.of(context).nationalIdInvalid;
+    return isValidNationalId(id)
+        ? null
+        : AppL10n.of(context).nationalIdInvalid;
   }
 
   String? _validateDocumentNumber(String? value) {
@@ -583,12 +581,9 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       return l10n.documentRequired;
     }
     if (_docType == _DocType.iqama) {
-      final valid =
-          RegExp(r'^2\d{9}$').hasMatch(number) && _isValidLuhn(number);
-      return valid ? null : l10n.iqamaInvalid;
+      return isValidIqama(number) ? null : l10n.iqamaInvalid;
     }
-    final valid = RegExp(r'^[A-Za-z0-9]{6,9}$').hasMatch(number);
-    return valid ? null : l10n.passportInvalid;
+    return isValidPassport(number) ? null : l10n.passportInvalid;
   }
 
   /// C4 (D-371) — the standard shapes live in `phone_validation.dart`,
@@ -1502,28 +1497,5 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     final month = date.month.toString().padLeft(2, '0');
     final day = date.day.toString().padLeft(2, '0');
     return '$year-$month-$day';
-  }
-
-  /// Standard Luhn mod-10 — mirrors the server check for the Saudi national id /
-  /// Iqama. Instant client feedback only; the server re-validates (D-197).
-  static bool _isValidLuhn(String number) {
-    var sum = 0;
-    var doubleDigit = false;
-    for (var i = number.length - 1; i >= 0; i--) {
-      final code = number.codeUnitAt(i);
-      if (code < 0x30 || code > 0x39) {
-        return false;
-      }
-      var digit = code - 0x30;
-      if (doubleDigit) {
-        digit *= 2;
-        if (digit > 9) {
-          digit -= 9;
-        }
-      }
-      sum += digit;
-      doubleDigit = !doubleDigit;
-    }
-    return sum % 10 == 0;
   }
 }

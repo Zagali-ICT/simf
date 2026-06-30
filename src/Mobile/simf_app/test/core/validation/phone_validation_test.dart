@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:simf_app/features/account/phone_validation.dart';
+import 'package:simf_app/core/validation/phone_validation.dart';
 
 /// C4 (D-371) — the same cases as the server's `UserProfileTests` phone
 /// theories, so the client/server mirror stays visibly in lockstep.

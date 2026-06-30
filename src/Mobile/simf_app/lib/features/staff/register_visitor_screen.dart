@@ -12,9 +12,10 @@ import '../../app/localization/locale_controller.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_logo.dart';
+import '../../core/validation/phone_validation.dart';
+import '../../core/validation/required_validation.dart';
 import '../account/data/profile_models.dart';
 import '../account/data/profile_repository.dart';
-import '../account/phone_validation.dart';
 import 'data/staff_models.dart';
 import 'data/staff_repository.dart';
 
@@ -890,7 +891,7 @@ class _StaffRegisterVisitorScreenState
   }
 
   String? _required(AppL10n l10n, String? value) =>
-      (value == null || value.trim().isEmpty) ? l10n.requiredField : null;
+      isBlank(value) ? l10n.requiredField : null;
 
   /// Phone is required server-side (Saudi or international); validate inline like
   /// every other required field, with the same standard shapes as self-service.

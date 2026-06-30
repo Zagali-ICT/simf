@@ -10,6 +10,8 @@ import '../../app/localization/locale_controller.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_logo.dart';
+import '../../core/validation/email_validation.dart';
+import '../../core/validation/password_validation.dart';
 import '../../core/widgets/simf_field_label.dart';
 import '../../core/widgets/simf_field_style.dart';
 
@@ -67,24 +69,18 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
     super.dispose();
   }
 
-  static final RegExp _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-  static final RegExp _letterPattern = RegExp(r'[A-Za-z]');
-  static final RegExp _digitPattern = RegExp(r'\d');
-
   String? _validateEmail(String? value) {
     final email = value?.trim() ?? '';
-    final valid = _emailPattern.hasMatch(email);
-    return valid ? null : AppL10n.of(context).invalidEmail;
+    return isValidEmail(email) ? null : AppL10n.of(context).invalidEmail;
   }
 
   /// Client-side mirror of the server policy (≥8 chars + a letter + a digit;
   /// SIMF-MOB-API-001) for instant feedback only — the server re-validates.
   String? _validatePassword(String? value) {
     final password = value ?? '';
-    final valid = password.length >= 8 &&
-        _letterPattern.hasMatch(password) &&
-        _digitPattern.hasMatch(password);
-    return valid ? null : AppL10n.of(context).passwordPolicyError;
+    return isValidPassword(password)
+        ? null
+        : AppL10n.of(context).passwordPolicyError;
   }
 
   String? _validateConfirm(String? value) {
