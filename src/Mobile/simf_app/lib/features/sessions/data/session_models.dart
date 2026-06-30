@@ -358,6 +358,7 @@ class SessionDetail {
     this.categoryName,
     this.categoryNameArabic,
     this.liveStreamUrl,
+    this.displayOrder = 0,
   });
 
   final String id;
@@ -385,6 +386,11 @@ class SessionDetail {
   /// button's visibility gate).
   bool get hasLiveStream =>
       liveStreamUrl != null && liveStreamUrl!.trim().isNotEmpty;
+
+  /// The session's 1-based position within its day (D-567, Figma 889:2604) —
+  /// the gold index badge shows it zero-padded ("02"). 0 = unknown (an older
+  /// API), in which case the badge falls back to the [code].
+  final int displayOrder;
 
   DateTime get startLocal => startUtc.toLocal();
   DateTime get endLocal => endUtc.toLocal();
@@ -418,6 +424,7 @@ class SessionDetail {
         categoryName: json['categoryName'] as String?,
         categoryNameArabic: json['categoryNameArabic'] as String?,
         liveStreamUrl: json['liveStreamUrl'] as String?,
+        displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
       );
 }
 

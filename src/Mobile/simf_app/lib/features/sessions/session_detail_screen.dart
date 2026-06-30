@@ -559,6 +559,12 @@ class _HeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // D-567 (Figma 889:2604) — the gold badge shows the session's 1-based
+    // position within its day, zero-padded ("02"); it falls back to the session
+    // code until the API supplies the ordinal (displayOrder 0, e.g. an older API).
+    final badgeText = detail.displayOrder > 0
+        ? detail.displayOrder.toString().padLeft(2, '0')
+        : detail.code;
     return Container(
       padding: const EdgeInsets.all(SimfTokens.space4),
       decoration: BoxDecoration(
@@ -568,20 +574,16 @@ class _HeaderCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          // Ordinal label + gold index badge (frame 889:2706). The badge shows
-          // the session code (e.g. "02"); the ordinal is the localized title's
-          // implicit position — we lead with the code on the badge and the
-          // session title below, matching the frame's number/name pairing.
-          // Frame 889:2706 — RTL: the title leads at the inline-start (right);
-          // the gold index badge trails at the inline-end (left).
+          // Frame 889:2706 — RTL: the session title leads at the inline-start
+          // (right); the gold index badge (the day-ordinal "02", D-567) trails
+          // at the inline-end (left).
           Row(
             children: <Widget>[
               Expanded(
                 child: Text(
                   detail.localizedTitle(isArabic),
                   textAlign: TextAlign.start,
-                  // Frame 889:2705 — 16px SemiBold white ordinal line; here it
-                  // carries the session title (the real bilingual data).
+                  // Frame 889:2705 — 16px SemiBold white title line.
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
@@ -590,9 +592,9 @@ class _HeaderCard extends StatelessWidget {
                   ),
                 ),
               ),
-              if (detail.code.isNotEmpty) ...<Widget>[
+              if (badgeText.isNotEmpty) ...<Widget>[
                 const SizedBox(width: SimfTokens.space2),
-                _IndexBadge(code: detail.code),
+                _IndexBadge(text: badgeText),
               ],
             ],
           ),
@@ -682,12 +684,12 @@ class _HeaderActionButton extends StatelessWidget {
 }
 
 /// The gold index badge (frame 889:2604): a 40×40 gold rounded square with the
-/// session code in white extrabold, always LTR (e.g. "02"); a longer real code
-/// scales down to fit rather than overflowing the badge.
+/// day-ordinal in white extrabold, always LTR (e.g. "02"); a longer fallback
+/// code scales down to fit rather than overflowing the badge.
 class _IndexBadge extends StatelessWidget {
-  const _IndexBadge({required this.code});
+  const _IndexBadge({required this.text});
 
-  final String code;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
@@ -701,13 +703,13 @@ class _IndexBadge extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4),
-        // A two-digit ordinal ("02") shows at full size; a longer real code
+        // A two-digit ordinal ("02") shows at full size; a longer fallback code
         // ("S-001" / "S-TODAY") scales down to fit the 40×40 badge instead of
         // overflowing or wrapping.
         child: FittedBox(
           fit: BoxFit.scaleDown,
           child: Text(
-            code,
+            text,
             textDirection: TextDirection.ltr,
             maxLines: 1,
             softWrap: false,

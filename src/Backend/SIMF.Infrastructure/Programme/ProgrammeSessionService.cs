@@ -325,6 +325,22 @@ internal sealed class ProgrammeSessionService(
             reserved,
             Math.Max(0, effectiveCapacity - reserved));
 
+        // D-567 (Figma 889:2604) — the gold badge shows the session's 1-based
+        // position within its day. Match the agenda's day grouping: a half-open
+        // UTC window (SIMF sessions are daytime UTC+3, so they never straddle UTC
+        // midnight) ordered by StartUtc. Count the earlier active sessions in the
+        // same day; +1 is this session's ordinal.
+        var dayStart = new DateTimeOffset(session.StartUtc.UtcDateTime.Date, TimeSpan.Zero);
+        var nextDayStart = dayStart.AddDays(1);
+        var displayOrder = 1 + await dbContext.Sessions
+            .AsNoTracking()
+            .CountAsync(
+                row => row.IsActive
+                    && row.StartUtc >= dayStart
+                    && row.StartUtc < nextDayStart
+                    && row.StartUtc < session.StartUtc,
+                cancellationToken);
+
         return new PublicSessionDetail(
             session.Id,
             session.Code,
@@ -354,7 +370,9 @@ internal sealed class ProgrammeSessionService(
             session.LiveSignLanguageUrl,
             // P5 — D-439: the AI live-caption text (null when none set).
             session.LiveCaptions,
-            session.LiveCaptionsArabic);
+            session.LiveCaptionsArabic,
+            // D-567: the gold-badge ordinal (1-based position within the day).
+            displayOrder);
     }
 
     public async Task<SessionRecordingRef?> GetPublishedRecordingAsync(

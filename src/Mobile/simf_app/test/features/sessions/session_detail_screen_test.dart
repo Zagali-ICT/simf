@@ -17,6 +17,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 SessionDetail _detail({String? liveStreamUrl, int? countryId}) => SessionDetail(
       id: 's1',
       code: 'OP-1',
+      displayOrder: 2, // D-567 — gold badge shows "02"
       title: 'Opening',
       titleArabic: 'الافتتاح',
       hallId: 'h1',
@@ -298,7 +299,9 @@ void main() {
       // Header card: the centred title chrome + the title/code + meta.
       expect(find.text('Session detail'), findsOneWidget);
       expect(find.text('Opening'), findsOneWidget);
-      expect(find.text('OP-1'), findsOneWidget); // the gold index badge
+      // The gold index badge shows the day-ordinal "02" (D-567), not the code.
+      expect(find.text('02'), findsOneWidget);
+      expect(find.text('OP-1'), findsNothing);
       // Header action buttons: the summary button always shows; the live link
       // is hidden because this detail has no liveStreamUrl (Figma 889:2715).
       expect(find.text('Session summary'), findsOneWidget);

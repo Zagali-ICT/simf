@@ -19,6 +19,7 @@ void main() {
         'categoryName': 'Main Session',
         'categoryNameArabic': 'جلسة رئيسية',
         'liveStreamUrl': 'https://youtu.be/abcdefghijk',
+        'displayOrder': 2, // D-567 — day-ordinal for the gold badge
         'speakers': <dynamic>[
           <String, dynamic>{
             'id': 'sp1',
@@ -41,6 +42,7 @@ void main() {
       expect(detail.localizedCategory(true), 'جلسة رئيسية');
       expect(detail.liveStreamUrl, 'https://youtu.be/abcdefghijk');
       expect(detail.hasLiveStream, isTrue);
+      expect(detail.displayOrder, 2); // D-567
       expect(detail.startUtc.isUtc, isTrue);
 
       expect(detail.speakers, hasLength(1));

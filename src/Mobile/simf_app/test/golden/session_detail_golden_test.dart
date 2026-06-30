@@ -51,6 +51,7 @@ import 'golden_fonts.dart';
 SessionDetail _detail() => SessionDetail(
       id: 's1',
       code: 'OP-01',
+      displayOrder: 2, // D-567 — gold badge shows the day-ordinal "02"
       title: 'Opening Session',
       titleArabic: 'الجلسة الافتتاحية',
       hallId: 'h1',
