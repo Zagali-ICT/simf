@@ -12,6 +12,7 @@ import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_confirm_dialog.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
+import '../../app/widgets/simf_svg_icon.dart';
 import '../../core/country_flag.dart';
 import 'data/seat_map_models.dart';
 import 'data/seat_map_repository.dart';
@@ -1026,8 +1027,10 @@ class _AskHostCard extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Icon(
-              Icons.person_outline,
+            // Figma 1056:12877 — solar:user-outline, the design-system user
+            // glyph (bundled), not Material's person_outline.
+            SimfSvgIcon(
+              'assets/icons/nav_user.svg',
               size: 24,
               color: iconColor,
             ),
@@ -1118,10 +1121,11 @@ class _ReservationCard extends StatelessWidget {
             ),
             if (onView != null) ...<Widget>[
               const SizedBox(width: SimfTokens.space2),
-              Icon(
-                Directionality.of(context) == TextDirection.rtl
-                    ? Icons.chevron_left
-                    : Icons.chevron_right,
+              // Figma 889:2762 — the my-seat arrow is the iconamoon chevron
+              // (left-pointing). Material's chevron_left auto-mirrors under RTL
+              // and wrongly points right; the bundled SVG never mirrors.
+              const SimfSvgIcon(
+                'assets/icons/ic_caret_left.svg',
                 size: 20,
                 color: SimfTokens.beigeBorder,
               ),
@@ -1251,9 +1255,9 @@ class _CtaRow extends StatelessWidget {
     // RTL: the first child is at the inline start (physical right). The frame
     // puts أضف إلى تقويمي (gold) on the right and تذكير (outlined) on the left,
     // so the gold Expanded button leads and the reminder button trails.
-    // Frame 897:2872 — in each button the label leads (inline-start, right) and
-    // the icon trails (inline-end, left). A plain Row [label, gap, icon] under
-    // RTL puts the icon on the left, unlike the .icon constructor.
+    // Frame 897:2872 — in each button the ICON leads (inline-start = physical
+    // right) and the label follows (owner 2026-06-30: "icon first"), so each
+    // inner Row is [icon, gap, label].
     return Row(
       children: <Widget>[
         Expanded(
@@ -1269,6 +1273,12 @@ class _CtaRow extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
+                const Icon(
+                  Icons.calendar_today_outlined,
+                  size: 24,
+                  color: Colors.white,
+                ),
+                const SizedBox(width: SimfTokens.space2),
                 Flexible(
                   child: Text(
                     l10n.addToCalendar,
@@ -1280,12 +1290,6 @@ class _CtaRow extends StatelessWidget {
                       fontSize: SimfTokens.textLg,
                     ),
                   ),
-                ),
-                const SizedBox(width: SimfTokens.space2),
-                const Icon(
-                  Icons.calendar_today_outlined,
-                  size: 24,
-                  color: Colors.white,
                 ),
               ],
             ),
@@ -1309,6 +1313,12 @@ class _CtaRow extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
+              const Icon(
+                Icons.schedule_outlined,
+                size: 24,
+                color: Colors.white,
+              ),
+              const SizedBox(width: SimfTokens.space2),
               Flexible(
                 child: Text(
                   l10n.reminder,
@@ -1320,12 +1330,6 @@ class _CtaRow extends StatelessWidget {
                     fontSize: SimfTokens.textLg,
                   ),
                 ),
-              ),
-              const SizedBox(width: SimfTokens.space2),
-              const Icon(
-                Icons.schedule_outlined,
-                size: 24,
-                color: Colors.white,
               ),
             ],
           ),

@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 import 'package:simf_app/features/sessions/data/seat_map_repository.dart';
 import 'package:simf_app/features/sessions/data/session_calendar.dart';
@@ -549,8 +550,17 @@ void main() {
       final outlinedDx = tester.getCenter(find.byType(OutlinedButton)).dx;
       expect(filledDx, greaterThan(outlinedDx));
 
-      // The reservation-card chevron sits at the inline end (far left).
-      final chevronDx = tester.getCenter(find.byIcon(Icons.chevron_left)).dx;
+      // The reservation-card chevron (the bundled left caret SVG) sits at the
+      // inline end (far left).
+      final chevronDx = tester
+          .getCenter(
+            find.byWidgetPredicate(
+              (w) =>
+                  w is SimfSvgIcon &&
+                  w.asset == 'assets/icons/ic_caret_left.svg',
+            ),
+          )
+          .dx;
       expect(chevronDx, lessThan(nameDx));
     });
 
