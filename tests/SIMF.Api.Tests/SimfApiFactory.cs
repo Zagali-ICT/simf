@@ -49,6 +49,11 @@ public class SimfApiFactory : WebApplicationFactory<Program>
     public string UserIdDocumentStorageDirectory { get; } =
         Path.Combine(Path.GetTempPath(), $"simf-user-id-documents-{Guid.NewGuid():N}");
 
+    /// <summary>D-568 — per-test-run root for the centralized file store
+    /// (<c>FileStorage:RootPath</c>), cleaned up on <see cref="Dispose(bool)"/>.</summary>
+    public string FileStorageDirectory { get; } =
+        Path.Combine(Path.GetTempPath(), $"simf-files-{Guid.NewGuid():N}");
+
     public SimfApiFactory()
     {
         Environment.SetEnvironmentVariable(
@@ -96,6 +101,13 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         Environment.SetEnvironmentVariable(
             "Storage__UserIdDocumentEncryptionKey",
             "VnY3R0V2YnFwT0ZQUE1XdjJxQjJlbzVwUFp4MnNYbWY=");
+        // D-568 — the centralized file store writes under a throwaway temp root and
+        // encrypts its Confidential/Secret services with a fixed test KEK so the
+        // envelope round-trip is deterministic across runs (the real KEK is supplied
+        // through the environment in production, never committed).
+        Environment.SetEnvironmentVariable("FileStorage__RootPath", FileStorageDirectory);
+        Environment.SetEnvironmentVariable(
+            "FileStorage__EncryptionKey", "U0lNRnRlc3RGaWxlU3RvcmFnZUtFSzAxMjM0NTY3ODk=");
         // C7 — D-371: the human-face gate is OFF for the general suite (the
         // fixture images are synthetic 1x1 PNGs that carry no face);
         // UserProfileFaceGateTests re-enables it via FaceGateApiFactory to
@@ -170,6 +182,10 @@ public class SimfApiFactory : WebApplicationFactory<Program>
                 if (Directory.Exists(AvatarStorageDirectory))
                 {
                     Directory.Delete(AvatarStorageDirectory, recursive: true);
+                }
+                if (Directory.Exists(FileStorageDirectory))
+                {
+                    Directory.Delete(FileStorageDirectory, recursive: true);
                 }
             }
             catch (Exception)

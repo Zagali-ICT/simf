@@ -1,0 +1,254 @@
+// D-568 — integration coverage for the centralized file endpoints:
+// POST /api/v1/files (one upload), GET /api/v1/files/{id} (download-by-GUID) and
+// DELETE /api/v1/files/{id} (soft-delete). Exercises the full StoredFileService
+// pipeline: magic-byte detection, the per-service allow-list, encrypt-at-rest +
+// envelope round-trip, the upload permission gate, and soft-delete.
+using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection;
+using SIMF.Common;
+using SIMF.Common.Enums;
+using SIMF.Contracts.Authentication;
+using SIMF.Contracts.Files;
+using SIMF.Domain.IdentityAccess;
+using Xunit;
+
+namespace SIMF.Api.Tests.Files;
+
+public sealed class FilesEndpointsTests : IClassFixture<SimfApiFactory>
+{
+    private const string AdministratorRole = "Administrator";
+
+    // Minimal 1x1 PNG (real magic bytes so DetectUpload classifies it as an image).
+    private static readonly byte[] Png = Convert.FromBase64String(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==");
+
+    private static readonly byte[] Pdf = "%PDF-1.4\n%fake pdf body for the type test\n"u8.ToArray();
+
+    private readonly SimfApiFactory _factory;
+    private readonly HttpClient _client;
+
+    public FilesEndpointsTests(SimfApiFactory factory)
+    {
+        _factory = factory;
+        _factory.EnsureDatabaseCreated();
+        _client = factory.CreateClient();
+    }
+
+    [Fact]
+    public async Task Upload_public_image_then_anonymous_download_streams_the_bytes()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var owner = Guid.NewGuid();
+
+        var resp = await UploadAsync(FileService.SpeakerPhoto, FileOwnerEntityType.Speaker, owner, Png, "image/png", "p.png", token);
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var file = (await resp.Content.ReadFromJsonAsync<ApiResult<UploadedFileResponse>>())!.Data!;
+        Assert.Equal(FileType.Image, file.FileType);
+        Assert.False(file.IsEncrypted);
+        Assert.Equal($"/api/v1/files/{file.Id}", file.Url);
+
+        // Anonymous (no bearer) download returns the original bytes.
+        var download = await _client.GetAsync(file.Url);
+        Assert.Equal(HttpStatusCode.OK, download.StatusCode);
+        Assert.Equal(Png, await download.Content.ReadAsByteArrayAsync());
+    }
+
+    [Fact]
+    public async Task Upload_encrypted_avatar_round_trips_through_the_cipher()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var owner = Guid.NewGuid();
+
+        var resp = await UploadAsync(FileService.Avatar, FileOwnerEntityType.UserProfile, owner, Png, "image/png", "a.png", token);
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var file = (await resp.Content.ReadFromJsonAsync<ApiResult<UploadedFileResponse>>())!.Data!;
+        Assert.True(file.IsEncrypted);
+
+        // The admin (wildcard) downloads — the bytes decrypt back to the original.
+        var download = await GetAuthAsync(file.Url, token);
+        Assert.Equal(HttpStatusCode.OK, download.StatusCode);
+        Assert.Equal(Png, await download.Content.ReadAsByteArrayAsync());
+
+        // Anonymous is refused with a uniform 404 (private file, no oracle).
+        var anon = await _client.GetAsync(file.Url);
+        Assert.Equal(HttpStatusCode.NotFound, anon.StatusCode);
+    }
+
+    [Fact]
+    public async Task An_unrecognized_payload_is_rejected_400()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+
+        var resp = await UploadAsync(
+            FileService.SpeakerPhoto, FileOwnerEntityType.Speaker, Guid.NewGuid(),
+            "not-an-image"u8.ToArray(), "text/plain", "x.txt", token);
+
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_pdf_uploaded_to_an_image_only_service_is_rejected_400()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+
+        var resp = await UploadAsync(
+            FileService.SpeakerPhoto, FileOwnerEntityType.Speaker, Guid.NewGuid(),
+            Pdf, "application/pdf", "doc.pdf", token);
+
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task An_owner_required_service_without_an_owner_is_rejected_400()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+
+        // Avatar requires an owner id; omit it.
+        var resp = await UploadAsync(
+            FileService.Avatar, FileOwnerEntityType.UserProfile, ownerId: null,
+            Png, "image/png", "a.png", token);
+
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task Anonymous_upload_is_unauthorized()
+    {
+        var resp = await UploadAsync(
+            FileService.SpeakerPhoto, FileOwnerEntityType.Speaker, Guid.NewGuid(),
+            Png, "image/png", "p.png", token: null);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_non_admin_upload_is_forbidden()
+    {
+        var visitor = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
+
+        var resp = await UploadAsync(
+            FileService.SpeakerPhoto, FileOwnerEntityType.Speaker, Guid.NewGuid(),
+            Png, "image/png", "p.png", visitor.AccessToken);
+
+        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task Delete_soft_deletes_and_a_later_download_is_404()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var upload = await UploadAsync(
+            FileService.SpeakerPhoto, FileOwnerEntityType.Speaker, Guid.NewGuid(),
+            Png, "image/png", "p.png", token);
+        var file = (await upload.Content.ReadFromJsonAsync<ApiResult<UploadedFileResponse>>())!.Data!;
+
+        var del = await DeleteAuthAsync($"/api/v1/files/{file.Id}", token);
+        Assert.Equal(HttpStatusCode.OK, del.StatusCode);
+
+        var after = await _client.GetAsync(file.Url);
+        Assert.Equal(HttpStatusCode.NotFound, after.StatusCode);
+    }
+
+    [Fact]
+    public async Task Deleting_an_unknown_file_is_404()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+
+        var resp = await DeleteAuthAsync($"/api/v1/files/{Guid.NewGuid()}", token);
+
+        Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task Downloading_an_unknown_file_is_404()
+    {
+        var resp = await _client.GetAsync($"/api/v1/files/{Guid.NewGuid()}");
+
+        Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
+    }
+
+    // -- Helpers --------------------------------------------------------------
+
+    private static MultipartFormDataContent BuildUpload(
+        FileService service, FileOwnerEntityType ownerType, Guid? ownerId,
+        byte[] bytes, string contentType, string fileName)
+    {
+        var form = new MultipartFormDataContent
+        {
+            { new StringContent(service.ToString()), "Service" },
+            { new StringContent(ownerType.ToString()), "OwnerEntityType" },
+        };
+        if (ownerId is { } id)
+        {
+            form.Add(new StringContent(id.ToString()), "OwnerEntityId");
+        }
+        var file = new ByteArrayContent(bytes);
+        file.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+        form.Add(file, "File", fileName);
+        return form;
+    }
+
+    private Task<HttpResponseMessage> UploadAsync(
+        FileService service, FileOwnerEntityType ownerType, Guid? ownerId,
+        byte[] bytes, string contentType, string fileName, string? token)
+    {
+        var req = new HttpRequestMessage(HttpMethod.Post, "/api/v1/files")
+        {
+            Content = BuildUpload(service, ownerType, ownerId, bytes, contentType, fileName),
+        };
+        if (token is not null)
+        {
+            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        }
+        return _client.SendAsync(req);
+    }
+
+    private Task<HttpResponseMessage> GetAuthAsync(string url, string token)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
+
+    private Task<HttpResponseMessage> DeleteAuthAsync(string url, string token)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Delete, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
+
+    private async Task<string> CreateAdministratorAndSignInAsync()
+    {
+        var email = $"file-admin-{Guid.NewGuid():N}@simf.test";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var roles = scope.ServiceProvider.GetRequiredService<RoleManager<SimfRole>>();
+            if (!await roles.RoleExistsAsync(AdministratorRole))
+            {
+                await roles.CreateAsync(new SimfRole { Name = AdministratorRole });
+            }
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            var user = new SimfUser
+            {
+                UserName = email,
+                Email = email,
+                EmailConfirmed = true,
+                DisplayName = "File Admin",
+                AccountState = AccountState.Approved,
+                UserType = UserType.Admin,
+            };
+            await users.CreateAsync(user, AuthFlow.Password);
+            await users.AddToRoleAsync(user, AdministratorRole);
+        }
+
+        var sign = await _client.PostAsJsonAsync(
+            "/api/v1/app/auth/sign-in",
+            new SignInRequest { Email = email, Password = AuthFlow.Password, Audience = SignInAudience.Cp });
+        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
+        return body.Data!.Tokens!.AccessToken;
+    }
+}
