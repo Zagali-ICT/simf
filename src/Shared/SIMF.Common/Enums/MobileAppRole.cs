@@ -16,7 +16,7 @@ namespace SIMF.Common.Enums;
 ///   <item><b>None</b> (0) — explicit "no in-app authority" for
 ///     partner-side profile types (D-186: ProfileType.IsVisitor=false
 ///     under the unified Visitor UserType) whose mobile-app effect is
-///     "treated as a Visitor" (Exhibitor, Sponsor, Speaker, Press,
+///     "treated as a Visitor" (Sponsor, Speaker, Press,
 ///     VIP Guest, Government, …).</item>
 /// </list>
 ///
@@ -50,4 +50,15 @@ public enum MobileAppRole
     /// Staff functions plus moderate user-generated content and
     /// override certain holds (e.g. force-approve a flagged scan).</summary>
     Moderator = 3,
+
+    /// <summary>D-519 — العارض (exhibitor / booth representative). In the
+    /// Flutter app an Exhibitor gets the full <b>Visitor</b> experience
+    /// <b>plus</b> the lead-capture tools (scan a visitor's QR, "My Visitors")
+    /// and add-to-contacts. Assigned via an exhibitor <c>ProfileType</c> whose
+    /// <c>MobileAppRole</c> column is set to <c>Exhibitor</c> (with
+    /// <c>IsVisitor</c>=false). This differs from <see cref="None"/> — which is
+    /// also a partner (IsVisitor=false) profile type but is *treated as* a plain
+    /// Visitor — by surfacing as its own app role so the exhibitor-only pages
+    /// gate to it.</summary>
+    Exhibitor = 4,
 }
