@@ -186,6 +186,15 @@ public static class AuditEvents
     public const string AssetRemoved = "Asset.Removed";
     public const string AssetRestored = "Asset.Restored";
 
+    // D-568 — the centralized file store. Every file action is audited, including
+    // a denied private download (SAMA E-16/17 / NCA ECC 2-12). Public-file reads
+    // are not audited per-row (they would flood the log).
+    public const string FileUploaded = "File.Uploaded";
+    public const string FileDownloaded = "File.Downloaded";
+    public const string FileAccessDenied = "File.AccessDenied";
+    public const string FileDeleted = "File.Deleted";
+    public const string FileSecurelyDestroyed = "File.SecurelyDestroyed";
+
     // System configuration settings (P2.4 / D-229 — FDS-012 §5.5)
     public const string SystemSettingCreated = "SystemSetting.Created";
     public const string SystemSettingUpdated = "SystemSetting.Updated";

@@ -605,6 +605,8 @@ public static class DependencyInjection
             SIMF.Infrastructure.Files.AesGcmEnvelopeCipher>();
         services.AddSingleton<SIMF.Application.Files.Abstractions.IFileStorageProvider,
             SIMF.Infrastructure.Files.FilesystemFileStorageProvider>();
+        services.AddScoped<SIMF.Application.Files.Abstractions.IFileService,
+            SIMF.Infrastructure.Files.StoredFileService>();
         services.AddSingleton<ILogFileService, LogFileService>();
         services.AddSingleton<IJwtTokenService, JwtTokenService>();
         services.AddSingleton<ITotpVerifier, TotpVerifier>();
