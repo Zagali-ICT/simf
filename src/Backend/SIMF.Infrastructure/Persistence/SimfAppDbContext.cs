@@ -14,6 +14,7 @@ using SIMF.Domain.Exhibition;
 using SIMF.Domain.Exhibitors;
 using SIMF.Domain.Faq;
 using SIMF.Domain.Feedback;
+using SIMF.Domain.Files;
 using SIMF.Domain.Media;
 using SIMF.Domain.Networking;
 using SIMF.Domain.Operations;
@@ -262,7 +263,15 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     // D-357 — unified media assets: the single upload/download store every
     // image-bearing entity shares (speaker photo, company / sponsor /
     // media-partner logo, archive cover, news image). Bytes live out-of-row.
+    // SUPERSEDED by StoredFile (D-568); kept until the Strategy-A cutover retires it.
     public DbSet<Asset> Assets => Set<Asset>();
+
+    // D-568 — the single, unified file store: ONE table for every uploaded or
+    // linked file (avatar, ID document, VIP photo, media gallery, speaker photo /
+    // presentation, session recording, all logos, news / archive / banner images).
+    // Replaces the seven bespoke filesystem stores + the D-357 Asset table. Bytes
+    // live out-of-row (D-90); owner is a bare polymorphic Guid (D-157).
+    public DbSet<StoredFile> StoredFiles => Set<StoredFile>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
