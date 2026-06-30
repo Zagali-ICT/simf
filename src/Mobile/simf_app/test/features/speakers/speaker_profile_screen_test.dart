@@ -97,6 +97,7 @@ class _FakeRepo implements SpeakersRepository {
   final List<SpeakerSlot> slots;
   int submits = 0;
   DateTime? lastSlotStart;
+  String? lastRequesterName;
 
   @override
   Future<List<SpeakerSummary>> getSpeakers() => throw UnimplementedError();
@@ -126,6 +127,7 @@ class _FakeRepo implements SpeakersRepository {
   }) async {
     submits++;
     lastSlotStart = slotStartUtc;
+    lastRequesterName = requesterName;
   }
 }
 
@@ -232,13 +234,16 @@ void main() {
 
       await tester.tap(find.widgetWithText(FilledButton, 'Request meeting'));
       await tester.pumpAndSettle();
-      // The sheet opened with the name prefilled + a subject field.
+      // The sheet has no name field (owner: "no need for name") — only the
+      // subject; the requester name comes from the signed-in account.
+      expect(find.byType(TextField), findsOneWidget);
       expect(find.text('Subject'), findsOneWidget);
-      await tester.enterText(find.byType(TextField).last, 'Discuss navigation');
+      await tester.enterText(find.byType(TextField), 'Discuss navigation');
       await tester.tap(find.widgetWithText(FilledButton, 'Send request'));
       await tester.pumpAndSettle();
 
       expect(repo.submits, 1);
+      expect(repo.lastRequesterName, 'Visitor One');
       expect(find.text('Meeting request sent'), findsOneWidget);
     });
 

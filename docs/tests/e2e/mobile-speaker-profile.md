@@ -42,6 +42,7 @@
 | E2E-MOB020-013 | Active tab pill is gold-filled; the rest are navy with a beige hairline | happy | P1 | _to author_ |
 | E2E-MOB020-014 | Only CV sections with content render a pill (1–4 pills) | edge | P1 | _to author_ |
 | E2E-MOB020-015 | Speaker with no CV content shows no tabs and no bio card | edge | P1 | _to author_ |
+| E2E-MOB020-016 | Meeting form has **no name field**; only subject (+ optional slot) is entered; `requesterName` is auto-sent from the signed-in account | happy | P1 | authored ✓ (`a signed-in visitor can submit a meeting request`) |
 
 ## Scenarios
 
@@ -237,6 +238,24 @@ Scenario: A speaker with no CV text shows neither the tab strip nor the bio card
   And the avatar, the request-meeting affordance and the sessions list still render per their own rules
 ```
 
+### E2E-MOB020-016 — Meeting form has no name field
+
+```gherkin
+Scenario: The request-meeting sheet no longer asks for the requester's name
+  Given an approved Visitor signed in as "Visitor One"
+  And a speaker whose allowsMeetingRequests is true
+  When the visitor opens the "طلب مقابلة" (Request meeting) sheet
+  Then the sheet shows only the Subject field (and the optional Available-time slot)
+  And there is no "Your name" field
+  When the visitor enters a subject and sends the request
+  Then the POST body's requesterName equals the account display name "Visitor One"
+  And the request is created Pending
+```
+
+> **Owner change (myComment.txt line 16, 2026-06-30):** the name input was
+> removed — the requester is the signed-in account, so the app sends the account
+> display name as `requesterName` automatically. The API contract is unchanged.
+
 ---
 
 > **Figma parity (2026-06-16):** the screen was re-skinned to the KSA-Project
@@ -263,4 +282,4 @@ Scenario: A speaker with no CV text shows neither the tab strip nor the bio card
 
 ---
 
-_Last reviewed:_ `2026-06-16` by `SIMF Team`.
+_Last reviewed:_ `2026-06-30` by `SIMF Team`.

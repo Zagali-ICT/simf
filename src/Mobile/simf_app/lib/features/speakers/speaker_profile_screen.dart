@@ -632,8 +632,6 @@ class _MeetingRequestSheet extends ConsumerStatefulWidget {
 }
 
 class _MeetingRequestSheetState extends ConsumerState<_MeetingRequestSheet> {
-  late final TextEditingController _name =
-      TextEditingController(text: widget.defaultName);
   final TextEditingController _subject = TextEditingController();
   bool _submitting = false;
   // D-474/D-475 (#11) — the VIP availability-slot picker (optional: a picked slot
@@ -671,16 +669,18 @@ class _MeetingRequestSheetState extends ConsumerState<_MeetingRequestSheet> {
 
   @override
   void dispose() {
-    _name.dispose();
     _subject.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
     final l10n = widget.l10n;
-    final name = _name.text.trim();
+    // Owner: "no need for name" — the requester is the signed-in account, so we
+    // submit its display name as the requesterName the backend contract still
+    // requires, instead of asking the user to type it.
+    final name = widget.defaultName.trim();
     final subject = _subject.text.trim();
-    if (name.isEmpty || subject.isEmpty) {
+    if (subject.isEmpty) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(l10n.meetingRequestInvalid)));
       return;
@@ -756,12 +756,6 @@ class _MeetingRequestSheetState extends ConsumerState<_MeetingRequestSheet> {
             ),
           ),
           const SizedBox(height: SimfTokens.space4),
-          TextField(
-            controller: _name,
-            decoration: InputDecoration(labelText: l10n.meetingNameLabel),
-            maxLength: 128,
-          ),
-          const SizedBox(height: SimfTokens.space2),
           TextField(
             controller: _subject,
             decoration: InputDecoration(labelText: l10n.meetingSubjectLabel),
