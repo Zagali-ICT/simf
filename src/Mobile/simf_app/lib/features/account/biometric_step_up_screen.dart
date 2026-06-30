@@ -8,10 +8,9 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_svg_icon.dart';
+import '../../core/responsive/max_width_body.dart';
 import 'biometric_auth.dart';
 import 'widgets/otp_code_boxes.dart';
-
-const Color _sweepTint = Color(0x0AFFFFFF);
 
 /// #7a — the emailed-OTP step-up confirming the user wants to ENABLE biometric
 /// (Face-ID) sign-in. Reached (pushed) from the Face-ID toggle and the
@@ -21,6 +20,11 @@ const Color _sweepTint = Color(0x0AFFFFFF);
 /// without a fresh code — so a borrowed-but-unlocked phone can't silently bind a
 /// biometric credential. Restyled to the shared KSA OTP frame (D-369) via
 /// [OtpCodeBoxes]/[OtpMark], like the sign-in second factor.
+///
+/// Clean-code frozen (D-554, Phase 3 — unbound auth screen, render preserved):
+/// the lone sweep-tint const dropped for `SimfTokens.surfaceTint`; the long
+/// `build` split into `_buildHeader` / `_buildContent` / `_buildSubmitButton` /
+/// `_buildResendRow`; the body + CTA capped by [MaxWidthBody].
 class BiometricStepUpScreen extends ConsumerStatefulWidget {
   const BiometricStepUpScreen({super.key});
 
@@ -182,7 +186,7 @@ class _BiometricStepUpScreenState extends ConsumerState<BiometricStepUpScreen> {
                 width: 313,
                 height: 323,
                 decoration: BoxDecoration(
-                  color: _sweepTint,
+                  color: SimfTokens.surfaceTint,
                   borderRadius: BorderRadius.circular(40),
                 ),
               ),
@@ -191,186 +195,201 @@ class _BiometricStepUpScreenState extends ConsumerState<BiometricStepUpScreen> {
           SafeArea(
             child: Column(
               children: <Widget>[
-                SizedBox(
-                  height: 56,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: <Widget>[
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 8),
-                          child: IconButton(
-                            onPressed: _verifying ? null : _back,
-                            icon: const SimfSvgIcon(
-                              'assets/icons/ic_back.svg',
-                              size: 24,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Text(
-                        l10n.biometricStepUpTitle,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 400),
-                      child: Column(
-                        children: <Widget>[
-                          const SizedBox(height: 48),
-                          const OtpMark(icon: Icons.fingerprint),
-                          const SizedBox(height: 24),
-                          Text(
-                            l10n.biometricStepUpHeading,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          if (_maskedEmail != null &&
-                              _maskedEmail!.isNotEmpty) ...<Widget>[
-                            Text(
-                              l10n.otpSentToPrefix,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color: SimfTokens.beigeBorder,
-                                fontSize: 14,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              _maskedEmail!,
-                              textAlign: TextAlign.center,
-                              textDirection: TextDirection.ltr,
-                              style: const TextStyle(
-                                color: SimfTokens.accent,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                          const SizedBox(height: 48),
-                          OtpCodeBoxes(
-                            controller: _code,
-                            focusNode: _codeFocus,
-                            enabled: !_verifying,
-                            onChanged: () => setState(() {}),
-                            onSubmitted: () {
-                              if (_canSubmit) {
-                                unawaited(_submit());
-                              }
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          Text.rich(
-                            TextSpan(
-                              children: <InlineSpan>[
-                                TextSpan(text: '${l10n.otpResendCountdown} '),
-                                TextSpan(
-                                  text: _countdownLabel,
-                                  style: const TextStyle(
-                                    color: SimfTokens.accent,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            style: const TextStyle(
-                              color: SimfTokens.beigeBorder,
-                              fontSize: 14,
-                            ),
-                          ),
-                          if (_error != null) ...<Widget>[
-                            const SizedBox(height: 12),
-                            Text(
-                              _error!,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color: SimfTokens.danger,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                          const SizedBox(height: 24),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: _canSubmit ? () => unawaited(_submit()) : null,
-                      child: _verifying
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : Text(
-                              l10n.verifyButton,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                    ),
-                  ),
-                ),
+                _buildHeader(l10n),
+                Expanded(child: _buildContent(l10n)),
+                _buildSubmitButton(l10n),
                 const SizedBox(height: 16),
-                // Resend row — re-requests a code once the countdown ends.
-                Text.rich(
-                  TextSpan(
-                    children: <InlineSpan>[
-                      TextSpan(text: '${l10n.otpDidntReceive} '),
-                      WidgetSpan(
-                        alignment: PlaceholderAlignment.middle,
-                        child: GestureDetector(
-                          onTap: (_secondsLeft == 0 && !_sending)
-                              ? () => unawaited(_send())
-                              : null,
-                          child: Text(
-                            l10n.otpResendAction,
-                            style: TextStyle(
-                              color: (_secondsLeft == 0 && !_sending)
-                                  ? SimfTokens.accent
-                                  : SimfTokens.beigeBorder,
-                              fontWeight: FontWeight.w700,
-                              decoration: TextDecoration.underline,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
-                ),
+                _buildResendRow(l10n),
                 const SizedBox(height: 24),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildHeader(AppL10n l10n) {
+    return SizedBox(
+      height: 56,
+      child: Stack(
+        alignment: Alignment.center,
+        children: <Widget>[
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: IconButton(
+                onPressed: _verifying ? null : _back,
+                icon: const SimfSvgIcon(
+                  'assets/icons/ic_back.svg',
+                  size: 24,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+          Text(
+            l10n.biometricStepUpTitle,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContent(AppL10n l10n) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: MaxWidthBody(
+        maxWidth: 560,
+        child: Column(
+          children: <Widget>[
+            const SizedBox(height: 48),
+            const OtpMark(icon: Icons.fingerprint),
+            const SizedBox(height: 24),
+            Text(
+              l10n.biometricStepUpHeading,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 24),
+            if (_maskedEmail != null && _maskedEmail!.isNotEmpty) ...<Widget>[
+              Text(
+                l10n.otpSentToPrefix,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: SimfTokens.beigeBorder,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _maskedEmail!,
+                textAlign: TextAlign.center,
+                textDirection: TextDirection.ltr,
+                style: const TextStyle(
+                  color: SimfTokens.accent,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+            const SizedBox(height: 48),
+            OtpCodeBoxes(
+              controller: _code,
+              focusNode: _codeFocus,
+              enabled: !_verifying,
+              onChanged: () => setState(() {}),
+              onSubmitted: () {
+                if (_canSubmit) {
+                  unawaited(_submit());
+                }
+              },
+            ),
+            const SizedBox(height: 16),
+            Text.rich(
+              TextSpan(
+                children: <InlineSpan>[
+                  TextSpan(text: '${l10n.otpResendCountdown} '),
+                  TextSpan(
+                    text: _countdownLabel,
+                    style: const TextStyle(
+                      color: SimfTokens.accent,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+              style: const TextStyle(
+                color: SimfTokens.beigeBorder,
+                fontSize: 14,
+              ),
+            ),
+            if (_error != null) ...<Widget>[
+              const SizedBox(height: 12),
+              Text(
+                _error!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: SimfTokens.danger,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubmitButton(AppL10n l10n) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: MaxWidthBody(
+        maxWidth: 560,
+        child: SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            onPressed: _canSubmit ? () => unawaited(_submit()) : null,
+            child: _verifying
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : Text(
+                    l10n.verifyButton,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Resend row — re-requests a code once the countdown ends.
+  Widget _buildResendRow(AppL10n l10n) {
+    final canResend = _secondsLeft == 0 && !_sending;
+    return Text.rich(
+      TextSpan(
+        children: <InlineSpan>[
+          TextSpan(text: '${l10n.otpDidntReceive} '),
+          WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: GestureDetector(
+              onTap: canResend ? () => unawaited(_send()) : null,
+              child: Text(
+                l10n.otpResendAction,
+                style: TextStyle(
+                  color: canResend
+                      ? SimfTokens.accent
+                      : SimfTokens.beigeBorder,
+                  fontWeight: FontWeight.w700,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+      textAlign: TextAlign.center,
+      style: const TextStyle(color: Colors.white, fontSize: 14),
     );
   }
 }
