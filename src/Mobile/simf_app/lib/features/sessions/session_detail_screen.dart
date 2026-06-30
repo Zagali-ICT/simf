@@ -579,11 +579,15 @@ class _HeaderCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          // Frame 889:2706 — RTL: the session title leads at the inline-start
-          // (right); the gold index badge (the day-ordinal "02", D-567) trails
-          // at the inline-end (left).
+          // Frame 889:2706 — RTL: the gold index badge (the BOLD day-ordinal
+          // "02", D-567) leads at the inline-start (physical right); the session
+          // title follows to its inline-end (left), packed against the badge.
           Row(
             children: <Widget>[
+              if (badgeText.isNotEmpty) ...<Widget>[
+                _IndexBadge(text: badgeText),
+                const SizedBox(width: SimfTokens.space2),
+              ],
               Expanded(
                 child: Text(
                   detail.localizedTitle(isArabic),
@@ -597,12 +601,9 @@ class _HeaderCard extends StatelessWidget {
                   ),
                 ),
               ),
-              if (badgeText.isNotEmpty) ...<Widget>[
-                const SizedBox(width: SimfTokens.space2),
-                _IndexBadge(text: badgeText),
-              ],
             ],
           ),
+
           const SizedBox(height: SimfTokens.space4),
           _MetaRow(detail: detail, isArabic: isArabic),
           const SizedBox(height: SimfTokens.space4),
