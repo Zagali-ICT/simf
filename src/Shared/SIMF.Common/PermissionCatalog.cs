@@ -539,6 +539,23 @@ public static class PermissionCatalog
         public const string Import = "Media.Import";
     }
 
+    /// <summary>D-568 — the centralized file store. <see cref="Upload"/> /
+    /// <see cref="Delete"/> gate the single file API; <see cref="View"/> gates the
+    /// management grid. The privileged trio (<see cref="ForceDelete"/> /
+    /// <see cref="Reclassify"/> / <see cref="BulkExport"/>) is held separately so
+    /// each elevated action is independently grantable and audited. (Public-file
+    /// reads need no permission; private downloads reuse the owning entity's
+    /// view permission, enforced per-service by the download endpoint.)</summary>
+    public static class Files
+    {
+        public const string Upload = "Files.Upload";
+        public const string Delete = "Files.Delete";
+        public const string View = "Files.View";
+        public const string ForceDelete = "Files.ForceDelete";
+        public const string Reclassify = "Files.Reclassify";
+        public const string BulkExport = "Files.BulkExport";
+    }
+
     public static class News
     {
         public const string View = "News.View";
@@ -984,6 +1001,14 @@ public static class PermissionCatalog
         // D-357 — centralised media library (manage every unified media asset).
         new(MediaLibrary.View, "MediaLibrary", "View", "View the media library", AdminOnly),
         new(MediaLibrary.Manage, "MediaLibrary", "Manage", "Manage media assets (deactivate / restore / edit links)", AdminOnly),
+
+        // D-568 — centralized file store.
+        new(Files.Upload, "Files", "Upload", "Upload a file to the central store", AdminOnly),
+        new(Files.Delete, "Files", "Delete", "Delete a file from the central store", AdminOnly),
+        new(Files.View, "Files", "View", "View the central file management grid", AdminOnly),
+        new(Files.ForceDelete, "Files", "ForceDelete", "Force-delete a retained file (privileged)", AdminOnly),
+        new(Files.Reclassify, "Files", "Reclassify", "Change a file's service / classification (privileged)", AdminOnly),
+        new(Files.BulkExport, "Files", "BulkExport", "Bulk-export files (privileged)", AdminOnly),
         new(Archive.Snapshot, "Archive", "Snapshot", "Snapshot the current event into a past edition", AdminOnly),
         new(Archive.Export, "Archive", "Export", "Export archive editions", AdminOnly),
         new(Archive.Import, "Archive", "Import", "Import archive editions", AdminOnly),
