@@ -1634,6 +1634,14 @@
   <data name="Admin.Sessions.Field.LiveCaptions" xml:space="preserve"><value>AI live captions (English)</value></data>
   <data name="Admin.Sessions.Field.LiveCaptionsArabic" xml:space="preserve"><value>AI live captions (Arabic)</value></data>
   <data name="Admin.Sessions.Field.LiveCaptionsHint" xml:space="preserve"><value>Optional caption / running-transcript text shown under the live player. Leave blank to fall back to the player's own captions.</value></data>
+  <data name="Admin.Sessions.Subtitle.ImportLabel" xml:space="preserve"><value>Get subtitle — import an .srt/.vtt file, or fetch it from the video below</value></data>
+  <data name="Admin.Sessions.Subtitle.FetchFromVideo" xml:space="preserve"><value>Fetch subtitle from video (YouTube)</value></data>
+  <data name="Admin.Sessions.Subtitle.Imported" xml:space="preserve"><value>Subtitle imported into the caption field above.</value></data>
+  <data name="Admin.Sessions.Subtitle.Fetched" xml:space="preserve"><value>Subtitle fetched from the video into the caption field above.</value></data>
+  <data name="Admin.Sessions.Subtitle.Empty" xml:space="preserve"><value>No readable text was found in that subtitle file.</value></data>
+  <data name="Admin.Sessions.Subtitle.ReadError" xml:space="preserve"><value>The subtitle file could not be read. Use a plain .srt, .vtt or .txt file.</value></data>
+  <data name="Admin.Sessions.Subtitle.NoUrl" xml:space="preserve"><value>Enter the Live stream URL above first, then fetch its subtitle.</value></data>
+  <data name="Admin.Sessions.Subtitle.FetchFailed" xml:space="preserve"><value>Could not fetch the subtitle from the video. The server may not be able to reach YouTube — paste or upload the subtitle instead.</value></data>
   <data name="Admin.Sessions.Field.Hall" xml:space="preserve"><value>Hall</value></data>
   <data name="Admin.Sessions.Field.HallPlaceholder" xml:space="preserve"><value>— Select a hall —</value></data>
   <data name="Admin.Sessions.Field.HallRequired" xml:space="preserve"><value>Hall is required.</value></data>

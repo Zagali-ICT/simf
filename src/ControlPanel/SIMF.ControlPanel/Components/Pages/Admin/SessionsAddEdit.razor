@@ -61,6 +61,23 @@
                       Value="@_model.LiveCaptionsArabic"
                       ValueChanged="@(v => _model.LiveCaptionsArabic = v)" />
 
+        @* D-578 — get the subtitle without typing it: import an .srt/.vtt file
+           (parsed on the server) or fetch it straight from the LiveStreamUrl video
+           (YouTube). Either fills the caption field above (Arabic vs English by the
+           detected language); the AI session-summary drafter then reads it. *@
+        <div class="simf-form__field">
+            <label>@L["Admin.Sessions.Subtitle.ImportLabel"]</label>
+            <InputFile OnChange="OnSubtitleFileAsync" accept=".srt,.vtt,.txt" disabled="@_busy" />
+        </div>
+        <SimfButton Type="button" Variant="secondary" Disabled="_busy"
+                    OnClick="FetchSubtitleAsync">
+            @L["Admin.Sessions.Subtitle.FetchFromVideo"]
+        </SimfButton>
+        @if (_subtitleMessage is not null)
+        {
+            <SimfAlert Variant="@_subtitleVariant">@_subtitleMessage</SimfAlert>
+        }
+
         <SimfSelect TValue="string"
                     Label="@L["Admin.Sessions.Field.Hall"]"
                     Placeholder="@L["Admin.Sessions.Field.HallPlaceholder"]"
@@ -663,6 +680,122 @@
             _error = L["Admin.Sessions.Fallback"];
         }
         finally { _busy = false; }
+    }
+
+    // D-578 — subtitle import (upload .srt/.vtt parsed server-side, or fetch from the
+    // video) feedback banner. Variant is one of SimfAlert's error/success/info.
+    private string? _subtitleMessage;
+    private string _subtitleVariant = "info";
+
+    /// <summary>Parses an uploaded .srt/.vtt/.txt file (server-side, in-process) into a
+    /// clean transcript and drops it into the matching caption field.</summary>
+    private async Task OnSubtitleFileAsync(InputFileChangeEventArgs e)
+    {
+        _subtitleMessage = null;
+        var file = e.File;
+        if (file is null)
+        {
+            return;
+        }
+        // Subtitle files are tiny; cap the read at 4 MB as a safety bound.
+        const long maxBytes = 4L * 1024 * 1024;
+        try
+        {
+            using var reader = new System.IO.StreamReader(file.OpenReadStream(maxBytes));
+            var text = SubtitleParser.Parse(await reader.ReadToEndAsync());
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                _subtitleVariant = "error";
+                _subtitleMessage = L["Admin.Sessions.Subtitle.Empty"];
+                return;
+            }
+            ApplyTranscript(text, IsMostlyArabic(text));
+            _subtitleVariant = "success";
+            _subtitleMessage = L["Admin.Sessions.Subtitle.Imported"];
+        }
+        catch (Exception)
+        {
+            _subtitleVariant = "error";
+            _subtitleMessage = L["Admin.Sessions.Subtitle.ReadError"];
+        }
+    }
+
+    /// <summary>Fetches the subtitle straight from the session's LiveStreamUrl video
+    /// (YouTube) via the admin API. Fails gracefully where the server can't reach
+    /// YouTube — the error banner then points the admin to paste/upload instead.</summary>
+    private async Task FetchSubtitleAsync()
+    {
+        _subtitleMessage = null;
+        var url = NullIfBlank(_model.LiveStreamUrl);
+        if (url is null)
+        {
+            _subtitleVariant = "error";
+            _subtitleMessage = L["Admin.Sessions.Subtitle.NoUrl"];
+            return;
+        }
+        _busy = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<FetchSubtitleResponse>>(
+                "simfAccount.postJson", "/account/api/admin/sessions/subtitle/fetch-from-video",
+                new FetchSubtitleRequest(url, null));
+            if (envelope is { Success: true, Data: not null }
+                && !string.IsNullOrWhiteSpace(envelope.Data.Text))
+            {
+                var isArabic = envelope.Data.LanguageCode
+                    .StartsWith("ar", StringComparison.OrdinalIgnoreCase);
+                ApplyTranscript(envelope.Data.Text, isArabic);
+                _subtitleVariant = "success";
+                _subtitleMessage = L["Admin.Sessions.Subtitle.Fetched"];
+            }
+            else
+            {
+                _subtitleVariant = "error";
+                _subtitleMessage = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Sessions.Subtitle.FetchFailed"];
+            }
+        }
+        catch (Exception)
+        {
+            _subtitleVariant = "error";
+            _subtitleMessage = L["Admin.Sessions.Subtitle.FetchFailed"];
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private void ApplyTranscript(string text, bool arabic)
+    {
+        if (arabic)
+        {
+            _model.LiveCaptionsArabic = text;
+        }
+        else
+        {
+            _model.LiveCaptions = text;
+        }
+    }
+
+    /// <summary>True when Arabic-script characters outnumber Latin ones — routes the
+    /// imported transcript to the Arabic vs English caption field.</summary>
+    private static bool IsMostlyArabic(string text)
+    {
+        var arabic = 0;
+        var latin = 0;
+        foreach (var c in text)
+        {
+            if (c is >= '؀' and <= 'ۿ')
+            {
+                arabic++;
+            }
+            else if (c is (>= 'A' and <= 'Z') or (>= 'a' and <= 'z'))
+            {
+                latin++;
+            }
+        }
+        return arabic > latin;
     }
 
     private static string? NullIfBlank(string? value) =>

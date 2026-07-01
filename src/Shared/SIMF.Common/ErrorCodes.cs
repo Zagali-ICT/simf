@@ -315,6 +315,9 @@ public static class ErrorCodes
     public const string AiProviderFailed = "AI_PROVIDER_FAILED";
     public const string AiInputInvalid = "AI_INPUT_INVALID";
     public const string AiFeatureDisabled = "AI_FEATURE_DISABLED";
+    // D-578 — server-side subtitle fetch from a video (YouTube) failed or the
+    // server has no egress to reach it (paste / upload the subtitle instead).
+    public const string SubtitleFetchFailed = "SUBTITLE_FETCH_FAILED";
 
     // CMS: ContentBlock + Banner (D-173, gap doc G8 — PDF §1, §2.1).
     public const string ContentBlockInvalid = "CONTENT_BLOCK_INVALID";

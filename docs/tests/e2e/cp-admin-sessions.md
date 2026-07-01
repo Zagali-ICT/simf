@@ -579,6 +579,71 @@ Scenario: The eight dropped fields survive an export → import round-trip
   And a blank Type / SeatSelectionModeOverride leaves the field unset (null = inherit the hall)
 ```
 
+### E2E-SES-027 — Import a subtitle file into the caption field (D-578)
+
+```gherkin
+Scenario: Importing an .srt file populates the caption field
+  Given the Add/Edit modal is open below the AI-live-captions textareas
+  And a "Get subtitle — import an .srt/.vtt file, or fetch it from the video below" control
+  When the administrator picks a valid .srt file whose cues read
+      "Good morning, and welcome." then "Today we discuss seabed security."
+  Then the server parses it in-process (SubtitleParser) and fills the English caption
+      field with "Good morning, and welcome. Today we discuss seabed security."
+  And a success banner "Subtitle imported into the caption field above." appears
+  And clicking "Create/Save" round-trips the caption text (SES-025 path)
+
+Scenario: An Arabic-script subtitle file routes to the Arabic caption field
+  When the administrator imports a .vtt whose text is predominantly Arabic
+  Then the parsed transcript fills "AI live captions (Arabic)", not the English field
+```
+
+### E2E-SES-028 — Subtitle parsing strips VTT tags/timestamps (D-578)
+
+```gherkin
+Scenario: A WebVTT file is cleaned to running text
+  When the administrator imports a .vtt containing the "WEBVTT" header, a NOTE block,
+      cue timestamps "00:00:01.000 --> 00:00:04.000" and inline tags "<c>…</c>", "<v Speaker>"
+  Then only the spoken text survives (header/notes/timestamps/tags removed),
+      consecutive duplicate rolling-caption lines are collapsed
+  And an empty / unreadable file shows "No readable text was found in that subtitle file."
+  # Proven by SubtitleParserTests (srt, vtt, dedup, plain, empty).
+```
+
+### E2E-SES-029 — Fetch subtitle from the video, YouTube unreachable → graceful error (D-578)
+
+```gherkin
+Scenario: Fetch-from-video degrades cleanly where the server has no YouTube egress
+  Given the Live stream URL is a valid YouTube watch URL
+  When the administrator clicks "Fetch subtitle from video (YouTube)"
+  And the API host cannot reach YouTube (the on-prem NCA network blocks it)
+  Then the endpoint POST /admin/sessions/subtitle/fetch-from-video returns
+      502 SUBTITLE_FETCH_FAILED
+  And an error banner tells the admin the server may not reach YouTube —
+      "paste or upload the subtitle instead"
+  And the caption field is left unchanged
+  # A non-YouTube URL → 400; a video with no captions → 422 (YoutubeTranscriptServiceTests).
+
+Scenario: Fetch-from-video fills the caption field on an unblocked network
+  Given a network that permits YouTube and a video that has captions
+  When the administrator clicks "Fetch subtitle from video (YouTube)"
+  Then the fetched transcript fills the caption field for the track's language
+  And a success banner "Subtitle fetched from the video into the caption field above." appears
+```
+
+### E2E-SES-030 — Fetch with no Live stream URL → client guard (D-578)
+
+```gherkin
+Scenario: Fetching before a URL is entered is blocked client-side
+  Given the Live stream URL field is blank
+  When the administrator clicks "Fetch subtitle from video (YouTube)"
+  Then no request is sent and the banner reads
+      "Enter the Live stream URL above first, then fetch its subtitle."
+
+Scenario: The subtitle tools are gated by Sessions.Edit
+  Given the endpoint is Policies(Sessions.Edit + RequireApprovedAccount)
+  Then an admin without Sessions.Edit is denied at the API (403), same as the CRUD gate
+```
+
 ---
 
 ## Implementation notes
@@ -617,4 +682,4 @@ Scenario: The eight dropped fields survive an export → import round-trip
 
 ---
 
-_Last reviewed:_ 2026-06-26 by Claude (D-506 — Excel round-trips the 8 dropped fields).
+_Last reviewed:_ 2026-07-01 by Claude (D-578 — subtitle import: upload `.srt`/`.vtt` + fetch-from-video, SES-027..030).

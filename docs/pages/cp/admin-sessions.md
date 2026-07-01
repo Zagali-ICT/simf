@@ -280,10 +280,11 @@ The Add/Edit form also lazy-loads its pickers on first render:
 
 | Date | Decision | Change |
 |------|----------|--------|
+| 2026-07-01 | D-578 | `SessionsAddEdit` "get subtitle" tools below the caption fields: import an `.srt`/`.vtt`/`.txt` file (parsed server-side to text) or **Fetch subtitle from video** (`POST /admin/sessions/subtitle/fetch-from-video`, gated `Sessions.Edit`), both filling `LiveCaptions`/`LiveCaptionsArabic` which feed the AI session-summary. Fetch degrades to `SUBTITLE_FETCH_FAILED` where the server can't reach YouTube (on-prem NCA network) → paste/upload instead. E2E SES-027..030. |
 | 2026-06-10 | D-356 | Uniform-CRUD Excel export (`Sessions.Export`) + import (`Sessions.Import`) via `CrudGridExcel`; reference doc created. |
 | 2026-06-09 | D-353 | CrudShell dialog/full-page toggle; inline SimfModal forms replaced by reusable `SessionsAddEdit` + `SessionsViewDelete`; delete now gated by SimfConfirm. |
 | earlier | D-165/231/232/225/226/349 | Sessions CRUD, broadcast lifecycle, recording, speaker roles, category, live-stream URLs. |
 
 ---
 
-_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5).
+_Last reviewed:_ 2026-07-01 by Claude (D-578 — subtitle import/fetch tools).

@@ -1627,6 +1627,14 @@
   <data name="Admin.Sessions.Field.LiveCaptions" xml:space="preserve"><value>الترجمة النصية المباشرة (الإنجليزية)</value></data>
   <data name="Admin.Sessions.Field.LiveCaptionsArabic" xml:space="preserve"><value>الترجمة النصية المباشرة (العربية)</value></data>
   <data name="Admin.Sessions.Field.LiveCaptionsHint" xml:space="preserve"><value>نص ترجمة/تفريغ اختياري يظهر أسفل مشغّل البث المباشر. اتركه فارغاً للاعتماد على ترجمة المشغّل نفسه.</value></data>
+  <data name="Admin.Sessions.Subtitle.ImportLabel" xml:space="preserve"><value>جلب الترجمة — ارفع ملف srt/‏.vtt‎. أو اجلبها من الفيديو أدناه</value></data>
+  <data name="Admin.Sessions.Subtitle.FetchFromVideo" xml:space="preserve"><value>جلب الترجمة من الفيديو (YouTube)</value></data>
+  <data name="Admin.Sessions.Subtitle.Imported" xml:space="preserve"><value>تم استيراد الترجمة إلى حقل النص أعلاه.</value></data>
+  <data name="Admin.Sessions.Subtitle.Fetched" xml:space="preserve"><value>تم جلب الترجمة من الفيديو إلى حقل النص أعلاه.</value></data>
+  <data name="Admin.Sessions.Subtitle.Empty" xml:space="preserve"><value>لم يُعثر على نص قابل للقراءة في ملف الترجمة.</value></data>
+  <data name="Admin.Sessions.Subtitle.ReadError" xml:space="preserve"><value>تعذّرت قراءة ملف الترجمة. استخدم ملف srt. أو vtt. أو txt. نصّياً.</value></data>
+  <data name="Admin.Sessions.Subtitle.NoUrl" xml:space="preserve"><value>أدخل رابط البث المباشر أعلاه أولاً، ثم اجلب ترجمته.</value></data>
+  <data name="Admin.Sessions.Subtitle.FetchFailed" xml:space="preserve"><value>تعذّر جلب الترجمة من الفيديو. قد لا يستطيع الخادم الوصول إلى YouTube — الصق النص أو ارفع ملف الترجمة بدلاً من ذلك.</value></data>
   <data name="Admin.Sessions.Field.Hall" xml:space="preserve"><value>القاعة</value></data>
   <data name="Admin.Sessions.Field.HallPlaceholder" xml:space="preserve"><value>— اختر القاعة —</value></data>
   <data name="Admin.Sessions.Field.HallRequired" xml:space="preserve"><value>القاعة مطلوبة.</value></data>

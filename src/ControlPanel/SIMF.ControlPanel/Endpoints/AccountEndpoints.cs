@@ -1450,6 +1450,14 @@ internal static class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.UpdateSessionAsync(id, body, token));
         });
+        // D-578 — subtitle fetch-from-video passthrough (Sessions editor).
+        group.MapPost("/admin/sessions/subtitle/fetch-from-video",
+            async (FetchSubtitleRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.FetchSessionSubtitleAsync(body, token));
+        });
         group.MapDelete("/admin/sessions/{id:guid}",
             async (Guid id, HttpContext http, SimfAdminClient api) =>
         {
