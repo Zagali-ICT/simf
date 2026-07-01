@@ -186,4 +186,64 @@ public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
         Assert.NotNull(vip);
         Assert.True(vip!.IsForVisitor, "VIP must be a visitor-side tier");
     }
+
+    [Fact]
+    public async Task SeedAsync_seeds_the_full_demo_account_matrix()
+    {
+        // D-585 — one demo account per user type / profile type so every role is
+        // testable from a fresh DB. Admin → Administrator role, no profile;
+        // visitor/partner → an Approved profile with a minted QR badge. The
+        // second run proves idempotency (no duplicate accounts / profiles).
+        using var scope = _factory.Services.CreateScope();
+        var seeder = scope.ServiceProvider.GetRequiredService<IdentitySeeder>();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var database = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+
+        await seeder.SeedAsync();
+
+        // The extra CP admin — Administrator role, no visitor profile.
+        var admin = await users.FindByEmailAsync("admin@simf.local");
+        Assert.NotNull(admin);
+        Assert.Equal(UserType.Admin, admin!.UserType);
+        Assert.True(await users.IsInRoleAsync(admin, "Administrator"));
+
+        // A visitor — Approved, with an Approved profile carrying a QR badge
+        // under the "Normal" profile type.
+        var visitor = await users.FindByEmailAsync("visitor@simf.local");
+        Assert.NotNull(visitor);
+        Assert.Equal(UserType.Visitor, visitor!.UserType);
+        Assert.Equal(AccountState.Approved, visitor.AccountState);
+        var visitorProfile = database.UserProfiles.SingleOrDefault(p => p.UserId == visitor.Id);
+        Assert.NotNull(visitorProfile);
+        Assert.False(
+            string.IsNullOrEmpty(visitorProfile!.QrId),
+            "an Approved demo profile carries a QR badge");
+        var normalType = database.ProfileTypes.Single(t => t.Id == visitorProfile.ProfileTypeId);
+        Assert.Equal("Normal", normalType.Name);
+
+        // A partner staff account resolves to the Staff app role via its profile type.
+        var staff = await users.FindByEmailAsync("staff@simf.local");
+        Assert.NotNull(staff);
+        var staffProfile = database.UserProfiles.Single(p => p.UserId == staff!.Id);
+        var staffType = database.ProfileTypes.Single(t => t.Id == staffProfile.ProfileTypeId);
+        Assert.Equal(MobileAppRole.Staff, staffType.MobileAppRole);
+
+        // All nine demo emails exist.
+        foreach (var email in new[]
+        {
+            "admin@simf.local", "vvip@simf.local", "vip@simf.local", "visitor@simf.local",
+            "staff@simf.local", "moderator@simf.local", "exhibitor@simf.local",
+            "media@simf.local", "sponsor@simf.local",
+        })
+        {
+            Assert.NotNull(await users.FindByEmailAsync(email));
+        }
+
+        // Idempotent — a second seed adds no duplicate demo profiles.
+        var demoProfileCount = database.UserProfiles.Count(p => p.NationalId!.StartsWith("100000000"));
+        await seeder.SeedAsync();
+        Assert.Equal(
+            demoProfileCount,
+            database.UserProfiles.Count(p => p.NationalId!.StartsWith("100000000")));
+    }
 }

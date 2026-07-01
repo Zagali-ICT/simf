@@ -147,6 +147,9 @@ public static class DependencyInjection
             configuration.GetSection(EmailOptions.SectionName));
         services.Configure<SuperAdminOptions>(
             configuration.GetSection(SuperAdminOptions.SectionName));
+        // D-585 — the demo user-account seed shares one password sourced here.
+        services.Configure<DemoSeedOptions>(
+            configuration.GetSection(DemoSeedOptions.SectionName));
         services.Configure<JwtOptions>(
             configuration.GetSection(JwtOptions.SectionName));
         // A7-13 (NCA) — credential-lifecycle settings (password max age).
