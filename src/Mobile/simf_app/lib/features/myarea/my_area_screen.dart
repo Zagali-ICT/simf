@@ -18,6 +18,7 @@ import '../../core/sharing/content_sharer.dart';
 import '../account/biometric_auth.dart';
 import '../account/data/profile_repository.dart'
     show avatarBustProvider, profileRepositoryProvider, referenceNumberProvider;
+import '../sessions/data/session_favourites.dart';
 import 'data/myarea_models.dart';
 import 'data/myarea_repository.dart';
 import 'identity_verification_screen.dart';
@@ -323,24 +324,27 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
         ),
         const SizedBox(height: SimfTokens.space6),
         // الإحصائيات (frame 213:963). الأرشيف has no API counter, so the right
-        // tile keeps the real مقابلات مؤكدة count (D-396); جلسات محفوظة = booked.
+        // tile keeps the مقابلات مؤكدة count (D-396); جلسات محفوظة = saved (D-584).
         SimfSectionHeader(title: l10n.statisticsTitle),
         const SizedBox(height: SimfTokens.space3),
         SimfTileRow(
           children: <Widget>[
-            // Wave 2 — the two counters now tap through to their real screens
-            // (owner spec, Figma): "my meetings request" → the read-only My
-            // meetings list (1408:9726); "my sessions" → the my-sessions list
-            // (1388:9067) with its القادمة / حضرتها / فاتتني / الأرشيف tabs.
+            // The two counters tap through to their real screens (owner spec,
+            // Figma): مقابلات → the read-only My meetings list (1408:9726);
+            // جلسات محفوظة → the saved-sessions list (1701:8928, D-584 — the
+            // favourited sessions with category chips).
             SimfStatTile(
               value: dashboard.counters.meetingsCount,
               label: l10n.statMeetings,
               onTap: () => context.pushNamed(RouteNames.requests),
             ),
             SimfStatTile(
-              value: dashboard.counters.bookedSessionsCount,
+              // D-584 — the SAVED (favourited) count (no dashboard saved
+              // counter, so the favourites set is the source of truth).
+              value:
+                  ref.watch(sessionFavouritesProvider).valueOrNull?.length ?? 0,
               label: l10n.statBookedSessions,
-              onTap: () => context.pushNamed(RouteNames.myAreaSessions),
+              onTap: () => context.pushNamed(RouteNames.savedSessions),
             ),
           ],
         ),

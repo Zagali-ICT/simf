@@ -8,6 +8,7 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/myarea/data/myarea_models.dart';
 import 'package:simf_app/features/myarea/data/myarea_repository.dart';
 import 'package:simf_app/features/myarea/my_area_screen.dart';
+import 'package:simf_app/features/sessions/data/session_favourites.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -95,10 +96,22 @@ class _FakeMyAreaRepository implements MyAreaRepository {
       true;
 }
 
+/// Deterministic favourites set so the saved-sessions counter (D-584) renders a
+/// known number without hitting `/app/sessions/favourites`.
+class _FakeFavourites extends SessionFavouritesController {
+  _FakeFavourites(this.ids);
+
+  final Set<String> ids;
+
+  @override
+  Future<Set<String>> build() async => ids;
+}
+
 Future<void> _pump(
   WidgetTester tester, {
   required AuthController controller,
   MyAreaRepository? repo,
+  Set<String> favourites = const <String>{},
   Locale locale = const Locale('en'),
 }) async {
   final router = GoRouter(
@@ -137,6 +150,8 @@ Future<void> _pump(
       overrides: <Override>[
         authControllerProvider.overrideWith(() => controller),
         if (repo != null) myAreaRepositoryProvider.overrideWithValue(repo),
+        sessionFavouritesProvider
+            .overrideWith(() => _FakeFavourites(favourites)),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -171,6 +186,7 @@ void main() {
         tester,
         controller: _AuthController(RegistrationStatus.approved),
         repo: _FakeMyAreaRepository(dashboard: _dashboard()),
+        favourites: const <String>{'a', 'b', 'c', 'd', 'e', 'f'},
       );
 
       expect(find.text('Raed Al-Salem'), findsOneWidget);
@@ -179,7 +195,7 @@ void main() {
       expect(find.text('Share my profile'), findsOneWidget);
       expect(find.text('Share contact'), findsOneWidget);
       expect(find.text('Statistics'), findsOneWidget); // الإحصائيات header
-      expect(find.text('6'), findsOneWidget); // booked-sessions stat
+      expect(find.text('6'), findsOneWidget); // saved-sessions stat (favourites)
       expect(find.text('3'), findsOneWidget); // meetings stat
       await _scrollTo(tester, find.text('Opening'));
       expect(find.text('Opening'), findsOneWidget);

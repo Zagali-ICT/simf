@@ -12,9 +12,19 @@ import '../data/session_favourites.dart';
 /// Watches the shared [sessionFavouritesProvider] so a toggle here updates every
 /// card across both screens; reverts + shows a toast if the server rejects it.
 class FavouriteHeartButton extends ConsumerWidget {
-  const FavouriteHeartButton({required this.sessionId, super.key});
+  const FavouriteHeartButton({
+    required this.sessionId,
+    this.filledIcon = Icons.favorite,
+    this.outlineIcon = Icons.favorite_border,
+    super.key,
+  });
 
   final String sessionId;
+
+  /// The saved / unsaved glyph. Defaults to the heart (Figma 1388:8392 /
+  /// 1388:9067); the saved-sessions screen (1701:8928) passes the bookmark pair.
+  final IconData filledIcon;
+  final IconData outlineIcon;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -35,7 +45,7 @@ class FavouriteHeartButton extends ConsumerWidget {
           width: 32,
           height: 32,
           child: Icon(
-            isFavourite ? Icons.favorite : Icons.favorite_border,
+            isFavourite ? filledIcon : outlineIcon,
             size: 16,
             color: Colors.white,
           ),

@@ -59,6 +59,7 @@ import '../features/registration/registration_status_screen.dart';
 import '../features/registration/registration_success_screen.dart';
 import '../features/sessions/join_session_hub_screen.dart';
 import '../features/sessions/my_seat_screen.dart';
+import '../features/sessions/saved_sessions_screen.dart';
 import '../features/sessions/seat_picker_screen.dart';
 import '../features/sessions/session_detail_screen.dart';
 import '../features/sessions/session_presentations_screen.dart';
@@ -258,6 +259,7 @@ const Map<int, Set<AppRole>> _routeRoles = <int, Set<AppRole>>{
   110: _attendee, // Join-a-session hub (D-485)
   113: _attendee, // My sessions (Wave 2)
   202: _attendee, // Session presentations (Wave 2)
+  205: _attendee, // Saved sessions (D-584, approved-only favourites)
   // Exhibitor-only — lead capture (D-426).
   106: <AppRole>{AppRole.exhibitor}, // Scan visitor badge
   107: <AppRole>{AppRole.exhibitor}, // My Visitors
@@ -513,6 +515,9 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.myAreaSessions) {
     return const MySessionsScreen();
+  }
+  if (r.name == RouteNames.savedSessions) {
+    return const SavedSessionsScreen();
   }
   return ComingSoonScreen(
     screenNumber: r.number,

@@ -869,7 +869,9 @@ class AppL10n {
         'Could not load the visitor classification.',
       );
   String get staffRegisterAnother => _t('تسجيل زائر آخر', 'Register another');
-  String get statBookedSessions => _t('جلسات محفوظة', 'Booked sessions');
+  // The My-Area "الجلسات المحفوظة" counter (D-584) — shows the SAVED (favourited)
+  // count and opens الجلسات المحفوظة (1701:8928); Arabic already read "محفوظة".
+  String get statBookedSessions => _t('جلسات محفوظة', 'Saved sessions');
   String get statMeetings => _t('مقابلات', 'Meetings');
   String get statisticsTitle => _t('الإحصائيات', 'Statistics');
   String get todayScheduleTitle => _t('جدولي اليوم', "Today's schedule");
@@ -1594,6 +1596,15 @@ class AppL10n {
   // The count subtitle, e.g. "3 جلسات قادمة" / "3 upcoming sessions".
   String mySessionsCount(int count, String tabLabel) =>
       _t('$count جلسة · $tabLabel', '$count · $tabLabel');
+
+  // #8 — Saved sessions, App "الجلسات المحفوظة" (Figma 1701:8928), reached from
+  // the My-Area saved-sessions counter. The favourited sessions (المفضلة =
+  // محفوظة) with a saved-count header + category chips over the cached programme.
+  String get savedSessionsTitle => _t('الجلسات المحفوظة', 'Saved sessions');
+  // The gold count-row unit label, rendered as "$count جلسة محفوظة".
+  String get savedSessionsCountLabel => _t('جلسة محفوظة', 'saved sessions');
+  String get savedSessionsEmpty =>
+      _t('لا توجد جلسات محفوظة بعد.', 'No saved sessions yet.');
 
   // Wave 4 — Delegations, App "الوفود" (Figma 1426:10771): the invited countries'
   // delegations with head of delegation, date range and member count.
