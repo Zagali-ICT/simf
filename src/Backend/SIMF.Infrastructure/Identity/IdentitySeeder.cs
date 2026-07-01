@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SIMF.Application.Auditing;
+using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Options;
@@ -29,10 +30,16 @@ public sealed class IdentitySeeder(
     SimfIdentityDbContext dbContext,
     SimfAppDbContext appDbContext,
     IOptions<SuperAdminOptions> options,
+    IOptions<DemoSeedOptions> demoOptions,
+    IQrIdMinter qrIdMinter,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<IdentitySeeder> logger)
 {
+    // D-585 — Saudi Arabia is the seeded default nationality (Country.Id, the
+    // ISO-3166 numeric code, seeded via CountryConfiguration.HasData).
+    private const int SaudiArabiaCountryId = 682;
+
     private const string AdministratorRole = AppRoles.Administrator;
 
     // ASP.NET Core Identity's internal token coordinates for the TOTP
@@ -213,6 +220,14 @@ public sealed class IdentitySeeder(
         await EnsureProfileTypeAsync(
             "VIP", "كبار الشخصيات", "#0E7490", // deep teal
             isVisitor: true, MobileAppRole.None, cancellationToken);
+
+        // D-585 — seed one demo user account per user type / profile type
+        // (an extra Admin + a VVIP/VIP/Normal visitor + a Staff/Moderator/
+        // Exhibitor/Media/Sponsor partner), so every role is testable from a
+        // fresh DB. Runs AFTER the profile types above so the name lookup
+        // resolves. Owner decision D-585: seeds in EVERY environment (prod
+        // included) with one shared password — REMOVE/ROTATE before handover.
+        await EnsureDemoAccountsAsync(admin.Id, cancellationToken);
 
         // D-174 (gap doc G11, Mockup page 39) — seed the cybersecurity
         // policy content blocks the Flutter "سياسات وضوابط الأمن
@@ -450,6 +465,116 @@ public sealed class IdentitySeeder(
 
         logger.LogInformation("Super-admin account seeded: {Email}", settings.Email);
         return admin;
+    }
+
+    /// <summary>D-585 — seed one demo account per user type / profile type so
+    /// every role is testable from a fresh database. Idempotent by email (an
+    /// existing account is skipped). An Admin account carries the Administrator
+    /// role and no profile; a visitor/partner account gets an <b>Approved</b>
+    /// <see cref="UserProfile"/> (Saudi nationality) with a minted QR badge.
+    /// <para><b>Owner decision D-585:</b> this runs in EVERY environment
+    /// (production included) with one shared password from
+    /// <see cref="DemoSeedOptions.DemoPassword"/>. The accounts and that default
+    /// password MUST be removed / rotated before the production publish + NCA
+    /// handover.</para></summary>
+    private async Task EnsureDemoAccountsAsync(
+        Guid actorUserId, CancellationToken cancellationToken)
+    {
+        var password = demoOptions.Value.DemoPassword;
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            logger.LogWarning("Demo-account seed skipped — Seed:DemoPassword is empty.");
+            return;
+        }
+
+        // (email, displayName, EN name, AR name, userType, profileTypeName, nationalId).
+        // profileTypeName == null → an Admin account (Administrator role, no profile).
+        var demoAccounts = new (string Email, string DisplayName, string EnName, string ArName, UserType UserType, string? ProfileType, string NationalId)[]
+        {
+            ("admin@simf.local",     "Demo Admin",     "Demo Admin",     "مدير تجريبي",         UserType.Admin,   null,        "1000000001"),
+            ("vvip@simf.local",      "Demo VVIP",      "Demo VVIP",      "شخصية بالغة الأهمية", UserType.Visitor, "VVIP",      "1000000002"),
+            ("vip@simf.local",       "Demo VIP",       "Demo VIP",       "شخصية مهمة",          UserType.Visitor, "VIP",       "1000000003"),
+            ("visitor@simf.local",   "Demo Visitor",   "Demo Visitor",   "زائر تجريبي",         UserType.Visitor, "Normal",    "1000000004"),
+            ("staff@simf.local",     "Demo Staff",     "Demo Staff",     "موظف تجريبي",         UserType.Visitor, "Staff",     "1000000005"),
+            ("moderator@simf.local", "Demo Moderator", "Demo Moderator", "منسّق تجريبي",        UserType.Visitor, "Moderator", "1000000006"),
+            ("exhibitor@simf.local", "Demo Exhibitor", "Demo Exhibitor", "عارض تجريبي",         UserType.Visitor, "Exhibitor", "1000000007"),
+            ("media@simf.local",     "Demo Media",     "Demo Media",     "إعلامي تجريبي",       UserType.Visitor, "Media",     "1000000008"),
+            ("sponsor@simf.local",   "Demo Sponsor",   "Demo Sponsor",   "راعٍ تجريبي",         UserType.Visitor, "Sponsor",   "1000000009"),
+        };
+
+        var now = timeProvider.GetUtcNow();
+        foreach (var demo in demoAccounts)
+        {
+            if (await accounts.FindByEmailAsync(demo.Email) is not null)
+            {
+                continue; // idempotent — already seeded.
+            }
+
+            var user = new SimfUser
+            {
+                UserName = demo.Email,
+                Email = demo.Email,
+                EmailConfirmed = true,
+                DisplayName = demo.DisplayName,
+                AccountState = AccountState.Approved,
+                UserType = demo.UserType,
+                PasswordChangeRequired = false,
+                CreatedAt = now,
+                StateChangedAt = now,
+                StateChangedByUserId = actorUserId,
+            };
+
+            var createResult = await accounts.CreateAsync(user, password);
+            if (!createResult.Succeeded)
+            {
+                logger.LogError(
+                    "Demo account {Email} could not be created: {Errors}",
+                    demo.Email,
+                    string.Join("; ", createResult.Errors.Select(error => error.Description)));
+                continue;
+            }
+
+            if (demo.UserType == UserType.Admin)
+            {
+                // A CP admin — Administrator role, no visitor profile.
+                await accounts.AddToRoleAsync(user, AdministratorRole).EnsureSuccessAsync();
+                logger.LogInformation("Demo admin account seeded: {Email}", demo.Email);
+                continue;
+            }
+
+            // A visitor / partner — needs an Approved profile + a QR badge.
+            var profileType = await appDbContext.ProfileTypes
+                .SingleOrDefaultAsync(profileType => profileType.Name == demo.ProfileType, cancellationToken);
+            if (profileType is null)
+            {
+                logger.LogWarning(
+                    "Demo account {Email}: profile type '{ProfileType}' not found — profile skipped.",
+                    demo.Email, demo.ProfileType);
+                continue;
+            }
+
+            var profile = new UserProfile
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                ProfileTypeId = profileType.Id,
+                Name = demo.EnName,
+                NameArabic = demo.ArName,
+                Gender = Gender.Male,
+                NationalityId = SaudiArabiaCountryId,
+                IsSaudi = true,
+                NationalId = demo.NationalId,
+                CreatedAt = now,
+            };
+            // D-585 — Approved accounts carry a QR badge (D-046 minter).
+            await qrIdMinter.MintIfMissingAsync(profile, cancellationToken);
+            appDbContext.UserProfiles.Add(profile);
+            // D-167: UserProfile (with its QrId) lives on the App DB.
+            await appDbContext.SaveChangesAsync(cancellationToken);
+
+            logger.LogInformation(
+                "Demo {ProfileType} account seeded: {Email}", demo.ProfileType, demo.Email);
+        }
     }
 
     /// <summary>D-174 (gap doc G11, Mockup page 39) — seed the
