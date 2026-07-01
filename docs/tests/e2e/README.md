@@ -124,6 +124,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/banners` | [`cp-admin-banners.md`](cp-admin-banners.md) | E2E-BNR-001..022 |
 | `/admin/content-blocks` | [`cp-admin-content-blocks.md`](cp-admin-content-blocks.md) | E2E-CNT-001..020 |
 | `/admin/media-library` | [`cp-admin-media-library.md`](cp-admin-media-library.md) | E2E-MLIB-001..010 |
+| `/api/v1/files` (centralized file store, D-568) | [`cp-files.md`](cp-files.md) | E2E-FILE-001..012 |
 
 ### Control Panel — AI
 
