@@ -199,7 +199,7 @@
 
             if (!result.Success)
             {
-                _changeError = result.Error?.MessageForCurrentCulture()
+                _changeError = result.Error?.DetailedMessageForCurrentCulture()
                     ?? L["Auth.ChangePassword.Fallback"];
                 return;
             }
