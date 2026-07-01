@@ -536,11 +536,12 @@ class _VisitorHome extends StatelessWidget {
                 onTap: () => context.pushNamed(RouteNames.delegations),
               ),
               SimfNavTile(
-                label: l10n.tileSessions,
+                label: l10n.tileSessionSummary,
                 iconAsset: _HomeIcons.aboutSessions,
-                // Owner 2026-06-29: the home "جلسات" tile opens the session
-                // summaries list (ملخص الجلسات, Figma 1388:8392) — the agenda
-                // itself stays reachable from the bottom-nav الأجندة tab.
+                // Owner 2026-07-01: the home "ملخص الجلسات" tile opens the
+                // session summaries list (Figma 1388:8392); its label now
+                // matches the destination. The agenda stays reachable from the
+                // bottom-nav الأجندة tab.
                 onTap: () => context.pushNamed(RouteNames.sessionSummaryList),
               ),
             ],
