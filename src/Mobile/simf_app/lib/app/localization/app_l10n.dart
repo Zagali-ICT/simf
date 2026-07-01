@@ -1066,6 +1066,9 @@ class AppL10n {
   String get meetingSendButton => _t('إرسال الطلب', 'Send request');
   // D-474/D-475 (#11) — the VIP availability-slot picker.
   String get meetingSlotLabel => _t('فترة الاجتماع (لكبار الشخصيات)', 'Meeting slot (VIP)');
+  // Figma 1701:7479 — the slot split into a date then a time picker.
+  String get meetingDateLabel => _t('التاريخ', 'Date');
+  String get meetingTimeLabel => _t('الوقت', 'Time');
   String get meetingSlotNone =>
       _t('لا توجد فترات متاحة حالياً', 'No meeting slots available right now');
   String get meetingVipOnly =>

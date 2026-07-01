@@ -402,7 +402,7 @@ void main() {
         'Sponsors', // الرعاة bar
         'Bilateral meetings',
         'Smart features',
-        'Session summaries',
+        'Session presentations', // #2 (was Session summaries)
         'Follow us',
         'Spirit of Saudi',
       ]) {
@@ -686,12 +686,12 @@ void main() {
       expect(bilateral, greaterThan(archive));
     });
 
-    testWidgets('smart row 2: بطاقتي الذكية (left) · ملخص الجلسات (right)',
+    testWidgets('smart row 2: بطاقتي الذكية (left) · عروض الجلسات (right)',
         (tester) async {
       await pumpTall(tester);
       final badge = tester.getCenter(find.text('بطاقتي الذكية')).dx;
-      final summary = tester.getCenter(find.text('ملخص الجلسات')).dx;
-      expect(summary, greaterThan(badge));
+      final presentations = tester.getCenter(find.text('عروض الجلسات')).dx;
+      expect(presentations, greaterThan(badge));
     });
 
     testWidgets('section bars render with the title at the start (right)',

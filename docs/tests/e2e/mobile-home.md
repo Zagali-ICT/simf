@@ -53,6 +53,7 @@
 | E2E-MOB013-017 | RTL tile/row order matches the frame (D-436 position assertions) | i18n | P1 | authored ✓ (screen — `getCenter().dx` about/news/smart-row-2) |
 | E2E-MOB013-018 | Discover badge is the filled "السعودية" (signed-in), not "KSA" (758:1280, D-446) | i18n/visual | P2 | authored ✓ (screen) |
 | E2E-MOB013-019 | **اللقاءات الثنائية → Coming soon (owner 2026-06-21):** the bilateral-meetings news tile opens the **ComingSoon** placeholder (the feature is not designed yet), not the media gallery | happy | P2 | authored ✓ (screen — tile → `bilateralMeetings` ComingSoon route) |
+| E2E-MOB013-020 | **Session-summary tile → session presentations (D-580, #2):** the smart-row-2 tile is relabelled "عروض الجلسات" and opens the presentations downloads screen (1388:7621), not the AI-summaries list | happy | P2 | authored ✓ (screen — smart-row-2 label + section-scan) |
 
 ## Scenarios
 
@@ -142,7 +143,7 @@ Scenario: A signed-in visitor gets the greeting home (frame 758:1134)
       full-width اسأل المحاور tile
   And the news tiles render اللقاءات الثنائية · الأرشيف
   And the "الميزات الذكية" group renders قابل أشخاص مثلك · المساعد الذكي ·
-      ملخص الجلسات · بطاقتي الذكية
+      عروض الجلسات · بطاقتي الذكية
   And the follow-us row and the روح السعودية discover row render
 ```
 
@@ -270,7 +271,7 @@ Scenario: Each signed-in tile shows its bundled SVG glyph
   And اسأل المحاور shows the user glyph (solar:user-outline)
   And الأرشيف shows the archive glyph, اللقاءات الثنائية the video glyph
   And المساعد الذكي the message glyph, قابل أشخاص مثلك the users glyph,
-       بطاقتي الذكية the card glyph, ملخص الجلسات the new-session glyph
+       بطاقتي الذكية the card glyph, عروض الجلسات the new-session glyph
   And each glyph is tinted to the tile foreground (gold when enabled)
 ```
 
@@ -317,7 +318,7 @@ Feature: RTL order is proven by position, not by eye (D-436)
   Given the device locale is Arabic and the signed-in Home is shown
   Then in the "عن الملتقى" row, المتحدثون is right of المعرض right of جلسات
   And in the news row, اللقاءات الثنائية is right of الأرشيف
-  And in the smart row 2, ملخص الجلسات is right of بطاقتي الذكية
+  And in the smart row 2, عروض الجلسات is right of بطاقتي الذكية
 ```
 
 ### E2E-MOB013-018 — Discover badge is the filled "السعودية" (node 758:1280, D-446)
@@ -329,9 +330,22 @@ Scenario: Signed-in discover row uses the Arabic filled badge
   # The guest home keeps the outlined "KSA" badge (frame 758:2910).
 ```
 
+### E2E-MOB013-020 — Session-summary tile opens session presentations (D-580)
+
+```gherkin
+Scenario: The smart-row-2 tile opens the session presentations screen
+  Given the signed-in Home is shown
+  Then the smart-row-2 tile reads "عروض الجلسات" (Session presentations)
+  When the user taps it
+  Then the Session presentations screen (1388:7621) opens
+  # The AI-summaries list (1388:8392) stays on the "الجلسات" about-tile;
+  # My-Sessions (1388:9067) stays on the My-Area dashboard.
+```
+
 ---
 
-_Last reviewed:_ `2026-06-19` by `SIMF Team` — D-462: the "تابعنا" social row URLs
-now come from the CP-editable site-settings (`GET /app/site-settings`), falling
-back to the build-time config then inert (D-369); the five brand buttons render
-unchanged (covered by the existing social-row widget test).
+_Last reviewed:_ `2026-07-01` by `SIMF Team` — D-580: the smart-row-2
+"ملخص الجلسات" tile was relabelled "عروض الجلسات" and repointed to the session
+presentations screen (1388:7621); the AI-summaries list stays on the "الجلسات"
+about-tile. (Prior 2026-06-19 D-462: the "تابعنا" social row URLs come from the
+CP-editable site-settings, falling back to build-time config then inert.)

@@ -638,6 +638,9 @@ class _MeetingRequestSheetState extends ConsumerState<_MeetingRequestSheet> {
   // is the VIP flow; none keeps the legacy topic-only request).
   List<SpeakerSlot> _slots = const <SpeakerSlot>[];
   SpeakerSlot? _selectedSlot;
+  // The picked calendar day (Figma 1701:7479 — date+time selection): narrows the
+  // available slots to that day's times before one is chosen.
+  DateTime? _selectedDate;
   bool _slotsLoaded = false;
 
   @override
@@ -712,12 +715,40 @@ class _MeetingRequestSheetState extends ConsumerState<_MeetingRequestSheet> {
     }
   }
 
-  String _formatSlot(SpeakerSlot slot) {
+  // The slot's local calendar day — the key that groups the available slots into
+  // the date picker (the time picker then lists that day's slots).
+  DateTime _dayOf(SpeakerSlot slot) {
+    final s = slot.startUtc.toLocal();
+    return DateTime(s.year, s.month, s.day);
+  }
+
+  // The distinct days that carry at least one free slot, ascending.
+  List<DateTime> get _availableDays {
+    final days = <DateTime>{for (final slot in _slots) _dayOf(slot)}.toList()
+      ..sort();
+    return days;
+  }
+
+  // The free slots on the selected day, ascending by start time.
+  List<SpeakerSlot> get _slotsForSelectedDay {
+    final day = _selectedDate;
+    if (day == null) {
+      return const <SpeakerSlot>[];
+    }
+    return _slots.where((s) => _dayOf(s) == day).toList()
+      ..sort((a, b) => a.startUtc.compareTo(b.startUtc));
+  }
+
+  String _formatDay(DateTime day) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${day.year}-${two(day.month)}-${two(day.day)}';
+  }
+
+  String _formatTimeRange(SpeakerSlot slot) {
     final s = slot.startUtc.toLocal();
     final e = slot.endUtc.toLocal();
     String two(int n) => n.toString().padLeft(2, '0');
-    return '${s.year}-${two(s.month)}-${two(s.day)} '
-        '${two(s.hour)}:${two(s.minute)}–${two(e.hour)}:${two(e.minute)}';
+    return '${two(s.hour)}:${two(s.minute)}–${two(e.hour)}:${two(e.minute)}';
   }
 
   String _failureText(ApiFailure failure, AppL10n l10n) {
@@ -762,22 +793,44 @@ class _MeetingRequestSheetState extends ConsumerState<_MeetingRequestSheet> {
             maxLength: 1000,
             maxLines: 3,
           ),
-          // D-474/D-475 — pick a free slot (VIP). Optional; none = topic-only request.
-          if (_slotsLoaded && _slots.isNotEmpty)
-            DropdownButtonFormField<SpeakerSlot>(
-              initialValue: _selectedSlot,
+          // D-474/D-475 + owner (Figma 1701:7479) — pick a free meeting time as a
+          // DATE then a TIME, both sourced from the speaker's available slots so the
+          // chosen slot always matches a free slot the server accepts. VIP only;
+          // optional (none = the legacy topic-only request).
+          if (_slotsLoaded && _slots.isNotEmpty) ...<Widget>[
+            DropdownButtonFormField<DateTime>(
+              initialValue: _selectedDate,
               isExpanded: true,
-              decoration: InputDecoration(labelText: l10n.meetingSlotLabel),
-              items: <DropdownMenuItem<SpeakerSlot>>[
-                for (final slot in _slots)
-                  DropdownMenuItem<SpeakerSlot>(
-                    value: slot,
-                    child: Text(_formatSlot(slot)),
+              decoration: InputDecoration(labelText: l10n.meetingDateLabel),
+              items: <DropdownMenuItem<DateTime>>[
+                for (final day in _availableDays)
+                  DropdownMenuItem<DateTime>(
+                    value: day,
+                    child: Text(_formatDay(day)),
                   ),
               ],
-              onChanged: (slot) => setState(() => _selectedSlot = slot),
-            )
-          else if (_slotsLoaded)
+              onChanged: (day) => setState(() {
+                _selectedDate = day;
+                _selectedSlot = null; // reset the time when the day changes
+              }),
+            ),
+            if (_selectedDate != null) ...<Widget>[
+              const SizedBox(height: SimfTokens.space3),
+              DropdownButtonFormField<SpeakerSlot>(
+                initialValue: _selectedSlot,
+                isExpanded: true,
+                decoration: InputDecoration(labelText: l10n.meetingTimeLabel),
+                items: <DropdownMenuItem<SpeakerSlot>>[
+                  for (final slot in _slotsForSelectedDay)
+                    DropdownMenuItem<SpeakerSlot>(
+                      value: slot,
+                      child: Text(_formatTimeRange(slot)),
+                    ),
+                ],
+                onChanged: (slot) => setState(() => _selectedSlot = slot),
+              ),
+            ],
+          ] else if (_slotsLoaded)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: SimfTokens.space2),
               child: Text(
