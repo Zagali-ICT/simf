@@ -536,13 +536,14 @@ class _VisitorHome extends StatelessWidget {
                 onTap: () => context.pushNamed(RouteNames.delegations),
               ),
               SimfNavTile(
-                label: l10n.tileSessionSummary,
+                label: l10n.tileSessions,
                 iconAsset: _HomeIcons.aboutSessions,
-                // Owner 2026-07-01: the home "ملخص الجلسات" tile opens the
-                // session summaries list (Figma 1388:8392); its label now
-                // matches the destination. The agenda stays reachable from the
-                // bottom-nav الأجندة tab.
-                onTap: () => context.pushNamed(RouteNames.sessionSummaryList),
+                // Owner 2026-07-01: the home "الجلسات" tile opens the session
+                // materials/downloads screen (Figma 1388:7621, header "الجلسات"),
+                // whose title matches this label. The AI summaries list
+                // ("ملخص الجلسات", 1388:8392) is the smart-features tile below;
+                // the agenda stays on the bottom-nav الأجندة tab.
+                onTap: () => context.pushNamed(RouteNames.sessionPresentations),
               ),
             ],
           ),
@@ -603,14 +604,15 @@ class _VisitorHome extends StatelessWidget {
           SimfTileRow(
             children: <Widget>[
               SimfNavTile(
-                label: l10n.sessionPresentationsTitle,
+                label: l10n.tileSessionSummary,
                 iconAsset: _HomeIcons.sessionSummary,
                 minHeight: 80,
-                // Owner 2026-07-01 (#2): repointed + relabelled to the session
-                // presentations downloads screen (Figma 1388:7621). The AI
-                // summaries list stays on the Sessions tile above (1388:8392)
-                // and My-Sessions (1388:9067) stays on My-Area. All reachable.
-                onTap: () => context.pushNamed(RouteNames.sessionPresentations),
+                // Owner 2026-07-01: the smart-features "ملخص الجلسات" tile opens
+                // the AI session-summaries list (Figma 1388:8392, header
+                // "ملخص الجلسات") — matching its summary icon + label. The
+                // session-downloads screen ("الجلسات", 1388:7621) is the about
+                // tile above; My-Sessions (1388:9067) stays on My-Area.
+                onTap: () => context.pushNamed(RouteNames.sessionSummaryList),
               ),
               SimfNavTile(
                 label: l10n.tileEntryBadge,
