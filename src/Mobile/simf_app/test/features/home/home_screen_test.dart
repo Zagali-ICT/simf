@@ -396,7 +396,7 @@ void main() {
         await tester.pump();
       }
       for (final section in <String>[
-        'Sessions', // جلسات (new about tile)
+        'Session summaries', // ملخص الجلسات (about tile → /session-summaries)
         'Ask the moderator', // اسأل المحاور (new full-width tile)
         'News & coverage', // الأخبار والتغطية bar
         'Sponsors', // الرعاة bar
@@ -665,14 +665,15 @@ void main() {
     }
 
     testWidgets(
-        'about tiles (4-up): المتحدثون · المعرض · الوفود · الجلسات (right→left)',
+        'about tiles (4-up): المتحدثون · المعرض · الوفود · '
+        'ملخص الجلسات (right→left)',
         (tester) async {
       await pumpTall(tester);
       final speakers = tester.getCenter(find.text('المتحدثون')).dx;
       final booths = tester.getCenter(find.text('المعرض')).dx;
       final delegations = tester.getCenter(find.text('الوفود')).dx;
-      final sessions = tester.getCenter(find.text('الجلسات')).dx;
-      // Right→left: المتحدثون (rightmost) > المعرض > الوفود > الجلسات (leftmost).
+      final sessions = tester.getCenter(find.text('ملخص الجلسات')).dx;
+      // Right→left order: المتحدثون > المعرض > الوفود > ملخص الجلسات.
       expect(speakers, greaterThan(booths));
       expect(booths, greaterThan(delegations));
       expect(delegations, greaterThan(sessions));
