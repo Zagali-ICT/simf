@@ -35,8 +35,8 @@
 | **Page** | [`Page_025`](../../App/Page_025/README.md) |
 | **Route** | `GET /api/v1/app/programme/sessions/{id}` · app screen #25 `/live?sessionId=` |
 | **Surface** | Mobile (Flutter) + App API |
-| **Auth setup** | **None** — the read is `AllowAnonymous` (a guest can watch). |
-| **Last reviewed** | 2026-06-19 |
+| **Auth setup** | **Signed-in for the screen (D-577)** — the live screen is login-only: a guest sees an in-screen "need login" prompt + a Sign-in button, never the player. The read endpoint stays `AllowAnonymous` (the app gates the screen, not the API); use an approved Visitor token to reach the player. |
+| **Last reviewed** | 2026-07-01 |
 
 ## Coverage matrix
 
@@ -62,6 +62,7 @@
 | E2E-MOB025-018 | P5 — session with AI caption text → the strip shows the text (white), not the placeholder hint (D-439) | happy | P1 | authored ✓ (screen `P5 — a session with caption text shows it in the caption strip (white)`) |
 | E2E-MOB025-019 | P5 — live session with no caption → the muted placeholder hint (D-439) | edge | P1 | authored ✓ (screen `P5 — a live session with no caption shows the placeholder hint`) |
 | E2E-MOB025-020 | P5 — caption locale fallback: Arabic text under `ar`, English under `en` (D-439) | i18n | P1 | authored ✓ (screen `P5 — the caption renders the Arabic text under the ar locale`) |
+| E2E-MOB025-021 | Login-gate (D-577): a signed-out guest sees the in-screen "need login" prompt + Sign-in button (never the player), and no session is fetched | auth | P0 | authored ✓ (screen `a signed-out guest sees the need-login gate, not the stream (owner, D-577)`) |
 
 ## Scenarios
 
@@ -81,6 +82,25 @@ Scenario: Opening /live without a sessionId
 
 **Evidence:** screen test `no sessionId shows the pick-a-session empty state`
 (+ `an empty sessionId is treated as no selection`).
+
+### E2E-MOB025-021 — Login-gate (guest sees "need login")
+
+```gherkin
+Scenario: A signed-out guest cannot open the stream
+  Given the app is signed out (a guest)
+  When the app opens /live for a broadcasting session
+  Then the player is NOT shown
+  And the screen shows "Sign in to watch the live stream." with a Sign-in button
+  And no session detail read is issued
+  When the guest taps Sign-in
+  Then the sign-in screen opens
+  # /live is NOT router-redirect-gated (unlike /sessions + session detail under
+  # D-576) — the gate is in-screen, so the guest still lands on the live screen.
+```
+
+**Evidence:** screen test `a signed-out guest sees the need-login gate, not the
+stream (owner, D-577)`; router-gate test `D-577 — a signed-out guest hitting
+/live is NOT redirected`.
 
 ### E2E-MOB025-002 — Live player (YouTube / HLS, D-349) + E2E-MOB025-008 — toggle
 

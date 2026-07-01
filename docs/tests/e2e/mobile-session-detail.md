@@ -35,6 +35,13 @@
 > E2E-MOB017-012..021 cover the new sections; the prior behaviour scenarios (001–011)
 > remain valid. The flag renders from `PublicSessionSpeaker.CountryId` via the new
 > `core/country_flag.dart` ISO-3166 numeric→emoji helper.
+>
+> **Login-gate (D-576, 2026-07-01):** the Session-detail *screen* (#17) is now
+> login-gated — a signed-out guest navigating to `/sessions/{id}` is redirected
+> to sign-in before the screen renders. The detail *endpoint* stays anonymous
+> (the gate is app-UX only, not an API change). The "guest" paths below (001,
+> 005) are therefore API-/widget-level guarantees — the live app redirects a
+> guest first. The screen gate is covered by E2E-MOB017-025.
 
 | | |
 |--|--|
@@ -42,8 +49,8 @@
 | **Route** | `GET /api/v1/app/programme/sessions/{id}` (detail, anon) · `GET /api/v1/app/sessions/{id}/seats` (my-seat, approved) · app screen #17 `/sessions/:sessionId` |
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
-| **Auth setup** | **Anonymous** for the detail. An **approved Visitor** token (seeded + a held reservation) for the my-seat card; an **Admin** token only to seed the session + seat layout. **No literal secrets** (admin TOTP via the `Get-Totp` helper). |
-| **Last reviewed** | 2026-06-05 |
+| **Auth setup** | **Signed-in for the screen (D-576)** — the Session-detail screen is login-gated: a signed-out guest navigating to `/sessions/{id}` is redirected to sign-in. The detail **endpoint** stays anonymous (the app gates the screen, not the API); the my-seat card needs an **approved Visitor** token (seeded + a held reservation); an **Admin** token only to seed the session + seat layout. **No literal secrets** (admin TOTP via the `Get-Totp` helper). |
+| **Last reviewed** | 2026-07-01 |
 
 ## Coverage matrix
 
@@ -73,6 +80,7 @@
 | E2E-MOB017-022 | **Join CTA (D-485)** — an approved user with no reservation sees a "Join this session" section, branched by the session's effective mode: assigned-seat → "Select my seat" opens the seat picker; open-seating → "Join this session" confirms then joins (Pending) with a "Request sent — pending approval" toast | happy | P1 | authored ✓ (widget — assigned→picker / open→confirm→join+toast) |
 | E2E-MOB017-023 | **Cancel booking (D-485)** — the reservation card's Cancel confirms, then releases the held seat (`DELETE …/seats/mine`) and the section returns to the Join CTA | happy | P2 | authored ✓ (widget — `releaseMine`) |
 | E2E-MOB017-024 | **Join is approved-only (D-485)** — a guest / pending account sees no join section (the seat endpoint 401/403s → null) | auth | P1 | authored ✓ (`…a guest sees no join section`) |
+| E2E-MOB017-025 | **App login-gate (D-576):** a signed-out guest navigating to `/sessions/{id}` is redirected to sign-in before the screen renders (the app gates the screen; the detail endpoint stays anonymous) | auth | P0 | authored ✓ (router-gate `D-576 — a signed-out guest hitting /sessions or a session detail → sign-in`) |
 
 ## Scenarios
 
@@ -377,6 +385,28 @@ Scenario: Cancelling a held reservation from the session page
   And the section returns to the Join CTA
 ```
 
+### E2E-MOB017-025 — App login-gate (D-576)
+
+```gherkin
+Feature: Session-detail screen — login gate (D-576)
+  As a signed-out guest
+  I want to be sent to sign-in when I open a session
+  So that the programme screens sit behind login (owner, D-576)
+
+Scenario: A guest opening a session detail is redirected to sign-in
+  Given the app is signed out (a guest)
+  When the app navigates to /sessions/{id} (row tap, deep link or cold start)
+  Then the router redirects to the sign-in screen
+  And the Session-detail screen is not rendered
+  # The detail read (GET /app/programme/sessions/{id}) stays AllowAnonymous —
+  # the gate is app-UX only (a router redirect), not an API change. Scenarios
+  # 001 / 005 above are therefore API-/widget-level guarantees; in the live app
+  # a guest never reaches the screen.
+```
+
+**Evidence:** router-gate test `D-576 — a signed-out guest hitting /sessions or a
+session detail → sign-in`; `routePathRequiresAuth('/sessions/:sessionId')` is TRUE.
+
 ---
 
-_Last reviewed:_ `2026-06-21` by `SIMF Team`.
+_Last reviewed:_ `2026-07-01` by `SIMF Team`.

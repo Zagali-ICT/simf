@@ -36,6 +36,14 @@
 > screen/route is renamed **Sessions** (D-276). A rename to `mobile-sessions.md`
 > is deferred (needs owner sign-off — it is referenced from PAGE-INDEX + the
 > e2e README).
+>
+> **Login-gate (D-576, 2026-07-01):** the Sessions/Agenda *screen* (#16) is now
+> login-gated — a signed-out guest navigating to `/sessions` is redirected to
+> sign-in before the screen renders. The public reads
+> (`GET /app/programme/sessions[/{id}]`) stay `AllowAnonymous` (the gate is
+> app-UX only, not an API change — thin clients still read the programme
+> anonymously), so the API scenarios below remain valid. The screen gate is
+> covered by E2E-MOB016-015.
 
 | | |
 |--|--|
@@ -43,8 +51,8 @@
 | **Route** | `GET /api/v1/app/programme/sessions` (+`?day=`) · `GET /api/v1/app/programme/sessions/{id}` · app screen #16 `/sessions` |
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
-| **Auth setup** | **Anonymous** for the public reads (no token). Admin token only to seed sessions/speakers/themes. **No literal secrets.** |
-| **Last reviewed** | 2026-06-03 |
+| **Auth setup** | **Signed-in for the screen (D-576)** — the Sessions/Agenda screen is login-gated: a signed-out guest navigating to `/sessions` is redirected to sign-in. The public reads stay `AllowAnonymous` (the app gates the screen, not the API — thin clients still read anonymously); use a signed-in Visitor session to reach the screen. Admin token only to seed sessions/speakers/themes. **No literal secrets.** |
+| **Last reviewed** | 2026-07-01 |
 
 ## Coverage matrix
 
@@ -64,6 +72,7 @@
 | E2E-MOB016-012 | `status` / speaker `role` decode tolerantly (int **or** name; unknown → default) | contract | P0 | authored ✓ (model — `SessionStatus.fromJson` / `SessionSpeakerRole.fromJson`) |
 | E2E-MOB016-013 | List item binds the real wire names incl. the D-271 speaker country+photo | contract | P0 | authored ✓ (model — `SessionListItem.fromJson`) |
 | E2E-MOB016-014 | **Full-width calendar (#4):** the day strip is a grey band over the FULL event date range (first→last programme day, empty in-between days filled), full-width (cells distributed, scroll fallback when long); a day **with** sessions = white ("active"), the **selected** day = black, an empty day = muted grey and **not** selectable | happy/visual | P1 | authored ✓ (screen — `_DayStrip`/`_calendarRange`; existing selected-cell-navy + switch-day tests) |
+| E2E-MOB016-015 | **App login-gate (D-576):** a signed-out guest navigating to the `/sessions` screen is redirected to sign-in (the app gates the screen; the reads stay anonymous for thin clients) | auth | P0 | authored ✓ (router-gate `D-576 — a signed-out guest hitting /sessions or a session detail → sign-in`) |
 
 ## Scenarios
 
@@ -237,6 +246,27 @@ Scenario: The list item binds the real wire names incl. the D-271 speaker cluste
 
 **Evidence:** model test `SessionListItem.fromJson binds the real wire field names…`.
 
+### E2E-MOB016-015 — App login-gate (D-576)
+
+```gherkin
+Feature: Sessions screen — login gate (D-576)
+  As a signed-out guest
+  I want to be sent to sign-in when I open the agenda
+  So that the programme screens sit behind login (owner, D-576)
+
+Scenario: A guest opening /sessions is redirected to sign-in
+  Given the app is signed out (a guest)
+  When the app navigates to the /sessions screen (tab, deep link or cold start)
+  Then the router redirects to the sign-in screen
+  And the Sessions screen is not rendered
+  # The public reads (GET /app/programme/sessions[/{id}]) stay AllowAnonymous —
+  # the gate is app-UX only (a router redirect), not an API change. Thin clients
+  # still read the programme anonymously.
+```
+
+**Evidence:** router-gate test `D-576 — a signed-out guest hitting /sessions or a
+session detail → sign-in`; `routePathRequiresAuth('/sessions')` is TRUE.
+
 ---
 
-_Last reviewed:_ `2026-06-05` by `SIMF Team`.
+_Last reviewed:_ `2026-07-01` by `SIMF Team`.

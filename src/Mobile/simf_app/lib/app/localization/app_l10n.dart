@@ -1521,12 +1521,13 @@ class AppL10n {
   String get guestModeTitle => _t('وضع الضيف', 'Guest mode');
   String get guestModeHeadline => _t('التصفح كضيف', 'Browsing as guest');
   String get guestModeBrowseBody => _t(
-        'يمكنك كضيف تصفّح الجلسات والمتحدثين والخريطة التفاعلية والوسائط.',
-        'As a guest you can browse the sessions, speakers, the venue map and the media.',
+        'يمكنك كضيف تصفّح المتحدثين والخريطة التفاعلية والوسائط.',
+        'As a guest you can browse the speakers, the venue map and the media.',
       );
   String get guestModeSignInBody => _t(
-        'سجّل الدخول للحصول على بطاقتك الذكية والإشعارات الشخصية وحجز المقاعد.',
-        'Sign in to get your smart badge, personal notifications and booking.',
+        'سجّل الدخول لعرض الأجندة والبث المباشر، وللحصول على بطاقتك الذكية والإشعارات الشخصية وحجز المقاعد.',
+        'Sign in to view the agenda and live broadcast, and to get your smart '
+            'badge, personal notifications and booking.',
       );
   String get guestModeContinueButton =>
       _t('المتابعة كضيف', 'Continue as guest');
@@ -1844,6 +1845,13 @@ class AppL10n {
 
   // Live broadcast (Page 025). liveNowLabel already exists (reused for the badge).
   String get liveBroadcastTitle => _t('البث المباشر', 'Live broadcast');
+  // Login-gate (owner, 2026-07-01): the live stream is login-only — a signed-out
+  // guest sees this prompt (with the shared signInButton label) instead of the
+  // player.
+  String get liveNeedLogin => _t(
+        'سجّل الدخول لمشاهدة البث المباشر.',
+        'Sign in to watch the live stream.',
+      );
   // D-433 — live broadcast + ask-question + media-coverage re-skins
   // (Figma 934-3450 / 934-3636 / 947-3764 / 958-2246).
   String get liveNowBroadcasting => _t('يُبث الآن', 'Now broadcasting');

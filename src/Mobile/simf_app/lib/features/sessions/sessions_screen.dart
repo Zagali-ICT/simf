@@ -17,7 +17,9 @@ import 'data/sessions_repository.dart';
 /// Page 016 — برنامج الملتقى · Sessions (#16, `/sessions`), rebuilt to the LIVE
 /// KSA frame **883:2308** (D-452).
 ///
-/// **Public** (Guest+). The screen fetches the day-grouped programme once
+/// **Signed-in** (Visitor+) — D-576 login-gated: a guest who opens this route
+/// is sent to sign-in (supersedes the earlier "public Guest+" access). The
+/// screen fetches the day-grouped programme once
 /// (`GET /app/programme/days`) and filters it client-side. Frame mapping: the
 /// bordered search field; the **white day strip** (the programme days — the
 /// selected day inverts to navy, weekend weekday labels render red); the

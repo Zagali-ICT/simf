@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 import 'package:video_player/video_player.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
@@ -21,7 +22,12 @@ import 'youtube_url.dart';
 /// Page 025 — البث المباشر · Live broadcast (#25, `/live?sessionId=`), rebuilt
 /// to the KSA-Project Figma frame **934:3450** on the shared navy shell.
 ///
-/// **Public** (anonymous). Takes an optional [sessionId] from the query string.
+/// **Login-only** (owner, D-577): a signed-out guest sees an in-screen "need
+/// login" prompt with a Sign-in button instead of the player, from any entry
+/// point (supersedes the D-199 "public, anonymous" design). This route is NOT
+/// router-redirect-gated (unlike sessions/detail under D-576) — the gate is
+/// in-screen, so the guest still lands here. A signed-in user takes an optional
+/// [sessionId] from the query string.
 /// With no id it shows a "pick a session" empty state and never fetches. With
 /// an id it reads the broadcast slice (`GET /app/programme/sessions/{id}`,
 /// `AllowAnonymous`) and branches three ways (Page_025 L-3):
@@ -76,7 +82,10 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
   @override
   void initState() {
     super.initState();
-    if (_hasId) {
+    // Login-gate (owner): a signed-out guest sees the need-login prompt instead
+    // of the stream, so don't fetch the session for them.
+    final isSignedIn = ref.read(authControllerProvider) is AuthStateSignedIn;
+    if (isSignedIn && _hasId) {
       unawaited(_load());
     }
   }
@@ -165,6 +174,17 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
   }
 
   Widget _buildBody(AppL10n l10n) {
+    // Login-gate (owner, D-577): the live stream is login-only — a signed-out
+    // guest sees a "need login" prompt with a Sign-in button instead of the
+    // player, from any entry point (session link, deep link, global main-live).
+    final isSignedIn = ref.watch(authControllerProvider) is AuthStateSignedIn;
+    if (!isSignedIn) {
+      return _NeedLoginState(
+        message: l10n.liveNeedLogin,
+        signInLabel: l10n.signInButton,
+        onSignIn: () => context.pushNamed(RouteNames.signIn),
+      );
+    }
     if (!_hasId) {
       // D-495 — no session id → play the forum's main (global) live-stream link
       // from the Organization profile when the admin has configured one; else the
@@ -327,6 +347,55 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Login-gate state (owner, D-577): the live stream is login-only, so a
+/// signed-out guest sees this prompt — an icon, a message, and a gold Sign-in
+/// button that routes to sign-in — instead of the player, from any entry point.
+class _NeedLoginState extends StatelessWidget {
+  const _NeedLoginState({
+    required this.message,
+    required this.signInLabel,
+    required this.onSignIn,
+  });
+
+  final String message;
+  final String signInLabel;
+  final VoidCallback onSignIn;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(SimfTokens.space6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            const Icon(
+              Icons.lock_outline,
+              size: 56,
+              color: SimfTokens.beigeBorder,
+            ),
+            const SizedBox(height: SimfTokens.space3),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: SimfTokens.beigeBorder),
+            ),
+            const SizedBox(height: SimfTokens.space4),
+            FilledButton(
+              onPressed: onSignIn,
+              style: FilledButton.styleFrom(
+                backgroundColor: SimfTokens.accent,
+                foregroundColor: Colors.white,
+              ),
+              child: Text(signInLabel),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
