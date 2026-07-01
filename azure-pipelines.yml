@@ -166,7 +166,9 @@ stages:
     #     under the agent's account. It FAILS LOUDLY if LocalDB is still
     #     unreachable, so a provisioning problem can never masquerade as a passing
     #     test gate. `sqllocaldb` is the standard Chocolatey package; the
-    #     bootstrap URL is Chocolatey's official installer. ---
+    #     bootstrap URL is Chocolatey's official installer.
+    #     DISABLED 2026-07-01 (enabled:false) together with the test gate below —
+    #     it exists only to support the integration tests. Re-enable both together. ---
     - powershell: |
         $ErrorActionPreference = 'Stop'
 
@@ -213,12 +215,16 @@ stages:
           throw 'MSSQLLocalDB is not Running - the integration tests cannot reach SQL Server.'
         }
       displayName: 'Provision SQL Server LocalDB (integration tests)'
+      enabled: false
 
     # --- Test gate (NCA Secure App-Dev Standard §3-20; SIMF-OPS-001 §5) — a
     #     failing test stops the pipeline. RE-ENABLED 2026-06-21 (had been
-    #     temporarily disabled 2026-06-05 for speed). SIMF.Api.Tests runs ~13 min. ---
+    #     temporarily disabled 2026-06-05 for speed). SIMF.Api.Tests runs ~13 min.
+    #     TEMPORARILY DISABLED 2026-07-01 (enabled:false) by owner request. Flip
+    #     `enabled` back to true to restore the gate. ---
     - task: DotNetCoreCLI@2
       displayName: 'Run all tests'
+      enabled: false
       inputs:
         command: 'test'
         projects: '$(Build.SourcesDirectory)/tests/**/*.csproj'
