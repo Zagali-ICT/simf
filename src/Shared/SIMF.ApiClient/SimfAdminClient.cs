@@ -1400,6 +1400,15 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Delete, $"sessions/{id}", content: null,
             accessToken, cancellationToken);
 
+    // D-578 — server-side subtitle fetch from a session's video (YouTube).
+    public Task<ApiCallResult<FetchSubtitleResponse>> FetchSessionSubtitleAsync(
+        FetchSubtitleRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<FetchSubtitleResponse>(
+            HttpMethod.Post, "sessions/subtitle/fetch-from-video",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
     // P3.2 — D-231: session broadcast-lifecycle transition.
     public Task<ApiCallResult<AdminSessionDetail>> SetSessionStatusAsync(
         Guid id, SetSessionStatusRequest request, string accessToken,

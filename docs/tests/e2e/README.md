@@ -76,7 +76,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/halls/seat-layouts` | [`cp-admin-halls-seat-layouts.md`](cp-admin-halls-seat-layouts.md) | E2E-HSL-001..015 |
 | `/admin/speakers` | [`cp-admin-speakers.md`](cp-admin-speakers.md) | E2E-SPK-001..022 |
 | `/admin/speaker-presentations` | [`cp-admin-speaker-presentations.md`](cp-admin-speaker-presentations.md) | E2E-SPP-001..017 |
-| `/admin/sessions` | [`cp-admin-sessions.md`](cp-admin-sessions.md) | E2E-SES-001..024 |
+| `/admin/sessions` | [`cp-admin-sessions.md`](cp-admin-sessions.md) | E2E-SES-001..030 |
 | `/admin/sessions/seat-plans` | [`cp-admin-sessions-seat-plans.md`](cp-admin-sessions-seat-plans.md) | E2E-SSP-001..014 |
 | `/admin/session-categories` | [`cp-admin-session-categories.md`](cp-admin-session-categories.md) | E2E-SCT-001..021 |
 | `/admin/programme-days` | [`cp-admin-programme-days.md`](cp-admin-programme-days.md) | E2E-PGD-001..018 |

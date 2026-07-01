@@ -26,8 +26,8 @@ void main() {
       expect(routePathRequiresAuth('/sessions/:sessionId/my-seat'), isTrue);
     });
 
-    test('the session detail itself is open (Guest)', () {
-      expect(routePathRequiresAuth('/sessions/:sessionId'), isFalse);
+    test('D-576 — the session detail is login-gated (was Guest-open)', () {
+      expect(routePathRequiresAuth('/sessions/:sessionId'), isTrue);
     });
 
     test('the explicitly gated screens require auth', () {
@@ -39,12 +39,17 @@ void main() {
       expect(routePathRequiresAuth('/notifications'), isTrue);
       expect(routePathRequiresAuth('/meet'), isTrue);
       expect(routePathRequiresAuth('/live/question'), isTrue);
+      // D-576 — the agenda + session detail are login-gated (redirect).
+      expect(routePathRequiresAuth('/sessions'), isTrue);
+      expect(routePathRequiresAuth('/sessions/:sessionId'), isTrue);
+      // D-577 — /live is NOT redirect-gated; it shows an in-screen need-login
+      // prompt instead, so a guest still lands on the live screen.
+      expect(routePathRequiresAuth('/live'), isFalse);
     });
 
     test('guest-accessible content is not gated', () {
       expect(routePathRequiresAuth('/'), isFalse);
       expect(routePathRequiresAuth('/map'), isFalse);
-      expect(routePathRequiresAuth('/sessions'), isFalse);
       expect(routePathRequiresAuth('/speakers/:speakerId'), isFalse);
     });
 
@@ -143,12 +148,42 @@ void main() {
     });
 
     test('a public route is always allowed', () {
+      // The venue map stays public (D-576 gated /sessions, so use /map here).
       expect(
         redirectDecision(
           isInitial: false,
           isSignedIn: false,
-          goingTo: '/sessions',
-          fullPath: '/sessions',
+          goingTo: '/map',
+          fullPath: '/map',
+        ),
+        isNull,
+      );
+    });
+
+    test('D-576 — a signed-out guest hitting /sessions or a session detail → '
+        'sign-in', () {
+      for (final p in <String>['/sessions', '/sessions/:sessionId']) {
+        expect(
+          redirectDecision(
+            isInitial: false,
+            isSignedIn: false,
+            goingTo: p,
+            fullPath: p,
+          ),
+          equals('/sign-in'),
+          reason: p,
+        );
+      }
+    });
+
+    test('D-577 — a signed-out guest hitting /live is NOT redirected (the gate '
+        'is in-screen on the live screen)', () {
+      expect(
+        redirectDecision(
+          isInitial: false,
+          isSignedIn: false,
+          goingTo: '/live',
+          fullPath: '/live',
         ),
         isNull,
       );
@@ -217,21 +252,33 @@ void main() {
       expect(find.text('BADGE'), findsNothing);
     });
 
-    testWidgets('a public tab (/sessions) is NOT bounced when signed out',
+    testWidgets('a public tab (/map) is NOT bounced when signed out',
         (tester) async {
       final auth = _AuthFlag();
       final router = await pumpShell(tester, auth);
-      // Move to the public sessions branch first.
-      router.go('/sessions');
+      // The venue map is the remaining public tab (D-576 gated /sessions).
+      router.go('/map');
       await tester.pumpAndSettle();
-      expect(find.text('SESSIONS'), findsOneWidget);
+      expect(find.text('MAP'), findsOneWidget);
 
       auth.signOut();
       await tester.pumpAndSettle();
 
       // A public branch stays put when the session ends — no over-redirect.
-      expect(find.text('SESSIONS'), findsOneWidget);
+      expect(find.text('MAP'), findsOneWidget);
       expect(find.text('SIGN-IN'), findsNothing);
+    });
+
+    testWidgets('D-576 — the /sessions tab bounces a signed-out guest',
+        (tester) async {
+      final auth = _AuthFlag();
+      final router = await pumpShell(tester, auth);
+      auth.signOut();
+      await tester.pumpAndSettle();
+      router.go('/sessions');
+      await tester.pumpAndSettle();
+      expect(find.text('SIGN-IN'), findsOneWidget);
+      expect(find.text('SESSIONS'), findsNothing);
     });
   });
 

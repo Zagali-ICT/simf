@@ -8,6 +8,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/core/organization_profile/organization_profile.dart';
 import 'package:simf_app/features/live/data/live_repository.dart';
 import 'package:simf_app/features/live/live_broadcast_screen.dart';
+import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 LiveSession _liveSession({
@@ -82,6 +83,35 @@ OrgProfile _orgProfile({String? liveStreamUrl}) => OrgProfile(
       liveStreamUrl: liveStreamUrl,
     );
 
+CurrentUser _visitor() => CurrentUser(
+      id: 'u1',
+      email: 'v@x.sa',
+      displayName: 'Visitor One',
+      appRole: AppRole.visitor,
+      preferredLanguage: PreferredLanguage.fromJson('en'),
+      registrationStatus: RegistrationStatus.approved,
+    );
+
+Session _authSession() => Session(
+      accessToken: 'A',
+      refreshToken: 'R',
+      accessTokenExpiresAt: DateTime.now().add(const Duration(minutes: 30)),
+      user: _visitor(),
+    );
+
+/// Default test auth = an approved, signed-in visitor (the live screen is
+/// login-only under D-577, so the player-path tests must be signed in).
+class _SignedIn extends AuthController {
+  @override
+  AuthState build() => AuthStateSignedIn(_authSession());
+}
+
+/// A signed-out guest — used to assert the D-577 need-login gate.
+class _Guest extends AuthController {
+  @override
+  AuthState build() => const AuthStateSignedOut();
+}
+
 Future<void> _pump(
   WidgetTester tester, {
   required LiveRepository repo,
@@ -89,6 +119,7 @@ Future<void> _pump(
   OrgProfile? profile,
   Locale locale = const Locale('en'),
   bool settle = true,
+  AuthController? auth,
 }) async {
   // Tall surface so the whole lazy scroll (player band → title → region notice →
   // ask-question, or the not-live message) lays out in the test viewport.
@@ -111,6 +142,7 @@ Future<void> _pump(
       overrides: <Override>[
         liveRepositoryProvider.overrideWithValue(repo),
         orgProfileProvider.overrideWith(() => _StubOrgProfile(profile)),
+        authControllerProvider.overrideWith(() => auth ?? _SignedIn()),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -139,6 +171,28 @@ Future<void> _pump(
 
 void main() {
   group('LiveBroadcastScreen (Page 025)', () {
+    testWidgets('a signed-out guest sees the need-login gate, not the stream '
+        '(owner, D-577)', (tester) async {
+      final repo = _FakeLiveRepo(
+        session: _liveSession(
+          liveStreamUrl: 'https://www.youtube.com/watch?v=simf',
+        ),
+      );
+      await _pump(tester, repo: repo, sessionId: 's1', auth: _Guest());
+
+      // The guest sees the login prompt + a Sign-in button — never the player.
+      expect(find.text('Sign in to watch the live stream.'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Sign in'), findsOneWidget);
+      // The stream/content is not shown, and the session is never fetched.
+      expect(
+        find.textContaining(
+          'Live broadcasting is available only inside the Riyadh region',
+        ),
+        findsNothing,
+      );
+      expect(repo.calls, 0);
+    });
+
     testWidgets('no sessionId shows the pick-a-session empty state',
         (tester) async {
       final repo = _FakeLiveRepo(session: _liveSession());

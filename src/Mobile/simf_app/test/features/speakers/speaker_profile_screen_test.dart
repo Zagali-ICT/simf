@@ -97,6 +97,7 @@ class _FakeRepo implements SpeakersRepository {
   final List<SpeakerSlot> slots;
   int submits = 0;
   DateTime? lastSlotStart;
+  String? lastRequesterName;
 
   @override
   Future<List<SpeakerSummary>> getSpeakers() => throw UnimplementedError();
@@ -126,6 +127,7 @@ class _FakeRepo implements SpeakersRepository {
   }) async {
     submits++;
     lastSlotStart = slotStartUtc;
+    lastRequesterName = requesterName;
   }
 }
 
@@ -232,18 +234,22 @@ void main() {
 
       await tester.tap(find.widgetWithText(FilledButton, 'Request meeting'));
       await tester.pumpAndSettle();
-      // The sheet opened with the name prefilled + a subject field.
+      // The sheet has no name field (owner: "no need for name") — only the
+      // subject; the requester name comes from the signed-in account.
+      expect(find.byType(TextField), findsOneWidget);
       expect(find.text('Subject'), findsOneWidget);
-      await tester.enterText(find.byType(TextField).last, 'Discuss navigation');
+      await tester.enterText(find.byType(TextField), 'Discuss navigation');
       await tester.tap(find.widgetWithText(FilledButton, 'Send request'));
       await tester.pumpAndSettle();
 
       expect(repo.submits, 1);
+      expect(repo.lastRequesterName, 'Visitor One');
       expect(find.text('Meeting request sent'), findsOneWidget);
     });
 
-    testWidgets('a speaker with availability slots shows the VIP slot picker (D-474)',
-        (tester) async {
+    testWidgets(
+        'a speaker with availability slots shows a date then time picker '
+        '(D-474/Figma 1701:7479)', (tester) async {
       final slot = SpeakerSlot(
         startUtc: DateTime.utc(2030, 1, 1, 10),
         endUtc: DateTime.utc(2030, 1, 1, 10, 30),
@@ -253,7 +259,22 @@ void main() {
 
       await tester.tap(find.widgetWithText(FilledButton, 'Request meeting'));
       await tester.pumpAndSettle();
-      // The sheet offers the VIP slot dropdown sourced from the speaker's free slots.
+      // The sheet first offers a DATE dropdown sourced from the free slots; the
+      // TIME dropdown appears only after a day is picked.
+      expect(find.byType(DropdownButtonFormField<DateTime>), findsOneWidget);
+      expect(find.byType(DropdownButtonFormField<SpeakerSlot>), findsNothing);
+
+      // Picking the (only) day reveals the time dropdown.
+      await tester.tap(find.byType(DropdownButtonFormField<DateTime>));
+      await tester.pumpAndSettle();
+      // warnIfMissed: the open dropdown overlay makes the menu item's centre a
+      // known hit-test warning in tests; the assertion below proves the day was
+      // actually selected (the time dropdown only renders once it is).
+      await tester.tap(
+        find.byType(DropdownMenuItem<DateTime>).last,
+        warnIfMissed: false,
+      );
+      await tester.pumpAndSettle();
       expect(find.byType(DropdownButtonFormField<SpeakerSlot>), findsOneWidget);
     });
 

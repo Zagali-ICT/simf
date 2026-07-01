@@ -972,6 +972,10 @@ class AppL10n {
   String get generalAdmissionLabel => _t('دخول عام', 'General admission');
   String get reservationPendingHint =>
       _t('بانتظار موافقة الإدارة', 'Pending approval');
+  // D-572 — the approved-booking hint (Figma 889:2766): once the Control Panel
+  // approves the seat the card swaps the pending line for this.
+  String get seatShowBadgeHint =>
+      _t('تأكد من إبراز بطاقتك عند الدخول', 'Show your badge at entry');
   String get cancelBookingCta => _t('إلغاء الحجز', 'Cancel booking');
   String get cancelBookingConfirmTitle => _t('إلغاء الحجز', 'Cancel booking?');
   String get cancelBookingConfirmBody => _t(
@@ -1062,6 +1066,9 @@ class AppL10n {
   String get meetingSendButton => _t('إرسال الطلب', 'Send request');
   // D-474/D-475 (#11) — the VIP availability-slot picker.
   String get meetingSlotLabel => _t('فترة الاجتماع (لكبار الشخصيات)', 'Meeting slot (VIP)');
+  // Figma 1701:7479 — the slot split into a date then a time picker.
+  String get meetingDateLabel => _t('التاريخ', 'Date');
+  String get meetingTimeLabel => _t('الوقت', 'Time');
   String get meetingSlotNone =>
       _t('لا توجد فترات متاحة حالياً', 'No meeting slots available right now');
   String get meetingVipOnly =>
@@ -1517,12 +1524,13 @@ class AppL10n {
   String get guestModeTitle => _t('وضع الضيف', 'Guest mode');
   String get guestModeHeadline => _t('التصفح كضيف', 'Browsing as guest');
   String get guestModeBrowseBody => _t(
-        'يمكنك كضيف تصفّح الجلسات والمتحدثين والخريطة التفاعلية والوسائط.',
-        'As a guest you can browse the sessions, speakers, the venue map and the media.',
+        'يمكنك كضيف تصفّح المتحدثين والخريطة التفاعلية والوسائط.',
+        'As a guest you can browse the speakers, the venue map and the media.',
       );
   String get guestModeSignInBody => _t(
-        'سجّل الدخول للحصول على بطاقتك الذكية والإشعارات الشخصية وحجز المقاعد.',
-        'Sign in to get your smart badge, personal notifications and booking.',
+        'سجّل الدخول لعرض الأجندة والبث المباشر، وللحصول على بطاقتك الذكية والإشعارات الشخصية وحجز المقاعد.',
+        'Sign in to view the agenda and live broadcast, and to get your smart '
+            'badge, personal notifications and booking.',
       );
   String get guestModeContinueButton =>
       _t('المتابعة كضيف', 'Continue as guest');
@@ -1840,6 +1848,13 @@ class AppL10n {
 
   // Live broadcast (Page 025). liveNowLabel already exists (reused for the badge).
   String get liveBroadcastTitle => _t('البث المباشر', 'Live broadcast');
+  // Login-gate (owner, 2026-07-01): the live stream is login-only — a signed-out
+  // guest sees this prompt (with the shared signInButton label) instead of the
+  // player.
+  String get liveNeedLogin => _t(
+        'سجّل الدخول لمشاهدة البث المباشر.',
+        'Sign in to watch the live stream.',
+      );
   // D-433 — live broadcast + ask-question + media-coverage re-skins
   // (Figma 934-3450 / 934-3636 / 947-3764 / 958-2246).
   String get liveNowBroadcasting => _t('يُبث الآن', 'Now broadcasting');

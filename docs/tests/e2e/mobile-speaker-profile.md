@@ -42,6 +42,8 @@
 | E2E-MOB020-013 | Active tab pill is gold-filled; the rest are navy with a beige hairline | happy | P1 | _to author_ |
 | E2E-MOB020-014 | Only CV sections with content render a pill (1–4 pills) | edge | P1 | _to author_ |
 | E2E-MOB020-015 | Speaker with no CV content shows no tabs and no bio card | edge | P1 | _to author_ |
+| E2E-MOB020-016 | Meeting form has **no name field**; only subject (+ optional slot) is entered; `requesterName` is auto-sent from the signed-in account | happy | P1 | authored ✓ (`a signed-in visitor can submit a meeting request`) |
+| E2E-MOB020-017 | Meeting form (D-579, Figma 1701:7479): the VIP slot is chosen as a **date** dropdown then a **time** dropdown, both sourced from the speaker's available slots; the time dropdown appears only after a day is picked | happy | P2 | authored ✓ (`a speaker with availability slots shows a date then time picker`) |
 
 ## Scenarios
 
@@ -237,6 +239,46 @@ Scenario: A speaker with no CV text shows neither the tab strip nor the bio card
   And the avatar, the request-meeting affordance and the sessions list still render per their own rules
 ```
 
+### E2E-MOB020-016 — Meeting form has no name field
+
+```gherkin
+Scenario: The request-meeting sheet no longer asks for the requester's name
+  Given an approved Visitor signed in as "Visitor One"
+  And a speaker whose allowsMeetingRequests is true
+  When the visitor opens the "طلب مقابلة" (Request meeting) sheet
+  Then the sheet shows only the Subject field (and the optional Available-time slot)
+  And there is no "Your name" field
+  When the visitor enters a subject and sends the request
+  Then the POST body's requesterName equals the account display name "Visitor One"
+  And the request is created Pending
+```
+
+> **Owner change (myComment.txt line 16, 2026-06-30):** the name input was
+> removed — the requester is the signed-in account, so the app sends the account
+> display name as `requesterName` automatically. The API contract is unchanged.
+
+### E2E-MOB020-017 — Meeting form date + time selection (D-579)
+
+```gherkin
+Scenario: The VIP slot is picked as a date then a time from available slots
+  Given an approved Visitor signed in
+  And a speaker whose allowsMeetingRequests is true with availability slots
+  When the visitor opens the "طلب مقابلة" (Request meeting) sheet
+  Then a "التاريخ" (Date) dropdown is shown listing the days that have a free slot
+  And no "الوقت" (Time) dropdown is shown yet
+  When the visitor picks a day
+  Then a "الوقت" (Time) dropdown of that day's start–end slots appears
+  When the visitor picks a time and sends the request
+  Then the POST body's slotStartUtc/slotEndUtc equal the chosen slot
+  # The slot always matches a published availability slot, so the server
+  # (which 409s a non-free slot and 403s a non-VIP) accepts it.
+```
+
+> **Owner change (myComment.txt #7, 2026-07-01):** the single slot dropdown was
+> split into a date picker then a time picker (Figma 1701:7479), both sourced from
+> the speaker's available slots so the chosen slot always matches a free one. The
+> API contract is unchanged.
+
 ---
 
 > **Figma parity (2026-06-16):** the screen was re-skinned to the KSA-Project
@@ -263,4 +305,6 @@ Scenario: A speaker with no CV text shows neither the tab strip nor the bio card
 
 ---
 
-_Last reviewed:_ `2026-06-16` by `SIMF Team`.
+_Last reviewed:_ `2026-07-01` by `SIMF Team` — D-579: the meeting-request slot
+picker split into a date then a time dropdown, both sourced from the speaker's
+available slots (Figma 1701:7479).

@@ -38,7 +38,7 @@ is a placeholder marked _(planned)_.
       (D-134 Sprint B / D-135).
    2. _(planned)_ Halls & seating
    3. _(planned)_ Speakers
-   4. _(planned)_ Sessions
+   4. **Sessions** (`/admin/sessions`) — chapter authored below (§5.4).
    5. _(planned)_ Bookings
 6. Exhibition modules _(planned)_
 7. Engagement modules _(planned)_
@@ -443,9 +443,148 @@ Standard per-row Edit (with Active checkbox) and Deactivate (soft-delete).
 - Floor-plan view — see Venue map module (later in Sprint C).
 - Sessions in-use guard — wired when Sessions ships in this sprint.
 
-### 5.3–5.5 _(planned)_ Speakers / Sessions / Bookings
+### 5.3 _(planned)_ Speakers — `/admin/speakers`
 
-These ship in the remaining Sprint B commits per the master plan
+Ships in a remaining Sprint B commit per the master plan
+[`SIMF-D134-Module-Build-Plan.md`](../SIMF-D134-Module-Build-Plan.md) §5.
+Until this chapter lands, use the standard CRUD list pattern (§3.1): the
+Speakers list backs the **Add speaker** picker on the Session form (§5.4).
+
+### 5.4 Sessions — `/admin/sessions`
+
+> Page reference: [`docs/pages/cp/admin-sessions.md`](../pages/cp/admin-sessions.md)
+> · E2E catalogue: [`docs/tests/e2e/cp-admin-sessions.md`](../tests/e2e/cp-admin-sessions.md)
+
+A **session** is one scheduled run-of-show talk: a time window in a
+specific **Hall** (§5.2), presented by one or more **Speakers** (§5.3),
+optionally tagged with **Themes** (§5.1) and a **Category**. Sessions are
+what the mobile-app agenda, the seat-booking flow, and the **live
+broadcast** player all read from. The list follows the canonical CRUD
+pattern (§3.1): filter, select-all, per-row **Details / Edit / Deactivate**,
+plus **Add session**, **Import**, and **Export**.
+
+#### Most common tasks
+
+##### Add a session
+
+1. **Programme → Sessions** → **Add session**.
+2. Fill the form (required fields marked ✱):
+   - **Code** ✱ — 2–16 chars, unique; uppercased on save. Used in the
+     public session URL (e.g. `SES-001`).
+   - **Title (English)** ✱ + **Title (Arabic)** ✱ — ≤ 256 chars each.
+   - **Description (English / Arabic)** — optional, ≤ 2048 each.
+   - **Live stream URL (live broadcast)** — see *Set the live broadcast
+     URL* below. Leave blank for a non-live session.
+   - **Sign-language stream URL** — optional alternate feed (same
+     accepted formats); shows the sign-language toggle on the player.
+   - **AI live captions (English / Arabic)** — optional caption /
+     running-transcript text shown under the player; blank falls back to
+     the player's own captions.
+   - **Hall** ✱ — pick from the Halls list (§5.2).
+   - **Category** — optional (from Session categories); `— No category —`
+     leaves it unset.
+   - **Type** — `Workshop` / `Session` / `Event`, driving the app's
+     agenda type tabs; `— No type —` leaves it untyped.
+   - **Seat selection (override)** — `— Inherit from hall —` (default),
+     `Assigned seat`, or `Open seating (general admission)`.
+   - **Start (UTC)** ✱ + **End (UTC)** ✱ — **enter UTC**, not local time.
+     End must be after Start.
+   - **Capacity override** — blank inherits the hall's seat count; set a
+     value only when the room is reconfigured for this session.
+   - **Add speaker** — pick a speaker to append; reorder with **Up / Down**
+     (row 1 is the primary speaker), set each one's **Role** (Speaker /
+     Host), or **Remove**.
+   - **Add theme** — append one or more themes; **Remove** to drop one.
+3. **Create session**.
+
+##### Edit a session
+
+Per-row **Edit** (pencil) icon → the **Edit session** dialog opens
+pre-filled with every current value → adjust → **Save changes**. The
+dialog adds an **Active — show in the public agenda** checkbox (untick to
+hide the session from the agenda without deleting it). A green
+*"Session '…' was updated."* banner confirms the save.
+
+> The Edit dialog round-trips **all** fields, so editing a session never
+> silently drops its speakers, themes, live URLs, type, or seat-mode
+> override.
+
+##### Set the live broadcast URL (what makes a session "LIVE")
+
+The **Live stream URL** field is what flips a session to a live broadcast:
+when it is set, the mobile app shows the LIVE player for that session;
+when blank, the session is recorded/scheduled only.
+
+Accepted values (validated in the CP **and** the API by the same rule):
+
+- A **YouTube** link with a real 11-character video id — `watch?v=…`,
+  `youtu.be/…`, `/live/…`, `/embed/…`, or `/shorts/…`
+  (e.g. `https://www.youtube.com/watch?v=jfKfPfyJRdk`).
+- **or** a direct **`https`** HLS/MP4 stream URL (ending `.m3u8` / `.mp4`).
+
+Rules to know:
+
+- **`https` only** — a plain `http://` link is rejected (no downgrade).
+- **A bare channel/handle link is rejected** —
+  `youtube.com/@channel` or `/channel/UC…` has no video id and will fail
+  validation with *"Enter a valid YouTube link or HLS/MP4 stream URL."*
+  Use the specific video/live watch URL.
+
+Steps:
+
+1. Open the session's **Edit** dialog (above).
+2. Paste the watch/live URL into **Live stream URL (live broadcast)**.
+3. **Save changes** → the update banner confirms it.
+4. *(Optional)* re-open **Edit** to read the value back, or check the app's
+   session screen, to confirm the LIVE player appears.
+
+> **Worked example (done 2026-06-30):** to give the team a feed to test
+> against, the **earliest** session — **S-TODAY · "Today's Welcome
+> Session" / "جلسة اليوم الترحيبية"** (Hall A, starts 2026-06-14 11:00
+> UTC) — had its **Live stream URL** set to a public 24/7 test stream,
+> `https://www.youtube.com/watch?v=jfKfPfyJRdk`. The public app API
+> (`GET /api/v1/app/programme/sessions/{id}`) then returned that
+> `liveStreamUrl`, so the app's live player plays it. Clear the field the
+> same way to stop showing the test feed to users.
+
+##### Deactivate a session
+
+Per-row **Deactivate** (trash) icon — soft-delete only. The session stops
+appearing in the public agenda on next load; its bookings, questions, and
+ratings are retained.
+
+#### Field validation reference
+
+| Field | Rule (rejected otherwise) |
+|-------|---------------------------|
+| Code | 2–16 chars; unique (case-insensitive) |
+| Title (English / Arabic) | required; ≤ 256 chars |
+| Hall | must be selected |
+| Start / End | both required; End strictly after Start; entered as **UTC** |
+| Capacity override | blank, or an integer ≥ 0 |
+| Live stream / Sign-language URL | blank, or a YouTube video URL or `https` HLS/MP4 stream |
+
+#### Troubleshooting
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| "A session with code 'X' already exists" | Codes are unique (case-insensitive) | Pick a different code |
+| "Enter a valid YouTube link or HLS/MP4 stream URL." | A channel/handle link, an `http://` link, or a malformed id | Use an `https` YouTube **watch/live** URL (with an 11-char id) or an `https` `.m3u8`/`.mp4` URL |
+| "End time must be after the start time." | End ≤ Start, or times read as local | Re-enter both as **UTC**, End after Start |
+| App doesn't show the LIVE player after saving | Field saved blank, or the app screen wasn't refreshed | Re-open Edit to confirm the URL; pull-to-refresh the app session screen |
+| Times look an hour off | The columns/inputs are **UTC**, not the venue's local time | Convert to UTC when entering |
+
+#### Cross-references
+
+- Page reference: [`docs/pages/cp/admin-sessions.md`](../pages/cp/admin-sessions.md)
+- E2E catalogue: [`docs/tests/e2e/cp-admin-sessions.md`](../tests/e2e/cp-admin-sessions.md)
+- Authority spec: SIMF-FDS-004 §5.3 (PDF §2.9).
+- Decisions: D-165 (sessions), D-349 (live = YouTube POC + HLS/MP4
+  fallback), D-439 (live section + captions round-trip on edit).
+
+### 5.5 _(planned)_ Bookings — `/admin/bookings`
+
+Ships in a remaining Sprint B commit per the master plan
 [`SIMF-D134-Module-Build-Plan.md`](../SIMF-D134-Module-Build-Plan.md) §5.
 
 ---

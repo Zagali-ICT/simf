@@ -12,6 +12,7 @@ import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_confirm_dialog.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
+import '../../app/widgets/simf_svg_icon.dart';
 import '../../core/country_flag.dart';
 import 'data/seat_map_models.dart';
 import 'data/seat_map_repository.dart';
@@ -578,11 +579,15 @@ class _HeaderCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          // Frame 889:2706 — RTL: the session title leads at the inline-start
-          // (right); the gold index badge (the day-ordinal "02", D-567) trails
-          // at the inline-end (left).
+          // Frame 889:2706 — RTL: the gold index badge (the BOLD day-ordinal
+          // "02", D-567) leads at the inline-start (physical right); the session
+          // title follows to its inline-end (left), packed against the badge.
           Row(
             children: <Widget>[
+              if (badgeText.isNotEmpty) ...<Widget>[
+                _IndexBadge(text: badgeText),
+                const SizedBox(width: SimfTokens.space2),
+              ],
               Expanded(
                 child: Text(
                   detail.localizedTitle(isArabic),
@@ -596,36 +601,31 @@ class _HeaderCard extends StatelessWidget {
                   ),
                 ),
               ),
-              if (badgeText.isNotEmpty) ...<Widget>[
-                const SizedBox(width: SimfTokens.space2),
-                _IndexBadge(text: badgeText),
-              ],
             ],
           ),
+
           const SizedBox(height: SimfTokens.space4),
           _MetaRow(detail: detail, isArabic: isArabic),
           const SizedBox(height: SimfTokens.space4),
-          // Frame 889:2715 — the two action buttons. رابط الجلسة (live link,
-          // beige hairline) only appears when the session has a live feed; it
-          // leads (inline-start / physical right under RTL) so ملخص الجلسة
-          // (gold hairline) trails, matching the frame.
+          // Frame 889:2715 — the two action buttons are ALWAYS both shown
+          // (owner 2026-06-30). ملخص الجلسة (gold hairline) leads at the
+          // inline-start (physical right under RTL); رابط الجلسة (beige
+          // hairline) trails at the inline-end (left) — matching the frame.
           Row(
             children: <Widget>[
-              if (detail.hasLiveStream) ...<Widget>[
-                Expanded(
-                  child: _HeaderActionButton(
-                    label: l10n.sessionLink,
-                    accented: false,
-                    onTap: onSessionLink,
-                  ),
-                ),
-                const SizedBox(width: SimfTokens.space2),
-              ],
               Expanded(
                 child: _HeaderActionButton(
                   label: l10n.sessionSummary,
                   accented: true,
                   onTap: onSessionSummary,
+                ),
+              ),
+              const SizedBox(width: SimfTokens.space2),
+              Expanded(
+                child: _HeaderActionButton(
+                  label: l10n.sessionLink,
+                  accented: false,
+                  onTap: onSessionLink,
                 ),
               ),
             ],
@@ -730,7 +730,10 @@ class _IndexBadge extends StatelessWidget {
 }
 
 /// The meta line (frame 889:2698): a clock + time range, a separator dot, and a
-/// calendar + weekday/day, in beige paragraph text.
+/// calendar + weekday/day, in beige paragraph text. Laid **LTR** so each segment
+/// is icon→text (icon leads at the left, owner 2026-06-30) and the time reads
+/// "09:00 — 10:30" start→end; the time segment sits left, the date segment right
+/// (matching the frame). The Arabic date still renders RTL within its own box.
 class _MetaRow extends StatelessWidget {
   const _MetaRow({required this.detail, required this.isArabic});
 
@@ -741,51 +744,46 @@ class _MetaRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final start = detail.startLocal;
     final end = detail.endLocal;
-    return Wrap(
-      alignment: WrapAlignment.start,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: SimfTokens.space3,
-      runSpacing: SimfTokens.space1,
-      children: <Widget>[
-        _MetaItem(
-          icon: Icons.schedule_outlined,
-          // Times are clock values — keep them LTR so "09:00 — 10:30" reads
-          // left-to-right even inside the RTL line.
-          label: '${_time(start)} — ${_time(end)}',
-          forceLtr: true,
-        ),
-        const Text(
-          '·',
-          // Frame 889:2702 — the separator dot is white (#FFFFFF), brighter than
-          // the beige time/date items beside it.
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w900,
-            fontSize: SimfTokens.textLg,
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Wrap(
+        alignment: WrapAlignment.start,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: SimfTokens.space3,
+        runSpacing: SimfTokens.space1,
+        children: <Widget>[
+          _MetaItem(
+            icon: Icons.schedule_outlined,
+            label: '${_time(start)} — ${_time(end)}',
           ),
-        ),
-        _MetaItem(
-          icon: Icons.calendar_today_outlined,
-          label: '${_weekday(start.weekday, isArabic)} · '
-              '${start.day.toString().padLeft(2, '0')} '
-              '${_month(start.month, isArabic)}',
-        ),
-      ],
+          const Text(
+            '·',
+            // Frame 889:2702 — the separator dot is white (#FFFFFF), heavier than
+            // the beige time/date items beside it.
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: SimfTokens.textLg,
+            ),
+          ),
+          _MetaItem(
+            icon: Icons.calendar_today_outlined,
+            label: '${_weekday(start.weekday, isArabic)} · '
+                '${start.day.toString().padLeft(2, '0')} '
+                '${_month(start.month, isArabic)}',
+          ),
+        ],
+      ),
     );
   }
 }
 
 /// One icon + label pair in the meta line (frame 889:2687/889:2686).
 class _MetaItem extends StatelessWidget {
-  const _MetaItem({
-    required this.icon,
-    required this.label,
-    this.forceLtr = false,
-  });
+  const _MetaItem({required this.icon, required this.label});
 
   final IconData icon;
   final String label;
-  final bool forceLtr;
 
   @override
   Widget build(BuildContext context) {
@@ -796,10 +794,13 @@ class _MetaItem extends StatelessWidget {
         const SizedBox(width: SimfTokens.space2),
         Text(
           label,
-          textDirection: forceLtr ? TextDirection.ltr : null,
+          // SemiBold (owner 2026-06-30): the time/date numbers read bolder than
+          // the frame's Regular. The ambient Directionality is LTR so the time
+          // digits read start→end and the icon leads on the left.
           style: const TextStyle(
             color: SimfTokens.beigeBorder,
             fontSize: SimfTokens.textSm,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
@@ -1026,8 +1027,10 @@ class _AskHostCard extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Icon(
-              Icons.person_outline,
+            // Figma 1056:12877 — solar:user-outline, the design-system user
+            // glyph (bundled), not Material's person_outline.
+            SimfSvgIcon(
+              'assets/icons/nav_user.svg',
               size: 24,
               color: iconColor,
             ),
@@ -1081,6 +1084,12 @@ class _ReservationCard extends StatelessWidget {
     final title = isOpen
         ? l10n.generalAdmissionLabel
         : l10n.seatLocation(cell.rowLabel, cell.seatNumber);
+    // D-572 — once the booking is approved the card swaps the pending line for
+    // the "show your badge at entry" hint (Figma 889:2766); otherwise it stays
+    // "awaiting approval".
+    final hint = cell.status == BookingStatus.approved
+        ? l10n.seatShowBadgeHint
+        : l10n.reservationPendingHint;
     return SimfCard(
       onTap: onView,
       child: Padding(
@@ -1107,7 +1116,7 @@ class _ReservationCard extends StatelessWidget {
                   ),
                   const SizedBox(height: SimfTokens.space2),
                   Text(
-                    l10n.reservationPendingHint,
+                    hint,
                     style: const TextStyle(
                       color: SimfTokens.beigeBorder,
                       fontSize: SimfTokens.textSm,
@@ -1118,10 +1127,12 @@ class _ReservationCard extends StatelessWidget {
             ),
             if (onView != null) ...<Widget>[
               const SizedBox(width: SimfTokens.space2),
-              Icon(
-                Directionality.of(context) == TextDirection.rtl
-                    ? Icons.chevron_left
-                    : Icons.chevron_right,
+              // Figma 889:2762 — the my-seat arrow is a thin STROKED chevron
+              // (left-pointing "‹"), NOT the filled triangle of ic_caret_left.
+              // ic_back.svg is that stroked chevron; SimfSvgIcon never mirrors,
+              // so it stays left-pointing in RTL (same fix as speakers_screen).
+              const SimfSvgIcon(
+                'assets/icons/ic_back.svg',
                 size: 20,
                 color: SimfTokens.beigeBorder,
               ),
@@ -1251,9 +1262,9 @@ class _CtaRow extends StatelessWidget {
     // RTL: the first child is at the inline start (physical right). The frame
     // puts أضف إلى تقويمي (gold) on the right and تذكير (outlined) on the left,
     // so the gold Expanded button leads and the reminder button trails.
-    // Frame 897:2872 — in each button the label leads (inline-start, right) and
-    // the icon trails (inline-end, left). A plain Row [label, gap, icon] under
-    // RTL puts the icon on the left, unlike the .icon constructor.
+    // Frame 897:2872 — in each button the ICON leads (inline-start = physical
+    // right) and the label follows (owner 2026-06-30: "icon first"), so each
+    // inner Row is [icon, gap, label].
     return Row(
       children: <Widget>[
         Expanded(
@@ -1269,6 +1280,12 @@ class _CtaRow extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
+                const Icon(
+                  Icons.calendar_today_outlined,
+                  size: 24,
+                  color: Colors.white,
+                ),
+                const SizedBox(width: SimfTokens.space2),
                 Flexible(
                   child: Text(
                     l10n.addToCalendar,
@@ -1280,12 +1297,6 @@ class _CtaRow extends StatelessWidget {
                       fontSize: SimfTokens.textLg,
                     ),
                   ),
-                ),
-                const SizedBox(width: SimfTokens.space2),
-                const Icon(
-                  Icons.calendar_today_outlined,
-                  size: 24,
-                  color: Colors.white,
                 ),
               ],
             ),
@@ -1309,6 +1320,12 @@ class _CtaRow extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
+              const Icon(
+                Icons.schedule_outlined,
+                size: 24,
+                color: Colors.white,
+              ),
+              const SizedBox(width: SimfTokens.space2),
               Flexible(
                 child: Text(
                   l10n.reminder,
@@ -1320,12 +1337,6 @@ class _CtaRow extends StatelessWidget {
                     fontSize: SimfTokens.textLg,
                   ),
                 ),
-              ),
-              const SizedBox(width: SimfTokens.space2),
-              const Icon(
-                Icons.schedule_outlined,
-                size: 24,
-                color: Colors.white,
               ),
             ],
           ),

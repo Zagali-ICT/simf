@@ -44,6 +44,19 @@ public static class LiveStreamUrlPolicy
         return TryGetYouTubeVideoId(uri, out _) || IsDirectStream(uri);
     }
 
+    /// <summary>
+    /// D-578 — extracts the 11-character YouTube video id from a watch /
+    /// youtu.be / live / embed / shorts URL. Returns false for a non-YouTube or
+    /// id-less link. Public so the server-side subtitle extractor
+    /// (<c>YoutubeTranscriptService</c>) reuses the one parsing rule instead of
+    /// duplicating it — the same logic <see cref="IsAllowed"/> validates against.
+    /// </summary>
+    public static bool TryGetYouTubeVideoId(string? url, out string videoId)
+    {
+        videoId = string.Empty;
+        return TryParseHttpsUrl(url, out var uri) && TryGetYouTubeVideoId(uri, out videoId);
+    }
+
     private static bool TryParseHttpsUrl(string? url, out Uri uri)
     {
         uri = null!;

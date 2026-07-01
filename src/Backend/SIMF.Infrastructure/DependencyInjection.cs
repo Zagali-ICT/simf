@@ -535,6 +535,22 @@ public static class DependencyInjection
             SIMF.Infrastructure.Ai.AiService>();
         services.AddScoped<SIMF.Application.Ai.Abstractions.IAdminAiPromptService,
             SIMF.Infrastructure.Ai.AdminAiPromptService>();
+        // D-578 — server-side subtitle fetch from a video (YouTube) for the CP
+        // Sessions editor. Uses a DEDICATED no-redirect HttpClient (not the shared
+        // singleton): the caption baseUrl comes from YouTube's response, so following
+        // a 3xx into an internal host would be SSRF (D-578 security review #1); with
+        // AllowAutoRedirect=false a redirect fails closed (the service also re-validates
+        // the baseUrl host). BCL-only — no Microsoft.Extensions.Http package (§1.7).
+        var youtubeTranscriptHttp = new HttpClient(
+            new SocketsHttpHandler { AllowAutoRedirect = false })
+        {
+            Timeout = TimeSpan.FromSeconds(30),
+        };
+        services.AddScoped<SIMF.Application.Programme.Abstractions.IYoutubeTranscriptService>(
+            sp => new SIMF.Infrastructure.Programme.YoutubeTranscriptService(
+                youtubeTranscriptHttp,
+                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<
+                    SIMF.Infrastructure.Programme.YoutubeTranscriptService>>()));
         // D-148 — Gate Module: admin CRUD + operator surface + QR resolver +
         // gate-config cache + idempotency store + failure-rate circuit
         // (SIMF-API-GATES-001, SIMF-FDS-003 §5.6).

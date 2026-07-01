@@ -73,8 +73,12 @@ The `طلب مقابلة` (request a meeting) button is shown **only when
 1. **Gate** — the action is `RequireApprovedAccount`. A **guest / pending**
    account is **prompted to sign in**; only an **approved Visitor** can submit.
 2. **Submit** — `POST /app/speakers/{speakerId}/meeting-requests` with body
-   `SubmitSpeakerMeetingRequestRequest = { requesterName, subject }`. Server
-   validates, in order:
+   `SubmitSpeakerMeetingRequestRequest = { requesterName, subject }` (plus the
+   optional VIP `slotStartUtc`/`slotEndUtc`, D-474). The app form collects only
+   the **subject** (and the optional Available-time slot) — there is **no name
+   field** (owner: "no need for name"); `requesterName` is the signed-in
+   account's display name, sent automatically. The wire contract is unchanged.
+   Server validates, in order:
    - the speaker **exists + is active** → else **404 `SPEAKER_NOT_FOUND`**,
    - the speaker **allows meeting requests** (`allowsMeetingRequests == true`)
      → else **409 `SPEAKER_MEETING_REQUESTS_NOT_ALLOWED`**,
@@ -109,8 +113,10 @@ interview"). A speaker-profile meeting request is **not** tied to a session.
 - **Empty `sessions[]`** → "no sessions yet" within the profile.
 - **Guest taps `طلب مقابلة`** → sign-in prompt (401/403 if attempted without an
   approved token).
-- **Invalid name/subject** → 400 `SPEAKER_MEETING_REQUEST_INVALID`; the form
-  shows a field error.
+- **Empty subject** → the form blocks submit until the subject is filled; a
+  direct POST with an empty subject is refused 400
+  `SPEAKER_MEETING_REQUEST_INVALID` (the `requesterName` is the account name, so
+  the form can no longer send it empty).
 
 ## L-7 Localization
 Arabic primary (RTL), English secondary. The hero (back chevron, rank, name),

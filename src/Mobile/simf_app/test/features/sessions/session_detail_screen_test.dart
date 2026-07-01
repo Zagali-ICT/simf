@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 import 'package:simf_app/features/sessions/data/seat_map_models.dart';
 import 'package:simf_app/features/sessions/data/seat_map_repository.dart';
 import 'package:simf_app/features/sessions/data/session_calendar.dart';
@@ -51,12 +52,21 @@ const _testConfig = SimfDataConfig(
   deviceType: SimfDeviceType.android,
 );
 
-// D-485 — the caller's own seat cell (an assigned-seat booking).
+// D-485 — the caller's own seat cell (an assigned-seat booking, still pending).
 const _mySeatCell = SeatCell(
   reservationId: 'r1',
   rowLabel: 'B',
   seatNumber: 12,
   kind: SeatReservationKind.userBooking,
+);
+
+// D-572 — the same seat once the Control Panel has APPROVED the booking.
+const _myApprovedSeatCell = SeatCell(
+  reservationId: 'r1',
+  rowLabel: 'B',
+  seatNumber: 12,
+  kind: SeatReservationKind.userBooking,
+  status: BookingStatus.approved,
 );
 
 SessionSeatMap _seatMap({
@@ -302,10 +312,10 @@ void main() {
       // The gold index badge shows the day-ordinal "02" (D-567), not the code.
       expect(find.text('02'), findsOneWidget);
       expect(find.text('OP-1'), findsNothing);
-      // Header action buttons: the summary button always shows; the live link
-      // is hidden because this detail has no liveStreamUrl (Figma 889:2715).
+      // Header action buttons: BOTH always show now (owner 2026-06-30) —
+      // ملخص الجلسة (summary) + رابط الجلسة (session link), per Figma 889:2715.
       expect(find.text('Session summary'), findsOneWidget);
-      expect(find.text('Session link'), findsNothing);
+      expect(find.text('Session link'), findsOneWidget);
       // Description card + heading.
       expect(find.text('Description'), findsOneWidget);
       expect(find.text('Welcome address'), findsOneWidget);
@@ -322,8 +332,7 @@ void main() {
       expect(find.widgetWithText(OutlinedButton, 'Reminder'), findsOneWidget);
     });
 
-    testWidgets('the live link shows only when the session has a feed, and '
-        'opens the live screen', (tester) async {
+    testWidgets('the session link opens the live screen', (tester) async {
       await _pump(
         tester,
         repo: _FakeDetailRepo(
@@ -416,6 +425,20 @@ void main() {
       );
       expect(find.widgetWithText(OutlinedButton, 'Reminder'), findsOneWidget);
       expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('D-572 — an APPROVED booking shows the show-badge hint, not the '
+        'pending line', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeDetailRepo(detail: _detail()),
+        seatMap: _seatMap(myCell: _myApprovedSeatCell),
+        controller: _SignedInController(),
+      );
+
+      expect(find.text('Row B · Seat 12'), findsOneWidget);
+      expect(find.text('Show your badge at entry'), findsOneWidget);
+      expect(find.text('Pending approval'), findsNothing);
     });
 
     testWidgets('#1 — Cancel booking confirms then releases the seat and shows '
@@ -549,8 +572,20 @@ void main() {
       final outlinedDx = tester.getCenter(find.byType(OutlinedButton)).dx;
       expect(filledDx, greaterThan(outlinedDx));
 
-      // The reservation-card chevron sits at the inline end (far left).
-      final chevronDx = tester.getCenter(find.byIcon(Icons.chevron_left)).dx;
+      // The reservation-card chevron (the thin stroked left chevron,
+      // ic_back.svg per Figma 889:2762 — not the filled triangle) sits at the
+      // inline end (far left). The header back button uses the same asset at
+      // size 24; the seat chevron is the size-20 one.
+      final chevronDx = tester
+          .getCenter(
+            find.byWidgetPredicate(
+              (w) =>
+                  w is SimfSvgIcon &&
+                  w.asset == 'assets/icons/ic_back.svg' &&
+                  w.size == 20,
+            ),
+          )
+          .dx;
       expect(chevronDx, lessThan(nameDx));
     });
 

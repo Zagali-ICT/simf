@@ -219,6 +219,14 @@ const Set<int> _authenticatedRoutes = <int>{
   10, // Registration success (signed-in, pending; Page_010)
   11, // Registration status (signed-in, not-yet-approved gate; Page_011 L-1)
   14, // My area / profile — every signed-in role
+  // D-576 (owner 2026-06-30) — the agenda + session detail are login-gated:
+  // a guest who taps Sessions or opens a session is sent to sign-in (the
+  // "need login" behaviour), superseding the D-199 public design and the
+  // "sessions are public" tabs note below. Every signed-in role passes.
+  // Live (25) is deliberately NOT here — it shows an in-screen "need login"
+  // prompt on the live screen itself (D-577), not a redirect.
+  16, // Sessions / Agenda — a bottom-nav tab; a guest bounces to sign-in
+  17, // Session detail
   32, // Badge / QR — every signed-in role's own entry pass (a bottom-nav tab, so
   // it must not bounce for Staff/Moderator; the server returns their own badge)
   33, // Notifications — every signed-in role
@@ -268,9 +276,10 @@ const Map<int, Set<AppRole>> _routeRoles = <int, Set<AppRole>>{
 /// the owner's "keep the button fixed, pages render inside" requirement).
 ///
 /// D-519 — these five tabs stay **universal** for every signed-in role
-/// (including the focused Staff/Moderator): home is role-aware, sessions/map are
-/// public, my-area is universal-auth, and badge is universal-auth (so the tab
-/// never bounces). "Focused" trims the home body + the drawer/More entries for
+/// (including the focused Staff/Moderator): home is role-aware, the map is
+/// public, and sessions (D-576), my-area, and badge are universal-auth (so a
+/// signed-in tab never dead-bounces; a guest on a gated tab is sent to
+/// sign-in). "Focused" trims the home body + the drawer/More entries for
 /// Staff/Moderator, **not** the bottom bar — a deliberate choice so the bar is
 /// never per-role and a tab can never dead-bounce.
 const List<String> _tabRouteNames = <String>[

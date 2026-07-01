@@ -602,12 +602,14 @@ class _VisitorHome extends StatelessWidget {
           SimfTileRow(
             children: <Widget>[
               SimfNavTile(
-                label: l10n.tileSessionSummary,
+                label: l10n.sessionPresentationsTitle,
                 iconAsset: _HomeIcons.sessionSummary,
                 minHeight: 80,
-                // #1/#6 — the tile now opens the summaries LIST → tap a session →
-                // its AI-summary details page (was: straight to the picker screen).
-                onTap: () => context.pushNamed(RouteNames.sessionSummaryList),
+                // Owner 2026-07-01 (#2): repointed + relabelled to the session
+                // presentations downloads screen (Figma 1388:7621). The AI
+                // summaries list stays on the Sessions tile above (1388:8392)
+                // and My-Sessions (1388:9067) stays on My-Area. All reachable.
+                onTap: () => context.pushNamed(RouteNames.sessionPresentations),
               ),
               SimfNavTile(
                 label: l10n.tileEntryBadge,
