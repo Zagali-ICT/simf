@@ -421,7 +421,7 @@ else
             }
             else
             {
-                _passwordError = envelope?.Error?.MessageForCurrentCulture();
+                _passwordError = envelope?.Error?.DetailedMessageForCurrentCulture();
             }
         }
         finally { _busy = false; }

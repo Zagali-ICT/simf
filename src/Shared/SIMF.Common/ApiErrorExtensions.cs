@@ -23,6 +23,21 @@ public static class ApiErrorExtensions
         IsArabic(CultureInfo.CurrentUICulture) ? detail.MessageArabic : detail.Message;
 
     /// <summary>
+    /// Like <see cref="MessageForCurrentCulture(ApiError)"/>, but when the error
+    /// carries field-level <see cref="ApiError.Details"/> it returns those specific
+    /// reasons rather than the generic top-level message. A <c>VALIDATION_FAILED</c>
+    /// error's top message is a generic "one or more fields are invalid"; the actual
+    /// reasons (e.g. "Password must not contain sequential characters like 123") live
+    /// in the details, so a UI that shows only the top message tells the user *that*
+    /// something is wrong but never *what*. Falls back to the top-level message when
+    /// there are no details.
+    /// </summary>
+    public static string DetailedMessageForCurrentCulture(this ApiError error) =>
+        error.Details.Count > 0
+            ? string.Join(" ", error.Details.Select(detail => detail.MessageForCurrentCulture()))
+            : error.MessageForCurrentCulture();
+
+    /// <summary>
     /// Returns the English or Arabic text for <see cref="CultureInfo.CurrentUICulture"/>.
     /// Use it for hard-coded fallback strings, the equivalent of an
     /// <c>ApiError</c> for an inline message (D-030).
