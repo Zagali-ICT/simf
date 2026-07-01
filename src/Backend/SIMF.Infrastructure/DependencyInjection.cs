@@ -61,6 +61,25 @@ public static class DependencyInjection
         }
     }
 
+    /// <summary>D-568 — refuse to start in Production when the centralized
+    /// file-store KEK (<c>FileStorage:EncryptionKey</c>) is missing. The
+    /// <c>AesGcmEnvelopeCipher</c> already fail-fasts on construction, but that
+    /// surfaces deep inside the DI / FastEndpoints stack; this guard states the
+    /// one-line reason up front. Call from the host after the app is built.</summary>
+    public static void EnsureFileStorageEncryptionConfigured(bool isProduction, IServiceProvider services)
+    {
+        if (isProduction
+            && string.IsNullOrWhiteSpace(
+                services.GetRequiredService<Microsoft.Extensions.Options.IOptions<SIMF.Common.Options.FileStorageOptions>>()
+                    .Value.EncryptionKey))
+        {
+            throw new InvalidOperationException(
+                "FileStorage:EncryptionKey must be a base64 32-byte AES key in Production — "
+                + "it is the KEK for the centralized file store (D-568). "
+                + "Set SIMF_FileStorage__EncryptionKey before starting.");
+        }
+    }
+
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
         IConfiguration configuration)

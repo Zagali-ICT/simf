@@ -372,6 +372,12 @@ SIMF.Infrastructure.DependencyInjection.EnsureAiPromptHashSecretConfigured(
 SIMF.Infrastructure.DependencyInjection.EnsurePiiEncryptionConfigured(
     app.Environment.IsProduction(), app.Services);
 
+// D-568 (security) — refuse to start in Production without the centralized
+// file-store KEK, with a clear one-line reason (the cipher otherwise fail-fasts
+// deep inside the FastEndpoints/DI stack — the boot crash this guard replaces).
+SIMF.Infrastructure.DependencyInjection.EnsureFileStorageEncryptionConfigured(
+    app.Environment.IsProduction(), app.Services);
+
 // Apply the migrations and seed the super-admin. Skipped under the test host,
 // which prepares its own database.
 if (!app.Environment.IsEnvironment("Testing"))
