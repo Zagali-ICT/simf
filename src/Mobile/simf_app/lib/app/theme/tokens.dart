@@ -135,6 +135,7 @@ class SimfTokens {
   static const double textTitle = 18; // KSA "Sub-title 18" (Phase-0 type scale)
   static const double textXl = 20;
   static const double textXxl = 22; // exhibitor/sponsor name (Figma 1439:11894)
+  static const double text24 = 24; // registration-status headline (Figma 1701:3803)
   static const double textHero = 28;
 
   // Named text styles — built incrementally per screen (§5.1). The font family

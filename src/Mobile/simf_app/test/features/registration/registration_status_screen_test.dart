@@ -108,7 +108,7 @@ void main() {
       );
 
       expect(find.text('Your account is under review'), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, 'Re-check'), findsOneWidget);
+      expect(find.text('Re-check'), findsOneWidget);
       expect(find.text('Stages'), findsOneWidget);
       expect(find.text('SIMF team review'), findsOneWidget);
     });
@@ -119,7 +119,7 @@ void main() {
       await _pump(tester, controller);
 
       expect(find.text('Your account is approved'), findsOneWidget);
-      final continueButton = find.widgetWithText(FilledButton, 'Continue');
+      final continueButton = find.text('Continue');
       expect(continueButton, findsOneWidget);
 
       await tester.tap(continueButton);
@@ -135,7 +135,7 @@ void main() {
       );
 
       expect(find.text('Your account was not approved'), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, 'Continue'), findsNothing);
+      expect(find.text('Continue'), findsNothing);
       expect(find.text('Stages'), findsNothing);
     });
 
@@ -148,7 +148,7 @@ void main() {
       await _pump(tester, controller);
 
       expect(find.text('Could not load your account status.'), findsOneWidget);
-      final retry = find.widgetWithText(FilledButton, 'Retry');
+      final retry = find.text('Retry');
       expect(retry, findsOneWidget);
 
       await tester.tap(retry);
@@ -162,7 +162,10 @@ void main() {
           _FakeAuthController(status: RegistrationStatus.pending);
       await _pump(tester, controller);
 
-      await tester.tap(find.widgetWithText(TextButton, 'Sign out'));
+      final signOut = find.widgetWithText(TextButton, 'Sign out');
+      await tester.ensureVisible(signOut);
+      await tester.pumpAndSettle();
+      await tester.tap(signOut);
       await tester.pumpAndSettle();
 
       expect(controller.signedOut, isTrue);

@@ -10,8 +10,22 @@ flow is in [Page_011_Function.md](Page_011_Function.md); the rules are in
 |---|---|
 | Route | `RouteNames.registrationStatus` → `/registration/status` |
 | Titles | AR **حالة التسجيل** · EN **Registration status** |
-| Mockup | page **011** (owner) |
-| Nature | Full-screen, single-column status / waiting screen |
+| Mockup | page **011** (owner) · Figma **1701:3789** (approved state, D-591) |
+| Nature | Full-screen, single-column status **gate** (no bottom nav) |
+
+> **D-591 (2026-07-02) — redesigned to Figma 1701:3789 (approved state).** The
+> screen is a `navySurface` gate (raw `Scaffold`, **no bottom nav** — a
+> not-yet-approved account must not reach the tab bar). Vertically-centred hero =
+> a **104px ring** (navyDeep fill + a 2.36px state-coloured border) around the
+> state icon, a **white 24px** headline, a beige 14px message (no surrounding
+> card). The **navy-80% "المراحل" card** lists four right-aligned rows, each
+> ending in an inline-end **gold done-check** (complete) / gold ring (current) /
+> muted numbered circle (future). A full-width **gold "متابعة" button** (h48,
+> radius-4), then the **"تسجيل الخروج" link beneath it** (moved off the header).
+> State colours: approved `statusAccepted` (#22C55E), pending `accent`, rejected
+> `danger`. The header title stays 18px (app-wide sub-page standard) — the one
+> intentional divergence from the frame's 24px. Golden:
+> `test/golden/registration_status_golden_test.dart`.
 
 ## Layout (top → bottom)
 | Region | Content |
