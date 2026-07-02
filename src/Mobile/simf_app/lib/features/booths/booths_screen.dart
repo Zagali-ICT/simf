@@ -482,9 +482,16 @@ class _HallRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // D-432 — prefer the real hall display name (now on the wire), then the
-    // booth sector, then the generic fallback (D11/Page_015 L-6 — never invent).
-    final hallLabel = booth.localizedHallName(l10n.isArabic) ??
+    // Frame 922:2624 — the hall box reads "HALL A · القاعة الرئيسية": the hall's
+    // English name (gold, upper-cased) + a beige dot + its Arabic name (beige),
+    // shown together. Both ship on the wire (D-432); when a booth carries neither
+    // hall name, degrade to the single localized hall name → sector → generic
+    // label (D11/Page_015 L-6 — never invent a hall name).
+    final hallEn = booth.hallName?.trim();
+    final hallAr = booth.hallNameArabic?.trim();
+    final hasBoth =
+        (hallEn?.isNotEmpty ?? false) && (hallAr?.isNotEmpty ?? false);
+    final fallback = booth.localizedHallName(l10n.isArabic) ??
         booth.localizedSector(l10n.isArabic) ??
         l10n.boothsHallFallback;
     final code = booth.code;
@@ -497,7 +504,9 @@ class _HallRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
         Expanded(
-          child: _HallBox(label: hallLabel),
+          child: hasBoth
+              ? _HallBox(code: hallEn!.toUpperCase(), name: hallAr!)
+              : _HallBox(name: fallback),
         ),
         if (code.isNotEmpty) ...<Widget>[
           const SizedBox(width: SimfTokens.space4),
@@ -542,12 +551,20 @@ class _CodePill extends StatelessWidget {
   }
 }
 
-/// The deep-navy hall box (frame node 922:2798): a 48-high `#01132D` box with a
-/// beige hairline, the label centred in gold.
+/// The deep-navy hall box (frame node 922:2624): a 48-high `#01132D` box with a
+/// beige hairline. When the hall ships both names it reads "HALL A · القاعة
+/// الرئيسية" — the [code] (gold) + a beige dot + the [name] (beige); otherwise it
+/// falls back to a single gold [name] label.
 class _HallBox extends StatelessWidget {
-  const _HallBox({required this.label});
+  const _HallBox({required this.name, this.code});
 
-  final String label;
+  /// The beige hall name (the frame's Arabic name), or — when [code] is null —
+  /// the single gold fallback label (localized hall name / sector / generic).
+  final String name;
+
+  /// The gold hall code (the frame's upper-cased English hall name), or null for
+  /// the single-tone fallback.
+  final String? code;
 
   @override
   Widget build(BuildContext context) {
@@ -563,17 +580,56 @@ class _HallBox extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
       ),
-      child: Text(
-        label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          color: SimfTokens.accent,
-          fontWeight: FontWeight.w600,
-          fontSize: SimfTokens.textMd,
-        ),
-      ),
+      child: code == null
+          ? Text(
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: SimfTokens.accent,
+                fontWeight: FontWeight.w600,
+                fontSize: SimfTokens.textMd,
+              ),
+            )
+          // Frame 922:2624 — pinned LTR so the gold "HALL A" leads and the beige
+          // Arabic name trails, matching the frame regardless of the app's RTL.
+          : Row(
+              textDirection: TextDirection.ltr,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Text(
+                  code!,
+                  style: const TextStyle(
+                    color: SimfTokens.accent,
+                    fontWeight: FontWeight.w600,
+                    fontSize: SimfTokens.textMd,
+                  ),
+                ),
+                const SizedBox(width: SimfTokens.space2),
+                const Text(
+                  '·',
+                  style: TextStyle(
+                    color: SimfTokens.beigeBorder,
+                    fontWeight: FontWeight.w700,
+                    fontSize: SimfTokens.textMd,
+                  ),
+                ),
+                const SizedBox(width: SimfTokens.space2),
+                Flexible(
+                  child: Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: SimfTokens.beigeBorder,
+                      fontWeight: FontWeight.w600,
+                      fontSize: SimfTokens.textMd,
+                    ),
+                  ),
+                ),
+              ],
+            ),
     );
   }
 }
