@@ -1562,13 +1562,13 @@ class AppL10n {
       _t('لا توجد جلسات متاحة بعد.', 'No sessions available yet.');
 
   // Wave 2 — session-summaries list (Figma 1388:8392): search + the three
-  // الجميع / جلساتي / المفضلة tabs over the cached programme.
+  // الكل / جلساتي / المفضلة tabs over the cached programme.
   // The list-screen header (plural) — distinct from [aiSummaryTitle] (the
   // single-session detail header).
   String get sessionSummariesTitle => _t('ملخص الجلسات', 'Session summaries');
   String get sessionSummarySearchHint =>
       _t('ابحث عن جلسة أو متحدث...', 'Search a session or speaker...');
-  String get sessionsTabAll => _t('الجميع', 'All');
+  String get sessionsTabAll => _t('الكل', 'All');
   String get sessionsTabMine => _t('جلساتي', 'My sessions');
   String get sessionsTabFavourites => _t('المفضلة', 'Favourites');
   String get sessionsNoFavourites =>
