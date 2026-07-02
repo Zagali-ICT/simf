@@ -190,7 +190,7 @@ const List<_Route> _routes = <_Route>[
   // they fall through to ComingSoonScreen (sentinel numbers 200+).
   _Route(number: 200, name: RouteNames.forumGuide, path: '/forum-guide', labelAr: 'دليل الملتقى', labelEn: 'Forum guide'),
   _Route(number: 201, name: RouteNames.faq, path: '/faq', labelAr: 'الأسئلة الشائعة', labelEn: 'FAQ'),
-  _Route(number: 202, name: RouteNames.sessionPresentations, path: '/session-presentations', labelAr: 'عروض الجلسات', labelEn: 'Session presentations'),
+  _Route(number: 202, name: RouteNames.sessionPresentations, path: '/session-presentations', labelAr: 'الجلسات', labelEn: 'Sessions'),
   _Route(number: 203, name: RouteNames.contactUs, path: '/contact-us', labelAr: 'تواصل معنا', labelEn: 'Contact us'),
   // Owner batch (2026-06-21) — entry points for features not yet designed/built;
   // they fall through to ComingSoonScreen (sentinel numbers 200+). #5 bilateral

@@ -1704,16 +1704,16 @@ class AppL10n {
 
   // Wave 2 — session-presentations list, App "عروض الجلسات" (Figma 1388:7621):
   // downloadable decks grouped by day, each with a تحميل button.
-  String get sessionPresentationsTitle =>
-      _t('عروض الجلسات', 'Session presentations');
+  // Owner 2026-07-03: the screen header matches the Home "الجلسات" tile
+  // (Figma 1388:7621 header is "الجلسات"), so both read the same word.
+  String get sessionPresentationsTitle => _t('الجلسات', 'Sessions');
   String get presentationsEmpty =>
       _t('لا توجد عروض متاحة بعد.', 'No presentations available yet.');
   String get presentationsError =>
       _t('تعذر تحميل العروض.', 'Could not load the presentations.');
+  // The gold button label on the الجلسات cards. Kept the word "تحميل" (owner) —
+  // as of D-592 it opens the session summary (34), not a file download.
   String get presentationDownload => _t('تحميل', 'Download');
-  String get presentationDownloading => _t('جارٍ التحميل...', 'Downloading...');
-  String get presentationDownloadError =>
-      _t('تعذر تحميل الملف.', 'Could not download the file.');
 
   // Event day group header, 1-based ("اليوم الأول" / "Day 1") — shared by the
   // session-summaries (8392) + presentations (7621) day grouping.
