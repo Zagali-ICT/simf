@@ -1094,7 +1094,8 @@ class AppL10n {
 
   // D-500 (Wave 5, الطلبات 1408:9726) — the unified requests feed (supersedes the
   // D-479 read-only My-meetings screen).
-  String get requestsTitle => _t('الطلبات', 'Requests');
+  // Owner 2026-07-03: match the Figma frame header (1408:9726) "اللقاءات الثنائية".
+  String get requestsTitle => _t('اللقاءات الثنائية', 'Bilateral meetings');
   String get requestsLink => _t('الطلبات', 'Requests');
   String get requestsEmpty =>
       _t('لا توجد طلبات بعد', 'You have no requests yet');
@@ -1163,6 +1164,21 @@ class AppL10n {
   String requestDate(DateTime date) => isArabic
       ? '${_shortDate(date)} ‎${date.year}'
       : '${_shortDate(date)} ${date.year}';
+
+  /// The card date line when the request's date is today (Figma 1408:9782):
+  /// "07:45 AM · اليوم" — a 12-hour time (English AM/PM, matching the frame)
+  /// then the relative "today". Non-today dates use [requestDate] instead.
+  String requestTimeToday(DateTime date) => '${_time12h(date)} · $dayToday';
+
+  /// "07:45 AM" — 12-hour clock with a zero-padded hour and an English AM/PM
+  /// marker (the frame shows "AM"/"PM" literally, in both locales).
+  String _time12h(DateTime date) {
+    final period = date.hour < 12 ? 'AM' : 'PM';
+    final hour12 = date.hour % 12 == 0 ? 12 : date.hour % 12;
+    final hh = hour12.toString().padLeft(2, '0');
+    final mm = date.minute.toString().padLeft(2, '0');
+    return '$hh:$mm $period';
+  }
 
   // Booths (Page 022).
   String get boothsTitle => _t('الأجنحة', 'Booths');

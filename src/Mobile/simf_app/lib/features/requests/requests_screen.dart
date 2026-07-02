@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +9,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_confirm_dialog.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../app/widgets/simf_svg_icon.dart';
 import 'data/request_models.dart';
 import 'data/requests_repository.dart';
 import 'new_request_sheet.dart';
@@ -120,10 +122,6 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
           _TopActionRow(
           l10n: l10n,
           filter: effectiveFilter,
-          // المقبولة can only filter when at least one accepted request exists
-          // (else the zero-count fallback would make it a silent dead-tap).
-          acceptedEnabled:
-              items.any((i) => i.status == AppRequestStatus.accepted),
           onNew: () => unawaited(_openNewRequest()),
           onSelect: (status) => setState(() => _filter = status),
         ),
@@ -171,30 +169,29 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
   }
 }
 
-/// The top action row (Figma 1408:9736): three equal buttons — "طلب جديد"
-/// (opens the new-request sheet), "المقبولة" (filter → accepted) and "السجل"
-/// (filter → all). The active filter button is gold-filled (white text), the
-/// rest are beige-outlined. "طلب جديد" is an action, never the active state.
+/// The top action row (Figma 1408:9736): two equal buttons — "طلب جديد" (opens
+/// the new-request sheet, beige-outlined) and "السجل" (the gold-filled "all/log"
+/// view; tapping it clears any status filter). Accepted stays filterable via the
+/// "مقبول" status chip below (D-592: the app's extra "المقبولة" button dropped to
+/// match the frame).
 class _TopActionRow extends StatelessWidget {
   const _TopActionRow({
     required this.l10n,
     required this.filter,
-    required this.acceptedEnabled,
     required this.onNew,
     required this.onSelect,
   });
 
   final AppL10n l10n;
   final AppRequestStatus? filter;
-  final bool acceptedEnabled;
   final VoidCallback onNew;
   final ValueChanged<AppRequestStatus?> onSelect;
 
   @override
   Widget build(BuildContext context) {
-    // The Figma lays this row left→right (طلب جديد · المقبولة · السجل) — a fixed
-    // LTR control row in the mock — so force LTR to match it exactly rather than
-    // letting the RTL shell mirror it.
+    // The Figma lays this row left→right (طلب جديد · السجل) — a fixed LTR control
+    // row in the mock — so force LTR to match it exactly rather than letting the
+    // RTL shell mirror it.
     return Directionality(
       textDirection: TextDirection.ltr,
       child: Row(
@@ -202,7 +199,7 @@ class _TopActionRow extends StatelessWidget {
           Expanded(
             child: _ActionButton(
               label: l10n.requestNew,
-              icon: Icons.note_add_outlined,
+              asset: 'assets/icons/request_new.svg',
               active: false,
               onTap: onNew,
             ),
@@ -210,18 +207,8 @@ class _TopActionRow extends StatelessWidget {
           const SizedBox(width: SimfTokens.space4),
           Expanded(
             child: _ActionButton(
-              label: l10n.requestsTabAccepted,
-              icon: Icons.thumb_up_outlined,
-              active: filter == AppRequestStatus.accepted,
-              enabled: acceptedEnabled,
-              onTap: () => onSelect(AppRequestStatus.accepted),
-            ),
-          ),
-          const SizedBox(width: SimfTokens.space4),
-          Expanded(
-            child: _ActionButton(
               label: l10n.requestsTabLog,
-              icon: Icons.history,
+              asset: 'assets/icons/request_log.svg',
               active: filter == null,
               onTap: () => onSelect(null),
             ),
@@ -233,32 +220,25 @@ class _TopActionRow extends StatelessWidget {
 }
 
 /// One equal-width pill in the [_TopActionRow]: gold-filled when [active], else
-/// a beige-hairline outline. Label SemiBold-12 over a 14px leading icon.
+/// a beige-hairline outline. Label SemiBold-12 over a 14px trailing Figma glyph.
 class _ActionButton extends StatelessWidget {
   const _ActionButton({
     required this.label,
-    required this.icon,
+    required this.asset,
     required this.active,
     required this.onTap,
-    this.enabled = true,
   });
 
   final String label;
-  final IconData icon;
+  final String asset;
   final bool active;
   final VoidCallback onTap;
 
-  /// false → dimmed, not tappable (e.g. المقبولة with no accepted requests).
-  final bool enabled;
-
   @override
   Widget build(BuildContext context) {
-    final Color base = active ? Colors.white : SimfTokens.beigeBorder;
-    final Color fg = enabled ? base : base.withValues(alpha: 0.4);
-    final Color borderColor =
-        enabled ? SimfTokens.beigeBorder : SimfTokens.beigeBorder.withValues(alpha: 0.4);
+    final Color fg = active ? Colors.white : SimfTokens.beigeBorder;
     return InkWell(
-      onTap: enabled ? onTap : null,
+      onTap: onTap,
       borderRadius: BorderRadius.circular(SimfTokens.radius),
       child: Container(
         padding: const EdgeInsets.all(SimfTokens.space2),
@@ -268,7 +248,7 @@ class _ActionButton extends StatelessWidget {
           border: active
               ? null
               : Border.all(
-                  color: borderColor,
+                  color: SimfTokens.beigeBorder,
                   width: SimfTokens.hairline,
                 ),
         ),
@@ -289,7 +269,7 @@ class _ActionButton extends StatelessWidget {
               ),
             ),
             const SizedBox(width: SimfTokens.space1),
-            Icon(icon, size: 14, color: fg),
+            SimfSvgIcon(asset, size: 14, color: fg),
           ],
         ),
       ),
@@ -516,10 +496,11 @@ class _RequestCardState extends State<_RequestCard> {
                         ],
                         const SizedBox(height: SimfTokens.space2),
                         Text(
-                          l10n.requestDate(item.displayDate.toLocal()),
-                          // Pinned LTR + the LRM in requestDate keep the date as
-                          // "12 يناير 2026" (Figma 1408:9782); align to the
-                          // trailing edge under the right-aligned title.
+                          _dateLine(l10n),
+                          // Pinned LTR keeps the time/date reading L→R (Figma
+                          // 1408:9782 — "07:45 AM · اليوم" today, else the date
+                          // "12 يناير 2026"); align to the trailing edge under
+                          // the right-aligned title.
                           textDirection: TextDirection.ltr,
                           textAlign: TextAlign.end,
                           style: const TextStyle(
@@ -532,12 +513,16 @@ class _RequestCardState extends State<_RequestCard> {
                     ),
                   ),
                   const SizedBox(width: SimfTokens.space2),
-                  Icon(
-                    _expanded
-                        ? Icons.keyboard_arrow_up
-                        : Icons.keyboard_arrow_down,
-                    size: 20,
-                    color: SimfTokens.beigeBorder,
+                  // The exact Figma chevron (iconamoon:arrow-up-2, 1408:9774) —
+                  // a left "‹" glyph rotated to point down (collapsed) / up
+                  // (expanded); gold per the frame.
+                  Transform.rotate(
+                    angle: _expanded ? math.pi / 2 : -math.pi / 2,
+                    child: const SimfSvgIcon(
+                      'assets/icons/chevron_left.svg',
+                      size: 20,
+                      color: SimfTokens.accent,
+                    ),
                   ),
                 ],
               ),
@@ -547,6 +532,16 @@ class _RequestCardState extends State<_RequestCard> {
         ],
       ),
     );
+  }
+
+  /// The card date line — "07:45 AM · اليوم" when the request's date is today,
+  /// else the absolute date "12 يناير 2026" (Figma 1408:9782).
+  String _dateLine(AppL10n l10n) {
+    final date = widget.item.displayDate.toLocal();
+    final now = DateTime.now();
+    final isToday =
+        date.year == now.year && date.month == now.month && date.day == now.day;
+    return isToday ? l10n.requestTimeToday(date) : l10n.requestDate(date);
   }
 
   Widget _buildDetail(AppL10n l10n, AppRequestItem item, Color statusColor) {

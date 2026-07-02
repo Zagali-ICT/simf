@@ -121,7 +121,7 @@ void main() {
       expect(find.text('Participation document request'), findsNothing);
     });
 
-    testWidgets('the المقبولة / السجل buttons filter the feed', (tester) async {
+    testWidgets('السجل resets the status-chip filter to all', (tester) async {
       await _pump(
         tester,
         data: <AppRequestItem>[
@@ -140,42 +140,17 @@ void main() {
         ],
       );
 
-      // السجل (Log) is the default → all cards.
-      expect(find.text('Participation document request'), findsOneWidget);
-      expect(find.text('Badge update request'), findsOneWidget);
-
-      // المقبولة (Accepted) button — the bare label, distinct from the
-      // "Accepted (1)" chip — filters to accepted only.
-      await tester.tap(find.text('Accepted'));
+      // A status chip filters to accepted only...
+      await tester.tap(find.text('Accepted (1)'));
       await tester.pumpAndSettle();
       expect(find.text('Badge update request'), findsOneWidget);
       expect(find.text('Participation document request'), findsNothing);
 
-      // السجل (Log) resets to all.
+      // ...then السجل (Log) — the gold "all" button — resets to every card.
       await tester.tap(find.text('Log'));
       await tester.pumpAndSettle();
       expect(find.text('Participation document request'), findsOneWidget);
       expect(find.text('Badge update request'), findsOneWidget);
-    });
-
-    testWidgets('المقبولة is a no-op when there are no accepted requests',
-        (tester) async {
-      await _pump(
-        tester,
-        data: <AppRequestItem>[
-          _item(
-            kind: AppRequestKind.participationDocument,
-            id: '1',
-            title: 'Certificate',
-            status: AppRequestStatus.pending,
-          ),
-        ],
-      );
-      // Tapping the disabled المقبولة button must not strand the user on a
-      // blank view — the pending card stays.
-      await tester.tap(find.text('Accepted'));
-      await tester.pumpAndSettle();
-      expect(find.text('Participation document request'), findsOneWidget);
     });
 
     testWidgets('the card date carries the year (Figma 1408:9782)',
