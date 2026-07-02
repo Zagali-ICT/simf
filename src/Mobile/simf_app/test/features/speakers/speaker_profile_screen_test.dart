@@ -239,7 +239,7 @@ void main() {
       expect(find.byType(TextField), findsOneWidget);
       expect(find.text('Subject'), findsOneWidget);
       await tester.enterText(find.byType(TextField), 'Discuss navigation');
-      await tester.tap(find.widgetWithText(FilledButton, 'Send request'));
+      await tester.tap(find.text('Send request'));
       await tester.pumpAndSettle();
 
       expect(repo.submits, 1);
@@ -248,8 +248,12 @@ void main() {
     });
 
     testWidgets(
-        'a speaker with availability slots shows a date then time picker '
-        '(D-474/Figma 1701:7479)', (tester) async {
+        'a speaker with availability slots shows day cards then time chips '
+        '(Figma 1776:4958/5036)', (tester) async {
+      tester.view.physicalSize = const Size(1200, 2600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
       final slot = SpeakerSlot(
         startUtc: DateTime.utc(2030, 1, 1, 10),
         endUtc: DateTime.utc(2030, 1, 1, 10, 30),
@@ -259,23 +263,26 @@ void main() {
 
       await tester.tap(find.widgetWithText(FilledButton, 'Request meeting'));
       await tester.pumpAndSettle();
-      // The sheet first offers a DATE dropdown sourced from the free slots; the
-      // TIME dropdown appears only after a day is picked.
-      expect(find.byType(DropdownButtonFormField<DateTime>), findsOneWidget);
-      expect(find.byType(DropdownButtonFormField<SpeakerSlot>), findsNothing);
+      // The sheet shows a day card + the "choose a date first" hint; no time chip
+      // until a day is picked.
+      expect(find.byKey(const ValueKey<String>('meeting-day-0')), findsOneWidget);
+      expect(find.text('Please choose a date first'), findsOneWidget);
+      expect(find.byKey(const ValueKey<String>('meeting-slot-0')), findsNothing);
 
-      // Picking the (only) day reveals the time dropdown.
-      await tester.tap(find.byType(DropdownButtonFormField<DateTime>));
+      // Picking the (only) day reveals its time chip.
+      await tester.tap(find.byKey(const ValueKey<String>('meeting-day-0')));
       await tester.pumpAndSettle();
-      // warnIfMissed: the open dropdown overlay makes the menu item's centre a
-      // known hit-test warning in tests; the assertion below proves the day was
-      // actually selected (the time dropdown only renders once it is).
-      await tester.tap(
-        find.byType(DropdownMenuItem<DateTime>).last,
-        warnIfMissed: false,
-      );
+      expect(find.text('Please choose a date first'), findsNothing);
+      expect(find.byKey(const ValueKey<String>('meeting-slot-0')), findsOneWidget);
+
+      // Selecting the chip + entering a subject + sending submits the slot.
+      await tester.enterText(find.byType(TextField), 'Discuss navigation');
+      await tester.tap(find.byKey(const ValueKey<String>('meeting-slot-0')));
       await tester.pumpAndSettle();
-      expect(find.byType(DropdownButtonFormField<SpeakerSlot>), findsOneWidget);
+      await tester.tap(find.text('Send request'));
+      await tester.pumpAndSettle();
+      expect(repo.submits, 1);
+      expect(repo.lastSlotStart, slot.startUtc);
     });
 
     testWidgets('shows a website chip when the speaker shared a website (D-544)',

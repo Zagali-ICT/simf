@@ -43,7 +43,7 @@
 | E2E-MOB020-014 | Only CV sections with content render a pill (1–4 pills) | edge | P1 | _to author_ |
 | E2E-MOB020-015 | Speaker with no CV content shows no tabs and no bio card | edge | P1 | _to author_ |
 | E2E-MOB020-016 | Meeting form has **no name field**; only subject (+ optional slot) is entered; `requesterName` is auto-sent from the signed-in account | happy | P1 | authored ✓ (`a signed-in visitor can submit a meeting request`) |
-| E2E-MOB020-017 | Meeting form (D-579, Figma 1701:7479): the VIP slot is chosen as a **date** dropdown then a **time** dropdown, both sourced from the speaker's available slots; the time dropdown appears only after a day is picked | happy | P2 | authored ✓ (`a speaker with availability slots shows a date then time picker`) |
+| E2E-MOB020-017 | Meeting form (D-589, Figma 1776:4958/5036): light sheet — the VIP slot is chosen from a row of **day cards** then that day's **time-slot chips**, both sourced from the speaker's available slots; the chips appear only after a day is tapped | happy | P2 | authored ✓ (`a speaker with availability slots shows day cards then time chips`) |
 
 ## Scenarios
 
@@ -257,27 +257,28 @@ Scenario: The request-meeting sheet no longer asks for the requester's name
 > removed — the requester is the signed-in account, so the app sends the account
 > display name as `requesterName` automatically. The API contract is unchanged.
 
-### E2E-MOB020-017 — Meeting form date + time selection (D-579)
+### E2E-MOB020-017 — Meeting form date + time selection (D-589, redesign of D-579)
 
 ```gherkin
-Scenario: The VIP slot is picked as a date then a time from available slots
+Scenario: The VIP slot is picked from day cards then time chips (light sheet)
   Given an approved Visitor signed in
   And a speaker whose allowsMeetingRequests is true with availability slots
   When the visitor opens the "طلب مقابلة" (Request meeting) sheet
-  Then a "التاريخ" (Date) dropdown is shown listing the days that have a free slot
-  And no "الوقت" (Time) dropdown is shown yet
-  When the visitor picks a day
-  Then a "الوقت" (Time) dropdown of that day's start–end slots appears
-  When the visitor picks a time and sends the request
+  Then a light sheet shows the "الموضوع" (Subject) field
+  And an "اختر التاريخ" (Choose the date) row of day cards for the days that have a free slot
+  And an "اختر الوقت" (Choose the time) section reading "الرجاء اختيار التاريخ أولاً" (choose a date first)
+  When the visitor taps a day card
+  Then that day's free slots appear as time chips ("10:00 ص" style)
+  When the visitor enters a subject, taps a time chip and taps "ارسال الطلب" (Send request)
   Then the POST body's slotStartUtc/slotEndUtc equal the chosen slot
   # The slot always matches a published availability slot, so the server
   # (which 409s a non-free slot and 403s a non-VIP) accepts it.
 ```
 
-> **Owner change (myComment.txt #7, 2026-07-01):** the single slot dropdown was
-> split into a date picker then a time picker (Figma 1701:7479), both sourced from
-> the speaker's available slots so the chosen slot always matches a free one. The
-> API contract is unchanged.
+> **Owner change (2026-07-02, Figma 1776:4958 → 1776:5036):** the meeting sheet
+> was redesigned from the D-579 date/time **dropdowns** to a light "طلب مقابلة"
+> sheet — a subject field, a row of **day cards**, then that day's **time-slot
+> chips** — same slot-sourced data + submit, so the API contract is unchanged.
 
 ---
 
@@ -305,6 +306,7 @@ Scenario: The VIP slot is picked as a date then a time from available slots
 
 ---
 
-_Last reviewed:_ `2026-07-01` by `SIMF Team` — D-579: the meeting-request slot
-picker split into a date then a time dropdown, both sourced from the speaker's
-available slots (Figma 1701:7479).
+_Last reviewed:_ `2026-07-02` by `SIMF Team` — D-589: the meeting-request sheet
+redesigned to the light "طلب مقابلة" form (subject + day cards + time-slot chips,
+Figma 1776:4958/5036), replacing the D-579 date/time dropdowns; same slot-sourced
+data + submit (API contract unchanged).

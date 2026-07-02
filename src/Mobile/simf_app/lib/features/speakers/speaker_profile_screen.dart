@@ -12,6 +12,8 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_svg_icon.dart';
+import '../../core/utils/gregorian_month_names.dart';
+import '../../core/utils/weekday_names.dart';
 import 'data/speaker_models.dart';
 import 'data/speakers_repository.dart';
 import 'speaker_initials.dart';
@@ -94,7 +96,13 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      showDragHandle: true,
+      // Figma 1776:4958 — a light "طلب مقابلة" sheet with its own gold drag
+      // handle (so the default grey handle is off) and rounded top corners.
+      backgroundColor: SimfTokens.cardBeige,
+      showDragHandle: false,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(SimfTokens.radius)),
+      ),
       builder: (_) => _MeetingRequestSheet(
         speakerId: speaker.id,
         defaultName: auth.session.user.displayName,
@@ -739,16 +747,16 @@ class _MeetingRequestSheetState extends ConsumerState<_MeetingRequestSheet> {
       ..sort((a, b) => a.startUtc.compareTo(b.startUtc));
   }
 
-  String _formatDay(DateTime day) {
-    String two(int n) => n.toString().padLeft(2, '0');
-    return '${day.year}-${two(day.month)}-${two(day.day)}';
-  }
-
-  String _formatTimeRange(SpeakerSlot slot) {
-    final s = slot.startUtc.toLocal();
-    final e = slot.endUtc.toLocal();
-    String two(int n) => n.toString().padLeft(2, '0');
-    return '${two(s.hour)}:${two(s.minute)}–${two(e.hour)}:${two(e.minute)}';
+  // The slot's local start time as "10:00 ص" / "02:30 PM" (12-hour, Arabic ص/م,
+  // no intl locale needed — Figma 1776:5036).
+  String _formatSlotTime(SpeakerSlot slot, bool isArabic) {
+    final t = slot.startUtc.toLocal();
+    final hour12 = t.hour % 12 == 0 ? 12 : t.hour % 12;
+    final hh = hour12.toString().padLeft(2, '0');
+    final mm = t.minute.toString().padLeft(2, '0');
+    final meridiem =
+        isArabic ? (t.hour >= 12 ? 'م' : 'ص') : (t.hour >= 12 ? 'PM' : 'AM');
+    return '$hh:$mm $meridiem';
   }
 
   String _failureText(ApiFailure failure, AppL10n l10n) {
@@ -767,83 +775,323 @@ class _MeetingRequestSheetState extends ConsumerState<_MeetingRequestSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = widget.l10n;
-    return Padding(
+    final isArabic = l10n.isArabic;
+    // Light "طلب مقابلة" sheet (Figma 1776:4958): gold handle, subject field, a
+    // row of day cards, then that day's time-slot chips, and a gold send button.
+    return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
-        SimfTokens.space5,
-        0,
-        SimfTokens.space5,
+        SimfTokens.space4,
+        SimfTokens.space3,
+        SimfTokens.space4,
         MediaQuery.of(context).viewInsets.bottom + SimfTokens.space6,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Text(
-            l10n.requestMeeting,
-            style: const TextStyle(
-              color: SimfTokens.surface,
-              fontWeight: FontWeight.w700,
-              fontSize: SimfTokens.textLg,
+          Center(
+            child: Container(
+              width: 80,
+              height: 5,
+              decoration: BoxDecoration(
+                color: SimfTokens.accent,
+                borderRadius: BorderRadius.circular(SimfTokens.radiusLarge),
+              ),
             ),
           ),
           const SizedBox(height: SimfTokens.space4),
-          TextField(
-            controller: _subject,
-            decoration: InputDecoration(labelText: l10n.meetingSubjectLabel),
-            maxLength: 1000,
-            maxLines: 3,
+          Text(
+            l10n.requestMeeting, // طلب مقابلة
+            textAlign: TextAlign.end,
+            style: const TextStyle(
+              color: SimfTokens.headlineInk,
+              fontWeight: FontWeight.w600,
+              fontSize: SimfTokens.textTitle, // 18
+            ),
           ),
-          // D-474/D-475 + owner (Figma 1701:7479) — pick a free meeting time as a
-          // DATE then a TIME, both sourced from the speaker's available slots so the
-          // chosen slot always matches a free slot the server accepts. VIP only;
-          // optional (none = the legacy topic-only request).
+          const SizedBox(height: SimfTokens.space4),
+          _label(l10n.meetingSubjectLabel), // الموضوع
+          const SizedBox(height: SimfTokens.space2),
+          _subjectField(l10n),
+          const SizedBox(height: SimfTokens.space4),
+          // The slot picker is sourced from the speaker's free slots so the chosen
+          // slot always matches a free one the server accepts (VIP-only; optional —
+          // no pick keeps the legacy topic-only request).
           if (_slotsLoaded && _slots.isNotEmpty) ...<Widget>[
-            DropdownButtonFormField<DateTime>(
-              initialValue: _selectedDate,
-              isExpanded: true,
-              decoration: InputDecoration(labelText: l10n.meetingDateLabel),
-              items: <DropdownMenuItem<DateTime>>[
-                for (final day in _availableDays)
-                  DropdownMenuItem<DateTime>(
-                    value: day,
-                    child: Text(_formatDay(day)),
+            _label(l10n.meetingChooseDateLabel), // اختر التاريخ
+            const SizedBox(height: SimfTokens.space2),
+            _dayCards(isArabic),
+            const SizedBox(height: SimfTokens.space4),
+            _label(l10n.meetingChooseTimeLabel), // اختر الوقت
+            const SizedBox(height: SimfTokens.space2),
+            if (_selectedDate == null)
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(
+                  l10n.meetingChooseDateFirst,
+                  style: const TextStyle(
+                    color: SimfTokens.greyText,
+                    fontSize: SimfTokens.textSm,
                   ),
-              ],
-              onChanged: (day) => setState(() {
+                ),
+              )
+            else
+              _timeChips(isArabic),
+            const SizedBox(height: SimfTokens.space5),
+          ] else if (_slotsLoaded) ...<Widget>[
+            Text(
+              l10n.meetingSlotNone,
+              style: const TextStyle(color: SimfTokens.greyText),
+            ),
+            const SizedBox(height: SimfTokens.space5),
+          ],
+          _sendButton(l10n),
+        ],
+      ),
+    );
+  }
+
+  /// A form field label — navy, 12px, at the inline start (right, RTL).
+  Widget _label(String text) => Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: Text(
+          text,
+          style: const TextStyle(
+            color: SimfTokens.navy,
+            fontSize: SimfTokens.textSm, // 12
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      );
+
+  /// The subject input — a white, beige-bordered field with the "اكتب الموضوع"
+  /// hint (Figma 1776:4967).
+  Widget _subjectField(AppL10n l10n) => TextField(
+        controller: _subject,
+        textAlign: TextAlign.right,
+        maxLength: 1000,
+        maxLines: 1,
+        style: const TextStyle(
+          color: SimfTokens.inputInk,
+          fontSize: SimfTokens.textMd,
+        ),
+        decoration: InputDecoration(
+          counterText: '',
+          hintText: l10n.meetingSubjectHint, // اكتب الموضوع
+          hintStyle: const TextStyle(
+            color: SimfTokens.greyText,
+            fontSize: SimfTokens.textMd,
+          ),
+          filled: true,
+          fillColor: SimfTokens.surface,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: SimfTokens.space4,
+            vertical: SimfTokens.space3,
+          ),
+          enabledBorder: const OutlineInputBorder(
+            borderRadius: SimfTokens.borderRadiusSmall,
+            borderSide: BorderSide(color: SimfTokens.beigeBorder),
+          ),
+          focusedBorder: const OutlineInputBorder(
+            borderRadius: SimfTokens.borderRadiusSmall,
+            borderSide: BorderSide(color: SimfTokens.accent),
+          ),
+          border: const OutlineInputBorder(
+            borderRadius: SimfTokens.borderRadiusSmall,
+          ),
+        ),
+      );
+
+  /// The horizontal row of day cards, one per day that carries a free slot.
+  Widget _dayCards(bool isArabic) => SizedBox(
+        height: 64,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: _availableDays.length,
+          separatorBuilder: (_, __) => const SizedBox(width: SimfTokens.space2),
+          itemBuilder: (context, i) {
+            final day = _availableDays[i];
+            return _DayCard(
+              key: ValueKey<String>('meeting-day-$i'),
+              weekday: gregorianWeekdayName(day, isArabic),
+              dayNumber: day.day,
+              month: gregorianMonthName(day.month, isArabic),
+              selected: _selectedDate == day,
+              onTap: () => setState(() {
                 _selectedDate = day;
                 _selectedSlot = null; // reset the time when the day changes
               }),
+            );
+          },
+        ),
+      );
+
+  /// The selected day's free slots as tappable time chips.
+  Widget _timeChips(bool isArabic) {
+    final slots = _slotsForSelectedDay;
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: Wrap(
+        spacing: SimfTokens.space2,
+        runSpacing: SimfTokens.space2,
+        children: <Widget>[
+          for (var i = 0; i < slots.length; i++)
+            _TimeChip(
+              key: ValueKey<String>('meeting-slot-$i'),
+              label: _formatSlotTime(slots[i], isArabic),
+              // Compare by start time (SpeakerSlot has no value equality) so the
+              // highlight survives any future re-fetch of the slot list.
+              selected: _selectedSlot?.startUtc == slots[i].startUtc,
+              onTap: () => setState(() => _selectedSlot = slots[i]),
             ),
-            if (_selectedDate != null) ...<Widget>[
-              const SizedBox(height: SimfTokens.space3),
-              DropdownButtonFormField<SpeakerSlot>(
-                initialValue: _selectedSlot,
-                isExpanded: true,
-                decoration: InputDecoration(labelText: l10n.meetingTimeLabel),
-                items: <DropdownMenuItem<SpeakerSlot>>[
-                  for (final slot in _slotsForSelectedDay)
-                    DropdownMenuItem<SpeakerSlot>(
-                      value: slot,
-                      child: Text(_formatTimeRange(slot)),
-                    ),
-                ],
-                onChanged: (slot) => setState(() => _selectedSlot = slot),
+        ],
+      ),
+    );
+  }
+
+  /// The full-width gold "ارسال الطلب" button (Figma 1776:5001).
+  Widget _sendButton(AppL10n l10n) => Material(
+        color: SimfTokens.accent,
+        borderRadius: SimfTokens.borderRadiusSmall,
+        child: InkWell(
+          onTap: _submitting ? null : () => unawaited(_submit()),
+          borderRadius: SimfTokens.borderRadiusSmall,
+          child: Container(
+            height: 48,
+            alignment: Alignment.center,
+            child: Text(
+              _submitting ? l10n.loadingLabel : l10n.meetingSendButton,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: SimfTokens.textLg, // 16
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+      );
+}
+
+/// One white day card in the meeting-request date picker (Figma 1776:4975):
+/// weekday over the bold day number over the month; gold-filled when selected.
+class _DayCard extends StatelessWidget {
+  const _DayCard({
+    required this.weekday,
+    required this.dayNumber,
+    required this.month,
+    required this.selected,
+    required this.onTap,
+    super.key,
+  });
+
+  final String weekday;
+  final int dayNumber;
+  final String month;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final labelColor = selected ? SimfTokens.navy : SimfTokens.greyText;
+    return Material(
+      color: selected ? SimfTokens.accent : SimfTokens.surface,
+      borderRadius: BorderRadius.circular(SimfTokens.radius),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(SimfTokens.radius),
+        child: Container(
+          width: 58,
+          height: 64,
+          padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space1),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(SimfTokens.radius),
+            border: Border.all(
+              color: selected ? SimfTokens.accent : SimfTokens.beigeBorder,
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  weekday,
+                  style: TextStyle(
+                    color: labelColor,
+                    fontSize: SimfTokens.textSm,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              Text(
+                '$dayNumber',
+                style: TextStyle(
+                  color: selected ? SimfTokens.navy : SimfTokens.navyDeep,
+                  fontSize: SimfTokens.textTitle, // 18
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  month,
+                  style: TextStyle(
+                    color: labelColor,
+                    fontSize: SimfTokens.textSm,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ),
             ],
-          ] else if (_slotsLoaded)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: SimfTokens.space2),
-              child: Text(
-                l10n.meetingSlotNone,
-                style: const TextStyle(color: SimfTokens.inkMuted),
-              ),
-            ),
-          const SizedBox(height: SimfTokens.space4),
-          FilledButton(
-            onPressed: _submitting ? null : () => unawaited(_submit()),
-            child: Text(_submitting ? l10n.loadingLabel : l10n.meetingSendButton),
           ),
-        ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One time-slot chip in the meeting-request time picker (Figma 1776:5036): a
+/// white pill with the slot's start time; gold-filled when selected.
+class _TimeChip extends StatelessWidget {
+  const _TimeChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    super.key,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? SimfTokens.accent : SimfTokens.surface,
+      borderRadius: BorderRadius.circular(SimfTokens.radius),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(SimfTokens.radius),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: SimfTokens.space4,
+            vertical: SimfTokens.space2,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(SimfTokens.radius),
+            border: Border.all(
+              color: selected ? SimfTokens.accent : SimfTokens.beigeBorder,
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: selected ? SimfTokens.navy : SimfTokens.headlineInk,
+              fontSize: SimfTokens.textMd,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
       ),
     );
   }
