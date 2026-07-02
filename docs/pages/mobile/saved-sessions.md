@@ -125,10 +125,10 @@ header, count row, chips and cards mirror right-to-left.
 - **Bookmark = the favourites toggle.** Un-saving here calls the same
   `DELETE /app/sessions/{id}/favourite` as the heart elsewhere; a failed toggle
   reverts and shows the "تعذر تحديث المفضلة" / "Could not update favourites" toast.
-- **My-sessions (1388:9067) is now unreferenced.** Repointing the My-Area counter to
-  this screen left the dedicated 4-tab my-sessions screen with no entry point (the
-  booked view remains reachable from the summaries "جلساتي" tab) — flagged for the
-  owner to keep, relink, or retire.
+- **My-sessions (1388:9067) re-linked (D-588).** Repointing the My-Area counter here
+  briefly left the 4-tab my-sessions screen with no entry point; D-588 re-linked it from
+  the More-menu "عروض الجلسات" row (and retitled it to match its Figma frame), so it is no
+  longer orphaned.
 
 ## 9. Related E2E test scenarios
 

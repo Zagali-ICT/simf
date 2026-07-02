@@ -330,13 +330,13 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
         SimfTileRow(
           children: <Widget>[
             // The two counters tap through to their real screens (owner spec,
-            // Figma): مقابلات → the read-only My meetings list (1408:9726);
-            // جلسات محفوظة → the saved-sessions list (1701:8928, D-584 — the
-            // favourited sessions with category chips).
+            // Figma): مقابلات → the read-only My meetings list (المقابلات
+            // 1701:9406); جلسات محفوظة → the saved-sessions list (1701:8928,
+            // D-584 — the favourited sessions with category chips).
             SimfStatTile(
               value: dashboard.counters.meetingsCount,
               label: l10n.statMeetings,
-              onTap: () => context.pushNamed(RouteNames.requests),
+              onTap: () => context.pushNamed(RouteNames.myMeetings),
             ),
             SimfStatTile(
               // D-584 — the SAVED (favourited) count (no dashboard saved

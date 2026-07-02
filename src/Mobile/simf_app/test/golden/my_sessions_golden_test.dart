@@ -19,7 +19,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import 'golden_fonts.dart';
 
 /// Golden render of the My-Sessions screen against Figma frame **1388:9067**
-/// (تفاصيل الجلسات, Approved account). Compare to the frame:
+/// (عروض الجلسات, Approved account). Compare to the frame:
 ///   flutter test --update-goldens test/golden/my_sessions_golden_test.dart
 ///
 /// Frame parity expected: the four equal-width القادمة/حضرتها/فاتتني/الأرشيف

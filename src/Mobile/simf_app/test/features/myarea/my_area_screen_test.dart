@@ -132,6 +132,7 @@ Future<void> _pump(
         (RouteNames.badge, '/badge', 'BADGE'),
         (RouteNames.more, '/more', 'MORE'),
         (RouteNames.shareMyContact, '/contacts/share', 'SHARE-MY-CONTACT'),
+        (RouteNames.myMeetings, '/my-meetings', 'MY-MEETINGS'),
         (RouteNames.home, '/', 'HOME'),
         (RouteNames.sessions, '/sessions', 'SESSIONS'),
         (RouteNames.venueMap, '/map', 'MAP'),
@@ -209,6 +210,19 @@ void main() {
       expect(find.text('العربية · English'), findsNothing);
       expect(find.text('Light / dark mode'), findsNothing);
       expect(find.text('Sign out'), findsNothing);
+    });
+
+    testWidgets('the meetings stat tile opens the My-meetings screen '
+        '(المقابلات 1701:9406)', (tester) async {
+      await _pump(
+        tester,
+        controller: _AuthController(RegistrationStatus.approved),
+        repo: _FakeMyAreaRepository(dashboard: _dashboard()),
+      );
+
+      await tester.tap(find.text('Meetings'));
+      await tester.pumpAndSettle();
+      expect(find.text('MY-MEETINGS'), findsOneWidget);
     });
 
     testWidgets('the share-my-profile tile opens the contact-QR screen',

@@ -43,6 +43,7 @@ import '../features/more/more_screen.dart';
 import '../features/notifications/notifications_screen.dart';
 import '../features/questions/send_question_screen.dart';
 import '../features/exhibitor/my_visitors_screen.dart';
+import '../features/requests/my_meetings_screen.dart';
 import '../features/requests/requests_screen.dart';
 import '../features/exhibitor/scan_visitor_screen.dart';
 import '../features/gates/gate_scan_screen.dart';
@@ -172,6 +173,9 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 114, name: RouteNames.staffRegisterVisitor, path: '/staff/register-visitor', labelAr: 'تسجيل زائر', labelEn: 'Register visitor'),
   // D-500 (Wave 5, الطلبات) — the unified requests feed (approved-only).
   _Route(number: 108, name: RouteNames.requests, path: '/requests', labelAr: 'الطلبات', labelEn: 'Requests'),
+  // المقابلات (Figma 1701:9406) — the caller's meetings list (approved attendee;
+  // My-Area مقابلات counter). Read-only view over the الطلبات feed.
+  _Route(number: 115, name: RouteNames.myMeetings, path: '/my-meetings', labelAr: 'المقابلات', labelEn: 'My meetings'),
   // D-485 — the session-join flow (approved-only): the seat picker + the hub.
   _Route(number: 109, name: RouteNames.seatPicker, path: '/sessions/:sessionId/pick-seat', labelAr: 'اختر مقعدك', labelEn: 'Select your seat'),
   _Route(number: 110, name: RouteNames.joinSessionHub, path: '/sessions/join', labelAr: 'احجز مقعداً', labelEn: 'Book a seat'),
@@ -180,7 +184,7 @@ const List<_Route> _routes = <_Route>[
   // #9 — venue map focused on a booth (booth "أرشدني" CTA; public, pushed).
   _Route(number: 112, name: RouteNames.boothMap, path: '/booths/:boothId/map', labelAr: 'الخريطة', labelEn: 'Venue map'),
   // Wave 2 (Figma 1388:9067) — "my sessions" (approved-only; My-Area counter).
-  _Route(number: 113, name: RouteNames.myAreaSessions, path: '/my-area/sessions', labelAr: 'تفاصيل الجلسات', labelEn: 'Session details'),
+  _Route(number: 113, name: RouteNames.myAreaSessions, path: '/my-area/sessions', labelAr: 'عروض الجلسات', labelEn: 'My sessions'),
 
   // D-464 — المزيد hub entries with no screen yet (Figma 1129:17224). Public;
   // they fall through to ComingSoonScreen (sentinel numbers 200+).
@@ -255,6 +259,7 @@ const Map<int, Set<AppRole>> _routeRoles = <int, Set<AppRole>>{
   102: _attendee, // Scan contact QR (FDS-014)
   103: _attendee, // Identity verification — avatar liveness (D-404)
   108: _attendee, // Requests feed (D-500, approved-only)
+  115: _attendee, // My meetings (المقابلات 1701:9406, approved attendee)
   109: _attendee, // Seat picker (D-485)
   110: _attendee, // Join-a-session hub (D-485)
   113: _attendee, // My sessions (Wave 2)
@@ -500,6 +505,9 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.requests) {
     return const RequestsScreen();
+  }
+  if (r.name == RouteNames.myMeetings) {
+    return const MyMeetingsScreen();
   }
   if (r.name == RouteNames.forumGuide) {
     return const ForumGuideScreen();

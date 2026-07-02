@@ -7,6 +7,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../core/utils/gregorian_month_names.dart';
 import '../ai_summary/session_summary_screen.dart' show aiSummarySessionsProvider;
 import 'data/session_favourites.dart';
 import 'data/session_models.dart';
@@ -31,18 +32,6 @@ class SavedSessionsScreen extends ConsumerStatefulWidget {
 
 /// One 12-hour formatter for the card timestamps (hoisted off the build path).
 final DateFormat _savedTimeFormat = DateFormat('hh:mm a');
-
-/// Gregorian month names, indexed by month-1, for the card's "12 يناير 2026"
-/// date line (Figma 1701:8928) — rendered without an intl locale so no
-/// `initializeDateFormatting` is required.
-const List<String> _monthsAr = <String>[
-  'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
-  'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
-];
-const List<String> _monthsEn = <String>[
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
 
 class _SavedSessionsScreenState extends ConsumerState<SavedSessionsScreen> {
   /// The selected category chip: 0 = الكل (all), i>0 = the (i-1)th category.
@@ -232,8 +221,8 @@ class _SavedCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final start = item.startLocal;
-    final months = isArabic ? _monthsAr : _monthsEn;
-    final date = '${start.day} ${months[start.month - 1]} ${start.year}';
+    final date =
+        '${start.day} ${gregorianMonthName(start.month, isArabic)} ${start.year}';
     final time = _savedTimeFormat.format(start);
     final category = item.localizedCategory(isArabic);
     final hall = item.localizedHall(isArabic);

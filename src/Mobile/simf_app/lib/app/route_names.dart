@@ -97,6 +97,11 @@ class RouteNames {
   // Area; Approved account). Supersedes the D-479 read-only My-meetings route.
   static const String requests = 'requests';
 
+  // المقابلات (Figma 1701:9406) — the caller's speaker + delegation meetings as
+  // person cards with status filter chips, reached from the My-Area "مقابلات"
+  // counter (Approved attendee). A read-only view over the الطلبات feed.
+  static const String myMeetings = 'myMeetings';
+
   // Wave 2 (Figma 1388:9067) — "my sessions" (تفاصيل الجلسات): the caller's
   // booked / joined sessions with القادمة / حضرتها / فاتتني / الأرشيف tabs,
   // reached from the My-Area "my sessions" counter (Approved account).

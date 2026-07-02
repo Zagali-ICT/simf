@@ -39,6 +39,8 @@ void main() {
       expect(routePathRequiresAuth('/notifications'), isTrue);
       expect(routePathRequiresAuth('/meet'), isTrue);
       expect(routePathRequiresAuth('/live/question'), isTrue);
+      // المقابلات (1701:9406) — approved attendee only, so auth-gated.
+      expect(routePathRequiresAuth('/my-meetings'), isTrue);
       // D-576 — the agenda + session detail are login-gated (redirect).
       expect(routePathRequiresAuth('/sessions'), isTrue);
       expect(routePathRequiresAuth('/sessions/:sessionId'), isTrue);
@@ -343,6 +345,18 @@ void main() {
       expect(hit(meet, AppRole.exhibitor), isNull);
       expect(hit(meet, AppRole.staff), '/'); // focused
       expect(hit(meet, AppRole.moderator), '/'); // focused
+    });
+
+    test('المقابلات (my-meetings) is attendee-only, like the requests feed', () {
+      const myMeetings = '/my-meetings';
+      expect(
+        allowedRolesForPath(myMeetings),
+        <AppRole>{AppRole.visitor, AppRole.exhibitor},
+      );
+      expect(hit(myMeetings, AppRole.visitor), isNull);
+      expect(hit(myMeetings, AppRole.exhibitor), isNull);
+      expect(hit(myMeetings, AppRole.staff), '/');
+      expect(hit(myMeetings, AppRole.moderator), '/');
     });
 
     test('the badge tab is universal — every signed-in role keeps it', () {

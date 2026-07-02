@@ -1584,7 +1584,9 @@ class AppL10n {
   // Wave 2 — "my sessions" list, App "تفاصيل الجلسات" (Figma 1388:9067), reached
   // from the My-Area "my sessions" counter. Four tabs partition the user's
   // booked / joined sessions.
-  String get mySessionsTitle => _t('تفاصيل الجلسات', 'Session details');
+  // App title matches Figma 1388:9067 ("عروض الجلسات"); the EN stays "My
+  // sessions" (distinct from the downloadable-slides screen) for clarity.
+  String get mySessionsTitle => _t('عروض الجلسات', 'My sessions');
   String get mySessionsTabUpcoming => _t('القادمة', 'Upcoming');
   String get mySessionsTabAttended => _t('حضرتها', 'Attended');
   String get mySessionsTabMissed => _t('فاتتني', 'Missed');
@@ -1605,6 +1607,21 @@ class AppL10n {
   String get savedSessionsCountLabel => _t('جلسة محفوظة', 'saved sessions');
   String get savedSessionsEmpty =>
       _t('لا توجد جلسات محفوظة بعد.', 'No saved sessions yet.');
+
+  // المقابلات, App "المقابلات" (Figma 1701:9406), reached from the My-Area
+  // "مقابلات" counter. The caller's speaker + delegation meetings as person
+  // cards over four status filter chips. Reuses the الطلبات feed (read-only).
+  String get myMeetingsTitle => _t('المقابلات', 'My meetings');
+  String get myMeetingsFilterCompleted => _t('مكتملة', 'Completed');
+  String get myMeetingsFilterPending => _t('قيد الانتظار', 'Pending');
+  String get myMeetingsFilterRejected => _t('مرفوضة', 'Rejected');
+  // The neutral badge on an accepted meeting card (Figma 1701:9446).
+  String get myMeetingBadgeConfirmed => _t('مؤكدة', 'Confirmed');
+  String get myMeetingsEmpty =>
+      _t('لا توجد مقابلات بعد.', 'No meetings yet.');
+  // The list section header, rendered as "جميع المقابلات ($count)".
+  String myMeetingsAllHeader(int count) =>
+      _t('جميع المقابلات ($count)', 'All meetings ($count)');
 
   // Wave 4 — Delegations, App "الوفود" (Figma 1426:10771): the invited countries'
   // delegations with head of delegation, date range and member count.
