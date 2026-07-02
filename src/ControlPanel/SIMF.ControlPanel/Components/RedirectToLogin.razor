@@ -1,8 +1,2 @@
 @* Sends an unauthenticated visitor to the sign-in page. Rendered by
    AuthorizeRouteView when a protected page is reached without a session. *@
-@inject NavigationManager Nav
-
-@code {
-    protected override void OnInitialized() =>
-        Nav.NavigateTo("/login", forceLoad: true);
-}

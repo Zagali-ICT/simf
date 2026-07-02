@@ -6,8 +6,6 @@
    built-in role the form shows the read-only notice instead of the field.
    Supersedes RoleForm.razor (D-134), which keyed off Initial==null. *@
 @inherits CrudAddEditFormBase<AdminRoleSummary>
-@inject IStringLocalizer<Strings> L
-@inject IJSRuntime JS
 
 @if (_error is not null)
 {
@@ -51,70 +49,4 @@ else
             }
         </div>
     </EditForm>
-}
-
-@code {
-    private readonly Model _model = new();
-    private EditContext _editContext = default!;
-    private bool _busy;
-    private string? _error;
-
-    protected override void OnInitialized()
-    {
-        if (Initial is not null)
-        {
-            _model.Name = Initial.Name;
-        }
-        _editContext = new EditContext(_model);
-    }
-
-    private async Task HandleSubmitAsync()
-    {
-        if (_busy) return;
-        _error = null;
-
-        var name = (_model.Name ?? string.Empty).Trim();
-        if (name.Length is < 1 or > 64)
-        {
-            _error = L["Admin.Roles.Field.NameInvalid"]; return;
-        }
-
-        _busy = true;
-        try
-        {
-            ApiResult<AdminRoleSummary>? envelope;
-            if (!IsEdit)
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminRoleSummary>>(
-                    "simfAccount.postJson", "/account/api/admin/roles",
-                    new AdminCreateRoleRequest { Name = name });
-            }
-            else
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminRoleSummary>>(
-                    "simfAccount.putJson", $"/account/api/admin/roles/{Initial!.Id}",
-                    new AdminUpdateRoleRequest { Name = name });
-            }
-
-            if (envelope is { Success: true, Data: not null })
-            {
-                await OnSuccess.InvokeAsync(envelope.Data);
-            }
-            else
-            {
-                _error = envelope?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.Roles.Fallback"];
-            }
-        }
-        catch (Exception)
-        {
-            _error = L["Admin.Roles.Fallback"];
-        }
-        finally { _busy = false; }
-    }
-
-    private sealed class Model
-    {
-        public string Name { get; set; } = string.Empty;
-    }
 }

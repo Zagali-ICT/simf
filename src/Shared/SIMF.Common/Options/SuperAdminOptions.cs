@@ -15,4 +15,15 @@ public sealed class SuperAdminOptions
     public string TempPassword { get; set; } = string.Empty;
 
     public string TotpSecret { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Whether the seeded super-admin is created with the one-time
+    /// forced-password-change flag (D-059 / H19 / D-206). Defaults to
+    /// <c>true</c> — the account must rotate the seed password on first CP
+    /// login. A dev / test box may set
+    /// <c>SIMF_SuperAdmin__PasswordChangeRequired=false</c> so the seed
+    /// credential stays usable without the change step; leave it <c>true</c>
+    /// for the production / NCA handover.
+    /// </summary>
+    public bool PasswordChangeRequired { get; set; } = true;
 }

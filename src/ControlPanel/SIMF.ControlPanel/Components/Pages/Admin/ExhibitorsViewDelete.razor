@@ -6,8 +6,6 @@
    delete hits the same /account/api/admin/exhibitors/{id} route as before. *@
 @inherits CrudViewDeleteFormBase<AdminExhibitorDetail>
 @using SIMF.Contracts.Exhibitors
-@inject IStringLocalizer<Strings> L
-@inject IJSRuntime JS
 
 @if (_error is not null)
 {
@@ -54,39 +52,4 @@
                  Busy="_busy"
                  OnConfirm="ConfirmDeleteAsync"
                  OnCancel="@(() => _confirming = false)" />
-}
-
-@code {
-    private bool _busy;
-    private bool _confirming;
-    private string? _error;
-
-    private async Task ConfirmDeleteAsync()
-    {
-        if (_busy || Initial is null) return;
-        _busy = true;
-        _error = null;
-        try
-        {
-            var env = await JS.InvokeAsync<ApiResult<bool>>(
-                "simfAccount.deleteJson", $"/account/api/admin/exhibitors/{Initial.Id}");
-            if (env is { Success: true })
-            {
-                _confirming = false;
-                await OnDeleted.InvokeAsync(Initial);
-            }
-            else
-            {
-                _confirming = false;
-                _error = env?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.Exhibitors.LoadFailed"];
-            }
-        }
-        catch (Exception)
-        {
-            _confirming = false;
-            _error = L["Admin.Exhibitors.LoadFailed"];
-        }
-        finally { _busy = false; }
-    }
 }

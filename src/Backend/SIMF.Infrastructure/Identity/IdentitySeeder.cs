@@ -515,7 +515,11 @@ public sealed class IdentitySeeder(
             // already sets this for the pre-P7 super-admin, but we also set
             // it here so a brand-new install on a clean DB lands correctly.
             UserType = UserType.Admin,
-            PasswordChangeRequired = true,
+            // D-059 / H19 / D-206 — the seed credential is normally forced to
+            // rotate on first CP login. Config-driven (SuperAdmin:
+            // PasswordChangeRequired, default true) so a dev / test box can opt
+            // out; keep it true for the production / NCA handover.
+            PasswordChangeRequired = settings.PasswordChangeRequired,
             CreatedAt = now,
         };
 

@@ -7,8 +7,6 @@
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Ratings.View)]
 @using SIMF.Contracts.Feedback
-@inject IStringLocalizer<Strings> L
-@inject IJSRuntime JS
 
 <PageTitle>@L["Admin.Ratings.Title"] · SIMF</PageTitle>
 
@@ -121,75 +119,3 @@
         </SimfDataGrid>
     </div>
 </div>
-
-@code {
-    private record Toast(string Variant, string Message);
-
-    private GridQuery _query = new() { Top = 20 };
-    private GridPage<AdminRatingResponseSummary> _page = new();
-    private double _averageOverall;
-    private int _responseCount;
-    private AdminRatingKpiView? _kpi;
-    private bool _loading;
-    private Toast? _toast;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadAsync();
-        await LoadKpiAsync();
-    }
-
-    private async Task OnQueryChangedAsync(GridQuery next)
-    {
-        _query = next;
-        await LoadAsync();
-    }
-
-    private string FormatSummary(int skip, int taken, int total) =>
-        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
-
-    private string FormatPage(int current, int total) =>
-        string.Format(L["Grid.Page"], current, total);
-
-    // Excel export (selected rows, or the current filtered set). Export only —
-    // responses are owned by the attendees who submit them (read-only view).
-    private Task OnExportAsync(IReadOnlyList<AdminRatingResponseSummary> selected) =>
-        JS.InvokeVoidAsync("simfAccount.downloadXlsx",
-            "/account/api/admin/ratings/export",
-            new AdminGridExportRequest
-            {
-                Ids = selected.Select(row => row.Id).ToList(),
-                Query = selected.Count == 0 ? _query : null,
-            }).AsTask();
-
-    private async Task LoadAsync()
-    {
-        _loading = true;
-        try
-        {
-            var env = await JS.InvokeAsync<ApiResult<AdminRatingResponsesPage>>(
-                "simfAccount.postJson",
-                "/account/api/admin/feedback/ratings", _query);
-            if (env is { Success: true, Data: not null })
-            {
-                _page = env.Data.Responses;
-                _averageOverall = env.Data.AverageOverall;
-                _responseCount = env.Data.ResponseCount;
-            }
-            else
-            {
-                _toast = new Toast("error",
-                    env?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.Ratings.LoadFailed"]);
-            }
-        }
-        finally { _loading = false; }
-    }
-
-    private async Task LoadKpiAsync()
-    {
-        var env = await JS.InvokeAsync<ApiResult<AdminRatingKpiView>>(
-            "simfAccount.getJson", "/account/api/admin/feedback/ratings/kpi");
-        if (env is { Success: true, Data: not null }) { _kpi = env.Data; }
-    }
-}

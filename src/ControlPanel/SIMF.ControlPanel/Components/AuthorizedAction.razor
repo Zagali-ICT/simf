@@ -6,13 +6,3 @@
 <AuthorizeView Policy="@_policy">
     <Authorized>@ChildContent</Authorized>
 </AuthorizeView>
-
-@code {
-    /// <summary>The permission code that gates the content, e.g.
-    /// <c>PermissionCatalog.Sessions.Edit</c>.</summary>
-    [Parameter, EditorRequired] public string Permission { get; set; } = string.Empty;
-
-    [Parameter] public RenderFragment? ChildContent { get; set; }
-
-    private string _policy => PermissionCatalog.PolicyFor(Permission);
-}
