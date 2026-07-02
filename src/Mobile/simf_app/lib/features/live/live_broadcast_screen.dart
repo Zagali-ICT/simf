@@ -276,7 +276,7 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
                 // D-433 — the hall name (already on the wire) completes the
                 // frame's "يُبث الآن · القاعة الرئيسية" header line.
                 _broadcastLabel(l10n, isLive, session.localizedHall(isArabic)),
-                textAlign: TextAlign.right,
+                textAlign: TextAlign.start,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: SimfTokens.textLg,
@@ -330,7 +330,7 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
                 const SizedBox(height: SimfTokens.space6),
                 Text(
                   l10n.liveUpcomingSessions,
-                  textAlign: TextAlign.right,
+                  textAlign: TextAlign.start,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: SimfTokens.textLg,
@@ -422,7 +422,7 @@ class _UpcomingCard extends StatelessWidget {
             Expanded(
               child: Text(
                 session.localizedTitle(isArabic),
-                textAlign: TextAlign.right,
+                textAlign: TextAlign.start,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 // Frame 934:3626 — the upcoming-session title is 14px Bold.
@@ -568,7 +568,7 @@ class _CaptionStrip extends ConsumerWidget {
           Expanded(
             child: Text(
               caption ?? hint,
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
               style: TextStyle(
                 // Real caption text reads in white; the placeholder is the
                 // frame's soft caption colour (#DDE4F0, 934:3613).
@@ -857,7 +857,7 @@ class _GoldBullet extends StatelessWidget {
         Expanded(
           child: Text(
             text,
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
             style: TextStyle(
               color: color,
               fontSize: fontSize,
@@ -909,7 +909,7 @@ class _RegionNoticeCard extends StatelessWidget {
             TextSpan(text: noticeBody),
           ],
         ),
-        textAlign: TextAlign.right,
+        textAlign: TextAlign.start,
         style: const TextStyle(
           color: Colors.white,
           fontSize: SimfTokens.textMd,

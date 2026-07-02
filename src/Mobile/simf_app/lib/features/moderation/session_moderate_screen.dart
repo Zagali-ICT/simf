@@ -576,7 +576,7 @@ class _QuestionCard extends StatelessWidget {
             ),
             child: Text(
               question.questionText,
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w700,

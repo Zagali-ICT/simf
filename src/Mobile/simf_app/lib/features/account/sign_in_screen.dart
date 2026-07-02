@@ -440,7 +440,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           controller: _email,
           keyboardType: TextInputType.emailAddress,
           textDirection: TextDirection.ltr,
-          textAlign: TextAlign.left,
+          textAlign: TextAlign.start,
           maxLength: 50,
           enabled: !_busy,
           onChanged: (_) => setState(() {}),

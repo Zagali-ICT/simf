@@ -868,7 +868,7 @@ class _MeetingRequestSheetState extends ConsumerState<_MeetingRequestSheet> {
   /// hint (Figma 1776:4967).
   Widget _subjectField(AppL10n l10n) => TextField(
         controller: _subject,
-        textAlign: TextAlign.right,
+        textAlign: TextAlign.start,
         maxLength: 1000,
         maxLines: 1,
         style: const TextStyle(

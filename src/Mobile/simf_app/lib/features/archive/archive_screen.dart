@@ -594,7 +594,7 @@ class _SessionTitleCard extends StatelessWidget {
         text,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        textAlign: TextAlign.right,
+        textAlign: TextAlign.start,
         style: const TextStyle(
           color: SimfTokens.beigeBorder,
           fontWeight: FontWeight.w600,

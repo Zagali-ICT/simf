@@ -250,7 +250,7 @@ class _SponsorCard extends StatelessWidget {
                   children: <Widget>[
                     Text(
                       name,
-                      textAlign: TextAlign.right,
+                      textAlign: TextAlign.start,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -271,7 +271,7 @@ class _SponsorCard extends StatelessWidget {
                         width: double.infinity,
                         child: Text(
                           secondary!,
-                          textAlign: TextAlign.right,
+                          textAlign: TextAlign.start,
                           style: TextStyle(
                             color: subColor,
                             fontSize: SimfTokens.textSm,

@@ -159,7 +159,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             controller: _code,
             keyboardType: TextInputType.number,
             textDirection: TextDirection.ltr,
-            textAlign: TextAlign.left,
+            textAlign: TextAlign.start,
             maxLength: 6,
             enabled: !_busy,
             inputFormatters: <TextInputFormatter>[

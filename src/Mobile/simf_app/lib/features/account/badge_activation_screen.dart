@@ -224,7 +224,7 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
           controller: _email,
           keyboardType: TextInputType.emailAddress,
           textDirection: TextDirection.ltr,
-          textAlign: TextAlign.left,
+          textAlign: TextAlign.start,
           maxLength: 50,
           enabled: !_busy,
           onChanged: (_) => setState(() {}),
@@ -257,7 +257,7 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
           controller: _code,
           keyboardType: TextInputType.number,
           textDirection: TextDirection.ltr,
-          textAlign: TextAlign.left,
+          textAlign: TextAlign.start,
           maxLength: 6,
           enabled: !_busy,
           inputFormatters: <TextInputFormatter>[

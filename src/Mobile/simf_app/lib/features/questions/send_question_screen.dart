@@ -233,7 +233,7 @@ class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
                   maxLength: 500,
                   maxLines: null,
                   expands: true,
-                  textAlign: TextAlign.right,
+                  textAlign: TextAlign.start,
                   textAlignVertical: TextAlignVertical.top,
                   textInputAction: TextInputAction.newline,
                   style: const TextStyle(
@@ -412,7 +412,7 @@ class _NumberedLine extends StatelessWidget {
         Text('$index.', textDirection: TextDirection.ltr, style: _style),
         const SizedBox(width: SimfTokens.space2),
         Expanded(
-          child: Text(text, textAlign: TextAlign.right, style: _style),
+          child: Text(text, textAlign: TextAlign.start, style: _style),
         ),
       ],
     );

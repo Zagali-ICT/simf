@@ -193,7 +193,7 @@ class _SessionCard extends StatelessWidget {
         children: <Widget>[
           Text(
             l10n.sessionLabel,
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
             style: const TextStyle(
               color: SimfTokens.beigeBorder,
               fontSize: SimfTokens.textLg,
