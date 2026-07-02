@@ -111,14 +111,14 @@ Scenario: Non-administrator user is denied
 ### E2E-INT-004 — Validation failure
 
 ```gherkin
-Scenario: Empty Name shows bilingual error in the modal
+Scenario: Empty Name shows the server's bilingual validation reason in the modal
   Given the Add modal is open
   When the administrator leaves Name blank
   And clicks "Create interest"
-  Then a SimfAlert error appears at the top of the modal
-  And reads "The English name is required (1–128 characters)." / "الاسم الإنجليزي مطلوب (1–128 حرف)."
+  Then a /account/api/admin/interests POST request fires and returns VALIDATION_FAILED
+  And a SimfAlert error appears at the top of the modal
+  And reads "The English name is required." / "الاسم بالإنجليزية مطلوب."
   And the modal stays open
-  And no /account/api/admin/interests POST request fires
 ```
 
 ### E2E-INT-005 — Duplicate name

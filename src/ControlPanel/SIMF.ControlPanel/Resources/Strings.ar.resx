@@ -268,10 +268,8 @@
   <data name="Admin.Interests.BackToList" xml:space="preserve"><value>الرجوع إلى القائمة</value></data>
   <data name="Admin.Interests.Field.Name" xml:space="preserve"><value>الاسم (بالإنجليزية)</value></data>
   <data name="Admin.Interests.Field.NameHint" xml:space="preserve"><value>حتى 128 حرفًا؛ يجب أن يكون فريدًا.</value></data>
-  <data name="Admin.Interests.Field.NameInvalid" xml:space="preserve"><value>الاسم بالإنجليزية مطلوب (من 1 إلى 128 حرفًا).</value></data>
   <data name="Admin.Interests.Field.NameArabic" xml:space="preserve"><value>الاسم (بالعربية)</value></data>
   <data name="Admin.Interests.Field.NameArabicHint" xml:space="preserve"><value>حتى 128 حرفًا.</value></data>
-  <data name="Admin.Interests.Field.NameArabicInvalid" xml:space="preserve"><value>الاسم بالعربية مطلوب (من 1 إلى 128 حرفًا).</value></data>
   <data name="Admin.Interests.Field.DisplayOrder" xml:space="preserve"><value>ترتيب العرض</value></data>
   <data name="Admin.Interests.Field.DisplayOrderHint" xml:space="preserve"><value>مفتاح فرز قائمة الزائر (صفر أو أكثر؛ تصاعديًا).</value></data>
   <data name="Admin.Interests.Field.DisplayOrderInvalid" xml:space="preserve"><value>يجب أن يكون ترتيب العرض صفرًا أو عددًا صحيحًا موجبًا.</value></data>

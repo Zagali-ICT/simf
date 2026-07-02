@@ -271,10 +271,8 @@
   <data name="Admin.Interests.BackToList" xml:space="preserve"><value>Back to list</value></data>
   <data name="Admin.Interests.Field.Name" xml:space="preserve"><value>Name (English)</value></data>
   <data name="Admin.Interests.Field.NameHint" xml:space="preserve"><value>Up to 128 characters; must be unique.</value></data>
-  <data name="Admin.Interests.Field.NameInvalid" xml:space="preserve"><value>The English name is required (1–128 characters).</value></data>
   <data name="Admin.Interests.Field.NameArabic" xml:space="preserve"><value>Name (Arabic)</value></data>
   <data name="Admin.Interests.Field.NameArabicHint" xml:space="preserve"><value>Up to 128 characters.</value></data>
-  <data name="Admin.Interests.Field.NameArabicInvalid" xml:space="preserve"><value>The Arabic name is required (1–128 characters).</value></data>
   <data name="Admin.Interests.Field.DisplayOrder" xml:space="preserve"><value>Display order</value></data>
   <data name="Admin.Interests.Field.DisplayOrderHint" xml:space="preserve"><value>Sort key in the visitor picker (zero or more; ascending).</value></data>
   <data name="Admin.Interests.Field.DisplayOrderInvalid" xml:space="preserve"><value>Display order must be zero or a positive integer.</value></data>
