@@ -13,6 +13,15 @@ namespace SIMF.Infrastructure.Persistence.Repositories;
 internal sealed class InterestRepository(SimfAppDbContext dbContext)
     : IInterestRepository
 {
+    // Sort tokens the admin grid sends (the SimfDataGrid column Keys, lower-cased).
+    private static class SortKeys
+    {
+        public const string Name = "name";
+        public const string NameArabic = "namearabic";
+        public const string DisplayOrder = "displayorder";
+        public const string CreatedAt = "createdat";
+    }
+
     public async Task<IReadOnlyList<InterestDto>> ListActiveAsync(
         CancellationToken cancellationToken = default)
     {
@@ -60,13 +69,13 @@ internal sealed class InterestRepository(SimfAppDbContext dbContext)
 
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
-            ("name", true) => rows.OrderByDescending(interest => interest.Name),
-            ("name", false) => rows.OrderBy(interest => interest.Name),
-            ("namearabic", true) => rows.OrderByDescending(interest => interest.NameArabic),
-            ("namearabic", false) => rows.OrderBy(interest => interest.NameArabic),
-            ("displayorder", true) => rows.OrderByDescending(interest => interest.DisplayOrder),
-            ("displayorder", false) => rows.OrderBy(interest => interest.DisplayOrder),
-            ("createdat", false) => rows.OrderBy(interest => interest.CreatedAt),
+            (SortKeys.Name, true) => rows.OrderByDescending(interest => interest.Name),
+            (SortKeys.Name, false) => rows.OrderBy(interest => interest.Name),
+            (SortKeys.NameArabic, true) => rows.OrderByDescending(interest => interest.NameArabic),
+            (SortKeys.NameArabic, false) => rows.OrderBy(interest => interest.NameArabic),
+            (SortKeys.DisplayOrder, true) => rows.OrderByDescending(interest => interest.DisplayOrder),
+            (SortKeys.DisplayOrder, false) => rows.OrderBy(interest => interest.DisplayOrder),
+            (SortKeys.CreatedAt, false) => rows.OrderBy(interest => interest.CreatedAt),
             // Natural order matches the visitor picker — DisplayOrder, then Name.
             _ => rows.OrderBy(interest => interest.DisplayOrder).ThenBy(interest => interest.Name),
         };

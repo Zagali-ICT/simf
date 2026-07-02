@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
@@ -14,20 +13,19 @@ public partial class InterestAddEdit
 
     private readonly Model _model = new();
     private string _displayOrderInput = "0";
-    private EditContext _editContext = default!;
     private bool _busy;
     private string? _error;
 
     protected override void OnInitialized()
     {
-        if (Initial is not null)
+        if (Initial is null)
         {
-            _model.Name = Initial.Name;
-            _model.NameArabic = Initial.NameArabic;
-            _model.IsActive = Initial.IsActive;
-            _displayOrderInput = Initial.DisplayOrder.ToString();
+            return;
         }
-        _editContext = new EditContext(_model);
+        _model.Name = Initial.Name;
+        _model.NameArabic = Initial.NameArabic;
+        _model.IsActive = Initial.IsActive;
+        _displayOrderInput = Initial.DisplayOrder.ToString();
     }
 
     private async Task HandleSubmitAsync()

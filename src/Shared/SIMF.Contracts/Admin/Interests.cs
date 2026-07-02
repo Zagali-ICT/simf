@@ -27,8 +27,15 @@ public sealed class AdminCreateInterestRequest
 /// fields as the create request plus the soft-delete flag.</summary>
 public sealed class AdminUpdateInterestRequest
 {
+    /// <summary>English display name (1-128 chars; unique).</summary>
     public string Name { get; set; } = string.Empty;
+
+    /// <summary>Arabic display name (1-128 chars).</summary>
     public string NameArabic { get; set; } = string.Empty;
+
+    /// <summary>Sort key in the visitor picker (≥ 0).</summary>
     public int DisplayOrder { get; set; }
+
+    /// <summary>Soft-delete flag; <c>false</c> deactivates the interest.</summary>
     public bool IsActive { get; set; } = true;
 }
