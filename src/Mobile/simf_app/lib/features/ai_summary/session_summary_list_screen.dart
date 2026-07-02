@@ -6,6 +6,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../app/widgets/simf_svg_icon.dart';
 import '../myarea/data/my_sessions_repository.dart';
 import '../sessions/data/session_favourites.dart';
 import '../sessions/data/session_models.dart';
@@ -378,7 +379,8 @@ class _SummaryCard extends StatelessWidget {
                       ),
                       const SizedBox(height: SimfTokens.space2),
                       _IconLine(
-                        icon: Icons.access_time,
+                        // Figma 1388:8441 — the exact iconify clock, not Material.
+                        asset: 'assets/icons/session_clock.svg',
                         text: '$time · $durationLabel',
                       ),
                     ],
@@ -397,14 +399,16 @@ class _SummaryCard extends StatelessWidget {
                   if (speaker != null)
                     Flexible(
                       child: _MetaGroup(
-                        icon: Icons.person_outline,
+                        // Figma 1388:8457 — the exact iconify "users" glyph.
+                        asset: 'assets/icons/session_users.svg',
                         text: speaker,
                       ),
                     ),
                   if (hall != null && hall.isNotEmpty)
                     Flexible(
                       child: _MetaGroup(
-                        icon: Icons.location_on_outlined,
+                        // Figma 1388:8449 — the exact iconify map-pin glyph.
+                        asset: 'assets/icons/session_location.svg',
                         text: hall,
                       ),
                     ),
@@ -445,16 +449,16 @@ class _SummaryCard extends StatelessWidget {
 /// The clock·time·duration line under the title (Figma 1388:8439): a 12px glyph
 /// + a beige 12px label.
 class _IconLine extends StatelessWidget {
-  const _IconLine({required this.icon, required this.text});
+  const _IconLine({required this.asset, required this.text});
 
-  final IconData icon;
+  final String asset;
   final String text;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: <Widget>[
-        Icon(icon, size: 12, color: SimfTokens.beigeBorder),
+        SimfSvgIcon(asset, size: 12, color: SimfTokens.beigeBorder),
         const SizedBox(width: SimfTokens.space2),
         Expanded(
           child: Text(
@@ -475,9 +479,9 @@ class _IconLine extends StatelessWidget {
 /// A speaker / hall meta group (Figma 1388:8445 / 8453): a 24px beige icon box
 /// (navy glyph) leading (right in RTL), then the beige 12px label.
 class _MetaGroup extends StatelessWidget {
-  const _MetaGroup({required this.icon, required this.text});
+  const _MetaGroup({required this.asset, required this.text});
 
-  final IconData icon;
+  final String asset;
   final String text;
 
   @override
@@ -493,7 +497,7 @@ class _MetaGroup extends StatelessWidget {
             color: SimfTokens.beigeBorder,
             borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
           ),
-          child: Icon(icon, size: 12, color: SimfTokens.navy),
+          child: SimfSvgIcon(asset, size: 12, color: SimfTokens.navy),
         ),
         const SizedBox(width: SimfTokens.space2),
         Flexible(
