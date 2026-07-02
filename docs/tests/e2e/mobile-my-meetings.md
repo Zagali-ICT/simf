@@ -17,6 +17,8 @@
 | E2E-MOBMTG-005 | An accepted meeting shows the "مؤكدة" badge | happy | P2 | authored ✓ (widget — badge) |
 | E2E-MOBMTG-006 | Empty state when there are no live meetings | empty | P2 | authored ✓ (widget — empty) |
 | E2E-MOBMTG-007 | Auth-gate + RTL — a guest deep-link redirects to sign-in; Arabic mirrors RTL | auth/i18n | P2 | authored ✓ (router gate + RTL render) |
+| E2E-MOBMTG-008 | Empty status bucket hides its chip (Figma 3-chip parity, D-590) | happy | P1 | authored ✓ (widget — hidden-when-zero) |
+| E2E-MOBMTG-009 | Card secondary line shows the speaker's rank; delegation / no-rank falls back to meeting-type (D-590) | happy | P1 | authored ✓ (widget + api — subtitle) |
 
 ## Scenarios
 
@@ -28,9 +30,10 @@ Scenario: The my-meetings screen lists speaker + delegation meetings with counts
   And the attendee opens My-Area
   When they tap the "مقابلات" counter
   Then the "المقابلات" screen opens (Figma 1701:9406)
-  And the chips read "الكل (2)", "مكتملة (1)", "قيد الانتظار (1)", "مرفوضة (0)"
+  And the chips read "الكل (2)", "مكتملة (1)", "قيد الانتظار (1)"
+  And no "مرفوضة" chip is shown (its bucket is empty — D-590)
   And the section header reads "جميع المقابلات (2)"
-  And both meeting cards are listed with their counterpart name + meeting type
+  And both meeting cards are listed with their counterpart name + secondary line
 ```
 
 ### E2E-MOBMTG-002 — Status chips filter
@@ -98,7 +101,42 @@ Scenario: Arabic layout
        (the gold initial avatar at the inline end, the "مؤكدة" badge on the row)
 ```
 
+### E2E-MOBMTG-008 — Empty status bucket hides its chip (D-590)
+
+```gherkin
+Scenario: A status with no meetings shows no chip (Figma three-chip row)
+  Given an approved attendee has 4 accepted and 2 pending meetings, and 0 rejected
+  When they open /my-meetings
+  Then exactly three chips show: "الكل (6)", "مكتملة (4)", "قيد الانتظار (2)"
+  And no "مرفوضة" chip is rendered (empty bucket hidden — matches Figma 1701:9406)
+  And the chip row does not overflow or truncate any label
+
+Scenario: The rejected chip appears once a rejected meeting exists
+  Given the attendee also has 1 rejected meeting
+  When they open /my-meetings
+  Then a "مرفوضة (1)" chip is now shown and filters to the rejected meeting
+```
+
+### E2E-MOBMTG-009 — Speaker rank as the card secondary line (D-590)
+
+```gherkin
+Scenario: A speaker meeting shows the speaker's rank under the name
+  Given an approved attendee has an accepted meeting with a speaker whose Rank is "باحث بيئي"
+  When they open /my-meetings
+  Then that card's secondary line reads "باحث بيئي" (not the meeting-type text)
+  # Backend: GET /app/my-requests returns Subtitle = the speaker's Rank (append-only field),
+  # resolved via the existing speaker join — no schema change.
+
+Scenario: No rank falls back to the meeting-type line
+  Given the speaker has no Rank recorded
+  Then the card's secondary line reads the meeting type "طلب لقاء مع متحدث"
+
+Scenario: A delegation meeting always shows the meeting-type line
+  Given the attendee has a delegation meeting (no speaker rank exists)
+  Then that card's secondary line reads "طلب اجتماع وفد"
+```
+
 ---
 
-_Last reviewed:_ `2026-07-02` by `SIMF Team` — D-587: new المقابلات screen (Figma 1701:9406)
-over the existing `GET /app/my-requests` feed; the My-Area "مقابلات" counter opens it.
+_Last reviewed:_ `2026-07-02` by `SIMF Team` — D-590: Figma-parity pass (hide-when-empty
+status chips + speaker-rank card subtitle) on the D-587 المقابلات screen (Figma 1701:9406).

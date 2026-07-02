@@ -10,6 +10,7 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Requests;
+using SIMF.Domain.BusinessMeetings;
 using SIMF.Domain.Programme;
 using SIMF.Domain.SeatReservations;
 using SIMF.Infrastructure.Persistence;
@@ -70,6 +71,33 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
         // from the join-session flow, not here.
         Assert.Equal(MeetingRequestStatus.Accepted, booking.Status);
         Assert.False(booking.CanCancel);
+    }
+
+    [Fact]
+    public async Task Speaker_meeting_carries_the_speaker_rank_as_subtitle()
+    {
+        var (token, userId) = await SignInApprovedVisitorAsync();
+        await SeedSpeakerMeetingAsync(userId, rank: "باحث بيئي");
+
+        var items = await GetMyRequestsAsync(token);
+
+        // D-590 — the المقابلات card's secondary line comes from the speaker's
+        // Rank, resolved via the join (no new column). The other kinds leave it
+        // null so the app falls back to the meeting-type headline.
+        var meeting = Assert.Single(items, i => i.Kind == AppRequestKind.SpeakerMeeting);
+        Assert.Equal("باحث بيئي", meeting.Subtitle);
+    }
+
+    [Fact]
+    public async Task A_speaker_with_no_rank_leaves_the_subtitle_null()
+    {
+        var (token, userId) = await SignInApprovedVisitorAsync();
+        await SeedSpeakerMeetingAsync(userId, rank: null);
+
+        var items = await GetMyRequestsAsync(token);
+
+        var meeting = Assert.Single(items, i => i.Kind == AppRequestKind.SpeakerMeeting);
+        Assert.Null(meeting.Subtitle);
     }
 
     [Fact]
@@ -141,6 +169,34 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
     private Task<HttpResponseMessage> CancelAsync(string token, AppRequestKind kind, Guid id) =>
         SendAuthAsync(HttpMethod.Post, "/api/v1/app/my-requests/cancel", token,
             new { kind = (int)kind, id });
+
+    private async Task SeedSpeakerMeetingAsync(Guid userId, string? rank)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var suffix = Guid.NewGuid().ToString("N")[..6].ToUpperInvariant();
+        var speaker = new Speaker
+        {
+            Id = Guid.NewGuid(),
+            Code = "SPK" + suffix,
+            Name = "Dr Ibrahim Al-Hamed",
+            NameArabic = "د. ابراهيم الحامد",
+            Rank = rank,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        db.Speakers.Add(speaker);
+        db.SpeakerMeetingRequests.Add(new SpeakerMeetingRequest
+        {
+            Id = Guid.NewGuid(),
+            SpeakerId = speaker.Id,
+            RequestedByUserId = userId,
+            RequesterName = "Test Requester",
+            Subject = "Cooperation on marine research",
+            Status = MeetingRequestStatus.Accepted,
+            CreatedAt = DateTimeOffset.UtcNow,
+        });
+        await db.SaveChangesAsync();
+    }
 
     private async Task SeedBookingAsync(Guid userId, BookingStatus status)
     {

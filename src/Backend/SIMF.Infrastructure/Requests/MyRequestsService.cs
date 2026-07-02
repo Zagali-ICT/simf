@@ -32,7 +32,7 @@ internal sealed class MyRequestsService(
             .Where(r => r.RequestedByUserId == userId)
             .Join(appDbContext.Speakers, r => r.SpeakerId, s => s.Id, (r, s) => new
             {
-                r.Id, s.Name, s.NameArabic, r.Status, r.SlotStartUtc, r.CreatedAt,
+                r.Id, s.Name, s.NameArabic, s.Rank, r.Status, r.SlotStartUtc, r.CreatedAt,
             })
             .ToListAsync(cancellationToken);
 
@@ -79,7 +79,8 @@ internal sealed class MyRequestsService(
         items.AddRange(speaker.Select(r => new AppRequestItem(
             AppRequestKind.SpeakerMeeting, r.Id, r.Name, r.NameArabic,
             r.Status, r.SlotStartUtc, r.CreatedAt,
-            r.Status == MeetingRequestStatus.Pending)));
+            r.Status == MeetingRequestStatus.Pending,
+            Subtitle: r.Rank)));
 
         items.AddRange(delegation.Select(r => new AppRequestItem(
             AppRequestKind.DelegationMeeting, r.Id, r.Name, r.NameArabic,

@@ -48,7 +48,14 @@ public sealed record AppRequestItem(
     /// <summary>True when the signed-in user may cancel this request from the app
     /// (their own, still Pending, and a cancellable kind — speaker / document /
     /// badge; never delegation or session-attendance, which cancel elsewhere).</summary>
-    bool CanCancel);
+    bool CanCancel,
+    /// <summary>D-590 — optional secondary descriptor shown under the name on the
+    /// المقابلات card (Figma 1701:9406). For a speaker meeting this carries the
+    /// speaker's <c>Rank</c> (e.g. "باحث بيئي"), the same descriptor the public
+    /// speaker profile shows; null for the other kinds, where the app falls back
+    /// to the meeting-type headline. Append-only (D-219): the app reads it by
+    /// name and older clients ignore it.</summary>
+    string? Subtitle = null);
 
 /// <summary>D-500 — body for <c>POST /app/my-requests/cancel</c>: the requester
 /// withdraws one of their own still-pending requests.</summary>

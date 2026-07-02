@@ -15,6 +15,7 @@ AppRequestItem _item({
   required String title,
   AppRequestStatus status = AppRequestStatus.pending,
   DateTime? eventDateUtc,
+  String? subtitle,
 }) =>
     AppRequestItem(
       kind: kind,
@@ -25,6 +26,7 @@ AppRequestItem _item({
       eventDateUtc: eventDateUtc,
       createdAt: DateTime.utc(2026, 1, 12, 12),
       canCancel: false,
+      subtitle: subtitle,
     );
 
 Future<void> _pump(
@@ -112,12 +114,14 @@ void main() {
       // The card's meeting-type secondary line (no role field in the data).
       expect(find.text('Speaker meeting request'), findsOneWidget);
       expect(find.text('Delegation meeting request'), findsOneWidget);
-      // Header + chips reflect only the two live meetings.
+      // Header + chips reflect only the two live meetings. الكل always shows;
+      // Completed/Pending show because they are non-empty; Rejected is hidden
+      // because its bucket is empty (Figma 1701:9406 three-chip parity).
       expect(find.text('All meetings (2)'), findsOneWidget);
       expect(find.text('All (2)'), findsOneWidget);
       expect(find.text('Completed (1)'), findsOneWidget);
       expect(find.text('Pending (1)'), findsOneWidget);
-      expect(find.text('Rejected (0)'), findsOneWidget);
+      expect(find.text('Rejected (0)'), findsNothing);
     });
 
     testWidgets('empty state when the feed has no meetings', (tester) async {
@@ -176,6 +180,36 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Rejected One'), findsOneWidget);
       expect(find.text('Accepted One'), findsNothing);
+    });
+
+    testWidgets('a speaker rank replaces the meeting-type secondary line',
+        (tester) async {
+      await _pump(
+        tester,
+        data: <AppRequestItem>[
+          // Speaker meeting WITH a rank → shows the rank (Figma 1701:9406).
+          _item(
+            kind: AppRequestKind.speakerMeeting,
+            id: '1',
+            title: 'Dr Ibrahim',
+            status: AppRequestStatus.accepted,
+            subtitle: 'Environmental researcher',
+          ),
+          // Delegation meeting has no rank → falls back to the meeting type.
+          _item(
+            kind: AppRequestKind.delegationMeeting,
+            id: '2',
+            title: 'Kingdom of X',
+            status: AppRequestStatus.pending,
+          ),
+        ],
+      );
+
+      expect(find.text('Environmental researcher'), findsOneWidget);
+      // The speaker's meeting-type line is replaced by the rank; the delegation
+      // (no rank) still shows its meeting-type line.
+      expect(find.text('Speaker meeting request'), findsNothing);
+      expect(find.text('Delegation meeting request'), findsOneWidget);
     });
 
     testWidgets('an accepted meeting shows the Confirmed badge', (tester) async {

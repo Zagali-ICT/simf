@@ -13,7 +13,9 @@ import 'data/requests_repository.dart';
 /// approved attendee), reached from the My-Area "مقابلات" counter. The caller's
 /// **speaker + delegation** meeting requests as person cards — a gold initial
 /// avatar, the counterpart name, the meeting type, the slot date, and a status
-/// badge — over four status filter chips (الكل / مكتملة / قيد الانتظار / مرفوضة).
+/// badge — over the status filter chips (الكل always, plus مكتملة / قيد الانتظار /
+/// مرفوضة only when their bucket is non-empty, matching Figma 1701:9406's
+/// zero-rejected three-chip row).
 ///
 /// Read-only: it reuses the الطلبات feed ([myRequestsProvider]) filtered to the
 /// two meeting kinds — no new endpoint. **Cancelled** meetings are excluded (they
@@ -198,10 +200,12 @@ String _badgeLabel(AppL10n l10n, AppRequestStatus status) {
   }
 }
 
-/// The four equal-width status filter chips (Figma 1701:9415). Each is the
-/// filter colour at 12% fill + 20% border with the colour as text; the selected
-/// chip is a solid colour fill with white text. Laid start→end so الكل sits at
-/// the inline start (right, RTL).
+/// The status filter chips (Figma 1701:9415). الكل always shows; مكتملة /
+/// قيد الانتظار / مرفوضة appear only when their bucket is non-empty, so the
+/// frame's zero-rejected sample reads as three chips (not four). Each visible
+/// chip is equal-width: the filter colour at 12% fill + 20% border with the
+/// colour as text; the selected chip is a solid colour fill with white text.
+/// Laid start→end so الكل sits at the inline start (right, RTL).
 class _StatusFilterRow extends StatelessWidget {
   const _StatusFilterRow({
     required this.counts,
@@ -223,19 +227,26 @@ class _StatusFilterRow extends StatelessWidget {
       _MeetingFilter.pending,
       _MeetingFilter.rejected,
     ];
+    // الكل always shows; a status bucket appears only when it has meetings, so
+    // the zero-rejected frame reads as three chips and the row never overflows
+    // (Figma 1701:9406).
+    final visible = <_MeetingFilter>[
+      for (final f in order)
+        if (f == _MeetingFilter.all || (counts[f] ?? 0) > 0) f,
+    ];
     final chips = <Widget>[];
-    for (var i = 0; i < order.length; i++) {
+    for (var i = 0; i < visible.length; i++) {
       if (i > 0) {
         chips.add(const SizedBox(width: SimfTokens.space2));
       }
       chips.add(
         Expanded(
           child: _FilterChip(
-            label: _filterLabel(l10n, order[i]),
-            count: counts[order[i]] ?? 0,
-            color: _filterColor(order[i]),
-            active: selected == order[i],
-            onTap: () => onSelect(order[i]),
+            label: _filterLabel(l10n, visible[i]),
+            count: counts[visible[i]] ?? 0,
+            color: _filterColor(visible[i]),
+            active: selected == visible[i],
+            onTap: () => onSelect(visible[i]),
           ),
         ),
       );
@@ -309,9 +320,13 @@ class _MeetingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final name = item.localizedSubtitle(isArabic); // speaker / country name
+    // Secondary line (Figma 1701:9406): the speaker's title/rank when the feed
+    // carries one, else the meeting-type headline (delegations have no rank).
     final kind = item.kind == AppRequestKind.delegationMeeting
         ? l10n.requestKindDelegation
         : l10n.requestKindSpeaker;
+    final subtitle = item.subtitle?.trim() ?? '';
+    final secondary = subtitle.isNotEmpty ? subtitle : kind;
     final start = item.displayDate.toLocal();
     final date =
         '${start.day} ${gregorianMonthName(start.month, isArabic)} – ${_meetingTimeFormat.format(start)}';
@@ -346,7 +361,7 @@ class _MeetingCard extends StatelessWidget {
                     ),
                     const SizedBox(height: SimfTokens.space2),
                     Text(
-                      kind,
+                      secondary,
                       textAlign: TextAlign.start,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
