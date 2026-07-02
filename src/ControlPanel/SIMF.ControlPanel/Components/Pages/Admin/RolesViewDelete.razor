@@ -7,9 +7,6 @@
    the list). Replaces the inline details modal + one-click delete that lived
    in RolesList. *@
 @inherits CrudViewDeleteFormBase<AdminRoleSummary>
-@inject IStringLocalizer<Strings> L
-@inject IJSRuntime JS
-@inject NavigationManager Nav
 
 @if (_error is not null)
 {
@@ -61,48 +58,4 @@
                  Busy="_busy"
                  OnConfirm="ConfirmDeleteAsync"
                  OnCancel="@(() => _confirming = false)" />
-}
-
-@code {
-    private bool _busy;
-    private bool _confirming;
-    private string? _error;
-
-    // Issue-1 â€” open the per-role permission editor page.
-    private void OpenPermissionEditor()
-    {
-        if (Initial is null) return;
-        Nav.NavigateTo($"/admin/roles/{Initial.Id}/permissions");
-    }
-
-    private async Task ConfirmDeleteAsync()
-    {
-        if (_busy || Initial is null) return;
-        _busy = true;
-        _error = null;
-        try
-        {
-            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
-                "simfAccount.deleteJson", $"/account/api/admin/roles/{Initial.Id}");
-            if (envelope is { Success: true })
-            {
-                _confirming = false;
-                await OnDeleted.InvokeAsync(Initial);
-            }
-            else
-            {
-                // Close the confirm first so the error lands on the visible
-                // form body, not behind the (still-open) confirm overlay.
-                _confirming = false;
-                _error = envelope?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.Roles.Fallback"];
-            }
-        }
-        catch (Exception)
-        {
-            _confirming = false;
-            _error = L["Admin.Roles.Fallback"];
-        }
-        finally { _busy = false; }
-    }
 }

@@ -9,7 +9,6 @@
    The read-only body is the exact same profile + ID-document view the inline
    Details SimfModal rendered (D-129 / D-126 admin read). *@
 @inherits CrudViewDeleteFormBase<AdminUserProfileView>
-@inject IStringLocalizer<Strings> L
 
 @if (Initial is not null)
 {
@@ -63,22 +62,4 @@
             @L["Admin.Others.Details.Close"]
         </SimfButton>
     </div>
-}
-
-@code {
-    private string IdentityTypeLabel(AdminUserProfileView profile)
-    {
-        if (!string.IsNullOrEmpty(profile.NationalId))
-            return L["Admin.Pending.View.IdentityType.National"];
-        if (!string.IsNullOrEmpty(profile.IqamaNumber))
-            return L["Admin.Pending.View.IdentityType.Iqama"];
-        if (!string.IsNullOrEmpty(profile.PassportNumber))
-            return L["Admin.Pending.View.IdentityType.Passport"];
-        return L["Admin.Pending.View.MissingValue"];
-    }
-
-    private static string? IdentityNumber(AdminUserProfileView profile) =>
-        profile.NationalId
-            ?? profile.IqamaNumber
-            ?? profile.PassportNumber;
 }

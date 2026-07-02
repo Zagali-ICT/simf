@@ -7,8 +7,6 @@
 @page "/admin/visitors/vip"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Visitors.RegisterOnsite)]
-@inject IStringLocalizer<Strings> L
-@inject NavigationManager Nav
 
 <PageTitle>@L["Admin.VipRegistration.Title"] · SIMF</PageTitle>
 
@@ -21,13 +19,3 @@
                        OnSuccess="OnCreatedAsync"
                        OnCancel="OnBackToListAsync" />
 </section>
-
-@code {
-    private Task OnCreatedAsync(AdminCreateUserResponse _) => Task.CompletedTask;
-
-    private Task OnBackToListAsync()
-    {
-        Nav.NavigateTo("/admin/visitors");
-        return Task.CompletedTask;
-    }
-}

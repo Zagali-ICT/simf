@@ -4,8 +4,6 @@
    details always show; when IsDelete=true a Deactivate button appears and a
    SimfConfirm gates the soft-delete (was a one-click delete on the list). *@
 @inherits CrudViewDeleteFormBase<AdminHallDetail>
-@inject IStringLocalizer<Strings> L
-@inject IJSRuntime JS
 
 @if (_error is not null)
 {
@@ -54,39 +52,4 @@
                  Busy="_busy"
                  OnConfirm="ConfirmDeleteAsync"
                  OnCancel="@(() => _confirming = false)" />
-}
-
-@code {
-    private bool _busy;
-    private bool _confirming;
-    private string? _error;
-
-    private async Task ConfirmDeleteAsync()
-    {
-        if (_busy || Initial is null) return;
-        _busy = true;
-        _error = null;
-        try
-        {
-            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
-                "simfAccount.deleteJson", $"/account/api/admin/halls/{Initial.Id}");
-            if (envelope is { Success: true })
-            {
-                _confirming = false;
-                await OnDeleted.InvokeAsync(Initial);
-            }
-            else
-            {
-                _confirming = false;
-                _error = envelope?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.Halls.Fallback"];
-            }
-        }
-        catch (Exception)
-        {
-            _confirming = false;
-            _error = L["Admin.Halls.Fallback"];
-        }
-        finally { _busy = false; }
-    }
 }
