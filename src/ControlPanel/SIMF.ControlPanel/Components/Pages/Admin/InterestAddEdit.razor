@@ -12,7 +12,7 @@
     <SimfAlert Variant="error">@_error</SimfAlert>
 }
 
-<EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
+<EditForm Model="_model" OnSubmit="HandleSubmitAsync" class="simf-form">
     <div class="simf-form__fields">
         <SimfTextField Label="@L["Admin.Interests.Field.Name"]"
                        Helper="@L["Admin.Interests.Field.NameHint"]"
