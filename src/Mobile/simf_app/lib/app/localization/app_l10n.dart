@@ -1832,25 +1832,8 @@ class AppL10n {
         'Questions are reviewed before going on air.',
       );
 
-  // Audience comments (Page 028).
-  String get commentsTitle => _t('تعليقات الجمهور', 'Audience comments');
-  String get commentsNoSession =>
-      _t('افتح هذه الشاشة من جلسة مباشرة.', 'Open this from a live session.');
-  String get commentsError =>
-      _t('تعذّر تحميل التعليقات.', 'Could not load the comments.');
-  String get commentsEmpty => _t('لا توجد تعليقات بعد', 'No comments yet');
-  String get commentBodyHint => _t('اكتب تعليقك…', 'Write your comment…');
-  String get commentSend => _t('إرسال', 'Send');
-  String get commentSubmitted =>
-      _t('تم إرسال تعليقك', 'Your comment was submitted');
-  String get commentSubmittedPending => _t(
-        'تم إرسال تعليقك وهو قيد المراجعة.',
-        'Your comment was submitted and is awaiting moderation.',
-      );
-  String get commentSubmitFailed => _t(
-        'تعذّر إرسال التعليق. حاول مرة أخرى.',
-        'Could not submit the comment. Try again.',
-      );
+  // (D-605/D-609: the Audience-comments (Page 028) l10n strings were removed
+  // with the feature — rejected by customer.)
 
   // Entry badge (Page 032).
   String get badgeTitle => _t('بطاقة الدخول', 'Entry badge');
