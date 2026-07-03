@@ -54,16 +54,16 @@ files; goldens for both states (758:1134 / 758:2910) overlay-verified. LESSON:
 time-dependent screen, add an optional `now` seam (default DateTime.now()) —
 don't fight the clock. Re-export moved top-level helpers from the screen file
 so test imports don't churn.
-**WAVE C in progress:** live_broadcast DONE (D-603 — 1286→348 + 5 widgets;
-golden caught a real button-font tofu bug [inline FilledButton.styleFrom
-textStyle drops fontFamily → move size/weight to the label Text]; player box
-env-limited in goldens, lock the chrome+info column). Next in Wave C:
-send_question (420, node 934:3636 — has a golden already) + audience_comments
-(544 — node map says "removed" but it IS routed #28 /live/comments, node UNKNOWN
-→ ASK owner for its Figma node). Then Wave D myarea+speakers.
-NEW REUSABLE LESSON: goldens of Arabic buttons expose the styleFrom.textStyle
-font-drop bug that text-asserting widget tests can't — worth a repo-wide grep in
-the de-dup sweep (`FilledButton.styleFrom(` + `textStyle:`).
+**WAVE C in progress:** live_broadcast DONE (D-603 — 1286→348 + 5 widgets) ·
+send_question DONE (D-604 — 420→319 + ReviewNote/SessionDataBlock; the EXISTING
+golden had LOCKED a tofu submit button [same styleFrom.textStyle font-drop] —
+regenerated → correct Arabic). Next in Wave C: **audience_comments** (544 —
+node map says "removed" but it IS routed #28 /live/comments, node UNKNOWN → ASK
+owner for its Figma node before L4). Then Wave D myarea+speakers.
+REUSABLE LESSON (reinforced): an Arabic golden generated with `--update`
+silently locks the styleFrom.textStyle tofu — goldens must be READ, not just
+regenerated. Repo-wide grep queued for the de-dup sweep:
+`FilledButton.styleFrom(` co-occurring with `textStyle:`.
 
 ## Gotchas carried forward
 
