@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SIMF.Infrastructure.Persistence.Migrations.Identity
 {
     /// <inheritdoc />
-    public partial class InitialModel : Migration
+    public partial class _20260501001 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -44,6 +44,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     AvatarRelativePath = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     StateChangedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     StateChangedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    PasswordChangedAtUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    LastSuccessfulSignInAtUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -62,23 +64,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Interests",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
-                    NameArabic = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
-                    DisplayOrder = table.Column<int>(type: "int", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Interests", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -119,24 +104,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 });
 
             migrationBuilder.CreateTable(
-                name: "ProfileTypes",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
-                    NameArabic = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
-                    PageColor = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
-                    UserType = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ProfileTypes", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "RowAudits",
                 schema: "identity",
                 columns: table => new
@@ -149,6 +116,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     Operation = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
                     PrimaryKey = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
                     ActorUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    ActorDisplayName = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
                     CorrelationId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
                     OldValuesJson = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     NewValuesJson = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -290,6 +258,52 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 });
 
             migrationBuilder.CreateTable(
+                name: "DeviceKeys",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PublicKey = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
+                    Algorithm = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
+                    Label = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    LastUsedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    RevokedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    CurrentChallenge = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
+                    ChallengeExpiresAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DeviceKeys", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_DeviceKeys_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PasswordHistory",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PasswordHash = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: false),
+                    CreatedAtUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PasswordHistory", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PasswordHistory_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "RefreshTokens",
                 columns: table => new
                 {
@@ -381,66 +395,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.CreateTable(
-                name: "UserProfiles",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ProfileTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    ArabicName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
-                    EnglishName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
-                    NationalityId = table.Column<int>(type: "int", nullable: false),
-                    DateOfBirth = table.Column<DateOnly>(type: "date", nullable: true),
-                    PlaceOfBirth = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
-                    IsSaudi = table.Column<bool>(type: "bit", nullable: false),
-                    NationalId = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    IqamaNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    PassportNumber = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: true),
-                    SaudiMobile = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    InternationalMobile = table.Column<string>(type: "nvarchar(24)", maxLength: 24, nullable: true),
-                    IdImageRelativePath = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    QrId = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: true),
-                    RejectionReason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    RejectionReasonArabic = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_UserProfiles", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_UserProfiles_ProfileTypes_ProfileTypeId",
-                        column: x => x.ProfileTypeId,
-                        principalTable: "ProfileTypes",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "UserProfileInterests",
-                columns: table => new
-                {
-                    UserProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    InterestId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_UserProfileInterests", x => new { x.UserProfileId, x.InterestId });
-                    table.ForeignKey(
-                        name: "FK_UserProfileInterests_Interests_InterestId",
-                        column: x => x.InterestId,
-                        principalTable: "Interests",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_UserProfileInterests_UserProfiles_UserProfileId",
-                        column: x => x.UserProfileId,
-                        principalTable: "UserProfiles",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
             migrationBuilder.CreateIndex(
                 name: "IX_AccountCodes_UserId_Purpose",
                 table: "AccountCodes",
@@ -496,15 +450,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Interests_IsActive_DisplayOrder",
-                table: "Interests",
-                columns: new[] { "IsActive", "DisplayOrder" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Interests_Name",
-                table: "Interests",
-                column: "Name",
-                unique: true);
+                name: "IX_DeviceKeys_UserId_RevokedAt",
+                table: "DeviceKeys",
+                columns: new[] { "UserId", "RevokedAt" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Notifications_UserId_CreatedAt",
@@ -518,6 +466,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 columns: new[] { "UserId", "ReadAt" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_PasswordHistory_UserId_CreatedAtUtc",
+                table: "PasswordHistory",
+                columns: new[] { "UserId", "CreatedAtUtc" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Permissions_Code",
                 table: "Permissions",
                 column: "Code",
@@ -528,11 +481,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 table: "Permissions",
                 columns: new[] { "Page", "Action" },
                 unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ProfileTypes_UserType_IsActive",
-                table: "ProfileTypes",
-                columns: new[] { "UserType", "IsActive" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_RefreshTokens_TokenHash",
@@ -584,34 +532,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 name: "IX_TotpRecoveryCodes_UserId",
                 table: "TotpRecoveryCodes",
                 column: "UserId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserProfileInterests_InterestId",
-                table: "UserProfileInterests",
-                column: "InterestId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserProfiles_NationalityId",
-                table: "UserProfiles",
-                column: "NationalityId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserProfiles_ProfileTypeId",
-                table: "UserProfiles",
-                column: "ProfileTypeId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserProfiles_QrId",
-                table: "UserProfiles",
-                column: "QrId",
-                unique: true,
-                filter: "[QrId] IS NOT NULL");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserProfiles_UserId",
-                table: "UserProfiles",
-                column: "UserId",
-                unique: true);
         }
 
         /// <inheritdoc />
@@ -636,7 +556,13 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
+                name: "DeviceKeys");
+
+            migrationBuilder.DropTable(
                 name: "Notifications");
+
+            migrationBuilder.DropTable(
+                name: "PasswordHistory");
 
             migrationBuilder.DropTable(
                 name: "RefreshTokens");
@@ -655,9 +581,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 name: "TotpRecoveryCodes");
 
             migrationBuilder.DropTable(
-                name: "UserProfileInterests");
-
-            migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
@@ -665,15 +588,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");
-
-            migrationBuilder.DropTable(
-                name: "Interests");
-
-            migrationBuilder.DropTable(
-                name: "UserProfiles");
-
-            migrationBuilder.DropTable(
-                name: "ProfileTypes");
         }
     }
 }

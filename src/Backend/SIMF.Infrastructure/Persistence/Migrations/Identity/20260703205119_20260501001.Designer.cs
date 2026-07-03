@@ -12,8 +12,8 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.Identity
 {
     [DbContext(typeof(SimfIdentityDbContext))]
-    [Migration("20260529175646_MoveProfilesToAppDb")]
-    partial class MoveProfilesToAppDb
+    [Migration("20260703205119_20260501001")]
+    partial class _20260501001
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -229,6 +229,77 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     b.ToTable("AccountCodes");
                 });
 
+            modelBuilder.Entity("SIMF.Domain.IdentityAccess.DeviceKey", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Algorithm")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<DateTimeOffset?>("ChallengeExpiresAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CurrentChallenge")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTimeOffset?>("LastUsedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("PublicKey")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "RevokedAt");
+
+                    b.ToTable("DeviceKeys", (string)null);
+                });
+
+            modelBuilder.Entity("SIMF.Domain.IdentityAccess.PasswordHistoryEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "CreatedAtUtc");
+
+                    b.ToTable("PasswordHistory");
+                });
+
             modelBuilder.Entity("SIMF.Domain.IdentityAccess.Permission", b =>
                 {
                     b.Property<Guid>("Id")
@@ -426,6 +497,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<DateTimeOffset?>("LastSuccessfulSignInAtUtc")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<long?>("LastUsedTotpTimestep")
                         .HasColumnType("bigint");
 
@@ -445,6 +519,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
 
                     b.Property<bool>("PasswordChangeRequired")
                         .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("PasswordChangedAtUtc")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("PasswordHash")
                         .HasColumnType("nvarchar(max)");
@@ -639,6 +716,24 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 });
 
             modelBuilder.Entity("SIMF.Domain.IdentityAccess.AccountCode", b =>
+                {
+                    b.HasOne("SIMF.Domain.IdentityAccess.SimfUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("SIMF.Domain.IdentityAccess.DeviceKey", b =>
+                {
+                    b.HasOne("SIMF.Domain.IdentityAccess.SimfUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("SIMF.Domain.IdentityAccess.PasswordHistoryEntry", b =>
                 {
                     b.HasOne("SIMF.Domain.IdentityAccess.SimfUser", null)
                         .WithMany()

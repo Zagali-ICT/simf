@@ -12,8 +12,8 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     [DbContext(typeof(SimfAppDbContext))]
-    [Migration("20260630011530_D547_AddRegionLookup")]
-    partial class D547_AddRegionLookup
+    [Migration("20260703133240_20260501001")]
+    partial class _20260501001
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -2872,6 +2872,101 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasIndex("IsActive", "DisplayOrder");
 
                     b.ToTable("RatingTypes", (string)null);
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Files.StoredFile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte>("CipherFormatVersion")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("ContentType")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ExternalUrl")
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
+
+                    b.Property<int>("FileType")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeletable")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsEncrypted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("OriginalFileName")
+                        .HasMaxLength(260)
+                        .HasColumnType("nvarchar(260)");
+
+                    b.Property<Guid?>("OwnerEntityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("OwnerEntityType")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("RetainUntilUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("SecureDestroyedUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("SensitivityTier")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Service")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Sha256")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<long?>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("SourceType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StorageKey")
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("RetainUntilUtc")
+                        .HasFilter("[IsActive] = 1 AND [RetainUntilUtc] IS NOT NULL");
+
+                    b.HasIndex("OwnerEntityType", "OwnerEntityId")
+                        .HasFilter("[IsActive] = 1");
+
+                    b.HasIndex("Service", "IsActive");
+
+                    b.ToTable("StoredFiles", (string)null);
                 });
 
             modelBuilder.Entity("SIMF.Domain.Media.MediaItem", b =>
