@@ -1,46 +1,64 @@
 # Clean-code refactor — session hand-off
 
-Branch `refactor/clean-code` (off `feature/app-cp-api-split` tip, tag
-`refactor-baseline`). **Nothing pushed.** Working tree clean (the untracked
-`lib/lib.rar` is a pre-existing stray — never stage it). Toolchain: run flutter
-from `src/Mobile/simf_app`; **never `git add -A`, never `dart format`**; gate =
-analyze 0 errors + the touched module's tests green.
+**Branch `refactor/clean-code-2`** (off `feature/centralized-file-store` tip 283ef215,
+pushed to origin 2026-07-03; Region fix `981ebee3` cherry-picked as def32866 so App
+integration tests can run). Worktree **D:/SIMF/wt-app**. Toolchain: run flutter from
+`src/Mobile/simf_app`; **never `git add -A`, never `dart format`**; gate = analyze
+0 errors/warnings (2123 info baseline) + full suite green + goldens WITHOUT --update.
 
-## Done (commits, newest last)
-| SHA | What |
-|---|---|
-| c83de15d | Phase 0a–0d: very_good@warning (0 errors, 1862 baseline), core/responsive, token audit |
-| 07f1b452 | Phase 0e: Ksa*→Simf* rename (behaviour-frozen; 14 goldens identical; 676 green) |
-| acbb20e4 | Phase 0f: census + parity ledger |
-| 542db48f | Node-map merge from the App-Pages .docx (faq/profile/staff/gates/moderation/… bound) |
-| 1eb9955b | Phase 0g: faq pilot (DoD-complete; golden faq_1388-7567.png) |
-| 3e2b4b0b | Module 1 Slice A: 5 leaf widgets (field_label, beige_tabs, radio_pill, lookup_search_sheet) |
-| 07968432 | Module 1 Slice B(1/3): complete_profile_notice, terms_and_next_buttons |
+Full plan: `C:\Users\LOQ\.claude\plans\based-on-app-clean-prancy-pudding.md` (owner-approved
+2026-07-03). Program docs: `~/.claude/skills/clean-code-skills/resources/`.
 
-`sign_up_visitor_screen.dart`: **2,245 → 1,941 lines**. Profile tests **49/49 green**.
+## Program state (supersedes older handoffs)
 
-## NEXT — Module 1 Slice B batch 2 (resume here)
-1. **Prerequisite:** extract the input-style helper from the State —
-   `_inputStyle`, `_restingBorder`, `_focusedBorder`, `_fieldDecoration()`
-   (orig lines ~1917–1956) → `features/profile/widgets/profile_field_style.dart`
-   (or a top-level helper). The input-field widgets below all depend on it.
-2. Then extract the 11 field widgets (stateless, receive controllers/state +
-   callbacks; State keeps the logic): `name_fields`, `gender_pills_field`
-   (uses RadioPill), `nationality_field`, `document_fields`, `mobile_field`,
-   `date_of_birth_field`, `place_of_birth_field`, `profile_type_field`,
-   `id_image_field`, `face_photo_field`, `sign_up_visitor_header`
-   (needs `_buildHeaderAvatar` → pass face bytes/hasAvatar). See the full
-   line-referenced map in this session's Explore output / the plan.
-3. **Slice C (critical-risk):** `plate_field` (sync/parse logic — add unit tests
-   for `_setPlateFromCode`/`_syncPlate`) + `organisation_field` (debounce stays
-   in State; widget is pure display). Each its own commit + targeted test.
-4. **Levels 3/4/5:** remove `maxWidth:400` (line ~750) for flexible width; verify
-   vs Figma `168:2972` (MCP) + tokenise the 26 inline TextStyles (incremental,
-   per the per-screen typography rule) + 2 raw colors (sweepTint, whitePill90);
-   per-page doc folder `docs/pages/mobile/sign-up-visitor/` + E2E; freeze.
+DONE before this branch: Phase 0 (Simf* shell rename, core/responsive, lint base, faq
+pilot) + Module 1 sign_up_visitor (D-546) + all 10 account screens (D-549..D-558) +
+staff register_visitor (D-559) + SimfFormScaffold cap 560 (D-560). 13 pages FROZEN,
+~54 remaining. Next decision number: **D-597**.
 
-## Gotchas hit
-- `_next()` returns **void** (not Future) — pass `onNext: _next`, never `unawaited(_next())`.
-- `OutlineInputBorder` default borderRadius == `_radius4` (circular 4) — drop redundant `borderRadius:`.
-- New widget files keep **relative imports** (match the codebase's 445; `always_use_package_imports` is the deferred ratchet rule).
-- `sed -i` flips EOL to LF but `core.autocrlf=true` normalises on commit (no churn in the commit).
+## This run (owner directives 2026-07-03 — ONE consolidated plan)
+
+Per page: 6-level loop **+ pixel-by-pixel Figma overlay compare on EVERY page**
+(including re-verifying the 13 frozen; node ids from docs/pages/FIGMA-NODE-MAP.md;
+missing node → ASK, never guess) **+ Level F functional completeness** (every button
+wired, every value repo-backed → API; missing APIs built FastEndpoints-style per
+SpeakerEndpoints.cs; EF additive-only, flagged per migration, Identity frozen, wire
+contract append-only) + docs rename App/Page_NNN → real-named docs/pages/mobile/<slug>/
++ shared Simf* widget extraction (never page-local copies) + review-agents+simplify per
+page + targeted-pathspec commit per page.
+
+Wave order: A sessions (7) → B home → C live+questions+comments → D myarea+speakers →
+E ai_summary+requests+contacts (ASK owner for contact node ids) → F venuemap gates
+archive booths sponsorship → G moderation delegations notifications registration →
+H long tail → de-dup sweep + unused-page report (owner confirm before delete).
+
+## Baseline (captured 2026-07-03 on refactor/clean-code-2)
+
+- flutter analyze: 2123 issues, **0 errors / 0 warnings** (all info)
+- flutter test: **749/749 green** (29 goldens lock without --update)
+- dotnet build -c Release SIMF.slnx: **0 warnings / 0 errors** (31.8s)
+- Metrics: raw colors excl tokens **20** · inline TextStyle **527** · maxWidth caps **18**
+  · files >400 lines **40** · biggest: sign_up_visitor 1571 (frozen), session_detail 1375,
+  live_broadcast 1286, home 1268
+
+## NEXT — Wave A: sessions module
+
+Order (worst first, shared widgets extracted here): session_detail (1375) →
+sessions (845) → saved_sessions → my_seat → seat_picker → join_session_hub →
+(my_sessions lives in myarea, Wave D). Extract SimfSessionCard, SimfFilterTabBar,
+empty/error/loading+pull-to-refresh state wrapper. Existing goldens:
+sessions_883-2308, session_detail_889-2450, presentations_1388-7621,
+my_sessions_1388-9067 — L0 baselines exist; L4 = MCP frame screenshot vs golden overlay.
+
+## Gotchas carried forward
+
+- `_next()` returns **void** — pass `onNext: _next`, never `unawaited(_next())`.
+- Timer screens (OTP/live): `pump()`, never `pumpAndSettle`.
+- Golden MUST set `theme: SimfTheme.dark()` + FontLoader harness (`golden_fonts.dart`)
+  or Arabic renders tofu; frame size = exact Figma node size.
+- Figma metadata-x RTL-inverts — trust the RENDER overlay, never metadata side-claims.
+- New widget files keep **relative imports** (codebase convention).
+- Frozen siblings keep local widget copies — extract shared for NEW screens, don't
+  unfreeze to retro-DRY (unless the L4 overlay finds a real Figma mismatch).
+- FastEndpoints: RoutePrefix is `api/v1` — use RELATIVE routes (D-568 double-prefix 404).
+- simf_auth_pkg signUp test failure = pre-existing baseline (NOT a regression).
