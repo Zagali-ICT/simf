@@ -61,13 +61,19 @@ regenerated → correct Arabic). audience_comments REMOVED (D-605 — owner: "re
 from system"; app-side screen/route/data/tests/docs deleted, suite 737/737;
 **backend SessionComment tables/endpoints/CP-moderation NOT touched — owner
 "dont modify backend", a separate session owns that destructive frozen-schema
-teardown**). **WAVE C COMPLETE.** **WAVE D in progress:** speaker_profile DONE (D-606 —
-1098→272 + 6 widgets; golden held) · my_area DONE (D-607 — 790→269 + 3 widgets
-incl. MyAreaDashboardBody ConsumerWidget; golden 213-963 captured; SimfPullableHost
-adopted). Next in Wave D: speakers (447, golden 908-1744), identity_verification
-(489, no golden), my_sessions (336, golden 1388-9067). REUSABLE: many screens
-carry a local _PullToRefreshState / LayoutBuilder+ConstrainedBox short-state
-wrapper — replace with shared SimfPullableHost (grep queued for de-dup sweep).
+teardown**). **WAVE C COMPLETE.** **WAVE D in progress (3/5 done):** speaker_profile
+(D-606 1098→272, golden held) · my_area (D-607 790→269 + MyAreaDashboardBody
+ConsumerWidget, golden 213-963 captured) · speakers (D-608 447→229, golden
+908-1744 held). **Next in Wave D: identity_verification (489, no golden) +
+my_sessions (336, golden 1388-9067).** Then Wave E (ai_summary + requests +
+contacts — my-meetings node 1701:9406 DELETED from Figma → render-lock;
+contacts UNBOUND → ASK owner) · Wave F (venuemap/gates/archive/booths/
+sponsorship) · Wave G (moderation/delegations/notifications/registration) ·
+Wave H (long tail ~19). REUSABLE: many screens carry a local _PullToRefreshState
+/ LayoutBuilder+ConstrainedBox short-state wrapper → replace with the shared
+SimfPullableHost (grep queued for de-dup sweep). REUSABLE bug class: inline
+`FilledButton.styleFrom(textStyle:)` drops the brand fontFamily → Arabic tofu
+(fixed on live/send-question; grep the repo in the de-dup sweep).
 REUSABLE LESSON (reinforced): an Arabic golden generated with `--update`
 silently locks the styleFrom.textStyle tofu — goldens must be READ, not just
 regenerated. Repo-wide grep queued for the de-dup sweep:
