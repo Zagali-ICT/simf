@@ -113,7 +113,7 @@ void main() {
 
       expect(find.text('Home'), findsOneWidget);
       // Inactive destinations are icon-only.
-      expect(find.text('Agenda'), findsNothing);
+      expect(find.text('Sessions'), findsNothing);
       expect(find.text('Venue map'), findsNothing);
       expect(find.text('Profile'), findsNothing);
     });
@@ -126,20 +126,20 @@ void main() {
       );
 
       expect(find.text('Home'), findsNothing);
-      expect(find.text('Agenda'), findsNothing);
+      expect(find.text('Sessions'), findsNothing);
       expect(find.text('Venue map'), findsNothing);
       expect(find.text('Profile'), findsNothing);
       // The centre QR action (exact nav_qr SVG) carries a Semantics label.
       expect(find.bySemanticsLabel('Entry badge'), findsOneWidget);
     });
 
-    testWidgets('agenda icon navigates to /sessions', (tester) async {
+    testWidgets('sessions icon navigates to /sessions', (tester) async {
       await _pump(
         tester,
         const Scaffold(bottomNavigationBar: SimfBottomNav(current: SimfTab.home)),
       );
 
-      await tester.tap(find.bySemanticsLabel('Agenda'));
+      await tester.tap(find.bySemanticsLabel('Sessions'));
       await tester.pumpAndSettle();
       expect(find.text('SESSIONS'), findsOneWidget);
     });

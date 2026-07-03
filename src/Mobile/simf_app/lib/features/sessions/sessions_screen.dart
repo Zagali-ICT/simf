@@ -88,7 +88,7 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
     final l10n = AppL10n.of(context);
     return SimfPageShell(
       // Frame 883:2314 — the screen header is "برنامج الملتقى" (the bottom-nav
-      // tab keeps its own "الأجندة" label).
+      // tab carries the shared "الجلسات" label, nav component 206:1732).
       title: l10n.sessionsProgrammeTitle,
       onBack: () => backOrHome(context),
       tab: SimfTab.sessions,

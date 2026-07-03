@@ -164,7 +164,7 @@ void main() {
       );
 
       expect(find.text('Forum programme'), findsOneWidget); // screen header
-      expect(find.text('Agenda'), findsWidgets); // active bottom-nav label
+      expect(find.text('Sessions'), findsWidgets); // active bottom-nav label
       expect(find.text('Day One'), findsOneWidget); // day title (تفاصيل اليوم)
       expect(find.text('Schedule'), findsOneWidget); // المواعيد
       expect(find.text('All'), findsOneWidget); // type tabs
@@ -307,7 +307,7 @@ void main() {
       );
 
       expect(find.text('برنامج الملتقى'), findsOneWidget); // screen header
-      expect(find.text('الأجندة'), findsWidgets); // active bottom-nav label
+      expect(find.text('الجلسات'), findsWidgets); // active bottom-nav label
       expect(find.text('اليوم الأول'), findsOneWidget); // day title
       expect(find.text('المواعيد'), findsOneWidget);
       expect(find.text('الكل'), findsOneWidget); // All tab

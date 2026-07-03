@@ -542,7 +542,9 @@ class _VisitorHome extends StatelessWidget {
                 // materials/downloads screen (Figma 1388:7621, header "الجلسات"),
                 // whose title matches this label. The AI summaries list
                 // ("ملخص الجلسات", 1388:8392) is the smart-features tile below;
-                // the agenda stays on the bottom-nav الأجندة tab.
+                // the agenda lives on the bottom-nav sessions tab (labelled
+                // "الجلسات" per nav component 206:1732 — the tab label only
+                // shows when that tab is active, so Home renders it icon-only).
                 onTap: () => context.pushNamed(RouteNames.sessionPresentations),
               ),
             ],

@@ -656,8 +656,8 @@ class AppL10n {
   // full-width tile that opens the send-a-question (ask the moderator) screen.
   String get tileAskModerator => _t('اسأل المحاور', 'Ask the moderator');
 
-  // Bottom navigation (KSA Wave-2 shell — frames 512:1492 / 213:963).
-  String get navAgenda => _t('الأجندة', 'Agenda');
+  // Bottom navigation (KSA Wave-2 shell — frames 512:1492 / 213:963). The
+  // sessions tab reuses [sessionsTitle] ("الجلسات", Figma 206:1732).
   String get navProfile => _t('الملف الشخصى', 'Profile');
 
   // Home — KSA Wave-2 redesign (guest 512:1492 / signed-in 203:1236).
@@ -913,7 +913,8 @@ class AppL10n {
   String get sessionsSearchHint => _t('البحث', 'Search');
   String get sessionsScheduleSection => _t('المواعيد', 'Schedule');
   // The Sessions screen header (frame 883:2308 node 883:2314 "برنامج الملتقي" —
-  // corrected spelling الملتقى); distinct from the bottom-nav label (navAgenda).
+  // corrected spelling الملتقى); distinct from the bottom-nav label
+  // ([sessionsTitle] "الجلسات", nav component 206:1732).
   String get sessionsProgrammeTitle => _t('برنامج الملتقى', 'Forum programme');
   // D-452 (Figma 883:2320) — the session type tabs.
   String get sessionTypeAll => _t('الكل', 'All');
