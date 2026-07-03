@@ -916,11 +916,11 @@ class AppL10n {
   // corrected spelling الملتقى); distinct from the bottom-nav label
   // ([sessionsTitle] "الجلسات", nav component 206:1732).
   String get sessionsProgrammeTitle => _t('برنامج الملتقى', 'Forum programme');
-  // D-452 (Figma 883:2320) — the session type tabs.
+  // D-452 (Figma 883:2320) — the session type tabs (احداث dropped to match
+  // the 3-tab frame, owner 2026-07-03).
   String get sessionTypeAll => _t('الكل', 'All');
   String get sessionTypeWorkshop => _t('ورش العمل', 'Workshops');
   String get sessionTypeSession => _t('جلسات', 'Sessions');
-  String get sessionTypeEvent => _t('احداث', 'Events');
   String get sessionsEmpty => _t('لا توجد جلسات', 'No sessions');
   String get sessionsError =>
       _t('تعذّر تحميل الجلسات.', 'Could not load the sessions.');

@@ -23,10 +23,13 @@
 > reads the **day-grouped** programme (`GET /app/programme/days`) and renders
 > the header **برنامج الملتقى**, the day strip (the programme days), the selected
 > day's **own title + logo banner** ("تفاصيل اليوم" carries the day title — owner:
-> not a static label), the **type tabs** (الكل / ورش العمل / جلسات / احداث —
-> client-side filter on the new `SessionType`), then the **المواعيد** list with the
+> not a static label), the **type tabs** (الكل / جلسات / ورش العمل — client-side
+> filter on `SessionType`; the احداث tab was dropped to match the 3-tab frame,
+> owner 2026-07-03 D-598 — event sessions show under الكل; the **day strip is
+> pinned LTR**, dates ascending left→right as the frame renders), then the
+> **المواعيد** list with the
 > first session **featured** (expanded with the day banner). Widget tests cover:
-> header + day title + tabs + numbered rows; search filter; **type-tab filter**;
+> header + day title + tabs + timeline rows; search filter; **type-tab filter**;
 > day-strip day switch; selected-cell inversion; row→detail; empty; error→retry;
 > RTL. Backed by D-452 phase 1 (`ProgrammeDay` + `Session.Type` + the days
 > endpoint). The CP admin to author days/types/logos is the D-452 CP phase. The
@@ -52,7 +55,7 @@
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
 | **Auth setup** | **Signed-in for the screen (D-576)** — the Sessions/Agenda screen is login-gated: a signed-out guest navigating to `/sessions` is redirected to sign-in. The public reads stay `AllowAnonymous` (the app gates the screen, not the API — thin clients still read anonymously); use a signed-in Visitor session to reach the screen. Admin token only to seed sessions/speakers/themes. **No literal secrets.** |
-| **Last reviewed** | 2026-07-01 |
+| **Last reviewed** | 2026-07-03 (D-598 — 3 type tabs, LTR white day strip) |
 
 ## Coverage matrix
 
@@ -71,7 +74,7 @@
 | E2E-MOB016-011 | Fetch fails → error + Retry that re-runs the read | resilience | P0 | authored ✓ (screen — `a load failure shows the error + retry`) |
 | E2E-MOB016-012 | `status` / speaker `role` decode tolerantly (int **or** name; unknown → default) | contract | P0 | authored ✓ (model — `SessionStatus.fromJson` / `SessionSpeakerRole.fromJson`) |
 | E2E-MOB016-013 | List item binds the real wire names incl. the D-271 speaker country+photo | contract | P0 | authored ✓ (model — `SessionListItem.fromJson`) |
-| E2E-MOB016-014 | **Full-width calendar (#4):** the day strip is a grey band over the FULL event date range (first→last programme day, empty in-between days filled), full-width (cells distributed, scroll fallback when long); a day **with** sessions = white ("active"), the **selected** day = black, an empty day = muted grey and **not** selectable | happy/visual | P1 | authored ✓ (screen — `_DayStrip`/`_calendarRange`; existing selected-cell-navy + switch-day tests) |
+| E2E-MOB016-014 | **Full-width calendar (#4):** the day strip is a WHITE band over the FULL event date range (first→last programme day, empty in-between days filled), **pinned LTR** (dates ascend left→right as the frame renders), full-width (cells distributed, scroll fallback when long); a day **with** sessions = navy text ("active"), the **selected** day = navy pill/white text, an empty day = muted grey and **not** selectable; weekend labels red | happy/visual | P1 | authored ✓ (screen — `ProgrammeDayStrip`/`_calendarRange`; existing selected-cell-navy + switch-day tests) |
 | E2E-MOB016-015 | **App login-gate (D-576):** a signed-out guest navigating to the `/sessions` screen is redirected to sign-in (the app gates the screen; the reads stay anonymous for thin clients) | auth | P0 | authored ✓ (router-gate `D-576 — a signed-out guest hitting /sessions or a session detail → sign-in`) |
 
 ## Scenarios

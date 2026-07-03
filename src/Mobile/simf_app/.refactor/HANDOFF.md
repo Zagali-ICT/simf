@@ -41,14 +41,15 @@ H long tail → de-dup sweep + unused-page report (owner confirm before delete).
   · files >400 lines **40** · biggest: sign_up_visitor 1571 (frozen), session_detail 1375,
   live_broadcast 1286, home 1268
 
-## NEXT — Wave A: sessions module
+## NEXT — Wave A remainder
 
-Order (worst first, shared widgets extracted here): session_detail (1375) →
-sessions (845) → saved_sessions → my_seat → seat_picker → join_session_hub →
-(my_sessions lives in myarea, Wave D). Extract SimfSessionCard, SimfFilterTabBar,
-empty/error/loading+pull-to-refresh state wrapper. Existing goldens:
-sessions_883-2308, session_detail_889-2450, presentations_1388-7621,
-my_sessions_1388-9067 — L0 baselines exist; L4 = MCP frame screenshot vs golden overlay.
+DONE: session_detail (D-597, 0ec0d78d) · sessions (D-598). Next: saved_sessions
+(bound 1701:8928, NO golden yet — capture at L0) → my_seat → seat_picker →
+join_session_hub. **OWNER (2026-07-03): my-seat frame = 898-2873; the seat-map
+view must become a REUSABLE component that seat_picker and join_hub reuse with
+additional button configs as needed** (seat_picker/join_hub have no own frames).
+Then Wave B home. Existing goldens: session_detail_889-2450 (re-locked),
+sessions_883-2308 (re-locked: LTR strip + 3 tabs).
 
 ## Gotchas carried forward
 

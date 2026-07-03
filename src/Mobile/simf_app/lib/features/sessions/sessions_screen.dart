@@ -8,11 +8,15 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
-import '../../app/widgets/simf_svg_icon.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import 'data/session_models.dart';
 import 'data/sessions_repository.dart';
+import 'widgets/programme_day_banner.dart';
+import 'widgets/programme_day_strip.dart';
+import 'widgets/session_timeline_row.dart';
+import 'widgets/session_type_tabs.dart';
+import 'widgets/sessions_search_field.dart';
 
 /// Page 016 — برنامج الملتقى · Sessions (#16, `/sessions`), rebuilt to the LIVE
 /// KSA frame **883:2308** (D-452).
@@ -24,11 +28,13 @@ import 'data/sessions_repository.dart';
 /// bordered search field; the **white day strip** (the programme days — the
 /// selected day inverts to navy, weekend weekday labels render red); the
 /// selected day's **day title + logo banner** ("تفاصيل اليوم" carries the day's
-/// own title); the **type tabs** (الكل / ورش العمل / جلسات / احداث); then the
+/// own title); the **type tabs** (الكل / جلسات / ورش العمل); then the
 /// **المواعيد** list — the day's sessions filtered by the active type + the
 /// search, the **first one featured** (expanded with the day banner image), the
-/// rest collapsed (time chip + numbered title + description + chevron). Tapping a
-/// row opens the session detail (Page_017).
+/// rest collapsed. Tapping a row opens the session detail (Page_017). The
+/// section widgets live in `widgets/` (sessions_search_field,
+/// programme_day_strip, programme_day_banner, session_type_tabs,
+/// session_timeline_row).
 class SessionsScreen extends ConsumerStatefulWidget {
   const SessionsScreen({super.key});
 
@@ -102,21 +108,15 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     if (_error) {
-      // Pull-to-retry: host the centred error state in a scrollable so the
-      // pull gesture fires even though the content is short.
+      // Pull-to-retry: the shared host keeps the pull gesture alive on the
+      // short, centred error state.
       return SimfPullToRefresh(
         onRefresh: _load,
-        child: LayoutBuilder(
-          builder: (context, constraints) => SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: SimfErrorState(
-                message: l10n.sessionsError,
-                retryLabel: l10n.retryLabel,
-                onRetry: () => unawaited(_load()),
-              ),
-            ),
+        child: SimfPullableHost(
+          child: SimfErrorState(
+            message: l10n.sessionsError,
+            retryLabel: l10n.retryLabel,
+            onRetry: () => unawaited(_load()),
           ),
         ),
       );
@@ -125,16 +125,10 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
       // Pull-to-refresh also works on the empty state.
       return SimfPullToRefresh(
         onRefresh: _load,
-        child: LayoutBuilder(
-          builder: (context, constraints) => SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: SimfEmptyState(
-                icon: Icons.event_busy_outlined,
-                message: l10n.sessionsEmpty,
-              ),
-            ),
+        child: SimfPullableHost(
+          child: SimfEmptyState(
+            icon: Icons.event_busy_outlined,
+            message: l10n.sessionsEmpty,
           ),
         ),
       );
@@ -183,12 +177,12 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
           SimfTokens.space6,
         ),
         children: <Widget>[
-          _SearchField(
+          SessionsSearchField(
             l10n: l10n,
             onChanged: (value) => setState(() => _query = value),
           ),
           const SizedBox(height: SimfTokens.space4),
-          _DayStrip(
+          ProgrammeDayStrip(
             days: _days,
             selectedId: selected.id,
             onChanged: (id) => setState(() => _selectedDayId = id),
@@ -199,10 +193,10 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
           // static label — it is the day's title).
           SimfSectionHeader(title: selected.localizedTitle(isArabic)),
           const SizedBox(height: SimfTokens.space3),
-          _DayBanner(imageUrl: dayImageUrl),
+          ProgrammeDayBanner(imageUrl: dayImageUrl),
           const SizedBox(height: SimfTokens.space5),
-          // Type tabs (883:2320): الكل / ورش العمل / جلسات / احداث.
-          _TypeTabs(
+          // Type tabs (883:2320): الكل / جلسات / ورش العمل.
+          SessionTypeTabs(
             l10n: l10n,
             active: _typeFilter,
             onChanged: (type) => setState(() => _typeFilter = type),
@@ -221,7 +215,7 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
           else
             for (final (index, session) in sessions.indexed) ...<Widget>[
               if (index > 0) const SizedBox(height: SimfTokens.space4),
-              _SessionRow(
+              SessionTimelineRow(
                 session: session,
                 isArabic: isArabic,
                 // The first session of the day is featured — expanded with the
@@ -234,612 +228,4 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
       ),
     );
   }
-}
-
-/// The bordered search field (frame node 883:2316).
-class _SearchField extends StatelessWidget {
-  const _SearchField({required this.l10n, required this.onChanged});
-
-  final AppL10n l10n;
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      onChanged: onChanged,
-      textInputAction: TextInputAction.search,
-      style: const TextStyle(color: Colors.white, fontSize: SimfTokens.textSm),
-      decoration: InputDecoration(
-        isDense: true,
-        filled: true,
-        fillColor: SimfTokens.navyDeep,
-        hintText: l10n.sessionsSearchHint,
-        hintStyle: const TextStyle(
-          color: Colors.white,
-          fontSize: SimfTokens.textSm,
-        ),
-        // Frame 883:2316 — the 18px magnifier hugs the inline-start (physical
-        // right under RTL), packed next to the hint (8px from the edge, 8px
-        // before the text); the rest of the field is empty. A prefixIcon lands
-        // at the inline-start in RTL (a suffixIcon would push it to the left).
-        prefixIcon: const Padding(
-          padding: EdgeInsetsDirectional.only(
-            start: SimfTokens.space2,
-            end: SimfTokens.space2,
-          ),
-          child: SimfSvgIcon(
-            'assets/icons/ic_search.svg',
-            size: 18,
-            color: Colors.white,
-          ),
-        ),
-        prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: SimfTokens.space3,
-          vertical: SimfTokens.space3,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(SimfTokens.radius),
-          borderSide:
-              const BorderSide(color: SimfTokens.beigeBorder, width: 0.5),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(SimfTokens.radius),
-          borderSide: const BorderSide(color: SimfTokens.accent),
-        ),
-      ),
-    );
-  }
-}
-
-/// The four type tabs (frame node 883:2320): الكل (all) / ورش العمل (workshops)
-/// / جلسات (sessions) / احداث (events). The active tab is solid gold; the rest
-/// are bordered navy cards. الكل = no type filter. Client-side filter.
-class _TypeTabs extends StatelessWidget {
-  const _TypeTabs({
-    required this.l10n,
-    required this.active,
-    required this.onChanged,
-  });
-
-  final AppL10n l10n;
-  final SessionType? active;
-  final ValueChanged<SessionType?> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    // Frame 883:2320 (verified against the render): الكل (All) leads at the
-    // inline-start — rightmost in RTL — then احداث · جلسات · ورش العمل. A Row
-    // lays children start→end, so All is the first entry.
-    final tabs = <(String, SessionType?)>[
-      (l10n.sessionTypeAll, null),
-      (l10n.sessionTypeEvent, SessionType.event),
-      (l10n.sessionTypeSession, SessionType.session),
-      (l10n.sessionTypeWorkshop, SessionType.workshop),
-    ];
-    return Container(
-      padding: const EdgeInsets.all(SimfTokens.space2),
-      decoration: BoxDecoration(
-        color: SimfTokens.navyDeep,
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
-      ),
-      child: Row(
-        children: <Widget>[
-          for (final (i, (label, type)) in tabs.indexed) ...<Widget>[
-            if (i > 0) const SizedBox(width: SimfTokens.space2),
-            Expanded(
-              child: _TypeTab(
-                label: label,
-                active: type == active,
-                onTap: () => onChanged(type),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _TypeTab extends StatelessWidget {
-  const _TypeTab({
-    required this.label,
-    required this.active,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool active;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return SimfCard(
-      onTap: active ? null : onTap,
-      color: active ? SimfTokens.accent : SimfTokens.navyDeep,
-      borderColor: active ? SimfTokens.accent : SimfTokens.beigeBorder,
-      child: SizedBox(
-        // Figma tab cell 883:2321 — 41px tall.
-        height: 41,
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space1),
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: SimfTokens.textSm,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The day banner (frame node 1064:13240): the selected day's logo image under a
-/// navy bottom-gradient with the gold anchor badge at the inline-end. A navy
-/// anchor-glyph box is the no-logo fall-back. 85 high, full width.
-class _DayBanner extends StatelessWidget {
-  const _DayBanner({this.imageUrl});
-
-  final String? imageUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 85,
-      width: double.infinity,
-      child: ClipRRect(
-        borderRadius:
-            const BorderRadius.all(Radius.circular(SimfTokens.radius)),
-        child: Stack(
-          fit: StackFit.expand,
-          children: <Widget>[
-            if (imageUrl != null)
-              Image.network(
-                imageUrl!,
-                fit: BoxFit.cover,
-                gaplessPlayback: true,
-                loadingBuilder: (context, child, progress) => progress == null
-                    ? child
-                    : const ColoredBox(color: SimfTokens.navy),
-                errorBuilder: (context, error, stackTrace) =>
-                    const _DayBannerFallback(),
-              )
-            else
-              const _DayBannerFallback(),
-            // The frame's bottom gradient (transparent → navy #001030 @ 80%).
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.center,
-                  end: Alignment.bottomCenter,
-                  colors: <Color>[Colors.transparent, SimfTokens.bannerScrim],
-                ),
-              ),
-            ),
-            // The gold anchor badge (frame 1064:13249) — inline-start (physical
-            // right under RTL), matching the frame.
-            PositionedDirectional(
-              top: SimfTokens.space2,
-              start: SimfTokens.space2,
-              child: Container(
-                width: 32,
-                height: 32,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: SimfTokens.accent,
-                  borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-                ),
-                child: const Icon(
-                  Icons.anchor,
-                  size: 16,
-                  color: SimfTokens.navy,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// The no-logo / failed-fetch day-banner fall-back: a navy box with the anchor
-/// glyph (the designed empty state until a day logo is uploaded).
-class _DayBannerFallback extends StatelessWidget {
-  const _DayBannerFallback();
-
-  @override
-  Widget build(BuildContext context) => const ColoredBox(
-        color: SimfTokens.navy,
-        child: Center(
-          child: Icon(Icons.image_outlined, size: 28, color: SimfTokens.beigeBorder),
-        ),
-      );
-}
-
-/// The agenda day strip (frame node 883:2327, restyled #4): a **grey** calendar
-/// band spanning the **full** event date range — every day from the first to the
-/// last programme day, not only the days that carry sessions. Each cell shows the
-/// weekday over the centred day number. A day **with** sessions is "active"
-/// (white); the **selected** day is black; an empty in-between day is muted grey
-/// and not selectable. The strip fills the width (cells distributed), falling
-/// back to a horizontal scroll when the range is too long to fit.
-class _DayStrip extends StatelessWidget {
-  const _DayStrip({
-    required this.days,
-    required this.selectedId,
-    required this.onChanged,
-  });
-
-  final List<ProgrammeDay> days;
-  final String selectedId;
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final entries = _calendarRange(days);
-    return Container(
-      padding: const EdgeInsets.all(SimfTokens.space2),
-      decoration: const BoxDecoration(
-        // Frame 883:2327 — the day strip is a WHITE band (the old grey
-        // calendarBand was the superseded design).
-        color: SimfTokens.surface,
-        borderRadius:
-            BorderRadius.all(Radius.circular(SimfTokens.radiusSmall)),
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          const double gap = SimfTokens.space1;
-          // Comfortable per-day width (owner 2026-06-30 — the strip was cramped);
-          // when the full date range exceeds the width the band scrolls
-          // horizontally rather than squeezing every day.
-          const double minCell = 52;
-          final width = entries.length * minCell + (entries.length - 1) * gap;
-          // Guard the unbounded-width case (e.g. if ever placed outside a
-          // width-bounded parent) so the Expanded row can't throw.
-          final fits = constraints.maxWidth.isFinite && width <= constraints.maxWidth;
-          final row = Row(
-            mainAxisSize: fits ? MainAxisSize.max : MainAxisSize.min,
-            children: <Widget>[
-              for (var i = 0; i < entries.length; i++) ...<Widget>[
-                if (i > 0) const SizedBox(width: gap),
-                if (fits)
-                  Expanded(child: _cell(entries[i]))
-                else
-                  SizedBox(width: minCell, child: _cell(entries[i])),
-              ],
-            ],
-          );
-          return fits
-              ? row
-              : SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: row,
-                );
-        },
-      ),
-    );
-  }
-
-  Widget _cell(_CalendarDay e) => _DayCell(
-        date: e.date,
-        hasSessions: e.programmeDay != null,
-        selected: e.programmeDay?.id == selectedId,
-        onTap:
-            e.programmeDay == null ? null : () => onChanged(e.programmeDay!.id),
-      );
-
-  /// The contiguous date range from the programme days: span the first to the
-  /// last day (inclusive), mapping each date to its [ProgrammeDay] when one
-  /// exists (an "active" day) or null (an empty in-between day).
-  static List<_CalendarDay> _calendarRange(List<ProgrammeDay> days) {
-    if (days.isEmpty) {
-      return const <_CalendarDay>[];
-    }
-    final byDate = <DateTime, ProgrammeDay>{};
-    DateTime? first;
-    DateTime? last;
-    for (final d in days) {
-      final date = DateTime(d.date.year, d.date.month, d.date.day);
-      byDate[date] = d;
-      if (first == null || date.isBefore(first)) {
-        first = date;
-      }
-      if (last == null || date.isAfter(last)) {
-        last = date;
-      }
-    }
-    final out = <_CalendarDay>[];
-    var cur = first!;
-    while (!cur.isAfter(last!)) {
-      out.add(_CalendarDay(cur, byDate[cur]));
-      cur = DateTime(cur.year, cur.month, cur.day + 1);
-    }
-    return out;
-  }
-}
-
-/// One date in the agenda calendar strip: [programmeDay] is null for an empty
-/// in-between day (no sessions), set for a day that carries sessions.
-class _CalendarDay {
-  const _CalendarDay(this.date, this.programmeDay);
-
-  final DateTime date;
-  final ProgrammeDay? programmeDay;
-}
-
-class _DayCell extends StatelessWidget {
-  const _DayCell({
-    required this.date,
-    required this.hasSessions,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final DateTime date;
-  final bool hasSessions;
-  final bool selected;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    // Frame 883:2327 — on the white band: the selected day is a navy pill with
-    // white text; a day with sessions shows navy text (no fill); an empty
-    // in-between day is muted grey (#C2C2C2). Weekend weekday labels (SAT/SUN)
-    // render red on non-selected days.
-    final bool isWeekend =
-        date.weekday == DateTime.saturday || date.weekday == DateTime.sunday;
-    final Color fill;
-    final Color numberColor;
-    final Color weekdayColor;
-    if (selected) {
-      fill = SimfTokens.navy;
-      numberColor = Colors.white;
-      weekdayColor = Colors.white;
-    } else if (hasSessions) {
-      fill = Colors.transparent;
-      numberColor = SimfTokens.navy;
-      weekdayColor = isWeekend ? SimfTokens.danger : SimfTokens.navy;
-    } else {
-      fill = Colors.transparent;
-      numberColor = SimfTokens.dayInactive;
-      weekdayColor = isWeekend ? SimfTokens.danger : SimfTokens.dayInactive;
-    }
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-      child: Container(
-        // Figma day-picker cell 883:2328 — px-8 / py-4.
-        padding: const EdgeInsets.symmetric(
-          horizontal: SimfTokens.space2,
-          vertical: SimfTokens.space1,
-        ),
-        decoration: BoxDecoration(
-          color: fill,
-          borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(
-              _weekdayEn(date),
-              style: TextStyle(
-                color: weekdayColor,
-                fontSize: SimfTokens.textXs,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            Text(
-              date.day.toString(),
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: numberColor,
-                fontSize: SimfTokens.textMd,
-                // Frame 883:2331 "Subheadline/semibold 14" — SemiBold, not bold.
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// One المواعيد timeline row (frame 1310:3213 collapsed / 1310:3232 featured):
-/// a navy radius-8 card holding, inline-start→end, the content column (a 14px
-/// gold calendar icon + the gold right-aligned title, the day banner on the
-/// featured row, then the grey description) and a trailing vertical **time rail**
-/// (start time over a hairline connector over the end time). No leading number,
-/// no trailing chevron (the updated frame dropped both). The whole row taps
-/// through to the session detail.
-class _SessionRow extends StatelessWidget {
-  const _SessionRow({
-    required this.session,
-    required this.isArabic,
-    required this.onTap,
-    this.featuredImageUrl,
-  });
-
-  final SessionListItem session;
-  final bool isArabic;
-  final VoidCallback onTap;
-  final String? featuredImageUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    final description = session.localizedDescription(isArabic);
-    final descriptionText = description == null
-        ? null
-        : Text(
-            description,
-            textAlign: TextAlign.start,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textSm,
-              height: 1.4,
-            ),
-          );
-
-    return SimfCard(
-      onTap: onTap,
-      // Frame 1310:3213 — radius 8, navy fill, no visible border.
-      radius: SimfTokens.radius,
-      borderWidth: 0,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: SimfTokens.space4,
-          vertical: SimfTokens.space3,
-        ),
-        // IntrinsicHeight lets the leading time rail's connector stretch to the
-        // full row height (title → description / banner).
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              // Frame 883:2308 — the start/end time rail LEADS (inline-start =
-              // physical right under RTL), then a full-height beige hairline
-              // (Figma 1310:3239 / 1313:3355 — beige #C2B8A2 @ 40%) divides it
-              // from the content, with an 8px gap each side (gap-[8px]).
-              _TimeRail(start: session.startLocal, end: session.endLocal),
-              const SizedBox(width: SimfTokens.space2),
-              const SizedBox(
-                width: 1,
-                child: ColoredBox(color: SimfTokens.beigeBorder40),
-              ),
-              const SizedBox(width: SimfTokens.space2),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    // Title line (Figma 1310:3215): the gold right-aligned title
-                    // LEADS at the inline-start (physical right); the 14px gold
-                    // calendar glyph TRAILS at the inline-end (physical left,
-                    // next to the divider) — owner 2026-06-30.
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Expanded(
-                          child: Text(
-                            session.localizedTitle(isArabic),
-                            textAlign: TextAlign.start,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: SimfTokens.accent,
-                              fontSize: SimfTokens.textMd,
-                              fontWeight: FontWeight.w500,
-                              height: 1.3,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: SimfTokens.space2),
-                        const Padding(
-                          padding: EdgeInsets.only(top: 1),
-                          child: Icon(
-                            Icons.calendar_today_outlined,
-                            size: 14,
-                            color: SimfTokens.accent,
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (featuredImageUrl != null) ...<Widget>[
-                      const SizedBox(height: SimfTokens.space3),
-                      _DayBanner(imageUrl: featuredImageUrl),
-                    ],
-                    if (descriptionText != null) ...<Widget>[
-                      const SizedBox(height: SimfTokens.space2),
-                      descriptionText,
-                    ],
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The trailing vertical time rail (frame 1310:3241): the start time at the top
-/// (beige SemiBold), a thin beige connector down the middle, and the end time at
-/// the bottom (white). Clock values stay LTR. 34px wide, full row height.
-class _TimeRail extends StatelessWidget {
-  const _TimeRail({required this.start, required this.end});
-
-  final DateTime start;
-  final DateTime end;
-
-  static String _hhmm(DateTime t) =>
-      '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
-
-  @override
-  Widget build(BuildContext context) {
-    // The rail is sized to fit "HH:MM" on ONE line (owner 2026-06-30 — the 34px
-    // rail wrapped the time into two rows); the row's content gets the rest of
-    // the width via Expanded. The timeline reads from (top) → connector line →
-    // to (bottom).
-    return SizedBox(
-      width: 48,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: <Widget>[
-          Text(
-            _hhmm(start),
-            textDirection: TextDirection.ltr,
-            maxLines: 1,
-            softWrap: false,
-            overflow: TextOverflow.visible,
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textSm,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const Expanded(
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: SimfTokens.space1),
-              child: SizedBox(
-                width: 1,
-                // Figma 1310:3244 — the in-rail "from → to" connector is SOLID
-                // beige (#C2B8A2), the timeline feel the owner asked for. (The
-                // faint 40% line is the separate content/rail divider below.)
-                child: ColoredBox(color: SimfTokens.beigeBorder),
-              ),
-            ),
-          ),
-          Text(
-            _hhmm(end),
-            textDirection: TextDirection.ltr,
-            maxLines: 1,
-            softWrap: false,
-            overflow: TextOverflow.visible,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: SimfTokens.textSm,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// A short 3-letter English weekday for the day strip (LTR, as in the frame).
-String _weekdayEn(DateTime day) {
-  const names = <String>['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
-  return names[day.weekday - 1];
 }

@@ -169,7 +169,8 @@ void main() {
       expect(find.text('Schedule'), findsOneWidget); // المواعيد
       expect(find.text('All'), findsOneWidget); // type tabs
       expect(find.text('Workshops'), findsOneWidget);
-      expect(find.text('Events'), findsOneWidget);
+      // احداث dropped — the frame has 3 tabs (owner 2026-07-03).
+      expect(find.text('Events'), findsNothing);
       expect(find.textContaining('Opening'), findsOneWidget);
       expect(find.textContaining('Panel'), findsOneWidget);
       // The updated rows lead with a gold calendar glyph (no numbered prefix /
@@ -217,10 +218,11 @@ void main() {
       expect(find.textContaining('Diving workshop'), findsOneWidget);
       expect(find.textContaining('Gala dinner'), findsNothing);
 
-      // Events → only the event.
-      await tester.tap(find.text('Events'));
+      // Back to الكل — the event-type session (no dedicated tab since the
+      // 3-tab frame, owner 2026-07-03) is reachable here.
+      await tester.tap(find.text('All'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('Diving workshop'), findsNothing);
+      expect(find.textContaining('Diving workshop'), findsOneWidget);
       expect(find.textContaining('Gala dinner'), findsOneWidget);
     });
 
