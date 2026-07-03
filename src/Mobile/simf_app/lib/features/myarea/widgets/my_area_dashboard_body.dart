@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/localization/app_l10n.dart';
@@ -7,17 +6,16 @@ import '../../../app/route_names.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_page_shell.dart';
 import '../../account/biometric_auth.dart';
-import '../../sessions/data/session_favourites.dart';
 import '../data/myarea_models.dart';
 import 'my_area_identity_card.dart';
 import 'my_area_rows.dart';
 
 /// The Approved-user My-Area dashboard body (frame 213:963 / 758:1283): the
-/// identity card, the two share pills, the الإحصائيات stat tiles, the جدولي
-/// اليوم schedule groups, and the المزيد rows. Owns its own navigation + the
-/// favourites-count watch; the three async account actions come from the screen
-/// (they hold the ImagePicker / identity-verification flow + dashboard reload).
-class MyAreaDashboardBody extends ConsumerWidget {
+/// identity card, the two share pills, the جدولي اليوم schedule groups, and the
+/// المزيد rows. (The الإحصائيات stat tiles were removed in D-609.) Owns its own
+/// navigation; the three async account actions come from the screen (they hold
+/// the ImagePicker / identity-verification flow + dashboard reload).
+class MyAreaDashboardBody extends StatelessWidget {
   const MyAreaDashboardBody({
     required this.dashboard,
     required this.referenceNumber,
@@ -34,7 +32,7 @@ class MyAreaDashboardBody extends ConsumerWidget {
   final VoidCallback onUploadIdDocument;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     final isArabic = l10n.isArabic;
     final identity = dashboard.identity;
@@ -91,32 +89,10 @@ class MyAreaDashboardBody extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: SimfTokens.space6),
-        // الإحصائيات (frame 213:963). الأرشيف has no API counter, so the right
-        // tile keeps the مقابلات مؤكدة count (D-396); جلسات محفوظة = saved (D-584).
-        SimfSectionHeader(title: l10n.statisticsTitle),
-        const SizedBox(height: SimfTokens.space3),
-        SimfTileRow(
-          children: <Widget>[
-            // The two counters tap through to their real screens (owner spec,
-            // Figma): مقابلات → the read-only My meetings list (المقابلات
-            // 1701:9406); جلسات محفوظة → the saved-sessions list (1701:8928,
-            // D-584 — the favourited sessions with category chips).
-            SimfStatTile(
-              value: dashboard.counters.meetingsCount,
-              label: l10n.statMeetings,
-              onTap: () => context.pushNamed(RouteNames.myMeetings),
-            ),
-            SimfStatTile(
-              // D-584 — the SAVED (favourited) count (no dashboard saved
-              // counter, so the favourites set is the source of truth).
-              value:
-                  ref.watch(sessionFavouritesProvider).valueOrNull?.length ?? 0,
-              label: l10n.statBookedSessions,
-              onTap: () => context.pushNamed(RouteNames.savedSessions),
-            ),
-          ],
-        ),
-        const SizedBox(height: SimfTokens.space6),
+        // الإحصائيات stat tiles removed 2026-07-04 (D-609, owner directive):
+        // the My-meetings, My-sessions and Saved-sessions screens were backed
+        // up as `.bk` and taken out of the app — a deliberate deviation from
+        // frame 213:963.
         SimfSectionHeader(title: l10n.todayScheduleTitle),
         const SizedBox(height: SimfTokens.space3),
         if (sessions.isEmpty && meetings.isEmpty)

@@ -1,5 +1,12 @@
 # E2E test catalogue — `My sessions` (`myAreaSessions`)
 
+> 🗑️ **REMOVED FROM APP — D-609 (2026-07-04), owner directive.** The My-sessions
+> screen was backed up as `my_sessions_screen.dart.bk`, its More-menu "عروض
+> الجلسات" entry deleted, and its route now falls through to ComingSoon. The
+> shared data layer (`my_sessions_repository.dart` / `my_sessions_models.dart`)
+> stays — it still backs the AI session-summaries list. This catalogue is
+> retained as the historical spec; the scenarios below no longer run.
+
 > **Authority:** SIMF E2E test catalogue template (D-133). Mobile catalogue —
 > data-driven from `GET /app/account/sessions` (`RequireApprovedAccount`), a
 > read-only aggregate of the caller's booked / joined sessions enriched with the

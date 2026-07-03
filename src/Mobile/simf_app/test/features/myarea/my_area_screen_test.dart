@@ -8,7 +8,6 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/myarea/data/myarea_models.dart';
 import 'package:simf_app/features/myarea/data/myarea_repository.dart';
 import 'package:simf_app/features/myarea/my_area_screen.dart';
-import 'package:simf_app/features/sessions/data/session_favourites.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -96,22 +95,10 @@ class _FakeMyAreaRepository implements MyAreaRepository {
       true;
 }
 
-/// Deterministic favourites set so the saved-sessions counter (D-584) renders a
-/// known number without hitting `/app/sessions/favourites`.
-class _FakeFavourites extends SessionFavouritesController {
-  _FakeFavourites(this.ids);
-
-  final Set<String> ids;
-
-  @override
-  Future<Set<String>> build() async => ids;
-}
-
 Future<void> _pump(
   WidgetTester tester, {
   required AuthController controller,
   MyAreaRepository? repo,
-  Set<String> favourites = const <String>{},
   Locale locale = const Locale('en'),
 }) async {
   final router = GoRouter(
@@ -132,7 +119,6 @@ Future<void> _pump(
         (RouteNames.badge, '/badge', 'BADGE'),
         (RouteNames.more, '/more', 'MORE'),
         (RouteNames.shareMyContact, '/contacts/share', 'SHARE-MY-CONTACT'),
-        (RouteNames.myMeetings, '/my-meetings', 'MY-MEETINGS'),
         (RouteNames.home, '/', 'HOME'),
         (RouteNames.sessions, '/sessions', 'SESSIONS'),
         (RouteNames.venueMap, '/map', 'MAP'),
@@ -151,8 +137,6 @@ Future<void> _pump(
       overrides: <Override>[
         authControllerProvider.overrideWith(() => controller),
         if (repo != null) myAreaRepositoryProvider.overrideWithValue(repo),
-        sessionFavouritesProvider
-            .overrideWith(() => _FakeFavourites(favourites)),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -181,13 +165,12 @@ Future<void> _scrollTo(WidgetTester tester, Finder finder) async {
 
 void main() {
   group('MyAreaScreen (Page 014 — KSA frame 213:963)', () {
-    testWidgets('approved visitor sees the identity card, tiles, stats and '
+    testWidgets('approved visitor sees the identity card, tiles and '
         'schedule', (tester) async {
       await _pump(
         tester,
         controller: _AuthController(RegistrationStatus.approved),
         repo: _FakeMyAreaRepository(dashboard: _dashboard()),
-        favourites: const <String>{'a', 'b', 'c', 'd', 'e', 'f'},
       );
 
       expect(find.text('Raed Al-Salem'), findsOneWidget);
@@ -195,9 +178,8 @@ void main() {
       expect(find.textContaining('VIP'), findsOneWidget);
       expect(find.text('Share my profile'), findsOneWidget);
       expect(find.text('Share contact'), findsOneWidget);
-      expect(find.text('Statistics'), findsOneWidget); // الإحصائيات header
-      expect(find.text('6'), findsOneWidget); // saved-sessions stat (favourites)
-      expect(find.text('3'), findsOneWidget); // meetings stat
+      // D-609 — the الإحصائيات stat section (مقابلات + جلسات محفوظة) was removed.
+      expect(find.text('Statistics'), findsNothing);
       await _scrollTo(tester, find.text('Opening'));
       expect(find.text('Opening'), findsOneWidget);
       await _scrollTo(tester, find.text('My smart badge'));
@@ -210,19 +192,6 @@ void main() {
       expect(find.text('العربية · English'), findsNothing);
       expect(find.text('Light / dark mode'), findsNothing);
       expect(find.text('Sign out'), findsNothing);
-    });
-
-    testWidgets('the meetings stat tile opens the My-meetings screen '
-        '(المقابلات 1701:9406)', (tester) async {
-      await _pump(
-        tester,
-        controller: _AuthController(RegistrationStatus.approved),
-        repo: _FakeMyAreaRepository(dashboard: _dashboard()),
-      );
-
-      await tester.tap(find.text('Meetings'));
-      await tester.pumpAndSettle();
-      expect(find.text('MY-MEETINGS'), findsOneWidget);
     });
 
     testWidgets('the share-my-profile tile opens the contact-QR screen',
@@ -297,7 +266,7 @@ void main() {
         ),
         locale: const Locale('ar'),
       );
-      // The gold "جلسات" sub-header (the stat tile is "جلسات محفوظة", distinct).
+      // The gold "جلسات" schedule sub-header.
       expect(find.text('جلسات'), findsOneWidget);
       expect(find.text('مقابلة د. ابراهيم'), findsOneWidget);
       // The sessions group sits above the meetings group.
@@ -331,7 +300,6 @@ void main() {
       expect(repo.dashboardCalls, 0); // approved-only endpoint not called (L-5)
       expect(find.text('Raed Al-Salem'), findsOneWidget); // cached name
       expect(find.textContaining('under review'), findsOneWidget);
-      expect(find.text('6'), findsNothing); // counters hidden
       expect(find.text('My smart badge'), findsNothing);
       // No photo-change affordance on the limited card (onAvatarTap is null).
       expect(find.byIcon(Icons.photo_camera_outlined), findsNothing);

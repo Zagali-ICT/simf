@@ -91,15 +91,11 @@ class MoreScreen extends ConsumerWidget {
                 title: l10n.faqRowTitle,
                 onTap: () => context.pushNamed(RouteNames.faq),
               ),
-              // "عروض الجلسات" here opens the my-sessions screen (Figma
-              // 1388:9067 — القادمة/حضرتها/فاتتني/الأرشيف), the node the owner
-              // pinned to this entry. The downloadable-slides screen (1388:7621,
-              // same Figma title) stays reachable from the Home "الجلسات" tile.
-              if (routeAllowsRole(RouteNames.myAreaSessions, role))
-                _MoreRow(
-                  title: l10n.morePresentations,
-                  onTap: () => context.pushNamed(RouteNames.myAreaSessions),
-                ),
+              // The "عروض الجلسات" my-sessions row (route myAreaSessions) was
+              // removed 2026-07-04 (D-609, owner directive) — the My-sessions
+              // screen was backed up as `.bk` and taken out of the app. The
+              // downloadable-slides screen (1388:7621) stays reachable from the
+              // Home "الجلسات" tile.
               _MoreRow(
                 title: l10n.moreVisitSaudi,
                 onTap: () => unawaited(

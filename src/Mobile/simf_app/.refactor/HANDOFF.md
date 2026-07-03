@@ -64,10 +64,17 @@ from system"; app-side screen/route/data/tests/docs deleted, suite 737/737;
 teardown**). **WAVE C COMPLETE.** **WAVE D in progress (3/5 done):** speaker_profile
 (D-606 1098→272, golden held) · my_area (D-607 790→269 + MyAreaDashboardBody
 ConsumerWidget, golden 213-963 captured) · speakers (D-608 447→229, golden
-908-1744 held). **Next in Wave D: identity_verification (489, no golden) +
-my_sessions (336, golden 1388-9067).** Then Wave E (ai_summary + requests +
-contacts — my-meetings node 1701:9406 DELETED from Figma → render-lock;
-contacts UNBOUND → ASK owner) · Wave F (venuemap/gates/archive/booths/
+908-1744 held). **D-609 (owner directive, 2026-07-04): my-meetings,
+my-sessions & saved-sessions REMOVED from My Area** — the 3 screens backed up
+as `.dart.bk`, routes → ComingSoon, the My-Area الإحصائيات section + the More
+"عروض الجلسات" row deleted; shared data layer (my_sessions_repository/models,
+session_favourites — used by ai_summary + hearts) KEPT; gating/RouteNames/
+route_table_test/router_gate_test untouched; my_area_213-963 golden regenerated;
+**suite 718/718**. So **my_sessions is NO LONGER a Wave-D clean-code target**
+(it's a `.bk` backup now). **Next in Wave D: identity_verification (489, no
+golden).** Then Wave E (ai_summary + requests [the requests feed stays; only the
+my-meetings *view* was removed] + contacts — contacts UNBOUND → ASK owner) ·
+Wave F (venuemap/gates/archive/booths/
 sponsorship) · Wave G (moderation/delegations/notifications/registration) ·
 Wave H (long tail ~19). REUSABLE: many screens carry a local _PullToRefreshState
 / LayoutBuilder+ConstrainedBox short-state wrapper → replace with the shared
@@ -91,3 +98,21 @@ regenerated. Repo-wide grep queued for the de-dup sweep:
   unfreeze to retro-DRY (unless the L4 overlay finds a real Figma mismatch).
 - FastEndpoints: RoutePrefix is `api/v1` — use RELATIVE routes (D-568 double-prefix 404).
 - simf_auth_pkg signUp test failure = pre-existing baseline (NOT a regression).
+
+## Backend hand-off (owner routes backend items here; a separate session owns the backend)
+
+- **D-609 (2026-07-04) — My-meetings / My-sessions / Saved-sessions removed from the app:
+  NO backend action required.** The removal was app-side only (screens `.bk`-backed
+  up, routes → ComingSoon, My-Area tiles + More row deleted). All three endpoints stay
+  **in use by other app screens**, so none is orphaned:
+  - `GET /app/my-requests` — still powers the **RequestsScreen** (only the read-only
+    my-meetings *view* over it was removed).
+  - `GET /app/account/sessions` — still powers the **AI session-summaries list**
+    (`session_summary_list_screen` reads `mySessionsProvider`).
+  - `GET /app/sessions/favourites` — still powers the **favourite hearts** across the
+    sessions module.
+  If the product later wants these features fully retired backend-side, that is a
+  separate owner decision — flag it; do not drop the endpoints on the strength of the
+  app removal alone.
+- (D-605 audience-comments backend teardown remains outstanding for the backend session —
+  destructive drop-table migration on the frozen schema + CP moderation removal.)

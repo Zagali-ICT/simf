@@ -42,14 +42,12 @@ import '../features/more/more_screen.dart';
 import '../features/notifications/notifications_screen.dart';
 import '../features/questions/send_question_screen.dart';
 import '../features/exhibitor/my_visitors_screen.dart';
-import '../features/requests/my_meetings_screen.dart';
 import '../features/requests/requests_screen.dart';
 import '../features/exhibitor/scan_visitor_screen.dart';
 import '../features/gates/gate_scan_screen.dart';
 import '../features/moderation/session_moderate_screen.dart';
 import '../features/myarea/identity_verification_screen.dart';
 import '../features/myarea/my_area_screen.dart';
-import '../features/myarea/my_sessions_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/venuemap/venue_map_screen.dart';
 import '../features/account/data/profile_models.dart';
@@ -59,7 +57,6 @@ import '../features/registration/registration_status_screen.dart';
 import '../features/registration/registration_success_screen.dart';
 import '../features/sessions/join_session_hub_screen.dart';
 import '../features/sessions/my_seat_screen.dart';
-import '../features/sessions/saved_sessions_screen.dart';
 import '../features/sessions/seat_picker_screen.dart';
 import '../features/sessions/session_detail_screen.dart';
 import '../features/sessions/session_presentations_screen.dart';
@@ -498,9 +495,6 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   if (r.name == RouteNames.requests) {
     return const RequestsScreen();
   }
-  if (r.name == RouteNames.myMeetings) {
-    return const MyMeetingsScreen();
-  }
   if (r.name == RouteNames.forumGuide) {
     return const ForumGuideScreen();
   }
@@ -512,12 +506,6 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.sessionPresentations) {
     return const SessionPresentationsScreen();
-  }
-  if (r.name == RouteNames.myAreaSessions) {
-    return const MySessionsScreen();
-  }
-  if (r.name == RouteNames.savedSessions) {
-    return const SavedSessionsScreen();
   }
   return ComingSoonScreen(
     screenNumber: r.number,
