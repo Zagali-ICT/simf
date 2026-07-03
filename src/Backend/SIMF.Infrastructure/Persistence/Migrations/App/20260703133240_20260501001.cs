@@ -3154,11 +3154,23 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "IX_VisitorShareTokens_UserId",
                 table: "VisitorShareTokens",
                 column: "UserId");
+
+            // D-373/D-587 — the registration-reference sequence (SIMF-YYYY-00000001)
+            // is a raw-SQL schema object outside the EF model, so it is invisible to
+            // the model snapshot and was dropped when this baseline was regenerated
+            // from the model during the migration squash. Restored here so a fresh
+            // database is schema-complete and UserProfileRepository.NextRegistration
+            // ReferenceAsync (SELECT NEXT VALUE FOR) works.
+            migrationBuilder.Sql(
+                "CREATE SEQUENCE [dbo].[RegistrationReferenceSequence] AS bigint START WITH 1 INCREMENT BY 1;");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.Sql(
+                "DROP SEQUENCE [dbo].[RegistrationReferenceSequence];");
+
             migrationBuilder.DropTable(
                 name: "AiInvocations");
 
