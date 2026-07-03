@@ -3155,6 +3155,52 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 table: "VisitorShareTokens",
                 column: "UserId");
 
+            // D-495/D-587 — the OrganizationProfile singleton is seeded via EF model
+            // HasData (kept by the squash), but its About/Details child rows were
+            // hand-written InsertData in the D-495 migration — outside the model, so
+            // the squash regeneration dropped them. Restored verbatim here. The two
+            // About placeholders (Mission/Vision) are what the D-586 seeder rewrites
+            // in place; without them a fresh DB shows only 2 of the 4 about-items and
+            // the Details list is empty (OrganizationProfileTests.GET_public…).
+            migrationBuilder.InsertData(
+                table: "OrganizationAboutItems",
+                columns: new[] { "Id", "OrganizationProfileId", "Title", "TitleArabic", "Text", "TextArabic", "DisplayOrder", "CreatedAt", "CreatedBy", "IsActive" },
+                values: new object[,]
+                {
+                    {
+                        new Guid("00000000-0000-0000-0000-000000000031"),
+                        new Guid("00000000-0000-0000-0000-000000000003"),
+                        "Mission", "الرسالة",
+                        "A Saudi global platform advancing dialogue on maritime-security issues",
+                        "منصة سعودية عالمية لدعم الحوار في قضايا الأمن البحري",
+                        0,
+                        new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                        new Guid("00000000-0000-0000-0000-000000000000"),
+                        true
+                    },
+                    {
+                        new Guid("00000000-0000-0000-0000-000000000032"),
+                        new Guid("00000000-0000-0000-0000-000000000003"),
+                        "Vision", "الرؤية",
+                        "The Saudi International Maritime Forum is a high-level international event that brings together leaders, officials and experts to share experience and build a shared global understanding of the future of maritime security.",
+                        "الملتقى البحري السعودي الدولي حدث دولي رفيع المستوى، يجمع القادة والمسؤولين والخبراء لتبادل التجارب وتعزيز فهم عالمي مشترك لمستقبل الأمن البحري.",
+                        1,
+                        new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                        new Guid("00000000-0000-0000-0000-000000000000"),
+                        true
+                    },
+                });
+
+            migrationBuilder.InsertData(
+                table: "OrganizationDetails",
+                columns: new[] { "Id", "OrganizationProfileId", "Name", "NameArabic", "Value", "DisplayOrder", "CreatedAt", "CreatedBy", "IsActive" },
+                values: new object[,]
+                {
+                    { new Guid("00000000-0000-0000-0000-000000000041"), new Guid("00000000-0000-0000-0000-000000000003"), "Year", "السنة", "2026", 0, new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero), new Guid("00000000-0000-0000-0000-000000000000"), true },
+                    { new Guid("00000000-0000-0000-0000-000000000042"), new Guid("00000000-0000-0000-0000-000000000003"), "Date", "الزمن", "01-2026 — 04-2026", 1, new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero), new Guid("00000000-0000-0000-0000-000000000000"), true },
+                    { new Guid("00000000-0000-0000-0000-000000000043"), new Guid("00000000-0000-0000-0000-000000000003"), "Location", "المكان", "Saudi Arabia", 2, new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero), new Guid("00000000-0000-0000-0000-000000000000"), true },
+                });
+
             // D-373/D-587 — the registration-reference sequence (SIMF-YYYY-00000001)
             // is a raw-SQL schema object outside the EF model, so it is invisible to
             // the model snapshot and was dropped when this baseline was regenerated
