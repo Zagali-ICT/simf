@@ -168,9 +168,7 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 114, name: RouteNames.staffRegisterVisitor, path: '/staff/register-visitor', labelAr: 'تسجيل زائر', labelEn: 'Register visitor'),
   // D-500 (Wave 5, الطلبات) — the unified requests feed (approved-only).
   _Route(number: 108, name: RouteNames.requests, path: '/requests', labelAr: 'الطلبات', labelEn: 'Requests'),
-  // المقابلات (Figma 1701:9406) — the caller's meetings list (approved attendee;
-  // My-Area مقابلات counter). Read-only view over the الطلبات feed.
-  _Route(number: 115, name: RouteNames.myMeetings, path: '/my-meetings', labelAr: 'المقابلات', labelEn: 'My meetings'),
+  // (D-609: route 115 My-meetings removed — screen backed up as `.bk`.)
   // D-485 — the session-join flow (approved-only): the seat picker + the hub.
   _Route(number: 109, name: RouteNames.seatPicker, path: '/sessions/:sessionId/pick-seat', labelAr: 'اختر مقعدك', labelEn: 'Select your seat'),
   _Route(number: 110, name: RouteNames.joinSessionHub, path: '/sessions/join', labelAr: 'احجز مقعداً', labelEn: 'Book a seat'),
@@ -178,8 +176,7 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 111, name: RouteNames.sessionSummaryList, path: '/session-summaries', labelAr: 'ملخص الجلسات', labelEn: 'Session summaries'),
   // #9 — venue map focused on a booth (booth "أرشدني" CTA; public, pushed).
   _Route(number: 112, name: RouteNames.boothMap, path: '/booths/:boothId/map', labelAr: 'الخريطة', labelEn: 'Venue map'),
-  // Wave 2 (Figma 1388:9067) — "my sessions" (approved-only; My-Area counter).
-  _Route(number: 113, name: RouteNames.myAreaSessions, path: '/my-area/sessions', labelAr: 'عروض الجلسات', labelEn: 'My sessions'),
+  // (D-609: route 113 My-sessions removed — screen backed up as `.bk`.)
 
   // D-464 — المزيد hub entries with no screen yet (Figma 1129:17224). Public;
   // they fall through to ComingSoonScreen (sentinel numbers 200+).
@@ -189,9 +186,9 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 203, name: RouteNames.contactUs, path: '/contact-us', labelAr: 'تواصل معنا', labelEn: 'Contact us'),
   // Owner batch (2026-06-21) — entry points for features not yet designed/built;
   // they fall through to ComingSoonScreen (sentinel numbers 200+). #5 bilateral
-  // meetings (home tile, undesigned); #8 saved sessions/meetings (My Area stats).
+  // meetings (home tile, undesigned); #8 saved meetings (My Area stat).
+  // (D-609: route 205 Saved-sessions removed — screen backed up as `.bk`.)
   _Route(number: 204, name: RouteNames.bilateralMeetings, path: '/bilateral-meetings', labelAr: 'اللقاءات الثنائية', labelEn: 'Bilateral meetings'),
-  _Route(number: 205, name: RouteNames.savedSessions, path: '/saved-sessions', labelAr: 'الجلسات المحفوظة', labelEn: 'Saved sessions'),
   _Route(number: 206, name: RouteNames.savedMeetings, path: '/saved-meetings', labelAr: 'المقابلات المحفوظة', labelEn: 'Saved meetings'),
 ];
 
@@ -253,12 +250,11 @@ const Map<int, Set<AppRole>> _routeRoles = <int, Set<AppRole>>{
   102: _attendee, // Scan contact QR (FDS-014)
   103: _attendee, // Identity verification — avatar liveness (D-404)
   108: _attendee, // Requests feed (D-500, approved-only)
-  115: _attendee, // My meetings (المقابلات 1701:9406, approved attendee)
   109: _attendee, // Seat picker (D-485)
   110: _attendee, // Join-a-session hub (D-485)
-  113: _attendee, // My sessions (Wave 2)
   202: _attendee, // Session presentations (Wave 2)
-  205: _attendee, // Saved sessions (D-584, approved-only favourites)
+  // (D-609: routes 115 My-meetings, 113 My-sessions, 205 Saved-sessions removed
+  // — screens backed up as `.bk`.)
   // Exhibitor-only — lead capture (D-426).
   106: <AppRole>{AppRole.exhibitor}, // Scan visitor badge
   107: <AppRole>{AppRole.exhibitor}, // My Visitors

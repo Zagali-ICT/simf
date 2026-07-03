@@ -66,11 +66,13 @@ teardown**). **WAVE C COMPLETE.** **WAVE D in progress (3/5 done):** speaker_pro
 ConsumerWidget, golden 213-963 captured) · speakers (D-608 447→229, golden
 908-1744 held). **D-609 (owner directive, 2026-07-04): my-meetings,
 my-sessions & saved-sessions REMOVED from My Area** — the 3 screens backed up
-as `.dart.bk`, routes → ComingSoon, the My-Area الإحصائيات section + the More
-"عروض الجلسات" row deleted; shared data layer (my_sessions_repository/models,
-session_favourites — used by ai_summary + hearts) KEPT; gating/RouteNames/
-route_table_test/router_gate_test untouched; my_area_213-963 golden regenerated;
-**suite 718/718**. So **my_sessions is NO LONGER a Wave-D clean-code target**
+as `.dart.bk`, routes **fully removed** (owner: "not ComingSoon, remove route" —
+`_Route` + `RouteNames` + `_routeRoles` entries all deleted; route_table_test
+unaffected, router_gate_test lost its /my-meetings assertions), the My-Area
+الإحصائيات section + the More "عروض الجلسات" row deleted; shared data layer
+(my_sessions_repository/models, session_favourites — used by ai_summary + hearts)
+KEPT; l10n strings KEPT (the `.bk` backups need them to restore); my_area_213-963
+golden regenerated; **suite 717/717**. So **my_sessions is NO LONGER a Wave-D clean-code target**
 (it's a `.bk` backup now). **Next in Wave D: identity_verification (489, no
 golden).** Then Wave E (ai_summary + requests [the requests feed stays; only the
 my-meetings *view* was removed] + contacts — contacts UNBOUND → ASK owner) ·

@@ -96,22 +96,15 @@ class RouteNames {
   // Area; Approved account). Supersedes the D-479 read-only My-meetings route.
   static const String requests = 'requests';
 
-  // المقابلات (Figma 1701:9406) — the caller's speaker + delegation meetings as
-  // person cards with status filter chips, reached from the My-Area "مقابلات"
-  // counter (Approved attendee). A read-only view over the الطلبات feed.
-  static const String myMeetings = 'myMeetings';
-
-  // Wave 2 (Figma 1388:9067) — "my sessions" (تفاصيل الجلسات): the caller's
-  // booked / joined sessions with القادمة / حضرتها / فاتتني / الأرشيف tabs,
-  // reached from the My-Area "my sessions" counter (Approved account).
-  static const String myAreaSessions = 'myAreaSessions';
+  // (D-609: myMeetings + myAreaSessions route names removed — their screens are
+  // backed up as `.bk` and their routes + My-Area/More entry points are gone.)
 
   // Owner batch (2026-06-21) — entry points whose feature is not designed/built
   // yet, so they render the ComingSoon placeholder (sentinel numbers 200+):
   //   • bilateralMeetings (اللقاءات الثنائية) — home tile, not designed yet (#5).
-  //   • savedSessions / savedMeetings — My Area stat tiles, not built yet (#8).
+  //   • savedMeetings — My Area stat tile, not built yet (#8).
+  //   (D-609: savedSessions removed — screen backed up as `.bk`.)
   static const String bilateralMeetings = 'bilateralMeetings';
-  static const String savedSessions = 'savedSessions';
   static const String savedMeetings = 'savedMeetings';
 
   // FDS-014 visitor contact sharing (D-286 API; additive, not mockup-numbered).
