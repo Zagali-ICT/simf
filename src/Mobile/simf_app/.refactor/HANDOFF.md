@@ -41,20 +41,22 @@ H long tail → de-dup sweep + unused-page report (owner confirm before delete).
   · files >400 lines **40** · biggest: sign_up_visitor 1571 (frozen), session_detail 1375,
   live_broadcast 1286, home 1268
 
-## NEXT — Wave B: home
+## NEXT — Wave C: live + questions + comments
 
-**WAVE A COMPLETE (D-597..D-601):** session_detail (0ec0d78d) · sessions
-(4dc5cc36) · saved_sessions (67daf291 — its Figma node 1701:8928 was DELETED
-from the file, golden is a render-lock; ditto my-meetings 1701:9406 for Wave E
-— flag to owner) · my_seat+seat_picker (77d8225c — shared `HallSeatMapCard`,
-my_seat overlay-verified vs 898:2873) · join_session_hub (D-601 — added
-missing pull-to-refresh; fixed the RTL chevron double-mirror
-[Icons.chevron_left carries matchTextDirection → use SimfSvgIcon ic_back.svg
-for forward chevrons]; render-lock golden).
-Next: **Wave B home_screen (1,268 lines, nodes 758:1134 signed-in /
-758:2910 guest)** — decompose to widgets/, SimfSectionHeader exists in the
-shell (REUSE, don't recreate), SimfNewsCard teaser candidate, L4 overlay both
-states. Then Wave C live+questions+comments.
+**WAVE A COMPLETE (D-597..D-601):** session_detail · sessions · saved_sessions
+(node 1701:8928 DELETED, render-lock; ditto my-meetings 1701:9406 for Wave E —
+flag owner) · my_seat+seat_picker (shared `HallSeatMapCard`) · join_session_hub
+(pull-to-refresh + RTL chevron fix).
+**WAVE B COMPLETE (D-602):** home_screen 1,271→111-line role router + 9 widget
+files; goldens for both states (758:1134 / 758:2910) overlay-verified. LESSON:
+`Icons.chevron_left` carries matchTextDirection → double-mirrors under RTL, use
+`SimfSvgIcon ic_back.svg` for forward chevrons. LESSON: for a golden of a
+time-dependent screen, add an optional `now` seam (default DateTime.now()) —
+don't fight the clock. Re-export moved top-level helpers from the screen file
+so test imports don't churn.
+Next: **Wave C** — live_broadcast (1,286 lines, node 934:3450 — timer/live
+screen, pump-not-settle) + send_question (934:3636) + audience_comments. Then
+Wave D myarea+speakers.
 
 ## Gotchas carried forward
 

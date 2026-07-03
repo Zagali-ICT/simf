@@ -1,0 +1,198 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../app/localization/app_l10n.dart';
+import '../../../app/route_names.dart';
+import '../../../app/theme/tokens.dart';
+import '../../../app/widgets/simf_bottom_nav.dart';
+import '../../../app/widgets/simf_page_shell.dart';
+import 'discover_saudi_row.dart';
+import 'home_icons.dart';
+
+/// Guest / unapproved layout (frame 758:2910 — "الرئيسية • ضيف", 2×2 tiles):
+/// shown to a not-signed-in guest AND a signed-in but unapproved account.
+class GuestHome extends StatelessWidget {
+  const GuestHome({required this.l10n, this.pendingApproval = false, super.key});
+
+  final AppL10n l10n;
+
+  /// True when a signed-in but unapproved account is viewing this layout —
+  /// shows the "awaiting approval" note instead of the sign-in CTA.
+  final bool pendingApproval;
+
+  @override
+  Widget build(BuildContext context) {
+    return SimfPageShell(
+      title: l10n.homeGuestTitle,
+      onBack: () => context.canPop()
+          ? context.pop()
+          : context.pushNamed(RouteNames.signIn),
+      tab: SimfTab.home,
+      showSweep: true,
+      // The guest home is a Home variant (frame 758:2910), so it keeps the top
+      // action cluster (language + menu) — opting back in over the new default
+      // (sub-pages show back+title only). The bell is hidden: a guest has no
+      // personal notifications.
+      showHeaderActions: true,
+      showNotificationsBell: false,
+      body: ListView(
+        padding: const EdgeInsets.all(SimfTokens.space4),
+        children: <Widget>[
+          _GuestBanner(l10n: l10n),
+          const SizedBox(height: SimfTokens.space4),
+          SimfTileRow(
+            children: <Widget>[
+              SimfNavTile(
+                label: l10n.tileSessions,
+                iconAsset: HomeIcons.sessions,
+                onTap: () => context.pushNamed(RouteNames.sessions),
+              ),
+              SimfNavTile(
+                label: l10n.tileSpeakers,
+                iconAsset: HomeIcons.speakers,
+                onTap: () => context.pushNamed(RouteNames.speakers),
+              ),
+            ],
+          ),
+          const SizedBox(height: SimfTokens.space2),
+          SimfTileRow(
+            children: <Widget>[
+              SimfNavTile(
+                label: l10n.tileVenueMap,
+                iconAsset: HomeIcons.venueMap,
+                onTap: () => context.pushNamed(RouteNames.venueMap),
+              ),
+              SimfNavTile(
+                label: l10n.tileExhibition,
+                iconAsset: HomeIcons.exhibition,
+                onTap: () => context.pushNamed(RouteNames.booths),
+              ),
+            ],
+          ),
+          const SizedBox(height: SimfTokens.space4),
+          // The locked smart-badge card — a visual cue that signing in
+          // unlocks it; never tappable as a guest.
+          SimfNavTile(
+            label: l10n.tileMyBadgeShort,
+            iconAsset: HomeIcons.badge,
+            enabled: false,
+          ),
+          const SizedBox(height: SimfTokens.space6),
+          SimfSectionHeader(title: l10n.homeOpenInfoSection),
+          const SizedBox(height: SimfTokens.space3),
+          SimfListRow(
+            title: l10n.faqRowTitle,
+            subtitle: l10n.faqRowSubtitle,
+            // Frame 758:2910 — the FAQ badge is the outlined (gold hairline)
+            // box with a gold "?" glyph, not a solid gold fill.
+            badgeOutlined: true,
+            badge: const Icon(
+              Icons.help_outline,
+              size: 32,
+              color: SimfTokens.accent,
+            ),
+            // Wave 1 added the public FAQ screen (GET /app/faq); the row opens
+            // it directly now (was temporarily pointed at About before the
+            // endpoint existed).
+            onTap: () => context.pushNamed(RouteNames.faq),
+          ),
+          const SizedBox(height: SimfTokens.space4),
+          DiscoverSaudiRow(l10n: l10n, outlined: true),
+          const SizedBox(height: SimfTokens.space6),
+          // True guest → the sign-in CTA; signed-in-but-unapproved → the
+          // "awaiting approval" note (a sign-in button would be wrong).
+          if (pendingApproval)
+            _PendingApprovalNote(l10n: l10n)
+          else
+            FilledButton(
+              onPressed: () => context.pushNamed(RouteNames.signIn),
+              child: Text(l10n.guestSignInCta),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The "your account is awaiting approval" note shown in place of the sign-in
+/// CTA when an unapproved (pending / rejected) account lands on the guest home
+/// (owner 2026-06-27). The account is already signed in, so a sign-in button
+/// would be wrong; full features unlock once the registration is approved.
+class _PendingApprovalNote extends StatelessWidget {
+  const _PendingApprovalNote({required this.l10n});
+
+  final AppL10n l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(SimfTokens.space3),
+      decoration: BoxDecoration(
+        color: SimfTokens.navyDeep,
+        borderRadius: BorderRadius.circular(SimfTokens.radius),
+        border: Border.all(color: SimfTokens.accent, width: 0.5),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          const Icon(Icons.hourglass_top, color: SimfTokens.accent, size: 24),
+          const SizedBox(width: SimfTokens.space2),
+          Expanded(
+            child: Text(
+              l10n.homePendingApprovalNote,
+              textAlign: TextAlign.start,
+              style: const TextStyle(
+                color: SimfTokens.beigeBorder,
+                fontSize: SimfTokens.textMd,
+                height: 1.5,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The "you are browsing as a guest" banner: a navy card with the gold
+/// highlighted phrase inside the beige copy (frame node 512:1499).
+class _GuestBanner extends StatelessWidget {
+  const _GuestBanner({required this.l10n});
+
+  final AppL10n l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SimfTokens.space2,
+        vertical: SimfTokens.space3,
+      ),
+      decoration: BoxDecoration(
+        color: SimfTokens.navy,
+        borderRadius: BorderRadius.circular(SimfTokens.radius),
+        border: Border.all(color: SimfTokens.accent, width: 0.2),
+      ),
+      child: Text.rich(
+        TextSpan(
+          style: const TextStyle(
+            color: SimfTokens.beigeBorder,
+            fontSize: SimfTokens.textMd,
+            height: 1.5,
+          ),
+          children: <InlineSpan>[
+            TextSpan(text: l10n.guestBannerPrefix),
+            TextSpan(
+              text: l10n.guestBannerHighlight,
+              style: const TextStyle(
+                color: SimfTokens.accent,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            TextSpan(text: l10n.guestBannerSuffix),
+          ],
+        ),
+      ),
+    );
+  }
+}

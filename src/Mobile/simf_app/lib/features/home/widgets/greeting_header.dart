@@ -1,0 +1,85 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../app/localization/app_l10n.dart';
+import '../../../app/route_names.dart';
+import '../../../app/theme/tokens.dart';
+import '../../../app/widgets/simf_page_shell.dart';
+import '../home_greeting.dart';
+
+/// The greeting header (frame node 203:1238): avatar + greeting + name at the
+/// inline start; the bell (with the unread badge) and the menu at the end.
+class GreetingHeader extends StatelessWidget {
+  const GreetingHeader({
+    required this.l10n,
+    required this.name,
+    this.now,
+    super.key,
+  });
+
+  final AppL10n l10n;
+  final String name;
+
+  /// The clock used for the time-of-day greeting word; defaults to the live
+  /// `DateTime.now()`. Injected only so the golden renders a fixed greeting.
+  final DateTime? now;
+
+  @override
+  Widget build(BuildContext context) {
+    // Name-less while the profile loads (or for a name-less account) → just the
+    // wave, never a stray leading space.
+    final nameLine = name.isEmpty ? '👋' : '$name 👋';
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SimfTokens.space4,
+        vertical: SimfTokens.space2,
+      ),
+      child: Row(
+        children: <Widget>[
+          // Tapping the avatar opens the user's profile / My Area (owner
+          // 2026-06-27). InkWell rides the SimfPageShell Scaffold's Material ancestor.
+          Semantics(
+            button: true,
+            label: l10n.navProfile,
+            child: InkWell(
+              onTap: () => context.pushNamed(RouteNames.myArea),
+              borderRadius:
+                  const BorderRadius.all(Radius.circular(SimfTokens.radius)),
+              child: SimfAvatar(name: name, currentUser: true),
+            ),
+          ),
+          const SizedBox(width: SimfTokens.space2),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  homeGreeting(l10n, now ?? DateTime.now()),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: SimfTokens.textMd,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  nameLine,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: SimfTokens.accent,
+                    fontSize: SimfTokens.textLg,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // The shared top-nav action cluster — identical to every sub-page:
+          // the bell, the language globe, the dark-mode crescent, and the menu
+          // ☰, each a gold glyph in a navy box. Home carries the unread badge.
+          const SimfHeaderActions(showUnreadBadge: true),
+        ],
+      ),
+    );
+  }
+}
