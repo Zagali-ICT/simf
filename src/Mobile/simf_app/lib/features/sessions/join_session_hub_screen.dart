@@ -5,8 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
+import '../../app/widgets/simf_page_shell.dart';
+import '../../app/widgets/simf_svg_icon.dart';
 import 'data/session_models.dart';
 import 'data/sessions_repository.dart';
 
@@ -23,6 +24,13 @@ final joinHubSessionsProvider =
 class JoinSessionHubScreen extends ConsumerWidget {
   const JoinSessionHubScreen({super.key});
 
+  /// Pull-to-refresh — re-fetch the programme list (every data page supports
+  /// the gesture, D-520/D-532; this screen was missing it — added D-601).
+  Future<void> _refresh(WidgetRef ref) async {
+    ref.invalidate(joinHubSessionsProvider);
+    await ref.read(joinHubSessionsProvider.future);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppL10n.of(context);
@@ -35,17 +43,30 @@ class JoinSessionHubScreen extends ConsumerWidget {
         loading: () => const Center(
           child: CircularProgressIndicator(color: SimfTokens.accent),
         ),
-        error: (_, __) => SimfErrorState(
-          message: l10n.sessionsError,
-          retryLabel: l10n.retryLabel,
-          onRetry: () => ref.invalidate(joinHubSessionsProvider),
+        error: (_, __) => SimfPullToRefresh(
+          onRefresh: () => _refresh(ref),
+          child: SimfPullableHost(
+            child: SimfErrorState(
+              message: l10n.sessionsError,
+              retryLabel: l10n.retryLabel,
+              onRetry: () => ref.invalidate(joinHubSessionsProvider),
+            ),
+          ),
         ),
         data: (items) => items.isEmpty
-            ? SimfEmptyState(
-                icon: Icons.event_busy_outlined,
-                message: l10n.sessionsEmpty,
+            ? SimfPullToRefresh(
+                onRefresh: () => _refresh(ref),
+                child: SimfPullableHost(
+                  child: SimfEmptyState(
+                    icon: Icons.event_busy_outlined,
+                    message: l10n.sessionsEmpty,
+                  ),
+                ),
               )
-            : _HubList(items: items, l10n: l10n),
+            : SimfPullToRefresh(
+                onRefresh: () => _refresh(ref),
+                child: _HubList(items: items, l10n: l10n),
+              ),
       ),
     );
   }
@@ -61,6 +82,7 @@ class _HubList extends StatelessWidget {
   Widget build(BuildContext context) {
     final isArabic = l10n.isArabic;
     return ListView.separated(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
         SimfTokens.space4,
         SimfTokens.space3,
@@ -148,10 +170,13 @@ class _HubRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: SimfTokens.space2),
-            Icon(
-              Directionality.of(context) == TextDirection.rtl
-                  ? Icons.chevron_left
-                  : Icons.chevron_right,
+            // The thin stroked forward chevron the sibling cards use
+            // (session-detail seat card / speakers rows). The old
+            // direction-aware Icons.chevron_left DOUBLE-mirrored under RTL
+            // (chevron_left carries matchTextDirection, so Flutter flipped it
+            // back to pointing right) — SimfSvgIcon never mirrors (D-601).
+            const SimfSvgIcon(
+              'assets/icons/ic_back.svg',
               size: 20,
               color: SimfTokens.beigeBorder,
             ),

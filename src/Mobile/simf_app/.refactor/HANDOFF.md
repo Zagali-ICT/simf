@@ -41,16 +41,20 @@ H long tail → de-dup sweep + unused-page report (owner confirm before delete).
   · files >400 lines **40** · biggest: sign_up_visitor 1571 (frozen), session_detail 1375,
   live_broadcast 1286, home 1268
 
-## NEXT — Wave A remainder
+## NEXT — Wave B: home
 
-DONE: session_detail (D-597, 0ec0d78d) · sessions (D-598, 4dc5cc36) ·
-saved_sessions (D-599, 67daf291 — **its Figma node 1701:8928 was DELETED from
-the file**, golden is a render-lock; ditto my-meetings 1701:9406 for Wave E —
-flag to owner) · my_seat + seat_picker (D-600 — shared `HallSeatMapCard`,
-owner-directed; my_seat golden overlay-verified vs 898:2873).
-Next: **join_session_hub** (163 lines, session list — no grid; shared card
-available "if required") → **Wave B home** (1,268 lines; SimfSectionHeader
-exists in the shell — reuse, don't recreate; SimfNewsCard teaser candidate).
+**WAVE A COMPLETE (D-597..D-601):** session_detail (0ec0d78d) · sessions
+(4dc5cc36) · saved_sessions (67daf291 — its Figma node 1701:8928 was DELETED
+from the file, golden is a render-lock; ditto my-meetings 1701:9406 for Wave E
+— flag to owner) · my_seat+seat_picker (77d8225c — shared `HallSeatMapCard`,
+my_seat overlay-verified vs 898:2873) · join_session_hub (D-601 — added
+missing pull-to-refresh; fixed the RTL chevron double-mirror
+[Icons.chevron_left carries matchTextDirection → use SimfSvgIcon ic_back.svg
+for forward chevrons]; render-lock golden).
+Next: **Wave B home_screen (1,268 lines, nodes 758:1134 signed-in /
+758:2910 guest)** — decompose to widgets/, SimfSectionHeader exists in the
+shell (REUSE, don't recreate), SimfNewsCard teaser candidate, L4 overlay both
+states. Then Wave C live+questions+comments.
 
 ## Gotchas carried forward
 
