@@ -263,6 +263,13 @@ public static class ErrorCodes
     /// <summary>D-500 — the request kind is not self-cancellable, or it is no
     /// longer Pending.</summary>
     public const string AppRequestNotCancellable = "APP_REQUEST_NOT_CANCELLABLE";
+    /// <summary>D-587/A1 — an admin tried to respond to a request that is no longer
+    /// Pending (already Accepted / Rejected / Cancelled). Guards double-response and
+    /// the side effects a re-decision would replay.</summary>
+    public const string AppRequestAlreadyResponded = "APP_REQUEST_ALREADY_RESPONDED";
+    /// <summary>D-587/A1 — the requester already has an open Pending request for the
+    /// same target (speaker / delegation), so a duplicate submission is rejected.</summary>
+    public const string AppRequestDuplicatePending = "APP_REQUEST_DUPLICATE_PENDING";
 
     // Seat reservations (D-175, gap doc G11 — Mockup page 7).
     public const string SeatLayoutInvalid = "SEAT_LAYOUT_INVALID";

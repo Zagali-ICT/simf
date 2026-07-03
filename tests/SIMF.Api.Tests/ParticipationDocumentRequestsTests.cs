@@ -91,6 +91,27 @@ public sealed class ParticipationDocumentRequestsTests : IClassFixture<SimfApiFa
         Assert.Equal(HttpStatusCode.BadRequest, respond.StatusCode);
     }
 
+    [Fact]
+    public async Task Responding_to_an_already_decided_request_is_409()
+    {
+        // A1 — only a Pending request may be decided.
+        var token = await SignInApprovedVisitorAsync();
+        var submitted = await SubmitAsync(token, documentType: 0);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var first = await SendAuthAsync(HttpMethod.Put,
+            $"/api/v1/admin/document-requests/{submitted.Id}/respond", admin,
+            new { status = (int)MeetingRequestStatus.Accepted });
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+
+        var second = await SendAuthAsync(HttpMethod.Put,
+            $"/api/v1/admin/document-requests/{submitted.Id}/respond", admin,
+            new { status = (int)MeetingRequestStatus.Rejected });
+        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
+        var body = (await second.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.AppRequestAlreadyResponded, body.Error!.Code);
+    }
+
     // -- helpers --------------------------------------------------------------
 
     private async Task<ParticipationDocumentRequestSubmitted> SubmitAsync(

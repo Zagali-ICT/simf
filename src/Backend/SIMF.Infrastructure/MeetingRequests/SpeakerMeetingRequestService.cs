@@ -83,6 +83,21 @@ internal sealed class SpeakerMeetingRequestService(
                 "هذا المتحدّث لا يقبل طلبات المقابلة.");
         }
 
+        // A1 — one open request per (requester, speaker): a duplicate Pending
+        // submission floods the review queue and (for VIP slots) stacks rival
+        // claims on one slot. The DB filtered-unique backstop is a Wave B item.
+        var hasOpenRequest = await appDbContext.SpeakerMeetingRequests.AsNoTracking()
+            .AnyAsync(r => r.RequestedByUserId == requesterUserId
+                && r.SpeakerId == speakerId
+                && r.Status == MeetingRequestStatus.Pending, cancellationToken);
+        if (hasOpenRequest)
+        {
+            throw new ApiException(
+                ErrorCodes.AppRequestDuplicatePending, 409,
+                "You already have a pending meeting request for this speaker.",
+                "لديك بالفعل طلب مقابلة قيد المراجعة لهذا المتحدّث.");
+        }
+
         // D-474 (#11) — the VIP slot flow: when the requester picked a slot, they
         // must be a VIP/VVIP and the slot must still be free. A null slot is the
         // legacy topic-only request (any approved attendee).
@@ -262,7 +277,7 @@ internal sealed class SpeakerMeetingRequestService(
         RespondToSpeakerMeetingRequestRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (request.Status == MeetingRequestStatus.Pending)
+        if (request.Status is not (MeetingRequestStatus.Accepted or MeetingRequestStatus.Rejected))
         {
             throw new ApiException(
                 ErrorCodes.SpeakerMeetingRequestStatusInvalid, 400,
@@ -275,6 +290,41 @@ internal sealed class SpeakerMeetingRequestService(
                 ErrorCodes.SpeakerMeetingRequestNotFound, 404,
                 "Speaker meeting request not found.",
                 "لم يتم العثور على طلب مقابلة المتحدّث.");
+
+        // A1 — only a Pending request may be decided. Without this guard a second
+        // Accept could double-book a VIP slot and any prior decision could be
+        // silently overwritten.
+        if (req.Status != MeetingRequestStatus.Pending)
+        {
+            throw new ApiException(
+                ErrorCodes.AppRequestAlreadyResponded, 409,
+                "This meeting request has already been responded to.",
+                "تمت معالجة طلب المقابلة هذا بالفعل.");
+        }
+
+        // A1 — accepting a slot-bearing request must re-check the slot is still
+        // free among Accepted rows (the submit-time check can go stale). Use the
+        // same half-open overlap the availability layer uses (SpeakerAvailability
+        // Service), not start-equality — overlapping windows with different slot
+        // lengths can produce accepted slots that overlap but start at different
+        // times. The DB filtered-unique/overlap backstop is a Wave B item.
+        if (request.Status == MeetingRequestStatus.Accepted
+            && req.SlotStartUtc is { } slotStart && req.SlotEndUtc is { } slotEnd)
+        {
+            var slotTaken = await appDbContext.SpeakerMeetingRequests.AsNoTracking()
+                .AnyAsync(r => r.Id != req.Id
+                    && r.SpeakerId == req.SpeakerId
+                    && r.Status == MeetingRequestStatus.Accepted
+                    && r.SlotStartUtc != null && r.SlotEndUtc != null
+                    && r.SlotStartUtc < slotEnd && slotStart < r.SlotEndUtc, cancellationToken);
+            if (slotTaken)
+            {
+                throw new ApiException(
+                    ErrorCodes.SpeakerMeetingRequestInvalid, 409,
+                    "That slot is no longer available.",
+                    "لم تعد هذه الفترة متاحة.");
+            }
+        }
 
         var now = timeProvider.GetUtcNow();
         req.Status = request.Status;
