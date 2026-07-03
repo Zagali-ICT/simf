@@ -12,8 +12,9 @@
 | **Implements use case(s)** | See the sessions I have saved/favourited; filter them by category; open a saved session's detail; un-save from the bookmark |
 | **Backend endpoints** | `GET /api/v1/app/programme/sessions` (cached programme, anonymous) · `GET /api/v1/app/sessions/favourites` (the caller's favourite ids, **approved-only**) · `DELETE /api/v1/app/sessions/{id}/favourite` (un-save via the bookmark). No new endpoint added. |
 | **Source file** | Flutter `features/sessions/saved_sessions_screen.dart` (+ the shared `sessionFavouritesProvider`, `aiSummarySessionsProvider`, `SessionFilterTabs`, and `FavouriteHeartButton` with the bookmark icon pair). |
-| **Tests** | [`docs/tests/e2e/mobile-saved-sessions.md`](../../tests/e2e/mobile-saved-sessions.md) (`E2E-MOBSAVED-001..006`); widget test `test/features/sessions/saved_sessions_screen_test.dart` |
-| **Last reviewed** | 2026-07-02 |
+| **Tests** | [`docs/tests/e2e/mobile-saved-sessions.md`](../../../tests/e2e/mobile-saved-sessions.md) (`E2E-MOBSAVED-001..006`); widget test `test/features/sessions/saved_sessions_screen_test.dart`; render-lock golden `test/golden/saved_sessions_golden_test.dart` (`goldens/saved_sessions.png`) |
+| **Last reviewed** | 2026-07-03 (D-599 — clean-code freeze: no code change, already clean; golden added; doc moved to this folder) |
+| **Figma note** | Built + owner-verified to `1701:8928` (D-584); that node was **removed from the Figma file** by 2026-07-03 (checked via MCP — sibling 1701:3789 still resolves), so the golden is a **render-lock** of the verified design, not a live-frame lock. If the designer publishes a replacement frame, re-run the overlay against it. |
 
 ---
 
@@ -132,7 +133,7 @@ header, count row, chips and cards mirror right-to-left.
 
 ## 9. Related E2E test scenarios
 
-See [`docs/tests/e2e/mobile-saved-sessions.md`](../../tests/e2e/mobile-saved-sessions.md)
+See [`docs/tests/e2e/mobile-saved-sessions.md`](../../../tests/e2e/mobile-saved-sessions.md)
 (`E2E-MOBSAVED-001..006`): golden path (open from the counter, see the saved cards +
 count), category-chip filtering, open a card → detail, un-save via the bookmark, the
 empty state, the auth-gate, and RTL.
@@ -142,7 +143,7 @@ empty state, the auth-gate, and RTL.
 - Decisions log: **D-584** (this screen + the My-Area counter repoint to the saved
   count). Related: D-133/D-245/D-246 (E2E + docs DoD), D-519 (attendee route gating),
   the favourites heart (summaries `1388:8392` / my-sessions `1388:9067`).
-- API spec: [`SIMF-API-001`](../../SIMF-API-001-API-Specification.md) — `app`
+- API spec: [`SIMF-API-001`](../../../SIMF-API-001-API-Specification.md) — `app`
   endpoint group, `ApiResult<T>` envelope.
 
 ## 11. Changelog
@@ -153,4 +154,4 @@ empty state, the auth-gate, and RTL.
 
 ---
 
-_Last reviewed:_ 2026-07-02 by SIMF Team (D-584 — saved-sessions screen reference doc).
+_Last reviewed:_ 2026-07-03 by SIMF Team (D-599 — clean-code freeze; doc moved to folder form, render-lock golden added).
