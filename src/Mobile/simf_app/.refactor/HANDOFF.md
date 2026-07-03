@@ -57,9 +57,13 @@ so test imports don't churn.
 **WAVE C in progress:** live_broadcast DONE (D-603 — 1286→348 + 5 widgets) ·
 send_question DONE (D-604 — 420→319 + ReviewNote/SessionDataBlock; the EXISTING
 golden had LOCKED a tofu submit button [same styleFrom.textStyle font-drop] —
-regenerated → correct Arabic). Next in Wave C: **audience_comments** (544 —
-node map says "removed" but it IS routed #28 /live/comments, node UNKNOWN → ASK
-owner for its Figma node before L4). Then Wave D myarea+speakers.
+regenerated → correct Arabic). audience_comments REMOVED (D-605 — owner: "rejected by customer, remove totally
+from system"; app-side screen/route/data/tests/docs deleted, suite 737/737;
+**backend SessionComment tables/endpoints/CP-moderation NOT touched — owner
+"dont modify backend", a separate session owns that destructive frozen-schema
+teardown**). **WAVE C COMPLETE.** Next: Wave D myarea (my_area 790,
+identity_verification 489, my_sessions) + speakers (speaker_profile 1098,
+speakers 447) — extract SimfSpeakerCard.
 REUSABLE LESSON (reinforced): an Arabic golden generated with `--update`
 silently locks the styleFrom.textStyle tofu — goldens must be READ, not just
 regenerated. Repo-wide grep queued for the de-dup sweep:

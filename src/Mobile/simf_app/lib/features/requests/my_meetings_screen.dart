@@ -401,8 +401,8 @@ class _InitialAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final trimmed = name.trim();
-    // Grapheme-safe first letter (matches the app's initial pattern, e.g.
-    // audience_comments_screen) so an astral-plane name never shows tofu.
+    // Grapheme-safe first letter (matches the app's avatar-initial pattern)
+    // so an astral-plane name never shows tofu.
     final initial = trimmed.isEmpty ? '؟' : trimmed.characters.first;
     return Container(
       width: 38,

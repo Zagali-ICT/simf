@@ -31,7 +31,6 @@ import '../features/ai_summary/session_summary_list_screen.dart';
 import '../features/ai_summary/session_summary_screen.dart';
 import '../features/badge/badge_screen.dart';
 import '../features/chatbot/chatbot_screen.dart';
-import '../features/comments/audience_comments_screen.dart';
 import '../features/contact_us/contact_us_screen.dart';
 import '../features/contacts/my_contacts_screen.dart';
 import '../features/contacts/scan_contact_screen.dart';
@@ -134,7 +133,6 @@ const List<_Route> _routes = <_Route>[
   // Section 4 — Live & Q&A (3 screens; 27 request-interview removed — D-278)
   _Route(number: 25, name: RouteNames.liveBroadcast, path: '/live', labelAr: 'البث المباشر', labelEn: 'Live broadcast'),
   _Route(number: 26, name: RouteNames.sendQuestion, path: '/live/question', labelAr: 'إرسال سؤال', labelEn: 'Send question'),
-  _Route(number: 28, name: RouteNames.audienceComments, path: '/live/comments', labelAr: 'تعليقات الجمهور', labelEn: 'Audience comments'),
 
   // Section 5 — Media coverage (3 screens)
   _Route(number: 29, name: RouteNames.news, path: '/news', labelAr: 'الأخبار', labelEn: 'News'),
@@ -251,7 +249,6 @@ const Map<int, Set<AppRole>> _routeRoles = <int, Set<AppRole>>{
   // Attendee features — Visitor + Exhibitor (NOT Staff/Moderator: D-519 focused).
   18: _attendee, // My seat
   26: _attendee, // Send question
-  28: _attendee, // Audience comments (D-319)
   35: _attendee, // Meet people
   40: _attendee, // Rate / feedback (D-310)
   100: _attendee, // My Contacts (FDS-014)
@@ -455,11 +452,6 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.sendQuestion) {
     return SendQuestionScreen(
-      sessionId: state.uri.queryParameters['sessionId'],
-    );
-  }
-  if (r.name == RouteNames.audienceComments) {
-    return AudienceCommentsScreen(
       sessionId: state.uri.queryParameters['sessionId'],
     );
   }

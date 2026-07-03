@@ -69,7 +69,7 @@ chrome), audience-comments (removed), my-contacts / scan-contact / share-my-cont
 | App screen | Decision | Notes |
 |---|---|---|
 | Media gallery (#30) | Dissolved — content embedded in Home page | No standalone screen in V1 |
-| Audience comments (#28) | Removed from app | — |
+| Audience comments (#28) | REMOVED from app (D-605, rejected by customer) — screen/route/tests deleted; backend teardown separate | — |
 | Guest mode (#12) | Not a separate screen — guest users see Home (`758-2910`) directly | — |
 
 ## Standard top-nav spec (from 758-1469 / 922-2824)
