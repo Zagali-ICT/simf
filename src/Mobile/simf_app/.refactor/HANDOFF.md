@@ -62,9 +62,9 @@ from system"; app-side screen/route/data/tests/docs deleted, suite 737/737;
 **backend SessionComment tables/endpoints/CP-moderation NOT touched — owner
 "dont modify backend", a separate session owns that destructive frozen-schema
 teardown**). **WAVE C COMPLETE.** **WAVE D in progress:** speaker_profile DONE (D-606 —
-1098→272 + 6 widgets; golden 908-2110 held without --update; replaced a local
-_PullToRefreshState with the shared SimfPullableHost). Next in Wave D:
-speakers (447, golden 908-1744), my_area (790, no golden), identity_verification
+1098→272 + 6 widgets; golden held) · my_area DONE (D-607 — 790→269 + 3 widgets
+incl. MyAreaDashboardBody ConsumerWidget; golden 213-963 captured; SimfPullableHost
+adopted). Next in Wave D: speakers (447, golden 908-1744), identity_verification
 (489, no golden), my_sessions (336, golden 1388-9067). REUSABLE: many screens
 carry a local _PullToRefreshState / LayoutBuilder+ConstrainedBox short-state
 wrapper — replace with shared SimfPullableHost (grep queued for de-dup sweep).
