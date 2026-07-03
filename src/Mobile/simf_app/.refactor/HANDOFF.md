@@ -43,13 +43,14 @@ H long tail → de-dup sweep + unused-page report (owner confirm before delete).
 
 ## NEXT — Wave A remainder
 
-DONE: session_detail (D-597, 0ec0d78d) · sessions (D-598). Next: saved_sessions
-(bound 1701:8928, NO golden yet — capture at L0) → my_seat → seat_picker →
-join_session_hub. **OWNER (2026-07-03): my-seat frame = 898-2873; the seat-map
-view must become a REUSABLE component that seat_picker and join_hub reuse with
-additional button configs as needed** (seat_picker/join_hub have no own frames).
-Then Wave B home. Existing goldens: session_detail_889-2450 (re-locked),
-sessions_883-2308 (re-locked: LTR strip + 3 tabs).
+DONE: session_detail (D-597, 0ec0d78d) · sessions (D-598, 4dc5cc36) ·
+saved_sessions (D-599, 67daf291 — **its Figma node 1701:8928 was DELETED from
+the file**, golden is a render-lock; ditto my-meetings 1701:9406 for Wave E —
+flag to owner) · my_seat + seat_picker (D-600 — shared `HallSeatMapCard`,
+owner-directed; my_seat golden overlay-verified vs 898:2873).
+Next: **join_session_hub** (163 lines, session list — no grid; shared card
+available "if required") → **Wave B home** (1,268 lines; SimfSectionHeader
+exists in the shell — reuse, don't recreate; SimfNewsCard teaser candidate).
 
 ## Gotchas carried forward
 
