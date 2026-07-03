@@ -9,14 +9,12 @@ using SIMF.Application.Auditing;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
+using SIMF.Common.Enums;
 using SIMF.Common.Options;
-using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Organization;
 using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
-
-using SIMF.Common.Enums;
 
 namespace SIMF.Infrastructure.Identity;
 
@@ -84,16 +82,16 @@ public sealed class IdentitySeeder(
                 permission.DisplayName, permission.BaselineRoles, cancellationToken);
         }
 
-        var admin = await accounts.FindByEmailAsync(settings.Email)
+        var admin = await accounts.FindByEmailAsync(settings.Email, cancellationToken)
             ?? await CreateSuperAdminAsync(settings, cancellationToken);
         if (admin is null)
         {
             return;
         }
 
-        if (!await accounts.IsInRoleAsync(admin, AdministratorRole))
+        if (!await accounts.IsInRoleAsync(admin, AdministratorRole, cancellationToken))
         {
-            await accounts.AddToRoleAsync(admin, AdministratorRole).EnsureSuccessAsync();
+            await accounts.AddToRoleAsync(admin, AdministratorRole, cancellationToken).EnsureSuccessAsync();
         }
 
         // P7 — every seeded admin must end up with UserType = Admin. This
@@ -534,7 +532,7 @@ public sealed class IdentitySeeder(
 
         if (!string.IsNullOrWhiteSpace(settings.TotpSecret))
         {
-            await accounts.SetAuthenticationTokenAsync( admin, AuthenticatorKeyProvider, AuthenticatorKeyTokenName, settings.TotpSecret).EnsureSuccessAsync();
+            await accounts.SetAuthenticationTokenAsync(admin, AuthenticatorKeyProvider, AuthenticatorKeyTokenName, settings.TotpSecret).EnsureSuccessAsync();
             await accounts.SetTwoFactorEnabledAsync(admin, true).EnsureSuccessAsync();
         }
 
