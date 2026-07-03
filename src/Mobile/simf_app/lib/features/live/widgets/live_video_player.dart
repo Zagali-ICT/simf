@@ -1,0 +1,270 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:video_player/video_player.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
+
+import '../../../app/localization/app_l10n.dart';
+import '../../../app/theme/tokens.dart';
+import '../youtube_url.dart';
+
+/// The live video surface. Owns its own controller and picks the player by the
+/// URL (D-349): a YouTube link → the IFrame player; anything else (HLS/MP4) →
+/// `video_player`. The parent rebuilds this with a new `ValueKey(url)` to switch
+/// feeds, so this widget only ever binds one URL for its lifetime.
+class LiveVideoPlayer extends StatefulWidget {
+  const LiveVideoPlayer({required this.url, super.key});
+
+  final String url;
+
+  @override
+  State<LiveVideoPlayer> createState() => _LiveVideoPlayerState();
+}
+
+class _LiveVideoPlayerState extends State<LiveVideoPlayer> {
+  YoutubePlayerController? _youtube;
+  VideoPlayerController? _video;
+  bool _videoReady = false;
+  bool _error = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _bind();
+  }
+
+  void _bind() {
+    final videoId = YoutubeUrl.tryParseId(widget.url);
+    if (videoId != null) {
+      try {
+        _youtube = YoutubePlayerController.fromVideoId(
+          videoId: videoId,
+          autoPlay: true,
+        );
+      } catch (_) {
+        // A failure building the IFrame controller degrades to the error
+        // surface rather than crashing the screen (Page_025 L-7).
+        _error = true;
+      }
+    } else {
+      unawaited(_initVideo(widget.url));
+    }
+  }
+
+  void _retry() {
+    _youtube?.close();
+    _youtube = null;
+    _video?.dispose();
+    _video = null;
+    setState(() {
+      _error = false;
+      _videoReady = false;
+    });
+    _bind();
+  }
+
+  Future<void> _initVideo(String url) async {
+    try {
+      final controller = VideoPlayerController.networkUrl(Uri.parse(url));
+      _video = controller;
+      await controller.initialize();
+      if (!mounted) {
+        return;
+      }
+      setState(() => _videoReady = true);
+      unawaited(controller.play());
+    } catch (_) {
+      // ANY failure — a malformed URL (Uri.parse), an unreachable stream, or a
+      // codec error — surfaces the error/retry state rather than spinning
+      // forever or crashing the screen (Page_025 L-7).
+      if (!mounted) {
+        return;
+      }
+      setState(() => _error = true);
+    }
+  }
+
+  void _toggleVideoPlay() {
+    final controller = _video;
+    if (controller == null) {
+      return;
+    }
+    // The glyph is driven by the controller's ValueListenable in [_Player], so
+    // no setState is needed here — just fire the toggle.
+    unawaited(
+      controller.value.isPlaying ? controller.pause() : controller.play(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _youtube?.close();
+    _video?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_error) {
+      final l10n = AppL10n.of(context);
+      return _PlayerError(
+        message: l10n.liveFeedError,
+        retryLabel: l10n.retryLabel,
+        onRetry: _retry,
+      );
+    }
+    final youtube = _youtube;
+    if (youtube != null) {
+      return _YoutubeView(controller: youtube);
+    }
+    final video = _video;
+    if (video != null && _videoReady) {
+      return _Player(controller: video, onToggle: _toggleVideoPlay);
+    }
+    return const _PlayerLoading();
+  }
+}
+
+/// The YouTube IFrame player surface (D-349) with a LIVE badge overlay. YouTube
+/// supplies its own play/pause + CC controls (the latter covers الترجمة الفورية
+/// for YouTube feeds), so no extra play FAB is added here.
+class _YoutubeView extends StatelessWidget {
+  const _YoutubeView({required this.controller});
+
+  final YoutubePlayerController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    // The LIVE badge + language chip live in the surface's top row (934:3612),
+    // not overlaid on the video, so the player is just the rounded feed.
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(SimfTokens.radius),
+      child: YoutubePlayer(controller: controller, aspectRatio: 16 / 9),
+    );
+  }
+}
+
+/// The `video_player` surface: a 16:9-aware [VideoPlayer] with a play/pause FAB
+/// (the HLS/MP4 fallback path).
+class _Player extends StatelessWidget {
+  const _Player({required this.controller, required this.onToggle});
+
+  final VideoPlayerController controller;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final ratio = controller.value.aspectRatio == 0
+        ? 16 / 9
+        : controller.value.aspectRatio;
+    // The LIVE badge + language chip live in the surface's top row (934:3612).
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(SimfTokens.radius),
+      child: Stack(
+        alignment: AlignmentDirectional.bottomEnd,
+        children: <Widget>[
+          AspectRatio(
+            aspectRatio: ratio,
+            child: VideoPlayer(controller),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(SimfTokens.space3),
+            child: FloatingActionButton.small(
+              heroTag: 'live-play',
+              onPressed: onToggle,
+              child: ValueListenableBuilder<VideoPlayerValue>(
+                valueListenable: controller,
+                builder: (_, value, __) => Icon(
+                  value.isPlaying ? Icons.pause : Icons.play_arrow,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlayerLoading extends StatelessWidget {
+  const _PlayerLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    // Frame 934:3595 — the resting/poster affordance: a 52px translucent-white
+    // circle holding a 22px white play triangle (shown until the feed renders).
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(SimfTokens.radius),
+        ),
+        child: Center(
+          child: Container(
+            width: 52,
+            height: 52,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              color: SimfTokens.playScrim,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.play_arrow, size: 22, color: Colors.white),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Shown when a live feed fails to load — a terminal error surface with a Retry
+/// that re-binds the player (Page_025 L-7), instead of an endless spinner.
+class _PlayerError extends StatelessWidget {
+  const _PlayerError({
+    required this.message,
+    required this.retryLabel,
+    required this.onRetry,
+  });
+
+  final String message;
+  final String retryLabel;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(SimfTokens.radius),
+        ),
+        // Centred + scrollable so the icon + message + button never overflow
+        // the fixed 16:9 box on a short / landscape viewport (RenderFlex).
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(SimfTokens.space3),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                const Icon(
+                  Icons.error_outline,
+                  size: 36,
+                  color: SimfTokens.beigeBorder,
+                ),
+                const SizedBox(height: SimfTokens.space2),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: SimfTokens.beigeBorder),
+                ),
+                const SizedBox(height: SimfTokens.space3),
+                FilledButton(onPressed: onRetry, child: Text(retryLabel)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

@@ -54,9 +54,16 @@ files; goldens for both states (758:1134 / 758:2910) overlay-verified. LESSON:
 time-dependent screen, add an optional `now` seam (default DateTime.now()) —
 don't fight the clock. Re-export moved top-level helpers from the screen file
 so test imports don't churn.
-Next: **Wave C** — live_broadcast (1,286 lines, node 934:3450 — timer/live
-screen, pump-not-settle) + send_question (934:3636) + audience_comments. Then
-Wave D myarea+speakers.
+**WAVE C in progress:** live_broadcast DONE (D-603 — 1286→348 + 5 widgets;
+golden caught a real button-font tofu bug [inline FilledButton.styleFrom
+textStyle drops fontFamily → move size/weight to the label Text]; player box
+env-limited in goldens, lock the chrome+info column). Next in Wave C:
+send_question (420, node 934:3636 — has a golden already) + audience_comments
+(544 — node map says "removed" but it IS routed #28 /live/comments, node UNKNOWN
+→ ASK owner for its Figma node). Then Wave D myarea+speakers.
+NEW REUSABLE LESSON: goldens of Arabic buttons expose the styleFrom.textStyle
+font-drop bug that text-asserting widget tests can't — worth a repo-wide grep in
+the de-dup sweep (`FilledButton.styleFrom(` + `textStyle:`).
 
 ## Gotchas carried forward
 
