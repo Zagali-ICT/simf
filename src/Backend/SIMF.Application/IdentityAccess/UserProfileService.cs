@@ -1,6 +1,7 @@
 // Tests: SIMF.Api.Tests/UserProfileTests.cs (upsert round-trip, ID image
 //        round-trip, get-empty-when-not-saved-yet, nationality-unknown,
-//        D-374 Me_profileComplete flip + male-without-photo)
+//        D-374 Me_profileComplete flip + male-without-photo, D-609
+//        DisplayName-placeholder-replaced + admin-name-preserved)
 //        SIMF.Api.Tests/UserProfileRollbackTests.cs (H16 — transaction rollback)
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Abstractions;
@@ -275,6 +276,20 @@ internal sealed class UserProfileService(
         // expiry. Notifications stay outside the transaction (in-app
         // rows + email enqueue are not under this DB scope), so they
         // dispatch only after the commit succeeds.
+        // A9c follow-up (D-609) — decide whether to replace the email-placeholder
+        // DisplayName with the registrant's real name at profile completion. This
+        // is the RegistrationService "DisplayName = Email … replaced at profile
+        // completion" TODO: both names are validator-required (English preferred,
+        // Arabic fallback). Only the untouched placeholder (DisplayName still ==
+        // Email) is overwritten, so an admin-customised name is preserved. The
+        // write itself happens inside the Identity transaction below.
+        var realName = !string.IsNullOrWhiteSpace(request.EnglishName)
+            ? request.EnglishName.Trim()
+            : request.ArabicName?.Trim() ?? string.Empty;
+        var renameDisplayName =
+            !string.IsNullOrWhiteSpace(realName)
+            && string.Equals(user.DisplayName, user.Email, StringComparison.OrdinalIgnoreCase);
+
         var transitioned = false;
         await transactionRunner.ExecuteAsync(async token =>
         {
@@ -297,24 +312,43 @@ internal sealed class UserProfileService(
             // fire exactly once (the first submit after email verification),
             // regardless of whether a photo upload pre-created the row, and
             // never re-fires once the account has left EmailVerified.
+            var accountDirty = false;
+
+            // A9c follow-up (D-609) — replace the email-placeholder DisplayName
+            // with the real name (set here so it commits with the profile via the
+            // same accounts.UpdateAsync used for the state flip; no cross-DB txn).
+            if (renameDisplayName)
+            {
+                user.DisplayName = realName;
+                accountDirty = true;
+            }
+
             if (user.AccountState == AccountState.EmailVerified)
             {
                 user.AccountState = AccountState.PendingApproval;
                 user.StateChangedAt = now;
                 user.StateChangedByUserId = null;
+                accountDirty = true;
+                transitioned = true;
+            }
+
+            if (accountDirty)
+            {
                 var updateResult = await accounts.UpdateAsync(user);
                 if (!updateResult.Succeeded)
                 {
                     throw new InvalidOperationException(
-                        "Auto-transition to PendingApproval failed: " +
+                        "Account update during profile save failed: " +
                         string.Join("; ", updateResult.Errors.Select(error => error.Description)));
                 }
+            }
 
+            if (transitioned)
+            {
                 // Stale tokens still encode the old account_state claim;
                 // revoke them so the user has to sign in again and the
                 // next JWT reflects PendingApproval.
                 await refreshTokens.RevokeAllForUserAsync(actorUserId, now, token);
-                transitioned = true;
             }
         }, cancellationToken);
 

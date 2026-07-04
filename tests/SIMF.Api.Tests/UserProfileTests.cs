@@ -623,6 +623,36 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Profile_completion_replaces_the_email_placeholder_display_name()
+    {
+        // D-609 (A9c follow-up) — a self-registered account's DisplayName is seeded
+        // to its email; completing the profile with a real name replaces it, so the
+        // moderator queue + every DisplayName surface stops showing the email.
+        var (token, userId, email) = await CreateApprovedVisitorAsync(displayName: null); // == email
+        Assert.Equal(email, await GetDisplayNameAsync(userId)); // starts as the placeholder
+
+        var request = await ValidSaudiRequestAsync(englishName: "Real English Name");
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        Assert.Equal("Real English Name", await GetDisplayNameAsync(userId));
+    }
+
+    [Fact]
+    public async Task Profile_completion_preserves_an_admin_customised_display_name()
+    {
+        // D-609 — the rename overwrites ONLY the email placeholder; an admin-set
+        // DisplayName (!= email) is authoritative and must survive a profile save.
+        var (token, userId, _) = await CreateApprovedVisitorAsync(displayName: "Admin Chosen Name");
+
+        var request = await ValidSaudiRequestAsync(englishName: "Real English Name");
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        Assert.Equal("Admin Chosen Name", await GetDisplayNameAsync(userId));
+    }
+
     /// <summary>Finds-or-creates an active profile type by name directly on
     /// the App DB (the C5 lock tests need specific audience/partner rows).</summary>
     private async Task<Guid> SeedProfileTypeAsync(
@@ -1345,6 +1375,57 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
             Convert.FromBase64String(padded.Replace('-', '+').Replace('_', '/')));
         using var doc = System.Text.Json.JsonDocument.Parse(json);
         return Guid.Parse(doc.RootElement.GetProperty("sub").GetString()!);
+    }
+
+    // D-609 — an APPROVED visitor whose DisplayName is either the email placeholder
+    // (displayName == null → seeded to Email, as RegistrationService does) or an
+    // explicit admin-set name. Uploads the ID document + an avatar so the profile
+    // upsert clears both the ID and the male-photo gate regardless of gender.
+    private async Task<(string Token, Guid UserId, string Email)> CreateApprovedVisitorAsync(
+        string? displayName)
+    {
+        var email = $"up-rename-{Guid.NewGuid():N}@simf.test";
+        Guid userId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            var user = new SimfUser
+            {
+                UserName = email,
+                Email = email,
+                EmailConfirmed = true,
+                DisplayName = displayName ?? email,
+                AccountState = AccountState.Approved,
+            };
+            await users.CreateAsync(user, AuthFlow.Password);
+            userId = user.Id;
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            appDb.UserProfiles.Add(new SIMF.Domain.Profiles.UserProfile
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                QrId = $"TEST{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}",
+                CreatedAt = DateTimeOffset.UtcNow,
+            });
+            await appDb.SaveChangesAsync();
+        }
+
+        var sign = await _client.PostAsJsonAsync(
+            "/api/v1/app/auth/sign-in",
+            new SignInRequest { Email = email, Password = AuthFlow.Password });
+        var token = (await sign.Content
+            .ReadFromJsonAsync<ApiResult<SignInResponse>>())!.Data!.Tokens!.AccessToken;
+        await UploadValidIdImageAsync(token);
+        await UploadValidAvatarAsync(token);
+        return (token, userId, email);
+    }
+
+    private async Task<string?> GetDisplayNameAsync(Guid userId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var user = await users.FindByIdAsync(userId.ToString());
+        return user?.DisplayName;
     }
 
     private async Task<HttpResponseMessage> GetAuthAsync(string url, string token)
