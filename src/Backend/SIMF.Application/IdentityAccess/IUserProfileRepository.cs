@@ -95,6 +95,11 @@ public interface IUserProfileRepository
     Task<bool> OrganisationExistsActiveAsync(
         Guid id, CancellationToken cancellationToken = default);
 
+    /// <summary>D-611 (Wave B): true when the id is an active <c>Region</c>
+    /// row. Used to validate the profile's المنطقة pick at write time.</summary>
+    Task<bool> RegionExistsActiveAsync(
+        Guid id, CancellationToken cancellationToken = default);
+
     // --- Identity DB: account reads ----------------------------------------
 
     /// <summary>Every approved Admin — the recipients of the new-pending-

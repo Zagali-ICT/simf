@@ -56,6 +56,13 @@ public sealed class UserProfileResponse
     /// or null when the user has not picked one.</summary>
     public Guid? OrganisationId { get; set; }
 
+    /// <summary>D-611 (Wave B) (المنطقة): the picked region id (from
+    /// <c>GET /api/v1/app/regions</c>), or null when the user has not picked
+    /// one. Append-only field — the region pick is now persisted (it used to
+    /// be discarded). The app already ships a region picker
+    /// (<c>region_repository.dart</c>); this closes the write path.</summary>
+    public Guid? RegionId { get; set; }
+
     /// <summary>B3 — D-221 (الجنس): the user's gender;
     /// <see cref="Gender.Unspecified"/> until picked.</summary>
     public Gender Gender { get; set; }
@@ -125,6 +132,11 @@ public sealed class UpsertUserProfileRequest
     /// <see cref="Organisation"/> id (from <c>GET /api/v1/app/organisations</c>).
     /// Optional; the service rejects an unknown / inactive id.</summary>
     public Guid? OrganisationId { get; set; }
+
+    /// <summary>D-611 (Wave B) (المنطقة): the user's self-picked region id (from
+    /// <c>GET /api/v1/app/regions</c>). Optional; the service rejects an unknown /
+    /// inactive id, exactly like <see cref="OrganisationId"/>.</summary>
+    public Guid? RegionId { get; set; }
 
     /// <summary>B3 — D-221 (الجنس): the user's gender. Optional —
     /// <see cref="Gender.Unspecified"/> when not picked.</summary>

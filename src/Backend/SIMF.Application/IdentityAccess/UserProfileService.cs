@@ -1,7 +1,8 @@
 // Tests: SIMF.Api.Tests/UserProfileTests.cs (upsert round-trip, ID image
 //        round-trip, get-empty-when-not-saved-yet, nationality-unknown,
 //        D-374 Me_profileComplete flip + male-without-photo, D-609
-//        DisplayName-placeholder-replaced + admin-name-preserved)
+//        DisplayName-placeholder-replaced + admin-name-preserved, D-611
+//        RegionId round-trip + optional + unknown/inactive → 400)
 //        SIMF.Api.Tests/UserProfileRollbackTests.cs (H16 — transaction rollback)
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Abstractions;
@@ -145,6 +146,17 @@ internal sealed class UserProfileService(
                 "الجهة المحددة غير صالحة.");
         }
 
+        // D-611 (Wave B): validate the المنطقة pick exists and is active, exactly
+        // like the الجهة check above. The App-DB Region table backs the pick.
+        if (request.RegionId is { } regionId
+            && !await profiles.RegionExistsActiveAsync(regionId, cancellationToken))
+        {
+            throw new ApiException(
+                ErrorCodes.RegionInvalid, 400,
+                "The selected region is not valid.",
+                "المنطقة المحددة غير صالحة.");
+        }
+
         // P9 — validate the picked interest ids: every id must exist
         // and be active. (The validator already enforces 1-10 count.)
         var requestedIds = request.InterestIds.Distinct().ToList();
@@ -230,8 +242,9 @@ internal sealed class UserProfileService(
         // C6 — D-371: رقم اللوحة, stored normalized (validator-checked shape;
         // separators stripped so the column holds the canonical ≤7 chars).
         profile.PlateNumber = NormalisePlate(request.PlateNumber);
-        // B3 — D-221: الجهة + الجنس.
+        // B3 — D-221: الجهة + الجنس. D-611: المنطقة.
         profile.OrganisationId = request.OrganisationId;
+        profile.RegionId = request.RegionId;
         profile.Gender = request.Gender;
         if (!isNew)
         {
@@ -778,6 +791,7 @@ internal sealed class UserProfileService(
             PlateNumberEn = SaudiPlate.ToEnglish(profile.PlateNumber),
             ReferenceNumber = profile.ReferenceNumber,
             OrganisationId = profile.OrganisationId,
+            RegionId = profile.RegionId,
             Gender = profile.Gender,
             HasIdImage = !string.IsNullOrEmpty(profile.IdImageRelativePath),
             HasAvatar = hasAvatar,

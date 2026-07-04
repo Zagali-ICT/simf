@@ -114,6 +114,15 @@ public sealed class UpsertUserProfileRequestValidator
                 "Organisation is required.",
                 "الجهة مطلوبة.");
 
+        // D-611 (Wave B) — المنطقة is optional. Shape-check only here (non-empty
+        // Guid when supplied); the existence / IsActive check runs in the service
+        // against the App DB (cross-context, FluentValidation is sync), exactly
+        // like ProfileTypeId.
+        RuleFor(request => request.RegionId)
+            .Must(id => id is null || id != Guid.Empty).Bilingual(
+                "Region id is not a valid identifier.",
+                "معرّف المنطقة غير صالح.");
+
         // B3 — D-221: الجنس. Must be a defined enum value (Unspecified is
         // allowed — the field is optional).
         RuleFor(request => request.Gender)

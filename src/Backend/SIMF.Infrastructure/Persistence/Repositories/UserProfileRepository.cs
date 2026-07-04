@@ -163,6 +163,12 @@ internal sealed class UserProfileRepository(
             .AsNoTracking()
             .AnyAsync(organisation => organisation.Id == id && organisation.IsActive, cancellationToken);
 
+    public Task<bool> RegionExistsActiveAsync(
+        Guid id, CancellationToken cancellationToken = default) =>
+        appDbContext.Regions
+            .AsNoTracking()
+            .AnyAsync(region => region.Id == id && region.IsActive, cancellationToken);
+
     public async Task<IReadOnlyList<PendingAdminRecipient>> ListApprovedAdminsAsync(
         CancellationToken cancellationToken = default) =>
         await dbContext.Users

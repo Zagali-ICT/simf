@@ -1200,6 +1200,95 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    // -- D-611 (Wave B): المنطقة (Region) — the schema-ready column is now wired
+    // through the self-service upsert (was persisted nowhere before). ---------
+
+    [Fact]
+    public async Task Upsert_with_RegionId_round_trips_to_GET()
+    {
+        var (token, _) = await CreateEmailVerifiedVisitorAndSignInAsync();
+        var regionId = await SeedRegionAsync();
+
+        // Male profile needs the face photo on the server first (two-photo split).
+        await UploadValidAvatarAsync(token);
+
+        var request = await ValidSaudiRequestAsync();
+        request.RegionId = regionId;
+        request.Gender = Gender.Male;
+
+        var save = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, save.StatusCode);
+        var saved = (await save.Content
+            .ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!.Data!;
+        Assert.Equal(regionId, saved.RegionId);
+
+        var get = await GetAuthAsync(Path, token);
+        var fetched = (await get.Content
+            .ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!.Data!;
+        Assert.Equal(regionId, fetched.RegionId);
+    }
+
+    [Fact]
+    public async Task Upsert_without_RegionId_is_allowed_and_stays_null()
+    {
+        // المنطقة is optional (unlike الجهة) — a save that omits it succeeds.
+        var (token, _) = await CreateEmailVerifiedVisitorAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.RegionId = null;
+
+        var save = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, save.StatusCode);
+        var saved = (await save.Content
+            .ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!.Data!;
+        Assert.Null(saved.RegionId);
+    }
+
+    [Fact]
+    public async Task Upsert_with_unknown_RegionId_returns_400()
+    {
+        var (token, _) = await CreateEmailVerifiedVisitorAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.RegionId = Guid.NewGuid();   // never seeded
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.RegionInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Upsert_with_inactive_RegionId_returns_400()
+    {
+        var (token, _) = await CreateEmailVerifiedVisitorAndSignInAsync();
+        var dormantId = await SeedRegionAsync(isActive: false);
+
+        var request = await ValidSaudiRequestAsync();
+        request.RegionId = dormantId;
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.RegionInvalid, body.Error!.Code);
+    }
+
+    private async Task<Guid> SeedRegionAsync(bool isActive = true)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var row = new SIMF.Domain.Regions.Region
+        {
+            Id = Guid.NewGuid(),
+            Code = "R-" + Guid.NewGuid().ToString("N")[..8],
+            NameArabic = $"منطقة اختبار {Guid.NewGuid():N}",
+            Name = $"Test Region {Guid.NewGuid():N}",
+            IsActive = isActive,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        appDb.Regions.Add(row);
+        await appDb.SaveChangesAsync();
+        return row.Id;
+    }
+
     private async Task<Guid> SeedOrganisationAsync(bool isActive = true)
     {
         using var scope = _factory.Services.CreateScope();
