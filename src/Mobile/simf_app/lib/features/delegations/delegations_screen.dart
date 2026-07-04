@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/simf_filter_search_field.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import 'data/delegation_models.dart';
 import 'data/delegations_repository.dart';
@@ -122,7 +123,7 @@ class _DelegationsBody extends StatelessWidget {
           l10n: l10n,
         ),
         const SizedBox(height: SimfTokens.space4),
-        _SearchField(
+        SimfFilterSearchField(
           controller: searchController,
           hint: l10n.delegationsSearchHint,
           onChanged: onQueryChanged,
@@ -287,83 +288,6 @@ class _Stat extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-/// The search box (Figma 1426:10819): a dark rounded field with a filter glyph
-/// at the inline start and a search glyph at the inline end.
-class _SearchField extends StatelessWidget {
-  const _SearchField({
-    required this.controller,
-    required this.hint,
-    required this.onChanged,
-  });
-
-  final TextEditingController controller;
-  final String hint;
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    // Figma 1426:10819: the search glyph + hint sit at the inline start (right
-    // in RTL) and the filter glyph in a 40px divider-walled cell at the inline
-    // end (left in RTL). radius-4, beige hairline.
-    return Container(
-      height: 48,
-      decoration: BoxDecoration(
-        color: SimfTokens.navyDeep,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        border: Border.all(
-          color: SimfTokens.beigeBorder,
-          width: SimfTokens.hairline,
-        ),
-      ),
-      child: Row(
-        children: <Widget>[
-          const Padding(
-            padding: EdgeInsetsDirectional.only(start: SimfTokens.space3),
-            child: Icon(Icons.search, color: SimfTokens.beigeBorder, size: 16),
-          ),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              onChanged: onChanged,
-              style: const TextStyle(color: Colors.white, fontSize: 14),
-              cursorColor: SimfTokens.accent,
-              decoration: InputDecoration(
-                hintText: hint,
-                hintStyle: const TextStyle(
-                  color: SimfTokens.beigeBorder,
-                  fontSize: 14,
-                ),
-                isDense: true,
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: SimfTokens.space3,
-                  vertical: SimfTokens.space2,
-                ),
-              ),
-            ),
-          ),
-          Container(
-            width: 40,
-            // Fill the 48-high field so the divider is a full-height wall, not a
-            // short stub (a bare Row centres children on the cross axis).
-            height: double.infinity,
-            alignment: Alignment.center,
-            decoration: const BoxDecoration(
-              border: BorderDirectional(
-                start: BorderSide(
-                  color: SimfTokens.beigeBorder,
-                  width: SimfTokens.hairline,
-                ),
-              ),
-            ),
-            child: const Icon(Icons.tune, color: SimfTokens.beigeBorder, size: 16),
-          ),
-        ],
-      ),
     );
   }
 }
