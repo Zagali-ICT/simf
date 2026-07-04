@@ -79,6 +79,43 @@ public sealed class PublicMediaTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Kind_filter_narrows_to_the_requested_kind()
+    {
+        // A8 — ?kind= narrows the gallery to one MediaKind; absent = both kinds.
+        var token = await CreateAdministratorAndSignInAsync();
+        var album = $"K-{Guid.NewGuid():N}";
+
+        var imageCreate = await PostAuthAsync("/api/v1/admin/media",
+            new AdminCreateMediaRequest
+            { Kind = MediaKind.Image, Title = "an-image", Album = album, DisplayOrder = 1 }, token);
+        Assert.Equal(HttpStatusCode.OK, imageCreate.StatusCode);
+        // A video media item requires a playback URL (admin-create validation).
+        var videoCreate = await PostAuthAsync("/api/v1/admin/media",
+            new AdminCreateMediaRequest
+            {
+                Kind = MediaKind.Video, Title = "a-video", Album = album,
+                Url = "https://youtu.be/abc123", DisplayOrder = 2,
+            }, token);
+        Assert.Equal(HttpStatusCode.OK, videoCreate.StatusCode);
+
+        // ?kind=Video → only the video.
+        var videosResp = await _client.GetAsync(
+            $"/api/v1/app/media?album={album}&kind=Video&top=100");
+        var videos = (await videosResp.Content
+            .ReadFromJsonAsync<ApiResult<PublicMediaPage>>())!.Data!;
+        Assert.All(videos.Items, i => Assert.Equal(MediaKind.Video, i.Kind));
+        Assert.Contains(videos.Items, i => i.Title == "a-video");
+        Assert.DoesNotContain(videos.Items, i => i.Title == "an-image");
+
+        // No ?kind= → both kinds are returned (backward-compatible default).
+        var allResp = await _client.GetAsync($"/api/v1/app/media?album={album}&top=100");
+        var all = (await allResp.Content
+            .ReadFromJsonAsync<ApiResult<PublicMediaPage>>())!.Data!;
+        Assert.Contains(all.Items, i => i.Title == "an-image");
+        Assert.Contains(all.Items, i => i.Title == "a-video");
+    }
+
+    [Fact]
     public async Task Image_url_is_null_when_no_bytes_and_stream_is_404()
     {
         var token = await CreateAdministratorAndSignInAsync();

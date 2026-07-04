@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Abstractions;
 using SIMF.Application.Media.Abstractions;
+using SIMF.Common.Enums;
 using SIMF.Contracts.Media;
 using SIMF.Infrastructure.Persistence;
 
@@ -18,7 +19,7 @@ internal sealed class PublicMediaService(
     IMediaImageStorage imageStorage) : IPublicMediaService
 {
     public async Task<PublicMediaPage> ListAsync(
-        string? album, int skip, int top,
+        string? album, int skip, int top, MediaKind? kind = null,
         CancellationToken cancellationToken = default)
     {
         var safeSkip = Math.Max(0, skip);
@@ -32,6 +33,13 @@ internal sealed class PublicMediaService(
         {
             var albumTerm = album.Trim();
             rows = rows.Where(item => item.Album == albumTerm || item.AlbumArabic == albumTerm);
+        }
+
+        // A8 — optional Kind (image / video) narrow. Kind is a mapped scalar, so
+        // this translates server-side; absent (null) = both kinds (unchanged).
+        if (kind is not null)
+        {
+            rows = rows.Where(item => item.Kind == kind.Value);
         }
 
         var ordered = rows
