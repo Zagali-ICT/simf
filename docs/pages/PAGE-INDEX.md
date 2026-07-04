@@ -177,7 +177,7 @@ testing (see [`SIMF-APP-Build-Plan.md`](../App/SIMF-APP-Build-Plan.md)).
 
 | Screen (route) | Status | Audience | Doc | Test |
 |----------------|--------|----------|-----|------|
-| #1 `splash` | 🟢 Screen built | Guest | [App/Page_001](../App/Page_001/README.md) | [e2e/mobile-splash.md](../tests/e2e/mobile-splash.md) |
+| #1 `splash` | ✅ Real — Figma `159:573`; **clean-code frozen (D-641)** — already clean (164 lines, controller in `data/`); render-lock golden (logo precached + `SplashLoading` pinned so no boot timers fire) | Guest | [mobile/splash/](mobile/splash/README.md) | [e2e/mobile-splash.md](../tests/e2e/mobile-splash.md) |
 | #2 `onboarding` | ✅ Real — Figma `148:22`; **clean-code frozen (D-636)**. 3-step first-run carousel (per-step video bg + overlay, brand mark, dots, skip/next) | Guest | [mobile/onboarding/](mobile/onboarding/README.md) | [e2e/mobile-onboarding.md](../tests/e2e/mobile-onboarding.md) |
 | #3 `signIn` (+ verify-otp / forgot / reset) | 🟢 Screen built · clean-code frozen (D-549) | Guest | [mobile/sign-in/README.md](mobile/sign-in/README.md) (legacy [App/Page_003](../App/Page_003/README.md)) | [e2e/mobile-sign-in.md](../tests/e2e/mobile-sign-in.md) |
 | #3a `verifyOtp` — sign-in **2FA** email second factor | ✅ Real — Figma 758:2616; **clean-code frozen (D-552)** | Mid-sign-in | [mobile/email-otp-verify/](mobile/email-otp-verify/README.md) (legacy [App/Page_003](../App/Page_003/README.md)) | [e2e/mobile-sign-in.md](../tests/e2e/mobile-sign-in.md) (2FA scenarios) |
