@@ -24,6 +24,11 @@ public sealed class ListPublicMediaEndpoint(IPublicMediaService service)
         Get("/app/media");
         AllowAnonymous();
         Tags("Public");
+        // A6d — 45s output cache; varies by all query keys so ?album/?skip/?top
+        // variants keep distinct entries (no-op under Testing). Only the JSON list
+        // is cached here — the image/thumbnail byte endpoints keep their own
+        // client Cache-Control and are not output-cached.
+        Options(b => b.CacheOutput("PublicRead"));
     }
 
     public override async Task HandleAsync(ListPublicMediaRequest req, CancellationToken ct) =>
