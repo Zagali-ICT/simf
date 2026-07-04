@@ -610,6 +610,7 @@ internal sealed class UserProfileService(
     }
 
     public async Task<UserIdDocumentImage?> ReadIdImageForSubjectAsync(
+        Guid actorUserId,
         Guid subjectUserId,
         UserType expectedKind,
         CancellationToken cancellationToken = default)
@@ -623,7 +624,23 @@ internal sealed class UserProfileService(
             return null;
         }
         var read = await idStorage.OpenReadAsync(path, cancellationToken);
-        return read is null ? null : new UserIdDocumentImage(read.Content, read.ContentType);
+        if (read is null) { return null; }
+
+        // A9 (PII) — an admin READ of a visitor's national-ID image is a PII
+        // disclosure and must leave an audit trail, mirroring the upload's audit
+        // (the write path was audited; the read was not). Only the actual byte
+        // disclosure is audited — a 404 for a subject with no image on file is not.
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.UserProfileIdImageViewed,
+            Outcome = AuditOutcome.Success,
+            SubjectUserId = subjectUserId,
+            SubjectEmail = subject.Email,
+            ActorUserId = actorUserId,
+            Detail = $"admin-read; {read.Content.Length} bytes; {read.ContentType}",
+        }, cancellationToken);
+
+        return new UserIdDocumentImage(read.Content, read.ContentType);
     }
 
     public async Task UploadVipPhotoForSubjectAsync(

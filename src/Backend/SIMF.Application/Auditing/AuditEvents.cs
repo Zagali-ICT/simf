@@ -122,6 +122,8 @@ public static class AuditEvents
     public const string UserProfileSaved = "UserProfile.Saved";
     public const string UserProfileIdImageUploaded = "UserProfile.IdImageUploaded";
     public const string UserProfileIdImageRejected = "UserProfile.IdImageRejected";
+    // A9 (PII) — every admin READ/disclosure of a subject's ID-document image.
+    public const string UserProfileIdImageViewed = "UserProfile.IdImageViewed";
     // V-1 (D-429) — VVIP/VIP welcome photo (موج) upload.
     public const string UserProfileVipPhotoUploaded = "UserProfile.VipPhotoUploaded";
 
