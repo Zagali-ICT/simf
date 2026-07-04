@@ -351,6 +351,43 @@ internal sealed class GateOperatorService(
         return new GateScanResult(GateScanResultKind.Recorded, replay, true, null);
     }
 
+    /// <summary>
+    /// A4 (D-592) — stages the idempotency row for a just-processed scan, to be
+    /// committed in the same SaveChanges as the GateScan. Upserts on the composite
+    /// PK (Key, GateId): a returning badge that re-scans with the same key AFTER
+    /// the 24h replay window has a stale row that <see cref="TryReplayAsync"/>
+    /// filters out as absent, but the PK still holds it — so a blind Add would
+    /// collide (the returning-badge 500). Refreshing the stale row in place avoids
+    /// the collision. ScanId is back-filled by the caller after SaveChanges
+    /// assigns the GateScan identity.
+    /// </summary>
+    private async Task StageIdempotencyAsync(
+        string idempotencyKey, Guid gateId, string requestHash, string responseHash,
+        DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        var existing = await appDbContext.ScanIdempotencies
+            .SingleOrDefaultAsync(
+                r => r.Key == idempotencyKey && r.GateId == gateId, cancellationToken);
+        if (existing is not null)
+        {
+            existing.RequestHash = requestHash;
+            existing.ResponseHash = responseHash;
+            existing.ScanId = null;
+            existing.StoredAt = now;
+            return;
+        }
+
+        appDbContext.ScanIdempotencies.Add(new ScanIdempotency
+        {
+            Key = idempotencyKey,
+            GateId = gateId,
+            RequestHash = requestHash,
+            ResponseHash = responseHash,
+            ScanId = null,
+            StoredAt = now,
+        });
+    }
+
     private async Task<GateScanResult> RecordAllowedAsync(
         GateScanContext context, string qr, QrResolution resolution,
         ScanDirection direction, string? requestHash, string? idempotencyKey,
@@ -374,15 +411,9 @@ internal sealed class GateOperatorService(
 
         if (!string.IsNullOrWhiteSpace(idempotencyKey) && requestHash is not null)
         {
-            appDbContext.ScanIdempotencies.Add(new ScanIdempotency
-            {
-                Key = idempotencyKey,
-                GateId = context.GateId,
-                RequestHash = requestHash,
-                ResponseHash = HashResponse(response),
-                ScanId = null,  // back-filled after SaveChanges below
-                StoredAt = now,
-            });
+            await StageIdempotencyAsync(
+                idempotencyKey, context.GateId, requestHash, HashResponse(response),
+                now, cancellationToken);
         }
         await appDbContext.SaveChangesAsync(cancellationToken);
 
@@ -429,15 +460,9 @@ internal sealed class GateOperatorService(
 
         if (!string.IsNullOrWhiteSpace(idempotencyKey) && requestHash is not null)
         {
-            appDbContext.ScanIdempotencies.Add(new ScanIdempotency
-            {
-                Key = idempotencyKey,
-                GateId = context.GateId,
-                RequestHash = requestHash,
-                ResponseHash = HashResponse(response),
-                ScanId = null,
-                StoredAt = now,
-            });
+            await StageIdempotencyAsync(
+                idempotencyKey, context.GateId, requestHash, HashResponse(response),
+                now, cancellationToken);
         }
         await appDbContext.SaveChangesAsync(cancellationToken);
 

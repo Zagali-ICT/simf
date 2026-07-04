@@ -15,6 +15,7 @@ using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Gates;
+using SIMF.Domain.AccessControl;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
@@ -216,6 +217,51 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
         var body = (await second.Content.ReadFromJsonAsync<ApiResult<object>>())!;
         Assert.Equal(ErrorCodes.IdempotencyKeyConflict, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Returning_badge_re_scan_after_24h_window_refreshes_idempotency_without_500()
+    {
+        // A4 (D-592) — the returning-badge 500. A prior scan's idempotency row
+        // older than the 24h replay window is filtered out by TryReplayAsync, so
+        // the re-scan flows to RecordAllowed — whose insert must upsert the stale
+        // row in place, not blind-Add and collide on the composite PK (Key, GateId).
+        var (token, _) = await CreateAdminAsync();
+        var gate = await CreateGateAsync(token, allowedProfileTypeIds: null,
+            ownAsOperator: true, mode: DirectionMode.Both);
+        var qrId = await CreateVisitorWithQrAsync(approved: true);
+        var key = Guid.NewGuid().ToString();
+
+        // Seed the returning badge's stale idempotency row (older than 24h).
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            appDb.ScanIdempotencies.Add(new ScanIdempotency
+            {
+                Key = key,
+                GateId = gate.Id,
+                RequestHash = "stale-request-hash",
+                ResponseHash = "stale-response-hash",
+                ScanId = null,
+                StoredAt = _factory.Time.GetUtcNow() - TimeSpan.FromHours(25),
+            });
+            await appDb.SaveChangesAsync();
+        }
+
+        // The re-scan must succeed, not 500 on the PK collision.
+        var response = await PostScanAsync(gate.Id, qr: qrId, token, idempotencyKey: key);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var rows = appDb.ScanIdempotencies
+                .Where(r => r.Key == key && r.GateId == gate.Id)
+                .ToList();
+            // One row, refreshed in place (not duplicated, not left stale).
+            Assert.Single(rows);
+            Assert.NotEqual("stale-request-hash", rows[0].RequestHash);
+        }
     }
 
     [Fact]

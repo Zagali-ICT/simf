@@ -214,6 +214,9 @@ public static class DependencyInjection
         services.AddScoped<IPasswordHistoryRepository, PasswordHistoryRepository>();
         // A1-19 (NCA) — dormant-account auto-disable (driven by the daily sweep host).
         services.AddScoped<IDormantAccountService, DormantAccountService>();
+        // A4 (NCA data-minimisation) — retention purge of dead security artifacts
+        // (driven by the daily RetentionSweepWorker host).
+        services.AddScoped<IRetentionPurgeService, RetentionPurgeService>();
         services.AddScoped<IPermissionRepository, PermissionRepository>();
         services.AddScoped<ISecondFactorTokenRepository, SecondFactorTokenRepository>();
         services.AddScoped<ITotpRecoveryCodeRepository, TotpRecoveryCodeRepository>();

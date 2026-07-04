@@ -61,6 +61,9 @@ builder.Services.AddInfrastructure(builder.Configuration);
 // A1-19 (NCA) — daily dormant-account disable sweep (no-op until configured).
 builder.Services.AddHostedService<SIMF.Api.HostedServices.DormantAccountSweepService>();
 
+// A4 (NCA data-minimisation) — daily retention purge of dead security artifacts.
+builder.Services.AddHostedService<SIMF.Api.HostedServices.RetentionSweepWorker>();
+
 // The audit log reads the request context; the API supplies it from HttpContext.
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IRequestContext, HttpRequestContext>();
