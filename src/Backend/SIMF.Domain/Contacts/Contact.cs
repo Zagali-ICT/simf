@@ -58,6 +58,11 @@ public sealed class Contact : BaseAuditEntity
     /// <c>SIMF.Domain.Common.Country.Id</c>. Optional.</summary>
     public int? CountryId { get; set; }
 
+    /// <summary>A5 — navigation for <see cref="CountryId"/> (same FK), so the
+    /// public sponsor projection reads the country name through one join instead
+    /// of a separate batch round-trip.</summary>
+    public Country? Country { get; set; }
+
     /// <summary>Wave 3 (Figma 1439:11881 / 11826) — the city, shown on the
     /// exhibitor / sponsor detail location line ("الظهران، المملكة العربية
     /// السعودية" = City، Country). Bilingual; ≤128. Optional. Additive (D-219).</summary>
