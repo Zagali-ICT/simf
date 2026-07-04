@@ -1,11 +1,40 @@
 // Tests: SIMF.Api.Tests/ProfileEndpointsTests.cs
 using System.Security.Claims;
 using FastEndpoints;
-using SIMF.Application.Abstractions;
-using SIMF.Application.IdentityAccess.Abstractions;
-using SIMF.Common;
+using Microsoft.EntityFrameworkCore;
+using SIMF.Application.Files.Abstractions;
+using SIMF.Common.Enums;
+using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Api.Endpoints.Account;
+
+/// <summary>D-568 (Wave C S3) — resolves a user's avatar bytes from the unified
+/// <c>StoredFile</c> store (App DB, encrypted at rest), owner-scoped by the user id.
+/// It is a RAW decrypt read, not <c>IFileService.DownloadAsync</c>: each serve
+/// endpoint enforces its own authorization (self-only for the app fetch, an admin
+/// View permission for the CP fetch), and the Avatar policy carries a single
+/// <c>AdminPermission</c> (Visitors.View) — routing the Others-avatar fetch (gated
+/// by Others.View) through DownloadAsync's authz would wrongly deny it. Skipping
+/// DownloadAsync also preserves the legacy no-per-fetch-audit behaviour for this
+/// high-frequency, client-cached read.</summary>
+internal static class AvatarBytes
+{
+    public static async Task<(byte[] Content, string ContentType)?> ReadAsync(
+        SimfAppDbContext appDb, IFileStorageProvider storage, Guid userId, CancellationToken ct)
+    {
+        var file = await appDb.StoredFiles.AsNoTracking()
+            .Where(f => f.Service == FileService.Avatar && f.OwnerEntityId == userId && f.IsActive)
+            // Newest active wins; Id is a deterministic tiebreak for the rare
+            // same-tick case (e.g. a fake TimeProvider or a brief replace window).
+            .OrderByDescending(f => f.CreatedAt)
+            .ThenByDescending(f => f.Id)
+            .Select(f => new { f.StorageKey, f.ContentType, f.IsEncrypted })
+            .FirstOrDefaultAsync(ct);
+        if (file?.StorageKey is not { Length: > 0 } key) { return null; }
+        var bytes = await storage.ReadAsync(key, file.IsEncrypted, ct);
+        return bytes is null ? null : (bytes, file.ContentType ?? "image/png");
+    }
+}
 
 /// <summary>
 /// <c>GET /api/v1/app/account/avatar/{userId:guid}</c> — streams the avatar bytes
@@ -15,8 +44,8 @@ namespace SIMF.Api.Endpoints.Account;
 /// authorisation check.
 /// </summary>
 public sealed class AvatarFetchEndpoint(
-    IUserAccountRepository accounts,
-    IAvatarStorage avatarStorage)
+    SimfAppDbContext appDb,
+    IFileStorageProvider storage)
     : EndpointWithoutRequest
 {
     public override void Configure()
@@ -43,24 +72,17 @@ public sealed class AvatarFetchEndpoint(
             return;
         }
 
-        var user = await accounts.FindByIdAsync(requestedId, ct);
-        if (user?.AvatarRelativePath is not { Length: > 0 } path)
+        var avatar = await AvatarBytes.ReadAsync(appDb, storage, requestedId, ct);
+        if (avatar is null)
         {
-            await Send.NotFoundAsync(ct);
-            return;
-        }
-
-        var read = await avatarStorage.OpenReadAsync(path, ct);
-        if (read is null)
-        {
-            // The row says we have an avatar but the file is missing —
-            // treat as "no avatar"; surface as 404 so the page falls back
-            // to the placeholder icon.
+            // No active avatar file (never set, removed, or the bytes are missing)
+            // — 404 so the page falls back to the placeholder icon.
             await Send.NotFoundAsync(ct);
             return;
         }
 
         HttpContext.Response.Headers.CacheControl = "private, max-age=300";
-        await Send.StreamAsync(read.Content, contentType: read.ContentType, cancellation: ct);
+        await Send.StreamAsync(
+            new MemoryStream(avatar.Value.Content), contentType: avatar.Value.ContentType, cancellation: ct);
     }
 }

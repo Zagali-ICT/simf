@@ -1,8 +1,12 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
+using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
+using SIMF.Infrastructure.Persistence;
 using Xunit;
 
 namespace SIMF.Api.Tests;
@@ -194,11 +198,14 @@ public sealed class ProfileEndpointsTests : IClassFixture<SimfApiFactory>
             .Content.ReadFromJsonAsync<ApiResult<ProfileResponse>>())!;
         Assert.NotNull(profile.Data!.AvatarUrl);
 
-        // The on-disk file should be exactly one — the replace path deletes
-        // any old file with the user's prefix before writing the new one.
-        var files = Directory.GetFiles(
-            _factory.AvatarStorageDirectory, $"{tokens.User.Id:N}.*");
-        Assert.Single(files);
+        // D-568 (S3) — avatars live in the StoredFile store now. The replace path
+        // retires the prior file, so exactly ONE active avatar StoredFile remains
+        // for the user (no orphaned bytes).
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var active = await db.StoredFiles.CountAsync(
+            f => f.Service == FileService.Avatar && f.OwnerEntityId == tokens.User.Id && f.IsActive);
+        Assert.Equal(1, active);
     }
 
     [Fact]
@@ -217,9 +224,12 @@ public sealed class ProfileEndpointsTests : IClassFixture<SimfApiFactory>
             .Content.ReadFromJsonAsync<ApiResult<ProfileResponse>>())!;
         Assert.Null(profile.Data!.AvatarUrl);
 
-        var files = Directory.GetFiles(
-            _factory.AvatarStorageDirectory, $"{tokens.User.Id:N}.*");
-        Assert.Empty(files);
+        // D-568 (S3) — delete retires the StoredFile: no active avatar remains.
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var active = await db.StoredFiles.CountAsync(
+            f => f.Service == FileService.Avatar && f.OwnerEntityId == tokens.User.Id && f.IsActive);
+        Assert.Equal(0, active);
     }
 
     private async Task<HttpResponseMessage> GetAuthAsync(string url, string token)
