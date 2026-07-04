@@ -27,9 +27,18 @@ public interface IAssetService
 
     /// <summary>Resolve the active asset for (category, owner) into everything a
     /// serve endpoint needs — bytes for an upload, the URL for a link — or
-    /// <c>null</c> when there is no active asset.</summary>
+    /// <c>null</c> when there is no active asset.
+    /// <para>A9 (security) — when <paramref name="requireOwnerActive"/> is
+    /// <c>true</c> (the anonymous public serve) the resolve ALSO returns
+    /// <c>null</c> if the owning entity (Speaker / Sponsor / News / …) has been
+    /// soft-deleted, so a deactivated owner's image stops serving on its
+    /// deterministic URL (the public list already hides it). The gated admin
+    /// preview passes <c>false</c> so the Media Library can still show a
+    /// deactivated owner's asset.</para></summary>
     Task<AssetResolution?> ResolveAsync(
-        AssetCategory category, Guid ownerId, CancellationToken cancellationToken = default);
+        AssetCategory category, Guid ownerId,
+        bool requireOwnerActive = true,
+        CancellationToken cancellationToken = default);
 
     // -- Central Media Library management (D-357 / MediaLibrary.* permission) --
 

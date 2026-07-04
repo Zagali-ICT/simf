@@ -37,9 +37,9 @@ internal static class AssetAuth
     /// writing the body starts the response.</para></summary>
     public static async Task ServeAsync(
         IAssetService service, AssetCategory category, Guid ownerId,
-        string cacheControl, HttpContext http, CancellationToken ct)
+        bool requireOwnerActive, string cacheControl, HttpContext http, CancellationToken ct)
     {
-        var resolution = await service.ResolveAsync(category, ownerId, ct);
+        var resolution = await service.ResolveAsync(category, ownerId, requireOwnerActive, ct);
         if (resolution is null)
         {
             http.Response.StatusCode = StatusCodes.Status404NotFound;
@@ -245,7 +245,10 @@ public sealed class AdminFetchAssetEndpoint(IAssetService service)
             await Send.ForbiddenAsync(ct);
             return;
         }
-        await AssetAuth.ServeAsync(service, category, req.OwnerId, "private, max-age=300", HttpContext, ct);
+        // Admin preview may show a deactivated owner's asset (Media Library).
+        await AssetAuth.ServeAsync(
+            service, category, req.OwnerId, requireOwnerActive: false,
+            "private, max-age=300", HttpContext, ct);
     }
 }
 
@@ -268,7 +271,10 @@ public sealed class PublicFetchAssetEndpoint(IAssetService service)
             await Send.NotFoundAsync(ct);
             return;
         }
-        await AssetAuth.ServeAsync(service, category, req.OwnerId, "public, max-age=300", HttpContext, ct);
+        // Public serve refuses a soft-deleted owner's image (A9).
+        await AssetAuth.ServeAsync(
+            service, category, req.OwnerId, requireOwnerActive: true,
+            "public, max-age=300", HttpContext, ct);
     }
 }
 

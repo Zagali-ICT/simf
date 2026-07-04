@@ -149,7 +149,9 @@ internal sealed class AssetService(
     }
 
     public async Task<AssetResolution?> ResolveAsync(
-        AssetCategory category, Guid ownerId, CancellationToken cancellationToken = default)
+        AssetCategory category, Guid ownerId,
+        bool requireOwnerActive = true,
+        CancellationToken cancellationToken = default)
     {
         var asset = await dbContext.Assets
             .AsNoTracking()
@@ -157,6 +159,20 @@ internal sealed class AssetService(
                 a => a.Category == category && a.OwnerId == ownerId && a.IsActive,
                 cancellationToken);
         if (asset is null) { return null; }
+
+        // A9 (security) — the anonymous public serve must refuse a soft-deleted
+        // owner's image: the owner drops off every public list, but its serve URL
+        // is a deterministic (category, ownerId) that a cache/bookmark/guess keeps
+        // resolving. Owner-deactivation does NOT cascade to the Asset row, so the
+        // asset stays IsActive; the check is a same-context lookup on the owner's
+        // own table (polymorphic OwnerId, no FK — one AnyAsync per category). The
+        // gated admin preview passes requireOwnerActive=false so the Media Library
+        // can still show a deactivated owner's asset.
+        if (requireOwnerActive
+            && !await OwnerIsActiveAsync(category, ownerId, cancellationToken))
+        {
+            return null;
+        }
 
         if (asset.SourceType == AssetSourceType.ExternalLink)
         {
@@ -169,6 +185,42 @@ internal sealed class AssetService(
         if (read is null) { return null; }
         return new AssetResolution(
             AssetSourceType.Upload, asset.Kind, read.Value.Content, read.Value.ContentType, null);
+    }
+
+    // A9 (security) — would the polymorphic owner of a (category, ownerId) asset
+    // still be visible on its PUBLIC surface? OwnerId is a bare Guid with no FK
+    // (D-157), so the check switches on the category and hits that category's own
+    // same-context table — the same per-category pattern as ResolveOwnerNamesAsync.
+    // Each branch must mirror that category's FULL public-visibility predicate, not
+    // just IsActive: NewsImage is gated by IsActive AND PublishedAt <= now (an
+    // embargoed/scheduled article is hidden from the feed, so its hero image must
+    // 404 too). The other seven categories gate on IsActive alone. An unmapped
+    // category is fail-closed (false): every current category is mapped below, so
+    // this is a tripwire that forces a new category to declare its owner table.
+    private Task<bool> OwnerIsActiveAsync(
+        AssetCategory category, Guid ownerId, CancellationToken cancellationToken)
+    {
+        var now = timeProvider.GetUtcNow();
+        return category switch
+        {
+            AssetCategory.SpeakerPhoto => dbContext.Speakers
+                .AnyAsync(x => x.Id == ownerId && x.IsActive, cancellationToken),
+            AssetCategory.CompanyLogo => dbContext.Contacts
+                .AnyAsync(x => x.Id == ownerId && x.IsActive, cancellationToken),
+            AssetCategory.MediaPartnerLogo => dbContext.MediaPartners
+                .AnyAsync(x => x.Id == ownerId && x.IsActive, cancellationToken),
+            AssetCategory.SponsorLogo => dbContext.Sponsors
+                .AnyAsync(x => x.Id == ownerId && x.IsActive, cancellationToken),
+            AssetCategory.ArchiveCover => dbContext.ArchiveEditions
+                .AnyAsync(x => x.Id == ownerId && x.IsActive, cancellationToken),
+            AssetCategory.NewsImage => dbContext.News
+                .AnyAsync(x => x.Id == ownerId && x.IsActive && x.PublishedAt <= now, cancellationToken),
+            AssetCategory.ProgrammeDayImage => dbContext.ProgrammeDays
+                .AnyAsync(x => x.Id == ownerId && x.IsActive, cancellationToken),
+            AssetCategory.OrganizationLogo => dbContext.OrganizationProfile
+                .AnyAsync(x => x.Id == ownerId && x.IsActive, cancellationToken),
+            _ => Task.FromResult(false),
+        };
     }
 
     public async Task<GridPage<AdminAssetSummary>> ListAsync(

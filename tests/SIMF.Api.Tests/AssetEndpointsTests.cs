@@ -2,19 +2,25 @@
 // per-category upload / external-link / public-serve gated by the OWNING entity's
 // permission, plus the central Media Library management (list / deactivate /
 // restore) gated by MediaLibrary.View / .Manage. Owner ids are free Guids — the
-// asset rows reference them polymorphically with no FK (D-157), so the tests need
-// no seeded owner row.
+// asset rows reference them polymorphically with no FK (D-157) — but the
+// ANONYMOUS public serve now refuses a soft-deleted owner (A9), so the positive
+// serve tests seed an ACTIVE owner row for the owner id; the admin preview does
+// not (it may show a deactivated owner's asset).
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Assets;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Programme;
+using SIMF.Domain.PublicRelations;
+using SIMF.Infrastructure.Persistence;
 using Xunit;
 
 namespace SIMF.Api.Tests;
@@ -42,6 +48,7 @@ public sealed class AssetEndpointsTests : IClassFixture<SimfApiFactory>
     {
         var token = await CreateAdministratorAndSignInAsync();
         var owner = Guid.NewGuid();
+        await SeedActiveSpeakerAsync(owner);
 
         var upload = await UploadAsync("SpeakerPhoto", owner, "Image", Png, "image/png", "p.png", token);
         Assert.Equal(HttpStatusCode.OK, upload.StatusCode);
@@ -79,6 +86,7 @@ public sealed class AssetEndpointsTests : IClassFixture<SimfApiFactory>
         // rather than following it. Exercises AssetAuth.ServeAsync's link branch.
         var token = await CreateAdministratorAndSignInAsync();
         var owner = Guid.NewGuid();
+        await SeedNewsAsync(owner, publishedAt: DateTimeOffset.UtcNow.AddDays(-1));
         var link = await PutAuthAsync(
             $"/api/v1/admin/assets/NewsImage/{owner}/link",
             new SetAssetLinkRequest { Kind = AssetKind.Image, Url = "https://cdn.example/x.jpg" },
@@ -100,6 +108,7 @@ public sealed class AssetEndpointsTests : IClassFixture<SimfApiFactory>
         // validator gets 200 + bytes. A plain first fetch is unchanged (200 + ETag).
         var token = await CreateAdministratorAndSignInAsync();
         var owner = Guid.NewGuid();
+        await SeedActiveSpeakerAsync(owner);
         var upload = await UploadAsync(
             "SpeakerPhoto", owner, "Image", Png, "image/png", "p.png", token);
         Assert.Equal(HttpStatusCode.OK, upload.StatusCode);
@@ -126,6 +135,69 @@ public sealed class AssetEndpointsTests : IClassFixture<SimfApiFactory>
         var full = await _client.SendAsync(mismatch);
         Assert.Equal(HttpStatusCode.OK, full.StatusCode);
         Assert.NotEmpty(await full.Content.ReadAsByteArrayAsync());
+    }
+
+    [Fact]
+    public async Task Public_serve_stops_after_the_owner_is_soft_deleted_but_admin_preview_does_not()
+    {
+        // A9 (security) — a deactivated owner drops off every public list, but the
+        // serve URL is a deterministic (category, ownerId). After the owner is
+        // soft-deleted the ANONYMOUS serve must 404, while the gated admin preview
+        // still streams (the Media Library manages deactivated owners' assets).
+        var token = await CreateAdministratorAndSignInAsync();
+        var owner = Guid.NewGuid();
+        await SeedActiveSpeakerAsync(owner);
+        var upload = await UploadAsync("SpeakerPhoto", owner, "Image", Png, "image/png", "p.png", token);
+        Assert.Equal(HttpStatusCode.OK, upload.StatusCode);
+
+        var publicUrl = $"/api/v1/app/assets/SpeakerPhoto/{owner}/image";
+        var adminUrl = $"/api/v1/admin/assets/SpeakerPhoto/{owner}/image";
+
+        // While the owner is active, both the public serve and the admin preview
+        // stream the bytes.
+        Assert.Equal(HttpStatusCode.OK, (await _client.GetAsync(publicUrl)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await GetAuthAsync(adminUrl, token)).StatusCode);
+
+        // Soft-delete the owning speaker (the asset row itself stays IsActive).
+        await DeactivateSpeakerAsync(owner);
+
+        // Anonymous public serve now refuses (404); admin preview still streams.
+        Assert.Equal(HttpStatusCode.NotFound, (await _client.GetAsync(publicUrl)).StatusCode);
+        var adminAfter = await GetAuthAsync(adminUrl, token);
+        Assert.Equal(HttpStatusCode.OK, adminAfter.StatusCode);
+        Assert.NotEmpty(await adminAfter.Content.ReadAsByteArrayAsync());
+    }
+
+    [Fact]
+    public async Task Public_serve_refuses_an_embargoed_news_image()
+    {
+        // A9 (security) — News is public only when IsActive AND PublishedAt <= now.
+        // An embargoed/scheduled article (future PublishedAt) is hidden from the
+        // feed, so its hero image must also 404 on the anonymous serve — the
+        // owner-active check mirrors the FULL public gate, not just IsActive.
+        var token = await CreateAdministratorAndSignInAsync();
+        var owner = Guid.NewGuid();
+        await SeedNewsAsync(owner, publishedAt: DateTimeOffset.UtcNow.AddDays(7)); // embargoed
+        var link = await PutAuthAsync(
+            $"/api/v1/admin/assets/NewsImage/{owner}/link",
+            new SetAssetLinkRequest { Kind = AssetKind.Image, Url = "https://cdn.example/embargo.jpg" },
+            token);
+        Assert.Equal(HttpStatusCode.OK, link.StatusCode);
+
+        using var noRedirect = _factory.CreateClient(
+            new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        var img = await noRedirect.GetAsync($"/api/v1/app/assets/NewsImage/{owner}/image");
+        // Embargoed → not served publicly (would have been a 302 to the link).
+        Assert.Equal(HttpStatusCode.NotFound, img.StatusCode);
+
+        // But the gated admin preview still resolves it (requireOwnerActive=false).
+        using var adminClient = _factory.CreateClient(
+            new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        var adminReq = new HttpRequestMessage(
+            HttpMethod.Get, $"/api/v1/admin/assets/NewsImage/{owner}/image");
+        adminReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var adminResp = await adminClient.SendAsync(adminReq);
+        Assert.Equal(HttpStatusCode.Redirect, adminResp.StatusCode); // 302 to the link
     }
 
     [Fact]
@@ -242,6 +314,54 @@ public sealed class AssetEndpointsTests : IClassFixture<SimfApiFactory>
     }
 
     // -- Helpers --------------------------------------------------------------
+
+    // A9 — seed an ACTIVE owning entity so the anonymous public serve (which now
+    // refuses a soft-deleted owner) streams the asset. Timestamps are stamped by
+    // the audit interceptor on add.
+    private async Task SeedActiveSpeakerAsync(Guid id)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        db.Speakers.Add(new Speaker
+        {
+            Id = id,
+            Code = id.ToString("N")[..16], // unique, within the 16-char Code cap
+            Name = "Serve Owner",
+            NameArabic = "المالك",
+            IsActive = true,
+        });
+        await db.SaveChangesAsync();
+    }
+
+    // News is public only when IsActive AND PublishedAt <= now, so the serve gate
+    // mirrors both. publishedAt in the future = an embargoed article (feed-hidden).
+    private async Task SeedNewsAsync(Guid id, DateTimeOffset publishedAt)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        db.News.Add(new News
+        {
+            Id = id,
+            Title = "Serve Owner",
+            TitleArabic = "المالك",
+            Body = "b",
+            BodyArabic = "ب",
+            Category = "NEWS",
+            CategoryArabic = "أخبار",
+            IsActive = true,
+            PublishedAt = publishedAt,
+        });
+        await db.SaveChangesAsync();
+    }
+
+    private async Task DeactivateSpeakerAsync(Guid id)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var speaker = await db.Speakers.FirstAsync(x => x.Id == id);
+        speaker.IsActive = false;
+        await db.SaveChangesAsync();
+    }
 
     private static MultipartFormDataContent BuildForm(byte[] bytes, string contentType, string fileName)
     {
