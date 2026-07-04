@@ -47,6 +47,13 @@ public interface IUserProfileRepository
     Task<string?> GetVipPhotoPathAsync(
         Guid userId, CancellationToken cancellationToken = default);
 
+    /// <summary>D-568 (Wave C S4) — the active VIP-photo <c>StoredFile</c>'s storage
+    /// locator (key + content-type + encrypted flag) for the subject, or null when
+    /// none. Owner-scoped (<c>Service=VipPhoto, OwnerEntityId=subject userId</c>) in
+    /// the same App DB — no cross-context read.</summary>
+    Task<(string StorageKey, string? ContentType, bool IsEncrypted)?> GetVipPhotoFileAsync(
+        Guid subjectUserId, CancellationToken cancellationToken = default);
+
     /// <summary>The assigned profile type's audience flag + mobile role, or
     /// null when the user has no profile type assigned.</summary>
     Task<ProfileTypeRole?> GetAssignedProfileTypeRoleAsync(

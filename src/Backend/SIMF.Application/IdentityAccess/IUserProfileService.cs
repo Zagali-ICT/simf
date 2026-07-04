@@ -78,8 +78,10 @@ public interface IUserProfileService
 
     /// <summary>V-1 (D-429): admin-side read of a subject's VIP welcome photo.
     /// Same UserType-match guard as the upload variant; null when no photo is
-    /// set.</summary>
+    /// set. D-568 (Wave C S4): the actor is audited on every byte disclosure
+    /// (PII trail), mirroring <see cref="ReadIdImageForSubjectAsync"/>.</summary>
     Task<VipPhotoImage?> ReadVipPhotoForSubjectAsync(
+        Guid actorUserId,
         Guid subjectUserId,
         SIMF.Common.Enums.UserType expectedKind,
         CancellationToken cancellationToken = default);

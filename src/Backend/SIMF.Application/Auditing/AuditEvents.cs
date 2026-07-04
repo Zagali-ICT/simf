@@ -126,6 +126,8 @@ public static class AuditEvents
     public const string UserProfileIdImageViewed = "UserProfile.IdImageViewed";
     // V-1 (D-429) — VVIP/VIP welcome photo (موج) upload.
     public const string UserProfileVipPhotoUploaded = "UserProfile.VipPhotoUploaded";
+    // D-568 (Wave C S4, PII) — every admin READ/disclosure of a subject's VIP photo.
+    public const string UserProfileVipPhotoViewed = "UserProfile.VipPhotoViewed";
 
     // Interests (P9 — D-050; الاهتمامات)
     public const string InterestCreated = "Interest.Created";

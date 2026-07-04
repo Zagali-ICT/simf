@@ -7,6 +7,7 @@
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Abstractions;
 using SIMF.Application.Auditing;
+using SIMF.Application.Files.Abstractions;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Application.Notifications;
 using SIMF.Common;
@@ -36,7 +37,8 @@ internal sealed class UserProfileService(
     IUserAccountRepository accounts,
     IUserProfileRepository profiles,
     IUserIdDocumentStorage idStorage,
-    IVipPhotoStorage vipPhotoStorage,
+    IFileService fileService,
+    IFileStorageProvider fileStorage,
     SIMF.Application.Abstractions.IUploadScanner uploadScanner,
     IAuditLog auditLog,
     TimeProvider timeProvider,
@@ -723,15 +725,38 @@ internal sealed class UserProfileService(
             profiles.Add(profile);
         }
 
-        // A6-18 (NCA) — malware-scan the untrusted image before it is stored.
-        await uploadScanner.EnsureCleanAsync(content, "vip-photo", cancellationToken);
-
-        var relativePath = await vipPhotoStorage.SaveAsync(
-            subjectUserId, content, contentType, cancellationToken);
-        profile.VipPhotoRelativePath = relativePath;
+        // D-568 (S4) — store the bytes in the unified StoredFile store (App DB,
+        // owner = subject userId, encrypted at rest). IFileService runs the full
+        // pipeline (malware scan, magic-byte allow-list, canonical MIME, SHA-256,
+        // audit). VipPhotoRelativePath is repurposed as the bare-Guid pointer +
+        // "has VIP photo" presence sentinel, so VipRosterService keeps working.
+        var priorFileId = ParseFileId(profile.VipPhotoRelativePath);
+        var result = await fileService.UploadAsync(
+            new UploadFileCommand(
+                FileService.VipPhoto, subjectUserId, content, null, contentType, actorUserId, FailClosed: false),
+            cancellationToken);
+        profile.VipPhotoRelativePath = result.Id.ToString();
         profile.UpdatedAt = timeProvider.GetUtcNow();
         // D-167: UserProfile is on the App DB now.
         await profiles.SaveAppChangesAsync(cancellationToken);
+
+        // Retiring the prior file is best-effort: the new photo is already the
+        // committed source of truth, so a failure here (e.g. a stale pointer whose
+        // StoredFile row is gone → DeleteAsync 404) must not fail the upload and
+        // trigger an orphan-spawning retry. Worst case leaves one orphaned blob.
+        if (priorFileId is { } old && old != result.Id)
+        {
+            try
+            {
+                await fileService.DeleteAsync(old, actorUserId, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(
+                    ex, "VIP-photo retirement of prior file {PriorFileId} failed for subject {SubjectUserId}; new photo {NewFileId} is committed.",
+                    old, subjectUserId, result.Id);
+            }
+        }
 
         await auditLog.WriteAsync(new AuditEntry
         {
@@ -740,11 +765,12 @@ internal sealed class UserProfileService(
             SubjectUserId = subjectUserId,
             SubjectEmail = subject.Email,
             ActorUserId = actorUserId,
-            Detail = $"admin-upload vip-photo; {content.Length} bytes; {contentType}",
+            Detail = $"admin-upload vip-photo; {content.Length} bytes; {contentType}; fileId={result.Id}",
         }, cancellationToken);
     }
 
     public async Task<VipPhotoImage?> ReadVipPhotoForSubjectAsync(
+        Guid actorUserId,
         Guid subjectUserId,
         UserType expectedKind,
         CancellationToken cancellationToken = default)
@@ -752,20 +778,37 @@ internal sealed class UserProfileService(
         var subject = await accounts.FindByIdAsync(subjectUserId, cancellationToken);
         if (subject is null || subject.UserType != expectedKind) { return null; }
 
-        // One-column projection (no tracking) — mirrors GetIdImagePathAsync; the
-        // per-image read path doesn't need the whole tracked profile.
-        var path = await profiles.GetVipPhotoPathAsync(subjectUserId, cancellationToken);
-        if (path is null)
+        // D-568 (S4) — resolve the VIP photo from the unified StoredFile store
+        // (App DB, owner-scoped). Raw decrypt read: the ExpectedKind guard above is
+        // the authorization; the admin fetch route also gates on Visitors.View. The
+        // bytes are AES-GCM encrypted at rest, so a tampered blob fails the auth tag
+        // on decrypt (ReadAsync → null) — the integrity guard is intrinsic.
+        var locator = await profiles.GetVipPhotoFileAsync(subjectUserId, cancellationToken);
+        if (locator is not { } file) { return null; }
+        var bytes = await fileStorage.ReadAsync(file.StorageKey, file.IsEncrypted, cancellationToken);
+        if (bytes is null) { return null; }
+
+        // D-568 (S4, PII) — an admin READ of a VIP welcome photo is a personal-data
+        // disclosure and must leave an audit trail, mirroring the ID-image read
+        // (ReadIdImageForSubjectAsync). Only the actual byte disclosure is audited —
+        // a 404 for a subject with no photo on file is not.
+        await auditLog.WriteAsync(new AuditEntry
         {
-            return null;
-        }
-        var read = await vipPhotoStorage.OpenReadAsync(path, cancellationToken);
-        if (read is null) { return null; }
-        using var stream = read.Content;
-        using var buffer = new MemoryStream();
-        await stream.CopyToAsync(buffer, cancellationToken);
-        return new VipPhotoImage(buffer.ToArray(), read.ContentType);
+            EventType = AuditEvents.UserProfileVipPhotoViewed,
+            Outcome = AuditOutcome.Success,
+            SubjectUserId = subjectUserId,
+            SubjectEmail = subject.Email,
+            ActorUserId = actorUserId,
+            Detail = $"admin-read vip-photo; {bytes.Length} bytes; {file.ContentType}",
+        }, cancellationToken);
+
+        return new VipPhotoImage(bytes, file.ContentType ?? "image/png");
     }
+
+    /// <summary>D-568 (S4/S3) — the VIP-photo / avatar pointer columns now hold a
+    /// StoredFile GUID. Returns it when parseable, else null.</summary>
+    private static Guid? ParseFileId(string? pointer) =>
+        Guid.TryParse(pointer, out var id) ? id : null;
 
     private static UserProfileResponse ToResponse(
         UserProfile profile, string? qrId, string nationalityCode, bool hasAvatar) =>

@@ -92,6 +92,20 @@ internal sealed class UserProfileRepository(
         return string.IsNullOrEmpty(path) ? null : path;
     }
 
+    public async Task<(string StorageKey, string? ContentType, bool IsEncrypted)?> GetVipPhotoFileAsync(
+        Guid subjectUserId, CancellationToken cancellationToken = default)
+    {
+        var row = await appDbContext.StoredFiles
+            .AsNoTracking()
+            .Where(f => f.Service == SIMF.Common.Enums.FileService.VipPhoto
+                && f.OwnerEntityId == subjectUserId && f.IsActive && f.StorageKey != null)
+            .OrderByDescending(f => f.CreatedAt)
+            .ThenByDescending(f => f.Id)
+            .Select(f => new { f.StorageKey, f.ContentType, f.IsEncrypted })
+            .FirstOrDefaultAsync(cancellationToken);
+        return row is null ? null : (row.StorageKey!, row.ContentType, row.IsEncrypted);
+    }
+
     public Task<ProfileCompletenessFacts?> GetCompletenessFactsAsync(
         Guid userId, CancellationToken cancellationToken = default) =>
         appDbContext.UserProfiles
