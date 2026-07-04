@@ -234,14 +234,15 @@ internal sealed class ProgrammeSessionService(
             return new PublicProgrammeDays(synthesized);
         }
 
-        // Which authored days have a linked logo (one query against the Asset table).
+        // Which authored days have a linked image (D-568 (S1) — StoredFile store).
         var dayIds = days.Select(d => d.Id).ToList();
-        var withImage = (await dbContext.Assets
+        var withImage = (await dbContext.StoredFiles
                 .AsNoTracking()
-                .Where(a => a.IsActive
-                    && a.Category == AssetCategory.ProgrammeDayImage
-                    && dayIds.Contains(a.OwnerId))
-                .Select(a => a.OwnerId)
+                .Where(f => f.IsActive
+                    && f.Service == FileService.ProgrammeDayImage
+                    && f.OwnerEntityId != null
+                    && dayIds.Contains(f.OwnerEntityId.Value))
+                .Select(f => f.OwnerEntityId!.Value)
                 .Distinct()
                 .ToListAsync(cancellationToken))
             .ToHashSet();

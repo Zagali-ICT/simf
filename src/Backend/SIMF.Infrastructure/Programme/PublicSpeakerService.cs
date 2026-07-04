@@ -55,12 +55,14 @@ internal sealed class PublicSpeakerService(SimfAppDbContext dbContext)
         // batched query; OwnerId is the speaker id, resolved cross-row with no FK
         // so it cannot fold into the main projection's join).
         var speakerIds = rows.Select(row => row.Id).ToList();
-        var withPhotoAsset = (await dbContext.Assets
+        // D-568 (S1) — the photo now lives in the unified StoredFile store.
+        var withPhotoAsset = (await dbContext.StoredFiles
             .AsNoTracking()
-            .Where(asset => asset.Category == AssetCategory.SpeakerPhoto
-                && asset.IsActive
-                && speakerIds.Contains(asset.OwnerId))
-            .Select(asset => asset.OwnerId)
+            .Where(file => file.Service == FileService.SpeakerPhoto
+                && file.IsActive
+                && file.OwnerEntityId != null
+                && speakerIds.Contains(file.OwnerEntityId.Value))
+            .Select(file => file.OwnerEntityId!.Value)
             .ToListAsync(cancellationToken))
             .ToHashSet();
 

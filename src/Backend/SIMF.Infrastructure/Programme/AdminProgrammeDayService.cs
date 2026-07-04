@@ -242,10 +242,10 @@ internal sealed class AdminProgrammeDayService(
     }
 
     private Task<bool> HasImageAsync(Guid dayId, CancellationToken cancellationToken) =>
-        db.Assets.AsNoTracking().AnyAsync(
-            a => a.IsActive
-                && a.Category == AssetCategory.ProgrammeDayImage
-                && a.OwnerId == dayId,
+        db.StoredFiles.AsNoTracking().AnyAsync(
+            f => f.IsActive
+                && f.Service == FileService.ProgrammeDayImage
+                && f.OwnerEntityId == dayId,
             cancellationToken);
 
     private async Task<HashSet<Guid>> DaysWithImageAsync(
@@ -255,12 +255,14 @@ internal sealed class AdminProgrammeDayService(
         {
             return new HashSet<Guid>();
         }
-        return (await db.Assets
+        // D-568 (S1) — the day image now lives in the unified StoredFile store.
+        return (await db.StoredFiles
                 .AsNoTracking()
-                .Where(a => a.IsActive
-                    && a.Category == AssetCategory.ProgrammeDayImage
-                    && dayIds.Contains(a.OwnerId))
-                .Select(a => a.OwnerId)
+                .Where(f => f.IsActive
+                    && f.Service == FileService.ProgrammeDayImage
+                    && f.OwnerEntityId != null
+                    && dayIds.Contains(f.OwnerEntityId.Value))
+                .Select(f => f.OwnerEntityId!.Value)
                 .Distinct()
                 .ToListAsync(cancellationToken))
             .ToHashSet();
