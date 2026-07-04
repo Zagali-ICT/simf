@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
+using SIMF.Application.Files.Abstractions;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -14,15 +15,16 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Programme;
 
 /// <summary>P2.3 — D-228 (FR-407): admin management of speaker presentation
-/// files (SIMF-FDS-004 §5.3). Bytes are stored out-of-row via
-/// <see cref="ISpeakerPresentationStorage"/>; the row holds only metadata.
-/// Both Speaker and Session are real FKs on <see cref="SimfAppDbContext"/>, so
-/// the session title is resolved in the same context.</summary>
+/// files (SIMF-FDS-004 §5.3). D-568 (Wave C S6): bytes live in the unified
+/// <c>StoredFile</c> store (Internal tier, encrypted at rest); the row keeps only
+/// the metadata + the bare-Guid pointer in <c>StoredFileName</c>. Both Speaker and
+/// Session are real FKs on <see cref="SimfAppDbContext"/>, so the session title is
+/// resolved in the same context.</summary>
 internal sealed class AdminSpeakerPresentationService(
     SimfAppDbContext db,
-    ISpeakerPresentationStorage storage,
+    IFileService fileService,
+    IFileStorageProvider fileStorage,
     IAuditLog auditLog,
-    SIMF.Application.Abstractions.IUploadScanner uploadScanner,
     TimeProvider timeProvider,
     ILogger<AdminSpeakerPresentationService> logger) : IAdminSpeakerPresentationService
 {
@@ -71,10 +73,6 @@ internal sealed class AdminSpeakerPresentationService(
                 "The presentation must be a PDF, PowerPoint, or Word document.",
                 "يجب أن يكون ملف العرض بصيغة PDF أو PowerPoint أو Word.");
         }
-        // A6-18 (NCA) — malware-scan the 50 MB upload before storing it.
-        await SIMF.Application.Abstractions.UploadScannerExtensions.EnsureCleanAsync(
-            uploadScanner, content, fileName, cancellationToken);
-
         var speakerExists = await db.Speakers.AsNoTracking()
             .AnyAsync(s => s.Id == speakerId && s.IsActive, cancellationToken);
         if (!speakerExists)
@@ -96,8 +94,16 @@ internal sealed class AdminSpeakerPresentationService(
 
         var safeName = SanitiseFileName(fileName);
         var presentationId = Guid.NewGuid();
-        var storedName = await storage.SaveAsync(
-            presentationId, content, safeName, cancellationToken);
+        // D-568 (S6) — store the bytes in the unified StoredFile store (Internal tier,
+        // encrypted at rest, owner = the presentation). IFileService runs the full
+        // pipeline (malware scan, magic-byte allow-list, canonical MIME, SHA-256,
+        // audit), so the standalone scanner call is gone. StoredFileName holds the
+        // bare-Guid pointer to the StoredFile.
+        var result = await fileService.UploadAsync(
+            new UploadFileCommand(
+                FileService.SpeakerPresentation, presentationId, content, safeName, contentType,
+                actorUserId, FailClosed: false),
+            cancellationToken);
 
         var presentation = new SpeakerPresentation
         {
@@ -105,7 +111,7 @@ internal sealed class AdminSpeakerPresentationService(
             SpeakerId = speakerId,
             SessionId = sessionId,
             FileName = safeName,
-            StoredFileName = storedName,
+            StoredFileName = result.Id.ToString(),
             ContentType = string.IsNullOrWhiteSpace(contentType)
                 ? "application/octet-stream" : contentType,
             SizeBytes = content.Length,
@@ -145,8 +151,9 @@ internal sealed class AdminSpeakerPresentationService(
         {
             return null;
         }
-        var file = await storage.GetAsync(row.StoredFileName, row.ContentType, cancellationToken);
-        return file is null ? null : (file.Value.Content, file.Value.ContentType, row.FileName);
+        var bytes = await PresentationFileReader.ReadBytesAsync(
+            db, fileStorage, row.StoredFileName, cancellationToken);
+        return bytes is null ? null : (bytes, row.ContentType, row.FileName);
     }
 
     public async Task DeleteAsync(
@@ -166,7 +173,23 @@ internal sealed class AdminSpeakerPresentationService(
 
         presentation.Deactivate();
         await db.SaveChangesAsync(cancellationToken);
-        await storage.DeleteAsync(presentation.StoredFileName, cancellationToken);
+
+        // D-568 (S6) — retire the StoredFile (soft-delete + unlink bytes). Best-effort:
+        // the row is already deactivated (source of truth), so a delete failure must
+        // not fail the operation. SpeakerPresentation is DeletableDefault:true.
+        if (Guid.TryParse(presentation.StoredFileName, out var fileId))
+        {
+            try
+            {
+                await fileService.DeleteAsync(fileId, actorUserId, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(
+                    ex, "StoredFile retirement failed for presentation {PresentationId} (file {FileId}); the row is deactivated.",
+                    presentation.Id, fileId);
+            }
+        }
 
         await auditLog.WriteAsync(new AuditEntry
         {
