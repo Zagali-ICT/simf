@@ -54,6 +54,8 @@ public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
         var req = await db.SpeakerMeetingRequests.SingleAsync(r => r.SpeakerId == speakerId);
         Assert.Equal(WindowStart, req.SlotStartUtc);
         Assert.Equal(MeetingRequestStatus.Pending, req.Status);
+        // D-612 — the picked slot's availability window is persisted (was inert).
+        Assert.NotNull(req.AvailabilityWindowId);
     }
 
     [Fact]

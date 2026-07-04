@@ -103,6 +103,7 @@ internal sealed class SpeakerMeetingRequestService(
         // legacy topic-only request (any approved attendee).
         DateTimeOffset? slotStart = null;
         DateTimeOffset? slotEnd = null;
+        Guid? availabilityWindowId = null;
         if (request.SlotStartUtc is { } pickedStart)
         {
             if (request.SlotEndUtc is not { } pickedEnd || pickedEnd <= pickedStart)
@@ -129,6 +130,15 @@ internal sealed class SpeakerMeetingRequestService(
             }
             slotStart = pickedStart;
             slotEnd = pickedEnd;
+
+            // D-612 — persist which availability window the picked slot came from
+            // (the D-611 SpeakerMeetingRequests.AvailabilityWindowId FK, SetNull).
+            // The slot falls inside exactly one active window; resolve it by range.
+            availabilityWindowId = await appDbContext.SpeakerAvailabilityWindows.AsNoTracking()
+                .Where(w => w.SpeakerId == speakerId && w.IsActive
+                    && w.StartUtc <= pickedStart && w.EndUtc >= pickedEnd)
+                .Select(w => (Guid?)w.Id)
+                .FirstOrDefaultAsync(cancellationToken);
         }
 
         var now = timeProvider.GetUtcNow();
@@ -141,6 +151,7 @@ internal sealed class SpeakerMeetingRequestService(
             Subject = subject,
             SlotStartUtc = slotStart,
             SlotEndUtc = slotEnd,
+            AvailabilityWindowId = availabilityWindowId,
             Status = MeetingRequestStatus.Pending,
             CreatedAt = now,
         };
