@@ -252,16 +252,71 @@ internal sealed class ProgrammeSessionService(
     public async Task<PublicSessionDetail?> GetAsync(
         Guid id, CancellationToken cancellationToken = default)
     {
-        var session = await dbContext.Sessions
+        // A6 — project the session header + its two child collections (themes,
+        // speakers) as independent per-collection sub-selects, mirroring ListAsync.
+        // The prior multi-Include (Hall + Speakers + Themes + Category) JOINed the
+        // two SIBLING collections into one rowset, materialising a speakers×themes
+        // cartesian product with the full Session/Hall/Category columns duplicated
+        // on every row (EF's MultipleCollectionIncludeWarning). The projection emits
+        // one APPLY per collection — no cross product, only the needed columns.
+        var row = await dbContext.Sessions
             .AsNoTracking()
-            .Include(row => row.Hall)
-            .Include(row => row.Speakers).ThenInclude(link => link.Speaker)
-            .Include(row => row.Themes).ThenInclude(link => link.Theme)
-            .Include(row => row.Category)
-            .SingleOrDefaultAsync(
-                row => row.Id == id && row.IsActive, cancellationToken);
+            .Where(session => session.Id == id && session.IsActive)
+            .Select(session => new
+            {
+                session.Id,
+                session.Code,
+                session.Title,
+                session.TitleArabic,
+                session.Description,
+                session.DescriptionArabic,
+                session.HallId,
+                HallName = session.Hall!.Name,
+                HallNameArabic = session.Hall!.NameArabic,
+                HallCapacity = (int?)session.Hall!.Capacity,
+                session.StartUtc,
+                session.EndUtc,
+                session.CapacityOverride,
+                session.Status,
+                session.PublishedAt,
+                HasRecordingFile = session.RecordingStoredFileName != null,
+                session.LiveStreamUrl,
+                session.LiveSignLanguageUrl,
+                session.LiveCaptions,
+                session.LiveCaptionsArabic,
+                session.CategoryId,
+                CategoryName = session.Category != null ? session.Category.Name : null,
+                CategoryNameArabic =
+                    session.Category != null ? session.Category.NameArabic : null,
+                Themes = session.Themes
+                    .Where(link => link.Theme!.IsActive)
+                    .Select(link => new
+                    {
+                        link.Theme!.Id,
+                        link.Theme!.Name,
+                        link.Theme!.NameArabic,
+                        link.Theme!.PageColor,
+                        link.Theme!.DisplayOrder,
+                    })
+                    .ToList(),
+                Speakers = session.Speakers
+                    .Where(link => link.Speaker!.IsActive)
+                    .Select(link => new
+                    {
+                        link.Speaker!.Id,
+                        link.Speaker!.Name,
+                        link.Speaker!.NameArabic,
+                        link.Speaker!.Rank,
+                        link.DisplayOrder,
+                        link.Role,
+                        link.Speaker!.CountryId,
+                        link.Speaker!.PhotoRelativePath,
+                    })
+                    .ToList(),
+            })
+            .SingleOrDefaultAsync(cancellationToken);
 
-        if (session is null)
+        if (row is null)
         {
             return null;
         }
@@ -273,50 +328,47 @@ internal sealed class ProgrammeSessionService(
                 cancellationToken);
 
         var effectiveCapacity =
-            session.CapacityOverride ?? session.Hall?.Capacity ?? 0;
+            row.CapacityOverride ?? row.HallCapacity ?? 0;
 
-        var themes = session.Themes
-            .Where(link => link.Theme is not null && link.Theme.IsActive)
-            .OrderBy(link => link.Theme!.DisplayOrder)
-            .ThenBy(link => link.Theme!.Name)
-            .Select(link => new PublicSessionTheme(
-                link.Theme!.Id,
-                link.Theme!.Name,
-                link.Theme!.NameArabic,
-                link.Theme!.PageColor))
+        var themes = row.Themes
+            .OrderBy(theme => theme.DisplayOrder)
+            .ThenBy(theme => theme.Name)
+            .Select(theme => new PublicSessionTheme(
+                theme.Id,
+                theme.Name,
+                theme.NameArabic,
+                theme.PageColor))
             .ToList();
 
         // §7: resolve the country names for the detail's speakers in one query.
         var detailCountries = await ResolveCountriesAsync(
-            session.Speakers
-                .Where(link => link.Speaker is not null && link.Speaker.IsActive
-                    && link.Speaker.CountryId.HasValue)
-                .Select(link => link.Speaker!.CountryId!.Value),
+            row.Speakers
+                .Where(speaker => speaker.CountryId.HasValue)
+                .Select(speaker => speaker.CountryId!.Value),
             cancellationToken);
 
-        var speakers = session.Speakers
-            .Where(link => link.Speaker is not null && link.Speaker.IsActive)
-            .OrderBy(link => link.DisplayOrder)
-            .Select(link =>
+        var speakers = row.Speakers
+            .OrderBy(speaker => speaker.DisplayOrder)
+            .Select(speaker =>
             {
                 string? countryEn = null, countryAr = null;
-                if (link.Speaker!.CountryId is { } countryId
+                if (speaker.CountryId is { } countryId
                     && detailCountries.TryGetValue(countryId, out var country))
                 {
                     countryEn = country.Name;
                     countryAr = country.NameArabic;
                 }
                 return new PublicSessionSpeaker(
-                    link.Speaker!.Id,
-                    link.Speaker!.Name,
-                    link.Speaker!.NameArabic,
-                    link.Speaker!.Rank,
-                    link.DisplayOrder,
-                    link.Role,
-                    link.Speaker!.CountryId,
+                    speaker.Id,
+                    speaker.Name,
+                    speaker.NameArabic,
+                    speaker.Rank,
+                    speaker.DisplayOrder,
+                    speaker.Role,
+                    speaker.CountryId,
                     countryEn,
                     countryAr,
-                    link.Speaker!.PhotoRelativePath);
+                    speaker.PhotoRelativePath);
             })
             .ToList();
 
@@ -330,47 +382,46 @@ internal sealed class ProgrammeSessionService(
         // UTC window (SIMF sessions are daytime UTC+3, so they never straddle UTC
         // midnight) ordered by StartUtc. Count the earlier active sessions in the
         // same day; +1 is this session's ordinal.
-        var dayStart = new DateTimeOffset(session.StartUtc.UtcDateTime.Date, TimeSpan.Zero);
+        var dayStart = new DateTimeOffset(row.StartUtc.UtcDateTime.Date, TimeSpan.Zero);
         var nextDayStart = dayStart.AddDays(1);
         var displayOrder = 1 + await dbContext.Sessions
             .AsNoTracking()
             .CountAsync(
-                row => row.IsActive
-                    && row.StartUtc >= dayStart
-                    && row.StartUtc < nextDayStart
-                    && row.StartUtc < session.StartUtc,
+                sibling => sibling.IsActive
+                    && sibling.StartUtc >= dayStart
+                    && sibling.StartUtc < nextDayStart
+                    && sibling.StartUtc < row.StartUtc,
                 cancellationToken);
 
         return new PublicSessionDetail(
-            session.Id,
-            session.Code,
-            session.Title,
-            session.TitleArabic,
-            session.Description,
-            session.DescriptionArabic,
-            session.HallId,
-            session.Hall?.Name ?? string.Empty,
-            session.Hall?.NameArabic ?? string.Empty,
-            session.StartUtc,
-            session.EndUtc,
+            row.Id,
+            row.Code,
+            row.Title,
+            row.TitleArabic,
+            row.Description,
+            row.DescriptionArabic,
+            row.HallId,
+            row.HallName,
+            row.HallNameArabic,
+            row.StartUtc,
+            row.EndUtc,
             themes,
             speakers,
             seats,
-            session.CategoryId,
-            session.Category?.Name,
-            session.Category?.NameArabic,
-            session.Status,
-            session.PublishedAt,
+            row.CategoryId,
+            row.CategoryName,
+            row.CategoryNameArabic,
+            row.Status,
+            row.PublishedAt,
             // P3.2b — D-232: the app shows a player only for a published
             // session that actually has a recording.
-            session.Status == SessionStatus.Published
-                && session.RecordingStoredFileName is not null,
+            row.Status == SessionStatus.Published && row.HasRecordingFile,
             // §8: the live broadcast feed(s) — null when the session is not live.
-            session.LiveStreamUrl,
-            session.LiveSignLanguageUrl,
+            row.LiveStreamUrl,
+            row.LiveSignLanguageUrl,
             // P5 — D-439: the AI live-caption text (null when none set).
-            session.LiveCaptions,
-            session.LiveCaptionsArabic,
+            row.LiveCaptions,
+            row.LiveCaptionsArabic,
             // D-567: the gold-badge ordinal (1-based position within the day).
             displayOrder);
     }

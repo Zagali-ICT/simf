@@ -167,6 +167,65 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Detail_with_multiple_themes_and_speakers_returns_each_once()
+    {
+        // A6 — the detail read projects themes + speakers as independent per-
+        // collection sub-selects (was a multi-Include of two SIBLING collections,
+        // which JOINed into one rowset). Seeding a session with 2 themes AND 3
+        // speakers proves the collections are NOT cross-multiplied: a cartesian
+        // would return 2×3 = 6 rows of each with duplicated ids.
+        var admin = await CreateAdminAsync();
+        var hallId = await CreateHallAsync(admin);
+        var speaker1 = await CreateSpeakerAsync(admin);
+        var speaker2 = await CreateSpeakerAsync(admin);
+        var speaker3 = await CreateSpeakerAsync(admin);
+        var theme1 = await CreateThemeAsync(admin);
+        var theme2 = await CreateThemeAsync(admin);
+        var start = DateTimeOffset.UtcNow.AddDays(7).Date.AddHours(9);
+
+        var create = await PostAuthAsync("/api/v1/admin/sessions",
+            new AdminCreateSessionRequest
+            {
+                Code = $"S{Guid.NewGuid():N}".Substring(0, 8),
+                Title = "Panel Session",
+                TitleArabic = "جلسة حوارية",
+                Description = "A multi-speaker panel.",
+                DescriptionArabic = "جلسة بعدة متحدثين.",
+                HallId = hallId,
+                StartUtc = start,
+                EndUtc = start.AddHours(1),
+                Speakers = new List<AdminSessionSpeakerEntry>
+                {
+                    new(speaker1, "", "", 0),
+                    new(speaker2, "", "", 1),
+                    new(speaker3, "", "", 2),
+                },
+                ThemeIds = new List<Guid> { theme1, theme2 },
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+        var created = (await create.Content
+            .ReadFromJsonAsync<ApiResult<AdminSessionDetail>>())!.Data!;
+
+        var detail = await _client.GetAsync(
+            $"/api/v1/app/programme/sessions/{created.Id}");
+        Assert.Equal(HttpStatusCode.OK, detail.StatusCode);
+        var body = (await detail.Content
+            .ReadFromJsonAsync<ApiResult<PublicSessionDetail>>())!.Data!;
+
+        // Each collection appears exactly once per row — no cartesian blow-up.
+        Assert.Equal(3, body.Speakers.Count);
+        Assert.Equal(3, body.Speakers.Select(s => s.Id).Distinct().Count());
+        // Speakers stay ordered by their SessionSpeaker.DisplayOrder (0,1,2).
+        Assert.Equal(
+            new[] { speaker1, speaker2, speaker3 },
+            body.Speakers.Select(s => s.Id).ToArray());
+        Assert.Equal(2, body.Themes.Count);
+        Assert.Equal(2, body.Themes.Select(t => t.Id).Distinct().Count());
+        Assert.Contains(theme1, body.Themes.Select(t => t.Id));
+        Assert.Contains(theme2, body.Themes.Select(t => t.Id));
+    }
+
+    [Fact]
     public async Task Public_list_is_ordered_by_start_time()
     {
         var admin = await CreateAdminAsync();
