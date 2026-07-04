@@ -420,8 +420,9 @@ public sealed class SignInService(
                 "The sign-in session is not valid.",
                 "جلسة تسجيل الدخول غير صالحة.");
         }
-        code.ConsumedAt = now;
-        await accountCodeRepository.UpdateAsync(code, cancellationToken);
+        // Single-use the OTP itself (the ticket gate above already decided the
+        // mint; this marks the code consumed atomically).
+        await accountCodeRepository.TryConsumeAsync(code.Id, now, cancellationToken);
         return await IssueTokensAsync(user, cancellationToken);
     }
 
@@ -747,8 +748,7 @@ public sealed class SignInService(
             user.Id, AccountCodePurpose.SignInOtp, cancellationToken);
         if (previous is not null)
         {
-            previous.ConsumedAt = now;
-            await accountCodeRepository.UpdateAsync(previous, cancellationToken);
+            await accountCodeRepository.TryConsumeAsync(previous.Id, now, cancellationToken);
         }
 
         // M3 (security) — store only the keyed hash; the plaintext is emailed.

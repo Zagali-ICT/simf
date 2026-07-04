@@ -41,4 +41,31 @@ internal sealed class AccountCodeRepository(SimfIdentityDbContext dbContext) : I
         dbContext.AccountCodes.Update(code);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task<bool> TryConsumeAsync(
+        Guid codeId, DateTimeOffset now, CancellationToken cancellationToken = default)
+    {
+        var affected = await dbContext.AccountCodes
+            .Where(code => code.Id == codeId && code.ConsumedAt == null)
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(code => code.ConsumedAt, now),
+                cancellationToken);
+        return affected == 1;
+    }
+
+    public async Task<int> IncrementAttemptCountAsync(
+        Guid codeId, CancellationToken cancellationToken = default)
+    {
+        await dbContext.AccountCodes
+            .Where(code => code.Id == codeId)
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(
+                    code => code.AttemptCount, code => code.AttemptCount + 1),
+                cancellationToken);
+        return await dbContext.AccountCodes
+            .AsNoTracking()
+            .Where(code => code.Id == codeId)
+            .Select(code => code.AttemptCount)
+            .SingleAsync(cancellationToken);
+    }
 }

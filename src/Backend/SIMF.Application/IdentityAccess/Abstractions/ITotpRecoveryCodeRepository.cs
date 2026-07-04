@@ -17,17 +17,15 @@ public interface ITotpRecoveryCodeRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Returns the active (un-consumed) code matching the hash, or <c>null</c>
-    /// when none does.
+    /// Atomically verifies + consumes the active (un-consumed) code matching the
+    /// hash in one conditional UPDATE (<c>WHERE UserId AND CodeHash AND
+    /// ConsumedAt IS NULL</c>). Returns <c>true</c> only for the caller that
+    /// consumes it, so a recovery code is single-use even under a concurrent
+    /// double-submit (replaces the old find-then-consume read-modify-write).
     /// </summary>
-    Task<TotpRecoveryCode?> FindActiveAsync(
+    Task<bool> TryConsumeAsync(
         Guid userId,
         string codeHash,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>Marks the code as consumed at <paramref name="now"/>.</summary>
-    Task ConsumeAsync(
-        TotpRecoveryCode code,
         DateTimeOffset now,
         CancellationToken cancellationToken = default);
 

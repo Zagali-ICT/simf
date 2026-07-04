@@ -61,15 +61,13 @@ internal sealed class RecoveryCodeService(
         }
 
         var hash = RecoveryCode.Hash(normalised);
-        var stored = await repository.FindActiveAsync(userId, hash, cancellationToken);
-        if (stored is null)
+        var consumed = await repository.TryConsumeAsync(
+            userId, hash, timeProvider.GetUtcNow(), cancellationToken);
+        if (consumed)
         {
-            return false;
+            logger.LogInformation("Recovery code consumed for {UserId}", userId);
         }
-
-        await repository.ConsumeAsync(stored, timeProvider.GetUtcNow(), cancellationToken);
-        logger.LogInformation("Recovery code consumed for {UserId}", userId);
-        return true;
+        return consumed;
     }
 
     public Task RevokeAllAsync(
