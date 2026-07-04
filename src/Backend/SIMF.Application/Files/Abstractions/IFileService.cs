@@ -25,12 +25,14 @@ public interface IFileService
     Task DeleteAsync(Guid id, Guid actorUserId, CancellationToken cancellationToken = default);
 }
 
-/// <summary>An upload request. <paramref name="OwnerEntityId"/> must be
-/// server-derived for owner-scoped services (never trusted from the client);
-/// <paramref name="FailClosed"/> is computed by the endpoint (true in Production).</summary>
+/// <summary>An upload request. The owner *family* is NOT carried here — it is
+/// forced from the service's policy in the file service, so a caller cannot
+/// over-post a mismatched <see cref="FileOwnerEntityType"/> (P2 — D-568 hardening).
+/// <paramref name="OwnerEntityId"/> must be server-derived for owner-scoped
+/// services (never trusted from the client); <paramref name="FailClosed"/> is
+/// computed by the endpoint (true in Production).</summary>
 public sealed record UploadFileCommand(
     FileService Service,
-    FileOwnerEntityType OwnerEntityType,
     Guid? OwnerEntityId,
     byte[] Content,
     string? OriginalFileName,

@@ -174,6 +174,47 @@ public sealed class FilesEndpointsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task The_stored_owner_family_is_forced_from_the_policy_not_the_client()
+    {
+        // P2 (D-568 hardening) — the client cannot set the owner family; the
+        // service stamps it from the resolved policy (Avatar → UserProfile).
+        var token = await CreateAdministratorAndSignInAsync();
+        var owner = Guid.NewGuid();
+
+        var resp = await UploadAsync(
+            FileService.Avatar, FileOwnerEntityType.UserProfile, owner, Png, "image/png", "a.png", token);
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var file = (await resp.Content.ReadFromJsonAsync<ApiResult<UploadedFileResponse>>())!.Data!;
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var row = await db.StoredFiles.FirstAsync(f => f.Id == file.Id);
+        Assert.Equal(FileOwnerEntityType.UserProfile, row.OwnerEntityType);
+        Assert.Equal(owner, row.OwnerEntityId);
+    }
+
+    [Fact]
+    public async Task An_arabic_file_name_is_served_via_rfc5987_filename_star()
+    {
+        // P1 (D-568 hardening) — a non-ASCII (Arabic) download name is carried by
+        // the RFC 5987 filename* param (UTF-8, percent-encoded), with an ASCII
+        // fallback, so the Content-Disposition header stays valid.
+        var token = await CreateAdministratorAndSignInAsync();
+
+        var resp = await UploadAsync(
+            FileService.SpeakerPresentation, FileOwnerEntityType.SpeakerPresentation, Guid.NewGuid(),
+            Zip, "application/zip", "عرض.docx", token);
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var file = (await resp.Content.ReadFromJsonAsync<ApiResult<UploadedFileResponse>>())!.Data!;
+
+        var download = await GetAuthAsync(file.Url, token);
+        Assert.Equal(HttpStatusCode.OK, download.StatusCode);
+        // The client parses the RFC 5987 filename* param back to the decoded name.
+        var disposition = download.Content.Headers.ContentDisposition!;
+        Assert.Equal("عرض.docx", disposition.FileNameStar);
+    }
+
+    [Fact]
     public async Task An_owner_required_service_without_an_owner_is_rejected_400()
     {
         var token = await CreateAdministratorAndSignInAsync();
@@ -248,10 +289,13 @@ public sealed class FilesEndpointsTests : IClassFixture<SimfApiFactory>
         FileService service, FileOwnerEntityType ownerType, Guid? ownerId,
         byte[] bytes, string contentType, string fileName)
     {
+        // P2 (D-568) — the owner family is server-forced from the policy; the
+        // client no longer sends OwnerEntityType (the `ownerType` arg documents
+        // the expected family for the reader). Only the owner id rides the form.
+        _ = ownerType;
         var form = new MultipartFormDataContent
         {
             { new StringContent(service.ToString()), "Service" },
-            { new StringContent(ownerType.ToString()), "OwnerEntityType" },
         };
         if (ownerId is { } id)
         {

@@ -34,6 +34,20 @@ internal static class FileEndpointSupport
     /// Content-Disposition header.</summary>
     public static string SanitizeForHeader(string name) =>
         new(name.Where(c => c is not ('"' or '\r' or '\n') && !char.IsControl(c)).ToArray());
+
+    /// <summary>P1 (D-568 hardening) — an RFC 6266 / RFC 5987 attachment
+    /// Content-Disposition that carries a non-ASCII (e.g. Arabic) file name
+    /// safely: an ASCII-only <c>filename="…"</c> fallback for legacy clients plus
+    /// <c>filename*=UTF-8''&lt;pct-encoded&gt;</c> for modern ones (browsers prefer
+    /// the starred form). Both parts are header-sanitized first.</summary>
+    public static string AttachmentDisposition(string fileName)
+    {
+        var safe = SanitizeForHeader(fileName);
+        var ascii = new string(safe.Where(char.IsAscii).ToArray()).Trim();
+        if (string.IsNullOrWhiteSpace(ascii)) { ascii = "download"; }
+        var encoded = Uri.EscapeDataString(safe);
+        return $"attachment; filename=\"{ascii}\"; filename*=UTF-8''{encoded}";
+    }
 }
 
 /// <summary>D-568 — the single upload endpoint. Multipart; the service category +
@@ -42,7 +56,14 @@ internal static class FileEndpointSupport
 public sealed class FileUploadRequest
 {
     public FileService Service { get; set; }
-    public FileOwnerEntityType OwnerEntityType { get; set; }
+
+    /// <summary>P2 (D-568 hardening) — the owning entity's id (e.g. the speaker /
+    /// booth an admin is uploading a photo for). The owner *family*
+    /// (<c>OwnerEntityType</c>) is NOT accepted from the client: it is forced from
+    /// the service's policy in <c>StoredFileService</c>, so a caller cannot
+    /// over-post a mismatched owner family. For owner-scoped self-service uploads
+    /// (avatar / ID) the id is server-derived from the subject by the internal
+    /// caller, never trusted from this form.</summary>
     public Guid? OwnerEntityId { get; set; }
     public IFormFile? File { get; set; }
 }
@@ -86,7 +107,7 @@ public sealed class FileUploadEndpoint(
         var failClosed = environment.IsProduction() && scanOptions.Value.FailClosed;
 
         var command = new UploadFileCommand(
-            req.Service, req.OwnerEntityType, req.OwnerEntityId, ms.ToArray(),
+            req.Service, req.OwnerEntityId, ms.ToArray(),
             file.FileName, file.ContentType ?? string.Empty, actorId, failClosed);
 
         var result = await service.UploadAsync(command, ct);
@@ -142,8 +163,8 @@ public sealed class FileDownloadEndpoint(IFileService service)
             && download.FileType == FileType.Image;
         if (!inline)
         {
-            var name = FileEndpointSupport.SanitizeForHeader(download.FileName ?? "download");
-            response.Headers.ContentDisposition = $"attachment; filename=\"{name}\"";
+            response.Headers.ContentDisposition =
+                FileEndpointSupport.AttachmentDisposition(download.FileName ?? "download");
         }
         response.Headers.CacheControl = download.Tier switch
         {

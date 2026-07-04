@@ -82,7 +82,11 @@ internal sealed class StoredFileService(
             Sha256 = sha256,
             IsDeletable = policy.DeletableDefault,
             RetainUntilUtc = policy.Retention is { } retention ? now.Add(retention) : null,
-            OwnerEntityType = command.OwnerEntityType,
+            // P2 (D-568 hardening) — the owner FAMILY is authoritative from the
+            // policy, never the client, so a caller can't over-post a mismatched
+            // owner type. Only the owner id rides the request (server-derived for
+            // owner-scoped services by the caller).
+            OwnerEntityType = policy.OwnerEntityType,
             OwnerEntityId = command.OwnerEntityId,
             CreatedBy = command.ActorUserId,
             CreatedAt = now,
