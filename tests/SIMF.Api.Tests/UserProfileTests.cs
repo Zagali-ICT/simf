@@ -755,12 +755,12 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Encrypted_file_on_disk_does_not_contain_the_plaintext_bytes()
+    public async Task ID_image_is_stored_encrypted_at_rest_in_the_file_store()
     {
         var token = await CreateUserAndSignInAsync();
         var actorId = await GetActorIdAsync(token);
 
-        // Use a distinctive plaintext we can grep the file bytes for.
+        // Use a distinctive plaintext we can grep the stored bytes for.
         var marker = System.Text.Encoding.UTF8.GetBytes("SIMF-PLAINTEXT-MARKER-2026");
         var image = new byte[3 + marker.Length];
         image[0] = 0xFF; image[1] = 0xD8; image[2] = 0xFF;     // JPEG magic
@@ -778,13 +778,19 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         var uploadResponse = await _client.SendAsync(upload);
         Assert.Equal(HttpStatusCode.OK, uploadResponse.StatusCode);
 
-        // Find the file on disk and confirm the marker is NOT there.
-        var filePath = System.IO.Path.Combine(
-            _factory.UserIdDocumentStorageDirectory, $"{actorId:N}.bin");
-        Assert.True(File.Exists(filePath), $"Encrypted file expected at {filePath}");
-        var diskBytes = await File.ReadAllBytesAsync(filePath);
-        Assert.DoesNotContain(IndexOfSequence(diskBytes, marker),
-            new[] { 0 });  // -1 means not found
+        // D-568 (S5) — the ID document now lives in the unified StoredFile store as a
+        // Confidential, encrypted-at-rest file. Read the RAW stored bytes (skip the
+        // decrypt) and confirm the plaintext marker never sits on disk.
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var stored = await db.StoredFiles.SingleAsync(
+            f => f.Service == FileService.IdDocument && f.OwnerEntityId == actorId && f.IsActive);
+        Assert.True(stored.IsEncrypted);
+        var storage = scope.ServiceProvider
+            .GetRequiredService<SIMF.Application.Files.Abstractions.IFileStorageProvider>();
+        var rawOnDisk = await storage.ReadAsync(stored.StorageKey!, encrypted: false, CancellationToken.None);
+        Assert.NotNull(rawOnDisk);
+        Assert.Equal(-1, IndexOfSequence(rawOnDisk!, marker));
     }
 
     // -- P9 interests ----------------------------------------------------------

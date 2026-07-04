@@ -36,10 +36,8 @@ namespace SIMF.Application.IdentityAccess;
 internal sealed class UserProfileService(
     IUserAccountRepository accounts,
     IUserProfileRepository profiles,
-    IUserIdDocumentStorage idStorage,
     IFileService fileService,
     IFileStorageProvider fileStorage,
-    SIMF.Application.Abstractions.IUploadScanner uploadScanner,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     INotificationDispatcher notifications,
@@ -555,17 +553,18 @@ internal sealed class UserProfileService(
                 "The acting account was not found.",
                 "لم يتم العثور على الحساب.");
 
-        // A6-18 (NCA) — malware-scan the untrusted image before it is stored.
-        await uploadScanner.EnsureCleanAsync(content, "id-document", cancellationToken);
-
-        // ID image follows the avatar contract (D-039): magic-byte and
-        // size already checked at the endpoint, the storage layer
-        // encrypts and writes.
+        // ID image follows the avatar contract (D-039): magic-byte and size are
+        // already checked at the endpoint. D-568 (S5): the bytes now land in the
+        // unified StoredFile store (App DB, owner = the user, Confidential/encrypted),
+        // whose upload pipeline runs the malware scan + magic-byte allow-list +
+        // canonical MIME + SHA-256 + audit — so the standalone scanner call is gone.
+        // IdImageRelativePath is repurposed as the bare-Guid pointer + "has ID image"
+        // presence sentinel (the completeness rule reads it null-vs-non-empty).
         var profile = await profiles.FindAsync(actorUserId, cancellationToken);
         if (profile is null)
         {
             // ID image only makes sense alongside a profile row — create
-            // a stub so the relative path has somewhere to live.
+            // a stub so the pointer has somewhere to live.
             profile = new UserProfile
             {
                 UserId = actorUserId,
@@ -574,12 +573,20 @@ internal sealed class UserProfileService(
             profiles.Add(profile);
         }
 
-        var relativePath = await idStorage.SaveAsync(
-            actorUserId, content, contentType, cancellationToken);
-        profile.IdImageRelativePath = relativePath;
+        var priorFileId = ParseFileId(profile.IdImageRelativePath);
+        var result = await fileService.UploadAsync(
+            new UploadFileCommand(
+                FileService.IdDocument, actorUserId, content, null, contentType, actorUserId, FailClosed: false),
+            cancellationToken);
+        profile.IdImageRelativePath = result.Id.ToString();
         profile.UpdatedAt = timeProvider.GetUtcNow();
         // D-167: UserProfile is on the App DB now.
         await profiles.SaveAppChangesAsync(cancellationToken);
+
+        // IdDocument is Secret-tier + DeletableDefault:false, so the ordinary delete
+        // is refused; secure-erase the superseded scan to keep one active per owner
+        // (replace-in-place, matching the legacy single-file store — but stronger).
+        await RetirePriorFileAsync(priorFileId, result.Id, actorUserId, forceDelete: true, cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
         {
@@ -588,20 +595,22 @@ internal sealed class UserProfileService(
             SubjectUserId = actorUserId,
             SubjectEmail = user.Email,
             ActorUserId = actorUserId,
-            Detail = $"{content.Length} bytes, {contentType}",
+            Detail = $"{content.Length} bytes, {contentType}; fileId={result.Id}",
         }, cancellationToken);
     }
 
     public async Task<UserIdDocumentImage?> ReadIdImageAsync(
         Guid actorUserId, CancellationToken cancellationToken = default)
     {
-        var path = await profiles.GetIdImagePathAsync(actorUserId, cancellationToken);
-        if (path is null)
-        {
-            return null;
-        }
-        var read = await idStorage.OpenReadAsync(path, cancellationToken);
-        return read is null ? null : new UserIdDocumentImage(read.Content, read.ContentType);
+        // D-568 (S5) — owner-scoped raw decrypt read from the unified StoredFile
+        // store (App DB, owner = the user). Self-read: the sub-claim gate on the
+        // endpoint is the authorization; no PII audit (self-access, not a third-party
+        // disclosure). AES-GCM integrity is intrinsic (a tampered blob → null).
+        var locator = await profiles.GetOwnerScopedFileAsync(
+            FileService.IdDocument, actorUserId, cancellationToken);
+        if (locator is not { } file) { return null; }
+        var bytes = await fileStorage.ReadAsync(file.StorageKey, file.IsEncrypted, cancellationToken);
+        return bytes is null ? null : new UserIdDocumentImage(bytes, file.ContentType ?? "application/octet-stream");
     }
 
     public async Task UploadIdImageForSubjectAsync(
@@ -637,15 +646,25 @@ internal sealed class UserProfileService(
             profiles.Add(profile);
         }
 
-        // A6-18 (NCA) — malware-scan the untrusted image before it is stored.
-        await uploadScanner.EnsureCleanAsync(content, "id-document", cancellationToken);
-
-        var relativePath = await idStorage.SaveAsync(
-            subjectUserId, content, contentType, cancellationToken);
-        profile.IdImageRelativePath = relativePath;
+        // D-568 (S5) — store the bytes in the unified StoredFile store (App DB, owner
+        // = the subject, Confidential/encrypted). IFileService runs the full pipeline
+        // (malware scan, magic-byte allow-list, canonical MIME, SHA-256, audit), so
+        // the standalone scanner call is gone. IdImageRelativePath is the bare-Guid
+        // pointer + presence sentinel.
+        var priorFileId = ParseFileId(profile.IdImageRelativePath);
+        var result = await fileService.UploadAsync(
+            new UploadFileCommand(
+                FileService.IdDocument, subjectUserId, content, null, contentType, actorUserId, FailClosed: false),
+            cancellationToken);
+        profile.IdImageRelativePath = result.Id.ToString();
         profile.UpdatedAt = timeProvider.GetUtcNow();
         // D-167: UserProfile is on the App DB now.
         await profiles.SaveAppChangesAsync(cancellationToken);
+
+        // IdDocument is Secret-tier + DeletableDefault:false, so the ordinary delete
+        // is refused; secure-erase the superseded scan to keep one active per owner
+        // (replace-in-place, matching the legacy single-file store — but stronger).
+        await RetirePriorFileAsync(priorFileId, result.Id, actorUserId, forceDelete: true, cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
         {
@@ -654,7 +673,7 @@ internal sealed class UserProfileService(
             SubjectUserId = subjectUserId,
             SubjectEmail = subject.Email,
             ActorUserId = actorUserId,
-            Detail = $"admin-upload; {content.Length} bytes; {contentType}",
+            Detail = $"admin-upload; {content.Length} bytes; {contentType}; fileId={result.Id}",
         }, cancellationToken);
     }
 
@@ -667,13 +686,14 @@ internal sealed class UserProfileService(
         var subject = await accounts.FindByIdAsync(subjectUserId, cancellationToken);
         if (subject is null || subject.UserType != expectedKind) { return null; }
 
-        var path = await profiles.GetIdImagePathAsync(subjectUserId, cancellationToken);
-        if (path is null)
-        {
-            return null;
-        }
-        var read = await idStorage.OpenReadAsync(path, cancellationToken);
-        if (read is null) { return null; }
+        // D-568 (S5) — owner-scoped raw decrypt read from the unified StoredFile store
+        // (App DB, owner = the subject). The UserType guard above + the route's
+        // Visitors.View gate are the authorization; AES-GCM integrity is intrinsic.
+        var locator = await profiles.GetOwnerScopedFileAsync(
+            FileService.IdDocument, subjectUserId, cancellationToken);
+        if (locator is not { } file) { return null; }
+        var bytes = await fileStorage.ReadAsync(file.StorageKey, file.IsEncrypted, cancellationToken);
+        if (bytes is null) { return null; }
 
         // A9 (PII) — an admin READ of a visitor's national-ID image is a PII
         // disclosure and must leave an audit trail, mirroring the upload's audit
@@ -686,10 +706,10 @@ internal sealed class UserProfileService(
             SubjectUserId = subjectUserId,
             SubjectEmail = subject.Email,
             ActorUserId = actorUserId,
-            Detail = $"admin-read; {read.Content.Length} bytes; {read.ContentType}",
+            Detail = $"admin-read; {bytes.Length} bytes; {file.ContentType}",
         }, cancellationToken);
 
-        return new UserIdDocumentImage(read.Content, read.ContentType);
+        return new UserIdDocumentImage(bytes, file.ContentType ?? "application/octet-stream");
     }
 
     public async Task UploadVipPhotoForSubjectAsync(
@@ -740,23 +760,9 @@ internal sealed class UserProfileService(
         // D-167: UserProfile is on the App DB now.
         await profiles.SaveAppChangesAsync(cancellationToken);
 
-        // Retiring the prior file is best-effort: the new photo is already the
-        // committed source of truth, so a failure here (e.g. a stale pointer whose
-        // StoredFile row is gone → DeleteAsync 404) must not fail the upload and
-        // trigger an orphan-spawning retry. Worst case leaves one orphaned blob.
-        if (priorFileId is { } old && old != result.Id)
-        {
-            try
-            {
-                await fileService.DeleteAsync(old, actorUserId, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(
-                    ex, "VIP-photo retirement of prior file {PriorFileId} failed for subject {SubjectUserId}; new photo {NewFileId} is committed.",
-                    old, subjectUserId, result.Id);
-            }
-        }
+        // Retire the prior file (best-effort — see RetirePriorFileAsync). VipPhoto is
+        // DeletableDefault:true, so the ordinary soft-delete retires it.
+        await RetirePriorFileAsync(priorFileId, result.Id, actorUserId, forceDelete: false, cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
         {
@@ -783,7 +789,8 @@ internal sealed class UserProfileService(
         // the authorization; the admin fetch route also gates on Visitors.View. The
         // bytes are AES-GCM encrypted at rest, so a tampered blob fails the auth tag
         // on decrypt (ReadAsync → null) — the integrity guard is intrinsic.
-        var locator = await profiles.GetVipPhotoFileAsync(subjectUserId, cancellationToken);
+        var locator = await profiles.GetOwnerScopedFileAsync(
+            FileService.VipPhoto, subjectUserId, cancellationToken);
         if (locator is not { } file) { return null; }
         var bytes = await fileStorage.ReadAsync(file.StorageKey, file.IsEncrypted, cancellationToken);
         if (bytes is null) { return null; }
@@ -805,10 +812,44 @@ internal sealed class UserProfileService(
         return new VipPhotoImage(bytes, file.ContentType ?? "image/png");
     }
 
-    /// <summary>D-568 (S4/S3) — the VIP-photo / avatar pointer columns now hold a
-    /// StoredFile GUID. Returns it when parseable, else null.</summary>
+    /// <summary>D-568 (S4/S3) — the VIP-photo / avatar / ID-image pointer columns now
+    /// hold a StoredFile GUID. Returns it when parseable, else null.</summary>
     private static Guid? ParseFileId(string? pointer) =>
         Guid.TryParse(pointer, out var id) ? id : null;
+
+    /// <summary>D-568 (S4/S5) — best-effort retirement of a replaced owner-scoped
+    /// file so one-active-per-owner holds. The new file is already the committed
+    /// source of truth, so a failure here (e.g. a stale pointer whose
+    /// <c>StoredFile</c> row is gone → 404) must NOT fail the upload and trigger an
+    /// orphan-spawning retry. Worst case leaves one orphaned blob for the retention
+    /// sweep to reap. No-op when there is no prior file or it is the just-uploaded
+    /// one. <paramref name="forceDelete"/> = true for a Secret-tier, non-deletable
+    /// service (ID document): the superseded copy is <b>secure-erased</b> (DEK
+    /// crypto-shred + audit), since the ordinary delete is refused by the retention
+    /// hold — this preserves the legacy replace-in-place semantics.</summary>
+    private async Task RetirePriorFileAsync(
+        Guid? priorFileId, Guid newFileId, Guid actorUserId, bool forceDelete,
+        CancellationToken cancellationToken)
+    {
+        if (priorFileId is not { } old || old == newFileId) { return; }
+        try
+        {
+            if (forceDelete)
+            {
+                await fileService.ForceDeleteAsync(old, actorUserId, cancellationToken);
+            }
+            else
+            {
+                await fileService.DeleteAsync(old, actorUserId, cancellationToken);
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(
+                ex, "Retirement of prior file {PriorFileId} failed; new file {NewFileId} is committed.",
+                old, newFileId);
+        }
+    }
 
     private static UserProfileResponse ToResponse(
         UserProfile profile, string? qrId, string nationalityCode, bool hasAvatar) =>
