@@ -10,6 +10,7 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/confirm_external_link.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../exhibition/entity_detail_helpers.dart';
 import '../exhibition/entity_detail_scaffold.dart';
 import '../exhibition/entity_logo_image.dart';
 import '../venuemap/data/venue_map_models.dart';
@@ -75,10 +76,10 @@ class ExhibitorDetailScreen extends ConsumerWidget {
         url: booth.exhibitorContactId == null
             ? null
             : '$baseUrl/app/assets/CompanyLogo/${booth.exhibitorContactId}/image',
-        initials: _initials(name),
+        initials: entityInitials(name),
       ),
       name: name,
-      locationLine: _locationLine(
+      locationLine: entityLocationLine(
         booth.localizedCity(isArabic),
         booth.localizedCountry(isArabic),
         isArabic,
@@ -102,44 +103,9 @@ class ExhibitorDetailScreen extends ConsumerWidget {
   }
 
   void _openWebsite(BuildContext context, String? url) {
-    final uri = _httpUri(url);
+    final uri = entityHttpUri(url);
     if (uri != null) {
       unawaited(confirmThenLaunchExternal(context, uri.toString()));
     }
   }
-}
-
-/// Joins "City، Country" (Arabic comma in RTL); either side may be null.
-String? _locationLine(String? city, String? country, bool isArabic) {
-  final parts = <String>[
-    if ((city ?? '').trim().isNotEmpty) city!.trim(),
-    if ((country ?? '').trim().isNotEmpty) country!.trim(),
-  ];
-  if (parts.isEmpty) {
-    return null;
-  }
-  return parts.join(isArabic ? '، ' : ', ');
-}
-
-/// The first two letters of a name, upper-cased, for the logo fallback.
-String _initials(String name) {
-  final trimmed = name.trim();
-  if (trimmed.isEmpty) {
-    return '';
-  }
-  return trimmed.substring(0, trimmed.length >= 2 ? 2 : 1).toUpperCase();
-}
-
-/// Parses a website into an http(s) [Uri] (prepending https:// when the scheme
-/// is missing); null when blank / unparseable.
-Uri? _httpUri(String? raw) {
-  final value = (raw ?? '').trim();
-  if (value.isEmpty) {
-    return null;
-  }
-  final withScheme =
-      value.startsWith('http://') || value.startsWith('https://')
-          ? value
-          : 'https://$value';
-  return Uri.tryParse(withScheme);
 }
