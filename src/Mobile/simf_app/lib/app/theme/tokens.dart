@@ -160,4 +160,11 @@ class SimfTokens {
     fontSize: textMd,
     fontWeight: FontWeight.w500,
   );
+  // The on-navy white row label (accessibility card labels + toggle titles,
+  // Figma 1116:16630) — the white sibling of [labelBeigeMedium].
+  static const TextStyle labelWhiteMedium = TextStyle(
+    color: Colors.white,
+    fontSize: textMd,
+    fontWeight: FontWeight.w500,
+  );
 }
