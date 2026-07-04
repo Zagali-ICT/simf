@@ -29,18 +29,29 @@ public class MediaItem:BaseAuditEntity
     public string? TitleArabic { get; set; }
 
     /// <summary>D-90 — relative path of the uploaded image's bytes within the
-    /// media object store. Null when the item is an externally hosted video
-    /// addressed by <see cref="Url"/>.</summary>
+    /// legacy media object store. Superseded by <see cref="ImageFileId"/>
+    /// (D-568 Wave C S2); retained only until the endgame drops it.</summary>
     public string? ImageRelativePath { get; set; }
+
+    /// <summary>D-568 (Wave C S2) — the uploaded image's row in the unified
+    /// <c>StoredFile</c> store (a bare Guid logical reference, no FK — D-157;
+    /// resolved on read). Null when the item is an externally hosted video
+    /// addressed by <see cref="Url"/>. The new source of truth for "has image".</summary>
+    public Guid? ImageFileId { get; set; }
 
     /// <summary>Absolute URL of an externally hosted asset (typically the
     /// video). Null when the asset is an uploaded image.</summary>
     public string? Url { get; set; }
 
-    /// <summary>D-90 — relative path of an optional thumbnail / video poster
-    /// image within the media object store. Null when the tile renders from
-    /// <see cref="ImageRelativePath"/> directly.</summary>
+    /// <summary>D-90 — legacy relative path of an optional thumbnail / video
+    /// poster. Superseded by <see cref="ThumbnailFileId"/>; retained until the
+    /// endgame drops it.</summary>
     public string? ThumbnailRelativePath { get; set; }
+
+    /// <summary>D-568 (Wave C S2) — the thumbnail / poster's row in the unified
+    /// <c>StoredFile</c> store (bare Guid, no FK). Null when the tile renders from
+    /// <see cref="ImageFileId"/> directly.</summary>
+    public Guid? ThumbnailFileId { get; set; }
 
     public string? Album { get; set; }
     public string? AlbumArabic { get; set; }
