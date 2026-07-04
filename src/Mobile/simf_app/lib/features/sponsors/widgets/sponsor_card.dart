@@ -1,0 +1,159 @@
+import 'package:flutter/material.dart';
+
+import '../../../app/theme/tokens.dart';
+import '../../../app/widgets/simf_page_shell.dart';
+import '../../../app/widgets/simf_svg_icon.dart';
+import 'sponsor_logo.dart';
+
+/// One sponsor card — frame 922:2824's 72-high row. RTL puts the square logo
+/// badge on the inline-start (physical right), the name + secondary line next
+/// to it, and the forward chevron on the far inline-end (physical left).
+///
+/// [hero] true is the strategic gold card (gold fill, dark text, gold initials
+/// badge with a navy edge, navy chevron); false is the premium navy card
+/// (navyDeep fill, beige hairline, white text, navy initials badge with a gold
+/// edge, gold chevron).
+class SponsorCard extends StatelessWidget {
+  const SponsorCard({
+    required this.id,
+    required this.baseUrl,
+    required this.name,
+    required this.badge,
+    required this.secondary,
+    required this.hero,
+    required this.onTap,
+    super.key,
+  });
+
+  final String id;
+  final String baseUrl;
+  final String name;
+  final String badge;
+  final String? secondary;
+  final bool hero;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    // Frame 922:2824 — the sponsor name is white on BOTH the gold hero card
+    // (925:2979 `text-white`) and the navy premium card; only the secondary
+    // line changes colour with the card.
+    const Color nameColor = Colors.white;
+    final Color subColor = hero ? SimfTokens.navyDeep : SimfTokens.beigeBorder;
+    return SimfCard(
+      onTap: onTap,
+      color: hero ? SimfTokens.accent : SimfTokens.navyDeep,
+      borderColor: SimfTokens.beigeBorder,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 72),
+        child: Padding(
+          padding: const EdgeInsets.all(SimfTokens.space2),
+          child: Row(
+            children: <Widget>[
+              // Frame 922:2824 — RTL order: the square logo badge sits at the
+              // inline-start (physical right), the name + secondary line next to
+              // it, and the forward chevron on the far inline-end (physical
+              // left). The bundled caret does not auto-mirror, so it keeps
+              // pointing left as the design shows.
+              _BadgeBox(
+                hero: hero,
+                child: SponsorLogo(
+                  id: id,
+                  baseUrl: baseUrl,
+                  fallbackInitials: badge,
+                  hero: hero,
+                ),
+              ),
+              const SizedBox(width: SimfTokens.space2),
+              Expanded(
+                child: Column(
+                  // Figma 925:2978 — items-end / text-right. In RTL,
+                  // CrossAxisAlignment.start is the physical RIGHT edge, so the
+                  // name + tagline hug the badge. The tagline is capped to the
+                  // frame's ~215px (ConstrainedBox) so its box has a definite
+                  // width and textAlign.right keeps EVERY wrapped line flush to
+                  // the badge (a free-width Text left short last lines centred).
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(
+                      name,
+                      textAlign: TextAlign.start,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: nameColor,
+                        fontWeight: FontWeight.w700,
+                        fontSize: SimfTokens.textMd,
+                        height: 1.3,
+                      ),
+                    ),
+                    if (secondary != null &&
+                        secondary!.trim().isNotEmpty) ...<Widget>[
+                      const SizedBox(height: SimfTokens.space1),
+                      // Responsive (owner 2026-06-28): fill the available column
+                      // width instead of the frame's fixed 215px so the tagline
+                      // stretches on a tablet; textAlign.right keeps the wrapped
+                      // lines flush to the badge.
+                      SizedBox(
+                        width: double.infinity,
+                        child: Text(
+                          secondary!,
+                          textAlign: TextAlign.start,
+                          style: TextStyle(
+                            color: subColor,
+                            fontSize: SimfTokens.textSm,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: SimfTokens.space2),
+              SimfSvgIcon(
+                // Frame 925:2990 — the iconamoon thin chevron (navy on the gold
+                // hero card, gold on a premium card), NOT a filled triangle.
+                'assets/icons/ic_back.svg',
+                size: 20,
+                color: hero ? SimfTokens.navy : SimfTokens.accent,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The square logo chip on a sponsor card — frame's 53×53 box. On the gold hero
+/// card it is gold-filled with a navy edge; on a navy premium card it is
+/// navy-filled with a gold edge. Hosts the real [SponsorLogo] (clipped to fill),
+/// falling back to the acronym initials.
+class _BadgeBox extends StatelessWidget {
+  const _BadgeBox({required this.child, required this.hero});
+
+  final Widget child;
+  final bool hero;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 53,
+      height: 53,
+      clipBehavior: Clip.antiAlias,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: hero ? SimfTokens.accent : SimfTokens.navy,
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        border: Border.all(
+          color: hero ? SimfTokens.navy : SimfTokens.accent,
+          width: SimfTokens.hairline,
+        ),
+      ),
+      child: child,
+    );
+  }
+}
