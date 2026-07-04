@@ -14,6 +14,14 @@ public interface IFileService
     /// <c>ApiException</c> (400/409) on a bad size / type / scan.</summary>
     Task<StoredFileResult> UploadAsync(UploadFileCommand command, CancellationToken cancellationToken = default);
 
+    /// <summary>P6 (D-568) — records an EXTERNAL image link (no bytes; the download
+    /// endpoint 302-redirects to it). Owner-upsert: replaces the owner's existing
+    /// active file of this service with the link and frees any orphaned uploaded
+    /// bytes. Used for seeded / admin-supplied logo URLs. Throws 400 on a
+    /// non-public / non-https URL or a missing owner where the policy requires one.</summary>
+    Task<StoredFileResult> CreateExternalLinkAsync(
+        CreateExternalLinkCommand command, CancellationToken cancellationToken = default);
+
     /// <summary>Authorizes <paramref name="caller"/> against the file's service
     /// policy and returns the bytes (or a redirect for an external link). Throws a
     /// uniform 404 <c>ApiException</c> when the file is missing OR the caller is not
@@ -49,6 +57,15 @@ public sealed record UploadFileCommand(
     string ClientContentType,
     Guid ActorUserId,
     bool FailClosed);
+
+/// <summary>P6 (D-568) — request to record an external image link. The owner
+/// family is forced from the service policy (like <see cref="UploadFileCommand"/>);
+/// only the owner id rides the command.</summary>
+public sealed record CreateExternalLinkCommand(
+    FileService Service,
+    Guid? OwnerEntityId,
+    string Url,
+    Guid ActorUserId);
 
 /// <summary>The result of a successful upload — the new file's id and its
 /// download URL, plus the resolved metadata.</summary>

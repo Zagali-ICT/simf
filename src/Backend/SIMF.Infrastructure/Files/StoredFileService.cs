@@ -113,6 +113,91 @@ internal sealed class StoredFileService(
             policy.EncryptAtRest, command.Content.LongLength);
     }
 
+    public async Task<StoredFileResult> CreateExternalLinkAsync(
+        CreateExternalLinkCommand command, CancellationToken cancellationToken = default)
+    {
+        var policy = FileServicePolicies.Resolve(command.Service);
+        var url = ValidateExternalLink(command.Url);
+        if (policy.OwnerRequired && (command.OwnerEntityId is null || command.OwnerEntityId == Guid.Empty))
+        {
+            throw new ApiException(ErrorCodes.ValidationFailed, 400,
+                "This file category requires an owner.", "هذا النوع من الملفات يتطلب مالكًا.");
+        }
+
+        var now = timeProvider.GetUtcNow();
+
+        // Owner-upsert (ported from AssetService.SetExternalLinkAsync): replace the
+        // owner's existing active file of this service with the link, freeing any
+        // orphaned uploaded bytes. A standalone (no owner) link always inserts.
+        StoredFile? existing = null;
+        if (command.OwnerEntityId is { } ownerId)
+        {
+            existing = await dbContext.StoredFiles.FirstOrDefaultAsync(
+                f => f.Service == command.Service
+                    && f.OwnerEntityType == policy.OwnerEntityType
+                    && f.OwnerEntityId == ownerId
+                    && f.IsActive,
+                cancellationToken);
+        }
+
+        var previousUploadKey =
+            existing is { SourceType: FileSourceType.Upload, StorageKey: { Length: > 0 } key } ? key : null;
+
+        StoredFile file;
+        if (existing is null)
+        {
+            file = new StoredFile
+            {
+                Id = Guid.NewGuid(),
+                Service = command.Service,
+                SensitivityTier = policy.Tier,
+                OwnerEntityType = policy.OwnerEntityType,
+                OwnerEntityId = command.OwnerEntityId,
+                CreatedBy = command.ActorUserId,
+                CreatedAt = now,
+                IsActive = true,
+            };
+            dbContext.StoredFiles.Add(file);
+        }
+        else
+        {
+            file = existing;
+            file.UpdatedBy = command.ActorUserId;
+            file.UpdatedAt = now;
+        }
+
+        file.SourceType = FileSourceType.ExternalLink;
+        file.ExternalUrl = url;
+        file.FileType = FileType.Image; // external links back the public image surfaces (logos / covers)
+        file.StorageKey = null;
+        file.ContentType = null;
+        file.SizeBytes = null;
+        file.Sha256 = null;
+        file.OriginalFileName = null;
+        file.IsEncrypted = false;
+        file.CipherFormatVersion = 0;
+        file.IsDeletable = policy.DeletableDefault;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        // Free the swapped-out upload's bytes only after the row is safely persisted.
+        if (previousUploadKey is not null)
+        {
+            await storage.DeleteAsync(previousUploadKey, cancellationToken);
+        }
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.FileLinked,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = command.ActorUserId,
+            Detail = $"id={file.Id}; service={command.Service}; url={url}",
+        }, cancellationToken);
+
+        return new StoredFileResult(
+            file.Id, $"/api/v1/files/{file.Id}", command.Service, file.FileType, IsEncrypted: false, SizeBytes: 0);
+    }
+
     public async Task<FileDownload> DownloadAsync(
         Guid id, FileAccessContext caller, CancellationToken cancellationToken = default)
     {
@@ -351,6 +436,39 @@ internal sealed class StoredFileService(
 
     private static bool StartsWith(ReadOnlySpan<byte> content, ReadOnlySpan<byte> signature) =>
         content.Length >= signature.Length && content[..signature.Length].SequenceEqual(signature);
+
+    // P6 (D-568) — external links are 302-served to anonymous visitors, so the
+    // target must be a real, public https host. Ported from AssetService.ValidateLink:
+    // require https (no cleartext) and reject literal IPs / localhost / internal TLDs
+    // so the trusted SIMF domain can't become an open redirect to an internal service.
+    private static string ValidateExternalLink(string url)
+    {
+        var trimmed = (url ?? string.Empty).Trim();
+        if (trimmed.Length is 0 or > 1024
+            || !Uri.TryCreate(trimmed, UriKind.Absolute, out var uri)
+            || uri.Scheme != Uri.UriSchemeHttps
+            || !IsPublicHost(uri))
+        {
+            throw new ApiException(ErrorCodes.ValidationFailed, 400,
+                "Provide a valid public https URL (max 1024 characters).",
+                "يرجى إدخال رابط https عام صحيح لا يتجاوز 1024 حرفاً.");
+        }
+        return trimmed;
+    }
+
+    private static bool IsPublicHost(Uri uri)
+    {
+        var host = uri.Host;
+        if (string.IsNullOrEmpty(host)
+            || host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+            || host.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase)
+            || host.EndsWith(".local", StringComparison.OrdinalIgnoreCase)
+            || host.EndsWith(".internal", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+        return !System.Net.IPAddress.TryParse(host, out _);
+    }
 
     private static string ExtensionFrom(string? originalFileName, string fallback)
     {

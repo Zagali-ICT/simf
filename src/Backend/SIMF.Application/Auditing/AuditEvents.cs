@@ -192,6 +192,7 @@ public static class AuditEvents
     // a denied private download (SAMA E-16/17 / NCA ECC 2-12). Public-file reads
     // are not audited per-row (they would flood the log).
     public const string FileUploaded = "File.Uploaded";
+    public const string FileLinked = "File.Linked";
     public const string FileDownloaded = "File.Downloaded";
     public const string FileAccessDenied = "File.AccessDenied";
     public const string FileIntegrityFailed = "File.IntegrityFailed";

@@ -117,6 +117,44 @@ public sealed class FileUploadEndpoint(
     }
 }
 
+/// <summary>D-568 (P6) — record an external image link (a logo / cover hosted
+/// elsewhere). Owner-upsert; the download endpoint 302-redirects to it. Gated by
+/// <c>Files.Upload</c>, same as the byte upload.</summary>
+public sealed class FileLinkRequest
+{
+    public FileService Service { get; set; }
+    public Guid? OwnerEntityId { get; set; }
+    public string Url { get; set; } = string.Empty;
+}
+
+public sealed class FileLinkEndpoint(IFileService service)
+    : Endpoint<FileLinkRequest, ApiResult<UploadedFileResponse>>
+{
+    public override void Configure()
+    {
+        Post("/files/link");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Files.Upload),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Files");
+    }
+
+    public override async Task HandleAsync(FileLinkRequest req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+
+        var result = await service.CreateExternalLinkAsync(
+            new CreateExternalLinkCommand(req.Service, req.OwnerEntityId, req.Url, actorId), ct);
+        var response = new UploadedFileResponse(
+            result.Id, result.Url, result.Service, result.FileType, result.IsEncrypted, result.SizeBytes);
+        await Send.OkAsync(ApiResult<UploadedFileResponse>.Ok(response), ct);
+    }
+}
+
 /// <summary>D-568 — the single download-by-GUID endpoint. Anonymous at the route
 /// (public files must serve without a token); authorization is resolved IN CODE
 /// from the file's own <see cref="FileService"/> policy, so a guessed GUID for a
@@ -143,8 +181,10 @@ public sealed class FileDownloadEndpoint(IFileService service)
 
         if (download.IsRedirect && !string.IsNullOrWhiteSpace(download.RedirectUrl))
         {
-            HttpContext.Response.StatusCode = StatusCodes.Status302Found;
-            HttpContext.Response.Headers.Location = download.RedirectUrl;
+            // External-link file — 302 to the (validated public https) target. The
+            // URL is off-host, so remote redirects must be explicitly allowed;
+            // setting Response.StatusCode alone lets FastEndpoints default to 204.
+            await Send.RedirectAsync(download.RedirectUrl, isPermanent: false, allowRemoteRedirects: true);
             return;
         }
         if (download.Content is null)

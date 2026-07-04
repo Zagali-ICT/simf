@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Application.Files.Abstractions;
@@ -251,6 +252,65 @@ public sealed class FilesEndpointsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Link_then_anonymous_download_302_redirects_to_the_url()
+    {
+        // P6 (D-568) — an external image link is 302-served (no bytes stored).
+        var token = await CreateAdministratorAndSignInAsync();
+        const string url = "https://cdn.example.com/sponsor/acme.png";
+
+        var link = await LinkAsync(FileService.SponsorLogo, Guid.NewGuid(), url, token);
+        Assert.Equal(HttpStatusCode.OK, link.StatusCode);
+        var file = (await link.Content.ReadFromJsonAsync<ApiResult<UploadedFileResponse>>())!.Data!;
+
+        var noRedirect = _factory.CreateClient(
+            new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        var download = await noRedirect.GetAsync(file.Url);
+        Assert.Equal(HttpStatusCode.Redirect, download.StatusCode);
+        Assert.Equal(url, download.Headers.Location!.ToString());
+    }
+
+    [Fact]
+    public async Task Link_upserts_the_owner_to_a_single_active_file()
+    {
+        // P6 — a second link for the same (service, owner) REPLACES the first
+        // (one active file per owner), not appends.
+        var token = await CreateAdministratorAndSignInAsync();
+        var owner = Guid.NewGuid();
+
+        var first = await LinkAsync(FileService.SponsorLogo, owner, "https://cdn.example.com/a.png", token);
+        var firstId = (await first.Content.ReadFromJsonAsync<ApiResult<UploadedFileResponse>>())!.Data!.Id;
+        var second = await LinkAsync(FileService.SponsorLogo, owner, "https://cdn.example.com/b.png", token);
+        var secondId = (await second.Content.ReadFromJsonAsync<ApiResult<UploadedFileResponse>>())!.Data!.Id;
+        Assert.Equal(firstId, secondId);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var active = await db.StoredFiles.CountAsync(
+            f => f.Service == FileService.SponsorLogo && f.OwnerEntityId == owner && f.IsActive);
+        Assert.Equal(1, active);
+        var row = await db.StoredFiles.FirstAsync(f => f.Id == secondId);
+        Assert.Equal("https://cdn.example.com/b.png", row.ExternalUrl);
+    }
+
+    [Fact]
+    public async Task Link_with_a_non_https_url_is_400()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var resp = await LinkAsync(
+            FileService.SponsorLogo, Guid.NewGuid(), "http://cdn.example.com/a.png", token);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task Link_with_a_localhost_url_is_400()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var resp = await LinkAsync(
+            FileService.SponsorLogo, Guid.NewGuid(), "https://localhost/a.png", token);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
     public async Task Delete_soft_deletes_and_a_later_download_is_404()
     {
         var token = await CreateAdministratorAndSignInAsync();
@@ -414,6 +474,17 @@ public sealed class FilesEndpointsTests : IClassFixture<SimfApiFactory>
     private Task<HttpResponseMessage> SendAuthAsync(HttpMethod method, string url, string token)
     {
         var request = new HttpRequestMessage(method, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
+
+    private Task<HttpResponseMessage> LinkAsync(
+        FileService service, Guid? ownerId, string url, string token)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/files/link")
+        {
+            Content = JsonContent.Create(new { Service = service, OwnerEntityId = ownerId, Url = url }),
+        };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return _client.SendAsync(request);
     }
