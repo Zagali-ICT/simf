@@ -37,7 +37,7 @@ internal sealed class StoredFileService(
                 "No file was uploaded.", "لم يتم رفع أي ملف.");
         }
 
-        var detected = DetectUpload(command.Content, command.ClientContentType, command.OriginalFileName);
+        var detected = DetectUpload(command.Content, command.OriginalFileName);
         if (!policy.AllowedTypes.Contains(detected.Type))
         {
             throw new ApiException(ErrorCodes.ValidationFailed, 400,
@@ -142,15 +142,27 @@ internal sealed class StoredFileService(
         var bytes = await storage.ReadAsync(file.StorageKey, file.IsEncrypted, cancellationToken);
         if (bytes is null) { throw NotFound(); }
 
-        // Integrity verification on a private file (SAMA H-29/30).
+        // P4 (D-568 hardening) — integrity verification on a private file (SAMA
+        // H-29/30). FAIL CLOSED: a stored-hash mismatch means the bytes on disk
+        // were tampered with (or a decrypt returned garbage) — audit it and refuse
+        // to serve, never hand the caller unverified bytes. Only Confidential+
+        // tiers carry the per-read hash check (public images are not hashed on read).
         if (policy.Tier >= FileSensitivityTier.Confidential && !string.IsNullOrEmpty(file.Sha256))
         {
             var actual = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
             if (!string.Equals(actual, file.Sha256, StringComparison.OrdinalIgnoreCase))
             {
                 logger.LogError(
-                    "Integrity mismatch on file {Id} (service={Service}) — stored hash does not match bytes.",
+                    "Integrity mismatch on file {Id} (service={Service}) — refusing to serve tampered bytes.",
                     id, file.Service);
+                await auditLog.WriteAsync(new AuditEntry
+                {
+                    EventType = AuditEvents.FileIntegrityFailed,
+                    Outcome = AuditOutcome.Failure,
+                    ActorUserId = caller.UserId,
+                    Detail = $"id={id}; service={file.Service}; expected={file.Sha256}; actual={actual}",
+                }, cancellationToken);
+                throw NotFound();
             }
         }
 
@@ -239,7 +251,7 @@ internal sealed class StoredFileService(
     /// (never trusting the client content-type), and returns the canonical MIME +
     /// extension. Throws 400 when the bytes are not a recognized allowed shape.</summary>
     private static (FileType Type, string ContentType, string Extension) DetectUpload(
-        byte[] content, string? clientContentType, string? originalFileName)
+        byte[] content, string? originalFileName)
     {
         if (ImageUploadValidation.MagicBytesMatch(content, "image/png"))
         {
@@ -267,11 +279,25 @@ internal sealed class StoredFileService(
         }
         if (StartsWith(content, [0x50, 0x4B, 0x03, 0x04]))
         {
-            // ZIP container — Office docx / pptx; classified as a Document.
-            var ct = string.IsNullOrWhiteSpace(clientContentType)
-                ? "application/octet-stream"
-                : clientContentType;
-            return (FileType.Document, ct, ExtensionFrom(originalFileName, ".bin"));
+            // P3 (D-568 hardening) — a ZIP container is an OOXML Office document.
+            // The stored MIME is the CANONICAL OOXML type resolved from the
+            // declared extension; the client content-type is NEVER echoed (a ZIP
+            // could be anything, and trusting the client MIME lets a caller
+            // mislabel the stored bytes). An unrecognized OOXML extension is
+            // rejected rather than stored as an opaque blob.
+            var ext = ExtensionFrom(originalFileName, string.Empty);
+            return ext switch
+            {
+                ".docx" => (FileType.Document,
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".docx"),
+                ".pptx" => (FileType.Document,
+                    "application/vnd.openxmlformats-officedocument.presentationml.presentation", ".pptx"),
+                ".xlsx" => (FileType.Spreadsheet,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx"),
+                _ => throw new ApiException(ErrorCodes.ValidationFailed, 400,
+                    "Only .docx, .pptx and .xlsx Office documents are accepted for this upload.",
+                    "لا يُقبل في هذا الرفع سوى مستندات Office بامتداد ‎.docx‎ أو ‎.pptx‎ أو ‎.xlsx‎."),
+            };
         }
 
         throw new ApiException(ErrorCodes.ValidationFailed, 400,

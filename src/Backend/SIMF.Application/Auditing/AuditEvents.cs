@@ -194,6 +194,7 @@ public static class AuditEvents
     public const string FileUploaded = "File.Uploaded";
     public const string FileDownloaded = "File.Downloaded";
     public const string FileAccessDenied = "File.AccessDenied";
+    public const string FileIntegrityFailed = "File.IntegrityFailed";
     public const string FileDeleted = "File.Deleted";
     public const string FileSecurelyDestroyed = "File.SecurelyDestroyed";
 

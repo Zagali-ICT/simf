@@ -7,12 +7,14 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Files;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Infrastructure.Persistence;
 using Xunit;
 
 namespace SIMF.Api.Tests.Files;
@@ -26,6 +28,10 @@ public sealed class FilesEndpointsTests : IClassFixture<SimfApiFactory>
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==");
 
     private static readonly byte[] Pdf = "%PDF-1.4\n%fake pdf body for the type test\n"u8.ToArray();
+
+    // Minimal ZIP local-file-header magic (PK\x03\x04). DetectUpload reads only the
+    // 4-byte signature, so this is enough to exercise the OOXML branch.
+    private static readonly byte[] Zip = [0x50, 0x4B, 0x03, 0x04, 0x14, 0x00, 0x00, 0x00];
 
     private readonly SimfApiFactory _factory;
     private readonly HttpClient _client;
@@ -100,6 +106,71 @@ public sealed class FilesEndpointsTests : IClassFixture<SimfApiFactory>
             Pdf, "application/pdf", "doc.pdf", token);
 
         Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_docx_zip_is_stored_with_the_canonical_ooxml_mime_not_the_client_type()
+    {
+        // P3 (D-568 hardening) — a ZIP/OOXML upload is stored under the CANONICAL
+        // Office MIME resolved from the .docx extension; the client's lie
+        // ("application/zip") is never echoed onto the stored/served content-type.
+        var token = await CreateAdministratorAndSignInAsync();
+
+        var resp = await UploadAsync(
+            FileService.SpeakerPresentation, FileOwnerEntityType.SpeakerPresentation, Guid.NewGuid(),
+            Zip, "application/zip", "deck.docx", token);
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var file = (await resp.Content.ReadFromJsonAsync<ApiResult<UploadedFileResponse>>())!.Data!;
+        Assert.Equal(FileType.Document, file.FileType);
+
+        var download = await GetAuthAsync(file.Url, token);
+        Assert.Equal(HttpStatusCode.OK, download.StatusCode);
+        Assert.Equal(
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            download.Content.Headers.ContentType!.MediaType);
+    }
+
+    [Fact]
+    public async Task A_zip_without_a_recognised_office_extension_is_rejected_400()
+    {
+        // P3 — a ZIP that is not a known OOXML type (.docx/.pptx/.xlsx) is not
+        // stored as an opaque blob; it is rejected at the edge.
+        var token = await CreateAdministratorAndSignInAsync();
+
+        var resp = await UploadAsync(
+            FileService.SpeakerPresentation, FileOwnerEntityType.SpeakerPresentation, Guid.NewGuid(),
+            Zip, "application/zip", "archive.zip", token);
+
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_tampered_confidential_file_fails_closed_on_download_404()
+    {
+        // P4 (D-568 hardening) — when the stored bytes no longer match the recorded
+        // SHA-256 (tamper / corrupt decrypt), a Confidential+ download FAILS CLOSED:
+        // uniform 404, never the unverified bytes. Simulated by mutating the
+        // recorded hash so the on-read integrity check cannot match.
+        var token = await CreateAdministratorAndSignInAsync();
+        var upload = await UploadAsync(
+            FileService.Avatar, FileOwnerEntityType.UserProfile, Guid.NewGuid(),
+            Png, "image/png", "a.png", token);
+        var file = (await upload.Content.ReadFromJsonAsync<ApiResult<UploadedFileResponse>>())!.Data!;
+
+        // A clean download works first (control).
+        var ok = await GetAuthAsync(file.Url, token);
+        Assert.Equal(HttpStatusCode.OK, ok.StatusCode);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var row = await db.StoredFiles.FirstAsync(f => f.Id == file.Id);
+            row.Sha256 = new string('0', 64);   // wrong hash → mismatch on next read
+            await db.SaveChangesAsync();
+        }
+
+        var tampered = await GetAuthAsync(file.Url, token);
+        Assert.Equal(HttpStatusCode.NotFound, tampered.StatusCode);
     }
 
     [Fact]
