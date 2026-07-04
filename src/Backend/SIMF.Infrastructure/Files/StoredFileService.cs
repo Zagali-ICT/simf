@@ -209,12 +209,52 @@ internal sealed class StoredFileService(
         file.UpdatedAt = now;
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        // P7 (D-568 hardening) — deletion honesty: a soft-deleted file's bytes must
+        // not linger on disk. Unlink the stored blob (Upload only; an ExternalLink
+        // holds no bytes). Best-effort after the row commit — the row is the source
+        // of truth (IsActive=false already makes the file un-downloadable).
+        if (file.SourceType == FileSourceType.Upload && !string.IsNullOrEmpty(file.StorageKey))
+        {
+            await storage.DeleteAsync(file.StorageKey, cancellationToken);
+        }
+
         await auditLog.WriteAsync(new AuditEntry
         {
             EventType = AuditEvents.FileDeleted,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
             Detail = $"id={id}; service={file.Service}",
+        }, cancellationToken);
+    }
+
+    public async Task ForceDeleteAsync(Guid id, Guid actorUserId, CancellationToken cancellationToken = default)
+    {
+        var file = await dbContext.StoredFiles
+            .FirstOrDefaultAsync(f => f.Id == id, cancellationToken)
+            ?? throw NotFound();
+        if (file.SecureDestroyedUtc is not null) { return; } // idempotent
+
+        // P7 — PDPL right-to-erasure. Securely destroy the bytes (crypto-shred the
+        // wrapped DEK for an encrypted file, overwrite the header for a plaintext
+        // one), bypassing the retention hold that blocks the ordinary delete.
+        if (file.SourceType == FileSourceType.Upload && !string.IsNullOrEmpty(file.StorageKey))
+        {
+            await storage.SecureEraseAsync(file.StorageKey, cancellationToken);
+        }
+
+        var now = timeProvider.GetUtcNow();
+        file.MarkSecurelyDestroyed(now);
+        file.DeletedAt ??= now;
+        file.UpdatedBy = actorUserId;
+        file.UpdatedAt = now;
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.FileSecurelyDestroyed,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = $"id={id}; service={file.Service}; force-delete",
         }, cancellationToken);
     }
 

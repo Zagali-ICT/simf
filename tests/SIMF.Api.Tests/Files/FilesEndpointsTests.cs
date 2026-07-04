@@ -9,6 +9,7 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using SIMF.Application.Files.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
@@ -266,6 +267,80 @@ public sealed class FilesEndpointsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Delete_removes_the_on_disk_bytes()
+    {
+        // P7 (D-568 hardening) — a soft-delete unlinks the stored blob, not just
+        // the row, so a "deleted" file's bytes do not linger on disk.
+        var token = await CreateAdministratorAndSignInAsync();
+        var upload = await UploadAsync(
+            FileService.SpeakerPhoto, FileOwnerEntityType.Speaker, Guid.NewGuid(),
+            Png, "image/png", "p.png", token);
+        var file = (await upload.Content.ReadFromJsonAsync<ApiResult<UploadedFileResponse>>())!.Data!;
+
+        string storageKey;
+        bool encrypted;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var row = await db.StoredFiles.FirstAsync(f => f.Id == file.Id);
+            storageKey = row.StorageKey!;
+            encrypted = row.IsEncrypted;
+        }
+
+        var del = await DeleteAuthAsync($"/api/v1/files/{file.Id}", token);
+        Assert.Equal(HttpStatusCode.OK, del.StatusCode);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var storage = scope.ServiceProvider.GetRequiredService<IFileStorageProvider>();
+            Assert.Null(await storage.ReadAsync(storageKey, encrypted));
+        }
+    }
+
+    [Fact]
+    public async Task ForceDelete_secure_erases_the_bytes_even_under_a_retention_hold()
+    {
+        // P7 — PDPL right-to-erasure: an IdDocument is retention-held
+        // (IsDeletable=false) so the ordinary delete is 409, but ForceDelete
+        // securely destroys the bytes and stamps SecureDestroyedUtc.
+        var token = await CreateAdministratorAndSignInAsync();
+        var upload = await UploadAsync(
+            FileService.IdDocument, FileOwnerEntityType.UserProfile, Guid.NewGuid(),
+            Png, "image/png", "id.png", token);
+        var file = (await upload.Content.ReadFromJsonAsync<ApiResult<UploadedFileResponse>>())!.Data!;
+
+        var softDelete = await DeleteAuthAsync($"/api/v1/files/{file.Id}", token);
+        Assert.Equal(HttpStatusCode.Conflict, softDelete.StatusCode);
+
+        var force = await SendAuthAsync(HttpMethod.Delete, $"/api/v1/files/{file.Id}/force", token);
+        Assert.Equal(HttpStatusCode.OK, force.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var row = await db.StoredFiles.FirstAsync(f => f.Id == file.Id);
+        Assert.NotNull(row.SecureDestroyedUtc);
+        Assert.False(row.IsActive);
+        var storage = scope.ServiceProvider.GetRequiredService<IFileStorageProvider>();
+        Assert.Null(await storage.ReadAsync(row.StorageKey!, row.IsEncrypted));
+    }
+
+    [Fact]
+    public async Task ForceDelete_requires_the_force_delete_permission()
+    {
+        // A signed-in non-admin (no Files.ForceDelete) is forbidden.
+        var token = await CreateAdministratorAndSignInAsync();
+        var upload = await UploadAsync(
+            FileService.SpeakerPhoto, FileOwnerEntityType.Speaker, Guid.NewGuid(),
+            Png, "image/png", "p.png", token);
+        var file = (await upload.Content.ReadFromJsonAsync<ApiResult<UploadedFileResponse>>())!.Data!;
+
+        var visitor = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
+        var resp = await SendAuthAsync(
+            HttpMethod.Delete, $"/api/v1/files/{file.Id}/force", visitor.AccessToken);
+        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
+    }
+
+    [Fact]
     public async Task Deleting_an_unknown_file_is_404()
     {
         var token = await CreateAdministratorAndSignInAsync();
@@ -332,6 +407,13 @@ public sealed class FilesEndpointsTests : IClassFixture<SimfApiFactory>
     private Task<HttpResponseMessage> DeleteAuthAsync(string url, string token)
     {
         var request = new HttpRequestMessage(HttpMethod.Delete, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
+
+    private Task<HttpResponseMessage> SendAuthAsync(HttpMethod method, string url, string token)
+    {
+        var request = new HttpRequestMessage(method, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return _client.SendAsync(request);
     }

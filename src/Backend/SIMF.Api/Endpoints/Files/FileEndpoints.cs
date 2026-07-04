@@ -207,3 +207,31 @@ public sealed class FileDeleteEndpoint(IFileService service)
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
 }
+
+/// <summary>D-568 — PDPL right-to-erasure (P7): securely destroy a file's bytes
+/// even under a retention hold. Gated by the privileged <c>Files.ForceDelete</c>,
+/// held separately from ordinary delete so the elevated action is independently
+/// grantable and audited.</summary>
+public sealed class FileForceDeleteEndpoint(IFileService service)
+    : Endpoint<FileDeleteRoute, ApiResult<bool>>
+{
+    public override void Configure()
+    {
+        Delete("/files/{id:guid}/force");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Files.ForceDelete),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Files");
+    }
+
+    public override async Task HandleAsync(FileDeleteRoute req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        await service.ForceDeleteAsync(req.Id, actorId, ct);
+        await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
+    }
+}

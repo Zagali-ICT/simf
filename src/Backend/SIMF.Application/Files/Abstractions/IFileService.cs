@@ -20,9 +20,19 @@ public interface IFileService
     /// allowed (no exists-but-forbidden oracle for private files).</summary>
     Task<FileDownload> DownloadAsync(Guid id, FileAccessContext caller, CancellationToken cancellationToken = default);
 
-    /// <summary>Soft-deletes a file. 404 if missing, 409 if the file is under a
-    /// retention hold (<c>IsDeletable == false</c>). Idempotent on an already-deleted file.</summary>
+    /// <summary>Soft-deletes a file AND removes the on-disk bytes (P7 — deletion
+    /// honesty: a "deleted" file's bytes do not linger on disk). 404 if missing,
+    /// 409 if the file is under a retention hold (<c>IsDeletable == false</c>).
+    /// Idempotent on an already-deleted file.</summary>
     Task DeleteAsync(Guid id, Guid actorUserId, CancellationToken cancellationToken = default);
+
+    /// <summary>PDPL right-to-erasure (P7): securely destroys the bytes —
+    /// crypto-shreds the wrapped DEK for an encrypted file, overwrites the header
+    /// for a plaintext one — and marks the row secure-destroyed, <b>bypassing the
+    /// retention hold</b> that blocks <see cref="DeleteAsync"/>. Gated by
+    /// <c>Files.ForceDelete</c>. 404 if missing; idempotent on an already-destroyed
+    /// file.</summary>
+    Task ForceDeleteAsync(Guid id, Guid actorUserId, CancellationToken cancellationToken = default);
 }
 
 /// <summary>An upload request. The owner *family* is NOT carried here — it is
