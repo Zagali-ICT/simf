@@ -16,7 +16,12 @@ internal sealed class SavedContactConfiguration : IEntityTypeConfiguration<Saved
         builder.ToTable("SavedContacts");
         builder.HasKey(saved => saved.Id);
         builder.Property(saved => saved.Note).HasMaxLength(512);
-        builder.HasIndex(saved => saved.OwnerUserId);
-        builder.HasIndex(saved => new { saved.OwnerUserId, saved.SubjectUserId });
+        // D-611 (Wave B) — one ACTIVE saved contact per (owner, subject): the
+        // filtered unique replaces the plain composite and backs the idempotent
+        // save. The standalone HasIndex(OwnerUserId) is dropped — a redundant
+        // left-prefix of this composite.
+        builder.HasIndex(saved => new { saved.OwnerUserId, saved.SubjectUserId })
+            .IsUnique()
+            .HasFilter("[IsActive] = 1");
     }
 }

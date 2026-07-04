@@ -45,9 +45,22 @@ internal sealed class ProfileTypeConfiguration : IEntityTypeConfiguration<UserPr
             .HasDefaultValue(true)
             .IsRequired();
 
+        // D-611 (Wave B) — VIP meeting-slot eligibility (replaces the Name
+        // substring hack). Default false; the seeder flips VVIP/VIP to true.
+        builder.Property(profileType => profileType.AllowsVipMeetingSlots)
+            .HasDefaultValue(false)
+            .IsRequired();
+
         // D-186 — after the UserType collapse every profile type is
         // Visitor-scope; the CP picker + approval queues filter by
         // (IsForVisitor, IsActive), so one composite index serves both.
         builder.HasIndex(profileType => new { profileType.IsForVisitor, profileType.IsActive });
+
+        // D-611 (Wave B) — unique profile-type name among the ACTIVE rows (the
+        // seeder is idempotent by Name; the filter lets an admin reuse a
+        // soft-deleted name).
+        builder.HasIndex(profileType => profileType.Name)
+            .IsUnique()
+            .HasFilter("[IsActive] = 1");
     }
 }

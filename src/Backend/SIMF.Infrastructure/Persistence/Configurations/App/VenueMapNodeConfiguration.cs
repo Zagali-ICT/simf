@@ -11,7 +11,10 @@ internal sealed class VenueMapNodeConfiguration : IEntityTypeConfiguration<Venue
 {
     public void Configure(EntityTypeBuilder<VenueMapNode> builder)
     {
-        builder.ToTable("VenueMapNodes");
+        // D-611 (Wave B) — HallId only on a Hall node (Kind=0), BoothId only on a Booth node (Kind=2), never both.
+        builder.ToTable("VenueMapNodes", table => table.HasCheckConstraint(
+            "CK_VenueMapNodes_KindArc",
+            "([HallId] IS NULL OR [Kind] = 0) AND ([BoothId] IS NULL OR [Kind] = 2) AND NOT ([HallId] IS NOT NULL AND [BoothId] IS NOT NULL)"));
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Label).HasMaxLength(128).IsRequired();

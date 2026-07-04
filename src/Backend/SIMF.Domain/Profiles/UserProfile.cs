@@ -88,6 +88,16 @@ public class UserProfile : BaseAuditEntity
     /// <summary>Navigation to the picked <see cref="Organisation"/>.</summary>
     public Organisation? Organisation { get; set; }
 
+    /// <summary>D-611 (Wave B) — the visitor's region, picked from the curated
+    /// <see cref="SIMF.Domain.Regions.Region"/> lookup. Optional; a real DB FK
+    /// (<c>OnDelete.Restrict</c>, same shape as <see cref="OrganisationId"/>) so
+    /// the region pick is now persisted — previously the Region lookup was
+    /// exposed by a picker but the choice was stored nowhere.</summary>
+    public Guid? RegionId { get; set; }
+
+    /// <summary>Navigation to the picked <see cref="SIMF.Domain.Regions.Region"/>.</summary>
+    public SIMF.Domain.Regions.Region? Region { get; set; }
+
 
 
 

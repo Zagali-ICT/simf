@@ -12,7 +12,9 @@ internal sealed class SpeakerAvailabilityWindowConfiguration
 {
     public void Configure(EntityTypeBuilder<SpeakerAvailabilityWindow> builder)
     {
-        builder.ToTable("SpeakerAvailabilityWindows");
+        // D-611 (Wave B) — a window must end after it starts.
+        builder.ToTable("SpeakerAvailabilityWindows", table => table.HasCheckConstraint(
+            "CK_SpeakerAvailabilityWindows_TimeWindow", "[EndUtc] > [StartUtc]"));
         builder.HasKey(w => w.Id);
 
         builder.HasOne(w => w.Speaker)
@@ -21,5 +23,11 @@ internal sealed class SpeakerAvailabilityWindowConfiguration
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(w => new { w.SpeakerId, w.IsActive, w.StartUtc });
+
+        // D-611 (Wave B) — one ACTIVE window per (speaker, start): backstop for
+        // the "no duplicate window" invariant.
+        builder.HasIndex(w => new { w.SpeakerId, w.StartUtc })
+            .IsUnique()
+            .HasFilter("[IsActive] = 1");
     }
 }

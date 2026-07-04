@@ -363,15 +363,17 @@ internal sealed class SpeakerMeetingRequestService(
         return await LoadDetailAsync(id, cancellationToken);
     }
 
-    // D-474 — VIP gate: the requester's profile-type name is VIP/VVIP.
+    // D-474 / D-611 — VIP gate: the requester's profile type opts into VIP
+    // meeting slots. D-611 replaced the former brittle "profile-type Name
+    // contains 'VIP'" substring test with the explicit
+    // ProfileType.AllowsVipMeetingSlots flag (the seeder sets it for VVIP + VIP),
+    // so a future type whose name merely embeds "VIP" no longer matches by accident.
     private async Task<bool> IsVipAsync(Guid userId, CancellationToken cancellationToken)
     {
-        var typeName = await appDbContext.UserProfiles.AsNoTracking()
+        return await appDbContext.UserProfiles.AsNoTracking()
             .Where(p => p.UserId == userId && p.ProfileTypeId != null)
-            .Select(p => p.ProfileType!.Name)
+            .Select(p => p.ProfileType!.AllowsVipMeetingSlots)
             .SingleOrDefaultAsync(cancellationToken);
-        return typeName is not null
-            && typeName.ToUpperInvariant().Contains("VIP");
     }
 
     // D-474 — in-app notify the requester of the decision; on Accept also email the

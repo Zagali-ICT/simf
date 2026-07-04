@@ -17,7 +17,12 @@ internal sealed class ExhibitorVisitorScanConfiguration
         builder.ToTable("ExhibitorVisitorScans");
         builder.HasKey(scan => scan.Id);
         builder.Property(scan => scan.Note).HasMaxLength(512);
-        builder.HasIndex(scan => scan.ExhibitorUserId);
-        builder.HasIndex(scan => new { scan.ExhibitorUserId, scan.VisitorUserId });
+        // D-611 (Wave B) — one ACTIVE capture per (exhibitor, visitor): the
+        // filtered unique replaces the plain composite and backs the idempotent
+        // capture. The standalone HasIndex(ExhibitorUserId) is dropped — a
+        // redundant left-prefix of this composite.
+        builder.HasIndex(scan => new { scan.ExhibitorUserId, scan.VisitorUserId })
+            .IsUnique()
+            .HasFilter("[IsActive] = 1");
     }
 }

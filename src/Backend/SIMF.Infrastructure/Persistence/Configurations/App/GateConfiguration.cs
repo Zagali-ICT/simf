@@ -29,9 +29,11 @@ internal sealed class GateConfiguration : IEntityTypeConfiguration<Gate>
             .HasForeignKey(allow => allow.GateId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // D-611 (Wave B) — Restrict (was Cascade): deleting a Gate must not
+        // silently delete its operator assignments; deactivate the Gate instead.
         builder.HasMany(gate => gate.Assignments)
             .WithOne(assignment => assignment.Gate!)
             .HasForeignKey(assignment => assignment.GateId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

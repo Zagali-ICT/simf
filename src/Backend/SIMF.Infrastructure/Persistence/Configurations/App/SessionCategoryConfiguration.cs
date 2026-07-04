@@ -21,5 +21,10 @@ internal sealed class SessionCategoryConfiguration
 
         // The picker / grid read: active categories ordered by DisplayOrder.
         builder.HasIndex(category => new { category.IsActive, category.DisplayOrder });
+
+        // D-611 (Wave B) — unique category name among the ACTIVE rows.
+        builder.HasIndex(category => category.Name)
+            .IsUnique()
+            .HasFilter("[IsActive] = 1");
     }
 }

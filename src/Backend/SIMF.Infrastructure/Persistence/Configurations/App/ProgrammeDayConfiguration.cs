@@ -24,5 +24,11 @@ internal sealed class ProgrammeDayConfiguration
         // The agenda + the CP list both order by DisplayOrder then Date,
         // filtered to the active rows.
         builder.HasIndex(d => new { d.IsActive, d.DisplayOrder, d.Date });
+
+        // D-611 (Wave B) — one ACTIVE programme day per date (a soft-deleted day
+        // must not block re-creating the same date, hence the filter).
+        builder.HasIndex(d => d.Date)
+            .IsUnique()
+            .HasFilter("[IsActive] = 1");
     }
 }

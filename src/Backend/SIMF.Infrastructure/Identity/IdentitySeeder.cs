@@ -220,6 +220,17 @@ public sealed class IdentitySeeder(
             "VIP", "كبار الشخصيات", "#0E7490", // deep teal
             isVisitor: true, MobileAppRole.None, cancellationToken);
 
+        // D-611 (Wave B) — the VVIP + VIP audience tiers may book VIP
+        // speaker-meeting slots. AllowsVipMeetingSlots defaults false for every
+        // other type; flip these two after seeding (idempotent — runs each boot).
+        // This is the source of truth the meeting-request service now reads,
+        // replacing its former "profile-type Name contains 'VIP'" substring test.
+        await appDbContext.ProfileTypes
+            .Where(profileType => profileType.Name == "VVIP" || profileType.Name == "VIP")
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(profileType => profileType.AllowsVipMeetingSlots, true),
+                cancellationToken);
+
         // D-585 — seed one demo user account per user type / profile type
         // (an extra Admin + a VVIP/VIP/Normal visitor + a Staff/Moderator/
         // Exhibitor/Media/Sponsor partner), so every role is testable from a

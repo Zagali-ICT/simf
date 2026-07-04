@@ -82,7 +82,10 @@ internal sealed class RatingResponseConfiguration : IEntityTypeConfiguration<Rat
 {
     public void Configure(EntityTypeBuilder<RatingResponse> builder)
     {
-        builder.ToTable("RatingResponses");
+        // D-611 (Wave B) — the optional overall score is 1–5 when present.
+        builder.ToTable("RatingResponses", table => table.HasCheckConstraint(
+            "CK_RatingResponses_OverallStars",
+            "[OverallStars] IS NULL OR [OverallStars] BETWEEN 1 AND 5"));
         builder.HasKey(r => r.Id);
 
         builder.Property(r => r.UserId).IsRequired();
@@ -114,7 +117,9 @@ internal sealed class RatingAnswerConfiguration : IEntityTypeConfiguration<Ratin
 {
     public void Configure(EntityTypeBuilder<RatingAnswer> builder)
     {
-        builder.ToTable("RatingAnswers");
+        // D-611 (Wave B) — a per-question score is between 1 and 5.
+        builder.ToTable("RatingAnswers", table => table.HasCheckConstraint(
+            "CK_RatingAnswers_Stars", "[Stars] BETWEEN 1 AND 5"));
         builder.HasKey(a => a.Id);
 
         builder.Property(a => a.Stars).IsRequired();

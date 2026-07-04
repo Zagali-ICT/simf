@@ -13,7 +13,9 @@ internal sealed class HallAllocationConfiguration : IEntityTypeConfiguration<Hal
 {
     public void Configure(EntityTypeBuilder<HallAllocation> builder)
     {
-        builder.ToTable("HallAllocations");
+        // D-611 (Wave B) — an allocation must end after it starts.
+        builder.ToTable("HallAllocations", table => table.HasCheckConstraint(
+            "CK_HallAllocations_TimeWindow", "[EndUtc] > [StartUtc]"));
         builder.HasKey(a => a.Id);
 
         builder.Property(a => a.RowColumnSpec).HasMaxLength(512);
