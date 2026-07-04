@@ -41,22 +41,8 @@ class ContactUsSection extends StatelessWidget {
         const SizedBox(height: 16),
         Row(
           children: <Widget>[
-            Expanded(
-              child: _ContactTile(
-                icon: Icons.call_outlined,
-                onTap: BuildConfig.supportPhone.isEmpty
-                    ? null
-                    : () => unawaited(
-                          _launchContact(
-                            Uri(
-                              scheme: 'tel',
-                              path: BuildConfig.supportPhone,
-                            ),
-                          ),
-                        ),
-              ),
-            ),
-            const SizedBox(width: 16),
+            // Frame 522:2223 (RTL): the mail tile leads (right edge), the call
+            // tile trails (left) — so the mail tile is the first child.
             Expanded(
               child: _ContactTile(
                 icon: Icons.mail_outline,
@@ -67,6 +53,22 @@ class ContactUsSection extends StatelessWidget {
                             Uri(
                               scheme: 'mailto',
                               path: BuildConfig.supportEmail,
+                            ),
+                          ),
+                        ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _ContactTile(
+                icon: Icons.call_outlined,
+                onTap: BuildConfig.supportPhone.isEmpty
+                    ? null
+                    : () => unawaited(
+                          _launchContact(
+                            Uri(
+                              scheme: 'tel',
+                              path: BuildConfig.supportPhone,
                             ),
                           ),
                         ),

@@ -77,8 +77,21 @@ class _InfoRow extends StatelessWidget {
         ),
       ),
       padding: const EdgeInsets.all(SimfTokens.space2), // p-8
+      // Icon leads (right edge under RTL), value + sub-label follow to its inline
+      // end — matches Figma 1388:7711.
       child: Row(
         children: <Widget>[
+          Container(
+            width: 40,
+            height: 40,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              color: SimfTokens.accent,
+              borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radius)),
+            ),
+            child: Icon(icon, color: SimfTokens.navy, size: 18),
+          ),
+          const SizedBox(width: SimfTokens.space2),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -103,17 +116,6 @@ class _InfoRow extends StatelessWidget {
                 ),
               ],
             ),
-          ),
-          const SizedBox(width: SimfTokens.space2),
-          Container(
-            width: 40,
-            height: 40,
-            alignment: Alignment.center,
-            decoration: const BoxDecoration(
-              color: SimfTokens.accent,
-              borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radius)),
-            ),
-            child: Icon(icon, color: SimfTokens.navy, size: 18),
           ),
         ],
       ),

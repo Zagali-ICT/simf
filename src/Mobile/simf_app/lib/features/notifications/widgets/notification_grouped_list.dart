@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart' hide TextDirection;
 
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
+import '../../../core/utils/gregorian_month_names.dart';
 import '../data/notification_models.dart';
 import 'notification_card.dart';
-
-final DateFormat _dateFormat = DateFormat('d MMM');
 
 /// The day-grouped list: a "اليوم / أمس / date" header per run of same-day
 /// items, then the cards for that day.
@@ -87,6 +85,8 @@ class NotificationGroupedList extends StatelessWidget {
     if (diff == 1) {
       return l10n.dayYesterday;
     }
-    return _dateFormat.format(local);
+    // Localised month name (Arabic on the ar UI) — never the intl English
+    // fallback that showed "Jun 10" inside the RTL screen.
+    return '${local.day} ${gregorianMonthName(local.month, isArabic)}';
   }
 }
