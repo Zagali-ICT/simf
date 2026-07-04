@@ -9,6 +9,10 @@ import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import 'data/feedback_repository.dart';
 import 'data/rating_models.dart';
+import 'widgets/rate_category_row.dart';
+import 'widgets/rate_gold_button.dart';
+import 'widgets/rate_load_error.dart';
+import 'widgets/star_row.dart';
 
 /// Page 040 — تقييم الملتقى · Rate (#40, `/rate`, login-only).
 ///
@@ -115,8 +119,7 @@ class _RateScreenState extends ConsumerState<RateScreen> {
       for (final g in form.groups) ...g.questions.where((q) => q.isRequired),
       ...form.ungroupedQuestions.where((q) => q.isRequired),
     ];
-    final missingRequired =
-        required.any((q) => (_answers[q.id] ?? 0) < 1);
+    final missingRequired = required.any((q) => (_answers[q.id] ?? 0) < 1);
     if (missingRequired) {
       messenger
         ..hideCurrentSnackBar()
@@ -170,7 +173,7 @@ class _RateScreenState extends ConsumerState<RateScreen> {
               child: CircularProgressIndicator(color: SimfTokens.accent),
             )
           : _loadFailed || form == null
-              ? _LoadError(message: l10n.rateLoadFailed, onRetry: _loadForm)
+              ? RateLoadError(message: l10n.rateLoadFailed, onRetry: _loadForm)
               : _buildForm(l10n, form),
     );
   }
@@ -202,7 +205,7 @@ class _RateScreenState extends ConsumerState<RateScreen> {
             ),
           ),
           const SizedBox(height: SimfTokens.space6),
-          _StarRow(
+          StarRow(
             value: _overall,
             size: 30,
             gap: SimfTokens.space3,
@@ -227,7 +230,7 @@ class _RateScreenState extends ConsumerState<RateScreen> {
 
     // Grouped questions — a section per group.
     for (final group in form.groups) {
-      children.add(_SectionTitle(group.localizedName(isArabic)));
+      children.add(SimfSectionHeader(title: group.localizedName(isArabic)));
       children.add(const SizedBox(height: SimfTokens.space3));
       for (final q in group.questions) {
         children.add(_questionRow(isArabic, q));
@@ -238,7 +241,7 @@ class _RateScreenState extends ConsumerState<RateScreen> {
 
     // Flat (ungrouped) questions — under the generic "Rate the elements" title.
     if (form.ungroupedQuestions.isNotEmpty) {
-      children.add(_SectionTitle(l10n.rateElementsTitle));
+      children.add(SimfSectionHeader(title: l10n.rateElementsTitle));
       children.add(const SizedBox(height: SimfTokens.space3));
       for (final q in form.ungroupedQuestions) {
         children.add(_questionRow(isArabic, q));
@@ -250,7 +253,7 @@ class _RateScreenState extends ConsumerState<RateScreen> {
       final commentLabel =
           form.localizedCommentLabel(isArabic) ?? l10n.rateCommentLabel;
       children.add(const SizedBox(height: SimfTokens.space5));
-      children.add(_SectionTitle(commentLabel));
+      children.add(SimfSectionHeader(title: commentLabel));
       children.add(const SizedBox(height: SimfTokens.space2));
       children.add(TextField(
         controller: _comment,
@@ -288,7 +291,7 @@ class _RateScreenState extends ConsumerState<RateScreen> {
     }
 
     children.add(const SizedBox(height: SimfTokens.space5));
-    children.add(_GoldButton(
+    children.add(RateGoldButton(
       label: l10n.rateSubmit,
       loading: _submitting,
       onTap: () => unawaited(_submit(l10n, form)),
@@ -305,210 +308,9 @@ class _RateScreenState extends ConsumerState<RateScreen> {
     );
   }
 
-  Widget _questionRow(bool isArabic, RatingFormQuestion q) => _CategoryRow(
+  Widget _questionRow(bool isArabic, RatingFormQuestion q) => RateCategoryRow(
         label: q.localizedText(isArabic),
         value: _answers[q.id] ?? 0,
         onChanged: (v) => setState(() => _answers[q.id] = v),
       );
-}
-
-/// A left-aligned white section heading (group name / "Rate the elements" /
-/// comment label).
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      textAlign: TextAlign.start,
-      style: const TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.w500,
-        fontSize: SimfTokens.textLg,
-      ),
-    );
-  }
-}
-
-/// Form-load failure with a retry button.
-class _LoadError extends StatelessWidget {
-  const _LoadError({required this.message, required this.onRetry});
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space5),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: SimfTokens.textMd,
-              ),
-            ),
-            const SizedBox(height: SimfTokens.space4),
-            OutlinedButton(
-              onPressed: onRetry,
-              child: Text(AppL10n.of(context).retryLabel),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// One per-element row: the beige-hairline 48-high box with the element name at
-/// the inline start and the small star bar at the inline end.
-class _CategoryRow extends StatelessWidget {
-  const _CategoryRow({
-    required this.label,
-    required this.value,
-    required this.onChanged,
-  });
-
-  final String label;
-  final int value;
-  final ValueChanged<int> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: SimfTokens.beigeBorder,
-          width: SimfTokens.hairline,
-        ),
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <Widget>[
-          Flexible(
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: SimfTokens.beigeBorder,
-                fontWeight: FontWeight.w600,
-                fontSize: SimfTokens.textMd,
-              ),
-            ),
-          ),
-          const SizedBox(width: SimfTokens.space2),
-          _StarRow(
-            value: value,
-            size: 18,
-            gap: SimfTokens.space1,
-            onChanged: onChanged,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// A tappable 1–5 star bar. Renders in the ambient direction so the fill grows
-/// from the inline start (right under RTL — matching the Figma — left under
-/// LTR). [value] 0 means unscored (all outlines). Tapping star N sets [value] N.
-class _StarRow extends StatelessWidget {
-  const _StarRow({
-    required this.value,
-    required this.onChanged,
-    this.size = 24,
-    this.gap = SimfTokens.space2,
-  });
-
-  final int value;
-  final ValueChanged<int> onChanged;
-  final double size;
-  final double gap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        for (var star = 1; star <= 5; star++) ...<Widget>[
-          if (star > 1) SizedBox(width: gap),
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => onChanged(star),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: SimfTokens.space1),
-              child: Icon(
-                star <= value ? Icons.star_rounded : Icons.star_outline_rounded,
-                size: size,
-                color: star <= value
-                    ? SimfTokens.accent
-                    : SimfTokens.beigeBorder,
-              ),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-/// The full-width gold action button: radius-4 gold fill with the centred white
-/// label. Stays gold while [loading] (taps disabled, a white spinner replaces the
-/// label) so the button never turns into an unreadable dark box on the navy.
-class _GoldButton extends StatelessWidget {
-  const _GoldButton({
-    required this.label,
-    required this.onTap,
-    this.loading = false,
-  });
-
-  final String label;
-  final bool loading;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: SimfTokens.accent,
-      borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-      child: InkWell(
-        onTap: loading ? null : onTap,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        child: SizedBox(
-          height: 48,
-          child: Center(
-            child: loading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : Text(
-                    label,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: SimfTokens.textLg,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-          ),
-        ),
-      ),
-    );
-  }
 }
