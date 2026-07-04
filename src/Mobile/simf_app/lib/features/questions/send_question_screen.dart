@@ -203,63 +203,16 @@ class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
                 ),
                 const SizedBox(height: SimfTokens.space6),
               ],
-              // Frame 945:3756 — the "الاسئلة" section label: white, Medium,
-              // aligned to the inline end (right in RTL).
-              Text(
-                l10n.sendQuestionSectionLabel,
-                // TextAlign.start = right under RTL (TextAlign.end would be left).
-                textAlign: TextAlign.start,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                  fontSize: SimfTokens.textLg,
-                ),
-              ),
-              const SizedBox(height: SimfTokens.space2),
-              // Frame 934:3668 — the fixed 100px tinted question box: navyDeep
-              // fill on the 8px radius (no border), placeholder pinned to the
-              // top, beige + inline-end aligned.
-              Container(
-                height: 100,
-                decoration: BoxDecoration(
-                  color: SimfTokens.navyDeep,
-                  borderRadius: BorderRadius.circular(SimfTokens.radius),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: SimfTokens.space2,
-                  vertical: SimfTokens.space3,
-                ),
-                child: TextField(
-                  controller: _question,
-                  maxLength: 500,
-                  maxLines: null,
-                  expands: true,
-                  textAlign: TextAlign.start,
-                  textAlignVertical: TextAlignVertical.top,
-                  textInputAction: TextInputAction.newline,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: SimfTokens.textSm,
-                  ),
-                  cursorColor: SimfTokens.accent,
-                  decoration: InputDecoration(
-                    isCollapsed: true,
-                    border: InputBorder.none,
-                    counterText: '',
-                    hintText: l10n.sendQuestionHint,
-                    hintStyle: const TextStyle(
-                      color: SimfTokens.beigeBorder,
-                      fontSize: SimfTokens.textSm,
-                    ),
-                    errorText: _inlineError,
-                    errorStyle: const TextStyle(color: SimfTokens.danger),
-                  ),
-                  onChanged: (_) {
-                    if (_inlineError != null) {
-                      setState(() => _inlineError = null);
-                    }
-                  },
-                ),
+              SendQuestionComposer(
+                sectionLabel: l10n.sendQuestionSectionLabel,
+                hint: l10n.sendQuestionHint,
+                controller: _question,
+                errorText: _inlineError,
+                onChanged: (_) {
+                  if (_inlineError != null) {
+                    setState(() => _inlineError = null);
+                  }
+                },
               ),
             ],
           ),
@@ -275,33 +228,9 @@ class _SendQuestionScreenState extends ConsumerState<SendQuestionScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              // Frame 942:3746 — the gold full-width submit: white SemiBold label
-              // on the 4px-radius accent fill.
-              SizedBox(
-                width: double.infinity,
-                height: 44,
-                child: FilledButton(
-                  onPressed:
-                      _submitting ? null : () => unawaited(_submit(l10n)),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: SimfTokens.accent,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-                    ),
-                  ),
-                  // The size/weight ride the label Text (not styleFrom.textStyle)
-                  // so the Arabic label keeps the theme's brand font — an inline
-                  // styleFrom.textStyle drops fontFamily and tofus the Arabic
-                  // (D-546/D-549; the frozen golden had locked that tofu).
-                  child: Text(
-                    _submitting ? l10n.loadingLabel : l10n.sendQuestionSubmit,
-                    style: const TextStyle(
-                      fontSize: SimfTokens.textSm,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+              SendQuestionSubmitButton(
+                label: _submitting ? l10n.loadingLabel : l10n.sendQuestionSubmit,
+                onPressed: _submitting ? null : () => unawaited(_submit(l10n)),
               ),
               const SizedBox(height: SimfTokens.space4),
               // Frame 943:3750 — the centred bulleted note: "ملاحظة" gold/SemiBold,

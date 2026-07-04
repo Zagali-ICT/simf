@@ -41,6 +41,126 @@ class ReviewNote extends StatelessWidget {
   }
 }
 
+/// The "الاسئلة" section label (frame 945:3756) over the fixed 100px tinted
+/// question box (frame 934:3668): navyDeep fill on the 8px radius (no border),
+/// the placeholder pinned top + beige + inline-end aligned, max 500 chars.
+class SendQuestionComposer extends StatelessWidget {
+  const SendQuestionComposer({
+    required this.sectionLabel,
+    required this.hint,
+    required this.controller,
+    required this.errorText,
+    required this.onChanged,
+    super.key,
+  });
+
+  final String sectionLabel;
+  final String hint;
+  final TextEditingController controller;
+  final String? errorText;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        // Frame 945:3756 — white, Medium, aligned to the inline end (right in RTL).
+        Text(
+          sectionLabel,
+          // TextAlign.start = right under RTL (TextAlign.end would be left).
+          textAlign: TextAlign.start,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+            fontSize: SimfTokens.textLg,
+          ),
+        ),
+        const SizedBox(height: SimfTokens.space2),
+        Container(
+          height: 100,
+          decoration: BoxDecoration(
+            color: SimfTokens.navyDeep,
+            borderRadius: BorderRadius.circular(SimfTokens.radius),
+          ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: SimfTokens.space2,
+            vertical: SimfTokens.space3,
+          ),
+          child: TextField(
+            controller: controller,
+            maxLength: 500,
+            maxLines: null,
+            expands: true,
+            textAlign: TextAlign.start,
+            textAlignVertical: TextAlignVertical.top,
+            textInputAction: TextInputAction.newline,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: SimfTokens.textSm,
+            ),
+            cursorColor: SimfTokens.accent,
+            decoration: InputDecoration(
+              isCollapsed: true,
+              border: InputBorder.none,
+              counterText: '',
+              hintText: hint,
+              hintStyle: const TextStyle(
+                color: SimfTokens.beigeBorder,
+                fontSize: SimfTokens.textSm,
+              ),
+              errorText: errorText,
+              errorStyle: const TextStyle(color: SimfTokens.danger),
+            ),
+            onChanged: onChanged,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The frame 942:3746 gold full-width submit: white SemiBold label on the
+/// 4px-radius accent fill. The size/weight ride the label [Text] (not
+/// `styleFrom.textStyle`) so the Arabic label keeps the theme's brand font — an
+/// inline `styleFrom.textStyle` drops fontFamily and tofus the Arabic
+/// (D-546/D-549; the frozen golden had locked that tofu).
+class SendQuestionSubmitButton extends StatelessWidget {
+  const SendQuestionSubmitButton({
+    required this.label,
+    required this.onPressed,
+    super.key,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 44,
+      child: FilledButton(
+        onPressed: onPressed,
+        style: FilledButton.styleFrom(
+          backgroundColor: SimfTokens.accent,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+          ),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            fontSize: SimfTokens.textSm,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// The frame 1049:12590 "بيانات الجلسة" block: the white Medium section header
 /// over the session-data lines rendered as a right-aligned numbered list
 /// (frame 1049:12591-12594), each line `#C2B8A2` 14px Medium.

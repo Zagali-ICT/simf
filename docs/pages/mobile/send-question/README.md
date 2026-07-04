@@ -4,15 +4,15 @@
 |---|---|
 | Route | `/live/question?sessionId=` (`RouteNames.sendQuestion`, page #26) · auth-gated (approved) |
 | Surface | Mobile (Flutter) |
-| Screen | `lib/features/questions/send_question_screen.dart` (`SendQuestionScreen`, 319 lines) |
-| Widgets | `lib/features/questions/widgets/send_question_content.dart` (`ReviewNote`, `SessionDataBlock` + `_NumberedLine`) |
+| Screen | `lib/features/questions/send_question_screen.dart` (`SendQuestionScreen`, 248 lines) |
+| Widgets | `lib/features/questions/widgets/send_question_content.dart` (`SendQuestionComposer`, `SendQuestionSubmitButton`, `ReviewNote`, `SessionDataBlock` + `_NumberedLine`) |
 | Figma node | `934:3636` (composer 934:3668, data block 1049:12590, note 943:3750) |
 | Shell | `SimfPageShell` (title معلومات عن الجلسة) |
 | API | `POST /app/sessions/{id}/questions` (`RequireApprovedAccount`, D-169/D-174) + `GET /app/programme/sessions/{id}` (the optional non-blocking data block) |
 | Providers | `questionsRepositoryProvider` · `sessionDetailRepositoryProvider` |
 | Tests | `test/features/questions/send_question_screen_test.dart` (8); golden `test/golden/send_question_golden_test.dart` (`goldens/send_question_934-3636.png`); E2E [`mobile-send-question.md`](../../../tests/e2e/mobile-send-question.md) |
 | Legacy detail | `docs/App/Page_026/` — retained as the historical spec |
-| Status | ✅ Real — D-318 (built) → 934:3636 parity → **clean-code frozen (D-604)** |
+| Status | ✅ Real — D-318 (built) → 934:3636 parity → **clean-code frozen (D-604)**; `_form` composer/submit further extracted (D-637) |
 
 ## 1. Purpose
 Ask a question during a live session: the بيانات الجلسة session-data block (the
@@ -52,3 +52,12 @@ golden had locked that tofu in* (generated with `--update` at build time).
 Moved the style onto the label `Text`; regenerated the golden (now correct
 Arabic, crop-verified) and overlay-checked against 934:3636. Behaviour
 byte-identical (8 tests green).
+
+## 6. Further decomposition (D-637, 2026-07-04)
+D-604 froze the screen but left a ~140-line `_form` method with the composer box +
+submit inline. Extracted them to the widget file as **`SendQuestionComposer`** (the
+الاسئلة label + the tinted max-500 question box) and **`SendQuestionSubmitButton`**
+(the gold full-width submit, keeping the label-`Text` font fix). Screen **319 →
+248**; the `send_question_934-3636` golden **held WITHOUT `--update`** (render
+byte-identical) and the 8 tests pass. `QuestionRecipient` stays in the screen — it
+is imported cross-feature by moderation.
