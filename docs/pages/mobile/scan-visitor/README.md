@@ -47,14 +47,13 @@ surface. No Figma frame is bound, so this is a structural render-lock.
 ## Tests
 
 `test/golden/scan_visitor_golden_test.dart` (render-lock, @375×812, ar,
-`enableCamera:false`). The scan flow itself is exercised through the shared
-`QrScanView` tests + the exhibitor repository tests. E2E:
+`enableCamera:false`) + `test/features/exhibitor/scan_visitor_screen_test.dart`
+(widget, 4 cases — the `_onCode` branches: valid badge → capture + route to My
+Visitors with the code trimmed; 404 / 403 / 5xx → the distinct toasts, no
+navigation). E2E:
 [`docs/tests/e2e/mobile-scan-visitor.md`](../../../tests/e2e/mobile-scan-visitor.md)
-(E2E-MOBSCANVIS-001..005, authored D-648 — closed the earlier pre-existing gap).
-
-> **Remaining gap (owner):** this D-426 screen still has no dedicated *widget*
-> test (the render is covered by the golden + the shared `QrScanView` tests) —
-> a small unit test for `_onCode`'s toast/route branches is tracked for the owner.
+(E2E-MOBSCANVIS-001..005). Both the widget-test and E2E gaps flagged at freeze
+are now closed (D-648).
 
 ## Related decisions
 

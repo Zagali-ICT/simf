@@ -7,9 +7,10 @@
 > captures the visitor server-side, then the app routes to
 > [`myVisitors`](mobile-my-visitors.md). The screen delegates its surface to the
 > shared `QrScanView` (D-430): the manual-entry path always works and the bounded
-> opt-in camera can never trap the user on EMUI. App test: the render-lock golden
-> `test/golden/scan_contact_golden_test.dart` pattern applies
-> (`test/golden/scan_visitor_golden_test.dart`, `goldens/scan_visitor.png`
+> opt-in camera can never trap the user on EMUI. App tests:
+> `test/features/exhibitor/scan_visitor_screen_test.dart` (widget, 4 cases — the
+> `_onCode` capture/route + 404/403/5xx toast branches) + the render-lock golden
+> `test/golden/scan_visitor_golden_test.dart` (`goldens/scan_visitor.png`
 > @375×812, `enableCamera:false`). Clean-code reviewed + frozen (D-643,
 > 2026-07-04); per-page doc
 > [`docs/pages/mobile/scan-visitor/`](../../pages/mobile/scan-visitor/README.md).
