@@ -91,7 +91,7 @@ class _MyVisitorsScreenState extends ConsumerState<MyVisitorsScreen> {
       return _Centered(text: l10n.myVisitorsEmpty);
     }
     final isArabic = l10n.isArabic;
-    return RefreshIndicator(
+    return SimfPullToRefresh(
       onRefresh: _load,
       child: ListView.separated(
         padding: const EdgeInsets.all(SimfTokens.space4),
