@@ -608,9 +608,10 @@ class AppL10n {
         'الملتقى البحري السعودي الدولي',
         'Saudi International Maritime Forum',
       );
-  // Two lines per the KSA-Project splash frame (Figma 159:573, D-361).
+  // Two lines per the KSA-Project splash frame (Figma 159:573, D-361). The frame
+  // shows Western digits in the date/year, so the Arabic line matches it.
   String get splashEventLine => _t(
-        'النسخة الرابعة\n٢٣–٢٥ نوفمبر ٢٠٢٦ · الرياض',
+        'النسخة الرابعة\n23–25 نوفمبر 2026 · الرياض',
         '4th Edition\n23–25 Nov 2026 · Riyadh',
       );
 
