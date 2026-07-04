@@ -1,0 +1,180 @@
+import 'package:flutter/material.dart';
+
+import '../../../app/theme/tokens.dart';
+import '../../../core/country_flag.dart';
+import '../../venuemap/data/venue_map_models.dart';
+
+/// The card header (frame node 922:2556): the company **logo tile** on the
+/// inline start (physical right) — the real CompanyLogo, short-name fallback —
+/// with the company short name (gold) over its full name (beige) in the middle
+/// and the exhibitor's **country flag** at the inline end (physical left), under
+/// a gold hairline rule. Matches the frame's logo-right / flag-left RTL layout
+/// (the flag is the Figma "Group" image; the app renders the country emoji).
+class BoothCompanyHeader extends StatelessWidget {
+  const BoothCompanyHeader({
+    required this.booth,
+    required this.isArabic,
+    required this.baseUrl,
+    super.key,
+  });
+
+  final BoothSummary booth;
+  final bool isArabic;
+  final String baseUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = booth.localizedName(isArabic);
+    final fullName = booth.localizedExhibitor(isArabic);
+    final flag = countryFlagEmoji(booth.countryId);
+    return Container(
+      padding: const EdgeInsets.only(bottom: SimfTokens.space2),
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: SimfTokens.accent,
+            width: SimfTokens.hairline,
+          ),
+        ),
+      ),
+      // Frame 922:2556 — RTL order: the company logo tile at the inline-start
+      // (right), the name column in the middle, the country flag at the
+      // inline-end (left).
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: <Widget>[
+          // Frame 922:2560 — the 48×48 logo tile (real CompanyLogo, short-name
+          // fallback) at the inline-start (right).
+          _LogoTile(
+            contactId: booth.exhibitorContactId,
+            baseUrl: baseUrl,
+            fallback: name,
+          ),
+          const SizedBox(width: SimfTokens.space2),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  name,
+                  style: const TextStyle(
+                    color: SimfTokens.accent,
+                    fontWeight: FontWeight.w500,
+                    fontSize: SimfTokens.textMd,
+                  ),
+                ),
+                if (fullName != null) ...<Widget>[
+                  const SizedBox(height: SimfTokens.space2),
+                  Text(
+                    fullName,
+                    style: const TextStyle(
+                      color: SimfTokens.beigeBorder,
+                      fontWeight: FontWeight.w400,
+                      fontSize: SimfTokens.textSm,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          // Frame 1062:12911 — the country flag tile at the inline-end (left),
+          // shown only when the booth carries a resolved country.
+          if (flag != null) ...<Widget>[
+            const SizedBox(width: SimfTokens.space2),
+            _CountryFlagTile(flag: flag),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// The booth country flag tile (frame node 1062:12911): a 40×40 rounded tile at
+/// the inline-end (left) of the header. Figma renders a full flag image; the app
+/// renders the country **emoji** (its only flag form), centred on the navy tile.
+class _CountryFlagTile extends StatelessWidget {
+  const _CountryFlagTile({required this.flag});
+
+  final String flag;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 40,
+      height: 40,
+      alignment: Alignment.center,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: SimfTokens.navyDeep,
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+      ),
+      child: Text(
+        flag,
+        textDirection: TextDirection.ltr,
+        style: const TextStyle(fontSize: 28, height: 1),
+      ),
+    );
+  }
+}
+
+/// The square company-logo tile (frame node 922:2560): a 48×48 navy square with
+/// a beige hairline. P6 — D-440: renders the exhibitor's real CompanyLogo (the
+/// D-357 asset owned by [contactId]) clipped to fill, falling back to the
+/// company **short name** (centred, as the frame shows "SAMI") while it loads or
+/// when the exhibitor has no linked Contact / logo.
+class _LogoTile extends StatelessWidget {
+  const _LogoTile({
+    required this.contactId,
+    required this.baseUrl,
+    required this.fallback,
+  });
+
+  final String? contactId;
+  final String baseUrl;
+  final String fallback;
+
+  @override
+  Widget build(BuildContext context) {
+    final fallbackText = Text(
+      fallback,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      textAlign: TextAlign.center,
+      style: const TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.w600,
+        fontSize: SimfTokens.textMd,
+      ),
+    );
+    final id = contactId?.trim() ?? '';
+    return Container(
+      // Frame 922:2560 — the logo tile is 48×48 ('Size/Square' token).
+      width: 48,
+      height: 48,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space1),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: SimfTokens.navyDeep,
+        border: Border.all(
+          color: SimfTokens.beigeBorder,
+          width: SimfTokens.hairline,
+        ),
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+      ),
+      child: id.isEmpty
+          ? fallbackText
+          : Image.network(
+              '$baseUrl/app/assets/CompanyLogo/$id/image',
+              width: 48,
+              height: 48,
+              fit: BoxFit.cover,
+              gaplessPlayback: true,
+              loadingBuilder: (context, child, progress) =>
+                  progress == null ? child : fallbackText,
+              errorBuilder: (context, error, stackTrace) => fallbackText,
+            ),
+    );
+  }
+}
