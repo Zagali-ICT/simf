@@ -14,7 +14,7 @@
 
 | | |
 |--|--|
-| **Page** | [`mobile/delegations.md`](../../pages/mobile/delegations.md) (app screen #21 `delegations`) |
+| **Page** | [`mobile/delegations/`](../../pages/mobile/delegations/README.md) (app screen #21 `delegations`) |
 | **Route** | `/delegations` (`GET /app/delegations`) |
 | **APIs** | `GET /api/v1/app/delegations` (`AllowAnonymous`) → `AppDelegations { countryCount, totalParticipants, items[] }`, each `AppDelegationItem { countryId, countryCode, countryName, countryNameArabic, headName?, headNameArabic?, headTitle?, arrivalDate?, departureDate?, memberCount }`. |
 | **Surface** | Mobile (Flutter) |
