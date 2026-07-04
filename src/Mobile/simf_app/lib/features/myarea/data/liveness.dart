@@ -1,7 +1,5 @@
 import 'dart:typed_data';
 
-import '../../../app/localization/app_l10n.dart';
-
 /// The selfie the liveness flow returns to the My-Area caller, which uploads it
 /// via the existing `POST /app/account/avatar`.
 typedef CapturedSelfie = ({Uint8List bytes, String filename});
@@ -10,7 +8,7 @@ typedef CapturedSelfie = ({Uint8List bytes, String filename});
 enum LivenessStep { smile, turnRight, turnLeft }
 
 /// The smile threshold (ML Kit `smilingProbability`, 0..1) that satisfies the
-/// "ابتسم" step.
+/// smile step.
 const double kSmileProbability = 0.7;
 
 /// The minimum absolute head yaw (ML Kit `headEulerAngleY`, degrees) that
@@ -38,18 +36,5 @@ bool livenessStepSatisfied(
       return headEulerAngleY != null && headEulerAngleY >= kTurnYawDegrees;
     case LivenessStep.turnLeft:
       return headEulerAngleY != null && headEulerAngleY <= -kTurnYawDegrees;
-  }
-}
-
-/// The prompt text for a step (the frame's "ابتسم" / "ادر راسك لليمين" / "ادر
-/// راسك لليسار").
-String livenessPrompt(AppL10n l10n, LivenessStep step) {
-  switch (step) {
-    case LivenessStep.smile:
-      return l10n.stepSmilePrompt;
-    case LivenessStep.turnRight:
-      return l10n.stepTurnRightPrompt;
-    case LivenessStep.turnLeft:
-      return l10n.stepTurnLeftPrompt;
   }
 }

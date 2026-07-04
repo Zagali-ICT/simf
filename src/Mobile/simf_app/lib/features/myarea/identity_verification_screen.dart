@@ -290,9 +290,6 @@ class _IdentityVerificationScreenState
                 onPick: () => unawaited(_pickFromGallery()),
               )
             : LiveCaptureView(
-                l10n: l10n,
-                step: _step,
-                activeIndex: _stepIndex,
                 ready: _cameraReady,
                 preview: _cameraReady && _camera != null
                     ? CameraPreview(_camera!)

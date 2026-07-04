@@ -749,10 +749,8 @@ class AppL10n {
   // 758:4180 / 758:4248 / 758:4316).
   String get identityVerificationTitle =>
       _t('التحقق من الهوية', 'Identity verification');
-  String get stepSmilePrompt => _t('ابتسم', 'Smile');
-  String get stepTurnRightPrompt =>
-      _t('ادر راسك لليمين', 'Turn your head right');
-  String get stepTurnLeftPrompt => _t('ادر راسك لليسار', 'Turn your head left');
+  // (D-611: the step*Prompt strings were removed with the on-screen prompt —
+  // owner chose the exact-Figma full-bleed camera with no prompt overlay.)
   String get identityCameraUnavailable => _t(
         'الكاميرا غير متاحة. اختر صورة من المعرض بدلاً من ذلك.',
         'The camera is unavailable. Choose a photo from the gallery instead.',
