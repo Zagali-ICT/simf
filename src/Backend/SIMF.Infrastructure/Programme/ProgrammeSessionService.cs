@@ -38,9 +38,13 @@ internal sealed class ProgrammeSessionService(
 
         if (day is { } d)
         {
-            // Half-open UTC range [dayStart, nextDayStart) — index-friendly
-            // and avoids relying on EF date-component translation.
-            var dayStart = new DateTimeOffset(d.Year, d.Month, d.Day, 0, 0, 0, TimeSpan.Zero);
+            // A6c — half-open EVENT-LOCAL (+03:00) day window [dayStart, nextDayStart).
+            // The app sends ProgrammeDay.Date (a Riyadh calendar date) as ?day=, and
+            // the day-grouped agenda (ListDaysAsync) buckets by StartUtc.ToOffset(+03:00),
+            // so this filter must use the SAME +03:00 boundary or the flat list would
+            // disagree with the app's day strip at the UTC-midnight edge. Still a plain
+            // range on StartUtc (index-friendly; no EF date-component translation).
+            var dayStart = new DateTimeOffset(d.Year, d.Month, d.Day, 0, 0, 0, EventOffset);
             var nextDayStart = dayStart.AddDays(1);
             rows = rows.Where(session =>
                 session.StartUtc >= dayStart && session.StartUtc < nextDayStart);
@@ -378,11 +382,13 @@ internal sealed class ProgrammeSessionService(
             Math.Max(0, effectiveCapacity - reserved));
 
         // D-567 (Figma 889:2604) — the gold badge shows the session's 1-based
-        // position within its day. Match the agenda's day grouping: a half-open
-        // UTC window (SIMF sessions are daytime UTC+3, so they never straddle UTC
-        // midnight) ordered by StartUtc. Count the earlier active sessions in the
-        // same day; +1 is this session's ordinal.
-        var dayStart = new DateTimeOffset(row.StartUtc.UtcDateTime.Date, TimeSpan.Zero);
+        // position within its day. A6c — match the agenda's day grouping exactly:
+        // a half-open EVENT-LOCAL (+03:00) window ordered by StartUtc (ProgrammeDay
+        // is a Riyadh calendar day, and both ListDaysAsync and the ?day= list filter
+        // bucket by the +03:00 date). Count the earlier active sessions in the same
+        // event-local day; +1 is this session's ordinal.
+        var localDate = row.StartUtc.ToOffset(EventOffset).Date;
+        var dayStart = new DateTimeOffset(localDate, EventOffset);
         var nextDayStart = dayStart.AddDays(1);
         var displayOrder = 1 + await dbContext.Sessions
             .AsNoTracking()
