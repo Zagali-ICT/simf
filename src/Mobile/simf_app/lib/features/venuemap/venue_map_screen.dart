@@ -10,6 +10,11 @@ import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import 'data/venue_map_models.dart';
 import 'data/venue_map_repository.dart';
+import 'widgets/venue_map_booth_sheet.dart';
+import 'widgets/venue_map_controls.dart';
+import 'widgets/venue_map_geometry.dart';
+import 'widgets/venue_map_info_card.dart';
+import 'widgets/venue_map_marker.dart';
 
 /// Page 015 — الخريطة · Venue map (2D map, #15, `/map`), rebuilt to the KSA
 /// Wave-2 frame **215:562 "Location"** — with the frame's Google geographic
@@ -113,7 +118,7 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
     if (nodes.isEmpty) {
       return const <String, Offset>{};
     }
-    final bounds = _Bounds.of(nodes);
+    final bounds = VenueMapBounds.of(nodes);
     return <String, Offset>{
       for (final node in nodes)
         node.id: Offset(
@@ -207,7 +212,7 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
-      builder: (_) => _BoothSheet(
+      builder: (_) => VenueMapBoothSheet(
         l10n: l10n,
         node: node,
         summary: summary,
@@ -278,7 +283,7 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
                       left: (_positions[node.id] ?? Offset.zero).dx - 40,
                       top: (_positions[node.id] ?? Offset.zero).dy - 40,
                       width: 80,
-                      child: _NodeMarker(
+                      child: VenueMapMarker(
                         node: node,
                         isArabic: isArabic,
                         selected: node.id == selected?.id,
@@ -296,11 +301,11 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
           top: SimfTokens.space4,
           child: Column(
             children: <Widget>[
-              _MapControl(icon: Icons.my_location, onTap: _resetView),
+              VenueMapControl(icon: Icons.my_location, onTap: _resetView),
               const SizedBox(height: SimfTokens.space2),
-              _MapControl(icon: Icons.add, onTap: () => _zoomBy(_zoomStep)),
+              VenueMapControl(icon: Icons.add, onTap: () => _zoomBy(_zoomStep)),
               const SizedBox(height: SimfTokens.space2),
-              _MapControl(
+              VenueMapControl(
                 icon: Icons.remove,
                 onTap: () => _zoomBy(1 / _zoomStep),
               ),
@@ -312,7 +317,7 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
             left: SimfTokens.space4,
             right: SimfTokens.space4,
             bottom: SimfTokens.space4,
-            child: _NodeInfoCard(
+            child: VenueMapInfoCard(
               l10n: l10n,
               node: selected,
               booth: selectedBooth,
@@ -324,452 +329,6 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
             ),
           ),
       ],
-    );
-  }
-}
-
-/// The min/max extent of the loaded nodes, used to normalise `(x, y)` into
-/// `[0, 1]` before mapping onto the canvas (Page_015 L-4).
-class _Bounds {
-  const _Bounds(this.minX, this.maxX, this.minY, this.maxY);
-
-  factory _Bounds.of(List<VenueMapNode> nodes) {
-    var minX = nodes.first.x;
-    var maxX = nodes.first.x;
-    var minY = nodes.first.y;
-    var maxY = nodes.first.y;
-    for (final node in nodes) {
-      minX = node.x < minX ? node.x : minX;
-      maxX = node.x > maxX ? node.x : maxX;
-      minY = node.y < minY ? node.y : minY;
-      maxY = node.y > maxY ? node.y : maxY;
-    }
-    return _Bounds(minX, maxX, minY, maxY);
-  }
-
-  final double minX;
-  final double maxX;
-  final double minY;
-  final double maxY;
-
-  double normX(double x) => (maxX - minX) <= 0 ? 0.5 : (x - minX) / (maxX - minX);
-  double normY(double y) => (maxY - minY) <= 0 ? 0.5 : (y - minY) / (maxY - minY);
-}
-
-/// One floating gold map control (frame nodes: locate / + / −).
-class _MapControl extends StatelessWidget {
-  const _MapControl({required this.icon, required this.onTap});
-
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    // Frame 758:1358 — gold square controls, 4-px radius, 20-px navy glyph.
-    return Material(
-      color: SimfTokens.accent,
-      borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        child: SizedBox(
-          width: 40,
-          height: 40,
-          child: Icon(icon, size: 20, color: SimfTokens.navy),
-        ),
-      ),
-    );
-  }
-}
-
-/// One node marker, styled by [VenueMapNode.kind]; the selected node carries
-/// a gold ring. All markers are tappable (selection drives the info card).
-class _NodeMarker extends StatelessWidget {
-  const _NodeMarker({
-    required this.node,
-    required this.isArabic,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final VenueMapNode node;
-  final bool isArabic;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final style = _markerStyle(node.kind);
-    final marker = Column(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Container(
-          width: 34,
-          height: 34,
-          decoration: BoxDecoration(
-            color: style.fill,
-            shape: style.shape,
-            borderRadius: style.shape == BoxShape.rectangle
-                ? BorderRadius.circular(SimfTokens.radiusSmall)
-                : null,
-            border: Border.all(
-              color: selected ? SimfTokens.accent : style.border,
-              width: selected ? 3 : 1.5,
-            ),
-          ),
-          child: Icon(style.icon, size: 18, color: style.foreground),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          node.localizedLabel(isArabic),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 9,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
-      ],
-    );
-
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Semantics(
-        button: true,
-        label: node.localizedLabel(isArabic),
-        child: marker,
-      ),
-    );
-  }
-
-  _MarkerStyle _markerStyle(VenueMapNodeKind kind) {
-    switch (kind) {
-      case VenueMapNodeKind.hall:
-        return const _MarkerStyle(
-          icon: Icons.meeting_room_outlined,
-          fill: SimfTokens.navy,
-          foreground: Colors.white,
-          border: SimfTokens.beigeBorder,
-          shape: BoxShape.rectangle,
-        );
-      case VenueMapNodeKind.zone:
-        return const _MarkerStyle(
-          icon: Icons.crop_din,
-          fill: SimfTokens.navyDeep,
-          foreground: SimfTokens.beigeBorder,
-          border: SimfTokens.beigeBorder,
-          shape: BoxShape.rectangle,
-        );
-      case VenueMapNodeKind.booth:
-        return const _MarkerStyle(
-          icon: Icons.storefront,
-          fill: SimfTokens.accent,
-          foreground: SimfTokens.navy,
-          border: SimfTokens.accent,
-          shape: BoxShape.circle,
-        );
-      case VenueMapNodeKind.pointOfInterest:
-        return const _MarkerStyle(
-          icon: Icons.place,
-          fill: Colors.white,
-          foreground: SimfTokens.danger,
-          border: SimfTokens.danger,
-          shape: BoxShape.circle,
-        );
-    }
-  }
-}
-
-class _MarkerStyle {
-  const _MarkerStyle({
-    required this.icon,
-    required this.fill,
-    required this.foreground,
-    required this.border,
-    required this.shape,
-  });
-
-  final IconData icon;
-  final Color fill;
-  final Color foreground;
-  final Color border;
-  final BoxShape shape;
-}
-
-/// The bottom white info card for the selected node (frame node 215:562's
-/// SAMI card): gold code box · name + exhibitor/sector line · code chip,
-/// then the gold أرشدني + bordered عرض التفاصيل actions.
-class _NodeInfoCard extends StatelessWidget {
-  const _NodeInfoCard({
-    required this.l10n,
-    required this.node,
-    required this.booth,
-    required this.onDirect,
-    required this.onClose,
-    this.onDetails,
-  });
-
-  final AppL10n l10n;
-  final VenueMapNode node;
-  final BoothSummary? booth;
-  final VoidCallback onDirect;
-  final VoidCallback onClose;
-  final VoidCallback? onDetails;
-
-  @override
-  Widget build(BuildContext context) {
-    final isArabic = l10n.isArabic;
-    final title = booth?.localizedName(isArabic) ?? node.localizedLabel(isArabic);
-    final subtitleParts = <String>[
-      if (booth?.localizedExhibitor(isArabic) != null)
-        booth!.localizedExhibitor(isArabic)!,
-      if (booth?.localizedSector(isArabic) != null)
-        booth!.localizedSector(isArabic)!,
-    ];
-    final code = booth?.code;
-
-    // Frame 758:1358 — white card, 8-px radius, gold 0.5 hairline + soft shadow.
-    return Container(
-      padding: const EdgeInsets.fromLTRB(
-        SimfTokens.space4,
-        SimfTokens.space2,
-        SimfTokens.space4,
-        SimfTokens.space4,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
-        border: Border.all(color: SimfTokens.accent, width: 0.5),
-        boxShadow: const <BoxShadow>[
-          BoxShadow(
-            color: SimfTokens.cardShadow,
-            offset: Offset(0, 1),
-            blurRadius: 8,
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              if (code != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: SimfTokens.space3,
-                    vertical: SimfTokens.space2,
-                  ),
-                  decoration: BoxDecoration(
-                    // Frame — pale-beige with a gold hairline.
-                    color: SimfTokens.codeBoxBeige,
-                    borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-                    border: Border.all(color: SimfTokens.accent, width: 0.5),
-                  ),
-                  child: Text(
-                    code,
-                    textDirection: TextDirection.ltr,
-                    style: const TextStyle(
-                      color: SimfTokens.accent,
-                      fontWeight: FontWeight.w600,
-                      fontSize: SimfTokens.textMd,
-                    ),
-                  ),
-                ),
-              if (code != null) const SizedBox(width: SimfTokens.space3),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      // Frame — navy #01132D, 14px SemiBold.
-                      style: const TextStyle(
-                        color: SimfTokens.navy,
-                        fontWeight: FontWeight.w600,
-                        fontSize: SimfTokens.textMd,
-                      ),
-                    ),
-                    if (subtitleParts.isNotEmpty) ...<Widget>[
-                      const SizedBox(height: SimfTokens.space2),
-                      Text(
-                        subtitleParts.join(' · '),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: SimfTokens.greyText,
-                          fontSize: SimfTokens.textSm,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(width: SimfTokens.space2),
-              // Close affordance (the frame's 60×60 exhibitor-logo badge needs
-              // logo assets we don't have; the dismiss control is kept).
-              IconButton(
-                onPressed: onClose,
-                icon: const Icon(
-                  Icons.close,
-                  size: 20,
-                  color: SimfTokens.greyText,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: SimfTokens.space3),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: onDirect,
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(44),
-                  ),
-                  icon: const Icon(Icons.navigation_outlined, size: 18),
-                  label: Text(l10n.venueMapDirectMe),
-                ),
-              ),
-              if (onDetails != null) ...<Widget>[
-                const SizedBox(width: SimfTokens.space3),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: onDetails,
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(44),
-                      // Frame 758:1358 — gold 0.5 hairline, not faint navy.
-                      side: const BorderSide(color: SimfTokens.accent, width: 0.5),
-                      foregroundColor: SimfTokens.accent,
-                    ),
-                    child: Text(l10n.venueMapViewDetails),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// The booth detail sheet (the عرض التفاصيل action). Shows the cached summary
-/// immediately; the description streams in from the lazy detail call — a null
-/// result (404 / transport) simply omits the description (Page_015 L-5/L-8).
-class _BoothSheet extends StatelessWidget {
-  const _BoothSheet({
-    required this.l10n,
-    required this.node,
-    required this.summary,
-    required this.detail,
-  });
-
-  final AppL10n l10n;
-  final VenueMapNode node;
-  final BoothSummary? summary;
-  final Future<BoothDetail?> detail;
-
-  @override
-  Widget build(BuildContext context) {
-    final isArabic = l10n.isArabic;
-    final booth = summary;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        SimfTokens.space5,
-        0,
-        SimfTokens.space5,
-        SimfTokens.space6,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: Text(
-                  booth?.localizedName(isArabic) ?? node.localizedLabel(isArabic),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: SimfTokens.textLg,
-                  ),
-                ),
-              ),
-              if (booth != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: SimfTokens.space2,
-                    vertical: SimfTokens.space1,
-                  ),
-                  decoration: BoxDecoration(
-                    color: SimfTokens.field,
-                    borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-                  ),
-                  child: Text(
-                    booth.code,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: SimfTokens.textSm,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          if (booth != null) ...<Widget>[
-            const SizedBox(height: SimfTokens.space2),
-            _SubLine(
-              booth.localizedExhibitor(isArabic),
-              booth.localizedSector(isArabic),
-            ),
-            const SizedBox(height: SimfTokens.space3),
-            FutureBuilder<BoothDetail?>(
-              future: detail,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Text(
-                    l10n.loadingLabel,
-                    style: const TextStyle(color: SimfTokens.inkMuted),
-                  );
-                }
-                final description =
-                    snapshot.data?.localizedDescription(isArabic);
-                if (description == null) {
-                  return const SizedBox.shrink();
-                }
-                return Text(description);
-              },
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-/// The "Exhibitor · Sector" sub-line; renders only the parts that are present.
-class _SubLine extends StatelessWidget {
-  const _SubLine(this.exhibitor, this.sector);
-
-  final String? exhibitor;
-  final String? sector;
-
-  @override
-  Widget build(BuildContext context) {
-    final parts = <String>[
-      if (exhibitor != null) exhibitor!,
-      if (sector != null) sector!,
-    ];
-    if (parts.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    return Text(
-      parts.join(' · '),
-      style: const TextStyle(color: SimfTokens.inkMuted),
     );
   }
 }
