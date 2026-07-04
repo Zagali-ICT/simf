@@ -92,10 +92,17 @@ internal sealed class AdminArchiveService(
         Guid id, CancellationToken cancellationToken = default)
     {
         // D-432 — load the rich child lists so the edit form pre-populates them.
+        // A6 — AsSplitQuery: three SIBLING collection Includes on one root would
+        // otherwise JOIN into a single Media×SessionTitles×PastSpeakers cartesian
+        // rowset; split emits one query per collection (each hitting its
+        // (ArchiveEditionId, DisplayOrder) index). Safe here — a single-row root
+        // (Id == id, no Skip/Take) and ToDetail re-sorts every child list in
+        // memory by DisplayOrder, so the wire order is unchanged.
         var edition = await appDbContext.ArchiveEditions.AsNoTracking()
             .Include(e => e.Media)
             .Include(e => e.SessionTitles)
             .Include(e => e.PastSpeakers)
+            .AsSplitQuery()
             .SingleOrDefaultAsync(e => e.Id == id, cancellationToken);
         return edition is null ? null : ToDetail(edition);
     }

@@ -150,6 +150,66 @@ public sealed class ArchiveTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Public_detail_with_multiple_children_returns_each_list_intact()
+    {
+        // A6 — the public detail read AsSplitQuery's its three projected child
+        // collections (Gallery + SessionTitles + PastSpeakers), each ordered by
+        // DisplayOrder. Populating all three proves the split returns every row
+        // once, ordered; a single-query cartesian would multiply the rows
+        // (3×2×2). 2010 is outside the seeded range (2022–2025).
+        var admin = await CreateAdministratorAndSignInAsync();
+        await PutAuthAsync("/api/v1/admin/archive/visibility",
+            new UpdateArchiveVisibilityRequest { IsVisible = true }, admin);
+
+        var create = await PostAuthAsync("/api/v1/admin/archive",
+            new CreateArchiveEditionRequest
+            {
+                Year = 2010,
+                TitleEn = "SIMF 2010",
+                TitleAr = "سيمف 2010",
+                Attendees = 90,
+                Sessions = 9,
+                Speakers = 11,
+                Gallery = new List<ArchiveMediaItemInput>
+                {
+                    new() { Kind = 0, Url = "archive/2010/a.png", DisplayOrder = 0 },
+                    new() { Kind = 0, Url = "archive/2010/b.png", DisplayOrder = 1 },
+                    new() { Kind = 1, Url = "archive/2010/c.mp4", DisplayOrder = 2 },
+                },
+                SessionTitles = new List<ArchiveSessionTitleInput>
+                {
+                    new() { TitleEn = "Opening", TitleAr = "الافتتاح", DisplayOrder = 0 },
+                    new() { TitleEn = "Closing", TitleAr = "الختام", DisplayOrder = 1 },
+                },
+                PastSpeakers = new List<ArchivePastSpeakerInput>
+                {
+                    new() { NameEn = "Alpha", NameAr = "ألفا", DisplayOrder = 0 },
+                    new() { NameEn = "Beta", NameAr = "بيتا", DisplayOrder = 1 },
+                },
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+        var created = (await create.Content
+            .ReadFromJsonAsync<ApiResult<AdminArchiveEditionDetail>>())!.Data!;
+
+        // Detail read is anonymous (no token).
+        var get = await _client.GetAsync($"/api/v1/app/archive/{created.Id}");
+        Assert.Equal(HttpStatusCode.OK, get.StatusCode);
+        var detail = (await get.Content
+            .ReadFromJsonAsync<ApiResult<PublicArchiveEditionDetail>>())!.Data!;
+
+        // Every projected child list returns each row once, ordered by DisplayOrder.
+        Assert.Equal(
+            new[] { "archive/2010/a.png", "archive/2010/b.png", "archive/2010/c.mp4" },
+            detail.Gallery!.Select(g => g.Url).ToArray());
+        Assert.Equal(
+            new[] { "Opening", "Closing" },
+            detail.SessionTitles!.Select(s => s.TitleEn).ToArray());
+        Assert.Equal(
+            new[] { "Alpha", "Beta" },
+            detail.PastSpeakers!.Select(p => p.NameEn).ToArray());
+    }
+
+    [Fact]
     public async Task Public_detail_returns_404_for_an_unknown_id()
     {
         var admin = await CreateAdministratorAndSignInAsync();
