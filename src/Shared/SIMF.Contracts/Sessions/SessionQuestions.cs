@@ -35,14 +35,19 @@ public sealed record SessionQuestionSubmitted(
     int Order,
     DateTimeOffset CreatedAt);
 
-/// <summary>D-169 — one row in the moderator queue view. Submitter
-/// display name + email are projected from the cross-DB lookup so the
-/// moderator doesn't have to issue a second request.</summary>
+/// <summary>D-169 — one row in the moderator queue view. The submitter
+/// display name is projected from the cross-DB lookup so the moderator doesn't
+/// have to issue a second request.
+/// <para>A9 (D-185) — <see cref="SubmittedByEmail"/> is PII and is deliberately
+/// NOT populated on this queue (a single grid render must never broadcast bulk
+/// submitter emails). The nullable field is retained for wire-compat (D-219) but
+/// the service always emits <c>null</c>.</para></summary>
 public sealed record SessionQuestionModeratorRow(
     Guid Id,
     Guid SessionId,
     Guid SubmittedByUserId,
     string SubmittedByDisplayName,
+    // A9 (D-185) — always null on the moderator queue (PII redaction); kept for D-219.
     string? SubmittedByEmail,
     string QuestionText,
     SessionQuestionRecipient Recipient,

@@ -56,10 +56,13 @@ internal sealed class SessionModerationService(
         }
 
         var userIds = rows.Select(r => r.SubmittedByUserId).Distinct().ToList();
+        // A9 (D-185) — the submitter email is PII and is NOT shipped to the
+        // moderator queue (a single grid render must never broadcast bulk PII).
+        // Only the display name is projected from the cross-DB Identity lookup.
         var users = await identityDbContext.Users
             .AsNoTracking()
             .Where(u => userIds.Contains(u.Id))
-            .Select(u => new { u.Id, u.Email, u.DisplayName })
+            .Select(u => new { u.Id, u.DisplayName })
             .ToDictionaryAsync(u => u.Id, cancellationToken);
 
         return rows.Select(r =>
@@ -70,7 +73,9 @@ internal sealed class SessionModerationService(
                 r.SessionId,
                 r.SubmittedByUserId,
                 user?.DisplayName ?? string.Empty,
-                user?.Email,
+                // A9 (D-185) — email redacted; the nullable DTO field stays for
+                // wire-compat (D-219) but is always null on the moderator queue.
+                null,
                 r.QuestionText,
                 r.Recipient,
                 r.Order,
@@ -225,16 +230,19 @@ internal sealed class SessionModerationService(
     private async Task<SessionQuestionModeratorRow> ToRowAsync(
         SessionQuestion question, CancellationToken cancellationToken)
     {
+        // A9 (D-185) — submitter email is PII and is NOT shipped to the moderator
+        // desk (parity with ListAsync); only the display name is projected.
         var user = await identityDbContext.Users.AsNoTracking()
             .Where(u => u.Id == question.SubmittedByUserId)
-            .Select(u => new { u.Email, u.DisplayName })
+            .Select(u => new { u.DisplayName })
             .SingleOrDefaultAsync(cancellationToken);
         return new SessionQuestionModeratorRow(
             question.Id,
             question.SessionId,
             question.SubmittedByUserId,
             user?.DisplayName ?? string.Empty,
-            user?.Email,
+            // A9 (D-185) — email redacted; field kept null for wire-compat (D-219).
+            null,
             question.QuestionText,
             question.Recipient,
             question.Order,

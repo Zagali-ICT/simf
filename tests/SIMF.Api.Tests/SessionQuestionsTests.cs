@@ -188,6 +188,38 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Moderator_queue_redacts_the_submitter_email()
+    {
+        // A9 (D-185) — the dedicated submitter-email field is redacted server-side:
+        // it is null on every moderator-queue row. (Note: DisplayName can itself be
+        // the account email for a self-registered visitor — RegistrationService
+        // seeds DisplayName = Email and the "replace with real name at profile
+        // completion" TODO is unimplemented — so a raw-body @-scan is NOT a valid
+        // guard here; that display-name exposure is a separate, broader concern.
+        // This test pins exactly what A9c changed: the SubmittedByEmail field.)
+        var admin = await CreateAdministratorAndSignInAsync();
+        var (session, _) = await SeedLiveSessionAsync();
+        var visitor = await SignInApprovedVisitorAsync();
+        var submit = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions",
+            new SubmitSessionQuestionRequest { QuestionText = "Q-redact", IsAtVenue = true },
+            visitor.AccessToken);
+        var qid = (await submit.Content
+            .ReadFromJsonAsync<ApiResult<SessionQuestionSubmitted>>())!.Data!.Id;
+        await PutAuthAsync($"/api/v1/admin/questions/{qid}/approve", new { }, admin);
+
+        var response = await GetAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions/moderate", admin);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var rows = (await response.Content
+            .ReadFromJsonAsync<ApiResult<IReadOnlyList<SessionQuestionModeratorRow>>>())!.Data!;
+
+        var row = Assert.Single(rows);
+        Assert.Null(row.SubmittedByEmail);                              // redacted (D-185)
+        Assert.False(string.IsNullOrEmpty(row.SubmittedByDisplayName)); // name preserved
+    }
+
+    [Fact]
     public async Task Hide_then_unhide_round_trips_state_and_is_idempotent()
     {
         var admin = await CreateAdministratorAndSignInAsync();
