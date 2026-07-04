@@ -8,7 +8,14 @@ namespace SIMF.Infrastructure.Exhibition;
 
 /// <summary>D-199 — public, anonymous read over active booths. Mirrors
 /// PublicDelegationService: AsNoTracking, IsActive filter, projection to
-/// the public contract.</summary>
+/// the public contract.
+///
+/// <para>A5 — the related-entity fields are read through the navigation
+/// properties (<c>Booth.Exhibitor</c>, <c>Booth.Hall</c>,
+/// <c>Booth.OfficerContact</c>, and the existing <c>Exhibitor.Contact</c>), so
+/// EF emits one LEFT JOIN per related row instead of a correlated subquery per
+/// field. The legacy free-text columns remain the fallback when a booth is not
+/// yet linked to a curated Exhibitor / Contact (D-219 wire contract).</para></summary>
 internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothService
 {
     public async Task<IReadOnlyList<PublicBoothSummary>> ListAsync(
@@ -25,65 +32,47 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
                 // B1 — D-222: the exhibitor name comes from the linked Exhibitor
                 // when set (the curated source of truth), falling back to the
                 // legacy free-text.
-                ExhibitorName = b.ExhibitorId == null
-                    ? b.ExhibitorName
-                    : db.Exhibitors.Where(c => c.Id == b.ExhibitorId)
-                        .Select(c => c.Name).FirstOrDefault(),
-                ExhibitorNameArabic = b.ExhibitorId == null
-                    ? b.ExhibitorNameArabic
-                    : db.Exhibitors.Where(c => c.Id == b.ExhibitorId)
-                        .Select(c => c.NameArabic).FirstOrDefault(),
+                ExhibitorName = b.Exhibitor != null ? b.Exhibitor.Name : b.ExhibitorName,
+                ExhibitorNameArabic =
+                    b.Exhibitor != null ? b.Exhibitor.NameArabic : b.ExhibitorNameArabic,
                 Sector = b.Sector,
                 SectorArabic = b.SectorArabic,
                 HallId = b.HallId,
                 MapX = b.MapX,
                 MapY = b.MapY,
-                // D-432 — the hall display name (entity already has it) + the
-                // booth officer resolved Contact-first (the de-duplicated D-260
-                // directory record), falling back to the legacy inline columns.
-                HallName = b.HallId == null
-                    ? null
-                    : db.Halls.Where(h => h.Id == b.HallId)
-                        .Select(h => h.Name).FirstOrDefault(),
-                HallNameArabic = b.HallId == null
-                    ? null
-                    : db.Halls.Where(h => h.Id == b.HallId)
-                        .Select(h => h.NameArabic).FirstOrDefault(),
-                OfficerName = b.ContactId == null
-                    ? b.OfficerName
-                    : (db.Contacts.Where(c => c.Id == b.ContactId)
-                        .Select(c => c.NameArabic != "" ? c.NameArabic : c.Name)
-                        .FirstOrDefault() ?? b.OfficerName),
-                OfficerPhone = b.ContactId == null
-                    ? b.OfficerPhone
-                    : db.Contacts.Where(c => c.Id == b.ContactId)
-                        .Select(c => c.PhonePrimary).FirstOrDefault(),
-                OfficerEmail = b.ContactId == null
-                    ? b.OfficerEmail
-                    : db.Contacts.Where(c => c.Id == b.ContactId)
-                        .Select(c => c.Email).FirstOrDefault(),
+                // D-432 — the hall display name + the booth officer resolved
+                // Contact-first (the de-duplicated D-260 directory record),
+                // falling back to the legacy inline columns.
+                HallName = b.Hall != null ? b.Hall.Name : null,
+                HallNameArabic = b.Hall != null ? b.Hall.NameArabic : null,
+                OfficerName = b.OfficerContact != null
+                    ? ((b.OfficerContact.NameArabic != ""
+                        ? b.OfficerContact.NameArabic
+                        : b.OfficerContact.Name) ?? b.OfficerName)
+                    : b.OfficerName,
+                OfficerPhone = b.OfficerContact != null
+                    ? b.OfficerContact.PhonePrimary
+                    : b.OfficerPhone,
+                OfficerEmail = b.OfficerContact != null
+                    ? b.OfficerContact.Email
+                    : b.OfficerEmail,
                 // P6 — D-440: the exhibitor's Contact id (the CompanyLogo owner),
                 // so the app can render the real booth logo (null when unlinked).
-                ExhibitorContactId = b.ExhibitorId == null
-                    ? null
-                    : db.Exhibitors.Where(c => c.Id == b.ExhibitorId)
-                        .Select(c => c.ContactId).FirstOrDefault(),
+                ExhibitorContactId = b.Exhibitor != null ? b.Exhibitor.ContactId : null,
                 // D-456: the exhibitor company's country (Exhibitor → Contact →
                 // CountryId) for the app's corner flag on the booth logo.
-                CountryId = b.ExhibitorId == null
-                    ? null
-                    : db.Exhibitors.Where(e => e.Id == b.ExhibitorId)
-                        .Select(e => e.Contact != null ? e.Contact.CountryId : null)
-                        .FirstOrDefault(),
+                CountryId = b.Exhibitor != null && b.Exhibitor.Contact != null
+                    ? b.Exhibitor.Contact.CountryId
+                    : null,
                 // #9: the country NAME from the Country lookup on that numeric id
                 // (so the app shows the country name, not only the corner flag).
                 CountryName = db.Countries
-                    .Where(c => db.Exhibitors.Any(e => e.Id == b.ExhibitorId
-                        && e.Contact != null && e.Contact.CountryId == c.Id))
+                    .Where(c => b.Exhibitor != null && b.Exhibitor.Contact != null
+                        && b.Exhibitor.Contact.CountryId == c.Id)
                     .Select(c => c.Name).FirstOrDefault(),
                 CountryNameArabic = db.Countries
-                    .Where(c => db.Exhibitors.Any(e => e.Id == b.ExhibitorId
-                        && e.Contact != null && e.Contact.CountryId == c.Id))
+                    .Where(c => b.Exhibitor != null && b.Exhibitor.Contact != null
+                        && b.Exhibitor.Contact.CountryId == c.Id)
                     .Select(c => c.NameArabic).FirstOrDefault(),
             })
             .ToListAsync(cancellationToken);
@@ -100,14 +89,9 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
                 NameArabic = b.NameArabic,
                 // B1 — D-222: exhibitor name from the linked Exhibitor when set,
                 // else the legacy free-text.
-                ExhibitorName = b.ExhibitorId == null
-                    ? b.ExhibitorName
-                    : db.Exhibitors.Where(c => c.Id == b.ExhibitorId)
-                        .Select(c => c.Name).FirstOrDefault(),
-                ExhibitorNameArabic = b.ExhibitorId == null
-                    ? b.ExhibitorNameArabic
-                    : db.Exhibitors.Where(c => c.Id == b.ExhibitorId)
-                        .Select(c => c.NameArabic).FirstOrDefault(),
+                ExhibitorName = b.Exhibitor != null ? b.Exhibitor.Name : b.ExhibitorName,
+                ExhibitorNameArabic =
+                    b.Exhibitor != null ? b.Exhibitor.NameArabic : b.ExhibitorNameArabic,
                 Sector = b.Sector,
                 SectorArabic = b.SectorArabic,
                 Description = b.Description,
@@ -116,74 +100,49 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
                 MapX = b.MapX,
                 MapY = b.MapY,
                 // D-432 — hall name + Contact-first officer (see ListAsync).
-                HallName = b.HallId == null
-                    ? null
-                    : db.Halls.Where(h => h.Id == b.HallId)
-                        .Select(h => h.Name).FirstOrDefault(),
-                HallNameArabic = b.HallId == null
-                    ? null
-                    : db.Halls.Where(h => h.Id == b.HallId)
-                        .Select(h => h.NameArabic).FirstOrDefault(),
-                OfficerName = b.ContactId == null
-                    ? b.OfficerName
-                    : (db.Contacts.Where(c => c.Id == b.ContactId)
-                        .Select(c => c.NameArabic != "" ? c.NameArabic : c.Name)
-                        .FirstOrDefault() ?? b.OfficerName),
-                OfficerPhone = b.ContactId == null
-                    ? b.OfficerPhone
-                    : db.Contacts.Where(c => c.Id == b.ContactId)
-                        .Select(c => c.PhonePrimary).FirstOrDefault(),
-                OfficerEmail = b.ContactId == null
-                    ? b.OfficerEmail
-                    : db.Contacts.Where(c => c.Id == b.ContactId)
-                        .Select(c => c.Email).FirstOrDefault(),
+                HallName = b.Hall != null ? b.Hall.Name : null,
+                HallNameArabic = b.Hall != null ? b.Hall.NameArabic : null,
+                OfficerName = b.OfficerContact != null
+                    ? ((b.OfficerContact.NameArabic != ""
+                        ? b.OfficerContact.NameArabic
+                        : b.OfficerContact.Name) ?? b.OfficerName)
+                    : b.OfficerName,
+                OfficerPhone = b.OfficerContact != null
+                    ? b.OfficerContact.PhonePrimary
+                    : b.OfficerPhone,
+                OfficerEmail = b.OfficerContact != null
+                    ? b.OfficerContact.Email
+                    : b.OfficerEmail,
                 // P6 — D-440: exhibitor's Contact id (CompanyLogo owner); see ListAsync.
-                ExhibitorContactId = b.ExhibitorId == null
-                    ? null
-                    : db.Exhibitors.Where(c => c.Id == b.ExhibitorId)
-                        .Select(c => c.ContactId).FirstOrDefault(),
+                ExhibitorContactId = b.Exhibitor != null ? b.Exhibitor.ContactId : null,
                 // D-456: the exhibitor company's country (Exhibitor → Contact →
                 // CountryId) for the app's corner flag on the booth logo.
-                CountryId = b.ExhibitorId == null
-                    ? null
-                    : db.Exhibitors.Where(e => e.Id == b.ExhibitorId)
-                        .Select(e => e.Contact != null ? e.Contact.CountryId : null)
-                        .FirstOrDefault(),
+                CountryId = b.Exhibitor != null && b.Exhibitor.Contact != null
+                    ? b.Exhibitor.Contact.CountryId
+                    : null,
                 // #9: the country NAME from the Country lookup (see ListAsync).
                 CountryName = db.Countries
-                    .Where(c => db.Exhibitors.Any(e => e.Id == b.ExhibitorId
-                        && e.Contact != null && e.Contact.CountryId == c.Id))
+                    .Where(c => b.Exhibitor != null && b.Exhibitor.Contact != null
+                        && b.Exhibitor.Contact.CountryId == c.Id)
                     .Select(c => c.Name).FirstOrDefault(),
                 CountryNameArabic = db.Countries
-                    .Where(c => db.Exhibitors.Any(e => e.Id == b.ExhibitorId
-                        && e.Contact != null && e.Contact.CountryId == c.Id))
+                    .Where(c => b.Exhibitor != null && b.Exhibitor.Contact != null
+                        && b.Exhibitor.Contact.CountryId == c.Id)
                     .Select(c => c.NameArabic).FirstOrDefault(),
                 // Wave 3 (Figma 1439:11881): the exhibitor-detail extras. Website
                 // is exhibitor-owned; City comes from the exhibitor's Contact; Tier
                 // from the exhibitor (TierName = the enum name, the app localizes).
-                Website = b.ExhibitorId == null
-                    ? null
-                    : db.Exhibitors.Where(e => e.Id == b.ExhibitorId)
-                        .Select(e => e.Website).FirstOrDefault(),
-                City = b.ExhibitorId == null
-                    ? null
-                    : db.Exhibitors.Where(e => e.Id == b.ExhibitorId)
-                        .Select(e => e.Contact != null ? e.Contact.City : null)
-                        .FirstOrDefault(),
-                CityArabic = b.ExhibitorId == null
-                    ? null
-                    : db.Exhibitors.Where(e => e.Id == b.ExhibitorId)
-                        .Select(e => e.Contact != null ? e.Contact.CityArabic : null)
-                        .FirstOrDefault(),
-                Tier = b.ExhibitorId == null
-                    ? null
-                    : db.Exhibitors.Where(e => e.Id == b.ExhibitorId)
-                        .Select(e => (int?)e.Tier).FirstOrDefault(),
-                TierName = b.ExhibitorId == null
-                    ? null
-                    : db.Exhibitors.Where(e => e.Id == b.ExhibitorId)
-                        .Select(e => e.Tier != null ? e.Tier.ToString() : null)
-                        .FirstOrDefault(),
+                Website = b.Exhibitor != null ? b.Exhibitor.Website : null,
+                City = b.Exhibitor != null && b.Exhibitor.Contact != null
+                    ? b.Exhibitor.Contact.City
+                    : null,
+                CityArabic = b.Exhibitor != null && b.Exhibitor.Contact != null
+                    ? b.Exhibitor.Contact.CityArabic
+                    : null,
+                Tier = b.Exhibitor != null ? (int?)b.Exhibitor.Tier : null,
+                TierName = b.Exhibitor != null && b.Exhibitor.Tier != null
+                    ? b.Exhibitor.Tier.ToString()
+                    : null,
             })
             .FirstOrDefaultAsync(cancellationToken);
 }
