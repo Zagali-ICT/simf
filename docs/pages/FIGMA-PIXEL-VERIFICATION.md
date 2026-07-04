@@ -34,3 +34,71 @@ originally-parity-built version, so clean-code introduced **zero** render change
 (b) the earlier parity waves already fetched + overlaid their Figma frames (the
 frames are in the session scratchpad). This overlay pass continues screen by
 screen; each result is appended above.
+
+## Full parallel-overlay pass (39-agent Workflow, 2026-07-05)
+
+A 39-agent Workflow fetched every bound screen's Figma frame and compared it to
+the render. **15 clean MATCH:** accessibility, archive, chatbot, email_otp, faq,
+forum_guide, gate_setup, interests, media_partners, my_seat, news, presentations,
+rate, session_summary_list, sponsors. The remaining findings are triaged below —
+most are **not** app defects. Numbers/dates use Western digits app-wide (matches
+the frames); the splash Arabic-Indic date was the only digit bug (fixed).
+
+### ✅ Real defects — FIXED
+| Screen | Defect | Fix |
+|--------|--------|-----|
+| contact_us | معلومات التواصل row had the gold icon trailing → RTL put it on the LEFT; frame has it leading (RIGHT) | Reordered so the icon leads; golden re-locked |
+| notifications | >1-day date header used `DateFormat('d MMM')` (default locale) → "Jun 10" in the Arabic UI | Switched to the locale-free `gregorianMonthName` → "10 يونيو" |
+| registration_success | تواصل معنا tiles were call-then-mail (call RIGHT under RTL); frame is phone-LEFT / mail-RIGHT | Swapped so the mail tile leads |
+| splash | date used Arabic-Indic digits `٢٠٢٦`; frame uses Western `2026` | Matched the frame (earlier commit) |
+
+### 🖼️ Golden-harness artifacts — NOT app defects (render correctly on device)
+- **Missing header emblem/logo** — sign_in, sign_up_form, sign_up_visitor,
+  staff_register_visitor: the logo IS drawn (`AuthBrandHeader` → `SimfLogo`,
+  `auth_chrome.dart:139`), but `SimfLogo` is an `Image.asset` PNG, which Flutter's
+  golden rasteriser renders empty without `precacheImage` (same root cause fixed
+  for splash). On device the emblem shows.
+- **Tofu country flags** — booths, delegations, meet_people, speaker_profile,
+  speakers: `country_flag.dart` returns a **flag emoji** (regional-indicator
+  pair). Emoji don't render in Flutter's golden rasteriser → tofu boxes. Renders
+  on iOS. **⚠️ Owner note:** Android renders regional-indicator flags
+  inconsistently — if broad Android fidelity is required, switch to flag images.
+- **Missing avatar photo** — my_area, home_signed_in social-post: `Image.network`
+  / asset avatars don't load in goldens (bearer/self-signed, D-422).
+
+### 🗑️ Owner-superseded (Figma frame predates the decision) — NOT defects
+- **my_area** "احصائيات" section + **more** "عروض الجلسات (PPT)" row: both were
+  **deleted by D-609** (owner directive, 2026-07-04). The frames are older.
+
+### 🔀 State differences (golden shows a different data state than the mockup)
+- **registration_status** "المراحل" stages card: shown for a *pending* account;
+  the frame shows the *approved* state (no stages). Both are real states.
+- **staff_register_visitor** document-type toggle + رقم الوثيقة row: only shows
+  for a **non-Saudi** nationality; the golden used Saudi (national-ID field).
+- **session_summary** agenda list / **gallery** active tab: data/tab-state.
+
+### ⚙️ Intentional app features beyond the static mockup (keep)
+- home/guest header language + theme toggles; live "اطرح سؤالاً" button; guest
+  login CTA; sign_in badge-scan button; contact_us submit button; notifications
+  "تعليم الكل كمقروء". These are functional; removing them to match a static
+  frame would drop features.
+
+### ✍️ Copy / spelling differences (mostly render is correct Arabic; a few real)
+- **Debatable (render is the more-correct Arabic — left as-is):** عضواً vs عضو,
+  أعضاء vs اعضاء, الذي vs الذى, إرسال vs ارسال, الآن vs الان, إلى vs الى,
+  السعودية vs السعوديه, اسأل vs اسئل. The frames use informal/dotless forms.
+- **Candidate real copy fixes (frame is the intended label):** home tile
+  "المعرض"→"الأجنحة"; home highlight title dropped "السعودي"; sessions banner
+  "اليوم الأول"→"تفاصيل اليوم"; send_question review-note wording. Low severity;
+  flagged for the owner's copy decision (do not want to guess brand copy).
+
+### 🎨 Lower-severity real items (flagged, not yet changed)
+- **speaker_profile** primary CTA floats up instead of anchoring above the nav
+  (missing Spacer/Expanded) — layout, medium.
+- **more** app-version footer + outlined sign-out button styling — medium.
+- **booths** "أرشدني" button uses a location-pin; frame uses a directions arrow — low.
+- **home_guest** speakers tile uses a person glyph; frame uses a mic — medium.
+- **about** message/vision body text hue reads cool-gray vs the frame's warm
+  gold/tan — needs a token check (dark-on-dark), medium.
+- **contact_us** social row uses generic Material glyphs (camera/briefcase) vs
+  brand logos (Instagram/LinkedIn) — needs brand SVGs, medium.
