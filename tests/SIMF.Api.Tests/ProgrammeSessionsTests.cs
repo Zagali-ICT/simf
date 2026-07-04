@@ -58,6 +58,58 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task List_flags_sessions_with_a_published_summary()
+    {
+        // A8 (D-237) — HasPublishedSummary is true only for a session whose محضر is
+        // ACTIVE and carries a PublishedAt stamp; false for no summary, a draft
+        // (PublishedAt == null), or a soft-deleted (IsActive == false) summary.
+        var admin = await CreateAdminAsync();
+        var hallId = await CreateHallAsync(admin);
+        var speakerId = await CreateSpeakerAsync(admin);
+        var day = DateTimeOffset.UtcNow.AddDays(12).Date;
+
+        var withPublished = await CreateSessionAsync(admin, hallId, speakerId,
+            Array.Empty<Guid>(), day.AddHours(9), day.AddHours(10));
+        var withDraft = await CreateSessionAsync(admin, hallId, speakerId,
+            Array.Empty<Guid>(), day.AddHours(11), day.AddHours(12));
+        var withInactive = await CreateSessionAsync(admin, hallId, speakerId,
+            Array.Empty<Guid>(), day.AddHours(13), day.AddHours(14));
+        var withNone = await CreateSessionAsync(admin, hallId, speakerId,
+            Array.Empty<Guid>(), day.AddHours(15), day.AddHours(16));
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            SessionSummary Summary(Guid sessionId, bool published, bool active) => new()
+            {
+                Id = Guid.NewGuid(),
+                SessionId = sessionId,
+                KeyPoints = "kp", KeyPointsArabic = "kp",
+                Recommendations = "rec", RecommendationsArabic = "rec",
+                Speakers = "spk", SpeakersArabic = "spk",
+                FullText = "full", FullTextArabic = "full",
+                IsActive = active,
+                PublishedAt = published ? DateTimeOffset.UtcNow : null,
+                CreatedAt = DateTimeOffset.UtcNow,
+            };
+            db.SessionSummaries.AddRange(
+                Summary(withPublished.Id, published: true, active: true),
+                Summary(withDraft.Id, published: false, active: true),
+                Summary(withInactive.Id, published: true, active: false));
+            await db.SaveChangesAsync();
+        }
+
+        var list = await _client.GetAsync("/api/v1/app/programme/sessions");
+        var items = (await list.Content
+            .ReadFromJsonAsync<ApiResult<PublicSessions>>())!.Data!.Items;
+
+        Assert.True(items.Single(i => i.Id == withPublished.Id).HasPublishedSummary);
+        Assert.False(items.Single(i => i.Id == withDraft.Id).HasPublishedSummary);
+        Assert.False(items.Single(i => i.Id == withInactive.Id).HasPublishedSummary);
+        Assert.False(items.Single(i => i.Id == withNone.Id).HasPublishedSummary);
+    }
+
+    [Fact]
     public async Task Public_list_item_carries_the_body_and_speaker_cards()
     {
         // D-252 (Mockup screen 16/17): the cached agenda payload also drives the

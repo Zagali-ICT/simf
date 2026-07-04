@@ -80,6 +80,15 @@ internal sealed class ProgrammeSessionService(
                 // without a second fetch.
                 session.Description,
                 session.DescriptionArabic,
+                // A8 — D-237: does this session have a PUBLISHED محضر? There is no
+                // Session→SessionSummary navigation, so this is a correlated EXISTS
+                // over SessionSummaries (the pattern AdminSessionSummaryService uses).
+                // Gate matches the summary read: an active summary with a PublishedAt
+                // stamp (Session.IsActive is already ensured by the outer Where).
+                HasPublishedSummary = dbContext.SessionSummaries.Any(summary =>
+                    summary.SessionId == session.Id
+                    && summary.IsActive
+                    && summary.PublishedAt != null),
                 Themes = session.Themes
                     .Where(link => link.Theme!.IsActive)
                     .Select(link => new
@@ -170,7 +179,9 @@ internal sealed class ProgrammeSessionService(
                     row.DescriptionArabic,
                     speakers,
                     // D-452: the session's type (Workshop / Session / Event).
-                    row.Type);
+                    row.Type,
+                    // A8 — D-237: whether a published محضر exists for this session.
+                    row.HasPublishedSummary);
             })
             .ToList();
 
