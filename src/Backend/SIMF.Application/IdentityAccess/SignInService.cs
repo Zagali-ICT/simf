@@ -282,8 +282,8 @@ public sealed class SignInService(
             && totp.TimeStep <= lastStep;
         if (!totp.IsValid || isReplay)
         {
-            ticket.AttemptCount++;
-            await secondFactorTokenRepository.UpdateAsync(ticket, cancellationToken);
+            await secondFactorTokenRepository.IncrementAttemptCountAsync(
+                ticket.Id, cancellationToken);
             await AuditAsync(AuditEvents.SignInSecondFactorFailed, AuditOutcome.Failure,
                 user.Email!, user.Id, ErrorCodes.AuthTotpInvalid,
                 cancellationToken: cancellationToken);
@@ -297,8 +297,19 @@ public sealed class SignInService(
         user.UpdatedAt = now;
         await accounts.UpdateAsync(user).EnsureSuccessAsync();
 
-        ticket.ConsumedAt = now;
-        await secondFactorTokenRepository.UpdateAsync(ticket, cancellationToken);
+        // Atomically consume the ticket — only the caller that flips ConsumedAt
+        // from null to now proceeds to mint; a concurrent second verify of the
+        // same ticket is rejected here, so one ticket yields exactly one session.
+        if (!await secondFactorTokenRepository.TryConsumeAsync(
+                ticket.Id, now, cancellationToken))
+        {
+            await AuditAsync(AuditEvents.SignInSecondFactorRejected, AuditOutcome.Failure,
+                user.Email!, user.Id, ErrorCodes.AuthMfaTokenInvalid,
+                "already_consumed", cancellationToken);
+            throw new ApiException(ErrorCodes.AuthMfaTokenInvalid, 400,
+                "The sign-in session is not valid.",
+                "جلسة تسجيل الدخول غير صالحة.");
+        }
         return await IssueTokensAsync(user, cancellationToken);
     }
 
@@ -324,8 +335,8 @@ public sealed class SignInService(
             user.Id, request.Code, cancellationToken);
         if (!accepted)
         {
-            ticket.AttemptCount++;
-            await secondFactorTokenRepository.UpdateAsync(ticket, cancellationToken);
+            await secondFactorTokenRepository.IncrementAttemptCountAsync(
+                ticket.Id, cancellationToken);
             await accounts.AccessFailedAsync(user);
             await AuditAsync(AuditEvents.TotpRecoveryCodeFailed, AuditOutcome.Failure,
                 user.Email!, user.Id, ErrorCodes.AuthRecoveryCodeInvalid,
@@ -338,8 +349,19 @@ public sealed class SignInService(
 
         await accounts.ResetAccessFailedCountAsync(user);
         var now = timeProvider.GetUtcNow();
-        ticket.ConsumedAt = now;
-        await secondFactorTokenRepository.UpdateAsync(ticket, cancellationToken);
+        // Atomically consume the ticket — the recovery code was already verified
+        // + consumed above; the ticket gate ensures a concurrent second verify of
+        // the same ticket cannot mint a second session.
+        if (!await secondFactorTokenRepository.TryConsumeAsync(
+                ticket.Id, now, cancellationToken))
+        {
+            await AuditAsync(AuditEvents.SignInSecondFactorRejected, AuditOutcome.Failure,
+                user.Email!, user.Id, ErrorCodes.AuthMfaTokenInvalid,
+                "already_consumed", cancellationToken);
+            throw new ApiException(ErrorCodes.AuthMfaTokenInvalid, 400,
+                "The sign-in session is not valid.",
+                "جلسة تسجيل الدخول غير صالحة.");
+        }
 
         await AuditAsync(AuditEvents.TotpRecoveryCodeUsed, AuditOutcome.Success,
             user.Email!, user.Id, cancellationToken: cancellationToken);
@@ -376,8 +398,8 @@ public sealed class SignInService(
 
         if (!CodesMatch(code.Code, AccountCodeHasher.Hash(request.Code)))
         {
-            ticket.AttemptCount++;
-            await secondFactorTokenRepository.UpdateAsync(ticket, cancellationToken);
+            await secondFactorTokenRepository.IncrementAttemptCountAsync(
+                ticket.Id, cancellationToken);
             await AuditAsync(AuditEvents.SignInSecondFactorFailed, AuditOutcome.Failure,
                 user.Email!, user.Id, ErrorCodes.AuthOtpInvalid,
                 cancellationToken: cancellationToken);
@@ -386,10 +408,20 @@ public sealed class SignInService(
                 "الرمز غير صحيح.");
         }
 
+        // Atomically consume the ticket first — the gate that ensures a
+        // concurrent second verify of the same ticket cannot mint twice.
+        if (!await secondFactorTokenRepository.TryConsumeAsync(
+                ticket.Id, now, cancellationToken))
+        {
+            await AuditAsync(AuditEvents.SignInSecondFactorRejected, AuditOutcome.Failure,
+                user.Email!, user.Id, ErrorCodes.AuthOtpTokenInvalid,
+                "already_consumed", cancellationToken);
+            throw new ApiException(ErrorCodes.AuthOtpTokenInvalid, 400,
+                "The sign-in session is not valid.",
+                "جلسة تسجيل الدخول غير صالحة.");
+        }
         code.ConsumedAt = now;
         await accountCodeRepository.UpdateAsync(code, cancellationToken);
-        ticket.ConsumedAt = now;
-        await secondFactorTokenRepository.UpdateAsync(ticket, cancellationToken);
         return await IssueTokensAsync(user, cancellationToken);
     }
 
