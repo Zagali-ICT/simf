@@ -176,6 +176,9 @@ internal sealed class GateOperatorService(
                      && s.ScannedAtUtc >= fromUtc && s.ScannedAtUtc <= toUtc);
         if (gateId is { } gid) { query = query.Where(s => s.GateId == gid); }
 
+        // The Rows DISPLAY grid stays capped at the 500 most-recent scans (bounds
+        // the wire payload); the Totals + DenialBreakdown below are computed over
+        // the FULL day server-side, not from this capped list (A8).
         var rows = await query
             .OrderByDescending(s => s.ScannedAtUtc)
             .Take(500)
@@ -193,12 +196,28 @@ internal sealed class GateOperatorService(
             .Distinct().ToList();
         var displayNames = await ResolveProfileDisplayNamesAsync(profileIds, cancellationToken);
 
-        var allowed = rows.Count(r => r.Outcome == ScanOutcome.Allowed);
-        var denied = rows.Count - allowed;
-        var denialBuckets = rows
-            .Where(r => r.Outcome == ScanOutcome.Denied && r.DenialReasonCode is not null)
-            .GroupBy(r => r.DenialReasonCode!.Value)
-            .Select(g => new OperatorDenialBucket(g.Key.ToString(), g.Count()))
+        // A8 — full-day aggregates over `query` (server-side GROUP BY), NOT the
+        // Take(500) grid, so a gate with >500 scans/day reports correct Totals +
+        // buckets. Allowed + denied come from ONE GroupBy(Outcome) so both counts
+        // read the same snapshot — neither `denied` (nor allowed) can go negative
+        // under a concurrent insert the way subtracting two independently-timed
+        // counts could. EF can GROUP BY the int enum key but cannot translate
+        // enum.ToString(), so the reason code is formatted + ordered in memory.
+        var outcomeCounts = await query
+            .GroupBy(s => s.Outcome)
+            .Select(g => new { Outcome = g.Key, Count = g.Count() })
+            .ToListAsync(cancellationToken);
+        var allowed = outcomeCounts
+            .FirstOrDefault(o => o.Outcome == ScanOutcome.Allowed)?.Count ?? 0;
+        var denied = outcomeCounts
+            .FirstOrDefault(o => o.Outcome == ScanOutcome.Denied)?.Count ?? 0;
+        var denialCounts = await query
+            .Where(s => s.Outcome == ScanOutcome.Denied && s.DenialReasonCode != null)
+            .GroupBy(s => s.DenialReasonCode!.Value)
+            .Select(g => new { Code = g.Key, Count = g.Count() })
+            .ToListAsync(cancellationToken);
+        var denialBuckets = denialCounts
+            .Select(b => new OperatorDenialBucket(b.Code.ToString(), b.Count))
             .OrderByDescending(b => b.Count)
             .ToList();
 
