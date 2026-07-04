@@ -53,11 +53,8 @@ Figma frame is bound, so this is a structural render-lock, not a parity claim.
 
 `test/golden/my_visitors_golden_test.dart` (render-lock, @375×812, ar) +
 `test/features/exhibitor/my_visitors_screen_test.dart` (empty / list / 403).
-
-> **Gap (flagged, not introduced here):** this D-426 screen shipped without an
-> E2E catalogue file under `docs/tests/e2e/`. Authoring `mobile-my-visitors.md`
-> is a pre-existing DoD gap, tracked for the owner — out of scope for this
-> clean-code freeze (a one-line refresh-widget swap + a golden).
+E2E: [`docs/tests/e2e/mobile-my-visitors.md`](../../../tests/e2e/mobile-my-visitors.md)
+(E2E-MOBMYVIS-001..006, authored D-648 — closed the earlier pre-existing gap).
 
 ## Related decisions
 
