@@ -8,6 +8,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -57,6 +58,74 @@ public sealed class AssetEndpointsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(AssetKind.Image, row.Kind);
         Assert.Equal(AssetSourceType.Upload, row.SourceType);
         Assert.True(row.IsActive);
+    }
+
+    [Fact]
+    public async Task Public_app_image_for_a_missing_asset_returns_404()
+    {
+        // Probe: the anonymous serve of an owner with no asset must be 404 (not a
+        // FastEndpoints auto-204). Exercises AssetAuth.ServeAsync's null-resolution
+        // branch, which no prior test covered.
+        var missing = await _client.GetAsync(
+            $"/api/v1/app/assets/SpeakerPhoto/{Guid.NewGuid()}/image");
+        Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
+    }
+
+    [Fact]
+    public async Task Public_app_image_for_an_external_link_returns_302()
+    {
+        // The external-link asset serve must 302-redirect to the stored URL (not a
+        // FastEndpoints auto-204). A non-redirecting client observes the 302 itself
+        // rather than following it. Exercises AssetAuth.ServeAsync's link branch.
+        var token = await CreateAdministratorAndSignInAsync();
+        var owner = Guid.NewGuid();
+        var link = await PutAuthAsync(
+            $"/api/v1/admin/assets/NewsImage/{owner}/link",
+            new SetAssetLinkRequest { Kind = AssetKind.Image, Url = "https://cdn.example/x.jpg" },
+            token);
+        Assert.Equal(HttpStatusCode.OK, link.StatusCode);
+
+        using var noRedirect = _factory.CreateClient(
+            new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        var img = await noRedirect.GetAsync($"/api/v1/app/assets/NewsImage/{owner}/image");
+        Assert.Equal(HttpStatusCode.Redirect, img.StatusCode); // 302 Found
+        Assert.Equal("https://cdn.example/x.jpg", img.Headers.Location?.ToString());
+    }
+
+    [Fact]
+    public async Task Public_app_image_returns_304_for_a_matching_if_none_match()
+    {
+        // A6 — the asset serve emits a strong content-hash ETag: a conditional
+        // re-fetch with a matching If-None-Match gets 304 (no body); a non-matching
+        // validator gets 200 + bytes. A plain first fetch is unchanged (200 + ETag).
+        var token = await CreateAdministratorAndSignInAsync();
+        var owner = Guid.NewGuid();
+        var upload = await UploadAsync(
+            "SpeakerPhoto", owner, "Image", Png, "image/png", "p.png", token);
+        Assert.Equal(HttpStatusCode.OK, upload.StatusCode);
+
+        var url = $"/api/v1/app/assets/SpeakerPhoto/{owner}/image";
+
+        // First fetch: 200 + a non-empty ETag header.
+        var first = await _client.GetAsync(url);
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        var etag = first.Headers.ETag;
+        Assert.NotNull(etag);
+        Assert.False(string.IsNullOrEmpty(etag!.Tag));
+
+        // Conditional re-fetch with the matching validator → 304 + empty body.
+        var conditional = new HttpRequestMessage(HttpMethod.Get, url);
+        conditional.Headers.IfNoneMatch.Add(etag);
+        var revalidated = await _client.SendAsync(conditional);
+        Assert.Equal(HttpStatusCode.NotModified, revalidated.StatusCode);
+        Assert.Empty(await revalidated.Content.ReadAsByteArrayAsync());
+
+        // A non-matching validator → the full 200 + bytes.
+        var mismatch = new HttpRequestMessage(HttpMethod.Get, url);
+        mismatch.Headers.TryAddWithoutValidation("If-None-Match", "\"deadbeef\"");
+        var full = await _client.SendAsync(mismatch);
+        Assert.Equal(HttpStatusCode.OK, full.StatusCode);
+        Assert.NotEmpty(await full.Content.ReadAsByteArrayAsync());
     }
 
     [Fact]
