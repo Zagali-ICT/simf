@@ -98,6 +98,92 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(ErrorCodes.MeetingParticipantInvalid, body.Error!.Code);
     }
 
+    // A7 — oversized cluster strings must be rejected at the edge with 400, not
+    // reach EF SaveChanges and fault with a SQL truncation 500 (the service's Trim
+    // helper does no length check). Each bound mirrors the EF HasMaxLength.
+
+    [Fact]
+    public async Task Schedule_with_oversized_notes_is_400_not_500()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting);
+        var tableId = await CreateTableAsync(hallId, token);
+        var start = DateTimeOffset.UtcNow.AddDays(1);
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/business-meetings",
+            new ScheduleMeetingRequest
+            {
+                MeetingTableId = tableId,
+                MeetingType = BusinessMeetingType.B2B,
+                StartUtc = start,
+                EndUtc = start.AddHours(1),
+                Notes = new string('n', 1025), // EF BusinessMeeting.Notes max = 1024
+                Participants =
+                [
+                    new() { Kind = MeetingPartyKind.Company, CompanyId = await SeedCompanyAsync() },
+                    new() { Kind = MeetingPartyKind.Company, CompanyId = await SeedCompanyAsync() },
+                ],
+            }, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Create_meeting_table_with_oversized_row_label_is_400_not_500()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting);
+
+        var response = await PostAuthAsync(
+            $"/api/v1/admin/halls/{hallId}/meeting-tables",
+            new CreateMeetingTableRequest
+            {
+                Code = "T1",
+                RowLabel = new string('x', 9), // EF MeetingTable.RowLabel max = 8
+                Capacity = 2,
+            }, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Create_hall_allocation_with_oversized_notes_is_400_not_500()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting);
+        var start = DateTimeOffset.UtcNow.AddDays(1);
+
+        var response = await PostAuthAsync(
+            $"/api/v1/admin/halls/{hallId}/hall-allocations",
+            new CreateHallAllocationRequest
+            {
+                Purpose = HallPurpose.Meeting,
+                Mode = HallAllocationMode.Whole,
+                StartUtc = start,
+                EndUtc = start.AddHours(1),
+                Notes = new string('n', 513), // EF HallAllocation.Notes max = 512
+            }, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Cancel_meeting_with_oversized_reason_is_400_not_500()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting);
+        var tableId = await CreateTableAsync(hallId, token);
+        var start = DateTimeOffset.UtcNow.AddDays(5);
+
+        var scheduled = (await (await ScheduleAsync(tableId, token, start, start.AddHours(1),
+                await SeedCompanyAsync(), await SeedCompanyAsync())).Content
+            .ReadFromJsonAsync<ApiResult<BusinessMeetingScheduled>>())!.Data!;
+
+        var response = await PostAuthAsync(
+            $"/api/v1/admin/business-meetings/{scheduled.Id}/cancel",
+            new CancelMeetingRequest { Reason = new string('r', 513) }, // EF CancellationReason max = 512
+            token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
     [Fact]
     public async Task Overlapping_meeting_on_the_same_table_is_409_table_conflict()
     {
