@@ -2468,33 +2468,6 @@
   <data name="Admin.RatingConfig.Field.Group" xml:space="preserve"><value>Group</value></data>
   <data name="Admin.RatingConfig.Field.GroupNone" xml:space="preserve"><value>(no group)</value></data>
 
-  <!-- D-199 — Audience-comments moderation. -->
-  <data name="Admin.Comments.Title" xml:space="preserve"><value>Audience comments</value></data>
-  <data name="Admin.Comments.Hint" xml:space="preserve"><value>Select a session to moderate its audience comments.</value></data>
-  <data name="Admin.Comments.Pick" xml:space="preserve"><value>Session</value></data>
-  <data name="Admin.Comments.PickNone" xml:space="preserve"><value>— Select a session —</value></data>
-  <data name="Admin.Comments.NoSessions" xml:space="preserve"><value>No sessions available.</value></data>
-  <data name="Admin.Comments.Loading" xml:space="preserve"><value>Loading…</value></data>
-  <data name="Admin.Comments.None" xml:space="preserve"><value>No comments for this session.</value></data>
-  <data name="Admin.Comments.Col.Author" xml:space="preserve"><value>Author</value></data>
-  <data name="Admin.Comments.Col.Body" xml:space="preserve"><value>Comment</value></data>
-  <data name="Admin.Comments.Col.Status" xml:space="preserve"><value>Status</value></data>
-  <data name="Admin.Comments.Col.AiVerdict" xml:space="preserve"><value>AI verdict</value></data>
-  <data name="Admin.Comments.Col.Created" xml:space="preserve"><value>Submitted</value></data>
-  <data name="Admin.Comments.Col.Actions" xml:space="preserve"><value>Actions</value></data>
-  <data name="Admin.Comments.Approve" xml:space="preserve"><value>Approve</value></data>
-  <data name="Admin.Comments.Hide" xml:space="preserve"><value>Hide</value></data>
-  <data name="Admin.Comments.Delete" xml:space="preserve"><value>Delete</value></data>
-  <data name="Admin.Comments.Delete.Confirm" xml:space="preserve"><value>Delete this comment? It will be removed from the public feed immediately.</value></data>
-  <data name="Admin.Comments.Status.Pending" xml:space="preserve"><value>Pending</value></data>
-  <data name="Admin.Comments.Status.Approved" xml:space="preserve"><value>Approved</value></data>
-  <data name="Admin.Comments.Status.Hidden" xml:space="preserve"><value>Hidden</value></data>
-  <data name="Admin.Comments.StatusSaved" xml:space="preserve"><value>Comment status updated.</value></data>
-  <data name="Admin.Comments.Deleted" xml:space="preserve"><value>Comment deleted.</value></data>
-  <data name="Admin.Comments.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
-  <data name="Admin.Comments.LoadFailed" xml:space="preserve"><value>Could not load comments. Please try again.</value></data>
-  <data name="Admin.Comments.SessionsLoadFailed" xml:space="preserve"><value>Could not load sessions. Please try again.</value></data>
-
   <!-- FR-506 — session-attendance dashboard (read-only). -->
   <data name="Admin.Attendance.Title" xml:space="preserve"><value>Session attendance</value></data>
   <data name="Admin.Attendance.Loading" xml:space="preserve"><value>Loading attendance…</value></data>
@@ -2523,8 +2496,6 @@
   <data name="Admin.Statistics.Stat.Sponsors" xml:space="preserve"><value>Sponsors</value></data>
   <data name="Admin.Statistics.Stat.NewsArticles" xml:space="preserve"><value>News articles</value></data>
   <data name="Admin.Statistics.Stat.MediaItems" xml:space="preserve"><value>Media items</value></data>
-  <data name="Admin.Statistics.Stat.CommentsApproved" xml:space="preserve"><value>Comments approved</value></data>
-  <data name="Admin.Statistics.Stat.CommentsPending" xml:space="preserve"><value>Comments pending</value></data>
   <data name="Admin.Statistics.Stat.RatingsCount" xml:space="preserve"><value>Total ratings</value></data>
   <data name="Admin.Statistics.Stat.AverageRating" xml:space="preserve"><value>Average rating</value></data>
 

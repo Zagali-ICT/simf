@@ -62,16 +62,6 @@ internal sealed class StatisticsService(
         var mediaItems = await appDbContext.MediaItems.AsNoTracking()
             .CountAsync(m => m.IsActive, cancellationToken);
 
-        var commentsApproved = await appDbContext.SessionComments.AsNoTracking()
-            .CountAsync(
-                c => c.IsActive && c.Status == SessionCommentStatus.Approved,
-                cancellationToken);
-
-        var commentsPending = await appDbContext.SessionComments.AsNoTracking()
-            .CountAsync(
-                c => c.IsActive && c.Status == SessionCommentStatus.Pending,
-                cancellationToken);
-
         var ratingsCount = await appDbContext.RatingResponses.AsNoTracking()
             .CountAsync(r => r.IsActive, cancellationToken);
 
@@ -93,8 +83,6 @@ internal sealed class StatisticsService(
             sponsors,
             newsArticles,
             mediaItems,
-            commentsApproved,
-            commentsPending,
             ratingsCount,
             averageRating);
     }

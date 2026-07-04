@@ -229,12 +229,6 @@ public static class ErrorCodes
     public const string SessionModeratorNotAssigned = "SESSION_MODERATOR_NOT_ASSIGNED";
     public const string SessionModeratorAlreadyAssigned = "SESSION_MODERATOR_ALREADY_ASSIGNED";
 
-    // Audience comments (D-199, Mockup page 28 — تعليقات الجمهور;
-    // distinct from SessionQuestion — public feed + admin moderation).
-    public const string SessionCommentInvalid = "SESSION_COMMENT_INVALID";
-    public const string SessionCommentNotFound = "SESSION_COMMENT_NOT_FOUND";
-    public const string SessionNotOpenForComments = "SESSION_NOT_OPEN_FOR_COMMENTS";
-
     // Venue self-assert (D-171, gap doc G7 — PDF §2.10; G-OI-2 resolved
     // to the self-assert toggle as input source).
     public const string NotAtVenue = "NOT_AT_VENUE";

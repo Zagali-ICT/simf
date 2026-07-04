@@ -371,7 +371,7 @@ public static class PermissionCatalog
         public const string Export = "SessionModerators.Export";
     }
 
-    /// <summary>The live session moderation desk (Q&amp;A + comments).</summary>
+    /// <summary>The live session moderation desk (Q&amp;A).</summary>
     public static class SessionModeration
     {
         public const string Moderate = "SessionModeration.Moderate";
@@ -458,14 +458,6 @@ public static class PermissionCatalog
     }
 
     // ── Engagement ───────────────────────────────────────────────────────
-
-    /// <summary>Audience comment moderation.</summary>
-    public static class Comments
-    {
-        public const string View = "Comments.View";
-        public const string Moderate = "Comments.Moderate";
-        public const string Export = "Comments.Export";
-    }
 
     /// <summary>Ratings / feedback viewer.</summary>
     public static class Ratings
@@ -924,10 +916,6 @@ public static class PermissionCatalog
         new(VenueMap.Import, "VenueMap", "Import", "Import venue-map nodes", AdminOnly),
 
         // Engagement
-        new(Comments.View, "Comments", "View", "View audience comments", AdminOnly),
-        new(Comments.Moderate, "Comments", "Moderate", "Moderate audience comments", AdminOnly),
-        new(Comments.Export, "Comments", "Export", "Export audience comments", AdminOnly),
-
         new(Ratings.View, "Ratings", "View", "View ratings and feedback", AdminOnly),
         new(Ratings.Export, "Ratings", "Export", "Export ratings and feedback", AdminOnly),
         new(RatingConfig.View, "RatingConfig", "View", "View rating configuration", AdminOnly),
@@ -1076,7 +1064,6 @@ public static class PermissionCatalog
         Questions.View,
         Questions.Moderate,
         SessionModeration.Moderate,
-        Comments.Moderate,
     ];
 
     /// <summary>

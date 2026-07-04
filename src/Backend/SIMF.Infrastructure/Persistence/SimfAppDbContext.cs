@@ -26,7 +26,6 @@ using SIMF.Domain.Programme;
 using SIMF.Domain.PublicRelations;
 using SIMF.Domain.Regions;
 using SIMF.Domain.SeatReservations;
-using SIMF.Domain.SessionComments;
 using SIMF.Domain.SessionQuestions;
 using SIMF.Domain.Sponsors;
 
@@ -179,7 +178,7 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     public DbSet<AiInvocation> AiInvocations => Set<AiInvocation>();
 
     // D-199 — event modules (freeze lift): media coverage, exhibition,
-    // sponsors, archive editions, audience comments, ratings.
+    // sponsors, archive editions, ratings.
     public DbSet<News> News => Set<News>();
     public DbSet<MediaItem> MediaItems => Set<MediaItem>();
     public DbSet<MediaPartner> MediaPartners => Set<MediaPartner>();
@@ -191,9 +190,6 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     public DbSet<ArchiveMediaItem> ArchiveMediaItems => Set<ArchiveMediaItem>();
     public DbSet<ArchiveSessionTitle> ArchiveSessionTitles => Set<ArchiveSessionTitle>();
     public DbSet<ArchivePastSpeaker> ArchivePastSpeakers => Set<ArchivePastSpeaker>();
-    public DbSet<SessionComment> SessionComments => Set<SessionComment>();
-    // B5 — D-223: per-user likes on audience comments.
-    public DbSet<SessionCommentLike> SessionCommentLikes => Set<SessionCommentLike>();
     // Dynamic, config-driven ratings — admin defines types/groups/questions,
     // attendees submit responses with per-question answers (replaces the old
     // fixed single-row Rating model).

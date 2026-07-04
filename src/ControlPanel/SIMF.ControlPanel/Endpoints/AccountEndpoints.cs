@@ -732,7 +732,6 @@ internal static class AccountEndpoints
         MapGridExcel(group, "booths");
         MapGridExcel(group, "venue-map");
         MapGridExport(group, "invitations");
-        MapGridExport(group, "comments-moderation");
         MapGridExport(group, "ratings");
         MapGridExport(group, "speaker-presentations");
         MapGridExport(group, "vips");
@@ -3144,33 +3143,6 @@ internal static class AccountEndpoints
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
             return Forward(await api.DeleteRatingQuestionAsync(id, token));
-        });
-
-        // D-199 — Session-comment moderation BFF passthroughs.
-        group.MapPost("/admin/sessions/{sessionId:guid}/comments/list",
-            async (Guid sessionId, AdminListSessionCommentsRequest body,
-                   HttpContext http, SimfAdminClient api) =>
-        {
-            var token = await http.GetTokenAsync("access_token");
-            if (token is null) return Results.Unauthorized();
-            return Forward(await api.ListSessionCommentsAsync(sessionId, body, token));
-        });
-        group.MapPut("/admin/sessions/{sessionId:guid}/comments/{commentId:guid}/status",
-            async (Guid sessionId, Guid commentId, SetSessionCommentStatusRequest body,
-                   HttpContext http, SimfAdminClient api) =>
-        {
-            var token = await http.GetTokenAsync("access_token");
-            if (token is null) return Results.Unauthorized();
-            return Forward(await api.SetSessionCommentStatusAsync(
-                sessionId, commentId, body, token));
-        });
-        group.MapDelete("/admin/sessions/{sessionId:guid}/comments/{commentId:guid}",
-            async (Guid sessionId, Guid commentId, HttpContext http, SimfAdminClient api) =>
-        {
-            var token = await http.GetTokenAsync("access_token");
-            if (token is null) return Results.Unauthorized();
-            return Forward(await api.DeactivateSessionCommentAsync(
-                sessionId, commentId, token));
         });
 
         // D-202 Track-2 — Statistics dashboard BFF passthrough.

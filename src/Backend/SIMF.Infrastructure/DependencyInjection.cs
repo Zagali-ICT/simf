@@ -386,7 +386,7 @@ public static class DependencyInjection
         services.AddScoped<SIMF.Application.MyArea.IMyAreaService,
             SIMF.Infrastructure.MyArea.MyAreaService>();
         // D-199 — event modules (freeze lift): programme/speaker public reads,
-        // news, media + media-partners, booths, sponsors, archive, comments, ratings.
+        // news, media + media-partners, booths, sponsors, archive, ratings.
         services.AddScoped<SIMF.Application.Programme.Abstractions.IPublicSpeakerService,
             SIMF.Infrastructure.Programme.PublicSpeakerService>();
         services.AddScoped<SIMF.Application.Programme.Abstractions.IProgrammeSessionService,
@@ -466,13 +466,6 @@ public static class DependencyInjection
             SIMF.Infrastructure.Archive.PublicArchiveService>();
         services.AddScoped<SIMF.Application.Archive.Abstractions.IAdminArchiveService,
             SIMF.Infrastructure.Archive.AdminArchiveService>();
-        services.AddScoped<SIMF.Application.SessionComments.Abstractions.ISessionCommentService,
-            SIMF.Infrastructure.SessionComments.SessionCommentService>();
-        services.AddScoped<SIMF.Application.SessionComments.Abstractions.IAdminSessionCommentService,
-            SIMF.Infrastructure.SessionComments.AdminSessionCommentService>();
-        // Stateless (reads only IOptions) — register as singleton.
-        services.AddSingleton<SIMF.Application.SessionComments.Abstractions.ICommentAiFilter,
-            SIMF.Infrastructure.SessionComments.StubCommentAiFilter>();
         // P4.2 — D-236: advisory question AI filter (stub). Stateless singleton.
         services.AddSingleton<SIMF.Application.SessionQuestions.Abstractions.IQuestionAiFilter,
             SIMF.Infrastructure.SessionQuestions.StubQuestionAiFilter>();

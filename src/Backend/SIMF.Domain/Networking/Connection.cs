@@ -10,8 +10,7 @@ namespace SIMF.Domain.Networking;
 /// references are LOGICAL FKs to <c>SimfUser.Id</c> on the Identity DB (no SQL
 /// constraint — cross-DB, D-157), enforced at write time. Soft-deleted via
 /// <see cref="IsActive"/> (decline / remove). App-only: there is no admin/CP
-/// surface, so it carries no permission code (matches SessionComment submit /
-/// MeetPeopleLikeYou).
+/// surface, so it carries no permission code (matches MeetPeopleLikeYou).
 /// </summary>
 public sealed class Connection : BaseAuditEntity
 {

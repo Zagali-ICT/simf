@@ -257,17 +257,6 @@ public static class AuditEvents
     public const string SessionQuestionApproved = "SessionQuestion.Approved";
     public const string SessionQuestionEscalated = "SessionQuestion.Escalated";
 
-    // Audience comments (D-199, Mockup page 28 — public submit + AI-filter
-    // landing state + admin moderation; distinct from SessionQuestion)
-    public const string SessionCommentSubmitted = "SessionComment.Submitted";
-    public const string SessionCommentApproved = "SessionComment.Approved";
-    public const string SessionCommentHidden = "SessionComment.Hidden";
-    public const string SessionCommentRepended = "SessionComment.Repended";
-    public const string SessionCommentDeactivated = "SessionComment.Deactivated";
-    // B5 — D-223: per-user likes on audience comments.
-    public const string SessionCommentLiked = "SessionComment.Liked";
-    public const string SessionCommentUnliked = "SessionComment.Unliked";
-
     // Networking connections (B6 — D-224: visitor-to-visitor request/accept).
     public const string ConnectionRequested = "Connection.Requested";
     public const string ConnectionAccepted = "Connection.Accepted";
