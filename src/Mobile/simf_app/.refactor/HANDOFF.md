@@ -11,10 +11,14 @@ Full plan: `C:\Users\LOQ\.claude\plans\based-on-app-clean-prancy-pudding.md` (ow
 
 ## Program state (supersedes older handoffs)
 
-DONE before this branch: Phase 0 (Simf* shell rename, core/responsive, lint base, faq
-pilot) + Module 1 sign_up_visitor (D-546) + all 10 account screens (D-549..D-558) +
-staff register_visitor (D-559) + SimfFormScaffold cap 560 (D-560). 13 pages FROZEN,
-~54 remaining. Next decision number: **D-597**.
+**✅ THE CLEAN-CODE SWEEP IS CODE-COMPLETE (2026-07-04).** Every routed app screen
+is now clean-code frozen. All commits are pushed to `origin/refactor/clean-code-2`
+(branch 0 ahead, working tree clean). Next decision number: **D-648**.
+
+DONE before this branch: Phase 0 + Module 1 sign_up_visitor (D-546) + 10 account
+screens (D-549..D-558) + staff register_visitor (D-559) + SimfFormScaffold cap (D-560).
+This branch drove D-597 → D-647 across Waves A–H, then the tail. See the DECISIONS_LOG
+for the per-screen record.
 
 ## This run (owner directives 2026-07-03 — ONE consolidated plan)
 
@@ -32,61 +36,54 @@ E ai_summary+requests+contacts (ASK owner for contact node ids) → F venuemap g
 archive booths sponsorship → G moderation delegations notifications registration →
 H long tail → de-dup sweep + unused-page report (owner confirm before delete).
 
-## Baseline (captured 2026-07-03 on refactor/clean-code-2)
+## Final state (2026-07-04, refactor/clean-code-2 — all pushed)
 
-- flutter analyze: 2123 issues, **0 errors / 0 warnings** (all info)
-- flutter test: **749/749 green** (29 goldens lock without --update)
-- dotnet build -c Release SIMF.slnx: **0 warnings / 0 errors** (31.8s)
-- Metrics: raw colors excl tokens **20** · inline TextStyle **527** · maxWidth caps **18**
-  · files >400 lines **40** · biggest: sign_up_visitor 1571 (frozen), session_detail 1375,
-  live_broadcast 1286, home 1268
+- flutter analyze: **0 errors / 0 warnings** in touched files (info-lint baseline is
+  the relative-import + line-length codebase idiom).
+- flutter test: **739/739 green** (goldens lock WITHOUT --update).
+- Metrics close-out: every file >400 lines + all 4 remaining raw `Color(0x)` in
+  `features/` are in **already-frozen** territory — the account/staff cluster
+  (D-546..D-560), the `session_models.dart` data file, the shared
+  `entity_detail_scaffold`, and the home widgets (D-602). Per **freeze-after-done**
+  these are NOT re-opened. **No un-frozen screen carries decomposition or
+  tokenisation debt.**
 
-## NEXT — Wave C: live + questions + comments
+## Sweep complete — Waves A–H + tail (D-597 → D-647)
 
-**WAVE A COMPLETE (D-597..D-601):** session_detail · sessions · saved_sessions
-(node 1701:8928 DELETED, render-lock; ditto my-meetings 1701:9406 for Wave E —
-flag owner) · my_seat+seat_picker (shared `HallSeatMapCard`) · join_session_hub
-(pull-to-refresh + RTL chevron fix).
-**WAVE B COMPLETE (D-602):** home_screen 1,271→111-line role router + 9 widget
-files; goldens for both states (758:1134 / 758:2910) overlay-verified. LESSON:
-`Icons.chevron_left` carries matchTextDirection → double-mirrors under RTL, use
-`SimfSvgIcon ic_back.svg` for forward chevrons. LESSON: for a golden of a
-time-dependent screen, add an optional `now` seam (default DateTime.now()) —
-don't fight the clock. Re-export moved top-level helpers from the screen file
-so test imports don't churn.
-**WAVE C in progress:** live_broadcast DONE (D-603 — 1286→348 + 5 widgets) ·
-send_question DONE (D-604 — 420→319 + ReviewNote/SessionDataBlock; the EXISTING
-golden had LOCKED a tofu submit button [same styleFrom.textStyle font-drop] —
-regenerated → correct Arabic). audience_comments REMOVED (D-605 — owner: "rejected by customer, remove totally
-from system"; app-side screen/route/data/tests/docs deleted, suite 737/737;
-**backend SessionComment tables/endpoints/CP-moderation NOT touched — owner
-"dont modify backend", a separate session owns that destructive frozen-schema
-teardown**). **WAVE C COMPLETE.** **WAVE D in progress (3/5 done):** speaker_profile
-(D-606 1098→272, golden held) · my_area (D-607 790→269 + MyAreaDashboardBody
-ConsumerWidget, golden 213-963 captured) · speakers (D-608 447→229, golden
-908-1744 held). **D-609 (owner directive, 2026-07-04): my-meetings,
-my-sessions & saved-sessions REMOVED from My Area** — the 3 screens backed up
-as `.dart.bk`, routes **fully removed** (owner: "not ComingSoon, remove route" —
-`_Route` + `RouteNames` + `_routeRoles` entries all deleted; route_table_test
-unaffected, router_gate_test lost its /my-meetings assertions), the My-Area
-الإحصائيات section + the More "عروض الجلسات" row deleted; shared data layer
-(my_sessions_repository/models, session_favourites — used by ai_summary + hearts)
-KEPT; l10n strings KEPT (the `.bk` backups need them to restore); my_area_213-963
-golden regenerated; **suite 717/717**. So **my_sessions is NO LONGER a Wave-D clean-code target**
-(it's a `.bk` backup now). **Next in Wave D: identity_verification (489, no
-golden).** Then Wave E (ai_summary + requests [the requests feed stays; only the
-my-meetings *view* was removed] + contacts — contacts UNBOUND → ASK owner) ·
-Wave F (venuemap/gates/archive/booths/
-sponsorship) · Wave G (moderation/delegations/notifications/registration) ·
-Wave H (long tail ~19). REUSABLE: many screens carry a local _PullToRefreshState
-/ LayoutBuilder+ConstrainedBox short-state wrapper → replace with the shared
-SimfPullableHost (grep queued for de-dup sweep). REUSABLE bug class: inline
-`FilledButton.styleFrom(textStyle:)` drops the brand fontFamily → Arabic tofu
-(fixed on live/send-question; grep the repo in the de-dup sweep).
-REUSABLE LESSON (reinforced): an Arabic golden generated with `--update`
-silently locks the styleFrom.textStyle tofu — goldens must be READ, not just
-regenerated. Repo-wide grep queued for the de-dup sweep:
-`FilledButton.styleFrom(` co-occurring with `textStyle:`.
+Every screen frozen. Highlights of the final tail (D-638 → D-647, this session):
+forum_guide · terms (surfaceTint token + shared SimfErrorState) · accessibility
+(new `SimfTokens.labelWhiteMedium`) · splash (logo-precache golden) · my_visitors +
+my_contacts (RefreshIndicator→SimfPullToRefresh) · scan_visitor + scan_contact
+(golden `enableCamera:false`) · guest_mode · share_my_contact. All committed
+per-screen with docs (PAGE-INDEX + `mobile/<slug>/` + DECISIONS_LOG) and pushed.
+
+### Reusable lessons banked this program
+- **Baseline-then-hold golden** proves a structural swap is byte-identical: capture
+  the CURRENT render first, refactor, then run the golden WITHOUT --update (a HOLD).
+- **`Image.asset` PNGs render EMPTY in goldens** under a bare pump → `precacheImage`
+  inside `tester.runAsync` (context captured AFTER a settling `pump()`, outside
+  runAsync), then pump to paint. First used on the splash logo.
+- **Timer/boot screens** (splash/OTP/live): pin a fixed state and `pump()`, never
+  `pumpAndSettle` (the real boot navigates away mid-frame).
+- **Camera screens** (scan_*): golden with `enableCamera:false`.
+- **Shared error/empty states use WHITE text** — safe on navy/dark scaffolds only;
+  on light scaffolds, OR when the local state uses the theme-default text colour and
+  you can't prove the swap identical from the golden, KEEP the local state.
+- **`FilledButton.styleFrom(textStyle:)` drops the brand fontFamily → Arabic tofu.**
+  An `--update` golden silently LOCKS the tofu — goldens must be READ, not just
+  regenerated. (Fixed on live/send-question earlier in the program.)
+- **`Icons.chevron_left` carries matchTextDirection → double-mirrors under RTL** —
+  use `SimfSvgIcon ic_back.svg` for forward chevrons.
+
+### Remaining (optional, owner call)
+- **Open a PR** for `refactor/clean-code-2` → `feature/centralized-file-store`
+  (or the intended target) when ready.
+- **Flagged pre-existing gaps** (NOT introduced by the sweep): `my_visitors` +
+  `scan_visitor` (D-426) have no E2E catalogue file under `docs/tests/e2e/`;
+  `scan_visitor` also has no widget test. Authoring these is a DoD gap tracked here.
+- **De-dup report:** because every screen is now frozen, any remaining cross-screen
+  duplication can only be REPORTED, not fixed (fixing would re-open a freeze) —
+  surface to the owner rather than retro-DRY.
 
 ## Gotchas carried forward
 
