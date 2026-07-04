@@ -13,12 +13,10 @@ namespace SIMF.Infrastructure.Programme;
 /// of <see cref="AdminSpeakerService"/>: only active speakers are returned
 /// (<c>IsActive</c>), ordered by <c>DisplayOrder</c>.
 ///
-/// <para>Country names are resolved with the same batch-dictionary
-/// approach <see cref="AdminSpeakerService"/> uses: <c>Speaker</c> carries
-/// a <c>CountryId</c> FK but no <c>Country</c> navigation property, so the
-/// projection cannot dot through to the country in SQL. The list does one
-/// extra query for the distinct country ids on the page; the detail does a
-/// single-row lookup.</para>
+/// <para>A5 — the country name is read through the <c>Speaker.Country</c>
+/// navigation in the same query (one LEFT JOIN), replacing the prior
+/// dictionary-stitch that fetched the distinct country ids in a separate
+/// round-trip for the list and a single-row lookup for the detail.</para>
 ///
 /// <para>Privacy: the profile surfaces the social URLs only when the
 /// speaker has opted into data-sharing (<c>AllowsDataSharing</c>); the
@@ -44,18 +42,18 @@ internal sealed class PublicSpeakerService(SimfAppDbContext dbContext)
                 speaker.NameArabic,
                 speaker.Rank,
                 speaker.CountryId,
+                // A5 — the country name comes through the nav in the same query
+                // (was a separate dictionary-stitch round-trip).
+                CountryNameEn = speaker.Country != null ? speaker.Country.Name : null,
+                CountryNameAr = speaker.Country != null ? speaker.Country.NameArabic : null,
                 speaker.PhotoRelativePath,
                 speaker.DisplayOrder,
             })
             .ToListAsync(cancellationToken);
 
-        var countriesById = await ResolveCountriesAsync(
-            rows.Where(row => row.CountryId.HasValue)
-                .Select(row => row.CountryId!.Value),
-            cancellationToken);
-
         // D-357 — which of these speakers have an active SpeakerPhoto asset (one
-        // batched query; OwnerId is the speaker id, resolved cross-row with no FK).
+        // batched query; OwnerId is the speaker id, resolved cross-row with no FK
+        // so it cannot fold into the main projection's join).
         var speakerIds = rows.Select(row => row.Id).ToList();
         var withPhotoAsset = (await dbContext.Assets
             .AsNoTracking()
@@ -67,21 +65,11 @@ internal sealed class PublicSpeakerService(SimfAppDbContext dbContext)
             .ToHashSet();
 
         var items = rows
-            .Select(row =>
-            {
-                string? en = null, ar = null;
-                if (row.CountryId.HasValue
-                    && countriesById.TryGetValue(row.CountryId.Value, out var country))
-                {
-                    en = country.Name;
-                    ar = country.NameArabic;
-                }
-                return new PublicSpeakerSummary(
-                    row.Id, row.Name, row.NameArabic, row.Rank,
-                    row.CountryId, en, ar,
-                    row.PhotoRelativePath, row.DisplayOrder,
-                    withPhotoAsset.Contains(row.Id));
-            })
+            .Select(row => new PublicSpeakerSummary(
+                row.Id, row.Name, row.NameArabic, row.Rank,
+                row.CountryId, row.CountryNameEn, row.CountryNameAr,
+                row.PhotoRelativePath, row.DisplayOrder,
+                withPhotoAsset.Contains(row.Id)))
             .ToList();
 
         return new PublicSpeakers(items);
@@ -100,6 +88,9 @@ internal sealed class PublicSpeakerService(SimfAppDbContext dbContext)
                 row.NameArabic,
                 row.Rank,
                 row.CountryId,
+                // A5 — country name via the nav (was a separate single-row query).
+                CountryNameEn = row.Country != null ? row.Country.Name : null,
+                CountryNameAr = row.Country != null ? row.Country.NameArabic : null,
                 row.Bio,
                 row.BioArabic,
                 row.Qualifications,
@@ -122,18 +113,6 @@ internal sealed class PublicSpeakerService(SimfAppDbContext dbContext)
         if (speaker is null)
         {
             return null;
-        }
-
-        string? countryNameEn = null, countryNameAr = null;
-        if (speaker.CountryId is { } countryId)
-        {
-            var country = await dbContext.Countries
-                .AsNoTracking()
-                .Where(c => c.Id == countryId)
-                .Select(c => new { c.Name, c.NameArabic })
-                .SingleOrDefaultAsync(cancellationToken);
-            countryNameEn = country?.Name;
-            countryNameAr = country?.NameArabic;
         }
 
         // The speaker's active sessions, via the SessionSpeaker join.
@@ -166,8 +145,8 @@ internal sealed class PublicSpeakerService(SimfAppDbContext dbContext)
             speaker.NameArabic,
             speaker.Rank,
             speaker.CountryId,
-            countryNameEn,
-            countryNameAr,
+            speaker.CountryNameEn,
+            speaker.CountryNameAr,
             speaker.Bio,
             speaker.BioArabic,
             speaker.Qualifications,
@@ -185,24 +164,5 @@ internal sealed class PublicSpeakerService(SimfAppDbContext dbContext)
             speaker.PhotoRelativePath,
             speaker.DisplayOrder,
             sessions);
-    }
-
-    private async Task<IReadOnlyDictionary<int, (string Name, string NameArabic)>>
-        ResolveCountriesAsync(
-            IEnumerable<int> countryIds, CancellationToken cancellationToken)
-    {
-        var ids = countryIds.Distinct().ToList();
-        if (ids.Count == 0)
-        {
-            return new Dictionary<int, (string, string)>();
-        }
-        return await dbContext.Countries
-            .AsNoTracking()
-            .Where(country => ids.Contains(country.Id))
-            .Select(country => new { country.Id, country.Name, country.NameArabic })
-            .ToDictionaryAsync(
-                country => country.Id,
-                country => (country.Name, country.NameArabic),
-                cancellationToken);
     }
 }
