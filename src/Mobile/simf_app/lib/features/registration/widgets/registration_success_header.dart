@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/tokens.dart';
-
 /// The success-frame header band (Figma 505:1456): a back chevron pinned to the
 /// inline-start with a centred title. Kept as a local header (not `SimfPageShell`)
 /// because the frame's title is 24/w500 and the screen carries a decorative

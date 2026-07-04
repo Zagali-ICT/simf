@@ -11,7 +11,6 @@ import 'package:simf_app/features/contacts/data/contact_models.dart';
 import 'package:simf_app/features/exhibitor/data/exhibitor_models.dart';
 import 'package:simf_app/features/exhibitor/data/exhibitor_repository.dart';
 import 'package:simf_app/features/exhibitor/my_visitors_screen.dart';
-import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import 'golden_fonts.dart';
 
