@@ -24,7 +24,10 @@ internal sealed class SimfUserConfiguration : IEntityTypeConfiguration<SimfUser>
         builder.Property(user => user.UserType)
             .HasConversion<string>()
             .HasMaxLength(16);
-        builder.HasIndex(user => user.UserType);
+        // D-610 (Wave B) — the "users of type X, newest first" admin listing
+        // filters by UserType and orders by CreatedAt; the composite supersedes
+        // the former standalone HasIndex(UserType) (a redundant left-prefix).
+        builder.HasIndex(user => new { user.UserType, user.CreatedAt });
 
         builder.Property(user => user.AvatarRelativePath)
             .HasMaxLength(256);
@@ -34,5 +37,15 @@ internal sealed class SimfUserConfiguration : IEntityTypeConfiguration<SimfUser>
         // scanning AspNetUsers. D-106 moved QrId + RejectionReason* to
         // UserProfile (profile-scope).
         builder.HasIndex(user => new { user.AccountState, user.StateChangedAt });
+
+        // D-610 (Wave B) — enforce e-mail uniqueness at the DB. Identity creates
+        // a non-unique "EmailIndex" on NormalizedEmail by default; override it in
+        // place (same database name) as UNIQUE + filtered so multiple NULL/e-mail-
+        // less rows are still allowed. Redundant-but-defensive alongside the
+        // already-unique UserNameIndex (UserName == Email for every account).
+        builder.HasIndex(user => user.NormalizedEmail)
+            .IsUnique()
+            .HasDatabaseName("EmailIndex")
+            .HasFilter("[NormalizedEmail] IS NOT NULL");
     }
 }

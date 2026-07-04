@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Notifications;
 
 using SIMF.Common.Enums;
@@ -64,5 +65,15 @@ internal sealed class NotificationConfiguration : IEntityTypeConfiguration<Notif
             notification.UserId,
             notification.ReadAt,
         });
+
+        // D-610 (Wave B) — Notification lives on the Identity DB alongside
+        // AspNetUsers, so UserId becomes a real FK (was a bare Guid): cascade so
+        // a deleted user's notifications go with them. The (UserId, CreatedAt)
+        // index above already covers the FK. (No orphan rows exist on a fresh
+        // recreate — notifications are only created at runtime for a real user.)
+        builder.HasOne<SimfUser>()
+            .WithMany()
+            .HasForeignKey(notification => notification.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
