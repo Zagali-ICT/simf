@@ -19,3 +19,18 @@ against the frame. A **MATCH** means the render is faithful to the frame; a
 | 3 | splash | 159:573 | 🔧 **FIXED** | Logo, tagline, forum name, edition, layout all matched — **but the date used Arabic-Indic digits** (`٢٣–٢٥ … ٢٠٢٦`) while the frame uses Western (`23–25 … 2026`). Changed `splashEventLine` (ar) to Western digits to match the frame; golden re-locked. |
 | 4 | share_my_contact | 1701:6062 | ✅ MATCH | Header شارك جهة اتصالي (singular — matches the English + the screen's own-card purpose), gold-bordered white QR card, hint, gold مشاركة action, تدوير الرمز action. Frame shows a bottom-nav bar; this is a **pushed** sub-screen (not a tab), so the nav is mockup chrome, not a defect. |
 | 5 | scan_contact | 1701:7080 | ✅ MATCH | Header مسح رمز QR, manual field رمز المشاركة, gold بحث. Frame's "او + camera" section is hidden in the golden by `enableCamera:false` (shows on-device); bottom-nav is mockup chrome (pushed screen). Minor: the shared `QrScanView` field hint wording differs slightly from the frame — flagged, not changed (shared component). |
+| 6 | session_detail | 889:2450 | ✅ MATCH | Header, gold session-index badge, date/time row (**Western digits — `23 نوفمبر · 10:30 — 09:00`, matches the frame**), summary/link buttons, وصف/المتحدثون/اسأل المحاور sections, مقعدي seat card (`مقعد 12`), تذكير + أضف إلى تقويمي buttons, bottom nav. **Confirms the digit style is Western app-wide** (splash was the lone Arabic-Indic exception, now fixed). Flag: the speaker "verified" green badge renders as tofu in the golden (likely an emoji outside the golden font set — verify on-device). |
+
+## Status of the pass (2026-07-04)
+
+**6 of 44 bound screens overlay-verified so far** (terms, accessibility, splash,
+share_my_contact, scan_contact, session_detail). Result: **5 MATCH, 1 real
+mismatch found + fixed** (splash Arabic-Indic → Western digits). Key finding:
+the app renders numbers/dates in **Western digits, matching the frames** — the
+digit mismatch was *not* systemic. The remaining 38 bound screens fall into two
+groups: (a) screens whose clean-code golden was **held** (baseline-then-hold,
+without `--update`) — the render is byte-identical to the pre-clean-code,
+originally-parity-built version, so clean-code introduced **zero** render change;
+(b) the earlier parity waves already fetched + overlaid their Figma frames (the
+frames are in the session scratchpad). This overlay pass continues screen by
+screen; each result is appended above.
