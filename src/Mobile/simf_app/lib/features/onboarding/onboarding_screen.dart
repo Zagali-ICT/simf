@@ -10,8 +10,10 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_logo.dart';
+import 'widgets/onboarding_background.dart';
+import 'widgets/onboarding_dots.dart';
+import 'widgets/onboarding_top_bar.dart';
 
-const String _worldMapAsset = 'assets/images/onboarding_world_map.jpg';
 // D-373 — one looping, muted background video per step. The same hero clip
 // ships as all three placeholders; the owner replaces 02/03 in place later.
 const List<String> _videoAssets = <String>[
@@ -19,10 +21,6 @@ const List<String> _videoAssets = <String>[
   'assets/videos/onboard_02.mp4',
   'assets/videos/onboard_03.mp4',
 ];
-// The design's photo treatment on step 1: #01132D at 90% over the image.
-const Color _photoOverlay = Color(0xE601132D);
-// Pill page dots (Figma 148:22): active beige, inactive soft gold at 50%.
-const Color _dotInactive = Color(0x80D0AC77);
 
 /// Page 002 — التهيئة · Onboarding (first-run only). The KSA-Project Figma
 /// design (frames 148:22 / 159:942 / 159:1052 — D-362): a three-step static
@@ -150,71 +148,22 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           // D-373 — every step plays its looping background video under the
           // navy overlay; until the decoder is ready (or when it is
           // unavailable) the step-1 world-map photo / plain navy shows.
-          if (_videoReady && _video != null)
-            Positioned.fill(
-              child: FittedBox(
-                fit: BoxFit.cover,
-                clipBehavior: Clip.hardEdge,
-                child: SizedBox(
-                  width: _video!.value.size.width,
-                  height: _video!.value.size.height,
-                  child: VideoPlayer(_video!),
-                ),
-              ),
-            )
-          else if (_index == 0)
-            Positioned.fill(
-              child: Image.asset(_worldMapAsset, fit: BoxFit.cover),
+          Positioned.fill(
+            child: OnboardingBackground(
+              video: _video,
+              videoReady: _videoReady,
+              index: _index,
             ),
-          const Positioned.fill(
-            child: ColoredBox(color: _photoOverlay),
           ),
           SafeArea(
             child: Column(
               children: <Widget>[
-                // Top bar: back chevron (steps 2-3) at the physical left and a
-                // prominent تخطي skip at the top-trailing corner (every step but
-                // the last). Forced LTR so both sit in the same place in AR + EN
-                // and the chevron is not auto-mirrored. The fixed height keeps
-                // the layout stable when either control is absent.
-                SizedBox(
-                  height: 48,
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    child: Row(
-                      textDirection: TextDirection.ltr,
-                      children: <Widget>[
-                        if (_index > 0)
-                          IconButton(
-                            onPressed: _onBack,
-                            icon: const Icon(
-                              Icons.arrow_back_ios_new,
-                              color: Colors.white,
-                              size: 20,
-                              textDirection: TextDirection.ltr,
-                            ),
-                          )
-                        else
-                          const SizedBox(width: 48),
-                        const Spacer(),
-                        if (!isLast)
-                          TextButton(
-                            onPressed: _onSkip,
-                            style: TextButton.styleFrom(
-                              foregroundColor: SimfTokens.accent,
-                            ),
-                            child: Text(
-                              l10n.onboardingSkip,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
+                OnboardingTopBar(
+                  showBack: _index > 0,
+                  onBack: _onBack,
+                  showSkip: !isLast,
+                  onSkip: _onSkip,
+                  skipLabel: l10n.onboardingSkip,
                 ),
                 const Spacer(),
                 const SimfLogo(size: 136),
@@ -264,7 +213,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                _Dots(count: _stepCount, activeIndex: _index),
+                OnboardingDots(count: _stepCount, activeIndex: _index),
                 const Spacer(flex: 2),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -287,37 +236,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           ),
         ],
       ),
-    );
-  }
-}
-
-/// The design's pill page dots — active 32×8 beige, inactive 16×8 soft gold.
-/// Forced LTR so the active dot travels left → right exactly as in the
-/// frames (which keep that progression even in the RTL design).
-class _Dots extends StatelessWidget {
-  const _Dots({required this.count, required this.activeIndex});
-
-  final int count;
-  final int activeIndex;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      textDirection: TextDirection.ltr,
-      children: <Widget>[
-        for (int i = 0; i < count; i++)
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-            width: i == activeIndex ? 32 : 16,
-            height: 8,
-            decoration: BoxDecoration(
-              color: i == activeIndex ? SimfTokens.beigeBorder : _dotInactive,
-              borderRadius: BorderRadius.circular(999),
-            ),
-          ),
-      ],
     );
   }
 }

@@ -42,6 +42,7 @@ class SimfTokens {
   static const Color navyHeader = Color(0xFF071832); // darker header block behind the forum title (Figma 1467:12565 / 1461:12565)
   static const Color navyFill80 = Color(0xCC01132D); // navy #01132D @ 80% — reference-number card fill (registration success 505:1525)
   static const Color navyFill70 = Color(0xB301132D); // navy #01132D @ 70% — gallery video play-circle fill (Figma 949:4059)
+  static const Color navyFill90 = Color(0xE601132D); // navy #01132D @ 90% — onboarding photo overlay (Figma 148:22)
   static const Color chipBorderNavy = Color(0xFF2A4066); // muted navy border on unselected pills (interests grid, Figma 505:1222)
   static const Color tileBorderNavy = Color(0xFF253660); // contact-tile border (registration success, Figma 522:2223)
   static const Color beigeBorder = Color(0xFFC2B8A2); // "Pragraph Color" — borders + on-navy paragraph text
@@ -52,6 +53,7 @@ class SimfTokens {
   static const Color goldBorder15 = Color(0x26C9A84C); // gold 15% — delegations head-of-delegation box border (Figma 1426:10771)
   static const Color cardBeige = Color(0xFFF1ECE4); // light card surface
   static const Color goldSoft = Color(0xFFD0AC77); // secondary gold text/icons
+  static const Color goldSoftFill50 = Color(0x80D0AC77); // goldSoft @ 50% — onboarding inactive page dot (Figma 148:22)
   static const Color headlineInk = Color(0xFF111827); // headings on light surfaces
   static const Color greyText = Color(0xFF6C7278); // secondary text on light surfaces
   static const Color calendarBand = Color(0xFFE9EAEC); // #4 — light-grey agenda day-strip band
