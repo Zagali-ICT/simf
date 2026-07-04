@@ -1,0 +1,107 @@
+import 'package:flutter/material.dart';
+
+import '../../../app/theme/tokens.dart';
+import '../data/notification_models.dart';
+
+/// The solid colour-coded circular category mark. Per Figma 758:2491 the icon is
+/// styled **per notification kind** (a decorative colour + glyph), not per
+/// severity — a gold ticket for an approved account, a green check for a session
+/// reminder, a green card for a confirmed meeting, and a coral mark for a VIP
+/// invitation. Kinds the frame does not document are grouped by meaning
+/// (positive = green, alert/negative = coral, info/account = gold); any unknown /
+/// future kind falls back to its severity colour so the wire stays forward-safe.
+class NotificationCategoryIcon extends StatelessWidget {
+  const NotificationCategoryIcon({
+    required this.kind,
+    required this.severity,
+    super.key,
+  });
+
+  final String kind;
+  final NotificationSeverity severity;
+
+  @override
+  Widget build(BuildContext context) {
+    final (color, icon) = _styleFor(kind, severity);
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      child: Icon(icon, size: 20, color: Colors.white),
+    );
+  }
+
+  /// (colour, glyph) for a notification kind (`NotificationKind` enum names,
+  /// D-053). The four kinds the frame (758:2491) documents are matched exactly on
+  /// colour; their glyphs match too, except the VIP card — the mockup shows a ✕
+  /// (close-circle) on a *positive* VIP invitation, which reads as an error, so a
+  /// star is used instead (the one deliberate deviation; swap to
+  /// `Icons.cancel_rounded` to mirror the mockup literally).
+  static (Color, IconData) _styleFor(
+    String kind,
+    NotificationSeverity severity,
+  ) {
+    switch (kind) {
+      // ---- Figma 758:2491 documented kinds (exact colour) ----
+      case 'AccountApproved': // gold ticket — "your badge is ready"
+        return (SimfTokens.accent, Icons.confirmation_number_rounded);
+      case 'SessionReminder': // green check
+        return (SimfTokens.notifGreen, Icons.check_circle_rounded);
+      case 'MeetingScheduled': // green card
+        return (SimfTokens.notifGreen, Icons.credit_card_rounded);
+      case 'InvitationReceived': // coral — VIP special (star, see note)
+      case 'VipBroadcast':
+        return (SimfTokens.notifCoral, Icons.star_rounded);
+      // ---- positive / confirmations / completions (green) ----
+      case 'BookingConfirmed':
+        return (SimfTokens.notifGreen, Icons.event_available_rounded);
+      case 'AccountWelcome':
+        return (SimfTokens.notifGreen, Icons.celebration_rounded);
+      case 'AccountPasswordChanged':
+      case 'AccountPasswordResetCompleted':
+        return (SimfTokens.notifGreen, Icons.lock_reset_rounded);
+      // ---- alerts / rejections / cancellations (coral) ----
+      case 'BookingRejected':
+      case 'MeetingCancelled':
+        return (SimfTokens.notifCoral, Icons.event_busy_rounded);
+      case 'AccountRejected':
+        return (SimfTokens.notifCoral, Icons.cancel_rounded);
+      // ---- account / admin / credential info (gold) ----
+      case 'AccountProfileSubmitted':
+      case 'AdminPendingVisitor':
+      case 'AdminPendingApproval':
+        return (SimfTokens.accent, Icons.how_to_reg_rounded);
+      case 'AccountTwoFactorReset':
+        return (SimfTokens.accent, Icons.shield_rounded);
+      case 'CredentialEmailVerificationSent':
+      case 'CredentialEmailVerificationResent':
+        return (SimfTokens.accent, Icons.mark_email_unread_rounded);
+      case 'CredentialSignInOtpSent':
+        return (SimfTokens.accent, Icons.password_rounded);
+      case 'CredentialPasswordResetRequested':
+        return (SimfTokens.accent, Icons.lock_open_rounded);
+      case 'SessionRatingRequest':
+        return (SimfTokens.accent, Icons.star_outline_rounded);
+      default:
+        return _severityStyle(severity);
+    }
+  }
+
+  /// Fallback for an unknown / future kind — the original severity-driven style.
+  static (Color, IconData) _severityStyle(NotificationSeverity severity) =>
+      switch (severity) {
+        NotificationSeverity.success => (
+            SimfTokens.success,
+            Icons.check_rounded,
+          ),
+        NotificationSeverity.error => (SimfTokens.danger, Icons.close_rounded),
+        NotificationSeverity.warning => (
+            SimfTokens.accent,
+            Icons.priority_high_rounded,
+          ),
+        NotificationSeverity.info => (
+            SimfTokens.accent,
+            Icons.mail_outline_rounded,
+          ),
+      };
+}
