@@ -252,7 +252,7 @@ void main() {
         '(D-370)', (tester) async {
       await _pump(tester);
 
-      await tester.tap(find.byKey(const ValueKey<String>('authBack')));
+      await tester.tap(find.byKey(const ValueKey<String>('accountBack')));
       await tester.pumpAndSettle();
 
       expect(find.text('SIGN-IN'), findsOneWidget);
@@ -264,7 +264,7 @@ void main() {
       await _pump(tester, prefs: prefs);
 
       // Empty prefs boot the controller in Arabic; the toggle flips to EN.
-      await tester.tap(find.byKey(const ValueKey<String>('authLanguage')));
+      await tester.tap(find.byKey(const ValueKey<String>('accountLanguage')));
       await tester.pumpAndSettle();
 
       expect(prefs.getString(StorageKeys.preferredLanguage), equals('en'));

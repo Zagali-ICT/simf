@@ -9,18 +9,17 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/localization/locale_controller.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_svg_icon.dart';
+import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
 import '../../core/validation/email_validation.dart';
 import '../../core/validation/password_validation.dart';
-import '../../core/widgets/simf_field_label.dart';
-import '../../core/widgets/simf_field_style.dart';
+import '../../core/widgets/simf_auth_sweep.dart';
+import 'widgets/account_auth_prompt.dart';
+import 'widgets/account_card.dart';
+import 'widgets/account_form_field.dart';
+import 'widgets/account_header.dart';
+import 'widgets/account_top_controls.dart';
 import 'widgets/auth_chrome.dart';
-
-// The password eye glyphs from frame 168:3454 (iconamoon) — shared shape with
-// the sign-in fields.
-const String _icEyeOff = 'assets/icons/auth_eye_off.svg';
-const String _icEye = 'assets/icons/auth_eye.svg';
 
 /// Page 005 — إنشاء حساب · Sign up. The KSA-Project Figma design (node
 /// 168:3454), replacing the mockup screen at the official `/sign-up`
@@ -36,12 +35,12 @@ const String _icEye = 'assets/icons/auth_eye.svg';
 /// `confirmPassword` is checked locally for instant feedback **and** sent in the
 /// body — the server re-validates `confirmPassword == password` (D-270).
 ///
-/// Clean-code frozen (D-551, Phase 3): screen-local colour aliases dropped for
-/// `SimfTokens`; the back/globe top controls + the logo header + the gold CTA
-/// reuse the shared [AuthTopControls] / [AuthBrandHeader] / [AuthSubmitButton]
-/// (the Material back/globe/eye icons swapped to the frame's exact SVG glyphs,
-/// matching the sign-in header); the body is capped by [MaxWidthBody]. Locked by
-/// the 168:3454 golden.
+/// Clean-code (D-655): the screen composes the shared account widgets
+/// ([AccountHeader], [AccountTopControls], [AccountCard], [AccountEmailField],
+/// [AccountPasswordField], [AccountAuthPrompt]) — the same set as the sign-in
+/// sister card — instead of local `_build*` copies and hardcoded eye glyphs; the
+/// decorative sweep is the shared [SimfAuthSweep]; the API error is localized
+/// through [ApiFailureL10n]. Locked by the 168:3454 golden.
 class SignUpFormScreen extends ConsumerStatefulWidget {
   const SignUpFormScreen({super.key});
 
@@ -122,9 +121,7 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
         return;
       }
       setState(() {
-        _error = failure is NetworkUnavailable
-            ? l10n.networkErrorBody
-            : failure.source.message;
+        _error = failure.source.localizedMessage(l10n);
       });
     } finally {
       if (mounted) {
@@ -159,50 +156,32 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
       backgroundColor: SimfTokens.navySurface,
       body: Stack(
         children: <Widget>[
-          // Decorative diagonal sweep behind the header (Figma node 168:3534,
-          // rotated 28.28° — approximated as a tinted rounded rectangle).
-          Positioned(
-            top: -156,
-            left: 60,
-            child: Transform.rotate(
-              angle: 0.4936, // 28.28°
-              child: Container(
-                width: 313,
-                height: 323,
-                decoration: BoxDecoration(
-                  color: SimfTokens.surfaceTint,
-                  borderRadius: BorderRadius.circular(40),
-                ),
-              ),
-            ),
-          ),
+          const SimfAuthSweep(),
           SafeArea(
             // The scroll body paints first; the top controls are the last Stack
             // child so they sit on top and always receive their taps (the
             // MaxWidthBody-centred body fills the cross axis behind them).
             child: Stack(
               children: <Widget>[
-                Center(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 56,
-                    ),
-                    child: MaxWidthBody(
-                      maxWidth: 560,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: <Widget>[
-                          AuthBrandHeader(title: l10n.signInForumTitle),
-                          const SizedBox(height: 40),
-                          _buildCard(l10n),
-                        ],
-                      ),
+                SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 56,
+                  ),
+                  child: MaxWidthBody(
+                    maxWidth: 560,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        AccountHeader(title: l10n.signInForumTitle),
+                        const SizedBox(height: 40),
+                        _buildCard(l10n),
+                      ],
                     ),
                   ),
                 ),
-                AuthTopControls(
+                AccountTopControls(
                   onBack: _back,
                   onToggleLanguage: _toggleLanguage,
                   busy: _busy,
@@ -216,12 +195,7 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
   }
 
   Widget _buildCard(AppL10n l10n) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(
-        color: SimfTokens.cardBeige,
-        borderRadius: SimfTokens.borderRadiusSmall,
-      ),
+    return AccountCard(
       child: Form(
         key: _formKey,
         child: Column(
@@ -237,61 +211,31 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            SimfFieldLabel(l10n.emailLabel),
-            const SizedBox(height: 8),
-            TextFormField(
+            AccountEmailField(
               controller: _email,
-              keyboardType: TextInputType.emailAddress,
-              textDirection: TextDirection.ltr,
-              textAlign: TextAlign.start,
-              maxLength: 50,
+              label: l10n.emailLabel,
               enabled: !_busy,
-              style: simfInputStyle,
-              autovalidateMode: AutovalidateMode.onUserInteraction,
               validator: _validateEmail,
-              decoration: simfFieldDecoration(counterText: ''),
             ),
             const SizedBox(height: 16),
-            SimfFieldLabel(l10n.passwordLabel),
-            const SizedBox(height: 8),
-            TextFormField(
+            AccountPasswordField(
               controller: _password,
-              obscureText: _obscure,
-              maxLength: 32,
+              label: l10n.passwordLabel,
+              obscure: _obscure,
+              onToggleObscure: () => setState(() => _obscure = !_obscure),
               enabled: !_busy,
-              style: simfInputStyle,
-              autovalidateMode: AutovalidateMode.onUserInteraction,
               validator: _validatePassword,
-              decoration: simfFieldDecoration(
-                counterText: '',
-                suffixIcon: _visibilityToggle(
-                  l10n,
-                  obscured: _obscure,
-                  onPressed: () => setState(() => _obscure = !_obscure),
-                ),
-              ),
             ),
             const SizedBox(height: 16),
-            SimfFieldLabel(l10n.confirmPasswordLabel),
-            const SizedBox(height: 8),
-            TextFormField(
+            AccountPasswordField(
               controller: _confirm,
-              obscureText: _obscureConfirm,
-              maxLength: 32,
+              label: l10n.confirmPasswordLabel,
+              obscure: _obscureConfirm,
+              onToggleObscure: () =>
+                  setState(() => _obscureConfirm = !_obscureConfirm),
               enabled: !_busy,
-              style: simfInputStyle,
-              autovalidateMode: AutovalidateMode.onUserInteraction,
               validator: _validateConfirm,
-              onFieldSubmitted: (_) => unawaited(_submit()),
-              decoration: simfFieldDecoration(
-                counterText: '',
-                suffixIcon: _visibilityToggle(
-                  l10n,
-                  obscured: _obscureConfirm,
-                  onPressed: () =>
-                      setState(() => _obscureConfirm = !_obscureConfirm),
-                ),
-              ),
+              onSubmitted: (_) => unawaited(_submit()),
             ),
             if (_error != null) ...<Widget>[
               const SizedBox(height: 12),
@@ -307,55 +251,15 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
               onPressed: _busy ? null : () => unawaited(_submit()),
             ),
             const SizedBox(height: 8),
-            _buildSignInPrompt(l10n),
+            AccountAuthPrompt(
+              question: l10n.haveAccountQuestion,
+              linkLabel: l10n.signInTitle,
+              onTap: () => context.goNamed(RouteNames.signIn),
+              enabled: !_busy,
+            ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildSignInPrompt(AppL10n l10n) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        Flexible(
-          child: Text(
-            l10n.haveAccountQuestion,
-            style: const TextStyle(fontSize: 12, color: SimfTokens.greyText),
-          ),
-        ),
-        const SizedBox(width: 6),
-        Flexible(
-          child: TextButton(
-            onPressed: _busy ? null : () => context.goNamed(RouteNames.signIn),
-            style: authLinkButtonStyle(SimfTokens.linkNavy),
-            child: Text(
-              l10n.signInTitle,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// The eye-off show/hide suffix shared by the two password fields.
-  IconButton _visibilityToggle(
-    AppL10n l10n, {
-    required bool obscured,
-    required VoidCallback onPressed,
-  }) {
-    return IconButton(
-      tooltip: obscured ? l10n.showPasswordTooltip : l10n.hidePasswordTooltip,
-      icon: SimfSvgIcon(
-        obscured ? _icEyeOff : _icEye,
-        size: 16,
-        color: SimfTokens.greyText,
-      ),
-      onPressed: onPressed,
     );
   }
 }
