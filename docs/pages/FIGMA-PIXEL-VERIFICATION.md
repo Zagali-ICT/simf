@@ -96,7 +96,7 @@ the frames); the splash Arabic-Indic date was the only digit bug (fixed).
 - **speaker_profile** primary CTA floats up instead of anchoring above the nav
   (missing Spacer/Expanded) — layout, medium.
 - **more** app-version footer + outlined sign-out button styling — medium.
-- **booths** "أرشدني" button uses a location-pin; frame uses a directions arrow — low.
+- ~~**booths** "أرشدني" button uses a location-pin; frame uses a directions arrow~~ — **FALSE ALARM (corrected 2026-07-05 by live check).** Figma metadata shows the CTA icon is `iconamoon:location` (node 922:2631) — a location glyph, the SAME as the app's `nav_location.svg`. The "directions arrow" was a workflow-agent misread; the app already matches Figma. No change made (a swap would have *broken* parity). Booths also confirmed live to carry the new top-right language globe (D-652).
 - **home_guest** speakers tile uses a person glyph; frame uses a mic — medium.
 - **about** message/vision body text hue reads cool-gray vs the frame's warm
   gold/tan — needs a token check (dark-on-dark), medium.
