@@ -14,6 +14,7 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_logo.dart';
 import '../../app/widgets/simf_svg_icon.dart';
+import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
 import '../../core/validation/email_validation.dart';
 import '../../core/validation/required_validation.dart';
@@ -146,9 +147,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         return;
       }
       setState(() {
-        _error = failure is NetworkUnavailable
-            ? l10n.networkErrorBody
-            : failure.source.message;
+        _error = failure.source.localizedMessage(l10n);
         _password.clear();
       });
     } finally {
@@ -230,9 +229,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     } on AuthFailure catch (failure) {
       if (mounted) {
         setState(() {
-          _error = failure is NetworkUnavailable
-              ? l10n.networkErrorBody
-              : failure.source.message;
+          _error = failure.source.localizedMessage(l10n);
         });
       }
     } catch (_) {

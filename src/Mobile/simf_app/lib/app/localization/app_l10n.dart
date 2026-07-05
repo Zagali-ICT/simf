@@ -63,6 +63,17 @@ class AppL10n {
         'تعذر الاتصال بالخادم. تحقق من الاتصال بالإنترنت وحاول مرة أخرى.',
         'Could not reach the server. Check your internet connection and try again.',
       );
+  // Shown for a client-synthesized API failure (no backend envelope): a
+  // malformed / non-JSON response (proxy or server outage) and any unexpected
+  // client-side error — so an Arabic user never sees a raw English dev string.
+  String get errorServerUnavailable => _t(
+        'تعذّر الوصول إلى الخادم. حاول مرة أخرى لاحقًا.',
+        'Could not reach the server. Please try again later.',
+      );
+  String get errorGenericBody => _t(
+        'حدث خطأ غير متوقع. حاول مرة أخرى.',
+        'Something went wrong. Please try again.',
+      );
 
   // Splash / store-update dialog (Page 001 — Logic L-2).
   String get updateRequiredTitle => _t('تحديث مطلوب', 'Update required');
@@ -459,8 +470,7 @@ class AppL10n {
   String get hidePasswordTooltip => _t('إخفاء كلمة المرور', 'Hide password');
   // Sign in — KSA-Project design (Figma 168:2800, D-358/D-360/D-363).
   String get guestSignInLink => _t('الدخول كزائر', 'Enter as guest');
-  String get signInForumTitle =>
-      _t('الملتقى الدولى البحرى', 'International Maritime Forum');
+  String get signInForumTitle => _t('الملتقى الدولى البحرى', 'SIMF');
   String get rememberMeLabel => _t('تذكرنى', 'Remember me');
   String get orDividerLabel => _t('او', 'or');
   String get faceIdSignInButton =>
