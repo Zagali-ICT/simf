@@ -10,6 +10,7 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
+import '../../core/widgets/simf_auth_sweep.dart';
 import 'widgets/auth_chrome.dart';
 import 'widgets/otp_code_boxes.dart';
 
@@ -173,22 +174,7 @@ class _SignUpEmailVerifyScreenState
       backgroundColor: SimfTokens.navySurface,
       body: Stack(
         children: <Widget>[
-          // Decorative diagonal sweep (Figma 505:887, top-right area).
-          Positioned(
-            top: -180,
-            right: -80,
-            child: Transform.rotate(
-              angle: 0.4936, // 28.28°
-              child: Container(
-                width: 313,
-                height: 323,
-                decoration: BoxDecoration(
-                  color: SimfTokens.surfaceTint,
-                  borderRadius: BorderRadius.circular(40),
-                ),
-              ),
-            ),
-          ),
+          const SimfAuthSweep(top: -180, left: null, right: -80),
           SafeArea(
             child: Column(
               children: <Widget>[

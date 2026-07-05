@@ -16,6 +16,7 @@ import '../../core/validation/name_validation.dart';
 import '../../core/validation/phone_validation.dart';
 import '../../core/validation/plate_validation.dart';
 import '../../core/validation/saudi_id_validation.dart';
+import '../../core/widgets/simf_auth_sweep.dart';
 import '../../core/widgets/simf_field_label.dart';
 import '../../core/widgets/simf_field_style.dart';
 import '../../core/widgets/simf_labeled_text_field.dart';
@@ -641,23 +642,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     return SimfFormScaffold(
       pinnedHeader: true,
       onBack: _back,
-      // The profile screen's decorative sweep sits differently from the
-      // auth default, so it is passed in explicitly.
-      sweep: Positioned(
-        top: -180,
-        right: -40,
-        child: Transform.rotate(
-          angle: 0.4936, // 28.28°
-          child: Container(
-            width: 313,
-            height: 323,
-            decoration: BoxDecoration(
-              color: SimfTokens.surfaceTint,
-              borderRadius: BorderRadius.circular(40),
-            ),
-          ),
-        ),
-      ),
+      // The profile screen's sweep sits at the top-right, not the auth default.
+      sweep: const SimfAuthSweep(top: -180, left: null, right: -40),
       child: _buildBody(l10n),
     );
   }

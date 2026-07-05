@@ -9,6 +9,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../core/responsive/max_width_body.dart';
+import '../../core/widgets/simf_auth_sweep.dart';
 import 'data/profile_models.dart';
 import 'data/profile_repository.dart';
 import 'widgets/interest_chip.dart';
@@ -208,22 +209,7 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
       backgroundColor: SimfTokens.navySurface,
       body: Stack(
         children: <Widget>[
-          // Decorative diagonal sweep (Figma 505:1086, top-right area).
-          Positioned(
-            top: -180,
-            right: -40,
-            child: Transform.rotate(
-              angle: 0.4936, // 28.28°
-              child: Container(
-                width: 313,
-                height: 323,
-                decoration: BoxDecoration(
-                  color: SimfTokens.surfaceTint,
-                  borderRadius: BorderRadius.circular(40),
-                ),
-              ),
-            ),
-          ),
+          const SimfAuthSweep(top: -180, left: null, right: -40),
           SafeArea(
             child: Column(
               children: <Widget>[
