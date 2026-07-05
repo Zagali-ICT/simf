@@ -23,7 +23,7 @@ import 'golden_fonts.dart';
 /// Frame parity expected: the bordered search field; the grey day strip (every
 /// calendar date first→last; the selected day inverts to navy, a day with
 /// sessions is white); the selected day's own title ("تفاصيل اليوم" carries the
-/// day title) over the day banner; the الكل/ورش العمل/جلسات/احداث type tabs (الكل
+/// day title) over the day banner; the الكل/ورش العمل/جلسات type tabs (الكل
 /// active); then the المواعيد list — the first session featured (expanded with
 /// the day banner), the rest collapsed (two-line time chip + numbered gold title
 /// + grey description + gold chevron). RTL throughout.

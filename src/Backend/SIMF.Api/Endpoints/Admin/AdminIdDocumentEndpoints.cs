@@ -135,7 +135,15 @@ public abstract class AdminIdDocumentFetchEndpointBase(IUserProfileService servi
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        var image = await service.ReadIdImageForSubjectAsync(SubjectId, ExpectedKind, ct);
+        // A9 (PII) — capture the acting admin so the read is audited. The route is
+        // permission-gated, so a token without a `sub` cannot legitimately reach
+        // here; treat its absence as unauthorized rather than write a null actor.
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        var image = await service.ReadIdImageForSubjectAsync(actorId, SubjectId, ExpectedKind, ct);
         if (image is null)
         {
             await Send.NotFoundAsync(ct);

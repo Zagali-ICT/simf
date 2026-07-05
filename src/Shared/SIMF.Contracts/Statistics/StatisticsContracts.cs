@@ -24,7 +24,5 @@ public sealed record StatisticsDashboard(
     int Sponsors,
     int NewsArticles,
     int MediaItems,
-    int CommentsApproved,
-    int CommentsPending,
     int RatingsCount,
     double AverageRating);

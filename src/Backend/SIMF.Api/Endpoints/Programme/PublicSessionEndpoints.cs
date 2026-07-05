@@ -13,13 +13,14 @@ namespace SIMF.Api.Endpoints.Programme;
 
 /// <summary>D-199 (gap doc G3, Mockup page 16 "Agenda") — public,
 /// anonymous list of active programme sessions, ordered by start time.
-/// Optional <c>?day=yyyy-MM-dd</c> restricts to one calendar day (UTC)
-/// for the agenda's Day 1/2/3 segmented control. Mirrors the
+/// Optional <c>?day=yyyy-MM-dd</c> restricts to one event-local (+03:00)
+/// calendar day (A6c — matches the day-grouped agenda) for the agenda's
+/// Day 1/2/3 segmented control. Mirrors the
 /// <c>ListPublicDelegationsEndpoint</c> public-read shape.</summary>
 public sealed class ListProgrammeSessionsRequest
 {
-    /// <summary>Optional UTC calendar day filter, <c>yyyy-MM-dd</c>.
-    /// Omitted = the whole programme.</summary>
+    /// <summary>Optional event-local (+03:00) calendar day filter,
+    /// <c>yyyy-MM-dd</c>. Omitted = the whole programme.</summary>
     public string? Day { get; set; }
 }
 
@@ -31,6 +32,9 @@ public sealed class ListProgrammeSessionsEndpoint(IProgrammeSessionService servi
         Get("/app/programme/sessions");
         AllowAnonymous();
         Tags("Public");
+        // A6d — 45s output cache; varies by all query keys so each ?day= keeps a
+        // distinct entry (no-op under Testing).
+        Options(b => b.CacheOutput("PublicRead"));
     }
 
     public override async Task HandleAsync(

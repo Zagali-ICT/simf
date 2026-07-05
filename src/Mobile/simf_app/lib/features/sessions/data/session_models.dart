@@ -69,7 +69,9 @@ enum SessionSpeakerRole {
 }
 
 /// D-452 (Figma 883:2308 type tabs) — the kind of a session, driving the app's
-/// "ورش العمل / جلسات / احداث" tabs. Int on the wire (mirrors
+/// "ورش العمل / جلسات" tabs (the احداث/Event tab was removed per owner
+/// 2026-07-03; an event still decodes and shows under "الكل / All"). Int on the
+/// wire (mirrors
 /// `SIMF.Common.Enums.SessionType`); [fromJson] is tolerant (int OR name); a
 /// null / absent / unknown value decodes to null (an untyped session shows only
 /// under the "الكل / All" tab).

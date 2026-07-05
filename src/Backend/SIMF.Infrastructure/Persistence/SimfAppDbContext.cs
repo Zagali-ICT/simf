@@ -4,7 +4,6 @@ using SIMF.Application.Abstractions;
 using SIMF.Domain.AccessControl;
 using SIMF.Domain.Ai;
 using SIMF.Domain.Archive;
-using SIMF.Domain.Assets;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.BusinessMeetings;
 using SIMF.Domain.Cms;
@@ -26,7 +25,6 @@ using SIMF.Domain.Programme;
 using SIMF.Domain.PublicRelations;
 using SIMF.Domain.Regions;
 using SIMF.Domain.SeatReservations;
-using SIMF.Domain.SessionComments;
 using SIMF.Domain.SessionQuestions;
 using SIMF.Domain.Sponsors;
 
@@ -179,7 +177,7 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     public DbSet<AiInvocation> AiInvocations => Set<AiInvocation>();
 
     // D-199 — event modules (freeze lift): media coverage, exhibition,
-    // sponsors, archive editions, audience comments, ratings.
+    // sponsors, archive editions, ratings.
     public DbSet<News> News => Set<News>();
     public DbSet<MediaItem> MediaItems => Set<MediaItem>();
     public DbSet<MediaPartner> MediaPartners => Set<MediaPartner>();
@@ -191,9 +189,6 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     public DbSet<ArchiveMediaItem> ArchiveMediaItems => Set<ArchiveMediaItem>();
     public DbSet<ArchiveSessionTitle> ArchiveSessionTitles => Set<ArchiveSessionTitle>();
     public DbSet<ArchivePastSpeaker> ArchivePastSpeakers => Set<ArchivePastSpeaker>();
-    public DbSet<SessionComment> SessionComments => Set<SessionComment>();
-    // B5 — D-223: per-user likes on audience comments.
-    public DbSet<SessionCommentLike> SessionCommentLikes => Set<SessionCommentLike>();
     // Dynamic, config-driven ratings — admin defines types/groups/questions,
     // attendees submit responses with per-question answers (replaces the old
     // fixed single-row Rating model).
@@ -259,12 +254,6 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     public DbSet<BusinessMeeting> BusinessMeetings => Set<BusinessMeeting>();
     public DbSet<BusinessMeetingParticipant> BusinessMeetingParticipants =>
         Set<BusinessMeetingParticipant>();
-
-    // D-357 — unified media assets: the single upload/download store every
-    // image-bearing entity shares (speaker photo, company / sponsor /
-    // media-partner logo, archive cover, news image). Bytes live out-of-row.
-    // SUPERSEDED by StoredFile (D-568); kept until the Strategy-A cutover retires it.
-    public DbSet<Asset> Assets => Set<Asset>();
 
     // D-568 — the single, unified file store: ONE table for every uploaded or
     // linked file (avatar, ID document, VIP photo, media gallery, speaker photo /

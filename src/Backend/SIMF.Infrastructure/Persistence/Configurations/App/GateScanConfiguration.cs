@@ -14,7 +14,13 @@ internal sealed class GateScanConfiguration : IEntityTypeConfiguration<GateScan>
 {
     public void Configure(EntityTypeBuilder<GateScan> builder)
     {
-        builder.ToTable("GateScans");
+        // D-611 (Wave B) — pin the Outcome↔DenialReason invariant at the DB:
+        // a Denied scan (Outcome=1) always carries a reason code, an Allowed scan
+        // (Outcome=0) never does. Outcome/DenialReasonCode are stored as int.
+        builder.ToTable("GateScans", table => table.HasCheckConstraint(
+            "CK_GateScans_DenialPin",
+            "([Outcome] = 1 AND [DenialReasonCode] IS NOT NULL) OR " +
+            "([Outcome] = 0 AND [DenialReasonCode] IS NULL)"));
         builder.HasKey(scan => scan.Id);
         builder.Property(scan => scan.Id).ValueGeneratedOnAdd();
 
@@ -58,5 +64,14 @@ internal sealed class GateScanConfiguration : IEntityTypeConfiguration<GateScan>
             .HasDatabaseName("UX_GateScan_Idempotency")
             .IsUnique()
             .HasFilter("[IdempotencyKey] IS NOT NULL");
+
+        // D-611 (Wave B) — Gate is on the App DB; make the relationship explicit
+        // Restrict (was Cascade by convention) so deleting a Gate can't wipe its
+        // append-only scan history. The IX_GateScan_Gate_ScannedAt index (GateId
+        // leading) already covers the FK, so no duplicate index is created.
+        builder.HasOne(scan => scan.Gate)
+            .WithMany()
+            .HasForeignKey(scan => scan.GateId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

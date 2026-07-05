@@ -1,5 +1,6 @@
 // Tests: SIMF.Api.Tests/NotificationTests.cs
 using SIMF.Common;
+using SIMF.Common.Enums;
 using SIMF.Contracts.Notifications;
 
 namespace SIMF.Application.Notifications;
@@ -24,8 +25,34 @@ internal sealed class NotificationService(
             && bool.TryParse(unreadFilter, out var parsed)
             && parsed;
 
+        // A8 — optional server-side kinds filter: comma-separated NotificationKind
+        // names in Filters["kinds"] (mirrors the unreadOnly key). Unknown tokens are
+        // dropped (a newer app kind never 400s an older server); if nothing parses,
+        // the filter is treated as absent (all kinds), matching the tolerant
+        // unreadOnly parse. Enum.TryParse also accepts a raw numeric string for an
+        // UNDEFINED value (e.g. "99999"), so Enum.IsDefined gates it out — otherwise
+        // such a token would survive as a phantom kind that matches no persisted row
+        // (empty result) instead of the documented all-kinds fallback.
+        List<NotificationKind>? kinds = null;
+        if (query.Filters.TryGetValue("kinds", out var kindsFilter)
+            && !string.IsNullOrWhiteSpace(kindsFilter))
+        {
+            kinds = kindsFilter
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(token =>
+                    Enum.TryParse<NotificationKind>(token, ignoreCase: true, out var k)
+                    && Enum.IsDefined(typeof(NotificationKind), k)
+                        ? k
+                        : (NotificationKind?)null)
+                .Where(k => k.HasValue)
+                .Select(k => k!.Value)
+                .Distinct()
+                .ToList();
+            if (kinds.Count == 0) { kinds = null; }
+        }
+
         var (items, total) = await notifications.ListForUserAsync(
-            actorUserId, skip, top, unreadOnly, cancellationToken);
+            actorUserId, skip, top, unreadOnly, kinds, cancellationToken);
 
         return GridPage<NotificationDto>.Of(items, total,
             new GridQuery { Skip = skip, Top = top });

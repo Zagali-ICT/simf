@@ -12,7 +12,9 @@ internal sealed class BusinessMeetingConfiguration : IEntityTypeConfiguration<Bu
 {
     public void Configure(EntityTypeBuilder<BusinessMeeting> builder)
     {
-        builder.ToTable("BusinessMeetings");
+        // D-611 (Wave B) — a meeting must end after it starts.
+        builder.ToTable("BusinessMeetings", table => table.HasCheckConstraint(
+            "CK_BusinessMeetings_TimeWindow", "[EndUtc] > [StartUtc]"));
         builder.HasKey(m => m.Id);
 
         builder.Property(m => m.Notes).HasMaxLength(1024);

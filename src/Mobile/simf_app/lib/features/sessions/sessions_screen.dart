@@ -24,7 +24,7 @@ import 'data/sessions_repository.dart';
 /// bordered search field; the **white day strip** (the programme days — the
 /// selected day inverts to navy, weekend weekday labels render red); the
 /// selected day's **day title + logo banner** ("تفاصيل اليوم" carries the day's
-/// own title); the **type tabs** (الكل / ورش العمل / جلسات / احداث); then the
+/// own title); the **type tabs** (الكل / ورش العمل / جلسات); then the
 /// **المواعيد** list — the day's sessions filtered by the active type + the
 /// search, the **first one featured** (expanded with the day banner image), the
 /// rest collapsed (time chip + numbered title + description + chevron). Tapping a
@@ -201,7 +201,7 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
           const SizedBox(height: SimfTokens.space3),
           _DayBanner(imageUrl: dayImageUrl),
           const SizedBox(height: SimfTokens.space5),
-          // Type tabs (883:2320): الكل / ورش العمل / جلسات / احداث.
+          // Type tabs (883:2320): الكل / ورش العمل / جلسات.
           _TypeTabs(
             l10n: l10n,
             active: _typeFilter,
@@ -292,9 +292,11 @@ class _SearchField extends StatelessWidget {
   }
 }
 
-/// The four type tabs (frame node 883:2320): الكل (all) / ورش العمل (workshops)
-/// / جلسات (sessions) / احداث (events). The active tab is solid gold; the rest
-/// are bordered navy cards. الكل = no type filter. Client-side filter.
+/// The type tabs (frame node 883:2320): الكل (all) / جلسات (sessions) / ورش
+/// العمل (workshops). The active tab is solid gold; the rest are bordered navy
+/// cards. الكل = no type filter. Client-side filter. The frame also shows an
+/// احداث (Events) tab; it was removed per owner 2026-07-03 (an event-typed
+/// session shows only under الكل).
 class _TypeTabs extends StatelessWidget {
   const _TypeTabs({
     required this.l10n,
@@ -309,11 +311,12 @@ class _TypeTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Frame 883:2320 (verified against the render): الكل (All) leads at the
-    // inline-start — rightmost in RTL — then احداث · جلسات · ورش العمل. A Row
-    // lays children start→end, so All is the first entry.
+    // inline-start — rightmost in RTL — then جلسات · ورش العمل. A Row lays
+    // children start→end, so All is the first entry. The frame's احداث (Events)
+    // tab was removed per owner 2026-07-03 — an event-typed session shows only
+    // under الكل / All.
     final tabs = <(String, SessionType?)>[
       (l10n.sessionTypeAll, null),
-      (l10n.sessionTypeEvent, SessionType.event),
       (l10n.sessionTypeSession, SessionType.session),
       (l10n.sessionTypeWorkshop, SessionType.workshop),
     ];

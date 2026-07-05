@@ -37,8 +37,11 @@ internal sealed class ContactConfiguration : IEntityTypeConfiguration<Contact>
 
         // Real same-DB FK to Country. Restrict matches the soft-delete policy
         // (admins deactivate countries via IsActive=false; they never hard-delete
-        // a row a contact points at). HasForeignKey creates the FK index.
-        builder.HasOne<Country>()
+        // a row a contact points at). HasForeignKey creates the FK index. A5 —
+        // mapped through the Contact.Country nav (same FK column) so the public
+        // sponsor projection joins the country in one query; model-metadata only,
+        // no schema change.
+        builder.HasOne(contact => contact.Country)
             .WithMany()
             .HasForeignKey(contact => contact.CountryId)
             .OnDelete(DeleteBehavior.Restrict);

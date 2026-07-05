@@ -11,6 +11,8 @@ using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Programme;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Programme;
+using SIMF.Infrastructure.Persistence;
 using Xunit;
 
 namespace SIMF.Api.Tests;
@@ -57,6 +59,45 @@ public sealed class VenueMapTests : IClassFixture<SimfApiFactory>
         var nodes = (await pub.Content
             .ReadFromJsonAsync<ApiResult<List<PublicVenueMapNode>>>())!.Data!;
         Assert.Contains(nodes, n => n.Id == created.Id);
+    }
+
+    [Fact]
+    public async Task Create_with_a_kind_that_mismatches_its_reference_is_400()
+    {
+        // D-611 (Wave B) — a Hall reference requires Kind=Hall; a Zone node that
+        // also carries a HallId is rejected at the edge (400) rather than faulting
+        // CK_VenueMapNodes_KindArc (500). Seed a real Hall so the existence check
+        // passes and the kind-arc guard is what fires.
+        var token = await CreateAdministratorAndSignInAsync();
+        Guid hallId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var hall = new Hall
+            {
+                Id = Guid.NewGuid(),
+                Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+                Name = "Arc Hall",
+                NameArabic = "قاعة القوس",
+                Capacity = 100,
+                IsActive = true,
+                CreatedAt = DateTimeOffset.UtcNow,
+            };
+            db.Halls.Add(hall);
+            await db.SaveChangesAsync();
+            hallId = hall.Id;
+        }
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/venue-map",
+            new AdminCreateVenueMapNodeRequest
+            {
+                Label = "Bad", LabelArabic = "خطأ",
+                Kind = VenueMapNodeKind.Zone, X = 1, Y = 1,
+                HallId = hallId, // mismatched: a Zone node must not carry a Hall ref
+            },
+            token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]

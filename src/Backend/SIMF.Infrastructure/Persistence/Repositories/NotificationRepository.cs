@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Notifications;
+using SIMF.Common.Enums;
 using SIMF.Contracts.Notifications;
 using SIMF.Domain.Notifications;
 
@@ -17,6 +18,7 @@ internal sealed class NotificationRepository(SimfIdentityDbContext dbContext)
 
     public async Task<(IReadOnlyList<NotificationDto> Items, int Total)> ListForUserAsync(
         Guid userId, int skip, int top, bool unreadOnly,
+        IReadOnlyCollection<NotificationKind>? kinds = null,
         CancellationToken cancellationToken = default)
     {
         var rows = dbContext.Notifications
@@ -26,6 +28,13 @@ internal sealed class NotificationRepository(SimfIdentityDbContext dbContext)
         if (unreadOnly)
         {
             rows = rows.Where(row => row.ReadAt == null);
+        }
+
+        // A8 — optional kind narrow, applied BEFORE the count so Total reflects it.
+        // Kind is string-mapped (D-108), so this translates to WHERE Kind IN (...).
+        if (kinds is { Count: > 0 })
+        {
+            rows = rows.Where(row => kinds.Contains(row.Kind));
         }
 
         var total = await rows.CountAsync(cancellationToken);

@@ -169,7 +169,8 @@ void main() {
       expect(find.text('Schedule'), findsOneWidget); // المواعيد
       expect(find.text('All'), findsOneWidget); // type tabs
       expect(find.text('Workshops'), findsOneWidget);
-      expect(find.text('Events'), findsOneWidget);
+      // احداث/Events tab removed per owner 2026-07-03 — no longer rendered.
+      expect(find.text('Events'), findsNothing);
       expect(find.textContaining('Opening'), findsOneWidget);
       expect(find.textContaining('Panel'), findsOneWidget);
       // The updated rows lead with a gold calendar glyph (no numbered prefix /
@@ -216,12 +217,6 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('Diving workshop'), findsOneWidget);
       expect(find.textContaining('Gala dinner'), findsNothing);
-
-      // Events → only the event.
-      await tester.tap(find.text('Events'));
-      await tester.pumpAndSettle();
-      expect(find.textContaining('Diving workshop'), findsNothing);
-      expect(find.textContaining('Gala dinner'), findsOneWidget);
     });
 
     testWidgets('the day strip switches the selected day', (tester) async {

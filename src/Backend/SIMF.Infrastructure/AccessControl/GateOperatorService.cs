@@ -176,6 +176,9 @@ internal sealed class GateOperatorService(
                      && s.ScannedAtUtc >= fromUtc && s.ScannedAtUtc <= toUtc);
         if (gateId is { } gid) { query = query.Where(s => s.GateId == gid); }
 
+        // The Rows DISPLAY grid stays capped at the 500 most-recent scans (bounds
+        // the wire payload); the Totals + DenialBreakdown below are computed over
+        // the FULL day server-side, not from this capped list (A8).
         var rows = await query
             .OrderByDescending(s => s.ScannedAtUtc)
             .Take(500)
@@ -193,12 +196,28 @@ internal sealed class GateOperatorService(
             .Distinct().ToList();
         var displayNames = await ResolveProfileDisplayNamesAsync(profileIds, cancellationToken);
 
-        var allowed = rows.Count(r => r.Outcome == ScanOutcome.Allowed);
-        var denied = rows.Count - allowed;
-        var denialBuckets = rows
-            .Where(r => r.Outcome == ScanOutcome.Denied && r.DenialReasonCode is not null)
-            .GroupBy(r => r.DenialReasonCode!.Value)
-            .Select(g => new OperatorDenialBucket(g.Key.ToString(), g.Count()))
+        // A8 — full-day aggregates over `query` (server-side GROUP BY), NOT the
+        // Take(500) grid, so a gate with >500 scans/day reports correct Totals +
+        // buckets. Allowed + denied come from ONE GroupBy(Outcome) so both counts
+        // read the same snapshot — neither `denied` (nor allowed) can go negative
+        // under a concurrent insert the way subtracting two independently-timed
+        // counts could. EF can GROUP BY the int enum key but cannot translate
+        // enum.ToString(), so the reason code is formatted + ordered in memory.
+        var outcomeCounts = await query
+            .GroupBy(s => s.Outcome)
+            .Select(g => new { Outcome = g.Key, Count = g.Count() })
+            .ToListAsync(cancellationToken);
+        var allowed = outcomeCounts
+            .FirstOrDefault(o => o.Outcome == ScanOutcome.Allowed)?.Count ?? 0;
+        var denied = outcomeCounts
+            .FirstOrDefault(o => o.Outcome == ScanOutcome.Denied)?.Count ?? 0;
+        var denialCounts = await query
+            .Where(s => s.Outcome == ScanOutcome.Denied && s.DenialReasonCode != null)
+            .GroupBy(s => s.DenialReasonCode!.Value)
+            .Select(g => new { Code = g.Key, Count = g.Count() })
+            .ToListAsync(cancellationToken);
+        var denialBuckets = denialCounts
+            .Select(b => new OperatorDenialBucket(b.Code.ToString(), b.Count))
             .OrderByDescending(b => b.Count)
             .ToList();
 
@@ -351,6 +370,43 @@ internal sealed class GateOperatorService(
         return new GateScanResult(GateScanResultKind.Recorded, replay, true, null);
     }
 
+    /// <summary>
+    /// A4 (D-592) — stages the idempotency row for a just-processed scan, to be
+    /// committed in the same SaveChanges as the GateScan. Upserts on the composite
+    /// PK (Key, GateId): a returning badge that re-scans with the same key AFTER
+    /// the 24h replay window has a stale row that <see cref="TryReplayAsync"/>
+    /// filters out as absent, but the PK still holds it — so a blind Add would
+    /// collide (the returning-badge 500). Refreshing the stale row in place avoids
+    /// the collision. ScanId is back-filled by the caller after SaveChanges
+    /// assigns the GateScan identity.
+    /// </summary>
+    private async Task StageIdempotencyAsync(
+        string idempotencyKey, Guid gateId, string requestHash, string responseHash,
+        DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        var existing = await appDbContext.ScanIdempotencies
+            .SingleOrDefaultAsync(
+                r => r.Key == idempotencyKey && r.GateId == gateId, cancellationToken);
+        if (existing is not null)
+        {
+            existing.RequestHash = requestHash;
+            existing.ResponseHash = responseHash;
+            existing.ScanId = null;
+            existing.StoredAt = now;
+            return;
+        }
+
+        appDbContext.ScanIdempotencies.Add(new ScanIdempotency
+        {
+            Key = idempotencyKey,
+            GateId = gateId,
+            RequestHash = requestHash,
+            ResponseHash = responseHash,
+            ScanId = null,
+            StoredAt = now,
+        });
+    }
+
     private async Task<GateScanResult> RecordAllowedAsync(
         GateScanContext context, string qr, QrResolution resolution,
         ScanDirection direction, string? requestHash, string? idempotencyKey,
@@ -374,15 +430,9 @@ internal sealed class GateOperatorService(
 
         if (!string.IsNullOrWhiteSpace(idempotencyKey) && requestHash is not null)
         {
-            appDbContext.ScanIdempotencies.Add(new ScanIdempotency
-            {
-                Key = idempotencyKey,
-                GateId = context.GateId,
-                RequestHash = requestHash,
-                ResponseHash = HashResponse(response),
-                ScanId = null,  // back-filled after SaveChanges below
-                StoredAt = now,
-            });
+            await StageIdempotencyAsync(
+                idempotencyKey, context.GateId, requestHash, HashResponse(response),
+                now, cancellationToken);
         }
         await appDbContext.SaveChangesAsync(cancellationToken);
 
@@ -429,15 +479,9 @@ internal sealed class GateOperatorService(
 
         if (!string.IsNullOrWhiteSpace(idempotencyKey) && requestHash is not null)
         {
-            appDbContext.ScanIdempotencies.Add(new ScanIdempotency
-            {
-                Key = idempotencyKey,
-                GateId = context.GateId,
-                RequestHash = requestHash,
-                ResponseHash = HashResponse(response),
-                ScanId = null,
-                StoredAt = now,
-            });
+            await StageIdempotencyAsync(
+                idempotencyKey, context.GateId, requestHash, HashResponse(response),
+                now, cancellationToken);
         }
         await appDbContext.SaveChangesAsync(cancellationToken);
 

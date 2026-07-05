@@ -6,7 +6,7 @@ namespace SIMF.Infrastructure.SessionQuestions;
 /// <summary>
 /// P4.2 — D-236: the stub question AI filter shipped in this increment. It does
 /// NOT call any AI provider — it returns a deterministic "clean" advisory
-/// verdict. Mirrors <c>StubCommentAiFilter</c>: the real moderation call (via
+/// verdict. The real moderation call (via
 /// the central <c>IAiService</c> prompt catalogue) replaces THIS class behind
 /// the unchanged <see cref="IQuestionAiFilter"/> interface, with no change to
 /// the submit service or its tests.

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Abstractions;
 using SIMF.Application.Auditing;
+using SIMF.Application.Files.Abstractions;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
@@ -18,15 +19,19 @@ namespace SIMF.Infrastructure.Identity;
 /// <summary>
 /// Implements account-management use cases for the signed-in user
 /// (myComment #11): reading the profile, updating and removing the avatar.
-/// Avatars are stored on the filesystem via <see cref="IAvatarStorage"/>
-/// (D-039); the user row carries only the relative path.
+/// D-568 (Wave C S3) — avatar bytes now live in the unified <see cref="IFileService"/>
+/// store (App DB, <c>FileService.Avatar</c>, encrypted at rest). The Identity
+/// <c>SimfUser.AvatarRelativePath</c> column is repurposed as the bare-Guid pointer
+/// to that <c>StoredFile</c> (no cross-DB FK — D-157) and doubles as the "has
+/// avatar" presence sentinel that <see cref="BuildAvatarUrl"/> and the profile-
+/// completeness / male-face gates already read; so those Identity-side reads stay
+/// byte-identical and no Identity migration is needed.
 /// </summary>
 internal sealed class AccountService(
     IUserAccountRepository accounts,
-    IAvatarStorage avatarStorage,
+    IFileService fileService,
     IRecoveryCodeService recoveryCodes,
     IUserProfileService userProfiles,
-    IUploadScanner uploadScanner,
     IAuditLog auditLog,
     ILogger<AccountService> logger) : IAccountService
 {
@@ -132,16 +137,26 @@ internal sealed class AccountService(
                 "يجب أن تكون الصورة بصيغة PNG أو JPEG أو WebP.");
         }
 
-        // A6-18 (NCA) — malware-scan the untrusted image before it is stored
-        // (the avatar is a public, app-facing upload; it must run the same scan
-        // seam as the ID-document / asset / presentation paths).
-        await uploadScanner.EnsureCleanAsync(content, "avatar", cancellationToken);
+        // D-568 (S3) — store the bytes in the unified StoredFile store (App DB,
+        // owner = the user id). IFileService runs the full pipeline (malware scan,
+        // magic-byte allow-list, canonical MIME, SHA-256, encrypt-at-rest, audit);
+        // the avatar-specific 2 MB cap + MIME check above still apply first.
+        var priorFileId = ParseFileId(user.AvatarRelativePath);
+        var result = await fileService.UploadAsync(
+            new UploadFileCommand(
+                FileService.Avatar, user.Id, content, null, normalisedContentType, user.Id, FailClosed: false),
+            cancellationToken);
 
-        var relativePath = await avatarStorage.SaveAsync(
-            user.Id, content, normalisedContentType, cancellationToken);
-        user.AvatarRelativePath = relativePath;
+        user.AvatarRelativePath = result.Id.ToString();
         user.UpdatedAt = DateTimeOffset.UtcNow;
         await accounts.UpdateAsync(user).EnsureSuccessAsync();
+
+        // Retire the replaced avatar's bytes (one active per user) after the
+        // pointer is safely repointed.
+        if (priorFileId is { } old && old != result.Id)
+        {
+            await fileService.DeleteAsync(old, user.Id, cancellationToken);
+        }
 
         await auditLog.WriteAsync(
             new AuditEntry
@@ -150,7 +165,7 @@ internal sealed class AccountService(
                 Outcome = AuditOutcome.Success,
                 SubjectEmail = user.Email,
                 SubjectUserId = user.Id,
-                Detail = $"mime={normalisedContentType};size={content.Length}",
+                Detail = $"mime={normalisedContentType};size={content.Length};fileId={result.Id}",
             },
             cancellationToken);
 
@@ -166,7 +181,11 @@ internal sealed class AccountService(
 
         if (!string.IsNullOrEmpty(user.AvatarRelativePath))
         {
-            await avatarStorage.DeleteAsync(user.AvatarRelativePath, cancellationToken);
+            // D-568 (S3) — securely delete the StoredFile the pointer references.
+            if (ParseFileId(user.AvatarRelativePath) is { } fileId)
+            {
+                await fileService.DeleteAsync(fileId, user.Id, cancellationToken);
+            }
             user.AvatarRelativePath = null;
             user.UpdatedAt = DateTimeOffset.UtcNow;
             await accounts.UpdateAsync(user).EnsureSuccessAsync();
@@ -217,6 +236,12 @@ internal sealed class AccountService(
         string.IsNullOrEmpty(user.AvatarRelativePath)
             ? null
             : $"/account/api/avatar/{user.Id:N}?v={user.UpdatedAt?.UtcTicks ?? 0}";
+
+    /// <summary>D-568 (S3) — the avatar pointer (<c>AvatarRelativePath</c>) now
+    /// holds the StoredFile GUID. Returns it when parseable, else null (a legacy
+    /// non-Guid path, or unset).</summary>
+    private static Guid? ParseFileId(string? pointer) =>
+        Guid.TryParse(pointer, out var id) ? id : null;
 
     /// <summary>The primary-language default emitted for <c>users/me</c> until
     /// a per-user language preference is persisted (SIMF-MAA-001 §10).</summary>

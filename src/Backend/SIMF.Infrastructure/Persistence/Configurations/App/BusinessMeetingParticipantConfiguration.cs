@@ -14,7 +14,10 @@ internal sealed class BusinessMeetingParticipantConfiguration
 {
     public void Configure(EntityTypeBuilder<BusinessMeetingParticipant> builder)
     {
-        builder.ToTable("BusinessMeetingParticipants");
+        // D-611 (Wave B) — exactly one party column is set, matching Kind (Company=0 / Visitor=1).
+        builder.ToTable("BusinessMeetingParticipants", table => table.HasCheckConstraint(
+            "CK_BusinessMeetingParticipants_PartyXor",
+            "([Kind] = 0 AND [ExhibitorId] IS NOT NULL AND [VisitorUserId] IS NULL) OR ([Kind] = 1 AND [VisitorUserId] IS NOT NULL AND [ExhibitorId] IS NULL)"));
         builder.HasKey(p => p.Id);
 
         builder.Property(p => p.DisplayNameSnapshot).HasMaxLength(256).IsRequired();
@@ -28,5 +31,13 @@ internal sealed class BusinessMeetingParticipantConfiguration
         builder.HasIndex(p => p.BusinessMeetingId);
         builder.HasIndex(p => p.ExhibitorId);
         builder.HasIndex(p => p.VisitorUserId);
+
+        // D-611 (Wave B) — a company / a visitor appears at most once per meeting.
+        builder.HasIndex(p => new { p.BusinessMeetingId, p.ExhibitorId })
+            .IsUnique()
+            .HasFilter("[ExhibitorId] IS NOT NULL");
+        builder.HasIndex(p => new { p.BusinessMeetingId, p.VisitorUserId })
+            .IsUnique()
+            .HasFilter("[VisitorUserId] IS NOT NULL");
     }
 }

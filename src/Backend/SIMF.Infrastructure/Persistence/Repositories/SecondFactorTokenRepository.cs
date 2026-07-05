@@ -19,6 +19,28 @@ internal sealed class SecondFactorTokenRepository(SimfIdentityDbContext dbContex
         dbContext.SecondFactorTokens
             .SingleOrDefaultAsync(token => token.TokenHash == tokenHash, cancellationToken);
 
+    public async Task<bool> TryConsumeAsync(
+        Guid tokenId, DateTimeOffset now, CancellationToken cancellationToken = default)
+    {
+        // Single conditional UPDATE: only the row that is still unconsumed is
+        // touched, so exactly one concurrent caller sees affected == 1.
+        var affected = await dbContext.SecondFactorTokens
+            .Where(token => token.Id == tokenId && token.ConsumedAt == null)
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(token => token.ConsumedAt, now),
+                cancellationToken);
+        return affected == 1;
+    }
+
+    public Task IncrementAttemptCountAsync(
+        Guid tokenId, CancellationToken cancellationToken = default) =>
+        dbContext.SecondFactorTokens
+            .Where(token => token.Id == tokenId)
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(
+                    token => token.AttemptCount, token => token.AttemptCount + 1),
+                cancellationToken);
+
     public async Task UpdateAsync(SecondFactorToken token, CancellationToken cancellationToken = default)
     {
         dbContext.SecondFactorTokens.Update(token);

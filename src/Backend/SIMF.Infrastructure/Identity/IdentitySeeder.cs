@@ -9,14 +9,12 @@ using SIMF.Application.Auditing;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
+using SIMF.Common.Enums;
 using SIMF.Common.Options;
-using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Organization;
 using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
-
-using SIMF.Common.Enums;
 
 namespace SIMF.Infrastructure.Identity;
 
@@ -84,16 +82,16 @@ public sealed class IdentitySeeder(
                 permission.DisplayName, permission.BaselineRoles, cancellationToken);
         }
 
-        var admin = await accounts.FindByEmailAsync(settings.Email)
+        var admin = await accounts.FindByEmailAsync(settings.Email, cancellationToken)
             ?? await CreateSuperAdminAsync(settings, cancellationToken);
         if (admin is null)
         {
             return;
         }
 
-        if (!await accounts.IsInRoleAsync(admin, AdministratorRole))
+        if (!await accounts.IsInRoleAsync(admin, AdministratorRole, cancellationToken))
         {
-            await accounts.AddToRoleAsync(admin, AdministratorRole).EnsureSuccessAsync();
+            await accounts.AddToRoleAsync(admin, AdministratorRole, cancellationToken).EnsureSuccessAsync();
         }
 
         // P7 — every seeded admin must end up with UserType = Admin. This
@@ -221,6 +219,17 @@ public sealed class IdentitySeeder(
         await EnsureProfileTypeAsync(
             "VIP", "كبار الشخصيات", "#0E7490", // deep teal
             isVisitor: true, MobileAppRole.None, cancellationToken);
+
+        // D-611 (Wave B) — the VVIP + VIP audience tiers may book VIP
+        // speaker-meeting slots. AllowsVipMeetingSlots defaults false for every
+        // other type; flip these two after seeding (idempotent — runs each boot).
+        // This is the source of truth the meeting-request service now reads,
+        // replacing its former "profile-type Name contains 'VIP'" substring test.
+        await appDbContext.ProfileTypes
+            .Where(profileType => profileType.Name == "VVIP" || profileType.Name == "VIP")
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(profileType => profileType.AllowsVipMeetingSlots, true),
+                cancellationToken);
 
         // D-585 — seed one demo user account per user type / profile type
         // (an extra Admin + a VVIP/VIP/Normal visitor + a Staff/Moderator/
@@ -534,7 +543,7 @@ public sealed class IdentitySeeder(
 
         if (!string.IsNullOrWhiteSpace(settings.TotpSecret))
         {
-            await accounts.SetAuthenticationTokenAsync( admin, AuthenticatorKeyProvider, AuthenticatorKeyTokenName, settings.TotpSecret).EnsureSuccessAsync();
+            await accounts.SetAuthenticationTokenAsync(admin, AuthenticatorKeyProvider, AuthenticatorKeyTokenName, settings.TotpSecret).EnsureSuccessAsync();
             await accounts.SetTwoFactorEnabledAsync(admin, true).EnsureSuccessAsync();
         }
 

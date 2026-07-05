@@ -7,7 +7,7 @@ namespace SIMF.Application.Networking.Abstractions;
 /// (used by the mobile networking screen): a caller requests a connection,
 /// the target accepts, and either party can remove it. There is no admin/CP
 /// surface, so the endpoints carry no permission code (RequireApprovedAccount
-/// only), mirroring SessionComment submit / MeetPeopleLikeYou.
+/// only), mirroring MeetPeopleLikeYou.
 /// </summary>
 public interface INetworkingService
 {

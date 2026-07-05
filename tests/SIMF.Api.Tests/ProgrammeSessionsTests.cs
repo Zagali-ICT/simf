@@ -58,6 +58,58 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task List_flags_sessions_with_a_published_summary()
+    {
+        // A8 (D-237) — HasPublishedSummary is true only for a session whose محضر is
+        // ACTIVE and carries a PublishedAt stamp; false for no summary, a draft
+        // (PublishedAt == null), or a soft-deleted (IsActive == false) summary.
+        var admin = await CreateAdminAsync();
+        var hallId = await CreateHallAsync(admin);
+        var speakerId = await CreateSpeakerAsync(admin);
+        var day = DateTimeOffset.UtcNow.AddDays(12).Date;
+
+        var withPublished = await CreateSessionAsync(admin, hallId, speakerId,
+            Array.Empty<Guid>(), day.AddHours(9), day.AddHours(10));
+        var withDraft = await CreateSessionAsync(admin, hallId, speakerId,
+            Array.Empty<Guid>(), day.AddHours(11), day.AddHours(12));
+        var withInactive = await CreateSessionAsync(admin, hallId, speakerId,
+            Array.Empty<Guid>(), day.AddHours(13), day.AddHours(14));
+        var withNone = await CreateSessionAsync(admin, hallId, speakerId,
+            Array.Empty<Guid>(), day.AddHours(15), day.AddHours(16));
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            SessionSummary Summary(Guid sessionId, bool published, bool active) => new()
+            {
+                Id = Guid.NewGuid(),
+                SessionId = sessionId,
+                KeyPoints = "kp", KeyPointsArabic = "kp",
+                Recommendations = "rec", RecommendationsArabic = "rec",
+                Speakers = "spk", SpeakersArabic = "spk",
+                FullText = "full", FullTextArabic = "full",
+                IsActive = active,
+                PublishedAt = published ? DateTimeOffset.UtcNow : null,
+                CreatedAt = DateTimeOffset.UtcNow,
+            };
+            db.SessionSummaries.AddRange(
+                Summary(withPublished.Id, published: true, active: true),
+                Summary(withDraft.Id, published: false, active: true),
+                Summary(withInactive.Id, published: true, active: false));
+            await db.SaveChangesAsync();
+        }
+
+        var list = await _client.GetAsync("/api/v1/app/programme/sessions");
+        var items = (await list.Content
+            .ReadFromJsonAsync<ApiResult<PublicSessions>>())!.Data!.Items;
+
+        Assert.True(items.Single(i => i.Id == withPublished.Id).HasPublishedSummary);
+        Assert.False(items.Single(i => i.Id == withDraft.Id).HasPublishedSummary);
+        Assert.False(items.Single(i => i.Id == withInactive.Id).HasPublishedSummary);
+        Assert.False(items.Single(i => i.Id == withNone.Id).HasPublishedSummary);
+    }
+
+    [Fact]
     public async Task Public_list_item_carries_the_body_and_speaker_cards()
     {
         // D-252 (Mockup screen 16/17): the cached agenda payload also drives the
@@ -167,6 +219,65 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Detail_with_multiple_themes_and_speakers_returns_each_once()
+    {
+        // A6 — the detail read projects themes + speakers as independent per-
+        // collection sub-selects (was a multi-Include of two SIBLING collections,
+        // which JOINed into one rowset). Seeding a session with 2 themes AND 3
+        // speakers proves the collections are NOT cross-multiplied: a cartesian
+        // would return 2×3 = 6 rows of each with duplicated ids.
+        var admin = await CreateAdminAsync();
+        var hallId = await CreateHallAsync(admin);
+        var speaker1 = await CreateSpeakerAsync(admin);
+        var speaker2 = await CreateSpeakerAsync(admin);
+        var speaker3 = await CreateSpeakerAsync(admin);
+        var theme1 = await CreateThemeAsync(admin);
+        var theme2 = await CreateThemeAsync(admin);
+        var start = DateTimeOffset.UtcNow.AddDays(7).Date.AddHours(9);
+
+        var create = await PostAuthAsync("/api/v1/admin/sessions",
+            new AdminCreateSessionRequest
+            {
+                Code = $"S{Guid.NewGuid():N}".Substring(0, 8),
+                Title = "Panel Session",
+                TitleArabic = "جلسة حوارية",
+                Description = "A multi-speaker panel.",
+                DescriptionArabic = "جلسة بعدة متحدثين.",
+                HallId = hallId,
+                StartUtc = start,
+                EndUtc = start.AddHours(1),
+                Speakers = new List<AdminSessionSpeakerEntry>
+                {
+                    new(speaker1, "", "", 0),
+                    new(speaker2, "", "", 1),
+                    new(speaker3, "", "", 2),
+                },
+                ThemeIds = new List<Guid> { theme1, theme2 },
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+        var created = (await create.Content
+            .ReadFromJsonAsync<ApiResult<AdminSessionDetail>>())!.Data!;
+
+        var detail = await _client.GetAsync(
+            $"/api/v1/app/programme/sessions/{created.Id}");
+        Assert.Equal(HttpStatusCode.OK, detail.StatusCode);
+        var body = (await detail.Content
+            .ReadFromJsonAsync<ApiResult<PublicSessionDetail>>())!.Data!;
+
+        // Each collection appears exactly once per row — no cartesian blow-up.
+        Assert.Equal(3, body.Speakers.Count);
+        Assert.Equal(3, body.Speakers.Select(s => s.Id).Distinct().Count());
+        // Speakers stay ordered by their SessionSpeaker.DisplayOrder (0,1,2).
+        Assert.Equal(
+            new[] { speaker1, speaker2, speaker3 },
+            body.Speakers.Select(s => s.Id).ToArray());
+        Assert.Equal(2, body.Themes.Count);
+        Assert.Equal(2, body.Themes.Select(t => t.Id).Distinct().Count());
+        Assert.Contains(theme1, body.Themes.Select(t => t.Id));
+        Assert.Contains(theme2, body.Themes.Select(t => t.Id));
+    }
+
+    [Fact]
     public async Task Public_list_is_ordered_by_start_time()
     {
         var admin = await CreateAdminAsync();
@@ -191,8 +302,12 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Day_filter_restricts_to_that_utc_calendar_day()
+    public async Task Day_filter_restricts_to_that_event_local_calendar_day()
     {
+        // A6c — the ?day= window is the event-local (+03:00) calendar day. These
+        // 09:00-UTC sessions (12:00 KSA) sit squarely inside their day under either
+        // offset, so this pins the basic same-day-in / next-day-out behaviour; the
+        // boundary case is covered by Day_filter_uses_the_event_local_day_boundary.
         var admin = await CreateAdminAsync();
         var hallId = await CreateHallAsync(admin);
         var speakerId = await CreateSpeakerAsync(admin);
@@ -213,6 +328,41 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
             .ReadFromJsonAsync<ApiResult<PublicSessions>>())!.Data!;
         Assert.Contains(body.Items, i => i.Id == onDayOne.Id);
         Assert.DoesNotContain(body.Items, i => i.Id == onDayTwo.Id);
+    }
+
+    [Fact]
+    public async Task Day_filter_uses_the_event_local_day_boundary()
+    {
+        // A6c — a session at 01:00 KSA (= 22:00 UTC the PREVIOUS calendar date)
+        // belongs to its KSA day, matching ProgrammeDay.Date and the day-grouped
+        // agenda (ListDaysAsync). ?day={KSA date} must INCLUDE it, and ?day={the
+        // prior UTC date} must EXCLUDE it. Under the old UTC-midnight window this
+        // session filed under the prior UTC day, so this pins the +03:00 boundary.
+        var admin = await CreateAdminAsync();
+        var hallId = await CreateHallAsync(admin);
+        var speakerId = await CreateSpeakerAsync(admin);
+
+        // Treat this date as the KSA calendar day; 01:00 KSA on it is 22:00 UTC on
+        // the prior date.
+        var ksaDay = DateTimeOffset.UtcNow.AddDays(30).Date;
+        var startUtc = new DateTimeOffset(ksaDay, TimeSpan.FromHours(3)).AddHours(1);
+
+        var created = await CreateSessionAsync(admin, hallId, speakerId,
+            Array.Empty<Guid>(), startUtc, startUtc.AddHours(1));
+
+        var ksaDateStr = ksaDay.ToString("yyyy-MM-dd");
+        var priorUtcDateStr = startUtc.UtcDateTime.Date.ToString("yyyy-MM-dd");
+        Assert.NotEqual(ksaDateStr, priorUtcDateStr); // the instant straddles midnight
+
+        var underKsaDay = (await (await _client.GetAsync(
+                $"/api/v1/app/programme/sessions?day={ksaDateStr}")).Content
+            .ReadFromJsonAsync<ApiResult<PublicSessions>>())!.Data!;
+        Assert.Contains(underKsaDay.Items, i => i.Id == created.Id);
+
+        var underPriorUtcDay = (await (await _client.GetAsync(
+                $"/api/v1/app/programme/sessions?day={priorUtcDateStr}")).Content
+            .ReadFromJsonAsync<ApiResult<PublicSessions>>())!.Data!;
+        Assert.DoesNotContain(underPriorUtcDay.Items, i => i.Id == created.Id);
     }
 
     [Fact]

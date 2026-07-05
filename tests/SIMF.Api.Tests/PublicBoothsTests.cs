@@ -282,6 +282,81 @@ public sealed class PublicBoothsTests : IClassFixture<SimfApiFactory>
         Assert.Equal("Premium", detail.TierName);
     }
 
+    // A5 — a booth linked to an officer Contact resolves the officer
+    // name/phone/email from the shared Contact directory record (Contact-first,
+    // D-260), overriding the legacy inline columns; an unlinked booth falls back
+    // to those columns. Covers the nav-based projection's officer resolution.
+    [Fact]
+    public async Task Public_booth_resolves_the_officer_from_the_linked_contact()
+    {
+        var officerContactId = Guid.NewGuid();
+        var boothLinked = Guid.NewGuid();
+        var boothInline = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        var codeLinked = NewCode();
+        var codeInline = NewCode();
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            db.Set<Contact>().Add(new Contact
+            {
+                Id = officerContactId,
+                NameArabic = "ضابط الجناح",
+                PhonePrimary = "+966500000000",
+                Email = "officer@simf.test",
+                IsActive = true,
+                CreatedAt = now,
+            });
+            // Linked booth: the officer is resolved from the Contact, overriding
+            // the legacy inline columns.
+            db.Set<Booth>().Add(new Booth
+            {
+                Id = boothLinked,
+                Code = codeLinked,
+                Name = "Linked", NameArabic = "مرتبط",
+                ContactId = officerContactId,
+                OfficerName = "Legacy Officer",
+                OfficerPhone = "+000",
+                OfficerEmail = "legacy@simf.test",
+                IsActive = true,
+                CreatedAt = now,
+            });
+            // Unlinked booth: the officer falls back to the legacy inline columns.
+            db.Set<Booth>().Add(new Booth
+            {
+                Id = boothInline,
+                Code = codeInline,
+                Name = "Inline", NameArabic = "سطري",
+                OfficerName = "Inline Officer",
+                OfficerPhone = "+111",
+                OfficerEmail = "inline@simf.test",
+                IsActive = true,
+                CreatedAt = now,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var rows = (await (await _client.GetAsync("/api/v1/app/booths"))
+            .Content.ReadFromJsonAsync<ApiResult<IReadOnlyList<PublicBoothSummary>>>())!.Data!;
+
+        var linked = rows.Single(b => b.Id == boothLinked);
+        Assert.Equal("ضابط الجناح", linked.OfficerName);
+        Assert.Equal("+966500000000", linked.OfficerPhone);
+        Assert.Equal("officer@simf.test", linked.OfficerEmail);
+
+        var inline = rows.Single(b => b.Id == boothInline);
+        Assert.Equal("Inline Officer", inline.OfficerName);
+        Assert.Equal("+111", inline.OfficerPhone);
+        Assert.Equal("inline@simf.test", inline.OfficerEmail);
+
+        var detail = (await (await _client.GetAsync($"/api/v1/app/booths/{boothLinked}"))
+            .Content.ReadFromJsonAsync<ApiResult<PublicBoothDetail>>())!.Data!;
+        Assert.Equal("ضابط الجناح", detail.OfficerName);
+        Assert.Equal("+966500000000", detail.OfficerPhone);
+        Assert.Equal("officer@simf.test", detail.OfficerEmail);
+    }
+
     [Fact]
     public async Task Public_detail_unknown_id_returns_404()
     {

@@ -45,6 +45,25 @@ internal sealed class DelegationMeetingRequestService(
                 $"يجب أن يتراوح عدد الحضور بين 1 و{MaxAttendees}.");
         }
 
+        // A1 — validate the optional slot pair (mirror the speaker flow): if either
+        // end is supplied, require both and end > start, so an invalid pair cannot
+        // be persisted silently.
+        DateTimeOffset? slotStart = null;
+        DateTimeOffset? slotEnd = null;
+        if (request.SlotStartUtc is not null || request.SlotEndUtc is not null)
+        {
+            if (request.SlotStartUtc is not { } pickedStart
+                || request.SlotEndUtc is not { } pickedEnd
+                || pickedEnd <= pickedStart)
+            {
+                throw new ApiException(ErrorCodes.DelegationMeetingRequestInvalid, 400,
+                    "A valid meeting slot (start and end) is required.",
+                    "يلزم اختيار فترة اجتماع صحيحة (بداية ونهاية).");
+            }
+            slotStart = pickedStart;
+            slotEnd = pickedEnd;
+        }
+
         // The requester must be a delegate; their nationality is the requesting country.
         var profile = await appDbContext.UserProfiles.AsNoTracking()
             .Where(p => p.UserId == requesterUserId)
@@ -85,6 +104,19 @@ internal sealed class DelegationMeetingRequestService(
                 "لا يمكن للوفد طلب اجتماع مع نفسه.");
         }
 
+        // A1 — one open request per (requester, target delegation): reject a
+        // duplicate Pending submission rather than flooding the review queue.
+        var hasOpenRequest = await appDbContext.DelegationMeetingRequests.AsNoTracking()
+            .AnyAsync(r => r.RequestedByUserId == requesterUserId
+                && r.TargetCountryId == targetCountry.Id
+                && r.Status == MeetingRequestStatus.Pending, cancellationToken);
+        if (hasOpenRequest)
+        {
+            throw new ApiException(ErrorCodes.AppRequestDuplicatePending, 409,
+                "You already have a pending meeting request for this delegation.",
+                "لديك بالفعل طلب اجتماع قيد المراجعة لهذا الوفد.");
+        }
+
         var now = timeProvider.GetUtcNow();
         var req = new DelegationMeetingRequest
         {
@@ -94,8 +126,8 @@ internal sealed class DelegationMeetingRequestService(
             TargetCountryId = targetCountry.Id,
             AttendeeCount = request.AttendeeCount,
             Subject = subject,
-            SlotStartUtc = request.SlotStartUtc,
-            SlotEndUtc = request.SlotEndUtc,
+            SlotStartUtc = slotStart,
+            SlotEndUtc = slotEnd,
             Status = MeetingRequestStatus.Pending,
             CreatedAt = now,
         };
@@ -180,7 +212,7 @@ internal sealed class DelegationMeetingRequestService(
         Guid actorUserId, Guid id, RespondToDelegationMeetingRequestRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (request.Status == MeetingRequestStatus.Pending)
+        if (request.Status is not (MeetingRequestStatus.Accepted or MeetingRequestStatus.Rejected))
         {
             throw new ApiException(ErrorCodes.DelegationMeetingRequestInvalid, 400,
                 "Response status must be Accepted or Rejected.",
@@ -191,6 +223,15 @@ internal sealed class DelegationMeetingRequestService(
             ?? throw new ApiException(ErrorCodes.DelegationMeetingRequestNotFound, 404,
                 "Delegation meeting request not found.",
                 "لم يتم العثور على طلب اجتماع الوفد.");
+
+        // A1 — only a Pending request may be decided (guards double-response and
+        // overwriting a prior decision).
+        if (req.Status != MeetingRequestStatus.Pending)
+        {
+            throw new ApiException(ErrorCodes.AppRequestAlreadyResponded, 409,
+                "This meeting request has already been responded to.",
+                "تمت معالجة طلب المقابلة هذا بالفعل.");
+        }
 
         var now = timeProvider.GetUtcNow();
         req.Status = request.Status;

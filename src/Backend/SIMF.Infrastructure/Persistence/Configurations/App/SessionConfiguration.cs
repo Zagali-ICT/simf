@@ -11,7 +11,9 @@ internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
 {
     public void Configure(EntityTypeBuilder<Session> builder)
     {
-        builder.ToTable("Sessions");
+        // D-611 (Wave B) — a session must end after it starts.
+        builder.ToTable("Sessions", table => table.HasCheckConstraint(
+            "CK_Sessions_TimeWindow", "[EndUtc] > [StartUtc]"));
         builder.HasKey(s => s.Id);
 
         builder.Property(s => s.Code).HasMaxLength(16).IsRequired();
@@ -75,7 +77,10 @@ internal sealed class SessionSummaryConfiguration
 {
     public void Configure(EntityTypeBuilder<SessionSummary> builder)
     {
-        builder.ToTable("SessionSummaries");
+        // D-611 (Wave B) — approval cannot precede review submission.
+        builder.ToTable("SessionSummaries", table => table.HasCheckConstraint(
+            "CK_SessionSummaries_ReviewOrder",
+            "[ApprovedAt] IS NULL OR ([ReviewSubmittedAt] IS NOT NULL AND [ApprovedAt] >= [ReviewSubmittedAt])"));
         builder.HasKey(s => s.Id);
 
         builder.Property(s => s.KeyPoints).HasMaxLength(4000).IsRequired();

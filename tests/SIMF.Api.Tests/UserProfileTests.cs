@@ -623,6 +623,36 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Profile_completion_replaces_the_email_placeholder_display_name()
+    {
+        // D-609 (A9c follow-up) — a self-registered account's DisplayName is seeded
+        // to its email; completing the profile with a real name replaces it, so the
+        // moderator queue + every DisplayName surface stops showing the email.
+        var (token, userId, email) = await CreateApprovedVisitorAsync(displayName: null); // == email
+        Assert.Equal(email, await GetDisplayNameAsync(userId)); // starts as the placeholder
+
+        var request = await ValidSaudiRequestAsync(englishName: "Real English Name");
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        Assert.Equal("Real English Name", await GetDisplayNameAsync(userId));
+    }
+
+    [Fact]
+    public async Task Profile_completion_preserves_an_admin_customised_display_name()
+    {
+        // D-609 — the rename overwrites ONLY the email placeholder; an admin-set
+        // DisplayName (!= email) is authoritative and must survive a profile save.
+        var (token, userId, _) = await CreateApprovedVisitorAsync(displayName: "Admin Chosen Name");
+
+        var request = await ValidSaudiRequestAsync(englishName: "Real English Name");
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        Assert.Equal("Admin Chosen Name", await GetDisplayNameAsync(userId));
+    }
+
     /// <summary>Finds-or-creates an active profile type by name directly on
     /// the App DB (the C5 lock tests need specific audience/partner rows).</summary>
     private async Task<Guid> SeedProfileTypeAsync(
@@ -725,12 +755,12 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Encrypted_file_on_disk_does_not_contain_the_plaintext_bytes()
+    public async Task ID_image_is_stored_encrypted_at_rest_in_the_file_store()
     {
         var token = await CreateUserAndSignInAsync();
         var actorId = await GetActorIdAsync(token);
 
-        // Use a distinctive plaintext we can grep the file bytes for.
+        // Use a distinctive plaintext we can grep the stored bytes for.
         var marker = System.Text.Encoding.UTF8.GetBytes("SIMF-PLAINTEXT-MARKER-2026");
         var image = new byte[3 + marker.Length];
         image[0] = 0xFF; image[1] = 0xD8; image[2] = 0xFF;     // JPEG magic
@@ -748,13 +778,19 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         var uploadResponse = await _client.SendAsync(upload);
         Assert.Equal(HttpStatusCode.OK, uploadResponse.StatusCode);
 
-        // Find the file on disk and confirm the marker is NOT there.
-        var filePath = System.IO.Path.Combine(
-            _factory.UserIdDocumentStorageDirectory, $"{actorId:N}.bin");
-        Assert.True(File.Exists(filePath), $"Encrypted file expected at {filePath}");
-        var diskBytes = await File.ReadAllBytesAsync(filePath);
-        Assert.DoesNotContain(IndexOfSequence(diskBytes, marker),
-            new[] { 0 });  // -1 means not found
+        // D-568 (S5) — the ID document now lives in the unified StoredFile store as a
+        // Confidential, encrypted-at-rest file. Read the RAW stored bytes (skip the
+        // decrypt) and confirm the plaintext marker never sits on disk.
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var stored = await db.StoredFiles.SingleAsync(
+            f => f.Service == FileService.IdDocument && f.OwnerEntityId == actorId && f.IsActive);
+        Assert.True(stored.IsEncrypted);
+        var storage = scope.ServiceProvider
+            .GetRequiredService<SIMF.Application.Files.Abstractions.IFileStorageProvider>();
+        var rawOnDisk = await storage.ReadAsync(stored.StorageKey!, encrypted: false, CancellationToken.None);
+        Assert.NotNull(rawOnDisk);
+        Assert.Equal(-1, IndexOfSequence(rawOnDisk!, marker));
     }
 
     // -- P9 interests ----------------------------------------------------------
@@ -1170,6 +1206,95 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    // -- D-611 (Wave B): المنطقة (Region) — the schema-ready column is now wired
+    // through the self-service upsert (was persisted nowhere before). ---------
+
+    [Fact]
+    public async Task Upsert_with_RegionId_round_trips_to_GET()
+    {
+        var (token, _) = await CreateEmailVerifiedVisitorAndSignInAsync();
+        var regionId = await SeedRegionAsync();
+
+        // Male profile needs the face photo on the server first (two-photo split).
+        await UploadValidAvatarAsync(token);
+
+        var request = await ValidSaudiRequestAsync();
+        request.RegionId = regionId;
+        request.Gender = Gender.Male;
+
+        var save = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, save.StatusCode);
+        var saved = (await save.Content
+            .ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!.Data!;
+        Assert.Equal(regionId, saved.RegionId);
+
+        var get = await GetAuthAsync(Path, token);
+        var fetched = (await get.Content
+            .ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!.Data!;
+        Assert.Equal(regionId, fetched.RegionId);
+    }
+
+    [Fact]
+    public async Task Upsert_without_RegionId_is_allowed_and_stays_null()
+    {
+        // المنطقة is optional (unlike الجهة) — a save that omits it succeeds.
+        var (token, _) = await CreateEmailVerifiedVisitorAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.RegionId = null;
+
+        var save = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, save.StatusCode);
+        var saved = (await save.Content
+            .ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!.Data!;
+        Assert.Null(saved.RegionId);
+    }
+
+    [Fact]
+    public async Task Upsert_with_unknown_RegionId_returns_400()
+    {
+        var (token, _) = await CreateEmailVerifiedVisitorAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.RegionId = Guid.NewGuid();   // never seeded
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.RegionInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Upsert_with_inactive_RegionId_returns_400()
+    {
+        var (token, _) = await CreateEmailVerifiedVisitorAndSignInAsync();
+        var dormantId = await SeedRegionAsync(isActive: false);
+
+        var request = await ValidSaudiRequestAsync();
+        request.RegionId = dormantId;
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.RegionInvalid, body.Error!.Code);
+    }
+
+    private async Task<Guid> SeedRegionAsync(bool isActive = true)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var row = new SIMF.Domain.Regions.Region
+        {
+            Id = Guid.NewGuid(),
+            Code = "R-" + Guid.NewGuid().ToString("N")[..8],
+            NameArabic = $"منطقة اختبار {Guid.NewGuid():N}",
+            Name = $"Test Region {Guid.NewGuid():N}",
+            IsActive = isActive,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        appDb.Regions.Add(row);
+        await appDb.SaveChangesAsync();
+        return row.Id;
+    }
+
     private async Task<Guid> SeedOrganisationAsync(bool isActive = true)
     {
         using var scope = _factory.Services.CreateScope();
@@ -1345,6 +1470,57 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
             Convert.FromBase64String(padded.Replace('-', '+').Replace('_', '/')));
         using var doc = System.Text.Json.JsonDocument.Parse(json);
         return Guid.Parse(doc.RootElement.GetProperty("sub").GetString()!);
+    }
+
+    // D-609 — an APPROVED visitor whose DisplayName is either the email placeholder
+    // (displayName == null → seeded to Email, as RegistrationService does) or an
+    // explicit admin-set name. Uploads the ID document + an avatar so the profile
+    // upsert clears both the ID and the male-photo gate regardless of gender.
+    private async Task<(string Token, Guid UserId, string Email)> CreateApprovedVisitorAsync(
+        string? displayName)
+    {
+        var email = $"up-rename-{Guid.NewGuid():N}@simf.test";
+        Guid userId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            var user = new SimfUser
+            {
+                UserName = email,
+                Email = email,
+                EmailConfirmed = true,
+                DisplayName = displayName ?? email,
+                AccountState = AccountState.Approved,
+            };
+            await users.CreateAsync(user, AuthFlow.Password);
+            userId = user.Id;
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            appDb.UserProfiles.Add(new SIMF.Domain.Profiles.UserProfile
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                QrId = $"TEST{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}",
+                CreatedAt = DateTimeOffset.UtcNow,
+            });
+            await appDb.SaveChangesAsync();
+        }
+
+        var sign = await _client.PostAsJsonAsync(
+            "/api/v1/app/auth/sign-in",
+            new SignInRequest { Email = email, Password = AuthFlow.Password });
+        var token = (await sign.Content
+            .ReadFromJsonAsync<ApiResult<SignInResponse>>())!.Data!.Tokens!.AccessToken;
+        await UploadValidIdImageAsync(token);
+        await UploadValidAvatarAsync(token);
+        return (token, userId, email);
+    }
+
+    private async Task<string?> GetDisplayNameAsync(Guid userId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var user = await users.FindByIdAsync(userId.ToString());
+        return user?.DisplayName;
     }
 
     private async Task<HttpResponseMessage> GetAuthAsync(string url, string token)

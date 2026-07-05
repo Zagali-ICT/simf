@@ -113,6 +113,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("GateId", "IsActive");
 
+                    b.HasIndex("GateId", "UserId")
+                        .IsUnique()
+                        .HasFilter("[IsActive] = 1");
+
                     b.HasIndex("UserId", "IsActive");
 
                     b.ToTable("GateAssignments", (string)null);
@@ -222,7 +226,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasDatabaseName("IX_GateScan_Gate_UserProfile_5sWindow")
                         .HasFilter("[UserProfileId] IS NOT NULL");
 
-                    b.ToTable("GateScans", (string)null);
+                    b.ToTable("GateScans", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_GateScans_DenialPin", "([Outcome] = 1 AND [DenialReasonCode] IS NOT NULL) OR ([Outcome] = 0 AND [DenialReasonCode] IS NULL)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.AccessControl.ScanIdempotency", b =>
@@ -651,72 +658,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.ToTable("ArchiveSessionTitles", (string)null);
                 });
 
-            modelBuilder.Entity("SIMF.Domain.Assets.Asset", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("Category")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ContentType")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("ExternalUrl")
-                        .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("Kind")
-                        .HasColumnType("int");
-
-                    b.Property<string>("OriginalFileName")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<Guid>("OwnerId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<long?>("SizeBytes")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("SourceType")
-                        .HasColumnType("int");
-
-                    b.Property<string>("StoragePath")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Category", "IsActive");
-
-                    b.HasIndex("Category", "OwnerId")
-                        .IsUnique()
-                        .HasFilter("[IsActive] = 1");
-
-                    b.ToTable("Assets", (string)null);
-                });
-
             modelBuilder.Entity("SIMF.Domain.Auditing.OperationLogEntry", b =>
                 {
                     b.Property<Guid>("Id")
@@ -779,6 +720,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasIndex("SubjectEmail");
 
                     b.HasIndex("TimestampUtc");
+
+                    b.HasIndex("ActorUserId", "TimestampUtc");
 
                     b.HasIndex("EventType", "TimestampUtc");
 
@@ -898,7 +841,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("Status", "StartUtc");
 
-                    b.ToTable("BusinessMeetings", (string)null);
+                    b.ToTable("BusinessMeetings", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_BusinessMeetings_TimeWindow", "[EndUtc] > [StartUtc]");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.BusinessMeetingParticipant", b =>
@@ -935,7 +881,18 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("VisitorUserId");
 
-                    b.ToTable("BusinessMeetingParticipants", (string)null);
+                    b.HasIndex("BusinessMeetingId", "ExhibitorId")
+                        .IsUnique()
+                        .HasFilter("[ExhibitorId] IS NOT NULL");
+
+                    b.HasIndex("BusinessMeetingId", "VisitorUserId")
+                        .IsUnique()
+                        .HasFilter("[VisitorUserId] IS NOT NULL");
+
+                    b.ToTable("BusinessMeetingParticipants", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_BusinessMeetingParticipants_PartyXor", "([Kind] = 0 AND [ExhibitorId] IS NOT NULL AND [VisitorUserId] IS NULL) OR ([Kind] = 1 AND [VisitorUserId] IS NOT NULL AND [ExhibitorId] IS NULL)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.DelegationMeetingRequest", b =>
@@ -991,7 +948,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("TargetCountryId", "Status", "CreatedAt");
 
-                    b.ToTable("DelegationMeetingRequests", (string)null);
+                    b.ToTable("DelegationMeetingRequests", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_DelegationMeetingRequests_Slot", "[SlotStartUtc] IS NULL OR [SlotEndUtc] IS NULL OR [SlotEndUtc] > [SlotStartUtc]");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.HallAllocation", b =>
@@ -1039,7 +999,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("HallId", "Purpose", "ReleasedAt");
 
-                    b.ToTable("HallAllocations", (string)null);
+                    b.ToTable("HallAllocations", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_HallAllocations_TimeWindow", "[EndUtc] > [StartUtc]");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.MeetingTable", b =>
@@ -1118,15 +1081,25 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
+                    b.HasIndex("SpeakerId", "StartUtc")
+                        .IsUnique()
+                        .HasFilter("[IsActive] = 1");
+
                     b.HasIndex("SpeakerId", "IsActive", "StartUtc");
 
-                    b.ToTable("SpeakerAvailabilityWindows", (string)null);
+                    b.ToTable("SpeakerAvailabilityWindows", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_SpeakerAvailabilityWindows_TimeWindow", "[EndUtc] > [StartUtc]");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.SpeakerMeetingRequest", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AvailabilityWindowId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("CreatedAt")
@@ -1169,11 +1142,20 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AvailabilityWindowId");
+
                     b.HasIndex("RequestedByUserId");
+
+                    b.HasIndex("SpeakerId", "SlotStartUtc")
+                        .IsUnique()
+                        .HasFilter("[Status] = 1 AND [SlotStartUtc] IS NOT NULL");
 
                     b.HasIndex("SpeakerId", "Status", "CreatedAt");
 
-                    b.ToTable("SpeakerMeetingRequests", (string)null);
+                    b.ToTable("SpeakerMeetingRequests", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_SpeakerMeetingRequests_Slot", "[SlotStartUtc] IS NULL OR [SlotEndUtc] IS NULL OR [SlotEndUtc] > [SlotStartUtc]");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Cms.Banner", b =>
@@ -1241,7 +1223,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("IsActive", "StartUtc", "EndUtc", "DisplayOrder");
 
-                    b.ToTable("Banners", (string)null);
+                    b.ToTable("Banners", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Banners_TimeWindow", "[EndUtc] > [StartUtc]");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Cms.ContentBlock", b =>
@@ -2211,9 +2196,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OwnerUserId");
-
-                    b.HasIndex("OwnerUserId", "SubjectUserId");
+                    b.HasIndex("OwnerUserId", "SubjectUserId")
+                        .IsUnique()
+                        .HasFilter("[IsActive] = 1");
 
                     b.ToTable("SavedContacts", (string)null);
                 });
@@ -2258,7 +2243,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasIndex("Token")
                         .IsUnique();
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasFilter("[IsActive] = 1");
 
                     b.ToTable("VisitorShareTokens", (string)null);
                 });
@@ -2473,7 +2460,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("ExhibitorId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasFilter("[IsActive] = 1");
 
                     b.ToTable("ExhibitorMemberships", (string)null);
                 });
@@ -2514,9 +2503,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ExhibitorUserId");
-
-                    b.HasIndex("ExhibitorUserId", "VisitorUserId");
+                    b.HasIndex("ExhibitorUserId", "VisitorUserId")
+                        .IsUnique()
+                        .HasFilter("[IsActive] = 1");
 
                     b.ToTable("ExhibitorVisitorScans", (string)null);
                 });
@@ -2644,7 +2633,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasIndex("RatingResponseId", "RatingQuestionId")
                         .IsUnique();
 
-                    b.ToTable("RatingAnswers", (string)null);
+                    b.ToTable("RatingAnswers", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_RatingAnswers_Stars", "[Stars] BETWEEN 1 AND 5");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Feedback.RatingQuestion", b =>
@@ -2796,7 +2788,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasIndex("UserId", "RatingTypeId", "TargetId")
                         .IsUnique();
 
-                    b.ToTable("RatingResponses", (string)null);
+                    b.ToTable("RatingResponses", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_RatingResponses_OverallStars", "[OverallStars] IS NULL OR [OverallStars] BETWEEN 1 AND 5");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Feedback.RatingType", b =>
@@ -2992,9 +2987,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
 
-                    b.Property<string>("ImageRelativePath")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                    b.Property<Guid?>("ImageFileId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -3002,9 +2996,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("Kind")
                         .HasColumnType("int");
 
-                    b.Property<string>("ThumbnailRelativePath")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                    b.Property<Guid?>("ThumbnailFileId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Title")
                         .HasMaxLength(200)
@@ -3027,6 +3020,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasKey("Id");
 
                     b.HasIndex("IsActive", "Album", "DisplayOrder");
+
+                    b.HasIndex("IsActive", "Kind", "DisplayOrder");
 
                     b.ToTable("MediaItems", (string)null);
                 });
@@ -3642,6 +3637,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<Guid?>("RegionId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("RejectionReason")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -3683,6 +3681,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .IsUnique()
                         .HasFilter("[ReferenceNumber] IS NOT NULL");
 
+                    b.HasIndex("RegionId");
+
                     b.HasIndex("UserId")
                         .IsUnique();
 
@@ -3694,6 +3694,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("AllowsVipMeetingSlots")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
@@ -3741,6 +3746,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasFilter("[IsActive] = 1");
 
                     b.HasIndex("IsForVisitor", "IsActive");
 
@@ -3819,7 +3828,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("IsActive", "Name");
 
-                    b.ToTable("Halls", (string)null);
+                    b.ToTable("Halls", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Halls_Geofence", "([GeofenceCenterLat] IS NULL AND [GeofenceCenterLon] IS NULL AND [GeofenceRadiusMeters] IS NULL) OR ([GeofenceCenterLat] IS NOT NULL AND [GeofenceCenterLon] IS NOT NULL AND [GeofenceRadiusMeters] IS NOT NULL AND [GeofenceRadiusMeters] > 0)");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Programme.HallAttendance", b =>
@@ -3853,6 +3865,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.HasIndex("HallId", "LeaveUtc");
 
@@ -3904,6 +3918,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Date")
+                        .IsUnique()
+                        .HasFilter("[IsActive] = 1");
 
                     b.HasIndex("IsActive", "DisplayOrder", "Date");
 
@@ -4040,7 +4058,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("Status", "StartUtc");
 
-                    b.ToTable("Sessions", (string)null);
+                    b.ToTable("Sessions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Sessions_TimeWindow", "[EndUtc] > [StartUtc]");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Programme.SessionCategory", b =>
@@ -4081,6 +4102,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasFilter("[IsActive] = 1");
 
                     b.HasIndex("IsActive", "DisplayOrder");
 
@@ -4223,7 +4248,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("IsActive", "PublishedAt");
 
-                    b.ToTable("SessionSummaries", (string)null);
+                    b.ToTable("SessionSummaries", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_SessionSummaries_ReviewOrder", "[ApprovedAt] IS NULL OR ([ReviewSubmittedAt] IS NOT NULL AND [ApprovedAt] >= [ReviewSubmittedAt])");
+                        });
                 });
 
             modelBuilder.Entity("SIMF.Domain.Programme.SessionTheme", b =>
@@ -4915,86 +4943,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.ToTable("SeatReservations", (string)null);
                 });
 
-            modelBuilder.Entity("SIMF.Domain.SessionComments.SessionComment", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("AiFilterVerdict")
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
-
-                    b.Property<string>("Body")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("LikeCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(0);
-
-                    b.Property<DateTimeOffset?>("ModeratedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<Guid?>("ModeratedByUserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("SessionId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("SessionId", "Status", "IsActive");
-
-                    b.ToTable("SessionComments", (string)null);
-                });
-
-            modelBuilder.Entity("SIMF.Domain.SessionComments.SessionCommentLike", b =>
-                {
-                    b.Property<Guid>("CommentId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.HasKey("CommentId", "UserId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("SessionCommentLikes", (string)null);
-                });
-
             modelBuilder.Entity("SIMF.Domain.SessionQuestions.SessionModerator", b =>
                 {
                     b.Property<Guid>("SessionId")
@@ -5275,7 +5223,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("IsActive");
 
-                    b.ToTable("VenueMapNodes", (string)null);
+                    b.ToTable("VenueMapNodes", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_VenueMapNodes_KindArc", "([HallId] IS NULL OR [Kind] = 0) AND ([BoothId] IS NULL OR [Kind] = 2) AND NOT ([HallId] IS NOT NULL AND [BoothId] IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("UserProfileInterests", b =>
@@ -5298,7 +5249,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasOne("SIMF.Domain.AccessControl.Gate", "Gate")
                         .WithMany("Assignments")
                         .HasForeignKey("GateId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Gate");
@@ -5326,7 +5277,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasOne("SIMF.Domain.AccessControl.Gate", "Gate")
                         .WithMany()
                         .HasForeignKey("GateId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("SIMF.Domain.Profiles.UserProfile", "UserProfile")
@@ -5336,6 +5287,15 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Navigation("Gate");
 
                     b.Navigation("UserProfile");
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Ai.AiPromptHistory", b =>
+                {
+                    b.HasOne("SIMF.Domain.Ai.AiPrompt", null)
+                        .WithMany()
+                        .HasForeignKey("AiPromptId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("SIMF.Domain.Archive.ArchiveMediaItem", b =>
@@ -5459,10 +5419,15 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.SpeakerMeetingRequest", b =>
                 {
+                    b.HasOne("SIMF.Domain.BusinessMeetings.SpeakerAvailabilityWindow", null)
+                        .WithMany()
+                        .HasForeignKey("AvailabilityWindowId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("SIMF.Domain.Programme.Speaker", "Speaker")
                         .WithMany()
                         .HasForeignKey("SpeakerId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Speaker");
@@ -5478,28 +5443,36 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
             modelBuilder.Entity("SIMF.Domain.Contacts.Contact", b =>
                 {
-                    b.HasOne("SIMF.Domain.Common.Country", null)
+                    b.HasOne("SIMF.Domain.Common.Country", "Country")
                         .WithMany()
                         .HasForeignKey("CountryId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Country");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Exhibition.Booth", b =>
                 {
-                    b.HasOne("SIMF.Domain.Contacts.Contact", null)
+                    b.HasOne("SIMF.Domain.Contacts.Contact", "OfficerContact")
                         .WithMany()
                         .HasForeignKey("ContactId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("SIMF.Domain.Exhibitors.Exhibitor", null)
+                    b.HasOne("SIMF.Domain.Exhibitors.Exhibitor", "Exhibitor")
                         .WithMany()
                         .HasForeignKey("ExhibitorId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("SIMF.Domain.Programme.Hall", null)
+                    b.HasOne("SIMF.Domain.Programme.Hall", "Hall")
                         .WithMany()
                         .HasForeignKey("HallId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Exhibitor");
+
+                    b.Navigation("Hall");
+
+                    b.Navigation("OfficerContact");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Exhibitors.Exhibitor", b =>
@@ -5517,7 +5490,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasOne("SIMF.Domain.Exhibitors.Exhibitor", "Exhibitor")
                         .WithMany()
                         .HasForeignKey("ExhibitorId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Exhibitor");
@@ -5627,9 +5600,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasForeignKey("ProfileTypeId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("SIMF.Domain.Regions.Region", "Region")
+                        .WithMany()
+                        .HasForeignKey("RegionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Organisation");
 
                     b.Navigation("ProfileType");
+
+                    b.Navigation("Region");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Programme.HallAttendance", b =>
@@ -5736,7 +5716,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasForeignKey("ContactId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("SIMF.Domain.Common.Country", null)
+                    b.HasOne("SIMF.Domain.Common.Country", "Country")
                         .WithMany()
                         .HasForeignKey("CountryId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -5745,6 +5725,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .WithMany()
                         .HasForeignKey("UserProfileId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Country");
                 });
 
             modelBuilder.Entity("SIMF.Domain.Programme.SpeakerPresentation", b =>
@@ -5799,32 +5781,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasOne("SIMF.Domain.Programme.Session", "Session")
                         .WithMany()
                         .HasForeignKey("SessionId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Session");
-                });
-
-            modelBuilder.Entity("SIMF.Domain.SessionComments.SessionComment", b =>
-                {
-                    b.HasOne("SIMF.Domain.Programme.Session", "Session")
-                        .WithMany()
-                        .HasForeignKey("SessionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Session");
-                });
-
-            modelBuilder.Entity("SIMF.Domain.SessionComments.SessionCommentLike", b =>
-                {
-                    b.HasOne("SIMF.Domain.SessionComments.SessionComment", "Comment")
-                        .WithMany()
-                        .HasForeignKey("CommentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Comment");
                 });
 
             modelBuilder.Entity("SIMF.Domain.SessionQuestions.SessionModerator", b =>

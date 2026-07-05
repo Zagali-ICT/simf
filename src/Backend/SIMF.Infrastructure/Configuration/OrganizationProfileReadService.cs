@@ -63,10 +63,10 @@ internal sealed class OrganizationProfileReadService(
             .OrderBy(d => d.DisplayOrder)
             .ToListAsync(ct);
 
-        var hasLogo = await db.Assets.AsNoTracking().AnyAsync(
-            a => a.IsActive
-                && a.Category == AssetCategory.OrganizationLogo
-                && a.OwnerId == OrganizationProfile.SingletonId, ct);
+        var hasLogo = await db.StoredFiles.AsNoTracking().AnyAsync(
+            f => f.IsActive
+                && f.Service == FileService.OrganizationLogo
+                && f.OwnerEntityId == OrganizationProfile.SingletonId, ct);
 
         var logoUrl = hasLogo
             ? $"app/assets/{AssetCategory.OrganizationLogo}/{OrganizationProfile.SingletonId}/image"

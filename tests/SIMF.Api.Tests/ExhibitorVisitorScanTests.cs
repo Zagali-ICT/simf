@@ -88,16 +88,12 @@ public sealed class ExhibitorVisitorScanTests : IClassFixture<SimfApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var type = new UserProfileType
-        {
-            Id = Guid.NewGuid(),
-            Name = "Exhibitor",
-            NameArabic = "عارض",
-            IsForVisitor = false,
-            IsActive = true,
-            CreatedAt = DateTimeOffset.UtcNow,
-        };
-        appDb.ProfileTypes.Add(type);
+        // Reuse the seeder's canonical "Exhibitor" profile type — D-611 added a
+        // unique index on the active ProfileType.Name (the admin service already
+        // returns 409 for the same duplicate), so seeding a second "Exhibitor"
+        // row now collides.
+        var type = await appDb.ProfileTypes
+            .FirstAsync(profileType => profileType.Name == "Exhibitor" && profileType.IsActive);
         var countryId = await appDb.Countries.AsNoTracking()
             .Where(c => c.IsActive).Select(c => c.Id).FirstAsync();
         appDb.UserProfiles.Add(new UserProfile

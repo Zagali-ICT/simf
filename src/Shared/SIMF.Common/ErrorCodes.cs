@@ -229,12 +229,6 @@ public static class ErrorCodes
     public const string SessionModeratorNotAssigned = "SESSION_MODERATOR_NOT_ASSIGNED";
     public const string SessionModeratorAlreadyAssigned = "SESSION_MODERATOR_ALREADY_ASSIGNED";
 
-    // Audience comments (D-199, Mockup page 28 — تعليقات الجمهور;
-    // distinct from SessionQuestion — public feed + admin moderation).
-    public const string SessionCommentInvalid = "SESSION_COMMENT_INVALID";
-    public const string SessionCommentNotFound = "SESSION_COMMENT_NOT_FOUND";
-    public const string SessionNotOpenForComments = "SESSION_NOT_OPEN_FOR_COMMENTS";
-
     // Venue self-assert (D-171, gap doc G7 — PDF §2.10; G-OI-2 resolved
     // to the self-assert toggle as input source).
     public const string NotAtVenue = "NOT_AT_VENUE";
@@ -263,6 +257,13 @@ public static class ErrorCodes
     /// <summary>D-500 — the request kind is not self-cancellable, or it is no
     /// longer Pending.</summary>
     public const string AppRequestNotCancellable = "APP_REQUEST_NOT_CANCELLABLE";
+    /// <summary>D-587/A1 — an admin tried to respond to a request that is no longer
+    /// Pending (already Accepted / Rejected / Cancelled). Guards double-response and
+    /// the side effects a re-decision would replay.</summary>
+    public const string AppRequestAlreadyResponded = "APP_REQUEST_ALREADY_RESPONDED";
+    /// <summary>D-587/A1 — the requester already has an open Pending request for the
+    /// same target (speaker / delegation), so a duplicate submission is rejected.</summary>
+    public const string AppRequestDuplicatePending = "APP_REQUEST_DUPLICATE_PENDING";
 
     // Seat reservations (D-175, gap doc G11 — Mockup page 7).
     public const string SeatLayoutInvalid = "SEAT_LAYOUT_INVALID";

@@ -13,7 +13,10 @@ internal sealed class DelegationMeetingRequestConfiguration
 {
     public void Configure(EntityTypeBuilder<DelegationMeetingRequest> builder)
     {
-        builder.ToTable("DelegationMeetingRequests");
+        // D-611 (Wave B) — the proposed slot must end after it starts (both nullable).
+        builder.ToTable("DelegationMeetingRequests", table => table.HasCheckConstraint(
+            "CK_DelegationMeetingRequests_Slot",
+            "[SlotStartUtc] IS NULL OR [SlotEndUtc] IS NULL OR [SlotEndUtc] > [SlotStartUtc]"));
         builder.HasKey(r => r.Id);
 
         builder.Property(r => r.Subject).HasMaxLength(1000).IsRequired();

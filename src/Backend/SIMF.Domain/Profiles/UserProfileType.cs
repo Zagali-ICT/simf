@@ -67,5 +67,12 @@ public sealed class UserProfileType : BaseAuditEntity
     /// Admin-curated at runtime — adding a
     /// new operational profile type is a row insert + an admin checkbox,
     /// not a code change.</summary>
-    public MobileAppRole MobileAppRole { get; set; } = MobileAppRole.None; 
+    public MobileAppRole MobileAppRole { get; set; } = MobileAppRole.None;
+
+    /// <summary>D-611 (Wave B) — whether a user of this profile type may book a
+    /// VIP speaker-meeting slot. Replaces the former brittle "the profile-type
+    /// Name contains 'VIP'" substring test in the meeting-request service, which
+    /// would wrongly match any future type whose name merely embedded "VIP".
+    /// Admin-curated; the seeder sets it <c>true</c> for the VVIP + VIP rows.</summary>
+    public bool AllowsVipMeetingSlots { get; set; }
 }

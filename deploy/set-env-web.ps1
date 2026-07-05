@@ -19,10 +19,14 @@
 $ErrorActionPreference = "Stop"
 
 # An empty value is SKIPPED (warned) so the unedited template never sets blanks.
+# Values below are NON-SECRET (loopback URL, flag, log path) - safe to commit.
+# set-env-api.ps1 already sets these at Machine scope; this fills them so the Web
+# script also works standalone.
 $vars = [ordered]@{
-    "ASPNETCORE_ENVIRONMENT"      = "Production"  # [REQUIRED] host-level - NOT prefixed
-    "SIMF_Api__BaseUrl"           = ""            # [REQUIRED] e.g. https://api.simf.example/ - MUST be HTTPS outside Development
-    "SIMF_Storage__LogDirectory"  = ""            # optional (default logs) - per-app logs under {dir}/SIMF.Web/
+    "ASPNETCORE_ENVIRONMENT"                = "Production"                 # [REQUIRED] host-level - NOT prefixed
+    "SIMF_Api__BaseUrl"                     = "https://localhost:12340/"   # API loopback binding (avoids NAT hairpin); MUST be HTTPS outside Development
+    "SIMF_Api__AllowSelfSignedCertificate"  = "true"                       # accept the API's self-signed cert (host-mismatch on localhost)
+    "SIMF_Storage__LogDirectory"            = "C:\SIMF\Storage\logs"       # per-app logs under {dir}/SIMF.Web/
 }
 
 $set = 0

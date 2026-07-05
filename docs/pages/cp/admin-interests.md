@@ -244,7 +244,7 @@ Authored at [`docs/tests/e2e/cp-admin-interests.md`](../../tests/e2e/cp-admin-in
 | Golden: sign in → Add → see new row → Edit → see update → Deactivate → see Inactive pill | E2E-INT-001 | full CRUD round-trip |
 | Empty list: fresh tenant → `SimfEmptyState` renders | E2E-INT-002 | empty path |
 | Auth: non-admin signed-in user navigates → redirected to `/not-permitted` | E2E-INT-003 | role gate |
-| Validation: submit empty Name → toast `Admin.Interests.Field.NameInvalid` | E2E-INT-004 | validation surface |
+| Validation: submit empty Name → POST returns `VALIDATION_FAILED`, server's bilingual field reason shows in the modal alert | E2E-INT-004 | validation surface |
 | Duplicate name: create "X" twice → second submit returns 409, toast shows bilingual server message | E2E-INT-005 | conflict envelope |
 | Server error: API returns 500 on `/list` → toast `Admin.Interests.LoadFailed` | E2E-INT-006 | resilience |
 | RTL: toggle Arabic → page mirrors, nav reverses, table headers flip, Add modal renders RTL | E2E-INT-007 | i18n |

@@ -282,8 +282,10 @@ internal sealed class AdminApprovalReadService(
             profile?.PlateNumber,
             profile?.ReferenceNumber,
             profile?.Interests.Select(i => new PendingProfileInterest(i.Name, i.NameArabic)).ToList(),
-            // CS-4 — the avatar (profile photo) lives on SimfUser (Identity).
-            HasAvatar: user.AvatarRelativePath != null);
+            // CS-4 — the avatar (profile photo) lives on SimfUser (Identity); its
+            // AvatarRelativePath is the StoredFile pointer/presence sentinel (D-568
+            // S3). Use IsNullOrEmpty to match every other presence reader.
+            HasAvatar: !string.IsNullOrEmpty(user.AvatarRelativePath));
     }
 
     // D-151 — Country lookup helper. Cross-context (Country lives in

@@ -29,7 +29,9 @@ internal sealed class BannerConfiguration : IEntityTypeConfiguration<Banner>
 {
     public void Configure(EntityTypeBuilder<Banner> builder)
     {
-        builder.ToTable("Banners");
+        // D-611 (Wave B) — a banner display window must end after it starts.
+        builder.ToTable("Banners", table => table.HasCheckConstraint(
+            "CK_Banners_TimeWindow", "[EndUtc] > [StartUtc]"));
         builder.HasKey(b => b.Id);
 
         builder.Property(b => b.Title).HasMaxLength(256).IsRequired();

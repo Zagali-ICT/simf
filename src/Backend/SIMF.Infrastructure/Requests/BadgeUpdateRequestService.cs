@@ -168,6 +168,17 @@ internal sealed class BadgeUpdateRequestService(
                 "Badge update request not found.",
                 "لم يتم العثور على طلب تحديث البادج.");
 
+        // A1 — only a Pending request may be decided. Without this guard an Accept
+        // on an already-Cancelled/decided request would replay the JobTitle side
+        // effect below and overwrite the profile.
+        if (req.Status != MeetingRequestStatus.Pending)
+        {
+            throw new ApiException(
+                ErrorCodes.AppRequestAlreadyResponded, 409,
+                "This request has already been responded to.",
+                "تمت معالجة هذا الطلب بالفعل.");
+        }
+
         var responseNote = string.IsNullOrWhiteSpace(request.ResponseNote)
             ? null : request.ResponseNote.Trim();
         if (responseNote is { Length: > 2000 })

@@ -47,6 +47,14 @@ public interface IUserProfileRepository
     Task<string?> GetVipPhotoPathAsync(
         Guid userId, CancellationToken cancellationToken = default);
 
+    /// <summary>D-568 (Wave C S4/S5) — the active <c>StoredFile</c>'s storage locator
+    /// (key + content-type + encrypted flag) for a Confidential owner-scoped service
+    /// (<see cref="FileService.VipPhoto"/>, <see cref="FileService.IdDocument"/>) + an
+    /// owner, or null when none. Owner-scoped (<c>Service=service,
+    /// OwnerEntityId=ownerUserId</c>) in the same App DB — no cross-context read.</summary>
+    Task<(string StorageKey, string? ContentType, bool IsEncrypted)?> GetOwnerScopedFileAsync(
+        FileService service, Guid ownerUserId, CancellationToken cancellationToken = default);
+
     /// <summary>The assigned profile type's audience flag + mobile role, or
     /// null when the user has no profile type assigned.</summary>
     Task<ProfileTypeRole?> GetAssignedProfileTypeRoleAsync(
@@ -93,6 +101,11 @@ public interface IUserProfileRepository
     /// <summary>B3 — D-221: true when the id is an active <c>Organisation</c>
     /// row. Used to validate the profile's الجهة pick at write time.</summary>
     Task<bool> OrganisationExistsActiveAsync(
+        Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>D-611 (Wave B): true when the id is an active <c>Region</c>
+    /// row. Used to validate the profile's المنطقة pick at write time.</summary>
+    Task<bool> RegionExistsActiveAsync(
         Guid id, CancellationToken cancellationToken = default);
 
     // --- Identity DB: account reads ----------------------------------------

@@ -1,5 +1,6 @@
 // Tests: SIMF.Api.Tests/PublicPresentationsTests.cs
 using Microsoft.EntityFrameworkCore;
+using SIMF.Application.Files.Abstractions;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Contracts.Programme;
 using SIMF.Infrastructure.Persistence;
@@ -9,12 +10,13 @@ namespace SIMF.Infrastructure.Programme;
 /// <summary>Wave 2 (Figma 1388:7621 "عروض الجلسات") — the public, read-only view
 /// of speaker-presentation files for the app. Lists every active presentation on
 /// an active session (with the presenting speaker), time-ordered by session start
-/// so the app groups by day; the bytes come out-of-row via
-/// <see cref="ISpeakerPresentationStorage"/>. Speaker + Session are real FKs on
-/// <see cref="SimfAppDbContext"/>, so both are resolved in the same query.</summary>
+/// so the app groups by day. D-568 (Wave C S6): the bytes come from the unified
+/// <c>StoredFile</c> store via <c>StoredFileName</c> (a bare-Guid pointer). Speaker
+/// + Session are real FKs on <see cref="SimfAppDbContext"/>, so both are resolved
+/// in the same query.</summary>
 internal sealed class PublicSpeakerPresentationService(
     SimfAppDbContext db,
-    ISpeakerPresentationStorage storage) : IPublicSpeakerPresentationService
+    IFileStorageProvider fileStorage) : IPublicSpeakerPresentationService
 {
     public async Task<PublicPresentations> ListAsync(
         CancellationToken cancellationToken = default)
@@ -51,7 +53,8 @@ internal sealed class PublicSpeakerPresentationService(
             return null;
         }
 
-        var file = await storage.GetAsync(row.StoredFileName, row.ContentType, cancellationToken);
-        return file is null ? null : (file.Value.Content, file.Value.ContentType, row.FileName);
+        var bytes = await PresentationFileReader.ReadBytesAsync(
+            db, fileStorage, row.StoredFileName, cancellationToken);
+        return bytes is null ? null : (bytes, row.ContentType, row.FileName);
     }
 }

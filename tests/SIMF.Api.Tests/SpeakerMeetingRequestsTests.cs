@@ -213,6 +213,67 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task A_second_pending_request_for_the_same_speaker_is_rejected()
+    {
+        // A1 — one open request per (requester, speaker): the second submit while a
+        // Pending one exists is a 409 duplicate.
+        var speaker = await SeedSpeakerAsync(allowsMeetings: true);
+        var visitor = await SignInApprovedVisitorAsync();
+        await SubmitAsync(speaker.Id, "Visitor", "First topic", visitor);
+
+        var second = await PostAuthAsync(
+            $"/api/v1/app/speakers/{speaker.Id}/meeting-requests",
+            new SubmitSpeakerMeetingRequestRequest { RequesterName = "Visitor", Subject = "Second topic" },
+            visitor);
+        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
+        var body = (await second.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.AppRequestDuplicatePending, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Responding_to_an_already_decided_request_is_409()
+    {
+        // A1 — only a Pending request may be decided; a second respond is a 409.
+        var speaker = await SeedSpeakerAsync(allowsMeetings: true);
+        var visitor = await SignInApprovedVisitorAsync();
+        var created = await SubmitAsync(speaker.Id, "Visitor", "Topic", visitor);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var first = await PutAuthAsync(
+            $"/api/v1/admin/speaker-meeting-requests/{created.Id}/respond",
+            new RespondToSpeakerMeetingRequestRequest { Status = MeetingRequestStatus.Rejected },
+            admin);
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+
+        var second = await PutAuthAsync(
+            $"/api/v1/admin/speaker-meeting-requests/{created.Id}/respond",
+            new RespondToSpeakerMeetingRequestRequest { Status = MeetingRequestStatus.Accepted },
+            admin);
+        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
+        var body = (await second.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.AppRequestAlreadyResponded, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Responding_with_Cancelled_status_is_400()
+    {
+        // A1 (review) — only Accepted/Rejected are valid responses; Cancelled (a
+        // requester-only state) or any other value must not corrupt the lifecycle.
+        var speaker = await SeedSpeakerAsync(allowsMeetings: true);
+        var visitor = await SignInApprovedVisitorAsync();
+        var created = await SubmitAsync(speaker.Id, "Visitor", "Topic", visitor);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var respond = await PutAuthAsync(
+            $"/api/v1/admin/speaker-meeting-requests/{created.Id}/respond",
+            new RespondToSpeakerMeetingRequestRequest { Status = MeetingRequestStatus.Cancelled },
+            admin);
+        Assert.Equal(HttpStatusCode.BadRequest, respond.StatusCode);
+        var body = (await respond.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SpeakerMeetingRequestStatusInvalid, body.Error!.Code);
+    }
+
+    [Fact]
     public async Task List_writes_audit_event()
     {
         var (admin, adminId) = await CreateAdministratorAndSignInWithIdAsync();

@@ -86,6 +86,7 @@ internal sealed class VenueMapService(
     {
         var (label, labelAr) = ValidateLabels(request.Label, request.LabelArabic);
         await EnsureReferencesAsync(request.HallId, request.BoothId, cancellationToken);
+        EnsureKindMatchesReferences(request.Kind, request.HallId, request.BoothId);
 
         var now = timeProvider.GetUtcNow();
         var node = new VenueMapNode
@@ -128,6 +129,7 @@ internal sealed class VenueMapService(
 
         var (label, labelAr) = ValidateLabels(request.Label, request.LabelArabic);
         await EnsureReferencesAsync(request.HallId, request.BoothId, cancellationToken);
+        EnsureKindMatchesReferences(request.Kind, request.HallId, request.BoothId);
 
         node.Label = label;
         node.LabelArabic = labelAr;
@@ -227,6 +229,26 @@ internal sealed class VenueMapService(
                     "The referenced booth was not found.",
                     "لم يتم العثور على الجناح المرتبط.");
             }
+        }
+    }
+
+    // D-611 (Wave B) — the DB CK_VenueMapNodes_KindArc enforces the weak arc; this
+    // guards it at the edge with a clean 400 instead of a SaveChanges 500: a Hall
+    // reference requires Kind=Hall, a Booth reference requires Kind=Booth, and a
+    // node may not reference both. A Zone / PointOfInterest node carries neither.
+    private static void EnsureKindMatchesReferences(
+        VenueMapNodeKind kind, Guid? hallId, Guid? boothId)
+    {
+        var invalid =
+            (hallId is not null && kind != VenueMapNodeKind.Hall)
+            || (boothId is not null && kind != VenueMapNodeKind.Booth)
+            || (hallId is not null && boothId is not null);
+        if (invalid)
+        {
+            throw new ApiException(
+                ErrorCodes.VenueMapNodeInvalid, 400,
+                "A hall reference requires kind Hall, a booth reference requires kind Booth, and a node cannot reference both.",
+                "ربط قاعة يتطلب النوع \"قاعة\"، وربط جناح يتطلب النوع \"جناح\"، ولا يمكن للعقدة ربط الاثنين معاً.");
         }
     }
 

@@ -82,7 +82,6 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | **Engagement, Q&A & attendance** | | | | |
 | `/admin/question-queue` | ✅ Real (D-234) | Administrator  | [cp/admin-question-queue.md](cp/admin-question-queue.md) | [e2e/cp-admin-question-queue.md](../tests/e2e/cp-admin-question-queue.md) |
 | `/sessions/{id}/moderate` | ✅ Real | Session moderator | — | [e2e/cp-session-moderate.md](../tests/e2e/cp-session-moderate.md) |
-| `/admin/comments-moderation` | ✅ Real (D-199) | Administrator  | [cp/admin-comments-moderation.md](cp/admin-comments-moderation.md) | [e2e/cp-admin-comments-moderation.md](../tests/e2e/cp-admin-comments-moderation.md) |
 | `/admin/ratings` | ✅ Real (D-496 — responses + KPI) | Administrator  | [cp/admin-ratings.md](cp/admin-ratings.md) | [e2e/cp-admin-ratings.md](../tests/e2e/cp-admin-ratings.md) |
 | `/admin/rating-config` | ✅ Real (D-496 — dynamic rating config) | Administrator  | [cp/admin-rating-config.md](cp/admin-rating-config.md) | [e2e/cp-admin-rating-config.md](../tests/e2e/cp-admin-rating-config.md) |
 | `/admin/session-summaries` | ✅ Real (D-238) | Administrator  | [cp/admin-session-summaries.md](cp/admin-session-summaries.md) | [e2e/cp-admin-session-summaries.md](../tests/e2e/cp-admin-session-summaries.md) |
@@ -267,7 +266,7 @@ incomplete PR.
 > touched by the D-356 Uniform CRUD wave now has a per-page reference doc — the
 > 7 full-CrudShell conversions + 8 refreshed (Phase 5), plus the 22
 > export/lookup pages backfilled on 2026-06-11 (AI prompts, Archive, Banners,
-> Bookings, Comments moderation, Configuration, Contacts, Content blocks,
+> Bookings, Configuration, Contacts, Content blocks,
 > Countries, Gates, Media, Media partners, News, Organisations, Question queue,
 > Ratings, Session categories, Session moderators, Session summaries, Speaker
 > meeting requests, Speaker presentations, VIPs). Any remaining `Doc = "—"` rows

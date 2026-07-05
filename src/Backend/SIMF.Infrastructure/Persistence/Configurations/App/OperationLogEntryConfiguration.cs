@@ -27,5 +27,8 @@ internal sealed class OperationLogEntryConfiguration : IEntityTypeConfiguration<
         builder.HasIndex(entry => entry.TimestampUtc);
         builder.HasIndex(entry => new { entry.EventType, entry.TimestampUtc });
         builder.HasIndex(entry => entry.SubjectEmail);
+
+        // D-611 (Wave B) — actor-centric audit lookups (who did what, when).
+        builder.HasIndex(entry => new { entry.ActorUserId, entry.TimestampUtc });
     }
 }

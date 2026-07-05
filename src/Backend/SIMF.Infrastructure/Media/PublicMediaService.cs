@@ -1,24 +1,27 @@
 // Tests: SIMF.Api.Tests/PublicMediaTests.cs
 using Microsoft.EntityFrameworkCore;
-using SIMF.Application.Abstractions;
+using SIMF.Application.Files.Abstractions;
 using SIMF.Application.Media.Abstractions;
+using SIMF.Common.Enums;
 using SIMF.Contracts.Media;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Media;
 
 /// <summary>
-/// D-199 (Mockup page 30) — public (anonymous) read of the active media
-/// gallery. Mirrors <c>PublicDelegationService</c> but adds paging + an
-/// optional album filter (the prompt: "active, paged, by album"). Image /
-/// thumbnail bytes are fetched out-of-row via <see cref="IMediaImageStorage"/>.
+/// D-199 (Mockup page 30) — public (anonymous) read of the active media gallery.
+/// Paged + optional album / kind filter. Image / thumbnail bytes now resolve from
+/// the unified <c>StoredFile</c> store (D-568 Wave C S2) via the pointer columns
+/// <c>MediaItem.ImageFileId</c> / <c>ThumbnailFileId</c>; the two serve routes,
+/// the presence-only <c>imageUrl</c>/<c>thumbnailUrl</c> wire keys and the
+/// content-type all stay byte-identical.
 /// </summary>
 internal sealed class PublicMediaService(
     SimfAppDbContext dbContext,
-    IMediaImageStorage imageStorage) : IPublicMediaService
+    IFileStorageProvider storage) : IPublicMediaService
 {
     public async Task<PublicMediaPage> ListAsync(
-        string? album, int skip, int top,
+        string? album, int skip, int top, MediaKind? kind = null,
         CancellationToken cancellationToken = default)
     {
         var safeSkip = Math.Max(0, skip);
@@ -32,6 +35,13 @@ internal sealed class PublicMediaService(
         {
             var albumTerm = album.Trim();
             rows = rows.Where(item => item.Album == albumTerm || item.AlbumArabic == albumTerm);
+        }
+
+        // A8 — optional Kind (image / video) narrow. Kind is a mapped scalar, so
+        // this translates server-side; absent (null) = both kinds (unchanged).
+        if (kind is not null)
+        {
+            rows = rows.Where(item => item.Kind == kind.Value);
         }
 
         var ordered = rows
@@ -50,8 +60,8 @@ internal sealed class PublicMediaService(
                 item.TitleArabic,
                 item.Album,
                 item.AlbumArabic,
-                HasImage = item.ImageRelativePath != null,
-                HasThumbnail = item.ThumbnailRelativePath != null,
+                HasImage = item.ImageFileId != null,
+                HasThumbnail = item.ThumbnailFileId != null,
                 item.Url,
                 item.DisplayOrder,
             })
@@ -74,27 +84,39 @@ internal sealed class PublicMediaService(
         return new PublicMediaPage(items, total, safeSkip, safeTop);
     }
 
-    public async Task<(byte[] Content, string ContentType)?> GetImageAsync(
-        Guid id, CancellationToken cancellationToken = default)
-    {
-        var path = await dbContext.MediaItems
-            .AsNoTracking()
-            .Where(item => item.Id == id && item.IsActive)
-            .Select(item => item.ImageRelativePath)
-            .SingleOrDefaultAsync(cancellationToken);
-        if (string.IsNullOrEmpty(path)) { return null; }
-        return await imageStorage.GetAsync(path, cancellationToken);
-    }
+    public Task<(byte[] Content, string ContentType)?> GetImageAsync(
+        Guid id, CancellationToken cancellationToken = default) =>
+        ResolveBytesAsync(
+            dbContext.MediaItems.AsNoTracking()
+                .Where(item => item.Id == id && item.IsActive)
+                .Select(item => item.ImageFileId),
+            cancellationToken);
 
-    public async Task<(byte[] Content, string ContentType)?> GetThumbnailAsync(
-        Guid id, CancellationToken cancellationToken = default)
+    public Task<(byte[] Content, string ContentType)?> GetThumbnailAsync(
+        Guid id, CancellationToken cancellationToken = default) =>
+        ResolveBytesAsync(
+            dbContext.MediaItems.AsNoTracking()
+                .Where(item => item.Id == id && item.IsActive)
+                .Select(item => item.ThumbnailFileId),
+            cancellationToken);
+
+    // Resolve the pointed-at StoredFile's bytes + content-type. Returns null when
+    // the item / pointer / file is missing (the endpoint maps that to 404) —
+    // preserving the legacy "no bytes → 404" semantics.
+    private async Task<(byte[] Content, string ContentType)?> ResolveBytesAsync(
+        IQueryable<Guid?> fileIdQuery, CancellationToken cancellationToken)
     {
-        var path = await dbContext.MediaItems
+        var fileId = await fileIdQuery.SingleOrDefaultAsync(cancellationToken);
+        if (fileId is not { } fid) { return null; }
+
+        var file = await dbContext.StoredFiles
             .AsNoTracking()
-            .Where(item => item.Id == id && item.IsActive)
-            .Select(item => item.ThumbnailRelativePath)
-            .SingleOrDefaultAsync(cancellationToken);
-        if (string.IsNullOrEmpty(path)) { return null; }
-        return await imageStorage.GetAsync(path, cancellationToken);
+            .Where(f => f.Id == fid && f.IsActive)
+            .Select(f => new { f.StorageKey, f.ContentType, f.IsEncrypted })
+            .FirstOrDefaultAsync(cancellationToken);
+        if (file?.StorageKey is not { Length: > 0 } key) { return null; }
+
+        var bytes = await storage.ReadAsync(key, file.IsEncrypted, cancellationToken);
+        return bytes is null ? null : (bytes, file.ContentType ?? "application/octet-stream");
     }
 }

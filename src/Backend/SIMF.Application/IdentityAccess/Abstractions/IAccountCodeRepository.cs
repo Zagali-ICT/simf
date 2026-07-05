@@ -31,4 +31,22 @@ public interface IAccountCodeRepository
 
     /// <summary>Persists changes to an existing code (consumption, attempt count).</summary>
     Task UpdateAsync(AccountCode code, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Atomically consumes the code in a single conditional UPDATE, but only
+    /// while it is still unconsumed. Returns <c>true</c> only for the caller that
+    /// flips <see cref="AccountCode.ConsumedAt"/> from null to
+    /// <paramref name="now"/> — so a code is single-use even under a concurrent
+    /// double-submit (no read-modify-write race).
+    /// </summary>
+    Task<bool> TryConsumeAsync(
+        Guid codeId, DateTimeOffset now, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Atomically increments the wrong-value attempt counter in a single UPDATE
+    /// and returns the new count, so a per-code attempt cap cannot be bypassed by
+    /// a read-modify-write that loses increments under concurrency.
+    /// </summary>
+    Task<int> IncrementAttemptCountAsync(
+        Guid codeId, CancellationToken cancellationToken = default);
 }

@@ -233,15 +233,43 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
     {
         var adminToken = await CreateAdministratorAndSignInAsync();
 
+        // Create three admins whose emails share a prefix and differ only by a
+        // single letter, inserted out of order, then assert they come back
+        // ascending. This proves the endpoint applies the sort without coupling
+        // the oracle to SQL Server's collation, which orders the seeded accounts'
+        // punctuation (e.g. admin@simf.local) differently from .NET's Ordinal
+        // comparer — the source of the earlier false failure.
+        var marker = $"sortcheck-{Guid.NewGuid():N}";
+        foreach (var letter in new[] { "z", "a", "m" })
+        {
+            await PostAuthAsync(
+                "/api/v1/admin/admins",
+                new AdminCreateAdminRequest
+                {
+                    Email = $"{marker}-{letter}@simf.test",
+                    DisplayName = "Sort Check",
+                },
+                adminToken);
+        }
+
         var response = await PostAuthAsync(
             "/api/v1/admin/admins/list",
             new GridQuery { Sort = "email", SortDescending = false, Top = 200 },
             adminToken);
 
         var body = (await response.Content.ReadFromJsonAsync<ApiResult<GridPage<AdminUserSummary>>>())!;
-        var emails = body.Data!.Items.Select(u => u.Email).ToList();
-        var sorted = emails.OrderBy(e => e, StringComparer.Ordinal).ToList();
-        Assert.Equal(sorted, emails);
+        var mine = body.Data!.Items
+            .Select(u => u.Email)
+            .Where(e => e.StartsWith(marker, StringComparison.Ordinal))
+            .ToList();
+        Assert.Equal(
+            new[]
+            {
+                $"{marker}-a@simf.test",
+                $"{marker}-m@simf.test",
+                $"{marker}-z@simf.test",
+            },
+            mine);
     }
 
     [Fact]

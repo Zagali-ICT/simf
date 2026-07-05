@@ -59,6 +59,43 @@ public sealed class InterestAddEditTests : CpComponentTestBase
     }
 
     [Fact]
+    public void Server_validation_failure_shows_the_specific_field_reason()
+    {
+        // Client-side field validation was removed (it duplicated the server
+        // FluentValidation). A server VALIDATION_FAILED reason must now surface
+        // via DetailedMessageForCurrentCulture — the specific detail, not the
+        // generic top-level "one or more fields are invalid" message.
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        var error = new ApiError
+        {
+            Code = ErrorCodes.ValidationFailed,
+            Message = "One or more fields are invalid.",
+            MessageArabic = "يوجد حقل أو أكثر غير صالح.",
+            Details =
+            [
+                new ApiErrorDetail
+                {
+                    Field = "Name",
+                    Message = "The English name is required.",
+                    MessageArabic = "الاسم بالإنجليزية مطلوب.",
+                },
+            ],
+        };
+        JSInterop.Setup<ApiResult<AdminInterestSummary>>("simfAccount.postJson", _ => true)
+            .SetResult(ApiResult<AdminInterestSummary>.Fail(error));
+
+        var cut = RenderComponent<InterestAddEdit>(parameters => parameters
+            .Add(p => p.IsEdit, false));
+
+        cut.FindAll("input.simf-field__input")[0].Change("X");
+        cut.FindAll("input.simf-field__input")[1].Change("Y");
+        cut.Find("form").Submit();
+
+        Assert.Contains("The English name is required.", cut.Markup);
+        Assert.DoesNotContain("One or more fields are invalid.", cut.Markup);
+    }
+
+    [Fact]
     public void Edit_mode_puts_an_update_request_to_the_row_id()
     {
         JSInterop.Mode = JSRuntimeMode.Loose;

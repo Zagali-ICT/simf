@@ -45,7 +45,7 @@ internal sealed class BoothConfiguration : IEntityTypeConfiguration<Booth>
 
         // D-199 — real same-DB FK to Hall. Restrict matches the soft-delete
         // policy. HasForeignKey creates the FK index automatically.
-        builder.HasOne<Hall>()
+        builder.HasOne(booth => booth.Hall)
             .WithMany()
             .HasForeignKey(booth => booth.HallId)
             .OnDelete(DeleteBehavior.Restrict);
@@ -53,7 +53,7 @@ internal sealed class BoothConfiguration : IEntityTypeConfiguration<Booth>
         // B1 — D-222: real same-DB FK to the Exhibitor. Restrict
         // (admins soft-delete exhibitors via IsActive, never hard-delete a row
         // a booth points at). HasForeignKey creates the FK index automatically.
-        builder.HasOne<Exhibitor>()
+        builder.HasOne(booth => booth.Exhibitor)
             .WithMany()
             .HasForeignKey(booth => booth.ExhibitorId)
             .OnDelete(DeleteBehavior.Restrict);
@@ -61,7 +61,7 @@ internal sealed class BoothConfiguration : IEntityTypeConfiguration<Booth>
         // SIMF-FDS-014 — D-260 (OI-1): optional shared Contact link for the booth
         // officer. Restrict (a Contact is soft-deleted, never hard-deleted under a
         // referrer). HasForeignKey creates the FK index.
-        builder.HasOne<Contact>()
+        builder.HasOne(booth => booth.OfficerContact)
             .WithMany()
             .HasForeignKey(booth => booth.ContactId)
             .OnDelete(DeleteBehavior.Restrict);

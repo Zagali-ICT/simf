@@ -7,12 +7,16 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using SIMF.Application.Files.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Files;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Infrastructure.Persistence;
 using Xunit;
 
 namespace SIMF.Api.Tests.Files;
@@ -26,6 +30,10 @@ public sealed class FilesEndpointsTests : IClassFixture<SimfApiFactory>
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==");
 
     private static readonly byte[] Pdf = "%PDF-1.4\n%fake pdf body for the type test\n"u8.ToArray();
+
+    // Minimal ZIP local-file-header magic (PK\x03\x04). DetectUpload reads only the
+    // 4-byte signature, so this is enough to exercise the OOXML branch.
+    private static readonly byte[] Zip = [0x50, 0x4B, 0x03, 0x04, 0x14, 0x00, 0x00, 0x00];
 
     private readonly SimfApiFactory _factory;
     private readonly HttpClient _client;
@@ -103,6 +111,112 @@ public sealed class FilesEndpointsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task A_docx_zip_is_stored_with_the_canonical_ooxml_mime_not_the_client_type()
+    {
+        // P3 (D-568 hardening) — a ZIP/OOXML upload is stored under the CANONICAL
+        // Office MIME resolved from the .docx extension; the client's lie
+        // ("application/zip") is never echoed onto the stored/served content-type.
+        var token = await CreateAdministratorAndSignInAsync();
+
+        var resp = await UploadAsync(
+            FileService.SpeakerPresentation, FileOwnerEntityType.SpeakerPresentation, Guid.NewGuid(),
+            Zip, "application/zip", "deck.docx", token);
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var file = (await resp.Content.ReadFromJsonAsync<ApiResult<UploadedFileResponse>>())!.Data!;
+        Assert.Equal(FileType.Document, file.FileType);
+
+        var download = await GetAuthAsync(file.Url, token);
+        Assert.Equal(HttpStatusCode.OK, download.StatusCode);
+        Assert.Equal(
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            download.Content.Headers.ContentType!.MediaType);
+    }
+
+    [Fact]
+    public async Task A_zip_without_a_recognised_office_extension_is_rejected_400()
+    {
+        // P3 — a ZIP that is not a known OOXML type (.docx/.pptx/.xlsx) is not
+        // stored as an opaque blob; it is rejected at the edge.
+        var token = await CreateAdministratorAndSignInAsync();
+
+        var resp = await UploadAsync(
+            FileService.SpeakerPresentation, FileOwnerEntityType.SpeakerPresentation, Guid.NewGuid(),
+            Zip, "application/zip", "archive.zip", token);
+
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_tampered_confidential_file_fails_closed_on_download_404()
+    {
+        // P4 (D-568 hardening) — when the stored bytes no longer match the recorded
+        // SHA-256 (tamper / corrupt decrypt), a Confidential+ download FAILS CLOSED:
+        // uniform 404, never the unverified bytes. Simulated by mutating the
+        // recorded hash so the on-read integrity check cannot match.
+        var token = await CreateAdministratorAndSignInAsync();
+        var upload = await UploadAsync(
+            FileService.Avatar, FileOwnerEntityType.UserProfile, Guid.NewGuid(),
+            Png, "image/png", "a.png", token);
+        var file = (await upload.Content.ReadFromJsonAsync<ApiResult<UploadedFileResponse>>())!.Data!;
+
+        // A clean download works first (control).
+        var ok = await GetAuthAsync(file.Url, token);
+        Assert.Equal(HttpStatusCode.OK, ok.StatusCode);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var row = await db.StoredFiles.FirstAsync(f => f.Id == file.Id);
+            row.Sha256 = new string('0', 64);   // wrong hash → mismatch on next read
+            await db.SaveChangesAsync();
+        }
+
+        var tampered = await GetAuthAsync(file.Url, token);
+        Assert.Equal(HttpStatusCode.NotFound, tampered.StatusCode);
+    }
+
+    [Fact]
+    public async Task The_stored_owner_family_is_forced_from_the_policy_not_the_client()
+    {
+        // P2 (D-568 hardening) — the client cannot set the owner family; the
+        // service stamps it from the resolved policy (Avatar → UserProfile).
+        var token = await CreateAdministratorAndSignInAsync();
+        var owner = Guid.NewGuid();
+
+        var resp = await UploadAsync(
+            FileService.Avatar, FileOwnerEntityType.UserProfile, owner, Png, "image/png", "a.png", token);
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var file = (await resp.Content.ReadFromJsonAsync<ApiResult<UploadedFileResponse>>())!.Data!;
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var row = await db.StoredFiles.FirstAsync(f => f.Id == file.Id);
+        Assert.Equal(FileOwnerEntityType.UserProfile, row.OwnerEntityType);
+        Assert.Equal(owner, row.OwnerEntityId);
+    }
+
+    [Fact]
+    public async Task An_arabic_file_name_is_served_via_rfc5987_filename_star()
+    {
+        // P1 (D-568 hardening) — a non-ASCII (Arabic) download name is carried by
+        // the RFC 5987 filename* param (UTF-8, percent-encoded), with an ASCII
+        // fallback, so the Content-Disposition header stays valid.
+        var token = await CreateAdministratorAndSignInAsync();
+
+        var resp = await UploadAsync(
+            FileService.SpeakerPresentation, FileOwnerEntityType.SpeakerPresentation, Guid.NewGuid(),
+            Zip, "application/zip", "عرض.docx", token);
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var file = (await resp.Content.ReadFromJsonAsync<ApiResult<UploadedFileResponse>>())!.Data!;
+
+        var download = await GetAuthAsync(file.Url, token);
+        Assert.Equal(HttpStatusCode.OK, download.StatusCode);
+        // The client parses the RFC 5987 filename* param back to the decoded name.
+        var disposition = download.Content.Headers.ContentDisposition!;
+        Assert.Equal("عرض.docx", disposition.FileNameStar);
+    }
+
+    [Fact]
     public async Task An_owner_required_service_without_an_owner_is_rejected_400()
     {
         var token = await CreateAdministratorAndSignInAsync();
@@ -138,6 +252,65 @@ public sealed class FilesEndpointsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Link_then_anonymous_download_302_redirects_to_the_url()
+    {
+        // P6 (D-568) — an external image link is 302-served (no bytes stored).
+        var token = await CreateAdministratorAndSignInAsync();
+        const string url = "https://cdn.example.com/sponsor/acme.png";
+
+        var link = await LinkAsync(FileService.SponsorLogo, Guid.NewGuid(), url, token);
+        Assert.Equal(HttpStatusCode.OK, link.StatusCode);
+        var file = (await link.Content.ReadFromJsonAsync<ApiResult<UploadedFileResponse>>())!.Data!;
+
+        var noRedirect = _factory.CreateClient(
+            new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        var download = await noRedirect.GetAsync(file.Url);
+        Assert.Equal(HttpStatusCode.Redirect, download.StatusCode);
+        Assert.Equal(url, download.Headers.Location!.ToString());
+    }
+
+    [Fact]
+    public async Task Link_upserts_the_owner_to_a_single_active_file()
+    {
+        // P6 — a second link for the same (service, owner) REPLACES the first
+        // (one active file per owner), not appends.
+        var token = await CreateAdministratorAndSignInAsync();
+        var owner = Guid.NewGuid();
+
+        var first = await LinkAsync(FileService.SponsorLogo, owner, "https://cdn.example.com/a.png", token);
+        var firstId = (await first.Content.ReadFromJsonAsync<ApiResult<UploadedFileResponse>>())!.Data!.Id;
+        var second = await LinkAsync(FileService.SponsorLogo, owner, "https://cdn.example.com/b.png", token);
+        var secondId = (await second.Content.ReadFromJsonAsync<ApiResult<UploadedFileResponse>>())!.Data!.Id;
+        Assert.Equal(firstId, secondId);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var active = await db.StoredFiles.CountAsync(
+            f => f.Service == FileService.SponsorLogo && f.OwnerEntityId == owner && f.IsActive);
+        Assert.Equal(1, active);
+        var row = await db.StoredFiles.FirstAsync(f => f.Id == secondId);
+        Assert.Equal("https://cdn.example.com/b.png", row.ExternalUrl);
+    }
+
+    [Fact]
+    public async Task Link_with_a_non_https_url_is_400()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var resp = await LinkAsync(
+            FileService.SponsorLogo, Guid.NewGuid(), "http://cdn.example.com/a.png", token);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task Link_with_a_localhost_url_is_400()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var resp = await LinkAsync(
+            FileService.SponsorLogo, Guid.NewGuid(), "https://localhost/a.png", token);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
     public async Task Delete_soft_deletes_and_a_later_download_is_404()
     {
         var token = await CreateAdministratorAndSignInAsync();
@@ -151,6 +324,80 @@ public sealed class FilesEndpointsTests : IClassFixture<SimfApiFactory>
 
         var after = await _client.GetAsync(file.Url);
         Assert.Equal(HttpStatusCode.NotFound, after.StatusCode);
+    }
+
+    [Fact]
+    public async Task Delete_removes_the_on_disk_bytes()
+    {
+        // P7 (D-568 hardening) — a soft-delete unlinks the stored blob, not just
+        // the row, so a "deleted" file's bytes do not linger on disk.
+        var token = await CreateAdministratorAndSignInAsync();
+        var upload = await UploadAsync(
+            FileService.SpeakerPhoto, FileOwnerEntityType.Speaker, Guid.NewGuid(),
+            Png, "image/png", "p.png", token);
+        var file = (await upload.Content.ReadFromJsonAsync<ApiResult<UploadedFileResponse>>())!.Data!;
+
+        string storageKey;
+        bool encrypted;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var row = await db.StoredFiles.FirstAsync(f => f.Id == file.Id);
+            storageKey = row.StorageKey!;
+            encrypted = row.IsEncrypted;
+        }
+
+        var del = await DeleteAuthAsync($"/api/v1/files/{file.Id}", token);
+        Assert.Equal(HttpStatusCode.OK, del.StatusCode);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var storage = scope.ServiceProvider.GetRequiredService<IFileStorageProvider>();
+            Assert.Null(await storage.ReadAsync(storageKey, encrypted));
+        }
+    }
+
+    [Fact]
+    public async Task ForceDelete_secure_erases_the_bytes_even_under_a_retention_hold()
+    {
+        // P7 — PDPL right-to-erasure: an IdDocument is retention-held
+        // (IsDeletable=false) so the ordinary delete is 409, but ForceDelete
+        // securely destroys the bytes and stamps SecureDestroyedUtc.
+        var token = await CreateAdministratorAndSignInAsync();
+        var upload = await UploadAsync(
+            FileService.IdDocument, FileOwnerEntityType.UserProfile, Guid.NewGuid(),
+            Png, "image/png", "id.png", token);
+        var file = (await upload.Content.ReadFromJsonAsync<ApiResult<UploadedFileResponse>>())!.Data!;
+
+        var softDelete = await DeleteAuthAsync($"/api/v1/files/{file.Id}", token);
+        Assert.Equal(HttpStatusCode.Conflict, softDelete.StatusCode);
+
+        var force = await SendAuthAsync(HttpMethod.Delete, $"/api/v1/files/{file.Id}/force", token);
+        Assert.Equal(HttpStatusCode.OK, force.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var row = await db.StoredFiles.FirstAsync(f => f.Id == file.Id);
+        Assert.NotNull(row.SecureDestroyedUtc);
+        Assert.False(row.IsActive);
+        var storage = scope.ServiceProvider.GetRequiredService<IFileStorageProvider>();
+        Assert.Null(await storage.ReadAsync(row.StorageKey!, row.IsEncrypted));
+    }
+
+    [Fact]
+    public async Task ForceDelete_requires_the_force_delete_permission()
+    {
+        // A signed-in non-admin (no Files.ForceDelete) is forbidden.
+        var token = await CreateAdministratorAndSignInAsync();
+        var upload = await UploadAsync(
+            FileService.SpeakerPhoto, FileOwnerEntityType.Speaker, Guid.NewGuid(),
+            Png, "image/png", "p.png", token);
+        var file = (await upload.Content.ReadFromJsonAsync<ApiResult<UploadedFileResponse>>())!.Data!;
+
+        var visitor = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
+        var resp = await SendAuthAsync(
+            HttpMethod.Delete, $"/api/v1/files/{file.Id}/force", visitor.AccessToken);
+        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
     }
 
     [Fact]
@@ -177,10 +424,13 @@ public sealed class FilesEndpointsTests : IClassFixture<SimfApiFactory>
         FileService service, FileOwnerEntityType ownerType, Guid? ownerId,
         byte[] bytes, string contentType, string fileName)
     {
+        // P2 (D-568) — the owner family is server-forced from the policy; the
+        // client no longer sends OwnerEntityType (the `ownerType` arg documents
+        // the expected family for the reader). Only the owner id rides the form.
+        _ = ownerType;
         var form = new MultipartFormDataContent
         {
             { new StringContent(service.ToString()), "Service" },
-            { new StringContent(ownerType.ToString()), "OwnerEntityType" },
         };
         if (ownerId is { } id)
         {
@@ -217,6 +467,24 @@ public sealed class FilesEndpointsTests : IClassFixture<SimfApiFactory>
     private Task<HttpResponseMessage> DeleteAuthAsync(string url, string token)
     {
         var request = new HttpRequestMessage(HttpMethod.Delete, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
+
+    private Task<HttpResponseMessage> SendAuthAsync(HttpMethod method, string url, string token)
+    {
+        var request = new HttpRequestMessage(method, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
+
+    private Task<HttpResponseMessage> LinkAsync(
+        FileService service, Guid? ownerId, string url, string token)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/files/link")
+        {
+            Content = JsonContent.Create(new { Service = service, OwnerEntityId = ownerId, Url = url }),
+        };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return _client.SendAsync(request);
     }

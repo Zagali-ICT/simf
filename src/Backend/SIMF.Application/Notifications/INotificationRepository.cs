@@ -1,4 +1,5 @@
 using SIMF.Common;
+using SIMF.Common.Enums;
 using SIMF.Contracts.Notifications;
 using SIMF.Domain.Notifications;
 
@@ -24,6 +25,9 @@ public interface INotificationRepository
         int skip,
         int top,
         bool unreadOnly,
+        // A8 — optional server-side kind narrow; null/empty = all kinds. Appended
+        // (defaulted → no other caller breaks).
+        IReadOnlyCollection<NotificationKind>? kinds = null,
         CancellationToken cancellationToken = default);
 
     Task<int> CountUnreadForUserAsync(

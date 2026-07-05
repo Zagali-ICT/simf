@@ -5,6 +5,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
+using SIMF.Application.Files.Abstractions;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -75,8 +76,7 @@ public sealed class PublicPresentationsTests : IClassFixture<SimfApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var app = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var storage = scope.ServiceProvider
-            .GetRequiredService<ISpeakerPresentationStorage>();
+        var fileService = scope.ServiceProvider.GetRequiredService<IFileService>();
         var now = scope.ServiceProvider.GetRequiredService<TimeProvider>().GetUtcNow();
 
         var hall = new Hall
@@ -108,17 +108,24 @@ public sealed class PublicPresentationsTests : IClassFixture<SimfApiFactory>
 
         var presentationId = Guid.NewGuid();
         const string fileName = "deck.pdf";
-        var storedName = await storage.SaveAsync(presentationId, PdfBytes, fileName);
+        var actorId = Guid.NewGuid();
+        // D-568 (S6) — seed the bytes in the unified StoredFile store (owner = the
+        // presentation); StoredFileName holds the bare-Guid pointer.
+        var stored = await fileService.UploadAsync(
+            new UploadFileCommand(
+                FileService.SpeakerPresentation, presentationId, PdfBytes, fileName, "application/pdf",
+                actorId, FailClosed: false),
+            CancellationToken.None);
         app.SpeakerPresentations.Add(new SpeakerPresentation
         {
             Id = presentationId,
             SpeakerId = speaker.Id,
             SessionId = session.Id,
             FileName = fileName,
-            StoredFileName = storedName,
+            StoredFileName = stored.Id.ToString(),
             ContentType = "application/pdf",
             SizeBytes = PdfBytes.Length,
-            UploadedByUserId = Guid.NewGuid(),
+            UploadedByUserId = actorId,
             IsActive = true,
             CreatedAt = now,
         });

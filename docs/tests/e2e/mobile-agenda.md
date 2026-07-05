@@ -23,8 +23,10 @@
 > reads the **day-grouped** programme (`GET /app/programme/days`) and renders
 > the header **برنامج الملتقى**, the day strip (the programme days), the selected
 > day's **own title + logo banner** ("تفاصيل اليوم" carries the day title — owner:
-> not a static label), the **type tabs** (الكل / ورش العمل / جلسات / احداث —
-> client-side filter on the new `SessionType`), then the **المواعيد** list with the
+> not a static label), the **type tabs** (الكل / ورش العمل / جلسات — client-side
+> filter on the new `SessionType`; the احداث/Events tab was removed per owner
+> 2026-07-03, an event-typed session now shows under الكل only), then the
+> **المواعيد** list with the
 > first session **featured** (expanded with the day banner). Widget tests cover:
 > header + day title + tabs + numbered rows; search filter; **type-tab filter**;
 > day-strip day switch; selected-cell inversion; row→detail; empty; error→retry;
