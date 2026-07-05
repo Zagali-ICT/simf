@@ -17,15 +17,14 @@ import 'my_area_rows.dart';
 /// اليوم schedule groups, and the المزيد rows. The stat tiles are
 /// **display-only** — D-653 restored them to match the frame after D-609's
 /// removal; they show the counts but no longer drill into list screens. Owns
-/// the favourites-count watch; the three async account actions come from the
-/// screen (they hold the ImagePicker / identity flow + dashboard reload).
+/// the favourites-count watch; the two async account actions come from the
+/// screen (they hold the identity-verification flow + dashboard reload).
 class MyAreaDashboardBody extends ConsumerWidget {
   const MyAreaDashboardBody({
     required this.dashboard,
     required this.referenceNumber,
     required this.onShareContact,
     required this.onChangeAvatar,
-    required this.onUploadIdDocument,
     super.key,
   });
 
@@ -33,7 +32,6 @@ class MyAreaDashboardBody extends ConsumerWidget {
   final String? referenceNumber;
   final VoidCallback onShareContact;
   final VoidCallback onChangeAvatar;
-  final VoidCallback onUploadIdDocument;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -169,13 +167,6 @@ class MyAreaDashboardBody extends ConsumerWidget {
         MyAreaMoreRow(
           label: l10n.joinHubTitle,
           onTap: () => context.pushNamed(RouteNames.joinSessionHub),
-        ),
-        const SizedBox(height: SimfTokens.space4),
-        // Photos-only profile edit (owner scope): re-upload the ID document
-        // from the gallery. The face photo is changed by tapping the avatar.
-        MyAreaMoreRow(
-          label: l10n.updateIdPhotoLink,
-          onTap: onUploadIdDocument,
         ),
         const SizedBox(height: SimfTokens.space4),
         MyAreaMoreRow(

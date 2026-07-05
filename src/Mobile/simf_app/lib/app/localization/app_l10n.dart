@@ -310,14 +310,6 @@ class AppL10n {
         'أدخل الاسم الكامل (من مقطعين إلى 4 مقاطع)',
         'Enter your full name (2 to 4 parts)',
       );
-  // My Area — photos-only profile edit: re-upload the ID document.
-  String get updateIdPhotoLink => _t('تحديث صورة الهوية', 'Update ID photo');
-  String get idImageUpdatedToast =>
-      _t('تم تحديث صورة الهوية', 'ID photo updated');
-  String get idImageUpdateFailed => _t(
-        'تعذّر رفع صورة الهوية. حاول مرة أخرى.',
-        "Couldn't upload the ID photo. Try again.",
-      );
   // C6 (D-371/D-459) — رقم اللوحة, optional; Saudi 17-letter set when filled.
   String get plateNumberLabel =>
       _t('رقم اللوحة (اختياري)', 'Plate number (optional)');

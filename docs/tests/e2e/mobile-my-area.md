@@ -21,8 +21,9 @@
 > into a **جلسات** group and a **مقابلات** group, each under its gold
 > sub-header; the two share pills were re-ordered to مشاركة جهة اتصال (right) ·
 > مشاركة ملفي (left); the stat label is **مقابلات** (was "مقابلات مؤكدة"). The
-> owner extras (تحديث صورة الهوية, the Face-ID toggle) and the shell header
-> chrome are kept (beyond the frame, per the owner invariants).
+> owner extra (the Face-ID toggle) and the shell header chrome are kept (beyond
+> the frame, per the owner invariants). **D-654:** the "تحديث صورة الهوية"
+> (Update ID photo) row was removed from the المزيد list (owner).
 
 | | |
 |--|--|
@@ -47,7 +48,7 @@
 | E2E-MOB014-008 | RTL render of card + counters + Arabic tier/hall labels | i18n | P1 | authored ✓ (screen — Arabic RTL + pending/403 limited card + session-row nav) |
 | E2E-MOB014-009 | KSA layout: language tile toggles AR/EN; theme tile visible but disabled | happy | P1 | authored ✓ (screen — disabled palette + no tap) |
 | E2E-MOB014-010 | مشاركة ملفي opens the share-my-contact QR screen | happy | P2 | authored ✓ (screen) |
-| E2E-MOB014-011 | **Photos-only profile edit (D-437):** the المزيد section shows an **"Update ID photo"** row that re-uploads the ID document from the gallery (`POST …/user-profile/id-image`), with a success / failure toast; the **face photo (avatar)** is changed via the existing tap-the-avatar flow. Names stay set-at-sign-up (not editable here) | happy | P1 | authored ✓ (screen — the row renders; gallery upload is a platform channel, driven live) |
+| E2E-MOB014-011 | ~~Photos-only profile edit (D-437): "Update ID photo" row~~ — **🗑️ REMOVED (D-654, owner):** the "تحديث صورة الهوية" row is gone from My Area; the face photo (avatar) is still changed via the tap-the-avatar flow (`_changeAvatar`) | happy | — | removed ✓ (screen asserts the row is absent) |
 | E2E-MOB014-012 | **Face-ID toggle (D-445):** the المزيد section shows an enable/disable **"Face ID sign-in"** switch that **self-hides when the device has no usable biometric**; turning it on enrols a device key (+ success toast); turning it **off first asks to confirm the permanent delete** ("…permanently deleted from this device") and only revokes after the user taps **Delete** (Cancel keeps the key). Mirrored in the side menu. | happy | P1 | authored ✓ (widget — `FaceIdToggleTile` hidden-when-unavailable / on→enrol+flip / off→confirm→revoke+flip / cancel→keep) |
 | E2E-MOB014-013 | **جدولي اليوم grouping (758:1283, D-447):** the schedule splits into a "جلسات" group then a "مقابلات" group, each under its gold sub-header; both empty → the no-items placeholder | i18n/visual | P1 | authored ✓ (screen — groups + RTL `dy` order: sessions above meetings) |
 | E2E-MOB014-014 | **Share pills order (758:1305, D-447):** مشاركة جهة اتصال at the inline-start (right), مشاركة ملفي at the end (left) | i18n | P2 | authored ✓ (screen — RTL `getCenter().dx`) |
@@ -107,16 +108,13 @@ Scenario: The الإحصائيات stat tiles open the Coming-soon placeholder
 
 **Evidence:** `ksa_shell_test.dart` — `KsaStatTile` fires its `onTap` (green); the tiles are wired to the `savedSessions` / `savedMeetings` ComingSoon routes in `my_area_screen.dart`.
 
-### E2E-MOB014-011 — Update ID photo (photos-only edit, D-437)
+### E2E-MOB014-011 — Update ID photo — 🗑️ REMOVED (D-654, owner)
 
 ```gherkin
-Scenario: An approved visitor re-uploads the ID document from My Area
+Scenario: The "Update ID photo" row is no longer on My Area
   Given an approved visitor on /my-area
-  Then the المزيد section shows an "Update ID photo" / "تحديث صورة الهوية" row
-  When they tap it
-  Then the gallery opens and a picked image is uploaded to POST /app/account/user-profile/id-image
-  And a success toast "ID photo updated" (or a failure toast) is shown
-  And the face photo is changed separately by tapping the identity-card avatar (existing flow)
+  Then the المزيد section does NOT show an "Update ID photo" / "تحديث صورة الهوية" row
+  And the face photo (avatar) is still changed by tapping the identity-card avatar (existing flow)
 ```
 
 

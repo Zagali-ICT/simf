@@ -197,9 +197,8 @@ void main() {
       expect(find.text('Opening'), findsOneWidget);
       await _scrollTo(tester, find.text('My smart badge'));
       expect(find.text('My smart badge'), findsOneWidget);
-      // Photos-only profile edit (two-photo split): the Update ID photo action.
-      await _scrollTo(tester, find.text('Update ID photo'));
-      expect(find.text('Update ID photo'), findsOneWidget);
+      // D-654 — the "Update ID photo" action was removed from My Area (owner).
+      expect(find.text('Update ID photo'), findsNothing);
       // Language / theme / calendar export / sign-out moved to the shell's
       // side drawer (D-396) — they must NOT be on the profile page anymore.
       expect(find.text('العربية · English'), findsNothing);
