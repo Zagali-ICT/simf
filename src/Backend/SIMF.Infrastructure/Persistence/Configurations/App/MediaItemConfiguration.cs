@@ -8,9 +8,10 @@ namespace SIMF.Infrastructure.Persistence.Configurations.App;
 /// Lives in the <c>...Configurations.App</c> namespace so it is picked up by
 /// <c>SimfAppDbContext.OnModelCreating</c>'s
 /// <c>ApplyConfigurationsFromAssembly</c> namespace filter. Binary bytes are
-/// out-of-row (D-90), so only the relative-path strings are persisted here.
-/// Max lengths below are the single source of truth the FluentValidation
-/// rules and the service validation mirror.</summary>
+/// out-of-row (D-90) in the unified StoredFile store, referenced by the
+/// <c>ImageFileId</c> / <c>ThumbnailFileId</c> pointers. Max lengths below are
+/// the single source of truth the FluentValidation rules and the service
+/// validation mirror.</summary>
 internal sealed class MediaItemConfiguration : IEntityTypeConfiguration<MediaItem>
 {
     public void Configure(EntityTypeBuilder<MediaItem> builder)
@@ -25,9 +26,7 @@ internal sealed class MediaItemConfiguration : IEntityTypeConfiguration<MediaIte
         builder.Property(item => item.Title).HasMaxLength(200);
         builder.Property(item => item.TitleArabic).HasMaxLength(200);
 
-        builder.Property(item => item.ImageRelativePath).HasMaxLength(256);
         builder.Property(item => item.Url).HasMaxLength(2048);
-        builder.Property(item => item.ThumbnailRelativePath).HasMaxLength(256);
 
         builder.Property(item => item.Album).HasMaxLength(200);
         builder.Property(item => item.AlbumArabic).HasMaxLength(200);

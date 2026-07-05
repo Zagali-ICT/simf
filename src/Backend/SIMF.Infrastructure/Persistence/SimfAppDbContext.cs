@@ -4,7 +4,6 @@ using SIMF.Application.Abstractions;
 using SIMF.Domain.AccessControl;
 using SIMF.Domain.Ai;
 using SIMF.Domain.Archive;
-using SIMF.Domain.Assets;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.BusinessMeetings;
 using SIMF.Domain.Cms;
@@ -255,12 +254,6 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     public DbSet<BusinessMeeting> BusinessMeetings => Set<BusinessMeeting>();
     public DbSet<BusinessMeetingParticipant> BusinessMeetingParticipants =>
         Set<BusinessMeetingParticipant>();
-
-    // D-357 — unified media assets: the single upload/download store every
-    // image-bearing entity shares (speaker photo, company / sponsor /
-    // media-partner logo, archive cover, news image). Bytes live out-of-row.
-    // SUPERSEDED by StoredFile (D-568); kept until the Strategy-A cutover retires it.
-    public DbSet<Asset> Assets => Set<Asset>();
 
     // D-568 — the single, unified file store: ONE table for every uploaded or
     // linked file (avatar, ID document, VIP photo, media gallery, speaker photo /
