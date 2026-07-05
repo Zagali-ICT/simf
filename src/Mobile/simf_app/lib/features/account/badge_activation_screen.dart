@@ -10,6 +10,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_form_scaffold.dart';
+import '../../core/errors/api_error_l10n.dart';
 import '../../core/validation/email_validation.dart';
 import '../../core/validation/password_validation.dart';
 import '../../core/validation/required_validation.dart';
@@ -101,9 +102,7 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
         return;
       }
       setState(() {
-        _error = failure is NetworkUnavailable
-            ? l10n.networkErrorBody
-            : failure.source.message;
+        _error = failure.source.localizedMessage(l10n);
       });
     } finally {
       if (mounted) {
@@ -140,9 +139,7 @@ class _BadgeActivationScreenState extends ConsumerState<BadgeActivationScreen> {
         return;
       }
       setState(() {
-        _error = failure is NetworkUnavailable
-            ? l10n.networkErrorBody
-            : failure.source.message;
+        _error = failure.source.localizedMessage(l10n);
       });
     } finally {
       if (mounted) {

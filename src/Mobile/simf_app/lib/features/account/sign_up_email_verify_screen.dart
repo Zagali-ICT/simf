@@ -8,6 +8,7 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
 import 'widgets/auth_chrome.dart';
 import 'widgets/otp_code_boxes.dart';
@@ -112,9 +113,7 @@ class _SignUpEmailVerifyScreenState
         return;
       }
       setState(() {
-        _error = failure is NetworkUnavailable
-            ? l10n.networkErrorBody
-            : failure.source.message;
+        _error = failure.source.localizedMessage(l10n);
         _code.clear();
       });
     } finally {
@@ -144,9 +143,7 @@ class _SignUpEmailVerifyScreenState
         return;
       }
       setState(() {
-        _error = failure is NetworkUnavailable
-            ? l10n.networkErrorBody
-            : failure.source.message;
+        _error = failure.source.localizedMessage(l10n);
       });
     } finally {
       if (mounted) {

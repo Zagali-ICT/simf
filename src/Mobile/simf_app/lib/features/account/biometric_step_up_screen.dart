@@ -9,6 +9,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/theme/app_assets.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_svg_icon.dart';
+import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
 import 'biometric_auth.dart';
 import 'widgets/otp_code_boxes.dart';
@@ -153,9 +154,7 @@ class _BiometricStepUpScreenState extends ConsumerState<BiometricStepUpScreen> {
         return;
       }
       setState(() {
-        _error = failure is NetworkUnavailable
-            ? l10n.networkErrorBody
-            : failure.source.message;
+        _error = failure.source.localizedMessage(l10n);
       });
     } finally {
       if (mounted) {
