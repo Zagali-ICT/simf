@@ -161,11 +161,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 OnboardingTopBar(
                   showBack: _index > 0,
                   onBack: _onBack,
-                  showSkip: !isLast,
-                  onSkip: _onSkip,
-                  skipLabel: l10n.onboardingSkip,
                 ),
-                const Spacer(),
+                const SizedBox(height: 8),
                 const SimfLogo(size: 136),
                 const SizedBox(height: 40),
                 SizedBox(
@@ -214,11 +211,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 ),
                 const SizedBox(height: 24),
                 OnboardingDots(count: _stepCount, activeIndex: _index),
-                const Spacer(flex: 2),
+                const Spacer(),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  // The skip moved to the top-trailing corner; the bottom keeps
-                  // only the primary التالي action.
                   child: FilledButton(
                     onPressed: _onNext,
                     child: Text(
@@ -230,7 +225,27 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
+                // تخطي sits under the primary action, centered, on every step
+                // but the last — Figma 758:1077 (node 758:1091). A matching
+                // spacer holds the last step steady when the link is gone.
+                if (isLast)
+                  const SizedBox(height: 48)
+                else
+                  TextButton(
+                    onPressed: _onSkip,
+                    style: TextButton.styleFrom(
+                      foregroundColor: SimfTokens.accent,
+                    ),
+                    child: Text(
+                      l10n.onboardingSkip,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 16),
               ],
             ),
           ),
