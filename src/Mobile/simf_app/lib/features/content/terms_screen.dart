@@ -5,10 +5,10 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import 'data/content_models.dart';
 import 'data/content_repository.dart';
-
-const Color _sweepTint = Color(0x0AFFFFFF);
+import 'widgets/terms_bullet_card.dart';
 
 /// Page 009 — الشروط والأحكام · Terms & conditions. The KSA-Project Figma
 /// design (node 505:1553 — D-367, fidelity pass D-375): navy surface + sweep,
@@ -116,7 +116,7 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
                 width: 313,
                 height: 323,
                 decoration: BoxDecoration(
-                  color: _sweepTint,
+                  color: SimfTokens.surfaceTint,
                   borderRadius: BorderRadius.circular(40),
                 ),
               ),
@@ -173,10 +173,21 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
       );
     }
     if (_error != null) {
-      return _buildMessage(l10n, _error!);
+      return SimfErrorState(
+        message: _error!,
+        retryLabel: l10n.retryLabel,
+        onRetry: _load,
+      );
     }
     if (_empty) {
-      return _buildMessage(l10n, l10n.termsEmpty);
+      // A missing/inactive block is empty, not broken — but the design still
+      // offers a retry here, so the shared error surface (which carries the
+      // retry) is the right shared widget, not the icon-only SimfEmptyState.
+      return SimfErrorState(
+        message: l10n.termsEmpty,
+        retryLabel: l10n.retryLabel,
+        onRetry: _load,
+      );
     }
     return _buildContent(l10n);
   }
@@ -214,7 +225,7 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
                 ),
                 const SizedBox(height: 16),
                 for (final item in items) ...<Widget>[
-                  _BulletCard(text: item),
+                  TermsBulletCard(text: item),
                   const SizedBox(height: 16),
                 ],
                 const SizedBox(height: 8),
@@ -244,70 +255,4 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
     );
   }
 
-  Widget _buildMessage(AppL10n l10n, String message) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: SimfTokens.txtSecondary),
-            ),
-            const SizedBox(height: SimfTokens.space4),
-            FilledButton(
-              onPressed: _load,
-              child: Text(l10n.retryLabel),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-}
-
-/// One gold-hairline bullet card (Figma 505:1639): the gold • at the inline
-/// start, the term text in `beigeBorder`.
-class _BulletCard extends StatelessWidget {
-  const _BulletCard({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        // The frame's hairline (505:1639 — 0.2px); kept ≥0.2 so it still
-        // rasterises on every phone density.
-        border: Border.all(color: SimfTokens.accent, width: 0.2),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          const Padding(
-            padding: EdgeInsetsDirectional.only(start: 4, end: 12),
-            child: Text(
-              '•',
-              style: TextStyle(color: SimfTokens.accent, fontSize: 16),
-            ),
-          ),
-          Expanded(
-            child: SelectableText(
-              text,
-              style: const TextStyle(
-                color: SimfTokens.beigeBorder,
-                fontSize: 14,
-                height: 1.5,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

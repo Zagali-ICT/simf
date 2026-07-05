@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart' show DateFormat;
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
@@ -10,8 +9,9 @@ import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import 'data/moderation_models.dart';
 import 'data/moderation_repository.dart';
-
-final DateFormat _hm = DateFormat('HH:mm');
+import 'widgets/moderator_filter_bar.dart';
+import 'widgets/moderator_header.dart';
+import 'widgets/moderator_question_card.dart';
 
 /// Moderator (محاور) per-session Q&A desk — Figma 1461:12227 (D-405 / D-509).
 ///
@@ -185,49 +185,10 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
         bottom: false,
         child: Column(
           children: <Widget>[
-            // Figma 1461:12565 — navy header block: back (left) + title (centre)
-            // + role pill (right). Forced LTR so back sits on the left as drawn.
-            Container(
-              color: SimfTokens.navyHeader,
-              padding: const EdgeInsets.fromLTRB(8, 4, 16, 16),
-              child: Row(
-                textDirection: TextDirection.ltr,
-                children: <Widget>[
-                  // Circular navy back button with a left chevron (Figma).
-                  Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Material(
-                      color: SimfTokens.navyDeep,
-                      shape: const CircleBorder(),
-                      child: InkWell(
-                        customBorder: const CircleBorder(),
-                        onTap: () => backOrHome(context),
-                        child: const Padding(
-                          padding: EdgeInsets.all(6),
-                          child: Icon(
-                            Icons.chevron_left,
-                            color: Colors.white,
-                            size: 26,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      l10n.moderatorDeskTitle,
-                      textAlign: TextAlign.center,
-                      textDirection: TextDirection.rtl,
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  _RolePill(label: l10n.moderatorBadge),
-                ],
-              ),
+            ModeratorDeskHeader(
+              title: l10n.moderatorDeskTitle,
+              badgeLabel: l10n.moderatorBadge,
+              onBack: () => backOrHome(context),
             ),
             Expanded(child: _body(l10n)),
           ],
@@ -264,7 +225,7 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        _FilterBar(
+        ModeratorFilterBar(
           l10n: l10n,
           filter: _filter,
           counts: <ModeratorQueueFilter, int>{
@@ -278,14 +239,14 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
                   icon: Icons.forum_outlined,
                   message: l10n.moderatorEmpty,
                 )
-              : RefreshIndicator(
+              : SimfPullToRefresh(
                   onRefresh: _load,
                   child: ListView.separated(
                     padding: const EdgeInsets.all(SimfTokens.space4),
                     itemCount: rows.length,
                     separatorBuilder: (_, __) =>
                         const SizedBox(height: SimfTokens.space3),
-                    itemBuilder: (context, i) => _QuestionCard(
+                    itemBuilder: (context, i) => ModeratorQuestionCard(
                       l10n: l10n,
                       question: rows[i],
                       answered: _answered.contains(rows[i].id),
@@ -298,401 +259,6 @@ class _SessionModerateScreenState extends ConsumerState<SessionModerateScreen> {
                 ),
         ),
       ],
-    );
-  }
-}
-
-class _RolePill extends StatelessWidget {
-  const _RolePill({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      alignment: Alignment.center,
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: SimfTokens.accent,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w700,
-          fontSize: SimfTokens.textTitle,
-        ),
-      ),
-    );
-  }
-}
-
-class _FilterBar extends StatelessWidget {
-  const _FilterBar({
-    required this.l10n,
-    required this.filter,
-    required this.counts,
-    required this.onChanged,
-  });
-
-  final AppL10n l10n;
-  final ModeratorQueueFilter filter;
-  final Map<ModeratorQueueFilter, int> counts;
-  final ValueChanged<ModeratorQueueFilter> onChanged;
-
-  String _label(ModeratorQueueFilter f) {
-    switch (f) {
-      case ModeratorQueueFilter.all:
-        return l10n.moderatorChipAll;
-      case ModeratorQueueFilter.fresh:
-        return l10n.moderatorChipNew;
-      case ModeratorQueueFilter.accepted:
-        return l10n.moderatorChipAccepted;
-      case ModeratorQueueFilter.answered:
-        return l10n.moderatorChipAnswered;
-      case ModeratorQueueFilter.rejected:
-        return l10n.moderatorChipRejected;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Figma 805:1876 — five equal-width chips filling the row (not a scroll).
-    final filters = ModeratorQueueFilter.values;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-      child: Row(
-        children: <Widget>[
-          for (int i = 0; i < filters.length; i++) ...<Widget>[
-            if (i > 0) const SizedBox(width: SimfTokens.space4),
-            Expanded(
-              child: _Chip(
-                label: _label(filters[i]),
-                count: counts[filters[i]] ?? 0,
-                active: filter == filters[i],
-                onTap: () => onChanged(filters[i]),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _Chip extends StatelessWidget {
-  const _Chip({
-    required this.label,
-    required this.count,
-    required this.active,
-    required this.onTap,
-  });
-
-  final String label;
-  final int count;
-  final bool active;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-      child: Container(
-        height: 58,
-        padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space2),
-        decoration: BoxDecoration(
-          color: active ? SimfTokens.accent : SimfTokens.navyDeep,
-          borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-          border: Border.all(
-            color: active ? SimfTokens.accent : SimfTokens.navyDisabledBorder,
-            width: 1.18,
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: active ? Colors.white : SimfTokens.beigeBorder,
-                  fontWeight: active ? FontWeight.w700 : FontWeight.w400,
-                  fontSize: SimfTokens.textTitle,
-                ),
-              ),
-            ),
-            const SizedBox(width: SimfTokens.space2),
-            Container(
-              width: 28,
-              height: 28,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: active
-                    ? SimfTokens.navy.withValues(alpha: 0.3)
-                    : SimfTokens.navyDisabledBorder,
-                borderRadius: BorderRadius.circular(5),
-              ),
-              child: Text(
-                '$count',
-                style: TextStyle(
-                  color: active ? Colors.white : SimfTokens.accent,
-                  fontWeight: FontWeight.w700,
-                  fontSize: SimfTokens.textMd,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _QuestionCard extends StatelessWidget {
-  const _QuestionCard({
-    required this.l10n,
-    required this.question,
-    required this.answered,
-    required this.rejected,
-    required this.onReject,
-    required this.onAnswered,
-    required this.onPush,
-  });
-
-  final AppL10n l10n;
-  final ModeratorQuestion question;
-  final bool answered;
-  final bool rejected;
-  final VoidCallback onReject;
-  final VoidCallback onAnswered;
-  final VoidCallback onPush;
-
-  static String _initials(String name) {
-    final parts = name
-        .trim()
-        .split(RegExp(r'\s+'))
-        .where((p) => p.isNotEmpty)
-        .toList();
-    if (parts.isEmpty) {
-      return '؟';
-    }
-    if (parts.length == 1) {
-      final p = parts.first;
-      return p.length >= 2 ? p.substring(0, 2) : p;
-    }
-    return parts[0].substring(0, 1) + parts[1].substring(0, 1);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Figma 1462:12236 — navy card with an 8px gold TOP border, a header row
-    // (time left, name + gold initial-avatar right), a bordered question box,
-    // and three large action buttons.
-    return Container(
-      padding: const EdgeInsets.all(SimfTokens.space4),
-      decoration: const BoxDecoration(
-        color: SimfTokens.navyDeep,
-        borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radius)),
-        border: Border(top: BorderSide(color: SimfTokens.accent, width: 8)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Text(
-                _hm.format(question.createdAt.toLocal()),
-                style: const TextStyle(
-                  color: SimfTokens.beigeBorder,
-                  fontWeight: FontWeight.w600,
-                  fontSize: SimfTokens.textHero - 4, // 24
-                ),
-              ),
-              const Spacer(),
-              Flexible(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: <Widget>[
-                    Text(
-                      question.submitterName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.end,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: SimfTokens.textHero, // 28
-                      ),
-                    ),
-                    if (question.recipient == QuestionRecipient.host)
-                      Text(
-                        l10n.moderatorToHost,
-                        style: const TextStyle(
-                          color: SimfTokens.accent,
-                          fontSize: SimfTokens.textTitle,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: SimfTokens.space5),
-              Container(
-                width: 80,
-                height: 80,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: SimfTokens.accent,
-                  borderRadius: BorderRadius.circular(SimfTokens.radiusLg),
-                ),
-                child: Text(
-                  _initials(question.submitterName),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: SimfTokens.textHero,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: SimfTokens.space6),
-          // Question box — dark inset, gold border, asymmetric radii.
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(SimfTokens.space5),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.25),
-              border: Border.all(color: SimfTokens.accent, width: 2),
-              borderRadius: const BorderRadius.only(
-                topRight: Radius.circular(16),
-                topLeft: Radius.circular(8),
-                bottomLeft: Radius.circular(16),
-                bottomRight: Radius.circular(16),
-              ),
-            ),
-            child: Text(
-              question.questionText,
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: SimfTokens.textHero, // 28
-                height: 1.5,
-              ),
-            ),
-          ),
-          const SizedBox(height: SimfTokens.space6),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: _ActionButton(
-                  label: l10n.moderatorActionReject,
-                  icon: Icons.close,
-                  color: SimfTokens.qReject,
-                  filled: rejected,
-                  primary: false,
-                  onTap: onReject,
-                ),
-              ),
-              const SizedBox(width: SimfTokens.space4),
-              Expanded(
-                child: _ActionButton(
-                  label: l10n.moderatorActionAnswered,
-                  icon: Icons.check,
-                  color: SimfTokens.qAnswered,
-                  filled: answered,
-                  primary: false,
-                  onTap: onAnswered,
-                ),
-              ),
-              const SizedBox(width: SimfTokens.space4),
-              Expanded(
-                child: _ActionButton(
-                  label: l10n.moderatorActionOnStage,
-                  icon: Icons.access_time,
-                  color: SimfTokens.qStage,
-                  filled: question.isOnStage && !answered && !rejected,
-                  // The on-stage CTA is drawn solid amber in the frame.
-                  primary: true,
-                  onTap: onPush,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ActionButton extends StatelessWidget {
-  const _ActionButton({
-    required this.label,
-    required this.icon,
-    required this.color,
-    required this.filled,
-    required this.primary,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final Color color;
-  final bool filled;
-
-  /// The on-stage action is drawn solid by default (Figma); reject/answered are
-  /// outline until their state is active.
-  final bool primary;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final solid = filled || primary;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(SimfTokens.radiusLg),
-      child: Container(
-        height: 88,
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space2),
-        decoration: BoxDecoration(
-          color: solid ? color : color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(SimfTokens.radiusLg),
-          border: Border.all(color: color, width: 2),
-          boxShadow: primary
-              ? <BoxShadow>[
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.25),
-                    blurRadius: 10,
-                    offset: const Offset(0, 8),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Icon(icon, size: 30, color: solid ? Colors.white : color),
-            const SizedBox(width: SimfTokens.space3),
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: solid ? Colors.white : color,
-                  fontWeight: FontWeight.w700,
-                  fontSize: SimfTokens.textHero - 4, // 24
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

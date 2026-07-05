@@ -1,0 +1,53 @@
+import 'package:flutter/material.dart';
+
+import '../../../app/theme/tokens.dart';
+
+/// The full-width gold action button: radius-4 gold fill with the centred white
+/// label. Stays gold while [loading] (taps disabled, a white spinner replaces the
+/// label) so the button never turns into an unreadable dark box on the navy.
+class RateGoldButton extends StatelessWidget {
+  const RateGoldButton({
+    required this.label,
+    required this.onTap,
+    this.loading = false,
+    super.key,
+  });
+
+  final String label;
+  final bool loading;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: SimfTokens.accent,
+      borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+      child: InkWell(
+        onTap: loading ? null : onTap,
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        child: SizedBox(
+          height: 48,
+          child: Center(
+            child: loading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : Text(
+                    label,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: SimfTokens.textLg,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+}

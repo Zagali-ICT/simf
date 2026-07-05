@@ -16,6 +16,7 @@ import '../route_names.dart';
 import '../theme/tokens.dart';
 import 'more_drawer.dart';
 import 'simf_bottom_nav.dart';
+import 'simf_language_toggle.dart';
 import 'simf_logo.dart';
 import 'simf_svg_icon.dart';
 
@@ -185,13 +186,21 @@ class SimfPageShell extends StatelessWidget {
             ),
           ),
           // The shared trailing action cluster (bell + language + inert theme +
-          // drawer ☰) when [showHeaderActions]; otherwise a 42-wide spacer that
-          // balances the back box so the title stays truly centred — the Figma
-          // standard nav (758-1469 / 922-2824) is back + title + line only.
+          // drawer ☰) when [showHeaderActions]; otherwise the gold language
+          // globe alone — the Figma sub-page frames (908-1744 …) carry it at the
+          // trailing corner (owner 2026-07-05: add the globe to every sub-page,
+          // superseding the 2026-06-28 back+title-only nav). Its 40-wide box also
+          // balances the 42 back box so the title stays effectively centred.
           if (showHeaderActions)
             SimfHeaderActions(showBell: showNotificationsBell)
           else
-            const SizedBox(width: 42, height: 42),
+            Consumer(
+              builder: (context, ref, _) => SimfLanguageToggle(
+                onPressed: () => unawaited(
+                  ref.read(localeControllerProvider.notifier).toggle(),
+                ),
+              ),
+            ),
         ],
       ),
     );

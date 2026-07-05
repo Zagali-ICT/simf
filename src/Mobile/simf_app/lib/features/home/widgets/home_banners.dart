@@ -1,0 +1,157 @@
+import 'package:flutter/material.dart';
+
+import '../../../app/localization/app_l10n.dart';
+import '../../../app/theme/tokens.dart';
+import '../../../app/widgets/simf_svg_icon.dart';
+
+/// The red LIVE banner (frame node 210:736) — static config for now (no API,
+/// D10, Page_013 L-6); tapping it opens the live view.
+class LiveBanner extends StatelessWidget {
+  const LiveBanner({required this.l10n, required this.onTap, super.key});
+
+  final AppL10n l10n;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        side: const BorderSide(color: SimfTokens.danger, width: 0.5),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        child: Padding(
+          padding: const EdgeInsets.all(SimfTokens.space2),
+          child: Row(
+            children: <Widget>[
+              Container(
+                width: 60,
+                height: 60,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: SimfTokens.danger,
+                  borderRadius: BorderRadius.circular(SimfTokens.radius),
+                ),
+                child: Text(
+                  l10n.liveNowLabel,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: SimfTokens.textMd,
+                    // Frame 758:1157 — the "مباشر" badge is SemiBold.
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(width: SimfTokens.space3),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      l10n.homeLiveTitle,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: SimfTokens.textMd,
+                      ),
+                    ),
+                    const SizedBox(height: SimfTokens.space2),
+                    Text(
+                      l10n.homeLiveSubtitle,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: SimfTokens.textSm,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: SimfTokens.space2),
+              // Owner 2026-06-27 — the LIVE (YouTube/broadcast) banner's caret
+              // must match the "عن الملتقى" / section rows: the same gold
+              // ic_caret_left.svg (not a white Material arrow). The bundled SVG
+              // points left and does not mirror under RTL.
+              const SimfSvgIcon(
+                'assets/icons/ic_caret_left.svg',
+                color: SimfTokens.accent,
+                size: 24,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The top discovery hero banner (frame node 758:1203): the bundled event
+/// photo under a black scrim, with the gold "اكتشف" title and the white
+/// sub-line right-aligned. Tapping it opens News.
+class DiscoverHeroBanner extends StatelessWidget {
+  const DiscoverHeroBanner({required this.l10n, required this.onTap, super.key});
+
+  final AppL10n l10n;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    // اكتشف hero (frame 758:1203). Taller (160) so on a wide tablet the full
+    // photo is visible (96 made it an ultra-thin strip), and BoxFit.fill so the
+    // whole image stretches into the banner — "view the full image" (owner
+    // 2026-06-27). The outer SizedBox + StackFit.expand give the Stack a definite
+    // size so every layer fills edge-to-edge. Scrim lightened to ~50% so the
+    // photo reads clearly (the 70% black hid it).
+    return SizedBox(
+      height: 160,
+      width: double.infinity,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        child: Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            Image.asset(
+              'assets/images/discover_hero.jpg',
+              fit: BoxFit.fill,
+            ),
+            const ColoredBox(color: Color(0x80000000)),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onTap,
+                child: Padding(
+                  padding: const EdgeInsets.all(SimfTokens.space2),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        l10n.discoverSection,
+                        style: const TextStyle(
+                          color: SimfTokens.accent,
+                          fontWeight: FontWeight.w700,
+                          fontSize: SimfTokens.textLg,
+                        ),
+                      ),
+                      const SizedBox(height: SimfTokens.space2),
+                      Text(
+                        l10n.discoverBannerSubtitle,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w500,
+                          fontSize: SimfTokens.textSm,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

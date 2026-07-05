@@ -40,12 +40,20 @@ class SimfTokens {
   // KSA-Project light-surface + auth-flow palette (D-358/D-359).
   static const Color navySurface = Color(0xFF102238); // elevated navy surface (login bg)
   static const Color navyHeader = Color(0xFF071832); // darker header block behind the forum title (Figma 1467:12565 / 1461:12565)
+  static const Color navyFill80 = Color(0xCC01132D); // navy #01132D @ 80% — reference-number card fill (registration success 505:1525)
+  static const Color navyFill70 = Color(0xB301132D); // navy #01132D @ 70% — gallery video play-circle fill (Figma 949:4059)
+  static const Color navyFill90 = Color(0xE601132D); // navy #01132D @ 90% — onboarding photo overlay (Figma 148:22)
   static const Color chipBorderNavy = Color(0xFF2A4066); // muted navy border on unselected pills (interests grid, Figma 505:1222)
+  static const Color tileBorderNavy = Color(0xFF253660); // contact-tile border (registration success, Figma 522:2223)
   static const Color beigeBorder = Color(0xFFC2B8A2); // "Pragraph Color" — borders + on-navy paragraph text
   static const Color beigeFill10 = Color(0x1AC2B8A2); // beige 10% — tier-pill + link-row icon-box fill (Figma rgba(194,184,162,0.1))
   static const Color beigeBorder40 = Color(0x66C2B8A2); // beige 40% — agenda timeline row divider (Figma 1310:3239 rgba(194,184,162,0.4))
+  static const Color goldFill7 = Color(0x12C9A84C); // gold 7% — delegations stats-strip grid (Figma 1426:10771)
+  static const Color goldFill6 = Color(0x0FC9A84C); // gold 6% — delegations head-of-delegation box fill (Figma 1426:10771)
+  static const Color goldBorder15 = Color(0x26C9A84C); // gold 15% — delegations head-of-delegation box border (Figma 1426:10771)
   static const Color cardBeige = Color(0xFFF1ECE4); // light card surface
   static const Color goldSoft = Color(0xFFD0AC77); // secondary gold text/icons
+  static const Color goldSoftFill50 = Color(0x80D0AC77); // goldSoft @ 50% — onboarding inactive page dot (Figma 148:22)
   static const Color headlineInk = Color(0xFF111827); // headings on light surfaces
   static const Color greyText = Color(0xFF6C7278); // secondary text on light surfaces
   static const Color calendarBand = Color(0xFFE9EAEC); // #4 — light-grey agenda day-strip band
@@ -135,6 +143,7 @@ class SimfTokens {
   static const double textTitle = 18; // KSA "Sub-title 18" (Phase-0 type scale)
   static const double textXl = 20;
   static const double textXxl = 22; // exhibitor/sponsor name (Figma 1439:11894)
+  static const double text24 = 24; // registration-status headline (Figma 1701:3803)
   static const double textHero = 28;
 
   // Named text styles — built incrementally per screen (§5.1). The font family
@@ -148,6 +157,13 @@ class SimfTokens {
   );
   static const TextStyle labelBeigeMedium = TextStyle(
     color: beigeBorder,
+    fontSize: textMd,
+    fontWeight: FontWeight.w500,
+  );
+  // The on-navy white row label (accessibility card labels + toggle titles,
+  // Figma 1116:16630) — the white sibling of [labelBeigeMedium].
+  static const TextStyle labelWhiteMedium = TextStyle(
+    color: Colors.white,
     fontSize: textMd,
     fontWeight: FontWeight.w500,
   );

@@ -12,49 +12,19 @@ import 'package:image_picker/image_picker.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import 'data/liveness.dart';
+import 'widgets/identity_capture_view.dart';
+import 'widgets/identity_fallback_view.dart';
 
-/// The selfie the flow returns to the My-Area caller, which uploads it via the
-/// existing `POST /app/account/avatar`.
-typedef CapturedSelfie = ({Uint8List bytes, String filename});
-
-/// One step of the guided liveness flow (frames 758:4180 / 758:4248 / 758:4316).
-enum LivenessStep { smile, turnRight, turnLeft }
-
-/// The smile threshold (ML Kit `smilingProbability`, 0..1) that satisfies the
-/// "ابتسم" step.
-const double kSmileProbability = 0.7;
-
-/// The minimum absolute head yaw (ML Kit `headEulerAngleY`, degrees) that
-/// satisfies a head-turn step.
-const double kTurnYawDegrees = 20;
-
-/// Pure step gate — true when the detected face satisfies [step]. Kept top-level
-/// so the liveness logic is unit-testable without a camera or the native plugin.
-///
-/// Note on sign: ML Kit's `headEulerAngleY` is positive when the head turns to
-/// the image's right. The two turn steps require a yaw beyond ±[kTurnYawDegrees]
-/// in opposite directions; front-camera mirroring can swap which way the user
-/// perceives as "right", but a turn in each direction is still required.
-bool livenessStepSatisfied(
-  LivenessStep step, {
-  double? smilingProbability,
-  double? headEulerAngleY,
-}) {
-  switch (step) {
-    case LivenessStep.smile:
-      return smilingProbability != null &&
-          smilingProbability >= kSmileProbability;
-    case LivenessStep.turnRight:
-      return headEulerAngleY != null && headEulerAngleY >= kTurnYawDegrees;
-    case LivenessStep.turnLeft:
-      return headEulerAngleY != null && headEulerAngleY <= -kTurnYawDegrees;
-  }
-}
+// The liveness step model + pure gate + prompt helper live in `data/liveness.dart`
+// (unit-testable without a camera); re-exported so existing imports of this
+// screen file keep resolving them.
+export 'data/liveness.dart';
 
 /// التحقق من الهوية — the guided face-capture / liveness screen (D-404, frames
 /// 758:4180 → 758:4248 → 758:4316). A full-bleed navy screen with a framed live
 /// front-camera preview, a prompt per step (ابتسم → ادر راسك لليمين → ادر راسك
-/// لليسار) and a gold 3-dot progress. The user must actually smile, then turn
+/// لليسار) and a gold progress bar. The user must actually smile, then turn
 /// right, then turn left; the forward/smile frame is captured and returned as
 /// the new avatar selfie.
 ///
@@ -77,6 +47,7 @@ class _IdentityVerificationScreenState
   bool _processing = false;
   bool _cameraReady = false;
   bool _cameraFailed = false;
+
   /// The challenge order is shuffled per session (D-422) so the sequence is not
   /// predictable — a fixed smile→right→left order is easier to defeat with a
   /// pre-recorded clip. The forward selfie is still grabbed on the smile step,
@@ -118,8 +89,9 @@ class _IdentityVerificationScreenState
         front,
         ResolutionPreset.medium,
         enableAudio: false,
-        imageFormatGroup:
-            Platform.isAndroid ? ImageFormatGroup.nv21 : ImageFormatGroup.bgra8888,
+        imageFormatGroup: Platform.isAndroid
+            ? ImageFormatGroup.nv21
+            : ImageFormatGroup.bgra8888,
       );
       await controller.initialize();
       _detector = FaceDetector(
@@ -313,176 +285,16 @@ class _IdentityVerificationScreenState
       ),
       body: SafeArea(
         child: _cameraFailed
-            ? _Fallback(l10n: l10n, onPick: () => unawaited(_pickFromGallery()))
-            : _LiveCapture(
+            ? IdentityFallbackView(
                 l10n: l10n,
-                step: _step,
-                activeIndex: _stepIndex,
+                onPick: () => unawaited(_pickFromGallery()),
+              )
+            : LiveCaptureView(
                 ready: _cameraReady,
                 preview: _cameraReady && _camera != null
                     ? CameraPreview(_camera!)
                     : null,
               ),
-      ),
-    );
-  }
-}
-
-/// The prompt text for a step (the frame's "ابتسم" / "ادر راسك لليمين" / "ادر
-/// راسك لليسار").
-String livenessPrompt(AppL10n l10n, LivenessStep step) {
-  switch (step) {
-    case LivenessStep.smile:
-      return l10n.stepSmilePrompt;
-    case LivenessStep.turnRight:
-      return l10n.stepTurnRightPrompt;
-    case LivenessStep.turnLeft:
-      return l10n.stepTurnLeftPrompt;
-  }
-}
-
-class _LiveCapture extends StatelessWidget {
-  const _LiveCapture({
-    required this.l10n,
-    required this.step,
-    required this.activeIndex,
-    required this.ready,
-    required this.preview,
-  });
-
-  final AppL10n l10n;
-  final LivenessStep step;
-
-  /// Position in the shuffled sequence (0-based) — drives the progress dots,
-  /// not the enum index (which no longer matches the displayed order).
-  final int activeIndex;
-  final bool ready;
-  final Widget? preview;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: <Widget>[
-        // The framed face preview (the figma's bordered square) — Expanded so
-        // it scales to the available height without overflowing.
-        Expanded(
-          child: Center(
-            child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: SimfTokens.space6),
-              child: AspectRatio(
-                aspectRatio: 3 / 4,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: SimfTokens.navyDeep,
-                    borderRadius: BorderRadius.circular(SimfTokens.radius),
-                    border: Border.all(color: SimfTokens.accent, width: 2),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(SimfTokens.radius),
-                    child: ready && preview != null
-                        ? FittedBox(fit: BoxFit.cover, child: _sized(preview!))
-                        : const Center(
-                            child: CircularProgressIndicator(
-                              color: SimfTokens.accent,
-                            ),
-                          ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: SimfTokens.space6),
-        Text(
-          livenessPrompt(l10n, step),
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: SimfTokens.textLg,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: SimfTokens.space4),
-        _ProgressDots(activeIndex: step.index),
-        const SizedBox(height: SimfTokens.space6),
-      ],
-    );
-  }
-
-  // CameraPreview needs a finite size inside the FittedBox/BoxFit.cover.
-  Widget _sized(Widget child) =>
-      SizedBox(width: 1080, height: 1440, child: child);
-}
-
-/// The gold 3-dot step indicator (the frame's bottom progress).
-class _ProgressDots extends StatelessWidget {
-  const _ProgressDots({required this.activeIndex});
-
-  final int activeIndex;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        for (var i = 0; i < LivenessStep.values.length; i++)
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: SimfTokens.space1),
-            width: i <= activeIndex ? 28 : 20,
-            height: 6,
-            decoration: BoxDecoration(
-              color: i <= activeIndex
-                  ? SimfTokens.accent
-                  : SimfTokens.beigeBorder.withValues(alpha: 0.4),
-              borderRadius: BorderRadius.circular(3),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-/// Shown when no live camera is available (web / test / emulator / permission
-/// denied): the user picks a photo from the gallery instead (no liveness).
-class _Fallback extends StatelessWidget {
-  const _Fallback({required this.l10n, required this.onPick});
-
-  final AppL10n l10n;
-  final VoidCallback onPick;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            const Icon(
-              Icons.photo_camera_front_outlined,
-              size: 56,
-              color: SimfTokens.beigeBorder,
-            ),
-            const SizedBox(height: SimfTokens.space4),
-            Text(
-              l10n.identityCameraUnavailable,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white),
-            ),
-            const SizedBox(height: SimfTokens.space6),
-            FilledButton.icon(
-              onPressed: onPick,
-              style: FilledButton.styleFrom(
-                backgroundColor: SimfTokens.accent,
-                foregroundColor: SimfTokens.navy,
-                minimumSize: const Size.fromHeight(48),
-              ),
-              icon: const Icon(Icons.photo_library_outlined),
-              label: Text(l10n.chooseFromGallery),
-            ),
-          ],
-        ),
       ),
     );
   }

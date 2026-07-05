@@ -345,6 +345,10 @@ void main() {
       expect(hit(meet, AppRole.moderator), '/'); // focused
     });
 
+    // (D-609: the "my-meetings is attendee-only" test was removed with the
+    // route — the My-meetings screen is backed up as `.bk` and its route is
+    // gone; the requests feed test above still covers the _attendee gate.)
+
     test('the badge tab is universal — every signed-in role keeps it', () {
       for (final role in <AppRole>[
         AppRole.visitor,

@@ -1,0 +1,92 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../app/localization/app_l10n.dart';
+import '../../../app/route_names.dart';
+import '../../../app/theme/tokens.dart';
+import 'contact_us_section.dart';
+import 'reference_number_card.dart';
+import 'registration_success_actions.dart';
+import 'registration_success_mark.dart';
+
+/// The fallback mask when no real reference is available (offline arrival or a
+/// pre-D-373 save). D-373 superseded the D-366 always-masked rule: the save
+/// response now carries the DB-issued `SIMF-YYYY-NNNNNNNN` reference and the
+/// interests screen passes it here via the route extra.
+const String _maskedReference = 'SIMF-2026-xxxx';
+
+/// The scrollable confirmation body (Figma 505:1451): the green success mark,
+/// the headline + welcome copy, the reference-number card, the status / home
+/// actions, and the contact-us block — capped at 400px and centred.
+class RegistrationSuccessBody extends StatelessWidget {
+  const RegistrationSuccessBody({
+    required this.welcomeMessage,
+    this.referenceNumber,
+    super.key,
+  });
+
+  final String welcomeMessage;
+
+  /// The `SIMF-YYYY-NNNNNNNN` reference issued by the save (D-373); null on an
+  /// offline / out-of-flow arrival → the mask renders.
+  final String? referenceNumber;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              const SizedBox(height: 24),
+              const RegistrationSuccessMark(),
+              const SizedBox(height: 16),
+              Text(
+                l10n.registrationSuccessTitle,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                welcomeMessage,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: SimfTokens.beigeBorder,
+                  fontSize: 14,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 24),
+              ReferenceNumberCard(
+                label: l10n.referenceNumberLabel,
+                reference: referenceNumber ?? _maskedReference,
+              ),
+              const SizedBox(height: 32),
+              RegistrationSuccessActions(
+                statusLabel: l10n.registrationStatusButton,
+                homeLabel: l10n.goHomeButton,
+                onStatus: () =>
+                    context.goNamed(RouteNames.registrationStatus),
+                onHome: () => context.go('/'),
+              ),
+              const SizedBox(height: 32),
+              ContactUsSection(
+                title: l10n.contactUsTitle,
+                socialFooter: l10n.simfSocialFooter,
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

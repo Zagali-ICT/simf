@@ -24,9 +24,13 @@
 
 ## Layout
 
-- **Header**: back chevron + centred title **الطلبات** ("Requests").
-- **"طلب جديد" (New request) button**: opens a sheet to submit a **document
-  request** (`ParticipationDocument`) or a **badge-update request** (`BadgeUpdate`).
+- **Header**: back chevron + centred title **اللقاءات الثنائية** ("Bilateral
+  meetings") — Figma 1408:9726 frame header (D-595, was "الطلبات").
+- **Top button row (2, D-595)**: **"طلب جديد"** (New request, beige-outlined,
+  clipboard glyph) opens a sheet to submit a **document request**
+  (`ParticipationDocument`) or a **badge-update request** (`BadgeUpdate`); **"السجل"**
+  (Log, gold-filled, history glyph) clears any status filter → all requests. Accepted
+  is filtered via the "مقبول (N)" status chip (the earlier "المقبولة" button was dropped).
 - **Status filter chips with counts**: الكل / قيد المراجعة / مقبول / مرفوض / ملغى
   (All / Pending / Accepted / Rejected / Cancelled), each showing the count of
   requests in that status; tapping a chip filters the feed.
@@ -232,7 +236,7 @@ Scenario: A failed feed load shows the retry surface
 ```gherkin
 Scenario: The screen mirrors under Arabic
   Given the app language is Arabic
-  Then the header title reads "الطلبات"
+  Then the header title reads "اللقاءات الثنائية"
   And the "طلب جديد" button, the status chips (الكل / قيد المراجعة / مقبول / مرفوض / ملغى) and the cards mirror right-to-left
   And each card's title renders from titleArabic and the status pill reads قيد المراجعة / مقبول / مرفوض / ملغى
   When the user switches to English

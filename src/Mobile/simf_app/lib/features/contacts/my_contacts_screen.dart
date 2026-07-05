@@ -8,11 +8,11 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_confirm_dialog.dart';
-import '../../core/sharing/content_sharer.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import 'data/contact_models.dart';
 import 'data/contacts_repository.dart';
-import 'widgets/contact_card.dart';
+import 'widgets/saved_contact_sheet.dart';
+import 'widgets/saved_contact_tile.dart';
 
 /// My Contacts (SIMF-FDS-014 §5.6, D-286). **Auth-gated** (Approved only). Lists
 /// the cards the visitor saved (`GET /app/contacts`, resolved on read — no PII
@@ -76,7 +76,7 @@ class _MyContactsScreenState extends ConsumerState<MyContactsScreen> {
     final removed = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      builder: (sheetContext) => _SavedContactSheet(row: row),
+      builder: (sheetContext) => SavedContactSheet(row: row),
     );
     if (removed == true && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -123,168 +123,19 @@ class _MyContactsScreenState extends ConsumerState<MyContactsScreen> {
       );
     }
     final isArabic = l10n.isArabic;
-    return RefreshIndicator(
+    return SimfPullToRefresh(
       onRefresh: _load,
       child: ListView.builder(
         padding: const EdgeInsets.all(SimfTokens.space4),
         itemCount: _rows.length,
         itemBuilder: (context, index) {
           final row = _rows[index];
-          return _SavedRow(
+          return SavedContactTile(
             row: row,
             isArabic: isArabic,
             onTap: () => unawaited(_openDetail(row)),
           );
         },
-      ),
-    );
-  }
-}
-
-/// One saved-contact row — name, an org/title subtitle, chevron. Tapping opens
-/// the detail sheet.
-class _SavedRow extends StatelessWidget {
-  const _SavedRow({
-    required this.row,
-    required this.isArabic,
-    required this.onTap,
-  });
-
-  final SavedContactRow row;
-  final bool isArabic;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppL10n.of(context);
-    final name = row.subjectAvailable
-        ? row.localizedName(isArabic)
-        : l10n.contactUnavailable;
-    final subtitleParts = <String>[
-      if (row.jobTitle != null && row.jobTitle!.trim().isNotEmpty) row.jobTitle!,
-      if (row.organisation != null && row.organisation!.trim().isNotEmpty)
-        row.organisation!,
-    ];
-    return Card(
-      margin: const EdgeInsets.only(bottom: SimfTokens.space2),
-      clipBehavior: Clip.antiAlias,
-      child: ListTile(
-        leading: const Icon(
-          Icons.account_circle_outlined,
-          color: SimfTokens.accent,
-        ),
-        title: Text(name),
-        subtitle: subtitleParts.isEmpty ? null : Text(subtitleParts.join(' · ')),
-        trailing: const Icon(Icons.chevron_right, color: SimfTokens.inkMuted),
-        onTap: onTap,
-      ),
-    );
-  }
-}
-
-/// The saved-contact detail sheet — the full card plus Export vCard / Remove.
-class _SavedContactSheet extends ConsumerStatefulWidget {
-  const _SavedContactSheet({required this.row});
-
-  final SavedContactRow row;
-
-  @override
-  ConsumerState<_SavedContactSheet> createState() => _SavedContactSheetState();
-}
-
-class _SavedContactSheetState extends ConsumerState<_SavedContactSheet> {
-  bool _busy = false;
-
-  Future<void> _exportVcard() async {
-    final l10n = AppL10n.of(context);
-    setState(() => _busy = true);
-    try {
-      final vcf =
-          await ref.read(contactsRepositoryProvider).getVcard(widget.row.id);
-      await shareTextContent(
-        content: vcf,
-        filename: 'simf-contact.vcf',
-        mimeType: 'text/vcard',
-      );
-      if (mounted) {
-        setState(() => _busy = false);
-      }
-    } on ApiFailure {
-      if (!mounted) {
-        return;
-      }
-      setState(() => _busy = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.shareFailed)),
-      );
-    }
-  }
-
-  Future<void> _remove() async {
-    final l10n = AppL10n.of(context);
-    final confirmed = await SimfConfirmDialog.show(
-      context,
-      title: l10n.myContactsRemoveConfirmTitle,
-      message: l10n.myContactsRemoveConfirmBody,
-      confirmLabel: l10n.myContactsRemove,
-      isDestructive: true,
-    );
-    if (!confirmed || !mounted) {
-      return;
-    }
-    setState(() => _busy = true);
-    try {
-      await ref.read(contactsRepositoryProvider).remove(widget.row.id);
-      if (!mounted) {
-        return;
-      }
-      Navigator.of(context).pop(true);
-    } on ApiFailure {
-      if (!mounted) {
-        return;
-      }
-      setState(() => _busy = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.myContactsError)),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppL10n.of(context);
-    final isArabic = l10n.isArabic;
-    final row = widget.row;
-    return Padding(
-      padding: const EdgeInsets.all(SimfTokens.space4),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            ContactCard(
-              name: row.localizedName(isArabic),
-              available: row.subjectAvailable,
-              jobTitle: row.jobTitle,
-              organisation: row.organisation,
-              note: row.note,
-            ),
-            const SizedBox(height: SimfTokens.space3),
-            if (row.subjectAvailable)
-              OutlinedButton.icon(
-                onPressed: _busy ? null : () => unawaited(_exportVcard()),
-                icon: const Icon(Icons.ios_share),
-                label: Text(l10n.myContactsExportVcard),
-              ),
-            const SizedBox(height: SimfTokens.space2),
-            FilledButton.icon(
-              onPressed: _busy ? null : () => unawaited(_remove()),
-              icon: const Icon(Icons.delete_outline),
-              style: FilledButton.styleFrom(backgroundColor: SimfTokens.danger),
-              label: Text(l10n.myContactsRemove),
-            ),
-          ],
-        ),
       ),
     );
   }

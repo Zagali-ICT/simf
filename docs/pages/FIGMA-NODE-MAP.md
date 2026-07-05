@@ -30,15 +30,15 @@ Pixel-parity is proven per screen with a golden render at the Figma frame size
 | My sessions / session presentations (عروض الجلسات) | `lib/features/myarea/my_sessions_screen.dart` | `1388-7621` | Day filter chips + cards with تحميل / قريبا; reached from My-Area dashboard session count |
 | Notifications (الاشعارات) | `lib/features/notifications/notifications_screen.dart` | `758-2491` | Search + chips (الكل/جلسات/VIP) + day groups (اليوم/أمس) + **per-kind** circular category icons (colour+glyph) + unread dot. Palette: green `#13C296`, coral `#FF6347`, gold `#C9A84C`. One deviation: the VIP card uses a **star** (mockup shows a ✕ close-circle on a positive VIP invite — reads as an error); unknown/future kinds fall back to the severity colour |
 | Delegations (الوفود) | `lib/features/delegations/delegations_screen.dart` | `1426-10771` | Country-level aggregate; data added via CP (mark Country invited + register delegates) |
-| Scan contact (مسح QR — FDS-014) | — | `758-4380` · `758-4735` | Two states: scan view + result/preview |
+| Scan contact (مسح QR — FDS-014) | `lib/features/contacts/scan_contact_screen.dart` | `1701-7080` (owner 2026-07-04) · older `758-4380`·`758-4735` | Two states: scan view + result/preview |
 
 ## TBD — no KSA frame assigned yet
 
 | App screen | Notes |
 |---|---|
 | Registration status (#11) | Pending Figma frame |
-| Share my contact (FDS-014) | Pending Figma frame |
-| My contacts (FDS-014) | Pending Figma frame |
+| Share my contact (FDS-014) | `1701-6062` (owner 2026-07-04 — was pending; `lib/features/contacts/share_my_contact_screen.dart`) |
+| My contacts (FDS-014) | **No Figma frame** — owner 2026-07-04: "does not exist" → structural-only / render-lock (`lib/features/contacts/my_contacts_screen.dart`) |
 
 ## Additional bindings (merged from SIMF-App-Pages-Figma-NodeIDs.docx, 2026-06-27)
 
@@ -69,7 +69,7 @@ chrome), audience-comments (removed), my-contacts / scan-contact / share-my-cont
 | App screen | Decision | Notes |
 |---|---|---|
 | Media gallery (#30) | Dissolved — content embedded in Home page | No standalone screen in V1 |
-| Audience comments (#28) | Removed from app | — |
+| Audience comments (#28) | REMOVED from app (D-605, rejected by customer) — screen/route/tests deleted; backend teardown separate | — |
 | Guest mode (#12) | Not a separate screen — guest users see Home (`758-2910`) directly | — |
 
 ## Standard top-nav spec (from 758-1469 / 922-2824)
@@ -78,6 +78,7 @@ chrome), audience-comments (removed), my-contacts / scan-contact / share-my-cont
 - Title: centred, Inter/FS-Albert SemiBold 18px, white, single line ellipsis.
 - Fixed header height below the status bar (~56–66px).
 - **Resolved (owner 2026-06-28):** sub-page nav matches Figma — back + title + line only, **no** bell/language/theme/menu cluster. The cluster lives on the Home greeting header (the guest home opts in). Implemented as `KsaPage.showHeaderActions` (default **false**); the 2026-06-18 every-page-cluster invariant is superseded for sub-pages.
+- **Updated (owner 2026-07-05, D-652):** the live pixel pass found the Figma sub-page frames (e.g. Speakers `908-1744`) **do** carry the gold language globe at the trailing corner. Owner directive: add the globe to **every** sub-page. `SimfPageShell._defaultHeader` now renders the shared gold `SimfLanguageToggle` in the trailing slot when `showHeaderActions` is false (still just the globe — not the full bell/theme/menu cluster). Supersedes the "back + title + line only" part of the 2026-06-28 note for the language globe specifically.
 
 ## Highlights carousel — deliberate deviation from Figma 758-1238 (owner 2026-06-28)
 

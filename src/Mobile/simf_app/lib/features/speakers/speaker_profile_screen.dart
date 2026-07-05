@@ -11,28 +11,28 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
-import '../../app/widgets/simf_svg_icon.dart';
 import 'data/speaker_models.dart';
 import 'data/speakers_repository.dart';
 import 'speaker_initials.dart';
+import 'widgets/meeting_request_sheet.dart';
+import 'widgets/speaker_avatar.dart';
+import 'widgets/speaker_cv.dart';
+import 'widgets/speaker_profile_header.dart';
+import 'widgets/speaker_sessions.dart';
 
 /// Page 020 — ملف المتحدث · Speaker profile (#20, `/speakers/:speakerId`,
 /// Guest+), rebuilt to the KSA-Project Figma frame **908:2110 "About Speaker"**
 /// on the shared navy shell.
 ///
 /// **Public** read (`GET /app/speakers/{id}`) — behaviour unchanged. Frame
-/// mapping: the two-line header (white name over the beige rank, the circled
-/// back chevron), the 125px white circle ringed gold (the speaker's uploaded
-/// SpeakerPhoto asset, initials fallback — D-357), the four CV tab pills in one
-/// row (نبذة عنه /
-/// المؤهلات العلمية / الخبرات التدريبية / الجوائز — the active pill filled gold
-/// with white text, the rest `#192B41` with a beige hairline and beige text),
-/// then the navy `#192B41` bio card with right-aligned white body text. Below
-/// the frame's minimal content the screen keeps its full behaviour: the
-/// **Request meeting** action (only when `allowsMeetingRequests`) — login-only
-/// (`POST …/meeting-requests`, D-269): a guest is sent to sign-in, an approved
-/// visitor gets the request form; the opted-in social links (only when
-/// `allowsDataSharing`); and the speaker's sessions (tap → session detail 17).
+/// mapping: the two-line header (`SpeakerProfileHeader`), the 125px gold-ringed
+/// avatar (`SpeakerAvatar`, D-357 photo + placeholder), the four CV tab pills
+/// (`SpeakerCvTabs`) over the navy bio card (`SpeakerCvCard`). Below the frame's
+/// minimal content the screen keeps its full behaviour: the **Request meeting**
+/// action (only when `allowsMeetingRequests`) — login-only
+/// (`POST …/meeting-requests`, D-269), opening the `MeetingRequestSheet`; the
+/// opted-in social links (only when `allowsDataSharing`); and the speaker's
+/// sessions (`SpeakerSessionRow`, tap → session detail 17).
 class SpeakerProfileScreen extends ConsumerStatefulWidget {
   const SpeakerProfileScreen({required this.speakerId, super.key});
 
@@ -94,8 +94,14 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      showDragHandle: true,
-      builder: (_) => _MeetingRequestSheet(
+      // Figma 1776:4958 — a light "طلب مقابلة" sheet with its own gold drag
+      // handle (so the default grey handle is off) and rounded top corners.
+      backgroundColor: SimfTokens.cardBeige,
+      showDragHandle: false,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(SimfTokens.radius)),
+      ),
+      builder: (_) => MeetingRequestSheet(
         speakerId: speaker.id,
         defaultName: auth.session.user.displayName,
         l10n: l10n,
@@ -112,93 +118,22 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return SimfPageShell(
-      onBack: () => backOrHome(context),
-      header: _buildHeader(l10n),
-      body: _buildBody(l10n),
-    );
-  }
-
-  /// The frame's two-line title (white name over the beige rank) flanked by the
-  /// circled back chevron — replaces the shell's default single-line title.
-  Widget _buildHeader(AppL10n l10n) {
     final speaker = _speaker;
     final isArabic = l10n.isArabic;
-    final title = speaker == null
-        ? l10n.speakerProfileTitle
-        : speaker.localizedName(isArabic);
     final rank = (speaker?.rank != null && speaker!.rank!.trim().isNotEmpty)
         ? speaker.rank!.trim()
         : null;
-    final flag = speaker?.flagEmoji ?? '';
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SimfTokens.space3,
-        vertical: SimfTokens.space2,
+    return SimfPageShell(
+      onBack: () => backOrHome(context),
+      header: SpeakerProfileHeader(
+        title: speaker == null
+            ? l10n.speakerProfileTitle
+            : speaker.localizedName(isArabic),
+        rank: rank,
+        flag: speaker?.flagEmoji ?? '',
+        onBack: () => backOrHome(context),
       ),
-      child: Row(
-        textDirection: TextDirection.ltr,
-        children: <Widget>[
-          SizedBox(
-            width: 42,
-            height: 42,
-            child: SimfCircledBackButton(onBack: () => backOrHome(context)),
-          ),
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                _nameLine(title, flag),
-                if (rank != null) ...<Widget>[
-                  const SizedBox(height: SimfTokens.space1),
-                  Text(
-                    rank,
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: SimfTokens.textMd,
-                      fontWeight: FontWeight.w600,
-                      color: SimfTokens.beigeBorder,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          // Balances the leading back button so the two-line title stays centred.
-          const SizedBox(width: 42, height: 42),
-        ],
-      ),
-    );
-  }
-
-  /// The header name line. Figma 1327:3461 — when the speaker has a nationality
-  /// the flag sits at the inline-start of the name (physical left in this
-  /// LTR-forced header), 8px before it; the name ellipsises if it is too long.
-  Widget _nameLine(String title, String flag) {
-    final nameText = Text(
-      title,
-      textAlign: TextAlign.center,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: const TextStyle(
-        fontSize: SimfTokens.textTitle,
-        fontWeight: FontWeight.w600,
-        color: Colors.white,
-      ),
-    );
-    if (flag.isEmpty) {
-      return nameText;
-    }
-    return Row(
-      textDirection: TextDirection.ltr,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        Text(flag, style: const TextStyle(fontSize: SimfTokens.textTitle)),
-        const SizedBox(width: SimfTokens.space2),
-        Flexible(child: nameText),
-      ],
+      body: _buildBody(l10n),
     );
   }
 
@@ -211,7 +146,7 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
     if (_notFound) {
       return SimfPullToRefresh(
         onRefresh: _load,
-        child: _PullToRefreshState(
+        child: SimfPullableHost(
           child: SimfEmptyState(
             icon: Icons.person_off_outlined,
             message: l10n.speakerNotFound,
@@ -222,7 +157,7 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
     if (_error || _speaker == null) {
       return SimfPullToRefresh(
         onRefresh: _load,
-        child: _PullToRefreshState(
+        child: SimfPullableHost(
           child: SimfErrorState(
             message: l10n.speakerProfileError,
             retryLabel: l10n.retryLabel,
@@ -242,11 +177,14 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
     // The avatar builds `{base}/app/assets/SpeakerPhoto/{id}/image` for the
     // uploaded photo; the base already includes `/api/v1`.
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
-    final sections = <_CvSection>[
-      _CvSection(l10n.cvBio, speaker.localizedBio(isArabic)),
-      _CvSection(l10n.cvQualifications, speaker.localizedQualifications(isArabic)),
-      _CvSection(l10n.cvTraining, speaker.localizedTraining(isArabic)),
-      _CvSection(l10n.cvAwards, speaker.localizedAwards(isArabic)),
+    final sections = <SpeakerCvSection>[
+      SpeakerCvSection(l10n.cvBio, speaker.localizedBio(isArabic)),
+      SpeakerCvSection(
+        l10n.cvQualifications,
+        speaker.localizedQualifications(isArabic),
+      ),
+      SpeakerCvSection(l10n.cvTraining, speaker.localizedTraining(isArabic)),
+      SpeakerCvSection(l10n.cvAwards, speaker.localizedAwards(isArabic)),
     ].where((s) => s.body != null).toList();
     final activeCv =
         sections.isEmpty ? 0 : _activeCv.clamp(0, sections.length - 1);
@@ -273,20 +211,20 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
         SimfTokens.space6,
       ),
       children: <Widget>[
-        _Avatar(
+        SpeakerAvatar(
           imageUrl: '$baseUrl/app/assets/SpeakerPhoto/${speaker.id}/image',
           initials: speakerInitials(speaker.localizedName(isArabic)),
         ),
         const SizedBox(height: SimfTokens.space8 + SimfTokens.space2), // 40
         if (sections.isNotEmpty) ...<Widget>[
-          _CvTabs(
+          SpeakerCvTabs(
             titles: sections.map((s) => s.title).toList(),
             activeIndex: activeCv,
             onSelect: (index) => setState(() => _activeCv = index),
           ),
           // Frame 912:2312 → 912:2331 — the CV card sits 24px below the tabs.
           const SizedBox(height: SimfTokens.space6), // 24
-          _CvCard(body: sections[activeCv].body!),
+          SpeakerCvCard(body: sections[activeCv].body!),
         ],
         if (speaker.allowsMeetingRequests) ...<Widget>[
           const SizedBox(height: SimfTokens.space5),
@@ -312,10 +250,10 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
         ],
         if (speaker.sessions.isNotEmpty) ...<Widget>[
           const SizedBox(height: SimfTokens.space5),
-          _SectionHeading(l10n.speakerSessionsHeading),
+          SpeakerSectionHeading(l10n.speakerSessionsHeading),
           const SizedBox(height: SimfTokens.space3),
           for (final session in speaker.sessions) ...<Widget>[
-            _SessionRow(session: session, isArabic: isArabic),
+            SpeakerSessionRow(session: session, isArabic: isArabic),
             const SizedBox(height: SimfTokens.space2),
           ],
         ],
@@ -326,525 +264,9 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
 
 bool _has(String? value) => value != null && value.trim().isNotEmpty;
 
-/// Hosts a non-scrollable empty/error widget inside an always-scrollable,
-/// full-height viewport so a pull-down-from-the-top still fires the enclosing
-/// [SimfPullToRefresh] (lets the user pull to retry), while keeping the message centred.
-class _PullToRefreshState extends StatelessWidget {
-  const _PullToRefreshState({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: child,
-          ),
-        );
-      },
-    );
-  }
-}
-
-/// The frame's identity avatar (908:2110 `912:2270`): a 125px white circle
-/// ringed gold (2.77px). Renders the speaker's uploaded photo (the D-357
-/// `SpeakerPhoto` asset) clipped to the circle, falling back to the speaker's
-/// navy initials while it loads or when no photo is uploaded (the route 404s).
-class _Avatar extends StatelessWidget {
-  const _Avatar({required this.imageUrl, required this.initials});
-
-  final String imageUrl;
-  final String initials;
-
-  @override
-  Widget build(BuildContext context) {
-    // The Figma placeholder is the gold SIMF anchor icon on white;
-    // text initials are used only when the SVG itself fails to load.
-    final placeholder = Center(
-      child: SimfSvgIcon(
-        'assets/icons/speaker_placeholder.svg',
-        size: 64,
-        color: SimfTokens.accent,
-      ),
-    );
-    // The gold ring is the outer circle; a 2.77px pad reveals it around the
-    // clipped white inner circle, so the photo sits inside the ring on white
-    // (never painted under the gold stroke).
-    return Center(
-      child: Container(
-        width: 125,
-        height: 125,
-        padding: const EdgeInsets.all(2.77),
-        decoration: const BoxDecoration(
-          color: SimfTokens.accent,
-          shape: BoxShape.circle,
-        ),
-        child: Container(
-          clipBehavior: Clip.antiAlias,
-          decoration: const BoxDecoration(
-            color: SimfTokens.surface,
-            shape: BoxShape.circle,
-          ),
-          child: Image.network(
-            imageUrl,
-            fit: BoxFit.cover,
-            gaplessPlayback: true,
-            loadingBuilder: (context, child, progress) =>
-                progress == null ? child : placeholder,
-            errorBuilder: (context, error, stackTrace) => placeholder,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The CV tab strip (frame 908:2110 `912:2312`): a full-width row of equal
-/// 48-high pills — the active one filled gold with white text, the rest navy
-/// `#192B41` with a beige hairline and beige text. One pill per CV section that
-/// carries content.
-class _CvTabs extends StatelessWidget {
-  const _CvTabs({
-    required this.titles,
-    required this.activeIndex,
-    required this.onSelect,
-  });
-
-  final List<String> titles;
-  final int activeIndex;
-  final ValueChanged<int> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: <Widget>[
-        for (var i = 0; i < titles.length; i++) ...<Widget>[
-          // Frame 912:2312 — four equal pills with an ~16px gap (SimfTokens.space4)
-          if (i > 0) const SizedBox(width: SimfTokens.space4),
-          Expanded(
-            child: _CvTab(
-              label: titles[i],
-              selected: i == activeIndex,
-              onTap: () => onSelect(i),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-class _CvTab extends StatelessWidget {
-  const _CvTab({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(SimfTokens.radius),
-      child: Container(
-        height: 48,
-        alignment: Alignment.center,
-        padding: const EdgeInsets.all(SimfTokens.space2),
-        decoration: BoxDecoration(
-          // Figma 912:2312 — the inactive pill is border-only (no fill); it
-          // reads the navySurface scaffold through, the active pill is gold.
-          color: selected ? SimfTokens.accent : Colors.transparent,
-          borderRadius: BorderRadius.circular(SimfTokens.radius),
-          border: selected
-              ? null
-              : Border.all(
-                  color: SimfTokens.beigeBorder,
-                  width: SimfTokens.hairline,
-                ),
-        ),
-        child: Text(
-          label,
-          textAlign: TextAlign.center,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: selected ? Colors.white : SimfTokens.beigeBorder,
-            fontWeight: FontWeight.w600,
-            fontSize: SimfTokens.textSm,
-            height: 1.2,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The CV body card (frame 908:2110 `912:2331`): the navy `#192B41` fill on the
-/// 8px radius, right-aligned white body text at the frame's 21px line-height.
-class _CvCard extends StatelessWidget {
-  const _CvCard({required this.body});
-
-  final String body;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      // Figma 912:2331 — px-8 / py-16 inside the navy card.
-      padding: const EdgeInsets.symmetric(
-        horizontal: SimfTokens.space2,
-        vertical: SimfTokens.space4,
-      ),
-      decoration: const BoxDecoration(
-        color: SimfTokens.navyDeep,
-        borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radius)),
-      ),
-      child: Text(
-        body,
-        textAlign: TextAlign.start,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: SimfTokens.textMd,
-          height: 1.5,
-        ),
-      ),
-    );
-  }
-}
-
-/// One of the speaker's sessions — kept on the navy card chrome (the frame's
-/// minimal content stops at the bio, but the screen's behaviour does not).
-class _SessionRow extends StatelessWidget {
-  const _SessionRow({required this.session, required this.isArabic});
-
-  final SpeakerSession session;
-  final bool isArabic;
-
-  @override
-  Widget build(BuildContext context) {
-    final hall = session.localizedHall(isArabic);
-    return SimfCard(
-      onTap: () => context.pushNamed(
-        RouteNames.sessionDetail,
-        pathParameters: <String, String>{'sessionId': session.id},
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space3),
-        child: Row(
-          children: <Widget>[
-            const Icon(Icons.event_note_outlined, color: SimfTokens.accent),
-            const SizedBox(width: SimfTokens.space3),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text(
-                    session.localizedTitle(isArabic),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: SimfTokens.textSm,
-                    ),
-                  ),
-                  if (hall != null) ...<Widget>[
-                    const SizedBox(height: SimfTokens.space1),
-                    Text(
-                      hall,
-                      style: const TextStyle(
-                        color: SimfTokens.beigeBorder,
-                        fontSize: SimfTokens.textXs,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(width: SimfTokens.space2),
-            const SimfSvgIcon(
-              'assets/icons/ic_caret_left.svg',
-              color: SimfTokens.txtTertiary,
-              size: 18,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CvSection {
-  const _CvSection(this.title, this.body);
-
-  final String title;
-  final String? body;
-}
-
 class _SocialLink {
   const _SocialLink(this.icon, this.url);
 
   final IconData icon;
   final String url;
-}
-
-class _SectionHeading extends StatelessWidget {
-  const _SectionHeading(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: const TextStyle(
-        color: SimfTokens.beigeBorder,
-        fontWeight: FontWeight.w700,
-        fontSize: SimfTokens.textXs,
-        letterSpacing: 0.8,
-      ),
-    );
-  }
-}
-
-/// The meeting-request form (bottom sheet) — approved-account only (E2).
-class _MeetingRequestSheet extends ConsumerStatefulWidget {
-  const _MeetingRequestSheet({
-    required this.speakerId,
-    required this.defaultName,
-    required this.l10n,
-  });
-
-  final String speakerId;
-  final String defaultName;
-  final AppL10n l10n;
-
-  @override
-  ConsumerState<_MeetingRequestSheet> createState() =>
-      _MeetingRequestSheetState();
-}
-
-class _MeetingRequestSheetState extends ConsumerState<_MeetingRequestSheet> {
-  final TextEditingController _subject = TextEditingController();
-  bool _submitting = false;
-  // D-474/D-475 (#11) — the VIP availability-slot picker (optional: a picked slot
-  // is the VIP flow; none keeps the legacy topic-only request).
-  List<SpeakerSlot> _slots = const <SpeakerSlot>[];
-  SpeakerSlot? _selectedSlot;
-  // The picked calendar day (Figma 1701:7479 — date+time selection): narrows the
-  // available slots to that day's times before one is chosen.
-  DateTime? _selectedDate;
-  bool _slotsLoaded = false;
-
-  @override
-  void initState() {
-    super.initState();
-    unawaited(_loadSlots());
-  }
-
-  Future<void> _loadSlots() async {
-    try {
-      final slots = await ref
-          .read(speakersRepositoryProvider)
-          .getAvailableSlots(widget.speakerId);
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _slots = slots;
-        _slotsLoaded = true;
-      });
-    } on ApiFailure {
-      if (!mounted) {
-        return;
-      }
-      // No slots shown; the legacy topic-only request still works.
-      setState(() => _slotsLoaded = true);
-    }
-  }
-
-  @override
-  void dispose() {
-    _subject.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    final l10n = widget.l10n;
-    // Owner: "no need for name" — the requester is the signed-in account, so we
-    // submit its display name as the requesterName the backend contract still
-    // requires, instead of asking the user to type it.
-    final name = widget.defaultName.trim();
-    final subject = _subject.text.trim();
-    if (subject.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(l10n.meetingRequestInvalid)));
-      return;
-    }
-    setState(() => _submitting = true);
-    final navigator = Navigator.of(context);
-    final messenger = ScaffoldMessenger.of(context);
-    try {
-      await ref.read(speakersRepositoryProvider).submitMeetingRequest(
-            widget.speakerId,
-            requesterName: name,
-            subject: subject,
-            slotStartUtc: _selectedSlot?.startUtc,
-            slotEndUtc: _selectedSlot?.endUtc,
-          );
-      if (!mounted) {
-        return;
-      }
-      navigator.pop();
-      messenger.showSnackBar(SnackBar(content: Text(l10n.meetingRequestSent)));
-    } on ApiFailure catch (failure) {
-      if (!mounted) {
-        return;
-      }
-      setState(() => _submitting = false);
-      messenger.showSnackBar(
-        SnackBar(content: Text(_failureText(failure, l10n))),
-      );
-    }
-  }
-
-  // The slot's local calendar day — the key that groups the available slots into
-  // the date picker (the time picker then lists that day's slots).
-  DateTime _dayOf(SpeakerSlot slot) {
-    final s = slot.startUtc.toLocal();
-    return DateTime(s.year, s.month, s.day);
-  }
-
-  // The distinct days that carry at least one free slot, ascending.
-  List<DateTime> get _availableDays {
-    final days = <DateTime>{for (final slot in _slots) _dayOf(slot)}.toList()
-      ..sort();
-    return days;
-  }
-
-  // The free slots on the selected day, ascending by start time.
-  List<SpeakerSlot> get _slotsForSelectedDay {
-    final day = _selectedDate;
-    if (day == null) {
-      return const <SpeakerSlot>[];
-    }
-    return _slots.where((s) => _dayOf(s) == day).toList()
-      ..sort((a, b) => a.startUtc.compareTo(b.startUtc));
-  }
-
-  String _formatDay(DateTime day) {
-    String two(int n) => n.toString().padLeft(2, '0');
-    return '${day.year}-${two(day.month)}-${two(day.day)}';
-  }
-
-  String _formatTimeRange(SpeakerSlot slot) {
-    final s = slot.startUtc.toLocal();
-    final e = slot.endUtc.toLocal();
-    String two(int n) => n.toString().padLeft(2, '0');
-    return '${two(s.hour)}:${two(s.minute)}–${two(e.hour)}:${two(e.minute)}';
-  }
-
-  String _failureText(ApiFailure failure, AppL10n l10n) {
-    if (failure.httpStatus == 403) {
-      return l10n.meetingVipOnly;
-    }
-    if (failure.httpStatus == 409) {
-      return l10n.meetingRequestNotAllowed;
-    }
-    if (failure.httpStatus == 400) {
-      return l10n.meetingRequestInvalid;
-    }
-    return l10n.meetingRequestFailed;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = widget.l10n;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        SimfTokens.space5,
-        0,
-        SimfTokens.space5,
-        MediaQuery.of(context).viewInsets.bottom + SimfTokens.space6,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(
-            l10n.requestMeeting,
-            style: const TextStyle(
-              color: SimfTokens.surface,
-              fontWeight: FontWeight.w700,
-              fontSize: SimfTokens.textLg,
-            ),
-          ),
-          const SizedBox(height: SimfTokens.space4),
-          TextField(
-            controller: _subject,
-            decoration: InputDecoration(labelText: l10n.meetingSubjectLabel),
-            maxLength: 1000,
-            maxLines: 3,
-          ),
-          // D-474/D-475 + owner (Figma 1701:7479) — pick a free meeting time as a
-          // DATE then a TIME, both sourced from the speaker's available slots so the
-          // chosen slot always matches a free slot the server accepts. VIP only;
-          // optional (none = the legacy topic-only request).
-          if (_slotsLoaded && _slots.isNotEmpty) ...<Widget>[
-            DropdownButtonFormField<DateTime>(
-              initialValue: _selectedDate,
-              isExpanded: true,
-              decoration: InputDecoration(labelText: l10n.meetingDateLabel),
-              items: <DropdownMenuItem<DateTime>>[
-                for (final day in _availableDays)
-                  DropdownMenuItem<DateTime>(
-                    value: day,
-                    child: Text(_formatDay(day)),
-                  ),
-              ],
-              onChanged: (day) => setState(() {
-                _selectedDate = day;
-                _selectedSlot = null; // reset the time when the day changes
-              }),
-            ),
-            if (_selectedDate != null) ...<Widget>[
-              const SizedBox(height: SimfTokens.space3),
-              DropdownButtonFormField<SpeakerSlot>(
-                initialValue: _selectedSlot,
-                isExpanded: true,
-                decoration: InputDecoration(labelText: l10n.meetingTimeLabel),
-                items: <DropdownMenuItem<SpeakerSlot>>[
-                  for (final slot in _slotsForSelectedDay)
-                    DropdownMenuItem<SpeakerSlot>(
-                      value: slot,
-                      child: Text(_formatTimeRange(slot)),
-                    ),
-                ],
-                onChanged: (slot) => setState(() => _selectedSlot = slot),
-              ),
-            ],
-          ] else if (_slotsLoaded)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: SimfTokens.space2),
-              child: Text(
-                l10n.meetingSlotNone,
-                style: const TextStyle(color: SimfTokens.inkMuted),
-              ),
-            ),
-          const SizedBox(height: SimfTokens.space4),
-          FilledButton(
-            onPressed: _submitting ? null : () => unawaited(_submit()),
-            child: Text(_submitting ? l10n.loadingLabel : l10n.meetingSendButton),
-          ),
-        ],
-      ),
-    );
-  }
 }

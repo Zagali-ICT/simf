@@ -243,7 +243,7 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
               controller: _email,
               keyboardType: TextInputType.emailAddress,
               textDirection: TextDirection.ltr,
-              textAlign: TextAlign.left,
+              textAlign: TextAlign.start,
               maxLength: 50,
               enabled: !_busy,
               style: simfInputStyle,

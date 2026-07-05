@@ -396,13 +396,13 @@ void main() {
         await tester.pump();
       }
       for (final section in <String>[
-        'Session summaries', // ملخص الجلسات (about tile → /session-summaries)
+        'Sessions', // الجلسات (about tile → downloads 1388:7621)
         'Ask the moderator', // اسأل المحاور (new full-width tile)
         'News & coverage', // الأخبار والتغطية bar
         'Sponsors', // الرعاة bar
         'Bilateral meetings',
         'Smart features',
-        'Session presentations', // #2 (was Session summaries)
+        'Session summaries', // ملخص الجلسات (smart tile → summaries 1388:8392)
         'Follow us',
         'Spirit of Saudi',
       ]) {
@@ -666,14 +666,14 @@ void main() {
 
     testWidgets(
         'about tiles (4-up): المتحدثون · المعرض · الوفود · '
-        'ملخص الجلسات (right→left)',
+        'الجلسات (right→left)',
         (tester) async {
       await pumpTall(tester);
       final speakers = tester.getCenter(find.text('المتحدثون')).dx;
       final booths = tester.getCenter(find.text('المعرض')).dx;
       final delegations = tester.getCenter(find.text('الوفود')).dx;
-      final sessions = tester.getCenter(find.text('ملخص الجلسات')).dx;
-      // Right→left order: المتحدثون > المعرض > الوفود > ملخص الجلسات.
+      final sessions = tester.getCenter(find.text('الجلسات')).dx;
+      // Right→left order: المتحدثون > المعرض > الوفود > الجلسات.
       expect(speakers, greaterThan(booths));
       expect(booths, greaterThan(delegations));
       expect(delegations, greaterThan(sessions));
@@ -687,12 +687,12 @@ void main() {
       expect(bilateral, greaterThan(archive));
     });
 
-    testWidgets('smart row 2: بطاقتي الذكية (left) · عروض الجلسات (right)',
+    testWidgets('smart row 2: بطاقتي الذكية (left) · ملخص الجلسات (right)',
         (tester) async {
       await pumpTall(tester);
       final badge = tester.getCenter(find.text('بطاقتي الذكية')).dx;
-      final presentations = tester.getCenter(find.text('عروض الجلسات')).dx;
-      expect(presentations, greaterThan(badge));
+      final summaries = tester.getCenter(find.text('ملخص الجلسات')).dx;
+      expect(summaries, greaterThan(badge));
     });
 
     testWidgets('section bars render with the title at the start (right)',

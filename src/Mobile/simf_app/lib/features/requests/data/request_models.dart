@@ -64,6 +64,7 @@ class AppRequestItem {
     required this.createdAt,
     required this.canCancel,
     this.eventDateUtc,
+    this.subtitle,
   });
 
   final AppRequestKind kind;
@@ -74,6 +75,11 @@ class AppRequestItem {
   final DateTime? eventDateUtc;
   final DateTime createdAt;
   final bool canCancel;
+
+  /// D-590 — optional secondary descriptor under the name on the المقابلات card
+  /// (Figma 1701:9406). Carries the speaker's rank for a speaker meeting; null
+  /// for the other kinds, where the card falls back to the meeting-type line.
+  final String? subtitle;
 
   /// The context line under the type headline, in the active locale (AR/EN with
   /// a fallback).
@@ -101,6 +107,9 @@ class AppRequestItem {
           (createdRaw == null ? null : DateTime.tryParse(createdRaw)?.toUtc()) ??
               DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
       canCancel: json['canCancel'] as bool? ?? false,
+      subtitle: (json['subtitle'] as String?)?.trim().isEmpty ?? true
+          ? null
+          : (json['subtitle'] as String).trim(),
     );
   }
 

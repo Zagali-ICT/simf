@@ -20,6 +20,8 @@ flow for an attendee who has not yet opened a specific session.
 | E2E-MOBHUB-003 | Empty programme → the "No sessions" empty state | edge | P2 | authored ✓ (widget — empty list) |
 | E2E-MOBHUB-004 | A load failure → error + Retry, which re-fetches | error | P2 | authored ✓ (provider error → KsaErrorState) |
 | E2E-MOBHUB-005 | Approved-only — reached from My Area; the route auth gate (110) sends a signed-out user to sign-in | auth | P2 | covered (router gate 110) |
+| E2E-MOBHUB-006 | **Pull-to-refresh** (list / empty / error) re-fetches the programme (D-601 — the gesture works on every state) | happy | P2 | covered (screen — `SimfPullToRefresh` on all three states) |
+| E2E-MOBHUB-007 | Under **RTL** each row's forward chevron points **left** (the stroked `ic_back.svg` glyph; D-601 fixed the Material-icon double-mirror) | visual | P2 | covered (golden `join_session_hub.png`, crop-verified) |
 
 ## Scenarios
 
@@ -36,4 +38,4 @@ Scenario: Browsing to a session from the hub
 
 ---
 
-_Last reviewed:_ `2026-06-21` by `SIMF Team`.
+_Last reviewed:_ `2026-07-03` by `SIMF Team` (D-601 — pull-to-refresh + RTL chevron).

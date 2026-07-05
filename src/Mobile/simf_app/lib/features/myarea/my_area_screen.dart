@@ -3,26 +3,23 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart' show DateFormat;
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
-import '../../app/widgets/simf_svg_icon.dart';
+import '../../app/widgets/simf_page_shell.dart';
 import '../../core/sharing/content_sharer.dart';
-import '../account/biometric_auth.dart';
 import '../account/data/profile_repository.dart'
     show avatarBustProvider, referenceNumberProvider;
 import 'data/myarea_models.dart';
 import 'data/myarea_repository.dart';
 import 'identity_verification_screen.dart';
-
-/// One 12-hour formatter for the schedule rows (hoisted off the build path).
-final DateFormat _timeFormat = DateFormat('hh:mm a');
+import 'widgets/my_area_dashboard_body.dart';
+import 'widgets/my_area_identity_card.dart';
+import 'widgets/my_area_rows.dart';
 
 /// Page 014 — منطقتي · My Area (#14, `/my-area`), rebuilt to the KSA Wave-2
 /// frame **213:963** (owner re-pick, D-396; the earlier build used 512:1780)
@@ -190,17 +187,11 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
     // so SimfPullToRefresh's gesture fires even though the content is short.
     return SimfPullToRefresh(
       onRefresh: _load,
-      child: LayoutBuilder(
-        builder: (context, constraints) => SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: SimfErrorState(
-              message: l10n.myAreaError,
-              retryLabel: l10n.retryLabel,
-              onRetry: () => unawaited(_load()),
-            ),
-          ),
+      child: SimfPullableHost(
+        child: SimfErrorState(
+          message: l10n.myAreaError,
+          retryLabel: l10n.retryLabel,
+          onRetry: () => unawaited(_load()),
         ),
       ),
     );
@@ -217,9 +208,9 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(SimfTokens.space4),
       children: <Widget>[
-        _IdentityCard(name: name, line: l10n.myAreaPendingNote),
+        MyAreaIdentityCard(name: name, line: l10n.myAreaPendingNote),
         const SizedBox(height: SimfTokens.space4),
-        _MoreRow(
+        MyAreaMoreRow(
           label: l10n.moreTitle,
           onTap: () => context.pushNamed(RouteNames.more),
         ),
@@ -234,516 +225,13 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
     MyAreaDashboard dashboard,
     String? referenceNumber,
   ) {
-    final isArabic = l10n.isArabic;
-    final identity = dashboard.identity;
-    final tier = identity.localizedTier(isArabic);
-    final enrolled =
-        l10n.enrolledInSessions(dashboard.counters.bookedSessionsCount);
-    final subtitle = tier == null ? enrolled : '$tier · $enrolled';
-    // The reference number (SIMF-2026-…) is the displayed ID; fall back to the
-    // qrId only until the reference loads.
-    final reference = referenceNumber != null
-        ? '#$referenceNumber'
-        : (identity.qrId == null ? null : '#${identity.qrId}');
-    // Frame 758:1283 — جدولي اليوم splits into a "جلسات" group and a "مقابلات"
-    // group, each under its own gold sub-header.
-    final sessions =
-        dashboard.todaySchedule.where((i) => i.isSession).toList();
-    final meetings =
-        dashboard.todaySchedule.where((i) => !i.isSession).toList();
-
     return SimfPullToRefresh(
       onRefresh: _load,
-      child: ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(SimfTokens.space4),
-      children: <Widget>[
-        _IdentityCard(
-          name: identity.localizedName(isArabic),
-          line: subtitle,
-          reference: reference,
-          shareLabel: l10n.shareLabel,
-          onShare: () => unawaited(_shareContact()),
-          onAvatarTap: () => unawaited(_changeAvatar()),
-          avatarTooltip: l10n.avatarChangeTooltip,
-        ),
-        const SizedBox(height: SimfTokens.space4),
-        // Frame 758:1283 — two horizontal share-action pills (h48, exact
-        // iconify glyphs), NOT the tall vertical nav tiles. Language / theme
-        // moved to the shell's side drawer (D-396).
-        // Frame 758:1283 — مشاركة جهة اتصال at the inline-start (right), مشاركة
-        // ملفي at the end (left).
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: _ShareTile(
-                label: l10n.shareContact,
-                iconAsset: 'assets/icons/share_contact.svg',
-                onTap: () => unawaited(_shareContact()),
-              ),
-            ),
-            const SizedBox(width: SimfTokens.space2),
-            Expanded(
-              child: _ShareTile(
-                label: l10n.shareMyProfile,
-                iconAsset: 'assets/icons/share_profile.svg',
-                onTap: () => context.pushNamed(RouteNames.shareMyContact),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: SimfTokens.space6),
-        // الإحصائيات (frame 213:963). الأرشيف has no API counter, so the right
-        // tile keeps the real مقابلات مؤكدة count (D-396); جلسات محفوظة = booked.
-        SimfSectionHeader(title: l10n.statisticsTitle),
-        const SizedBox(height: SimfTokens.space3),
-        SimfTileRow(
-          children: <Widget>[
-            // Wave 2 — the two counters now tap through to their real screens
-            // (owner spec, Figma): "my meetings request" → the read-only My
-            // meetings list (1408:9726); "my sessions" → the my-sessions list
-            // (1388:9067) with its القادمة / حضرتها / فاتتني / الأرشيف tabs.
-            SimfStatTile(
-              value: dashboard.counters.meetingsCount,
-              label: l10n.statMeetings,
-              onTap: () => context.pushNamed(RouteNames.requests),
-            ),
-            SimfStatTile(
-              value: dashboard.counters.bookedSessionsCount,
-              label: l10n.statBookedSessions,
-              onTap: () => context.pushNamed(RouteNames.myAreaSessions),
-            ),
-          ],
-        ),
-        const SizedBox(height: SimfTokens.space6),
-        SimfSectionHeader(title: l10n.todayScheduleTitle),
-        const SizedBox(height: SimfTokens.space3),
-        if (sessions.isEmpty && meetings.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: SimfTokens.space4),
-            child: Text(
-              l10n.scheduleEmpty,
-              style: const TextStyle(color: SimfTokens.beigeBorder),
-            ),
-          )
-        else
-          for (final (groupLabel, items)
-              in <(String, List<MyAreaScheduleItem>)>[
-            (l10n.scheduleSessionsGroup, sessions),
-            (l10n.scheduleMeetingsGroup, meetings),
-          ])
-            if (items.isNotEmpty) ...<Widget>[
-              _ScheduleGroupHeader(label: groupLabel),
-              const SizedBox(height: SimfTokens.space3),
-              for (final item in items)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: SimfTokens.space3),
-                  child: _ScheduleRow(
-                    item: item,
-                    isArabic: isArabic,
-                    onTap: item.isSession && item.sessionId != null
-                        ? () => context.pushNamed(
-                              RouteNames.sessionDetail,
-                              pathParameters: <String, String>{
-                                'sessionId': item.sessionId!,
-                              },
-                            )
-                        : null,
-                  ),
-                ),
-            ],
-        const SizedBox(height: SimfTokens.space3),
-        SimfSectionHeader(title: l10n.moreSectionSettings),
-        const SizedBox(height: SimfTokens.space3),
-        _MoreRow(
-          label: l10n.smartBadgeLink,
-          onTap: () => context.pushNamed(RouteNames.badge),
-        ),
-        const SizedBox(height: SimfTokens.space4),
-        // D-500 (Wave 5, الطلبات) — the unified requests feed.
-        _MoreRow(
-          label: l10n.requestsLink,
-          onTap: () => context.pushNamed(RouteNames.requests),
-        ),
-        const SizedBox(height: SimfTokens.space4),
-        // D-485 — the standalone Join-a-session hub (the seat-booking flow; the
-        // other entry is the Join CTA on each session page).
-        _MoreRow(
-          label: l10n.joinHubTitle,
-          onTap: () => context.pushNamed(RouteNames.joinSessionHub),
-        ),
-        const SizedBox(height: SimfTokens.space4),
-        _MoreRow(
-          label: l10n.moreTitle,
-          onTap: () => context.pushNamed(RouteNames.more),
-        ),
-        // Face-ID sign-in enable/disable (D-445) — self-hides when the device
-        // has no usable biometric. Also offered in the side menu.
-        const FaceIdToggleTile(),
-        // Calendar export + sign-out moved to the shell's side drawer (D-396),
-        // matching frame 213:963 which ends المزيد at اعدادات الحساب.
-      ],
-      ),
-    );
-  }
-}
-
-/// The identity card (frame node 512:2047): avatar 64, name + tier·enrolled
-/// line + gold reference, and the bordered gold مشاركة button.
-class _IdentityCard extends StatelessWidget {
-  const _IdentityCard({
-    required this.name,
-    required this.line,
-    this.reference,
-    this.shareLabel,
-    this.onShare,
-    this.onAvatarTap,
-    this.avatarTooltip,
-  });
-
-  final String name;
-  final String line;
-  final String? reference;
-  final String? shareLabel;
-  final VoidCallback? onShare;
-  final VoidCallback? onAvatarTap;
-  final String? avatarTooltip;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(SimfTokens.space2),
-      decoration: BoxDecoration(
-        color: SimfTokens.navyDeep,
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
-        border: Border.all(color: SimfTokens.accent, width: 0.2),
-      ),
-      child: Row(
-        children: <Widget>[
-          _TappableAvatar(
-            name: name,
-            onTap: onAvatarTap,
-            tooltip: avatarTooltip,
-          ),
-          const SizedBox(width: SimfTokens.space3),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: SimfTokens.textTitle,
-                  ),
-                ),
-                const SizedBox(height: SimfTokens.space2),
-                Text(
-                  line,
-                  style: const TextStyle(
-                    color: SimfTokens.beigeBorder,
-                    fontSize: SimfTokens.textSm,
-                  ),
-                ),
-                if (reference != null) ...<Widget>[
-                  const SizedBox(height: SimfTokens.space2),
-                  Text(
-                    reference!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textDirection: TextDirection.ltr,
-                    style: const TextStyle(
-                      color: SimfTokens.accent,
-                      fontSize: SimfTokens.textSm,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          if (onShare != null) ...<Widget>[
-            const SizedBox(width: SimfTokens.space2),
-            InkWell(
-              onTap: onShare,
-              borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-              child: Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: SimfTokens.navy,
-                  borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-                  border: Border.all(color: SimfTokens.accent, width: 0.5),
-                ),
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Padding(
-                    padding: const EdgeInsets.all(SimfTokens.space1),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        const Icon(
-                          Icons.share_outlined,
-                          size: 18,
-                          color: SimfTokens.accent,
-                        ),
-                        if (shareLabel != null)
-                          Text(
-                            shareLabel!,
-                            style: const TextStyle(
-                              color: SimfTokens.accent,
-                              fontSize: SimfTokens.textSm,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-/// The profile avatar with a tap-to-change affordance (frame 213:963): the gold
-/// rounded avatar plus a small camera badge at the corner. A null [onTap] (the
-/// limited/pending view) renders a plain avatar with no camera badge.
-class _TappableAvatar extends StatelessWidget {
-  const _TappableAvatar({
-    required this.name,
-    this.onTap,
-    this.tooltip,
-  });
-
-  final String name;
-  final VoidCallback? onTap;
-  final String? tooltip;
-
-  @override
-  Widget build(BuildContext context) {
-    final avatar = SimfAvatar(name: name, currentUser: true, size: 64);
-    if (onTap == null) {
-      return avatar;
-    }
-    return Semantics(
-      button: true,
-      label: tooltip,
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const CircleBorder(),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: <Widget>[
-            avatar,
-            Positioned.directional(
-              textDirection: Directionality.of(context),
-              end: -2,
-              bottom: -2,
-              child: Container(
-                padding: const EdgeInsets.all(SimfTokens.space1),
-                decoration: BoxDecoration(
-                  color: SimfTokens.accent,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: SimfTokens.navyDeep, width: 1.5),
-                ),
-                child: const Icon(
-                  Icons.photo_camera_outlined,
-                  size: 12,
-                  color: SimfTokens.navy,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// One schedule row (frame node 512:2116): bold time at the inline start,
-/// the title (+ hall, when present), and the gold star at the inline end.
-/// Session rows are tappable (→ session detail); meeting rows are not.
-class _ScheduleRow extends StatelessWidget {
-  const _ScheduleRow({
-    required this.item,
-    required this.isArabic,
-    this.onTap,
-  });
-
-  final MyAreaScheduleItem item;
-  final bool isArabic;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final time = _timeFormat.format(item.startUtc.toLocal());
-    final hall = item.localizedHall(isArabic);
-    return SimfCard(
-      onTap: onTap,
-      child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: SimfTokens.space2,
-            vertical: SimfTokens.space4,
-          ),
-          child: Row(
-            children: <Widget>[
-              Text(
-                time,
-                textDirection: TextDirection.ltr,
-                style: const TextStyle(
-                  color: SimfTokens.beigeBorder,
-                  fontWeight: FontWeight.w700,
-                  fontSize: SimfTokens.textSm,
-                ),
-              ),
-              const SizedBox(width: SimfTokens.space3),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: <Widget>[
-                    Text(
-                      item.localizedTitle(isArabic),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500,
-                        fontSize: SimfTokens.textMd,
-                      ),
-                    ),
-                    if (hall != null) ...<Widget>[
-                      const SizedBox(height: SimfTokens.space1),
-                      Text(
-                        hall,
-                        style: const TextStyle(
-                          color: SimfTokens.beigeBorder,
-                          fontSize: SimfTokens.textXs,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(width: SimfTokens.space3),
-              const Icon(
-                Icons.star_rounded,
-                size: 20,
-                color: SimfTokens.accent,
-              ),
-            ],
-          ),
-      ),
-    );
-  }
-}
-
-/// A جدولي اليوم sub-group header (frame nodes 1041:2042 / 1041:2044): the gold
-/// "جلسات" / "مقابلات" label, at the inline start, above each group of rows.
-class _ScheduleGroupHeader extends StatelessWidget {
-  const _ScheduleGroupHeader({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: AlignmentDirectional.centerStart,
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: SimfTokens.accent,
-          fontSize: SimfTokens.textSm,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-}
-
-/// One المزيد row (frame node 512:2126): the label at the inline start and a
-/// white forward chevron at the inline end, on the tile chrome.
-class _MoreRow extends StatelessWidget {
-  const _MoreRow({required this.label, required this.onTap});
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return SimfCard(
-      onTap: onTap,
-      child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: SimfTokens.space2,
-            vertical: SimfTokens.space4,
-          ),
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                child: Text(
-                  label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                    fontSize: SimfTokens.textMd,
-                  ),
-                ),
-              ),
-              const SimfSvgIcon(
-                'assets/icons/ic_back.svg',
-                size: 20,
-                color: Colors.white,
-              ),
-            ],
-          ),
-      ),
-    );
-  }
-}
-
-/// One horizontal share-action pill (frame 758:1283): the gold iconify glyph
-/// beside its label on the shared card chrome, fixed to the frame's 48-px row.
-class _ShareTile extends StatelessWidget {
-  const _ShareTile({
-    required this.label,
-    required this.iconAsset,
-    required this.onTap,
-  });
-
-  final String label;
-  final String iconAsset;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return SimfCard(
-      onTap: onTap,
-      child: SizedBox(
-        height: 48,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space3),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              SimfSvgIcon(iconAsset, size: 20, color: SimfTokens.accent),
-              const SizedBox(width: SimfTokens.space2),
-              Flexible(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: SimfTokens.textSm,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+      child: MyAreaDashboardBody(
+        dashboard: dashboard,
+        referenceNumber: referenceNumber,
+        onShareContact: () => unawaited(_shareContact()),
+        onChangeAvatar: () => unawaited(_changeAvatar()),
       ),
     );
   }

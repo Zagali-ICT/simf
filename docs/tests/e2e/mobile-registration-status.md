@@ -137,6 +137,24 @@ Scenario: Arabic state label renders right-to-left
   And the approval reference number + date (decoration, D11) are not data-bound
 ```
 
+### E2E-MOB011-010 — Approved-state visual parity (Figma 1701:3789, D-591)
+
+```gherkin
+Scenario: The approved gate matches the frame
+  Given a signed-in account whose registrationStatus is Approved
+  When the حالة التسجيل screen renders
+  Then the screen is a navy gate with NO bottom navigation bar
+  And the header shows a back chevron on the left + the centred title "حالة التسجيل"
+  And a 104px green ring surrounds a green check
+  And the white headline reads "تم اعتماد حسابك" over a beige message
+  And the "المراحل" card lists the four stages right-aligned, each ending in a gold check
+  And a full-width gold "متابعة" button sits below the card
+  And a muted "تسجيل الخروج" link sits beneath the button (not in the header)
+  When the user taps "متابعة"
+  Then the app opens the home route
+  # Covered by the golden test/golden/registration_status_golden_test.dart (1701:3789).
+```
+
 ---
 
-_Last reviewed:_ `2026-06-05` by `SIMF Team`.
+_Last reviewed:_ `2026-07-02` by `SIMF Team` (D-591 — approved-state redesign to Figma 1701:3789).

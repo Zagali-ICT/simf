@@ -62,26 +62,6 @@ void main() {
     });
   });
 
-  testWidgets('livenessPrompt returns the Arabic step prompts', (tester) async {
-    late AppL10n l10n;
-    await tester.pumpWidget(
-      _wrap(
-        Builder(
-          builder: (context) {
-            l10n = AppL10n.of(context);
-            return const SizedBox.shrink();
-          },
-        ),
-        locale: const Locale('ar'),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(livenessPrompt(l10n, LivenessStep.smile), 'ابتسم');
-    expect(livenessPrompt(l10n, LivenessStep.turnRight), 'ادر راسك لليمين');
-    expect(livenessPrompt(l10n, LivenessStep.turnLeft), 'ادر راسك لليسار');
-  });
-
   testWidgets('the screen builds with the header and a loading preview '
       '(camera init is async; no overflow)', (tester) async {
     await tester.pumpWidget(_wrap(const IdentityVerificationScreen()));

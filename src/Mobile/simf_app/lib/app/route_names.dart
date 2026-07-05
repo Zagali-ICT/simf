@@ -60,7 +60,6 @@ class RouteNames {
   // Section 4 — Live & Q&A (3 screens; 27 request-interview removed — D-278)
   static const String liveBroadcast = 'liveBroadcast';
   static const String sendQuestion = 'sendQuestion';
-  static const String audienceComments = 'audienceComments';
 
   // Section 5 — Media coverage (3 screens)
   static const String news = 'news';
@@ -97,17 +96,15 @@ class RouteNames {
   // Area; Approved account). Supersedes the D-479 read-only My-meetings route.
   static const String requests = 'requests';
 
-  // Wave 2 (Figma 1388:9067) — "my sessions" (تفاصيل الجلسات): the caller's
-  // booked / joined sessions with القادمة / حضرتها / فاتتني / الأرشيف tabs,
-  // reached from the My-Area "my sessions" counter (Approved account).
-  static const String myAreaSessions = 'myAreaSessions';
+  // (D-609: myMeetings + myAreaSessions route names removed — their screens are
+  // backed up as `.bk` and their routes + My-Area/More entry points are gone.)
 
   // Owner batch (2026-06-21) — entry points whose feature is not designed/built
   // yet, so they render the ComingSoon placeholder (sentinel numbers 200+):
   //   • bilateralMeetings (اللقاءات الثنائية) — home tile, not designed yet (#5).
-  //   • savedSessions / savedMeetings — My Area stat tiles, not built yet (#8).
+  //   • savedMeetings — My Area stat tile, not built yet (#8).
+  //   (D-609: savedSessions removed — screen backed up as `.bk`.)
   static const String bilateralMeetings = 'bilateralMeetings';
-  static const String savedSessions = 'savedSessions';
   static const String savedMeetings = 'savedMeetings';
 
   // FDS-014 visitor contact sharing (D-286 API; additive, not mockup-numbered).

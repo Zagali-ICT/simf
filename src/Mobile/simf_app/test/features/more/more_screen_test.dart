@@ -135,8 +135,9 @@ void main() {
   group('MoreScreen (Page 041 — frame 1129:17224)', () {
     testWidgets('renders the three grouped sections and their rows',
         (tester) async {
-      // Signed-in Visitor sees every row — including the attendee-only
-      // Presentations + Rate (D-519 role-filters those off the guest view).
+      // Signed-in Visitor sees every row — including the attendee-only Rate
+      // (D-519 role-filters it off the guest view). D-609 removed the
+      // "Session presentations" / my-sessions row entirely.
       await _pump(tester, router: _router(), signedIn: true);
       // Section headers.
       expect(find.text('Forum information'), findsOneWidget);
@@ -146,7 +147,6 @@ void main() {
       expect(find.text('About the forum'), findsOneWidget);
       expect(find.text('Forum guide'), findsOneWidget);
       expect(find.text('FAQ'), findsOneWidget);
-      expect(find.text('Session presentations'), findsOneWidget);
       expect(find.text('Explore Riyadh · VisitSaudi'), findsOneWidget);
       // الإعدادات rows (Language shows the current value).
       expect(find.text('Language'), findsOneWidget);
@@ -168,9 +168,8 @@ void main() {
       await _pump(tester, router: _router());
       expect(find.text('My area'), findsNothing);
       expect(find.text('Sign out'), findsNothing);
-      // D-519 — the attendee-only rows are role-filtered off the guest view
-      // (a guest cannot reach them; tapping would bounce to sign-in).
-      expect(find.text('Session presentations'), findsNothing);
+      // D-519 — the attendee-only Rate row is role-filtered off the guest view
+      // (a guest cannot reach it; tapping would bounce to sign-in).
       expect(find.text('Rate the app'), findsNothing);
       // The public rows remain.
       expect(find.text('About the forum'), findsOneWidget);

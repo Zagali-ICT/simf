@@ -53,8 +53,8 @@
 | E2E-MOB013-017 | RTL tile/row order matches the frame (D-436 position assertions) | i18n | P1 | authored ✓ (screen — `getCenter().dx` about/news/smart-row-2) |
 | E2E-MOB013-018 | Discover badge is the filled "السعودية" (signed-in), not "KSA" (758:1280, D-446) | i18n/visual | P2 | authored ✓ (screen) |
 | E2E-MOB013-019 | **اللقاءات الثنائية → Coming soon (owner 2026-06-21):** the bilateral-meetings news tile opens the **ComingSoon** placeholder (the feature is not designed yet), not the media gallery | happy | P2 | authored ✓ (screen — tile → `bilateralMeetings` ComingSoon route) |
-| E2E-MOB013-020 | **Session-summary tile → session presentations (D-580, #2):** the smart-row-2 tile is relabelled "عروض الجلسات" and opens the presentations downloads screen (1388:7621), not the AI-summaries list | happy | P2 | authored ✓ (screen — smart-row-2 label + section-scan) |
-| E2E-MOB013-021 | **About-tile relabel → AI-summaries (D-582):** the Home about-row tile that opens the AI-summaries list (1388:8392) reads "ملخص الجلسات" (was "الجلسات"), matching its destination; route/node unchanged | i18n/visual | P2 | authored ✓ (screen — about-row label + order) |
+| E2E-MOB013-020 | **Smart-features tile → AI-summaries (D-580→D-583):** the smart-row-2 tile reads "ملخص الجلسات" and opens the AI-summaries list (1388:8392, header "ملخص الجلسات") | happy | P2 | authored ✓ (screen — smart-row-2 label + section-scan) |
+| E2E-MOB013-021 | **About-tile → session downloads (D-583):** the Home about-row (4-up) tile reads "الجلسات" and opens the session-materials downloads screen (1388:7621, header "الجلسات"); label matches the screen title | happy | P2 | authored ✓ (screen — about-row label + order) |
 
 ## Scenarios
 
@@ -331,37 +331,37 @@ Scenario: Signed-in discover row uses the Arabic filled badge
   # The guest home keeps the outlined "KSA" badge (frame 758:2910).
 ```
 
-### E2E-MOB013-020 — Session-summary tile opens session presentations (D-580)
+### E2E-MOB013-020 — Smart-features tile opens the AI-summaries list (D-583)
 
 ```gherkin
-Scenario: The smart-row-2 tile opens the session presentations screen
+Scenario: The smart-row-2 tile opens the AI-summaries list
   Given the signed-in Home is shown
-  Then the smart-row-2 tile reads "عروض الجلسات" (Session presentations)
+  Then the smart-row-2 tile reads "ملخص الجلسات" (Session summaries)
   When the user taps it
-  Then the Session presentations screen (1388:7621) opens
-  # The AI-summaries list (1388:8392) is on the "ملخص الجلسات" about-tile;
+  Then the AI-summaries list (1388:8392, header "ملخص الجلسات") opens
+  # The session-downloads screen (1388:7621) is the "الجلسات" about-tile;
   # My-Sessions (1388:9067) stays on the My-Area dashboard.
 ```
 
-### E2E-MOB013-021 — About-tile relabel → AI-summaries list (D-582)
+### E2E-MOB013-021 — About-tile opens the session downloads screen (D-583)
 
 ```gherkin
-Scenario: The Home about-tile that opens the AI-summaries list reads "ملخص الجلسات"
+Scenario: The Home about-tile "الجلسات" opens the session downloads screen
   Given the signed-in Home is shown
-  Then the about-row (4-up) tile that opens the AI-summaries list reads "ملخص الجلسات"
+  Then the about-row (4-up) tile reads "الجلسات"
   And it sits at the inline-end (leftmost, RTL) of المتحدثون · المعرض · الوفود
   When the user taps it
-  Then the Session summaries list (1388:8392) opens
-  # Route + node unchanged (D-582 relabel only); the label was "الجلسات".
+  Then the session-materials downloads screen (1388:7621, header "الجلسات") opens
+  # Its label matches the Figma screen title; the AI-summaries list
+  # (1388:8392) is the "ملخص الجلسات" smart-features tile.
 ```
 
 ---
 
-_Last reviewed:_ `2026-07-01` by `SIMF Team` — D-582: the Home about-row tile that
-opens the AI-summaries list (1388:8392) was relabelled from "الجلسات" to
-"ملخص الجلسات" so its label matches the destination (route + node unchanged).
-D-580: the smart-row-2 "ملخص الجلسات" tile was relabelled "عروض الجلسات" and
-repointed to the session presentations screen (1388:7621); the AI-summaries list
-is on the "ملخص الجلسات" about-tile. (Prior 2026-06-19 D-462: the "تابعنا" social
-row URLs come from the CP-editable site-settings, falling back to build-time
+_Last reviewed:_ `2026-07-01` by `SIMF Team` — D-583: the two Home session tiles
+were crossed against their Figma node titles and swapped so each label opens the
+same-titled screen — about "الجلسات" → session-downloads (1388:7621), smart-features
+"ملخص الجلسات" → AI-summaries list (1388:8392). Supersedes D-582 (which relabelled the
+wrong tile) and corrects the D-580 smart-tile. (Prior 2026-06-19 D-462: the "تابعنا"
+social row URLs come from the CP-editable site-settings, falling back to build-time
 config then inert.)

@@ -10,6 +10,8 @@ import '../../app/widgets/simf_page_shell.dart';
 import '../../core/organization_profile/organization_profile.dart';
 import '../content/data/content_models.dart';
 import '../content/data/content_repository.dart';
+import 'widgets/about_cards.dart';
+import 'widgets/about_header.dart';
 
 /// Page 037 — عن الملتقى · About the forum (#37, `/about`, Guest+).
 ///
@@ -71,6 +73,9 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
         ? profile.nameFor(isAr)
         : l10n.aboutForumName;
     final forumTitle = profile != null ? profile.titleFor(isAr) : '';
+    final statusBadge = profile != null
+        ? '${l10n.aboutStatus(profile.status)} · ${profile.currentYear}'
+        : null;
 
     // The "about" cards — driven by the profile's about-items (the same
     // vision/mission card design) when present, else the bundled copy.
@@ -81,21 +86,16 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
           aboutCards.add(const SizedBox(height: SimfTokens.space4));
         }
         aboutCards.add(
-          _AboutCard(
-            title: item.titleFor(isAr),
-            body: item.textFor(isAr),
-          ),
+          AboutTextCard(title: item.titleFor(isAr), body: item.textFor(isAr)),
         );
       }
     } else {
       aboutCards.add(
-        _AboutCard(
-          title: l10n.aboutMissionTitle,
-          body: l10n.aboutHeroHeading,
-        ),
+        AboutTextCard(title: l10n.aboutMissionTitle, body: l10n.aboutHeroHeading),
       );
       aboutCards.add(const SizedBox(height: SimfTokens.space4));
-      aboutCards.add(_AboutCard(title: l10n.aboutVisionTitle, body: visionBody));
+      aboutCards
+          .add(AboutTextCard(title: l10n.aboutVisionTitle, body: visionBody));
     }
 
     // The "details" list — driven by the profile's details when present.
@@ -130,260 +130,30 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
       body: ListView(
         padding: const EdgeInsets.all(SimfTokens.space4),
         children: <Widget>[
-          // Anchor-mark header (frame 1116:16448) — name, then title.
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              const Icon(Icons.anchor, color: SimfTokens.accent, size: 22),
-              const SizedBox(width: SimfTokens.space2),
-              Flexible(
-                child: Text(
-                  forumName,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: SimfTokens.accent,
-                    fontSize: SimfTokens.textLg,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
+          AboutHeader(
+            forumName: forumName,
+            forumTitle: forumTitle,
+            statusBadge: statusBadge,
           ),
-          if (forumTitle.isNotEmpty) ...<Widget>[
-            const SizedBox(height: SimfTokens.space2),
-            Text(
-              forumTitle,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: SimfTokens.textMd,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-          // D-495 — the edition status badge (status · year).
-          if (profile != null) ...<Widget>[
-            const SizedBox(height: SimfTokens.space3),
-            Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: SimfTokens.space3,
-                  vertical: SimfTokens.space1,
-                ),
-                decoration: BoxDecoration(
-                  color: SimfTokens.accent,
-                  borderRadius: BorderRadius.circular(SimfTokens.radius),
-                ),
-                child: Text(
-                  '${l10n.aboutStatus(profile.status)} · ${profile.currentYear}',
-                  style: const TextStyle(
-                    color: SimfTokens.navyDeep,
-                    fontSize: SimfTokens.textSm,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ),
-          ],
           const SizedBox(height: SimfTokens.space5),
           ...aboutCards,
           const SizedBox(height: SimfTokens.space4),
-          _DetailsCard(title: l10n.aboutDetailsTitle, rows: detailRows),
+          AboutDetailsCard(title: l10n.aboutDetailsTitle, rows: detailRows),
           // D-495 — contact + version cards (shown only when set).
           if (contactRows.isNotEmpty) ...<Widget>[
             const SizedBox(height: SimfTokens.space4),
-            _DetailsCard(title: l10n.aboutContactTitle, rows: contactRows),
+            AboutDetailsCard(title: l10n.aboutContactTitle, rows: contactRows),
           ],
           if (profile?.version != null && profile!.version!.isNotEmpty) ...<Widget>[
             const SizedBox(height: SimfTokens.space4),
-            _DetailsCard(
+            AboutDetailsCard(
               title: l10n.aboutVersionTitle,
               rows: <(String, String)>[(l10n.aboutVersionLabel, profile.version!)],
             ),
           ],
           const SizedBox(height: SimfTokens.space4),
-          _ThemesCard(title: l10n.aboutThemesTitle, themes: themes),
+          AboutThemesCard(title: l10n.aboutThemesTitle, themes: themes),
         ],
-      ),
-    );
-  }
-}
-
-/// A titled navy-deep text card (الرسالة / الرؤية): the white heading over the
-/// beige body paragraph.
-class _AboutCard extends StatelessWidget {
-  const _AboutCard({required this.title, required this.body});
-
-  final String title;
-  final String body;
-
-  @override
-  Widget build(BuildContext context) {
-    return _Card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          _CardHeading(title),
-          const SizedBox(height: SimfTokens.space2),
-          Text(
-            body,
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textSm,
-              height: 1.6,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// The تفاصيل الملتقى card: the heading over "label : value" rows.
-class _DetailsCard extends StatelessWidget {
-  const _DetailsCard({required this.title, required this.rows});
-
-  final String title;
-  final List<(String, String)> rows;
-
-  @override
-  Widget build(BuildContext context) {
-    return _Card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          _CardHeading(title),
-          const SizedBox(height: SimfTokens.space3),
-          for (final (index, (label, value)) in rows.indexed) ...<Widget>[
-            if (index > 0) const SizedBox(height: SimfTokens.space2),
-            Row(
-              children: <Widget>[
-                Text(
-                  '$label :',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: SimfTokens.textSm,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(width: SimfTokens.space2),
-                Expanded(
-                  child: Text(
-                    value,
-                    textDirection: TextDirection.ltr,
-                    textAlign: TextAlign.start,
-                    style: const TextStyle(
-                      color: SimfTokens.beigeBorder,
-                      fontSize: SimfTokens.textSm,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-/// The المحاور الرئيسية card: the heading over the numbered theme entries.
-class _ThemesCard extends StatelessWidget {
-  const _ThemesCard({required this.title, required this.themes});
-
-  final String title;
-  final List<(String, String, String)> themes;
-
-  @override
-  Widget build(BuildContext context) {
-    return _Card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          _CardHeading(title),
-          const SizedBox(height: SimfTokens.space3),
-          for (final (index, (number, themeTitle, body)) in themes.indexed)
-            ...<Widget>[
-            if (index > 0) const SizedBox(height: SimfTokens.space4),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  number,
-                  style: const TextStyle(
-                    color: SimfTokens.accent,
-                    fontSize: SimfTokens.textLg,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(width: SimfTokens.space3),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        themeTitle,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: SimfTokens.textMd,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: SimfTokens.space1),
-                      Text(
-                        body,
-                        style: const TextStyle(
-                          color: SimfTokens.beigeBorder,
-                          fontSize: SimfTokens.textSm,
-                          height: 1.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-/// The shared navy-deep card chrome for the About sections.
-class _Card extends StatelessWidget {
-  const _Card({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(SimfTokens.space4),
-      decoration: BoxDecoration(
-        color: SimfTokens.navyDeep,
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
-      ),
-      child: child,
-    );
-  }
-}
-
-class _CardHeading extends StatelessWidget {
-  const _CardHeading(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      textAlign: TextAlign.start,
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: SimfTokens.textMd,
-        fontWeight: FontWeight.w700,
       ),
     );
   }

@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../app/localization/app_l10n.dart';
+import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
-import '../../core/sharing/content_sharer.dart';
 import 'data/presentation_models.dart';
 import 'data/presentation_repository.dart';
 import 'widgets/session_filter_tabs.dart';
 
-/// **Session presentations** — App "عروض الجلسات" (Figma 1388:7621, Approved
-/// account). The downloadable decks grouped by event day, each card a file icon
-/// + the session title + the presenting speaker + a gold تحميل button that
-/// fetches the bytes through the authenticated client and hands them to the OS
-/// share/save sheet. Reads `GET /app/presentations`.
+/// **Sessions** — App "الجلسات" (Figma 1388:7621, Approved account), reached
+/// from the Home "الجلسات" tile. Sessions grouped by event day, each card a file
+/// icon + the session title + the presenting speaker + a gold تحميل button.
+/// Owner 2026-07-03: tapping a card opens the **session detail** (17), and the
+/// gold تحميل button opens that session's **summary** (ملخص الجلسة, 34) — this
+/// screen no longer downloads the deck bytes. Reads `GET /app/presentations`.
 class SessionPresentationsScreen extends ConsumerStatefulWidget {
   const SessionPresentationsScreen({super.key});
 
@@ -168,8 +170,9 @@ class _Body extends StatelessWidget {
       a.year == b.year && a.month == b.month && a.day == b.day;
 }
 
-/// One presentation card with its own download-in-progress state.
-class _PresentationCard extends ConsumerStatefulWidget {
+/// One session card — tapping it opens the session detail (17); the gold تحميل
+/// button opens that session's summary (34). Owner 2026-07-03.
+class _PresentationCard extends StatelessWidget {
   const _PresentationCard({
     required this.item,
     required this.isArabic,
@@ -180,20 +183,26 @@ class _PresentationCard extends ConsumerStatefulWidget {
   final bool isArabic;
   final String dayLabel;
 
-  @override
-  ConsumerState<_PresentationCard> createState() => _PresentationCardState();
-}
+  /// Card tap → تفاصيل الجلسة (session detail, 17).
+  void _openDetail(BuildContext context) => context.pushNamed(
+        RouteNames.sessionDetail,
+        pathParameters: <String, String>{'sessionId': item.sessionId},
+      );
 
-class _PresentationCardState extends ConsumerState<_PresentationCard> {
-  bool _downloading = false;
+  /// تحميل → ملخص الجلسة (session summary, 34). 404s gracefully until the
+  /// Committee publishes the summary.
+  void _openSummary(BuildContext context) => context.pushNamed(
+        RouteNames.aiSummary,
+        queryParameters: <String, String>{'sessionId': item.sessionId},
+      );
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    final item = widget.item;
-    final speaker = item.localizedSpeaker(widget.isArabic);
+    final speaker = item.localizedSpeaker(isArabic);
 
     return SimfCard(
+      onTap: () => _openDetail(context),
       child: Padding(
         padding: const EdgeInsets.all(SimfTokens.space2), // p-8 (Figma 1388:7640)
         child: Column(
@@ -208,7 +217,7 @@ class _PresentationCardState extends ConsumerState<_PresentationCard> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
                       Text(
-                        item.localizedSessionTitle(widget.isArabic),
+                        item.localizedSessionTitle(isArabic),
                         textAlign: TextAlign.start,
                         style: const TextStyle(
                           color: Colors.white,
@@ -237,14 +246,14 @@ class _PresentationCardState extends ConsumerState<_PresentationCard> {
               ],
             ),
             const SizedBox(height: SimfTokens.space6), // gap-24
-            // Download button on the left, the event-day label on the right.
+            // Summary button on the left, the event-day label on the right.
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                if (widget.dayLabel.isNotEmpty)
+                if (dayLabel.isNotEmpty)
                   Flexible(
                     child: Text(
-                      widget.dayLabel,
+                      dayLabel,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -256,11 +265,8 @@ class _PresentationCardState extends ConsumerState<_PresentationCard> {
                 else
                   const SizedBox.shrink(),
                 _DownloadButton(
-                  downloading: _downloading,
-                  label: _downloading
-                      ? l10n.presentationDownloading
-                      : l10n.presentationDownload,
-                  onTap: _downloading ? null : () => _download(l10n),
+                  label: l10n.presentationDownload,
+                  onTap: () => _openSummary(context),
                 ),
               ],
             ),
@@ -268,29 +274,6 @@ class _PresentationCardState extends ConsumerState<_PresentationCard> {
         ),
       ),
     );
-  }
-
-  Future<void> _download(AppL10n l10n) async {
-    final messenger = ScaffoldMessenger.of(context);
-    setState(() => _downloading = true);
-    try {
-      final bytes = await ref
-          .read(presentationRepositoryProvider)
-          .downloadFile(widget.item.id);
-      await shareBinaryContent(
-        bytes: bytes,
-        filename: widget.item.fileName,
-        mimeType: widget.item.contentType,
-      );
-    } catch (_) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.presentationDownloadError)),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _downloading = false);
-      }
-    }
   }
 }
 
@@ -317,17 +300,15 @@ class _FileIcon extends StatelessWidget {
   }
 }
 
-/// The gold تحميل button (Figma 1388:7621), with a spinner while downloading.
+/// The gold تحميل button (Figma 1388:7621) — opens the session summary (34).
 class _DownloadButton extends StatelessWidget {
   const _DownloadButton({
-    required this.downloading,
     required this.label,
     required this.onTap,
   });
 
-  final bool downloading;
   final String label;
-  final VoidCallback? onTap;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -341,8 +322,8 @@ class _DownloadButton extends StatelessWidget {
           padding: const EdgeInsets.all(SimfTokens.space2), // p-8
           // Frame 1388:7657 — the download glyph leads at the inline-end (LEFT in
           // RTL), with "تحميل" to its right. A plain RTL Row [icon, text] would
-          // put the icon on the right, so the label leads and the icon/spinner
-          // trails to land on the left, matching the frame.
+          // put the icon on the right, so the label leads and the icon trails to
+          // land on the left, matching the frame.
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
@@ -355,21 +336,11 @@ class _DownloadButton extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: SimfTokens.space1),
-              if (downloading)
-                const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              else
-                const Icon(
-                  Icons.download_rounded,
-                  size: 14,
-                  color: Colors.white,
-                ),
+              const Icon(
+                Icons.download_rounded,
+                size: 14,
+                color: Colors.white,
+              ),
             ],
           ),
         ),

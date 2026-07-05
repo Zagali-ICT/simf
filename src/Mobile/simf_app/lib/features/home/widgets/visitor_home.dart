@@ -1,0 +1,249 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../app/localization/app_l10n.dart';
+import '../../../app/route_names.dart';
+import '../../../app/theme/tokens.dart';
+import '../../../app/widgets/simf_bottom_nav.dart';
+import '../../../app/widgets/simf_page_shell.dart';
+import '../../news/data/news_models.dart';
+import '../../news/news_article_screen.dart';
+import 'discover_saudi_row.dart';
+import 'follow_us_section.dart';
+import 'greeting_header.dart';
+import 'highlights_carousel.dart';
+import 'home_banners.dart';
+import 'home_icons.dart';
+
+/// Signed-in layout (frame 758:1134 — greeting home, exact parity): the
+/// greeting header, discover hero, live banner, the "عن الملتقى" section bar +
+/// its tile group, the "الميزات الذكية" smart tiles, the "الرعاة" +
+/// "الأخبار والتغطية" section bars, the highlights carousel, the discover row,
+/// and the follow-us row.
+class VisitorHome extends StatelessWidget {
+  const VisitorHome({
+    required this.l10n,
+    required this.name,
+    required this.baseUrl,
+    this.highlights = const <NewsListItem>[],
+    this.isExhibitor = false,
+    this.now,
+    super.key,
+  });
+
+  final AppL10n l10n;
+  final String name;
+  final String baseUrl;
+  final List<NewsListItem> highlights;
+
+  /// Exhibitor (العارض) — the attendee home plus the lead-capture tools section
+  /// (scan a visitor's QR + my visitors). D-519.
+  final bool isExhibitor;
+
+  /// The clock for the greeting word; defaults to live. Injected by the golden
+  /// so its greeting is deterministic.
+  final DateTime? now;
+
+  @override
+  Widget build(BuildContext context) {
+    return SimfPageShell(
+      tab: SimfTab.home,
+      header: GreetingHeader(l10n: l10n, name: name, now: now),
+      body: ListView(
+        padding: const EdgeInsets.all(SimfTokens.space4),
+        children: <Widget>[
+          // The discovery hero banner (frame node 758:1203) — opens News.
+          DiscoverHeroBanner(
+            l10n: l10n,
+            onTap: () => context.pushNamed(RouteNames.news),
+          ),
+          const SizedBox(height: SimfTokens.space6),
+          // The live banner (frame node 758:1150) — opens the live view.
+          LiveBanner(
+            l10n: l10n,
+            onTap: () => context.pushNamed(RouteNames.liveBroadcast),
+          ),
+          const SizedBox(height: SimfTokens.space6),
+          // Exhibitor (العارض) lead-capture tools — D-519. Shown only to the
+          // Exhibitor role, above the shared attendee content.
+          if (isExhibitor) ...<Widget>[
+            SimfSectionHeader(title: l10n.exhibitorToolsSection),
+            const SizedBox(height: SimfTokens.space4),
+            SimfTileRow(
+              children: <Widget>[
+                SimfNavTile(
+                  label: l10n.scanVisitorTitle,
+                  icon: Icons.qr_code_scanner,
+                  minHeight: 80,
+                  onTap: () => context.pushNamed(RouteNames.scanVisitor),
+                ),
+                SimfNavTile(
+                  label: l10n.myVisitorsTitle,
+                  icon: Icons.groups_outlined,
+                  minHeight: 80,
+                  onTap: () => context.pushNamed(RouteNames.myVisitors),
+                ),
+              ],
+            ),
+            const SizedBox(height: SimfTokens.space6),
+          ],
+          // "عن الملتقى" section bar (758:1207) — opens About the forum.
+          SimfLinkRow(
+            title: l10n.homeAboutSection,
+            onTap: () => context.pushNamed(RouteNames.aboutForum),
+          ),
+          const SizedBox(height: SimfTokens.space6),
+          // About tiles (frame 758:1215, h72) — a 4-up grid of the shared tile,
+          // the same SimfNavTile reused as grid columns. Right→left under RTL:
+          // المتحدثون · الأجنحة · الوفود · جلسات.
+          SimfTileRow(
+            children: <Widget>[
+              SimfNavTile(
+                label: l10n.tileSpeakers,
+                iconAsset: HomeIcons.people,
+                onTap: () => context.pushNamed(RouteNames.speakers),
+              ),
+              SimfNavTile(
+                // Home button title matches the screen header ("المعرض").
+                label: l10n.tileExhibition,
+                iconAsset: HomeIcons.booths,
+                onTap: () => context.pushNamed(RouteNames.booths),
+              ),
+              // الوفود — delegations sits in the about row (frame 758:1220) with
+              // the design's exact formkit:people glyph (node 1408:10399).
+              SimfNavTile(
+                label: l10n.delegationsTitle,
+                iconAsset: HomeIcons.delegations,
+                onTap: () => context.pushNamed(RouteNames.delegations),
+              ),
+              SimfNavTile(
+                label: l10n.tileSessions,
+                iconAsset: HomeIcons.aboutSessions,
+                // Owner 2026-07-01: the home "الجلسات" tile opens the session
+                // materials/downloads screen (Figma 1388:7621, header "الجلسات"),
+                // whose title matches this label. The AI summaries list
+                // ("ملخص الجلسات", 1388:8392) is the smart-features tile below;
+                // the agenda lives on the bottom-nav sessions tab (labelled
+                // "الجلسات" per nav component 206:1732 — the tab label only
+                // shows when that tab is active, so Home renders it icon-only).
+                onTap: () => context.pushNamed(RouteNames.sessionPresentations),
+              ),
+            ],
+          ),
+          // 16px gap inside the "عن الملتقى" group (frame 1054:12864 gap-16).
+          const SizedBox(height: SimfTokens.space4),
+          // The full-width "اسأل المحاور" tile (1052:12856) — send a question.
+          SimfNavTile(
+            label: l10n.tileAskModerator,
+            iconAsset: HomeIcons.askModerator,
+            onTap: () => context.pushNamed(RouteNames.sendQuestion),
+          ),
+          const SizedBox(height: SimfTokens.space6),
+          // News tiles (758:1228, h80): right→left اللقاءات الثنائية · الأرشيف.
+          SimfTileRow(
+            children: <Widget>[
+              SimfNavTile(
+                label: l10n.tileBilateralMeetings,
+                iconAsset: HomeIcons.bilateral,
+                minHeight: 80,
+                // اللقاءات الثنائية opens the الطلبات Requests feed (1408:9726) —
+                // where bilateral / meeting requests live (owner 2026-06-29: keep
+                // the tile label, link it to Requests instead of the ComingSoon).
+                onTap: () => context.pushNamed(RouteNames.requests),
+              ),
+              SimfNavTile(
+                label: l10n.tileArchive,
+                iconAsset: HomeIcons.archive,
+                minHeight: 80,
+                onTap: () => context.pushNamed(RouteNames.archive),
+              ),
+            ],
+          ),
+          const SizedBox(height: SimfTokens.space6),
+          // "الميزات الذكية" (758:1158) — header + the المزيد link → More.
+          SimfSectionHeader(
+            title: l10n.homeSmartSection,
+            moreLabel: l10n.moreTitle,
+            onMore: () => context.pushNamed(RouteNames.more),
+          ),
+          const SizedBox(height: SimfTokens.space4),
+          SimfTileRow(
+            children: <Widget>[
+              SimfNavTile(
+                label: l10n.tileMeetPeople,
+                iconAsset: HomeIcons.meetPeople,
+                minHeight: 80,
+                onTap: () => context.pushNamed(RouteNames.meetPeople),
+              ),
+              SimfNavTile(
+                label: l10n.chatbotTitle,
+                iconAsset: HomeIcons.aiAssistant,
+                minHeight: 80,
+                onTap: () => context.pushNamed(RouteNames.chatbot),
+              ),
+            ],
+          ),
+          const SizedBox(height: SimfTokens.space2),
+          SimfTileRow(
+            children: <Widget>[
+              SimfNavTile(
+                label: l10n.tileSessionSummary,
+                iconAsset: HomeIcons.sessionSummary,
+                minHeight: 80,
+                // Owner 2026-07-01: the smart-features "ملخص الجلسات" tile opens
+                // the AI session-summaries list (Figma 1388:8392, header
+                // "ملخص الجلسات") — matching its summary icon + label. The
+                // session-downloads screen ("الجلسات", 1388:7621) is the about
+                // tile above; My-Sessions (1388:9067) stays on My-Area.
+                onTap: () => context.pushNamed(RouteNames.sessionSummaryList),
+              ),
+              SimfNavTile(
+                label: l10n.tileEntryBadge,
+                iconAsset: HomeIcons.badge,
+                minHeight: 80,
+                onTap: () => context.pushNamed(RouteNames.badge),
+              ),
+            ],
+          ),
+          const SizedBox(height: SimfTokens.space6),
+          // "الرعاة" section bar (1049:12844) — opens Sponsors.
+          SimfLinkRow(
+            title: l10n.tileSponsors,
+            onTap: () => context.pushNamed(RouteNames.sponsors),
+          ),
+          const SizedBox(height: SimfTokens.space6),
+          // "الأخبار والتغطية" section bar (758:1211) — opens News.
+          SimfLinkRow(
+            title: l10n.tileNews,
+            onTap: () => context.pushNamed(RouteNames.news),
+          ),
+          // ابرز الاحداث (frame node 758:1239) — the highlights carousel
+          // (image + title slides, auto-advancing); hidden until a post exists.
+          if (highlights.isNotEmpty) ...<Widget>[
+            const SizedBox(height: SimfTokens.space6),
+            SimfSectionHeader(title: l10n.featuredEventsSection),
+            const SizedBox(height: SimfTokens.space4),
+            HighlightsCarousel(
+              l10n: l10n,
+              items: highlights,
+              baseUrl: baseUrl,
+              onTap: (post) => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => NewsArticleScreen(newsId: post.id),
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: SimfTokens.space6),
+          // "اكتشف" (758:1270) — header + the روح السعودية discover row.
+          SimfSectionHeader(title: l10n.discoverSection),
+          const SizedBox(height: SimfTokens.space4),
+          DiscoverSaudiRow(l10n: l10n),
+          // "تابعنا" (758:1183) — header + brand row + handle. Self-hiding when
+          // no social link is set (owner 2026-06-27); owns its leading gap.
+          FollowUsSection(l10n: l10n),
+        ],
+      ),
+    );
+  }
+}

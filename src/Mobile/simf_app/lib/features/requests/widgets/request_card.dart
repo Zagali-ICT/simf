@@ -1,0 +1,243 @@
+import 'dart:math' as math;
+
+import 'package:flutter/material.dart';
+
+import '../../../app/localization/app_l10n.dart';
+import '../../../app/theme/tokens.dart';
+import '../../../app/widgets/simf_svg_icon.dart';
+import '../data/request_models.dart';
+import 'request_status_style.dart';
+
+/// One expandable request card: the type icon, headline + context line + date,
+/// a status-coloured leading strip, and (when expanded) the status detail and a
+/// cancel action for the user's own pending requests.
+class RequestCard extends StatefulWidget {
+  const RequestCard({
+    required this.item,
+    required this.isArabic,
+    required this.l10n,
+    required this.onCancel,
+    super.key,
+  });
+
+  final AppRequestItem item;
+  final bool isArabic;
+  final AppL10n l10n;
+  final VoidCallback onCancel;
+
+  @override
+  State<RequestCard> createState() => _RequestCardState();
+}
+
+class _RequestCardState extends State<RequestCard> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
+    final l10n = widget.l10n;
+    final statusColor = requestStatusColor(item.status);
+    final subtitle = item.localizedSubtitle(widget.isArabic);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: SimfTokens.navyDeep,
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        // Full status-coloured hairline (Figma 1408:9773 — 0.5px all round).
+        border: Border.all(color: statusColor, width: SimfTokens.hairlineBold),
+      ),
+      child: Column(
+        children: <Widget>[
+          InkWell(
+            onTap: () => setState(() => _expanded = !_expanded),
+            borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+            child: Padding(
+              padding: const EdgeInsets.all(SimfTokens.space2),
+              child: Row(
+                children: <Widget>[
+                  _IconBox(icon: _kindIcon(item.kind)),
+                  const SizedBox(width: SimfTokens.space2),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        Text(
+                          _kindHeadline(l10n, item.kind),
+                          textAlign: TextAlign.start,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: SimfTokens.textMd, // 14
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        if (subtitle.isNotEmpty) ...<Widget>[
+                          const SizedBox(height: SimfTokens.space2),
+                          Text(
+                            subtitle,
+                            textAlign: TextAlign.start,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: SimfTokens.beigeBorder,
+                              fontSize: SimfTokens.textSm, // 12
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: SimfTokens.space2),
+                        Text(
+                          _dateLine(l10n),
+                          // Pinned LTR keeps the time/date reading L→R (Figma
+                          // 1408:9782 — "07:45 AM · اليوم" today, else the date
+                          // "12 يناير 2026"); align to the trailing edge under
+                          // the right-aligned title.
+                          textDirection: TextDirection.ltr,
+                          textAlign: TextAlign.end,
+                          style: const TextStyle(
+                            color: SimfTokens.beigeBorder,
+                            fontSize: SimfTokens.textXs, // ~10
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: SimfTokens.space2),
+                  // The exact Figma chevron (iconamoon:arrow-up-2, 1408:9774) —
+                  // a left "‹" glyph rotated to point down (collapsed) / up
+                  // (expanded); gold per the frame.
+                  Transform.rotate(
+                    angle: _expanded ? math.pi / 2 : -math.pi / 2,
+                    child: const SimfSvgIcon(
+                      'assets/icons/chevron_left.svg',
+                      size: 20,
+                      color: SimfTokens.accent,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_expanded) _buildDetail(l10n, item, statusColor),
+        ],
+      ),
+    );
+  }
+
+  /// The card date line — "07:45 AM · اليوم" when the request's date is today,
+  /// else the absolute date "12 يناير 2026" (Figma 1408:9782).
+  String _dateLine(AppL10n l10n) {
+    final date = widget.item.displayDate.toLocal();
+    final now = DateTime.now();
+    final isToday =
+        date.year == now.year && date.month == now.month && date.day == now.day;
+    return isToday ? l10n.requestTimeToday(date) : l10n.requestDate(date);
+  }
+
+  Widget _buildDetail(AppL10n l10n, AppRequestItem item, Color statusColor) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        SimfTokens.space3,
+        0,
+        SimfTokens.space3,
+        SimfTokens.space3,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          const Divider(color: SimfTokens.line, height: SimfTokens.space4),
+          Row(
+            children: <Widget>[
+              Container(
+                width: 8,
+                height: 8,
+                decoration:
+                    BoxDecoration(color: statusColor, shape: BoxShape.circle),
+              ),
+              const SizedBox(width: SimfTokens.space2),
+              Text(
+                requestStatusLabel(l10n, item.status),
+                style: TextStyle(
+                  color: statusColor,
+                  fontSize: SimfTokens.textSm,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          if (item.canCancel) ...<Widget>[
+            const SizedBox(height: SimfTokens.space3),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: OutlinedButton.icon(
+                onPressed: widget.onCancel,
+                icon: const Icon(Icons.close, size: 16, color: SimfTokens.danger),
+                label: Text(
+                  l10n.requestCancel,
+                  style: const TextStyle(color: SimfTokens.danger),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: SimfTokens.danger),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+String _kindHeadline(AppL10n l10n, AppRequestKind kind) {
+  switch (kind) {
+    case AppRequestKind.delegationMeeting:
+      return l10n.requestKindDelegation;
+    case AppRequestKind.sessionAttendance:
+      return l10n.requestKindSession;
+    case AppRequestKind.participationDocument:
+      return l10n.requestKindDocument;
+    case AppRequestKind.badgeUpdate:
+      return l10n.requestKindBadge;
+    case AppRequestKind.speakerMeeting:
+      return l10n.requestKindSpeaker;
+  }
+}
+
+IconData _kindIcon(AppRequestKind kind) {
+  switch (kind) {
+    case AppRequestKind.delegationMeeting:
+      return Icons.flag_outlined;
+    case AppRequestKind.sessionAttendance:
+      return Icons.event_seat_outlined;
+    case AppRequestKind.participationDocument:
+      return Icons.description_outlined;
+    case AppRequestKind.badgeUpdate:
+      return Icons.badge_outlined;
+    case AppRequestKind.speakerMeeting:
+      return Icons.person_outline;
+  }
+}
+
+/// The gold rounded type-icon box at the inline start of a card (Figma
+/// 1408:9783 — 32px, radius-4, a 16px navy glyph).
+class _IconBox extends StatelessWidget {
+  const _IconBox({required this.icon});
+
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 32,
+      height: 32,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: SimfTokens.accent,
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+      ),
+      child: Icon(icon, size: 16, color: SimfTokens.navy),
+    );
+  }
+}

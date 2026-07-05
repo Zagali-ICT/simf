@@ -600,9 +600,10 @@ class AppL10n {
         'الملتقى البحري السعودي الدولي',
         'Saudi International Maritime Forum',
       );
-  // Two lines per the KSA-Project splash frame (Figma 159:573, D-361).
+  // Two lines per the KSA-Project splash frame (Figma 159:573, D-361). The frame
+  // shows Western digits in the date/year, so the Arabic line matches it.
   String get splashEventLine => _t(
-        'النسخة الرابعة\n٢٣–٢٥ نوفمبر ٢٠٢٦ · الرياض',
+        'النسخة الرابعة\n23–25 نوفمبر 2026 · الرياض',
         '4th Edition\n23–25 Nov 2026 · Riyadh',
       );
 
@@ -648,8 +649,8 @@ class AppL10n {
   // full-width tile that opens the send-a-question (ask the moderator) screen.
   String get tileAskModerator => _t('اسأل المحاور', 'Ask the moderator');
 
-  // Bottom navigation (KSA Wave-2 shell — frames 512:1492 / 213:963).
-  String get navAgenda => _t('الأجندة', 'Agenda');
+  // Bottom navigation (KSA Wave-2 shell — frames 512:1492 / 213:963). The
+  // sessions tab reuses [sessionsTitle] ("الجلسات", Figma 206:1732).
   String get navProfile => _t('الملف الشخصى', 'Profile');
 
   // Home — KSA Wave-2 redesign (guest 512:1492 / signed-in 203:1236).
@@ -741,10 +742,8 @@ class AppL10n {
   // 758:4180 / 758:4248 / 758:4316).
   String get identityVerificationTitle =>
       _t('التحقق من الهوية', 'Identity verification');
-  String get stepSmilePrompt => _t('ابتسم', 'Smile');
-  String get stepTurnRightPrompt =>
-      _t('ادر راسك لليمين', 'Turn your head right');
-  String get stepTurnLeftPrompt => _t('ادر راسك لليسار', 'Turn your head left');
+  // (D-611: the step*Prompt strings were removed with the on-screen prompt —
+  // owner chose the exact-Figma full-bleed camera with no prompt overlay.)
   String get identityCameraUnavailable => _t(
         'الكاميرا غير متاحة. اختر صورة من المعرض بدلاً من ذلك.',
         'The camera is unavailable. Choose a photo from the gallery instead.',
@@ -861,7 +860,9 @@ class AppL10n {
         'Could not load the visitor classification.',
       );
   String get staffRegisterAnother => _t('تسجيل زائر آخر', 'Register another');
-  String get statBookedSessions => _t('جلسات محفوظة', 'Booked sessions');
+  // The My-Area "الجلسات المحفوظة" counter (D-584) — shows the SAVED (favourited)
+  // count and opens الجلسات المحفوظة (1701:8928); Arabic already read "محفوظة".
+  String get statBookedSessions => _t('جلسات محفوظة', 'Saved sessions');
   String get statMeetings => _t('مقابلات', 'Meetings');
   String get statisticsTitle => _t('الإحصائيات', 'Statistics');
   String get todayScheduleTitle => _t('جدولي اليوم', "Today's schedule");
@@ -903,13 +904,14 @@ class AppL10n {
   String get sessionsSearchHint => _t('البحث', 'Search');
   String get sessionsScheduleSection => _t('المواعيد', 'Schedule');
   // The Sessions screen header (frame 883:2308 node 883:2314 "برنامج الملتقي" —
-  // corrected spelling الملتقى); distinct from the bottom-nav label (navAgenda).
+  // corrected spelling الملتقى); distinct from the bottom-nav label
+  // ([sessionsTitle] "الجلسات", nav component 206:1732).
   String get sessionsProgrammeTitle => _t('برنامج الملتقى', 'Forum programme');
-  // D-452 (Figma 883:2320) — the session type tabs.
+  // D-452 (Figma 883:2320) — the session type tabs (احداث dropped to match
+  // the 3-tab frame, owner 2026-07-03).
   String get sessionTypeAll => _t('الكل', 'All');
   String get sessionTypeWorkshop => _t('ورش العمل', 'Workshops');
   String get sessionTypeSession => _t('جلسات', 'Sessions');
-  String get sessionTypeEvent => _t('احداث', 'Events');
   String get sessionsEmpty => _t('لا توجد جلسات', 'No sessions');
   String get sessionsError =>
       _t('تعذّر تحميل الجلسات.', 'Could not load the sessions.');
@@ -1056,11 +1058,13 @@ class AppL10n {
   String get meetingNameLabel => _t('الاسم', 'Your name');
   String get meetingSubjectLabel => _t('الموضوع', 'Subject');
   String get meetingSendButton => _t('إرسال الطلب', 'Send request');
-  // D-474/D-475 (#11) — the VIP availability-slot picker.
-  String get meetingSlotLabel => _t('فترة الاجتماع (لكبار الشخصيات)', 'Meeting slot (VIP)');
-  // Figma 1701:7479 — the slot split into a date then a time picker.
-  String get meetingDateLabel => _t('التاريخ', 'Date');
-  String get meetingTimeLabel => _t('الوقت', 'Time');
+  // Figma 1776:4958 / 1776:5036 — the light "طلب مقابلة" sheet: a subject field,
+  // a row of day cards, then that day's time-slot chips.
+  String get meetingSubjectHint => _t('اكتب الموضوع', 'Write the subject');
+  String get meetingChooseDateLabel => _t('اختر التاريخ', 'Choose the date');
+  String get meetingChooseTimeLabel => _t('اختر الوقت', 'Choose the time');
+  String get meetingChooseDateFirst =>
+      _t('الرجاء اختيار التاريخ أولاً', 'Please choose a date first');
   String get meetingSlotNone =>
       _t('لا توجد فترات متاحة حالياً', 'No meeting slots available right now');
   String get meetingVipOnly =>
@@ -1082,7 +1086,8 @@ class AppL10n {
 
   // D-500 (Wave 5, الطلبات 1408:9726) — the unified requests feed (supersedes the
   // D-479 read-only My-meetings screen).
-  String get requestsTitle => _t('الطلبات', 'Requests');
+  // Owner 2026-07-03: match the Figma frame header (1408:9726) "اللقاءات الثنائية".
+  String get requestsTitle => _t('اللقاءات الثنائية', 'Bilateral meetings');
   String get requestsLink => _t('الطلبات', 'Requests');
   String get requestsEmpty =>
       _t('لا توجد طلبات بعد', 'You have no requests yet');
@@ -1151,6 +1156,21 @@ class AppL10n {
   String requestDate(DateTime date) => isArabic
       ? '${_shortDate(date)} ‎${date.year}'
       : '${_shortDate(date)} ${date.year}';
+
+  /// The card date line when the request's date is today (Figma 1408:9782):
+  /// "07:45 AM · اليوم" — a 12-hour time (English AM/PM, matching the frame)
+  /// then the relative "today". Non-today dates use [requestDate] instead.
+  String requestTimeToday(DateTime date) => '${_time12h(date)} · $dayToday';
+
+  /// "07:45 AM" — 12-hour clock with a zero-padded hour and an English AM/PM
+  /// marker (the frame shows "AM"/"PM" literally, in both locales).
+  String _time12h(DateTime date) {
+    final period = date.hour < 12 ? 'AM' : 'PM';
+    final hour12 = date.hour % 12 == 0 ? 12 : date.hour % 12;
+    final hh = hour12.toString().padLeft(2, '0');
+    final mm = date.minute.toString().padLeft(2, '0');
+    return '$hh:$mm $period';
+  }
 
   // Booths (Page 022).
   String get boothsTitle => _t('الأجنحة', 'Booths');
@@ -1550,13 +1570,13 @@ class AppL10n {
       _t('لا توجد جلسات متاحة بعد.', 'No sessions available yet.');
 
   // Wave 2 — session-summaries list (Figma 1388:8392): search + the three
-  // الجميع / جلساتي / المفضلة tabs over the cached programme.
+  // الكل / جلساتي / المفضلة tabs over the cached programme.
   // The list-screen header (plural) — distinct from [aiSummaryTitle] (the
   // single-session detail header).
   String get sessionSummariesTitle => _t('ملخص الجلسات', 'Session summaries');
   String get sessionSummarySearchHint =>
       _t('ابحث عن جلسة أو متحدث...', 'Search a session or speaker...');
-  String get sessionsTabAll => _t('الجميع', 'All');
+  String get sessionsTabAll => _t('الكل', 'All');
   String get sessionsTabMine => _t('جلساتي', 'My sessions');
   String get sessionsTabFavourites => _t('المفضلة', 'Favourites');
   String get sessionsNoFavourites =>
@@ -1574,7 +1594,9 @@ class AppL10n {
   // Wave 2 — "my sessions" list, App "تفاصيل الجلسات" (Figma 1388:9067), reached
   // from the My-Area "my sessions" counter. Four tabs partition the user's
   // booked / joined sessions.
-  String get mySessionsTitle => _t('تفاصيل الجلسات', 'Session details');
+  // App title matches Figma 1388:9067 ("عروض الجلسات"); the EN stays "My
+  // sessions" (distinct from the downloadable-slides screen) for clarity.
+  String get mySessionsTitle => _t('عروض الجلسات', 'My sessions');
   String get mySessionsTabUpcoming => _t('القادمة', 'Upcoming');
   String get mySessionsTabAttended => _t('حضرتها', 'Attended');
   String get mySessionsTabMissed => _t('فاتتني', 'Missed');
@@ -1586,6 +1608,30 @@ class AppL10n {
   // The count subtitle, e.g. "3 جلسات قادمة" / "3 upcoming sessions".
   String mySessionsCount(int count, String tabLabel) =>
       _t('$count جلسة · $tabLabel', '$count · $tabLabel');
+
+  // #8 — Saved sessions, App "الجلسات المحفوظة" (Figma 1701:8928), reached from
+  // the My-Area saved-sessions counter. The favourited sessions (المفضلة =
+  // محفوظة) with a saved-count header + category chips over the cached programme.
+  String get savedSessionsTitle => _t('الجلسات المحفوظة', 'Saved sessions');
+  // The gold count-row unit label, rendered as "$count جلسة محفوظة".
+  String get savedSessionsCountLabel => _t('جلسة محفوظة', 'saved sessions');
+  String get savedSessionsEmpty =>
+      _t('لا توجد جلسات محفوظة بعد.', 'No saved sessions yet.');
+
+  // المقابلات, App "المقابلات" (Figma 1701:9406), reached from the My-Area
+  // "مقابلات" counter. The caller's speaker + delegation meetings as person
+  // cards over four status filter chips. Reuses the الطلبات feed (read-only).
+  String get myMeetingsTitle => _t('المقابلات', 'My meetings');
+  String get myMeetingsFilterCompleted => _t('مكتملة', 'Completed');
+  String get myMeetingsFilterPending => _t('قيد الانتظار', 'Pending');
+  String get myMeetingsFilterRejected => _t('مرفوضة', 'Rejected');
+  // The neutral badge on an accepted meeting card (Figma 1701:9446).
+  String get myMeetingBadgeConfirmed => _t('مؤكدة', 'Confirmed');
+  String get myMeetingsEmpty =>
+      _t('لا توجد مقابلات بعد.', 'No meetings yet.');
+  // The list section header, rendered as "جميع المقابلات ($count)".
+  String myMeetingsAllHeader(int count) =>
+      _t('جميع المقابلات ($count)', 'All meetings ($count)');
 
   // Wave 4 — Delegations, App "الوفود" (Figma 1426:10771): the invited countries'
   // delegations with head of delegation, date range and member count.
@@ -1666,16 +1712,16 @@ class AppL10n {
 
   // Wave 2 — session-presentations list, App "عروض الجلسات" (Figma 1388:7621):
   // downloadable decks grouped by day, each with a تحميل button.
-  String get sessionPresentationsTitle =>
-      _t('عروض الجلسات', 'Session presentations');
+  // Owner 2026-07-03: the screen header matches the Home "الجلسات" tile
+  // (Figma 1388:7621 header is "الجلسات"), so both read the same word.
+  String get sessionPresentationsTitle => _t('الجلسات', 'Sessions');
   String get presentationsEmpty =>
       _t('لا توجد عروض متاحة بعد.', 'No presentations available yet.');
   String get presentationsError =>
       _t('تعذر تحميل العروض.', 'Could not load the presentations.');
+  // The gold button label on the الجلسات cards. Kept the word "تحميل" (owner) —
+  // as of D-592 it opens the session summary (34), not a file download.
   String get presentationDownload => _t('تحميل', 'Download');
-  String get presentationDownloading => _t('جارٍ التحميل...', 'Downloading...');
-  String get presentationDownloadError =>
-      _t('تعذر تحميل الملف.', 'Could not download the file.');
 
   // Event day group header, 1-based ("اليوم الأول" / "Day 1") — shared by the
   // session-summaries (8392) + presentations (7621) day grouping.
@@ -1777,25 +1823,8 @@ class AppL10n {
         'Questions are reviewed before going on air.',
       );
 
-  // Audience comments (Page 028).
-  String get commentsTitle => _t('تعليقات الجمهور', 'Audience comments');
-  String get commentsNoSession =>
-      _t('افتح هذه الشاشة من جلسة مباشرة.', 'Open this from a live session.');
-  String get commentsError =>
-      _t('تعذّر تحميل التعليقات.', 'Could not load the comments.');
-  String get commentsEmpty => _t('لا توجد تعليقات بعد', 'No comments yet');
-  String get commentBodyHint => _t('اكتب تعليقك…', 'Write your comment…');
-  String get commentSend => _t('إرسال', 'Send');
-  String get commentSubmitted =>
-      _t('تم إرسال تعليقك', 'Your comment was submitted');
-  String get commentSubmittedPending => _t(
-        'تم إرسال تعليقك وهو قيد المراجعة.',
-        'Your comment was submitted and is awaiting moderation.',
-      );
-  String get commentSubmitFailed => _t(
-        'تعذّر إرسال التعليق. حاول مرة أخرى.',
-        'Could not submit the comment. Try again.',
-      );
+  // (D-605/D-609: the Audience-comments (Page 028) l10n strings were removed
+  // with the feature — rejected by customer.)
 
   // Entry badge (Page 032).
   String get badgeTitle => _t('بطاقة الدخول', 'Entry badge');

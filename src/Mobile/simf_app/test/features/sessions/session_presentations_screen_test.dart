@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/sessions/data/presentation_models.dart';
 import 'package:simf_app/features/sessions/data/presentation_repository.dart';
 import 'package:simf_app/features/sessions/session_presentations_screen.dart';
@@ -20,14 +22,47 @@ PresentationItem _item(String id, String title) => PresentationItem(
       sizeBytes: 2048,
     );
 
-Future<void> _pump(WidgetTester tester, List<PresentationItem> items) async {
+/// A router with the screen plus stub detail/summary targets so we can assert
+/// where each affordance navigates (owner 2026-07-03).
+GoRouter _router() => GoRouter(
+      initialLocation: '/p',
+      routes: <RouteBase>[
+        GoRoute(
+          path: '/p',
+          name: RouteNames.sessionPresentations,
+          builder: (_, __) => const SessionPresentationsScreen(),
+        ),
+        GoRoute(
+          path: '/sessions/:sessionId',
+          name: RouteNames.sessionDetail,
+          builder: (_, state) => Scaffold(
+            body: Text('DETAIL ${state.pathParameters['sessionId']}'),
+          ),
+        ),
+        GoRoute(
+          path: '/ai-summary',
+          name: RouteNames.aiSummary,
+          builder: (_, state) => Scaffold(
+            body: Text('SUMMARY ${state.uri.queryParameters['sessionId']}'),
+          ),
+        ),
+      ],
+    );
+
+Future<void> _pump(
+  WidgetTester tester,
+  List<PresentationItem> items, {
+  GoRouter? router,
+}) async {
+  final config = router ?? _router();
   await tester.pumpWidget(
     ProviderScope(
       overrides: <Override>[
         presentationsProvider
             .overrideWith((ref) async => PresentationsPage(items)),
       ],
-      child: MaterialApp(
+      child: MaterialApp.router(
+        routerConfig: config,
         locale: const Locale('en'),
         supportedLocales: AppL10n.supportedLocales,
         localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
@@ -36,7 +71,6 @@ Future<void> _pump(WidgetTester tester, List<PresentationItem> items) async {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        home: const SessionPresentationsScreen(),
       ),
     ),
   );
@@ -45,7 +79,7 @@ Future<void> _pump(WidgetTester tester, List<PresentationItem> items) async {
 
 void main() {
   group('SessionPresentationsScreen (Figma 1388:7621)', () {
-    testWidgets('lists the decks with the speaker and a Download button',
+    testWidgets('lists the sessions with the speaker and a Download button',
         (tester) async {
       await _pump(tester, <PresentationItem>[_item('p1', 'Future of Investment')]);
 
@@ -63,6 +97,26 @@ void main() {
         (tester) async {
       await _pump(tester, const <PresentationItem>[]);
       expect(find.text('No presentations available yet.'), findsOneWidget);
+    });
+
+    testWidgets('tapping the card opens that session detail (17)',
+        (tester) async {
+      await _pump(tester, <PresentationItem>[_item('p1', 'Future of Investment')]);
+
+      await tester.tap(find.text('Future of Investment'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('DETAIL s-p1'), findsOneWidget);
+    });
+
+    testWidgets('tapping تحميل opens that session summary (34)',
+        (tester) async {
+      await _pump(tester, <PresentationItem>[_item('p1', 'Future of Investment')]);
+
+      await tester.tap(find.text('Download'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('SUMMARY s-p1'), findsOneWidget);
     });
   });
 }

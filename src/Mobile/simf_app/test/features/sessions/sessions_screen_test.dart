@@ -164,12 +164,12 @@ void main() {
       );
 
       expect(find.text('Forum programme'), findsOneWidget); // screen header
-      expect(find.text('Agenda'), findsWidgets); // active bottom-nav label
+      expect(find.text('Sessions'), findsWidgets); // active bottom-nav label
       expect(find.text('Day One'), findsOneWidget); // day title (تفاصيل اليوم)
       expect(find.text('Schedule'), findsOneWidget); // المواعيد
       expect(find.text('All'), findsOneWidget); // type tabs
       expect(find.text('Workshops'), findsOneWidget);
-      // احداث/Events tab removed per owner 2026-07-03 — no longer rendered.
+      // احداث dropped — the frame has 3 tabs (owner 2026-07-03).
       expect(find.text('Events'), findsNothing);
       expect(find.textContaining('Opening'), findsOneWidget);
       expect(find.textContaining('Panel'), findsOneWidget);
@@ -217,6 +217,13 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('Diving workshop'), findsOneWidget);
       expect(find.textContaining('Gala dinner'), findsNothing);
+
+      // Back to الكل — the event-type session (no dedicated tab since the
+      // 3-tab frame, owner 2026-07-03) is reachable here.
+      await tester.tap(find.text('All'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Diving workshop'), findsOneWidget);
+      expect(find.textContaining('Gala dinner'), findsOneWidget);
     });
 
     testWidgets('the day strip switches the selected day', (tester) async {
@@ -302,7 +309,7 @@ void main() {
       );
 
       expect(find.text('برنامج الملتقى'), findsOneWidget); // screen header
-      expect(find.text('الأجندة'), findsWidgets); // active bottom-nav label
+      expect(find.text('الجلسات'), findsWidgets); // active bottom-nav label
       expect(find.text('اليوم الأول'), findsOneWidget); // day title
       expect(find.text('المواعيد'), findsOneWidget);
       expect(find.text('الكل'), findsOneWidget); // All tab

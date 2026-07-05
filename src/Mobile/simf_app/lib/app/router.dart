@@ -31,7 +31,6 @@ import '../features/ai_summary/session_summary_list_screen.dart';
 import '../features/ai_summary/session_summary_screen.dart';
 import '../features/badge/badge_screen.dart';
 import '../features/chatbot/chatbot_screen.dart';
-import '../features/comments/audience_comments_screen.dart';
 import '../features/contact_us/contact_us_screen.dart';
 import '../features/contacts/my_contacts_screen.dart';
 import '../features/contacts/scan_contact_screen.dart';
@@ -49,7 +48,6 @@ import '../features/gates/gate_scan_screen.dart';
 import '../features/moderation/session_moderate_screen.dart';
 import '../features/myarea/identity_verification_screen.dart';
 import '../features/myarea/my_area_screen.dart';
-import '../features/myarea/my_sessions_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/venuemap/venue_map_screen.dart';
 import '../features/account/data/profile_models.dart';
@@ -132,7 +130,6 @@ const List<_Route> _routes = <_Route>[
   // Section 4 — Live & Q&A (3 screens; 27 request-interview removed — D-278)
   _Route(number: 25, name: RouteNames.liveBroadcast, path: '/live', labelAr: 'البث المباشر', labelEn: 'Live broadcast'),
   _Route(number: 26, name: RouteNames.sendQuestion, path: '/live/question', labelAr: 'إرسال سؤال', labelEn: 'Send question'),
-  _Route(number: 28, name: RouteNames.audienceComments, path: '/live/comments', labelAr: 'تعليقات الجمهور', labelEn: 'Audience comments'),
 
   // Section 5 — Media coverage (3 screens)
   _Route(number: 29, name: RouteNames.news, path: '/news', labelAr: 'الأخبار', labelEn: 'News'),
@@ -171,6 +168,7 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 114, name: RouteNames.staffRegisterVisitor, path: '/staff/register-visitor', labelAr: 'تسجيل زائر', labelEn: 'Register visitor'),
   // D-500 (Wave 5, الطلبات) — the unified requests feed (approved-only).
   _Route(number: 108, name: RouteNames.requests, path: '/requests', labelAr: 'الطلبات', labelEn: 'Requests'),
+  // (D-609: route 115 My-meetings removed — screen backed up as `.bk`.)
   // D-485 — the session-join flow (approved-only): the seat picker + the hub.
   _Route(number: 109, name: RouteNames.seatPicker, path: '/sessions/:sessionId/pick-seat', labelAr: 'اختر مقعدك', labelEn: 'Select your seat'),
   _Route(number: 110, name: RouteNames.joinSessionHub, path: '/sessions/join', labelAr: 'احجز مقعداً', labelEn: 'Book a seat'),
@@ -178,20 +176,19 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 111, name: RouteNames.sessionSummaryList, path: '/session-summaries', labelAr: 'ملخص الجلسات', labelEn: 'Session summaries'),
   // #9 — venue map focused on a booth (booth "أرشدني" CTA; public, pushed).
   _Route(number: 112, name: RouteNames.boothMap, path: '/booths/:boothId/map', labelAr: 'الخريطة', labelEn: 'Venue map'),
-  // Wave 2 (Figma 1388:9067) — "my sessions" (approved-only; My-Area counter).
-  _Route(number: 113, name: RouteNames.myAreaSessions, path: '/my-area/sessions', labelAr: 'تفاصيل الجلسات', labelEn: 'Session details'),
+  // (D-609: route 113 My-sessions removed — screen backed up as `.bk`.)
 
   // D-464 — المزيد hub entries with no screen yet (Figma 1129:17224). Public;
   // they fall through to ComingSoonScreen (sentinel numbers 200+).
   _Route(number: 200, name: RouteNames.forumGuide, path: '/forum-guide', labelAr: 'دليل الملتقى', labelEn: 'Forum guide'),
   _Route(number: 201, name: RouteNames.faq, path: '/faq', labelAr: 'الأسئلة الشائعة', labelEn: 'FAQ'),
-  _Route(number: 202, name: RouteNames.sessionPresentations, path: '/session-presentations', labelAr: 'عروض الجلسات', labelEn: 'Session presentations'),
+  _Route(number: 202, name: RouteNames.sessionPresentations, path: '/session-presentations', labelAr: 'الجلسات', labelEn: 'Sessions'),
   _Route(number: 203, name: RouteNames.contactUs, path: '/contact-us', labelAr: 'تواصل معنا', labelEn: 'Contact us'),
   // Owner batch (2026-06-21) — entry points for features not yet designed/built;
   // they fall through to ComingSoonScreen (sentinel numbers 200+). #5 bilateral
-  // meetings (home tile, undesigned); #8 saved sessions/meetings (My Area stats).
+  // meetings (home tile, undesigned); #8 saved meetings (My Area stat).
+  // (D-609: route 205 Saved-sessions removed — screen backed up as `.bk`.)
   _Route(number: 204, name: RouteNames.bilateralMeetings, path: '/bilateral-meetings', labelAr: 'اللقاءات الثنائية', labelEn: 'Bilateral meetings'),
-  _Route(number: 205, name: RouteNames.savedSessions, path: '/saved-sessions', labelAr: 'الجلسات المحفوظة', labelEn: 'Saved sessions'),
   _Route(number: 206, name: RouteNames.savedMeetings, path: '/saved-meetings', labelAr: 'المقابلات المحفوظة', labelEn: 'Saved meetings'),
 ];
 
@@ -246,7 +243,6 @@ const Map<int, Set<AppRole>> _routeRoles = <int, Set<AppRole>>{
   // Attendee features — Visitor + Exhibitor (NOT Staff/Moderator: D-519 focused).
   18: _attendee, // My seat
   26: _attendee, // Send question
-  28: _attendee, // Audience comments (D-319)
   35: _attendee, // Meet people
   40: _attendee, // Rate / feedback (D-310)
   100: _attendee, // My Contacts (FDS-014)
@@ -256,8 +252,9 @@ const Map<int, Set<AppRole>> _routeRoles = <int, Set<AppRole>>{
   108: _attendee, // Requests feed (D-500, approved-only)
   109: _attendee, // Seat picker (D-485)
   110: _attendee, // Join-a-session hub (D-485)
-  113: _attendee, // My sessions (Wave 2)
   202: _attendee, // Session presentations (Wave 2)
+  // (D-609: routes 115 My-meetings, 113 My-sessions, 205 Saved-sessions removed
+  // — screens backed up as `.bk`.)
   // Exhibitor-only — lead capture (D-426).
   106: <AppRole>{AppRole.exhibitor}, // Scan visitor badge
   107: <AppRole>{AppRole.exhibitor}, // My Visitors
@@ -451,11 +448,6 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
       sessionId: state.uri.queryParameters['sessionId'],
     );
   }
-  if (r.name == RouteNames.audienceComments) {
-    return AudienceCommentsScreen(
-      sessionId: state.uri.queryParameters['sessionId'],
-    );
-  }
   if (r.name == RouteNames.liveBroadcast) {
     return LiveBroadcastScreen(
       sessionId: state.uri.queryParameters['sessionId'],
@@ -510,9 +502,6 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.sessionPresentations) {
     return const SessionPresentationsScreen();
-  }
-  if (r.name == RouteNames.myAreaSessions) {
-    return const MySessionsScreen();
   }
   return ComingSoonScreen(
     screenNumber: r.number,

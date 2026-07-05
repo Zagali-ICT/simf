@@ -13,6 +13,7 @@ import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import 'data/seat_map_models.dart';
 import 'data/seat_map_repository.dart';
+import 'widgets/hall_seat_map.dart';
 
 /// Page 018 — مقعدي · My Seat map (#18,
 /// `/sessions/:sessionId/my-seat`, **auth-gated**, approved Visitor only),
@@ -162,7 +163,9 @@ class _SeatMapView extends StatelessWidget {
           // Frame gaps: session card (ends y265) → hall card (y289) = 24; hall
           // card (ends y699) → actions (y739) = 40 (no 40 in the spacing scale).
           const SizedBox(height: SimfTokens.space6),
-          _HallCard(map: map, l10n: l10n),
+          // Read-only defaults = this frame (898:2873): beige available
+          // border, 20px seat cap, 14px reserved/mine swatches.
+          HallSeatMapCard(map: map, l10n: l10n),
           const SizedBox(height: 40),
           _Actions(l10n: l10n, onNavigate: onNavigate, onShare: onShare),
         ],
@@ -193,7 +196,7 @@ class _SessionCard extends StatelessWidget {
         children: <Widget>[
           Text(
             l10n.sessionLabel,
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
             style: const TextStyle(
               color: SimfTokens.beigeBorder,
               fontSize: SimfTokens.textLg,
@@ -300,268 +303,6 @@ class _SeatChip extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
-    );
-  }
-}
-
-/// The hall card (frame 907:1708): the gold-bordered stage band, the A–H seat
-/// grid, and the محجوز / متاح / مقعدك legend — on the navyDeep fill.
-class _HallCard extends StatelessWidget {
-  const _HallCard({required this.map, required this.l10n});
-
-  final SessionSeatMap map;
-  final AppL10n l10n;
-
-  @override
-  Widget build(BuildContext context) {
-    final reserved = map.reservedKeys();
-    return Container(
-      padding: const EdgeInsets.all(SimfTokens.space4),
-      decoration: BoxDecoration(
-        color: SimfTokens.navyDeep,
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
-      ),
-      child: Column(
-        children: <Widget>[
-          _StageBar(label: l10n.stageLabelBilingual),
-          const SizedBox(height: SimfTokens.space6),
-          // The hall plan keeps the stage at the top and seat columns in venue
-          // order — do not mirror the grid geometry in RTL (L-7). The seats are
-          // square and sized to the width (see _SeatRow), centred by this Column,
-          // so the full row is always visible — no horizontal scroll.
-          Directionality(
-            textDirection: TextDirection.ltr,
-            child: Column(
-              children: <Widget>[
-                for (final (index, row) in map.rowLabels.indexed) ...<Widget>[
-                  if (index > 0) const SizedBox(height: SimfTokens.space4),
-                  _SeatRow(
-                    rowLabel: row,
-                    seatsPerRow: map.seatsPerRow,
-                    reserved: reserved,
-                    map: map,
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(height: SimfTokens.space6),
-          _Legend(l10n: l10n),
-        ],
-      ),
-    );
-  }
-}
-
-/// The gold-bordered "المسرح · STAGE" band at the top of the hall card
-/// (frame 905:1584): a full-width navyDeep pill, gold hairline, gold label.
-class _StageBar extends StatelessWidget {
-  const _StageBar({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: 48,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: SimfTokens.navyDeep,
-        border: Border.all(
-          color: SimfTokens.accent,
-          width: SimfTokens.hairlineBold,
-        ),
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-      ),
-      child: Text(
-        label,
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          fontSize: SimfTokens.textMd,
-          color: SimfTokens.accent,
-        ),
-      ),
-    );
-  }
-}
-
-class _SeatRow extends StatelessWidget {
-  const _SeatRow({
-    required this.rowLabel,
-    required this.seatsPerRow,
-    required this.reserved,
-    required this.map,
-  });
-
-  final String rowLabel;
-  final int seatsPerRow;
-  final Set<String> reserved;
-  final SessionSeatMap map;
-
-  @override
-  Widget build(BuildContext context) {
-    // `hasLayout` (the caller) already rejects an empty hall; localise that
-    // invariant here so the seat-size math below can never divide by zero.
-    assert(seatsPerRow > 0, 'seatsPerRow must be > 0 (guarded by hasLayout)');
-    // Seats are SQUARES (frame 902:1406 ~20×20). They shrink to fit a narrow
-    // (phone) width but never stretch into wide rectangles on a tablet: each is
-    // capped at the frame seat size and the whole row is sized to content +
-    // centred by the grid Column. Frame 902:1402 = row letter (12px box) + 8px.
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const labelWidth = 12.0;
-        const seatGap = 6.0;
-        const maxSeat = 20.0;
-        final seatsArea = constraints.maxWidth - labelWidth - SimfTokens.space2;
-        final fit = (seatsArea - seatGap * (seatsPerRow - 1)) / seatsPerRow;
-        final seat = fit.clamp(0.0, maxSeat).toDouble();
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            SizedBox(
-              width: labelWidth,
-              child: Text(
-                rowLabel,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: SimfTokens.textSm,
-                  color: SimfTokens.beigeBorder,
-                ),
-              ),
-            ),
-            const SizedBox(width: SimfTokens.space2),
-            for (var s = 1; s <= seatsPerRow; s++) ...<Widget>[
-              if (s > 1) const SizedBox(width: seatGap),
-              _SeatBox(
-                size: seat,
-                status: map.isMine(rowLabel, s)
-                    ? _SeatStatus.mine
-                    : reserved.contains('$rowLabel:$s')
-                        ? _SeatStatus.reserved
-                        : _SeatStatus.available,
-              ),
-            ],
-          ],
-        );
-      },
-    );
-  }
-}
-
-enum _SeatStatus { mine, reserved, available }
-
-class _SeatBox extends StatelessWidget {
-  const _SeatBox({required this.status, required this.size});
-
-  final _SeatStatus status;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    // Frame 907:1595..: plain seat squares (no number). Mine is a gold fill +
-    // beige border; reserved is the darker navy (#01132d) fill, no border;
-    // available has NO fill (the navyDeep card shows through) + a beige border.
-    final Color fill;
-    Border? border;
-    switch (status) {
-      case _SeatStatus.mine:
-        fill = SimfTokens.accent;
-        border = Border.all(color: SimfTokens.beigeBorder);
-      case _SeatStatus.reserved:
-        fill = SimfTokens.navy;
-      case _SeatStatus.available:
-        fill = Colors.transparent;
-        border = Border.all(color: SimfTokens.beigeBorder);
-    }
-    // A square seat (≤20px, frame 902:1406); [size] is computed per row width.
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: fill,
-        border: border,
-        borderRadius: BorderRadius.circular(3),
-      ),
-    );
-  }
-}
-
-/// The legend row (frame 907:1591): محجوز (deep-navy fill) · متاح (beige
-/// border) · مقعدك (gold fill) — each a label next to its colour swatch.
-class _Legend extends StatelessWidget {
-  const _Legend({required this.l10n});
-
-  final AppL10n l10n;
-
-  @override
-  Widget build(BuildContext context) {
-    // Frame 907:1591 — the legend reads left-to-right (محجوز · متاح · مقعدك),
-    // each a label then its swatch; force LTR so it matches the frame instead of
-    // mirroring with the RTL page.
-    return Directionality(
-      textDirection: TextDirection.ltr,
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        spacing: SimfTokens.space2,
-        runSpacing: SimfTokens.space2,
-        children: <Widget>[
-          _LegendItem(
-            label: l10n.legendReserved,
-            color: SimfTokens.navy,
-          ),
-          _LegendItem(
-            label: l10n.legendAvailable,
-            color: Colors.transparent,
-            border: true,
-            size: 16,
-          ),
-          _LegendItem(
-            label: l10n.legendMine,
-            color: SimfTokens.accent,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LegendItem extends StatelessWidget {
-  const _LegendItem({
-    required this.color,
-    required this.label,
-    this.border = false,
-    this.size = 14,
-  });
-
-  final Color color;
-  final String label;
-  final bool border;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Text(
-          label,
-          style: const TextStyle(
-            color: SimfTokens.beigeBorder,
-            fontSize: SimfTokens.textSm,
-          ),
-        ),
-        const SizedBox(width: SimfTokens.space2),
-        Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            color: color,
-            border: border ? Border.all(color: SimfTokens.beigeBorder) : null,
-            borderRadius: BorderRadius.circular(3),
-          ),
-        ),
-      ],
     );
   }
 }

@@ -4,6 +4,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
+import '../../../app/widgets/simf_svg_icon.dart';
 import '../data/session_favourites.dart';
 
 /// The المفضلة heart toggle shown on a session card (Figma 1388:8392 / 1388:9067)
@@ -12,9 +13,27 @@ import '../data/session_favourites.dart';
 /// Watches the shared [sessionFavouritesProvider] so a toggle here updates every
 /// card across both screens; reverts + shows a toast if the server rejects it.
 class FavouriteHeartButton extends ConsumerWidget {
-  const FavouriteHeartButton({required this.sessionId, super.key});
+  const FavouriteHeartButton({
+    required this.sessionId,
+    this.filledIcon,
+    this.outlineIcon,
+    this.filledAsset = 'assets/icons/heart_filled.svg',
+    this.outlineAsset = 'assets/icons/heart_outline.svg',
+    super.key,
+  });
 
   final String sessionId;
+
+  /// An optional saved / unsaved glyph override. Defaults to the exact Figma
+  /// heart SVGs ([filledAsset] / [outlineAsset]); the saved-sessions screen
+  /// (1701:8928) passes the Material bookmark pair, which takes precedence.
+  final IconData? filledIcon;
+  final IconData? outlineIcon;
+
+  /// The default heart glyphs (Figma 1388:8465 filled / outline). Used unless a
+  /// caller passes [filledIcon] / [outlineIcon].
+  final String filledAsset;
+  final String outlineAsset;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -34,13 +53,23 @@ class FavouriteHeartButton extends ConsumerWidget {
         child: SizedBox(
           width: 32,
           height: 32,
-          child: Icon(
-            isFavourite ? Icons.favorite : Icons.favorite_border,
-            size: 16,
-            color: Colors.white,
-          ),
+          child: _glyph(isFavourite),
         ),
       ),
+    );
+  }
+
+  /// The IconData override wins when supplied (bookmark); otherwise the exact
+  /// Figma heart SVG for the current state.
+  Widget _glyph(bool isFavourite) {
+    final icon = isFavourite ? filledIcon : outlineIcon;
+    if (icon != null) {
+      return Icon(icon, size: 16, color: Colors.white);
+    }
+    return SimfSvgIcon(
+      isFavourite ? filledAsset : outlineAsset,
+      size: 16,
+      color: Colors.white,
     );
   }
 

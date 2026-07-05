@@ -1,0 +1,18 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_data_pkg/simf_data_pkg.dart';
+
+import 'media_models.dart';
+
+/// `GET /app/media` → the media items (public, D-199).
+final mediaItemsProvider =
+    FutureProvider.autoDispose<List<MediaItem>>((ref) async {
+  final client = ref.watch(simfApiClientProvider);
+  return client.get<List<MediaItem>>(
+    '/app/media',
+    decodeData: (data) =>
+        ((data is Map ? data['items'] : null) as List? ?? const <dynamic>[])
+            .whereType<Map<dynamic, dynamic>>()
+            .map((e) => MediaItem.fromJson(e.cast<String, dynamic>()))
+            .toList(growable: false),
+  );
+});

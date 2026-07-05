@@ -8,6 +8,7 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/myarea/data/myarea_models.dart';
 import 'package:simf_app/features/myarea/data/myarea_repository.dart';
 import 'package:simf_app/features/myarea/my_area_screen.dart';
+import 'package:simf_app/features/sessions/data/session_favourites.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -58,6 +59,12 @@ MyAreaDashboard _dashboard({List<MyAreaScheduleItem>? schedule}) =>
             ),
           ],
     );
+
+/// Two favourited sessions → the جلسات محفوظة stat tile shows 2 (display-only).
+class _FakeFavourites extends SessionFavouritesController {
+  @override
+  Future<Set<String>> build() async => <String>{'s1', 's2'};
+}
 
 class _FakeMyAreaRepository implements MyAreaRepository {
   _FakeMyAreaRepository({this.dashboard, this.fail = false, this.status = 500});
@@ -136,6 +143,7 @@ Future<void> _pump(
     ProviderScope(
       overrides: <Override>[
         authControllerProvider.overrideWith(() => controller),
+        sessionFavouritesProvider.overrideWith(_FakeFavourites.new),
         if (repo != null) myAreaRepositoryProvider.overrideWithValue(repo),
       ],
       child: MaterialApp.router(
@@ -165,7 +173,7 @@ Future<void> _scrollTo(WidgetTester tester, Finder finder) async {
 
 void main() {
   group('MyAreaScreen (Page 014 — KSA frame 213:963)', () {
-    testWidgets('approved visitor sees the identity card, tiles, stats and '
+    testWidgets('approved visitor sees the identity card, tiles and '
         'schedule', (tester) async {
       await _pump(
         tester,
@@ -178,13 +186,19 @@ void main() {
       expect(find.textContaining('VIP'), findsOneWidget);
       expect(find.text('Share my profile'), findsOneWidget);
       expect(find.text('Share contact'), findsOneWidget);
-      expect(find.text('Statistics'), findsOneWidget); // الإحصائيات header
-      expect(find.text('6'), findsOneWidget); // booked-sessions stat
-      expect(find.text('3'), findsOneWidget); // meetings stat
+      // D-653 — الإحصائيات restored display-only (not tappable): the مقابلات
+      // count (3, dashboard) + the جلسات محفوظة count (2, favourited set).
+      expect(find.text('Statistics'), findsOneWidget);
+      expect(find.text('Meetings'), findsOneWidget);
+      expect(find.text('Saved sessions'), findsOneWidget);
+      expect(find.text('3'), findsOneWidget); // meetings count
+      expect(find.text('2'), findsOneWidget); // saved (favourited) count
       await _scrollTo(tester, find.text('Opening'));
       expect(find.text('Opening'), findsOneWidget);
       await _scrollTo(tester, find.text('My smart badge'));
       expect(find.text('My smart badge'), findsOneWidget);
+      // D-654 — the "Update ID photo" action was removed from My Area (owner).
+      expect(find.text('Update ID photo'), findsNothing);
       // Language / theme / calendar export / sign-out moved to the shell's
       // side drawer (D-396) — they must NOT be on the profile page anymore.
       expect(find.text('العربية · English'), findsNothing);
@@ -264,7 +278,7 @@ void main() {
         ),
         locale: const Locale('ar'),
       );
-      // The gold "جلسات" sub-header (the stat tile is "جلسات محفوظة", distinct).
+      // The gold "جلسات" schedule sub-header.
       expect(find.text('جلسات'), findsOneWidget);
       expect(find.text('مقابلة د. ابراهيم'), findsOneWidget);
       // The sessions group sits above the meetings group.
@@ -298,7 +312,6 @@ void main() {
       expect(repo.dashboardCalls, 0); // approved-only endpoint not called (L-5)
       expect(find.text('Raed Al-Salem'), findsOneWidget); // cached name
       expect(find.textContaining('under review'), findsOneWidget);
-      expect(find.text('6'), findsNothing); // counters hidden
       expect(find.text('My smart badge'), findsNothing);
       // No photo-change affordance on the limited card (onAvatarTap is null).
       expect(find.byIcon(Icons.photo_camera_outlined), findsNothing);

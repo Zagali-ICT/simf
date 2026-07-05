@@ -123,7 +123,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             controller: _email,
             keyboardType: TextInputType.emailAddress,
             textDirection: TextDirection.ltr,
-            textAlign: TextAlign.left,
+            textAlign: TextAlign.start,
             maxLength: 50,
             enabled: !_busy,
             autovalidateMode: AutovalidateMode.onUserInteraction,
