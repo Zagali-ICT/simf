@@ -25,6 +25,9 @@ internal sealed class FilesystemFileStorageProvider : IFileStorageProvider
     // (fmt + KEK version + wrapped DEK), rendering an encrypted body unrecoverable.
     private const int ShredHeaderBytes = 4096;
 
+    // Copy buffer for the streamed (recording) read/write paths (D-568 S7).
+    private const int StreamBufferSize = 81920;
+
     private readonly string _root;
     private readonly IFileCipher _cipher;
     private readonly ILogger<FilesystemFileStorageProvider> _logger;
@@ -72,6 +75,56 @@ internal sealed class FilesystemFileStorageProvider : IFileStorageProvider
 
         var raw = await File.ReadAllBytesAsync(fullPath, cancellationToken);
         return encrypted ? _cipher.Decrypt(raw) : raw;
+    }
+
+    public async Task<StreamWriteResult> WriteStreamAsync(
+        FileService service, Guid fileId, string extension, Stream content,
+        CancellationToken cancellationToken = default)
+    {
+        var storageKey = BuildStorageKey(service, fileId, extension);
+        var fullPath = ResolveSafe(storageKey)
+            ?? throw new InvalidOperationException($"Server-built storage key '{storageKey}' failed validation.");
+        Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
+
+        // Stream source → temp with an incremental SHA-256, then atomic-move (temp +
+        // move) so a partial write never replaces a good file. Plaintext only — the
+        // file must stay seekable for Range streaming (D-568 S7).
+        var temp = fullPath + ".tmp";
+        long total = 0;
+        string sha256Hex;
+        using (var hash = System.Security.Cryptography.IncrementalHash.CreateHash(
+            System.Security.Cryptography.HashAlgorithmName.SHA256))
+        {
+            await using (var dest = new FileStream(
+                temp, FileMode.Create, FileAccess.Write, FileShare.None, StreamBufferSize, FileOptions.Asynchronous))
+            {
+                var buffer = new byte[StreamBufferSize];
+                int read;
+                while ((read = await content.ReadAsync(buffer.AsMemory(0, StreamBufferSize), cancellationToken)) > 0)
+                {
+                    hash.AppendData(buffer.AsSpan(0, read));
+                    await dest.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+                    total += read;
+                }
+            }
+            sha256Hex = Convert.ToHexString(hash.GetHashAndReset()).ToLowerInvariant();
+        }
+        File.Move(temp, fullPath, overwrite: true);
+
+        _logger.LogInformation(
+            "Streamed file {Key} ({Bytes} bytes on disk, plaintext).", storageKey, total);
+        return new StreamWriteResult(storageKey, sha256Hex, total);
+    }
+
+    public Task<FileReadStream?> OpenReadAsync(
+        string storageKey, CancellationToken cancellationToken = default)
+    {
+        var fullPath = ResolveSafe(storageKey);
+        if (fullPath is null || !File.Exists(fullPath)) { return Task.FromResult<FileReadStream?>(null); }
+        var info = new FileInfo(fullPath);
+        var stream = new FileStream(
+            fullPath, FileMode.Open, FileAccess.Read, FileShare.Read, StreamBufferSize, FileOptions.Asynchronous);
+        return Task.FromResult<FileReadStream?>(new FileReadStream(stream, info.Length));
     }
 
     public Task DeleteAsync(string storageKey, CancellationToken cancellationToken = default)

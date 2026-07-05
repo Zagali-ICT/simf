@@ -25,6 +25,22 @@ public interface IFileStorageProvider
     Task<byte[]?> ReadAsync(
         string storageKey, bool encrypted, CancellationToken cancellationToken = default);
 
+    /// <summary>D-568 (Wave C S7) — streams <paramref name="content"/> to disk for a
+    /// file WITHOUT buffering it whole, computing the SHA-256 of the bytes written
+    /// on the fly. <b>Plaintext only</b> — the result is a seekable file for Range
+    /// streaming (AES-GCM is not seekable), so this is for <c>EncryptAtRest:false</c>
+    /// services (session recordings). Returns the storage key + hash + byte count.</summary>
+    Task<StreamWriteResult> WriteStreamAsync(
+        FileService service, Guid fileId, string extension, Stream content,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>D-568 (Wave C S7) — opens a stored <b>plaintext</b> file as an async,
+    /// SEEKABLE read stream (+ its length) so the caller can Range-stream it (HTTP
+    /// 206). Returns null when the key is missing or escapes the storage root.
+    /// Encrypted files are not seekable — use <see cref="ReadAsync"/> for those.</summary>
+    Task<FileReadStream?> OpenReadAsync(
+        string storageKey, CancellationToken cancellationToken = default);
+
     /// <summary>Deletes the file for a stored key (idempotent).</summary>
     Task DeleteAsync(string storageKey, CancellationToken cancellationToken = default);
 
@@ -38,3 +54,11 @@ public interface IFileStorageProvider
 /// <summary>The key to persist on the <c>StoredFile</c> row plus the cipher
 /// format version used (<c>0</c> = plaintext).</summary>
 public sealed record FileWriteResult(string StorageKey, byte CipherFormatVersion);
+
+/// <summary>D-568 (Wave C S7) — the outcome of a streamed (plaintext) write: the
+/// storage key, the SHA-256 of the bytes (lowercase hex), and the byte count.</summary>
+public sealed record StreamWriteResult(string StorageKey, string Sha256, long SizeBytes);
+
+/// <summary>D-568 (Wave C S7) — a seekable read stream over a stored plaintext file
+/// plus its length, for Range streaming. The caller disposes the stream.</summary>
+public sealed record FileReadStream(Stream Content, long Length);

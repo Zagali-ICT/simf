@@ -113,6 +113,85 @@ internal sealed class StoredFileService(
             policy.EncryptAtRest, command.Content.LongLength);
     }
 
+    public async Task<StoredFileResult> CreateStreamedAsync(
+        FileService service, Guid? ownerEntityId, Stream content,
+        string? originalFileName, string contentType, string extension, Guid actorUserId,
+        CancellationToken cancellationToken = default)
+    {
+        var policy = FileServicePolicies.Resolve(service);
+        // Streamed uploads are for large, admin-trusted plaintext media (recordings) —
+        // the stored file must stay seekable for Range streaming, and AES-GCM is not
+        // seekable, so this path is only valid for an EncryptAtRest:false service.
+        if (policy.EncryptAtRest)
+        {
+            throw new InvalidOperationException(
+                $"CreateStreamedAsync requires an EncryptAtRest:false service; {service} encrypts at rest.");
+        }
+        if (policy.OwnerRequired && (ownerEntityId is null || ownerEntityId == Guid.Empty))
+        {
+            throw new ApiException(ErrorCodes.ValidationFailed, 400,
+                "This file category requires an owner.", "هذا النوع من الملفات يتطلب مالكًا.");
+        }
+
+        // The malware scan is SKIPPED for streamed uploads (P5 size-capped policy): the
+        // caller is an admin-only, extension+MIME-validated video up to 1 GiB, and
+        // buffering it whole for a byte[] scan would defeat the streaming pipeline.
+        var fileId = Guid.NewGuid();
+        var write = await storage.WriteStreamAsync(service, fileId, extension, content, cancellationToken);
+
+        var now = timeProvider.GetUtcNow();
+        var file = new StoredFile
+        {
+            Id = fileId,
+            Service = service,
+            SensitivityTier = policy.Tier,
+            FileType = FileType.Video,
+            SourceType = FileSourceType.Upload,
+            IsEncrypted = false,
+            CipherFormatVersion = 0,
+            StorageKey = write.StorageKey,
+            OriginalFileName = SanitizeFileName(originalFileName),
+            ContentType = contentType,
+            SizeBytes = write.SizeBytes,
+            Sha256 = write.Sha256,
+            IsDeletable = policy.DeletableDefault,
+            RetainUntilUtc = policy.Retention is { } retention ? now.Add(retention) : null,
+            OwnerEntityType = policy.OwnerEntityType,
+            OwnerEntityId = ownerEntityId,
+            CreatedBy = actorUserId,
+            CreatedAt = now,
+            IsActive = true,
+        };
+        dbContext.StoredFiles.Add(file);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.FileUploaded,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = $"id={fileId}; service={service}; type=Video; bytes={write.SizeBytes}; encrypted=false; streamed",
+        }, cancellationToken);
+
+        logger.LogInformation(
+            "File {Id} streamed (service={Service}, {Bytes} bytes, plaintext).", fileId, service, write.SizeBytes);
+
+        return new StoredFileResult(
+            fileId, $"/api/v1/files/{fileId}", service, FileType.Video, false, write.SizeBytes);
+    }
+
+    public async Task<FileReadStream?> OpenReadStreamAsync(
+        Guid id, CancellationToken cancellationToken = default)
+    {
+        var storageKey = await dbContext.StoredFiles
+            .AsNoTracking()
+            .Where(f => f.Id == id && f.IsActive && f.StorageKey != null)
+            .Select(f => f.StorageKey)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (storageKey is null) { return null; }
+        return await storage.OpenReadAsync(storageKey, cancellationToken);
+    }
+
     public async Task<StoredFileResult> CreateExternalLinkAsync(
         CreateExternalLinkCommand command, CancellationToken cancellationToken = default)
     {

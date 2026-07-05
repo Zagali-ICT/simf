@@ -22,6 +22,25 @@ public interface IFileService
     Task<StoredFileResult> CreateExternalLinkAsync(
         CreateExternalLinkCommand command, CancellationToken cancellationToken = default);
 
+    /// <summary>D-568 (Wave C S7) — streaming upload for large, admin-trusted media
+    /// (session recordings) that must not be buffered whole in memory. The bytes are
+    /// streamed source→disk with an incremental SHA-256; the malware scan is SKIPPED
+    /// (size-capped policy — an admin-only, extension+MIME-validated video up to
+    /// 1 GiB, which a byte[] scan would have to buffer whole). Requires an
+    /// <c>EncryptAtRest:false</c> service (a seekable plaintext file for Range
+    /// streaming); the caller pre-validates the video content-type + extension.</summary>
+    Task<StoredFileResult> CreateStreamedAsync(
+        FileService service, Guid? ownerEntityId, Stream content,
+        string? originalFileName, string contentType, string extension, Guid actorUserId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>D-568 (Wave C S7) — opens an active stored file as a seekable read
+    /// stream (+ length) for Range streaming (HTTP 206), or null when the id is not
+    /// an active file. A RAW open (no per-call authorization): the caller does its own
+    /// authz — the recording stream endpoint gates via its StreamToken scheme + a
+    /// publish re-check. Only valid for a plaintext (<c>EncryptAtRest:false</c>) file.</summary>
+    Task<FileReadStream?> OpenReadStreamAsync(Guid id, CancellationToken cancellationToken = default);
+
     /// <summary>Authorizes <paramref name="caller"/> against the file's service
     /// policy and returns the bytes (or a redirect for an external link). Throws a
     /// uniform 404 <c>ApiException</c> when the file is missing OR the caller is not
