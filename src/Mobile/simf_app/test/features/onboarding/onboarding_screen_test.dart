@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/localization/locale_controller.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/app_theme.dart';
 import 'package:simf_app/features/onboarding/onboarding_screen.dart';
@@ -78,6 +79,7 @@ Future<void> _pumpOnboarding(WidgetTester tester, _FakePrefs prefs) async {
     ProviderScope(
       overrides: <Override>[
         simfPrefsStorageProvider.overrideWithValue(prefs),
+        localeControllerProvider.overrideWith(() => LocaleController(prefs: prefs)),
       ],
       child: MaterialApp.router(
         theme: SimfTheme.dark(),
@@ -141,6 +143,19 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Skip'), findsNothing);
+    });
+
+    testWidgets('the language globe is present and stays tappable',
+        (tester) async {
+      final prefs = _FakePrefs();
+      await _pumpOnboarding(tester, prefs);
+
+      final toggle = find.byKey(const ValueKey<String>('languageToggle'));
+      expect(toggle, findsOneWidget);
+      await tester.tap(toggle);
+      await tester.pumpAndSettle();
+      // Toggling AR ↔ EN must not remove or crash the control.
+      expect(toggle, findsOneWidget);
     });
 
     testWidgets('the back chevron steps back (hidden on step 1)',

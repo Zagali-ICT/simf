@@ -7,6 +7,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../app/localization/app_l10n.dart';
+import '../../app/localization/locale_controller.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_logo.dart';
@@ -106,6 +107,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   void _onSkip() => unawaited(_complete());
 
+  /// The globe toggles AR ↔ EN and persists the choice (D-363), matching the
+  /// sign-in language control.
+  void _toggleLanguage() {
+    final isArabic = ref.read(localeControllerProvider).languageCode == 'ar';
+    unawaited(
+      ref
+          .read(localeControllerProvider.notifier)
+          .setLanguage(isArabic ? 'en' : 'ar'),
+    );
+  }
+
   void _onNext() {
     if (_index >= _stepCount - 1) {
       unawaited(_complete());
@@ -161,6 +173,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 OnboardingTopBar(
                   showBack: _index > 0,
                   onBack: _onBack,
+                  onToggleLanguage: _toggleLanguage,
                 ),
                 const SizedBox(height: 8),
                 const SimfLogo(size: 136),
