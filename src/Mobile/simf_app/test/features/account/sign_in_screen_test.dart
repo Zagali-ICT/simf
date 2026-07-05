@@ -405,16 +405,12 @@ void main() {
       expect(find.text('FORGOT'), findsOneWidget);
     });
 
-    testWidgets('the back chevron with no history falls back to onboarding',
-        (tester) async {
+    testWidgets('the sign-in screen has no back button (D-655 — it only '
+        'dead-ended to onboarding)', (tester) async {
       final prefs = _FakePrefs();
       await _pump(tester, _Outcome.success, prefs);
 
-      // Back control carries a stable key (it sits on top of the scroll body).
-      await tester.tap(find.byKey(const ValueKey<String>('signInBack')));
-      await tester.pumpAndSettle();
-
-      expect(find.text('ONBOARDING'), findsOneWidget);
+      expect(find.byKey(const ValueKey<String>('accountBack')), findsNothing);
     });
 
     testWidgets('the guest link opens the guest screen (D-363)',
@@ -436,7 +432,7 @@ void main() {
 
       // Empty prefs boot the controller in Arabic; the toggle flips to EN.
       // The language globe carries a stable key (it sits on top of the body).
-      await tester.tap(find.byKey(const ValueKey<String>('signInLanguage')));
+      await tester.tap(find.byKey(const ValueKey<String>('accountLanguage')));
       await tester.pumpAndSettle();
 
       expect(prefs.getString(StorageKeys.preferredLanguage), equals('en'));
