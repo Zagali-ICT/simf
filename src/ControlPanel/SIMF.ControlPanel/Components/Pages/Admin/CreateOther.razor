@@ -4,8 +4,6 @@
 @page "/admin/others/new"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Others.Create)]
-@inject IStringLocalizer<Strings> L
-@inject NavigationManager Nav
 
 <PageTitle>@L["Admin.Others.New.Title"] · SIMF</PageTitle>
 
@@ -17,13 +15,3 @@
     <CreateOtherForm OnSuccess="OnCreatedAsync"
                      OnCancel="OnBackToListAsync" />
 </section>
-
-@code {
-    private Task OnCreatedAsync(AdminCreateUserResponse _) => Task.CompletedTask;
-
-    private Task OnBackToListAsync()
-    {
-        Nav.NavigateTo("/admin/others");
-        return Task.CompletedTask;
-    }
-}

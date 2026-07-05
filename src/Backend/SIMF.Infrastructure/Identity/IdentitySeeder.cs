@@ -12,6 +12,7 @@ using SIMF.Common;
 using SIMF.Common.Options;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Organization;
 using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
 
@@ -262,6 +263,12 @@ public sealed class IdentitySeeder(
         // shape as the cyber/landing content seeds above.
         await EnsureCoreAppContentAsync(admin.Id, cancellationToken);
 
+        // D-586 — seed the forum's public About / Vision / Mission / Themes
+        // as OrganizationProfile "about items" (the app renders them as
+        // vision/mission cards). Public marketing content from the event deck;
+        // all restricted (محظور) operational data is deliberately excluded.
+        await EnsureOrganizationAboutItemsAsync(admin.Id, cancellationToken);
+
         // D-345 — seed a demo speaker roster so the public /app/speakers list
         // (and the Website speakers strip + the app speakers screen) render a
         // populated, realistic set out of the box instead of a single lonely
@@ -417,6 +424,80 @@ public sealed class IdentitySeeder(
         await appDbContext.SaveChangesAsync(cancellationToken);
     }
 
+    /// <summary>D-586 — seed the forum's public About / Vision / Mission / Themes
+    /// as <see cref="OrganizationAboutItem"/> rows on the singleton
+    /// <see cref="OrganizationProfile"/> (the app renders them as vision/mission
+    /// cards). Content is the public marketing text from the event deck; all
+    /// restricted (محظور) operational material is deliberately excluded. Seeds
+    /// ONLY when the table is empty, so a deliberate admin edit / deletion is never
+    /// re-added on the next boot (mirrors <see cref="EnsureBaselineOrganisationsAsync"/>).</summary>
+    private async Task EnsureOrganizationAboutItemsAsync(
+        Guid actorUserId, CancellationToken cancellationToken)
+    {
+        // Run once: the "About the Forum" item marks the deck-content seed as
+        // complete. D-495 pre-seeds two PLACEHOLDER items (Vision + Mission) via
+        // HasData; the first run rewrites those in place with the real deck text
+        // and adds the About + Themes items. Guarding on the About marker means it
+        // never re-runs, so later admin edits are never clobbered.
+        if (await appDbContext.OrganizationAboutItems
+                .AnyAsync(i => i.Title == "About the Forum", cancellationToken))
+        {
+            return;
+        }
+
+        var now = timeProvider.GetUtcNow();
+        var existing = await appDbContext.OrganizationAboutItems.ToListAsync(cancellationToken);
+
+        // (DisplayOrder, EN title, AR title, EN text, AR text).
+        var items = new (int Order, string Title, string TitleArabic, string Text, string TextArabic)[]
+        {
+            (0, "About the Forum", "نبذة عن الملتقى",
+             "Recent regional and international developments have shown that maritime security is no longer limited to protecting shipping lanes — it is now directly tied to energy security and the global economy. On this basis, the Fourth Saudi International Maritime Forum is held under the theme “The Future of Seabed Security and Supply Chains in a Changing Global Environment”, to address threats to seabed security and supply chains with the participation of international experts from leading universities, strategic-studies centres, and relevant organisations to exchange expertise and develop solutions.",
+             "أثبتت المتغيرات الإقليمية والدولية خلال الفترة الأخيرة أن أمن البحار لم يعد مقتصراً على حماية خطوط الملاحة فحسب، بل أصبح يرتبط بشكل مباشر بأمن الطاقة والاقتصاد العالمي. ومن هذا المنطلق جاء الملتقى البحري السعودي الدولي الرابع بعنوان (مستقبل أمن قاع البحار وسلاسل الإمداد في بيئة عالمية متغيرة)، لمناقشة مهددات أمن قاع البحار وسلاسل الإمداد بمشاركة خبراء دوليين من أشهر الجامعات ومراكز الدراسات الاستراتيجية والمنظمات ذات العلاقة لتبادل الخبرات وإيجاد الحلول."),
+            (1, "Vision", "الرؤية",
+             "To become a globally leading platform for exchanging knowledge and advancing maritime innovation and industry, and for strengthening international cooperation to safeguard maritime security and the sustainability of oceans and marine resources.",
+             "أن يصبح الملتقى منصة رائدة عالمياً لتبادل المعرفة وتطوير الابتكارات والصناعة في المجال البحري، وتعزيز التعاون الدولي من أجل الحفاظ على الأمن البحري واستدامة المحيطات والموارد البحرية."),
+            (2, "Mission", "الرسالة",
+             "To bring together military leaders, local and global industry pioneers, researchers, and experts from around the world to exchange ideas, strengthen partnerships, and discuss the challenges and opportunities in the maritime sector — reinforcing the pivotal regional role of the Royal Saudi Naval Forces in advancing maritime security, supporting innovation, and sustaining the marine environment through purposeful dialogue, scientific contributions, and training activities.",
+             "جمع القادة العسكريين ورواد الصناعة المحلية والعالمية والباحثين والخبراء من جميع أنحاء العالم لتبادل الأفكار وتعزيز الشراكات ومناقشة التحديات والفرص في القطاع البحري، لتعزيز دور القوات البحرية الملكية السعودية المحوري في المنطقة في تعزيز الأمن البحري ودعم الابتكار واستدامة البيئة البحرية من خلال حوارات هادفة ومشاركات علمية وفعاليات تدريبية."),
+            (3, "Key Themes", "المحاور الرئيسية",
+             "1) Shifts in the global strategic environment and their impact on the security of maritime supply chains.\n2) Threats to energy supply chains and their effect on the global economy.\n3) Seabed security and undersea communications infrastructure.\n4) Cybersecurity of maritime transport: challenges and solutions.\n5) The role of artificial intelligence and modern technologies in seabed and supply-chain security.",
+             "١) المتغيرات في البيئة الاستراتيجية العالمية وتأثيرها على أمن سلاسل الإمداد البحرية.\n٢) التهديدات على سلاسل إمداد الطاقة وأثرها على الاقتصاد العالمي.\n٣) أمن قاع البحار وبنية الاتصالات تحت البحر.\n٤) الأمن السيبراني للنقل البحري: التحديات والحلول.\n٥) دور الذكاء الاصطناعي والتقنيات الحديثة في أمن قاع البحار وسلاسل الإمداد."),
+        };
+
+        foreach (var item in items)
+        {
+            // Rewrite the matching D-495 placeholder (by title) in place, or add
+            // the new item when there is none.
+            var row = existing.FirstOrDefault(i => i.Title == item.Title);
+            if (row is null)
+            {
+                appDbContext.OrganizationAboutItems.Add(new OrganizationAboutItem
+                {
+                    Id = Guid.NewGuid(),
+                    OrganizationProfileId = OrganizationProfile.SingletonId,
+                    Title = item.Title,
+                    TitleArabic = item.TitleArabic,
+                    Text = item.Text,
+                    TextArabic = item.TextArabic,
+                    DisplayOrder = item.Order,
+                    IsActive = true,
+                    CreatedAt = now,
+                    CreatedBy = actorUserId,
+                });
+            }
+            else
+            {
+                row.TitleArabic = item.TitleArabic;
+                row.Text = item.Text;
+                row.TextArabic = item.TextArabic;
+                row.DisplayOrder = item.Order;
+                row.IsActive = true;
+            }
+        }
+        await appDbContext.SaveChangesAsync(cancellationToken);
+    }
+
     private async Task<SimfUser?> CreateSuperAdminAsync(
         SuperAdminOptions settings,
         CancellationToken cancellationToken)
@@ -434,7 +515,11 @@ public sealed class IdentitySeeder(
             // already sets this for the pre-P7 super-admin, but we also set
             // it here so a brand-new install on a clean DB lands correctly.
             UserType = UserType.Admin,
-            PasswordChangeRequired = true,
+            // D-059 / H19 / D-206 — the seed credential is normally forced to
+            // rotate on first CP login. Config-driven (SuperAdmin:
+            // PasswordChangeRequired, default true) so a dev / test box can opt
+            // out; keep it true for the production / NCA handover.
+            PasswordChangeRequired = settings.PasswordChangeRequired,
             CreatedAt = now,
         };
 

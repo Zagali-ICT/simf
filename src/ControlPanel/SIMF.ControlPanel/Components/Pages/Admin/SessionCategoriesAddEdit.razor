@@ -5,8 +5,6 @@
    IsEdit=true runs Edit (PUT against Initial) and shows the IsActive checkbox.
    Supersedes the inline SimfModal form that lived in SessionCategoriesList. *@
 @inherits CrudAddEditFormBase<AdminSessionCategoryDetail>
-@inject IStringLocalizer<Strings> L
-@inject IJSRuntime JS
 
 @if (_error is not null)
 {
@@ -47,90 +45,3 @@
         }
     </div>
 </EditForm>
-
-@code {
-    private readonly Model _model = new();
-    private string _displayOrderInput = "0";
-    private EditContext _editContext = default!;
-    private bool _busy;
-    private string? _error;
-
-    protected override void OnInitialized()
-    {
-        if (Initial is not null)
-        {
-            _model.Name = Initial.Name;
-            _model.NameArabic = Initial.NameArabic;
-            _model.IsActive = Initial.IsActive;
-            _displayOrderInput = Initial.DisplayOrder.ToString();
-        }
-        _editContext = new EditContext(_model);
-    }
-
-    private async Task HandleSubmitAsync()
-    {
-        if (_busy) return;
-        _error = null;
-
-        if (string.IsNullOrWhiteSpace(_model.Name) || _model.Name.Length > 128
-            || string.IsNullOrWhiteSpace(_model.NameArabic) || _model.NameArabic.Length > 128)
-        {
-            _error = L["Admin.SessionCategories.Required"]; return;
-        }
-        if (!int.TryParse(_displayOrderInput, out var order) || order < 0)
-        {
-            order = 0;
-        }
-
-        _busy = true;
-        try
-        {
-            ApiResult<AdminSessionCategoryDetail>? envelope;
-            if (!IsEdit)
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminSessionCategoryDetail>>(
-                    "simfAccount.postJson", "/account/api/admin/session-categories",
-                    new AdminCreateSessionCategoryRequest
-                    {
-                        Name = _model.Name.Trim(),
-                        NameArabic = _model.NameArabic.Trim(),
-                        DisplayOrder = order,
-                    });
-            }
-            else
-            {
-                envelope = await JS.InvokeAsync<ApiResult<AdminSessionCategoryDetail>>(
-                    "simfAccount.putJson", $"/account/api/admin/session-categories/{Initial!.Id}",
-                    new AdminUpdateSessionCategoryRequest
-                    {
-                        Name = _model.Name.Trim(),
-                        NameArabic = _model.NameArabic.Trim(),
-                        DisplayOrder = order,
-                        IsActive = _model.IsActive,
-                    });
-            }
-
-            if (envelope is { Success: true, Data: not null })
-            {
-                await OnSuccess.InvokeAsync(envelope.Data);
-            }
-            else
-            {
-                _error = envelope?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.SessionCategories.LoadFailed"];
-            }
-        }
-        catch (Exception)
-        {
-            _error = L["Admin.SessionCategories.LoadFailed"];
-        }
-        finally { _busy = false; }
-    }
-
-    private sealed class Model
-    {
-        public string Name { get; set; } = string.Empty;
-        public string NameArabic { get; set; } = string.Empty;
-        public bool IsActive { get; set; } = true;
-    }
-}

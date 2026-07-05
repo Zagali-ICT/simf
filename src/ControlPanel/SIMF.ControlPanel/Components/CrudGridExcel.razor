@@ -7,8 +7,6 @@
    per-page input is the Resource slug. *@
 @using SIMF.Common
 @using SIMF.Contracts.Admin
-@inject IStringLocalizer<Strings> L
-@inject IJSRuntime JS
 
 <input type="file" id="@InputId" accept=".xlsx" class="simf-hidden-input"
        aria-label="@L["Grid.Import.Picker"]" @onchange="OnFileSelectedAsync" />
@@ -36,54 +34,4 @@
             </SimfButton>
         </Footer>
     </SimfModal>
-}
-
-@code {
-    /// <summary>The resource slug, e.g. "interests" — the BFF/API route segment.</summary>
-    [Parameter, EditorRequired] public string Resource { get; set; } = default!;
-
-    /// <summary>Raised after a successful import so the page can reload its grid.</summary>
-    [Parameter] public EventCallback OnImported { get; set; }
-
-    /// <summary>Raised (with a localized message) when export/import transport fails,
-    /// so the page can surface it in its own toast.</summary>
-    [Parameter] public EventCallback<string> OnError { get; set; }
-
-    private string InputId => $"{Resource}-import-input";
-    private AdminGridImportResult? _result;
-
-    /// <summary>Downloads the XLSX for the selected ids, or — when none are
-    /// selected — the whole filtered grid (the API caps the row count).</summary>
-    public async Task ExportAsync(IReadOnlyList<Guid> ids, GridQuery query)
-    {
-        await JS.InvokeVoidAsync("simfAccount.downloadXlsx",
-            $"/account/api/admin/{Resource}/export",
-            new AdminGridExportRequest
-            {
-                Ids = ids.ToList(),
-                Query = ids.Count == 0 ? query : null,
-            });
-    }
-
-    /// <summary>Opens the OS file picker; the chosen .xlsx is uploaded on change.</summary>
-    public async Task TriggerImportAsync() =>
-        await JS.InvokeVoidAsync("simfAccount.triggerFileInput", InputId);
-
-    private async Task OnFileSelectedAsync()
-    {
-        var env = await JS.InvokeAsync<ApiResult<AdminGridImportResult>>(
-            "simfAccount.uploadFile", $"/account/api/admin/{Resource}/import", InputId);
-        if (env is { Success: true, Data: not null })
-        {
-            _result = env.Data;
-            await OnImported.InvokeAsync();
-        }
-        else if (OnError.HasDelegate)
-        {
-            await OnError.InvokeAsync(
-                env?.Error?.MessageForCurrentCulture() ?? L["Grid.Import.Failed"].Value);
-        }
-    }
-
-    private void CloseResult() => _result = null;
 }

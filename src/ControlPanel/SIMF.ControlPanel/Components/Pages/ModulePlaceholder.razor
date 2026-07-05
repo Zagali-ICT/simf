@@ -3,7 +3,6 @@
 @page "/m/{Module}"
 @layout CpShellLayout
 @attribute [Authorize]
-@inject IStringLocalizer<Strings> L
 
 <PageTitle>@PageTitle · SIMF</PageTitle>
 
@@ -13,17 +12,3 @@
     <h2 class="simf-panel__title">@L["Module.ComingSoon.Title"]</h2>
     <p class="simf-panel__text">@L["Module.ComingSoon.Text"]</p>
 </div>
-
-@code {
-    /// <summary>The module slug from the route.</summary>
-    [Parameter] public string Module { get; set; } = string.Empty;
-
-    private string PageTitle
-    {
-        get
-        {
-            var key = CpNavigation.LabelKeyForHref($"/m/{Module}");
-            return key is not null ? L[key].Value : L["Module.ComingSoon.Title"].Value;
-        }
-    }
-}

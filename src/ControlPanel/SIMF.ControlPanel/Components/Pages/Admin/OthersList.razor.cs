@@ -1,0 +1,336 @@
+using System.Globalization;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.Extensions.Localization;
+using Microsoft.JSInterop;
+using SIMF.Common;
+using SIMF.Components.Forms;
+using SIMF.Common.Enums;
+using SIMF.Contracts.Admin;
+using SIMF.Contracts.Authentication;
+
+namespace SIMF.ControlPanel.Components.Pages.Admin;
+
+public partial class OthersList
+{
+    [Inject] private IStringLocalizer<Strings> L { get; set; } = default!;
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+    [Inject] private CpPreferences Prefs { get; set; } = default!;
+
+    private enum FormKind { None, AddEdit, ViewDelete }
+
+    private const string PageKey = "others";
+
+    private GridQuery _query = new() { Top = 20 };
+    private GridPage<AdminUserSummary>? _page;
+    private bool _loading;
+    private bool _busy;
+
+    // D-353 — centralized Add / Edit / Details framing.
+    private CrudPresentation _presentation = CrudPresentation.Dialog;
+    private FormKind _form = FormKind.None;
+    private bool _isEdit;
+    private bool _isDelete;
+    private AdminUserProfileView? _target;
+
+    private bool _bulkDeleteOpen;
+    private IReadOnlyList<AdminUserSummary> _bulkDeleteTargets = Array.Empty<AdminUserSummary>();
+    private string _bulkDeleteReason = string.Empty;
+
+    private bool _duplicateOpen;
+    private AdminUserSummary? _duplicateSource;
+    private string _duplicateEmail = string.Empty;
+
+    private AdminImportUsersResponse? _importResult;
+    private Toast? _toast;
+
+    private bool FormOpen => _form != FormKind.None;
+    // D-393 — the wide Add form (the same WalkInRegistrationForm as visitors)
+    // opens full-page regardless of the admin's popup/page preference; Edit +
+    // Details keep the preference.
+    private CrudPresentation EffectivePresentation =>
+        _form == FormKind.AddEdit && !_isEdit
+            ? CrudPresentation.Page
+            : _presentation;
+    private bool GridHidden => FormOpen && EffectivePresentation == CrudPresentation.Page;
+
+    private string FormTitle => _form switch
+    {
+        FormKind.AddEdit => _isEdit
+            ? L["Admin.Others.Edit.Title"]
+            : L["Admin.Others.Add.Title"],
+        FormKind.ViewDelete => _target is not null
+            ? string.Format(L["Admin.Others.Details.Title"], _target.Email)
+            : string.Empty,
+        _ => string.Empty,
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _presentation = await Prefs.GetPresentationAsync(PageKey);
+        await LoadAsync();
+    }
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminUserSummary>>>(
+                "simfAccount.postJson", "/account/api/admin/others/list", _query);
+            _page = envelope is { Success: true, Data: not null }
+                ? envelope.Data
+                : GridPage<AdminUserSummary>.Of(
+                    Array.Empty<AdminUserSummary>(), 0, _query);
+        }
+        finally { _loading = false; }
+    }
+
+    private Task OnAddAsync()
+    {
+        _toast = null;
+        _form = FormKind.AddEdit;
+        _isEdit = false;
+        _target = null;
+        return Task.CompletedTask;
+    }
+
+    private async Task OnEditAsync(AdminUserSummary user)
+    {
+        var detail = await LoadProfileAsync(user.Id);
+        if (detail is null) return;
+        _form = FormKind.AddEdit;
+        _isEdit = true;
+        _target = detail;
+    }
+
+    private async Task OnDetailsAsync(AdminUserSummary user)
+    {
+        var detail = await LoadProfileAsync(user.Id);
+        if (detail is null) return;
+        _form = FormKind.ViewDelete;
+        _isDelete = false;
+        _target = detail;
+    }
+
+    // Edit / Details work against the full profile (the grid summary omits the
+    // profile fields). Returns null and surfaces a toast on failure. Reuses the
+    // same D-126 admin read the inline Details modal used.
+    private async Task<AdminUserProfileView?> LoadProfileAsync(Guid id)
+    {
+        _toast = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<AdminUserProfileView>>(
+                "simfAccount.getJson", $"/account/api/admin/others/{id}/profile");
+            if (envelope is { Success: true, Data: not null })
+            {
+                return envelope.Data;
+            }
+            ShowToast("error",
+                envelope?.Error?.MessageForCurrentCulture()
+                ?? L["Admin.Pending.View.Fallback"]);
+        }
+        catch (Exception)
+        {
+            ShowToast("error", L["Admin.Pending.View.Fallback"]);
+        }
+        return null;
+    }
+
+    private void CloseForm()
+    {
+        _form = FormKind.None;
+        _target = null;
+    }
+
+    private async Task OnSavedAsync(AdminUserProfileView saved)
+    {
+        var wasEdit = _isEdit;
+        CloseForm();
+        ShowToast("success", wasEdit
+            ? L["Admin.Edit.Saved"]
+            : string.Format(L["Admin.CreateUser.Success"], saved.Email));
+        await LoadAsync();
+    }
+
+    // ViewDelete is details-only here (single-row delete keeps the reason-gated
+    // bulk-delete dialog), so OnDeleted never fires — the handler exists only to
+    // satisfy the form's typed callback contract.
+    private async Task OnDeletedAsync(AdminUserProfileView deleted)
+    {
+        CloseForm();
+        await LoadAsync();
+    }
+
+    private Task OnRowDeleteAsync(AdminUserSummary user)
+    {
+        _bulkDeleteTargets = new[] { user };
+        _bulkDeleteReason = string.Empty;
+        _bulkDeleteOpen = true;
+        return Task.CompletedTask;
+    }
+
+    private Task OnBulkDeleteAsync(IReadOnlyList<AdminUserSummary> users)
+    {
+        if (users.Count == 0)
+        {
+            ShowToast("error", L["Admin.Users.NoSelection"]);
+            return Task.CompletedTask;
+        }
+        _bulkDeleteTargets = users;
+        _bulkDeleteReason = string.Empty;
+        _bulkDeleteOpen = true;
+        return Task.CompletedTask;
+    }
+
+    private async Task ConfirmBulkDeleteAsync()
+    {
+        if (_bulkDeleteReason.Length is < 10 or > 500 || _bulkDeleteTargets.Count == 0) return;
+        _busy = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<AdminBulkDeleteResponse>>(
+                "simfAccount.postJson", "/account/api/admin/others/bulk-delete",
+                new AdminBulkDeleteRequest
+                {
+                    Ids = _bulkDeleteTargets.Select(u => u.Id).ToList(),
+                    Reason = _bulkDeleteReason,
+                });
+            if (envelope is { Success: true, Data: not null })
+            {
+                _bulkDeleteOpen = false;
+                ShowToast("success", string.Format(
+                    L["Admin.Users.BulkDelete.Success"],
+                    envelope.Data.Deleted, envelope.Data.Skipped));
+                await LoadAsync();
+            }
+            else
+            {
+                ShowToast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Users.BulkDelete.Fallback"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private Task OnDuplicateAsync(AdminUserSummary user)
+    {
+        _duplicateSource = user;
+        _duplicateEmail = string.Empty;
+        _duplicateOpen = true;
+        return Task.CompletedTask;
+    }
+
+    private async Task ConfirmDuplicateAsync()
+    {
+        if (_duplicateSource is null || !IsLikelyEmail(_duplicateEmail)) return;
+        _busy = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<AdminCreateUserResponse>>(
+                "simfAccount.postJson", "/account/api/admin/others/duplicate",
+                new AdminDuplicateUserRequest
+                {
+                    SourceId = _duplicateSource.Id,
+                    NewEmail = _duplicateEmail,
+                });
+            if (envelope is { Success: true, Data: not null })
+            {
+                _duplicateOpen = false;
+                ShowToast("success", string.Format(
+                    L["Admin.Users.Duplicate.Success"], envelope.Data.Email));
+                await LoadAsync();
+            }
+            else
+            {
+                ShowToast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Users.Duplicate.Fallback"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private Task OnCopySelectedAsync(IReadOnlyList<AdminUserSummary> users)
+    {
+        if (users.Count == 0) return Task.CompletedTask;
+        ShowToast("info", string.Format(L["Admin.Users.Copy.Count"], users.Count));
+        return Task.CompletedTask;
+    }
+
+    private Task OnCopyOneAsync(AdminUserSummary user)
+    {
+        ShowToast("info", string.Format(L["Admin.Users.Copy.One"], user.Email));
+        return Task.CompletedTask;
+    }
+
+    private Task OnPasteAsync(string clipboard)
+    {
+        if (string.IsNullOrWhiteSpace(clipboard))
+        {
+            ShowToast("error", L["Admin.Users.Paste.Empty"]);
+            return Task.CompletedTask;
+        }
+        ShowToast("info", L["Admin.Users.Paste.NotImplemented"]);
+        return Task.CompletedTask;
+    }
+
+    private async Task OnExportAsync(IReadOnlyList<AdminUserSummary> selected)
+    {
+        var ids = selected.Select(u => u.Id).ToList();
+        await JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+            "/account/api/admin/others/export",
+            new AdminExportUsersRequest { Ids = ids, Query = ids.Count == 0 ? _query : null });
+    }
+
+    private async Task OnImportAsync() =>
+        await JS.InvokeVoidAsync("simfAccount.triggerFileInput", "others-import-input");
+
+    private async Task OnImportFileSelectedAsync()
+    {
+        _busy = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<AdminImportUsersResponse>>(
+                "simfAccount.uploadFile", "/account/api/admin/others/import", "others-import-input");
+            if (envelope is { Success: true, Data: not null })
+            {
+                _importResult = envelope.Data;
+                await LoadAsync();
+            }
+            else
+            {
+                ShowToast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Users.Import.Fallback"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private string FormatSummary(int from, int to, int total) =>
+        string.Format(L["Admin.Users.Pager.Summary"], from, to, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Admin.Users.Pager.Page"], current, total);
+
+    private static bool IsLikelyEmail(string value) =>
+        !string.IsNullOrWhiteSpace(value)
+        && value.Contains('@', StringComparison.Ordinal)
+        && value.Length <= 256;
+
+    private void ShowToast(string variant, string message)
+    {
+        _toast = new Toast(variant, message);
+    }
+
+    private sealed record Toast(string Variant, string Message);
+}

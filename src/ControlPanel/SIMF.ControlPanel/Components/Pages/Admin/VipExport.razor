@@ -7,8 +7,6 @@
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Visitors.ExportVip)]
 @using SIMF.Components.Forms
-@inject IStringLocalizer<Strings> L
-@inject IJSRuntime JS
 
 <PageTitle>@L["Admin.VipExport.Title"] · SIMF</PageTitle>
 
@@ -127,44 +125,3 @@
         </SimfDataGrid>
     </div>
 </div>
-
-@code {
-    private GridQuery _query = new() { Top = 20, Sort = "tier" };
-    private GridPage<VipRosterRow> _page = new();
-    private bool _loading;
-
-    private static bool IsArabic =>
-        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
-
-    private static string PhotoUrl(Guid userId) => $"/account/api/admin/visitors/{userId}/vip-photo";
-
-    protected override async Task OnInitializedAsync() => await LoadAsync();
-
-    private async Task OnQueryChangedAsync(GridQuery next)
-    {
-        _query = next;
-        await LoadAsync();
-    }
-
-    private string FormatSummary(int skip, int taken, int total) =>
-        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
-
-    private string FormatPage(int current, int total) =>
-        string.Format(L["Grid.Page"], current, total);
-
-    private async Task LoadAsync()
-    {
-        _loading = true;
-        try
-        {
-            var env = await JS.InvokeAsync<ApiResult<GridPage<VipRosterRow>>>(
-                "simfAccount.postJson",
-                "/account/api/admin/visitors/vip/roster/list", _query);
-            if (env is { Success: true, Data: not null })
-            {
-                _page = env.Data;
-            }
-        }
-        finally { _loading = false; }
-    }
-}

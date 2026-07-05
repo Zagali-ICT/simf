@@ -6,8 +6,6 @@
 @page "/admin/gates/dashboard"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Gates.Manage)]
-@inject IStringLocalizer<Strings> L
-@inject IJSRuntime JS
 
 <PageTitle>@L["Admin.GatesDashboard.Title"] · SIMF</PageTitle>
 
@@ -116,70 +114,3 @@
         }
     </div>
 </div>
-
-@code {
-    private record Toast(string Variant, string Message);
-
-    private IReadOnlyList<AdminCurrentlyInsideRow> _inside = Array.Empty<AdminCurrentlyInsideRow>();
-    private IReadOnlyList<AdminGateSummary> _gates = Array.Empty<AdminGateSummary>();
-    private bool _loading;
-    private Toast? _toast;
-
-    // The simfAccount JS module is only available once the interactive Blazor
-    // connection is up — running these calls in OnInitializedAsync would throw
-    // on the SSR prerender pass and surface Blazor's unhandled-error banner
-    // (same idiom as GateOperatorConsole).
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!firstRender) { return; }
-        await LoadAsync();
-        StateHasChanged();
-    }
-
-    private async Task LoadAsync()
-    {
-        _loading = true;
-        _toast = null;
-        try
-        {
-            var insideEnv = await JS.InvokeAsync<ApiResult<IReadOnlyList<AdminCurrentlyInsideRow>>>(
-                "simfAccount.getJson",
-                "/account/api/admin/gates/reports/currently-inside");
-            if (insideEnv is { Success: true, Data: not null })
-            {
-                _inside = insideEnv.Data;
-            }
-            else
-            {
-                _toast = new Toast("error",
-                    insideEnv?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.GatesDashboard.LoadFailed"]);
-            }
-
-            var gatesEnv = await JS.InvokeAsync<ApiResult<GridPage<AdminGateSummary>>>(
-                "simfAccount.postJson",
-                "/account/api/admin/gates/list", new GridQuery { Top = 200 });
-            if (gatesEnv is { Success: true, Data: not null })
-            {
-                _gates = gatesEnv.Data.Items;
-            }
-            else
-            {
-                _toast = new Toast("error",
-                    gatesEnv?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.GatesDashboard.LoadFailed"]);
-            }
-        }
-        finally { _loading = false; }
-    }
-
-    private static string NameOf(AdminCurrentlyInsideRow row) =>
-        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
-            ? (string.IsNullOrWhiteSpace(row.DisplayNameArabic) ? row.DisplayName : row.DisplayNameArabic)
-            : row.DisplayName;
-
-    private static string NameOf(AdminGateSummary gate) =>
-        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
-            ? (string.IsNullOrWhiteSpace(gate.NameArabic) ? gate.Name : gate.NameArabic)
-            : gate.Name;
-}

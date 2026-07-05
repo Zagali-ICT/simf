@@ -6,8 +6,6 @@
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.ContactInquiries.View)]
 @using SIMF.Contracts.Support
-@inject IStringLocalizer<Strings> L
-@inject IJSRuntime JS
 
 <PageTitle>@L["Admin.ContactInquiries.Title"] · SIMF</PageTitle>
 
@@ -93,80 +91,3 @@
         </SimfDataGrid>
     </div>
 </div>
-
-@code {
-    private record Toast(string Variant, string Message);
-
-    private GridQuery _query = new() { Top = 20 };
-    private GridPage<AdminContactInquiryRow> _page = new();
-    private bool _loading;
-    private bool _busy;
-    private Toast? _toast;
-
-    protected override async Task OnInitializedAsync() => await LoadAsync();
-
-    private async Task OnQueryChangedAsync(GridQuery next)
-    {
-        _query = next;
-        await LoadAsync();
-    }
-
-    private static string Truncate(string text) =>
-        text.Length <= 80 ? text : text[..77] + "…";
-
-    private string FormatSummary(int skip, int taken, int total) =>
-        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
-
-    private string FormatPage(int current, int total) =>
-        string.Format(L["Grid.Page"], current, total);
-
-    private async Task LoadAsync()
-    {
-        _loading = true;
-        try
-        {
-            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminContactInquiryRow>>>(
-                "simfAccount.postJson",
-                "/account/api/admin/contact-inquiries/list", _query);
-            if (env is { Success: true, Data: not null })
-            {
-                _page = env.Data;
-            }
-            else
-            {
-                _toast = new Toast("error",
-                    env?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.ContactInquiries.LoadFailed"]);
-            }
-        }
-        finally { _loading = false; }
-    }
-
-    private async Task SetHandledAsync(AdminContactInquiryRow row, bool handled)
-    {
-        if (_busy) return;
-        _busy = true;
-        _toast = null;
-        try
-        {
-            var env = await JS.InvokeAsync<ApiResult<bool>>(
-                "simfAccount.postJson",
-                $"/account/api/admin/contact-inquiries/{row.Id}/handled",
-                new { handled });
-            if (env is { Success: true })
-            {
-                _toast = new Toast("success",
-                    handled ? L["Admin.ContactInquiries.Handled"]
-                            : L["Admin.ContactInquiries.Reopened"]);
-                await LoadAsync();
-            }
-            else
-            {
-                _toast = new Toast("error",
-                    env?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.ContactInquiries.LoadFailed"]);
-            }
-        }
-        finally { _busy = false; }
-    }
-}

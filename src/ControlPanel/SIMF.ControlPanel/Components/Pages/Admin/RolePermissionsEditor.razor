@@ -6,9 +6,6 @@
 @page "/admin/roles/{RoleId:guid}/permissions"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Roles.AssignPermissions)]
-@inject IStringLocalizer<Strings> L
-@inject IJSRuntime JS
-@inject NavigationManager Nav
 
 <PageTitle>@_pageTitle · SIMF</PageTitle>
 
@@ -68,86 +65,3 @@
         }
     </div>
 </div>
-
-@code {
-    [Parameter] public Guid RoleId { get; set; }
-
-    private record Toast(string Variant, string Message);
-
-    private static readonly IReadOnlyList<IGrouping<string, PermissionDef>> _groups =
-        PermissionCatalog.All.GroupBy(permission => permission.Page).ToList();
-
-    private AdminRolePermissionsResponse? _role;
-    private readonly HashSet<string> _selected = new(StringComparer.Ordinal);
-    private bool _loading = true;
-    private bool _busy;
-    private Toast? _toast;
-
-    private string _pageTitle = string.Empty;
-
-    protected override async Task OnInitializedAsync()
-    {
-        _pageTitle = L["Admin.RolePermissions.Title"];
-        await LoadAsync();
-    }
-
-    private async Task LoadAsync()
-    {
-        _loading = true;
-        try
-        {
-            var envelope = await JS.InvokeAsync<ApiResult<AdminRolePermissionsResponse>>(
-                "simfAccount.getJson", $"/account/api/admin/roles/{RoleId}/permissions");
-            if (envelope is { Success: true, Data: not null })
-            {
-                _role = envelope.Data;
-                _selected.Clear();
-                foreach (var code in _role.GrantedCodes)
-                {
-                    _selected.Add(code);
-                }
-                _pageTitle = string.Format(L["Admin.RolePermissions.TitleFor"], _role.RoleName);
-            }
-            else
-            {
-                _toast = new Toast("error",
-                    envelope?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.RolePermissions.LoadFailed"]);
-            }
-        }
-        finally { _loading = false; }
-    }
-
-    private void Toggle(string code, bool on)
-    {
-        if (on) { _selected.Add(code); }
-        else { _selected.Remove(code); }
-    }
-
-    private async Task SaveAsync()
-    {
-        if (_busy || _role is null || _role.IsBaseline) { return; }
-
-        _busy = true;
-        _toast = null;
-        try
-        {
-            var body = new AdminSetRolePermissionsRequest { Codes = _selected.ToList() };
-            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
-                "simfAccount.putJson", $"/account/api/admin/roles/{RoleId}/permissions", body);
-            if (envelope is { Success: true })
-            {
-                _toast = new Toast("success", L["Admin.RolePermissions.Saved"]);
-            }
-            else
-            {
-                _toast = new Toast("error",
-                    envelope?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.RolePermissions.Fallback"]);
-            }
-        }
-        finally { _busy = false; }
-    }
-
-    private void BackToList() => Nav.NavigateTo("/admin/roles");
-}

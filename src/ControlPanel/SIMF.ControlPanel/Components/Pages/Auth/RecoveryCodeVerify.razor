@@ -3,11 +3,6 @@
    Same MFA-token ticket and same cookie hand-off as the TOTP step. *@
 @page "/login/recovery"
 @attribute [AllowAnonymous]
-@inject IStringLocalizer<Strings> L
-@inject SimfAuthClient Api
-@inject SimfAuthSession Session
-@inject SignInTicketStore Tickets
-@inject NavigationManager Nav
 
 <PageTitle>@L["Auth.PageTitle.RecoveryCode"]</PageTitle>
 
@@ -53,84 +48,4 @@
             </SimfAuthCard>
         </ChildContent>
     </SimfAuthLayout>
-}
-
-@code {
-    private readonly CodeModel _model = new();
-    private EditContext _editContext = default!;
-    private ValidationMessageStore _messages = default!;
-    private bool _loading;
-    private string? _error;
-
-    protected override void OnInitialized()
-    {
-        _editContext = new EditContext(_model);
-        _messages = new ValidationMessageStore(_editContext);
-        _editContext.OnFieldChanged += ClearFieldError;
-
-        if (string.IsNullOrEmpty(Session.PendingMfaToken))
-        {
-            Nav.NavigateTo("/login");
-        }
-    }
-
-    private void ClearFieldError(object? sender, FieldChangedEventArgs e)
-    {
-        _messages.Clear(e.FieldIdentifier);
-        _editContext.NotifyValidationStateChanged();
-    }
-
-    private async Task HandleSubmitAsync()
-    {
-        if (_loading)
-        {
-            return;
-        }
-
-        _loading = true;
-        _error = null;
-        try
-        {
-            _messages.Clear();
-
-            if (string.IsNullOrWhiteSpace(_model.Code))
-            {
-                _messages.Add(_editContext.Field(nameof(CodeModel.Code)),
-                    L["Auth.RecoveryCode.Required"]);
-            }
-
-            _editContext.NotifyValidationStateChanged();
-            if (_editContext.GetValidationMessages().Any())
-            {
-                return;
-            }
-
-            var result = await Api.VerifyRecoveryCodeAsync(
-                new VerifyRecoveryCodeRequest
-                {
-                    MfaToken = Session.PendingMfaToken!,
-                    Code = _model.Code,
-                });
-
-            if (!result.Success || result.Data is null)
-            {
-                _error = result.Error?.MessageForCurrentCulture()
-                    ?? L["Auth.RecoveryCode.Fallback"];
-                return;
-            }
-
-            var reference = Tickets.Stash(result.Data);
-            Session.Clear();
-            Nav.NavigateTo($"/auth/complete?reference={reference}", forceLoad: true);
-        }
-        finally
-        {
-            _loading = false;
-        }
-    }
-
-    private sealed class CodeModel
-    {
-        public string Code { get; set; } = string.Empty;
-    }
 }

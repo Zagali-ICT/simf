@@ -4,8 +4,6 @@
    OnCancel). Read-only details always show; when IsDelete=true a Delete button
    appears and a SimfConfirm gates the soft-delete (DeactivateAsync). *@
 @inherits CrudViewDeleteFormBase<AdminSystemSettingDetail>
-@inject IStringLocalizer<Strings> L
-@inject IJSRuntime JS
 
 @if (_error is not null)
 {
@@ -48,39 +46,4 @@
                  Busy="_busy"
                  OnConfirm="ConfirmDeleteAsync"
                  OnCancel="@(() => _confirming = false)" />
-}
-
-@code {
-    private bool _busy;
-    private bool _confirming;
-    private string? _error;
-
-    private async Task ConfirmDeleteAsync()
-    {
-        if (_busy || Initial is null) return;
-        _busy = true;
-        _error = null;
-        try
-        {
-            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
-                "simfAccount.deleteJson", $"/account/api/admin/system-settings/{Initial.Id}");
-            if (envelope is { Success: true })
-            {
-                _confirming = false;
-                await OnDeleted.InvokeAsync(Initial);
-            }
-            else
-            {
-                _confirming = false;
-                _error = envelope?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.Configuration.Fallback"];
-            }
-        }
-        catch (Exception)
-        {
-            _confirming = false;
-            _error = L["Admin.Configuration.Fallback"];
-        }
-        finally { _busy = false; }
-    }
 }

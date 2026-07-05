@@ -5,8 +5,6 @@
 @page "/admin/admins/new"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Admins.Create)]
-@inject IStringLocalizer<Strings> L
-@inject NavigationManager Nav
 
 <PageTitle>@L["Admin.CreateUser.Title"] · SIMF</PageTitle>
 
@@ -18,18 +16,3 @@
     <CreateAdminForm OnSuccess="OnCreatedAsync"
                      OnCancel="OnBackToListAsync" />
 </section>
-
-@code {
-    private Task OnCreatedAsync(AdminCreateUserResponse _)
-    {
-        // The child form shows its own success banner; the page leaves
-        // navigation to the admin. (D-042 behaviour preserved.)
-        return Task.CompletedTask;
-    }
-
-    private Task OnBackToListAsync()
-    {
-        Nav.NavigateTo("/admin/admins");
-        return Task.CompletedTask;
-    }
-}

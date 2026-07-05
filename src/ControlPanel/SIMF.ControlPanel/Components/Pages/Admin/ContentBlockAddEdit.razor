@@ -5,8 +5,6 @@
    is required and editable on Add, read-only on Edit. Supersedes the inline
    SimfModal form that lived in ContentBlocksList. *@
 @inherits CrudAddEditFormBase<AdminContentBlockSummary>
-@inject IStringLocalizer<Strings> L
-@inject IJSRuntime JS
 
 @if (_error is not null)
 {
@@ -39,72 +37,3 @@
         }
     </div>
 </EditForm>
-
-@code {
-    private readonly Model _model = new();
-    private EditContext _editContext = default!;
-    private bool _busy;
-    private string? _error;
-
-    protected override void OnInitialized()
-    {
-        if (Initial is not null)
-        {
-            _model.Key = Initial.Key;
-            _model.Content = Initial.Content;
-            _model.ContentArabic = Initial.ContentArabic;
-            _model.IsActive = Initial.IsActive;
-        }
-        _editContext = new EditContext(_model);
-    }
-
-    private async Task HandleSubmitAsync()
-    {
-        if (_busy) return;
-        _error = null;
-
-        if (string.IsNullOrWhiteSpace(_model.Key) || _model.Key.Trim().Length > 128)
-        {
-            _error = L["Admin.ContentBlocks.Required"]; return;
-        }
-
-        _busy = true;
-        try
-        {
-            // Upsert-by-Key â€” one PUT serves both Add and Edit (the row is
-            // created if the Key is new, updated in place if it exists).
-            var envelope = await JS.InvokeAsync<ApiResult<AdminContentBlockSummary>>(
-                "simfAccount.putJson", "/account/api/admin/content-blocks",
-                new UpsertContentBlockRequest
-                {
-                    Key = _model.Key.Trim(),
-                    Content = _model.Content,
-                    ContentArabic = _model.ContentArabic,
-                    IsActive = _model.IsActive,
-                });
-
-            if (envelope is { Success: true, Data: not null })
-            {
-                await OnSuccess.InvokeAsync(envelope.Data);
-            }
-            else
-            {
-                _error = envelope?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.ContentBlocks.LoadFailed"];
-            }
-        }
-        catch (Exception)
-        {
-            _error = L["Admin.ContentBlocks.LoadFailed"];
-        }
-        finally { _busy = false; }
-    }
-
-    private sealed class Model
-    {
-        public string Key { get; set; } = string.Empty;
-        public string Content { get; set; } = string.Empty;
-        public string ContentArabic { get; set; } = string.Empty;
-        public bool IsActive { get; set; } = true;
-    }
-}
