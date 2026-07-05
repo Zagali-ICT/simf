@@ -54,6 +54,8 @@ public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
         var req = await db.SpeakerMeetingRequests.SingleAsync(r => r.SpeakerId == speakerId);
         Assert.Equal(WindowStart, req.SlotStartUtc);
         Assert.Equal(MeetingRequestStatus.Pending, req.Status);
+        // D-612 — the picked slot's availability window is persisted (was inert).
+        Assert.NotNull(req.AvailabilityWindowId);
     }
 
     [Fact]
@@ -109,7 +111,119 @@ public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
         Assert.True(notified);
     }
 
+    [Fact]
+    public async Task Accepting_a_second_request_for_an_already_accepted_slot_is_409()
+    {
+        // A1 — the accept-time slot re-check prevents double-booking: two VIPs may
+        // both hold Pending requests for one slot (only Accepted excludes it), but
+        // the second Accept is rejected.
+        var speakerId = await SeedSpeakerWithWindowAsync();
+        var (vip1, _) = await CreateVisitorAsync(vip: true);
+        var (vip2, _) = await CreateVisitorAsync(vip: true);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var submit1 = await PostAuthAsync(
+            $"/api/v1/app/speakers/{speakerId}/meeting-requests",
+            SlotRequest(WindowStart, WindowStart.AddMinutes(30)), vip1);
+        var submit2 = await PostAuthAsync(
+            $"/api/v1/app/speakers/{speakerId}/meeting-requests",
+            SlotRequest(WindowStart, WindowStart.AddMinutes(30)), vip2);
+        Assert.Equal(HttpStatusCode.OK, submit1.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, submit2.StatusCode);
+        var id1 = (await submit1.Content
+            .ReadFromJsonAsync<ApiResult<SpeakerMeetingRequestSubmitted>>())!.Data!.Id;
+        var id2 = (await submit2.Content
+            .ReadFromJsonAsync<ApiResult<SpeakerMeetingRequestSubmitted>>())!.Data!.Id;
+
+        var accept1 = await PostAuthAsync(
+            $"/api/v1/admin/speaker-meeting-requests/{id1}/respond",
+            new RespondToSpeakerMeetingRequestRequest { Status = MeetingRequestStatus.Accepted },
+            admin, HttpMethod.Put);
+        Assert.Equal(HttpStatusCode.OK, accept1.StatusCode);
+
+        var accept2 = await PostAuthAsync(
+            $"/api/v1/admin/speaker-meeting-requests/{id2}/respond",
+            new RespondToSpeakerMeetingRequestRequest { Status = MeetingRequestStatus.Accepted },
+            admin, HttpMethod.Put);
+        Assert.Equal(HttpStatusCode.Conflict, accept2.StatusCode);
+        var body = (await accept2.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SpeakerMeetingRequestInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Accepting_a_second_request_whose_slot_overlaps_an_accepted_one_is_409()
+    {
+        // A1 (review) — overlapping availability windows with different slot lengths
+        // can offer accepted slots that overlap but start at different times; the
+        // accept-time guard must use half-open overlap, not start-equality.
+        var winAStart = new DateTimeOffset(2030, 3, 1, 9, 0, 0, TimeSpan.Zero);   // [09:00,10:00]
+        var winBStart = new DateTimeOffset(2030, 3, 1, 9, 30, 0, TimeSpan.Zero);  // [09:30,10:30]
+        var speakerId = await SeedSpeakerWithTwoOverlappingWindowsAsync(winAStart, winBStart);
+        var (vip1, _) = await CreateVisitorAsync(vip: true);
+        var (vip2, _) = await CreateVisitorAsync(vip: true);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var submit1 = await PostAuthAsync(
+            $"/api/v1/app/speakers/{speakerId}/meeting-requests",
+            SlotRequest(winAStart, winAStart.AddMinutes(60)), vip1);
+        var submit2 = await PostAuthAsync(
+            $"/api/v1/app/speakers/{speakerId}/meeting-requests",
+            SlotRequest(winBStart, winBStart.AddMinutes(60)), vip2);
+        Assert.Equal(HttpStatusCode.OK, submit1.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, submit2.StatusCode);
+        var id1 = (await submit1.Content
+            .ReadFromJsonAsync<ApiResult<SpeakerMeetingRequestSubmitted>>())!.Data!.Id;
+        var id2 = (await submit2.Content
+            .ReadFromJsonAsync<ApiResult<SpeakerMeetingRequestSubmitted>>())!.Data!.Id;
+
+        var accept1 = await PostAuthAsync(
+            $"/api/v1/admin/speaker-meeting-requests/{id1}/respond",
+            new RespondToSpeakerMeetingRequestRequest { Status = MeetingRequestStatus.Accepted },
+            admin, HttpMethod.Put);
+        Assert.Equal(HttpStatusCode.OK, accept1.StatusCode);
+
+        // [09:30,10:30] overlaps the accepted [09:00,10:00] → rejected.
+        var accept2 = await PostAuthAsync(
+            $"/api/v1/admin/speaker-meeting-requests/{id2}/respond",
+            new RespondToSpeakerMeetingRequestRequest { Status = MeetingRequestStatus.Accepted },
+            admin, HttpMethod.Put);
+        Assert.Equal(HttpStatusCode.Conflict, accept2.StatusCode);
+    }
+
     // -- helpers --------------------------------------------------------------
+
+    private async Task<Guid> SeedSpeakerWithTwoOverlappingWindowsAsync(
+        DateTimeOffset winAStart, DateTimeOffset winBStart)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var speaker = new Speaker
+        {
+            Id = Guid.NewGuid(),
+            Code = "SPK-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+            Name = "Overlap Speaker", NameArabic = "متحدّث",
+            AllowsMeetingRequests = true,
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        db.Speakers.Add(speaker);
+        // Two overlapping 60-minute windows, each offering a single 60-minute slot
+        // that starts at a different time but overlaps the other.
+        db.SpeakerAvailabilityWindows.Add(new SpeakerAvailabilityWindow
+        {
+            Id = Guid.NewGuid(), SpeakerId = speaker.Id,
+            StartUtc = winAStart, EndUtc = winAStart.AddMinutes(60), SlotMinutes = 60,
+            IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+        });
+        db.SpeakerAvailabilityWindows.Add(new SpeakerAvailabilityWindow
+        {
+            Id = Guid.NewGuid(), SpeakerId = speaker.Id,
+            StartUtc = winBStart, EndUtc = winBStart.AddMinutes(60), SlotMinutes = 60,
+            IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+        });
+        await db.SaveChangesAsync();
+        return speaker.Id;
+    }
 
     private static SubmitSpeakerMeetingRequestRequest SlotRequest(
         DateTimeOffset start, DateTimeOffset end) =>

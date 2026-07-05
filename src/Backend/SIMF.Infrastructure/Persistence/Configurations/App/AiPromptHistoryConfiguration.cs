@@ -36,5 +36,14 @@ internal sealed class AiPromptHistoryConfiguration
         // (PromptId is the lookup; Version is the sort key).
         builder.HasIndex(x => new { x.AiPromptId, x.Version }).IsUnique();
         builder.HasIndex(x => x.CapturedAt);
+
+        // D-611 (Wave B) — AiPromptId becomes a real FK to AiPrompt (both on the
+        // App DB). RESTRICT, never Cascade: a snapshot must survive the live
+        // row's lifecycle (the live AiPrompt is soft-deleted, so Restrict never
+        // actually fires). The unique (AiPromptId, Version) index above covers it.
+        builder.HasOne<AiPrompt>()
+            .WithMany()
+            .HasForeignKey(x => x.AiPromptId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

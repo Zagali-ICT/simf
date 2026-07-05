@@ -20,6 +20,7 @@ public sealed class ListPublicSponsorsEndpoint(IPublicSponsorService service)
         Get("/app/sponsors");
         AllowAnonymous();
         Tags("Public");
+        Options(b => b.CacheOutput("PublicRead")); // A6d — 45s output cache (no-op under Testing)
     }
 
     public override async Task HandleAsync(CancellationToken ct) =>

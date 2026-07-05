@@ -96,9 +96,14 @@ public static class FileServicePolicies
                 AdminPermission: null, EncryptAtRest: true, Documents, FileOwnerEntityType.SpeakerPresentation,
                 OwnerRequired: false, Retention: null, DeletableDefault: true),
 
+            // EncryptAtRest:false (D-568 Wave C S7): a conference recording is
+            // Internal-tier (not PII), and Range/seek streaming (HTTP 206) needs a
+            // SEEKABLE plaintext file — AES-GCM is not seekable. This matches the
+            // posture of the legacy plaintext recording store it replaces (no
+            // security regression) and is streamed to disk (never buffered whole).
             [FileService.SessionRecording] = new(
                 FileService.SessionRecording, FileSensitivityTier.Internal, FileAccessClass.Authenticated,
-                AdminPermission: null, EncryptAtRest: true, Videos, FileOwnerEntityType.Session,
+                AdminPermission: null, EncryptAtRest: false, Videos, FileOwnerEntityType.Session,
                 OwnerRequired: false, Retention: null, DeletableDefault: true),
 
             // ── Public images (plaintext) ────────────────────────────────────

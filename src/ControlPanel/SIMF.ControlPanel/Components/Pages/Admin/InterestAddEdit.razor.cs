@@ -33,15 +33,12 @@ public partial class InterestAddEdit
         if (_busy) return;
         _error = null;
 
-        if (string.IsNullOrWhiteSpace(_model.Name) || _model.Name.Length > 128)
-        {
-            _error = L["Admin.Interests.Field.NameInvalid"]; return;
-        }
-        if (string.IsNullOrWhiteSpace(_model.NameArabic) || _model.NameArabic.Length > 128)
-        {
-            _error = L["Admin.Interests.Field.NameArabicInvalid"]; return;
-        }
-        if (!int.TryParse(_displayOrderInput, out var order) || order < 0)
+        // The name/Arabic-name/display-order rules are validated server-side by
+        // AdminCreate|UpdateInterestRequestValidator (bilingual, the single source
+        // of truth); on failure the specific reason is shown via
+        // DetailedMessageForCurrentCulture below. The only client-side step is
+        // parsing the display-order text into the int the request contract needs.
+        if (!int.TryParse(_displayOrderInput, out var order))
         {
             _error = L["Admin.Interests.Field.DisplayOrderInvalid"]; return;
         }
@@ -80,7 +77,7 @@ public partial class InterestAddEdit
             }
             else
             {
-                _error = envelope?.Error?.MessageForCurrentCulture()
+                _error = envelope?.Error?.DetailedMessageForCurrentCulture()
                     ?? L["Admin.Interests.Fallback"];
             }
         }

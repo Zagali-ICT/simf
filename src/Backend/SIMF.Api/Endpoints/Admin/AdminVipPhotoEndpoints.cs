@@ -93,8 +93,14 @@ public sealed class FetchVisitorVipPhotoEndpoint(IUserProfileService service)
 
     public override async Task HandleAsync(CancellationToken ct)
     {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+
         var photo = await service.ReadVipPhotoForSubjectAsync(
-            Route<Guid>("id"), UserType.Visitor, ct);
+            actorId, Route<Guid>("id"), UserType.Visitor, ct);
         if (photo is null)
         {
             await Send.NotFoundAsync(ct);

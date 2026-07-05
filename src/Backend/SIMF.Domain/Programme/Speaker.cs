@@ -27,6 +27,11 @@ public class Speaker : BaseAuditEntity
     /// "speakers by country" admin query stays cheap.</summary>
     public int? CountryId { get; set; }
 
+    /// <summary>A5 — navigation for <see cref="CountryId"/> (same FK), so the
+    /// public projection reads the country name through one join instead of a
+    /// separate dictionary-stitch round-trip.</summary>
+    public Country? Country { get; set; }
+
     /// <summary>D-153 / D-167 — when the speaker also holds a SIMF
     /// account, the owning <c>UserProfile.Id</c>. After D-167 moved
     /// <c>UserProfile</c> onto <c>SimfAppDbContext</c>, this is a real

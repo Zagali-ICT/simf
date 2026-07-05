@@ -4,7 +4,7 @@ namespace SIMF.Application.Programme.Abstractions;
 
 /// <summary>P2.3 — D-228 (FR-407): admin management of speaker presentation
 /// files (SIMF-FDS-004 §5.3). Each file links a speaker to a session and is
-/// stored out-of-row via <see cref="ISpeakerPresentationStorage"/>.</summary>
+/// stored out-of-row in the unified <c>StoredFile</c> store (D-568 Wave C S6).</summary>
 public interface IAdminSpeakerPresentationService
 {
     /// <summary>All active presentations for one speaker, newest first.</summary>

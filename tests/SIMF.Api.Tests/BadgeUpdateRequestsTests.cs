@@ -84,6 +84,35 @@ public sealed class BadgeUpdateRequestsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Re_deciding_a_responded_request_is_409_and_leaves_the_profile_untouched()
+    {
+        // A1 — an Accept after the request was already decided is rejected, so the
+        // JobTitle side effect cannot replay on a non-Pending request.
+        var (token, userId) = await SignInApprovedVisitorAsync();
+        await SeedProfileAsync(userId, jobTitle: "Lieutenant");
+        var submitted = await SubmitAsync(token, "Commander");
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var reject = await SendAuthAsync(HttpMethod.Put,
+            $"/api/v1/admin/badge-requests/{submitted.Id}/respond", admin,
+            new { status = (int)MeetingRequestStatus.Rejected });
+        Assert.Equal(HttpStatusCode.OK, reject.StatusCode);
+
+        var accept = await SendAuthAsync(HttpMethod.Put,
+            $"/api/v1/admin/badge-requests/{submitted.Id}/respond", admin,
+            new { status = (int)MeetingRequestStatus.Accepted });
+        Assert.Equal(HttpStatusCode.Conflict, accept.StatusCode);
+        var body = (await accept.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.AppRequestAlreadyResponded, body.Error!.Code);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var title = await db.UserProfiles.Where(p => p.UserId == userId)
+            .Select(p => p.JobTitle).SingleAsync();
+        Assert.Equal("Lieutenant", title);
+    }
+
     // -- helpers --------------------------------------------------------------
 
     private async Task<BadgeUpdateRequestSubmitted> SubmitAsync(string token, string title)

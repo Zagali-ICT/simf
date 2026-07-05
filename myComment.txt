@@ -1,0 +1,16 @@
+IN MOBILE APP:
+> fix in main:
+[x] in main , sessions btn goto page >  1388-8392
+[x] in main , session summary  1388-7621
+
+[x] add to speaker details, website link
+[x] in exibtor add country as in figma, and on click of details (sponsors, exibtors) page, the desgn is totally deferent than in figma.
+[x] confirm message design must be two btns and showed in same row.
+[x] add test youtub channel url for test first session
+[x] in main, request a bi-meeting, for vip > is a new page (with time slot selection), and we need also cancel otptio
+
+[x] in bottom button, Agenda > implement a New desgin as in figma as for both Agent and Agenda details 
+
+
+[x] on main now, the session show session summary, and session sumary show my session (in my profile)
+[x] request meeting , this in speakers list on slect one, add   select datetime from  Available time, no need for name,and then will show in cp and wait for approve

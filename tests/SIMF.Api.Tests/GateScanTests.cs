@@ -15,6 +15,7 @@ using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Gates;
+using SIMF.Domain.AccessControl;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
@@ -219,6 +220,51 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Returning_badge_re_scan_after_24h_window_refreshes_idempotency_without_500()
+    {
+        // A4 (D-592) — the returning-badge 500. A prior scan's idempotency row
+        // older than the 24h replay window is filtered out by TryReplayAsync, so
+        // the re-scan flows to RecordAllowed — whose insert must upsert the stale
+        // row in place, not blind-Add and collide on the composite PK (Key, GateId).
+        var (token, _) = await CreateAdminAsync();
+        var gate = await CreateGateAsync(token, allowedProfileTypeIds: null,
+            ownAsOperator: true, mode: DirectionMode.Both);
+        var qrId = await CreateVisitorWithQrAsync(approved: true);
+        var key = Guid.NewGuid().ToString();
+
+        // Seed the returning badge's stale idempotency row (older than 24h).
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            appDb.ScanIdempotencies.Add(new ScanIdempotency
+            {
+                Key = key,
+                GateId = gate.Id,
+                RequestHash = "stale-request-hash",
+                ResponseHash = "stale-response-hash",
+                ScanId = null,
+                StoredAt = _factory.Time.GetUtcNow() - TimeSpan.FromHours(25),
+            });
+            await appDb.SaveChangesAsync();
+        }
+
+        // The re-scan must succeed, not 500 on the PK collision.
+        var response = await PostScanAsync(gate.Id, qr: qrId, token, idempotencyKey: key);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var rows = appDb.ScanIdempotencies
+                .Where(r => r.Key == key && r.GateId == gate.Id)
+                .ToList();
+            // One row, refreshed in place (not duplicated, not left stale).
+            Assert.Single(rows);
+            Assert.NotEqual("stale-request-hash", rows[0].RequestHash);
+        }
+    }
+
+    [Fact]
     public async Task Both_mode_gate_honours_the_operator_requested_direction()
     {
         // D-509 — on a Both-mode gate the operator's دخول/خروج choice is honoured
@@ -311,6 +357,59 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
         var report = (await response.Content
             .ReadFromJsonAsync<ApiResult<OperatorDailyReport>>())!.Data!;
         Assert.True(report.Totals.Allowed >= 1);
+    }
+
+    [Fact]
+    public async Task My_daily_report_aggregates_the_full_day_past_the_500_row_cap()
+    {
+        // A8 — Totals + DenialBreakdown must cover the FULL day, not the Take(500)
+        // display grid. Seed 520 Allowed + 90 Denied (two reason codes) for one
+        // operator+gate today, then assert the aggregates are full-day-correct while
+        // the Rows grid stays capped at 500. Fails on the old count-the-capped-list
+        // code (it would report Allowed <= 500 and drop the tail of every bucket).
+        var (token, email) = await CreateAdminAsync();
+        var gate = await CreateGateAsync(token, allowedProfileTypeIds: null,
+            ownAsOperator: true, mode: DirectionMode.Both);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            var operatorId = (await users.FindByEmailAsync(email))!.Id;
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            // Seed at the service's clock so the scans fall inside today's window.
+            var now = _factory.Time.GetUtcNow();
+
+            GateScan Scan(ScanOutcome outcome, DenialReasonCode? reason) => new()
+            {
+                GateId = gate.Id,
+                ScannedByUserId = operatorId,
+                ScannedAtUtc = now,
+                Outcome = outcome,
+                Direction = ScanDirection.CheckIn,
+                DenialReasonCode = reason,
+                QrIdAtScan = "seed",
+                Source = ScanSource.Simulator,
+            };
+
+            var scans = new List<GateScan>();
+            for (var i = 0; i < 520; i++) { scans.Add(Scan(ScanOutcome.Allowed, null)); }
+            for (var i = 0; i < 60; i++)
+            { scans.Add(Scan(ScanOutcome.Denied, DenialReasonCode.HolderNotApproved)); }
+            for (var i = 0; i < 30; i++)
+            { scans.Add(Scan(ScanOutcome.Denied, DenialReasonCode.OutsideTimeWindow)); }
+            db.GateScans.AddRange(scans);
+            await db.SaveChangesAsync();
+        }
+
+        var response = await GetAuthAsync("/api/v1/app/gates/my-reports/today", token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var report = (await response.Content
+            .ReadFromJsonAsync<ApiResult<OperatorDailyReport>>())!.Data!;
+
+        Assert.Equal(520, report.Totals.Allowed);                    // full-day COUNT
+        Assert.Equal(90, report.Totals.Denied);
+        Assert.Equal(90, report.DenialBreakdown.Sum(b => b.Count));  // full-day GROUP BY
+        Assert.Equal(500, report.Rows.Count);                        // grid still capped
     }
 
     // -- Helpers --------------------------------------------------------------

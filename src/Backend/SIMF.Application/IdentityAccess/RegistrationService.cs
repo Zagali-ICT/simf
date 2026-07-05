@@ -84,7 +84,9 @@ public sealed class RegistrationService(
         {
             UserName = request.Email,
             Email = request.Email,
-            // TODO(SIMF-FDS-002): replaced by the real name at profile completion.
+            // Placeholder until the registrant provides a real name: D-609
+            // (UserProfileService.UpsertMineAsync) replaces this with the profile
+            // name at profile completion, overwriting only while it still == Email.
             DisplayName = request.Email,
             AccountState = AccountState.Registered,
             CreatedAt = now,

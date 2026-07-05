@@ -78,8 +78,10 @@ internal sealed class PublicArchiveService(
                 edition.Sessions,
                 edition.Speakers,
                 edition.CoverImageRelativePath,
-                // D-432 — the rich child lists, ordered; EF projects these as a
-                // single split query keyed on the FK index.
+                // D-432 — the rich child lists, each ordered by DisplayOrder. A6 —
+                // AsSplitQuery (below) emits one query per collection; without it
+                // the three sibling collection sub-selects JOIN into a single
+                // Media×SessionTitles×PastSpeakers cartesian rowset.
                 edition.Media
                     .OrderBy(m => m.DisplayOrder)
                     .Select(m => new PublicArchiveMediaItem(
@@ -94,6 +96,11 @@ internal sealed class PublicArchiveService(
                     .Select(p => new PublicArchivePastSpeaker(
                         p.NameEn, p.NameAr, p.PhotoRelativePath, p.CountryId))
                     .ToList()))
+            // A6 — split the projection's collection sub-selects (see above). Safe:
+            // single-row root (no Skip/Take) + each child carries an explicit
+            // OrderBy(DisplayOrder), so every split query is deterministically
+            // ordered and the wire output is byte-identical.
+            .AsSplitQuery()
             .SingleOrDefaultAsync(cancellationToken);
     }
 }

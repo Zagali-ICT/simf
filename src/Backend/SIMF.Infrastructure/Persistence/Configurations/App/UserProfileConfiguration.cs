@@ -93,6 +93,15 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
             .HasForeignKey(profile => profile.OrganisationId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // D-611 (Wave B) — الإقليم / region. Real DB FK to the Region lookup,
+        // same shape as the Organisation FK (nullable + Restrict); persists the
+        // region pick that previously had nowhere to live.
+        builder.HasIndex(profile => profile.RegionId);
+        builder.HasOne(profile => profile.Region)
+            .WithMany()
+            .HasForeignKey(profile => profile.RegionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // P9 — M-to-M with Interests (D-050). Composite-PK join table
         // UserProfileInterests, both FKs Cascade so deleting either side
         // cleans up the join row.

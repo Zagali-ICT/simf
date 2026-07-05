@@ -53,6 +53,64 @@ public sealed class NotificationTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task List_filters_by_kinds()
+    {
+        // A8 — Filters["kinds"] (comma-separated NotificationKind names) narrows the
+        // list server-side, and Total reflects the filter (count-after-filter).
+        var (token, userId) = await CreateUserAndSignInAsync();
+        var now = DateTimeOffset.UtcNow;
+        await SeedAsync(userId, "welcome", now.AddMinutes(-3),
+            kind: NotificationKind.AccountWelcome);
+        await SeedAsync(userId, "approved", now.AddMinutes(-2),
+            kind: NotificationKind.AccountApproved);
+        await SeedAsync(userId, "submitted", now.AddMinutes(-1),
+            kind: NotificationKind.AccountProfileSubmitted);
+
+        var response = await PostAuthAsync("/api/v1/app/account/notifications/list",
+            new GridQuery
+            {
+                Top = 50,
+                Filters = new Dictionary<string, string>
+                {
+                    ["kinds"] = "AccountWelcome,AccountApproved",
+                },
+            }, token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var page = (await response.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<NotificationDto>>>())!.Data!;
+
+        Assert.Equal(2, page.Items.Count);
+        Assert.Equal(2, page.Total); // Total reflects the filter, not the whole set
+        Assert.All(page.Items, i =>
+            Assert.Contains(i.Kind, new[] { "AccountWelcome", "AccountApproved" }));
+        Assert.DoesNotContain(page.Items, i => i.Kind == "AccountProfileSubmitted");
+    }
+
+    [Theory]
+    [InlineData("NotARealKind")]  // non-numeric junk — Enum.TryParse rejects it
+    [InlineData("99999")]          // numeric UNDEFINED value — TryParse accepts, IsDefined rejects
+    public async Task List_with_an_unknown_kind_token_is_ignored_not_an_error(string junkToken)
+    {
+        // A8 — an unknown kind token is dropped (forward-compat), never a 400; with
+        // no recognisable kind the filter is treated as absent (all kinds returned).
+        // The numeric case guards the Enum.IsDefined fix: without it "99999" would
+        // survive as a phantom kind and wrongly return an EMPTY list, not all kinds.
+        var (token, userId) = await CreateUserAndSignInAsync();
+        await SeedAsync(userId, "a", DateTimeOffset.UtcNow, kind: NotificationKind.AccountWelcome);
+
+        var response = await PostAuthAsync("/api/v1/app/account/notifications/list",
+            new GridQuery
+            {
+                Top = 50,
+                Filters = new Dictionary<string, string> { ["kinds"] = junkToken },
+            }, token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var page = (await response.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<NotificationDto>>>())!.Data!;
+        Assert.Single(page.Items); // all-unknown → no filter → the seeded row returns
+    }
+
+    [Fact]
     public async Task UnreadCount_only_counts_the_actors_unread_rows()
     {
         var (token, userId) = await CreateUserAndSignInAsync();
@@ -160,7 +218,8 @@ public sealed class NotificationTests : IClassFixture<SimfApiFactory>
 
     private async Task<Guid> SeedAsync(
         Guid userId, string title, DateTimeOffset createdAt,
-        DateTimeOffset? readAt = null)
+        DateTimeOffset? readAt = null,
+        NotificationKind kind = NotificationKind.AccountProfileSubmitted)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
@@ -168,7 +227,7 @@ public sealed class NotificationTests : IClassFixture<SimfApiFactory>
         {
             Id = Guid.NewGuid(),
             UserId = userId,
-            Kind = NotificationKind.AccountProfileSubmitted,
+            Kind = kind,
             Title = title,
             TitleArabic = title,
             Body = "body",

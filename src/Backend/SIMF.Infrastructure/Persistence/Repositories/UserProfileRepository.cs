@@ -92,6 +92,20 @@ internal sealed class UserProfileRepository(
         return string.IsNullOrEmpty(path) ? null : path;
     }
 
+    public async Task<(string StorageKey, string? ContentType, bool IsEncrypted)?> GetOwnerScopedFileAsync(
+        FileService service, Guid ownerUserId, CancellationToken cancellationToken = default)
+    {
+        var row = await appDbContext.StoredFiles
+            .AsNoTracking()
+            .Where(f => f.Service == service
+                && f.OwnerEntityId == ownerUserId && f.IsActive && f.StorageKey != null)
+            .OrderByDescending(f => f.CreatedAt)
+            .ThenByDescending(f => f.Id)
+            .Select(f => new { f.StorageKey, f.ContentType, f.IsEncrypted })
+            .FirstOrDefaultAsync(cancellationToken);
+        return row is null ? null : (row.StorageKey!, row.ContentType, row.IsEncrypted);
+    }
+
     public Task<ProfileCompletenessFacts?> GetCompletenessFactsAsync(
         Guid userId, CancellationToken cancellationToken = default) =>
         appDbContext.UserProfiles
@@ -162,6 +176,12 @@ internal sealed class UserProfileRepository(
         appDbContext.Organisations
             .AsNoTracking()
             .AnyAsync(organisation => organisation.Id == id && organisation.IsActive, cancellationToken);
+
+    public Task<bool> RegionExistsActiveAsync(
+        Guid id, CancellationToken cancellationToken = default) =>
+        appDbContext.Regions
+            .AsNoTracking()
+            .AnyAsync(region => region.Id == id && region.IsActive, cancellationToken);
 
     public async Task<IReadOnlyList<PendingAdminRecipient>> ListApprovedAdminsAsync(
         CancellationToken cancellationToken = default) =>

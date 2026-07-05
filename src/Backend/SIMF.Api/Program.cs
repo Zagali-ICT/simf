@@ -61,6 +61,9 @@ builder.Services.AddInfrastructure(builder.Configuration);
 // A1-19 (NCA) — daily dormant-account disable sweep (no-op until configured).
 builder.Services.AddHostedService<SIMF.Api.HostedServices.DormantAccountSweepService>();
 
+// A4 (NCA data-minimisation) — daily retention purge of dead security artifacts.
+builder.Services.AddHostedService<SIMF.Api.HostedServices.RetentionSweepWorker>();
+
 // The audit log reads the request context; the API supplies it from HttpContext.
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IRequestContext, HttpRequestContext>();
@@ -211,6 +214,28 @@ builder.Services.AddRateLimiter(rateLimiter =>
 // keys off the route segment — every App route is under /app/* and every CP
 // route under /admin/* (SIMF-API-001 §4).
 builder.Services.AddFastEndpoints();
+
+// A6d — output caching for the anonymous public read endpoints. The "PublicRead"
+// policy caches for 45s and varies by ALL query keys ("*") so paged / filtered /
+// ?day= variants never share an entry. Under the Testing environment the policy
+// is a no-op AND the middleware below is not added, so the integration suite
+// always reads fresh (every create → public-read → mutate → public-read stays
+// correct). Framework-provided by the Web SDK — no package reference. The service
+// is registered unconditionally because app.UseOutputCache() throws if it is
+// missing; only the middleware is environment-gated.
+builder.Services.AddOutputCache(options =>
+    options.AddPolicy("PublicRead", policy =>
+    {
+        if (builder.Environment.IsEnvironment("Testing"))
+        {
+            policy.NoCache();
+        }
+        else
+        {
+            policy.Expire(TimeSpan.FromSeconds(45)).SetVaryByQuery("*");
+        }
+    }));
+
 builder.Services.SwaggerDocument(options =>
 {
     options.DocumentSettings = settings =>
@@ -460,6 +485,15 @@ app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// A6d — output caching runs after CORS/auth and before the endpoints, so a cache
+// hit on an anonymous public read short-circuits endpoint execution. Disabled
+// entirely under Testing (paired with the no-op policy above) so the suite never
+// serves a stale cached read.
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    app.UseOutputCache();
+}
 
 app.UseFastEndpoints(config =>
 {

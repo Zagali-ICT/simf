@@ -212,6 +212,64 @@ public sealed class AdminArchiveTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Admin_detail_with_multiple_children_returns_each_list_intact()
+    {
+        // A6 — the admin detail read AsSplitQuery's its three SIBLING child
+        // collections (Gallery + SessionTitles + PastSpeakers). Populating all
+        // three with multiple rows proves the split returns each list at its
+        // authored count and order; a single-query cartesian would multiply them
+        // (3×2×2). No sibling test seeds children, so this is the first exercise
+        // of that path. 2011 is outside the seeded range (2022–2025).
+        var admin = await CreateAdministratorAndSignInAsync();
+        var create = await PostAuthAsync("/api/v1/admin/archive",
+            new CreateArchiveEditionRequest
+            {
+                Year = 2011,
+                TitleEn = "SIMF 2011",
+                TitleAr = "سيمف 2011",
+                Attendees = 100,
+                Sessions = 10,
+                Speakers = 12,
+                Gallery = new List<ArchiveMediaItemInput>
+                {
+                    new() { Kind = 0, Url = "archive/2011/a.png", DisplayOrder = 0 },
+                    new() { Kind = 0, Url = "archive/2011/b.png", DisplayOrder = 1 },
+                    new() { Kind = 1, Url = "archive/2011/c.mp4", DisplayOrder = 2 },
+                },
+                SessionTitles = new List<ArchiveSessionTitleInput>
+                {
+                    new() { TitleEn = "Opening", TitleAr = "الافتتاح", DisplayOrder = 0 },
+                    new() { TitleEn = "Closing", TitleAr = "الختام", DisplayOrder = 1 },
+                },
+                PastSpeakers = new List<ArchivePastSpeakerInput>
+                {
+                    new() { NameEn = "Alpha", NameAr = "ألفا", DisplayOrder = 0 },
+                    new() { NameEn = "Beta", NameAr = "بيتا", DisplayOrder = 1 },
+                },
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+        var created = (await create.Content
+            .ReadFromJsonAsync<ApiResult<AdminArchiveEditionDetail>>())!.Data!;
+
+        var get = await GetAuthAsync($"/api/v1/admin/archive/{created.Id}", admin);
+        Assert.Equal(HttpStatusCode.OK, get.StatusCode);
+        var detail = (await get.Content
+            .ReadFromJsonAsync<ApiResult<AdminArchiveEditionDetail>>())!.Data!;
+
+        // Each child list returns at its authored count (no cartesian multiplication)
+        // and in ascending DisplayOrder (ToDetail re-sorts by DisplayOrder).
+        Assert.Equal(
+            new[] { "archive/2011/a.png", "archive/2011/b.png", "archive/2011/c.mp4" },
+            detail.Gallery!.Select(g => g.Url).ToArray());
+        Assert.Equal(
+            new[] { "Opening", "Closing" },
+            detail.SessionTitles!.Select(s => s.TitleEn).ToArray());
+        Assert.Equal(
+            new[] { "Alpha", "Beta" },
+            detail.PastSpeakers!.Select(p => p.NameEn).ToArray());
+    }
+
     // -- helpers --
 
     private async Task<string> CreateAdministratorAndSignInAsync()

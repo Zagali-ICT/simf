@@ -30,5 +30,12 @@ internal sealed class DeviceKeyConfiguration : IEntityTypeConfiguration<DeviceKe
         // The hot-path lookup is "list my non-revoked keys" — covered
         // by this composite.
         builder.HasIndex(k => new { k.UserId, k.RevokedAt });
+
+        // D-610 (Wave B) — at most one ACTIVE (non-revoked) key per (user,
+        // public-key): a filtered unique so re-enrolling a rotated key still
+        // works after the old one is revoked (RevokedAt set → excluded).
+        builder.HasIndex(k => new { k.UserId, k.PublicKey })
+            .IsUnique()
+            .HasFilter("[RevokedAt] IS NULL");
     }
 }

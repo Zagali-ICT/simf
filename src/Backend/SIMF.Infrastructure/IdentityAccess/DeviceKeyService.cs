@@ -125,8 +125,7 @@ internal sealed class DeviceKeyService(
         // Single-use: consume the step-up code now that the key is committed.
         if (stepUpCode is not null)
         {
-            stepUpCode.ConsumedAt = now;
-            await accountCodes.UpdateAsync(stepUpCode, cancellationToken);
+            await accountCodes.TryConsumeAsync(stepUpCode.Id, now, cancellationToken);
         }
 
         await auditLog.WriteAsync(new AuditEntry
@@ -181,8 +180,7 @@ internal sealed class DeviceKeyService(
             callerUserId, AccountCodePurpose.BiometricEnrolStepUp, cancellationToken);
         if (previous is not null)
         {
-            previous.ConsumedAt = now;
-            await accountCodes.UpdateAsync(previous, cancellationToken);
+            await accountCodes.TryConsumeAsync(previous.Id, now, cancellationToken);
         }
 
         // Store only the keyed hash; the plaintext is emailed and never persisted.
@@ -303,11 +301,27 @@ internal sealed class DeviceKeyService(
             return null;
         }
 
-        // Consume the challenge so the same signature cannot be replayed.
-        deviceKey.CurrentChallenge = null;
-        deviceKey.ChallengeExpiresAt = null;
-        deviceKey.LastUsedAt = timeProvider.GetUtcNow();
-        await identityDbContext.SaveChangesAsync(cancellationToken);
+        // Consume the challenge so the same signature cannot be replayed. The
+        // atomic conditional UPDATE (only the row still holding THIS challenge is
+        // cleared) is the single-use gate: a concurrent replay within the window
+        // clears nothing (affected == 0) and is rejected before any token mint.
+        var consumedAt = timeProvider.GetUtcNow();
+        var challengeConsumed = await identityDbContext.DeviceKeys
+            .Where(k => k.Id == deviceKey.Id
+                && k.CurrentChallenge == deviceKey.CurrentChallenge)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(k => k.CurrentChallenge, (string?)null)
+                    .SetProperty(k => k.ChallengeExpiresAt, (DateTimeOffset?)null)
+                    .SetProperty(k => k.LastUsedAt, (DateTimeOffset?)consumedAt),
+                cancellationToken);
+        if (challengeConsumed != 1)
+        {
+            await AuditFailureAsync(request.DeviceKeyId,
+                ErrorCodes.DeviceKeyChallengeInvalid, "already_consumed",
+                cancellationToken);
+            return null;
+        }
 
         var user = await accounts.FindByIdAsync(deviceKey.UserId, cancellationToken);
         if (user is null || user.AccountState == AccountState.Disabled)
@@ -490,8 +504,7 @@ internal sealed class DeviceKeyService(
 
         if (code.ExpiresAt <= now)
         {
-            code.ConsumedAt = now;
-            await accountCodes.UpdateAsync(code, cancellationToken);
+            await accountCodes.TryConsumeAsync(code.Id, now, cancellationToken);
             await AuditStepUpRejectedAsync(callerUserId,
                 ErrorCodes.BiometricStepUpInvalid, "expired", cancellationToken);
             throw new ApiException(
@@ -502,14 +515,16 @@ internal sealed class DeviceKeyService(
 
         if (!CodesMatch(code.Code, AccountCodeHasher.Hash(suppliedCode.Trim())))
         {
-            code.AttemptCount += 1;
             // Burn the code once the attempt budget is spent so the 10^6 code
-            // space can't be ground down across repeated register calls.
-            if (code.AttemptCount >= MaxStepUpAttempts)
+            // space can't be ground down across repeated register calls — the
+            // increment and the burn are atomic so concurrent wrong tries can't
+            // lose an increment and stretch the budget.
+            var attempts = await accountCodes.IncrementAttemptCountAsync(
+                code.Id, cancellationToken);
+            if (attempts >= MaxStepUpAttempts)
             {
-                code.ConsumedAt = now;
+                await accountCodes.TryConsumeAsync(code.Id, now, cancellationToken);
             }
-            await accountCodes.UpdateAsync(code, cancellationToken);
             await AuditStepUpRejectedAsync(callerUserId,
                 ErrorCodes.BiometricStepUpInvalid, "mismatch", cancellationToken);
             throw new ApiException(

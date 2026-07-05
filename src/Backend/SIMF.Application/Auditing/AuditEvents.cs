@@ -122,8 +122,12 @@ public static class AuditEvents
     public const string UserProfileSaved = "UserProfile.Saved";
     public const string UserProfileIdImageUploaded = "UserProfile.IdImageUploaded";
     public const string UserProfileIdImageRejected = "UserProfile.IdImageRejected";
+    // A9 (PII) — every admin READ/disclosure of a subject's ID-document image.
+    public const string UserProfileIdImageViewed = "UserProfile.IdImageViewed";
     // V-1 (D-429) — VVIP/VIP welcome photo (موج) upload.
     public const string UserProfileVipPhotoUploaded = "UserProfile.VipPhotoUploaded";
+    // D-568 (Wave C S4, PII) — every admin READ/disclosure of a subject's VIP photo.
+    public const string UserProfileVipPhotoViewed = "UserProfile.VipPhotoViewed";
 
     // Interests (P9 — D-050; الاهتمامات)
     public const string InterestCreated = "Interest.Created";
@@ -190,8 +194,10 @@ public static class AuditEvents
     // a denied private download (SAMA E-16/17 / NCA ECC 2-12). Public-file reads
     // are not audited per-row (they would flood the log).
     public const string FileUploaded = "File.Uploaded";
+    public const string FileLinked = "File.Linked";
     public const string FileDownloaded = "File.Downloaded";
     public const string FileAccessDenied = "File.AccessDenied";
+    public const string FileIntegrityFailed = "File.IntegrityFailed";
     public const string FileDeleted = "File.Deleted";
     public const string FileSecurelyDestroyed = "File.SecurelyDestroyed";
 
@@ -256,17 +262,6 @@ public static class AuditEvents
     // P3.3 — D-212: Scientific-Committee pipeline actions.
     public const string SessionQuestionApproved = "SessionQuestion.Approved";
     public const string SessionQuestionEscalated = "SessionQuestion.Escalated";
-
-    // Audience comments (D-199, Mockup page 28 — public submit + AI-filter
-    // landing state + admin moderation; distinct from SessionQuestion)
-    public const string SessionCommentSubmitted = "SessionComment.Submitted";
-    public const string SessionCommentApproved = "SessionComment.Approved";
-    public const string SessionCommentHidden = "SessionComment.Hidden";
-    public const string SessionCommentRepended = "SessionComment.Repended";
-    public const string SessionCommentDeactivated = "SessionComment.Deactivated";
-    // B5 — D-223: per-user likes on audience comments.
-    public const string SessionCommentLiked = "SessionComment.Liked";
-    public const string SessionCommentUnliked = "SessionComment.Unliked";
 
     // Networking connections (B6 — D-224: visitor-to-visitor request/accept).
     public const string ConnectionRequested = "Connection.Requested";

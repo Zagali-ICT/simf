@@ -43,6 +43,12 @@ public sealed class SpeakerMeetingRequest
     public DateTimeOffset? SlotStartUtc { get; set; }
     public DateTimeOffset? SlotEndUtc { get; set; }
 
+    /// <summary>D-611 (Wave B) — the <see cref="SpeakerAvailabilityWindow"/> the
+    /// picked slot belongs to, now persisted as a real FK (OnDelete SetNull)
+    /// instead of only being validated at submit time. Null for a legacy
+    /// topic-only request or when the window is later removed.</summary>
+    public Guid? AvailabilityWindowId { get; set; }
+
     /// <summary>Lifecycle state. Pending on create; Accepted or Rejected
     /// after an admin reviews.</summary>
     public MeetingRequestStatus Status { get; set; } = MeetingRequestStatus.Pending;

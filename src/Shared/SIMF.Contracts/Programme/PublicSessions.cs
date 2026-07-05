@@ -39,7 +39,13 @@ public sealed record PublicSessionListItem(
     IReadOnlyList<PublicSessionSpeaker>? Speakers = null,
     // D-452 (Figma 883:2308 type tabs): the session's kind (Workshop / Session /
     // Event). Null = untyped. Appended (append-only, D-219).
-    SessionType? Type = null);
+    SessionType? Type = null,
+    // A8 (D-237) — true when this session has an ACTIVE SessionSummary carrying a
+    // PublishedAt stamp (the محضر the app renders), so the agenda can badge
+    // "summary available" without a per-session GET /summary probe. This is the
+    // summary's OWN editorial publish state, orthogonal to Status. Appended
+    // (append-only, D-219).
+    bool HasPublishedSummary = false);
 
 /// <summary>D-199 — envelope for the public agenda list.</summary>
 public sealed record PublicSessions(IReadOnlyList<PublicSessionListItem> Items);

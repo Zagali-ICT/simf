@@ -34,10 +34,12 @@ internal sealed class SeatReservationConfiguration : IEntityTypeConfiguration<Se
         // default (not a persisted model concern).
         builder.Property(x => x.RejectionReason).HasMaxLength(512);
 
+        // D-611 (Wave B) — Restrict (was Cascade): deleting a Session must not
+        // silently wipe its seat reservations; release/cancel them explicitly.
         builder.HasOne(x => x.Session)
             .WithMany()
             .HasForeignKey(x => x.SessionId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
 
         // Active-seat uniqueness — a seat can be re-reserved after release.
         // D-485: only seat-specific rows participate (RowLabel IS NOT NULL), so

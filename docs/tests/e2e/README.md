@@ -97,7 +97,6 @@ not reused. Each page owns a unique 3–4 letter namespace.
 |------|------|-----------|
 | `/admin/question-queue` | [`cp-admin-question-queue.md`](cp-admin-question-queue.md) | E2E-QQU-001..015 |
 | `/sessions/{id}/moderate` | [`cp-session-moderate.md`](cp-session-moderate.md) | E2E-MOD-001..012 |
-| `/admin/comments-moderation` | [`cp-admin-comments-moderation.md`](cp-admin-comments-moderation.md) | E2E-CMT-001..018 |
 | `/admin/ratings` | [`cp-admin-ratings.md`](cp-admin-ratings.md) | E2E-RAT-001..012 |
 | `/admin/rating-config` | [`cp-admin-rating-config.md`](cp-admin-rating-config.md) | E2E-RCFG-001..015 |
 | `/admin/session-summaries` | [`cp-admin-session-summaries.md`](cp-admin-session-summaries.md) | E2E-SUM-001..022 |

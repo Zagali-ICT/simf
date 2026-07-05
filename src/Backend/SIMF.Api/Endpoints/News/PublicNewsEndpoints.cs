@@ -23,6 +23,9 @@ public sealed class ListPublicNewsEndpoint(IPublicNewsService service)
         Get("/app/news");
         AllowAnonymous();
         Tags("Public");
+        // A6d — 45s output cache; the policy varies by all query keys so
+        // ?page/?pageSize variants keep distinct entries (no-op under Testing).
+        Options(b => b.CacheOutput("PublicRead"));
     }
 
     public override async Task HandleAsync(ListPublicNewsQuery req, CancellationToken ct) =>

@@ -45,10 +45,8 @@ formatted `"0.0"` invariant.
 | 8 | `NewsArticles` | News articles | الأخبار | App `News` where `IsActive` |
 | 9 | `MediaItems` | Media items | عناصر الوسائط | App `MediaItems` where `IsActive` |
 | 10 | `Delegations` | Delegations | الوفود | App `Delegations` where `IsActive` |
-| 11 | `CommentsApproved` | Comments approved | التعليقات المعتمدة | App `SessionComments` `IsActive && Approved` |
-| 12 | `CommentsPending` | Comments pending | التعليقات المعلقة | App `SessionComments` `IsActive && Pending` |
-| 13 | `RatingsCount` | Total ratings | إجمالي التقييمات | App `Ratings` where `IsActive` |
-| 14 | `AverageRating` | Average rating | متوسط التقييم | `AVG(Stars)` over active `Ratings`, null → `0.0` |
+| 11 | `RatingsCount` | Total ratings | إجمالي التقييمات | App `Ratings` where `IsActive` |
+| 12 | `AverageRating` | Average rating | متوسط التقييم | `AVG(Stars)` over active `Ratings`, null → `0.0` |
 
 ## Coverage matrix
 
@@ -104,8 +102,6 @@ Scenario: All fourteen stat tiles render with live counts
     | News articles      | NewsArticles       |
     | Media items        | MediaItems         |
     | Delegations        | Delegations        |
-    | Comments approved  | CommentsApproved   |
-    | Comments pending   | CommentsPending    |
     | Total ratings      | RatingsCount       |
     | Average rating     | AverageRating      |
   And each count tile shows the integer value from the payload (invariant culture, no thousands separator)
@@ -150,7 +146,7 @@ Scenario: A successful response with a null payload shows the empty state
 
 ```gherkin
 Scenario: A fresh event with no data still renders tiles (not the empty state)
-  Given the event has no attendees, sessions, speakers, booths, sponsors, news, media, delegations, comments or ratings
+  Given the event has no attendees, sessions, speakers, booths, sponsors, news, media, delegations or ratings
   And the API returns Success:true with every count = 0 and AverageRating = 0
   When the administrator opens /admin/statistics
   Then all 14 SimfStatCard tiles still render (the payload is non-null)

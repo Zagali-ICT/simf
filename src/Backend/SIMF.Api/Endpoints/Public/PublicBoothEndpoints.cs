@@ -17,6 +17,7 @@ public sealed class ListPublicBoothsEndpoint(IPublicBoothService service)
         Get("/app/booths");
         AllowAnonymous();
         Tags("Public");
+        Options(b => b.CacheOutput("PublicRead")); // A6d — 45s output cache (no-op under Testing)
     }
 
     public override async Task HandleAsync(CancellationToken ct) =>

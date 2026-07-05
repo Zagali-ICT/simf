@@ -83,11 +83,27 @@ internal sealed class SpeakerMeetingRequestService(
                 "هذا المتحدّث لا يقبل طلبات المقابلة.");
         }
 
+        // A1 — one open request per (requester, speaker): a duplicate Pending
+        // submission floods the review queue and (for VIP slots) stacks rival
+        // claims on one slot. The DB filtered-unique backstop is a Wave B item.
+        var hasOpenRequest = await appDbContext.SpeakerMeetingRequests.AsNoTracking()
+            .AnyAsync(r => r.RequestedByUserId == requesterUserId
+                && r.SpeakerId == speakerId
+                && r.Status == MeetingRequestStatus.Pending, cancellationToken);
+        if (hasOpenRequest)
+        {
+            throw new ApiException(
+                ErrorCodes.AppRequestDuplicatePending, 409,
+                "You already have a pending meeting request for this speaker.",
+                "لديك بالفعل طلب مقابلة قيد المراجعة لهذا المتحدّث.");
+        }
+
         // D-474 (#11) — the VIP slot flow: when the requester picked a slot, they
         // must be a VIP/VVIP and the slot must still be free. A null slot is the
         // legacy topic-only request (any approved attendee).
         DateTimeOffset? slotStart = null;
         DateTimeOffset? slotEnd = null;
+        Guid? availabilityWindowId = null;
         if (request.SlotStartUtc is { } pickedStart)
         {
             if (request.SlotEndUtc is not { } pickedEnd || pickedEnd <= pickedStart)
@@ -114,6 +130,15 @@ internal sealed class SpeakerMeetingRequestService(
             }
             slotStart = pickedStart;
             slotEnd = pickedEnd;
+
+            // D-612 — persist which availability window the picked slot came from
+            // (the D-611 SpeakerMeetingRequests.AvailabilityWindowId FK, SetNull).
+            // The slot falls inside exactly one active window; resolve it by range.
+            availabilityWindowId = await appDbContext.SpeakerAvailabilityWindows.AsNoTracking()
+                .Where(w => w.SpeakerId == speakerId && w.IsActive
+                    && w.StartUtc <= pickedStart && w.EndUtc >= pickedEnd)
+                .Select(w => (Guid?)w.Id)
+                .FirstOrDefaultAsync(cancellationToken);
         }
 
         var now = timeProvider.GetUtcNow();
@@ -126,6 +151,7 @@ internal sealed class SpeakerMeetingRequestService(
             Subject = subject,
             SlotStartUtc = slotStart,
             SlotEndUtc = slotEnd,
+            AvailabilityWindowId = availabilityWindowId,
             Status = MeetingRequestStatus.Pending,
             CreatedAt = now,
         };
@@ -262,7 +288,7 @@ internal sealed class SpeakerMeetingRequestService(
         RespondToSpeakerMeetingRequestRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (request.Status == MeetingRequestStatus.Pending)
+        if (request.Status is not (MeetingRequestStatus.Accepted or MeetingRequestStatus.Rejected))
         {
             throw new ApiException(
                 ErrorCodes.SpeakerMeetingRequestStatusInvalid, 400,
@@ -275,6 +301,41 @@ internal sealed class SpeakerMeetingRequestService(
                 ErrorCodes.SpeakerMeetingRequestNotFound, 404,
                 "Speaker meeting request not found.",
                 "لم يتم العثور على طلب مقابلة المتحدّث.");
+
+        // A1 — only a Pending request may be decided. Without this guard a second
+        // Accept could double-book a VIP slot and any prior decision could be
+        // silently overwritten.
+        if (req.Status != MeetingRequestStatus.Pending)
+        {
+            throw new ApiException(
+                ErrorCodes.AppRequestAlreadyResponded, 409,
+                "This meeting request has already been responded to.",
+                "تمت معالجة طلب المقابلة هذا بالفعل.");
+        }
+
+        // A1 — accepting a slot-bearing request must re-check the slot is still
+        // free among Accepted rows (the submit-time check can go stale). Use the
+        // same half-open overlap the availability layer uses (SpeakerAvailability
+        // Service), not start-equality — overlapping windows with different slot
+        // lengths can produce accepted slots that overlap but start at different
+        // times. The DB filtered-unique/overlap backstop is a Wave B item.
+        if (request.Status == MeetingRequestStatus.Accepted
+            && req.SlotStartUtc is { } slotStart && req.SlotEndUtc is { } slotEnd)
+        {
+            var slotTaken = await appDbContext.SpeakerMeetingRequests.AsNoTracking()
+                .AnyAsync(r => r.Id != req.Id
+                    && r.SpeakerId == req.SpeakerId
+                    && r.Status == MeetingRequestStatus.Accepted
+                    && r.SlotStartUtc != null && r.SlotEndUtc != null
+                    && r.SlotStartUtc < slotEnd && slotStart < r.SlotEndUtc, cancellationToken);
+            if (slotTaken)
+            {
+                throw new ApiException(
+                    ErrorCodes.SpeakerMeetingRequestInvalid, 409,
+                    "That slot is no longer available.",
+                    "لم تعد هذه الفترة متاحة.");
+            }
+        }
 
         var now = timeProvider.GetUtcNow();
         req.Status = request.Status;
@@ -313,15 +374,17 @@ internal sealed class SpeakerMeetingRequestService(
         return await LoadDetailAsync(id, cancellationToken);
     }
 
-    // D-474 — VIP gate: the requester's profile-type name is VIP/VVIP.
+    // D-474 / D-611 — VIP gate: the requester's profile type opts into VIP
+    // meeting slots. D-611 replaced the former brittle "profile-type Name
+    // contains 'VIP'" substring test with the explicit
+    // ProfileType.AllowsVipMeetingSlots flag (the seeder sets it for VVIP + VIP),
+    // so a future type whose name merely embeds "VIP" no longer matches by accident.
     private async Task<bool> IsVipAsync(Guid userId, CancellationToken cancellationToken)
     {
-        var typeName = await appDbContext.UserProfiles.AsNoTracking()
+        return await appDbContext.UserProfiles.AsNoTracking()
             .Where(p => p.UserId == userId && p.ProfileTypeId != null)
-            .Select(p => p.ProfileType!.Name)
+            .Select(p => p.ProfileType!.AllowsVipMeetingSlots)
             .SingleOrDefaultAsync(cancellationToken);
-        return typeName is not null
-            && typeName.ToUpperInvariant().Contains("VIP");
     }
 
     // D-474 — in-app notify the requester of the decision; on Accept also email the

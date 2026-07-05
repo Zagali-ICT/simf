@@ -4,6 +4,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
+using SIMF.Application.Files.Abstractions;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -24,7 +25,7 @@ internal sealed class AdminSessionService(
     SimfAppDbContext dbContext,
     IAuditLog auditLog,
     TimeProvider timeProvider,
-    ISessionRecordingStorage recordingStorage,
+    IFileService fileService,
     ILogger<AdminSessionService> logger) : IAdminSessionService
 {
     public async Task<GridPage<AdminSessionSummary>> ListAllAsync(
@@ -388,20 +389,29 @@ internal sealed class AdminSessionService(
     {
         var session = await LoadFullAsync(id, cancellationToken);
 
-        // Stream the bytes to disk (the storage never buffers a whole-file
-        // byte[]); persist only the metadata on the row.
-        var storedFileName = await recordingStorage.SaveAsync(
-            session.Id, content, fileName, cancellationToken);
+        // D-568 (S7) — stream the bytes into the unified StoredFile store (Internal
+        // tier, plaintext + seekable for Range streaming, owner = the session). The
+        // store never buffers the whole video and computes the SHA-256 on the fly;
+        // RecordingStoredFileName is repurposed as the bare-Guid pointer + "has
+        // recording" sentinel. The malware scan is skipped (size-capped policy).
+        var priorPointer = session.RecordingStoredFileName;
+        var result = await fileService.CreateStreamedAsync(
+            FileService.SessionRecording, session.Id, content, fileName, contentType,
+            System.IO.Path.GetExtension(fileName), actorUserId, cancellationToken);
 
         var now = timeProvider.GetUtcNow();
-        session.RecordingStoredFileName = storedFileName;
+        session.RecordingStoredFileName = result.Id.ToString();
         session.RecordingFileName = fileName;
         session.RecordingContentType = contentType;
-        session.RecordingSizeBytes = sizeBytes;
+        session.RecordingSizeBytes = result.SizeBytes;
         session.RecordingUploadedAt = now;
         session.RecordingUploadedByUserId = actorUserId;
         session.UpdatedAt = now;
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        // Retire the prior recording (best-effort — the new one is the committed
+        // source of truth; SessionRecording is DeletableDefault:true).
+        await RetireRecordingAsync(priorPointer, result.Id, actorUserId, cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
         {
@@ -442,7 +452,7 @@ internal sealed class AdminSessionService(
         // fails the app already sees "no recording" and only an orphan file
         // is left behind (harmless), never a row pointing at a missing file.
         await dbContext.SaveChangesAsync(cancellationToken);
-        await recordingStorage.DeleteAsync(storedFileName, cancellationToken);
+        await RetireRecordingAsync(storedFileName, null, actorUserId, cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
         {
@@ -453,6 +463,25 @@ internal sealed class AdminSessionService(
         }, cancellationToken);
 
         return ToDetail(session);
+    }
+
+    /// <summary>D-568 (S7) — best-effort retirement of a recording's <c>StoredFile</c>
+    /// (soft-delete + byte-unlink). The row is already updated (source of truth), so a
+    /// delete failure must not fail the operation — worst case leaves one orphan blob.
+    /// No-op when the pointer is absent/unparseable or is the just-uploaded file.</summary>
+    private async Task RetireRecordingAsync(
+        string? priorPointer, Guid? newFileId, Guid actorUserId, CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(priorPointer, out var old) || old == newFileId) { return; }
+        try
+        {
+            await fileService.DeleteAsync(old, actorUserId, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(
+                ex, "Recording StoredFile retirement failed for file {FileId}; the session row is updated.", old);
+        }
     }
 
     // -- helpers --------------------------------------------------------------

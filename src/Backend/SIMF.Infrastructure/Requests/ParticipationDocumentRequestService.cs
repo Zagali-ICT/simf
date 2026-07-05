@@ -165,6 +165,16 @@ internal sealed class ParticipationDocumentRequestService(
                 "Participation document request not found.",
                 "لم يتم العثور على طلب وثيقة المشاركة.");
 
+        // A1 — only a Pending request may be decided (guards double-response and
+        // re-deciding a Cancelled request).
+        if (req.Status != MeetingRequestStatus.Pending)
+        {
+            throw new ApiException(
+                ErrorCodes.AppRequestAlreadyResponded, 409,
+                "This request has already been responded to.",
+                "تمت معالجة هذا الطلب بالفعل.");
+        }
+
         var responseNote = string.IsNullOrWhiteSpace(request.ResponseNote)
             ? null : request.ResponseNote.Trim();
         if (responseNote is { Length: > 2000 })

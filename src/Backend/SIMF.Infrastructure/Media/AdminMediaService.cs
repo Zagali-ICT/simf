@@ -1,8 +1,8 @@
 // Tests: SIMF.Api.Tests/AdminMediaTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using SIMF.Application.Abstractions;
 using SIMF.Application.Auditing;
+using SIMF.Application.Files.Abstractions;
 using SIMF.Application.Media.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -18,13 +18,13 @@ namespace SIMF.Infrastructure.Media;
 /// soft-delete via <c>IsActive</c>, an audit entry per mutation, and the same
 /// validation-then-persist flow. There is no unique business key on a media
 /// item (unlike Speaker.Code), so there is no 409-duplicate path — see
-/// <c>AdminMediaTests</c> and the module notes. Image bytes are written
-/// out-of-row through <see cref="IMediaImageStorage"/> (D-90).
+/// <c>AdminMediaTests</c> and the module notes. Image bytes are written to the
+/// unified <see cref="IFileService"/> store (D-568 Wave C S2), pointed at by
+/// <c>MediaItem.ImageFileId</c>.
 /// </summary>
 internal sealed class AdminMediaService(
     SimfAppDbContext dbContext,
-    IMediaImageStorage imageStorage,
-    IUploadScanner uploadScanner,
+    IFileService fileService,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<AdminMediaService> logger) : IAdminMediaService
@@ -101,7 +101,7 @@ internal sealed class AdminMediaService(
                 item.TitleArabic,
                 item.Album,
                 item.AlbumArabic,
-                item.ImageRelativePath != null,
+                item.ImageFileId != null,
                 item.Url,
                 item.DisplayOrder,
                 item.IsActive,
@@ -243,22 +243,31 @@ internal sealed class AdminMediaService(
                 "The media item was not found.",
                 "لم يتم العثور على عنصر الوسائط.");
 
-        // A6-18 (NCA) — malware-scan the untrusted image before it is stored,
-        // matching the ID-document / avatar / asset / presentation paths.
-        await uploadScanner.EnsureCleanAsync(content, "media-image", cancellationToken);
+        // D-568 (S2) — store the bytes in the unified StoredFile store. IFileService
+        // runs the full pipeline (malware scan, magic-byte allow-list, canonical
+        // MIME, SHA-256, audit); a non-image is rejected there (400).
+        var result = await fileService.UploadAsync(
+            new UploadFileCommand(
+                FileService.MediaGalleryImage, item.Id, content, null, contentType, actorUserId, FailClosed: false),
+            cancellationToken);
 
-        var relativePath = await imageStorage.SaveAsync(
-            item.Id, MediaImageSlot.Image, content, contentType, cancellationToken);
-        item.ImageRelativePath = relativePath;
+        // "One active image per item" — retire the replaced file's bytes.
+        var priorFileId = item.ImageFileId;
+        item.ImageFileId = result.Id;
         item.UpdatedAt = timeProvider.GetUtcNow();
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        if (priorFileId is { } old && old != result.Id)
+        {
+            await fileService.DeleteAsync(old, actorUserId, cancellationToken);
+        }
 
         await auditLog.WriteAsync(new AuditEntry
         {
             EventType = AuditEvents.MediaImageSet,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            Detail = $"id={item.Id}; path={relativePath}",
+            Detail = $"id={item.Id}; fileId={result.Id}",
         }, cancellationToken);
 
         return ToDetail(item);
@@ -321,8 +330,8 @@ internal sealed class AdminMediaService(
             item.TitleArabic,
             item.Album,
             item.AlbumArabic,
-            item.ImageRelativePath != null,
-            item.ThumbnailRelativePath != null,
+            item.ImageFileId != null,
+            item.ThumbnailFileId != null,
             item.Url,
             item.DisplayOrder,
             item.IsActive,

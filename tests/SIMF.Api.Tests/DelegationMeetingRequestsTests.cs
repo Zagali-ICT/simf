@@ -156,6 +156,118 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
         Assert.Contains(body.Data!.Items, r => r.Subject == "Listing probe");
     }
 
+    [Fact]
+    public async Task A_second_pending_request_for_the_same_target_is_rejected()
+    {
+        // A1 — one open request per (requester, target delegation).
+        var homeId = await EnsureCountryAsync("SA", 682, invited: true);
+        await EnsureCountryAsync("EG", 818, invited: true);
+        var (delegate1, _) = await CreateDelegateAsync(homeId, isDelegate: true);
+
+        var first = await PostAuthAsync(
+            "/api/v1/app/delegation-meeting-requests",
+            new SubmitDelegationMeetingRequestRequest
+            {
+                TargetCountryCode = "EG", AttendeeCount = 5, Subject = "First",
+            },
+            delegate1);
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+
+        var second = await PostAuthAsync(
+            "/api/v1/app/delegation-meeting-requests",
+            new SubmitDelegationMeetingRequestRequest
+            {
+                TargetCountryCode = "EG", AttendeeCount = 5, Subject = "Second",
+            },
+            delegate1);
+        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
+        var body = (await second.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.AppRequestDuplicatePending, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Responding_to_an_already_decided_request_is_409()
+    {
+        // A1 — only a Pending request may be decided.
+        var homeId = await EnsureCountryAsync("SA", 682, invited: true);
+        await EnsureCountryAsync("EG", 818, invited: true);
+        var (delegate1, _) = await CreateDelegateAsync(homeId, isDelegate: true);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var submit = await PostAuthAsync(
+            "/api/v1/app/delegation-meeting-requests",
+            new SubmitDelegationMeetingRequestRequest
+            {
+                TargetCountryCode = "EG", AttendeeCount = 5, Subject = "Topic",
+            },
+            delegate1);
+        var requestId = (await submit.Content
+            .ReadFromJsonAsync<ApiResult<DelegationMeetingRequestSubmitted>>())!.Data!.Id;
+
+        var first = await PostAuthAsync(
+            $"/api/v1/admin/delegation-meeting-requests/{requestId}/respond",
+            new RespondToDelegationMeetingRequestRequest { Status = MeetingRequestStatus.Rejected },
+            admin, HttpMethod.Put);
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+
+        var second = await PostAuthAsync(
+            $"/api/v1/admin/delegation-meeting-requests/{requestId}/respond",
+            new RespondToDelegationMeetingRequestRequest { Status = MeetingRequestStatus.Accepted },
+            admin, HttpMethod.Put);
+        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
+        var body = (await second.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.AppRequestAlreadyResponded, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task A_slot_start_without_an_end_is_400()
+    {
+        // A1 — a half-specified slot pair is rejected rather than stored silently.
+        var homeId = await EnsureCountryAsync("SA", 682, invited: true);
+        await EnsureCountryAsync("EG", 818, invited: true);
+        var (delegate1, _) = await CreateDelegateAsync(homeId, isDelegate: true);
+
+        var response = await PostAuthAsync(
+            "/api/v1/app/delegation-meeting-requests",
+            new SubmitDelegationMeetingRequestRequest
+            {
+                TargetCountryCode = "EG", AttendeeCount = 5, Subject = "Topic",
+                SlotStartUtc = new DateTimeOffset(2030, 2, 1, 9, 0, 0, TimeSpan.Zero),
+            },
+            delegate1);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.DelegationMeetingRequestInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Responding_with_Cancelled_status_is_400()
+    {
+        // A1 (review) — only Accepted/Rejected are valid admin responses.
+        var homeId = await EnsureCountryAsync("SA", 682, invited: true);
+        await EnsureCountryAsync("EG", 818, invited: true);
+        var (delegate1, _) = await CreateDelegateAsync(homeId, isDelegate: true);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var submit = await PostAuthAsync(
+            "/api/v1/app/delegation-meeting-requests",
+            new SubmitDelegationMeetingRequestRequest
+            {
+                TargetCountryCode = "EG", AttendeeCount = 5, Subject = "Topic",
+            },
+            delegate1);
+        var requestId = (await submit.Content
+            .ReadFromJsonAsync<ApiResult<DelegationMeetingRequestSubmitted>>())!.Data!.Id;
+
+        var respond = await PostAuthAsync(
+            $"/api/v1/admin/delegation-meeting-requests/{requestId}/respond",
+            new RespondToDelegationMeetingRequestRequest { Status = MeetingRequestStatus.Cancelled },
+            admin, HttpMethod.Put);
+        Assert.Equal(HttpStatusCode.BadRequest, respond.StatusCode);
+        var body = (await respond.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.DelegationMeetingRequestInvalid, body.Error!.Code);
+    }
+
     // -- helpers --------------------------------------------------------------
 
     private async Task<int> EnsureCountryAsync(string code, int id, bool invited)

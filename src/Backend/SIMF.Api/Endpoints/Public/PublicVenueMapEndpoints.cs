@@ -16,6 +16,7 @@ public sealed class PublicVenueMapEndpoint(IVenueMapService service)
         Get("/app/venue-map");
         AllowAnonymous();
         Tags("Public");
+        Options(b => b.CacheOutput("PublicRead")); // A6d — 45s output cache (no-op under Testing)
     }
 
     public override async Task HandleAsync(CancellationToken ct) =>

@@ -105,7 +105,6 @@ public sealed class PermissionCatalogTests
         Assert.All(staff, code => Assert.Contains(code, moderator));
         Assert.Contains(PermissionCatalog.Questions.Moderate, moderator);
         Assert.Contains(PermissionCatalog.SessionModeration.Moderate, moderator);
-        Assert.Contains(PermissionCatalog.Comments.Moderate, moderator);
     }
 
     [Theory]

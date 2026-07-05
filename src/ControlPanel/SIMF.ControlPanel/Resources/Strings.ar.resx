@@ -268,10 +268,8 @@
   <data name="Admin.Interests.BackToList" xml:space="preserve"><value>الرجوع إلى القائمة</value></data>
   <data name="Admin.Interests.Field.Name" xml:space="preserve"><value>الاسم (بالإنجليزية)</value></data>
   <data name="Admin.Interests.Field.NameHint" xml:space="preserve"><value>حتى 128 حرفًا؛ يجب أن يكون فريدًا.</value></data>
-  <data name="Admin.Interests.Field.NameInvalid" xml:space="preserve"><value>الاسم بالإنجليزية مطلوب (من 1 إلى 128 حرفًا).</value></data>
   <data name="Admin.Interests.Field.NameArabic" xml:space="preserve"><value>الاسم (بالعربية)</value></data>
   <data name="Admin.Interests.Field.NameArabicHint" xml:space="preserve"><value>حتى 128 حرفًا.</value></data>
-  <data name="Admin.Interests.Field.NameArabicInvalid" xml:space="preserve"><value>الاسم بالعربية مطلوب (من 1 إلى 128 حرفًا).</value></data>
   <data name="Admin.Interests.Field.DisplayOrder" xml:space="preserve"><value>ترتيب العرض</value></data>
   <data name="Admin.Interests.Field.DisplayOrderHint" xml:space="preserve"><value>مفتاح فرز قائمة الزائر (صفر أو أكثر؛ تصاعديًا).</value></data>
   <data name="Admin.Interests.Field.DisplayOrderInvalid" xml:space="preserve"><value>يجب أن يكون ترتيب العرض صفرًا أو عددًا صحيحًا موجبًا.</value></data>
@@ -2463,33 +2461,6 @@
   <data name="Admin.RatingConfig.Field.Group" xml:space="preserve"><value>المجموعة</value></data>
   <data name="Admin.RatingConfig.Field.GroupNone" xml:space="preserve"><value>(بدون مجموعة)</value></data>
 
-  <!-- D-199 — Audience-comments moderation. -->
-  <data name="Admin.Comments.Title" xml:space="preserve"><value>تعليقات الجمهور</value></data>
-  <data name="Admin.Comments.Hint" xml:space="preserve"><value>اختر جلسة لإدارة تعليقات الجمهور الخاصة بها.</value></data>
-  <data name="Admin.Comments.Pick" xml:space="preserve"><value>الجلسة</value></data>
-  <data name="Admin.Comments.PickNone" xml:space="preserve"><value>— اختر جلسة —</value></data>
-  <data name="Admin.Comments.NoSessions" xml:space="preserve"><value>لا توجد جلسات متاحة.</value></data>
-  <data name="Admin.Comments.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
-  <data name="Admin.Comments.None" xml:space="preserve"><value>لا توجد تعليقات لهذه الجلسة.</value></data>
-  <data name="Admin.Comments.Col.Author" xml:space="preserve"><value>الكاتب</value></data>
-  <data name="Admin.Comments.Col.Body" xml:space="preserve"><value>التعليق</value></data>
-  <data name="Admin.Comments.Col.Status" xml:space="preserve"><value>الحالة</value></data>
-  <data name="Admin.Comments.Col.AiVerdict" xml:space="preserve"><value>تقييم الذكاء الاصطناعي</value></data>
-  <data name="Admin.Comments.Col.Created" xml:space="preserve"><value>تاريخ الإرسال</value></data>
-  <data name="Admin.Comments.Col.Actions" xml:space="preserve"><value>الإجراءات</value></data>
-  <data name="Admin.Comments.Approve" xml:space="preserve"><value>اعتماد</value></data>
-  <data name="Admin.Comments.Hide" xml:space="preserve"><value>إخفاء</value></data>
-  <data name="Admin.Comments.Delete" xml:space="preserve"><value>حذف</value></data>
-  <data name="Admin.Comments.Delete.Confirm" xml:space="preserve"><value>هل تريد حذف هذا التعليق؟ سيُزال من العرض العام فورًا.</value></data>
-  <data name="Admin.Comments.Status.Pending" xml:space="preserve"><value>قيد الانتظار</value></data>
-  <data name="Admin.Comments.Status.Approved" xml:space="preserve"><value>معتمد</value></data>
-  <data name="Admin.Comments.Status.Hidden" xml:space="preserve"><value>مخفي</value></data>
-  <data name="Admin.Comments.StatusSaved" xml:space="preserve"><value>تم تحديث حالة التعليق.</value></data>
-  <data name="Admin.Comments.Deleted" xml:space="preserve"><value>تم حذف التعليق.</value></data>
-  <data name="Admin.Comments.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
-  <data name="Admin.Comments.LoadFailed" xml:space="preserve"><value>تعذر تحميل التعليقات. حاول مرة أخرى.</value></data>
-  <data name="Admin.Comments.SessionsLoadFailed" xml:space="preserve"><value>تعذر تحميل الجلسات. حاول مرة أخرى.</value></data>
-
   <!-- FR-506 — session-attendance dashboard (read-only). -->
   <data name="Admin.Attendance.Title" xml:space="preserve"><value>حضور الجلسات</value></data>
   <data name="Admin.Attendance.Loading" xml:space="preserve"><value>جارٍ تحميل الحضور…</value></data>
@@ -2518,8 +2489,6 @@
   <data name="Admin.Statistics.Stat.Sponsors" xml:space="preserve"><value>الرعاة</value></data>
   <data name="Admin.Statistics.Stat.NewsArticles" xml:space="preserve"><value>الأخبار</value></data>
   <data name="Admin.Statistics.Stat.MediaItems" xml:space="preserve"><value>عناصر الوسائط</value></data>
-  <data name="Admin.Statistics.Stat.CommentsApproved" xml:space="preserve"><value>التعليقات المعتمدة</value></data>
-  <data name="Admin.Statistics.Stat.CommentsPending" xml:space="preserve"><value>التعليقات المعلقة</value></data>
   <data name="Admin.Statistics.Stat.RatingsCount" xml:space="preserve"><value>إجمالي التقييمات</value></data>
   <data name="Admin.Statistics.Stat.AverageRating" xml:space="preserve"><value>متوسط التقييم</value></data>
 

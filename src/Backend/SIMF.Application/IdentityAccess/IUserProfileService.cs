@@ -52,8 +52,11 @@ public interface IUserProfileService
         CancellationToken cancellationToken = default);
 
     /// <summary>D-129: admin-side read of a subject's ID-image. Same
-    /// UserType-match guard as the upload variant.</summary>
+    /// UserType-match guard as the upload variant. A9 (PII) — takes the acting
+    /// admin's <paramref name="actorUserId"/> so every byte disclosure writes a
+    /// <c>UserProfile.IdImageViewed</c> audit row (mirrors the upload's audit).</summary>
     Task<UserIdDocumentImage?> ReadIdImageForSubjectAsync(
+        Guid actorUserId,
         Guid subjectUserId,
         SIMF.Common.Enums.UserType expectedKind,
         CancellationToken cancellationToken = default);
@@ -75,8 +78,10 @@ public interface IUserProfileService
 
     /// <summary>V-1 (D-429): admin-side read of a subject's VIP welcome photo.
     /// Same UserType-match guard as the upload variant; null when no photo is
-    /// set.</summary>
+    /// set. D-568 (Wave C S4): the actor is audited on every byte disclosure
+    /// (PII trail), mirroring <see cref="ReadIdImageForSubjectAsync"/>.</summary>
     Task<VipPhotoImage?> ReadVipPhotoForSubjectAsync(
+        Guid actorUserId,
         Guid subjectUserId,
         SIMF.Common.Enums.UserType expectedKind,
         CancellationToken cancellationToken = default);

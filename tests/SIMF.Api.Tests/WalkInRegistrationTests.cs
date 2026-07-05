@@ -254,8 +254,9 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
     public async Task Admin_uploads_vip_photo_sets_path()
     {
         // V-1 (D-429) — the VIP page captures a separate welcome photo via the
-        // dedicated vip-photo endpoint; it must set VipPhotoRelativePath (a
-        // field distinct from the avatar).
+        // dedicated vip-photo endpoint. D-568 (Wave C S4): the bytes now land in
+        // the unified StoredFile store; VipPhotoRelativePath is repurposed as the
+        // bare-Guid pointer + "has VIP photo" presence sentinel.
         var adminToken = await CreateAdministratorAndSignInAsync();
         var profileTypeId = await GetVisitorProfileTypeAsync();
         var organisationId = await GetOrganisationIdAsync();
@@ -280,7 +281,12 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var profile = await appDb.UserProfiles.SingleAsync(p => p.UserId == subjectId);
+        // The sentinel pointer is set, one active VipPhoto StoredFile exists for
+        // the subject, and the pointer resolves to that file.
         Assert.False(string.IsNullOrEmpty(profile.VipPhotoRelativePath));
+        var stored = await appDb.StoredFiles.SingleAsync(
+            f => f.Service == FileService.VipPhoto && f.OwnerEntityId == subjectId && f.IsActive);
+        Assert.Equal(stored.Id.ToString(), profile.VipPhotoRelativePath);
     }
 
     [Fact]

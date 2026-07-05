@@ -3,6 +3,7 @@ using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Authentication;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Application.Files.Abstractions;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
@@ -68,7 +69,7 @@ public sealed class RequestRecordingStreamTokenEndpoint(
 public sealed class StreamSessionRecordingRequest { public Guid Id { get; set; } }
 
 public sealed class StreamSessionRecordingEndpoint(
-    IProgrammeSessionService sessions, ISessionRecordingStorage storage)
+    IProgrammeSessionService sessions, IFileService files)
     : Endpoint<StreamSessionRecordingRequest>
 {
     public override void Configure()
@@ -100,7 +101,15 @@ public sealed class StreamSessionRecordingEndpoint(
             return;
         }
 
-        var file = storage.OpenRead(recording.StoredFileName);
+        // D-568 (S7) — RecordingStoredFileName is now the StoredFile pointer; open it
+        // as a seekable plaintext stream (SessionRecording is EncryptAtRest:false) so
+        // the player can Range-seek (HTTP 206) without buffering the whole video.
+        if (!Guid.TryParse(recording.StoredFileName, out var fileId))
+        {
+            await Send.NotFoundAsync(ct);
+            return;
+        }
+        var file = await files.OpenReadStreamAsync(fileId, ct);
         if (file is null)
         {
             await Send.NotFoundAsync(ct);

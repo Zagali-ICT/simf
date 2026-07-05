@@ -114,10 +114,13 @@ public sealed class FileAuthorizationTests : IClassFixture<SimfApiFactory>
         FileService service, FileOwnerEntityType ownerType, Guid? ownerId,
         byte[] bytes, string contentType, string fileName, string token)
     {
+        // P2 (D-568) — the owner family is server-forced from the policy; the
+        // client no longer sends OwnerEntityType (the `ownerType` arg documents
+        // the expected family for the reader). Only the owner id rides the form.
+        _ = ownerType;
         var form = new MultipartFormDataContent
         {
             { new StringContent(service.ToString()), "Service" },
-            { new StringContent(ownerType.ToString()), "OwnerEntityType" },
         };
         if (ownerId is { } id)
         {

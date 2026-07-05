@@ -268,6 +268,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
 
                     b.HasKey("Id");
 
+                    b.HasIndex("UserId", "PublicKey")
+                        .IsUnique()
+                        .HasFilter("[RevokedAt] IS NULL");
+
                     b.HasIndex("UserId", "RevokedAt");
 
                     b.ToTable("DeviceKeys", (string)null);
@@ -556,16 +560,18 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     b.HasKey("Id");
 
                     b.HasIndex("NormalizedEmail")
-                        .HasDatabaseName("EmailIndex");
+                        .IsUnique()
+                        .HasDatabaseName("EmailIndex")
+                        .HasFilter("[NormalizedEmail] IS NOT NULL");
 
                     b.HasIndex("NormalizedUserName")
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
-                    b.HasIndex("UserType");
-
                     b.HasIndex("AccountState", "StateChangedAt");
+
+                    b.HasIndex("UserType", "CreatedAt");
 
                     b.ToTable("AspNetUsers", (string)null);
                 });
@@ -594,7 +600,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
 
                     b.HasIndex("CodeHash");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "CodeHash")
+                        .IsUnique();
 
                     b.ToTable("TotpRecoveryCodes");
                 });
@@ -777,6 +784,15 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 });
 
             modelBuilder.Entity("SIMF.Domain.IdentityAccess.TotpRecoveryCode", b =>
+                {
+                    b.HasOne("SIMF.Domain.IdentityAccess.SimfUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Notifications.Notification", b =>
                 {
                     b.HasOne("SIMF.Domain.IdentityAccess.SimfUser", null)
                         .WithMany()

@@ -37,5 +37,8 @@ internal sealed class HallAttendanceConfiguration : IEntityTypeConfiguration<Hal
 
         // Live per-hall presence count rides this (open rows in a hall).
         builder.HasIndex(a => new { a.HallId, a.LeaveUtc });
+
+        // D-611 (Wave B) — the per-attendee attendance-history lookup by user.
+        builder.HasIndex(a => a.UserId);
     }
 }

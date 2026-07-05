@@ -1,4 +1,7 @@
 using SIMF.Domain.Common;
+using SIMF.Domain.Contacts;
+using SIMF.Domain.Exhibitors;
+using SIMF.Domain.Programme;
 
 namespace SIMF.Domain.Exhibition;
 
@@ -42,6 +45,11 @@ public class Booth : BaseAuditEntity
     /// Nullable — a booth may exist before its exhibitor is provisioned.</summary>
     public Guid? ExhibitorId { get; set; }
 
+    /// <summary>A5 — navigation for <see cref="ExhibitorId"/> (same FK), so a
+    /// projection reads every exhibitor field through one join instead of a
+    /// correlated subquery per field.</summary>
+    public Exhibitor? Exhibitor { get; set; }
+
     /// <summary>B1 — D-222: booth-officer contact name (≤ 256 chars). Optional.</summary>
     public string? OfficerName { get; set; }
 
@@ -57,6 +65,10 @@ public class Booth : BaseAuditEntity
     /// <see cref="ExhibitorId"/>). Null until linked; multiple entities may
     /// reference the same Contact.</summary>
     public Guid? ContactId { get; set; }
+
+    /// <summary>A5 — navigation for <see cref="ContactId"/> (same FK): the booth
+    /// officer's shared <c>Contact</c> record.</summary>
+    public Contact? OfficerContact { get; set; }
 
     /// <summary>English exhibitor / company name (≤ 256 chars). Legacy free-text
     /// fallback retained for the public wire contract (D-219) and pre-D-222
@@ -84,6 +96,10 @@ public class Booth : BaseAuditEntity
     /// <summary>D-199 — optional real FK to <c>Hall.Id</c> (same App DB).
     /// Null when the booth has not yet been placed in a hall/zone.</summary>
     public Guid? HallId { get; set; }
+
+    /// <summary>A5 — navigation for <see cref="HallId"/> (same FK): the hall the
+    /// booth sits in.</summary>
+    public Hall? Hall { get; set; }
 
     /// <summary>D-199 — booth X position on the 2D venue map. Optional until
     /// the booth is placed.</summary>

@@ -1,15 +1,17 @@
 namespace SIMF.Infrastructure.Programme;
 
-/// <summary>P3.2b — D-232 (D-213): filesystem storage options for session
-/// recordings. Mirrors <see cref="SpeakerPresentationStorageOptions"/>
-/// (own top-level section + relative <c>App_Data</c> root) rather than the
-/// literal <c>Storage:SessionRecordingBase</c> example in D-213 — the two
-/// are equivalent and matching the most recent file-seam convention keeps
-/// the codebase consistent.</summary>
+/// <summary>P3.2b — D-232 (D-213): upload-size options for session recordings.
+/// D-568 (Wave C S7): the recording bytes moved to the unified <c>StoredFile</c>
+/// store, so this class is kept only for <see cref="MaxUploadBytes"/> — the
+/// per-request body/multipart ceiling the recording upload endpoint raises.
+/// <c>RootPath</c> is retained for config-binding compatibility but is no longer
+/// read (the bespoke recording store is gone).</summary>
 public sealed class SessionRecordingStorageOptions
 {
     public const string SectionName = "SessionRecordingStorage";
 
+    /// <summary>Vestigial (D-568 S7) — no longer read; kept so the existing
+    /// <c>SessionRecordingStorage:RootPath</c> config key still binds cleanly.</summary>
     public string RootPath { get; set; } = "App_Data/recordings";
 
     /// <summary>Max accepted upload size, in bytes (default 1 GiB). The upload

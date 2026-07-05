@@ -22,7 +22,20 @@ internal sealed class ExhibitorMembershipConfiguration
         builder.Property(membership => membership.ContactName).HasMaxLength(256).IsRequired();
         builder.Property(membership => membership.RoleLabel).HasMaxLength(128);
 
-        builder.HasIndex(membership => membership.ExhibitorId);
-        builder.HasIndex(membership => membership.UserId);
+        // D-611 (Wave B) — Exhibitor and ExhibitorMembership are both on the App
+        // DB, so make the relationship an explicit Restrict FK (was Cascade by
+        // convention): deleting an Exhibitor must not silently delete its member
+        // accounts. The FK auto-creates the ExhibitorId index, so the former
+        // standalone HasIndex(ExhibitorId) is dropped to avoid a duplicate.
+        builder.HasOne(membership => membership.Exhibitor)
+            .WithMany()
+            .HasForeignKey(membership => membership.ExhibitorId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // D-611 (Wave B) — a UserId is provisioned as a single-use account, so at
+        // most one ACTIVE membership per user: filtered unique backstop.
+        builder.HasIndex(membership => membership.UserId)
+            .IsUnique()
+            .HasFilter("[IsActive] = 1");
     }
 }

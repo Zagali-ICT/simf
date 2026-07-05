@@ -24,24 +24,23 @@ internal sealed class TotpRecoveryCodeRepository(SimfIdentityDbContext dbContext
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public Task<TotpRecoveryCode?> FindActiveAsync(
+    public async Task<bool> TryConsumeAsync(
         Guid userId,
         string codeHash,
-        CancellationToken cancellationToken = default) =>
-        dbContext.TotpRecoveryCodes.SingleOrDefaultAsync(
-            code => code.UserId == userId
-                && code.CodeHash == codeHash
-                && code.ConsumedAt == null,
-            cancellationToken);
-
-    public async Task ConsumeAsync(
-        TotpRecoveryCode code,
         DateTimeOffset now,
         CancellationToken cancellationToken = default)
     {
-        code.ConsumedAt = now;
-        dbContext.TotpRecoveryCodes.Update(code);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        // Single conditional UPDATE: the active code matching (user, hash) is
+        // consumed in one atomic statement, so a concurrent double-submit of the
+        // same code yields exactly one affected == 1.
+        var affected = await dbContext.TotpRecoveryCodes
+            .Where(code => code.UserId == userId
+                && code.CodeHash == codeHash
+                && code.ConsumedAt == null)
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(code => code.ConsumedAt, now),
+                cancellationToken);
+        return affected == 1;
     }
 
     public Task<int> CountActiveAsync(

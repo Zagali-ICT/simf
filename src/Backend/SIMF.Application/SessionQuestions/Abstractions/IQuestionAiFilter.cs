@@ -10,8 +10,8 @@ namespace SIMF.Application.SessionQuestions.Abstractions;
 /// queue to inform, not replace, the human decision.
 ///
 /// <para><b>Stub in this increment:</b> the shipped impl
-/// (<c>StubQuestionAiFilter</c>) is deterministic and calls no AI provider —
-/// the same seam shape as <c>ICommentAiFilter</c>. The real filter (routing
+/// (<c>StubQuestionAiFilter</c>) is deterministic and calls no AI provider.
+/// The real filter (routing
 /// through the central <c>IAiService</c> / a <c>question-filter</c> prompt) is
 /// wired later behind THIS interface, with no change to the submit service or
 /// its tests.</para>

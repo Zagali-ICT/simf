@@ -145,8 +145,6 @@ public static class CpNavigation
         new("Nav.Engagement",
         [
             new("Module.LiveSessions", "/m/live-sessions", IsStub: true, Icon: "video"),
-            // D-199 — audience-comments moderation desk (Mockup page 28).
-            new("Module.Moderation", "/admin/comments-moderation", RequiredPermission: PermissionCatalog.Comments.View, Icon: "message-circle"),
             // Submitted ratings read-only view + KPIs.
             new("Module.Ratings", "/admin/ratings", RequiredPermission: PermissionCatalog.Ratings.View, Icon: "star"),
             // Dynamic rating configuration — types / question groups / questions.

@@ -46,7 +46,7 @@ internal sealed class SpeakerConfiguration : IEntityTypeConfiguration<Speaker>
         // IsActive=false; they never hard-delete a row a speaker points at).
         // The HasForeignKey call creates the FK index automatically, so the
         // explicit HasIndex(speaker.CountryId) is no longer needed.
-        builder.HasOne<Country>()
+        builder.HasOne(speaker => speaker.Country)
             .WithMany()
             .HasForeignKey(speaker => speaker.CountryId)
             .OnDelete(DeleteBehavior.Restrict);
