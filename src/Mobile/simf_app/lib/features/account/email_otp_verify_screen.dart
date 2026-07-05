@@ -8,6 +8,7 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
+import '../../app/theme/app_assets.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import '../../core/responsive/max_width_body.dart';
@@ -230,7 +231,7 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
               child: IconButton(
                 onPressed: _busy ? null : _back,
                 icon: const SimfSvgIcon(
-                  'assets/icons/ic_back.svg',
+                  AppAssets.icBack,
                   size: 24,
                   color: Colors.white,
                 ),

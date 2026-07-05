@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/localization/app_l10n.dart';
+import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
 import 'auth_chrome.dart';
-
-// The Face-ID glyph from frame 168:2845 (mingcute:faceid-line) — no 1:1
-// Material match, so it ships as an iconify SVG asset.
-const String _icFaceId = 'assets/icons/auth_faceid.svg';
 
 /// The sign-in card's alternative entry methods below the "or" divider:
 /// Face-ID sign-in (shown only when a biometric is usable), the printed-badge
@@ -66,7 +63,7 @@ class SignInAltActions extends StatelessWidget {
           AuthAltButton(
             label: l10n.faceIdSignInButton,
             icon: const SimfSvgIcon(
-              _icFaceId,
+              AppAssets.authFaceId,
               size: 20,
               color: SimfTokens.goldSoft,
             ),

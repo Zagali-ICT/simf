@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
+import '../../app/theme/app_assets.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_svg_icon.dart';
 import '../../core/responsive/max_width_body.dart';
@@ -222,7 +223,7 @@ class _BiometricStepUpScreenState extends ConsumerState<BiometricStepUpScreen> {
               child: IconButton(
                 onPressed: _verifying ? null : _back,
                 icon: const SimfSvgIcon(
-                  'assets/icons/ic_back.svg',
+                  AppAssets.icBack,
                   size: 24,
                   color: Colors.white,
                 ),

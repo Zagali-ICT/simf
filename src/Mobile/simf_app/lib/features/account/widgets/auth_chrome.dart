@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/localization/app_l10n.dart';
+import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_logo.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
-
-// Exact iconify / Figma glyphs (frame 627:2361/2407) for the auth top controls —
-// no 1:1 Material match, so they ship as SVG assets.
-const String _icAuthBack = 'assets/icons/auth_back.svg'; // iconamoon:arrow-left-2
-const String _icAuthGlobe = 'assets/icons/auth_globe.svg'; // exact Figma globe
 
 /// The beige-bordered, 48-high outlined "alternative action" button used below
 /// the sign-in card's "or" divider (Face-ID, printed-badge QR). Label sits at
@@ -182,7 +178,11 @@ class AuthTopControls extends StatelessWidget {
           IconButton(
             key: const ValueKey<String>('authBack'),
             onPressed: busy ? null : onBack,
-            icon: const SimfSvgIcon(_icAuthBack, size: 24, color: Colors.white),
+            icon: const SimfSvgIcon(
+              AppAssets.authBack,
+              size: 24,
+              color: Colors.white,
+            ),
           ),
           const Spacer(),
           SizedBox(
@@ -199,7 +199,7 @@ class AuthTopControls extends StatelessWidget {
                 ),
               ),
               icon: const SimfSvgIcon(
-                _icAuthGlobe,
+                AppAssets.authGlobe,
                 size: 24,
                 color: SimfTokens.accent,
               ),
