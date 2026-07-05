@@ -102,3 +102,42 @@ the frames); the splash Arabic-Indic date was the only digit bug (fixed).
   gold/tan — needs a token check (dark-on-dark), medium.
 - **contact_us** social row uses generic Material glyphs (camera/briefcase) vs
   brand logos (Instagram/LinkedIn) — needs brand SVGs, medium.
+
+## Live gated-screen pass — signed-in visitor on local seeded backend (2026-07-05)
+
+Stood up the local API + CP, seeded demo data, logged the app in as `visitor@simf.local`
+(Approved, profile completed to the `IsProfileCompleteAsync` rule), and drove the
+login-gated screens live against real data. Per-screen results (D-652 sub-page globe
+confirmed present on every one):
+
+- **Signed-in Home (758-1134)** — MATCH. Diffs: action tile «المعرض» vs Figma «الأجنحة»
+  (owner copy call — app is internally consistent with the المعرض screen title); extra
+  theme-toggle (intentional feature); avatar photo (demo data). All previously triaged.
+- **My-area (758-1283)** — MATCH (updated 2026-07-05). The «احصائيات» stats section was
+  **restored display-only per owner (D-653)** — two KPI tiles («جلسات محفوظة» + «مقابلات»),
+  non-tappable; this reverses the D-609 removal for the tiles only (the drill-down list
+  screens stay retired). Figma header also carries a theme moon (app = globe-only per D-652
+  scope). Settings list has extra app rows (requests / book-seat / update-ID) = functional
+  additions.
+- **Badge (758-1469)** — MATCH on layout. Two real flaggable diffs: (1) the app renders a
+  **rounded-dot QR** (circular finder patterns) where Figma shows a **standard square-module
+  QR** — a QR-style choice; (2) the second button reads «شارك جهة اتصالي» (share my contact)
+  vs Figma «مشاركة البطاقة» (share the badge) — different label/action. Owner decisions.
+- **Notifications (758-2491)** — empty-state («لا توجد إشعارات بعد») renders correctly with the
+  D-652 globe (visitor has no notifications). The populated list layout is golden-verified
+  (`notifications_758-2491.png`, re-locked with the globe); a live populated check needs a
+  CP-triggered notification.
+
+### Live-pass pattern (7 screens in)
+Across onboarding, speakers, booths, signed-in home, my-area, badge, notifications the app is
+**faithful to Figma**. The only *systematic* gap (the missing sub-page language globe) is fixed
+(D-652). Remaining per-screen diffs are: owner decisions (المعرض/الأجنحة copy, D-609 stats
+removal, badge share-button copy), intentional features (theme toggle, extra settings rows),
+data/empty states (0 sessions, no avatar photo, no notifications), or design choices (dotted vs
+square QR). No new correctness bugs found on these 7. Data-heavy screens (sessions, session-detail,
+live, delegations, moderation) still need CP data entry to live-check with content.
+- **About (1116-16448)** — MATCH on structure, with one **CONFIRMED FIXABLE** diff: the
+  الرسالة / الرؤية / تفاصيل body text renders **cool gray** in the app but **warm gold/tan**
+  in Figma (confirms the earlier triage flag). Candidate token: the body should use the warm
+  paragraph/gold token (≈ `#C2B8A2` / accent) not a cool gray. App also adds a subtitle +
+  «مفتوح · 2026» pill + a System-info (v1.0.0) section Figma omits (additions). → batch-fix the body hue.

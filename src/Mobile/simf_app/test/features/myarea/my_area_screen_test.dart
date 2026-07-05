@@ -8,6 +8,7 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/myarea/data/myarea_models.dart';
 import 'package:simf_app/features/myarea/data/myarea_repository.dart';
 import 'package:simf_app/features/myarea/my_area_screen.dart';
+import 'package:simf_app/features/sessions/data/session_favourites.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -58,6 +59,12 @@ MyAreaDashboard _dashboard({List<MyAreaScheduleItem>? schedule}) =>
             ),
           ],
     );
+
+/// Two favourited sessions → the جلسات محفوظة stat tile shows 2 (display-only).
+class _FakeFavourites extends SessionFavouritesController {
+  @override
+  Future<Set<String>> build() async => <String>{'s1', 's2'};
+}
 
 class _FakeMyAreaRepository implements MyAreaRepository {
   _FakeMyAreaRepository({this.dashboard, this.fail = false, this.status = 500});
@@ -136,6 +143,7 @@ Future<void> _pump(
     ProviderScope(
       overrides: <Override>[
         authControllerProvider.overrideWith(() => controller),
+        sessionFavouritesProvider.overrideWith(_FakeFavourites.new),
         if (repo != null) myAreaRepositoryProvider.overrideWithValue(repo),
       ],
       child: MaterialApp.router(
@@ -178,8 +186,13 @@ void main() {
       expect(find.textContaining('VIP'), findsOneWidget);
       expect(find.text('Share my profile'), findsOneWidget);
       expect(find.text('Share contact'), findsOneWidget);
-      // D-609 — the الإحصائيات stat section (مقابلات + جلسات محفوظة) was removed.
-      expect(find.text('Statistics'), findsNothing);
+      // D-653 — الإحصائيات restored display-only (not tappable): the مقابلات
+      // count (3, dashboard) + the جلسات محفوظة count (2, favourited set).
+      expect(find.text('Statistics'), findsOneWidget);
+      expect(find.text('Meetings'), findsOneWidget);
+      expect(find.text('Saved sessions'), findsOneWidget);
+      expect(find.text('3'), findsOneWidget); // meetings count
+      expect(find.text('2'), findsOneWidget); // saved (favourited) count
       await _scrollTo(tester, find.text('Opening'));
       expect(find.text('Opening'), findsOneWidget);
       await _scrollTo(tester, find.text('My smart badge'));
