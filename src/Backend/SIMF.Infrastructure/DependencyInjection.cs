@@ -297,10 +297,6 @@ public static class DependencyInjection
         // P2.5 — D-230 (FR-605): 2D venue map (admin CRUD + public read).
         services.AddScoped<SIMF.Application.Venue.Abstractions.IVenueMapService,
             SIMF.Infrastructure.Venue.VenueMapService>();
-        services.Configure<SIMF.Infrastructure.Programme.SpeakerPresentationStorageOptions>(
-            configuration.GetSection(SIMF.Infrastructure.Programme.SpeakerPresentationStorageOptions.SectionName));
-        services.AddSingleton<SIMF.Application.Programme.Abstractions.ISpeakerPresentationStorage,
-            SIMF.Infrastructure.Programme.FilesystemSpeakerPresentationStorage>();
         // D-165 (gap doc G3) — Session admin CRUD: programme sessions tied
         // to a Hall + M-to-M Speakers + M-to-M Themes (PDF §2.9).
         services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminSessionService,
@@ -312,12 +308,11 @@ public static class DependencyInjection
         // P5.1 — D-241: attendee-facing hall arrival/departure via GPS geofence.
         services.AddScoped<SIMF.Application.Programme.Abstractions.IHallAttendanceService,
             SIMF.Infrastructure.Programme.HallAttendanceService>();
-        // P3.2b — D-232 (D-213): out-of-row session-recording storage (streamed
-        // both ways, range-served behind a short-lived stream token).
+        // D-568 (Wave C S7): recordings now live in the unified StoredFile store;
+        // SessionRecordingStorageOptions is kept only for the upload endpoint's
+        // MaxUploadBytes ceiling (the bespoke recording store is gone).
         services.Configure<SIMF.Infrastructure.Programme.SessionRecordingStorageOptions>(
             configuration.GetSection(SIMF.Infrastructure.Programme.SessionRecordingStorageOptions.SectionName));
-        services.AddSingleton<SIMF.Application.Programme.Abstractions.ISessionRecordingStorage,
-            SIMF.Infrastructure.Programme.FilesystemSessionRecordingStorage>();
         // D-166 (gap doc G4) — registration gate + archive visibility
         // singletons + the auto-close background worker (PDF §2.3, §2.4).
         services.AddScoped<SIMF.Application.Operations.Abstractions.IOperationsToggleService,
@@ -421,17 +416,9 @@ public static class DependencyInjection
             SIMF.Infrastructure.Media.PublicMediaService>();
         services.AddScoped<SIMF.Application.Media.Abstractions.IAdminMediaService,
             SIMF.Infrastructure.Media.AdminMediaService>();
-        services.Configure<SIMF.Infrastructure.Media.MediaImageStorageOptions>(
-            configuration.GetSection(SIMF.Infrastructure.Media.MediaImageStorageOptions.SectionName));
-        services.AddSingleton<SIMF.Application.Abstractions.IMediaImageStorage,
-            SIMF.Infrastructure.Media.FilesystemMediaImageStorage>();
-        // D-357 — unified media-asset pipeline: the single upload/download store
-        // every image-bearing entity shares (speaker photo, company / sponsor /
-        // media-partner logo, archive cover, news image).
-        services.Configure<SIMF.Infrastructure.Assets.ImageAssetStorageOptions>(
-            configuration.GetSection(SIMF.Infrastructure.Assets.ImageAssetStorageOptions.SectionName));
-        services.AddSingleton<SIMF.Application.Abstractions.IImageAssetStorage,
-            SIMF.Infrastructure.Assets.FilesystemImageAssetStorage>();
+        // D-568 (Wave C S1/S2): the media-gallery + shared image-asset bytes now live
+        // in the unified StoredFile store; the bespoke MediaImage / ImageAsset stores
+        // are gone (AssetService is retained, rewritten onto IFileService).
         services.AddScoped<SIMF.Application.Assets.Abstractions.IAssetService,
             SIMF.Infrastructure.Assets.AssetService>();
         services.AddScoped<SIMF.Application.Exhibition.Abstractions.IPublicBoothService,
@@ -606,10 +593,10 @@ public static class DependencyInjection
         // every resource's export/import, driven by per-resource column descriptors).
         services.AddSingleton<SIMF.Application.Excel.IGridExcelExporter, ClosedXmlGridExcelExporter>();
         services.AddSingleton<SIMF.Application.Excel.IGridExcelImporter, ClosedXmlGridExcelImporter>();
-        services.AddSingleton<IAvatarStorage, FilesystemAvatarStorage>();
-        // V-1 (D-429) — VVIP/VIP welcome-photo store, separate base dir from avatars.
-        services.AddSingleton<IVipPhotoStorage, FilesystemVipPhotoStorage>();
-        services.AddSingleton<IUserIdDocumentStorage, EncryptedUserIdDocumentStorage>();
+        // D-568 (Wave C S3/S4/S5): the avatar, VVIP welcome-photo and ID-document
+        // bytes now live in the unified StoredFile store; the bespoke user-keyed
+        // stores (FilesystemAvatarStorage / FilesystemVipPhotoStorage /
+        // EncryptedUserIdDocumentStorage) are gone.
         // A2-10 — AES-GCM encryptor for PII identifier columns; applied by an EF
         // value converter on UserProfile (SimfAppDbContext.OnModelCreating).
         services.AddSingleton<SIMF.Application.Abstractions.IPiiEncryptor, AesGcmPiiEncryptor>();

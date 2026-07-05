@@ -6,8 +6,8 @@ namespace SIMF.Application.Programme.Abstractions;
 /// of the speaker-presentation files for the app's "Session presentations"
 /// screen. Lists every active presentation (with its session + speaker) so the
 /// app can group by day and offer a download; the file bytes are served
-/// out-of-row via the same <see cref="ISpeakerPresentationStorage"/> the admin
-/// side uses. Approved-account only (attendee materials).</summary>
+/// out-of-row from the same unified <c>StoredFile</c> store the admin side uses
+/// (D-568 Wave C S6). Approved-account only (attendee materials).</summary>
 public interface IPublicSpeakerPresentationService
 {
     /// <summary>All active presentations, time-ordered by session start.</summary>
