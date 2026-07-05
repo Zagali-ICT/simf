@@ -78,6 +78,7 @@ chrome), audience-comments (removed), my-contacts / scan-contact / share-my-cont
 - Title: centred, Inter/FS-Albert SemiBold 18px, white, single line ellipsis.
 - Fixed header height below the status bar (~56–66px).
 - **Resolved (owner 2026-06-28):** sub-page nav matches Figma — back + title + line only, **no** bell/language/theme/menu cluster. The cluster lives on the Home greeting header (the guest home opts in). Implemented as `KsaPage.showHeaderActions` (default **false**); the 2026-06-18 every-page-cluster invariant is superseded for sub-pages.
+- **Updated (owner 2026-07-05, D-652):** the live pixel pass found the Figma sub-page frames (e.g. Speakers `908-1744`) **do** carry the gold language globe at the trailing corner. Owner directive: add the globe to **every** sub-page. `SimfPageShell._defaultHeader` now renders the shared gold `SimfLanguageToggle` in the trailing slot when `showHeaderActions` is false (still just the globe — not the full bell/theme/menu cluster). Supersedes the "back + title + line only" part of the 2026-06-28 note for the language globe specifically.
 
 ## Highlights carousel — deliberate deviation from Figma 758-1238 (owner 2026-06-28)
 
