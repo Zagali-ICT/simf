@@ -156,8 +156,7 @@ internal sealed class AssetService(
     public async Task<GridPage<AdminAssetSummary>> ListAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
+        var (skip, top) = query.ClampPage(25, 200);
 
         var assetServices = CategoryToService.Values.ToList();
         var rows = dbContext.StoredFiles.AsNoTracking()
@@ -195,7 +194,7 @@ internal sealed class AssetService(
 
         var names = await ResolveOwnerNamesAsync(page, cancellationToken);
         var items = page.Select(f => ToSummary(f, names)).ToList();
-        return GridPage<AdminAssetSummary>.Of(items, total, new GridQuery { Skip = skip, Top = top });
+        return GridPage<AdminAssetSummary>.Of(items, total, skip, top);
     }
 
     public async Task<AdminAssetSummary?> GetByIdAsync(

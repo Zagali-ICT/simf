@@ -83,8 +83,7 @@ internal sealed class BadgeUpdateRequestService(
         Guid actorUserId, GridQuery query,
         CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
+        var (skip, top) = query.ClampPage(25, 200);
 
         var rows = appDbContext.BadgeUpdateRequests.AsNoTracking().AsQueryable();
         var statusFilter = string.Empty;
@@ -132,7 +131,7 @@ internal sealed class BadgeUpdateRequestService(
             r.CreatedAt, r.RespondedAt))
             .ToList();
         return GridPage<AdminBadgeUpdateRequestRow>.Of(items, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     public async Task<AdminBadgeUpdateRequestDetail> GetAsync(

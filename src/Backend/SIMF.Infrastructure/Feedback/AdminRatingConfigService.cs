@@ -32,8 +32,7 @@ internal sealed class AdminRatingConfigService(
     public async Task<GridPage<AdminRatingTypeSummary>> ListTypesAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
+        var (skip, top) = query.ClampPage(25, 200);
 
         var rows = dbContext.RatingTypes.AsNoTracking().AsQueryable();
 
@@ -91,7 +90,7 @@ internal sealed class AdminRatingConfigService(
             responseCounts.GetValueOrDefault(t.Id), t.CreatedAt)).ToList();
 
         return GridPage<AdminRatingTypeSummary>.Of(items, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     public async Task<AdminRatingTypeSummary?> GetTypeAsync(
@@ -213,8 +212,7 @@ internal sealed class AdminRatingConfigService(
     public async Task<GridPage<AdminRatingQuestionGroupSummary>> ListGroupsAsync(
         Guid ratingTypeId, GridQuery query, CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 50, 1, 200);
+        var (skip, top) = query.ClampPage(50, 200);
 
         var rows = dbContext.RatingQuestionGroups.AsNoTracking()
             .Where(g => g.RatingTypeId == ratingTypeId);
@@ -249,7 +247,7 @@ internal sealed class AdminRatingConfigService(
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminRatingQuestionGroupSummary>.Of(page, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     public async Task<AdminRatingQuestionGroupSummary?> GetGroupAsync(
@@ -331,8 +329,7 @@ internal sealed class AdminRatingConfigService(
     public async Task<GridPage<AdminRatingQuestionSummary>> ListQuestionsAsync(
         Guid ratingTypeId, GridQuery query, CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 50, 1, 200);
+        var (skip, top) = query.ClampPage(50, 200);
 
         var rows = dbContext.RatingQuestions.AsNoTracking()
             .Where(q => q.RatingTypeId == ratingTypeId);
@@ -370,7 +367,7 @@ internal sealed class AdminRatingConfigService(
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminRatingQuestionSummary>.Of(page, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     public async Task<AdminRatingQuestionSummary?> GetQuestionAsync(

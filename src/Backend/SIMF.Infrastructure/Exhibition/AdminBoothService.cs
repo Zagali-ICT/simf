@@ -28,8 +28,7 @@ internal sealed class AdminBoothService(
     public async Task<GridPage<AdminBoothSummary>> ListAllAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
+        var (skip, top) = query.ClampPage(25, 200);
 
         var rows = dbContext.Booths.AsNoTracking().AsQueryable();
 
@@ -101,7 +100,7 @@ internal sealed class AdminBoothService(
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminBoothSummary>.Of(page, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     public async Task<AdminBoothDetail?> GetAsync(

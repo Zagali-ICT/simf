@@ -26,8 +26,7 @@ internal sealed class AdminSessionModeratorService(
     public async Task<GridPage<AdminSessionModeratorRow>> ListAllAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
+        var (skip, top) = query.ClampPage(25, 200);
 
         // Join the session up front so the grid can filter / sort on the
         // session code/title (D-255). The moderator + assigner names live in
@@ -85,7 +84,7 @@ internal sealed class AdminSessionModeratorService(
         {
             return GridPage<AdminSessionModeratorRow>.Of(
                 Array.Empty<AdminSessionModeratorRow>(), total,
-                new GridQuery { Skip = skip, Top = top });
+                skip, top);
         }
 
         var userIds = pageRows.Select(r => r.UserId)
@@ -115,7 +114,7 @@ internal sealed class AdminSessionModeratorService(
         }).ToList();
 
         return GridPage<AdminSessionModeratorRow>.Of(items, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     public async Task<AdminSessionModeratorRow> AssignAsync(

@@ -152,8 +152,7 @@ internal sealed class DelegationMeetingRequestService(
     public async Task<GridPage<AdminDelegationMeetingRequestRow>> ListAllAsync(
         Guid actorUserId, GridQuery query, CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
+        var (skip, top) = query.ClampPage(25, 200);
 
         var rows = appDbContext.DelegationMeetingRequests.AsNoTracking().AsQueryable();
         if (query.Filters.TryGetValue("status", out var statusRaw)
@@ -191,7 +190,7 @@ internal sealed class DelegationMeetingRequestService(
         }, cancellationToken);
 
         return GridPage<AdminDelegationMeetingRequestRow>.Of(
-            page, total, new GridQuery { Skip = skip, Top = top });
+            page, total, skip, top);
     }
 
     public async Task<AdminDelegationMeetingRequestDetail> GetAsync(

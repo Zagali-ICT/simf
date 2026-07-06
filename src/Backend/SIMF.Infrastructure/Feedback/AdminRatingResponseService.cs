@@ -17,8 +17,7 @@ internal sealed class AdminRatingResponseService(
     public async Task<AdminRatingResponsesPage> ListResponsesAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
+        var (skip, top) = query.ClampPage(25, 200);
 
         var rows = dbContext.RatingResponses.AsNoTracking()
             .Where(r => r.IsActive);
@@ -79,7 +78,7 @@ internal sealed class AdminRatingResponseService(
             .ToListAsync(cancellationToken);
 
         var grid = GridPage<AdminRatingResponseSummary>.Of(page, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
         return new AdminRatingResponsesPage(grid, averageOverall, total);
     }
 

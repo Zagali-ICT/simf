@@ -31,8 +31,7 @@ internal sealed class AdminGateService(
     public async Task<GridPage<AdminGateSummary>> ListAllAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
+        var (skip, top) = query.ClampPage(25, 200);
 
         var rows = appDbContext.Gates.AsNoTracking().AsQueryable();
 
@@ -100,7 +99,7 @@ internal sealed class AdminGateService(
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminGateSummary>.Of(page, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     public async Task<AdminGateDetail?> GetAsync(

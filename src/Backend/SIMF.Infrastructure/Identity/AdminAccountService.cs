@@ -731,8 +731,7 @@ internal sealed partial class AdminAccountService(
     {
         // Normalise: clamp Top to [1..200], clamp Skip to [0..). The grid
         // contract (SIMF.Common.GridQuery) says the endpoint owns the clamp.
-        var skip = query.Skip < 0 ? 0 : query.Skip;
-        var top = query.Top switch { < 1 => 20, > 200 => 200, _ => query.Top };
+        var (skip, top) = query.ClampPage(20, 200);
 
         // Resolve the Administrator role id once for the per-row "is admin"
         // flag. Only Admin-typed users carry RBAC roles per the P7 model.
@@ -848,7 +847,7 @@ internal sealed partial class AdminAccountService(
             .ToList();
 
         return GridPage<AdminUserSummary>.Of(summaries, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     private async Task<Guid?> GetAdministratorRoleIdAsync(CancellationToken cancellationToken)
@@ -1009,8 +1008,7 @@ internal sealed partial class AdminAccountService(
         GridQuery query, UserType userType, bool? profileScope,
         CancellationToken cancellationToken)
     {
-        var skip = query.Skip < 0 ? 0 : query.Skip;
-        var top = query.Top switch { < 1 => 20, > 200 => 200, _ => query.Top };
+        var (skip, top) = query.ClampPage(20, 200);
 
         var scopedUserIds = await ResolveProfileScopedUserIdsAsync(
             profileScope, cancellationToken);
@@ -1063,7 +1061,7 @@ internal sealed partial class AdminAccountService(
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminPendingUserSummary>.Of(page, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
 

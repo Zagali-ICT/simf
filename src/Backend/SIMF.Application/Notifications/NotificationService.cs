@@ -18,8 +18,7 @@ internal sealed class NotificationService(
         Guid actorUserId, GridQuery query,
         CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
+        var (skip, top) = query.ClampPage(25, 200);
         var unreadOnly =
             query.Filters.TryGetValue("unreadOnly", out var unreadFilter)
             && bool.TryParse(unreadFilter, out var parsed)
@@ -55,7 +54,7 @@ internal sealed class NotificationService(
             actorUserId, skip, top, unreadOnly, kinds, cancellationToken);
 
         return GridPage<NotificationDto>.Of(items, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     public Task<int> UnreadCountMineAsync(

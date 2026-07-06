@@ -83,8 +83,7 @@ internal sealed class ParticipationDocumentRequestService(
         Guid actorUserId, GridQuery query,
         CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
+        var (skip, top) = query.ClampPage(25, 200);
 
         var rows = appDbContext.ParticipationDocumentRequests.AsNoTracking().AsQueryable();
         var statusFilter = string.Empty;
@@ -129,7 +128,7 @@ internal sealed class ParticipationDocumentRequestService(
             r.DocumentType, r.Note, r.Status, r.ResponseNote, r.CreatedAt, r.RespondedAt))
             .ToList();
         return GridPage<AdminParticipationDocumentRequestRow>.Of(items, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     public async Task<AdminParticipationDocumentRequestDetail> GetAsync(
