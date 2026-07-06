@@ -71,7 +71,8 @@ class MoreDrawer extends ConsumerWidget {
                   // account (D-666).
                   for (final entry in moreMenuEntries(l10n))
                     if (routeAllowsRole(entry.routeName, role) &&
-                        (!entry.approvedOnly || approved))
+                        (!entry.approvedOnly || approved) &&
+                        (!entry.signedInOnly || signedIn))
                       _DrawerTile(
                         icon: entry.icon,
                         title: entry.title,

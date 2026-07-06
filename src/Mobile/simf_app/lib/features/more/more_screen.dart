@@ -123,10 +123,13 @@ class MoreScreen extends ConsumerWidget {
                 title: l10n.moreAccessibility,
                 onTap: () => context.pushNamed(RouteNames.accessibility),
               ),
-              MoreRow(
-                title: l10n.moreNotifications,
-                onTap: () => context.pushNamed(RouteNames.notifications),
-              ),
+              // Notifications are auth-only — hide from a not-logged-in guest so
+              // the row doesn't dead-bounce to sign-in (D-669).
+              if (signedIn)
+                MoreRow(
+                  title: l10n.moreNotifications,
+                  onTap: () => context.pushNamed(RouteNames.notifications),
+                ),
               // Reset password (signed-in only) — reuses the forgot→reset flow:
               // it emails a code, then the reset screen sets the new password.
               // The known email is pre-filled so it isn't retyped (D-659).

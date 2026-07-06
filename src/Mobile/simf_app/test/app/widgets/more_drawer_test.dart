@@ -328,7 +328,34 @@ void main() {
       expect(find.text('Registration status'), findsOneWidget); // the exception
       expect(find.text('Contact us'), findsOneWidget); // D-668 end group
       expect(find.text('About the app'), findsOneWidget);
+      expect(find.text('Notifications'), findsOneWidget); // signed-in keeps it (D-669)
       expect(find.text('Sign out'), findsOneWidget); // still signed in
+    });
+  });
+
+  // D-669 — notifications is an auth-only page, so the entry hides for a
+  // not-logged-in guest (it would only dead-bounce to sign-in).
+  group('MoreDrawer — notifications is signed-in only (D-669)', () {
+    Future<void> pumpTall(WidgetTester tester, {required bool signedIn}) async {
+      tester.view.physicalSize = const Size(500, 2200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await _pump(tester, auth: _RecordingAuthController(signedIn: signedIn));
+    }
+
+    testWidgets('a signed-in account sees Notifications', (tester) async {
+      await pumpTall(tester, signedIn: true);
+      expect(find.text('Notifications'), findsOneWidget);
+    });
+
+    testWidgets('a not-logged-in guest does NOT see Notifications',
+        (tester) async {
+      await pumpTall(tester, signedIn: false);
+      expect(find.text('Notifications'), findsNothing);
+      // Public entries still show for the guest.
+      expect(find.text('About the forum'), findsOneWidget);
+      expect(find.text('Contact us'), findsOneWidget);
     });
   });
 }
