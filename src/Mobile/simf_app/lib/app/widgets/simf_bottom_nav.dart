@@ -8,9 +8,11 @@ import '../theme/tokens.dart';
 import 'simf_svg_icon.dart';
 
 /// The app's bottom navigation bar, rebuilt to the KSA-Project frame **758:1476
-/// "Nav Bar"**: a navy `#01132D` bar with rounded top corners, an upward gold
-/// glow, the exact iconify glyphs (`vuesax/linear/user`, `boxicons:location`,
-/// `boxicons:qr`, `uil:calender`, `vuesax/bold/home-2`) bundled under
+/// "Nav Bar"** (icons verified against the nav component **206:1699**): a navy
+/// `#01132D` bar with rounded top corners, an upward gold glow, the exact
+/// iconify glyphs (`vuesax/linear/user`, `tabler:map-pin-2` (the folded-map pin,
+/// D-671 — replaced the old `boxicons:location` teardrop), `boxicons:qr`,
+/// `uil:calender`, `vuesax/bold/home-2`) bundled under
 /// `assets/icons/nav_*.svg`, a raised 56px gold QR centre action, inactive
 /// icons in `#5E584B`, and the active tab in gold with its label below it.
 /// Destinations (reading order): Home · Agenda · [QR badge] · Map · Profile —
