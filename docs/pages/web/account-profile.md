@@ -8,8 +8,8 @@
 | **Auth** | `[Authorize]` + `InteractiveServerNoPrerender` (interactive island) |
 | **Status** | ✅ Real |
 | **Backend** | `GET /account/api/profile`, `PUT /account/api/profile`, `POST /account/api/profile/id-document`, `GET /account/api/interests`, `GET /account/api/profile-types/visitor` |
-| **Source** | [`UserProfile.razor`](../../../src/Website/SIMF.Web/Components/Pages/Account/UserProfile.razor) |
-| **Last reviewed** | 2026-05-28 |
+| **Source** | [`UserProfile.razor`](../../../src/Website/SIMF.Web/Components/Pages/Account/UserProfile.razor) + [`UserProfile.razor.cs`](../../../src/Website/SIMF.Web/Components/Pages/Account/UserProfile.razor.cs) |
+| **Last reviewed** | 2026-07-06 |
 
 ## 1. Purpose
 
@@ -51,4 +51,15 @@ D-046a).
 - Decisions: D-046a (QR minted on approval), D-049 (route rename to `/account/profile`), D-064 (no nav menu), D-132 (Notifications link wired).
 - Companion: [`account-notifications.md`](account-notifications.md).
 
-_Last reviewed:_ 2026-05-28 by Claude (D-133 slice 5).
+## Tests
+
+- bUnit: [`UserProfilePageTests`](../../../tests/SIMF.Web.Tests/UserProfilePageTests.cs)
+  — a load-error smoke (the page composes + shows the fetch-failure state). A
+  full happy-path render (four stubbed BFF loads) is a follow-up.
+
+## Changelog
+
+- 2026-07-06 (D-633) — C# moved to a `UserProfile.razor.cs` code-behind partial
+  (Website clean-code, Phase 5); behaviour + wire unchanged. Added a smoke test.
+
+_Last reviewed:_ 2026-07-06 by Claude (D-633).
