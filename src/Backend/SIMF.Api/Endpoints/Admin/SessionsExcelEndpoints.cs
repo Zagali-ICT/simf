@@ -80,14 +80,23 @@ public sealed class ExportSessionsEndpoint(
 
         // Resolve the two FK display values once per request. FastEndpoints creates
         // one endpoint instance per request and the export base calls this once per
-        // page, so the guard keeps the bounded lookups to a single read on the first
-        // page (Top=500 — the same page size the CP session form uses for these
-        // pickers).
+        // page, so the guard keeps each lookup to a single paged walk on the first
+        // page. Both list services clamp Top to 200, so page through each so >200
+        // halls/categories still resolve.
         if (!_lookupsLoaded)
         {
-            var lookupQuery = new GridQuery { Skip = 0, Top = 500 };
-            var halls = (await hallService.ListAllAsync(lookupQuery, ct)).Items;
-            var categories = (await categoryService.ListAsync(lookupQuery, ct)).Items;
+            var halls = await GridExportPaging.CollectAllAsync(
+                async skip => (await hallService.ListAllAsync(
+                    GridExportPaging.Page(new GridQuery(), skip, MaxExportRows), ct)).Items,
+                MaxExportRows);
+            // Categories fit one page today; if they ever exceed one, note their
+            // (DisplayOrder, Name) sort is not unique — a tie at a page boundary
+            // could duplicate a row, so dedupe before ToDictionary then. (Halls sort
+            // by their unique Code, so they have no such boundary risk.)
+            var categories = await GridExportPaging.CollectAllAsync(
+                async skip => (await categoryService.ListAsync(
+                    GridExportPaging.Page(new GridQuery(), skip, MaxExportRows), ct)).Items,
+                MaxExportRows);
             _hallCodes = halls.ToDictionary(h => h.Id, h => h.Code);
             _categoryNames = categories.ToDictionary(c => c.Id, c => c.Name);
             _lookupsLoaded = true;

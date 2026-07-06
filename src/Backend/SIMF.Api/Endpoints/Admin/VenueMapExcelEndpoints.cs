@@ -61,14 +61,21 @@ public sealed class ExportVenueMapEndpoint(
 
         // FastEndpoints creates one endpoint instance per request and the export
         // base calls this once per page, so build the Hall/Booth code maps only on
-        // the first page.
+        // the first page. Both list services clamp Top to 200, so page through each
+        // lookup — a venue with >200 halls/booths still resolves every node's code.
         if (!_lookupsLoaded)
         {
-            var halls = await hallService.ListAllAsync(new GridQuery { Top = 5_000 }, ct);
-            _hallCodes = halls.Items.ToDictionary(h => h.Id, h => h.Code);
+            var halls = await GridExportPaging.CollectAllAsync(
+                async skip => (await hallService.ListAllAsync(
+                    GridExportPaging.Page(new GridQuery(), skip, MaxExportRows), ct)).Items,
+                MaxExportRows);
+            _hallCodes = halls.ToDictionary(h => h.Id, h => h.Code);
 
-            var booths = await boothService.ListAllAsync(new GridQuery { Top = 5_000 }, ct);
-            _boothCodes = booths.Items.ToDictionary(b => b.Id, b => b.Code);
+            var booths = await GridExportPaging.CollectAllAsync(
+                async skip => (await boothService.ListAllAsync(
+                    GridExportPaging.Page(new GridQuery(), skip, MaxExportRows), ct)).Items,
+                MaxExportRows);
+            _boothCodes = booths.ToDictionary(b => b.Id, b => b.Code);
 
             _lookupsLoaded = true;
         }

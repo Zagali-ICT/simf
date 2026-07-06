@@ -9,6 +9,7 @@ using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Programme;
 using SIMF.Domain.Venue;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
@@ -160,6 +161,66 @@ public sealed class VenueMapExcelTests : IClassFixture<SimfApiFactory>
             .Count(label => label.StartsWith(prefix, StringComparison.Ordinal));
 
         Assert.Equal(seeded, exported);
+    }
+
+    [Fact]
+    public async Task Export_resolves_FK_code_columns_beyond_the_lookup_page_cap()
+    {
+        // Regression for the D-642 follow-up: the Hall/Booth code lookups the export
+        // builds for the FK columns were themselves capped at the list page size
+        // (200), so a node referencing the 201st+ hall exported a BLANK Hall code.
+        // Seed 210 halls + one node per hall; every node's Hall column must resolve.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        // Short token: Hall.Code is capped at 16 chars, so a full GUID won't fit.
+        var token = Guid.NewGuid().ToString("N")[..8];
+        const int count = 210;
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            for (var i = 0; i < count; i++)
+            {
+                var hall = new Hall
+                {
+                    Id = Guid.NewGuid(),
+                    Code = $"{token}{i:D3}",
+                    Name = $"Hall {i}",
+                    NameArabic = $"قاعة {i}",
+                    Capacity = 100,
+                };
+                db.Set<Hall>().Add(hall);
+                db.VenueMapNodes.Add(new VenueMapNode
+                {
+                    Id = Guid.NewGuid(),
+                    Label = $"{token}-N{i:D3}",
+                    LabelArabic = $"عقدة {i}",
+                    Kind = VenueMapNodeKind.Hall,
+                    HallId = hall.Id,
+                    X = i,
+                    Y = i,
+                });
+            }
+            await db.SaveChangesAsync();
+        }
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/venue-map/export",
+            new AdminGridExportRequest { Query = new GridQuery { Top = 50 } },
+            adminToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+
+        using var workbook = new XLWorkbook(new MemoryStream(bytes));
+        var sheet = workbook.Worksheet("VenueMap");
+        // Column 1 = Label, column 6 = Hall (resolved code). Every one of our nodes
+        // must carry a non-empty Hall code — pre-fix the halls past the 200-row
+        // lookup cap resolved to blank.
+        var resolved = sheet.RowsUsed()
+            .Where(r => r.Cell(1).GetString().StartsWith(token, StringComparison.Ordinal))
+            .Count(r => !string.IsNullOrEmpty(r.Cell(6).GetString()));
+
+        Assert.Equal(count, resolved);
     }
 
     [Fact]
