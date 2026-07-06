@@ -1437,6 +1437,7 @@
   <data name="Admin.Sessions.Action.Edit" xml:space="preserve"><value>تعديل</value></data>
   <data name="Admin.Sessions.Action.Details" xml:space="preserve"><value>تفاصيل</value></data>
   <data name="Admin.Sessions.Action.Deactivate" xml:space="preserve"><value>إلغاء التفعيل</value></data>
+  <data name="Admin.Sessions.Action.Moderate" xml:space="preserve"><value>إدارة الأسئلة المباشرة</value></data>
   <data name="Admin.Sessions.Action.SelectAll" xml:space="preserve"><value>اختيار الكل</value></data>
   <data name="Admin.Sessions.Action.SelectRow" xml:space="preserve"><value>اختيار الصف</value></data>
   <data name="Admin.Sessions.Action.Up" xml:space="preserve"><value>أعلى</value></data>

@@ -46,6 +46,11 @@ As of D-356 the grid also bulk-exports to and imports from Excel.
     `<AuthorizedAction Permission="@PermissionCatalog.Sessions.Publish">` so an
     admin with View/Edit but not Publish sees the read-only details **without**
     the lifecycle footer or the recording uploader.
+  - The grid **Moderate** row action (gavel icon → the per-session live Q&A desk
+    at `/sessions/{id}/moderate`) is wrapped in
+    `<AuthorizedAction Permission="@PermissionCatalog.Questions.Moderate">`, so it
+    appears only for a moderator / Administrator (D-646). The desk page and its API
+    enforce the same `Questions.Moderate` code, so hiding the action is UX-only.
 - **What an unauthenticated / under-privileged user sees:** an admin lacking
   `Sessions.View` lands on `/not-permitted` (HTTP 200) and the "Sessions" nav
   item is not rendered (its `RequiredPermission = Sessions.View`).
@@ -257,6 +262,7 @@ The Add/Edit form also lazy-loads its pickers on first render:
 | Delete confirmation gate (D-353) | same | E2E-SES-021 |
 | Excel export (D-356) | same | E2E-SES-022 |
 | Excel import + rejection (D-356) | same | E2E-SES-023, 024 |
+| Moderate row action → live Q&A desk (D-646) | same | E2E-SES-031 |
 
 ## 12. Related docs
 
