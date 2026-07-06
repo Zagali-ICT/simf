@@ -25,14 +25,18 @@ class _FakeAuthRepository implements AuthRepository {
       throw UnimplementedError(invocation.memberName.toString());
 }
 
-Future<void> _pump(WidgetTester tester, _FakeAuthRepository repo) async {
+Future<void> _pump(
+  WidgetTester tester,
+  _FakeAuthRepository repo, {
+  String? email,
+}) async {
   final router = GoRouter(
     initialLocation: '/auth/forgot-password',
     routes: <RouteBase>[
       GoRoute(
         name: RouteNames.forgotPassword,
         path: '/auth/forgot-password',
-        builder: (c, s) => const ForgotPasswordScreen(),
+        builder: (c, s) => ForgotPasswordScreen(email: email),
       ),
       GoRoute(
         name: RouteNames.resetPassword,
@@ -116,6 +120,14 @@ void main() {
       // No validation error survived a valid submit.
       expect(find.text('Invalid email'), findsNothing);
       expect(find.text('This field is required'), findsNothing);
+    });
+
+    testWidgets('a pre-filled email (signed-in profile reset) populates the '
+        'field (D-659)', (tester) async {
+      final repo = _FakeAuthRepository();
+      await _pump(tester, repo, email: 'known@example.sa');
+
+      expect(find.text('known@example.sa'), findsOneWidget);
     });
   });
 }

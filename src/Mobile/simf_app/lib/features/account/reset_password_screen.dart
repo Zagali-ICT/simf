@@ -89,6 +89,13 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             .read(simfPrefsStorageProvider)
             .setString(StorageKeys.lastEmail, widget.email);
       }
+      // If the user reached reset from their profile while signed in, the
+      // password change invalidates the old session server-side — sign out
+      // locally so the sign-in screen is a genuine fresh login, not a stale
+      // signed-in state (D-659).
+      if (ref.read(authControllerProvider) is AuthStateSignedIn) {
+        await ref.read(authControllerProvider.notifier).signOut();
+      }
       if (!mounted) {
         return;
       }

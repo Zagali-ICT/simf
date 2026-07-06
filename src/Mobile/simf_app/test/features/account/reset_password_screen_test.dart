@@ -66,11 +66,46 @@ class _FakePrefs implements SimfPrefsStorage {
   }
 }
 
+Session _session() => Session(
+      accessToken: 'A',
+      refreshToken: 'R',
+      accessTokenExpiresAt: DateTime.now().add(const Duration(minutes: 30)),
+      user: CurrentUser(
+        id: 'u1',
+        email: 'visitor@example.sa',
+        displayName: 'Raed',
+        appRole: AppRole.visitor,
+        preferredLanguage: PreferredLanguage.fromJson('en'),
+        registrationStatus: RegistrationStatus.approved,
+      ),
+    );
+
+/// Fake auth controller — starts signed-in or signed-out and records whether
+/// the reset flow signed out (the D-659 profile-reset clean-up).
+class _FakeAuthController extends AuthController {
+  _FakeAuthController({required this.signedIn});
+
+  final bool signedIn;
+  int signOutCalls = 0;
+
+  @override
+  AuthState build() =>
+      signedIn ? AuthStateSignedIn(_session()) : const AuthStateSignedOut();
+
+  @override
+  Future<void> signOut() async {
+    signOutCalls++;
+    state = const AuthStateSignedOut();
+  }
+}
+
 Future<void> _pump(
   WidgetTester tester,
   _FakeAuthRepo repo,
-  _FakePrefs prefs,
-) async {
+  _FakePrefs prefs, {
+  _FakeAuthController? auth,
+}) async {
+  final authController = auth ?? _FakeAuthController(signedIn: false);
   final router = GoRouter(
     initialLocation: '/reset',
     routes: <RouteBase>[
@@ -97,6 +132,7 @@ Future<void> _pump(
       overrides: <Override>[
         authRepositoryProvider.overrideWithValue(repo),
         simfPrefsStorageProvider.overrideWithValue(prefs),
+        authControllerProvider.overrideWith(() => authController),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -212,6 +248,27 @@ void main() {
       expect(find.text('The passwords do not match.'), findsOneWidget);
       expect(repo.resetCalls, 0);
       expect(find.text('SIGN-IN'), findsNothing);
+    });
+
+    testWidgets(
+        'a signed-in profile reset signs out then routes to sign-in (D-659)',
+        (tester) async {
+      final repo = _FakeAuthRepo();
+      final auth = _FakeAuthController(signedIn: true);
+      await _pump(tester, repo, _FakePrefs(), auth: auth);
+
+      await _fill(
+        tester,
+        code: '123456',
+        password: 'Password1',
+        confirm: 'Password1',
+      );
+      await _tapReset(tester);
+
+      expect(repo.resetCalls, 1);
+      // Signed-in reset clears the stale session before landing on sign-in.
+      expect(auth.signOutCalls, 1);
+      expect(find.text('SIGN-IN'), findsOneWidget);
     });
   });
 }

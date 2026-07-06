@@ -127,10 +127,16 @@ class MoreScreen extends ConsumerWidget {
               ),
               // Reset password (signed-in only) — reuses the forgot→reset flow:
               // it emails a code, then the reset screen sets the new password.
+              // The known email is pre-filled so it isn't retyped (D-659).
               if (signedIn)
                 MoreRow(
                   title: l10n.moreResetPassword,
-                  onTap: () => context.pushNamed(RouteNames.forgotPassword),
+                  onTap: () => context.pushNamed(
+                    RouteNames.forgotPassword,
+                    queryParameters: <String, String>{
+                      'email': auth.session.user.email,
+                    },
+                  ),
                 ),
             ],
           ),

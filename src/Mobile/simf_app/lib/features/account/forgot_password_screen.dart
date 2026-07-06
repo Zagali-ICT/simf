@@ -26,7 +26,11 @@ import 'widgets/otp_code_boxes.dart';
 /// forward. The request is enumeration-resistant on the server (always
 /// success-shaped), so the app always proceeds to the reset step.
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
-  const ForgotPasswordScreen({super.key});
+  const ForgotPasswordScreen({this.email, super.key});
+
+  /// Pre-fills the email field — passed when a signed-in user opens this from
+  /// their profile (D-659), so they don't retype an address the app knows.
+  final String? email;
 
   @override
   ConsumerState<ForgotPasswordScreen> createState() =>
@@ -38,6 +42,15 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   final TextEditingController _email = TextEditingController();
   bool _busy = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    final email = widget.email;
+    if (email != null && email.isNotEmpty) {
+      _email.text = email;
+    }
+  }
 
   @override
   void dispose() {
