@@ -1,7 +1,7 @@
 # Registration-status gate — حالة التسجيل (Page 011, `#11`)
 
 - **Route:** `/registration-status` (`RouteNames.registrationStatus`). Access: signed-in but not-yet-approved (router gate route 11).
-- **Figma:** **1701:3789** (D-591). **Clean-code freeze:** D-623 (2026-07-04).
+- **Figma:** **1701:3789** (D-591). **Clean-code freeze:** D-623 (2026-07-04); stages card removed + golden re-locked D-665 (2026-07-06).
 
 ## Purpose
 
@@ -15,10 +15,9 @@ redirects to sign-in.
 
 | File | Holds |
 |------|-------|
-| `registration_status_screen.dart` (235) | State — load, pending/approved/rejected switch, sign-out/continue/back, `_buildBody`/`_buildStatusView`/`_buildError` |
+| `registration_status_screen.dart` (230) | State — load, pending/approved/rejected switch, sign-out/continue/back, `_buildBody`/`_buildStatusView`/`_buildError` |
 | `widgets/registration_status_header.dart` | `RegistrationStatusHeader` — plain-chevron gate header |
 | `widgets/registration_status_hero.dart` | `RegistrationStatusHero` — state ring + headline + message |
-| `widgets/registration_stages_card.dart` | `RegistrationStagesCard` (+ `_StageMarker`, `_StageState`, `_Stage`) |
 | `widgets/registration_primary_button.dart` | `RegistrationPrimaryButton` |
 | `widgets/registration_sign_out_link.dart` | `RegistrationSignOutLink` |
 
@@ -28,8 +27,10 @@ link would change the render (D-623).
 
 ## L4 Figma parity (frame 1701:3789)
 
-`registration_status_1701-3789` golden held without `--update` after the decomposition
-— render byte-identical to the frame-verified D-591 build.
+The "المراحل" stages card was **removed** (D-665, 2026-07-06) — the frame 1701:3789 has
+no such card and its source nodes (`1701:3805–3822`) were deleted from Figma, so the app
+now matches the frame: hero → gold "متابعة" button → "تسجيل الخروج" link. The
+`registration_status_1701-3789` golden was regenerated to the cardless render.
 
 ## Level-F
 

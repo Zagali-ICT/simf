@@ -100,7 +100,7 @@ Future<void> _pump(WidgetTester tester, _FakeAuthController controller) async {
 
 void main() {
   group('RegistrationStatusScreen (Page 011)', () {
-    testWidgets('pending shows the under-review state + Re-check + stages',
+    testWidgets('pending shows the under-review state + Re-check',
         (tester) async {
       await _pump(
         tester,
@@ -109,8 +109,6 @@ void main() {
 
       expect(find.text('Your account is under review'), findsOneWidget);
       expect(find.text('Re-check'), findsOneWidget);
-      expect(find.text('Stages'), findsOneWidget);
-      expect(find.text('SIMF team review'), findsOneWidget);
     });
 
     testWidgets('approved shows Continue, which routes home', (tester) async {
@@ -127,7 +125,7 @@ void main() {
       expect(find.text('HOME'), findsOneWidget);
     });
 
-    testWidgets('rejected shows the declined state with no Continue / stages',
+    testWidgets('rejected shows the declined state with no Continue',
         (tester) async {
       await _pump(
         tester,
@@ -136,7 +134,6 @@ void main() {
 
       expect(find.text('Your account was not approved'), findsOneWidget);
       expect(find.text('Continue'), findsNothing);
-      expect(find.text('Stages'), findsNothing);
     });
 
     testWidgets('a load failure shows the error + retry, which re-fetches',

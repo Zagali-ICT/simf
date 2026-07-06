@@ -450,12 +450,6 @@ class AppL10n {
         'هل تريد تسجيل الخروج من حسابك؟',
         'Do you want to sign out of your account?',
       );
-  String get stagesTitle => _t('المراحل', 'Stages');
-  String get stageDataSubmitted => _t('إرسال البيانات', 'Data submitted');
-  String get stageEmailConfirmed =>
-      _t('تأكيد البريد الإلكتروني', 'Email confirmed');
-  String get stageTeamReview => _t('مراجعة فريق SIMF', 'SIMF team review');
-  String get stageActivation => _t('تفعيل الحساب', 'Account activation');
 
   // Sign in (Page 003).
   String get signInTitle => _t('تسجيل الدخول', 'Sign in');

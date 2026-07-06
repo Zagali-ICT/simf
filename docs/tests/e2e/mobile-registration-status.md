@@ -147,8 +147,7 @@ Scenario: The approved gate matches the frame
   And the header shows a back chevron on the left + the centred title "حالة التسجيل"
   And a 104px green ring surrounds a green check
   And the white headline reads "تم اعتماد حسابك" over a beige message
-  And the "المراحل" card lists the four stages right-aligned, each ending in a gold check
-  And a full-width gold "متابعة" button sits below the card
+  And a full-width gold "متابعة" button sits below the message
   And a muted "تسجيل الخروج" link sits beneath the button (not in the header)
   When the user taps "متابعة"
   Then the app opens the home route
@@ -157,4 +156,4 @@ Scenario: The approved gate matches the frame
 
 ---
 
-_Last reviewed:_ `2026-07-02` by `SIMF Team` (D-591 — approved-state redesign to Figma 1701:3789).
+_Last reviewed:_ `2026-07-06` by `SIMF Team` (D-665 — "المراحل" stages card removed to match Figma 1701:3789; D-591 — approved-state redesign).

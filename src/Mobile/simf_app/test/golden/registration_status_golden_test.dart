@@ -21,9 +21,8 @@ import 'golden_fonts.dart';
 ///
 /// Frame parity expected: a navy gate (no bottom nav), a back + centred title
 /// header, a 104px green ring around the check, a white "تم اعتماد حسابك"
-/// headline over the beige message, the navy-80% "المراحل" card with four
-/// right-aligned rows each ending in a gold check, a full-width gold "متابعة"
-/// button, and a muted "تسجيل الخروج" link beneath it. RTL throughout.
+/// headline over the beige message, a full-width gold "متابعة" button, and a
+/// muted "تسجيل الخروج" link beneath it. RTL throughout.
 
 CurrentUser _approvedUser() => CurrentUser(
       id: 'u1',

@@ -10,7 +10,6 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import 'widgets/registration_primary_button.dart';
 import 'widgets/registration_sign_out_link.dart';
-import 'widgets/registration_stages_card.dart';
 import 'widgets/registration_status_header.dart';
 import 'widgets/registration_status_hero.dart';
 
@@ -26,8 +25,8 @@ import 'widgets/registration_status_hero.dart';
 ///
 /// Layout matches the frame: a `navySurface` gate (no bottom nav), a back +
 /// centred title header, a vertically-centred hero (a state-coloured ring around
-/// the state icon, a white headline, a beige message), the "المراحل" progress
-/// card, the gold primary button, and a "تسجيل الخروج" link beneath it.
+/// the state icon, a white headline, a beige message), the gold primary button,
+/// and a "تسجيل الخروج" link beneath it.
 class RegistrationStatusScreen extends ConsumerStatefulWidget {
   const RegistrationStatusScreen({super.key});
 
@@ -181,10 +180,6 @@ class _RegistrationStatusScreenState
                     headline: headline,
                     message: message,
                   ),
-                  if (status != RegistrationStatus.rejected) ...<Widget>[
-                    const SizedBox(height: SimfTokens.space6),
-                    RegistrationStagesCard(status: status, l10n: l10n),
-                  ],
                   const SizedBox(height: SimfTokens.space6),
                   if (primaryLabel != null && onPrimary != null)
                     RegistrationPrimaryButton(
