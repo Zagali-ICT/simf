@@ -60,9 +60,9 @@ curated map omitted. For any screen not here, consult that docx before guessing.
 | Exhibitor detail | `lib/features/booths/exhibitor_detail_screen.dart` | `1439-11881` | docx #17 |
 
 Still genuinely unbound in the docx too (truly ASK / pending): badge-activation,
-badge-sign-in, biometric-step-up, forgot/reset-password (auth flow — frozen
-chrome), audience-comments (removed), my-contacts / scan-contact / share-my-contact
-(FDS-014), registration-status (#11).
+badge-sign-in, biometric-step-up, reset-password (auth flow — frozen chrome;
+forgot-password now bound to `918-2341`, D-656), audience-comments (removed),
+my-contacts / scan-contact / share-my-contact (FDS-014), registration-status (#11).
 
 ## Removed / dissolved screens
 

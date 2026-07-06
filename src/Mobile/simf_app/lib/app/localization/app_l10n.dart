@@ -546,11 +546,14 @@ class AppL10n {
   String get otpResentToast =>
       _t('تم إرسال رمز جديد إلى بريدك', 'A new code was sent to your email');
   String get forgotPasswordTitle =>
-      _t('استعادة كلمة المرور', 'Reset password');
+      _t('نسيت كلمة المرور', 'Forgot password');
   String get forgotPasswordBody => _t(
-        'أدخل بريدك الإلكتروني وسنرسل لك رمزاً لإعادة التعيين.',
-        'Enter your email and we will send you a reset code.',
+        'أدخل بريدك الإلكتروني المسجّل وسنرسل لك رمز إعادة تعيين كلمة المرور.',
+        'Enter your registered email and we will send you a password reset '
+            'code.',
       );
+  String get rememberedPasswordQuestion =>
+      _t('تذكرت كلمة المرور؟', 'Remembered your password?');
   String get sendCodeButton => _t('إرسال الرمز', 'Send code');
   String get resetPasswordTitle =>
       _t('تعيين كلمة مرور جديدة', 'Set a new password');
