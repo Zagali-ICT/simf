@@ -6,6 +6,7 @@
 @using SIMF.ControlPanel.Components.Pages.Admin.ProfileTypes
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Visitors.View)]
+@inherits PendingApprovalPageBase
 
 <PageTitle>@L["Admin.Pending.Visitors.Title"] · SIMF</PageTitle>
 
