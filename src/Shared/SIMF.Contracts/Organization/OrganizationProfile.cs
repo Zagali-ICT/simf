@@ -31,20 +31,10 @@ public sealed record OrganizationProfileResponse(
     string? ContactEmail,
     string? ContactWebsite,
     string? LiveStreamUrl,
-    OrganizationSocialLinks Social,
+    SocialLinks Social,
     string? LogoUrl,
     IReadOnlyList<OrganizationAboutItemDto> AboutItems,
     IReadOnlyList<OrganizationDetailDto> Details);
-
-/// <summary>The fixed set of social-media URLs (null = not set / not an http(s) URL).</summary>
-public sealed record OrganizationSocialLinks(
-    string? Facebook,
-    string? X,
-    string? Instagram,
-    string? LinkedIn,
-    string? YouTube,
-    string? TikTok,
-    string? Snapchat);
 
 /// <summary>One "about" item — a bilingual title + body (e.g. mission / vision).</summary>
 public sealed record OrganizationAboutItemDto(

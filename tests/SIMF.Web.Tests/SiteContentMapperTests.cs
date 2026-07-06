@@ -1,4 +1,5 @@
 using SIMF.Common;
+using SIMF.Contracts;
 using SIMF.Contracts.Archive;
 using SIMF.Contracts.Cms;
 using SIMF.Contracts.Configuration;
@@ -235,7 +236,7 @@ public sealed class SiteContentMapperTests
         // hides any platform that is absent.
         var settings = new SiteSettingsResponse(
             "مرحبا", "Welcome",
-            new SiteSocialLinks(
+            new SocialLinks(
                 Facebook: null,
                 X: "https://x.com/simf",
                 Instagram: "   ", // blank → omitted
@@ -259,7 +260,7 @@ public sealed class SiteContentMapperTests
     {
         var settings = new SiteSettingsResponse(
             "م", "W",
-            new SiteSocialLinks(null, null, null, null, null, null, null));
+            new SocialLinks(null, null, null, null, null, null, null));
 
         var result = SiteContentEndpoints.Compose(
             null, null, null, null, null, null, null, null, settings);

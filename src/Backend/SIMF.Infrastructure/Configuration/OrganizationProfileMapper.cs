@@ -1,3 +1,4 @@
+using SIMF.Contracts;
 using SIMF.Contracts.Organization;
 using SIMF.Domain.Organization;
 
@@ -39,7 +40,7 @@ internal static class OrganizationProfileMapper
             NullIfBlank(p.ContactEmail),
             SafeUrl(p.ContactWebsite),
             SafeUrl(p.LiveStreamUrl),
-            new OrganizationSocialLinks(
+            new SocialLinks(
                 SafeUrl(p.FacebookUrl),
                 SafeUrl(p.XUrl),
                 SafeUrl(p.InstagramUrl),
