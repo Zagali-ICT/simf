@@ -13,12 +13,12 @@ import 'package:simf_app/features/myarea/widgets/identity_fallback_view.dart';
 import 'golden_fonts.dart';
 
 /// Goldens for the identity-verification (التحقق من الهوية) screen, D-404 →
-/// clean-code D-610 → full-bleed Figma redesign D-611 → manual shutter + gallery
-/// re-added (owner 2026-07-06) so the photo can always be taken. The live camera
+/// clean-code D-610 → full-bleed Figma D-611 → live-only + liveness-prompt
+/// restored (owner 2026-07-06, D-662): the capture is live-camera-only with the
+/// liveness-step prompt overlaid; no manual shutter, no gallery. The live camera
 /// can't render in the test runtime (no camera plugin), so parity is locked on
-/// the deterministic states: the loading capture surface (a spinner until the
-/// camera is ready), the ready surface with the shutter + prompt + gallery
-/// overlay, and the gallery fallback.
+/// the deterministic states: the loading surface (a spinner), the ready surface
+/// with the liveness prompt, and the "camera required" retry.
 ///   flutter test --update-goldens test/golden/identity_verification_golden_test.dart
 
 Widget _host(Widget child) => MaterialApp(
@@ -47,12 +47,7 @@ LiveCaptureView _capture(
   return LiveCaptureView(
     ready: ready,
     preview: preview,
-    promptText: l10n.identityCapturePrompt,
-    captureLabel: l10n.capturePhotoLabel,
-    galleryLabel: l10n.chooseFromGallery,
-    capturing: false,
-    onCapture: () {},
-    onGallery: () {},
+    promptText: l10n.livenessSmilePrompt,
   );
 }
 
@@ -76,7 +71,7 @@ void main() {
     );
   });
 
-  testWidgets('Identity capture controls @375x812 — shutter + prompt + gallery',
+  testWidgets('Identity capture prompt @375x812 — liveness step over preview',
       (tester) async {
     tester.view.physicalSize = const Size(375, 812);
     tester.view.devicePixelRatio = 1.0;
@@ -97,11 +92,12 @@ void main() {
 
     await expectLater(
       find.byType(LiveCaptureView),
-      matchesGoldenFile('goldens/identity_capture_controls.png'),
+      matchesGoldenFile('goldens/identity_capture_prompt.png'),
     );
   });
 
-  testWidgets('Identity gallery fallback @375x812 (Arabic)', (tester) async {
+  testWidgets('Identity camera-required retry @375x812 (Arabic)',
+      (tester) async {
     tester.view.physicalSize = const Size(375, 812);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -111,7 +107,7 @@ void main() {
         Builder(
           builder: (context) => IdentityFallbackView(
             l10n: AppL10n.of(context),
-            onPick: () {},
+            onRetry: () {},
           ),
         ),
       ),

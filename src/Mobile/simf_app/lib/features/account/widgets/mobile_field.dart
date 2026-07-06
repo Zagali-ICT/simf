@@ -39,8 +39,9 @@ class MobileField extends StatelessWidget {
           // label above it (owner 2026-07-06).
           textDirection: TextDirection.ltr,
           textAlign: TextAlign.end,
-          // Fold Arabic-Indic digits to Western as they are typed.
-          inputFormatters: const <TextInputFormatter>[WesternDigitsFormatter()],
+          // Digits only, with an optional leading `+` — no letters or symbols;
+          // Arabic-Indic digits fold to Western (owner 2026-07-06).
+          inputFormatters: const <TextInputFormatter>[PhoneNumberFormatter()],
           // Covers Saudi 05XXXXXXXX / +9665XXXXXXXX / 009665XXXXXXXX and
           // international +[1-9]\d{7,14} / 00[1-9]\d{7,14}.
           maxLength: 17,

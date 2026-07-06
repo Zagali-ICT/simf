@@ -3,17 +3,19 @@ import 'package:flutter/material.dart';
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
 
-/// Shown when no live camera is available (web / test / emulator / permission
-/// denied): the user picks a photo from the gallery instead (no liveness).
+/// Shown when no live camera is available (web / test / no camera / permission
+/// denied / a device without Google Play Services): a "camera required" message
+/// with a retry. There is NO gallery option — the identity photo must be a live
+/// camera image (owner 2026-07-06, D-662).
 class IdentityFallbackView extends StatelessWidget {
   const IdentityFallbackView({
     required this.l10n,
-    required this.onPick,
+    required this.onRetry,
     super.key,
   });
 
   final AppL10n l10n;
-  final VoidCallback onPick;
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -36,14 +38,14 @@ class IdentityFallbackView extends StatelessWidget {
             ),
             const SizedBox(height: SimfTokens.space6),
             FilledButton.icon(
-              onPressed: onPick,
+              onPressed: onRetry,
               style: FilledButton.styleFrom(
                 backgroundColor: SimfTokens.accent,
                 foregroundColor: SimfTokens.navy,
                 minimumSize: const Size.fromHeight(48),
               ),
-              icon: const Icon(Icons.photo_library_outlined),
-              label: Text(l10n.chooseFromGallery),
+              icon: const Icon(Icons.refresh),
+              label: Text(l10n.identityRetry),
             ),
           ],
         ),

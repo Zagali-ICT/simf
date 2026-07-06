@@ -759,19 +759,19 @@ class AppL10n {
   // 758:4180 / 758:4248 / 758:4316).
   String get identityVerificationTitle =>
       _t('التحقق من الهوية', 'Identity verification');
-  // A manual shutter + gallery were added back on the live-camera view (owner
-  // 2026-07-06) so the photo can always be taken — the auto smile/turn liveness
-  // can't complete on devices without Google Play Services (ML Kit).
-  String get identityCapturePrompt => _t(
-        'وجّه وجهك نحو الكاميرا ثم اضغط على زر الالتقاط',
-        'Face the camera, then tap the capture button',
-      );
-  String get capturePhotoLabel => _t('التقاط الصورة', 'Capture photo');
+  // Camera security rules (owner 2026-07-06, D-662): the identity photo must be
+  // a LIVE, human-verified capture — the on-screen prompt guides the liveness
+  // challenge, and there is no gallery path, so a static image is never used.
+  String get livenessSmilePrompt => _t('ابتسم', 'Smile');
+  String get livenessTurnRightPrompt =>
+      _t('أدر رأسك يمينًا', 'Turn your head right');
+  String get livenessTurnLeftPrompt =>
+      _t('أدر رأسك يسارًا', 'Turn your head left');
   String get identityCameraUnavailable => _t(
-        'الكاميرا غير متاحة. اختر صورة من المعرض بدلاً من ذلك.',
-        'The camera is unavailable. Choose a photo from the gallery instead.',
+        'الكاميرا مطلوبة للتحقق من الهوية بصورة حية. فعّل الكاميرا وحاول مجددًا.',
+        'The camera is required for a live identity check. Enable it and retry.',
       );
-  String get chooseFromGallery => _t('اختر من المعرض', 'Choose from gallery');
+  String get identityRetry => _t('إعادة المحاولة', 'Retry');
 
   // Moderator (محاور) per-session Q&A desk (Figma 758:5307, D-405).
   String get moderatorDeskTitle => _t('أسئلة الجلسة', 'Session questions');
