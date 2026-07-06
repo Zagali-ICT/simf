@@ -5,9 +5,6 @@
 @page "/account/rejected"
 @rendermode AppRenderMode.InteractiveServerNoPrerender
 @attribute [Authorize]
-@inject IStringLocalizer<Strings> L
-@inject AuthenticationStateProvider AuthState
-@inject NavigationManager Nav
 
 <PageTitle>@L["Account.Rejected.Title"]</PageTitle>
 
@@ -34,29 +31,3 @@
         </form>
     </section>
 </section>
-
-@code {
-    private string? _reason;
-
-    protected override async Task OnInitializedAsync()
-    {
-        var auth = await AuthState.GetAuthenticationStateAsync();
-        var state = auth.User.FindFirst("account_state")?.Value;
-        if (string.Equals(state, "Approved", StringComparison.Ordinal))
-        {
-            Nav.NavigateTo("/account/profile", forceLoad: true);
-            return;
-        }
-        if (string.Equals(state, "PendingApproval", StringComparison.Ordinal))
-        {
-            Nav.NavigateTo("/account/pending", forceLoad: false);
-            return;
-        }
-        var isArabic = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
-        _reason = isArabic
-            ? auth.User.FindFirst("rejection_reason_ar")?.Value
-              ?? auth.User.FindFirst("rejection_reason")?.Value
-            : auth.User.FindFirst("rejection_reason")?.Value
-              ?? auth.User.FindFirst("rejection_reason_ar")?.Value;
-    }
-}
