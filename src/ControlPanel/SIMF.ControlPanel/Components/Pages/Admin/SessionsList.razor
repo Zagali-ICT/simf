@@ -112,6 +112,17 @@
                         </CellTemplate>
                     </SimfDataGridColumn>
                 </Columns>
+                <RowActions>
+                    @* D-646 — the live Q&A moderation desk is per-session and is
+                       reached from this grid, not the nav (CpNavigation notes the
+                       same). Gated by the same Questions.Moderate permission the
+                       desk page + API enforce, so only moderators see the action. *@
+                    <AuthorizedAction Permission="@PermissionCatalog.Questions.Moderate">
+                        <SimfToolbarButton Icon="gavel"
+                                           Title="@L["Admin.Sessions.Action.Moderate"]"
+                                           OnClick="@(() => OpenModeration(context))" />
+                    </AuthorizedAction>
+                </RowActions>
                 <EmptyTemplate>
                     <SimfEmptyState Title="@L["Admin.Sessions.None"]" />
                 </EmptyTemplate>
