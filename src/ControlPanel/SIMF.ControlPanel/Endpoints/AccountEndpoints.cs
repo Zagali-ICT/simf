@@ -1420,6 +1420,45 @@ internal static class AccountEndpoints
             return Forward(await api.DeactivateRegionAsync(id, token));
         });
 
+        // D-649 — Contact-inquiries inbox + Site-settings + Country-delegates
+        //         BFF passthroughs (pages + API shipped, wiring was never added).
+        group.MapPost("/admin/contact-inquiries/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListContactInquiriesAsync(body, token));
+        });
+        group.MapPost("/admin/contact-inquiries/{id:guid}/handled",
+            async (Guid id, SetContactInquiryHandledBody body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.MarkContactInquiryHandledAsync(id, body.Handled, token));
+        });
+        group.MapGet("/admin/site-settings",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetSiteSettingsAsync(token));
+        });
+        group.MapPut("/admin/site-settings",
+            async (AdminUpdateSiteSettingsRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateSiteSettingsAsync(body, token));
+        });
+        group.MapGet("/admin/countries/{id:int}/delegates",
+            async (int id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListCountryDelegatesAsync(id, token));
+        });
+
         // D-153 — Speaker admin BFF passthroughs.
         group.MapPost("/admin/speakers/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
@@ -3330,4 +3369,8 @@ internal static class AccountEndpoints
     /// passthrough. <see cref="ProfileTypeId"/> null (or an empty body)
     /// leaves the visitor's tier unchanged.</summary>
     private sealed record ApproveVisitorBody(Guid? ProfileTypeId);
+
+    /// <summary>D-649 — body for the contact-inquiry handled/reopen toggle
+    /// passthrough (the CP posts <c>{ handled }</c>).</summary>
+    private sealed record SetContactInquiryHandledBody(bool Handled = true);
 }
