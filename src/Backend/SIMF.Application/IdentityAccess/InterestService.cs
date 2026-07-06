@@ -33,13 +33,12 @@ internal sealed class InterestService(
     public async Task<GridPage<AdminInterestSummary>> ListAllAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
+        var (skip, top) = query.ClampPage(25, 200);
 
         var (items, total) = await interests.ListPageAsync(query, skip, top, cancellationToken);
 
         return GridPage<AdminInterestSummary>.Of(items, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     public Task<AdminInterestSummary?> GetAsync(

@@ -350,6 +350,12 @@ internal sealed partial class AdminAccountService
         return created;
     }
 
+    // The whole-grid user export is bounded to this many rows so an accidental
+    // "export everything" never loads the entire table into memory. Each page is
+    // built via GridExportPaging.Page (a fresh GridQuery, so the caller's own live
+    // query is never mutated — D-045 H1, the CP page passes its own `_query` in).
+    private const int ExportRowCap = 5_000;
+
     public async Task<byte[]> ExportUsersAsync(
         Guid actorUserId,
         AdminExportUsersRequest request,
@@ -382,31 +388,22 @@ internal sealed partial class AdminAccountService
         }
         else
         {
-            // Whole-result-set path — re-run the same query the grid used.
-            // Bound to 5 000 rows so an accidental "export everything"
-            // doesn't load the entire database into RAM.
+            // Whole-result-set path — page through the same query the grid used
+            // (ListAdminsAsync clamps Top to its 200-row page size) until the whole
+            // set is collected or the export cap is reached, so a >200-row grid is
+            // not silently truncated to the first page (D-642). Bounded to
+            // ExportRowCap rows so an accidental "export everything" never loads the
+            // entire table into memory.
             //
-            // D-045 H1: clone the incoming query before mutating Skip/Top —
-            // the caller may still be holding a reference to it (the CP page
-            // does — UsersList.razor passes its own `_query` in), and
-            // mutating it in place silently changed the page-size on the
-            // next list call.
+            // P7c — export operates on the Admin family today (the /admin/admins
+            // grid is the only consumer that triggers it). When the Other / Visitor
+            // grids grow their own export, this branches on a request-side
+            // `UserType` filter.
             var source = request.Query ?? new GridQuery();
-            var query = new GridQuery
-            {
-                Skip = 0,
-                Top = 5_000,
-                Search = source.Search,
-                Sort = source.Sort,
-                SortDescending = source.SortDescending,
-                Filters = new Dictionary<string, string>(source.Filters),
-            };
-            // P7c — export operates on the Admin family today (the
-            // /admin/admins grid is the only consumer that triggers it).
-            // When the Other / Visitor grids grow their own export, this
-            // branches on a request-side `UserType` filter.
-            var page = await ListAdminsAsync(query, cancellationToken);
-            rows = page.Items;
+            rows = await GridExportPaging.CollectAllAsync(
+                async skip => (await ListAdminsAsync(
+                    GridExportPaging.Page(source, skip, ExportRowCap), cancellationToken)).Items,
+                ExportRowCap);
         }
 
         var bytes = excel.Export(rows);
@@ -706,19 +703,14 @@ internal sealed partial class AdminAccountService
         }
         else
         {
-            // Whole-result-set path — bounded export of the matching kind.
+            // Whole-result-set path — page through the matching kind (see
+            // ExportUsersAsync) until the whole set is collected or the export cap
+            // is reached, so a >200-row grid is not truncated to the first page.
             var source = request.Query ?? new GridQuery();
-            var query = new GridQuery
-            {
-                Skip = 0,
-                Top = 5_000,
-                Search = source.Search,
-                Sort = source.Sort,
-                SortDescending = source.SortDescending,
-                Filters = new Dictionary<string, string>(source.Filters),
-            };
-            var page = await ListAccountsAsync(query, kind, profileScope, cancellationToken);
-            rows = page.Items;
+            rows = await GridExportPaging.CollectAllAsync(
+                async skip => (await ListAccountsAsync(
+                    GridExportPaging.Page(source, skip, ExportRowCap), kind, profileScope, cancellationToken)).Items,
+                ExportRowCap);
         }
 
         var bytes = excel.Export(rows);

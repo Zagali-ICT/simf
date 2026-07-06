@@ -31,8 +31,7 @@ internal sealed class AdminFaqService(
     public async Task<GridPage<AdminFaqGroupSummary>> ListGroupsAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
+        var (skip, top) = query.ClampPage(25, 200);
 
         var rows = dbContext.FaqGroups.AsNoTracking().AsQueryable();
 
@@ -72,7 +71,7 @@ internal sealed class AdminFaqService(
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminFaqGroupSummary>.Of(page, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     public async Task<AdminFaqGroupSummary?> GetGroupAsync(
@@ -157,8 +156,7 @@ internal sealed class AdminFaqService(
     public async Task<GridPage<AdminFaqEntrySummary>> ListEntriesAsync(
         Guid groupId, GridQuery query, CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 50, 1, 200);
+        var (skip, top) = query.ClampPage(50, 200);
 
         var rows = dbContext.FaqEntries.AsNoTracking()
             .Where(e => e.FaqGroupId == groupId);
@@ -192,7 +190,7 @@ internal sealed class AdminFaqService(
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminFaqEntrySummary>.Of(page, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     public async Task<AdminFaqEntrySummary?> GetEntryAsync(

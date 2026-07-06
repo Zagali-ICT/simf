@@ -25,8 +25,7 @@ internal sealed class AdminCmsService(
     public async Task<GridPage<AdminContentBlockSummary>> ListContentBlocksAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
+        var (skip, top) = query.ClampPage(25, 200);
 
         var rows = appDbContext.ContentBlocks.AsNoTracking().AsQueryable();
         if (!string.IsNullOrWhiteSpace(query.Search))
@@ -81,7 +80,7 @@ internal sealed class AdminCmsService(
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminContentBlockSummary>.Of(page, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     public async Task<AdminContentBlockSummary?> GetContentBlockAsync(
@@ -199,8 +198,7 @@ internal sealed class AdminCmsService(
     public async Task<GridPage<AdminBannerSummary>> ListBannersAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
+        var (skip, top) = query.ClampPage(25, 200);
 
         var rows = appDbContext.Banners.AsNoTracking().AsQueryable();
         if (!string.IsNullOrWhiteSpace(query.Search))
@@ -254,7 +252,7 @@ internal sealed class AdminCmsService(
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminBannerSummary>.Of(page, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     public async Task<AdminBannerDetail?> GetBannerAsync(

@@ -9,6 +9,9 @@ using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Programme;
+using SIMF.Domain.Venue;
+using SIMF.Infrastructure.Persistence;
 using Xunit;
 
 namespace SIMF.Api.Tests;
@@ -109,6 +112,163 @@ public sealed class VenueMapExcelTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Export_returns_every_row_past_the_list_page_cap()
+    {
+        // Regression for D-642: the whole-grid export requested every row, but the
+        // list service re-clamped Top back to its page size — silently truncating
+        // any grid larger than one page. The venue-map list clamps at 500
+        // (ClampPage(50, 500)), so seed 600 uniquely-labelled nodes: pre-fix only
+        // 500 came back; the fix pages through and returns all 600.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var prefix = $"Bulk-{Guid.NewGuid():N}";
+        const int seeded = 600;
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            for (var i = 0; i < seeded; i++)
+            {
+                db.VenueMapNodes.Add(new VenueMapNode
+                {
+                    Id = Guid.NewGuid(),
+                    Label = $"{prefix}-{i:D3}",
+                    LabelArabic = $"عقدة {i}",
+                    Kind = VenueMapNodeKind.Zone,
+                    X = i,
+                    Y = i,
+                });
+            }
+            await db.SaveChangesAsync();
+        }
+
+        // The client asks for a 50-row page; the export pages through the whole set
+        // regardless of the client Top, so all 600 must still come back.
+        var response = await PostAuthAsync(
+            "/api/v1/admin/venue-map/export",
+            new AdminGridExportRequest { Query = new GridQuery { Top = 50 } },
+            adminToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+
+        using var workbook = new XLWorkbook(new MemoryStream(bytes));
+        var sheet = workbook.Worksheet("VenueMap");
+        // Column 1 is Label; row 1 is the header (excluded by the prefix filter).
+        // Count only the rows we seeded so the assertion is independent of any
+        // nodes the other tests in this class add.
+        var exported = sheet.Column(1).CellsUsed()
+            .Select(cell => cell.GetString())
+            .Count(label => label.StartsWith(prefix, StringComparison.Ordinal));
+
+        Assert.Equal(seeded, exported);
+    }
+
+    [Fact]
+    public async Task Export_resolves_FK_code_columns_beyond_the_lookup_page_cap()
+    {
+        // Regression for the D-642 follow-up: the Hall/Booth code lookups the export
+        // builds for the FK columns were themselves capped at the list page size
+        // (200), so a node referencing the 201st+ hall exported a BLANK Hall code.
+        // Seed 210 halls + one node per hall; every node's Hall column must resolve.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        // Short token: Hall.Code is capped at 16 chars, so a full GUID won't fit.
+        var token = Guid.NewGuid().ToString("N")[..8];
+        const int count = 210;
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            for (var i = 0; i < count; i++)
+            {
+                var hall = new Hall
+                {
+                    Id = Guid.NewGuid(),
+                    Code = $"{token}{i:D3}",
+                    Name = $"Hall {i}",
+                    NameArabic = $"قاعة {i}",
+                    Capacity = 100,
+                };
+                db.Set<Hall>().Add(hall);
+                db.VenueMapNodes.Add(new VenueMapNode
+                {
+                    Id = Guid.NewGuid(),
+                    Label = $"{token}-N{i:D3}",
+                    LabelArabic = $"عقدة {i}",
+                    Kind = VenueMapNodeKind.Hall,
+                    HallId = hall.Id,
+                    X = i,
+                    Y = i,
+                });
+            }
+            await db.SaveChangesAsync();
+        }
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/venue-map/export",
+            new AdminGridExportRequest { Query = new GridQuery { Top = 50 } },
+            adminToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+
+        using var workbook = new XLWorkbook(new MemoryStream(bytes));
+        var sheet = workbook.Worksheet("VenueMap");
+        // Column 1 = Label, column 6 = Hall (resolved code). Every one of our nodes
+        // must carry a non-empty Hall code — pre-fix the halls past the 200-row
+        // lookup cap resolved to blank.
+        var resolved = sheet.RowsUsed()
+            .Where(r => r.Cell(1).GetString().StartsWith(token, StringComparison.Ordinal))
+            .Count(r => !string.IsNullOrEmpty(r.Cell(6).GetString()));
+
+        Assert.Equal(count, resolved);
+    }
+
+    [Fact]
+    public async Task Import_resolves_a_hall_code_beyond_the_lookup_page_cap()
+    {
+        // Regression for the D-645 import twin of D-644: ImportVenueMapEndpoint
+        // resolved Hall codes against a 200-capped dictionary, so importing a node
+        // that referenced the 201st+ hall wrongly failed with "No active hall …".
+        // Seed 210 halls and import a node referencing the last one (guaranteed
+        // beyond the 200-cap by Code order); it must resolve, not error.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var token = Guid.NewGuid().ToString("N")[..8];
+        const int count = 210;
+        var lastHallCode = $"{token}{count - 1:D3}"; // token209 — >=210th by Code order
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            for (var i = 0; i < count; i++)
+            {
+                db.Set<Hall>().Add(new Hall
+                {
+                    Id = Guid.NewGuid(),
+                    Code = $"{token}{i:D3}",
+                    Name = $"Hall {i}",
+                    NameArabic = $"قاعة {i}",
+                    Capacity = 100,
+                });
+            }
+            await db.SaveChangesAsync();
+        }
+
+        var nodeLabel = $"{token}-import";
+        var workbook = BuildVenueMapWorkbookWithHall("VenueMap",
+            (nodeLabel, "عقدة", "Hall", lastHallCode));
+
+        var response = await PostFileAuthAsync(
+            "/api/v1/admin/venue-map/import", workbook, adminToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminGridImportResult>>())!.Data!;
+        // The row resolves its hall beyond the 200-cap and is created — no per-row error.
+        Assert.DoesNotContain(result.Errors, e => e.Key == nodeLabel);
+        Assert.True(result.Created >= 1);
+    }
+
+    [Fact]
     public async Task Non_admin_caller_is_forbidden_from_export()
     {
         var tokens = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
@@ -141,6 +301,30 @@ public sealed class VenueMapExcelTests : IClassFixture<SimfApiFactory>
             sheet.Cell(i + 2, 3).Value = rows[i].Kind;
             sheet.Cell(i + 2, 4).Value = rows[i].X;
             sheet.Cell(i + 2, 5).Value = rows[i].Y;
+        }
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        return stream.ToArray();
+    }
+
+    // Like BuildVenueMapWorkbook but with the optional Hall code column, for the
+    // FK-resolution import path.
+    private static byte[] BuildVenueMapWorkbookWithHall(
+        string sheetName,
+        params (string Label, string LabelArabic, string Kind, string Hall)[] rows)
+    {
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.Worksheets.Add(sheetName);
+        sheet.Cell(1, 1).Value = "Label";
+        sheet.Cell(1, 2).Value = "LabelArabic";
+        sheet.Cell(1, 3).Value = "Kind";
+        sheet.Cell(1, 4).Value = "Hall";
+        for (var i = 0; i < rows.Length; i++)
+        {
+            sheet.Cell(i + 2, 1).Value = rows[i].Label;
+            sheet.Cell(i + 2, 2).Value = rows[i].LabelArabic;
+            sheet.Cell(i + 2, 3).Value = rows[i].Kind;
+            sheet.Cell(i + 2, 4).Value = rows[i].Hall;
         }
         using var stream = new MemoryStream();
         workbook.SaveAs(stream);

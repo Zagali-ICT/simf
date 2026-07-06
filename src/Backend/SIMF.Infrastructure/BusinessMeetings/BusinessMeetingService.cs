@@ -73,7 +73,7 @@ internal sealed class BusinessMeetingService(
             .Select(t => new MeetingTableRow(
                 t.Id, t.HallId, t.Code, t.RowLabel, t.ColumnNumber, t.Capacity, t.IsActive))
             .ToListAsync(cancellationToken);
-        return GridPage<MeetingTableRow>.Of(rows, total, new GridQuery { Skip = skip, Top = top });
+        return GridPage<MeetingTableRow>.Of(rows, total, skip, top);
     }
 
     public async Task<MeetingTableRow> CreateTableAsync(
@@ -295,7 +295,7 @@ internal sealed class BusinessMeetingService(
                 a.Id, a.HallId, a.Purpose, a.Mode, a.UnitCount, a.RowColumnSpec,
                 a.StartUtc, a.EndUtc, a.Notes))
             .ToListAsync(cancellationToken);
-        return GridPage<HallAllocationRow>.Of(rows, total, new GridQuery { Skip = skip, Top = top });
+        return GridPage<HallAllocationRow>.Of(rows, total, skip, top);
     }
 
     public async Task<HallAllocationRow> CreateAllocationAsync(
@@ -451,7 +451,7 @@ internal sealed class BusinessMeetingService(
                 m.Participants.Count))
             .ToListAsync(cancellationToken);
 
-        return GridPage<BusinessMeetingRow>.Of(items, total, new GridQuery { Skip = skip, Top = top });
+        return GridPage<BusinessMeetingRow>.Of(items, total, skip, top);
     }
 
     public async Task<BusinessMeetingDetail> GetMeetingAsync(
@@ -848,7 +848,7 @@ internal sealed class BusinessMeetingService(
         new(t.Id, t.HallId, t.Code, t.RowLabel, t.ColumnNumber, t.Capacity, t.IsActive);
 
     private static (int Skip, int Top) Page(GridQuery query) =>
-        (Math.Max(0, query.Skip), Math.Clamp(query.Top is > 0 ? query.Top : 50, 1, 500));
+        query.ClampPage(50, 500);
 
     private void ValidateSlot(DateTimeOffset start, DateTimeOffset end)
     {

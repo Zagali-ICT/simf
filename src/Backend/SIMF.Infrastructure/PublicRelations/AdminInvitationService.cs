@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Application.Notifications;
 using SIMF.Application.PublicRelations.Abstractions;
 using SIMF.Common;
@@ -22,6 +23,7 @@ namespace SIMF.Infrastructure.PublicRelations;
 internal sealed class AdminInvitationService(
     SimfAppDbContext appDbContext,
     SimfIdentityDbContext identityDbContext,
+    IIdentityUserDirectory userDirectory,
     INotificationDispatcher notificationDispatcher,
     IAuditLog auditLog,
     TimeProvider timeProvider,
@@ -30,8 +32,7 @@ internal sealed class AdminInvitationService(
     public async Task<GridPage<AdminInvitationSummary>> ListAllAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
+        var (skip, top) = query.ClampPage(25, 200);
 
         var invitations = appDbContext.Invitations.AsNoTracking().AsQueryable();
 
@@ -76,7 +77,7 @@ internal sealed class AdminInvitationService(
         {
             return GridPage<AdminInvitationSummary>.Of(
                 Array.Empty<AdminInvitationSummary>(), total,
-                new GridQuery { Skip = skip, Top = top });
+                skip, top);
         }
 
         var profileIds = pageRows.Select(row => row.SentToUserProfileId).Distinct().ToList();
@@ -140,7 +141,7 @@ internal sealed class AdminInvitationService(
         }).ToList();
 
         return GridPage<AdminInvitationSummary>.Of(items, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     public async Task<AdminInvitationDetail?> GetAsync(
@@ -352,8 +353,7 @@ internal sealed class AdminInvitationService(
     public async Task<GridPage<AdminVipSummary>> ListVipsAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
+        var (skip, top) = query.ClampPage(25, 200);
 
         var vips = appDbContext.UserProfiles
             .AsNoTracking()
@@ -397,14 +397,12 @@ internal sealed class AdminInvitationService(
         {
             return GridPage<AdminVipSummary>.Of(
                 Array.Empty<AdminVipSummary>(), total,
-                new GridQuery { Skip = skip, Top = top });
+                skip, top);
         }
 
         var userIds = pageRows.Select(row => row.UserId).ToList();
-        var emailsByUser = await identityDbContext.Users.AsNoTracking()
-            .Where(user => userIds.Contains(user.Id))
-            .Select(user => new { user.Id, user.Email })
-            .ToDictionaryAsync(user => user.Id, user => user.Email, cancellationToken);
+        var emailsByUser = await userDirectory.GetEmailsAsync(
+            userIds, cancellationToken);
 
         var items = pageRows.Select(row => new AdminVipSummary(
             row.Id,
@@ -418,7 +416,7 @@ internal sealed class AdminInvitationService(
             .ToList();
 
         return GridPage<AdminVipSummary>.Of(items, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     public async Task<AdminNotifyVipsResult> NotifyVipsAsync(
@@ -476,10 +474,8 @@ internal sealed class AdminInvitationService(
         var validUserIds = vipProfiles.Select(p => p.UserId).ToList();
         var skipped = requestedIds.Except(vipProfiles.Select(p => p.Id)).ToList();
 
-        var emailsByUser = await identityDbContext.Users.AsNoTracking()
-            .Where(user => validUserIds.Contains(user.Id))
-            .Select(user => new { user.Id, user.Email })
-            .ToDictionaryAsync(user => user.Id, user => user.Email, cancellationToken);
+        var emailsByUser = await userDirectory.GetEmailsAsync(
+            validUserIds, cancellationToken);
 
         var dispatched = 0;
         var emailsEnqueued = 0;

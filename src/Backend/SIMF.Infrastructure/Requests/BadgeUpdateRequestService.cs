@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Application.Requests.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -20,7 +21,7 @@ namespace SIMF.Infrastructure.Requests;
 /// Mirrors <c>SpeakerMeetingRequestService</c>.</summary>
 internal sealed class BadgeUpdateRequestService(
     SimfAppDbContext appDbContext,
-    SimfIdentityDbContext identityDbContext,
+    IIdentityUserDirectory userDirectory,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<BadgeUpdateRequestService> logger) : IBadgeUpdateRequestService
@@ -83,8 +84,7 @@ internal sealed class BadgeUpdateRequestService(
         Guid actorUserId, GridQuery query,
         CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
+        var (skip, top) = query.ClampPage(25, 200);
 
         var rows = appDbContext.BadgeUpdateRequests.AsNoTracking().AsQueryable();
         var statusFilter = string.Empty;
@@ -132,7 +132,7 @@ internal sealed class BadgeUpdateRequestService(
             r.CreatedAt, r.RespondedAt))
             .ToList();
         return GridPage<AdminBadgeUpdateRequestRow>.Of(items, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     public async Task<AdminBadgeUpdateRequestDetail> GetAsync(
@@ -240,10 +240,8 @@ internal sealed class BadgeUpdateRequestService(
             .Where(p => p.UserId == req.RequestedByUserId)
             .Select(p => p.Name)
             .SingleOrDefaultAsync(cancellationToken);
-        var email = await identityDbContext.Users.AsNoTracking()
-            .Where(u => u.Id == req.RequestedByUserId)
-            .Select(u => u.Email)
-            .SingleOrDefaultAsync(cancellationToken);
+        var email = await userDirectory.GetEmailAsync(
+            req.RequestedByUserId, cancellationToken);
 
         return new AdminBadgeUpdateRequestDetail(
             req.Id, req.RequestedByUserId, name, email,

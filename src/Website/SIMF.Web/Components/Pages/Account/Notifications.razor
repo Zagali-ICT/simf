@@ -3,9 +3,6 @@
 @page "/account/notifications"
 @rendermode AppRenderMode.InteractiveServerNoPrerender
 @attribute [Authorize]
-@inject IStringLocalizer<Strings> L
-@inject IJSRuntime JS
-@inject NavigationManager Nav
 
 <PageTitle>@L["Account.Notifications.Title"]</PageTitle>
 
@@ -68,62 +65,3 @@
         </div>
     </div>
 </div>
-
-@code {
-    private record Toast(string Variant, string Message);
-
-    private GridQuery _query = new() { Top = 25 };
-    private GridPage<NotificationDto> _page = new();
-    private bool _loading;
-    private Toast? _toast;
-
-    protected override async Task OnInitializedAsync() => await LoadAsync();
-
-    private async Task OnQueryChangedAsync(GridQuery next)
-    {
-        _query = next;
-        await LoadAsync();
-    }
-
-    private async Task LoadAsync()
-    {
-        _loading = true;
-        try
-        {
-            var envelope = await JS.InvokeAsync<ApiResult<GridPage<NotificationDto>>>(
-                "simfAccount.postJson", "/account/api/notifications/list", _query);
-            if (envelope is { Success: true, Data: not null })
-            {
-                _page = envelope.Data;
-            }
-        }
-        finally { _loading = false; }
-    }
-
-    private async Task OnDeleteAsync(NotificationDto row)
-    {
-        await JS.InvokeAsync<ApiResult<bool>>(
-            "simfAccount.deleteJson", $"/account/api/notifications/{row.Id}");
-        await LoadAsync();
-    }
-
-    private async Task MarkAllReadAsync()
-    {
-        await JS.InvokeAsync<ApiResult<bool>>(
-            "simfAccount.postJson", "/account/api/notifications/read-all", null);
-        _toast = new Toast("success", L["Account.Notifications.MarkAllReadDone"]);
-        await LoadAsync();
-    }
-
-    private string TitleFor(NotificationDto n) =>
-        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
-            ? n.TitleArabic : n.Title;
-
-    private string BodyFor(NotificationDto n) =>
-        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
-            ? n.BodyArabic : n.Body;
-
-    private string FormatSummary(int skip, int taken, int total) =>
-        string.Format(L["Account.Notifications.Summary"],
-            skip + 1, skip + taken, total);
-}

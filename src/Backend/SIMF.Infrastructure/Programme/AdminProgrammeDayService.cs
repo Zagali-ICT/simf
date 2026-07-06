@@ -30,8 +30,7 @@ internal sealed class AdminProgrammeDayService(
     public async Task<GridPage<AdminProgrammeDaySummary>> ListAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
+        var (skip, top) = query.ClampPage(25, 200);
 
         var rows = db.ProgrammeDays.AsNoTracking().AsQueryable();
 
@@ -104,7 +103,7 @@ internal sealed class AdminProgrammeDayService(
             .ToList();
 
         return GridPage<AdminProgrammeDaySummary>.Of(summaries, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     public async Task<AdminProgrammeDayDetail?> GetAsync(

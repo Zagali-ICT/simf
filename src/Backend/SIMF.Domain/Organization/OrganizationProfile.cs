@@ -14,7 +14,7 @@ namespace SIMF.Domain.Organization;
 /// <para>The logo lives in the unified <c>Asset</c> table (category
 /// <c>OrganizationLogo</c>, owner = <see cref="SingletonId"/>) — bytes stay out of
 /// the row (D-357). Social links are 7 fixed columns (the shipped
-/// <c>SiteSocialLinks</c> wire contract); the single website is
+/// <c>SocialLinks</c> wire contract); the single website is
 /// <see cref="ContactWebsite"/>. The variable lists (<see cref="AboutItems"/>,
 /// <see cref="Details"/>) are child tables.</para>
 ///
@@ -115,7 +115,7 @@ public sealed class OrganizationProfile : BaseAuditEntity
     /// the per-session <c>Session.LiveStreamUrl</c> (D-349).</summary>
     public string? LiveStreamUrl { get; set; }
 
-    // --- Social links (the fixed SiteSocialLinks wire contract) ---
+    // --- Social links (the fixed SocialLinks wire contract) ---
 
     public string? FacebookUrl { get; set; }
     public string? XUrl { get; set; }

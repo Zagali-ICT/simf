@@ -29,8 +29,7 @@ internal sealed class AdminContactService(
     public async Task<GridPage<AdminContactSummary>> ListAsync(
         GridQuery query, CancellationToken ct = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
+        var (skip, top) = query.ClampPage(25, 200);
 
         var rows = db.Contacts.AsNoTracking().AsQueryable();
 
@@ -104,7 +103,7 @@ internal sealed class AdminContactService(
             .ToList();
 
         return GridPage<AdminContactSummary>.Of(page, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     public async Task<AdminContactDetail?> GetAsync(

@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Configuration.Abstractions;
 using SIMF.Common;
+using SIMF.Contracts;
 using SIMF.Contracts.Configuration;
 using SIMF.Domain.Organization;
 using SIMF.Infrastructure.Persistence;
@@ -42,7 +43,7 @@ internal sealed class SiteSettingsService(SimfAppDbContext db) : ISiteSettingsSe
             RegistrationSuccessMessageEn: Message(
                 p?.RegistrationSuccessMessage,
                 SiteSettingKeys.DefaultRegistrationMessageEn),
-            Social: new SiteSocialLinks(
+            Social: new SocialLinks(
                 Facebook: SocialUrl(p?.FacebookUrl),
                 X: SocialUrl(p?.XUrl),
                 Instagram: SocialUrl(p?.InstagramUrl),

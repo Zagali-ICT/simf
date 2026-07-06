@@ -47,6 +47,16 @@ public sealed class GridQuery
         set => _filters = value ?? new Dictionary<string, string>();
     }
     private Dictionary<string, string> _filters = new();
+
+    /// <summary>
+    /// Clamps this query into a safe <c>(skip, top)</c> page window: <c>skip</c>
+    /// floored at 0, <c>top</c> defaulted to <paramref name="fallbackTop"/> when
+    /// unset (<c>Top &lt;= 0</c>) and capped at <paramref name="maxTop"/>.
+    /// Centralises the paging preamble every server-paged list service repeated
+    /// inline; each caller passes its own page-size policy.
+    /// </summary>
+    public (int Skip, int Top) ClampPage(int fallbackTop = 25, int maxTop = 200) =>
+        (Math.Max(0, Skip), Math.Clamp(Top is > 0 ? Top : fallbackTop, 1, maxTop));
 }
 
 /// <summary>
@@ -78,5 +88,18 @@ public sealed class GridPage<TItem>
             Total = total,
             Skip = query.Skip,
             Top = query.Top,
+        };
+
+    /// <summary>Builds a page from materialised rows and an already-clamped
+    /// <c>(skip, top)</c> window (the companion to
+    /// <see cref="GridQuery.ClampPage"/>).</summary>
+    public static GridPage<TItem> Of(
+        IReadOnlyList<TItem> items, int total, int skip, int top) =>
+        new()
+        {
+            Items = items,
+            Total = total,
+            Skip = skip,
+            Top = top,
         };
 }

@@ -7,8 +7,8 @@
 | **Audience** | Any signed-in visitor |
 | **Auth** | `[Authorize]` |
 | **Status** | ✅ Real |
-| **Source** | [`Home.razor`](../../../src/Website/SIMF.Web/Components/Pages/Home.razor) |
-| **Last reviewed** | 2026-05-28 |
+| **Source** | [`Home.razor`](../../../src/Website/SIMF.Web/Components/Pages/Home.razor) + [`Home.razor.cs`](../../../src/Website/SIMF.Web/Components/Pages/Home.razor.cs) |
+| **Last reviewed** | 2026-07-06 |
 
 ## 1. Purpose
 
@@ -31,4 +31,14 @@ URL or auth redirect.
 | Signed-in visitor lands on /account | E2E-WEB-HM-001 |
 | State-banner redirects fire correctly | E2E-WEB-HM-002 |
 
-_Last reviewed:_ 2026-05-28 by Claude (D-133 slice 5).
+## Tests
+
+- bUnit: [`HomePageTests`](../../../tests/SIMF.Web.Tests/HomePageTests.cs) — the
+  redirect-when-signed-out branch + the signed-in landing.
+
+## Changelog
+
+- 2026-07-06 (D-630) — C# moved to a `Home.razor.cs` code-behind partial
+  (Website clean-code, Phase 5); added bUnit coverage. Behaviour unchanged.
+
+_Last reviewed:_ 2026-07-06 by Claude (D-630).

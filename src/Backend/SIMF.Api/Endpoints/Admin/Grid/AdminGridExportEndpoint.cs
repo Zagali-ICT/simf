@@ -37,8 +37,10 @@ public abstract class AdminGridExportEndpoint<TRow>(IGridExcelExporter exporter)
     /// <summary>The export column layout (header + per-row value selector).</summary>
     protected abstract IReadOnlyList<GridExcelColumn<TRow>> Columns { get; }
 
-    /// <summary>Lists the rows matching <paramref name="query"/> (the base caps
-    /// <c>Top</c> at <see cref="MaxExportRows"/> and resets <c>Skip</c>).</summary>
+    /// <summary>Lists one clamped page of rows matching <paramref name="query"/>.
+    /// The base calls this once per page (advancing <see cref="GridQuery.Skip"/>)
+    /// and stops when a page is empty or <see cref="MaxExportRows"/> is reached, so
+    /// the list service keeps its own page-size clamp untouched (D-642).</summary>
     protected abstract Task<IReadOnlyList<TRow>> ListAsync(GridQuery query, CancellationToken ct);
 
     /// <summary>The row's id, used to honour a selected-ids export.</summary>
@@ -56,11 +58,16 @@ public abstract class AdminGridExportEndpoint<TRow>(IGridExcelExporter exporter)
 
     public override async Task HandleAsync(AdminGridExportRequest req, CancellationToken ct)
     {
-        var query = req.Query ?? new GridQuery();
-        query.Skip = 0;
-        query.Top = MaxExportRows;
+        var source = req.Query ?? new GridQuery();
+        // Page through the resource's normal list (each service clamps Top to its
+        // own page size) until the whole filtered set is collected or MaxExportRows
+        // is reached — the fix for the D-642 single-page truncation. The list
+        // contract is untouched, so there is no client-reachable escape hatch on
+        // the shared GridQuery. This also fixes the selected-ids path: an id beyond
+        // the first page is now found because every page is fetched.
+        var rows = await GridExportPaging.CollectAllAsync(
+            skip => ListAsync(GridExportPaging.Page(source, skip, MaxExportRows), ct), MaxExportRows);
 
-        var rows = await ListAsync(query, ct);
         if (req.Ids is { Count: > 0 })
         {
             var wanted = req.Ids.ToHashSet();
