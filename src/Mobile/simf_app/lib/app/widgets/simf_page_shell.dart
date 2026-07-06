@@ -483,11 +483,11 @@ class SimfHeaderActions extends ConsumerWidget {
             ),
             const SizedBox(width: SimfTokens.space2),
           ],
-          _box(
-            tooltip: l10n.languageToggleLabel,
-            onTap: () =>
+          // The language toggle is the EN/عر pill now (Figma 1967:3661, D-670),
+          // not a globe box — a fixed-width control among the square action boxes.
+          SimfLanguageToggle(
+            onPressed: () =>
                 unawaited(ref.read(localeControllerProvider.notifier).toggle()),
-            glyph: const Icon(Icons.language),
           ),
           const SizedBox(width: SimfTokens.space2),
           // Node 1049:2087 — the gold crescent, intentionally inert (navy-always).

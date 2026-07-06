@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../localization/app_l10n.dart';
 import '../theme/tokens.dart';
-import 'simf_svg_icon.dart';
 
-const String _icGlobe = 'assets/icons/auth_globe.svg'; // exact Figma globe
-
-/// The gold globe language toggle — a navy-deep rounded square with the Figma
-/// globe glyph — shown at the top-trailing corner of the auth entry and
-/// onboarding tops. [onPressed] flips AR ↔ EN; the control is disabled while
-/// [busy]. (The frozen auth screens keep their own copy per the freeze rule;
-/// new screens use this shared widget.)
+/// The language toggle — a 48×24 navy-deep **pill** with a gold dot and the
+/// target-language code (**"EN"** when Arabic is active, **"عر"** when English
+/// is active), matching Figma **1967:3661** (D-670, replaces the old gold globe
+/// glyph). [onPressed] flips AR ↔ EN; the control is disabled while [busy].
+/// Shared by the onboarding top bar, the in-app header cluster
+/// ([SimfHeaderActions]) and the auth top controls so every screen shows one
+/// toggle design.
 class SimfLanguageToggle extends StatelessWidget {
   const SimfLanguageToggle({
     required this.onPressed,
@@ -25,20 +24,59 @@ class SimfLanguageToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 40,
-      height: 40,
-      child: IconButton(
-        key: const ValueKey<String>('languageToggle'),
-        tooltip: AppL10n.of(context).languageToggleLabel,
-        onPressed: busy ? null : onPressed,
-        style: IconButton.styleFrom(
-          backgroundColor: SimfTokens.navyDeep,
-          shape: const RoundedRectangleBorder(
-            borderRadius: SimfTokens.borderRadiusSmall,
+    final l10n = AppL10n.of(context);
+    final isArabic = l10n.isArabic;
+    // Show the language you switch TO: Arabic active → "EN", English → "عر".
+    final label = isArabic ? 'EN' : 'عر';
+    const dot = SizedBox(
+      width: 16,
+      height: 16,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: SimfTokens.accent,
+          shape: BoxShape.circle,
+        ),
+      ),
+    );
+    final text = Text(
+      label,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 10,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+    return Semantics(
+      button: true,
+      label: l10n.languageToggleLabel,
+      child: Tooltip(
+        message: l10n.languageToggleLabel,
+        child: InkWell(
+          key: const ValueKey<String>('languageToggle'),
+          onTap: busy ? null : onPressed,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            width: 48,
+            height: 24,
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: SimfTokens.navyDeep,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            // The Figma control is a fixed LTR toggle: the gold dot sits toward
+            // the active side and the target-language label opposite it,
+            // regardless of the app's RTL direction.
+            child: Directionality(
+              textDirection: TextDirection.ltr,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: isArabic
+                    ? <Widget>[dot, text]
+                    : <Widget>[text, dot],
+              ),
+            ),
           ),
         ),
-        icon: const SimfSvgIcon(_icGlobe, size: 24, color: SimfTokens.accent),
       ),
     );
   }

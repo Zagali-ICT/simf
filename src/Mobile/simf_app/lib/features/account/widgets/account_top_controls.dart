@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/app_assets.dart';
-import '../../../app/theme/tokens.dart';
+import '../../../app/widgets/simf_language_toggle.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
 
 /// The auth screens' top controls (Figma 627:2361): an optional back chevron at
-/// the inline start + the gold language globe at the end, forced LTR so the
-/// sides and the chevron glyph match the frame under RTL. When [onBack] is null
-/// the back button is omitted entirely (e.g. sign-in, which has no back target).
+/// the inline start + the language toggle at the end, forced LTR so the sides
+/// and the chevron glyph match the frame under RTL. When [onBack] is null the
+/// back button is omitted entirely (e.g. sign-in, which has no back target).
+/// The language control is the shared EN/عر pill (Figma 1967:3661, D-670).
 class AccountTopControls extends StatelessWidget {
   const AccountTopControls({
     required this.onToggleLanguage,
@@ -27,7 +27,6 @@ class AccountTopControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppL10n.of(context);
     final onBack = this.onBack;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -45,25 +44,9 @@ class AccountTopControls extends StatelessWidget {
               ),
             ),
           const Spacer(),
-          SizedBox(
-            width: 40,
-            height: 40,
-            child: IconButton(
-              key: const ValueKey<String>('accountLanguage'),
-              tooltip: l10n.languageToggleLabel,
-              onPressed: busy ? null : onToggleLanguage,
-              style: IconButton.styleFrom(
-                backgroundColor: SimfTokens.navyDeep,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: SimfTokens.borderRadiusSmall,
-                ),
-              ),
-              icon: const SimfSvgIcon(
-                AppAssets.authGlobe,
-                size: 24,
-                color: SimfTokens.accent,
-              ),
-            ),
+          SimfLanguageToggle(
+            onPressed: onToggleLanguage,
+            busy: busy,
           ),
         ],
       ),

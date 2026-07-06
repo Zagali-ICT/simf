@@ -296,7 +296,11 @@ void main() {
       // controls remain on the guest top bar.
       expect(find.byTooltip('Notifications'), findsNothing);
       expect(find.byIcon(Icons.menu), findsOneWidget);
-      expect(find.byIcon(Icons.language), findsOneWidget);
+      // The language control is the EN/عر pill now (D-670), keyed 'languageToggle'.
+      expect(
+        find.byKey(const ValueKey<String>('languageToggle')),
+        findsOneWidget,
+      );
       // Dark mode is now the gold crescent (node 1049:2087), still inert.
       expect(find.byIcon(Icons.dark_mode), findsOneWidget);
     });

@@ -206,17 +206,13 @@ void main() {
 
       // Both shared controls render when the cluster is opted in (Home / guest
       // home); sub-pages default to back + title + line only (owner 2026-06-28).
-      expect(find.byIcon(Icons.language), findsOneWidget);
-      expect(find.byIcon(Icons.dark_mode), findsOneWidget);
-
-      // The language globe is enabled (toggles AR ↔ EN via LocaleController).
-      final langButton = tester.widget<IconButton>(
-        find.ancestor(
-          of: find.byIcon(Icons.language),
-          matching: find.byType(IconButton),
-        ),
+      // The language control is the EN/عر pill (D-670), keyed 'languageToggle';
+      // tapping it flips the locale (exercised in the next test).
+      expect(
+        find.byKey(const ValueKey<String>('languageToggle')),
+        findsOneWidget,
       );
-      expect(langButton.onPressed, isNotNull);
+      expect(find.byIcon(Icons.dark_mode), findsOneWidget);
 
       // Dark mode is intentionally inert — navy-always (owner decision); the
       // icon is shown for parity but is not tappable until a light theme exists.
@@ -253,10 +249,10 @@ void main() {
       // Arabic is the default when nothing is stored (SIMF-MAA-001 §10).
       expect(container.read(localeControllerProvider).languageCode, 'ar');
 
-      await tester.tap(find.byIcon(Icons.language));
+      await tester.tap(find.byKey(const ValueKey<String>('languageToggle')));
       await tester.pumpAndSettle();
 
-      // The globe toggled the locale and persisted the new choice.
+      // The pill toggled the locale and persisted the new choice.
       expect(container.read(localeControllerProvider).languageCode, 'en');
       expect(prefs.getString(StorageKeys.preferredLanguage), 'en');
     });
