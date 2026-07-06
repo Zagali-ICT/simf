@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Application.MeetingRequests.Abstractions;
 using SIMF.Application.Notifications;
 using SIMF.Common;
@@ -19,7 +20,7 @@ namespace SIMF.Infrastructure.MeetingRequests;
 /// the dispatcher, since the requester is a SimfUser). Mirrors the speaker flow.</summary>
 internal sealed class DelegationMeetingRequestService(
     SimfAppDbContext appDbContext,
-    SimfIdentityDbContext identityDbContext,
+    IIdentityUserDirectory userDirectory,
     INotificationDispatcher notifications,
     IAuditLog auditLog,
     TimeProvider timeProvider,
@@ -304,10 +305,8 @@ internal sealed class DelegationMeetingRequestService(
                 "Delegation meeting request not found.",
                 "لم يتم العثور على طلب اجتماع الوفد.");
 
-        var email = await identityDbContext.Users.AsNoTracking()
-            .Where(u => u.Id == r.RequestedByUserId)
-            .Select(u => u.Email)
-            .SingleOrDefaultAsync(cancellationToken);
+        var email = await userDirectory.GetEmailAsync(
+            r.RequestedByUserId, cancellationToken);
 
         return new AdminDelegationMeetingRequestDetail(
             r.Id, r.RequestingCountry, r.TargetCountry, r.RequestedByUserId, email,
