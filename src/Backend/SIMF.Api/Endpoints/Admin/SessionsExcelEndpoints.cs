@@ -41,9 +41,10 @@ public sealed class ExportSessionsEndpoint(
     protected override string SheetName => "Sessions";
     protected override string FilePrefix => "simf-sessions";
 
-    // Built per request in ListAsync; the base reads Columns right afterwards.
+    // Built once per request in ListAsync; the base reads Columns right afterwards.
     private Dictionary<Guid, string> _hallCodes = new();
     private Dictionary<Guid, string> _categoryNames = new();
+    private bool _lookupsLoaded;
 
     protected override IReadOnlyList<GridExcelColumn<AdminSessionSummary>> Columns =>
     [
@@ -77,14 +78,20 @@ public sealed class ExportSessionsEndpoint(
     {
         var rows = (await service.ListAllAsync(query, ct)).Items;
 
-        // Resolve the two FK display values once for the whole sheet. The
-        // lookups are bounded, so a single read each is fine — the same Top=500
-        // the CP session form uses for these pickers.
-        var lookupQuery = new GridQuery { Skip = 0, Top = 500 };
-        var halls = (await hallService.ListAllAsync(lookupQuery, ct)).Items;
-        var categories = (await categoryService.ListAsync(lookupQuery, ct)).Items;
-        _hallCodes = halls.ToDictionary(h => h.Id, h => h.Code);
-        _categoryNames = categories.ToDictionary(c => c.Id, c => c.Name);
+        // Resolve the two FK display values once per request. FastEndpoints creates
+        // one endpoint instance per request and the export base calls this once per
+        // page, so the guard keeps the bounded lookups to a single read on the first
+        // page (Top=500 — the same page size the CP session form uses for these
+        // pickers).
+        if (!_lookupsLoaded)
+        {
+            var lookupQuery = new GridQuery { Skip = 0, Top = 500 };
+            var halls = (await hallService.ListAllAsync(lookupQuery, ct)).Items;
+            var categories = (await categoryService.ListAsync(lookupQuery, ct)).Items;
+            _hallCodes = halls.ToDictionary(h => h.Id, h => h.Code);
+            _categoryNames = categories.ToDictionary(c => c.Id, c => c.Name);
+            _lookupsLoaded = true;
+        }
 
         return rows;
     }

@@ -32,6 +32,7 @@ public sealed class ExportVenueMapEndpoint(
 {
     private Dictionary<Guid, string> _hallCodes = new();
     private Dictionary<Guid, string> _boothCodes = new();
+    private bool _lookupsLoaded;
 
     protected override string RoutePath => "/admin/venue-map/export";
     protected override string Permission => PermissionCatalog.VenueMap.Export;
@@ -58,11 +59,19 @@ public sealed class ExportVenueMapEndpoint(
     {
         var nodes = (await service.ListAsync(query, ct)).Items;
 
-        var halls = await hallService.ListAllAsync(new GridQuery { Top = 5_000 }, ct);
-        _hallCodes = halls.Items.ToDictionary(h => h.Id, h => h.Code);
+        // FastEndpoints creates one endpoint instance per request and the export
+        // base calls this once per page, so build the Hall/Booth code maps only on
+        // the first page.
+        if (!_lookupsLoaded)
+        {
+            var halls = await hallService.ListAllAsync(new GridQuery { Top = 5_000 }, ct);
+            _hallCodes = halls.Items.ToDictionary(h => h.Id, h => h.Code);
 
-        var booths = await boothService.ListAllAsync(new GridQuery { Top = 5_000 }, ct);
-        _boothCodes = booths.Items.ToDictionary(b => b.Id, b => b.Code);
+            var booths = await boothService.ListAllAsync(new GridQuery { Top = 5_000 }, ct);
+            _boothCodes = booths.Items.ToDictionary(b => b.Id, b => b.Code);
+
+            _lookupsLoaded = true;
+        }
 
         return nodes;
     }

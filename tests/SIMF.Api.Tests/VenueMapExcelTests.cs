@@ -9,6 +9,8 @@ using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Venue;
+using SIMF.Infrastructure.Persistence;
 using Xunit;
 
 namespace SIMF.Api.Tests;
@@ -106,6 +108,58 @@ public sealed class VenueMapExcelTests : IClassFixture<SimfApiFactory>
         // The bad row errors but the good one still imports (batch not aborted).
         Assert.True(result.Created >= 1);
         Assert.Contains(result.Errors, error => error.Key == bad);
+    }
+
+    [Fact]
+    public async Task Export_returns_every_row_past_the_list_page_cap()
+    {
+        // Regression for D-642: the whole-grid export requested every row, but the
+        // list service re-clamped Top back to its page size — silently truncating
+        // any grid larger than one page. The venue-map list clamps at 500
+        // (ClampPage(50, 500)), so seed 600 uniquely-labelled nodes: pre-fix only
+        // 500 came back; the fix pages through and returns all 600.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var prefix = $"Bulk-{Guid.NewGuid():N}";
+        const int seeded = 600;
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            for (var i = 0; i < seeded; i++)
+            {
+                db.VenueMapNodes.Add(new VenueMapNode
+                {
+                    Id = Guid.NewGuid(),
+                    Label = $"{prefix}-{i:D3}",
+                    LabelArabic = $"عقدة {i}",
+                    Kind = VenueMapNodeKind.Zone,
+                    X = i,
+                    Y = i,
+                });
+            }
+            await db.SaveChangesAsync();
+        }
+
+        // The client asks for a 50-row page; the export pages through the whole set
+        // regardless of the client Top, so all 600 must still come back.
+        var response = await PostAuthAsync(
+            "/api/v1/admin/venue-map/export",
+            new AdminGridExportRequest { Query = new GridQuery { Top = 50 } },
+            adminToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+
+        using var workbook = new XLWorkbook(new MemoryStream(bytes));
+        var sheet = workbook.Worksheet("VenueMap");
+        // Column 1 is Label; row 1 is the header (excluded by the prefix filter).
+        // Count only the rows we seeded so the assertion is independent of any
+        // nodes the other tests in this class add.
+        var exported = sheet.Column(1).CellsUsed()
+            .Select(cell => cell.GetString())
+            .Count(label => label.StartsWith(prefix, StringComparison.Ordinal));
+
+        Assert.Equal(seeded, exported);
     }
 
     [Fact]
