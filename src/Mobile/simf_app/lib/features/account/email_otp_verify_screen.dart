@@ -9,10 +9,13 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_svg_icon.dart';
+import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
+import '../../core/widgets/simf_auth_sweep.dart';
 import 'biometric_auth.dart';
 import 'post_auth_route.dart';
+import 'widgets/account_sub_header.dart';
+import 'widgets/auth_chrome.dart';
 import 'widgets/otp_code_boxes.dart';
 
 /// Page 003 — email-OTP second factor (Logic L-5), restyled to the KSA OTP
@@ -26,8 +29,9 @@ import 'widgets/otp_code_boxes.dart';
 /// and restarts the countdown. Frame 758:2616.
 ///
 /// Clean-code frozen (D-552, Phase 3): the lone sweep-tint const dropped for
-/// `SimfTokens.surfaceTint`; the long `build` split into `_buildHeader` /
-/// `_buildContent` / `_buildSubmitButton` / `_buildResendRow`; the body + CTA
+/// `SimfTokens.surfaceTint`; the long `build` split into the shared
+/// [AccountSubHeader] (D-658) / `_buildContent` / `_buildSubmitButton` /
+/// `_buildResendRow`; the body + CTA
 /// capped by [MaxWidthBody]. Behaviour + render unchanged — the 758:2616 golden
 /// locks it.
 class EmailOtpVerifyScreen extends ConsumerStatefulWidget {
@@ -123,9 +127,7 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
         return;
       }
       setState(() {
-        _error = failure is NetworkUnavailable
-            ? l10n.networkErrorBody
-            : failure.source.message;
+        _error = failure.source.localizedMessage(l10n);
       });
     } finally {
       if (mounted) {
@@ -155,9 +157,7 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
         return;
       }
       setState(() {
-        _error = failure is NetworkUnavailable
-            ? l10n.networkErrorBody
-            : failure.source.message;
+        _error = failure.source.localizedMessage(l10n);
       });
     } finally {
       if (mounted) {
@@ -183,67 +183,21 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
       backgroundColor: SimfTokens.navySurface,
       body: Stack(
         children: <Widget>[
-          // Decorative diagonal sweep (the shared OTP-frame backdrop).
-          Positioned(
-            top: -180,
-            right: -80,
-            child: Transform.rotate(
-              angle: 0.4936, // 28.28°
-              child: Container(
-                width: 313,
-                height: 323,
-                decoration: BoxDecoration(
-                  color: SimfTokens.surfaceTint,
-                  borderRadius: BorderRadius.circular(40),
-                ),
-              ),
-            ),
-          ),
+          const SimfAuthSweep(top: -180, left: null, right: -80),
           SafeArea(
             child: Column(
               children: <Widget>[
-                _buildHeader(l10n),
+                AccountSubHeader(
+                  title: l10n.otpHeaderTitle,
+                  onBack: _back,
+                  busy: _busy,
+                ),
                 Expanded(child: _buildContent(l10n, email)),
                 _buildSubmitButton(l10n),
                 const SizedBox(height: 16),
                 _buildResendRow(l10n),
                 const SizedBox(height: 24),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Header band (frame 758:2616): back chevron at the start, centred title.
-  Widget _buildHeader(AppL10n l10n) {
-    return SizedBox(
-      height: 56,
-      child: Stack(
-        alignment: Alignment.center,
-        children: <Widget>[
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: IconButton(
-                onPressed: _busy ? null : _back,
-                icon: const SimfSvgIcon(
-                  'assets/icons/ic_back.svg',
-                  size: 24,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-          Text(
-            // Frame 758:2616 header — "التحقق بالبريد".
-            l10n.otpHeaderTitle,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -359,24 +313,10 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
         maxWidth: 560,
         child: SizedBox(
           width: double.infinity,
-          child: FilledButton(
+          child: AuthSubmitButton(
+            label: l10n.verifyButton,
+            busy: _busy,
             onPressed: _canSubmit ? () => unawaited(_submit()) : null,
-            child: _busy
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : Text(
-                    l10n.verifyButton,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
           ),
         ),
       ),
@@ -387,6 +327,9 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
   /// "إعادة الإرسال" re-issues the code in place (resend-otp, #12) — it does
   /// not return to sign-in.
   Widget _buildResendRow(AppL10n l10n) {
+    // Gate on !_busy as well as the countdown, so the resend can't fire a second
+    // request on top of an in-flight verify (matches the sibling OTP screens).
+    final canResend = _secondsLeft == 0 && !_busy;
     return Text.rich(
       TextSpan(
         children: <InlineSpan>[
@@ -394,13 +337,11 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
           TextSpan(
             text: l10n.otpResendAction,
             style: TextStyle(
-              color: _secondsLeft == 0
-                  ? SimfTokens.accent
-                  : SimfTokens.beigeBorder,
+              color: canResend ? SimfTokens.accent : SimfTokens.beigeBorder,
               fontWeight: FontWeight.w700,
               decoration: TextDecoration.underline,
             ),
-            recognizer: _secondsLeft == 0 ? _resendTap : null,
+            recognizer: canResend ? _resendTap : null,
           ),
         ],
       ),

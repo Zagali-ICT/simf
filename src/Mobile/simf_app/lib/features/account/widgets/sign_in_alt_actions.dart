@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/localization/app_l10n.dart';
+import '../../../app/theme/app_assets.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
 import 'auth_chrome.dart';
-
-// The Face-ID glyph from frame 168:2845 (mingcute:faceid-line) — no 1:1
-// Material match, so it ships as an iconify SVG asset.
-const String _icFaceId = 'assets/icons/auth_faceid.svg';
 
 /// The sign-in card's alternative entry methods below the "or" divider:
 /// Face-ID sign-in (shown only when a biometric is usable), the printed-badge
@@ -66,7 +63,7 @@ class SignInAltActions extends StatelessWidget {
           AuthAltButton(
             label: l10n.faceIdSignInButton,
             icon: const SimfSvgIcon(
-              _icFaceId,
+              AppAssets.authFaceId,
               size: 20,
               color: SimfTokens.goldSoft,
             ),
@@ -93,10 +90,17 @@ class SignInAltActions extends StatelessWidget {
               style: authLinkButtonStyle(SimfTokens.greyText),
               child: Text(
                 l10n.guestSignInLink,
+                // Explicit colour + decorationColor: the underline is dropped
+                // when both are left to resolve from the button's foreground
+                // (the label's DefaultTextStyle doesn't carry them to the
+                // decoration painter), so the guest link rendered plain despite
+                // the underline being set. Grey #6C7278 matches frame 627:2390.
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
+                  color: SimfTokens.greyText,
                   decoration: TextDecoration.underline,
+                  decorationColor: SimfTokens.greyText,
                 ),
               ),
             ),

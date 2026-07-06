@@ -8,7 +8,10 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
+import '../../core/widgets/simf_auth_sweep.dart';
+import 'widgets/account_sub_header.dart';
 import 'widgets/auth_chrome.dart';
 import 'widgets/otp_code_boxes.dart';
 
@@ -24,8 +27,9 @@ import 'widgets/otp_code_boxes.dart';
 /// and restarts the cooldown from the returned `codeExpiresInSeconds`.
 ///
 /// Clean-code frozen (D-553, Phase 3): the lone sweep-tint const dropped for
-/// `SimfTokens.surfaceTint`; the long `build` split into `_buildHeader` /
-/// `_buildContent` / `_buildBottomActions`; the resend link reuses the shared
+/// `SimfTokens.surfaceTint`; the long `build` split into the shared
+/// [AccountSubHeader] (D-658) / `_buildContent` / `_buildBottomActions`; the
+/// resend link reuses the shared
 /// [authLinkButtonStyle]; the body + actions capped by [MaxWidthBody].
 /// Behaviour + render unchanged — the 505:837 golden locks it.
 class SignUpEmailVerifyScreen extends ConsumerStatefulWidget {
@@ -112,9 +116,7 @@ class _SignUpEmailVerifyScreenState
         return;
       }
       setState(() {
-        _error = failure is NetworkUnavailable
-            ? l10n.networkErrorBody
-            : failure.source.message;
+        _error = failure.source.localizedMessage(l10n);
         _code.clear();
       });
     } finally {
@@ -144,9 +146,7 @@ class _SignUpEmailVerifyScreenState
         return;
       }
       setState(() {
-        _error = failure is NetworkUnavailable
-            ? l10n.networkErrorBody
-            : failure.source.message;
+        _error = failure.source.localizedMessage(l10n);
       });
     } finally {
       if (mounted) {
@@ -176,65 +176,19 @@ class _SignUpEmailVerifyScreenState
       backgroundColor: SimfTokens.navySurface,
       body: Stack(
         children: <Widget>[
-          // Decorative diagonal sweep (Figma 505:887, top-right area).
-          Positioned(
-            top: -180,
-            right: -80,
-            child: Transform.rotate(
-              angle: 0.4936, // 28.28°
-              child: Container(
-                width: 313,
-                height: 323,
-                decoration: BoxDecoration(
-                  color: SimfTokens.surfaceTint,
-                  borderRadius: BorderRadius.circular(40),
-                ),
-              ),
-            ),
-          ),
+          const SimfAuthSweep(top: -180, left: null, right: -80),
           SafeArea(
             child: Column(
               children: <Widget>[
-                _buildHeader(l10n),
+                AccountSubHeader(
+                  title: l10n.emailVerifyTitle,
+                  onBack: _back,
+                  busy: _busy,
+                ),
                 Expanded(child: _buildContent(l10n)),
                 _buildBottomActions(l10n),
                 const SizedBox(height: 24),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Header band (Figma 505:919): back chevron at the start, centred title.
-  Widget _buildHeader(AppL10n l10n) {
-    return SizedBox(
-      height: 56,
-      child: Stack(
-        alignment: Alignment.center,
-        children: <Widget>[
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: IconButton(
-                onPressed: _busy ? null : _back,
-                icon: const Icon(
-                  Icons.arrow_back_ios_new,
-                  color: Colors.white,
-                  size: 20,
-                  textDirection: TextDirection.ltr,
-                ),
-              ),
-            ),
-          ),
-          Text(
-            l10n.emailVerifyTitle,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -344,24 +298,10 @@ class _SignUpEmailVerifyScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            FilledButton(
+            AuthSubmitButton(
+              label: l10n.verifyButton,
+              busy: _busy,
               onPressed: _canVerify ? () => unawaited(_verify()) : null,
-              child: _busy
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : Text(
-                      l10n.verifyButton,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
             ),
             const SizedBox(height: 16),
             Row(

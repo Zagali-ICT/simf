@@ -13,12 +13,12 @@ import 'package:simf_app/features/myarea/widgets/identity_fallback_view.dart';
 import 'golden_fonts.dart';
 
 /// Goldens for the identity-verification (التحقق من الهوية) screen, D-404 →
-/// clean-code D-610 → full-bleed exact-Figma redesign D-611. The live camera
-/// can't render in the test runtime (no camera plugin), so — like live_broadcast
-/// (D-603) — parity is locked on the deterministic states: the full-bleed
-/// capture surface (a spinner until the camera is ready; NO framed box / prompt
-/// / progress chrome, per the owner's exact-Figma choice) and the gallery
-/// fallback.
+/// clean-code D-610 → full-bleed Figma D-611 → live-only + liveness-prompt
+/// restored (owner 2026-07-06, D-662): the capture is live-camera-only with the
+/// liveness-step prompt overlaid; no manual shutter, no gallery. The live camera
+/// can't render in the test runtime (no camera plugin), so parity is locked on
+/// the deterministic states: the loading surface (a spinner), the ready surface
+/// with the liveness prompt, and the "camera required" retry.
 ///   flutter test --update-goldens test/golden/identity_verification_golden_test.dart
 
 Widget _host(Widget child) => MaterialApp(
@@ -38,6 +38,22 @@ Widget _host(Widget child) => MaterialApp(
       ),
     );
 
+LiveCaptureView _capture(
+  BuildContext context, {
+  required bool ready,
+  Widget? preview,
+}) {
+  final l10n = AppL10n.of(context);
+  return LiveCaptureView(
+    ready: ready,
+    preview: preview,
+    promptText: l10n.livenessSmilePrompt,
+    promptLeading: const Text('😊', style: TextStyle(fontSize: 22)),
+    stepIndex: 0,
+    stepCount: 3,
+  );
+}
+
 void main() {
   setUpAll(loadGoldenFonts);
 
@@ -48,7 +64,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      _host(const LiveCaptureView(ready: false, preview: null)),
+      _host(Builder(builder: (c) => _capture(c, ready: false))),
     );
     await tester.pump();
 
@@ -58,7 +74,33 @@ void main() {
     );
   });
 
-  testWidgets('Identity gallery fallback @375x812 (Arabic)', (tester) async {
+  testWidgets('Identity capture prompt @375x812 — liveness step over preview',
+      (tester) async {
+    tester.view.physicalSize = const Size(375, 812);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      _host(
+        Builder(
+          builder: (c) => _capture(
+            c,
+            ready: true,
+            preview: const ColoredBox(color: SimfTokens.navy),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await expectLater(
+      find.byType(LiveCaptureView),
+      matchesGoldenFile('goldens/identity_capture_prompt.png'),
+    );
+  });
+
+  testWidgets('Identity camera-required retry @375x812 (Arabic)',
+      (tester) async {
     tester.view.physicalSize = const Size(375, 812);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -68,7 +110,7 @@ void main() {
         Builder(
           builder: (context) => IdentityFallbackView(
             l10n: AppL10n.of(context),
-            onPick: () {},
+            onRetry: () {},
           ),
         ),
       ),

@@ -74,18 +74,20 @@
             <EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
                 <div class="simf-form__fields">
                     <SimfTextField Label="@L["Account.Profile.ArabicName"]"
+                                   MaxLength="100"
                                    @bind-Value="_model.ArabicName"
                                    Disabled="_saving" />
 
                     <SimfTextField Label="@L["Account.Profile.EnglishName"]"
+                                   MaxLength="100"
                                    @bind-Value="_model.EnglishName"
                                    Helper="@L["Account.Profile.EnglishNameHint"]"
                                    Disabled="_saving" />
 
-                    @* D-163 (PDF §2.6) — optional job title. *@
+                    @* D-163 (PDF §2.6) — optional job title, max 100 (owner 2026-07-06). *@
                     <SimfTextField Label="@L["Account.Profile.JobTitle"]"
                                    Helper="@L["Account.Profile.JobTitleHint"]"
-                                   MaxLength="128"
+                                   MaxLength="100"
                                    Value="@(_model.JobTitle ?? string.Empty)"
                                    ValueChanged="@(v => _model.JobTitle = string.IsNullOrWhiteSpace(v) ? null : v)"
                                    ValueExpression="@(() => _model.JobTitle)"

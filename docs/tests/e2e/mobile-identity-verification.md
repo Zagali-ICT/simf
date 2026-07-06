@@ -15,6 +15,19 @@
 | **Role/gate** | Signed-in + Approved (launched only from the My-Area approved dashboard) |
 | **Test runner** | Flutter widget/unit test (screen) + device manual (live camera) |
 
+> **Camera security rules (owner 2026-07-06, D-662) — MUST hold:**
+> 1. **Human-verified** — the identity photo is only accepted after the liveness
+>    challenge (smile → turn → turn) passes; a single still is never trusted.
+> 2. **Live image only** — the source is the live front camera. There is **no
+>    gallery/upload path and no manual shutter**, so a static "studio" photo can
+>    never be submitted.
+> 3. **No live camera → no photo** — where the camera or the ML Kit face detector
+>    is unavailable (web / no camera / permission denied / a device without
+>    Google Play Services) the screen shows a "camera required" message with a
+>    **retry**, never a gallery fallback. On a no-Google-Play-Services device the
+>    ML Kit liveness cannot run, so identity capture is unavailable there by
+>    design (needs a Play-Services device or a Huawei-ML-Kit / provider swap).
+
 ---
 
 ### E2E-MOBIDV-001 — Golden liveness path (device only)
@@ -24,29 +37,30 @@ Scenario: The user passes the three liveness steps and sets the avatar
   Given an approved user opens منطقتي and taps their avatar (camera badge)
   And the device has a working front camera with permission granted
   When the التحقق من الهوية screen opens
-  Then the live front-camera preview shows in the gold-bordered frame
-  And the prompt reads "ابتسم" with the first progress dot active
+  Then the full-bleed live front-camera preview shows with the step prompt over it
+  And the prompt reads "ابتسم"
   When the user smiles (ML Kit smilingProbability ≥ 0.7)
-  Then the forward selfie is captured and the prompt advances to "ادر راسك لليمين"
+  Then the forward selfie is captured and the prompt advances to "أدر رأسك يمينًا"
   When the user turns right (headEulerAngleY ≥ +20°)
-  Then the prompt advances to "ادر راسك لليسار"
+  Then the prompt advances to "أدر رأسك يسارًا"
   When the user turns left (headEulerAngleY ≤ -20°)
   Then the screen pops, the captured selfie uploads to POST /app/account/avatar
   And the My-Area dashboard reloads showing the new photo
   # Device-only — the AVD virtual camera cannot perform a real smile/turn.
 ```
 
-### E2E-MOBIDV-002 — Camera unavailable → gallery fallback
+### E2E-MOBIDV-002 — Camera unavailable → "camera required" retry (no gallery)
 
 ```gherkin
-Scenario: No live camera falls back to the gallery (no liveness)
-  Given the camera or the ML Kit plugin is unavailable (web / no camera /
-        permission denied)
+Scenario: No live camera shows the camera-required message (never a gallery)
+  Given the camera or the ML Kit detector is unavailable (web / no camera /
+        permission denied / no Google Play Services)
   When the التحقق من الهوية screen opens
-  Then it shows "الكاميرا غير متاحة …" and a "اختر من المعرض" button
-  When the user picks a gallery photo
-  Then it uploads to POST /app/account/avatar and the dashboard reloads
-  And the liveness check is skipped (documented limitation)
+  Then it shows "الكاميرا مطلوبة للتحقق من الهوية بصورة حية …" and a
+       "إعادة المحاولة" (retry) button
+  And there is NO gallery / upload option (live image only, D-662)
+  When the user grants the camera permission and taps إعادة المحاولة
+  Then the live preview initialises and the liveness challenge starts
 ```
 
 ### E2E-MOBIDV-003 — Step gate thresholds (unit)
@@ -78,4 +92,4 @@ Scenario: RTL
 
 ---
 
-_Last reviewed:_ `2026-06-14` by `SIMF Team`.
+_Last reviewed:_ `2026-07-06` by `SIMF Team`.

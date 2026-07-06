@@ -13,9 +13,11 @@ import 'package:simf_app/features/account/forgot_password_screen.dart';
 
 import 'golden_fonts.dart';
 
-/// Render-regression lock for the forgot-password screen. **Unbound** auth
-/// screen on the shared KSA auth chrome (`SimfFormScaffold`); no dedicated Figma
-/// node, so this is a regression guard, not a parity proof (D-556). Regenerate:
+/// Parity lock for the forgot-password screen against Figma node **918:2341**
+/// (نسيت كلمة المرور — owner-bound 2026-07-06, D-656): the navy surface, the
+/// back + centred-title header, the gold-ringed lock mark, the beige-bordered
+/// email field with the mail glyph, the gold CTA and the "remembered? sign in"
+/// foot. Regenerate:
 ///   flutter test --update-goldens test/golden/forgot_password_golden_test.dart
 void main() {
   setUpAll(loadGoldenFonts);

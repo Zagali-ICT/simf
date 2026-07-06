@@ -530,7 +530,7 @@ class _StaffRegisterVisitorScreenState
           _textField(
             l10n.arabicNameLabel,
             _arabicName,
-            maxLength: 256,
+            maxLength: 100,
             validator: (v) => _required(l10n, v),
             inputFormatters: <TextInputFormatter>[
               FilteringTextInputFormatter.allow(RegExp(r'[ء-ي\s]')),
@@ -540,7 +540,7 @@ class _StaffRegisterVisitorScreenState
             l10n.englishNameLabel,
             _englishName,
             ltr: true,
-            maxLength: 256,
+            maxLength: 100,
             validator: (v) => _required(l10n, v),
             inputFormatters: <TextInputFormatter>[
               FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z\s]')),
@@ -562,7 +562,7 @@ class _StaffRegisterVisitorScreenState
         gap,
         _twoCol(
           wide,
-          _textField(l10n.jobTitleLabel, _jobTitle, maxLength: 128),
+          _textField(l10n.jobTitleLabel, _jobTitle, maxLength: 100),
           _organisationField(l10n),
         ),
         gap,

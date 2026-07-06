@@ -1,14 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
-import '../../../app/widgets/simf_logo.dart';
-import '../../../app/widgets/simf_svg_icon.dart';
-
-// Exact iconify / Figma glyphs (frame 627:2361/2407) for the auth top controls —
-// no 1:1 Material match, so they ship as SVG assets.
-const String _icAuthBack = 'assets/icons/auth_back.svg'; // iconamoon:arrow-left-2
-const String _icAuthGlobe = 'assets/icons/auth_globe.svg'; // exact Figma globe
 
 /// The beige-bordered, 48-high outlined "alternative action" button used below
 /// the sign-in card's "or" divider (Face-ID, printed-badge QR). Label sits at
@@ -119,94 +111,6 @@ class AuthSubmitButton extends StatelessWidget {
                 color: Colors.white,
               ),
             ),
-    );
-  }
-}
-
-/// Forum logo + name header shared by the auth entry screens (sign-up / verify):
-/// the [SimfLogo] at the inline start (the right under RTL) + the forum name,
-/// matching the Figma frames' centred logo+title row.
-class AuthBrandHeader extends StatelessWidget {
-  const AuthBrandHeader({required this.title, super.key});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        const SimfLogo(size: 44),
-        const SizedBox(width: 16),
-        Flexible(
-          child: Text(
-            title,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w500,
-              color: Colors.white,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// The auth entry screens' top controls (Figma 627:2361/2407): a back chevron at
-/// the start + the gold language globe at the end, forced LTR so the sides and
-/// the chevron glyph match the frame even under RTL. Carries stable keys
-/// (`authBack` / `authLanguage`) so it can sit on top of a centred scroll body.
-class AuthTopControls extends StatelessWidget {
-  const AuthTopControls({
-    required this.onBack,
-    required this.onToggleLanguage,
-    required this.busy,
-    super.key,
-  });
-
-  final VoidCallback onBack;
-  final VoidCallback onToggleLanguage;
-
-  /// While true both controls are disabled (a request is in flight).
-  final bool busy;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppL10n.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Row(
-        textDirection: TextDirection.ltr,
-        children: <Widget>[
-          IconButton(
-            key: const ValueKey<String>('authBack'),
-            onPressed: busy ? null : onBack,
-            icon: const SimfSvgIcon(_icAuthBack, size: 24, color: Colors.white),
-          ),
-          const Spacer(),
-          SizedBox(
-            width: 40,
-            height: 40,
-            child: IconButton(
-              key: const ValueKey<String>('authLanguage'),
-              tooltip: l10n.languageToggleLabel,
-              onPressed: busy ? null : onToggleLanguage,
-              style: IconButton.styleFrom(
-                backgroundColor: SimfTokens.navyDeep,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: SimfTokens.borderRadiusSmall,
-                ),
-              ),
-              icon: const SimfSvgIcon(
-                _icAuthGlobe,
-                size: 24,
-                color: SimfTokens.accent,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

@@ -60,9 +60,11 @@ curated map omitted. For any screen not here, consult that docx before guessing.
 | Exhibitor detail | `lib/features/booths/exhibitor_detail_screen.dart` | `1439-11881` | docx #17 |
 
 Still genuinely unbound in the docx too (truly ASK / pending): badge-activation,
-badge-sign-in, biometric-step-up, forgot/reset-password (auth flow — frozen
-chrome), audience-comments (removed), my-contacts / scan-contact / share-my-contact
-(FDS-014), registration-status (#11).
+biometric-step-up (auth flow — no bound node). reset-password has no node of its
+own but is now built to match its navy sibling forgot-password `918-2341`
+(D-658); forgot-password bound `918-2341` (D-656) and badge-sign-in bound
+`758-4735` (D-657). Also unbound: audience-comments (removed), my-contacts /
+scan-contact / share-my-contact (FDS-014), registration-status (#11).
 
 ## Removed / dissolved screens
 

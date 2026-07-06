@@ -8,20 +8,29 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_form_scaffold.dart';
+import '../../core/errors/api_error_l10n.dart';
+import '../../core/responsive/max_width_body.dart';
 import '../../core/validation/email_validation.dart';
 import '../../core/validation/required_validation.dart';
 import '../../core/widgets/simf_field_label.dart';
 import '../../core/widgets/simf_field_style.dart';
+import 'widgets/account_sub_header.dart';
 import 'widgets/auth_chrome.dart';
+import 'widgets/otp_code_boxes.dart';
 
-/// Page 003 — Forgot password (Logic L-6), rebuilt on the KSA entry chrome
-/// (D-374: "same card and color and style" as sign-in/sign-up). Emails a
-/// reset OTP, then routes to the reset screen with the email carried
+/// Page 003 — نسيت كلمة المرور · Forgot password (Logic L-6). The KSA-Project
+/// Figma design (node 918:2341): navy surface, the back + centred-title header,
+/// the gold-ringed lock mark, the instruction body, the email field with a mail
+/// glyph, the gold CTA pinned at the bottom, and the "remembered? sign in" foot.
+/// Emails a reset code, then routes to the reset screen with the address carried
 /// forward. The request is enumeration-resistant on the server (always
 /// success-shaped), so the app always proceeds to the reset step.
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
-  const ForgotPasswordScreen({super.key});
+  const ForgotPasswordScreen({this.email, super.key});
+
+  /// Pre-fills the email field — passed when a signed-in user opens this from
+  /// their profile (D-659), so they don't retype an address the app knows.
+  final String? email;
 
   @override
   ConsumerState<ForgotPasswordScreen> createState() =>
@@ -35,6 +44,15 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   String? _error;
 
   @override
+  void initState() {
+    super.initState();
+    final email = widget.email;
+    if (email != null && email.isNotEmpty) {
+      _email.text = email;
+    }
+  }
+
+  @override
   void dispose() {
     _email.dispose();
     super.dispose();
@@ -42,9 +60,17 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
   bool get _canSubmit => _email.text.trim().isNotEmpty && !_busy;
 
+  String? _validateEmail(String? value) {
+    final l10n = AppL10n.of(context);
+    if (isBlank(value)) {
+      return l10n.requiredField;
+    }
+    return isValidEmail(value!.trim()) ? null : l10n.invalidEmail;
+  }
+
   Future<void> _submit() async {
     // Client-side validation (required + email shape) gates the round-trip; the
-    // inline field error renders via the shared decoration's error border.
+    // inline field error renders via the field's own error border.
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -68,9 +94,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         return;
       }
       setState(() {
-        _error = failure is NetworkUnavailable
-            ? l10n.networkErrorBody
-            : failure.source.message;
+        _error = failure.source.localizedMessage(l10n);
       });
     } finally {
       if (mounted) {
@@ -90,75 +114,142 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return SimfFormScaffold(
-      busy: _busy,
-      onBack: _back,
-      child: Form(
-        key: _formKey,
+    return Scaffold(
+      backgroundColor: SimfTokens.navySurface,
+      body: SafeArea(
         child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(
-            l10n.forgotPasswordTitle,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w600,
-              color: SimfTokens.headlineInk,
+          children: <Widget>[
+            AccountSubHeader(
+              title: l10n.forgotPasswordTitle,
+              onBack: _back,
+              busy: _busy,
             ),
+            Expanded(child: _buildBody(l10n)),
+            _buildBottomActions(l10n),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBody(AppL10n l10n) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: MaxWidthBody(
+        maxWidth: 560,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              const SizedBox(height: 48),
+              const Center(child: OtpMark(icon: Icons.lock_outline)),
+              const SizedBox(height: 24),
+              Text(
+                l10n.forgotPasswordBody,
+                textAlign: TextAlign.center,
+                style: SimfTokens.bodyBeige,
+              ),
+              const SizedBox(height: 32),
+              SimfFieldLabel(l10n.emailLabel, color: Colors.white),
+              const SizedBox(height: 8),
+              _buildEmailField(),
+              if (_error != null) ...<Widget>[
+                const SizedBox(height: 12),
+                Text(
+                  _error!,
+                  style: const TextStyle(
+                    color: SimfTokens.danger,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 24),
+            ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            l10n.forgotPasswordBody,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 12,
-              color: SimfTokens.greyText,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmailField() {
+    return TextFormField(
+      controller: _email,
+      keyboardType: TextInputType.emailAddress,
+      textDirection: TextDirection.ltr,
+      textAlign: TextAlign.start,
+      maxLength: 50,
+      enabled: !_busy,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      validator: _validateEmail,
+      onChanged: (_) => setState(() {}),
+      onFieldSubmitted: (_) {
+        if (_canSubmit) {
+          unawaited(_submit());
+        }
+      },
+      style: simfInputStyleOnNavy,
+      decoration: simfFieldDecoration(
+        counterText: '',
+        hintText: 'example@email.com',
+        // The glyph is a suffix so it renders at the inline-start (left under
+        // RTL), matching the frame's mail-on-the-left placement.
+        suffixIcon: const Icon(
+          Icons.mail_outline,
+          color: SimfTokens.beigeBorder,
+          size: 18,
+        ),
+      ),
+    );
+  }
+
+  /// Bottom actions (918:2371): the gold send CTA + the "remembered? sign in"
+  /// foot.
+  Widget _buildBottomActions(AppL10n l10n) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: MaxWidthBody(
+        maxWidth: 560,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            AuthSubmitButton(
+              label: l10n.sendCodeButton,
+              busy: _busy,
+              onPressed: _canSubmit ? () => unawaited(_submit()) : null,
             ),
-          ),
-          const SizedBox(height: 24),
-          SimfFieldLabel(l10n.emailLabel),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: _email,
-            keyboardType: TextInputType.emailAddress,
-            textDirection: TextDirection.ltr,
-            textAlign: TextAlign.start,
-            maxLength: 50,
-            enabled: !_busy,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            validator: (value) {
-              if (isBlank(value)) {
-                return AppL10n.of(context).requiredField;
-              }
-              if (!isValidEmail(value!.trim())) {
-                return AppL10n.of(context).invalidEmail;
-              }
-              return null;
-            },
-            onChanged: (_) => setState(() {}),
-            onFieldSubmitted: (_) {
-              if (_canSubmit) {
-                unawaited(_submit());
-              }
-            },
-            style: simfInputStyle,
-            decoration: simfFieldDecoration(counterText: ''),
-          ),
-          if (_error != null) ...<Widget>[
-            const SizedBox(height: 12),
-            Text(
-              _error!,
-              style: const TextStyle(color: SimfTokens.danger, fontSize: 12),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Flexible(
+                  child: Text(
+                    l10n.rememberedPasswordQuestion,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: TextButton(
+                    onPressed: _busy ? null : () => context.goNamed(RouteNames.signIn),
+                    style: authLinkButtonStyle(SimfTokens.accent),
+                    child: Text(
+                      l10n.signInTitle,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
-          const SizedBox(height: 24),
-          AuthSubmitButton(
-            label: l10n.sendCodeButton,
-            busy: _busy,
-            onPressed: _canSubmit ? () => unawaited(_submit()) : null,
-          ),
-        ],
         ),
       ),
     );

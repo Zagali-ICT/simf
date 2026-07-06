@@ -8,9 +8,13 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
+import '../../core/widgets/simf_auth_sweep.dart';
 import 'data/profile_models.dart';
 import 'data/profile_repository.dart';
+import 'widgets/account_sub_header.dart';
+import 'widgets/auth_chrome.dart';
 import 'widgets/interest_chip.dart';
 
 /// Page 007‑01 — اهتماماتي · Sign up — interests. The KSA-Project Figma design
@@ -28,8 +32,8 @@ import 'widgets/interest_chip.dart';
 ///
 /// Clean-code frozen (D-550, Phase 3): screen-local colour consts dropped for
 /// `SimfTokens` (`chipBorderNavy` added); the pill extracted to [InterestChip];
-/// header to `_buildHeader`; the body capped by [MaxWidthBody]. Behaviour +
-/// render unchanged — the 505:1083 golden locks it.
+/// header to the shared [AccountSubHeader] (D-658); the body capped by
+/// [MaxWidthBody]. Behaviour + render unchanged — the 505:1083 golden locks it.
 class SignUpInterestsScreen extends ConsumerStatefulWidget {
   const SignUpInterestsScreen({super.key, this.draft});
 
@@ -85,8 +89,9 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
       if (!mounted) {
         return;
       }
+      final l10n = AppL10n.of(context);
       setState(() {
-        _loadError = failure.message;
+        _loadError = failure.localizedMessage(l10n);
         _loading = false;
       });
     }
@@ -185,7 +190,7 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
       if (!mounted) {
         return;
       }
-      setState(() => _submitError = failure.message);
+      setState(() => _submitError = failure.localizedMessage(l10n));
     } finally {
       if (mounted) {
         setState(() => _submitting = false);
@@ -208,63 +213,17 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
       backgroundColor: SimfTokens.navySurface,
       body: Stack(
         children: <Widget>[
-          // Decorative diagonal sweep (Figma 505:1086, top-right area).
-          Positioned(
-            top: -180,
-            right: -40,
-            child: Transform.rotate(
-              angle: 0.4936, // 28.28°
-              child: Container(
-                width: 313,
-                height: 323,
-                decoration: BoxDecoration(
-                  color: SimfTokens.surfaceTint,
-                  borderRadius: BorderRadius.circular(40),
-                ),
-              ),
-            ),
-          ),
+          const SimfAuthSweep(top: -180, left: null, right: -40),
           SafeArea(
             child: Column(
               children: <Widget>[
-                _buildHeader(l10n),
+                AccountSubHeader(
+                  title: l10n.interestsTitle,
+                  onBack: _back,
+                  busy: _submitting,
+                ),
                 Expanded(child: _buildBody(l10n)),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Header band (Figma 505:1190): back chevron at the start, centred title.
-  Widget _buildHeader(AppL10n l10n) {
-    return SizedBox(
-      height: 56,
-      child: Stack(
-        alignment: Alignment.center,
-        children: <Widget>[
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: IconButton(
-                onPressed: _submitting ? null : _back,
-                icon: const Icon(
-                  Icons.arrow_back_ios_new,
-                  color: Colors.white,
-                  size: 20,
-                  textDirection: TextDirection.ltr,
-                ),
-              ),
-            ),
-          ),
-          Text(
-            l10n.interestsTitle,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -373,26 +332,12 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
             maxWidth: 560,
             child: SizedBox(
               width: double.infinity,
-              child: FilledButton(
+              child: AuthSubmitButton(
+                label: l10n.continueLabel,
+                busy: _submitting,
                 onPressed: (_submitting || _selected.isEmpty)
                     ? null
                     : () => unawaited(_save()),
-                child: _submitting
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Text(
-                        l10n.continueLabel,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
               ),
             ),
           ),

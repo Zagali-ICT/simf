@@ -2,32 +2,100 @@ import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
 
-/// The full-bleed liveness camera (frames 758:4180 / 758:4248 / 758:4316): the
-/// front-camera preview fills the screen edge-to-edge (a spinner until it is
-/// ready). No framed box / prompt / progress overlay — owner-directed
-/// exact-Figma (D-611). The smile → turn → turn challenge still runs in the
-/// screen's liveness logic; it is simply not surfaced as on-screen chrome.
+/// The guided liveness camera (Figma 758:4180 / 758:4248 / 758:4316): the live
+/// front-camera preview fills the area above (a spinner until it is ready), and
+/// a bottom guidance block shows the current step — a directional cue
+/// ([promptLeading]: 😊 for the front step, a gold arrow for the turns) next to
+/// its label ([promptText]) — over a 3-dash progress bar (gold = done/current,
+/// beige = pending). Capture is automatic once the liveness challenge passes;
+/// there is NO manual shutter and NO gallery (live image only, D-662 / D-663).
 class LiveCaptureView extends StatelessWidget {
   const LiveCaptureView({
     required this.ready,
     required this.preview,
+    required this.promptText,
+    required this.promptLeading,
+    required this.stepIndex,
+    required this.stepCount,
     super.key,
   });
 
   final bool ready;
   final Widget? preview;
+  final String promptText;
+  final Widget promptLeading;
+  final int stepIndex;
+  final int stepCount;
 
   @override
   Widget build(BuildContext context) {
-    if (ready && preview != null) {
-      return SizedBox.expand(
-        child: FittedBox(fit: BoxFit.cover, child: _sized(preview!)),
-      );
-    }
-    return const Center(
-      child: CircularProgressIndicator(color: SimfTokens.accent),
+    return Column(
+      children: <Widget>[
+        Expanded(
+          child: ready && preview != null
+              ? SizedBox.expand(
+                  child: FittedBox(fit: BoxFit.cover, child: _sized(preview!)),
+                )
+              : const Center(
+                  child: CircularProgressIndicator(color: SimfTokens.accent),
+                ),
+        ),
+        if (ready) _guidance(),
+        const SizedBox(height: SimfTokens.space8),
+      ],
     );
   }
+
+  Widget _guidance() {
+    // The guidance block is laid out left-to-right (icon on the left, label on
+    // the right, and the progress filling left→right) exactly as Figma draws it,
+    // regardless of the app's RTL direction (Figma 758:4180 / 4248 / 4316).
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: SimfTokens.space6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                promptLeading,
+                const SizedBox(width: 8),
+                Text(
+                  promptText,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: SimfTokens.space5),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                for (int i = 0; i < stepCount; i++) ...<Widget>[
+                  if (i > 0) const SizedBox(width: 8),
+                  _dash(done: i <= stepIndex),
+                ],
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _dash({required bool done}) => Container(
+        width: 32,
+        height: 6,
+        decoration: BoxDecoration(
+          color: done ? SimfTokens.accent : SimfTokens.beigeFill50,
+          borderRadius: BorderRadius.circular(3),
+        ),
+      );
 
   // CameraPreview needs a finite size inside the FittedBox/BoxFit.cover.
   Widget _sized(Widget child) =>

@@ -788,20 +788,21 @@ void main() {
       expect(find.text('INTERESTS'), findsOneWidget);
     });
 
-    testWidgets('the mobile field caps its length at 16 (maxLength set)',
+    testWidgets('the mobile field caps its length at 17 (maxLength set)',
         (tester) async {
       final repo = _FakeProfileRepository(profile: _completeProfile());
       await _pump(tester, repo);
 
       // The shared MobileField wraps a TextFormField whose inner TextField has
-      // maxLength 16 (covers Saudi 05XXXXXXXX / +9665XXXXXXXX and E.164).
+      // maxLength 17 (covers Saudi 05XXXXXXXX / +9665XXXXXXXX / 009665XXXXXXXX
+      // and international +/00 + country code + number).
       final mobileFinder = find.descendant(
         of: find.byType(MobileField),
         matching: find.byType(TextField),
       );
       expect(mobileFinder, findsOneWidget);
       final mobile = tester.widget<TextField>(mobileFinder);
-      expect(mobile.maxLength, 16);
+      expect(mobile.maxLength, 17);
 
       // Over-long input is truncated to the cap.
       final mobileFormField = find.descendant(
@@ -810,7 +811,7 @@ void main() {
       );
       await tester.enterText(mobileFormField, '0' * 30);
       await tester.pump();
-      expect(mobile.controller!.text.length, 16);
+      expect(mobile.controller!.text.length, 17);
     });
 
     testWidgets('a load failure shows the retry, which reloads the form',

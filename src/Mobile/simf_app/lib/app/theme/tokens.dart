@@ -45,9 +45,13 @@ class SimfTokens {
   static const Color navyFill90 = Color(0xE601132D); // navy #01132D @ 90% — onboarding photo overlay (Figma 148:22)
   static const Color chipBorderNavy = Color(0xFF2A4066); // muted navy border on unselected pills (interests grid, Figma 505:1222)
   static const Color tileBorderNavy = Color(0xFF253660); // contact-tile border (registration success, Figma 522:2223)
+  static const Color scannerCard = Color(0xFF0F2044); // QR-scanner card fill (Figma 758:4566)
+  static const Color scannerTrack = Color(0xFF132A50); // QR-scanner progress-bar track (Figma 758:4598)
+  static const Color mutedBlue = Color(0xFF8A9CC0); // muted blue caption — OTP countdown + scanner status (Figma 505:987 / 758:4596)
   static const Color beigeBorder = Color(0xFFC2B8A2); // "Pragraph Color" — borders + on-navy paragraph text
   static const Color beigeFill10 = Color(0x1AC2B8A2); // beige 10% — tier-pill + link-row icon-box fill (Figma rgba(194,184,162,0.1))
   static const Color beigeBorder40 = Color(0x66C2B8A2); // beige 40% — agenda timeline row divider (Figma 1310:3239 rgba(194,184,162,0.4))
+  static const Color beigeFill50 = Color(0x80C2B8A2); // beige 50% — liveness pending progress dash (Figma 758:4242 rgba(194,184,162,0.5))
   static const Color goldFill7 = Color(0x12C9A84C); // gold 7% — delegations stats-strip grid (Figma 1426:10771)
   static const Color goldFill6 = Color(0x0FC9A84C); // gold 6% — delegations head-of-delegation box fill (Figma 1426:10771)
   static const Color goldBorder15 = Color(0x26C9A84C); // gold 15% — delegations head-of-delegation box border (Figma 1426:10771)

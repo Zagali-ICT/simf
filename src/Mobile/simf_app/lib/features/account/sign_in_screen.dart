@@ -12,25 +12,21 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/localization/locale_controller.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_logo.dart';
-import '../../app/widgets/simf_svg_icon.dart';
+import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
 import '../../core/validation/email_validation.dart';
 import '../../core/validation/required_validation.dart';
-import '../../core/widgets/simf_field_label.dart';
-import '../../core/widgets/simf_field_style.dart';
+import '../../core/widgets/simf_auth_sweep.dart';
 import 'biometric_auth.dart';
 import 'post_auth_route.dart';
+import 'widgets/account_auth_prompt.dart';
+import 'widgets/account_card.dart';
+import 'widgets/account_form_field.dart';
+import 'widgets/account_header.dart';
+import 'widgets/account_remember_forgot.dart';
+import 'widgets/account_top_controls.dart';
 import 'widgets/auth_chrome.dart';
 import 'widgets/sign_in_alt_actions.dart';
-
-// Exact iconify / Figma glyphs from frame 758:2555 (no 1:1 Material match):
-// the top back-chevron + gold globe, and the password eye. (The Face-ID mark
-// lives with the alt-actions block in widgets/sign_in_alt_actions.dart.)
-const String _icBack = 'assets/icons/auth_back.svg'; // iconamoon:arrow-left-2
-const String _icGlobe = 'assets/icons/auth_globe.svg'; // exact Figma globe
-const String _icEyeOff = 'assets/icons/auth_eye_off.svg'; // iconamoon:eye-off
-const String _icEye = 'assets/icons/auth_eye.svg'; // iconamoon:eye
 
 /// Page 003 — تسجيل الدخول · Sign in. The KSA-Project Figma design (node
 /// 168:2800), promoted from the D-358 preview to the official sign-in
@@ -38,17 +34,17 @@ const String _icEye = 'assets/icons/auth_eye.svg'; // iconamoon:eye
 ///
 /// Email + password against `POST /app/auth/sign-in` with the 2FA email-OTP
 /// redirect, the post-sign-in profile-completeness route (D-288), best-effort
-/// device-key enrolment after a successful sign-in, and the Face-ID
-/// device-key path. The email is pre-filled from the last successful sign-in;
-/// the design's "remember me" checkbox gates whether it is stored. The frame's
-/// 2026-06-11 update (D-363) added the globe language toggle (top-right,
-/// wired to [LocaleController]) and the underlined "الدخول كزائر" guest link —
-/// the app's only guest-mode entry (Page_012).
+/// device-key enrolment after a successful sign-in, and the Face-ID device-key
+/// path. The email is pre-filled from the last successful sign-in; the design's
+/// "remember me" checkbox gates whether it is stored. The globe language toggle
+/// (top-right, wired to [LocaleController], D-363) and the underlined guest link
+/// (Page_012) round out the screen.
 ///
-/// Clean-code frozen (D-549, Phase 3): screen-local colour aliases dropped for
-/// `SimfTokens`; the gold CTA reuses the shared [AuthSubmitButton]; the alt
-/// entry methods moved to [SignInAltActions]; the body is capped by
-/// [MaxWidthBody]. Render unchanged — the 168:2800 golden locks it.
+/// Clean-code (D-655): the screen composes the shared account widgets
+/// ([AccountHeader], [AccountTopControls], [AccountCard], [AccountEmailField],
+/// [AccountPasswordField], [AccountRememberForgot], [AccountAuthPrompt]) instead
+/// of local `_build*` copies; the decorative sweep is the shared [SimfAuthSweep];
+/// the back button was removed (it only dead-ended to onboarding — owner).
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
 
@@ -146,9 +142,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         return;
       }
       setState(() {
-        _error = failure is NetworkUnavailable
-            ? l10n.networkErrorBody
-            : failure.source.message;
+        _error = failure.source.localizedMessage(l10n);
         _password.clear();
       });
     } finally {
@@ -230,9 +224,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     } on AuthFailure catch (failure) {
       if (mounted) {
         setState(() {
-          _error = failure is NetworkUnavailable
-              ? l10n.networkErrorBody
-              : failure.source.message;
+          _error = failure.source.localizedMessage(l10n);
         });
       }
     } catch (_) {
@@ -249,14 +241,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     if (mounted && ref.read(authControllerProvider) is AuthStateSignedIn) {
       routeAfterAuth(context, ref);
     }
-  }
-
-  void _back() {
-    if (context.canPop()) {
-      context.pop();
-      return;
-    }
-    context.goNamed(RouteNames.onboarding);
   }
 
   /// The globe button toggles AR ↔ EN and persists the choice (D-363).
@@ -277,27 +261,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       backgroundColor: SimfTokens.navySurface,
       body: Stack(
         children: <Widget>[
-          // Decorative diagonal sweep behind the header (Figma node 168:2850,
-          // rotated 28.28° — approximated as a tinted rounded rectangle).
-          Positioned(
-            top: -156,
-            left: 60,
-            child: Transform.rotate(
-              angle: 0.4936, // 28.28°
-              child: Container(
-                width: 313,
-                height: 323,
-                decoration: BoxDecoration(
-                  color: SimfTokens.surfaceTint,
-                  borderRadius: BorderRadius.circular(40),
-                ),
-              ),
-            ),
-          ),
+          const SimfAuthSweep(),
           SafeArea(
-            // The scroll body paints first; the back/language controls are the
-            // last Stack child so they sit on top and always receive their taps
-            // (the MaxWidthBody-centred body fills the cross axis behind them).
+            // The scroll body paints first; the language control is the last
+            // Stack child so it sits on top and always receives its tap (the
+            // MaxWidthBody-centred body fills the cross axis behind it).
             child: Stack(
               children: <Widget>[
                 SingleChildScrollView(
@@ -311,55 +279,20 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
-                        _Header(title: l10n.signInForumTitle),
+                        AccountHeader(title: l10n.signInForumTitle),
                         const SizedBox(height: 24),
                         _buildCard(l10n),
                       ],
                     ),
                   ),
                 ),
-                _buildTopControls(l10n),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Top controls (Figma 627:2361): back chevron left, language toggle right.
-  /// Forced LTR so the sides — and the chevron glyph — match the frame even
-  /// under RTL.
-  Widget _buildTopControls(AppL10n l10n) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Row(
-        textDirection: TextDirection.ltr,
-        children: <Widget>[
-          IconButton(
-            key: const ValueKey<String>('signInBack'),
-            onPressed: _busy ? null : _back,
-            icon: const SimfSvgIcon(_icBack, size: 24, color: Colors.white),
-          ),
-          const Spacer(),
-          SizedBox(
-            width: 40,
-            height: 40,
-            child: IconButton(
-              key: const ValueKey<String>('signInLanguage'),
-              tooltip: l10n.languageToggleLabel,
-              onPressed: _busy ? null : _toggleLanguage,
-              style: IconButton.styleFrom(
-                backgroundColor: SimfTokens.navyDeep,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: SimfTokens.borderRadiusSmall,
+                // Language globe only — the sign-in screen has no back target
+                // (the back button was removed per owner directive, D-655).
+                AccountTopControls(
+                  onToggleLanguage: _toggleLanguage,
+                  busy: _busy,
                 ),
-              ),
-              icon: const SimfSvgIcon(
-                _icGlobe,
-                size: 24,
-                color: SimfTokens.accent,
-              ),
+              ],
             ),
           ),
         ],
@@ -375,12 +308,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           data: (available) => available,
           orElse: () => false,
         );
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(
-        color: SimfTokens.cardBeige,
-        borderRadius: SimfTokens.borderRadiusSmall,
-      ),
+    return AccountCard(
       child: Form(
         key: _formKey,
         child: Column(
@@ -396,11 +324,37 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            _buildEmailField(l10n),
+            AccountEmailField(
+              controller: _email,
+              label: l10n.emailLabel,
+              enabled: !_busy,
+              validator: _validateEmail,
+              onChanged: (_) => setState(() {}),
+            ),
             const SizedBox(height: 16),
-            _buildPasswordField(l10n),
+            AccountPasswordField(
+              controller: _password,
+              label: l10n.passwordLabel,
+              obscure: _obscure,
+              onToggleObscure: () => setState(() => _obscure = !_obscure),
+              enabled: !_busy,
+              validator: _validatePassword,
+              onChanged: (_) => setState(() {}),
+              onSubmitted: (_) {
+                if (_canSubmit) {
+                  unawaited(_submit());
+                }
+              },
+            ),
             const SizedBox(height: 8),
-            _buildRememberForgotRow(l10n),
+            AccountRememberForgot(
+              rememberMe: _rememberMe,
+              onRememberChanged: (v) => setState(() => _rememberMe = v),
+              rememberLabel: l10n.rememberMeLabel,
+              forgotLabel: l10n.forgotPasswordLink,
+              onForgot: () => context.goNamed(RouteNames.forgotPassword),
+              enabled: !_busy,
+            ),
             if (_error != null) ...<Widget>[
               const SizedBox(height: 12),
               Text(
@@ -415,7 +369,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               onPressed: _canSubmit ? () => unawaited(_submit()) : null,
             ),
             const SizedBox(height: 8),
-            _buildSignUpPrompt(l10n),
+            AccountAuthPrompt(
+              question: l10n.createAccountQuestion,
+              linkLabel: l10n.createAccountLink,
+              onTap: () => context.pushNamed(RouteNames.signUpForm),
+              enabled: !_busy,
+            ),
             const SizedBox(height: 24),
             SignInAltActions(
               biometricAvailable: biometricAvailable,
@@ -427,184 +386,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildEmailField(AppL10n l10n) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        SimfFieldLabel(l10n.emailLabel, color: SimfTokens.navy),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: _email,
-          keyboardType: TextInputType.emailAddress,
-          textDirection: TextDirection.ltr,
-          textAlign: TextAlign.start,
-          maxLength: 50,
-          enabled: !_busy,
-          onChanged: (_) => setState(() {}),
-          style: simfInputStyle,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          validator: _validateEmail,
-          decoration: simfFieldDecoration(counterText: ''),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPasswordField(AppL10n l10n) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        SimfFieldLabel(l10n.passwordLabel, color: SimfTokens.navy),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: _password,
-          obscureText: _obscure,
-          maxLength: 32,
-          enabled: !_busy,
-          onChanged: (_) => setState(() {}),
-          onFieldSubmitted: (_) {
-            if (_canSubmit) {
-              unawaited(_submit());
-            }
-          },
-          style: simfInputStyle,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          validator: _validatePassword,
-          decoration: simfFieldDecoration(
-            counterText: '',
-            suffixIcon: IconButton(
-              tooltip: _obscure
-                  ? l10n.showPasswordTooltip
-                  : l10n.hidePasswordTooltip,
-              icon: SimfSvgIcon(
-                _obscure ? _icEyeOff : _icEye,
-                size: 16,
-                color: SimfTokens.greyText,
-              ),
-              onPressed: () => setState(() => _obscure = !_obscure),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRememberForgotRow(AppL10n l10n) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: <Widget>[
-        Flexible(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              SizedBox(
-                width: 19,
-                height: 19,
-                child: Checkbox(
-                  value: _rememberMe,
-                  onChanged: _busy
-                      ? null
-                      : (v) => setState(() => _rememberMe = v ?? true),
-                  activeColor: SimfTokens.accent,
-                  side: const BorderSide(
-                    color: SimfTokens.greyText,
-                    width: 1.5,
-                  ),
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: SimfTokens.borderRadiusSmall,
-                  ),
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-              ),
-              const SizedBox(width: 5),
-              Flexible(
-                child: Text(
-                  l10n.rememberMeLabel,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: SimfTokens.greyText,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        Flexible(
-          child: TextButton(
-            onPressed: _busy
-                ? null
-                : () => context.goNamed(RouteNames.forgotPassword),
-            style: authLinkButtonStyle(SimfTokens.greyText),
-            child: Text(
-              l10n.forgotPasswordLink,
-              style: const TextStyle(fontSize: 12),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSignUpPrompt(AppL10n l10n) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        Flexible(
-          child: Text(
-            l10n.createAccountQuestion,
-            style: const TextStyle(fontSize: 12, color: SimfTokens.greyText),
-          ),
-        ),
-        const SizedBox(width: 6),
-        Flexible(
-          child: TextButton(
-            onPressed: _busy
-                ? null
-                : () => context.pushNamed(RouteNames.signUpForm),
-            style: authLinkButtonStyle(SimfTokens.linkNavy),
-            child: Text(
-              l10n.createAccountLink,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-}
-
-/// Forum logo + name header (logo sits at the inline start — the right under
-/// RTL, matching the Figma frame).
-class _Header extends StatelessWidget {
-  const _Header({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        const SimfLogo(size: 44),
-        const SizedBox(width: 16),
-        Flexible(
-          child: Text(
-            title,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w500,
-              color: Colors.white,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

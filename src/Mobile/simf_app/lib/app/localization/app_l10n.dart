@@ -63,6 +63,17 @@ class AppL10n {
         'تعذر الاتصال بالخادم. تحقق من الاتصال بالإنترنت وحاول مرة أخرى.',
         'Could not reach the server. Check your internet connection and try again.',
       );
+  // Shown for a client-synthesized API failure (no backend envelope): a
+  // malformed / non-JSON response (proxy or server outage) and any unexpected
+  // client-side error — so an Arabic user never sees a raw English dev string.
+  String get errorServerUnavailable => _t(
+        'تعذّر الوصول إلى الخادم. حاول مرة أخرى لاحقًا.',
+        'Could not reach the server. Please try again later.',
+      );
+  String get errorGenericBody => _t(
+        'حدث خطأ غير متوقع. حاول مرة أخرى.',
+        'Something went wrong. Please try again.',
+      );
 
   // Splash / store-update dialog (Page 001 — Logic L-2).
   String get updateRequiredTitle => _t('تحديث مطلوب', 'Update required');
@@ -129,8 +140,10 @@ class AppL10n {
   String get signUpButton => _t('إنشاء حساب', 'Create account');
   String get invalidEmail => _t('بريد إلكتروني غير صالح', 'Invalid email');
   String get passwordPolicyError => _t(
-        'كلمة المرور لا تستوفي الشروط',
-        'Password does not meet the requirements',
+        'يجب أن تتكوّن كلمة المرور من ٨ إلى ١٢٨ حرفًا وتحتوي على حرف كبير وحرف '
+            'صغير ورقم ورمز خاص',
+        'Password must be 8–128 characters with an upper- and lower-case '
+            'letter, a digit and a special character',
       );
   String get signUpCheckEmail =>
       _t('تحقق من بريدك الإلكتروني', 'Check your email');
@@ -314,8 +327,8 @@ class AppL10n {
   String get plateNumberLabel =>
       _t('رقم اللوحة (اختياري)', 'Plate number (optional)');
   String get plateNumberInvalid => _t(
-        'يجب أن يتكوّن رقم اللوحة من 3 أحرف (من حروف اللوحات السعودية) وحتى 4 أرقام',
-        'The plate must be 3 letters (Saudi plate set) and up to 4 digits',
+        'أدخل رقم لوحة صحيح: حروف لوحات سعودية و/أو أرقام',
+        'Enter a valid plate: Saudi plate letters and/or digits',
       );
   // C6 (D-459) — the plate letter dropdowns + the digits field.
   String get plateLetterHint => _t('حرف', 'Letter');
@@ -326,12 +339,12 @@ class AppL10n {
       _t('يجب اختيار التصنيف', 'A profile type selection is required');
   // C4 (D-371) — the standard phone shapes, mirrored client/server.
   String get saudiMobileInvalid => _t(
-        'يجب أن يكون رقم الجوال السعودي بصيغة 05XXXXXXXX أو +9665XXXXXXXX',
-        'The Saudi mobile must be 05XXXXXXXX or +9665XXXXXXXX',
+        'أدخل الرقم بصيغة 05XXXXXXXX أو +9665XXXXXXXX أو 009665XXXXXXXX',
+        'Enter as 05XXXXXXXX or +9665XXXXXXXX or 009665XXXXXXXX',
       );
   String get internationalMobileInvalid => _t(
-        'يجب أن يكون رقم الجوال الدولي بالصيغة الدولية (E.164)',
-        'The international mobile must be in the +<country code><number> (E.164) format',
+        'أدخل الرقم بصيغة دولية: 00 أو + ثم رمز الدولة والرقم، مثل 00966XXXXXXXXX أو +966XXXXXXXXX',
+        'Use international format: 00 or + then country code and number, e.g. 00966XXXXXXXXX or +966XXXXXXXXX',
       );
   String get dateOfBirthRequired =>
       _t('تاريخ الميلاد مطلوب', 'Date of birth is required');
@@ -459,8 +472,7 @@ class AppL10n {
   String get hidePasswordTooltip => _t('إخفاء كلمة المرور', 'Hide password');
   // Sign in — KSA-Project design (Figma 168:2800, D-358/D-360/D-363).
   String get guestSignInLink => _t('الدخول كزائر', 'Enter as guest');
-  String get signInForumTitle =>
-      _t('الملتقى الدولى البحرى', 'International Maritime Forum');
+  String get signInForumTitle => _t('الملتقى الدولى البحرى', 'SIMF');
   String get rememberMeLabel => _t('تذكرنى', 'Remember me');
   String get orDividerLabel => _t('او', 'or');
   String get faceIdSignInButton =>
@@ -536,11 +548,14 @@ class AppL10n {
   String get otpResentToast =>
       _t('تم إرسال رمز جديد إلى بريدك', 'A new code was sent to your email');
   String get forgotPasswordTitle =>
-      _t('استعادة كلمة المرور', 'Reset password');
+      _t('نسيت كلمة المرور', 'Forgot password');
   String get forgotPasswordBody => _t(
-        'أدخل بريدك الإلكتروني وسنرسل لك رمزاً لإعادة التعيين.',
-        'Enter your email and we will send you a reset code.',
+        'أدخل بريدك الإلكتروني المسجّل وسنرسل لك رمز إعادة تعيين كلمة المرور.',
+        'Enter your registered email and we will send you a password reset '
+            'code.',
       );
+  String get rememberedPasswordQuestion =>
+      _t('تذكرت كلمة المرور؟', 'Remembered your password?');
   String get sendCodeButton => _t('إرسال الرمز', 'Send code');
   String get resetPasswordTitle =>
       _t('تعيين كلمة مرور جديدة', 'Set a new password');
@@ -567,6 +582,8 @@ class AppL10n {
       _t('أو أدخل رمز الشارة يدويًا', 'Or enter the badge code manually');
   String get badgeManualField => _t('رمز الشارة', 'Badge code');
   String get badgeResolveButton => _t('متابعة', 'Continue');
+  // The scanner viewfinder's "actively searching" caption (Figma 758:4596).
+  String get scanningCode => _t('جارٍ فحص الرمز...', 'Scanning the code…');
   // Shared QR-scanner chrome (used by the badge, contact and exhibitor scanners).
   String get qrStopCamera => _t('إيقاف الكاميرا', 'Stop camera');
   String get qrBack => _t('رجوع', 'Back');
@@ -742,13 +759,18 @@ class AppL10n {
   // 758:4180 / 758:4248 / 758:4316).
   String get identityVerificationTitle =>
       _t('التحقق من الهوية', 'Identity verification');
-  // (D-611: the step*Prompt strings were removed with the on-screen prompt —
-  // owner chose the exact-Figma full-bleed camera with no prompt overlay.)
+  // Camera security rules (owner 2026-07-06, D-662): the identity photo must be
+  // a LIVE, human-verified capture — there is no gallery path, so a static image
+  // is never used. The step labels + directional cue + progress bar match Figma
+  // 758:4180 / 4248 / 4316 (D-663).
+  String get livenessSmilePrompt => _t('المقطع الأمامي', 'Front');
+  String get livenessTurnRightPrompt => _t('المقطع الأيمن', 'Right');
+  String get livenessTurnLeftPrompt => _t('المقطع الأيسر', 'Left');
   String get identityCameraUnavailable => _t(
-        'الكاميرا غير متاحة. اختر صورة من المعرض بدلاً من ذلك.',
-        'The camera is unavailable. Choose a photo from the gallery instead.',
+        'الكاميرا مطلوبة للتحقق من الهوية بصورة حية. فعّل الكاميرا وحاول مجددًا.',
+        'The camera is required for a live identity check. Enable it and retry.',
       );
-  String get chooseFromGallery => _t('اختر من المعرض', 'Choose from gallery');
+  String get identityRetry => _t('إعادة المحاولة', 'Retry');
 
   // Moderator (محاور) per-session Q&A desk (Figma 758:5307, D-405).
   String get moderatorDeskTitle => _t('أسئلة الجلسة', 'Session questions');
@@ -1474,6 +1496,8 @@ class AppL10n {
   String get moreTerms => _t('الشروط والأحكام', 'Terms & conditions');
   String get moreRate => _t('تقييم', 'Rate');
   String get moreNotifications => _t('الإشعارات', 'Notifications');
+  String get moreResetPassword =>
+      _t('إعادة تعيين كلمة المرور', 'Reset password');
   String get moreMediaPartners => _t('الشركاء الإعلاميون', 'Media partners');
 
   // Section headers (Figma 1129:17224).

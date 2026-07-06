@@ -24,7 +24,9 @@ import 'golden_fonts.dart';
 /// Frame parity expected (signed-in): the منطقتي profile header card, the three
 /// grouped sections (معلومات الملتقى / الإعدادات / قانوني) of bordered nav rows
 /// (the اللغة row shows the current language), the تسجيل الخروج link and the
-/// version line. RTL.
+/// version line. RTL. The الإعدادات section also carries the signed-in-only
+/// "إعادة تعيين كلمة المرور" row — a deliberate profile action beyond the frame
+/// (D-658, owner directive).
 
 const _testConfig = SimfDataConfig(
   baseUrl: 'http://test.local/api/v1',

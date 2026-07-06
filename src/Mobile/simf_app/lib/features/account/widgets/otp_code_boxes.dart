@@ -7,8 +7,9 @@ import '../../../app/theme/tokens.dart';
 /// widget when the 2FA screen became the second consumer, D-369).
 const Color otpCodeBoxBorder = Color(0xFF1E3A5F);
 
-/// The OTP frame's muted blue caption colour (countdown label).
-const Color otpMutedBlue = Color(0xFF8A9CC0);
+/// The OTP frame's muted blue caption colour (countdown label) — the shared
+/// [SimfTokens.mutedBlue] under the screen-local name its callers already use.
+const Color otpMutedBlue = SimfTokens.mutedBlue;
 
 /// Six segmented code boxes rendered over one invisible capture field — the
 /// KSA-Project OTP entry (Figma 505:987). Tapping anywhere on the row focuses

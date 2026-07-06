@@ -50,10 +50,18 @@ final Map<String, String> _enToAr = <String, String>{
 const String _latinClass = 'ABDEGHJKLNRSTUVXZ';
 const String _arabicClass = 'ابحدرسصطعقكلمنهوى';
 
-final RegExp _latinPlate =
-    RegExp('^([$_latinClass]{3}[0-9]{1,4}|[0-9]{1,4}[$_latinClass]{3})\$');
-final RegExp _arabicPlate =
-    RegExp('^([$_arabicClass]{3}[0-9]{1,4}|[0-9]{1,4}[$_arabicClass]{3})\$');
+// Relaxed rule (owner 2026-07-06): at least one plate letter and/or at least
+// one digit — up to 3 letters (from the 17-letter set, one script) and up to 4
+// digits, in either order. The `(?=.)` lookahead rejects an all-empty match; a
+// non-empty value made only of allowed characters (letters-then-digits or
+// digits-then-letters, never interleaved) validates. Mirrored on the server
+// (`SaudiPlate`).
+final RegExp _latinPlate = RegExp(
+  '^(?=.)([$_latinClass]{0,3}[0-9]{0,4}|[0-9]{0,4}[$_latinClass]{0,3})\$',
+);
+final RegExp _arabicPlate = RegExp(
+  '^(?=.)([$_arabicClass]{0,3}[0-9]{0,4}|[0-9]{0,4}[$_arabicClass]{0,3})\$',
+);
 
 /// Strips separators and folds the input to a canonical comparison form
 /// (variant Arabic glyphs normalised, Arabic-Indic digits → Western, Latin

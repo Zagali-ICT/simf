@@ -38,10 +38,17 @@ public sealed class UpsertUserProfileRequestValidator
         new(@"^\+[1-9]\d{7,14}$",
             System.Text.RegularExpressions.RegexOptions.Compiled);
 
-    /// <summary>Strips the separators users habitually type (spaces and
-    /// dashes) so "+9665 0123-4567" and "+966501234567" validate alike.</summary>
+    /// <summary>Strips the separators users habitually type (spaces and dashes)
+    /// and rewrites a leading international <c>00</c> prefix to <c>+</c> — so
+    /// "+9665 0123-4567", "+966501234567" and "009665..." validate alike,
+    /// mirroring the client's <c>normalizePhone</c> (owner 2026-07-06).</summary>
     private static string NormalizePhone(string value)
-        => value.Replace(" ", string.Empty).Replace("-", string.Empty);
+    {
+        var stripped = value.Replace(" ", string.Empty).Replace("-", string.Empty);
+        return stripped.StartsWith("00", StringComparison.Ordinal)
+            ? string.Concat("+", stripped.AsSpan(2))
+            : stripped;
+    }
 
     /// <summary>C4 (D-371) Saudi-mobile standard check — shared with the
     /// walk-in registration validator so the rule lives once.</summary>
@@ -150,7 +157,7 @@ public sealed class UpsertUserProfileRequestValidator
             .NotEmpty().Bilingual(
                 "The Arabic name is required.",
                 "الاسم بالعربية مطلوب.")
-            .MaximumLength(256)
+            .MaximumLength(100)
             .Must(BeArabicLettersOnly).Bilingual(
                 "The Arabic name must contain Arabic letters only.",
                 "يجب أن يحتوي الاسم بالعربية على حروف عربية فقط.")
@@ -162,7 +169,7 @@ public sealed class UpsertUserProfileRequestValidator
             .NotEmpty().Bilingual(
                 "The English name is required.",
                 "الاسم بالإنجليزية مطلوب.")
-            .MaximumLength(256)
+            .MaximumLength(100)
             .Must(BeEnglishLettersOnly).Bilingual(
                 "The English name must contain English letters only.",
                 "يجب أن يحتوي الاسم بالإنجليزية على حروف إنجليزية فقط.")
@@ -181,12 +188,12 @@ public sealed class UpsertUserProfileRequestValidator
         RuleFor(request => request.PlaceOfBirth)
             .MaximumLength(128);
 
-        // D-163 (PDF §2.6) — optional job title, max 128 chars.
+        // D-163 (PDF §2.6) — optional job title, max 100 chars (owner 2026-07-06).
         RuleFor(request => request.JobTitle)
-            .MaximumLength(128).When(r => !string.IsNullOrEmpty(r.JobTitle))
+            .MaximumLength(100).When(r => !string.IsNullOrEmpty(r.JobTitle))
             .Bilingual(
-                "Job title must be at most 128 characters.",
-                "يجب ألا يتجاوز المسمى الوظيفي 128 حرفًا.");
+                "Job title must be at most 100 characters.",
+                "يجب ألا يتجاوز المسمى الوظيفي 100 حرف.");
 
         // D-197 — date of birth is required, and the registrant must be at
         // least 18 years old (owner rule). The age check is leap-safe via
@@ -261,14 +268,15 @@ public sealed class UpsertUserProfileRequestValidator
                 "The international mobile must be in the +<country code><number> (E.164) format.",
                 "يجب أن يكون رقم الجوال الدولي بالصيغة الدولية ‎+‎ يليها رمز الدولة والرقم (E.164).");
 
-        // C6 (D-459) — رقم اللوحة: optional, but when present it must match
-        // the Saudi standard — 3 letters from the official 17-letter set
-        // (Arabic or Latin) + 1–4 digits.
+        // C6 (D-459, relaxed 2026-07-06) — رقم اللوحة: optional, but when
+        // present it must be plate letters from the official 17-letter set
+        // (Arabic or Latin) and/or digits — up to 3 letters + up to 4 digits,
+        // at least one of them.
         RuleFor(request => request.PlateNumber)
             .Must(value => string.IsNullOrEmpty(value) || IsStandardPlateNumber(value))
             .Bilingual(
-                "The plate number must be 3 letters (Saudi plate set) and up to 4 digits.",
-                "يجب أن يتكوّن رقم اللوحة من 3 أحرف (من حروف اللوحات السعودية) وحتى 4 أرقام.");
+                "Enter a valid plate: Saudi plate letters and/or digits.",
+                "أدخل رقم لوحة صحيح: حروف لوحات سعودية و/أو أرقام.");
     }
 
     // D-197 — the registrant must be at least 18. Uses UtcNow date-only;

@@ -125,6 +125,19 @@ class MoreScreen extends ConsumerWidget {
                 title: l10n.moreNotifications,
                 onTap: () => context.pushNamed(RouteNames.notifications),
               ),
+              // Reset password (signed-in only) — reuses the forgot→reset flow:
+              // it emails a code, then the reset screen sets the new password.
+              // The known email is pre-filled so it isn't retyped (D-659).
+              if (signedIn)
+                MoreRow(
+                  title: l10n.moreResetPassword,
+                  onTap: () => context.pushNamed(
+                    RouteNames.forgotPassword,
+                    queryParameters: <String, String>{
+                      'email': auth.session.user.email,
+                    },
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: SimfTokens.space5),

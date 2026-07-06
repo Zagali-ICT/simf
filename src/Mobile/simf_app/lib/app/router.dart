@@ -513,7 +513,9 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
 /// The screen for an auxiliary auth route (forgot / reset / verify-OTP).
 Widget _auxScreenFor(BuildContext context, GoRouterState state, _Route r) {
   if (r.name == RouteNames.forgotPassword) {
-    return const ForgotPasswordScreen();
+    // The email is pre-filled when a signed-in user opens this from their
+    // profile (D-659); null/absent for the normal signed-out entry.
+    return ForgotPasswordScreen(email: state.uri.queryParameters['email']);
   }
   if (r.name == RouteNames.resetPassword) {
     return ResetPasswordScreen(

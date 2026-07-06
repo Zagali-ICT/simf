@@ -11,11 +11,14 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_form_scaffold.dart';
+import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
+import '../../core/validation/digit_normalization.dart';
 import '../../core/validation/name_validation.dart';
 import '../../core/validation/phone_validation.dart';
 import '../../core/validation/plate_validation.dart';
 import '../../core/validation/saudi_id_validation.dart';
+import '../../core/widgets/simf_auth_sweep.dart';
 import '../../core/widgets/simf_field_label.dart';
 import '../../core/widgets/simf_field_style.dart';
 import '../../core/widgets/simf_labeled_text_field.dart';
@@ -201,8 +204,9 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       if (!mounted) {
         return;
       }
+      final l10n = AppL10n.of(context);
       setState(() {
-        _loadError = failure.message;
+        _loadError = failure.localizedMessage(l10n);
         _loading = false;
       });
     }
@@ -526,9 +530,13 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       passportNumber: !isSaudi && _docType == _DocType.passport
           ? _emptyToNull(_documentNumber.text)
           : null,
-      saudiMobile: isSaudi ? _emptyToNull(_saudiMobile.text) : null,
-      internationalMobile:
-          !isSaudi ? _emptyToNull(_internationalMobile.text) : null,
+      // Submit the canonical phone — Arabic digits folded, a leading `00`
+      // rewritten to `+` — so the value matches the server's `+`-only shapes.
+      saudiMobile:
+          isSaudi ? _emptyToNull(normalizePhone(_saudiMobile.text)) : null,
+      internationalMobile: !isSaudi
+          ? _emptyToNull(normalizePhone(_internationalMobile.text))
+          : null,
       plateNumber: _emptyToNull(_plate.text),
       organisationId: _organisationId,
       gender: _gender,
@@ -641,23 +649,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     return SimfFormScaffold(
       pinnedHeader: true,
       onBack: _back,
-      // The profile screen's decorative sweep sits differently from the
-      // auth default, so it is passed in explicitly.
-      sweep: Positioned(
-        top: -180,
-        right: -40,
-        child: Transform.rotate(
-          angle: 0.4936, // 28.28°
-          child: Container(
-            width: 313,
-            height: 323,
-            decoration: BoxDecoration(
-              color: SimfTokens.surfaceTint,
-              borderRadius: BorderRadius.circular(40),
-            ),
-          ),
-        ),
-      ),
+      // The profile screen's sweep sits at the top-right, not the auth default.
+      sweep: const SimfAuthSweep(top: -180, left: null, right: -40),
       child: _buildBody(l10n),
     );
   }
@@ -727,7 +720,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                   SimfLabeledTextField(
                     label: l10n.arabicNameLabel,
                     controller: _arabicName,
-                    maxLength: 256,
+                    maxLength: 100,
                     // Arabic letters + spaces only — block other scripts at
                     // the keystroke so the field can never hold mixed text.
                     inputFormatters: <TextInputFormatter>[
@@ -739,7 +732,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                   SimfLabeledTextField(
                     label: l10n.englishNameLabel,
                     controller: _englishName,
-                    maxLength: 256,
+                    maxLength: 100,
                     textDirection: TextDirection.ltr,
                     // Latin letters + spaces only.
                     inputFormatters: <TextInputFormatter>[
@@ -761,7 +754,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                   SimfLabeledTextField(
                     label: l10n.jobTitleLabel,
                     controller: _jobTitle,
-                    maxLength: 128,
+                    maxLength: 100,
                   ),
                   const SizedBox(height: 16),
                   _buildNationalityField(l10n),
@@ -1114,6 +1107,12 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           controller: _nationalId,
           keyboardType: TextInputType.number,
           maxLength: 10,
+          // Accept an id typed in Arabic-Indic digits — fold to Western so it
+          // validates and submits as `1XXXXXXXXX` (owner 2026-07-06).
+          inputFormatters: <TextInputFormatter>[
+            const WesternDigitsFormatter(),
+            FilteringTextInputFormatter.digitsOnly,
+          ],
           validator: _validateNationalId,
         ),
       ];
@@ -1134,6 +1133,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         label: l10n.documentNumberLabel,
         controller: _documentNumber,
         maxLength: _docType == _DocType.iqama ? 10 : 9,
+        // Fold Arabic-Indic digits to Western (letters pass for passports).
+        inputFormatters: const <TextInputFormatter>[WesternDigitsFormatter()],
         validator: _validateDocumentNumber,
       ),
     ];
@@ -1239,6 +1240,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                   maxLength: 4,
                   keyboardType: TextInputType.number,
                   inputFormatters: <TextInputFormatter>[
+                    const WesternDigitsFormatter(),
                     FilteringTextInputFormatter.digitsOnly,
                   ],
                   style: simfInputStyle,

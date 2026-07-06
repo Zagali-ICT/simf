@@ -1,0 +1,33 @@
+import 'package:flutter/material.dart';
+
+import '../../../app/widgets/simf_logo.dart';
+
+/// The auth screens' brand header: the [SimfLogo] beside the forum name,
+/// centred (the logo at the inline start — the right under RTL), matching the
+/// Figma auth frames' logo + title row.
+class AccountHeader extends StatelessWidget {
+  const AccountHeader({required this.title, super.key});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        const SimfLogo(size: 44),
+        const SizedBox(width: 16),
+        Flexible(
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}

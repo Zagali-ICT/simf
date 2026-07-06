@@ -14,6 +14,15 @@ const TextStyle simfInputStyle = TextStyle(
   color: SimfTokens.inputInk,
 );
 
+/// The value text style for a SIMF field on a navy surface (white text) — the
+/// forgot / reset password screens, where [simfInputStyle]'s dark ink would be
+/// unreadable against the navy background.
+const TextStyle simfInputStyleOnNavy = TextStyle(
+  fontSize: 14,
+  fontWeight: FontWeight.w500,
+  color: Colors.white,
+);
+
 // Radius left at OutlineInputBorder's default (circular 4 ==
 // SimfTokens.radiusSmall); passing it trips avoid_redundant_argument_values.
 const OutlineInputBorder _restingBorder = OutlineInputBorder(
