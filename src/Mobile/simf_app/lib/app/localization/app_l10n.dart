@@ -54,12 +54,6 @@ class AppL10n {
         'Your account is awaiting approval. Full features unlock once your '
             'registration is approved.',
       );
-  // D-666 — the snackbar shown when a pending account re-checks its status from
-  // the home card and it is still not approved.
-  String get statusStillPending => _t(
-        'لا يزال حسابك قيد المراجعة.',
-        'Your account is still under review.',
-      );
   String get retryLabel => _t('إعادة المحاولة', 'Retry');
   String get loadingLabel => _t('جارٍ التحميل…', 'Loading…');
   String get lookupLoadError =>
@@ -1555,6 +1549,16 @@ class AppL10n {
   String get languageCurrentName => _t('العربية', 'English');
 
   String get moreVersion => _t('SIMF 2026 · v1.0.0', 'SIMF 2026 · v1.0.0');
+  // D-668 — About-the-app screen (version / release date / organizer + links).
+  // The release date is a maintained constant (no build-date source in the app).
+  String get aboutAppTitle => _t('عن التطبيق', 'About the app');
+  String get aboutAppInfoTitle => _t('معلومات التطبيق', 'App information');
+  String get aboutAppReleaseDateLabel => _t('تاريخ الإصدار', 'Release date');
+  String get aboutAppReleaseDate => _t('2026-07-06', '2026-07-06');
+  String get aboutAppOrganizerLabel => _t('الجهة المنظمة', 'Organizer');
+  String get aboutAppOrganizerValue =>
+      _t('القوات البحرية الملكية السعودية', 'Royal Saudi Naval Forces');
+  String get aboutAppLinksTitle => _t('روابط', 'Links');
 
   // Guest mode (Page 012 — informational entry).
   String get guestModeTitle => _t('وضع الضيف', 'Guest mode');

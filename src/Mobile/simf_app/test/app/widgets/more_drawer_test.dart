@@ -109,6 +109,8 @@ Future<void> _pump(
         (RouteNames.scanVisitor, '/exhibitor/scan', 'SCAN-VISITOR'),
         (RouteNames.myVisitors, '/exhibitor/visitors', 'MY-VISITORS'),
         (RouteNames.registrationStatus, '/registration/status', 'REG-STATUS'),
+        (RouteNames.contactUs, '/contact-us', 'CONTACT-US'),
+        (RouteNames.aboutApp, '/about-app', 'ABOUT-APP'),
       ])
         GoRoute(
           name: name,
@@ -167,19 +169,25 @@ void main() {
       expect(find.text('العربية · English'), findsOneWidget);
       expect(find.text('Light / dark mode'), findsOneWidget);
       expect(find.text('Share my calendar'), findsOneWidget);
+      // The end group (D-668): contact us + about (app) + logout.
+      expect(find.text('Contact us'), findsOneWidget);
+      expect(find.text('About the app'), findsOneWidget);
       expect(find.text('Sign out'), findsOneWidget);
     });
 
-    testWidgets('signed-out hides the calendar + logout (session-bound) actions',
+    testWidgets('signed-out hides the calendar + logout, keeps contact + about',
         (tester) async {
       await _pump(tester, auth: _RecordingAuthController(signedIn: false));
 
       // Public items still present.
       expect(find.text('About the forum'), findsOneWidget);
-      // The last public action when signed out is the (inert) theme tile.
-      await _scrollTo(tester, find.text('Light / dark mode'));
+      // Contact us + About are public — shown even to a not-signed-in guest
+      // (owner 2026-07-06, D-668).
+      await _scrollTo(tester, find.text('About the app'));
       expect(find.text('العربية · English'), findsOneWidget);
       expect(find.text('Light / dark mode'), findsOneWidget);
+      expect(find.text('Contact us'), findsOneWidget);
+      expect(find.text('About the app'), findsOneWidget);
       // Session-bound actions hidden.
       expect(find.text('Share my calendar'), findsNothing);
       expect(find.text('Sign out'), findsNothing);
@@ -313,11 +321,13 @@ void main() {
       expect(find.text('Share my calendar'), findsNothing);
     });
 
-    testWidgets('shows the public hub + the one Registration-status action',
+    testWidgets('shows the public hub + Registration-status + contact/about',
         (tester) async {
       await pumpPending(tester);
       expect(find.text('About the forum'), findsOneWidget); // public info stays
       expect(find.text('Registration status'), findsOneWidget); // the exception
+      expect(find.text('Contact us'), findsOneWidget); // D-668 end group
+      expect(find.text('About the app'), findsOneWidget);
       expect(find.text('Sign out'), findsOneWidget); // still signed in
     });
   });

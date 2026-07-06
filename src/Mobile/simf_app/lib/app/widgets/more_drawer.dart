@@ -161,6 +161,28 @@ class MoreDrawer extends ConsumerWidget {
                       title: l10n.shareCalendar,
                       onTap: () => unawaited(_shareCalendar(context, ref, l10n)),
                     ),
+                  const Divider(color: SimfTokens.beigeBorder, height: 1),
+                  // The end of the menu (owner 2026-07-06): contact us + about
+                  // (app version / release date / organizer) + logout. Contact
+                  // us and About are public — every account, incl. a guest — and
+                  // About now carries the version (the old footer line is gone);
+                  // logout is signed-in only.
+                  _DrawerTile(
+                    icon: Icons.mail_outline,
+                    title: l10n.contactUsTitle,
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      context.pushNamed(RouteNames.contactUs);
+                    },
+                  ),
+                  _DrawerTile(
+                    icon: Icons.info_outline,
+                    title: l10n.aboutAppTitle,
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      context.pushNamed(RouteNames.aboutApp);
+                    },
+                  ),
                   if (signedIn)
                     _DrawerTile(
                       icon: Icons.logout,
@@ -169,16 +191,6 @@ class MoreDrawer extends ConsumerWidget {
                           unawaited(_confirmSignOut(context, ref, l10n)),
                     ),
                 ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(SimfTokens.space4),
-              child: Text(
-                l10n.moreVersion,
-                style: const TextStyle(
-                  color: SimfTokens.inkMuted,
-                  fontSize: SimfTokens.textSm,
-                ),
               ),
             ),
           ],

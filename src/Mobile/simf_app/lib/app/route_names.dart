@@ -78,6 +78,7 @@ class RouteNames {
   static const String meetPeople = 'meetPeople';
   static const String chatbot = 'chatbot';
   static const String aboutForum = 'aboutForum';
+  static const String aboutApp = 'aboutApp';
 
   // Section 8 — Settings & legal (3 screens; 39 cybersecurity removed)
   static const String accessibility = 'accessibility';

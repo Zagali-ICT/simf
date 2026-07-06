@@ -8,58 +8,44 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/route_names.dart';
 import '../../../app/theme/tokens.dart';
+import '../../registration/widgets/registration_sign_out_link.dart';
 
 /// The home block for a signed-in but **not-yet-approved** account (D-666): the
-/// "awaiting approval" note plus the two actions a true guest never gets —
-/// **re-check** (re-fetches the account status; the moment it is approved the
-/// auth-state change rebuilds Home into the full experience) and **registration
-/// status** (opens the status gate, Page 011). It replaces the guest "sign in"
-/// CTA, which is wrong for an already-logged-in user.
-class PendingApprovalCard extends ConsumerStatefulWidget {
+/// "awaiting approval" note, a single **Registration status** button that opens
+/// the status gate and **re-checks on return** (so an approval granted there
+/// flips Home into the full experience), and a small **sign-out** link in the
+/// registration-gate style. It replaces the guest "sign in" CTA, which is wrong
+/// for an already-logged-in user. (D-668 collapsed the earlier duplicate
+/// Re-check + Registration-status buttons into this one navigate-and-refresh
+/// action and added the sign-out link.)
+class PendingApprovalCard extends ConsumerWidget {
   const PendingApprovalCard({required this.l10n, super.key});
 
   final AppL10n l10n;
 
-  @override
-  ConsumerState<PendingApprovalCard> createState() =>
-      _PendingApprovalCardState();
-}
-
-class _PendingApprovalCardState extends ConsumerState<PendingApprovalCard> {
-  bool _refreshing = false;
-
-  Future<void> _refresh() async {
-    final l10n = widget.l10n;
-    final messenger = ScaffoldMessenger.of(context);
-    setState(() => _refreshing = true);
+  /// Opens the registration-status gate, then re-fetches the account on return:
+  /// if it was approved there, the auth-state change rebuilds Home into the full
+  /// experience. `pushNamed` uses [context] synchronously before the await, so
+  /// there is no use-after-await on the context.
+  Future<void> _openStatus(BuildContext context, WidgetRef ref) async {
+    await context.pushNamed(RouteNames.registrationStatus);
     try {
-      final user =
-          await ref.read(authControllerProvider.notifier).refreshCurrentUser();
-      if (!mounted) {
-        return;
-      }
-      // Approved → the auth-state change rebuilds Home into the full experience,
-      // so only surface a message when it is still not approved.
-      if (user.registrationStatus != RegistrationStatus.approved) {
-        messenger.showSnackBar(
-          SnackBar(content: Text(l10n.statusStillPending)),
-        );
-      }
+      await ref.read(authControllerProvider.notifier).refreshCurrentUser();
     } on AuthFailure {
-      if (!mounted) {
-        return;
-      }
-      messenger.showSnackBar(SnackBar(content: Text(l10n.regStatusError)));
-    } finally {
-      if (mounted) {
-        setState(() => _refreshing = false);
-      }
+      // A stale session flips auth to signed-out and the router gate handles it.
     }
   }
 
+  /// Plain sign-out (no confirm) → sign-in, matching the registration gate. The
+  /// router is captured before the await so [context] is not used after it.
+  Future<void> _signOut(BuildContext context, WidgetRef ref) async {
+    final router = GoRouter.of(context);
+    await ref.read(authControllerProvider.notifier).signOut();
+    router.goNamed(RouteNames.signIn);
+  }
+
   @override
-  Widget build(BuildContext context) {
-    final l10n = widget.l10n;
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       padding: const EdgeInsets.all(SimfTokens.space3),
       decoration: BoxDecoration(
@@ -93,33 +79,13 @@ class _PendingApprovalCardState extends ConsumerState<PendingApprovalCard> {
             ],
           ),
           const SizedBox(height: SimfTokens.space3),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _refreshing ? null : () => unawaited(_refresh()),
-                  icon: _refreshing
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: SimfTokens.accent,
-                          ),
-                        )
-                      : const Icon(Icons.refresh, size: 18),
-                  label: Text(l10n.reCheckButton),
-                ),
-              ),
-              const SizedBox(width: SimfTokens.space2),
-              Expanded(
-                child: FilledButton(
-                  onPressed: () =>
-                      context.pushNamed(RouteNames.registrationStatus),
-                  child: Text(l10n.registrationStatusButton),
-                ),
-              ),
-            ],
+          FilledButton(
+            onPressed: () => unawaited(_openStatus(context, ref)),
+            child: Text(l10n.registrationStatusButton),
+          ),
+          RegistrationSignOutLink(
+            label: l10n.signOutLink,
+            onTap: () => unawaited(_signOut(context, ref)),
           ),
         ],
       ),

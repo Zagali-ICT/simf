@@ -350,8 +350,8 @@ void main() {
     });
 
     testWidgets('an unapproved (pending) account sees the guest layout with the '
-        'under-review card (re-check + registration status), not the guest '
-        'banner or the sign-in button (D-666)', (tester) async {
+        'under-review card (registration status + sign out), not the guest '
+        'banner or the sign-in button (D-666 / D-668)', (tester) async {
       await _pump(tester, controller: _UnapprovedController());
 
       // The guest tiles render…
@@ -360,16 +360,18 @@ void main() {
       // …but the "browsing as a guest, sign in" banner is NOT shown — the
       // account is already logged in (D-666), so that prompt would be wrong.
       expect(find.textContaining('browsing as a guest'), findsNothing);
-      // …and the under-review card replaces the sign-in CTA, carrying the
-      // re-check + registration-status actions a true guest never gets.
+      // …and the under-review card replaces the sign-in CTA.
       await tester.scrollUntilVisible(
         find.textContaining('awaiting approval'),
         120,
         scrollable: find.byType(Scrollable).first,
       );
       expect(find.textContaining('awaiting approval'), findsOneWidget);
-      expect(find.text('Re-check'), findsOneWidget);
+      // A single Registration-status action (D-668 dropped the duplicate
+      // Re-check button) plus a sign-out link — never the guest "Sign in".
       expect(find.text('Registration status'), findsOneWidget);
+      expect(find.text('Re-check'), findsNothing);
+      expect(find.text('Sign out'), findsOneWidget);
       expect(find.widgetWithText(FilledButton, 'Sign in'), findsNothing);
       // It is the guest layout, not the signed-in greeting header.
       expect(find.textContaining('Pending User'), findsNothing);
