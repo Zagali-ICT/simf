@@ -7,8 +7,8 @@
 | **Auth** | Anonymous |
 | **Status** | ✅ Real |
 | **Backend** | `POST /account/api/auth/sign-in` (Website BFF, same shape as CP) |
-| **Source** | [`SignIn.razor`](../../../src/Website/SIMF.Web/Components/Pages/Auth/SignIn.razor) |
-| **Last reviewed** | 2026-05-28 |
+| **Source** | [`SignIn.razor`](../../../src/Website/SIMF.Web/Components/Pages/Auth/SignIn.razor) + [`SignIn.razor.cs`](../../../src/Website/SIMF.Web/Components/Pages/Auth/SignIn.razor.cs) |
+| **Last reviewed** | 2026-07-06 |
 
 ## 1. Purpose
 
@@ -38,4 +38,9 @@ them to the CP `/login`.
 - TOTP verify: [`web/otp-verify.md`](otp-verify.md)
 - Forgot password: [`web/forgot-password.md`](forgot-password.md)
 
-_Last reviewed:_ 2026-05-28 by Claude (D-133 slice 5).
+## Changelog
+
+- 2026-07-06 (D-632) — C# moved to a `SignIn.razor.cs` code-behind partial
+  (Website clean-code, Phase 5); behaviour unchanged (SignInPageTests still green).
+
+_Last reviewed:_ 2026-07-06 by Claude (D-632).

@@ -7,8 +7,8 @@
 | **Auth** | Anonymous (code is the bearer) |
 | **Status** | ✅ Real |
 | **Backend** | `POST /account/api/auth/reset-password` |
-| **Source** | [`ResetPassword.razor`](../../../src/Website/SIMF.Web/Components/Pages/Auth/ResetPassword.razor) |
-| **Last reviewed** | 2026-05-28 |
+| **Source** | [`ResetPassword.razor`](../../../src/Website/SIMF.Web/Components/Pages/Auth/ResetPassword.razor) + [`ResetPassword.razor.cs`](../../../src/Website/SIMF.Web/Components/Pages/Auth/ResetPassword.razor.cs) |
+| **Last reviewed** | 2026-07-06 |
 
 ## 1. Purpose
 
@@ -25,4 +25,9 @@ special. Success → toast + redirect to `/login`.
 | Weak password → bilingual complexity message | E2E-WEB-RST-003 |
 | Expired code (>15 min) → invalid | E2E-WEB-RST-004 |
 
-_Last reviewed:_ 2026-05-28 by Claude (D-133 slice 5).
+## Changelog
+
+- 2026-07-06 (D-632) — C# moved to a `ResetPassword.razor.cs` code-behind
+  partial (Website clean-code, Phase 5); behaviour unchanged.
+
+_Last reviewed:_ 2026-07-06 by Claude (D-632).
