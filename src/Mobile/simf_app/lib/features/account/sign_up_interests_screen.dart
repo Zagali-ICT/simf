@@ -8,6 +8,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
 import '../../core/widgets/simf_auth_sweep.dart';
 import 'data/profile_models.dart';
@@ -86,8 +87,9 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
       if (!mounted) {
         return;
       }
+      final l10n = AppL10n.of(context);
       setState(() {
-        _loadError = failure.message;
+        _loadError = failure.localizedMessage(l10n);
         _loading = false;
       });
     }
@@ -186,7 +188,7 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
       if (!mounted) {
         return;
       }
-      setState(() => _submitError = failure.message);
+      setState(() => _submitError = failure.localizedMessage(l10n));
     } finally {
       if (mounted) {
         setState(() => _submitting = false);

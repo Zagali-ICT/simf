@@ -35,6 +35,11 @@ class BadgeSignInScreen extends ConsumerStatefulWidget {
 class _BadgeSignInScreenState extends ConsumerState<BadgeSignInScreen> {
   final TextEditingController _manual = TextEditingController();
 
+  /// Single-flight guard — the live camera fires `onScan` on every decoded
+  /// frame, so without this a steady QR would launch concurrent resolves and
+  /// stack duplicate navigations.
+  bool _resolving = false;
+
   @override
   void dispose() {
     _manual.dispose();
@@ -49,6 +54,10 @@ class _BadgeSignInScreenState extends ConsumerState<BadgeSignInScreen> {
   }
 
   Future<void> _onCode(String qr) async {
+    if (_resolving || qr.isEmpty) {
+      return;
+    }
+    _resolving = true;
     final l10n = AppL10n.of(context);
     final messenger = ScaffoldMessenger.of(context);
     try {
@@ -87,6 +96,10 @@ class _BadgeSignInScreenState extends ConsumerState<BadgeSignInScreen> {
           ),
         ),
       );
+    } finally {
+      if (mounted) {
+        _resolving = false;
+      }
     }
   }
 

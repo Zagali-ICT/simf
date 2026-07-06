@@ -11,6 +11,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_form_scaffold.dart';
+import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
 import '../../core/validation/name_validation.dart';
 import '../../core/validation/phone_validation.dart';
@@ -202,8 +203,9 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       if (!mounted) {
         return;
       }
+      final l10n = AppL10n.of(context);
       setState(() {
-        _loadError = failure.message;
+        _loadError = failure.localizedMessage(l10n);
         _loading = false;
       });
     }
