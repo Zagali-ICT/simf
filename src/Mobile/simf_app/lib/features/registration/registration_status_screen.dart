@@ -9,6 +9,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import 'widgets/registration_primary_button.dart';
+import 'widgets/registration_secondary_button.dart';
 import 'widgets/registration_sign_out_link.dart';
 import 'widgets/registration_status_header.dart';
 import 'widgets/registration_status_hero.dart';
@@ -181,12 +182,24 @@ class _RegistrationStatusScreenState
                     message: message,
                   ),
                   const SizedBox(height: SimfTokens.space6),
-                  if (primaryLabel != null && onPrimary != null)
+                  if (primaryLabel != null && onPrimary != null) ...<Widget>[
                     RegistrationPrimaryButton(
                       label: primaryLabel,
                       onTap: onPrimary,
                     ),
-                  const SizedBox(height: SimfTokens.space3),
+                    const SizedBox(height: SimfTokens.space3),
+                  ],
+                  // A non-approved account gets an explicit way back to the
+                  // (guest) home so it is never stuck on the gate (owner
+                  // 2026-07-06); the approved state reaches home via its
+                  // "متابعة" (Continue) primary instead.
+                  if (status != RegistrationStatus.approved) ...<Widget>[
+                    RegistrationSecondaryButton(
+                      label: l10n.goHomeButton,
+                      onTap: _continue,
+                    ),
+                    const SizedBox(height: SimfTokens.space3),
+                  ],
                   RegistrationSignOutLink(
                     label: l10n.signOutLink,
                     onTap: () => unawaited(_signOut()),

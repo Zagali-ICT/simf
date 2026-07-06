@@ -172,7 +172,9 @@ Scenario: A pending account reaches the status gate from the home card + the sid
   When the user taps "إعادة التحقق" on the home card and the account is still pending
   Then a "لا يزال حسابك قيد المراجعة" snackbar confirms it was re-checked
   And once the account is approved, a re-check rebuilds Home into the full experience
-  # Covered by home_screen_test.dart + more_drawer_test.dart (D-666).
+  And on the status gate, an "الانتقال للرئيسية" (Go to home) button under Re-check
+    returns to the (guest) home — pending + rejected only, approved uses "متابعة" (D-667)
+  # Covered by home_screen_test.dart + more_drawer_test.dart + registration_status_screen_test.dart.
 ```
 
 ---

@@ -15,10 +15,11 @@ redirects to sign-in.
 
 | File | Holds |
 |------|-------|
-| `registration_status_screen.dart` (230) | State — load, pending/approved/rejected switch, sign-out/continue/back, `_buildBody`/`_buildStatusView`/`_buildError` |
+| `registration_status_screen.dart` (243) | State — load, pending/approved/rejected switch, sign-out/continue/back, `_buildBody`/`_buildStatusView`/`_buildError` |
 | `widgets/registration_status_header.dart` | `RegistrationStatusHeader` — plain-chevron gate header |
 | `widgets/registration_status_hero.dart` | `RegistrationStatusHero` — state ring + headline + message |
-| `widgets/registration_primary_button.dart` | `RegistrationPrimaryButton` |
+| `widgets/registration_primary_button.dart` | `RegistrationPrimaryButton` — gold primary (Re-check / Continue) |
+| `widgets/registration_secondary_button.dart` | `RegistrationSecondaryButton` — outlined "Go to home" for non-approved (D-667) |
 | `widgets/registration_sign_out_link.dart` | `RegistrationSignOutLink` |
 
 The error state keeps a **custom** `_buildError` (beige message + grouped sign-out
@@ -34,8 +35,8 @@ now matches the frame: hero → gold "متابعة" button → "تسجيل ال�
 
 ## Level-F
 
-Wired: Re-check (pending) / Continue (approved) primary button, sign-out, back, retry.
-Reads `refreshCurrentUser`. No missing API.
+Wired: Re-check (pending) / Continue (approved) primary button, "Go to home"
+(non-approved, D-667), sign-out, back, retry. Reads `refreshCurrentUser`. No missing API.
 
 ## Tests
 
