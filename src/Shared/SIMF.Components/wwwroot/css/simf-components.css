@@ -1242,33 +1242,6 @@
 }
 .simf-spinner--lg { inline-size: 28px; block-size: 28px; border-width: 3px; }
 
-/* -- Badge — count / dot --------------------------------------------------- */
-.simf-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-inline-size: 18px;
-  block-size: 18px;
-  padding-inline: 6px;
-  border-radius: 999px;
-  background-color: var(--color-surface-sunken);
-  color: var(--color-text-muted);
-  font-size: var(--font-size-caption);
-  line-height: 1;
-  font-weight: var(--font-weight-heading);
-}
-.simf-badge--info { background-color: var(--color-info-surface); color: var(--color-accent-blue); }
-.simf-badge--success { background-color: var(--color-success-surface); color: var(--color-success); }
-.simf-badge--warning { background-color: var(--color-warning-surface); color: var(--color-warning); }
-.simf-badge--danger { background-color: var(--color-error-surface); color: var(--color-error); }
-.simf-badge--dot {
-  min-inline-size: 8px;
-  inline-size: 8px;
-  block-size: 8px;
-  padding: 0;
-  border-radius: 50%;
-}
-
 /* -- Empty state ----------------------------------------------------------- */
 .simf-empty {
   display: flex;
@@ -1842,43 +1815,6 @@ body.simf-modal-open { overflow: hidden; }
 }
 .simf-fileupload__status:empty { visibility: hidden; }
 
-/* -- Tooltip (D-044 c) ------------------------------------------------------ */
-.simf-tooltip {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-}
-
-.simf-tooltip__bubble {
-  position: absolute;
-  z-index: 50;
-  inline-size: max-content;
-  max-inline-size: 240px;
-  padding: var(--space-2) var(--space-3);
-  background-color: var(--color-text);
-  color: var(--color-surface);
-  font-size: var(--font-size-caption);
-  line-height: var(--line-height-caption);
-  border-radius: var(--radius-field);
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity var(--transition-fast);
-  white-space: normal;
-  text-align: start;
-}
-.simf-tooltip--top .simf-tooltip__bubble {
-  inset-block-end: calc(100% + var(--space-2));
-  inset-inline-start: 50%;
-  transform: translateX(-50%);
-}
-.simf-tooltip--bottom .simf-tooltip__bubble {
-  inset-block-start: calc(100% + var(--space-2));
-  inset-inline-start: 50%;
-  transform: translateX(-50%);
-}
-.simf-tooltip:hover .simf-tooltip__bubble,
-.simf-tooltip:focus-within .simf-tooltip__bubble { opacity: 1; }
-
 /* -- Hidden file input utility (D-045 H1) — replaces inline `style="display:none"`
    so SIMF-SES-001 §217 "no inline styles" stays clean. */
 .simf-hidden-input {
@@ -2013,8 +1949,7 @@ body.simf-modal-open { overflow: hidden; }
   .simf-nav-item__link,
   .simf-grid__row,
   .simf-grid__filter-input,
-  .simf-modal__close,
-  .simf-tooltip__bubble { transition: none; }
+  .simf-modal__close { transition: none; }
   /* The button spinner and grid spinner are status indicators, kept. */
 }
 
