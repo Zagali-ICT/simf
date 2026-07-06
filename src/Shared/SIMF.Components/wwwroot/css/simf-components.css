@@ -477,8 +477,8 @@
 .simf-logs-viewer {
   margin-block-start: var(--space-4);
   padding: var(--space-3) var(--space-4);
-  background: var(--color-surface-strong, #0f1115);
-  color: var(--color-text-on-strong, #e6e6e6);
+  background: var(--color-surface-strong);
+  color: var(--color-text-on-strong);
   border-radius: var(--radius-3);
   font-family: var(--font-mono, ui-monospace, "SFMono-Regular", "Consolas", monospace);
   font-size: var(--font-size-body-small);
@@ -662,7 +662,7 @@
   inline-size: 16px;
   block-size: 16px;
   border: 2px solid rgba(255, 255, 255, 0.30);
-  border-block-start-color: #FFFFFF;
+  border-block-start-color: var(--color-text-on-primary);
   border-radius: 50%;
   animation: simf-spin 700ms linear infinite;
 }
@@ -1226,8 +1226,8 @@
   background-color: var(--color-error);
   color: var(--color-text-on-primary);
 }
-.simf-button--danger:hover { background-color: #8E1F18; }
-.simf-button--danger:active { background-color: #6E1812; }
+.simf-button--danger:hover { background-color: var(--color-error-hover); }
+.simf-button--danger:active { background-color: var(--color-error-active); }
 
 /* -- Spinner --------------------------------------------------------------- */
 .simf-spinner {
@@ -2542,7 +2542,7 @@ h1:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
 }
 .simf-walkin__toggle-btn.is-selected {
   background-color: var(--color-primary);
-  color: var(--color-text-on-primary, #fff);
+  color: var(--color-text-on-primary);
 }
 
 /* Interest chips — multi-select pill toggles. */
@@ -2561,7 +2561,7 @@ h1:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
 .simf-walkin__chip:hover { border-color: var(--color-secondary); }
 .simf-walkin__chip.is-selected {
   background-color: var(--color-primary);
-  color: var(--color-text-on-primary, #fff);
+  color: var(--color-text-on-primary);
   border-color: var(--color-primary);
 }
 
@@ -2590,7 +2590,7 @@ h1:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
 .simf-walkin-badge__header {
   inline-size: 100%;
   background-color: var(--simf-badge-color);
-  color: #fff;
+  color: var(--color-text-on-primary);
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-sm);
   margin-block-end: var(--space-3);
