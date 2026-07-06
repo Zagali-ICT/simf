@@ -178,14 +178,14 @@ public sealed class AdminWalkInRegistrationRequestValidator
                 "You can pick up to 10 interests.",
                 "يمكنك اختيار حتى 10 اهتمامات.");
 
-        // C6 (D-459) — optional plate; when present it must match the Saudi
-        // standard (17-letter set + 1–4 digits), the same rule as the
-        // self-service profile upsert (no longer just a length cap).
+        // C6 (D-459, relaxed 2026-07-06) — optional plate; when present it must
+        // be plate letters from the 17-letter set and/or digits (up to 3 + up
+        // to 4), the same rule as the self-service profile upsert.
         RuleFor(request => request.PlateNumber)
             .Must(value => string.IsNullOrEmpty(value) || SaudiPlate.IsValid(value))
             .Bilingual(
-                "The plate number must be 3 letters (Saudi plate set) and up to 4 digits.",
-                "يجب أن يتكوّن رقم اللوحة من 3 أحرف (من حروف اللوحات السعودية) وحتى 4 أرقام.");
+                "Enter a valid plate: Saudi plate letters and/or digits.",
+                "أدخل رقم لوحة صحيح: حروف لوحات سعودية و/أو أرقام.");
 
         // D-395 — gender must be a defined enum value.
         RuleFor(request => request.Gender)

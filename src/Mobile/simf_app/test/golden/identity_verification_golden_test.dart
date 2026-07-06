@@ -13,12 +13,12 @@ import 'package:simf_app/features/myarea/widgets/identity_fallback_view.dart';
 import 'golden_fonts.dart';
 
 /// Goldens for the identity-verification (التحقق من الهوية) screen, D-404 →
-/// clean-code D-610 → full-bleed exact-Figma redesign D-611. The live camera
-/// can't render in the test runtime (no camera plugin), so — like live_broadcast
-/// (D-603) — parity is locked on the deterministic states: the full-bleed
-/// capture surface (a spinner until the camera is ready; NO framed box / prompt
-/// / progress chrome, per the owner's exact-Figma choice) and the gallery
-/// fallback.
+/// clean-code D-610 → full-bleed Figma redesign D-611 → manual shutter + gallery
+/// re-added (owner 2026-07-06) so the photo can always be taken. The live camera
+/// can't render in the test runtime (no camera plugin), so parity is locked on
+/// the deterministic states: the loading capture surface (a spinner until the
+/// camera is ready), the ready surface with the shutter + prompt + gallery
+/// overlay, and the gallery fallback.
 ///   flutter test --update-goldens test/golden/identity_verification_golden_test.dart
 
 Widget _host(Widget child) => MaterialApp(
@@ -38,6 +38,24 @@ Widget _host(Widget child) => MaterialApp(
       ),
     );
 
+LiveCaptureView _capture(
+  BuildContext context, {
+  required bool ready,
+  Widget? preview,
+}) {
+  final l10n = AppL10n.of(context);
+  return LiveCaptureView(
+    ready: ready,
+    preview: preview,
+    promptText: l10n.identityCapturePrompt,
+    captureLabel: l10n.capturePhotoLabel,
+    galleryLabel: l10n.chooseFromGallery,
+    capturing: false,
+    onCapture: () {},
+    onGallery: () {},
+  );
+}
+
 void main() {
   setUpAll(loadGoldenFonts);
 
@@ -48,13 +66,38 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      _host(const LiveCaptureView(ready: false, preview: null)),
+      _host(Builder(builder: (c) => _capture(c, ready: false))),
     );
     await tester.pump();
 
     await expectLater(
       find.byType(LiveCaptureView),
       matchesGoldenFile('goldens/identity_capture.png'),
+    );
+  });
+
+  testWidgets('Identity capture controls @375x812 — shutter + prompt + gallery',
+      (tester) async {
+    tester.view.physicalSize = const Size(375, 812);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      _host(
+        Builder(
+          builder: (c) => _capture(
+            c,
+            ready: true,
+            preview: const ColoredBox(color: SimfTokens.navy),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await expectLater(
+      find.byType(LiveCaptureView),
+      matchesGoldenFile('goldens/identity_capture_controls.png'),
     );
   });
 

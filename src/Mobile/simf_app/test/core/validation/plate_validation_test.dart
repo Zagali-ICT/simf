@@ -14,12 +14,20 @@ void main() {
       expect(isStandardPlateNumber('ABJ1'), isTrue);
     });
 
-    test('rejects non-standard shapes', () {
-      expect(isStandardPlateNumber('AB1234'), isFalse); // 2 letters
+    // Relaxed rule (owner 2026-07-06): at least one letter and/or one digit,
+    // up to 3 letters + up to 4 digits.
+    test('accepts a partial plate — letters and/or digits', () {
+      expect(isStandardPlateNumber('AB1234'), isTrue); // 2 letters + digits
+      expect(isStandardPlateNumber('ABJ'), isTrue); // letters only
+      expect(isStandardPlateNumber('1234'), isTrue); // digits only
+      expect(isStandardPlateNumber('A1'), isTrue); // one letter + one digit
+      expect(isStandardPlateNumber('ابح'), isTrue); // Arabic letters only
+    });
+
+    test('rejects out-of-range or non-plate characters', () {
       expect(isStandardPlateNumber('ABCD123'), isFalse); // 4 letters
       expect(isStandardPlateNumber('ABJ12345'), isFalse); // 5 digits
-      expect(isStandardPlateNumber('ABJ'), isFalse); // no digits
-      expect(isStandardPlateNumber('1234567'), isFalse); // digits only
+      expect(isStandardPlateNumber('12345'), isFalse); // 5 digits
       expect(isStandardPlateNumber('AB!1234'), isFalse); // symbol
       expect(isStandardPlateNumber('ABC1234'), isFalse); // C not a plate letter
       expect(isStandardPlateNumber('ابج1234'), isFalse); // ج not a plate letter

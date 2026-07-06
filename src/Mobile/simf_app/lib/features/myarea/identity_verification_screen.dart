@@ -47,6 +47,7 @@ class _IdentityVerificationScreenState
   bool _processing = false;
   bool _cameraReady = false;
   bool _cameraFailed = false;
+  bool _capturing = false;
 
   /// The challenge order is shuffled per session (D-422) so the sequence is not
   /// predictable — a fixed smile→right→left order is easier to defeat with a
@@ -208,6 +209,36 @@ class _IdentityVerificationScreenState
     );
   }
 
+  /// Manual shutter (owner 2026-07-06) — grabs the current frame and returns it,
+  /// bypassing the smile → turn liveness so the photo can always be taken
+  /// (the auto check can't complete without Google Play Services / ML Kit).
+  Future<void> _captureNow() async {
+    final controller = _camera;
+    if (controller == null || _capturing) {
+      return;
+    }
+    setState(() => _capturing = true);
+    try {
+      if (controller.value.isStreamingImages) {
+        await controller.stopImageStream();
+      }
+      final shot = await controller.takePicture();
+      final bytes = await shot.readAsBytes();
+      await _stop();
+      if (!mounted) {
+        return;
+      }
+      Navigator.of(context).pop<CapturedSelfie>(
+        (bytes: bytes, filename: shot.name),
+      );
+    } catch (_) {
+      // Capture failed — let the user retry or pick from the gallery.
+      if (mounted) {
+        setState(() => _capturing = false);
+      }
+    }
+  }
+
   InputImage? _toInputImage(CameraImage image) {
     final controller = _camera;
     if (controller == null) {
@@ -294,6 +325,12 @@ class _IdentityVerificationScreenState
                 preview: _cameraReady && _camera != null
                     ? CameraPreview(_camera!)
                     : null,
+                promptText: l10n.identityCapturePrompt,
+                captureLabel: l10n.capturePhotoLabel,
+                galleryLabel: l10n.chooseFromGallery,
+                capturing: _capturing,
+                onCapture: () => unawaited(_captureNow()),
+                onGallery: () => unawaited(_pickFromGallery()),
               ),
       ),
     );

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../app/localization/app_l10n.dart';
+import '../../../core/validation/digit_normalization.dart';
 import '../../../core/widgets/simf_field_label.dart';
 import '../../../core/widgets/simf_field_style.dart';
 
@@ -32,9 +34,16 @@ class MobileField extends StatelessWidget {
         TextFormField(
           controller: controller,
           keyboardType: TextInputType.phone,
+          // The number renders left-to-right (leading `+`, digits) but sits at
+          // the field's start — the right edge in the RTL form, matching the
+          // label above it (owner 2026-07-06).
           textDirection: TextDirection.ltr,
-          // Covers Saudi 05XXXXXXXX / +9665XXXXXXXX and E.164 +[1-9]\d{7,14}.
-          maxLength: 16,
+          textAlign: TextAlign.end,
+          // Fold Arabic-Indic digits to Western as they are typed.
+          inputFormatters: const <TextInputFormatter>[WesternDigitsFormatter()],
+          // Covers Saudi 05XXXXXXXX / +9665XXXXXXXX / 009665XXXXXXXX and
+          // international +[1-9]\d{7,14} / 00[1-9]\d{7,14}.
+          maxLength: 17,
           style: simfInputStyle,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           validator: validator,

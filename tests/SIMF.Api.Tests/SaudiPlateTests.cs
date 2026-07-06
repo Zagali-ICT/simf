@@ -10,6 +10,8 @@ namespace SIMF.Api.Tests;
 /// </summary>
 public sealed class SaudiPlateTests
 {
+    // Relaxed rule (owner 2026-07-06): at least one plate letter and/or at
+    // least one digit — up to 3 letters + up to 4 digits, either order.
     [Theory]
     [InlineData("ABJ1234")]
     [InlineData("abj 1234")]
@@ -17,21 +19,23 @@ public sealed class SaudiPlateTests
     [InlineData("ابح1234")]   // Arabic plate letters
     [InlineData("ابح١٢٣٤")]   // + Arabic-Indic digits
     [InlineData("ABJ1")]
-    public void IsValid_accepts_standard_plates(string value)
+    [InlineData("AB1234")]    // 2 letters + digits
+    [InlineData("ABJ")]       // letters only
+    [InlineData("1234")]      // digits only
+    [InlineData("A1")]        // one letter + one digit
+    public void IsValid_accepts_plate_letters_and_or_digits(string value)
         => Assert.True(SaudiPlate.IsValid(value));
 
     [Theory]
-    [InlineData("AB1234")]    // 2 letters
     [InlineData("ABCD123")]   // 4 letters
     [InlineData("ABJ12345")]  // 5 digits
-    [InlineData("ABJ")]       // no digits
-    [InlineData("1234567")]   // digits only
+    [InlineData("12345")]     // 5 digits
     [InlineData("AB!1234")]   // symbol
     [InlineData("ABC1234")]   // C is not one of the 17 plate letters
     [InlineData("ابج1234")]   // ج (jeem) is not a plate letter
     [InlineData("")]
     [InlineData(null)]
-    public void IsValid_rejects_non_standard_plates(string? value)
+    public void IsValid_rejects_out_of_range_or_non_plate_chars(string? value)
         => Assert.False(SaudiPlate.IsValid(value));
 
     [Theory]

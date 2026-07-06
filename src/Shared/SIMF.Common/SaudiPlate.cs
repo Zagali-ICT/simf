@@ -6,8 +6,9 @@ namespace SIMF.Common;
 /// <summary>
 /// C6 (D-459) — the official Saudi vehicle-plate letter set: the 17 Arabic
 /// letters permitted on KSA plates and their single-character Latin codes
-/// (the Elm / Absher transliteration). A plate is 3 letters (all from this
-/// set, one script) + 1–4 digits, in either order.
+/// (the Elm / Absher transliteration). A plate is up to 3 letters (all from
+/// this set, one script) and up to 4 digits, in either order, with at least
+/// one letter and/or one digit (relaxed 2026-07-06, was a fixed 3 + 1–4).
 ///
 /// <para>The letter set is a fixed bijection, so a plate written in one
 /// script is losslessly convertible to the other. The system stores the
@@ -62,12 +63,16 @@ public static class SaudiPlate
     private const string LatinClass = "ABDEGHJKLNRSTUVXZ";
     private const string ArabicClass = "ابحدرسصطعقكلمنهوى";
 
+    // Relaxed rule (owner 2026-07-06): at least one plate letter and/or at
+    // least one digit — up to 3 letters (from the 17-letter set, one script)
+    // and up to 4 digits, in either order. The (?=.) lookahead rejects an
+    // all-empty match. Mirrors the client (plate_validation.dart).
     private static readonly Regex LatinPlate = new(
-        $"^([{LatinClass}]{{3}}[0-9]{{1,4}}|[0-9]{{1,4}}[{LatinClass}]{{3}})$",
+        $"^(?=.)([{LatinClass}]{{0,3}}[0-9]{{0,4}}|[0-9]{{0,4}}[{LatinClass}]{{0,3}})$",
         RegexOptions.Compiled);
 
     private static readonly Regex ArabicPlate = new(
-        $"^([{ArabicClass}]{{3}}[0-9]{{1,4}}|[0-9]{{1,4}}[{ArabicClass}]{{3}})$",
+        $"^(?=.)([{ArabicClass}]{{0,3}}[0-9]{{0,4}}|[0-9]{{0,4}}[{ArabicClass}]{{0,3}})$",
         RegexOptions.Compiled);
 
     /// <summary>Strips separators and folds the input to a canonical
@@ -93,9 +98,10 @@ public static class SaudiPlate
     }
 
     /// <summary>True when <paramref name="value"/> is a valid Saudi plate —
-    /// 3 letters from the 17-letter set (one script) + 1–4 digits, either
-    /// order (separators ignored). Empty / null is not valid; the caller
-    /// owns the optional-field rule.</summary>
+    /// at least one letter from the 17-letter set (one script) and/or at least
+    /// one digit: up to 3 letters + up to 4 digits, either order (separators
+    /// ignored; owner 2026-07-06). Empty / null is not valid; the caller owns
+    /// the optional-field rule.</summary>
     public static bool IsValid(string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) { return false; }

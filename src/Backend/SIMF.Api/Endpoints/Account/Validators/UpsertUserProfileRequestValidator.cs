@@ -261,14 +261,15 @@ public sealed class UpsertUserProfileRequestValidator
                 "The international mobile must be in the +<country code><number> (E.164) format.",
                 "يجب أن يكون رقم الجوال الدولي بالصيغة الدولية ‎+‎ يليها رمز الدولة والرقم (E.164).");
 
-        // C6 (D-459) — رقم اللوحة: optional, but when present it must match
-        // the Saudi standard — 3 letters from the official 17-letter set
-        // (Arabic or Latin) + 1–4 digits.
+        // C6 (D-459, relaxed 2026-07-06) — رقم اللوحة: optional, but when
+        // present it must be plate letters from the official 17-letter set
+        // (Arabic or Latin) and/or digits — up to 3 letters + up to 4 digits,
+        // at least one of them.
         RuleFor(request => request.PlateNumber)
             .Must(value => string.IsNullOrEmpty(value) || IsStandardPlateNumber(value))
             .Bilingual(
-                "The plate number must be 3 letters (Saudi plate set) and up to 4 digits.",
-                "يجب أن يتكوّن رقم اللوحة من 3 أحرف (من حروف اللوحات السعودية) وحتى 4 أرقام.");
+                "Enter a valid plate: Saudi plate letters and/or digits.",
+                "أدخل رقم لوحة صحيح: حروف لوحات سعودية و/أو أرقام.");
     }
 
     // D-197 — the registrant must be at least 18. Uses UtcNow date-only;

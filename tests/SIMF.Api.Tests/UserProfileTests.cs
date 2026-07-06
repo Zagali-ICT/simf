@@ -410,8 +410,9 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     // permissive-phone test): Saudi 05XXXXXXXX / +9665XXXXXXXX,
     // international E.164; separators are stripped before the match.
     [Theory]
-    [InlineData("+44-7700900123")] // UK E.164 with a dash separator
-    [InlineData("+12025550123")]   // US E.164
+    [InlineData("+44-7700900123")] // international with a dash separator
+    [InlineData("+12025550123")]   // US
+    [InlineData("00447700900123")] // 00 international prefix → + (owner 2026-07-06)
     public async Task POST_accepts_a_standard_international_phone(string phone)
     {
         var token = await CreateUserAndSignInAsync();
@@ -423,7 +424,6 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     }
 
     [Theory]
-    [InlineData("00447700900123")] // no "+" — not E.164
     [InlineData("+0447700900123")] // leading zero after "+"
     [InlineData("+44")]            // too short
     public async Task POST_rejects_a_non_standard_international_phone(string phone)
@@ -465,9 +465,10 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    // C6 (D-371) — رقم اللوحة: optional, but when present it must match
-    // the Saudi standard (3 letters + 1–4 digits, ≤ 7 chars, separators
-    // stripped); the service stores the normalized upper-cased value.
+    // C6 (D-371; relaxed 2026-07-06) — رقم اللوحة: optional, but when present it
+    // must be plate letters from the 17-letter set and/or digits (up to 3 + up
+    // to 4, separators stripped); the service stores the normalized upper-cased
+    // value.
     [Theory]
     [InlineData("ABJ1234", "ABJ1234")]
     [InlineData("abj 1234", "ABJ1234")]   // separators stripped + upper-cased
@@ -475,6 +476,9 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     [InlineData("ابح1234", "ABJ1234")]    // Arabic letters → canonical Latin code
     [InlineData("ابح١٢٣٤", "ABJ1234")]    // Arabic letters + Arabic-Indic digits
     [InlineData("ABJ1", "ABJ1")]          // single digit
+    [InlineData("AB1234", "AB1234")]      // 2 letters + digits (relaxed)
+    [InlineData("ABJ", "ABJ")]            // letters only (relaxed)
+    [InlineData("1234", "1234")]          // digits only (relaxed)
     public async Task POST_accepts_a_standard_plate_and_stores_it_normalized(
         string plate, string stored)
     {
@@ -490,11 +494,9 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     }
 
     [Theory]
-    [InlineData("AB1234")]    // only 2 letters
     [InlineData("ABCD123")]   // 4 letters
     [InlineData("ABJ12345")]  // 5 digits
-    [InlineData("ABJ")]       // no digits
-    [InlineData("1234567")]   // digits only
+    [InlineData("1234567")]   // 7 digits — more than 4
     [InlineData("AB!1234")]   // symbol
     [InlineData("ABC1234")]   // C is not one of the 17 Saudi plate letters
     [InlineData("ابج1234")]   // ج (jeem) is not a Saudi plate letter

@@ -327,8 +327,8 @@ class AppL10n {
   String get plateNumberLabel =>
       _t('رقم اللوحة (اختياري)', 'Plate number (optional)');
   String get plateNumberInvalid => _t(
-        'يجب أن يتكوّن رقم اللوحة من 3 أحرف (من حروف اللوحات السعودية) وحتى 4 أرقام',
-        'The plate must be 3 letters (Saudi plate set) and up to 4 digits',
+        'أدخل رقم لوحة صحيح: حروف لوحات سعودية و/أو أرقام',
+        'Enter a valid plate: Saudi plate letters and/or digits',
       );
   // C6 (D-459) — the plate letter dropdowns + the digits field.
   String get plateLetterHint => _t('حرف', 'Letter');
@@ -339,12 +339,12 @@ class AppL10n {
       _t('يجب اختيار التصنيف', 'A profile type selection is required');
   // C4 (D-371) — the standard phone shapes, mirrored client/server.
   String get saudiMobileInvalid => _t(
-        'يجب أن يكون رقم الجوال السعودي بصيغة 05XXXXXXXX أو +9665XXXXXXXX',
-        'The Saudi mobile must be 05XXXXXXXX or +9665XXXXXXXX',
+        'أدخل الرقم بصيغة 05XXXXXXXX أو +9665XXXXXXXX أو 009665XXXXXXXX',
+        'Enter as 05XXXXXXXX or +9665XXXXXXXX or 009665XXXXXXXX',
       );
   String get internationalMobileInvalid => _t(
-        'يجب أن يكون رقم الجوال الدولي بالصيغة الدولية (E.164)',
-        'The international mobile must be in the +<country code><number> (E.164) format',
+        'أدخل الرقم بصيغة دولية: 00 أو + ثم رمز الدولة والرقم، مثل 00966XXXXXXXXX أو +966XXXXXXXXX',
+        'Use international format: 00 or + then country code and number, e.g. 00966XXXXXXXXX or +966XXXXXXXXX',
       );
   String get dateOfBirthRequired =>
       _t('تاريخ الميلاد مطلوب', 'Date of birth is required');
@@ -759,8 +759,14 @@ class AppL10n {
   // 758:4180 / 758:4248 / 758:4316).
   String get identityVerificationTitle =>
       _t('التحقق من الهوية', 'Identity verification');
-  // (D-611: the step*Prompt strings were removed with the on-screen prompt —
-  // owner chose the exact-Figma full-bleed camera with no prompt overlay.)
+  // A manual shutter + gallery were added back on the live-camera view (owner
+  // 2026-07-06) so the photo can always be taken — the auto smile/turn liveness
+  // can't complete on devices without Google Play Services (ML Kit).
+  String get identityCapturePrompt => _t(
+        'وجّه وجهك نحو الكاميرا ثم اضغط على زر الالتقاط',
+        'Face the camera, then tap the capture button',
+      );
+  String get capturePhotoLabel => _t('التقاط الصورة', 'Capture photo');
   String get identityCameraUnavailable => _t(
         'الكاميرا غير متاحة. اختر صورة من المعرض بدلاً من ذلك.',
         'The camera is unavailable. Choose a photo from the gallery instead.',

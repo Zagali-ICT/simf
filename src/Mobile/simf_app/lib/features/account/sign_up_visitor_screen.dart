@@ -13,6 +13,7 @@ import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_form_scaffold.dart';
 import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
+import '../../core/validation/digit_normalization.dart';
 import '../../core/validation/name_validation.dart';
 import '../../core/validation/phone_validation.dart';
 import '../../core/validation/plate_validation.dart';
@@ -529,9 +530,13 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       passportNumber: !isSaudi && _docType == _DocType.passport
           ? _emptyToNull(_documentNumber.text)
           : null,
-      saudiMobile: isSaudi ? _emptyToNull(_saudiMobile.text) : null,
-      internationalMobile:
-          !isSaudi ? _emptyToNull(_internationalMobile.text) : null,
+      // Submit the canonical phone — Arabic digits folded, a leading `00`
+      // rewritten to `+` — so the value matches the server's `+`-only shapes.
+      saudiMobile:
+          isSaudi ? _emptyToNull(normalizePhone(_saudiMobile.text)) : null,
+      internationalMobile: !isSaudi
+          ? _emptyToNull(normalizePhone(_internationalMobile.text))
+          : null,
       plateNumber: _emptyToNull(_plate.text),
       organisationId: _organisationId,
       gender: _gender,
@@ -1102,6 +1107,12 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           controller: _nationalId,
           keyboardType: TextInputType.number,
           maxLength: 10,
+          // Accept an id typed in Arabic-Indic digits — fold to Western so it
+          // validates and submits as `1XXXXXXXXX` (owner 2026-07-06).
+          inputFormatters: <TextInputFormatter>[
+            const WesternDigitsFormatter(),
+            FilteringTextInputFormatter.digitsOnly,
+          ],
           validator: _validateNationalId,
         ),
       ];
@@ -1122,6 +1133,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         label: l10n.documentNumberLabel,
         controller: _documentNumber,
         maxLength: _docType == _DocType.iqama ? 10 : 9,
+        // Fold Arabic-Indic digits to Western (letters pass for passports).
+        inputFormatters: const <TextInputFormatter>[WesternDigitsFormatter()],
         validator: _validateDocumentNumber,
       ),
     ];
@@ -1227,6 +1240,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                   maxLength: 4,
                   keyboardType: TextInputType.number,
                   inputFormatters: <TextInputFormatter>[
+                    const WesternDigitsFormatter(),
                     FilteringTextInputFormatter.digitsOnly,
                   ],
                   style: simfInputStyle,
