@@ -11,6 +11,7 @@ import '../../app/theme/tokens.dart';
 import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
 import '../../core/widgets/simf_auth_sweep.dart';
+import 'widgets/account_sub_header.dart';
 import 'widgets/auth_chrome.dart';
 import 'widgets/otp_code_boxes.dart';
 
@@ -26,8 +27,9 @@ import 'widgets/otp_code_boxes.dart';
 /// and restarts the cooldown from the returned `codeExpiresInSeconds`.
 ///
 /// Clean-code frozen (D-553, Phase 3): the lone sweep-tint const dropped for
-/// `SimfTokens.surfaceTint`; the long `build` split into `_buildHeader` /
-/// `_buildContent` / `_buildBottomActions`; the resend link reuses the shared
+/// `SimfTokens.surfaceTint`; the long `build` split into the shared
+/// [AccountSubHeader] (D-658) / `_buildContent` / `_buildBottomActions`; the
+/// resend link reuses the shared
 /// [authLinkButtonStyle]; the body + actions capped by [MaxWidthBody].
 /// Behaviour + render unchanged — the 505:837 golden locks it.
 class SignUpEmailVerifyScreen extends ConsumerStatefulWidget {
@@ -178,46 +180,15 @@ class _SignUpEmailVerifyScreenState
           SafeArea(
             child: Column(
               children: <Widget>[
-                _buildHeader(l10n),
+                AccountSubHeader(
+                  title: l10n.emailVerifyTitle,
+                  onBack: _back,
+                  busy: _busy,
+                ),
                 Expanded(child: _buildContent(l10n)),
                 _buildBottomActions(l10n),
                 const SizedBox(height: 24),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Header band (Figma 505:919): back chevron at the start, centred title.
-  Widget _buildHeader(AppL10n l10n) {
-    return SizedBox(
-      height: 56,
-      child: Stack(
-        alignment: Alignment.center,
-        children: <Widget>[
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: IconButton(
-                onPressed: _busy ? null : _back,
-                icon: const Icon(
-                  Icons.arrow_back_ios_new,
-                  color: Colors.white,
-                  size: 20,
-                  textDirection: TextDirection.ltr,
-                ),
-              ),
-            ),
-          ),
-          Text(
-            l10n.emailVerifyTitle,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.w500,
             ),
           ),
         ],

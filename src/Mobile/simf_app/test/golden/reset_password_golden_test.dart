@@ -13,9 +13,10 @@ import 'package:simf_app/features/account/reset_password_screen.dart';
 
 import 'golden_fonts.dart';
 
-/// Render-regression lock for the reset-password screen. **Unbound** auth screen
-/// on the shared KSA auth chrome (`SimfFormScaffold`); no dedicated Figma node
-/// (D-557). Regenerate:
+/// Render-regression lock for the reset-password screen. No dedicated Figma
+/// node exists, so it is built to match its navy sibling — the forgot-password
+/// screen (918:2341) — on the shared [AccountSubHeader] (D-658; was the beige
+/// `SimfFormScaffold`, D-557). Regenerate:
 ///   flutter test --update-goldens test/golden/reset_password_golden_test.dart
 void main() {
   setUpAll(loadGoldenFonts);

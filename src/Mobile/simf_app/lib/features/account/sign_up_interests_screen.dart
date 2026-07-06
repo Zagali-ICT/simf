@@ -13,6 +13,7 @@ import '../../core/responsive/max_width_body.dart';
 import '../../core/widgets/simf_auth_sweep.dart';
 import 'data/profile_models.dart';
 import 'data/profile_repository.dart';
+import 'widgets/account_sub_header.dart';
 import 'widgets/interest_chip.dart';
 
 /// Page 007‑01 — اهتماماتي · Sign up — interests. The KSA-Project Figma design
@@ -30,8 +31,8 @@ import 'widgets/interest_chip.dart';
 ///
 /// Clean-code frozen (D-550, Phase 3): screen-local colour consts dropped for
 /// `SimfTokens` (`chipBorderNavy` added); the pill extracted to [InterestChip];
-/// header to `_buildHeader`; the body capped by [MaxWidthBody]. Behaviour +
-/// render unchanged — the 505:1083 golden locks it.
+/// header to the shared [AccountSubHeader] (D-658); the body capped by
+/// [MaxWidthBody]. Behaviour + render unchanged — the 505:1083 golden locks it.
 class SignUpInterestsScreen extends ConsumerStatefulWidget {
   const SignUpInterestsScreen({super.key, this.draft});
 
@@ -215,44 +216,13 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
           SafeArea(
             child: Column(
               children: <Widget>[
-                _buildHeader(l10n),
+                AccountSubHeader(
+                  title: l10n.interestsTitle,
+                  onBack: _back,
+                  busy: _submitting,
+                ),
                 Expanded(child: _buildBody(l10n)),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Header band (Figma 505:1190): back chevron at the start, centred title.
-  Widget _buildHeader(AppL10n l10n) {
-    return SizedBox(
-      height: 56,
-      child: Stack(
-        alignment: Alignment.center,
-        children: <Widget>[
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: IconButton(
-                onPressed: _submitting ? null : _back,
-                icon: const Icon(
-                  Icons.arrow_back_ios_new,
-                  color: Colors.white,
-                  size: 20,
-                  textDirection: TextDirection.ltr,
-                ),
-              ),
-            ),
-          ),
-          Text(
-            l10n.interestsTitle,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.w500,
             ),
           ),
         ],

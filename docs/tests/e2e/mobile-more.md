@@ -19,7 +19,7 @@
 
 - **منطقتي profile card** (signed-in only) — avatar + name · tier (from `MyAreaDashboard`), taps to `/my-area`.
 - **معلومات الملتقى**: عن الملتقى → `/about`; دليل الملتقى → ComingSoon (`/forum-guide`); الأسئلة الشائعة → ComingSoon (`/faq`); عروض الجلسات → ComingSoon (`/session-presentations`); استكشف الرياض · VisitSaudi → external `VisitSaudiUrl`.
-- **الإعدادات**: اللغة (shows the current language, taps to toggle); إمكانية الوصول → `/settings/accessibility`; الإشعارات → `/notifications`.
+- **الإعدادات**: اللغة (shows the current language, taps to toggle); إمكانية الوصول → `/settings/accessibility`; الإشعارات → `/notifications`; إعادة تعيين كلمة المرور (**signed-in only**, D-658) → `/forgot-password` (reuses the forgot→email-code→reset flow).
 - **قانوني**: الشروط والأحكام → `/terms`; تواصل معنا → ComingSoon (`/contact-us`); تقييم التطبيق → `/rate`.
 - **تسجيل الخروج** (signed-in only) → confirm dialog → sign-out → `/sign-in`.
 - Version line `SIMF 2026 · v1.0.0`.
@@ -35,6 +35,8 @@
 | E2E-MOB041-005 | Tapping About routes to the About screen | happy | P0 | authored ✓ (screen `tapping About navigates to the About route`) |
 | E2E-MOB041-006 | An unbuilt entry (Forum guide/FAQ/PPT/Contact us) opens ComingSoon | edge | P1 | covered (routes 200–203 fall through to `ComingSoonScreen`) |
 | E2E-MOB041-007 | Tapping a gated destination (Notifications) while signed-out bounces to sign-in | edge | P1 | covered (router auth gate, destination #33) |
+| E2E-MOB041-008 | Signed-in shows the إعادة تعيين كلمة المرور row; guest hides it | auth | P1 | authored ✓ (screen `renders the three grouped sections…` + `guest hides…`) |
+| E2E-MOB041-009 | Tapping إعادة تعيين كلمة المرور opens the forgot-password flow | happy | P1 | authored ✓ (screen `signed-in tapping Reset password opens the forgot flow`) |
 
 ## Scenarios
 
@@ -61,14 +63,22 @@ Scenario: Tapping About routes to its screen
   When the user taps "عن الملتقى"
   Then the app navigates to /about
 
+Scenario: Reset password is a signed-in-only account action (D-658)
+  Given a guest (signed out) opens /more
+  Then no "إعادة تعيين كلمة المرور" row is shown
+  Given an approved visitor opens /more
+  Then an "إعادة تعيين كلمة المرور" row is shown in the الإعدادات section
+  When the visitor taps it
+  Then the app navigates to the forgot-password screen (which emails a reset code)
+
 Scenario: An unbuilt entry opens the ComingSoon placeholder
   When the user taps "دليل الملتقى"
   Then the ComingSoon screen for /forum-guide is shown (no dead-end)
 ```
 
-**Evidence:** screen tests (5: grouped rows, version, guest-hides-card, signed-in-card, About-nav).
+**Evidence:** screen tests (7: grouped rows, version, guest-hides-card, signed-in-card, About-nav, reset-password-row present/hidden, reset-password → forgot nav).
 ComingSoon routing covered by the router's fall-through for routes 200–203.
 
 ---
 
-_Last reviewed:_ `2026-06-20` by `SIMF Team`.
+_Last reviewed:_ `2026-07-06` by `SIMF Team`.

@@ -6,13 +6,12 @@ import 'package:go_router/go_router.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
-import '../../app/theme/app_assets.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_svg_icon.dart';
 import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
 import '../../core/widgets/simf_auth_sweep.dart';
 import 'biometric_auth.dart';
+import 'widgets/account_sub_header.dart';
 import 'widgets/otp_code_boxes.dart';
 
 /// #7a — the emailed-OTP step-up confirming the user wants to ENABLE biometric
@@ -26,8 +25,9 @@ import 'widgets/otp_code_boxes.dart';
 ///
 /// Clean-code frozen (D-554, Phase 3 — unbound auth screen, render preserved):
 /// the lone sweep-tint const dropped for `SimfTokens.surfaceTint`; the long
-/// `build` split into `_buildHeader` / `_buildContent` / `_buildSubmitButton` /
-/// `_buildResendRow`; the body + CTA capped by [MaxWidthBody].
+/// `build` split into the shared [AccountSubHeader] (D-658) / `_buildContent` /
+/// `_buildSubmitButton` / `_buildResendRow`; the body + CTA capped by
+/// [MaxWidthBody].
 class BiometricStepUpScreen extends ConsumerStatefulWidget {
   const BiometricStepUpScreen({super.key});
 
@@ -181,46 +181,17 @@ class _BiometricStepUpScreenState extends ConsumerState<BiometricStepUpScreen> {
           SafeArea(
             child: Column(
               children: <Widget>[
-                _buildHeader(l10n),
+                AccountSubHeader(
+                  title: l10n.biometricStepUpTitle,
+                  onBack: _back,
+                  busy: _verifying,
+                ),
                 Expanded(child: _buildContent(l10n)),
                 _buildSubmitButton(l10n),
                 const SizedBox(height: 16),
                 _buildResendRow(l10n),
                 const SizedBox(height: 24),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader(AppL10n l10n) {
-    return SizedBox(
-      height: 56,
-      child: Stack(
-        alignment: Alignment.center,
-        children: <Widget>[
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: IconButton(
-                onPressed: _verifying ? null : _back,
-                icon: const SimfSvgIcon(
-                  AppAssets.icBack,
-                  size: 24,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-          Text(
-            l10n.biometricStepUpTitle,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.w500,
             ),
           ),
         ],

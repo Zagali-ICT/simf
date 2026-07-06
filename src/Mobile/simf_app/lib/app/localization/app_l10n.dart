@@ -1489,6 +1489,8 @@ class AppL10n {
   String get moreTerms => _t('الشروط والأحكام', 'Terms & conditions');
   String get moreRate => _t('تقييم', 'Rate');
   String get moreNotifications => _t('الإشعارات', 'Notifications');
+  String get moreResetPassword =>
+      _t('إعادة تعيين كلمة المرور', 'Reset password');
   String get moreMediaPartners => _t('الشركاء الإعلاميون', 'Media partners');
 
   // Section headers (Figma 1129:17224).

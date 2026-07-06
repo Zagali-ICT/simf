@@ -14,6 +14,7 @@ import '../../core/validation/email_validation.dart';
 import '../../core/validation/required_validation.dart';
 import '../../core/widgets/simf_field_label.dart';
 import '../../core/widgets/simf_field_style.dart';
+import 'widgets/account_sub_header.dart';
 import 'widgets/auth_chrome.dart';
 import 'widgets/otp_code_boxes.dart';
 
@@ -105,48 +106,16 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       body: SafeArea(
         child: Column(
           children: <Widget>[
-            _buildHeader(l10n),
+            AccountSubHeader(
+              title: l10n.forgotPasswordTitle,
+              onBack: _back,
+              busy: _busy,
+            ),
             Expanded(child: _buildBody(l10n)),
             _buildBottomActions(l10n),
             const SizedBox(height: 24),
           ],
         ),
-      ),
-    );
-  }
-
-  /// Header band (918:2346): back chevron at the start, centred title.
-  Widget _buildHeader(AppL10n l10n) {
-    return SizedBox(
-      height: 56,
-      child: Stack(
-        alignment: Alignment.center,
-        children: <Widget>[
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: IconButton(
-                key: const ValueKey<String>('accountBack'),
-                onPressed: _busy ? null : _back,
-                icon: const Icon(
-                  Icons.arrow_back_ios_new,
-                  color: Colors.white,
-                  size: 20,
-                  textDirection: TextDirection.ltr,
-                ),
-              ),
-            ),
-          ),
-          Text(
-            l10n.forgotPasswordTitle,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -207,11 +176,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           unawaited(_submit());
         }
       },
-      style: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: Colors.white,
-      ),
+      style: simfInputStyleOnNavy,
       decoration: simfFieldDecoration(
         counterText: '',
         hintText: 'example@email.com',

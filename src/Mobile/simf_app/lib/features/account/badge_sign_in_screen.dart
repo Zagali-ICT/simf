@@ -11,6 +11,7 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_scanner_frame.dart';
 import '../../core/widgets/simf_field_style.dart';
+import 'widgets/account_sub_header.dart';
 
 /// Part B (D-430) — badge-QR sign-in entry. The holder scans the QR printed on
 /// their badge; the server resolves it and the app branches: an account that
@@ -119,7 +120,10 @@ class _BadgeSignInScreenState extends ConsumerState<BadgeSignInScreen> {
       body: SafeArea(
         child: Column(
           children: <Widget>[
-            _buildHeader(l10n),
+            AccountSubHeader(
+              title: l10n.badgeScanTitle,
+              onBack: _leave,
+            ),
             Expanded(
               child: Center(
                 child: SingleChildScrollView(
@@ -148,45 +152,6 @@ class _BadgeSignInScreenState extends ConsumerState<BadgeSignInScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  /// Header: the round back button at the inline start + the centred title.
-  Widget _buildHeader(AppL10n l10n) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Stack(
-        alignment: Alignment.center,
-        children: <Widget>[
-          Align(
-            alignment: Alignment.centerLeft,
-            child: DecoratedBox(
-              decoration: const BoxDecoration(
-                color: SimfTokens.navyDeep,
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                key: const ValueKey<String>('badgeBack'),
-                onPressed: _leave,
-                icon: const Icon(
-                  Icons.arrow_back_ios_new,
-                  color: Colors.white,
-                  size: 20,
-                  textDirection: TextDirection.ltr,
-                ),
-              ),
-            ),
-          ),
-          Text(
-            l10n.badgeScanTitle,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
       ),
     );
   }

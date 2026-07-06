@@ -79,6 +79,13 @@ GoRouter _router() {
           body: Center(child: Text('ABOUT-MARKER')),
         ),
       ),
+      GoRoute(
+        name: RouteNames.forgotPassword,
+        path: '/forgot',
+        builder: (context, state) => const Scaffold(
+          body: Center(child: Text('FORGOT-MARKER')),
+        ),
+      ),
       // The shared shell's bottom-nav destinations + the my-area target.
       for (final (name, path) in <(String, String)>[
         (RouteNames.home, '/'),
@@ -153,6 +160,9 @@ void main() {
       expect(find.text('English'), findsOneWidget);
       expect(find.text('Accessibility'), findsOneWidget);
       expect(find.text('Notifications'), findsOneWidget);
+      // Reset password (signed-in only, D-658) — a deliberate profile action
+      // beyond frame 1129:17224.
+      expect(find.text('Reset password'), findsOneWidget);
       // قانوني rows.
       expect(find.text('Terms & conditions'), findsOneWidget);
       expect(find.text('Contact us'), findsOneWidget);
@@ -174,6 +184,8 @@ void main() {
       // The public rows remain.
       expect(find.text('About the forum'), findsOneWidget);
       expect(find.text('FAQ'), findsOneWidget);
+      // Reset password is an account action — hidden from the guest view.
+      expect(find.text('Reset password'), findsNothing);
     });
 
     testWidgets('signed-in shows the منطقتي profile card + sign-out',
@@ -189,6 +201,14 @@ void main() {
       await tester.tap(find.text('About the forum'));
       await tester.pumpAndSettle();
       expect(find.text('ABOUT-MARKER'), findsOneWidget);
+    });
+
+    testWidgets('signed-in tapping Reset password opens the forgot flow',
+        (tester) async {
+      await _pump(tester, router: _router(), signedIn: true);
+      await tester.tap(find.text('Reset password'));
+      await tester.pumpAndSettle();
+      expect(find.text('FORGOT-MARKER'), findsOneWidget);
     });
   });
 }
