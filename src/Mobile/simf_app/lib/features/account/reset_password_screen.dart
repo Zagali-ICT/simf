@@ -19,6 +19,7 @@ import '../../core/widgets/simf_field_label.dart';
 import '../../core/widgets/simf_field_style.dart';
 import 'widgets/account_sub_header.dart';
 import 'widgets/auth_chrome.dart';
+import 'widgets/navy_password_toggle.dart';
 import 'widgets/otp_code_boxes.dart';
 
 /// Page 003 — Reset password (Logic L-6). No dedicated Figma frame exists for
@@ -217,7 +218,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     return TextFormField(
       controller: _password,
       obscureText: _obscure,
-      maxLength: 32,
+      maxLength: 128,
       enabled: !_busy,
       onChanged: (_) => setState(() {}),
       // Reset SETS a new password, so apply the policy here.
@@ -230,7 +231,10 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       style: simfInputStyleOnNavy,
       decoration: simfFieldDecoration(
         counterText: '',
-        suffixIcon: _passwordToggle(l10n),
+        suffixIcon: NavyPasswordToggle(
+          obscure: _obscure,
+          onToggle: () => setState(() => _obscure = !_obscure),
+        ),
       ),
     );
   }
@@ -239,7 +243,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     return TextFormField(
       controller: _confirm,
       obscureText: _obscure,
-      maxLength: 32,
+      maxLength: 128,
       enabled: !_busy,
       onChanged: (_) => setState(() {}),
       onFieldSubmitted: (_) {
@@ -252,18 +256,6 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
           value == _password.text ? null : l10n.passwordsDoNotMatch,
       style: simfInputStyleOnNavy,
       decoration: simfFieldDecoration(counterText: ''),
-    );
-  }
-
-  Widget _passwordToggle(AppL10n l10n) {
-    return IconButton(
-      tooltip: _obscure ? l10n.showPasswordTooltip : l10n.hidePasswordTooltip,
-      icon: Icon(
-        _obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-        size: 18,
-        color: SimfTokens.beigeBorder,
-      ),
-      onPressed: () => setState(() => _obscure = !_obscure),
     );
   }
 

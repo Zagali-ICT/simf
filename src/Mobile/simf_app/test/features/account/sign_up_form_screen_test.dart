@@ -150,8 +150,8 @@ void main() {
       await _fill(
         tester,
         email: 'Visitor@Example.SA',
-        password: 'Password1',
-        confirm: 'Password1',
+        password: 'Password1!',
+        confirm: 'Password1!',
       );
       await _tapCreate(tester);
 
@@ -167,8 +167,8 @@ void main() {
       await _fill(
         tester,
         email: 'visitor@example.sa',
-        password: 'Password1',
-        confirm: 'Password2',
+        password: 'Password1!',
+        confirm: 'Password2!',
       );
       await _tapCreate(tester);
 
@@ -184,8 +184,8 @@ void main() {
       await _fill(
         tester,
         email: 'not-an-email',
-        password: 'Password1',
-        confirm: 'Password1',
+        password: 'Password1!',
+        confirm: 'Password1!',
       );
       await _tapCreate(tester);
 
@@ -205,10 +205,7 @@ void main() {
       );
       await _tapCreate(tester);
 
-      expect(
-        find.text('Password does not meet the requirements'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('special character'), findsOneWidget);
       expect(controller.signUpCalled, isFalse);
     });
 
@@ -228,14 +225,52 @@ void main() {
       await _fill(
         tester,
         email: 'visitor@example.sa',
-        password: 'Password1',
-        confirm: 'Password1',
+        password: 'Password1!',
+        confirm: 'Password1!',
       );
       await _tapCreate(tester);
 
       expect(controller.signUpCalled, isTrue);
       expect(find.text('The request was invalid.'), findsOneWidget);
       expect(find.textContaining('OTP email='), findsNothing);
+    });
+
+    testWidgets('a validation failure surfaces the specific field reason, not '
+        'the generic envelope message', (tester) async {
+      // The server returns a generic top-level message with the real reason in
+      // details[] — the app must show the specific reason so the user knows
+      // what to fix (e.g. the failing password rule), not a useless generic.
+      final controller = _FakeSignUpController(
+        failure: const ValidationFailed(
+          ApiFailure(
+            code: 'VALIDATION_FAILED',
+            message: 'One or more fields are invalid.',
+            httpStatus: 400,
+            details: <ApiResultErrorDetail>[
+              ApiResultErrorDetail(
+                field: 'password',
+                message: 'Password must contain a special character.',
+              ),
+            ],
+          ),
+        ),
+      );
+      await _pump(tester, controller: controller);
+
+      await _fill(
+        tester,
+        email: 'visitor@example.sa',
+        password: 'Password1!',
+        confirm: 'Password1!',
+      );
+      await _tapCreate(tester);
+
+      expect(controller.signUpCalled, isTrue);
+      expect(
+        find.text('Password must contain a special character.'),
+        findsOneWidget,
+      );
+      expect(find.text('One or more fields are invalid.'), findsNothing);
     });
 
     testWidgets('the Sign in link leaves the sign-up flow', (tester) async {

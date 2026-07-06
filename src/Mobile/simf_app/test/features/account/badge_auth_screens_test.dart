@@ -248,7 +248,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.text('Password does not meet the requirements'),
+      find.textContaining('special character'),
       findsOneWidget,
     );
     expect(repo.completeCalls, 0);
@@ -265,8 +265,8 @@ void main() {
 
     final fields = find.byType(TextFormField);
     await tester.enterText(fields.at(0), '123456');
-    await tester.enterText(fields.at(1), 'Passw0rd1');
-    await tester.enterText(fields.at(2), 'Passw0rd2'); // differs
+    await tester.enterText(fields.at(1), 'Passw0rd1!');
+    await tester.enterText(fields.at(2), 'Passw0rd2!'); // differs
     await tester.pumpAndSettle();
 
     await tester.ensureVisible(find.text('Activate & set password'));
@@ -288,8 +288,8 @@ void main() {
 
     final fields = find.byType(TextFormField);
     await tester.enterText(fields.at(0), '123456');
-    await tester.enterText(fields.at(1), 'Passw0rd1');
-    await tester.enterText(fields.at(2), 'Passw0rd1');
+    await tester.enterText(fields.at(1), 'Passw0rd1!');
+    await tester.enterText(fields.at(2), 'Passw0rd1!');
     await tester.pumpAndSettle();
 
     await tester.ensureVisible(find.text('Activate & set password'));

@@ -22,6 +22,20 @@ extension ApiFailureL10n on ApiFailure {
       case ApiErrorCodes.clientCancelled:
         return l10n.errorGenericBody;
     }
+    // A field-validation failure carries the specific per-field reason(s) in
+    // `details`, while the envelope's top-level message is only the generic
+    // "one or more fields are invalid". Surface the specific reason(s) so the
+    // user knows exactly what to fix — e.g. which password rule failed — rather
+    // than a generic message that leaves them stuck.
+    if (code == ApiErrorCodes.validationFailed && details.isNotEmpty) {
+      final specifics = details
+          .map((detail) => detail.localized(l10n.isArabic).trim())
+          .where((text) => text.isNotEmpty)
+          .toList();
+      if (specifics.isNotEmpty) {
+        return specifics.join('\n');
+      }
+    }
     // A server envelope error already carries a localized message; fall back to
     // the generic localized string when it is empty.
     final serverMessage = message.trim();

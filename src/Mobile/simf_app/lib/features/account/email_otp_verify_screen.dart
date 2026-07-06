@@ -15,6 +15,7 @@ import '../../core/widgets/simf_auth_sweep.dart';
 import 'biometric_auth.dart';
 import 'post_auth_route.dart';
 import 'widgets/account_sub_header.dart';
+import 'widgets/auth_chrome.dart';
 import 'widgets/otp_code_boxes.dart';
 
 /// Page 003 — email-OTP second factor (Logic L-5), restyled to the KSA OTP
@@ -312,24 +313,10 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
         maxWidth: 560,
         child: SizedBox(
           width: double.infinity,
-          child: FilledButton(
+          child: AuthSubmitButton(
+            label: l10n.verifyButton,
+            busy: _busy,
             onPressed: _canSubmit ? () => unawaited(_submit()) : null,
-            child: _busy
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : Text(
-                    l10n.verifyButton,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
           ),
         ),
       ),
@@ -340,6 +327,9 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
   /// "إعادة الإرسال" re-issues the code in place (resend-otp, #12) — it does
   /// not return to sign-in.
   Widget _buildResendRow(AppL10n l10n) {
+    // Gate on !_busy as well as the countdown, so the resend can't fire a second
+    // request on top of an in-flight verify (matches the sibling OTP screens).
+    final canResend = _secondsLeft == 0 && !_busy;
     return Text.rich(
       TextSpan(
         children: <InlineSpan>[
@@ -347,13 +337,11 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
           TextSpan(
             text: l10n.otpResendAction,
             style: TextStyle(
-              color: _secondsLeft == 0
-                  ? SimfTokens.accent
-                  : SimfTokens.beigeBorder,
+              color: canResend ? SimfTokens.accent : SimfTokens.beigeBorder,
               fontWeight: FontWeight.w700,
               decoration: TextDecoration.underline,
             ),
-            recognizer: _secondsLeft == 0 ? _resendTap : null,
+            recognizer: canResend ? _resendTap : null,
           ),
         ],
       ),

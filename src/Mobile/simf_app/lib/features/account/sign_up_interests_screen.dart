@@ -14,6 +14,7 @@ import '../../core/widgets/simf_auth_sweep.dart';
 import 'data/profile_models.dart';
 import 'data/profile_repository.dart';
 import 'widgets/account_sub_header.dart';
+import 'widgets/auth_chrome.dart';
 import 'widgets/interest_chip.dart';
 
 /// Page 007‑01 — اهتماماتي · Sign up — interests. The KSA-Project Figma design
@@ -331,26 +332,12 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
             maxWidth: 560,
             child: SizedBox(
               width: double.infinity,
-              child: FilledButton(
+              child: AuthSubmitButton(
+                label: l10n.continueLabel,
+                busy: _submitting,
                 onPressed: (_submitting || _selected.isEmpty)
                     ? null
                     : () => unawaited(_save()),
-                child: _submitting
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Text(
-                        l10n.continueLabel,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
               ),
             ),
           ),

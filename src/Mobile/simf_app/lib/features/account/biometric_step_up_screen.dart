@@ -12,6 +12,7 @@ import '../../core/responsive/max_width_body.dart';
 import '../../core/widgets/simf_auth_sweep.dart';
 import 'biometric_auth.dart';
 import 'widgets/account_sub_header.dart';
+import 'widgets/auth_chrome.dart';
 import 'widgets/otp_code_boxes.dart';
 
 /// #7a — the emailed-OTP step-up confirming the user wants to ENABLE biometric
@@ -296,24 +297,10 @@ class _BiometricStepUpScreenState extends ConsumerState<BiometricStepUpScreen> {
         maxWidth: 560,
         child: SizedBox(
           width: double.infinity,
-          child: FilledButton(
+          child: AuthSubmitButton(
+            label: l10n.verifyButton,
+            busy: _verifying,
             onPressed: _canSubmit ? () => unawaited(_submit()) : null,
-            child: _verifying
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : Text(
-                    l10n.verifyButton,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
           ),
         ),
       ),

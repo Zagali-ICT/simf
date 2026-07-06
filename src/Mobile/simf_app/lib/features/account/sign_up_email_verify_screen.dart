@@ -298,24 +298,10 @@ class _SignUpEmailVerifyScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            FilledButton(
+            AuthSubmitButton(
+              label: l10n.verifyButton,
+              busy: _busy,
               onPressed: _canVerify ? () => unawaited(_verify()) : null,
-              child: _busy
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : Text(
-                      l10n.verifyButton,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
             ),
             const SizedBox(height: 16),
             Row(

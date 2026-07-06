@@ -66,7 +66,9 @@ class AccountPasswordField extends StatelessWidget {
     this.validator,
     this.onChanged,
     this.onSubmitted,
-    this.maxLength = 32,
+    // Matches the server policy max (PasswordPolicy.MaxLength = 128) so a valid
+    // existing password longer than the old 32 cap can still be typed.
+    this.maxLength = 128,
     super.key,
   });
 

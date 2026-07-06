@@ -181,8 +181,8 @@ void main() {
       await _fill(
         tester,
         code: '123456',
-        password: 'Password1',
-        confirm: 'Password1',
+        password: 'Password1!',
+        confirm: 'Password1!',
       );
       await _tapReset(tester);
 
@@ -199,8 +199,8 @@ void main() {
       await _fill(
         tester,
         code: '123',
-        password: 'Password1',
-        confirm: 'Password1',
+        password: 'Password1!',
+        confirm: 'Password1!',
       );
       await _tapReset(tester);
 
@@ -224,10 +224,7 @@ void main() {
       );
       await _tapReset(tester);
 
-      expect(
-        find.text('Password does not meet the requirements'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('special character'), findsOneWidget);
       expect(repo.resetCalls, 0);
       expect(find.text('SIGN-IN'), findsNothing);
     });
@@ -240,8 +237,8 @@ void main() {
       await _fill(
         tester,
         code: '123456',
-        password: 'Password1',
-        confirm: 'Password2',
+        password: 'Password1!',
+        confirm: 'Password2!',
       );
       await _tapReset(tester);
 
@@ -260,8 +257,8 @@ void main() {
       await _fill(
         tester,
         code: '123456',
-        password: 'Password1',
-        confirm: 'Password1',
+        password: 'Password1!',
+        confirm: 'Password1!',
       );
       await _tapReset(tester);
 
