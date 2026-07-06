@@ -1,3 +1,7 @@
+// Tests: covered via the SIMF.Api.Tests service suites that consume it —
+// Speaker/Delegation/BadgeUpdate/ParticipationDocumentRequestsTests (GetEmailAsync),
+// AdminGatesTests, AdminInvitationsTests, ExhibitorVisitorScanTests,
+// VisitorContactSharingTests (GetDisplayNamesAsync / GetEmailsAsync).
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Infrastructure.Persistence;
@@ -18,4 +22,18 @@ internal sealed class IdentityUserDirectory(SimfIdentityDbContext identityDbCont
             .Where(u => u.Id == userId)
             .Select(u => u.Email)
             .SingleOrDefaultAsync(cancellationToken);
+
+    public async Task<IReadOnlyDictionary<Guid, string>> GetDisplayNamesAsync(
+        IReadOnlyCollection<Guid> userIds, CancellationToken cancellationToken = default) =>
+        await identityDbContext.Users.AsNoTracking()
+            .Where(u => userIds.Contains(u.Id))
+            .Select(u => new { u.Id, u.DisplayName })
+            .ToDictionaryAsync(x => x.Id, x => x.DisplayName ?? string.Empty, cancellationToken);
+
+    public async Task<IReadOnlyDictionary<Guid, string?>> GetEmailsAsync(
+        IReadOnlyCollection<Guid> userIds, CancellationToken cancellationToken = default) =>
+        await identityDbContext.Users.AsNoTracking()
+            .Where(u => userIds.Contains(u.Id))
+            .Select(u => new { u.Id, u.Email })
+            .ToDictionaryAsync(x => x.Id, x => x.Email, cancellationToken);
 }

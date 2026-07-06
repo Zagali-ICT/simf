@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.AccessControl.Abstractions;
 using SIMF.Application.Auditing;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
@@ -23,6 +24,7 @@ namespace SIMF.Infrastructure.AccessControl;
 internal sealed class AdminGateService(
     SimfAppDbContext appDbContext,
     SimfIdentityDbContext identityDbContext,
+    IIdentityUserDirectory userDirectory,
     IAuditLog auditLog,
     IGateConfigCache configCache,
     TimeProvider timeProvider,
@@ -276,10 +278,8 @@ internal sealed class AdminGateService(
         if (assignments.Count == 0) { return Array.Empty<AdminGateAssignmentRow>(); }
 
         var operatorIds = assignments.Select(a => a.UserId).ToHashSet();
-        var operatorNames = await identityDbContext.Users.AsNoTracking()
-            .Where(u => operatorIds.Contains(u.Id))
-            .Select(u => new { u.Id, u.DisplayName })
-            .ToDictionaryAsync(x => x.Id, x => x.DisplayName ?? string.Empty, cancellationToken);
+        var operatorNames = await userDirectory.GetDisplayNamesAsync(
+            operatorIds, cancellationToken);
 
         return assignments
             .Select(a => new AdminGateAssignmentRow(
@@ -330,10 +330,8 @@ internal sealed class AdminGateService(
                 .Select(profile => new { profile.Id, profile.UserId })
                 .ToListAsync(cancellationToken);
             var userIds = profileUsers.Select(pu => pu.UserId).Distinct().ToList();
-            var userNamesByUserId = await identityDbContext.Users.AsNoTracking()
-                .Where(user => userIds.Contains(user.Id))
-                .Select(user => new { user.Id, user.DisplayName })
-                .ToDictionaryAsync(user => user.Id, user => user.DisplayName ?? string.Empty, cancellationToken);
+            var userNamesByUserId = await userDirectory.GetDisplayNamesAsync(
+                userIds, cancellationToken);
             displayNames = profileUsers.ToDictionary(
                 pu => pu.Id,
                 pu => userNamesByUserId.TryGetValue(pu.UserId, out var name) ? name : string.Empty);
@@ -389,10 +387,8 @@ internal sealed class AdminGateService(
             })
             .ToListAsync(cancellationToken);
         var inProfileUserIds = profileRows.Select(pr => pr.UserId).Distinct().ToList();
-        var profileUserDisplayNames = await identityDbContext.Users.AsNoTracking()
-            .Where(user => inProfileUserIds.Contains(user.Id))
-            .Select(user => new { user.Id, user.DisplayName })
-            .ToDictionaryAsync(user => user.Id, user => user.DisplayName ?? string.Empty, cancellationToken);
+        var profileUserDisplayNames = await userDirectory.GetDisplayNamesAsync(
+            inProfileUserIds, cancellationToken);
         var profiles = profileRows.ToDictionary(
             row => row.Id,
             row => new
