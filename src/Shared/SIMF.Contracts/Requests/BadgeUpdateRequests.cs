@@ -53,8 +53,6 @@ public sealed record AdminBadgeUpdateRequestDetail(
 /// Rejected. On Accept the service applies the requested title to the
 /// requester's profile. Open for inheritance (the D-168 route-binding
 /// pattern).</summary>
-public class RespondToBadgeUpdateRequestRequest
+public class RespondToBadgeUpdateRequestRequest : RespondToRequest
 {
-    public MeetingRequestStatus Status { get; set; }
-    public string? ResponseNote { get; set; }
 }

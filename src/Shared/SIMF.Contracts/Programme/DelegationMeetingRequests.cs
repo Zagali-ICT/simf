@@ -56,8 +56,6 @@ public sealed record AdminDelegationMeetingRequestDetail(
     DateTimeOffset? RespondedAt);
 
 /// <summary>D-478 — the team's Accept/Reject response.</summary>
-public class RespondToDelegationMeetingRequestRequest
+public class RespondToDelegationMeetingRequestRequest : RespondToRequest
 {
-    public MeetingRequestStatus Status { get; set; }
-    public string? ResponseNote { get; set; }
 }

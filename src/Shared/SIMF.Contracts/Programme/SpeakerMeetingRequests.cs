@@ -67,8 +67,6 @@ public sealed record AdminSpeakerMeetingRequestDetail(
 /// <summary>D-269 — admin moves the row off Pending. Status must be Accepted or
 /// Rejected; Pending → Pending is rejected. Open for inheritance so the
 /// route-binding endpoint can carry an <c>Id</c> field (the D-168 pattern).</summary>
-public class RespondToSpeakerMeetingRequestRequest
+public class RespondToSpeakerMeetingRequestRequest : RespondToRequest
 {
-    public MeetingRequestStatus Status { get; set; }
-    public string? ResponseNote { get; set; }
 }
