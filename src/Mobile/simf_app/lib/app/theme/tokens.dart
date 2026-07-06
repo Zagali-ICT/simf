@@ -45,6 +45,9 @@ class SimfTokens {
   static const Color navyFill90 = Color(0xE601132D); // navy #01132D @ 90% — onboarding photo overlay (Figma 148:22)
   static const Color chipBorderNavy = Color(0xFF2A4066); // muted navy border on unselected pills (interests grid, Figma 505:1222)
   static const Color tileBorderNavy = Color(0xFF253660); // contact-tile border (registration success, Figma 522:2223)
+  static const Color scannerCard = Color(0xFF0F2044); // QR-scanner card fill (Figma 758:4566)
+  static const Color scannerTrack = Color(0xFF132A50); // QR-scanner progress-bar track (Figma 758:4598)
+  static const Color mutedBlue = Color(0xFF8A9CC0); // muted blue caption — OTP countdown + scanner status (Figma 505:987 / 758:4596)
   static const Color beigeBorder = Color(0xFFC2B8A2); // "Pragraph Color" — borders + on-navy paragraph text
   static const Color beigeFill10 = Color(0x1AC2B8A2); // beige 10% — tier-pill + link-row icon-box fill (Figma rgba(194,184,162,0.1))
   static const Color beigeBorder40 = Color(0x66C2B8A2); // beige 40% — agenda timeline row divider (Figma 1310:3239 rgba(194,184,162,0.4))

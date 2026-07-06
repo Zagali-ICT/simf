@@ -580,6 +580,8 @@ class AppL10n {
       _t('أو أدخل رمز الشارة يدويًا', 'Or enter the badge code manually');
   String get badgeManualField => _t('رمز الشارة', 'Badge code');
   String get badgeResolveButton => _t('متابعة', 'Continue');
+  // The scanner viewfinder's "actively searching" caption (Figma 758:4596).
+  String get scanningCode => _t('جارٍ فحص الرمز...', 'Scanning the code…');
   // Shared QR-scanner chrome (used by the badge, contact and exhibitor scanners).
   String get qrStopCamera => _t('إيقاف الكاميرا', 'Stop camera');
   String get qrBack => _t('رجوع', 'Back');
