@@ -760,13 +760,12 @@ class AppL10n {
   String get identityVerificationTitle =>
       _t('التحقق من الهوية', 'Identity verification');
   // Camera security rules (owner 2026-07-06, D-662): the identity photo must be
-  // a LIVE, human-verified capture — the on-screen prompt guides the liveness
-  // challenge, and there is no gallery path, so a static image is never used.
-  String get livenessSmilePrompt => _t('ابتسم', 'Smile');
-  String get livenessTurnRightPrompt =>
-      _t('أدر رأسك يمينًا', 'Turn your head right');
-  String get livenessTurnLeftPrompt =>
-      _t('أدر رأسك يسارًا', 'Turn your head left');
+  // a LIVE, human-verified capture — there is no gallery path, so a static image
+  // is never used. The step labels + directional cue + progress bar match Figma
+  // 758:4180 / 4248 / 4316 (D-663).
+  String get livenessSmilePrompt => _t('المقطع الأمامي', 'Front');
+  String get livenessTurnRightPrompt => _t('المقطع الأيمن', 'Right');
+  String get livenessTurnLeftPrompt => _t('المقطع الأيسر', 'Left');
   String get identityCameraUnavailable => _t(
         'الكاميرا مطلوبة للتحقق من الهوية بصورة حية. فعّل الكاميرا وحاول مجددًا.',
         'The camera is required for a live identity check. Enable it and retry.',

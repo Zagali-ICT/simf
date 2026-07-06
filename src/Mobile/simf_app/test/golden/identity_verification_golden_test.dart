@@ -48,6 +48,9 @@ LiveCaptureView _capture(
     ready: ready,
     preview: preview,
     promptText: l10n.livenessSmilePrompt,
+    promptLeading: const Text('😊', style: TextStyle(fontSize: 22)),
+    stepIndex: 0,
+    stepCount: 3,
   );
 }
 

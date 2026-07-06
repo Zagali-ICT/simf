@@ -51,6 +51,7 @@ class SimfTokens {
   static const Color beigeBorder = Color(0xFFC2B8A2); // "Pragraph Color" — borders + on-navy paragraph text
   static const Color beigeFill10 = Color(0x1AC2B8A2); // beige 10% — tier-pill + link-row icon-box fill (Figma rgba(194,184,162,0.1))
   static const Color beigeBorder40 = Color(0x66C2B8A2); // beige 40% — agenda timeline row divider (Figma 1310:3239 rgba(194,184,162,0.4))
+  static const Color beigeFill50 = Color(0x80C2B8A2); // beige 50% — liveness pending progress dash (Figma 758:4242 rgba(194,184,162,0.5))
   static const Color goldFill7 = Color(0x12C9A84C); // gold 7% — delegations stats-strip grid (Figma 1426:10771)
   static const Color goldFill6 = Color(0x0FC9A84C); // gold 6% — delegations head-of-delegation box fill (Figma 1426:10771)
   static const Color goldBorder15 = Color(0x26C9A84C); // gold 15% — delegations head-of-delegation box border (Figma 1426:10771)

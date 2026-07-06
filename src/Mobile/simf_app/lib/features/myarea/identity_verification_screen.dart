@@ -220,8 +220,8 @@ class _IdentityVerificationScreenState
     unawaited(_initCamera());
   }
 
-  /// The guidance for the current liveness step (ابتسم → أدر رأسك …), shown over
-  /// the live preview so the user knows what to do to pass the human check.
+  /// The label for the current liveness step (المقطع الأمامي / الأيمن / الأيسر),
+  /// shown under the live preview so the user knows what to do (Figma 758:4180).
   String _stepPrompt(AppL10n l10n) {
     switch (_step) {
       case LivenessStep.smile:
@@ -230,6 +230,19 @@ class _IdentityVerificationScreenState
         return l10n.livenessTurnRightPrompt;
       case LivenessStep.turnLeft:
         return l10n.livenessTurnLeftPrompt;
+    }
+  }
+
+  /// The directional cue for the current step: the 😊 emoji for the front step,
+  /// a gold arrow for the right / left turns (Figma 758:4180 / 4248 / 4316).
+  Widget _stepLeading() {
+    switch (_step) {
+      case LivenessStep.smile:
+        return const Text('😊', style: TextStyle(fontSize: 22));
+      case LivenessStep.turnRight:
+        return const Icon(Icons.east, color: SimfTokens.accent, size: 24);
+      case LivenessStep.turnLeft:
+        return const Icon(Icons.west, color: SimfTokens.accent, size: 24);
     }
   }
 
@@ -317,6 +330,9 @@ class _IdentityVerificationScreenState
                     ? CameraPreview(_camera!)
                     : null,
                 promptText: _stepPrompt(l10n),
+                promptLeading: _stepLeading(),
+                stepIndex: _stepIndex,
+                stepCount: _sequence.length,
               ),
       ),
     );
