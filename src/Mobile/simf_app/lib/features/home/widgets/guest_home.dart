@@ -8,6 +8,7 @@ import '../../../app/widgets/simf_bottom_nav.dart';
 import '../../../app/widgets/simf_page_shell.dart';
 import 'discover_saudi_row.dart';
 import 'home_icons.dart';
+import 'pending_approval_card.dart';
 
 /// Guest / unapproved layout (frame 758:2910 — "الرئيسية • ضيف", 2×2 tiles):
 /// shown to a not-signed-in guest AND a signed-in but unapproved account.
@@ -38,8 +39,14 @@ class GuestHome extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(SimfTokens.space4),
         children: <Widget>[
-          _GuestBanner(l10n: l10n),
-          const SizedBox(height: SimfTokens.space4),
+          // The "browsing as guest, sign in" banner is for a NOT-signed-in
+          // guest only. A signed-in but unapproved account is already logged in
+          // (D-666) — it gets the under-review card at the bottom instead, never
+          // a "please sign in" prompt.
+          if (!pendingApproval) ...<Widget>[
+            _GuestBanner(l10n: l10n),
+            const SizedBox(height: SimfTokens.space4),
+          ],
           SimfTileRow(
             children: <Widget>[
               SimfNavTile(
@@ -100,54 +107,15 @@ class GuestHome extends StatelessWidget {
           DiscoverSaudiRow(l10n: l10n, outlined: true),
           const SizedBox(height: SimfTokens.space6),
           // True guest → the sign-in CTA; signed-in-but-unapproved → the
-          // "awaiting approval" note (a sign-in button would be wrong).
+          // under-review card with re-check + registration-status actions (a
+          // sign-in button would be wrong — they are already signed in, D-666).
           if (pendingApproval)
-            _PendingApprovalNote(l10n: l10n)
+            PendingApprovalCard(l10n: l10n)
           else
             FilledButton(
               onPressed: () => context.pushNamed(RouteNames.signIn),
               child: Text(l10n.guestSignInCta),
             ),
-        ],
-      ),
-    );
-  }
-}
-
-/// The "your account is awaiting approval" note shown in place of the sign-in
-/// CTA when an unapproved (pending / rejected) account lands on the guest home
-/// (owner 2026-06-27). The account is already signed in, so a sign-in button
-/// would be wrong; full features unlock once the registration is approved.
-class _PendingApprovalNote extends StatelessWidget {
-  const _PendingApprovalNote({required this.l10n});
-
-  final AppL10n l10n;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(SimfTokens.space3),
-      decoration: BoxDecoration(
-        color: SimfTokens.navyDeep,
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
-        border: Border.all(color: SimfTokens.accent, width: 0.5),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          const Icon(Icons.hourglass_top, color: SimfTokens.accent, size: 24),
-          const SizedBox(width: SimfTokens.space2),
-          Expanded(
-            child: Text(
-              l10n.homePendingApprovalNote,
-              textAlign: TextAlign.start,
-              style: const TextStyle(
-                color: SimfTokens.beigeBorder,
-                fontSize: SimfTokens.textMd,
-                height: 1.5,
-              ),
-            ),
-          ),
         ],
       ),
     );

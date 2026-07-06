@@ -50,7 +50,9 @@ class MoreScreen extends ConsumerWidget {
     final signedIn = auth is AuthStateSignedIn;
     // D-519 — role-filter the attendee-only rows so a focused Staff/Moderator
     // never sees a dead link here (the slide-in MoreDrawer filters identically).
-    final role = signedIn ? auth.session.user.appRole : AppRole.guest;
+    // D-666 — a not-yet-approved account presents as guest, so the attendee-only
+    // rows (rate) hide for it just like they do for a true guest.
+    final role = signedIn ? auth.session.user.effectiveAppRole : AppRole.guest;
     final profile =
         signedIn ? ref.watch(_moreProfileProvider).asData?.value : null;
 

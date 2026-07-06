@@ -13,7 +13,11 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
 import '../../features/accessibility/_fake_prefs.dart';
 
-Session _session({AppRole role = AppRole.visitor}) => Session(
+Session _session({
+  AppRole role = AppRole.visitor,
+  RegistrationStatus status = RegistrationStatus.approved,
+}) =>
+    Session(
       accessToken: 'A',
       refreshToken: 'R',
       accessTokenExpiresAt: DateTime.now().add(const Duration(minutes: 30)),
@@ -23,21 +27,26 @@ Session _session({AppRole role = AppRole.visitor}) => Session(
         displayName: 'Raed',
         appRole: role,
         preferredLanguage: PreferredLanguage.fromJson('ar'),
-        registrationStatus: RegistrationStatus.approved,
+        registrationStatus: status,
       ),
     );
 
 /// Records sign-out so the logout flow can be asserted without a real revoke.
 class _RecordingAuthController extends AuthController {
-  _RecordingAuthController({required this.signedIn, this.role = AppRole.visitor});
+  _RecordingAuthController({
+    required this.signedIn,
+    this.role = AppRole.visitor,
+    this.status = RegistrationStatus.approved,
+  });
 
   final bool signedIn;
   final AppRole role;
+  final RegistrationStatus status;
   int signOutCalls = 0;
 
   @override
   AuthState build() => signedIn
-      ? AuthStateSignedIn(_session(role: role))
+      ? AuthStateSignedIn(_session(role: role, status: status))
       : const AuthStateSignedOut();
 
   @override
@@ -99,6 +108,7 @@ Future<void> _pump(
         (RouteNames.staffRegisterVisitor, '/staff/register-visitor', 'REGISTER'),
         (RouteNames.scanVisitor, '/exhibitor/scan', 'SCAN-VISITOR'),
         (RouteNames.myVisitors, '/exhibitor/visitors', 'MY-VISITORS'),
+        (RouteNames.registrationStatus, '/registration/status', 'REG-STATUS'),
       ])
         GoRoute(
           name: name,
@@ -268,6 +278,47 @@ void main() {
       expect(find.text('Register a visitor'), findsNothing);
       expect(find.text('Scan visitor badge'), findsNothing);
       expect(find.text('My Visitors'), findsNothing);
+    });
+  });
+
+  // D-666 — a signed-in but not-yet-approved account is presented as a guest:
+  // the attendee + approved-only + calendar entries hide, and it gets the one
+  // extra "Registration status" action a true guest never sees.
+  group('MoreDrawer — a not-yet-approved account is treated as guest (D-666)',
+      () {
+    Future<void> pumpPending(WidgetTester tester) async {
+      tester.view.physicalSize = const Size(500, 2200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await _pump(
+        tester,
+        auth: _RecordingAuthController(
+          signedIn: true,
+          status: RegistrationStatus.pending,
+        ),
+      );
+    }
+
+    testWidgets('hides the attendee + approved-only + calendar entries',
+        (tester) async {
+      await pumpPending(tester);
+      // Attendee-only rows (rate, contacts) hide — it is an effective guest.
+      expect(find.text('Rate'), findsNothing);
+      expect(find.text('Share my contact'), findsNothing);
+      expect(find.text('My Contacts'), findsNothing);
+      // Approved-only row (media partners) hides too.
+      expect(find.text('Media partners'), findsNothing);
+      // The account action that needs an approved schedule hides.
+      expect(find.text('Share my calendar'), findsNothing);
+    });
+
+    testWidgets('shows the public hub + the one Registration-status action',
+        (tester) async {
+      await pumpPending(tester);
+      expect(find.text('About the forum'), findsOneWidget); // public info stays
+      expect(find.text('Registration status'), findsOneWidget); // the exception
+      expect(find.text('Sign out'), findsOneWidget); // still signed in
     });
   });
 }

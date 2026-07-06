@@ -390,4 +390,38 @@ void main() {
       expect(routeAllowsRole(RouteNames.aboutForum, null), isTrue);
     });
   });
+
+  group('D-666 — a not-yet-approved account is gated as an effective guest', () {
+    // buildRouter passes CurrentUser.effectiveAppRole, which is guest for a
+    // pending / rejected account — so the redirect treats it exactly like a
+    // guest even though its token may carry a Visitor role.
+    String? hitGuest(String fullPath) => redirectDecision(
+          isInitial: false,
+          isSignedIn: true,
+          goingTo: fullPath,
+          fullPath: fullPath,
+          appRole: AppRole.guest,
+        );
+
+    test('is redirected home off the attendee / approved routes', () {
+      for (final p in <String>['/meet', '/rate', '/contacts', '/contacts/share']) {
+        expect(hitGuest(p), '/', reason: p);
+      }
+    });
+
+    test('keeps the universal-auth routes it reaches as itself', () {
+      // Badge, my-area, notifications, sessions and the registration-status
+      // gate are auth-gated (any signed-in user), not role-gated, so a pending
+      // account stays on them — the registration-status gate is its way back.
+      for (final p in <String>[
+        '/badge',
+        '/my-area',
+        '/notifications',
+        '/sessions',
+        '/registration/status',
+      ]) {
+        expect(hitGuest(p), isNull, reason: p);
+      }
+    });
+  });
 }

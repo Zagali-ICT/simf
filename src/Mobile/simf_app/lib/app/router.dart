@@ -574,8 +574,13 @@ GoRouter buildRouter(Ref ref) {
         isSignedIn: isSignedIn,
         goingTo: goingTo,
         fullPath: state.fullPath,
+        // A signed-in but not-yet-approved account presents as guest
+        // (effectiveAppRole, D-666), so the role-gate keeps it out of the
+        // attendee/approved routes exactly like the menus do — its only
+        // signed-in destinations are the universal-auth routes (home, my-area,
+        // badge, notifications, sessions, registration-status).
         appRole: authState is AuthStateSignedIn
-            ? authState.session.user.appRole
+            ? authState.session.user.effectiveAppRole
             : null,
       );
     },

@@ -40,6 +40,15 @@ class CurrentUser {
   /// permission check and [registrationStatus] for the route decision.
   bool get isApproved => registrationStatus == RegistrationStatus.approved;
 
+  /// The role the app UI presents this user as. A signed-in but **not-yet-
+  /// approved** account (pending / rejected) has no attendee permissions, so it
+  /// presents as [AppRole.guest] regardless of the role its token carries — the
+  /// menus, home layout and route role-gate all treat it as a guest. The one
+  /// thing it reaches as itself is the registration-status gate, which is
+  /// auth-gated (any signed-in user), not role-gated. Once approved this returns
+  /// the real [appRole]. Single source of truth for the "pending ⇒ guest" rule.
+  AppRole get effectiveAppRole => isApproved ? appRole : AppRole.guest;
+
   CurrentUser copyWith({
     String? displayName,
     AppRole? appRole,

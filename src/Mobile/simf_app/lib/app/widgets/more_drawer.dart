@@ -31,7 +31,15 @@ class MoreDrawer extends ConsumerWidget {
     final l10n = AppL10n.of(context);
     final auth = ref.watch(authControllerProvider);
     final signedIn = auth is AuthStateSignedIn;
-    final role = signedIn ? auth.session.user.appRole : AppRole.guest;
+    final user = signedIn ? auth.session.user : null;
+    // A signed-in but not-yet-approved account presents as guest (D-666): the
+    // attendee rows hide via the role gate, the approved-only rows (media
+    // partners) via [MoreMenuEntry.approvedOnly], the account actions that need
+    // an approved account (calendar) hide too, and it gets a single
+    // "registration status" entry a true guest never sees.
+    final role = user?.effectiveAppRole ?? AppRole.guest;
+    final approved = user?.isApproved ?? false;
+    final pending = signedIn && !approved;
     return Drawer(
       backgroundColor: SimfTokens.navySurface,
       child: SafeArea(
@@ -57,9 +65,13 @@ class MoreDrawer extends ConsumerWidget {
                 children: <Widget>[
                   // Navigation-hub entries, filtered to the role's own pages
                   // (D-519): unrestricted entries show for everyone; the
-                  // attendee-only ones (rate, contacts) hide for Staff/Moderator.
+                  // attendee-only ones (rate, contacts) hide for Staff/Moderator
+                  // and for an unapproved account (effective guest); the
+                  // approved-only ones (media partners) hide for any non-approved
+                  // account (D-666).
                   for (final entry in moreMenuEntries(l10n))
-                    if (routeAllowsRole(entry.routeName, role))
+                    if (routeAllowsRole(entry.routeName, role) &&
+                        (!entry.approvedOnly || approved))
                       _DrawerTile(
                         icon: entry.icon,
                         title: entry.title,
@@ -68,6 +80,17 @@ class MoreDrawer extends ConsumerWidget {
                           context.pushNamed(entry.routeName);
                         },
                       ),
+                  // The one action a signed-in-but-unapproved account gets that a
+                  // true guest does not: check its registration status (D-666).
+                  if (pending)
+                    _DrawerTile(
+                      icon: Icons.hourglass_top_outlined,
+                      title: l10n.registrationStatusButton,
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        context.pushNamed(RouteNames.registrationStatus);
+                      },
+                    ),
                   // Staff gate operations (D-406 / D-509) — Staff role only.
                   if (routeAllowsRole(RouteNames.gateScanner, role))
                     _DrawerTile(
@@ -130,7 +153,9 @@ class MoreDrawer extends ConsumerWidget {
                   // has no usable biometric; enabling enrols a device key,
                   // disabling revokes it. Account action, so signed-in only.
                   if (signedIn) const FaceIdToggleTile(),
-                  if (signedIn)
+                  // Calendar export needs an approved account's schedule — hide
+                  // it for a guest / not-yet-approved account (D-666).
+                  if (approved)
                     _DrawerTile(
                       icon: Icons.calendar_today_outlined,
                       title: l10n.shareCalendar,

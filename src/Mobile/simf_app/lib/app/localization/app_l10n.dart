@@ -54,6 +54,12 @@ class AppL10n {
         'Your account is awaiting approval. Full features unlock once your '
             'registration is approved.',
       );
+  // D-666 — the snackbar shown when a pending account re-checks its status from
+  // the home card and it is still not approved.
+  String get statusStillPending => _t(
+        'لا يزال حسابك قيد المراجعة.',
+        'Your account is still under review.',
+      );
   String get retryLabel => _t('إعادة المحاولة', 'Retry');
   String get loadingLabel => _t('جارٍ التحميل…', 'Loading…');
   String get lookupLoadError =>

@@ -154,6 +154,27 @@ Scenario: The approved gate matches the frame
   # Covered by the golden test/golden/registration_status_golden_test.dart (1701:3789).
 ```
 
+### E2E-MOB011-011 — Entry points for a not-yet-approved account (D-666)
+
+```gherkin
+Scenario: A pending account reaches the status gate from the home card + the side menu
+  Given a signed-in account whose registrationStatus is Pending
+  When the home screen renders
+  Then it shows the guest layout with the "حسابك قيد المراجعة" under-review card
+  And the card shows an "إعادة التحقق" (Re-check) button and a "حالة التسجيل" button
+  And the "أنت تتصفح كضيف" guest banner is NOT shown (the account is already signed in)
+  When the user opens the side menu (☰)
+  Then the attendee rows (تقييم / شارك جهة اتصالي / جهات اتصالي / الشركاء الإعلاميون) are hidden
+  And the "مشاركة التقويم" (share calendar) action is hidden
+  And a "حالة التسجيل" entry is shown
+  When the user taps "حالة التسجيل" (from the card or the menu)
+  Then the registration-status gate (Page 011) opens
+  When the user taps "إعادة التحقق" on the home card and the account is still pending
+  Then a "لا يزال حسابك قيد المراجعة" snackbar confirms it was re-checked
+  And once the account is approved, a re-check rebuilds Home into the full experience
+  # Covered by home_screen_test.dart + more_drawer_test.dart (D-666).
+```
+
 ---
 
-_Last reviewed:_ `2026-07-06` by `SIMF Team` (D-665 — "المراحل" stages card removed to match Figma 1701:3789; D-591 — approved-state redesign).
+_Last reviewed:_ `2026-07-06` by `SIMF Team` (D-666 — pending account = effective guest + home under-review card / status entry; D-665 — "المراحل" stages card removed to match Figma 1701:3789; D-591 — approved-state redesign).

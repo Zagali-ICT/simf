@@ -12,11 +12,19 @@ class MoreMenuEntry {
     required this.icon,
     required this.title,
     required this.routeName,
+    this.approvedOnly = false,
   });
 
   final IconData icon;
   final String title;
   final String routeName;
+
+  /// When true the entry is advertised only to an **approved** account — the
+  /// target page stays reachable elsewhere (e.g. media partners from the public
+  /// News/Gallery coverage tabs), but a guest / not-yet-approved account does
+  /// not see it in the menu (D-666). Route-role-gated entries (rate, contacts)
+  /// don't need this flag — [routeAllowsRole] already hides them from a guest.
+  final bool approvedOnly;
 }
 
 /// The navigation hub items (About → Media partners), in display order.
@@ -60,5 +68,6 @@ List<MoreMenuEntry> moreMenuEntries(AppL10n l10n) => <MoreMenuEntry>[
         icon: Icons.handshake_outlined,
         title: l10n.moreMediaPartners,
         routeName: RouteNames.mediaPartners,
+        approvedOnly: true,
       ),
     ];
