@@ -17,10 +17,10 @@
 <EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
     <div class="simf-form__fields">
         <SimfTextField Label="@L["Admin.Organisations.Field.NameAr"]"
-                       MaxLength="256"
+                       MaxLength="150"
                        @bind-Value="_model.NameAr" Disabled="_busy" />
         <SimfTextField Label="@L["Admin.Organisations.Field.NameEn"]"
-                       MaxLength="256"
+                       MaxLength="150"
                        @bind-Value="_model.NameEn" Disabled="_busy" />
         <SimfTextField Label="@L["Admin.Organisations.Field.CommercialRegistration"]"
                        MaxLength="32"

@@ -22,8 +22,10 @@ internal sealed class OrganisationConfiguration : IEntityTypeConfiguration<Organ
         builder.ToTable("Organisations");
         builder.HasKey(organisation => organisation.Id);
 
-        builder.Property(organisation => organisation.NameArabic).HasMaxLength(256).IsRequired();
-        builder.Property(organisation => organisation.Name).HasMaxLength(256);
+        // Owner 2026-07-06 — reasonable org-name cap (was 256), aligned with the
+        // CP form MaxLength.
+        builder.Property(organisation => organisation.NameArabic).HasMaxLength(150).IsRequired();
+        builder.Property(organisation => organisation.Name).HasMaxLength(150);
         builder.Property(organisation => organisation.CommercialRegistration).HasMaxLength(32);
         builder.Property(organisation => organisation.Sector).HasMaxLength(128);
         builder.Property(organisation => organisation.City).HasMaxLength(128);

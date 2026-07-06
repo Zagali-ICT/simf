@@ -720,7 +720,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                   SimfLabeledTextField(
                     label: l10n.arabicNameLabel,
                     controller: _arabicName,
-                    maxLength: 256,
+                    maxLength: 100,
                     // Arabic letters + spaces only — block other scripts at
                     // the keystroke so the field can never hold mixed text.
                     inputFormatters: <TextInputFormatter>[
@@ -732,7 +732,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                   SimfLabeledTextField(
                     label: l10n.englishNameLabel,
                     controller: _englishName,
-                    maxLength: 256,
+                    maxLength: 100,
                     textDirection: TextDirection.ltr,
                     // Latin letters + spaces only.
                     inputFormatters: <TextInputFormatter>[
@@ -754,7 +754,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                   SimfLabeledTextField(
                     label: l10n.jobTitleLabel,
                     controller: _jobTitle,
-                    maxLength: 128,
+                    maxLength: 100,
                   ),
                   const SizedBox(height: 16),
                   _buildNationalityField(l10n),

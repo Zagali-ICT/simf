@@ -47,17 +47,17 @@ public sealed class AdminWalkInRegistrationRequestValidator
             .NotEmpty().Bilingual(
                 "Arabic name is required.",
                 "الاسم بالعربية مطلوب.")
-            .MaximumLength(128).Bilingual(
-                "Arabic name must be at most 128 characters.",
-                "يجب ألا يتجاوز الاسم بالعربية 128 حرفًا.");
+            .MaximumLength(100).Bilingual(
+                "Arabic name must be at most 100 characters.",
+                "يجب ألا يتجاوز الاسم بالعربية 100 حرف.");
 
         RuleFor(request => request.EnglishName)
             .NotEmpty().Bilingual(
                 "English name is required.",
                 "الاسم بالإنجليزية مطلوب.")
-            .MaximumLength(128).Bilingual(
-                "English name must be at most 128 characters.",
-                "يجب ألا يتجاوز الاسم بالإنجليزية 128 حرفًا.");
+            .MaximumLength(100).Bilingual(
+                "English name must be at most 100 characters.",
+                "يجب ألا يتجاوز الاسم بالإنجليزية 100 حرف.");
 
         RuleFor(request => request.ProfileTypeId)
             .NotEqual(Guid.Empty).Bilingual(
@@ -166,12 +166,12 @@ public sealed class AdminWalkInRegistrationRequestValidator
                 "Place of birth must be at most 128 characters.",
                 "يجب ألا يتجاوز مكان الميلاد 128 حرفًا.");
 
-        // D-163 (PDF §2.6) — optional job title, max 128 chars.
+        // D-163 (PDF §2.6) — optional job title, max 100 chars (owner 2026-07-06).
         RuleFor(request => request.JobTitle)
-            .MaximumLength(128).When(r => !string.IsNullOrEmpty(r.JobTitle))
+            .MaximumLength(100).When(r => !string.IsNullOrEmpty(r.JobTitle))
             .Bilingual(
-                "Job title must be at most 128 characters.",
-                "يجب ألا يتجاوز المسمى الوظيفي 128 حرفًا.");
+                "Job title must be at most 100 characters.",
+                "يجب ألا يتجاوز المسمى الوظيفي 100 حرف.");
 
         RuleFor(request => request.InterestIds.Count)
             .LessThanOrEqualTo(10).Bilingual(
