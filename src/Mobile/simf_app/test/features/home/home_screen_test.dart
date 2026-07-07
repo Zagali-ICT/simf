@@ -296,7 +296,11 @@ void main() {
       // controls remain on the guest top bar.
       expect(find.byTooltip('Notifications'), findsNothing);
       expect(find.byIcon(Icons.menu), findsOneWidget);
-      expect(find.byIcon(Icons.language), findsOneWidget);
+      // The language control is the EN/عر pill now (D-670), keyed 'languageToggle'.
+      expect(
+        find.byKey(const ValueKey<String>('languageToggle')),
+        findsOneWidget,
+      );
       // Dark mode is now the gold crescent (node 1049:2087), still inert.
       expect(find.byIcon(Icons.dark_mode), findsOneWidget);
     });
@@ -350,19 +354,28 @@ void main() {
     });
 
     testWidgets('an unapproved (pending) account sees the guest layout with the '
-        'awaiting-approval note, not the sign-in button', (tester) async {
+        'under-review card (registration status + sign out), not the guest '
+        'banner or the sign-in button (D-666 / D-668)', (tester) async {
       await _pump(tester, controller: _UnapprovedController());
 
       // The guest tiles render…
       expect(find.text('Sessions'), findsOneWidget);
       expect(find.text('Speakers'), findsOneWidget);
-      // …and the awaiting-approval note replaces the sign-in CTA.
+      // …but the "browsing as a guest, sign in" banner is NOT shown — the
+      // account is already logged in (D-666), so that prompt would be wrong.
+      expect(find.textContaining('browsing as a guest'), findsNothing);
+      // …and the under-review card replaces the sign-in CTA.
       await tester.scrollUntilVisible(
         find.textContaining('awaiting approval'),
         120,
         scrollable: find.byType(Scrollable).first,
       );
       expect(find.textContaining('awaiting approval'), findsOneWidget);
+      // A single Registration-status action (D-668 dropped the duplicate
+      // Re-check button) plus a sign-out link — never the guest "Sign in".
+      expect(find.text('Registration status'), findsOneWidget);
+      expect(find.text('Re-check'), findsNothing);
+      expect(find.text('Sign out'), findsOneWidget);
       expect(find.widgetWithText(FilledButton, 'Sign in'), findsNothing);
       // It is the guest layout, not the signed-in greeting header.
       expect(find.textContaining('Pending User'), findsNothing);

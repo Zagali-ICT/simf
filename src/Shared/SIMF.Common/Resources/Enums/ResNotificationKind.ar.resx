@@ -26,4 +26,8 @@
   <data name="MeetingScheduled" xml:space="preserve"><value>تم تحديد موعد اجتماع لك</value></data>
   <data name="MeetingCancelled" xml:space="preserve"><value>تم إلغاء اجتماع</value></data>
   <data name="SessionRatingRequest" xml:space="preserve"><value>قيّم هذه الجلسة</value></data>
+  <data name="DayRatingRequest" xml:space="preserve"><value>قيّم برنامج اليوم</value></data>
+  <data name="EventRatingRequest" xml:space="preserve"><value>قيّم الملتقى</value></data>
+  <data name="AppRatingRequest" xml:space="preserve"><value>قيّم التطبيق</value></data>
+  <data name="ExhibitionRatingRequest" xml:space="preserve"><value>قيّم المعرض</value></data>
 </root>

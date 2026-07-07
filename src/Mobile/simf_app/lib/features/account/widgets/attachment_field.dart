@@ -135,20 +135,26 @@ class _AttachBox extends StatelessWidget {
           border: Border.all(color: SimfTokens.beigeBorder),
           borderRadius: SimfTokens.borderRadiusSmall,
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              label,
-              style: const TextStyle(
-                color: SimfTokens.inputInk,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+        // The frame (168:2972) shows the gold attach glyph first, then the
+        // label — forced LTR so the icon-then-text order holds under Arabic too
+        // and the icon is gold, not grey (D-674).
+        child: Directionality(
+          textDirection: TextDirection.ltr,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Icon(icon, size: 24, color: SimfTokens.accent),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: SimfTokens.inputInk,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Icon(icon, size: 24, color: SimfTokens.greyText),
-          ],
+            ],
+          ),
         ),
       ),
     );

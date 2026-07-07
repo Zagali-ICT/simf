@@ -30,7 +30,6 @@ import 'data/region_repository.dart';
 import 'saudi_regions.dart';
 import 'widgets/attachment_field.dart';
 import 'widgets/beige_tabs.dart';
-import 'widgets/complete_profile_notice.dart';
 import 'widgets/date_of_birth_field.dart';
 import 'widgets/gender_pills_field.dart';
 import 'widgets/lookup_search_sheet.dart';
@@ -701,8 +700,6 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                       SignUpVisitorHeaderAvatar(bytes: _faceImageBytes),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  const CompleteProfileNotice(),
                   const SizedBox(height: 24),
                   // نوع التسجيل (Visitor / Other) — beige tabs (Figma 505:1075).
                   BeigeTabs(
@@ -1359,13 +1356,14 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   }
 
   /// "Upload ID" — the mandatory ID-document attachment. The "required" hint
-  /// shows up front, escalating to danger after a blocked Next.
+  /// stays hidden until a blocked Next, then shows in danger red — like the
+  /// text-field validators, not surfaced up-front in grey (D-674).
   Widget _buildIdImageField(AppL10n l10n) {
     final needsImage = _idImageBytes == null && !_hasExistingIdImage;
     return AttachmentField(
       label: l10n.attachmentsLabel,
-      hintText: needsImage ? l10n.idImageRequired : null,
-      hintDanger: _triedSubmit && needsImage,
+      hintText: (_triedSubmit && needsImage) ? l10n.idImageRequired : null,
+      hintDanger: true,
       bytes: _idImageBytes,
       round: false,
       attachLabel: l10n.attachFileLabel,
@@ -1379,21 +1377,22 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
 
   /// "Face photo" — the live face capture (→ profile avatar). Mandatory for
   /// men, optional for women. Once captured the face shows at the top of the
-  /// card and this row confirms it with a Retake; an empty male field shows the
-  /// "required" hint (danger after a blocked Next), a woman sees the optional
-  /// hint.
+  /// card and this row confirms it with a Retake. The male-**required** hint
+  /// stays hidden until a blocked Next (then danger red, D-674); the
+  /// women-**optional** hint is informational, so it stays visible in grey.
   Widget _buildFacePhotoField(AppL10n l10n) {
     final bytes = _faceImageBytes;
     final maleNeedsFace =
         _gender == AppGender.male && bytes == null && !_hasExistingAvatar;
     final showOptionalHint =
         bytes == null && !_hasExistingAvatar && !maleNeedsFace;
+    final showRequiredHint = _triedSubmit && maleNeedsFace;
     return AttachmentField(
       label: l10n.facePhotoLabel,
-      hintText: maleNeedsFace
+      hintText: showRequiredHint
           ? l10n.facePhotoRequiredForMen
           : (showOptionalHint ? l10n.facePhotoOptionalForWomen : null),
-      hintDanger: _triedSubmit && maleNeedsFace,
+      hintDanger: showRequiredHint,
       bytes: bytes,
       round: true,
       attachLabel: l10n.facePhotoCaptureLabel,

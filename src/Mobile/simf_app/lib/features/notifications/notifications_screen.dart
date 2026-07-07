@@ -15,16 +15,50 @@ import 'data/notifications_repository.dart';
 import 'widgets/notification_filter_chip.dart';
 import 'widgets/notification_grouped_list.dart';
 
-/// The three filter chips → notification `kind` names (D-053 enum).
-const Set<String> _sessionKinds = <String>{
-  'BookingConfirmed',
-  'SessionReminder',
-  'BookingRejected',
-  'MeetingScheduled',
-  'MeetingCancelled',
-  'SessionRatingRequest',
+/// The chips filter by the server `group` code (D-678). The "جلسات" chip covers
+/// the event-flow groups; "VIP" covers the VIP group; "الكل" shows everything.
+const Set<String> _sessionsChipGroups = <String>{
+  'Sessions',
+  'Bookings',
+  'Meetings',
+  'Ratings',
 };
-const Set<String> _vipKinds = <String>{'InvitationReceived', 'VipBroadcast'};
+const Set<String> _vipChipGroups = <String>{'Vip'};
+
+/// The only in-app locations a notification `clickUrl` may open — a guard so a
+/// stale or foreign value never pushes an unknown route (the router has no error
+/// page). Only the path is matched; the query string is ignored (D-678).
+const Set<String> _allowedClickPaths = <String>{'/rate', '/badge'};
+
+/// The group for [item]: the server `group`, or a client fallback derived from
+/// the kind for rows created before the group column existed.
+String _groupForItem(NotificationItem item) {
+  final group = item.group?.trim();
+  if (group != null && group.isNotEmpty) {
+    return group;
+  }
+  switch (item.kind) {
+    case 'BookingConfirmed':
+    case 'BookingRejected':
+      return 'Bookings';
+    case 'SessionReminder':
+      return 'Sessions';
+    case 'MeetingScheduled':
+    case 'MeetingCancelled':
+      return 'Meetings';
+    case 'InvitationReceived':
+    case 'VipBroadcast':
+      return 'Vip';
+    case 'SessionRatingRequest':
+    case 'DayRatingRequest':
+    case 'EventRatingRequest':
+    case 'AppRatingRequest':
+    case 'ExhibitionRatingRequest':
+      return 'Ratings';
+    default:
+      return 'Account';
+  }
+}
 
 enum _NotifFilter { all, sessions, vip }
 
@@ -124,10 +158,22 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     }
   }
 
-  /// Deep-links from an actionable notification. The end-of-session prompt
-  /// (`SessionRatingRequest`) carries the session id in `relatedEntityId`; tap
-  /// opens the Session rating form for it.
+  /// Deep-links from an actionable notification. Prefers the server `clickUrl`
+  /// (an app-internal location like `/rate?code=Session&targetId=…` or
+  /// `/badge`), restricted to a known-route allowlist so a stale/foreign value
+  /// never lands on the router's (error-page-less) fallback. Falls back to the
+  /// kind-based routes for rows created before the clickUrl column (D-678,
+  /// generalises the D-672 hardcode).
   void _maybeDeepLink(NotificationItem item) {
+    final clickUrl = item.clickUrl?.trim();
+    if (clickUrl != null && clickUrl.isNotEmpty) {
+      final uri = Uri.tryParse(clickUrl);
+      if (uri != null && _allowedClickPaths.contains(uri.path)) {
+        context.push(clickUrl);
+        return;
+      }
+    }
+    // Fallback for pre-migration rows (no/again-null clickUrl).
     if (item.kind == 'SessionRatingRequest' &&
         (item.relatedEntityId ?? '').isNotEmpty) {
       context.pushNamed(
@@ -137,6 +183,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           'targetId': item.relatedEntityId!,
         },
       );
+      return;
+    }
+    if (item.kind == 'BookingConfirmed') {
+      context.pushNamed(RouteNames.badge);
     }
   }
 
@@ -183,9 +233,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     Iterable<NotificationItem> it = _items;
     switch (_filter) {
       case _NotifFilter.sessions:
-        it = it.where((n) => _sessionKinds.contains(n.kind));
+        it = it.where((n) => _sessionsChipGroups.contains(_groupForItem(n)));
       case _NotifFilter.vip:
-        it = it.where((n) => _vipKinds.contains(n.kind));
+        it = it.where((n) => _vipChipGroups.contains(_groupForItem(n)));
       case _NotifFilter.all:
         break;
     }

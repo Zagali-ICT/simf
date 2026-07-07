@@ -9,8 +9,8 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import 'widgets/registration_primary_button.dart';
+import 'widgets/registration_secondary_button.dart';
 import 'widgets/registration_sign_out_link.dart';
-import 'widgets/registration_stages_card.dart';
 import 'widgets/registration_status_header.dart';
 import 'widgets/registration_status_hero.dart';
 
@@ -26,8 +26,8 @@ import 'widgets/registration_status_hero.dart';
 ///
 /// Layout matches the frame: a `navySurface` gate (no bottom nav), a back +
 /// centred title header, a vertically-centred hero (a state-coloured ring around
-/// the state icon, a white headline, a beige message), the "المراحل" progress
-/// card, the gold primary button, and a "تسجيل الخروج" link beneath it.
+/// the state icon, a white headline, a beige message), the gold primary button,
+/// and a "تسجيل الخروج" link beneath it.
 class RegistrationStatusScreen extends ConsumerStatefulWidget {
   const RegistrationStatusScreen({super.key});
 
@@ -181,17 +181,25 @@ class _RegistrationStatusScreenState
                     headline: headline,
                     message: message,
                   ),
-                  if (status != RegistrationStatus.rejected) ...<Widget>[
-                    const SizedBox(height: SimfTokens.space6),
-                    RegistrationStagesCard(status: status, l10n: l10n),
-                  ],
                   const SizedBox(height: SimfTokens.space6),
-                  if (primaryLabel != null && onPrimary != null)
+                  if (primaryLabel != null && onPrimary != null) ...<Widget>[
                     RegistrationPrimaryButton(
                       label: primaryLabel,
                       onTap: onPrimary,
                     ),
-                  const SizedBox(height: SimfTokens.space3),
+                    const SizedBox(height: SimfTokens.space3),
+                  ],
+                  // A non-approved account gets an explicit way back to the
+                  // (guest) home so it is never stuck on the gate (owner
+                  // 2026-07-06); the approved state reaches home via its
+                  // "متابعة" (Continue) primary instead.
+                  if (status != RegistrationStatus.approved) ...<Widget>[
+                    RegistrationSecondaryButton(
+                      label: l10n.goHomeButton,
+                      onTap: _continue,
+                    ),
+                    const SizedBox(height: SimfTokens.space3),
+                  ],
                   RegistrationSignOutLink(
                     label: l10n.signOutLink,
                     onTap: () => unawaited(_signOut()),

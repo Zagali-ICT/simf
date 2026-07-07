@@ -120,4 +120,27 @@ public enum NotificationKind
     /// row only. Additive value (append-only — the frozen-enum rule).</summary>
     [Display(Description = nameof(ResNotificationKind.SessionRatingRequest), ResourceType = typeof(ResNotificationKind))]
     SessionRatingRequest = 45,
+
+    /// <summary>D-677 — dispatched at the end of a programme day to every user who
+    /// checked in that day (a GateScan). <c>RelatedEntityId</c> = the ProgrammeDay
+    /// id; deep-links to <c>/rate?code=Day</c>. In-app row only. Additive value.</summary>
+    [Display(Description = nameof(ResNotificationKind.DayRatingRequest), ResourceType = typeof(ResNotificationKind))]
+    DayRatingRequest = 46,
+
+    /// <summary>D-677 — dispatched after the last programme day to every user who
+    /// checked in during the event, inviting an overall event rating
+    /// (<c>/rate?code=Event</c>). In-app row only. Additive value.</summary>
+    [Display(Description = nameof(ResNotificationKind.EventRatingRequest), ResourceType = typeof(ResNotificationKind))]
+    EventRatingRequest = 47,
+
+    /// <summary>D-677 — dispatched with the programme-end batch inviting an app
+    /// rating (<c>/rate?code=App</c>). In-app row only. Additive value.</summary>
+    [Display(Description = nameof(ResNotificationKind.AppRatingRequest), ResourceType = typeof(ResNotificationKind))]
+    AppRatingRequest = 48,
+
+    /// <summary>D-677 — dispatched with the programme-end batch inviting an
+    /// exhibition rating (<c>/rate?code=Exhibition</c>). In-app row only.
+    /// Additive value.</summary>
+    [Display(Description = nameof(ResNotificationKind.ExhibitionRatingRequest), ResourceType = typeof(ResNotificationKind))]
+    ExhibitionRatingRequest = 49,
 }

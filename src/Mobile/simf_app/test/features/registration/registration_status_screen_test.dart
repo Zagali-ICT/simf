@@ -100,7 +100,7 @@ Future<void> _pump(WidgetTester tester, _FakeAuthController controller) async {
 
 void main() {
   group('RegistrationStatusScreen (Page 011)', () {
-    testWidgets('pending shows the under-review state + Re-check + stages',
+    testWidgets('pending shows the under-review state + Re-check + Go to home',
         (tester) async {
       await _pump(
         tester,
@@ -109,8 +109,20 @@ void main() {
 
       expect(find.text('Your account is under review'), findsOneWidget);
       expect(find.text('Re-check'), findsOneWidget);
-      expect(find.text('Stages'), findsOneWidget);
-      expect(find.text('SIMF team review'), findsOneWidget);
+      // A non-approved account gets an explicit way back home (D-666).
+      expect(find.text('Go to home'), findsOneWidget);
+    });
+
+    testWidgets('pending — "Go to home" routes to the home screen',
+        (tester) async {
+      await _pump(
+        tester,
+        _FakeAuthController(status: RegistrationStatus.pending),
+      );
+
+      await tester.tap(find.text('Go to home'));
+      await tester.pumpAndSettle();
+      expect(find.text('HOME'), findsOneWidget);
     });
 
     testWidgets('approved shows Continue, which routes home', (tester) async {
@@ -121,13 +133,15 @@ void main() {
       expect(find.text('Your account is approved'), findsOneWidget);
       final continueButton = find.text('Continue');
       expect(continueButton, findsOneWidget);
+      // Approved reaches home via Continue, so there is no separate Go-to-home.
+      expect(find.text('Go to home'), findsNothing);
 
       await tester.tap(continueButton);
       await tester.pumpAndSettle();
       expect(find.text('HOME'), findsOneWidget);
     });
 
-    testWidgets('rejected shows the declined state with no Continue / stages',
+    testWidgets('rejected shows the declined state with no Continue',
         (tester) async {
       await _pump(
         tester,
@@ -136,7 +150,8 @@ void main() {
 
       expect(find.text('Your account was not approved'), findsOneWidget);
       expect(find.text('Continue'), findsNothing);
-      expect(find.text('Stages'), findsNothing);
+      // Even with no primary action, a rejected account can return home (D-666).
+      expect(find.text('Go to home'), findsOneWidget);
     });
 
     testWidgets('a load failure shows the error + retry, which re-fetches',

@@ -50,13 +50,18 @@ class MoreScreen extends ConsumerWidget {
     final signedIn = auth is AuthStateSignedIn;
     // D-519 — role-filter the attendee-only rows so a focused Staff/Moderator
     // never sees a dead link here (the slide-in MoreDrawer filters identically).
-    final role = signedIn ? auth.session.user.appRole : AppRole.guest;
+    // D-666 — a not-yet-approved account presents as guest, so the attendee-only
+    // rows (rate) hide for it just like they do for a true guest.
+    final role = signedIn ? auth.session.user.effectiveAppRole : AppRole.guest;
     final profile =
         signedIn ? ref.watch(_moreProfileProvider).asData?.value : null;
 
     return SimfPageShell(
       title: l10n.moreTitle,
       onBack: () => backOrHome(context),
+      // The More menu (frame 1129:17224) has no header language pill; it
+      // carries a language row instead (owner 2026-07-07).
+      showLanguageToggle: false,
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           SimfTokens.space4,
@@ -121,10 +126,13 @@ class MoreScreen extends ConsumerWidget {
                 title: l10n.moreAccessibility,
                 onTap: () => context.pushNamed(RouteNames.accessibility),
               ),
-              MoreRow(
-                title: l10n.moreNotifications,
-                onTap: () => context.pushNamed(RouteNames.notifications),
-              ),
+              // Notifications are auth-only — hide from a not-logged-in guest so
+              // the row doesn't dead-bounce to sign-in (D-669).
+              if (signedIn)
+                MoreRow(
+                  title: l10n.moreNotifications,
+                  onTap: () => context.pushNamed(RouteNames.notifications),
+                ),
               // Reset password (signed-in only) — reuses the forgot→reset flow:
               // it emails a code, then the reset screen sets the new password.
               // The known email is pre-filled so it isn't retyped (D-659).

@@ -45,6 +45,8 @@ class NotificationItem {
     this.createdAt,
     this.relatedEntityType,
     this.relatedEntityId,
+    this.clickUrl,
+    this.group,
   });
 
   final String id;
@@ -62,6 +64,14 @@ class NotificationItem {
   /// session id for a "rate this session" prompt).
   final String? relatedEntityType;
   final String? relatedEntityId;
+
+  /// D-677 — an app-internal deep-link the tile navigates to on tap (e.g.
+  /// `/rate?code=Session&targetId=…`, `/badge`); null = informational, no nav.
+  final String? clickUrl;
+
+  /// D-677 — the section this notification belongs to (Sessions / Bookings /
+  /// Meetings / Ratings / Account / Vip); null on pre-migration rows.
+  final String? group;
 
   String localizedTitle(bool isArabic) {
     final ar = titleArabic.trim();
@@ -90,6 +100,8 @@ class NotificationItem {
         createdAt: createdAt,
         relatedEntityType: relatedEntityType,
         relatedEntityId: relatedEntityId,
+        clickUrl: clickUrl,
+        group: group,
       );
 
   static NotificationItem fromJson(Map<String, dynamic> json) {
@@ -109,6 +121,8 @@ class NotificationItem {
           createdAtRaw == null ? null : DateTime.tryParse(createdAtRaw)?.toUtc(),
       relatedEntityType: json['relatedEntityType'] as String?,
       relatedEntityId: json['relatedEntityId'] as String?,
+      clickUrl: json['clickUrl'] as String?,
+      group: json['group'] as String?,
     );
   }
 

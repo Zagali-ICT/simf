@@ -13,6 +13,7 @@ import '../features/account/reset_password_screen.dart';
 import '../features/account/sign_in_screen.dart';
 import '../features/account/sign_up_email_verify_screen.dart';
 import '../features/account/sign_up_form_screen.dart';
+import '../features/about/about_app_screen.dart';
 import '../features/about/about_screen.dart';
 import '../features/archive/archive_screen.dart';
 import '../features/booths/booths_screen.dart';
@@ -184,6 +185,9 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 201, name: RouteNames.faq, path: '/faq', labelAr: 'الأسئلة الشائعة', labelEn: 'FAQ'),
   _Route(number: 202, name: RouteNames.sessionPresentations, path: '/session-presentations', labelAr: 'الجلسات', labelEn: 'Sessions'),
   _Route(number: 203, name: RouteNames.contactUs, path: '/contact-us', labelAr: 'تواصل معنا', labelEn: 'Contact us'),
+  // D-668 — About-the-app page (version / release date / organizer + links),
+  // reached from the end of the side drawer. Public.
+  _Route(number: 207, name: RouteNames.aboutApp, path: '/about-app', labelAr: 'عن التطبيق', labelEn: 'About the app'),
   // Owner batch (2026-06-21) — entry points for features not yet designed/built;
   // they fall through to ComingSoonScreen (sentinel numbers 200+). #5 bilateral
   // meetings (home tile, undesigned); #8 saved meetings (My Area stat).
@@ -415,6 +419,9 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   if (r.name == RouteNames.aboutForum) {
     return const AboutScreen();
   }
+  if (r.name == RouteNames.aboutApp) {
+    return const AboutAppScreen();
+  }
   if (r.name == RouteNames.rate) {
     final q = state.uri.queryParameters;
     return RateScreen(
@@ -574,8 +581,13 @@ GoRouter buildRouter(Ref ref) {
         isSignedIn: isSignedIn,
         goingTo: goingTo,
         fullPath: state.fullPath,
+        // A signed-in but not-yet-approved account presents as guest
+        // (effectiveAppRole, D-666), so the role-gate keeps it out of the
+        // attendee/approved routes exactly like the menus do — its only
+        // signed-in destinations are the universal-auth routes (home, my-area,
+        // badge, notifications, sessions, registration-status).
         appRole: authState is AuthStateSignedIn
-            ? authState.session.user.appRole
+            ? authState.session.user.effectiveAppRole
             : null,
       );
     },

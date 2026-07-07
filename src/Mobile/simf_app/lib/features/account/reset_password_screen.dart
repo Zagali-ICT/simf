@@ -15,10 +15,9 @@ import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
 import '../../core/validation/password_validation.dart';
 import '../../core/validation/required_validation.dart';
-import '../../core/widgets/simf_field_label.dart';
-import '../../core/widgets/simf_field_style.dart';
 import 'widgets/account_sub_header.dart';
 import 'widgets/auth_chrome.dart';
+import 'widgets/navi_form_field.dart';
 import 'widgets/navy_password_toggle.dart';
 import 'widgets/otp_code_boxes.dart';
 
@@ -164,17 +163,62 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 style: SimfTokens.bodyBeige,
               ),
               const SizedBox(height: 32),
-              SimfFieldLabel(l10n.otpLabel, color: Colors.white),
-              const SizedBox(height: 8),
-              _buildCodeField(l10n),
+              NaviFormField(
+                label: l10n.otpLabel,
+                controller: _code,
+                enabled: !_busy,
+                keyboardType: TextInputType.number,
+                textDirection: TextDirection.ltr,
+                maxLength: 6,
+                inputFormatters: <TextInputFormatter>[
+                  FilteringTextInputFormatter.digitsOnly,
+                ],
+                // No dedicated "6-digit code" key; reuse requiredField for the
+                // empty + wrong-length case (reported to owner).
+                validator: (value) => isBlank(value) || value!.trim().length != 6
+                    ? l10n.requiredField
+                    : null,
+                onChanged: (_) => setState(() {}),
+              ),
               const SizedBox(height: 16),
-              SimfFieldLabel(l10n.newPasswordLabel, color: Colors.white),
-              const SizedBox(height: 8),
-              _buildPasswordField(l10n),
+              NaviFormField(
+                label: l10n.newPasswordLabel,
+                controller: _password,
+                enabled: !_busy,
+                obscureText: _obscure,
+                maxLength: 128,
+                suffixIcon: NavyPasswordToggle(
+                  obscure: _obscure,
+                  onToggle: () => setState(() => _obscure = !_obscure),
+                ),
+                // Reset SETS a new password, so apply the policy here.
+                validator: (value) {
+                  if (isBlank(value)) {
+                    return l10n.requiredField;
+                  }
+                  return isValidPassword(value!)
+                      ? null
+                      : l10n.passwordPolicyError;
+                },
+                onChanged: (_) => setState(() {}),
+              ),
               const SizedBox(height: 16),
-              SimfFieldLabel(l10n.confirmPasswordLabel, color: Colors.white),
-              const SizedBox(height: 8),
-              _buildConfirmField(l10n),
+              NaviFormField(
+                label: l10n.confirmPasswordLabel,
+                controller: _confirm,
+                enabled: !_busy,
+                obscureText: _obscure,
+                maxLength: 128,
+                // Must equal the new password typed above.
+                validator: (value) =>
+                    value == _password.text ? null : l10n.passwordsDoNotMatch,
+                onChanged: (_) => setState(() {}),
+                onFieldSubmitted: (_) {
+                  if (_canSubmit) {
+                    unawaited(_submit());
+                  }
+                },
+              ),
               if (_error != null) ...<Widget>[
                 const SizedBox(height: 12),
                 Text(
@@ -190,72 +234,6 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildCodeField(AppL10n l10n) {
-    return TextFormField(
-      controller: _code,
-      keyboardType: TextInputType.number,
-      textDirection: TextDirection.ltr,
-      maxLength: 6,
-      enabled: !_busy,
-      inputFormatters: <TextInputFormatter>[
-        FilteringTextInputFormatter.digitsOnly,
-      ],
-      onChanged: (_) => setState(() {}),
-      // No dedicated "6-digit code" l10n key exists; reuse requiredField for
-      // both the empty and the wrong-length case (reported to owner).
-      validator: (value) => isBlank(value) || value!.trim().length != 6
-          ? l10n.requiredField
-          : null,
-      style: simfInputStyleOnNavy,
-      decoration: simfFieldDecoration(counterText: ''),
-    );
-  }
-
-  Widget _buildPasswordField(AppL10n l10n) {
-    return TextFormField(
-      controller: _password,
-      obscureText: _obscure,
-      maxLength: 128,
-      enabled: !_busy,
-      onChanged: (_) => setState(() {}),
-      // Reset SETS a new password, so apply the policy here.
-      validator: (value) {
-        if (isBlank(value)) {
-          return l10n.requiredField;
-        }
-        return isValidPassword(value!) ? null : l10n.passwordPolicyError;
-      },
-      style: simfInputStyleOnNavy,
-      decoration: simfFieldDecoration(
-        counterText: '',
-        suffixIcon: NavyPasswordToggle(
-          obscure: _obscure,
-          onToggle: () => setState(() => _obscure = !_obscure),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildConfirmField(AppL10n l10n) {
-    return TextFormField(
-      controller: _confirm,
-      obscureText: _obscure,
-      maxLength: 128,
-      enabled: !_busy,
-      onChanged: (_) => setState(() {}),
-      onFieldSubmitted: (_) {
-        if (_canSubmit) {
-          unawaited(_submit());
-        }
-      },
-      // Must equal the new password typed above.
-      validator: (value) =>
-          value == _password.text ? null : l10n.passwordsDoNotMatch,
-      style: simfInputStyleOnNavy,
-      decoration: simfFieldDecoration(counterText: ''),
     );
   }
 

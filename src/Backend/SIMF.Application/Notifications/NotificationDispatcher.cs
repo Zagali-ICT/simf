@@ -42,6 +42,13 @@ internal sealed class NotificationDispatcher(
             Severity = request.Severity,
             RelatedEntityType = request.RelatedEntityType,
             RelatedEntityId = request.RelatedEntityId,
+            // D-677 — stamp the group + deep-link from the catalog when the call
+            // site doesn't set them, so every existing dispatcher untouched gets
+            // correct values and a new kind adds one catalog arm.
+            ClickUrl = request.ClickUrl
+                ?? NotificationKindCatalog.ClickUrlFor(request.Kind, request.RelatedEntityId),
+            GroupCode = request.Group
+                ?? NotificationKindCatalog.GroupFor(request.Kind),
             CreatedAt = now,
         };
 

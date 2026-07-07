@@ -165,7 +165,7 @@ class AppL10n {
       _t('إعادة الإرسال خلال $seconds ث', 'Resend in ${seconds}s');
 
   String get haveAccountQuestion =>
-      _t('لديك حساب؟', 'Have an account?');
+      _t('هل لديك حساب ؟', 'Have an account?');
 
   // Sign up — visitor profile completion (Page 007).
   String get signUpVisitorTitle =>
@@ -320,8 +320,8 @@ class AppL10n {
         'The English name must contain English letters only',
       );
   String get fullNameFourParts => _t(
-        'أدخل الاسم الكامل (من مقطعين إلى 4 مقاطع)',
-        'Enter your full name (2 to 4 parts)',
+        'أدخل الاسم الكامل (4 مقاطع على الأقل)',
+        'Enter your full name (at least 4 parts)',
       );
   // C6 (D-371/D-459) — رقم اللوحة, optional; Saudi 17-letter set when filled.
   String get plateNumberLabel =>
@@ -450,12 +450,6 @@ class AppL10n {
         'هل تريد تسجيل الخروج من حسابك؟',
         'Do you want to sign out of your account?',
       );
-  String get stagesTitle => _t('المراحل', 'Stages');
-  String get stageDataSubmitted => _t('إرسال البيانات', 'Data submitted');
-  String get stageEmailConfirmed =>
-      _t('تأكيد البريد الإلكتروني', 'Email confirmed');
-  String get stageTeamReview => _t('مراجعة فريق SIMF', 'SIMF team review');
-  String get stageActivation => _t('تفعيل الحساب', 'Account activation');
 
   // Sign in (Page 003).
   String get signInTitle => _t('تسجيل الدخول', 'Sign in');
@@ -557,6 +551,10 @@ class AppL10n {
   String get rememberedPasswordQuestion =>
       _t('تذكرت كلمة المرور؟', 'Remembered your password?');
   String get sendCodeButton => _t('إرسال الرمز', 'Send code');
+  // The forgot-password submit label (owner 2026-07-07, D-674). "Code", not
+  // "link" — the flow emails a code the user types on the reset screen.
+  String get sendRecoveryCodeButton =>
+      _t('إرسال رمز الاستعادة', 'Send recovery code');
   String get resetPasswordTitle =>
       _t('تعيين كلمة مرور جديدة', 'Set a new password');
   String get newPasswordLabel => _t('كلمة المرور الجديدة', 'New password');
@@ -574,6 +572,9 @@ class AppL10n {
   String get badgeSignInButton =>
       _t('الدخول بمسح الشارة', 'Sign in by scanning your badge');
   String get badgeScanTitle => _t('امسح شارتك', 'Scan your badge');
+  // The badge sign-in header title (owner 2026-07-07, D-674).
+  String get badgePortalSignInTitle =>
+      _t('البوابة الرئيسية • دخول', 'Main portal • Sign in');
   String get badgeScanHint => _t(
         'وجّه الكاميرا نحو رمز QR المطبوع على شارتك.',
         'Point the camera at the QR code on your badge.',
@@ -1555,6 +1556,16 @@ class AppL10n {
   String get languageCurrentName => _t('العربية', 'English');
 
   String get moreVersion => _t('SIMF 2026 · v1.0.0', 'SIMF 2026 · v1.0.0');
+  // D-668 — About-the-app screen (version / release date / organizer + links).
+  // The release date is a maintained constant (no build-date source in the app).
+  String get aboutAppTitle => _t('عن التطبيق', 'About the app');
+  String get aboutAppInfoTitle => _t('معلومات التطبيق', 'App information');
+  String get aboutAppReleaseDateLabel => _t('تاريخ الإصدار', 'Release date');
+  String get aboutAppReleaseDate => _t('2026-07-06', '2026-07-06');
+  String get aboutAppOrganizerLabel => _t('الجهة المنظمة', 'Organizer');
+  String get aboutAppOrganizerValue =>
+      _t('القوات البحرية الملكية السعودية', 'Royal Saudi Naval Forces');
+  String get aboutAppLinksTitle => _t('روابط', 'Links');
 
   // Guest mode (Page 012 — informational entry).
   String get guestModeTitle => _t('وضع الضيف', 'Guest mode');

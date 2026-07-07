@@ -44,6 +44,17 @@ public sealed class Notification
     /// <summary>Optional foreign-key into the related entity.</summary>
     public Guid? RelatedEntityId { get; set; }
 
+    /// <summary>D-677 — an app-internal deep-link the tile opens on tap (e.g.
+    /// <c>/rate?code=Session&amp;targetId=…</c> or <c>/badge</c>). Populated from
+    /// <c>NotificationKindCatalog</c> when the dispatch request leaves it null.
+    /// Null = the tile is informational (no navigation).</summary>
+    public string? ClickUrl { get; set; }
+
+    /// <summary>D-677 — a stable group code the app sections the list by
+    /// (Sessions / Bookings / Meetings / Ratings / Account / Vip). Populated from
+    /// the catalog when the request leaves it null.</summary>
+    public string? GroupCode { get; set; }
+
     /// <summary>
     /// D-108: derived read flag — true once <see cref="ReadAt"/> is set.
     /// Ignored by EF so it doesn't sneak into a SELECT projection; the

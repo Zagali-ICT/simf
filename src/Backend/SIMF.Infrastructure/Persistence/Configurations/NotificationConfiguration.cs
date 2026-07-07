@@ -49,6 +49,13 @@ internal sealed class NotificationConfiguration : IEntityTypeConfiguration<Notif
         builder.Property(notification => notification.RelatedEntityType)
             .HasMaxLength(64);
 
+        // D-677 — additive nullable columns for the backend-driven tile
+        // (app-internal deep-link + group code).
+        builder.Property(notification => notification.ClickUrl)
+            .HasMaxLength(512);
+        builder.Property(notification => notification.GroupCode)
+            .HasMaxLength(64);
+
         // The bell pulls the latest 5; the page pulls a paged grid in
         // CreatedAt-DESC order. Index supports both.
         builder.HasIndex(notification => new

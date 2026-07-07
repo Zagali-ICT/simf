@@ -622,8 +622,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
+                    b.Property<string>("ClickUrl")
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("GroupCode")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
 
                     b.Property<string>("Kind")
                         .IsRequired()

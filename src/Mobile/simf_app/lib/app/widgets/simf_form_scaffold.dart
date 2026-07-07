@@ -6,12 +6,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../localization/app_l10n.dart';
 import '../localization/locale_controller.dart';
 import '../theme/tokens.dart';
+import 'simf_language_toggle.dart';
 import 'simf_logo.dart';
 import 'simf_page_shell.dart';
 
 /// The shared navy-sweep scaffold for every account/entry form (login, sign-up,
 /// profile, forgot/reset/badge): the decorative sweep, the forced-LTR
-/// back-chevron + globe language toggle, the logo + forum-name header, then
+/// back-chevron + the language toggle pill, the logo + forum-name header, then
 /// [child]. One owner for the chrome the account screens used to each hand-roll.
 ///
 /// [pinnedHeader] `false` (default) scrolls the header + [child] together,
@@ -72,24 +73,11 @@ class SimfFormScaffold extends ConsumerWidget {
             ),
           ),
           const Spacer(),
-          SizedBox(
-            width: 40,
-            height: 40,
-            child: IconButton(
-              tooltip: l10n.languageToggleLabel,
-              onPressed: busy ? null : () => _toggleLanguage(ref),
-              style: IconButton.styleFrom(
-                backgroundColor: SimfTokens.navyDeep,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: SimfTokens.borderRadiusSmall,
-                ),
-              ),
-              icon: const Icon(
-                Icons.language,
-                color: SimfTokens.accent,
-                size: 24,
-              ),
-            ),
+          // The EN/عر pill (Figma 1967:3661) — replaces the old gold globe so
+          // every auth/profile form matches sign-in/sign-up (D-674).
+          SimfLanguageToggle(
+            onPressed: () => _toggleLanguage(ref),
+            busy: busy,
           ),
         ],
       ),

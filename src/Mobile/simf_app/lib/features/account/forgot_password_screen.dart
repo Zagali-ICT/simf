@@ -12,10 +12,9 @@ import '../../core/errors/api_error_l10n.dart';
 import '../../core/responsive/max_width_body.dart';
 import '../../core/validation/email_validation.dart';
 import '../../core/validation/required_validation.dart';
-import '../../core/widgets/simf_field_label.dart';
-import '../../core/widgets/simf_field_style.dart';
 import 'widgets/account_sub_header.dart';
 import 'widgets/auth_chrome.dart';
+import 'widgets/navi_form_field.dart';
 import 'widgets/otp_code_boxes.dart';
 
 /// Page 003 — نسيت كلمة المرور · Forgot password (Logic L-6). The KSA-Project
@@ -152,9 +151,28 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 style: SimfTokens.bodyBeige,
               ),
               const SizedBox(height: 32),
-              SimfFieldLabel(l10n.emailLabel, color: Colors.white),
-              const SizedBox(height: 8),
-              _buildEmailField(),
+              NaviFormField(
+                label: l10n.emailLabel,
+                controller: _email,
+                enabled: !_busy,
+                keyboardType: TextInputType.emailAddress,
+                maxLength: 50,
+                hintText: 'example@email.com',
+                // The mail glyph matches the hint colour (D-674); as a suffix it
+                // renders at the inline-start (left under RTL), per the frame.
+                suffixIcon: const Icon(
+                  Icons.mail_outline,
+                  color: SimfTokens.greyText,
+                  size: 18,
+                ),
+                validator: _validateEmail,
+                onChanged: (_) => setState(() {}),
+                onFieldSubmitted: (_) {
+                  if (_canSubmit) {
+                    unawaited(_submit());
+                  }
+                },
+              ),
               if (_error != null) ...<Widget>[
                 const SizedBox(height: 12),
                 Text(
@@ -173,37 +191,6 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     );
   }
 
-  Widget _buildEmailField() {
-    return TextFormField(
-      controller: _email,
-      keyboardType: TextInputType.emailAddress,
-      textDirection: TextDirection.ltr,
-      textAlign: TextAlign.start,
-      maxLength: 50,
-      enabled: !_busy,
-      autovalidateMode: AutovalidateMode.onUserInteraction,
-      validator: _validateEmail,
-      onChanged: (_) => setState(() {}),
-      onFieldSubmitted: (_) {
-        if (_canSubmit) {
-          unawaited(_submit());
-        }
-      },
-      style: simfInputStyleOnNavy,
-      decoration: simfFieldDecoration(
-        counterText: '',
-        hintText: 'example@email.com',
-        // The glyph is a suffix so it renders at the inline-start (left under
-        // RTL), matching the frame's mail-on-the-left placement.
-        suffixIcon: const Icon(
-          Icons.mail_outline,
-          color: SimfTokens.beigeBorder,
-          size: 18,
-        ),
-      ),
-    );
-  }
-
   /// Bottom actions (918:2371): the gold send CTA + the "remembered? sign in"
   /// foot.
   Widget _buildBottomActions(AppL10n l10n) {
@@ -215,7 +202,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             AuthSubmitButton(
-              label: l10n.sendCodeButton,
+              label: l10n.sendRecoveryCodeButton,
               busy: _busy,
               onPressed: _canSubmit ? () => unawaited(_submit()) : null,
             ),

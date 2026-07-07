@@ -80,7 +80,12 @@ class NotificationCategoryIcon extends StatelessWidget {
         return (SimfTokens.accent, Icons.password_rounded);
       case 'CredentialPasswordResetRequested':
         return (SimfTokens.accent, Icons.lock_open_rounded);
+      // Rating prompts — session / day / event / app / exhibition (D-678).
       case 'SessionRatingRequest':
+      case 'DayRatingRequest':
+      case 'EventRatingRequest':
+      case 'AppRatingRequest':
+      case 'ExhibitionRatingRequest':
         return (SimfTokens.accent, Icons.star_outline_rounded);
       default:
         return _severityStyle(severity);

@@ -31,7 +31,15 @@ class MoreDrawer extends ConsumerWidget {
     final l10n = AppL10n.of(context);
     final auth = ref.watch(authControllerProvider);
     final signedIn = auth is AuthStateSignedIn;
-    final role = signedIn ? auth.session.user.appRole : AppRole.guest;
+    final user = signedIn ? auth.session.user : null;
+    // A signed-in but not-yet-approved account presents as guest (D-666): the
+    // attendee rows hide via the role gate, the approved-only rows (media
+    // partners) via [MoreMenuEntry.approvedOnly], the account actions that need
+    // an approved account (calendar) hide too, and it gets a single
+    // "registration status" entry a true guest never sees.
+    final role = user?.effectiveAppRole ?? AppRole.guest;
+    final approved = user?.isApproved ?? false;
+    final pending = signedIn && !approved;
     return Drawer(
       backgroundColor: SimfTokens.navySurface,
       child: SafeArea(
@@ -57,9 +65,14 @@ class MoreDrawer extends ConsumerWidget {
                 children: <Widget>[
                   // Navigation-hub entries, filtered to the role's own pages
                   // (D-519): unrestricted entries show for everyone; the
-                  // attendee-only ones (rate, contacts) hide for Staff/Moderator.
+                  // attendee-only ones (rate, contacts) hide for Staff/Moderator
+                  // and for an unapproved account (effective guest); the
+                  // approved-only ones (media partners) hide for any non-approved
+                  // account (D-666).
                   for (final entry in moreMenuEntries(l10n))
-                    if (routeAllowsRole(entry.routeName, role))
+                    if (routeAllowsRole(entry.routeName, role) &&
+                        (!entry.approvedOnly || approved) &&
+                        (!entry.signedInOnly || signedIn))
                       _DrawerTile(
                         icon: entry.icon,
                         title: entry.title,
@@ -68,6 +81,17 @@ class MoreDrawer extends ConsumerWidget {
                           context.pushNamed(entry.routeName);
                         },
                       ),
+                  // The one action a signed-in-but-unapproved account gets that a
+                  // true guest does not: check its registration status (D-666).
+                  if (pending)
+                    _DrawerTile(
+                      icon: Icons.hourglass_top_outlined,
+                      title: l10n.registrationStatusButton,
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        context.pushNamed(RouteNames.registrationStatus);
+                      },
+                    ),
                   // Staff gate operations (D-406 / D-509) — Staff role only.
                   if (routeAllowsRole(RouteNames.gateScanner, role))
                     _DrawerTile(
@@ -130,12 +154,36 @@ class MoreDrawer extends ConsumerWidget {
                   // has no usable biometric; enabling enrols a device key,
                   // disabling revokes it. Account action, so signed-in only.
                   if (signedIn) const FaceIdToggleTile(),
-                  if (signedIn)
+                  // Calendar export needs an approved account's schedule — hide
+                  // it for a guest / not-yet-approved account (D-666).
+                  if (approved)
                     _DrawerTile(
                       icon: Icons.calendar_today_outlined,
                       title: l10n.shareCalendar,
                       onTap: () => unawaited(_shareCalendar(context, ref, l10n)),
                     ),
+                  const Divider(color: SimfTokens.beigeBorder, height: 1),
+                  // The end of the menu (owner 2026-07-06): contact us + about
+                  // (app version / release date / organizer) + logout. Contact
+                  // us and About are public — every account, incl. a guest — and
+                  // About now carries the version (the old footer line is gone);
+                  // logout is signed-in only.
+                  _DrawerTile(
+                    icon: Icons.mail_outline,
+                    title: l10n.contactUsTitle,
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      context.pushNamed(RouteNames.contactUs);
+                    },
+                  ),
+                  _DrawerTile(
+                    icon: Icons.info_outline,
+                    title: l10n.aboutAppTitle,
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      context.pushNamed(RouteNames.aboutApp);
+                    },
+                  ),
                   if (signedIn)
                     _DrawerTile(
                       icon: Icons.logout,
@@ -144,16 +192,6 @@ class MoreDrawer extends ConsumerWidget {
                           unawaited(_confirmSignOut(context, ref, l10n)),
                     ),
                 ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(SimfTokens.space4),
-              child: Text(
-                l10n.moreVersion,
-                style: const TextStyle(
-                  color: SimfTokens.inkMuted,
-                  fontSize: SimfTokens.textSm,
-                ),
               ),
             ),
           ],
@@ -208,8 +246,9 @@ class MoreDrawer extends ConsumerWidget {
   }
 }
 
-/// One drawer row in the navy KSA styling: a gold leading icon over a white
-/// title. [enabled] false renders the muted, non-tappable variant.
+/// One drawer row in the navy KSA styling: a white leading icon over a white
+/// title (owner 2026-07-07: main-menu nav icons are white, not gold). [enabled]
+/// false renders the muted, non-tappable variant.
 class _DrawerTile extends StatelessWidget {
   const _DrawerTile({
     required this.icon,
@@ -225,7 +264,7 @@ class _DrawerTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = enabled ? SimfTokens.accent : SimfTokens.inkMuted;
+    final color = enabled ? Colors.white : SimfTokens.inkMuted;
     final titleColor = enabled ? Colors.white : SimfTokens.inkMuted;
     return ListTile(
       enabled: enabled,

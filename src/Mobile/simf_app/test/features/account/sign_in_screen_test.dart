@@ -425,14 +425,14 @@ void main() {
       expect(find.text('GUEST'), findsOneWidget);
     });
 
-    testWidgets('the globe button toggles and persists the language (D-363)',
+    testWidgets('the language pill toggles and persists the language (D-363)',
         (tester) async {
       final prefs = _FakePrefs();
       await _pump(tester, _Outcome.success, prefs);
 
       // Empty prefs boot the controller in Arabic; the toggle flips to EN.
-      // The language globe carries a stable key (it sits on top of the body).
-      await tester.tap(find.byKey(const ValueKey<String>('accountLanguage')));
+      // The language pill carries a stable key (it sits on top of the body).
+      await tester.tap(find.byKey(const ValueKey<String>('languageToggle')));
       await tester.pumpAndSettle();
 
       expect(prefs.getString(StorageKeys.preferredLanguage), equals('en'));

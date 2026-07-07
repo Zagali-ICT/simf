@@ -19,6 +19,8 @@ class GenderPillsField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
+    // The frame (168:2972) lays each pill text-then-radio in RTL; force it so
+    // the order holds under English too (D-674).
     return Row(
       children: <Widget>[
         Expanded(
@@ -26,6 +28,7 @@ class GenderPillsField extends StatelessWidget {
             label: l10n.genderMale,
             selected: gender == AppGender.male,
             onTap: () => onChanged(AppGender.male),
+            textDirection: TextDirection.rtl,
           ),
         ),
         const SizedBox(width: 8),
@@ -34,6 +37,7 @@ class GenderPillsField extends StatelessWidget {
             label: l10n.genderFemale,
             selected: gender == AppGender.female,
             onTap: () => onChanged(AppGender.female),
+            textDirection: TextDirection.rtl,
           ),
         ),
       ],

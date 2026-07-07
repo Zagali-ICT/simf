@@ -246,6 +246,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #200 `forumGuide` (no API — static guide) — built from ComingSoon, Figma `1388:7493` | [`mobile-forum-guide.md`](mobile-forum-guide.md) | E2E-MOB200-001..005 |
 | #201 `faq` (`GET /app/faq` — public) — built from ComingSoon, Figma `1388:7567` | [`mobile-faq.md`](mobile-faq.md) | E2E-MOB201-001..006 |
 | #203 `contactUs` (`POST /app/contact-inquiry` + `GET /app/organization-profile`) — built from ComingSoon, Figma `1388:7711` | [`mobile-contact-us.md`](mobile-contact-us.md) | E2E-MOB203-001..007 |
+| #207 `aboutApp` (`GET /app/organization-profile` for support) — app version/date/organizer + links (D-668) | [`mobile-about-app.md`](mobile-about-app.md) | E2E-MOB207-001..003 |
 | #202 `sessionPresentations` (`GET /app/presentations` + `/{id}/file`) — built from ComingSoon, Figma `1388:7621` | [`mobile-session-presentations.md`](mobile-session-presentations.md) | E2E-MOB202-001..006 |
 | #113 `myAreaSessions` (`GET /app/account/sessions`) — Wave 2 my-sessions, titled "عروض الجلسات" (Figma `1388:9067`; retitled + reached from the More "عروض الجلسات" row, D-588) | [`mobile-my-sessions.md`](mobile-my-sessions.md) | E2E-MOB113-001..007 |
 

@@ -97,7 +97,7 @@ void main() {
 
       await tester.enterText(find.byType(TextFormField), 'not-an-email');
       await tester.pump();
-      await tester.tap(find.widgetWithText(FilledButton, 'Send code'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Send recovery code'));
       await tester.pumpAndSettle();
 
       expect(find.text('Invalid email'), findsOneWidget);
@@ -112,7 +112,7 @@ void main() {
 
       await tester.enterText(find.byType(TextFormField), 'visitor@example.sa');
       await tester.pump();
-      await tester.tap(find.widgetWithText(FilledButton, 'Send code'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Send recovery code'));
       await tester.pumpAndSettle();
 
       expect(find.text('RESET'), findsOneWidget);

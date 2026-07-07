@@ -147,14 +147,36 @@ Scenario: The approved gate matches the frame
   And the header shows a back chevron on the left + the centred title "حالة التسجيل"
   And a 104px green ring surrounds a green check
   And the white headline reads "تم اعتماد حسابك" over a beige message
-  And the "المراحل" card lists the four stages right-aligned, each ending in a gold check
-  And a full-width gold "متابعة" button sits below the card
+  And a full-width gold "متابعة" button sits below the message
   And a muted "تسجيل الخروج" link sits beneath the button (not in the header)
   When the user taps "متابعة"
   Then the app opens the home route
   # Covered by the golden test/golden/registration_status_golden_test.dart (1701:3789).
 ```
 
+### E2E-MOB011-011 — Entry points for a not-yet-approved account (D-666)
+
+```gherkin
+Scenario: A pending account reaches the status gate from the home card + the side menu
+  Given a signed-in account whose registrationStatus is Pending
+  When the home screen renders
+  Then it shows the guest layout with the "حسابك قيد المراجعة" under-review card
+  And the card shows an "إعادة التحقق" (Re-check) button and a "حالة التسجيل" button
+  And the "أنت تتصفح كضيف" guest banner is NOT shown (the account is already signed in)
+  When the user opens the side menu (☰)
+  Then the attendee rows (تقييم / شارك جهة اتصالي / جهات اتصالي / الشركاء الإعلاميون) are hidden
+  And the "مشاركة التقويم" (share calendar) action is hidden
+  And a "حالة التسجيل" entry is shown
+  When the user taps "حالة التسجيل" (from the card or the menu)
+  Then the registration-status gate (Page 011) opens
+  When the user taps "إعادة التحقق" on the home card and the account is still pending
+  Then a "لا يزال حسابك قيد المراجعة" snackbar confirms it was re-checked
+  And once the account is approved, a re-check rebuilds Home into the full experience
+  And on the status gate, an "الانتقال للرئيسية" (Go to home) button under Re-check
+    returns to the (guest) home — pending + rejected only, approved uses "متابعة" (D-667)
+  # Covered by home_screen_test.dart + more_drawer_test.dart + registration_status_screen_test.dart.
+```
+
 ---
 
-_Last reviewed:_ `2026-07-02` by `SIMF Team` (D-591 — approved-state redesign to Figma 1701:3789).
+_Last reviewed:_ `2026-07-06` by `SIMF Team` (D-666 — pending account = effective guest + home under-review card / status entry; D-665 — "المراحل" stages card removed to match Figma 1701:3789; D-591 — approved-state redesign).

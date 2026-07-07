@@ -69,9 +69,9 @@ public sealed class UpsertUserProfileRequestValidator
 
     // Owner rule — the Arabic name must be Arabic letters only and the
     // English name Latin letters only (no digits, punctuation or cross-
-    // script characters), and each must be a full name of 2 to 4 parts
-    // (D-459, was ≥4). The char restriction guarantees every part is in the
-    // field's language, so "2–4 parts, same language" reduces to these checks.
+    // script characters), and each must be a full name of at least 4 parts
+    // (D-674, restored from the D-459 2–4 rule). The char restriction
+    // guarantees every part is in the field's language.
     private static readonly System.Text.RegularExpressions.Regex ArabicNameShape =
         new(@"^[ء-ي\s]+$",
             System.Text.RegularExpressions.RegexOptions.Compiled);
@@ -90,14 +90,15 @@ public sealed class UpsertUserProfileRequestValidator
     public static bool BeEnglishLettersOnly(string? value)
         => string.IsNullOrWhiteSpace(value) || EnglishNameShape.IsMatch(value.Trim());
 
-    /// <summary>Owner rule (D-459) — a "full name" is 2 to 4 whitespace-
-    /// separated parts (was "at least 4"). Splits on any whitespace (matching
-    /// the name regex's <c>\s</c> and the client's <c>\s+</c>) so a tab- or
-    /// NBSP-separated name counts its parts the same way everywhere. Empty
-    /// defers to the NotEmpty rule.</summary>
-    public static bool HaveTwoToFourParts(string? value)
+    /// <summary>Owner rule (D-674) — a "full name" is at least 4 whitespace-
+    /// separated parts (was 2–4 under D-459; the owner restored the ≥4 rule).
+    /// Splits on any whitespace (matching the name regex's <c>\s</c> and the
+    /// client's <c>\s+</c>) so a tab- or NBSP-separated name counts its parts the
+    /// same way everywhere. No upper cap — length is bounded by MaximumLength.
+    /// Empty defers to the NotEmpty rule.</summary>
+    public static bool HaveAtLeastFourParts(string? value)
         => string.IsNullOrWhiteSpace(value)
-            || value.Trim().Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length is >= 2 and <= 4;
+            || value.Trim().Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length >= 4;
 
     public UpsertUserProfileRequestValidator()
     {
@@ -161,9 +162,9 @@ public sealed class UpsertUserProfileRequestValidator
             .Must(BeArabicLettersOnly).Bilingual(
                 "The Arabic name must contain Arabic letters only.",
                 "يجب أن يحتوي الاسم بالعربية على حروف عربية فقط.")
-            .Must(HaveTwoToFourParts).Bilingual(
-                "Enter your full name in Arabic — 2 to 4 parts.",
-                "أدخل اسمك الكامل بالعربية — من مقطعين إلى أربعة مقاطع.");
+            .Must(HaveAtLeastFourParts).Bilingual(
+                "Enter your full name in Arabic — at least 4 parts.",
+                "أدخل اسمك الكامل بالعربية — أربعة مقاطع على الأقل.");
 
         RuleFor(request => request.EnglishName)
             .NotEmpty().Bilingual(
@@ -173,9 +174,9 @@ public sealed class UpsertUserProfileRequestValidator
             .Must(BeEnglishLettersOnly).Bilingual(
                 "The English name must contain English letters only.",
                 "يجب أن يحتوي الاسم بالإنجليزية على حروف إنجليزية فقط.")
-            .Must(HaveTwoToFourParts).Bilingual(
-                "Enter your full name in English — 2 to 4 parts.",
-                "أدخل اسمك الكامل بالإنجليزية — من مقطعين إلى أربعة مقاطع.");
+            .Must(HaveAtLeastFourParts).Bilingual(
+                "Enter your full name in English — at least 4 parts.",
+                "أدخل اسمك الكامل بالإنجليزية — أربعة مقاطع على الأقل.");
 
         RuleFor(request => request.NationalityCode)
             .NotEmpty().Bilingual(

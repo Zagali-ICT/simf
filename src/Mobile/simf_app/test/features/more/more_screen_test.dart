@@ -181,6 +181,8 @@ void main() {
       // D-519 — the attendee-only Rate row is role-filtered off the guest view
       // (a guest cannot reach it; tapping would bounce to sign-in).
       expect(find.text('Rate the app'), findsNothing);
+      // D-669 — notifications are auth-only, hidden from the guest view too.
+      expect(find.text('Notifications'), findsNothing);
       // The public rows remain.
       expect(find.text('About the forum'), findsOneWidget);
       expect(find.text('FAQ'), findsOneWidget);
