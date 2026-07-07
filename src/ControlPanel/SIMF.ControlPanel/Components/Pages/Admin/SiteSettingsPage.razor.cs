@@ -1,19 +1,10 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
 using SIMF.Components.Forms;
-using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
-using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Sessions;
-using SIMF.Contracts.Logs;
-using SIMF.Contracts.UserProfile;
-using SIMF.Contracts.Gates;
-using SIMF.Contracts.Ai;
-using SIMF.Contracts.Notifications;
 using SIMF.Contracts.Configuration;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
@@ -42,13 +33,6 @@ public partial class SiteSettingsPage
                 var d = envelope.Data;
                 _model.RegistrationMessageAr = d.RegistrationSuccessMessageAr;
                 _model.RegistrationMessageEn = d.RegistrationSuccessMessageEn;
-                _model.Facebook = d.Social.Facebook ?? string.Empty;
-                _model.X = d.Social.X ?? string.Empty;
-                _model.Instagram = d.Social.Instagram ?? string.Empty;
-                _model.LinkedIn = d.Social.LinkedIn ?? string.Empty;
-                _model.YouTube = d.Social.YouTube ?? string.Empty;
-                _model.TikTok = d.Social.TikTok ?? string.Empty;
-                _model.Snapchat = d.Social.Snapchat ?? string.Empty;
             }
             else
             {
@@ -77,13 +61,6 @@ public partial class SiteSettingsPage
                 {
                     RegistrationMessageAr = _model.RegistrationMessageAr,
                     RegistrationMessageEn = _model.RegistrationMessageEn,
-                    Facebook = _model.Facebook,
-                    X = _model.X,
-                    Instagram = _model.Instagram,
-                    LinkedIn = _model.LinkedIn,
-                    YouTube = _model.YouTube,
-                    TikTok = _model.TikTok,
-                    Snapchat = _model.Snapchat,
                 });
             if (envelope is { Success: true })
             {
@@ -109,12 +86,5 @@ public partial class SiteSettingsPage
     {
         public string RegistrationMessageAr { get; set; } = string.Empty;
         public string RegistrationMessageEn { get; set; } = string.Empty;
-        public string Facebook { get; set; } = string.Empty;
-        public string X { get; set; } = string.Empty;
-        public string Instagram { get; set; } = string.Empty;
-        public string LinkedIn { get; set; } = string.Empty;
-        public string YouTube { get; set; } = string.Empty;
-        public string TikTok { get; set; } = string.Empty;
-        public string Snapchat { get; set; } = string.Empty;
     }
 }

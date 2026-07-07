@@ -50,7 +50,7 @@
                         <div class="simf-bulk-row">
                             <span class="simf-bulk-row__name">@pt.Name</span>
                             <SimfTextField Label="@L["Admin.Delegates.Bulk.Count"]"
-                                           Type="number"
+                                           Numeric="true" MaxLength="4"
                                            Value="@CountFor(pt.Id)"
                                            ValueChanged="@(v => SetCount(pt.Id, v))"
                                            Disabled="_busy" />

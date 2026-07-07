@@ -1,7 +1,8 @@
-@* D-464 — CP "Site Settings" page: edit the public branding settings — the
-   registration welcome message (bilingual) + the social-media links. Reads /
-   writes the whitelisted site-settings keys via /admin/site-settings; the app +
-   website consume them through GET /app/site-settings. Gated by Configuration.*. *@
+@* D-464 / D-650 — CP "Site Settings" page: edit the registration welcome message
+   (bilingual). Reads / writes via /admin/site-settings; the app + website consume
+   it through GET /app/site-settings. The social-media links were moved to the
+   Organization Profile page (single source of truth — D-495/D-650) so they are no
+   longer edited here. Gated by Configuration.*. *@
 @page "/admin/site-settings"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Configuration.Edit)]
@@ -35,23 +36,6 @@
                     <SimfTextField Label="@L["Admin.SiteSettings.Field.RegMessageEn"]"
                                    MaxLength="2048"
                                    @bind-Value="_model.RegistrationMessageEn" Disabled="_busy" />
-
-                    <h3>@L["Admin.SiteSettings.Section.Social"]</h3>
-                    <p>@L["Admin.SiteSettings.Section.Social.Hint"]</p>
-                    <SimfTextField Label="Facebook" MaxLength="512"
-                                   @bind-Value="_model.Facebook" Disabled="_busy" />
-                    <SimfTextField Label="X (Twitter)" MaxLength="512"
-                                   @bind-Value="_model.X" Disabled="_busy" />
-                    <SimfTextField Label="Instagram" MaxLength="512"
-                                   @bind-Value="_model.Instagram" Disabled="_busy" />
-                    <SimfTextField Label="LinkedIn" MaxLength="512"
-                                   @bind-Value="_model.LinkedIn" Disabled="_busy" />
-                    <SimfTextField Label="YouTube" MaxLength="512"
-                                   @bind-Value="_model.YouTube" Disabled="_busy" />
-                    <SimfTextField Label="TikTok" MaxLength="512"
-                                   @bind-Value="_model.TikTok" Disabled="_busy" />
-                    <SimfTextField Label="Snapchat" MaxLength="512"
-                                   @bind-Value="_model.Snapchat" Disabled="_busy" />
                 </div>
                 <div class="simf-form__actions">
                     <SimfButton Loading="_busy" LoadingLabel="@L["Admin.SiteSettings.Saving"]">

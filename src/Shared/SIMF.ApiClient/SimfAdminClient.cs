@@ -21,8 +21,11 @@ using SIMF.Contracts.Media;
 using SIMF.Contracts.Organization;
 using SIMF.Contracts.Programme;
 using SIMF.Contracts.PublicRelations;
+using SIMF.Contracts.Regions;
 using SIMF.Contracts.Sessions;
 using SIMF.Contracts.Statistics;
+using SIMF.Contracts.Configuration;
+using SIMF.Contracts.Support;
 
 using SIMF.Common.Enums;
 
@@ -1313,6 +1316,86 @@ public sealed class SimfAdminClient(HttpClient http)
         CancellationToken cancellationToken = default) =>
         SendAsync<bool>(
             HttpMethod.Delete, $"countries/{id}", content: null,
+            accessToken, cancellationToken);
+
+    // -- D-547 — Region admin lookup CRUD (mirrors the Country block; Guid key) --
+
+    public Task<ApiCallResult<GridPage<AdminRegionSummary>>> ListRegionsAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminRegionSummary>>(
+            HttpMethod.Post, "regions/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminRegionDetail>> GetRegionAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminRegionDetail>(
+            HttpMethod.Get, $"regions/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminRegionDetail>> CreateRegionAsync(
+        CreateRegionRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminRegionDetail>(
+            HttpMethod.Post, "regions",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminRegionDetail>> UpdateRegionAsync(
+        Guid id, UpdateRegionRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminRegionDetail>(
+            HttpMethod.Put, $"regions/{id}",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> DeactivateRegionAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"regions/{id}", content: null,
+            accessToken, cancellationToken);
+
+    // -- D-649 — Contact-inquiries inbox + Site-settings + Country delegates --
+    //    (pages + API shipped, but the CP client/BFF wiring was never added). --
+
+    public Task<ApiCallResult<GridPage<AdminContactInquiryRow>>> ListContactInquiriesAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminContactInquiryRow>>(
+            HttpMethod.Post, "contact-inquiries/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> MarkContactInquiryHandledAsync(
+        Guid id, bool handled, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Post, $"contact-inquiries/{id}/handled",
+            JsonContent.Create(new { handled }, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<SiteSettingsResponse>> GetSiteSettingsAsync(
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<SiteSettingsResponse>(
+            HttpMethod.Get, "site-settings", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<SiteSettingsResponse>> UpdateSiteSettingsAsync(
+        AdminUpdateSiteSettingsRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<SiteSettingsResponse>(
+            HttpMethod.Put, "site-settings",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<IReadOnlyList<AdminCountryDelegateOption>>> ListCountryDelegatesAsync(
+        int countryId, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<IReadOnlyList<AdminCountryDelegateOption>>(
+            HttpMethod.Get, $"countries/{countryId}/delegates", content: null,
             accessToken, cancellationToken);
 
     // -- D-153 — Speaker admin CRUD -----------------------------------------
