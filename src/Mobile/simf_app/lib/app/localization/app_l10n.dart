@@ -551,6 +551,10 @@ class AppL10n {
   String get rememberedPasswordQuestion =>
       _t('تذكرت كلمة المرور؟', 'Remembered your password?');
   String get sendCodeButton => _t('إرسال الرمز', 'Send code');
+  // The forgot-password submit label (owner 2026-07-07, D-674). "Code", not
+  // "link" — the flow emails a code the user types on the reset screen.
+  String get sendRecoveryCodeButton =>
+      _t('إرسال رمز الاستعادة', 'Send recovery code');
   String get resetPasswordTitle =>
       _t('تعيين كلمة مرور جديدة', 'Set a new password');
   String get newPasswordLabel => _t('كلمة المرور الجديدة', 'New password');
