@@ -17,6 +17,15 @@
 
 @if (Initial is not null)
 {
+    @* D-673 — the booth logo IS the linked exhibitor's Contact CompanyLogo (the
+       same asset the app renders on the booth). Placeholder icon when the booth
+       has no linked exhibitor / Contact. *@
+    <div class="simf-image-upload__preview">
+        <SimfImageThumb Src="@LogoSrc(Initial.ExhibitorContactId)"
+                        Alt="@ExhibitorName(Initial.ExhibitorId)"
+                        Class="simf-img-thumb--lg" />
+    </div>
+
     <dl class="simf-dl">
         <dt>@L["Admin.Booths.Col.Code"]</dt>
         <dd>@Initial.Code</dd>
@@ -26,6 +35,16 @@
         <dd>@Initial.NameArabic</dd>
         <dt>@L["Admin.Booths.Col.Exhibitor"]</dt>
         <dd>@ExhibitorName(Initial.ExhibitorId)</dd>
+        @* D-673 — exhibitor-owned, read-only (resolved from the linked
+           Exhibitor / its Contact); not editable on the booth form. *@
+        <dt>@L["Admin.Booths.Field.Website"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.Website) ? "—" : Initial.Website)</dd>
+        <dt>@L["Admin.Booths.Field.Tier"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.TierName) ? "—" : Initial.TierName)</dd>
+        <dt>@L["Admin.Booths.Field.CityEn"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.City) ? "—" : Initial.City)</dd>
+        <dt>@L["Admin.Booths.Field.CityAr"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.CityArabic) ? "—" : Initial.CityArabic)</dd>
         <dt>@L["Admin.Booths.Field.OfficerName"]</dt>
         <dd>@(string.IsNullOrWhiteSpace(Initial.OfficerName) ? "—" : Initial.OfficerName)</dd>
         <dt>@L["Admin.Booths.Field.OfficerPhone"]</dt>

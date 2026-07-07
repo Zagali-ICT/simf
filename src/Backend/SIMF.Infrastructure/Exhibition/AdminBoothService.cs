@@ -106,8 +106,15 @@ internal sealed class AdminBoothService(
     public async Task<AdminBoothDetail?> GetAsync(
         Guid id, CancellationToken cancellationToken = default)
     {
+        // D-673 — pull the linked exhibitor + its Contact so the detail can
+        // surface the exhibitor-owned Website / City / Tier / logo owner (the
+        // fields the app booth detail shows). AsNoTracking → LEFT JOINs, single
+        // row. The create/update paths do not load these navigations, so their
+        // ToDetail echo leaves the resolved fields null (by design).
         var booth = await dbContext.Booths
             .AsNoTracking()
+            .Include(row => row.Exhibitor)
+                .ThenInclude(exhibitor => exhibitor!.Contact)
             .SingleOrDefaultAsync(row => row.Id == id, cancellationToken);
         return booth is null ? null : ToDetail(booth);
     }
@@ -431,5 +438,16 @@ internal sealed class AdminBoothService(
         MapX = b.MapX,
         MapY = b.MapY,
         IsActive = b.IsActive,
+        // D-673 — read-only exhibitor-resolved fields (mirrors PublicBoothService):
+        // Website + Tier from the linked Exhibitor, City/CityArabic from its
+        // Contact, ExhibitorContactId = the CompanyLogo owner (the booth logo).
+        // Null when the Exhibitor / Contact navigation was not loaded (create /
+        // update paths) or the booth has no linked exhibitor / Contact.
+        Website = b.Exhibitor?.Website,
+        City = b.Exhibitor?.Contact?.City,
+        CityArabic = b.Exhibitor?.Contact?.CityArabic,
+        Tier = (int?)b.Exhibitor?.Tier,
+        TierName = b.Exhibitor?.Tier?.ToString(),
+        ExhibitorContactId = b.Exhibitor?.ContactId,
     };
 }

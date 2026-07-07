@@ -132,6 +132,21 @@ public sealed class AdminBoothDetail
     public double? MapX { get; set; }
     public double? MapY { get; set; }
     public bool IsActive { get; set; }
+
+    // D-673 — read-only exhibitor-resolved fields so the CP booth detail matches
+    // the app booth detail (mirrors PublicBoothDetail). All are owned by the
+    // linked Exhibitor, NOT by the booth, so they are surfaced read-only on the
+    // detail view and are NOT part of the create/update write surface. Resolved
+    // on read (GetAsync) only — the create/update echo leaves them null. Website
+    // + Tier come from the Exhibitor; City/CityArabic from the exhibitor's
+    // Contact; ExhibitorContactId is the CompanyLogo owner (the booth logo the
+    // app renders). All null when the booth has no linked exhibitor / Contact.
+    public string? Website { get; set; }
+    public string? City { get; set; }
+    public string? CityArabic { get; set; }
+    public int? Tier { get; set; }
+    public string? TierName { get; set; }
+    public Guid? ExhibitorContactId { get; set; }
 }
 
 /// <summary>D-199 — admin create payload. B1 — D-222: exhibitor =

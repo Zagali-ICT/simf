@@ -3,13 +3,17 @@ import 'package:flutter/material.dart';
 import '../../../app/theme/tokens.dart';
 import '../data/session_models.dart';
 
-/// The agenda day strip (frame node 883:2327, restyled #4): a **white** calendar
-/// band spanning the **full** event date range — every day from the first to the
-/// last programme day, not only the days that carry sessions. Each cell shows the
-/// weekday over the centred day number. A day **with** sessions is "active"
-/// (white); the **selected** day is navy; an empty in-between day is muted grey
-/// and not selectable. The strip fills the width (cells distributed), falling
-/// back to a horizontal scroll when the range is too long to fit.
+/// The agenda day strip (frame node 883:2327, restyled #4): a **white**
+/// calendar band that shows the programme days **plus muted neighbour days
+/// before and after** ([_padDays] greyed, non-selectable days on each side),
+/// so the event reads centred with its neighbours peeking in
+/// (SAT 12 · SUN 13 · [MON 14 · TUE 15 · WED 16] · THU 17 · FRI 18). Each cell
+/// shows the weekday over the centred day number. A day **with** sessions is
+/// "active"; the **selected** day is a navy pill; a padding / empty in-between
+/// day is muted grey and not selectable. When the band fits the width the cells
+/// distribute (event centred, as on a tablet); when it doesn't (e.g. a narrow
+/// phone once the pad days are added) it scrolls horizontally from the leading
+/// day.
 class ProgrammeDayStrip extends StatelessWidget {
   const ProgrammeDayStrip({
     required this.days,
@@ -17,6 +21,10 @@ class ProgrammeDayStrip extends StatelessWidget {
     required this.onChanged,
     super.key,
   });
+
+  /// Muted neighbour days shown on each side of the programme (Figma 883:2327
+  /// pads the event with 2 greyed days before the first and 2 after the last).
+  static const int _padDays = 2;
 
   final List<ProgrammeDay> days;
   final String selectedId;
@@ -87,9 +95,11 @@ class ProgrammeDayStrip extends StatelessWidget {
             e.programmeDay == null ? null : () => onChanged(e.programmeDay!.id),
       );
 
-  /// The contiguous date range from the programme days: span the first to the
-  /// last day (inclusive), mapping each date to its [ProgrammeDay] when one
-  /// exists (an "active" day) or null (an empty in-between day).
+  /// The contiguous date range for the calendar band, matching Figma 883:2327:
+  /// the programme days (first→last, inclusive) plus [_padDays] muted days on
+  /// each side, so the event is centred with greyed neighbour days around it.
+  /// Each date maps to its [ProgrammeDay] when one exists (an "active" day) or
+  /// null (a padding / empty in-between day).
   static List<_CalendarDay> _calendarRange(List<ProgrammeDay> days) {
     if (days.isEmpty) {
       return const <_CalendarDay>[];
@@ -107,9 +117,12 @@ class ProgrammeDayStrip extends StatelessWidget {
         last = date;
       }
     }
+    // Pad the event with muted neighbour days on each side (Figma 883:2327).
+    final start = DateTime(first!.year, first.month, first.day - _padDays);
+    final end = DateTime(last!.year, last.month, last.day + _padDays);
     final out = <_CalendarDay>[];
-    var cur = first!;
-    while (!cur.isAfter(last!)) {
+    var cur = start;
+    while (!cur.isAfter(end)) {
       out.add(_CalendarDay(cur, byDate[cur]));
       cur = DateTime(cur.year, cur.month, cur.day + 1);
     }
@@ -142,9 +155,10 @@ class _DayCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Frame 883:2327 — on the white band: the selected day is a navy pill with
-    // white text; a day with sessions shows navy text (no fill); an empty
-    // in-between day is muted grey (#C2C2C2). Weekend weekday labels (SAT/SUN)
-    // render red on non-selected days.
+    // white text; a day with sessions shows navy text (no fill); a padding /
+    // empty day is uniformly muted grey (#C2C2C2). The weekend-red weekday
+    // accent applies only to active (session) days — the frame shows the greyed
+    // neighbour days (incl. SAT/SUN) with a plain grey label.
     final bool isWeekend =
         date.weekday == DateTime.saturday || date.weekday == DateTime.sunday;
     final Color fill;
@@ -161,7 +175,7 @@ class _DayCell extends StatelessWidget {
     } else {
       fill = Colors.transparent;
       numberColor = SimfTokens.dayInactive;
-      weekdayColor = isWeekend ? SimfTokens.danger : SimfTokens.dayInactive;
+      weekdayColor = SimfTokens.dayInactive;
     }
     return InkWell(
       onTap: onTap,

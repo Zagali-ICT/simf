@@ -53,7 +53,10 @@ class SummarySessionCard extends StatelessWidget {
           const SizedBox(height: SimfTokens.space2),
           Text(
             label,
-            textAlign: TextAlign.end,
+            // start = right in Arabic (RTL), left in English — matches the
+            // frame (right-aligned) and adapts to the language (was .end,
+            // which renders LEFT in RTL).
+            textAlign: TextAlign.start,
             style: const TextStyle(
               color: Colors.white,
               fontSize: SimfTokens.textLg,
@@ -75,11 +78,13 @@ class SummarySessionCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
             ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+              // start = leading edge (right in RTL / left in LTR) — the frame
+              // right-aligns the title + sub in Arabic; .end rendered LEFT.
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
                   session.localizedTitle(isArabic),
-                  textAlign: TextAlign.end,
+                  textAlign: TextAlign.start,
                   style: const TextStyle(
                     color: SimfTokens.accent,
                     fontSize: SimfTokens.textLg,
@@ -89,7 +94,7 @@ class SummarySessionCard extends StatelessWidget {
                 const SizedBox(height: SimfTokens.space2),
                 Text(
                   sub,
-                  textAlign: TextAlign.end,
+                  textAlign: TextAlign.start,
                   style: const TextStyle(
                     color: SimfTokens.beigeBorder,
                     fontSize: SimfTokens.textSm,

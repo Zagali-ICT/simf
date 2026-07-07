@@ -15,6 +15,8 @@ import 'package:simf_app/features/sessions/session_detail_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
+import '../accessibility/_fake_prefs.dart';
+
 SessionDetail _detail({String? liveStreamUrl, int? countryId}) => SessionDetail(
       id: 's1',
       code: 'OP-1',
@@ -42,6 +44,23 @@ SessionDetail _detail({String? liveStreamUrl, int? countryId}) => SessionDetail(
       categoryName: 'Main Session',
       categoryNameArabic: 'جلسة رئيسية',
       liveStreamUrl: liveStreamUrl,
+    );
+
+// A session whose end time is in the past — the trigger for the one-time
+// after-view rate prompt.
+SessionDetail _endedDetail() => SessionDetail(
+      id: 's1',
+      code: 'OP-1',
+      displayOrder: 2,
+      title: 'Opening',
+      titleArabic: 'الافتتاح',
+      hallId: 'h1',
+      hallName: 'Main Hall',
+      hallNameArabic: 'القاعة الرئيسية',
+      startUtc: DateTime.utc(2020, 1, 1, 6),
+      endUtc: DateTime.utc(2020, 1, 1, 7),
+      speakers: const <SessionSpeaker>[],
+      description: 'Welcome address',
     );
 
 // The avatar builds the photo URL from the base; the must-override data config
@@ -294,6 +313,102 @@ Future<void> _pump(
     ),
   );
   await tester.pumpAndSettle();
+}
+
+// A router with a home beneath the session detail (so a pop disposes the
+// screen) plus a /rate landing that echoes its query so the after-view prompt
+// is observable. Returns the router so the test can push / pop programmatically.
+Future<GoRouter> _pumpRatePrompt(
+  WidgetTester tester, {
+  required SessionDetailRepository repo,
+  required AuthController controller,
+  required SimfPrefsStorage prefs,
+}) async {
+  tester.view.physicalSize = const Size(1200, 2600);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+  final router = GoRouter(
+    initialLocation: '/',
+    routes: <RouteBase>[
+      GoRoute(
+        path: '/',
+        name: 'home',
+        builder: (_, __) => const Scaffold(body: Text('HOME')),
+      ),
+      GoRoute(
+        path: '/sessions/:sessionId',
+        name: RouteNames.sessionDetail,
+        builder: (_, state) => SessionDetailScreen(
+          sessionId: state.pathParameters['sessionId'] ?? '',
+        ),
+      ),
+      GoRoute(
+        path: '/rate',
+        name: RouteNames.rate,
+        builder: (_, state) => Scaffold(
+          body: Text('RATE ${state.uri.queryParameters['targetId']} '
+              '${state.uri.queryParameters['code']}'),
+        ),
+      ),
+      GoRoute(
+        path: '/speakers/:speakerId',
+        name: RouteNames.speakerProfile,
+        builder: (_, __) => const Scaffold(body: Text('SPEAKER')),
+      ),
+      GoRoute(
+        path: '/sessions/:sessionId/my-seat',
+        name: RouteNames.mySeat,
+        builder: (_, __) => const Scaffold(body: Text('MY-SEAT')),
+      ),
+      GoRoute(
+        path: '/sessions/:sessionId/pick-seat',
+        name: RouteNames.seatPicker,
+        builder: (_, __) => const Scaffold(body: Text('PICKER')),
+      ),
+      GoRoute(
+        path: '/live',
+        name: RouteNames.liveBroadcast,
+        builder: (_, __) => const Scaffold(body: Text('LIVE')),
+      ),
+      GoRoute(
+        path: '/ai-summary',
+        name: RouteNames.aiSummary,
+        builder: (_, __) => const Scaffold(body: Text('AI-SUMMARY')),
+      ),
+      GoRoute(
+        path: '/live/question',
+        name: RouteNames.sendQuestion,
+        builder: (_, __) => const Scaffold(body: Text('SEND-Q')),
+      ),
+    ],
+  );
+
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: <Override>[
+        simfDataConfigProvider.overrideWithValue(_testConfig),
+        simfPrefsStorageProvider.overrideWithValue(prefs),
+        sessionDetailRepositoryProvider.overrideWithValue(repo),
+        seatMapRepositoryProvider.overrideWithValue(_FakeSeatRepo(map: null)),
+        sessionCalendarProvider.overrideWithValue(_FakeCalendar()),
+        authControllerProvider.overrideWith(() => controller),
+      ],
+      child: MaterialApp.router(
+        routerConfig: router,
+        locale: const Locale('en'),
+        supportedLocales: AppL10n.supportedLocales,
+        localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+          ...AppL10n.localizationsDelegates,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+  return router;
 }
 
 void main() {
@@ -724,6 +839,76 @@ void main() {
       await tester.tap(find.widgetWithText(FilledButton, 'Retry'));
       await tester.pumpAndSettle();
       expect(repo.detailCalls, greaterThanOrEqualTo(2));
+    });
+  });
+
+  group('after-view rate prompt (one-time per session)', () {
+    testWidgets('an approved attendee leaving an ENDED session is prompted to '
+        'rate it exactly once', (tester) async {
+      final prefs = FakePrefs();
+      final router = await _pumpRatePrompt(
+        tester,
+        repo: _FakeDetailRepo(detail: _endedDetail()),
+        controller: _SignedInController(),
+        prefs: prefs,
+      );
+
+      // First view of the ended session.
+      router.push('/sessions/s1');
+      await tester.pumpAndSettle();
+      expect(find.text('Session detail'), findsOneWidget);
+
+      // Leaving it opens the dynamic rate screen for THIS session.
+      router.pop();
+      await tester.pumpAndSettle();
+      expect(find.text('RATE s1 Session'), findsOneWidget);
+
+      // Leave the rate screen.
+      router.pop();
+      await tester.pumpAndSettle();
+      expect(find.text('HOME'), findsOneWidget);
+
+      // Second view of the same ended session → it must NOT prompt again.
+      router.push('/sessions/s1');
+      await tester.pumpAndSettle();
+      router.pop();
+      await tester.pumpAndSettle();
+      expect(find.text('RATE s1 Session'), findsNothing);
+      expect(find.text('HOME'), findsOneWidget);
+    });
+
+    testWidgets('a guest leaving an ended session is NOT prompted',
+        (tester) async {
+      final router = await _pumpRatePrompt(
+        tester,
+        repo: _FakeDetailRepo(detail: _endedDetail()),
+        controller: _GuestController(),
+        prefs: FakePrefs(),
+      );
+
+      router.push('/sessions/s1');
+      await tester.pumpAndSettle();
+      router.pop();
+      await tester.pumpAndSettle();
+      expect(find.text('RATE s1 Session'), findsNothing);
+      expect(find.text('HOME'), findsOneWidget);
+    });
+
+    testWidgets('an approved attendee leaving an UPCOMING (not-yet-ended) '
+        'session is NOT prompted', (tester) async {
+      final router = await _pumpRatePrompt(
+        tester,
+        repo: _FakeDetailRepo(detail: _detail()), // future endUtc
+        controller: _SignedInController(),
+        prefs: FakePrefs(),
+      );
+
+      router.push('/sessions/s1');
+      await tester.pumpAndSettle();
+      router.pop();
+      await tester.pumpAndSettle();
+      expect(find.text('RATE s1 Session'), findsNothing);
+      expect(find.text('HOME'), findsOneWidget);
     });
   });
 }
