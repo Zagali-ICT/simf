@@ -16,10 +16,21 @@ class SignUpVisitorHeaderAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final data = bytes;
     if (data == null) {
-      return const Icon(
-        Icons.account_circle_outlined,
-        size: 40,
-        color: SimfTokens.headlineInk,
+      // The frame (168:2972) shows a navy-deep rounded box with a gold person
+      // glyph, not a bare dark icon on the beige card (D-674).
+      return Container(
+        width: 40,
+        height: 40,
+        alignment: Alignment.center,
+        decoration: const BoxDecoration(
+          color: SimfTokens.navyDeep,
+          borderRadius: SimfTokens.borderRadiusSmall,
+        ),
+        child: const Icon(
+          Icons.account_circle_outlined,
+          size: 24,
+          color: SimfTokens.accent,
+        ),
       );
     }
     return ClipOval(

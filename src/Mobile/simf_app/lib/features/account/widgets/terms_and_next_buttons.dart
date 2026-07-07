@@ -34,6 +34,9 @@ class TermsAndNextButtons extends StatelessWidget {
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 decoration: TextDecoration.underline,
+                // The frame underlines in navySurface, not the navy foreground
+                // (owner: 0xFF102238, D-674).
+                decorationColor: SimfTokens.navySurface,
               ),
             ),
           ),

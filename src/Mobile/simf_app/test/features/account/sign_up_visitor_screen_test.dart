@@ -506,8 +506,8 @@ void main() {
     });
 
     testWidgets(
-        'a male profile without a face photo blocks Next with the face-required '
-        'hint, shown UP FRONT (two-photo split — face mandatory for men)',
+        'a male profile without a face photo blocks Next, the face-required '
+        'hint hidden until Next (two-photo split — face mandatory for men)',
         (tester) async {
       final repo = _FakeProfileRepository(
         // ID present, face missing → only the face gate blocks a male.
@@ -515,11 +515,11 @@ void main() {
       );
       await _pump(tester, repo);
 
-      // The face requirement is visible immediately for a male with no face —
-      // not only after a failed Next.
+      // The required hint stays hidden until a blocked Next (D-674) — like the
+      // text-field validators, not surfaced up front in grey.
       expect(
         find.text('A face photo is required — capture it with the camera'),
-        findsOneWidget,
+        findsNothing,
       );
 
       await _tapNext(tester);
@@ -560,13 +560,13 @@ void main() {
       await tester.pump();
       expect(find.text('Ahmed 123'), findsNothing);
 
-      // A one-part Arabic name fails the full-name (2–4 parts) rule on Next.
-      await tester.enterText(arabicField, 'محمد');
+      // A three-part Arabic name fails the full-name (≥4 parts) rule on Next.
+      await tester.enterText(arabicField, 'محمد عبدالله أحمد');
       await tester.pump();
       await _tapNext(tester);
       expect(find.text('INTERESTS'), findsNothing);
       expect(
-        find.text('Enter your full name (2 to 4 parts)'),
+        find.text('Enter your full name (at least 4 parts)'),
         findsWidgets,
       );
     });
@@ -581,8 +581,8 @@ void main() {
 
       await _tapNext(tester);
 
-      // Not a silent no-op: the bilingual prompt is shown (banner + toast share
-      // the same string, so it is present at least once).
+      // Not a silent no-op: the bilingual prompt is shown as the blocked-Next
+      // toast (the up-front banner was removed in D-674).
       expect(
         find.text(
           'Please complete the required fields below to finish your profile.',

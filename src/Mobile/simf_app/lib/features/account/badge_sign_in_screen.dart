@@ -121,7 +121,7 @@ class _BadgeSignInScreenState extends ConsumerState<BadgeSignInScreen> {
         child: Column(
           children: <Widget>[
             AccountSubHeader(
-              title: l10n.badgeScanTitle,
+              title: l10n.badgePortalSignInTitle,
               onBack: _leave,
               // The badge scanner keeps its round back button over the dark
               // camera surface (D-659, owner).

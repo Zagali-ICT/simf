@@ -165,7 +165,7 @@ class AppL10n {
       _t('إعادة الإرسال خلال $seconds ث', 'Resend in ${seconds}s');
 
   String get haveAccountQuestion =>
-      _t('لديك حساب؟', 'Have an account?');
+      _t('هل لديك حساب ؟', 'Have an account?');
 
   // Sign up — visitor profile completion (Page 007).
   String get signUpVisitorTitle =>
@@ -320,8 +320,8 @@ class AppL10n {
         'The English name must contain English letters only',
       );
   String get fullNameFourParts => _t(
-        'أدخل الاسم الكامل (من مقطعين إلى 4 مقاطع)',
-        'Enter your full name (2 to 4 parts)',
+        'أدخل الاسم الكامل (4 مقاطع على الأقل)',
+        'Enter your full name (at least 4 parts)',
       );
   // C6 (D-371/D-459) — رقم اللوحة, optional; Saudi 17-letter set when filled.
   String get plateNumberLabel =>
@@ -568,6 +568,9 @@ class AppL10n {
   String get badgeSignInButton =>
       _t('الدخول بمسح الشارة', 'Sign in by scanning your badge');
   String get badgeScanTitle => _t('امسح شارتك', 'Scan your badge');
+  // The badge sign-in header title (owner 2026-07-07, D-674).
+  String get badgePortalSignInTitle =>
+      _t('البوابة الرئيسية • دخول', 'Main portal • Sign in');
   String get badgeScanHint => _t(
         'وجّه الكاميرا نحو رمز QR المطبوع على شارتك.',
         'Point the camera at the QR code on your badge.',
