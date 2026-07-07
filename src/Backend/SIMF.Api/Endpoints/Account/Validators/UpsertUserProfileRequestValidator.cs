@@ -69,8 +69,8 @@ public sealed class UpsertUserProfileRequestValidator
 
     // Owner rule — the Arabic name must be Arabic letters only and the
     // English name Latin letters only (no digits, punctuation or cross-
-    // script characters), and each must be a full name of at least 4 parts
-    // (D-674, restored from the D-459 2–4 rule). The char restriction
+    // script characters), and each must be a full name of at least 2 parts
+    // (D-683, relaxed from the short-lived D-674 ≥4 rule). The char restriction
     // guarantees every part is in the field's language.
     private static readonly System.Text.RegularExpressions.Regex ArabicNameShape =
         new(@"^[ء-ي\s]+$",
@@ -139,16 +139,16 @@ public sealed class UpsertUserProfileRequestValidator
                 "The gender selection is not valid.",
                 "اختيار الجنس غير صالح.");
 
-        // P9 — interests are required (min 1, max 10). Defence-in-depth
-        // re-checks of "every id active" live on the service.
+        // P9 / D-684 — interests are saved in the SECOND step now (profile-first
+        // save), so the profile save may legitimately carry 0 interests; the
+        // interests screen still requires 1-10 client-side. Server caps at 10 and
+        // enforces distinct. Defence-in-depth "every id active" re-checks live on
+        // the service.
         RuleFor(request => request.InterestIds)
-            .NotNull().Bilingual(
-                "At least one interest is required.",
-                "يجب اختيار اهتمام واحد على الأقل.")
-            .Must(ids => ids is not null && ids.Count is >= 1 and <= 10)
+            .Must(ids => ids is null || ids.Count <= 10)
             .Bilingual(
-                "Pick between 1 and 10 interests.",
-                "اختر ما بين 1 و 10 اهتمامات.")
+                "Pick at most 10 interests.",
+                "اختر 10 اهتمامات كحد أقصى.")
             .Must(ids => ids is null || ids.Distinct().Count() == ids.Count)
             .Bilingual(
                 "Each interest may only be picked once.",

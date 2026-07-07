@@ -20,6 +20,7 @@ class _FakeProfileRepository implements ProfileRepository {
   _FakeProfileRepository({
     UserProfileResponse? profile,
     this.throwOnLoad = false,
+    this.throwOnUpsert = false,
     List<CountryItem>? countries,
   })  : profile = profile ?? _emptyProfile,
         countries = countries ?? _defaultCountries;
@@ -47,6 +48,9 @@ class _FakeProfileRepository implements ProfileRepository {
 
   UserProfileResponse profile;
   bool throwOnLoad;
+  // D-684 — the profile is saved on the profile step now; this lets a test fail
+  // that save to prove the error surfaces HERE (not two screens later).
+  bool throwOnUpsert;
   // D-375 — lets a test fail ONLY the profile-types lookup (the per-switch
   // fetch), exercising the picker's inline loading/retry state.
   bool throwOnProfileTypes = false;
@@ -110,6 +114,9 @@ class _FakeProfileRepository implements ProfileRepository {
     UpsertUserProfileRequest request,
   ) async {
     upserted = request;
+    if (throwOnUpsert) {
+      throw const ApiFailure(code: 'X', message: 'save boom');
+    }
     return profile;
   }
 
@@ -301,16 +308,34 @@ void main() {
       expect(find.text('Date of birth is required'), findsOneWidget);
     });
 
-    testWidgets('valid data → Next navigates to interests (no save here)',
-        (tester) async {
+    testWidgets('valid data → Next saves the profile then navigates to interests '
+        '(D-684 profile-first save)', (tester) async {
       final repo = _FakeProfileRepository(profile: _completeProfile());
       await _pump(tester, repo);
 
       await _tapNext(tester);
 
-      // Navigated to the interests screen; this screen did NOT upsert.
+      // The profile is saved on THIS step now (so a name/field error surfaces
+      // here, not on interests), then it navigates to the interests screen.
+      expect(repo.upserted, isNotNull);
       expect(find.text('INTERESTS'), findsOneWidget);
-      expect(repo.upserted, isNull);
+    });
+
+    testWidgets('a server error on the profile save surfaces HERE, not on '
+        'interests (D-684)', (tester) async {
+      final repo = _FakeProfileRepository(
+        profile: _completeProfile(),
+        throwOnUpsert: true,
+      );
+      await _pump(tester, repo);
+
+      await _tapNext(tester);
+
+      // The save was attempted and rejected, so it stays on the profile screen
+      // (never advancing to interests) — the whole point of the profile-first
+      // split: a name/field error shows on the screen that owns the field.
+      expect(repo.upserted, isNotNull);
+      expect(find.text('INTERESTS'), findsNothing);
     });
 
     testWidgets('prefills the plate dropdowns from a stored code and carries it '

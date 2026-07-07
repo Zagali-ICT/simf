@@ -24,11 +24,12 @@ import 'widgets/interest_chip.dart';
 /// button pinned at the bottom. The previous screen is parked in
 /// `_legacy_mockup/`.
 ///
-/// Contract unchanged (D-332/D-050): receives the [SignUpProfileDraft] from
-/// Page 007, loads the interests lookup, requires **1–10** picks, fires the
-/// **single** `POST /app/account/user-profile` (draft + interestIds), uploads
-/// the optional ID image, then routes to Page 010. AUTH-only; a draft-less
-/// deep link shows the recover state back to the profile-data screen.
+/// Second save step (D-684, was the single D-332 save): the profile fields +
+/// both images are already saved on Page 007, so this screen receives the
+/// [SignUpProfileDraft], loads the interests lookup, requires **1–10** picks,
+/// then fires `POST /app/account/user-profile` again to add the interestIds to
+/// the existing profile, and routes to Page 010. AUTH-only; a draft-less deep
+/// link shows the recover state back to the profile-data screen.
 ///
 /// Clean-code frozen (D-550, Phase 3): screen-local colour consts dropped for
 /// `SimfTokens` (`chipBorderNavy` added); the pill extracted to [InterestChip];
@@ -129,48 +130,9 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
     });
     final repo = ref.read(profileRepositoryProvider);
     try {
-      // Two-photo split — both images must land on the server BEFORE the
-      // profile save: the server now rejects a profile with no stored ID
-      // document (all registrants) or, for a male, no stored face photo. A
-      // pre-save upload keeps the app from saving an incomplete profile that
-      // would bounce back to this form on every sign-in.
-      final isMale = draft.request.gender == AppGender.male;
-
-      // 1) ID document — mandatory for EVERYONE; a failed upload blocks.
-      final idBytes = draft.idImageBytes;
-      final idName = draft.idImageName;
-      if (idBytes != null && idName != null) {
-        try {
-          await repo.uploadIdImage(bytes: idBytes, filename: idName);
-        } on ApiFailure {
-          if (!mounted) {
-            return;
-          }
-          setState(() => _submitError = l10n.idImageUploadFailed);
-          return;
-        }
-      }
-
-      // 2) Face photo (avatar) — mandatory for men, optional for women. On
-      //    success bump the avatar bust so the top profile photo refreshes
-      //    everywhere; a failed upload blocks only for a male.
-      final faceBytes = draft.faceImageBytes;
-      final faceName = draft.faceImageName;
-      if (faceBytes != null && faceName != null) {
-        try {
-          await repo.uploadAvatar(bytes: faceBytes, filename: faceName);
-          ref.read(avatarBustProvider.notifier).state++;
-        } on ApiFailure {
-          if (!mounted) {
-            return;
-          }
-          if (isMale) {
-            setState(() => _submitError = l10n.facePhotoUploadFailed);
-            return;
-          }
-          // Optional for women — fall through and save.
-        }
-      }
+      // D-684 — the profile fields + both images were already saved on the
+      // previous (profile) step, so this step only adds the picked interests to
+      // the existing profile. Any profile-field error was surfaced back there.
       final saved = await repo.upsertMyProfile(
         draft.request.copyWith(interestIds: _selected.toList()),
       );

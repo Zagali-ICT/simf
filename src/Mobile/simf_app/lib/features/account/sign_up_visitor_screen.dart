@@ -149,6 +149,10 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   bool _loading = true;
   String? _loadError;
   bool _triedSubmit = false;
+  // D-684 — the profile is saved on THIS step now (profile-first), so any server
+  // error (e.g. the name) surfaces here, not two screens later on interests.
+  bool _saving = false;
+  String? _saveError;
 
   @override
   void initState() {
@@ -451,11 +455,15 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
 
   // ---- Next (carry the draft to the interests screen) ----------------------
 
-  /// Validates the data fields, then carries the collected profile data (+ the
-  /// optional ID image) to the interests screen (Page 007‑01) as a
-  /// [SignUpProfileDraft]. **No API write happens here** — the single save fires
-  /// on the interests screen once interests are picked (D-332).
-  void _next() {
+  /// Validates the data fields, uploads the images and **saves the profile here**
+  /// (D-684, profile-first) so any server error — the name in particular —
+  /// surfaces on THIS screen, not two steps later on interests. Only on a clean
+  /// save does it carry the [SignUpProfileDraft] to the interests screen
+  /// (Page 007‑01), where the interests are added in a second save.
+  Future<void> _next() async {
+    if (_saving) {
+      return;
+    }
     setState(() => _triedSubmit = true);
     final formValid = _formKey.currentState?.validate() ?? false;
     final dateOfBirthValid = _dateOfBirth != null;
@@ -497,14 +505,61 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         );
       return;
     }
-    final draft = SignUpProfileDraft(
-      request: _buildRequest(),
-      idImageBytes: _idImageBytes,
-      idImageName: _idImageName,
-      faceImageBytes: _faceImageBytes,
-      faceImageName: _faceImageName,
-    );
-    context.pushNamed(RouteNames.signUpInterests, extra: draft);
+    final l10n = AppL10n.of(context);
+    setState(() {
+      _saving = true;
+      _saveError = null;
+    });
+    final repo = ref.read(profileRepositoryProvider);
+    try {
+      // The server rejects a profile with no stored ID document (everyone) or,
+      // for a male, no stored face photo — so the images must land BEFORE the
+      // profile save. A failed mandatory upload blocks with a clear message.
+      final idBytes = _idImageBytes;
+      final idName = _idImageName;
+      if (idBytes != null && idName != null) {
+        try {
+          await repo.uploadIdImage(bytes: idBytes, filename: idName);
+        } on ApiFailure {
+          if (!mounted) return;
+          setState(() => _saveError = l10n.idImageUploadFailed);
+          return;
+        }
+      }
+      final faceBytes = _faceImageBytes;
+      final faceName = _faceImageName;
+      if (faceBytes != null && faceName != null) {
+        try {
+          await repo.uploadAvatar(bytes: faceBytes, filename: faceName);
+          ref.read(avatarBustProvider.notifier).state++;
+        } on ApiFailure {
+          if (!mounted) return;
+          if (_gender == AppGender.male) {
+            setState(() => _saveError = l10n.facePhotoUploadFailed);
+            return;
+          }
+          // Optional for women — fall through and save.
+        }
+      }
+
+      // Save the profile fields NOW — the server validates the name (etc.) and
+      // any error is shown on this screen (interests are added in a 2nd save).
+      await repo.upsertMyProfile(_buildRequest());
+      if (!mounted) return;
+      final draft = SignUpProfileDraft(
+        request: _buildRequest(),
+        idImageBytes: _idImageBytes,
+        idImageName: _idImageName,
+        faceImageBytes: _faceImageBytes,
+        faceImageName: _faceImageName,
+      );
+      context.pushNamed(RouteNames.signUpInterests, extra: draft);
+    } on ApiFailure catch (failure) {
+      if (!mounted) return;
+      setState(() => _saveError = failure.localizedMessage(l10n));
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   /// Builds the request from the data fields. `interestIds` carries any existing
@@ -786,7 +841,19 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                   const SizedBox(height: 16),
                   _buildFacePhotoField(l10n),
                   const SizedBox(height: 16),
-                  TermsAndNextButtons(onNext: _next),
+                  if (_saveError != null) ...<Widget>[
+                    Text(
+                      _saveError!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: SimfTokens.danger,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  TermsAndNextButtons(onNext: _next, busy: _saving),
                 ],
               ),
             ),

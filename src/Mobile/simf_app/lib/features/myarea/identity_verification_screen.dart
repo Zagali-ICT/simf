@@ -227,10 +227,14 @@ class _IdentityVerificationScreenState
     switch (_step) {
       case LivenessStep.smile:
         return l10n.livenessSmilePrompt;
+      // D-684 — the front camera is mirrored, so the ML "turn right" step
+      // (headEulerAngleY +ve) is satisfied by a physical turn to the user's LEFT
+      // (and vice-versa). Present each step as the direction the user must
+      // actually move (owner on-device: the left/right message was reversed).
       case LivenessStep.turnRight:
-        return l10n.livenessTurnRightPrompt;
-      case LivenessStep.turnLeft:
         return l10n.livenessTurnLeftPrompt;
+      case LivenessStep.turnLeft:
+        return l10n.livenessTurnRightPrompt;
     }
   }
 
@@ -240,10 +244,12 @@ class _IdentityVerificationScreenState
     switch (_step) {
       case LivenessStep.smile:
         return const Text('😊', style: TextStyle(fontSize: 30));
+      // D-684 — arrows follow the (mirror-corrected) prompt: the turnRight step
+      // asks the user to turn LEFT, so it shows a left arrow, and vice-versa.
       case LivenessStep.turnRight:
-        return const Icon(Icons.east, color: SimfTokens.accent, size: 32);
-      case LivenessStep.turnLeft:
         return const Icon(Icons.west, color: SimfTokens.accent, size: 32);
+      case LivenessStep.turnLeft:
+        return const Icon(Icons.east, color: SimfTokens.accent, size: 32);
     }
   }
 
