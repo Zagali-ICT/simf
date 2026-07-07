@@ -256,6 +256,7 @@
                             disabled="@(_busy || _typeEditId is not null)">
                         <option value="@RatingScope.Global">@L["Admin.RatingConfig.Scope.Global"]</option>
                         <option value="@RatingScope.PerSession">@L["Admin.RatingConfig.Scope.PerSession"]</option>
+                        <option value="@RatingScope.PerDay">@L["Admin.RatingConfig.Scope.PerDay"]</option>
                     </select>
                 </label>
                 <SimfCheckbox @bind-Value="_typeHasOverall" Disabled="_busy">

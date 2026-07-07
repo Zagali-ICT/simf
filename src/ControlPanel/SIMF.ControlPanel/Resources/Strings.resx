@@ -2445,6 +2445,7 @@
   <data name="Admin.RatingConfig.Col.Required" xml:space="preserve"><value>Required</value></data>
   <data name="Admin.RatingConfig.Scope.Global" xml:space="preserve"><value>Global (once per user)</value></data>
   <data name="Admin.RatingConfig.Scope.PerSession" xml:space="preserve"><value>Per session</value></data>
+  <data name="Admin.RatingConfig.Scope.PerDay" xml:space="preserve"><value>Per programme day</value></data>
   <data name="Admin.RatingConfig.Type.Add.Title" xml:space="preserve"><value>Add rating type</value></data>
   <data name="Admin.RatingConfig.Type.Edit.Title" xml:space="preserve"><value>Edit rating type</value></data>
   <data name="Admin.RatingConfig.Group.Add.Title" xml:space="preserve"><value>Add group</value></data>

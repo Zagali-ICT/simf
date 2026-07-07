@@ -319,9 +319,9 @@ class AppL10n {
         'يجب أن يحتوي الاسم بالإنجليزية على حروف إنجليزية فقط',
         'The English name must contain English letters only',
       );
-  String get fullNameFourParts => _t(
-        'أدخل الاسم الكامل (4 مقاطع على الأقل)',
-        'Enter your full name (at least 4 parts)',
+  String get fullNameParts => _t(
+        'أدخل الاسم الكامل (مقطعان على الأقل)',
+        'Enter your full name (at least 2 parts)',
       );
   // C6 (D-371/D-459) — رقم اللوحة, optional; Saudi 17-letter set when filled.
   String get plateNumberLabel =>
@@ -764,9 +764,16 @@ class AppL10n {
   // a LIVE, human-verified capture — there is no gallery path, so a static image
   // is never used. The step labels + directional cue + progress bar match Figma
   // 758:4180 / 4248 / 4316 (D-663).
-  String get livenessSmilePrompt => _t('المقطع الأمامي', 'Front');
-  String get livenessTurnRightPrompt => _t('المقطع الأيمن', 'Right');
-  String get livenessTurnLeftPrompt => _t('المقطع الأيسر', 'Left');
+  // Owner 2026-07-07 (D-683) — clear, human-friendly commands in big font so the
+  // visitor knows exactly what to do at each liveness step (the terse
+  // Front/Right/Left labels were unclear).
+  String get livenessHumanCheckTitle =>
+      _t('للتأكد من أنك شخص حقيقي', "To confirm you're a real person");
+  String get livenessSmilePrompt => _t('ابتسم من فضلك', 'Please smile');
+  String get livenessTurnRightPrompt =>
+      _t('أدر رأسك إلى اليمين', 'Please turn your head right');
+  String get livenessTurnLeftPrompt =>
+      _t('أدر رأسك إلى اليسار', 'Please turn your head left');
   String get identityCameraUnavailable => _t(
         'الكاميرا مطلوبة للتحقق من الهوية بصورة حية. فعّل الكاميرا وحاول مجددًا.',
         'The camera is required for a live identity check. Enable it and retry.',

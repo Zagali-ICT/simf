@@ -148,7 +148,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         Assert.True(body.Data!.ProfileComplete);
     }
 
-    // Name rules — Arabic-only / English-only, full name of at least 4 parts (D-674).
+    // Name rules — Arabic-only / English-only, full name of at least 2 parts (D-683).
 
     [Fact]
     public async Task POST_rejects_an_arabic_name_with_non_arabic_characters()
@@ -162,37 +162,37 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task POST_rejects_an_arabic_name_with_fewer_than_four_parts()
+    public async Task POST_rejects_a_single_part_arabic_name()
     {
         var token = await CreateUserAndSignInAsync();
         var request = await ValidSaudiRequestAsync();
-        request.ArabicName = "محمد عبدالله أحمد";   // three parts — D-674 floor is 4
+        request.ArabicName = "محمد";   // one part — the floor is 2 (D-683)
 
         var response = await PostAuthAsync(Path, request, token);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
-    public async Task POST_accepts_an_arabic_name_with_more_than_four_parts()
+    public async Task POST_accepts_a_multi_part_arabic_name()
     {
-        // D-674 — the ≥4 rule has no upper cap; an Arabic name can carry more.
+        // D-683 — the ≥2 rule has no upper cap; an Arabic name can carry more.
         var token = await CreateUserAndSignInAsync();
         var request = await ValidSaudiRequestAsync();
-        request.ArabicName = "محمد عبدالله أحمد سعيد الزهراني";   // five parts
+        request.ArabicName = "محمد عبدالله أحمد";   // three parts
 
         var response = await PostAuthAsync(Path, request, token);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
-    public async Task POST_rejects_a_two_part_name()
+    public async Task POST_accepts_a_two_part_name()
     {
-        // D-674 — the floor is back to 4 parts, so a 2-part name is rejected.
+        // D-683 — the floor is 2 parts, so a 2-part name is accepted.
         var token = await CreateUserAndSignInAsync();
         var request = await ValidSaudiRequestAsync("Ahmad Alharbi", "أحمد الحربي");
 
         var response = await PostAuthAsync(Path, request, token);
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
@@ -207,20 +207,20 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task POST_rejects_an_english_name_with_fewer_than_four_parts()
+    public async Task POST_rejects_a_single_part_english_name()
     {
         var token = await CreateUserAndSignInAsync();
         var request = await ValidSaudiRequestAsync();
-        request.EnglishName = "Mohammed Bin Saleh";   // three parts — D-674 floor is 4
+        request.EnglishName = "Mohammed";   // one part — the floor is 2 (D-683)
 
         var response = await PostAuthAsync(Path, request, token);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
-    public async Task POST_accepts_an_english_name_with_more_than_four_parts()
+    public async Task POST_accepts_a_multi_part_english_name()
     {
-        // D-674 — no upper cap on the ≥4 rule.
+        // D-683 — no upper cap on the ≥2 rule.
         var token = await CreateUserAndSignInAsync();
         var request = await ValidSaudiRequestAsync();
         request.EnglishName = "Mohammed Bin Saleh Ahmed Alzahrani";   // five parts
@@ -1371,7 +1371,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     }
 
     private async Task<UpsertUserProfileRequest> ValidSaudiRequestAsync(
-        // Names must be four parts in one script (Arabic-only / English-only).
+        // Names must be at least two parts in one script (Arabic-only / English-only).
         string englishName = "Test Visitor User Account",
         string arabicName = "محمد عبدالله أحمد الزهراني")
     {

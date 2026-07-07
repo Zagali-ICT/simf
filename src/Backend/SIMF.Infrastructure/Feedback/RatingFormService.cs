@@ -199,13 +199,28 @@ internal sealed class RatingFormService(
                 "A target is required to rate this.", "يجب تحديد العنصر المراد تقييمه.");
         }
 
-        var exists = await dbContext.Sessions
-            .AnyAsync(s => s.Id == target && s.IsActive, cancellationToken);
+        // Each targeted scope validates against its own table. An unhandled scope
+        // is a programming error (append-only enum, D-110) — fail loud rather than
+        // silently accepting an unvalidated target.
+        var exists = type.Scope switch
+        {
+            RatingScope.PerSession => await dbContext.Sessions
+                .AnyAsync(s => s.Id == target && s.IsActive, cancellationToken),
+            RatingScope.PerDay => await dbContext.ProgrammeDays
+                .AnyAsync(d => d.Id == target && d.IsActive, cancellationToken),
+            _ => throw new ApiException(
+                ErrorCodes.RatingTargetRequired, 400,
+                "This rating type cannot target an entity.",
+                "لا يمكن ربط هذا النوع من التقييم بعنصر."),
+        };
         if (!exists)
         {
-            throw new ApiException(
-                ErrorCodes.RatingTargetNotFound, 404,
-                "The session to rate was not found.", "لم يتم العثور على الجلسة المراد تقييمها.");
+            var (en, ar) = type.Scope == RatingScope.PerDay
+                ? ("The programme day to rate was not found.",
+                   "لم يتم العثور على اليوم المراد تقييمه.")
+                : ("The session to rate was not found.",
+                   "لم يتم العثور على الجلسة المراد تقييمها.");
+            throw new ApiException(ErrorCodes.RatingTargetNotFound, 404, en, ar);
         }
         return target;
     }

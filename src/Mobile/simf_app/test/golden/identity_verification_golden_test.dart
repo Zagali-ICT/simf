@@ -47,8 +47,9 @@ LiveCaptureView _capture(
   return LiveCaptureView(
     ready: ready,
     preview: preview,
+    humanCheckLabel: l10n.livenessHumanCheckTitle,
     promptText: l10n.livenessSmilePrompt,
-    promptLeading: const Text('😊', style: TextStyle(fontSize: 22)),
+    promptLeading: const Text('😊', style: TextStyle(fontSize: 30)),
     stepIndex: 0,
     stepCount: 3,
   );

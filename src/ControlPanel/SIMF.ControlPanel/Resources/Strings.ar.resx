@@ -2438,6 +2438,7 @@
   <data name="Admin.RatingConfig.Col.Required" xml:space="preserve"><value>مطلوب</value></data>
   <data name="Admin.RatingConfig.Scope.Global" xml:space="preserve"><value>عام (مرة واحدة لكل مستخدم)</value></data>
   <data name="Admin.RatingConfig.Scope.PerSession" xml:space="preserve"><value>لكل جلسة</value></data>
+  <data name="Admin.RatingConfig.Scope.PerDay" xml:space="preserve"><value>لكل يوم من الملتقى</value></data>
   <data name="Admin.RatingConfig.Type.Add.Title" xml:space="preserve"><value>إضافة نوع تقييم</value></data>
   <data name="Admin.RatingConfig.Type.Edit.Title" xml:space="preserve"><value>تعديل نوع التقييم</value></data>
   <data name="Admin.RatingConfig.Group.Add.Title" xml:space="preserve"><value>إضافة مجموعة</value></data>

@@ -225,7 +225,7 @@ UserProfileResponse _completeProfile({
 }) =>
     UserProfileResponse(
       interestIds: const <String>['i1'],
-      // 2–4 parts in one script (the name rules require a full name).
+      // At least 2 parts in one script (the name rules require a full name, D-683).
       arabicName: 'راكان عبدالله أحمد السالم',
       englishName: 'Rakan Abdullah Ahmed Alsalem',
       nationalityCode: 'SA',
@@ -560,13 +560,13 @@ void main() {
       await tester.pump();
       expect(find.text('Ahmed 123'), findsNothing);
 
-      // A three-part Arabic name fails the full-name (≥4 parts) rule on Next.
-      await tester.enterText(arabicField, 'محمد عبدالله أحمد');
+      // A single-part Arabic name fails the full-name (≥2 parts) rule on Next.
+      await tester.enterText(arabicField, 'محمد');
       await tester.pump();
       await _tapNext(tester);
       expect(find.text('INTERESTS'), findsNothing);
       expect(
-        find.text('Enter your full name (at least 4 parts)'),
+        find.text('Enter your full name (at least 2 parts)'),
         findsWidgets,
       );
     });

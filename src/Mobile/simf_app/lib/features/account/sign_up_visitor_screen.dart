@@ -558,7 +558,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       return lettersOnlyMsg;
     }
     if (!hasFullNameParts(name)) {
-      return l10n.fullNameFourParts;
+      return l10n.fullNameParts;
     }
     return null;
   }
@@ -717,7 +717,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                   SimfLabeledTextField(
                     label: l10n.arabicNameLabel,
                     controller: _arabicName,
-                    maxLength: 100,
+                    maxLength: 50,
                     // Arabic letters + spaces only — block other scripts at
                     // the keystroke so the field can never hold mixed text.
                     inputFormatters: <TextInputFormatter>[
@@ -729,7 +729,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                   SimfLabeledTextField(
                     label: l10n.englishNameLabel,
                     controller: _englishName,
-                    maxLength: 100,
+                    maxLength: 50,
                     textDirection: TextDirection.ltr,
                     // Latin letters + spaces only.
                     inputFormatters: <TextInputFormatter>[

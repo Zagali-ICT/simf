@@ -90,15 +90,15 @@ public sealed class UpsertUserProfileRequestValidator
     public static bool BeEnglishLettersOnly(string? value)
         => string.IsNullOrWhiteSpace(value) || EnglishNameShape.IsMatch(value.Trim());
 
-    /// <summary>Owner rule (D-674) — a "full name" is at least 4 whitespace-
-    /// separated parts (was 2–4 under D-459; the owner restored the ≥4 rule).
-    /// Splits on any whitespace (matching the name regex's <c>\s</c> and the
-    /// client's <c>\s+</c>) so a tab- or NBSP-separated name counts its parts the
-    /// same way everywhere. No upper cap — length is bounded by MaximumLength.
-    /// Empty defers to the NotEmpty rule.</summary>
-    public static bool HaveAtLeastFourParts(string? value)
+    /// <summary>Owner rule (D-683, supersedes the D-674 ≥4 rule) — a "full name"
+    /// is at least 2 whitespace-separated parts. Splits on any whitespace
+    /// (matching the name regex's <c>\s</c> and the client's <c>\s+</c>) so a tab-
+    /// or NBSP-separated name counts its parts the same way everywhere. No upper
+    /// cap on parts — length is bounded by MaximumLength. Empty defers to the
+    /// NotEmpty rule.</summary>
+    public static bool HaveAtLeastTwoParts(string? value)
         => string.IsNullOrWhiteSpace(value)
-            || value.Trim().Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length >= 4;
+            || value.Trim().Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length >= 2;
 
     public UpsertUserProfileRequestValidator()
     {
@@ -158,25 +158,25 @@ public sealed class UpsertUserProfileRequestValidator
             .NotEmpty().Bilingual(
                 "The Arabic name is required.",
                 "الاسم بالعربية مطلوب.")
-            .MaximumLength(100)
+            .MaximumLength(50)
             .Must(BeArabicLettersOnly).Bilingual(
                 "The Arabic name must contain Arabic letters only.",
                 "يجب أن يحتوي الاسم بالعربية على حروف عربية فقط.")
-            .Must(HaveAtLeastFourParts).Bilingual(
-                "Enter your full name in Arabic — at least 4 parts.",
-                "أدخل اسمك الكامل بالعربية — أربعة مقاطع على الأقل.");
+            .Must(HaveAtLeastTwoParts).Bilingual(
+                "Enter your full name in Arabic — at least 2 parts.",
+                "أدخل اسمك الكامل بالعربية — مقطعان على الأقل.");
 
         RuleFor(request => request.EnglishName)
             .NotEmpty().Bilingual(
                 "The English name is required.",
                 "الاسم بالإنجليزية مطلوب.")
-            .MaximumLength(100)
+            .MaximumLength(50)
             .Must(BeEnglishLettersOnly).Bilingual(
                 "The English name must contain English letters only.",
                 "يجب أن يحتوي الاسم بالإنجليزية على حروف إنجليزية فقط.")
-            .Must(HaveAtLeastFourParts).Bilingual(
-                "Enter your full name in English — at least 4 parts.",
-                "أدخل اسمك الكامل بالإنجليزية — أربعة مقاطع على الأقل.");
+            .Must(HaveAtLeastTwoParts).Bilingual(
+                "Enter your full name in English — at least 2 parts.",
+                "أدخل اسمك الكامل بالإنجليزية — مقطعان على الأقل.");
 
         RuleFor(request => request.NationalityCode)
             .NotEmpty().Bilingual(

@@ -47,17 +47,17 @@ public sealed class AdminWalkInRegistrationRequestValidator
             .NotEmpty().Bilingual(
                 "Arabic name is required.",
                 "الاسم بالعربية مطلوب.")
-            .MaximumLength(100).Bilingual(
-                "Arabic name must be at most 100 characters.",
-                "يجب ألا يتجاوز الاسم بالعربية 100 حرف.");
+            .MaximumLength(50).Bilingual(
+                "Arabic name must be at most 50 characters.",
+                "يجب ألا يتجاوز الاسم بالعربية 50 حرفًا.");
 
         RuleFor(request => request.EnglishName)
             .NotEmpty().Bilingual(
                 "English name is required.",
                 "الاسم بالإنجليزية مطلوب.")
-            .MaximumLength(100).Bilingual(
-                "English name must be at most 100 characters.",
-                "يجب ألا يتجاوز الاسم بالإنجليزية 100 حرف.");
+            .MaximumLength(50).Bilingual(
+                "English name must be at most 50 characters.",
+                "يجب ألا يتجاوز الاسم بالإنجليزية 50 حرفًا.");
 
         RuleFor(request => request.ProfileTypeId)
             .NotEqual(Guid.Empty).Bilingual(

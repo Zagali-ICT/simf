@@ -14,4 +14,10 @@ public enum RatingScope
     /// <summary>One submission per user per target entity (e.g. "Session" — the
     /// response's <c>TargetId</c> is the rated <c>Session.Id</c>).</summary>
     PerSession = 1,
+
+    /// <summary>One submission per user per programme day (e.g. "Day" — the
+    /// response's <c>TargetId</c> is the rated <c>ProgrammeDay.Id</c>). Fired by
+    /// the end-of-day rating prompt to attendees who checked in that day
+    /// (D-679).</summary>
+    PerDay = 2,
 }
