@@ -325,6 +325,8 @@ public static class DependencyInjection
         services.AddHostedService<SIMF.Infrastructure.Operations.SessionReminderWorker>();
         // End-of-session "please rate this session" prompt worker.
         services.AddHostedService<SIMF.Infrastructure.Operations.SessionRatingPromptWorker>();
+        // D-679 — end-of-day + end-of-programme rating prompt worker.
+        services.AddHostedService<SIMF.Infrastructure.Operations.ProgrammeRatingPromptWorker>();
         // D-168 (gap doc G5) — public-relations team: invitation CRUD +
         // VIP list + bulk-notify dispatcher (PDF §2.7.3).
         services.AddScoped<SIMF.Application.PublicRelations.Abstractions.IAdminInvitationService,
@@ -445,6 +447,9 @@ public static class DependencyInjection
         services.AddScoped<SIMF.Application.Regions.Abstractions.IPublicRegionService,
             SIMF.Infrastructure.Regions.PublicRegionService>();
         services.AddScoped<SIMF.Infrastructure.Regions.RegionSeeder>();
+        // D-681 — default public content (hall, programme days + sessions,
+        // highlights, org X link) so a fresh DB is not empty. Idempotent.
+        services.AddScoped<SIMF.Infrastructure.Seeding.DefaultContentSeeder>();
         // SIMF-FDS-014 (D-261) — shared Contact directory admin CRUD.
         services.AddScoped<SIMF.Application.Contacts.Abstractions.IAdminContactService,
             SIMF.Infrastructure.Contacts.AdminContactService>();

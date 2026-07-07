@@ -180,9 +180,14 @@ Scenario: Arabic toggle mirrors the page and the three modals
 
 - **Manual smoke is the canonical run today** (Chrome DevTools MCP). Keep the Gherkin
   runner-agnostic.
-- **System types** are seeded by `RatingSeeder` (App = Global stars+comment; Session =
-  PerSession with default non-required Speaker/Sound/Light questions). They can't be
-  deleted and their `Code`/`Scope` are locked.
+- **System types** are seeded by `RatingSeeder` (App / Event / Exhibition = Global
+  stars+comment; Session = PerSession with default non-required Speaker/Sound/Light
+  questions; **Day = PerDay**, D-679). They can't be deleted and their `Code`/`Scope`
+  are locked.
+- **Scope options (D-679):** the type modal's Scope select now offers three values —
+  `Global (once per user)`, `Per session`, and **`Per programme day`** (`RatingScope.PerDay`)
+  — and the types grid's Scope column labels each via a switch (a PerDay type no longer
+  mislabels as "Global").
 - **Group delete is `SetNull`** — deactivating/deleting a group leaves its questions as
   flat (ungrouped), never cascade-deletes them.
 - **API integration tests** at `tests/SIMF.Api.Tests/RatingConfigTests.cs` cover the

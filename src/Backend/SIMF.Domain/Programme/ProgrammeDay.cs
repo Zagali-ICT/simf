@@ -30,4 +30,10 @@ public class ProgrammeDay : BaseAuditEntity
     /// <summary>Order among the programme days (ascending); ties break on
     /// <see cref="Date"/>.</summary>
     public int DisplayOrder { get; set; }
+
+    /// <summary>Once-only guard for the end-of-day rating prompt: stamped by
+    /// <c>ProgrammeRatingPromptWorker</c> after the day's "please rate today"
+    /// batch is dispatched so a restart cannot resend (D-679; mirrors
+    /// <see cref="Session.RatingPromptSentUtc"/>).</summary>
+    public DateTimeOffset? RatingPromptSentUtc { get; set; }
 }

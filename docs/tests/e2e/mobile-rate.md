@@ -16,7 +16,7 @@
 
 ## Wire contract (D-496)
 
-- `GET /app/feedback/form?code=App|Session&ratingTypeId=&targetId=` → `RatingFormView`
+- `GET /app/feedback/form?code=App|Session|Day|Event|Exhibition&ratingTypeId=&targetId=` → `RatingFormView`
   `{ ratingTypeId, code, name, scope, hasOverallStars, allowComment, commentLabel,
   targetId, groups[{ name, questions[{ id, text, isRequired }] }], ungroupedQuestions[],
   existing{ overallStars, comment, answers[{ questionId, stars }] } }`.
@@ -26,6 +26,12 @@
 - **App** entry: the More menu opens the App (global) rating; the end-of-session
   **notification** (`kind = SessionRatingRequest`, `relatedEntityId` = session id)
   deep-links to `code=Session&targetId={id}`.
+- **Prompt codes (D-679):** the seeded system types `Day` (PerDay — one per
+  programme day, `targetId` = `ProgrammeDay.Id`) and `Event` / `Exhibition`
+  (global) back the `ProgrammeRatingPromptWorker` notifications, which deep-link to
+  `code=Day&targetId={id}` (end of each day, to that day's checked-in attendees)
+  and `code=Event|Exhibition|App` (end of the programme). The screen is code-agnostic
+  — the same form/submit endpoints serve every code.
 
 ## Coverage matrix
 
@@ -42,6 +48,9 @@
 | E2E-MOB040-009 | Per-session form without a target → 400 | validation | P1 | authored ✓ (API `Per_session_form_without_a_target_is_400`) |
 | E2E-MOB040-010 | Session deep-link from the "rate this session" notification opens the form | happy | P0 | authored ✓ (worker `SessionRatingPromptWorkerTests` + `notifications_screen_test` deep-link regression; **D-507** — the card must stay tappable after the inbox auto-marks it read) |
 | E2E-MOB040-011 | Guest → redirected to sign-in (route auth-gated) | auth | P0 | covered (route 40 in the authenticated set) |
+| E2E-MOB040-012 | Global `Event` / `Exhibition` form needs no target and submits | happy | P1 | authored ✓ (API `DynamicRatingFormTests.Global_rating_form_needs_no_target_and_is_submittable`) |
+| E2E-MOB040-013 | `Day` form without a target → 400; submit for an unknown day → 404; a real `ProgrammeDay` → 200 (the new PerDay branch) | validation | P1 | authored ✓ (API `DynamicRatingFormTests` Day cases) |
+| E2E-MOB040-014 | End-of-day / end-of-programme prompts deep-link to `code=Day\|Event\|Exhibition\|App` | happy | P1 | authored ✓ (worker `ProgrammeRatingPromptWorkerTests`; clickUrl via `NotificationKindCatalog`) |
 
 ## Scenarios
 
@@ -89,6 +98,17 @@ Scenario: A session rating is reached from the notification
 Scenario: A guest cannot reach the page
   Given a signed-out user navigates to /rate
   Then the auth gate redirects to sign-in (route 40 is authenticated)
+
+Scenario: The end-of-day prompt opens the Day rating form (D-679)
+  Given a programme day has ended and the visitor checked in that day
+  When the ProgrammeRatingPromptWorker fires a DayRatingRequest and the visitor taps it
+  Then it navigates to /rate?code=Day&targetId={programmeDayId}
+  And the Day rating form loads; submitting for a real day persists, an unknown day → 404
+
+Scenario: The end-of-programme prompts open the overall rating forms (D-679)
+  Given the whole 3-day programme has ended
+  When the worker fires the Event + Exhibition + App prompts to every checked-in attendee
+  Then each opens its global form (code=Event|Exhibition|App, no target) which submits with 200
 ```
 
 **Evidence:** `rate_screen_test.dart` (4 widget tests, all green) + `FeedbackRatingsTests`
@@ -102,4 +122,4 @@ config lives on `/admin/rating-config` (see `cp-admin-rating-config.md`).
 
 ---
 
-_Last reviewed:_ `2026-06-25` by Claude (D-496 dynamic ratings).
+_Last reviewed:_ `2026-07-07` by Claude (D-679/D-680 — Day/Event/Exhibition prompt codes).

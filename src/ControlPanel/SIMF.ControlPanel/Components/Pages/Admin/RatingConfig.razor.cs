@@ -72,9 +72,12 @@ public partial class RatingConfig
     private string FormatPage(int current, int total) =>
         string.Format(L["Grid.Page"], current, total);
 
-    private string ScopeLabel(RatingScope scope) => scope == RatingScope.PerSession
-        ? L["Admin.RatingConfig.Scope.PerSession"]
-        : L["Admin.RatingConfig.Scope.Global"];
+    private string ScopeLabel(RatingScope scope) => scope switch
+    {
+        RatingScope.PerSession => L["Admin.RatingConfig.Scope.PerSession"],
+        RatingScope.PerDay => L["Admin.RatingConfig.Scope.PerDay"],
+        _ => L["Admin.RatingConfig.Scope.Global"],
+    };
 
     private string GroupName(Guid? id) =>
         id is { } gid && _groupPage.Items.FirstOrDefault(g => g.Id == gid) is { } g ? g.Name : "—";

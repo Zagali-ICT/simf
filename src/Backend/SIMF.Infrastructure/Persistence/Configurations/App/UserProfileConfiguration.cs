@@ -27,10 +27,10 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         // a sibling row.
         builder.HasIndex(profile => profile.UserId).IsUnique();
 
-        // Owner 2026-07-06 — reasonable name caps (was 256), aligned client +
-        // server + EF.
-        builder.Property(profile => profile.NameArabic).HasMaxLength(100).IsRequired();
-        builder.Property(profile => profile.Name).HasMaxLength(100).IsRequired();
+        // Owner 2026-07-06 — reasonable name caps (was 256); tightened to 50
+        // (D-683, owner 2026-07-07), aligned client + server + EF.
+        builder.Property(profile => profile.NameArabic).HasMaxLength(50).IsRequired();
+        builder.Property(profile => profile.Name).HasMaxLength(50).IsRequired();
         // D-163 — PDF §2.6 optional job title (max 100, owner 2026-07-06).
         builder.Property(profile => profile.JobTitle).HasMaxLength(100);
         // D-151 / D-167: NationalityId is validated at the service layer

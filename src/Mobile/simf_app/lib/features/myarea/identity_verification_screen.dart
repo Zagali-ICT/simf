@@ -220,8 +220,9 @@ class _IdentityVerificationScreenState
     unawaited(_initCamera());
   }
 
-  /// The label for the current liveness step (المقطع الأمامي / الأيمن / الأيسر),
-  /// shown under the live preview so the user knows what to do (Figma 758:4180).
+  /// The command for the current liveness step (ابتسم / أدر رأسك لليمين / لليسار),
+  /// shown big under the live preview so the user knows exactly what to do
+  /// (D-683; over the Figma 758:4180 layout).
   String _stepPrompt(AppL10n l10n) {
     switch (_step) {
       case LivenessStep.smile:
@@ -238,11 +239,11 @@ class _IdentityVerificationScreenState
   Widget _stepLeading() {
     switch (_step) {
       case LivenessStep.smile:
-        return const Text('😊', style: TextStyle(fontSize: 22));
+        return const Text('😊', style: TextStyle(fontSize: 30));
       case LivenessStep.turnRight:
-        return const Icon(Icons.east, color: SimfTokens.accent, size: 24);
+        return const Icon(Icons.east, color: SimfTokens.accent, size: 32);
       case LivenessStep.turnLeft:
-        return const Icon(Icons.west, color: SimfTokens.accent, size: 24);
+        return const Icon(Icons.west, color: SimfTokens.accent, size: 32);
     }
   }
 
@@ -329,6 +330,7 @@ class _IdentityVerificationScreenState
                 preview: _cameraReady && _camera != null
                     ? CameraPreview(_camera!)
                     : null,
+                humanCheckLabel: l10n.livenessHumanCheckTitle,
                 promptText: _stepPrompt(l10n),
                 promptLeading: _stepLeading(),
                 stepIndex: _stepIndex,

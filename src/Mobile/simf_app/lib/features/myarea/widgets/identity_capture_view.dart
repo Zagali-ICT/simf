@@ -13,6 +13,7 @@ class LiveCaptureView extends StatelessWidget {
   const LiveCaptureView({
     required this.ready,
     required this.preview,
+    required this.humanCheckLabel,
     required this.promptText,
     required this.promptLeading,
     required this.stepIndex,
@@ -22,6 +23,10 @@ class LiveCaptureView extends StatelessWidget {
 
   final bool ready;
   final Widget? preview;
+
+  /// The "to confirm you're a real person" line shown above the step command so
+  /// the visitor understands why they are being asked to smile / turn (D-683).
+  final String humanCheckLabel;
   final String promptText;
   final Widget promptLeading;
   final int stepIndex;
@@ -57,17 +62,31 @@ class LiveCaptureView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
+            // Why we're asking — the human-check subtitle, then the big command.
+            Text(
+              humanCheckLabel,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: SimfTokens.space4),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 promptLeading,
-                const SizedBox(width: 8),
-                Text(
-                  promptText,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                const SizedBox(width: 10),
+                Flexible(
+                  child: Text(
+                    promptText,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],

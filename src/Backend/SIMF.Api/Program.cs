@@ -429,6 +429,10 @@ if (!app.Environment.IsEnvironment("Testing"))
     // required reference data the app's region picker reads, so it must exist in
     // every environment. Idempotent (keyed on Code).
     await services.GetRequiredService<SIMF.Infrastructure.Regions.RegionSeeder>().SeedAsync();
+    // D-681 — default public content (main hall, the 20-22 Nov programme days +
+    // sessions incl. the opening session, one Highlights item, the org X link) so
+    // a fresh DB is not empty on first boot. Every environment; idempotent.
+    await services.GetRequiredService<SIMF.Infrastructure.Seeding.DefaultContentSeeder>().SeedAsync();
 
     // B3 — D-221 — in Development only, seed a few sample organisations so the
     // registration organisation picker has data before the gov Excel import.
