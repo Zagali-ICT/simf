@@ -800,14 +800,18 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     // -- P9 interests ----------------------------------------------------------
 
     [Fact]
-    public async Task POST_requires_at_least_one_interest()
+    public async Task POST_accepts_an_empty_interest_list()
     {
+        // D-684 — the profile is now saved BEFORE interests are picked
+        // (profile-first save), so a profile save may legitimately carry 0
+        // interests; the interests are added in the second save. The interests
+        // screen still requires 1-10 client-side.
         var token = await CreateUserAndSignInAsync();
         var request = await ValidSaudiRequestAsync();
-        request.InterestIds = new List<Guid>();   // empty — validator rejects
+        request.InterestIds = new List<Guid>();   // empty is now allowed server-side
 
         var response = await PostAuthAsync(Path, request, token);
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
