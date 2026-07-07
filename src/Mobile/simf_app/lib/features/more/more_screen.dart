@@ -59,6 +59,9 @@ class MoreScreen extends ConsumerWidget {
     return SimfPageShell(
       title: l10n.moreTitle,
       onBack: () => backOrHome(context),
+      // The More menu (frame 1129:17224) has no header language pill; it
+      // carries a language row instead (owner 2026-07-07).
+      showLanguageToggle: false,
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           SimfTokens.space4,

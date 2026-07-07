@@ -37,7 +37,7 @@ class MoreSection extends StatelessWidget {
 }
 
 /// One nav row (frame 1129:17225…): the navy-deep box with the title at the
-/// inline start, an optional value, and the gold caret at the inline end.
+/// inline start, an optional value, and the white caret at the inline end.
 class MoreRow extends StatelessWidget {
   const MoreRow({
     required this.title,
@@ -88,9 +88,11 @@ class MoreRow extends StatelessWidget {
                   ),
                 ],
                 const SizedBox(width: SimfTokens.space2),
+                // White caret per the More-menu frame 1129:17224 (owner
+                // 2026-07-07: nav arrows are white, not gold).
                 const SimfSvgIcon(
                   'assets/icons/ic_caret_left.svg',
-                  color: SimfTokens.accent,
+                  color: Colors.white,
                   size: 22,
                 ),
               ],

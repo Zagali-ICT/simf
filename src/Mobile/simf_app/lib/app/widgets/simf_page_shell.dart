@@ -71,6 +71,7 @@ class SimfPageShell extends StatelessWidget {
     this.showSweep = false,
     this.showNotificationsBell = true,
     this.showHeaderActions = false,
+    this.showLanguageToggle = true,
     super.key,
   });
 
@@ -105,6 +106,14 @@ class SimfPageShell extends StatelessWidget {
   /// the title centred. The cluster lives on the Home greeting header (which
   /// builds its own [header]); a page may pass true to opt back in.
   final bool showHeaderActions;
+
+  /// Whether the lone trailing language toggle shows on the default header.
+  /// The المزيد main menu (frame 1129:17224) passes false: it already carries a
+  /// language *row* inside the menu, so the header pill is redundant (owner
+  /// 2026-07-07). Ignored when [showHeaderActions] is true (that cluster owns
+  /// its own toggle). When both are false a 42-wide spacer keeps the title
+  /// centred against the back box.
+  final bool showLanguageToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -193,14 +202,18 @@ class SimfPageShell extends StatelessWidget {
           // balances the 42 back box so the title stays effectively centred.
           if (showHeaderActions)
             SimfHeaderActions(showBell: showNotificationsBell)
-          else
+          else if (showLanguageToggle)
             Consumer(
               builder: (context, ref, _) => SimfLanguageToggle(
                 onPressed: () => unawaited(
                   ref.read(localeControllerProvider.notifier).toggle(),
                 ),
               ),
-            ),
+            )
+          else
+            // المزيد (1129:17224) drops the header pill; the spacer balances the
+            // 42-wide back box so the title stays centred.
+            const SizedBox(width: 42, height: 42),
         ],
       ),
     );

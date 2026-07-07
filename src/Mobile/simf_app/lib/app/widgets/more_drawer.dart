@@ -246,8 +246,9 @@ class MoreDrawer extends ConsumerWidget {
   }
 }
 
-/// One drawer row in the navy KSA styling: a gold leading icon over a white
-/// title. [enabled] false renders the muted, non-tappable variant.
+/// One drawer row in the navy KSA styling: a white leading icon over a white
+/// title (owner 2026-07-07: main-menu nav icons are white, not gold). [enabled]
+/// false renders the muted, non-tappable variant.
 class _DrawerTile extends StatelessWidget {
   const _DrawerTile({
     required this.icon,
@@ -263,7 +264,7 @@ class _DrawerTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = enabled ? SimfTokens.accent : SimfTokens.inkMuted;
+    final color = enabled ? Colors.white : SimfTokens.inkMuted;
     final titleColor = enabled ? Colors.white : SimfTokens.inkMuted;
     return ListTile(
       enabled: enabled,
