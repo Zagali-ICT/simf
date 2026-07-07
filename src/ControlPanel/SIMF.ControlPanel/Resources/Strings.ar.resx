@@ -2322,6 +2322,10 @@
   <data name="Admin.Booths.Field.OfficerName" xml:space="preserve"><value>اسم مسؤول الجناح</value></data>
   <data name="Admin.Booths.Field.OfficerPhone" xml:space="preserve"><value>هاتف مسؤول الجناح</value></data>
   <data name="Admin.Booths.Field.OfficerEmail" xml:space="preserve"><value>بريد مسؤول الجناح</value></data>
+  <data name="Admin.Booths.Field.Website" xml:space="preserve"><value>موقع العارض</value></data>
+  <data name="Admin.Booths.Field.Tier" xml:space="preserve"><value>فئة العارض</value></data>
+  <data name="Admin.Booths.Field.CityEn" xml:space="preserve"><value>مدينة العارض (إنجليزي)</value></data>
+  <data name="Admin.Booths.Field.CityAr" xml:space="preserve"><value>مدينة العارض (عربي)</value></data>
   <data name="Admin.Booths.ExhibitorsLoadFailed" xml:space="preserve"><value>تعذّر تحميل قائمة العارضين.</value></data>
   <data name="Admin.Booths.Field.MapX" xml:space="preserve"><value>موضع الخريطة س</value></data>
   <data name="Admin.Booths.Field.MapY" xml:space="preserve"><value>موضع الخريطة ص</value></data>

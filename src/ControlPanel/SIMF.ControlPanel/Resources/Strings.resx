@@ -2329,6 +2329,10 @@
   <data name="Admin.Booths.Field.OfficerName" xml:space="preserve"><value>Booth officer name</value></data>
   <data name="Admin.Booths.Field.OfficerPhone" xml:space="preserve"><value>Booth officer phone</value></data>
   <data name="Admin.Booths.Field.OfficerEmail" xml:space="preserve"><value>Booth officer email</value></data>
+  <data name="Admin.Booths.Field.Website" xml:space="preserve"><value>Exhibitor website</value></data>
+  <data name="Admin.Booths.Field.Tier" xml:space="preserve"><value>Exhibitor tier</value></data>
+  <data name="Admin.Booths.Field.CityEn" xml:space="preserve"><value>Exhibitor city (English)</value></data>
+  <data name="Admin.Booths.Field.CityAr" xml:space="preserve"><value>Exhibitor city (Arabic)</value></data>
   <data name="Admin.Booths.ExhibitorsLoadFailed" xml:space="preserve"><value>Could not load the exhibitor list.</value></data>
   <data name="Admin.Booths.Field.MapX" xml:space="preserve"><value>Map X position</value></data>
   <data name="Admin.Booths.Field.MapY" xml:space="preserve"><value>Map Y position</value></data>

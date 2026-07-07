@@ -75,6 +75,14 @@ public partial class BoothsViewDelete
         return hall is null ? "—" : hall.Name;
     }
 
+    // D-673 — the booth logo is the linked exhibitor's Contact CompanyLogo asset
+    // (the same asset the app renders on the booth). Empty string when the booth
+    // has no linked exhibitor / Contact → SimfImageThumb shows its placeholder.
+    private static string LogoSrc(Guid? exhibitorContactId) =>
+        exhibitorContactId is null
+            ? string.Empty
+            : $"/account/api/admin/assets/CompanyLogo/{exhibitorContactId}/image";
+
     private async Task ConfirmDeleteAsync()
     {
         if (_busy || Initial is null) return;
