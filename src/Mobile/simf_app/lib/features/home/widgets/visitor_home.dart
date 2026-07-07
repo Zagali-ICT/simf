@@ -8,6 +8,7 @@ import '../../../app/widgets/simf_bottom_nav.dart';
 import '../../../app/widgets/simf_page_shell.dart';
 import '../../news/data/news_models.dart';
 import '../../news/news_article_screen.dart';
+import '../../speakers/widgets/meeting_request_sheet.dart';
 import 'discover_saudi_row.dart';
 import 'follow_us_section.dart';
 import 'greeting_header.dart';
@@ -43,6 +44,27 @@ class VisitorHome extends StatelessWidget {
   /// The clock for the greeting word; defaults to live. Injected by the golden
   /// so its greeting is deterministic.
   final DateTime? now;
+
+  /// Opens the shared meeting-request sheet in the bilateral "pick a speaker"
+  /// mode (owner 2026-07-08: VIP اللقاءات الثنائية). Reuses the speaker-profile
+  /// sheet with no fixed speaker; the server VIP-gates the send.
+  void _openBilateralMeeting(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: SimfTokens.cardBeige,
+      showDragHandle: false,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(SimfTokens.radius)),
+      ),
+      builder: (_) => MeetingRequestSheet(
+        speakerId: null,
+        defaultName: name,
+        l10n: l10n,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -146,10 +168,11 @@ class VisitorHome extends StatelessWidget {
                 label: l10n.tileBilateralMeetings,
                 iconAsset: HomeIcons.bilateral,
                 minHeight: 80,
-                // اللقاءات الثنائية opens the الطلبات Requests feed (1408:9726) —
-                // where bilateral / meeting requests live (owner 2026-06-29: keep
-                // the tile label, link it to Requests instead of the ComingSoon).
-                onTap: () => context.pushNamed(RouteNames.requests),
+                // اللقاءات الثنائية opens the shared request-meeting sheet in the
+                // "pick a speaker" (bilateral) mode — owner 2026-07-08. The server
+                // VIP-gates the request itself (a non-VIP sees the "VIP only"
+                // message on send), so no client role check is needed here.
+                onTap: () => _openBilateralMeeting(context),
               ),
               SimfNavTile(
                 label: l10n.tileArchive,

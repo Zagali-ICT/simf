@@ -1087,6 +1087,12 @@ class AppL10n {
   String get requestMeeting => _t('طلب مقابلة', 'Request meeting');
   String get meetingNameLabel => _t('الاسم', 'Your name');
   String get meetingSubjectLabel => _t('الموضوع', 'Subject');
+  // Bilateral-meeting entry (owner: VIP اللقاءات الثنائية) — pick a speaker.
+  String get meetingSelectSpeakerLabel => _t('اختر المتحدث', 'Select speaker');
+  String get meetingSelectSpeakerHint =>
+      _t('اختر المتحدث…', 'Choose a speaker…');
+  String get meetingSelectSpeakerFirst =>
+      _t('اختر متحدثاً أولاً', 'Select a speaker first');
   String get meetingSendButton => _t('إرسال الطلب', 'Send request');
   // Figma 1776:4958 / 1776:5036 — the light "طلب مقابلة" sheet: a subject field,
   // a row of day cards, then that day's time-slot chips.
