@@ -26,6 +26,7 @@
 | E2E-MOB033-004 | Empty inbox → empty state, no mark-all action | edge | P1 | authored ✓ (screen `empty list shows the empty state`, `no mark-all action when everything is read`) |
 | E2E-MOB033-005 | A read failure → error + Retry that re-fetches | resilience | P0 | authored ✓ (screen `error shows retry, which re-fetches`) |
 | E2E-MOB033-006 | String `kind`/`severity` decode tolerantly (unknown → Info) | contract | P1 | authored ✓ (models `decodes the string kind/severity…`, `an unknown or missing severity falls back to info`) |
+| E2E-MOB033-007 | Tapping an actionable notification deep-links: `SessionRatingRequest` → the Session rate form; **`BookingConfirmed` → the entry-badge QR** | happy | P1 | authored ✓ (screen `tapping a read SessionRatingRequest deep-links…`, `tapping a BookingConfirmed notification opens the badge QR`) |
 
 ## Scenarios
 
@@ -98,6 +99,27 @@ Scenario: The wire kind/severity are string names
 model tests `decodes the string kind/severity…`,
 `an unknown or missing severity falls back to info`.
 
+### E2E-MOB033-007 — Actionable notifications deep-link on tap
+
+```gherkin
+Scenario: Tapping an end-of-session prompt opens the rate form
+  Given a read SessionRatingRequest notification carrying a session id
+  When I tap the card
+  Then the app opens the Session rate form for that session id
+
+Scenario: Tapping a confirmed-booking notification opens the entry badge
+  Given a BookingConfirmed notification (the seat booking is confirmed)
+  When I tap the card
+  Then the app opens the personal QR badge screen (/badge)
+  # The confirmed booking mints the entry badge; the notification is the
+  # shortcut to the QR the visitor scans at the gate. No per-booking QR — it
+  # is the one personal entry badge (qrId).
+```
+
+**Evidence:** screen tests `tapping a read SessionRatingRequest deep-links to the
+Session rate form`, `tapping a BookingConfirmed notification opens the badge QR`.
+Both run through `_maybeDeepLink`; every other kind only marks-read.
+
 ---
 
-_Last reviewed:_ `2026-06-21` by `SIMF Team`.
+_Last reviewed:_ `2026-07-07` by `SIMF Team`.

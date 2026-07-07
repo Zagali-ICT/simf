@@ -126,7 +126,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 
   /// Deep-links from an actionable notification. The end-of-session prompt
   /// (`SessionRatingRequest`) carries the session id in `relatedEntityId`; tap
-  /// opens the Session rating form for it.
+  /// opens the Session rating form for it. A `BookingConfirmed` notification
+  /// means the visitor's entry badge is now live; tap opens the personal QR
+  /// badge they scan at the gate.
   void _maybeDeepLink(NotificationItem item) {
     if (item.kind == 'SessionRatingRequest' &&
         (item.relatedEntityId ?? '').isNotEmpty) {
@@ -137,6 +139,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           'targetId': item.relatedEntityId!,
         },
       );
+      return;
+    }
+    if (item.kind == 'BookingConfirmed') {
+      context.pushNamed(RouteNames.badge);
     }
   }
 
