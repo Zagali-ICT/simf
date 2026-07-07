@@ -23,7 +23,9 @@ class SummaryTabContentCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(SimfTokens.radius),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        // start = leading edge (right in RTL / left in LTR): the frame places
+        // the heading + bullets on the right in Arabic; .end rendered LEFT.
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           SummarySectionHeading(heading),
           const SizedBox(height: SimfTokens.space4),

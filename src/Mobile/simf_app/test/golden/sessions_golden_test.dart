@@ -21,9 +21,11 @@ import 'golden_fonts.dart';
 ///   flutter test --update-goldens test/golden/sessions_golden_test.dart
 ///
 /// Frame parity expected (D-598): the bordered search field; the WHITE day
-/// strip pinned LTR (every calendar date first→last ascending left→right; the
-/// selected day is a navy pill, a session day navy text, an empty day muted,
-/// weekend labels red); the selected day's own title ("تفاصيل اليوم" carries the
+/// strip pinned LTR (the programme days plus 2 muted neighbour days before the
+/// first and after the last — the event centred, as the frame renders it; the
+/// selected day is a navy pill, a session day navy text, a padding/empty day
+/// muted grey, the weekend-red label only on active session days); the selected
+/// day's own title ("تفاصيل اليوم" carries the
 /// day title) over the day banner; the THREE type tabs الكل/جلسات/ورش العمل
 /// (الكل active — احداث dropped per the 3-tab frame, owner 2026-07-03); then
 /// the المواعيد list — the first session featured (expanded with the day

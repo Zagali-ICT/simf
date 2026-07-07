@@ -250,6 +250,27 @@ void main() {
       expect(find.textContaining('Opening'), findsNothing);
     });
 
+    testWidgets('the day strip pads the event with muted days before and after '
+        '(Figma 883:2327)', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeSessionsRepository(days: <ProgrammeDay>[
+          _dayOne(<SessionListItem>[_session('s1', 9, 'Opening')],),
+        ],),
+      );
+
+      // Day One is the 13th → the band pads 2 days before (11, 12) and 2 after
+      // (14, 15) as non-selectable muted cells; the event stays centred.
+      for (final n in <String>['11', '12', '13', '14', '15']) {
+        expect(find.text(n), findsOneWidget, reason: 'day $n cell');
+      }
+      // Tapping a padding day (no sessions) does nothing — still Day One.
+      await tester.tap(find.text('15'));
+      await tester.pumpAndSettle();
+      expect(find.text('Day One'), findsOneWidget);
+      expect(find.textContaining('Opening'), findsOneWidget);
+    });
+
     testWidgets('the selected day cell inverts to navy', (tester) async {
       await _pump(
         tester,
