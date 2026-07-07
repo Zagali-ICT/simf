@@ -11,7 +11,6 @@ import '../../features/account/biometric_auth.dart';
 import '../../features/more/more_menu_items.dart';
 import '../../features/myarea/data/myarea_repository.dart';
 import '../localization/app_l10n.dart';
-import '../localization/locale_controller.dart';
 import '../route_names.dart';
 import '../router.dart';
 import '../theme/tokens.dart';
@@ -21,8 +20,9 @@ import 'simf_confirm_dialog.dart';
 /// shared top bar's ☰ (in RTL it slides from the right). Holds the navigation
 /// hub items (single source: [moreMenuEntries], shared with the full-page
 /// [MoreScreen]) plus the account actions moved off the منطقتي page (D-396):
-/// the language toggle, the (inert) theme control, the calendar export and
-/// sign-out. The session-bound actions show only when signed in.
+/// the Face-ID sign-in toggle, the calendar export and sign-out (the language
+/// toggle + inert dark-mode tile were removed 2026-07-08 — language lives on the
+/// More screen's settings row). The session-bound actions show only when signed in.
 class MoreDrawer extends ConsumerWidget {
   const MoreDrawer({super.key});
 
@@ -132,24 +132,12 @@ class MoreDrawer extends ConsumerWidget {
                       },
                     ),
                   const Divider(color: SimfTokens.beigeBorder, height: 1),
-                  // Account actions moved here from منطقتي (D-396).
-                  _DrawerTile(
-                    icon: Icons.language,
-                    title: l10n.languageToggleLabel,
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      unawaited(
-                        ref.read(localeControllerProvider.notifier).toggle(),
-                      );
-                    },
-                  ),
-                  // Visible but inert — the app has no light theme yet (owner
-                  // decision, carried over from the profile tile).
-                  _DrawerTile(
-                    icon: Icons.dark_mode_outlined,
-                    title: l10n.themeToggleTooltip,
-                    enabled: false,
-                  ),
+                  // Account actions moved here from منطقتي (D-396). The language
+                  // toggle + the inert dark-mode tile were removed (owner
+                  // 2026-07-08): language is changed from the More screen's
+                  // الإعدادات row (and the home header pill), and the app is
+                  // navy-always (no light theme), so a dead dark-mode row added
+                  // nothing to the menu.
                   // Face-ID sign-in toggle (D-441) — self-hides when the device
                   // has no usable biometric; enabling enrols a device key,
                   // disabling revokes it. Account action, so signed-in only.
@@ -247,29 +235,23 @@ class MoreDrawer extends ConsumerWidget {
 }
 
 /// One drawer row in the navy KSA styling: a white leading icon over a white
-/// title (owner 2026-07-07: main-menu nav icons are white, not gold). [enabled]
-/// false renders the muted, non-tappable variant.
+/// title (owner 2026-07-07: main-menu nav icons are white, not gold).
 class _DrawerTile extends StatelessWidget {
   const _DrawerTile({
     required this.icon,
     required this.title,
     this.onTap,
-    this.enabled = true,
   });
 
   final IconData icon;
   final String title;
   final VoidCallback? onTap;
-  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
-    final color = enabled ? Colors.white : SimfTokens.inkMuted;
-    final titleColor = enabled ? Colors.white : SimfTokens.inkMuted;
     return ListTile(
-      enabled: enabled,
-      leading: Icon(icon, color: color),
-      title: Text(title, style: TextStyle(color: titleColor)),
+      leading: Icon(icon, color: Colors.white),
+      title: Text(title, style: const TextStyle(color: Colors.white)),
       onTap: onTap,
     );
   }

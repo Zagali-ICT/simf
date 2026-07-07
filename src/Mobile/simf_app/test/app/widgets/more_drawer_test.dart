@@ -157,17 +157,18 @@ Future<void> _scrollTo(WidgetTester tester, Finder finder) async {
 
 void main() {
   group('MoreDrawer (shared shell side menu)', () {
-    testWidgets('signed-in shows the nav hub + language/theme/calendar/logout',
+    testWidgets('signed-in shows the nav hub + calendar/logout',
         (tester) async {
       await _pump(tester, auth: _RecordingAuthController(signedIn: true));
 
       // Nav hub (top of the list, visible without scrolling).
       expect(find.text('About the forum'), findsOneWidget);
       // Account actions moved here from the profile page (D-396) — at the
-      // bottom of the scrollable drawer.
+      // bottom of the scrollable drawer. The language toggle + dark-mode tile
+      // were removed 2026-07-08 (owner); language lives on the More screen.
       await _scrollTo(tester, find.text('Sign out'));
-      expect(find.text('العربية · English'), findsOneWidget);
-      expect(find.text('Light / dark mode'), findsOneWidget);
+      expect(find.text('العربية · English'), findsNothing);
+      expect(find.text('Light / dark mode'), findsNothing);
       expect(find.text('Share my calendar'), findsOneWidget);
       // The end group (D-668): contact us + about (app) + logout.
       expect(find.text('Contact us'), findsOneWidget);
@@ -184,8 +185,8 @@ void main() {
       // Contact us + About are public — shown even to a not-signed-in guest
       // (owner 2026-07-06, D-668).
       await _scrollTo(tester, find.text('About the app'));
-      expect(find.text('العربية · English'), findsOneWidget);
-      expect(find.text('Light / dark mode'), findsOneWidget);
+      expect(find.text('العربية · English'), findsNothing);
+      expect(find.text('Light / dark mode'), findsNothing);
       expect(find.text('Contact us'), findsOneWidget);
       expect(find.text('About the app'), findsOneWidget);
       // Session-bound actions hidden.
