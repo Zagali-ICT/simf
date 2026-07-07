@@ -182,12 +182,13 @@ internal sealed class AdminSystemSettingService(
         Guid actorUserId, AdminUpdateSiteSettingsRequest request,
         CancellationToken cancellationToken = default)
     {
-        // D-495 — the social links + welcome message now live on the singleton
+        // D-495 — the social links + welcome message live on the singleton
         // OrganizationProfile (one source of truth). null = leave the field
         // unchanged; a provided value (including an empty string) is applied — an
-        // empty string clears it. Social links must be absolute http(s) URLs. The
-        // CP page sends every field (a full overwrite); partial updates are also
-        // supported (used by tests + future callers).
+        // empty string clears it. Social links must be absolute http(s) URLs.
+        // Since D-650 the Site Settings page sends only the registration message
+        // (social is edited on the Organization Profile page), so its unsent social
+        // fields stay null → untouched here; partial updates are supported + tested.
         var profile = await db.OrganizationProfile
             .SingleOrDefaultAsync(p => p.Id == OrganizationProfile.SingletonId, cancellationToken);
         if (profile is null)

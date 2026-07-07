@@ -904,8 +904,6 @@
   <data name="Admin.SiteSettings.Section.Registration.Hint" xml:space="preserve"><value>Shown to a visitor when registration completes.</value></data>
   <data name="Admin.SiteSettings.Field.RegMessageAr" xml:space="preserve"><value>Welcome message (Arabic)</value></data>
   <data name="Admin.SiteSettings.Field.RegMessageEn" xml:space="preserve"><value>Welcome message (English)</value></data>
-  <data name="Admin.SiteSettings.Section.Social" xml:space="preserve"><value>Social links</value></data>
-  <data name="Admin.SiteSettings.Section.Social.Hint" xml:space="preserve"><value>Public social-media URLs shown on the app and website. Leave a field blank to hide that link.</value></data>
   <data name="Admin.SiteSettings.Save" xml:space="preserve"><value>Save</value></data>
   <data name="Admin.SiteSettings.Saving" xml:space="preserve"><value>Saving…</value></data>
   <data name="Admin.SiteSettings.Saved" xml:space="preserve"><value>Site settings saved.</value></data>
