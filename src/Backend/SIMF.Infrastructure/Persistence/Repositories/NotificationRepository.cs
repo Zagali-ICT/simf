@@ -54,7 +54,9 @@ internal sealed class NotificationRepository(SimfIdentityDbContext dbContext)
                 row.ReadAt != null,
                 row.CreatedAt,
                 row.RelatedEntityType,
-                row.RelatedEntityId))
+                row.RelatedEntityId,
+                row.ClickUrl,
+                row.GroupCode))
             .ToListAsync(cancellationToken);
 
         return (page, total);

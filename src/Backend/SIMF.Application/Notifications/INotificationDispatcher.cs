@@ -33,6 +33,14 @@ public sealed class NotificationRequest
     public string? RelatedEntityType { get; init; }
     public Guid? RelatedEntityId { get; init; }
 
+    /// <summary>D-677 — an explicit app-internal deep-link. Null (the default)
+    /// lets <see cref="NotificationKindCatalog"/> derive one from the kind +
+    /// <see cref="RelatedEntityId"/>; a non-null value here wins.</summary>
+    public string? ClickUrl { get; init; }
+
+    /// <summary>D-677 — an explicit group code; null defers to the catalog.</summary>
+    public string? Group { get; init; }
+
     /// <summary>When true, the dispatcher queues an email for the user
     /// (P13 wires the template renderer behind this).</summary>
     public bool SendEmail { get; init; }

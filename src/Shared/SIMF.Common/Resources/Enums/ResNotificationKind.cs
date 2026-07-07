@@ -34,6 +34,10 @@ public static class ResNotificationKind
     public static string MeetingScheduled => Get(nameof(MeetingScheduled));
     public static string MeetingCancelled => Get(nameof(MeetingCancelled));
     public static string SessionRatingRequest => Get(nameof(SessionRatingRequest));
+    public static string DayRatingRequest => Get(nameof(DayRatingRequest));
+    public static string EventRatingRequest => Get(nameof(EventRatingRequest));
+    public static string AppRatingRequest => Get(nameof(AppRatingRequest));
+    public static string ExhibitionRatingRequest => Get(nameof(ExhibitionRatingRequest));
 
     private static string Get(string key) =>
         ResourceManager.GetString(key, CultureInfo.CurrentUICulture) ?? key;

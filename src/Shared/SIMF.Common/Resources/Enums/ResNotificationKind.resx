@@ -26,4 +26,8 @@
   <data name="MeetingScheduled" xml:space="preserve"><value>A meeting was scheduled for you</value></data>
   <data name="MeetingCancelled" xml:space="preserve"><value>A meeting was cancelled</value></data>
   <data name="SessionRatingRequest" xml:space="preserve"><value>Rate this session</value></data>
+  <data name="DayRatingRequest" xml:space="preserve"><value>Rate today's programme</value></data>
+  <data name="EventRatingRequest" xml:space="preserve"><value>Rate the forum</value></data>
+  <data name="AppRatingRequest" xml:space="preserve"><value>Rate the app</value></data>
+  <data name="ExhibitionRatingRequest" xml:space="preserve"><value>Rate the exhibition</value></data>
 </root>
