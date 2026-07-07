@@ -19,6 +19,8 @@ NotificationItem _item({
   NotificationSeverity severity = NotificationSeverity.warning,
   String? relatedEntityType,
   String? relatedEntityId,
+  String? clickUrl,
+  String? group,
 }) {
   return NotificationItem(
     id: id,
@@ -31,6 +33,8 @@ NotificationItem _item({
     isRead: isRead,
     relatedEntityType: relatedEntityType,
     relatedEntityId: relatedEntityId,
+    clickUrl: clickUrl,
+    group: group,
   );
 }
 
@@ -311,6 +315,92 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('BADGE QR'), findsOneWidget);
+    });
+
+    testWidgets('tapping a clickUrl notification pushes that in-app location',
+        (tester) async {
+      // Backend-driven deep-link (D-678): a Day-rating prompt carries a
+      // clickUrl, pushed verbatim because its path is allowlisted.
+      final repo = _FakeNotificationsRepository(
+        items: <NotificationItem>[
+          _item(
+            id: 'day1',
+            title: 'Rate today',
+            kind: 'DayRatingRequest',
+            isRead: true,
+            clickUrl: '/rate?code=Day&targetId=day-7',
+            group: 'Ratings',
+          ),
+        ],
+      );
+      final router = GoRouter(
+        initialLocation: '/',
+        routes: <RouteBase>[
+          GoRoute(
+            name: RouteNames.notifications,
+            path: '/',
+            builder: (context, state) => const NotificationsScreen(),
+          ),
+          GoRoute(
+            path: '/rate',
+            builder: (context, state) => Text(
+              'RATE code=${state.uri.queryParameters['code']} '
+              'target=${state.uri.queryParameters['targetId']}',
+            ),
+          ),
+        ],
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: <Override>[
+            notificationsRepositoryProvider.overrideWithValue(repo),
+          ],
+          child: MaterialApp.router(
+            locale: const Locale('en'),
+            supportedLocales: AppL10n.supportedLocales,
+            localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+              ...AppL10n.localizationsDelegates,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            routerConfig: router,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Rate today'), findsOneWidget);
+
+      await tester.tap(find.text('Rate today'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('RATE code=Day target=day-7'), findsOneWidget);
+    });
+
+    testWidgets('the Sessions chip includes the new Ratings group (D-678)',
+        (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeNotificationsRepository(
+          items: <NotificationItem>[
+            _item(
+              id: 'r1',
+              title: 'Rate today',
+              kind: 'DayRatingRequest',
+              group: 'Ratings',
+            ),
+            _item(id: 'v1', title: 'VIP invite', kind: 'VipBroadcast', group: 'Vip'),
+          ],
+        ),
+      );
+      expect(find.text('Rate today'), findsOneWidget);
+      expect(find.text('VIP invite'), findsOneWidget);
+
+      await tester.tap(find.text('Sessions'));
+      await tester.pumpAndSettle();
+      // Ratings is inside the Sessions chip; Vip is not.
+      expect(find.text('Rate today'), findsOneWidget);
+      expect(find.text('VIP invite'), findsNothing);
     });
   });
 

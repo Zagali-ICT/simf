@@ -26,7 +26,8 @@
 | E2E-MOB033-004 | Empty inbox → empty state, no mark-all action | edge | P1 | authored ✓ (screen `empty list shows the empty state`, `no mark-all action when everything is read`) |
 | E2E-MOB033-005 | A read failure → error + Retry that re-fetches | resilience | P0 | authored ✓ (screen `error shows retry, which re-fetches`) |
 | E2E-MOB033-006 | String `kind`/`severity` decode tolerantly (unknown → Info) | contract | P1 | authored ✓ (models `decodes the string kind/severity…`, `an unknown or missing severity falls back to info`) |
-| E2E-MOB033-007 | Tapping an actionable notification deep-links: `SessionRatingRequest` → the Session rate form; **`BookingConfirmed` → the entry-badge QR** | happy | P1 | authored ✓ (screen `tapping a read SessionRatingRequest deep-links…`, `tapping a BookingConfirmed notification opens the badge QR`) |
+| E2E-MOB033-007 | Tapping an actionable notification deep-links: a server **`clickUrl`** (allowlisted path) is pushed verbatim; otherwise the kind fallback (`SessionRatingRequest` → rate form, `BookingConfirmed` → entry-badge QR); a foreign `clickUrl` is ignored | happy | P1 | authored ✓ (screen `tapping a clickUrl notification pushes…`, `tapping a read SessionRatingRequest deep-links…`, `tapping a BookingConfirmed notification opens the badge QR`) |
+| E2E-MOB033-008 | Chips filter by the server **`group`** (with a kind→group fallback for pre-migration rows): the جلسات chip covers Sessions/Bookings/Meetings/Ratings, VIP covers Vip | happy | P1 | authored ✓ (screen `the Sessions chip includes the new Ratings group`) |
 
 ## Scenarios
 
