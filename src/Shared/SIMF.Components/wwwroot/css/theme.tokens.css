@@ -150,6 +150,18 @@
      notification-bell badge + error item). */
   --color-danger: var(--color-error);
   --color-on-danger: var(--color-text-on-primary);
+  /* Danger button hover / active — fixed deep-reds, intentionally constant
+     across themes (SimfButton danger variant). */
+  --color-error-hover: #8E1F18;
+  --color-error-active: #6E1812;
+
+  /* Blazor reconnect overlay (ReconnectModal) — framework-infra colours kept
+     as fixed constants across every theme (the overlay is theme-independent
+     chrome: a white box, distinct light-blue button, not brand navy). */
+  --color-reconnect-surface: #FFFFFF;
+  --color-reconnect-button: #6B9ED2;
+  --color-reconnect-button-hover: #3B6EA2;
+  --color-reconnect-ripple: #0087FF;
 
   /* Small + elevated shadows alongside the card shadow. */
   --shadow-sm: 0 1px 3px rgba(26, 36, 51, 0.12);

@@ -32,6 +32,7 @@ public sealed class ExportVenueMapEndpoint(
 {
     private Dictionary<Guid, string> _hallCodes = new();
     private Dictionary<Guid, string> _boothCodes = new();
+    private bool _lookupsLoaded;
 
     protected override string RoutePath => "/admin/venue-map/export";
     protected override string Permission => PermissionCatalog.VenueMap.Export;
@@ -58,11 +59,26 @@ public sealed class ExportVenueMapEndpoint(
     {
         var nodes = (await service.ListAsync(query, ct)).Items;
 
-        var halls = await hallService.ListAllAsync(new GridQuery { Top = 5_000 }, ct);
-        _hallCodes = halls.Items.ToDictionary(h => h.Id, h => h.Code);
+        // FastEndpoints creates one endpoint instance per request and the export
+        // base calls this once per page, so build the Hall/Booth code maps only on
+        // the first page. Both list services clamp Top to 200, so page through each
+        // lookup — a venue with >200 halls/booths still resolves every node's code.
+        if (!_lookupsLoaded)
+        {
+            var halls = await GridExportPaging.CollectAllAsync(
+                async skip => (await hallService.ListAllAsync(
+                    GridExportPaging.Page(new GridQuery(), skip, MaxExportRows), ct)).Items,
+                MaxExportRows);
+            _hallCodes = halls.ToDictionary(h => h.Id, h => h.Code);
 
-        var booths = await boothService.ListAllAsync(new GridQuery { Top = 5_000 }, ct);
-        _boothCodes = booths.Items.ToDictionary(b => b.Id, b => b.Code);
+            var booths = await GridExportPaging.CollectAllAsync(
+                async skip => (await boothService.ListAllAsync(
+                    GridExportPaging.Page(new GridQuery(), skip, MaxExportRows), ct)).Items,
+                MaxExportRows);
+            _boothCodes = booths.ToDictionary(b => b.Id, b => b.Code);
+
+            _lookupsLoaded = true;
+        }
 
         return nodes;
     }
@@ -95,6 +111,11 @@ public sealed class ImportVenueMapEndpoint(
     IGridExcelImporter importer)
     : AdminGridImportEndpoint(importer)
 {
+    // Import batches can reference any hall/booth by code; page the whole list (the
+    // list services clamp Top to 200) up to this bound so a >200-hall/booth venue
+    // still resolves. Keep equal to AdminGridExportEndpoint.MaxExportRows — the
+    // import must resolve every FK a matching export could have written (D-644/645).
+    private const int LookupPageCap = 5_000;
     private Dictionary<string, Guid>? _hallsByCode;
     private Dictionary<string, Guid>? _boothsByCode;
 
@@ -158,8 +179,11 @@ public sealed class ImportVenueMapEndpoint(
         var trimmed = code.Trim();
         if (string.IsNullOrEmpty(trimmed)) return null;
 
-        _hallsByCode ??= (await hallService.ListAllAsync(new GridQuery { Top = 5_000 }, ct))
-            .Items.GroupBy(h => h.Code, StringComparer.OrdinalIgnoreCase)
+        _hallsByCode ??= (await GridExportPaging.CollectAllAsync(
+                async skip => (await hallService.ListAllAsync(
+                    GridExportPaging.Page(new GridQuery(), skip, LookupPageCap), ct)).Items,
+                LookupPageCap))
+            .GroupBy(h => h.Code, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.First().Id, StringComparer.OrdinalIgnoreCase);
 
         if (_hallsByCode.TryGetValue(trimmed, out var id)) return id;
@@ -173,8 +197,11 @@ public sealed class ImportVenueMapEndpoint(
         var trimmed = code.Trim();
         if (string.IsNullOrEmpty(trimmed)) return null;
 
-        _boothsByCode ??= (await boothService.ListAllAsync(new GridQuery { Top = 5_000 }, ct))
-            .Items.GroupBy(b => b.Code, StringComparer.OrdinalIgnoreCase)
+        _boothsByCode ??= (await GridExportPaging.CollectAllAsync(
+                async skip => (await boothService.ListAllAsync(
+                    GridExportPaging.Page(new GridQuery(), skip, LookupPageCap), ct)).Items,
+                LookupPageCap))
+            .GroupBy(b => b.Code, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.First().Id, StringComparer.OrdinalIgnoreCase);
 
         if (_boothsByCode.TryGetValue(trimmed, out var id)) return id;

@@ -53,8 +53,6 @@ public sealed record AdminParticipationDocumentRequestDetail(
 /// <summary>D-500 — admin moves the row off Pending. Status must be Accepted or
 /// Rejected. Open for inheritance so the route-binding endpoint can carry an
 /// <c>Id</c> field (the D-168 pattern).</summary>
-public class RespondToParticipationDocumentRequestRequest
+public class RespondToParticipationDocumentRequestRequest : RespondToRequest
 {
-    public MeetingRequestStatus Status { get; set; }
-    public string? ResponseNote { get; set; }
 }

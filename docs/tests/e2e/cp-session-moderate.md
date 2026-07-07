@@ -238,6 +238,11 @@ Scenario: Arabic toggle mirrors the desk
 
 ## Implementation notes
 
+- **Entry point (D-646).** The desk is per-session, so it is **not** a nav item —
+  it is reached from the **Sessions grid** (`/admin/sessions`) via the **Moderate**
+  (gavel) row action, gated by `<AuthorizedAction Permission="Questions.Moderate">`
+  (see `cp-admin-sessions.md` E2E-SES-031). `CpNavigation` documents the same
+  ("reached from the Sessions grid, not the nav").
 - **API integration tests cover this surface at a lower layer** (no browser),
   under `tests/SIMF.Api.Tests/`:
   - `SessionQuestionsTests.cs` —

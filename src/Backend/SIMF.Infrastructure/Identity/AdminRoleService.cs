@@ -30,8 +30,7 @@ internal sealed class AdminRoleService(
     public async Task<GridPage<AdminRoleSummary>> ListAllAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
+        var (skip, top) = query.ClampPage(25, 200);
 
         var roles = dbContext.Roles.AsNoTracking().AsQueryable();
 
@@ -69,7 +68,7 @@ internal sealed class AdminRoleService(
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminRoleSummary>.Of(page, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     public async Task<AdminRoleSummary?> GetAsync(

@@ -1,6 +1,7 @@
 // Tests: SIMF.Api.Tests/ExhibitorVisitorScanTests.cs
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Exhibitors.Abstractions;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Contacts;
 using SIMF.Contracts.Exhibitors;
@@ -19,7 +20,7 @@ namespace SIMF.Infrastructure.Exhibitors;
 /// </summary>
 internal sealed class ExhibitorVisitorService(
     SimfAppDbContext appDbContext,
-    SimfIdentityDbContext identityDbContext,
+    IIdentityUserDirectory userDirectory,
     TimeProvider timeProvider) : IExhibitorVisitorService
 {
     private const int NoteMaxLength = 512;
@@ -193,11 +194,7 @@ internal sealed class ExhibitorVisitorService(
                 .ToListAsync(cancellationToken))
                 .ToDictionary(c => c.Id, c => (En: c.Name, Ar: c.NameArabic));
 
-        var emails = (await identityDbContext.Users.AsNoTracking()
-                .Where(u => userIds.Contains(u.Id))
-                .Select(u => new { u.Id, u.Email })
-                .ToListAsync(cancellationToken))
-            .ToDictionary(u => u.Id, u => u.Email);
+        var emails = await userDirectory.GetEmailsAsync(userIds, cancellationToken);
 
         foreach (var userId in userIds.Distinct())
         {

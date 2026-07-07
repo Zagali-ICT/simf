@@ -218,6 +218,9 @@ public static class DependencyInjection
         // (driven by the daily RetentionSweepWorker host).
         services.AddScoped<IRetentionPurgeService, RetentionPurgeService>();
         services.AddScoped<IPermissionRepository, PermissionRepository>();
+        // Phase-6 de-dup (D-636) — resolves Identity-owned user attributes for
+        // App-side services across the DB boundary (D-157: no cross-DB JOIN).
+        services.AddScoped<IIdentityUserDirectory, IdentityUserDirectory>();
         services.AddScoped<ISecondFactorTokenRepository, SecondFactorTokenRepository>();
         services.AddScoped<ITotpRecoveryCodeRepository, TotpRecoveryCodeRepository>();
         // R4 — D-095: persistence seams for the services that moved from

@@ -27,14 +27,14 @@ body {
     inset-block-end: 0;
     padding: var(--space-3) var(--space-5);
     background-color: var(--color-error);
-    color: #FFFFFF;
+    color: var(--color-on-danger);
     font-family: var(--font-family-base);
     font-size: var(--font-size-body);
     z-index: 1000;
 }
 
 #blazor-error-ui .reload {
-    color: #FFFFFF;
+    color: var(--color-on-danger);
 }
 
 #blazor-error-ui .dismiss {

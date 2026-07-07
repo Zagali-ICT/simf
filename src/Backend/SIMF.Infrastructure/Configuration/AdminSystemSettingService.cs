@@ -27,8 +27,7 @@ internal sealed class AdminSystemSettingService(
     public async Task<GridPage<AdminSystemSettingSummary>> ListAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 50, 1, 200);
+        var (skip, top) = query.ClampPage(50, 200);
 
         var rows = db.SystemSettings.AsNoTracking().AsQueryable();
 
@@ -74,7 +73,7 @@ internal sealed class AdminSystemSettingService(
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminSystemSettingSummary>.Of(page, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     public async Task<AdminSystemSettingDetail?> GetAsync(
@@ -183,12 +182,13 @@ internal sealed class AdminSystemSettingService(
         Guid actorUserId, AdminUpdateSiteSettingsRequest request,
         CancellationToken cancellationToken = default)
     {
-        // D-495 — the social links + welcome message now live on the singleton
+        // D-495 — the social links + welcome message live on the singleton
         // OrganizationProfile (one source of truth). null = leave the field
         // unchanged; a provided value (including an empty string) is applied — an
-        // empty string clears it. Social links must be absolute http(s) URLs. The
-        // CP page sends every field (a full overwrite); partial updates are also
-        // supported (used by tests + future callers).
+        // empty string clears it. Social links must be absolute http(s) URLs.
+        // Since D-650 the Site Settings page sends only the registration message
+        // (social is edited on the Organization Profile page), so its unsent social
+        // fields stay null → untouched here; partial updates are supported + tested.
         var profile = await db.OrganizationProfile
             .SingleOrDefaultAsync(p => p.Id == OrganizationProfile.SingletonId, cancellationToken);
         if (profile is null)

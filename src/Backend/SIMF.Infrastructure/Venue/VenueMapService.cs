@@ -25,8 +25,7 @@ internal sealed class VenueMapService(
     public async Task<GridPage<AdminVenueMapNodeSummary>> ListAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 50, 1, 500);
+        var (skip, top) = query.ClampPage(50, 500);
 
         var rows = db.VenueMapNodes.AsNoTracking().AsQueryable();
 
@@ -69,7 +68,7 @@ internal sealed class VenueMapService(
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminVenueMapNodeSummary>.Of(page, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     public async Task<AdminVenueMapNodeDetail?> GetAsync(

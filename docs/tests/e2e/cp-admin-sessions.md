@@ -61,6 +61,7 @@
 | E2E-SES-022 | Excel export: toolbar Export downloads an .xlsx of the filtered grid / selected rows (D-356) | happy | P1 | _to author_ |
 | E2E-SES-023 | Excel import: upload a workbook → rows created + result modal with per-row outcome (D-356) | happy | P1 | _to author_ |
 | E2E-SES-024 | Excel import: a non-workbook / wrong-sheet upload → bilingual rejection, nothing created (D-356) | error | P1 | _to author_ |
+| E2E-SES-031 | Moderate row action → navigates to the live Q&A desk; hidden without Questions.Moderate (D-646) | happy | P1 | _to author_ |
 | E2E-SES-025 | AI live captions field round-trips + the whole live section survives an edit (regression — D-439) | happy/regression | P1 | authored ✓ (`AdminSessionsTests.Update_round_trips_all_live_fields`) |
 | E2E-SES-026 | Excel export/import round-trips the 8 previously-dropped fields (Description+Arabic, the 2 live URLs, the 2 live captions, Type, SeatSelectionModeOverride) — D-506 | happy/regression | P1 | authored ✓ (`SessionsExcelTests.Export_includes_the_dropped_round_trip_columns` + `.Import_round_trips_the_dropped_fields`) |
 
@@ -642,6 +643,23 @@ Scenario: Fetching before a URL is entered is blocked client-side
 Scenario: The subtitle tools are gated by Sessions.Edit
   Given the endpoint is Policies(Sessions.Edit + RequireApprovedAccount)
   Then an admin without Sessions.Edit is denied at the API (403), same as the CRUD gate
+```
+
+### E2E-SES-031 — Moderate row action opens the live Q&A desk (D-646)
+
+```gherkin
+Scenario: The Moderate row action navigates to the per-session moderation desk
+  Given the administrator is on /admin/sessions with at least one session listed
+  And the administrator holds Questions.Moderate (or the Administrator wildcard)
+  When the administrator clicks the "Moderate live Q&A" (gavel) action on a session row
+  Then the browser navigates to /sessions/{that session id}/moderate
+  And the live Q&A moderation desk for that session loads
+
+Scenario: The Moderate action is hidden for an admin without Questions.Moderate
+  Given the administrator holds Sessions.View but not Questions.Moderate
+  When the sessions grid renders
+  Then the row shows Edit / Details / Deactivate but NOT the Moderate action
+  # UX-only: the desk page + its API still enforce Questions.Moderate (403) if reached directly.
 ```
 
 ---

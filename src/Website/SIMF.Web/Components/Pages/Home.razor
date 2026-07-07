@@ -3,9 +3,6 @@
    unauthenticated visitor is sent to the sign-in page. *@
 @page "/account"
 @rendermode AppRenderMode.InteractiveServerNoPrerender
-@inject SimfAuthClient Api
-@inject SimfAuthSession Session
-@inject NavigationManager Nav
 
 <PageTitle>Saudi International Maritime Forum</PageTitle>
 
@@ -19,40 +16,4 @@
             Sign out
         </SimfButton>
     </SimfSignedInLanding>
-}
-
-@code {
-    private bool _signingOut;
-
-    protected override void OnInitialized()
-    {
-        if (!Session.IsSignedIn)
-        {
-            Nav.NavigateTo("/login");
-        }
-    }
-
-    private async Task SignOutAsync()
-    {
-        if (_signingOut)
-        {
-            return;
-        }
-
-        _signingOut = true;
-        try
-        {
-            var accessToken = Session.Tokens?.AccessToken;
-            if (accessToken is not null)
-            {
-                await Api.SignOutAsync(accessToken);
-            }
-            Session.Clear();
-            Nav.NavigateTo("/login");
-        }
-        finally
-        {
-            _signingOut = false;
-        }
-    }
 }

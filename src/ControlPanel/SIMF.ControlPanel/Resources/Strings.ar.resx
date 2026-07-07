@@ -896,8 +896,6 @@
   <data name="Admin.SiteSettings.Section.Registration.Hint" xml:space="preserve"><value>تُعرض للزائر عند اكتمال التسجيل.</value></data>
   <data name="Admin.SiteSettings.Field.RegMessageAr" xml:space="preserve"><value>رسالة الترحيب (عربي)</value></data>
   <data name="Admin.SiteSettings.Field.RegMessageEn" xml:space="preserve"><value>رسالة الترحيب (إنجليزي)</value></data>
-  <data name="Admin.SiteSettings.Section.Social" xml:space="preserve"><value>روابط التواصل</value></data>
-  <data name="Admin.SiteSettings.Section.Social.Hint" xml:space="preserve"><value>روابط مواقع التواصل العامة المعروضة في التطبيق والموقع. اترك الحقل فارغاً لإخفاء الرابط.</value></data>
   <data name="Admin.SiteSettings.Save" xml:space="preserve"><value>حفظ</value></data>
   <data name="Admin.SiteSettings.Saving" xml:space="preserve"><value>جارٍ الحفظ…</value></data>
   <data name="Admin.SiteSettings.Saved" xml:space="preserve"><value>تم حفظ إعدادات الموقع.</value></data>
@@ -1437,6 +1435,7 @@
   <data name="Admin.Sessions.Action.Edit" xml:space="preserve"><value>تعديل</value></data>
   <data name="Admin.Sessions.Action.Details" xml:space="preserve"><value>تفاصيل</value></data>
   <data name="Admin.Sessions.Action.Deactivate" xml:space="preserve"><value>إلغاء التفعيل</value></data>
+  <data name="Admin.Sessions.Action.Moderate" xml:space="preserve"><value>إدارة الأسئلة المباشرة</value></data>
   <data name="Admin.Sessions.Action.SelectAll" xml:space="preserve"><value>اختيار الكل</value></data>
   <data name="Admin.Sessions.Action.SelectRow" xml:space="preserve"><value>اختيار الصف</value></data>
   <data name="Admin.Sessions.Action.Up" xml:space="preserve"><value>أعلى</value></data>

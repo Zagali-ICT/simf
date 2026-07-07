@@ -2,6 +2,7 @@
 using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Contacts.Abstractions;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Contacts;
 using SIMF.Domain.Contacts;
@@ -19,7 +20,7 @@ namespace SIMF.Infrastructure.Contacts;
 /// </summary>
 internal sealed class VisitorShareService(
     SimfAppDbContext appDbContext,
-    SimfIdentityDbContext identityDbContext,
+    IIdentityUserDirectory userDirectory,
     TimeProvider timeProvider) : IVisitorShareService
 {
     // Crockford base32 (excludes I, L, O, U, 0, 1) — mirrors the QrId minter.
@@ -271,11 +272,7 @@ internal sealed class VisitorShareService(
                 .ToDictionary(c => c.Id, c => (En: c.Name, Ar: c.NameArabic));
 
         // Email is Identity-owned — one cross-DB round-trip (D-157: no join).
-        var emails = (await identityDbContext.Users.AsNoTracking()
-                .Where(u => userIds.Contains(u.Id))
-                .Select(u => new { u.Id, u.Email })
-                .ToListAsync(cancellationToken))
-            .ToDictionary(u => u.Id, u => u.Email);
+        var emails = await userDirectory.GetEmailsAsync(userIds, cancellationToken);
 
         foreach (var userId in userIds.Distinct())
         {

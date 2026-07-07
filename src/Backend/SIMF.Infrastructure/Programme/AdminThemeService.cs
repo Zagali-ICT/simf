@@ -26,8 +26,7 @@ internal sealed class AdminThemeService(
     public async Task<GridPage<AdminThemeSummary>> ListAllAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
+        var (skip, top) = query.ClampPage(25, 200);
 
         var rows = dbContext.Themes.AsNoTracking().AsQueryable();
 
@@ -69,7 +68,7 @@ internal sealed class AdminThemeService(
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminThemeSummary>.Of(page, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     public async Task<AdminThemeDetail?> GetAsync(

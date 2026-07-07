@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Application.Requests.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -20,7 +21,7 @@ namespace SIMF.Infrastructure.Requests;
 /// <c>SpeakerMeetingRequestService</c>.</summary>
 internal sealed class ParticipationDocumentRequestService(
     SimfAppDbContext appDbContext,
-    SimfIdentityDbContext identityDbContext,
+    IIdentityUserDirectory userDirectory,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<ParticipationDocumentRequestService> logger)
@@ -83,8 +84,7 @@ internal sealed class ParticipationDocumentRequestService(
         Guid actorUserId, GridQuery query,
         CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
+        var (skip, top) = query.ClampPage(25, 200);
 
         var rows = appDbContext.ParticipationDocumentRequests.AsNoTracking().AsQueryable();
         var statusFilter = string.Empty;
@@ -129,7 +129,7 @@ internal sealed class ParticipationDocumentRequestService(
             r.DocumentType, r.Note, r.Status, r.ResponseNote, r.CreatedAt, r.RespondedAt))
             .ToList();
         return GridPage<AdminParticipationDocumentRequestRow>.Of(items, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     public async Task<AdminParticipationDocumentRequestDetail> GetAsync(
@@ -224,10 +224,8 @@ internal sealed class ParticipationDocumentRequestService(
             .Where(p => p.UserId == req.RequestedByUserId)
             .Select(p => p.Name)
             .SingleOrDefaultAsync(cancellationToken);
-        var email = await identityDbContext.Users.AsNoTracking()
-            .Where(u => u.Id == req.RequestedByUserId)
-            .Select(u => u.Email)
-            .SingleOrDefaultAsync(cancellationToken);
+        var email = await userDirectory.GetEmailAsync(
+            req.RequestedByUserId, cancellationToken);
 
         return new AdminParticipationDocumentRequestDetail(
             req.Id, req.RequestedByUserId, name, email,

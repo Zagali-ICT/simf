@@ -28,8 +28,7 @@ internal sealed class AdminExhibitorService(
     public async Task<GridPage<AdminExhibitorSummary>> ListAllAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
+        var (skip, top) = query.ClampPage(25, 200);
 
         var rows = appDbContext.Exhibitors.AsNoTracking().AsQueryable();
         if (!string.IsNullOrWhiteSpace(query.Search))
@@ -85,7 +84,7 @@ internal sealed class AdminExhibitorService(
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminExhibitorSummary>.Of(page, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     public async Task<AdminExhibitorDetail?> GetAsync(

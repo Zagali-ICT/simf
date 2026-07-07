@@ -8,14 +8,4 @@ namespace SIMF.Contracts.Configuration;
 public sealed record SiteSettingsResponse(
     string RegistrationSuccessMessageAr,
     string RegistrationSuccessMessageEn,
-    SiteSocialLinks Social);
-
-/// <summary>The configurable social-media URLs (null = not set).</summary>
-public sealed record SiteSocialLinks(
-    string? Facebook,
-    string? X,
-    string? Instagram,
-    string? LinkedIn,
-    string? YouTube,
-    string? TikTok,
-    string? Snapchat);
+    SocialLinks Social);

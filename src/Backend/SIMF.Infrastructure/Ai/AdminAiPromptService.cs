@@ -24,8 +24,7 @@ internal sealed class AdminAiPromptService(
     public async Task<GridPage<AdminAiPromptSummary>> ListAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
+        var (skip, top) = query.ClampPage(25, 200);
 
         var rows = appDbContext.AiPrompts.AsNoTracking().AsQueryable();
 
@@ -85,7 +84,7 @@ internal sealed class AdminAiPromptService(
                 p.IsActive, p.Version, p.CreatedAt, p.UpdatedAt))
             .ToListAsync(cancellationToken);
         return GridPage<AdminAiPromptSummary>.Of(items, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     public async Task<AdminAiPromptDetail?> GetAsync(
@@ -317,8 +316,7 @@ internal sealed class AdminAiPromptService(
     public async Task<GridPage<AdminAiInvocationRow>> ListInvocationsAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 50, 1, 500);
+        var (skip, top) = query.ClampPage(50, 500);
 
         var rows = appDbContext.AiInvocations.AsNoTracking().AsQueryable();
 
@@ -379,7 +377,7 @@ internal sealed class AdminAiPromptService(
                 i.ErrorCode, i.CreatedAt))
             .ToListAsync(cancellationToken);
         return GridPage<AdminAiInvocationRow>.Of(items, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     public async Task<AdminAiDashboard> GetDashboardAsync(

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.Email;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Application.MeetingRequests.Abstractions;
 using SIMF.Application.Notifications;
 using SIMF.Common;
@@ -22,7 +23,7 @@ namespace SIMF.Infrastructure.MeetingRequests;
 /// now-removed session-scoped flow, D-278).</summary>
 internal sealed class SpeakerMeetingRequestService(
     SimfAppDbContext appDbContext,
-    SimfIdentityDbContext identityDbContext,
+    IIdentityUserDirectory userDirectory,
     ISpeakerAvailabilityService availability,
     INotificationDispatcher notifications,
     IEmailQueue emailQueue,
@@ -182,8 +183,7 @@ internal sealed class SpeakerMeetingRequestService(
         Guid actorUserId, GridQuery query,
         CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
+        var (skip, top) = query.ClampPage(25, 200);
 
         var rows = appDbContext.SpeakerMeetingRequests.AsNoTracking().AsQueryable();
         var statusFilter = string.Empty;
@@ -263,7 +263,7 @@ internal sealed class SpeakerMeetingRequestService(
             r.Subject, r.Status, r.ResponseNote, r.CreatedAt, r.RespondedAt))
             .ToList();
         return GridPage<AdminSpeakerMeetingRequestRow>.Of(items, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     public async Task<AdminSpeakerMeetingRequestDetail> GetAsync(
@@ -460,10 +460,8 @@ internal sealed class SpeakerMeetingRequestService(
             .Select(s => new { s.Name, s.NameArabic })
             .SingleAsync(cancellationToken);
 
-        var email = await identityDbContext.Users.AsNoTracking()
-            .Where(u => u.Id == req.RequestedByUserId)
-            .Select(u => u.Email)
-            .SingleOrDefaultAsync(cancellationToken);
+        var email = await userDirectory.GetEmailAsync(
+            req.RequestedByUserId, cancellationToken);
 
         return new AdminSpeakerMeetingRequestDetail(
             req.Id, req.SpeakerId, speaker.Name, speaker.NameArabic,

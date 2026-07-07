@@ -545,8 +545,7 @@ internal sealed class SeatReservationService(
         Guid sessionId, GridQuery query,
         CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 50, 1, 500);
+        var (skip, top) = query.ClampPage(50, 500);
 
         var baseQuery = appDbContext.SeatReservations.AsNoTracking()
             .Where(r => r.SessionId == sessionId && r.ReleasedAt == null);
@@ -557,7 +556,7 @@ internal sealed class SeatReservationService(
             .Select(r => new SessionSeatCell(r.Id, r.RowLabel, r.SeatNumber, r.Kind))
             .ToListAsync(cancellationToken);
         return GridPage<SessionSeatCell>.Of(rows, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     // -- Booking approval queue (P2.2 / D-227 — FDS-005 §5.2) --
@@ -565,8 +564,7 @@ internal sealed class SeatReservationService(
     public async Task<GridPage<BookingQueueRow>> ListPendingBookingsAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 50, 1, 500);
+        var (skip, top) = query.ClampPage(50, 500);
 
         // Pending, still-held visitor bookings. Admin row-blocks are created
         // Approved with a null ReservedForUserId, so they never appear here.
@@ -649,7 +647,7 @@ internal sealed class SeatReservationService(
         }).ToList();
 
         return GridPage<BookingQueueRow>.Of(items, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     public async Task ApproveBookingAsync(

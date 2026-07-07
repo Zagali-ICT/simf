@@ -31,8 +31,7 @@ internal sealed class AdminSessionService(
     public async Task<GridPage<AdminSessionSummary>> ListAllAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
+        var (skip, top) = query.ClampPage(25, 200);
 
         var rows = dbContext.Sessions
             .AsNoTracking()
@@ -100,7 +99,7 @@ internal sealed class AdminSessionService(
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminSessionSummary>.Of(page, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 
     public async Task<AdminSessionDetail?> GetAsync(

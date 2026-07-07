@@ -7,8 +7,8 @@
 | **Auth** | `[Authorize]` |
 | **Status** | ✅ Real |
 | **Backend** | `POST /account/api/notifications/list`, `DELETE /account/api/notifications/{id}`, `POST /account/api/notifications/read-all` |
-| **Source** | [`Notifications.razor`](../../../src/Website/SIMF.Web/Components/Pages/Account/Notifications.razor) |
-| **Last reviewed** | 2026-05-28 |
+| **Source** | [`Notifications.razor`](../../../src/Website/SIMF.Web/Components/Pages/Account/Notifications.razor) + [`Notifications.razor.cs`](../../../src/Website/SIMF.Web/Components/Pages/Account/Notifications.razor.cs) |
+| **Last reviewed** | 2026-07-06 |
 
 ## 1. Purpose
 
@@ -29,4 +29,15 @@ finding).
 - D-132 — orphan fix: UserProfile header now links here.
 - CP equivalent: [`cp/account-notifications.md`](../cp/account-notifications.md).
 
-_Last reviewed:_ 2026-05-28 by Claude (D-133 slice 5).
+## 13. Tests
+
+- bUnit: [`NotificationsPageTests`](../../../tests/SIMF.Web.Tests/NotificationsPageTests.cs)
+  — the empty-list shell + a populated row via the stubbed BFF JS bridge.
+
+## Changelog
+
+- 2026-07-06 (D-629) — C# moved to a `Notifications.razor.cs` code-behind
+  partial (Website clean-code, Phase 5); dropped an unused `NavigationManager`
+  injection; added bUnit coverage. Behaviour + wire unchanged.
+
+_Last reviewed:_ 2026-07-06 by Claude (D-629).

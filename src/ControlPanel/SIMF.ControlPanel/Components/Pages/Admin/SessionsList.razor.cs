@@ -19,6 +19,7 @@ public partial class SessionsList
     [Inject] private IStringLocalizer<Strings> L { get; set; } = default!;
     [Inject] private IJSRuntime JS { get; set; } = default!;
     [Inject] private CpPreferences Prefs { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
 
     private record Toast(string Variant, string Message);
 
@@ -145,6 +146,13 @@ public partial class SessionsList
         _form = FormKind.None;
         _target = null;
     }
+
+    // D-646 — the live Q&A moderation desk is per-session, so it is reached from the
+    // Sessions grid rather than the nav (see CpNavigation). The desk page + the API
+    // both enforce Questions.Moderate; the row action is wrapped in AuthorizedAction
+    // for the same permission, so an admin without it never sees this button.
+    private void OpenModeration(AdminSessionSummary row) =>
+        Nav.NavigateTo($"/sessions/{row.Id}/moderate");
 
     // D-356 — Excel export/import wired to the reusable CrudGridExcel component.
     private Task OnExportAsync(IReadOnlyList<AdminSessionSummary> selected) =>

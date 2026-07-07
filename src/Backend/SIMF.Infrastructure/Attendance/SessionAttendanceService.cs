@@ -57,8 +57,7 @@ internal sealed class SessionAttendanceService(
     public async Task<GridPage<SessionAttendanceRow>> ListSessionAttendanceAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
-        var skip = Math.Max(0, query.Skip);
-        var top = Math.Clamp(query.Top is > 0 ? query.Top : 20, 1, 200);
+        var (skip, top) = query.ClampPage(20, 200);
 
         var sessions = appDbContext.Sessions.AsNoTracking()
             .Where(session => session.IsActive);
@@ -148,6 +147,6 @@ internal sealed class SessionAttendanceService(
             liveBySession.GetValueOrDefault(session.Id))).ToList();
 
         return GridPage<SessionAttendanceRow>.Of(rows, total,
-            new GridQuery { Skip = skip, Top = top });
+            skip, top);
     }
 }

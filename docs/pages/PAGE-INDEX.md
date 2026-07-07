@@ -113,6 +113,7 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/gates/dashboard` | ✅ Real | Administrator | — | [e2e/cp-admin-gates-dashboard.md](../tests/e2e/cp-admin-gates-dashboard.md) |
 | `/admin/configuration` | ✅ Real (D-229) | Administrator  | [cp/admin-configuration.md](cp/admin-configuration.md) | [e2e/cp-admin-configuration.md](../tests/e2e/cp-admin-configuration.md) |
 | `/admin/organization-profile` | ✅ Real (D-495) | Administrator | [cp/organization-profile.md](cp/organization-profile.md) | [e2e/cp-organization-profile.md](../tests/e2e/cp-organization-profile.md) |
+| `/admin/contact-inquiries` | ✅ Real (D-464; BFF wired D-649) | Administrator | — | [e2e/cp-contact-inquiries.md](../tests/e2e/cp-contact-inquiries.md) |
 | `/admin/operations` | ✅ Real (D-166) | Administrator | — | [e2e/cp-admin-operations.md](../tests/e2e/cp-admin-operations.md) |
 | `/admin/operation-log` | ✅ Real | Administrator | [cp/admin-operation-log.md](cp/admin-operation-log.md) | [e2e/cp-admin-operation-log.md](../tests/e2e/cp-admin-operation-log.md) |
 | `/admin/logs` | ✅ Real | Administrator | [cp/admin-logs.md](cp/admin-logs.md) | [e2e/cp-admin-logs.md](../tests/e2e/cp-admin-logs.md) |
@@ -148,7 +149,7 @@ No public nav per D-064 — every page is reached via direct URL or auth redirec
 |-------|--------|----------|-----|------|
 | `/` (marketing landing) | ✅ Real (D-294 dynamic) | Public | [web/landing.md](web/landing.md) | [e2e/web-landing.md](../tests/e2e/web-landing.md) |
 | `/account` | ✅ Real | Any signed-in | [web/home.md](web/home.md) | [e2e/web-home.md](../tests/e2e/web-home.md) |
-| `/programme` | ✅ Real (D-199) | Public | — | [e2e/web-programme.md](../tests/e2e/web-programme.md) |
+| `/programme` | ✅ Real (D-199) | Public | [web/programme.md](web/programme.md) | [e2e/web-programme.md](../tests/e2e/web-programme.md) |
 | `/visit` | ✅ Real | Public | — | [e2e/web-visit.md](../tests/e2e/web-visit.md) |
 | `/login` | 🔒 Auth-only | Anyone | [web/login.md](web/login.md) | [e2e/web-login.md](../tests/e2e/web-login.md) |
 | `/login/verify` | 🔒 Auth-only | Mid-sign-in | [web/otp-verify.md](web/otp-verify.md) | [e2e/web-otp-verify.md](../tests/e2e/web-otp-verify.md) |
