@@ -4,17 +4,24 @@ import '../../app/theme/tokens.dart';
 
 /// A selectable radio pill (Figma 522:2151): a white pill with the [label] and
 /// an 18px gold-ringed radio that fills when [selected]. Shared form primitive.
+/// [textDirection] pins the label/radio order (null = follow the ambient
+/// direction); the gender field forces RTL so the frame's text-then-radio order
+/// holds in every locale (D-674).
 class SimfRadioPill extends StatelessWidget {
   const SimfRadioPill({
     required this.label,
     required this.selected,
     required this.onTap,
+    this.textDirection,
     super.key,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onTap;
+
+  /// Forces the row's direction; null follows the ambient [Directionality].
+  final TextDirection? textDirection;
 
   @override
   Widget build(BuildContext context) {
@@ -28,6 +35,7 @@ class SimfRadioPill extends StatelessWidget {
           borderRadius: SimfTokens.borderRadiusSmall,
         ),
         child: Row(
+          textDirection: textDirection,
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Text(

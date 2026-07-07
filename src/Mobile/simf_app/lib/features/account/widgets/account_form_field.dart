@@ -7,9 +7,11 @@ import '../../../app/widgets/simf_svg_icon.dart';
 import '../../../core/widgets/simf_field_label.dart';
 import '../../../core/widgets/simf_field_style.dart';
 
-/// The auth forms' email field: a [SimfFieldLabel] over an LTR [TextFormField]
-/// on the shared input style. Shared by sign-in / sign-up so the label,
-/// direction and decoration stay in one place.
+/// The auth forms' email field: a [SimfFieldLabel] over a [TextFormField] on
+/// the shared input style. Shared by sign-in / sign-up so the label, direction
+/// and decoration stay in one place. The field follows the ambient text
+/// direction (D-674): under Arabic the caret starts at the right like the
+/// password field — a typed Latin address still renders as an LTR run via bidi.
 class AccountEmailField extends StatelessWidget {
   const AccountEmailField({
     required this.controller,
@@ -38,8 +40,6 @@ class AccountEmailField extends StatelessWidget {
         TextFormField(
           controller: controller,
           keyboardType: TextInputType.emailAddress,
-          textDirection: TextDirection.ltr,
-          textAlign: TextAlign.start,
           maxLength: maxLength,
           enabled: enabled,
           onChanged: onChanged,
@@ -106,10 +106,12 @@ class AccountPasswordField extends StatelessWidget {
               tooltip: obscure
                   ? l10n.showPasswordTooltip
                   : l10n.hidePasswordTooltip,
+              // The eye tint matches the field's resting border (D-674) rather
+              // than the muted grey, so the suffix reads as part of the field.
               icon: SimfSvgIcon(
                 obscure ? AppAssets.authEyeOff : AppAssets.authEye,
                 size: 16,
-                color: SimfTokens.greyText,
+                color: SimfTokens.beigeBorder,
               ),
               onPressed: onToggleObscure,
             ),

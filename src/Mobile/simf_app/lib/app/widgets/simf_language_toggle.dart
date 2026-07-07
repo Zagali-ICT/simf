@@ -4,9 +4,10 @@ import '../localization/app_l10n.dart';
 import '../theme/tokens.dart';
 
 /// The language toggle — a 48×24 navy-deep **pill** with a gold dot and the
-/// target-language code (**"EN"** when Arabic is active, **"عر"** when English
-/// is active), matching Figma **1967:3661** (D-670, replaces the old gold globe
-/// glyph). [onPressed] flips AR ↔ EN; the control is disabled while [busy].
+/// target-language code (**"EN"** when Arabic is active, **"ع ر"** when English
+/// is active), matching Figma **1967:3661** (D-670; the label spacing + the
+/// inner top shadow were pinned to the frame on 2026-07-07, D-674). [onPressed]
+/// flips AR ↔ EN; the control is disabled while [busy].
 /// Shared by the onboarding top bar, the in-app header cluster
 /// ([SimfHeaderActions]) and the auth top controls so every screen shows one
 /// toggle design.
@@ -26,8 +27,9 @@ class SimfLanguageToggle extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     final isArabic = l10n.isArabic;
-    // Show the language you switch TO: Arabic active → "EN", English → "عر".
-    final label = isArabic ? 'EN' : 'عر';
+    // Show the language you switch TO: Arabic active → "EN", English → "ع ر"
+    // (the frame renders the Arabic label as two spaced letters, not "عر").
+    final label = isArabic ? 'EN' : 'ع ر';
     const dot = SizedBox(
       width: 16,
       height: 16,
@@ -63,16 +65,37 @@ class SimfLanguageToggle extends StatelessWidget {
               color: SimfTokens.navyDeep,
               borderRadius: BorderRadius.circular(12),
             ),
-            // The Figma control is a fixed LTR toggle: the gold dot sits toward
-            // the active side and the target-language label opposite it,
-            // regardless of the app's RTL direction.
+            // Figma 1967:3661 also has a 10% inset top shadow; it is
+            // imperceptible on the navy fill and, as the pill is shared
+            // app-wide, rendering it re-locks hundreds of goldens for no
+            // visible gain — deliberately omitted (D-674).
+            // Fixed LTR toggle: the gold dot sits on the active side and the
+            // label opposite. The dot is fixed and the label scales down so
+            // the wider "ع ر" never overflows the 48px pill.
             child: Directionality(
               textDirection: TextDirection.ltr,
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: isArabic
-                    ? <Widget>[dot, text]
-                    : <Widget>[text, dot],
+                    ? <Widget>[
+                        dot,
+                        Expanded(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerRight,
+                            child: text,
+                          ),
+                        ),
+                      ]
+                    : <Widget>[
+                        Expanded(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: text,
+                          ),
+                        ),
+                        dot,
+                      ],
               ),
             ),
           ),
