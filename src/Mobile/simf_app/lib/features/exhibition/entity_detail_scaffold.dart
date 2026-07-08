@@ -422,13 +422,13 @@ class _LinkRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: SimfTokens.space2),
-            // Figma 1439:11906/11919 — a GOLD caret pointing to the drill-in
-            // direction: left in RTL (as the Arabic frame shows), mirrored to
-            // right in LTR. (Owner 2026-07-08 — was a fixed beige left-chevron.)
-            Icon(
-              Directionality.of(context) == TextDirection.rtl
-                  ? Icons.chevron_left
-                  : Icons.chevron_right,
+            // Figma 1439:11906/11919 — the GOLD thin left-chevron. Reuses the
+            // same bundled ic_back.svg as the sponsor / speaker cards (the
+            // iconamoon thin chevron the frame draws — not a filled triangle,
+            // not auto-mirrored), so it matches the design and every other card
+            // caret. (Owner 2026-07-08 — was a fixed BEIGE Material chevron.)
+            const SimfSvgIcon(
+              'assets/icons/ic_back.svg',
               size: 18,
               color: SimfTokens.accent,
             ),
