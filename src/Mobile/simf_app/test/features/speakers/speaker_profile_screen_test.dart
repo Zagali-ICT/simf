@@ -90,11 +90,10 @@ class _Guest extends AuthController {
 }
 
 class _FakeRepo implements SpeakersRepository {
-  _FakeRepo({this.detail, this.status, this.slots = const <SpeakerSlot>[]});
+  _FakeRepo({this.detail, this.status});
 
   final SpeakerDetail? detail;
   final int? status;
-  final List<SpeakerSlot> slots;
   int submits = 0;
   DateTime? lastSlotStart;
   String? lastRequesterName;
@@ -115,7 +114,8 @@ class _FakeRepo implements SpeakersRepository {
   }
 
   @override
-  Future<List<SpeakerSlot>> getAvailableSlots(String speakerId) async => slots;
+  Future<List<SpeakerSlot>> getAvailableSlots(String speakerId) async =>
+      const <SpeakerSlot>[];
 
   @override
   Future<void> submitMeetingRequest(
@@ -229,6 +229,10 @@ void main() {
 
     testWidgets('a signed-in visitor can submit a meeting request',
         (tester) async {
+      tester.view.physicalSize = const Size(1200, 2600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
       final repo = _FakeRepo(detail: _detail());
       await _pump(tester, repo: repo, controller: _SignedIn());
 
@@ -238,51 +242,45 @@ void main() {
       // subject; the requester name comes from the signed-in account.
       expect(find.byType(TextField), findsOneWidget);
       expect(find.text('Subject'), findsOneWidget);
+      // A request needs the subject + a picked day + a picked time.
       await tester.enterText(find.byType(TextField), 'Discuss navigation');
+      await tester.tap(find.byKey(const ValueKey<String>('meeting-day-0')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey<String>('meeting-time-0')));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Send request'));
       await tester.pumpAndSettle();
 
       expect(repo.submits, 1);
       expect(repo.lastRequesterName, 'Visitor One');
+      expect(repo.lastSlotStart, isNotNull);
       expect(find.text('Meeting request sent'), findsOneWidget);
     });
 
     testWidgets(
-        'a speaker with availability slots shows day cards then time chips '
-        '(Figma 1776:4958/5036)', (tester) async {
+        'the meeting sheet always shows the day cards + time chips '
+        '(Figma 1776:5036) — a free date/time pick, not speaker slots',
+        (tester) async {
       tester.view.physicalSize = const Size(1200, 2600);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      final slot = SpeakerSlot(
-        startUtc: DateTime.utc(2030, 1, 1, 10),
-        endUtc: DateTime.utc(2030, 1, 1, 10, 30),
-      );
-      final repo = _FakeRepo(detail: _detail(), slots: <SpeakerSlot>[slot]);
+      // No availability slots — the pickers still render (upcoming days + times).
+      final repo = _FakeRepo(detail: _detail());
       await _pump(tester, repo: repo, controller: _SignedIn());
 
       await tester.tap(find.widgetWithText(FilledButton, 'Request meeting'));
       await tester.pumpAndSettle();
-      // The sheet shows a day card + the "choose a date first" hint; no time chip
-      // until a day is picked.
-      expect(find.byKey(const ValueKey<String>('meeting-day-0')), findsOneWidget);
-      expect(find.text('Please choose a date first'), findsOneWidget);
-      expect(find.byKey(const ValueKey<String>('meeting-slot-0')), findsNothing);
-
-      // Picking the (only) day reveals its time chip.
-      await tester.tap(find.byKey(const ValueKey<String>('meeting-day-0')));
-      await tester.pumpAndSettle();
-      expect(find.text('Please choose a date first'), findsNothing);
-      expect(find.byKey(const ValueKey<String>('meeting-slot-0')), findsOneWidget);
-
-      // Selecting the chip + entering a subject + sending submits the slot.
-      await tester.enterText(find.byType(TextField), 'Discuss navigation');
-      await tester.tap(find.byKey(const ValueKey<String>('meeting-slot-0')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Send request'));
-      await tester.pumpAndSettle();
-      expect(repo.submits, 1);
-      expect(repo.lastSlotStart, slot.startUtc);
+      expect(find.text('Choose the date'), findsOneWidget);
+      expect(find.text('Choose the time'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('meeting-day-0')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('meeting-time-0')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('shows a website chip when the speaker shared a website (D-544)',

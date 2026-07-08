@@ -1101,6 +1101,8 @@ class AppL10n {
   String get meetingChooseTimeLabel => _t('اختر الوقت', 'Choose the time');
   String get meetingChooseDateFirst =>
       _t('الرجاء اختيار التاريخ أولاً', 'Please choose a date first');
+  String get meetingPickDateTime =>
+      _t('الرجاء اختيار التاريخ والوقت', 'Please choose a date and time');
   String get meetingSlotNone =>
       _t('لا توجد فترات متاحة حالياً', 'No meeting slots available right now');
   String get meetingVipOnly =>

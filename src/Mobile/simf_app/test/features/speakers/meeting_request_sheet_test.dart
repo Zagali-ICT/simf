@@ -6,11 +6,16 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/features/speakers/data/speaker_models.dart';
 import 'package:simf_app/features/speakers/data/speakers_repository.dart';
 import 'package:simf_app/features/speakers/widgets/meeting_request_sheet.dart';
+import 'package:simf_app/features/speakers/widgets/meeting_slot_pickers.dart';
 
-/// Fake repo: two speakers for the bilateral picker, no free slots (the
-/// topic-only path). submit is a no-op success.
+/// Fake repo: two speakers for the bilateral picker; records the meeting-request
+/// submit so a test can assert the picked date + time were sent.
 class _FakeRepo implements SpeakersRepository {
-  const _FakeRepo();
+  _FakeRepo();
+
+  int submitCalls = 0;
+  String? lastSubject;
+  DateTime? lastSlotStartUtc;
 
   @override
   Future<List<SpeakerSummary>> getSpeakers() async => const <SpeakerSummary>[
@@ -42,14 +47,22 @@ class _FakeRepo implements SpeakersRepository {
     required String subject,
     DateTime? slotStartUtc,
     DateTime? slotEndUtc,
-  }) async {}
+  }) async {
+    submitCalls++;
+    lastSubject = subject;
+    lastSlotStartUtc = slotStartUtc;
+  }
 }
 
-Future<void> _pump(WidgetTester tester, {required String? speakerId}) async {
+Future<void> _pump(
+  WidgetTester tester, {
+  required String? speakerId,
+  SpeakersRepository? repo,
+}) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: <Override>[
-        speakersRepositoryProvider.overrideWithValue(const _FakeRepo()),
+        speakersRepositoryProvider.overrideWithValue(repo ?? _FakeRepo()),
       ],
       child: MaterialApp(
         locale: const Locale('en'),
@@ -66,6 +79,8 @@ Future<void> _pump(WidgetTester tester, {required String? speakerId}) async {
               speakerId: speakerId,
               defaultName: 'Raed',
               l10n: AppL10n.of(ctx),
+              // Fixed clock so the generated day cards are deterministic.
+              now: DateTime(2026, 7, 8),
             ),
           ),
         ),
@@ -102,6 +117,35 @@ void main() {
       expect(find.text('Select speaker'), findsNothing);
       expect(find.byType(DropdownButtonFormField<String>), findsNothing);
       expect(find.text('Subject'), findsOneWidget);
+    });
+
+    testWidgets('the date cards + time chips always show (Figma 1776:5036) — '
+        'not gated on speaker availability slots', (tester) async {
+      await _pump(tester, speakerId: 's1');
+
+      expect(find.text('Choose the date'), findsOneWidget);
+      expect(find.text('Choose the time'), findsOneWidget);
+      // Seven upcoming day cards + nine standard time chips, regardless of slots.
+      expect(find.byType(MeetingDayCard), findsNWidgets(7));
+      expect(find.byType(MeetingTimeChip), findsNWidgets(9));
+    });
+
+    testWidgets('submitting sends the picked subject + date + time', (tester) async {
+      final repo = _FakeRepo();
+      await _pump(tester, speakerId: 's1', repo: repo);
+
+      await tester.enterText(find.byType(TextField), 'Naval cooperation');
+      await tester.tap(find.byKey(const ValueKey<String>('meeting-day-0')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey<String>('meeting-time-1')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Send request'));
+      await tester.pumpAndSettle();
+
+      expect(repo.submitCalls, 1);
+      expect(repo.lastSubject, 'Naval cooperation');
+      // The picked day + time were combined into the requested slot start.
+      expect(repo.lastSlotStartUtc, isNotNull);
     });
   });
 }

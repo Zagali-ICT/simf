@@ -2,15 +2,18 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
+import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_confirm_dialog.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../speakers/widgets/meeting_request_sheet.dart';
 import 'data/request_models.dart';
 import 'data/requests_repository.dart';
-import 'new_request_sheet.dart';
 import 'widgets/request_action_row.dart';
 import 'widgets/request_card.dart';
 import 'widgets/request_status_chips.dart';
@@ -38,11 +41,36 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
+  /// "طلب جديد" (owner 2026-07-08) opens the meeting-request sheet (Figma
+  /// 1776:5036) with the speaker picker — a new bilateral-meeting request. The
+  /// list refreshes when the sheet closes so a just-submitted request shows.
   Future<void> _openNewRequest() async {
-    final submitted = await showNewRequestSheet(context);
-    if (submitted && mounted) {
+    final auth = ref.read(authControllerProvider);
+    if (auth is! AuthStateSignedIn) {
+      if (mounted) {
+        context.pushNamed(RouteNames.signIn);
+      }
+      return;
+    }
+    final l10n = AppL10n.of(context);
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      // The beige "طلب مقابلة" sheet with its own gold drag handle.
+      backgroundColor: SimfTokens.cardBeige,
+      showDragHandle: false,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(SimfTokens.radius)),
+      ),
+      builder: (_) => MeetingRequestSheet(
+        speakerId: null, // no fixed speaker → the picker is shown
+        defaultName: auth.session.user.displayName,
+        l10n: l10n,
+      ),
+    );
+    if (mounted) {
       ref.invalidate(myRequestsProvider);
-      _toast(AppL10n.of(context).requestSubmitted);
     }
   }
 

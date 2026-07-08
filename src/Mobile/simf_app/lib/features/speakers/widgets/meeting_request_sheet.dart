@@ -13,21 +13,26 @@ import '../data/speakers_repository.dart';
 import 'meeting_slot_pickers.dart';
 
 /// The meeting-request form (bottom sheet) — approved-account only (E2). The
-/// light "طلب مقابلة" sheet (Figma 1776:4958): gold handle, subject field, a
-/// row of day cards, then that day's time-slot chips, and a gold send button.
+/// beige "طلب مقابلة" sheet, Figma **1776:5036**: a gold drag handle, the
+/// الموضوع subject field, a row of upcoming day cards (اختيار التاريخ), standard
+/// time chips (اختيار الوقت), then the gold "ارسال الطلب" button.
 ///
 /// Two entry points share this one sheet:
-/// - from a **speaker profile** — [speakerId] is set, the speaker is fixed and
-///   no picker is shown (the original flow);
-/// - from the **bilateral-meeting** tile (owner: VIP "اللقاءات الثنائية") —
-///   [speakerId] is **null**, so the sheet shows a speaker **dropdown** to pick
-///   one, then the same subject + slot form. The request itself is VIP-gated by
-///   the server (a 403 surfaces the "VIP only" message) either way.
+/// - from a **speaker profile** — [speakerId] is set, so the speaker is fixed and
+///   no picker is shown;
+/// - from the **"طلب جديد"** on the requests list (اللقاءات الثنائية, 1408:9726) —
+///   [speakerId] is **null**, so the sheet first shows a speaker **dropdown**.
+///
+/// The date + time are a free client-side pick (owner 2026-07-08): the next seven
+/// days as cards and standard hourly times as chips — not tied to a speaker's
+/// availability slots — so the sheet always renders the full Figma layout. The
+/// request itself is VIP-gated by the server (a 403 surfaces "VIP only").
 class MeetingRequestSheet extends ConsumerStatefulWidget {
   const MeetingRequestSheet({
     required this.speakerId,
     required this.defaultName,
     required this.l10n,
+    this.now,
     super.key,
   });
 
@@ -35,6 +40,10 @@ class MeetingRequestSheet extends ConsumerStatefulWidget {
   final String? speakerId;
   final String defaultName;
   final AppL10n l10n;
+
+  /// The clock for the day cards; defaults to live. Injected by tests so the
+  /// generated dates are deterministic.
+  final DateTime? now;
 
   @override
   ConsumerState<MeetingRequestSheet> createState() =>
@@ -50,50 +59,40 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
   // The picker's speaker list (bilateral flow only; empty on the profile flow).
   List<SpeakerSummary> _speakers = const <SpeakerSummary>[];
   bool _speakersLoaded = false;
-  // D-474/D-475 (#11) — the VIP availability-slot picker (optional: a picked slot
-  // is the VIP flow; none keeps the legacy topic-only request).
-  List<SpeakerSlot> _slots = const <SpeakerSlot>[];
-  SpeakerSlot? _selectedSlot;
-  // The picked calendar day (Figma 1701:7479 — date+time selection): narrows the
-  // available slots to that day's times before one is chosen.
-  DateTime? _selectedDate;
-  bool _slotsLoaded = false;
+  // The picked calendar day + time of day (a free pick — Figma 1776:5052/5076).
+  DateTime? _selectedDay;
+  TimeOfDay? _selectedTime;
+
+  // Standard meeting hours as time chips (Figma 1776:5076): 09:00 ص → 05:00 م.
+  static const List<TimeOfDay> _timeOptions = <TimeOfDay>[
+    TimeOfDay(hour: 9, minute: 0),
+    TimeOfDay(hour: 10, minute: 0),
+    TimeOfDay(hour: 11, minute: 0),
+    TimeOfDay(hour: 12, minute: 0),
+    TimeOfDay(hour: 13, minute: 0),
+    TimeOfDay(hour: 14, minute: 0),
+    TimeOfDay(hour: 15, minute: 0),
+    TimeOfDay(hour: 16, minute: 0),
+    TimeOfDay(hour: 17, minute: 0),
+  ];
 
   @override
   void initState() {
     super.initState();
     _selectedSpeakerId = widget.speakerId;
-    if (widget.speakerId != null) {
-      unawaited(_loadSlots());
-    } else {
-      // Bilateral entry — load the speaker list for the picker.
+    // Bilateral entry (no fixed speaker) — load the speaker list for the picker.
+    if (widget.speakerId == null) {
       unawaited(_loadSpeakers());
     }
   }
 
-  Future<void> _loadSlots() async {
-    final speakerId = _selectedSpeakerId;
-    if (speakerId == null) {
-      return;
-    }
-    try {
-      final slots = await ref
-          .read(speakersRepositoryProvider)
-          .getAvailableSlots(speakerId);
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _slots = slots;
-        _slotsLoaded = true;
-      });
-    } on ApiFailure {
-      if (!mounted) {
-        return;
-      }
-      // No slots shown; the legacy topic-only request still works.
-      setState(() => _slotsLoaded = true);
-    }
+  /// The next seven selectable days from today (Figma 1776:5052 — day cards).
+  List<DateTime> get _days {
+    final base = widget.now ?? DateTime.now();
+    final today = DateTime(base.year, base.month, base.day);
+    return <DateTime>[
+      for (var i = 0; i < 7; i++) today.add(Duration(days: i)),
+    ];
   }
 
   /// Bilateral flow — fetch the speakers for the dropdown.
@@ -115,20 +114,11 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
     }
   }
 
-  /// Picking a speaker in the bilateral flow: switch target + reload that
-  /// speaker's free slots (resetting any previous day/time pick).
   void _onSpeakerSelected(String? speakerId) {
     if (speakerId == null || speakerId == _selectedSpeakerId) {
       return;
     }
-    setState(() {
-      _selectedSpeakerId = speakerId;
-      _slots = const <SpeakerSlot>[];
-      _selectedDate = null;
-      _selectedSlot = null;
-      _slotsLoaded = false;
-    });
-    unawaited(_loadSlots());
+    setState(() => _selectedSpeakerId = speakerId);
   }
 
   @override
@@ -140,8 +130,7 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
   Future<void> _submit() async {
     final l10n = widget.l10n;
     // Owner: "no need for name" — the requester is the signed-in account, so we
-    // submit its display name as the requesterName the backend contract still
-    // requires, instead of asking the user to type it.
+    // submit its display name as the requesterName the backend contract requires.
     final name = widget.defaultName.trim();
     final speakerId = _selectedSpeakerId;
     if (speakerId == null) {
@@ -157,6 +146,15 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
           .showSnackBar(SnackBar(content: Text(l10n.meetingRequestInvalid)));
       return;
     }
+    final day = _selectedDay;
+    final time = _selectedTime;
+    if (day == null || time == null) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(l10n.meetingPickDateTime)));
+      return;
+    }
+    final startLocal =
+        DateTime(day.year, day.month, day.day, time.hour, time.minute);
     setState(() => _submitting = true);
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
@@ -165,8 +163,8 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
             speakerId,
             requesterName: name,
             subject: subject,
-            slotStartUtc: _selectedSlot?.startUtc,
-            slotEndUtc: _selectedSlot?.endUtc,
+            slotStartUtc: startLocal.toUtc(),
+            slotEndUtc: startLocal.add(const Duration(hours: 1)).toUtc(),
           );
       if (!mounted) {
         return;
@@ -184,39 +182,15 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
     }
   }
 
-  // The slot's local calendar day — the key that groups the available slots into
-  // the date picker (the time picker then lists that day's slots).
-  DateTime _dayOf(SpeakerSlot slot) {
-    final s = slot.startUtc.toLocal();
-    return DateTime(s.year, s.month, s.day);
-  }
-
-  // The distinct days that carry at least one free slot, ascending.
-  List<DateTime> get _availableDays {
-    final days = <DateTime>{for (final slot in _slots) _dayOf(slot)}.toList()
-      ..sort();
-    return days;
-  }
-
-  // The free slots on the selected day, ascending by start time.
-  List<SpeakerSlot> get _slotsForSelectedDay {
-    final day = _selectedDate;
-    if (day == null) {
-      return const <SpeakerSlot>[];
-    }
-    return _slots.where((s) => _dayOf(s) == day).toList()
-      ..sort((a, b) => a.startUtc.compareTo(b.startUtc));
-  }
-
-  // The slot's local start time as "10:00 ص" / "02:30 PM" (12-hour, Arabic ص/م,
-  // no intl locale needed — Figma 1776:5036).
-  String _formatSlotTime(SpeakerSlot slot, bool isArabic) {
-    final t = slot.startUtc.toLocal();
-    final hour12 = t.hour % 12 == 0 ? 12 : t.hour % 12;
+  // A time-of-day as "10:00 ص" / "02:30 PM" (12-hour, Arabic ص/م — Figma
+  // 1776:5078). No intl locale needed.
+  String _formatTime(TimeOfDay time, bool isArabic) {
+    final hour12 = time.hour % 12 == 0 ? 12 : time.hour % 12;
     final hh = hour12.toString().padLeft(2, '0');
-    final mm = t.minute.toString().padLeft(2, '0');
-    final meridiem =
-        isArabic ? (t.hour >= 12 ? 'م' : 'ص') : (t.hour >= 12 ? 'PM' : 'AM');
+    final mm = time.minute.toString().padLeft(2, '0');
+    final meridiem = isArabic
+        ? (time.hour >= 12 ? 'م' : 'ص')
+        : (time.hour >= 12 ? 'PM' : 'AM');
     return '$hh:$mm $meridiem';
   }
 
@@ -277,44 +251,21 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
             _speakerDropdown(l10n, isArabic),
             const SizedBox(height: SimfTokens.space4),
           ],
-          // The subject + slots + send appear once a speaker is set (always on
-          // the profile flow; after a pick on the bilateral flow).
+          // The subject + date + time + send appear once a speaker is set (always
+          // on the profile flow; after a pick on the bilateral flow).
           if (_selectedSpeakerId != null) ...<Widget>[
             _label(l10n.meetingSubjectLabel), // الموضوع
             const SizedBox(height: SimfTokens.space2),
             _subjectField(l10n),
             const SizedBox(height: SimfTokens.space4),
-            // The slot picker is sourced from the speaker's free slots so the
-            // chosen slot matches a free one the server accepts (VIP-only;
-            // optional — no pick keeps the legacy topic-only request).
-            if (_slotsLoaded && _slots.isNotEmpty) ...<Widget>[
-              _label(l10n.meetingChooseDateLabel), // اختر التاريخ
-              const SizedBox(height: SimfTokens.space2),
-              _dayCards(isArabic),
-              const SizedBox(height: SimfTokens.space4),
-              _label(l10n.meetingChooseTimeLabel), // اختر الوقت
-              const SizedBox(height: SimfTokens.space2),
-              if (_selectedDate == null)
-                Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: Text(
-                    l10n.meetingChooseDateFirst,
-                    style: const TextStyle(
-                      color: SimfTokens.greyText,
-                      fontSize: SimfTokens.textSm,
-                    ),
-                  ),
-                )
-              else
-                _timeChips(isArabic),
-              const SizedBox(height: SimfTokens.space5),
-            ] else if (_slotsLoaded) ...<Widget>[
-              Text(
-                l10n.meetingSlotNone,
-                style: const TextStyle(color: SimfTokens.greyText),
-              ),
-              const SizedBox(height: SimfTokens.space5),
-            ],
+            _label(l10n.meetingChooseDateLabel), // اختر التاريخ
+            const SizedBox(height: SimfTokens.space2),
+            _dayCards(isArabic),
+            const SizedBox(height: SimfTokens.space4),
+            _label(l10n.meetingChooseTimeLabel), // اختر الوقت
+            const SizedBox(height: SimfTokens.space2),
+            _timeChips(isArabic),
+            const SizedBox(height: SimfTokens.space5),
             _sendButton(l10n),
           ],
         ],
@@ -336,7 +287,7 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
       );
 
   /// The subject input — a white, beige-bordered field with the "اكتب الموضوع"
-  /// hint (Figma 1776:4967).
+  /// hint (Figma 1776:5048).
   Widget _subjectField(AppL10n l10n) => TextField(
         controller: _subject,
         textAlign: TextAlign.start,
@@ -373,9 +324,8 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
         ),
       );
 
-  /// The bilateral speaker picker — a beige-bordered dropdown of the speakers
-  /// (Figma 1776:5035 flow). Shown only when [MeetingRequestSheet.speakerId] is
-  /// null; picking one loads that speaker's slots.
+  /// The bilateral speaker picker — a beige-bordered dropdown of the speakers.
+  /// Shown only when [MeetingRequestSheet.speakerId] is null.
   Widget _speakerDropdown(AppL10n l10n, bool isArabic) {
     if (!_speakersLoaded) {
       return const Align(
@@ -443,54 +393,46 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
     );
   }
 
-  /// The horizontal row of day cards, one per day that carries a free slot.
+  /// The horizontal row of the next seven day cards (Figma 1776:5052).
   Widget _dayCards(bool isArabic) => SizedBox(
         height: 64,
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
-          itemCount: _availableDays.length,
+          itemCount: _days.length,
           separatorBuilder: (_, __) => const SizedBox(width: SimfTokens.space2),
           itemBuilder: (context, i) {
-            final day = _availableDays[i];
+            final day = _days[i];
             return MeetingDayCard(
               key: ValueKey<String>('meeting-day-$i'),
               weekday: gregorianWeekdayName(day, isArabic),
               dayNumber: day.day,
               month: gregorianMonthName(day.month, isArabic),
-              selected: _selectedDate == day,
-              onTap: () => setState(() {
-                _selectedDate = day;
-                _selectedSlot = null; // reset the time when the day changes
-              }),
+              selected: _selectedDay == day,
+              onTap: () => setState(() => _selectedDay = day),
             );
           },
         ),
       );
 
-  /// The selected day's free slots as tappable time chips.
-  Widget _timeChips(bool isArabic) {
-    final slots = _slotsForSelectedDay;
-    return Align(
-      alignment: AlignmentDirectional.centerStart,
-      child: Wrap(
-        spacing: SimfTokens.space2,
-        runSpacing: SimfTokens.space2,
-        children: <Widget>[
-          for (var i = 0; i < slots.length; i++)
-            MeetingTimeChip(
-              key: ValueKey<String>('meeting-slot-$i'),
-              label: _formatSlotTime(slots[i], isArabic),
-              // Compare by start time (SpeakerSlot has no value equality) so the
-              // highlight survives any future re-fetch of the slot list.
-              selected: _selectedSlot?.startUtc == slots[i].startUtc,
-              onTap: () => setState(() => _selectedSlot = slots[i]),
-            ),
-        ],
-      ),
-    );
-  }
+  /// The standard meeting times as tappable chips (Figma 1776:5076).
+  Widget _timeChips(bool isArabic) => Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: Wrap(
+          spacing: SimfTokens.space2,
+          runSpacing: SimfTokens.space2,
+          children: <Widget>[
+            for (var i = 0; i < _timeOptions.length; i++)
+              MeetingTimeChip(
+                key: ValueKey<String>('meeting-time-$i'),
+                label: _formatTime(_timeOptions[i], isArabic),
+                selected: _selectedTime == _timeOptions[i],
+                onTap: () => setState(() => _selectedTime = _timeOptions[i]),
+              ),
+          ],
+        ),
+      );
 
-  /// The full-width gold "ارسال الطلب" button (Figma 1776:5001).
+  /// The full-width gold "ارسال الطلب" button (Figma 1776:5083).
   Widget _sendButton(AppL10n l10n) => Material(
         color: SimfTokens.accent,
         borderRadius: SimfTokens.borderRadiusSmall,
