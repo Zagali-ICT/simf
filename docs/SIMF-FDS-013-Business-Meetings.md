@@ -21,6 +21,7 @@
 | 0.2 | 2026-06-03 | Engineering & Architecture Team | Owner resolved the open items (§12): company-type party (OI-1); **flexible per-hall configuration + allocation** — purpose (booth / session / meeting), allocation by whole / random-by-count / by-row-column pre-reserved, each over a from–to time-slot (OI-2/OI-3); **group** meetings, not strictly bilateral (OI-5); free from–to time-slot (OI-8); **freeze lifted** for this module's tables (OI-7, "no freeze"). Two follow-on questions raised (OI-9, OI-10). Still no code — pending §13 build-plan approval. |
 | 1.0 | 2026-06-03 | Engineering & Architecture Team | **Built (D-248)** as one end-to-end commit (owner: "do all", "generalize across all three", "one big commit"). OI-9 + OI-10 resolved; see §14 As-built. |
 | 1.1-DRAFT | 2026-07-08 | Engineering & Architecture Team | **DRAFT amendment (D0-1) — pending owner sign-off; NO code until approved.** Adds the owner's "meeting-in-hall" request→review→speaker-approval workflow (owner batch item 7) + the app "real available slots" fix (item 6) on top of the built 1.0 core. The 1.0 admin-arranged path is unchanged; this adds the **attendee-request → admin-review-vs-hall-availability → speaker double-opt-in email → surfaces in اللقاءات الثنائية** flow that §2 of 1.0 explicitly excluded. Grounded in the shipped code (§15.2); open items in §15.9 need owner decisions before build. |
+| 1.1-DRAFT (rev 2) | 2026-07-08 | Engineering & Architecture Team | **Owner resolved the three blocking open items (§15.9):** OI-A → **reuse the 3 built types** (g2b/g2vip are display labels on a BusinessMeeting, no new workflow); OI-D/OI-I → **speaker double-opt-in email with a signed single-use 72h token** (the new `AllowAnonymous` exception is **owner-approved**); OI-B → **new `HallAvailabilityWindow`** (symmetric with speaker availability). The remaining OIs (C/E/F/G/H) proceed on the documented recommendation unless the owner flags them. The spec is **build-ready pending the owner's final "go"**; the build follows the §15.10 DoD as one wave (Wave C, item 7 + item 6). |
 
 ---
 
@@ -354,14 +355,19 @@ When approved and built, the same changeset must include:
 
 # §15 — v1.1 (DRAFT, D0-1): meeting-in-hall requests, hall availability & speaker double-opt-in
 
-> **STATUS: DRAFT — pending owner sign-off. NO code is written against this section
-> until the §15.9 open items are resolved and the owner approves.** This amendment
-> is additive to the built 1.0 core (§1–§14): the admin-arranged path stays exactly
+> **STATUS: DRAFT — the three blocking open items are owner-resolved (§15.9,
+> 2026-07-08); build-ready pending the owner's final "go".** This amendment is
+> additive to the built 1.0 core (§1–§14): the admin-arranged path stays exactly
 > as shipped; §15 adds the *attendee-initiated request* path the owner asked for.
 > It is authored the same way 1.0 was — drafted with open items for the owner to
 > resolve, then built. It also governs the app-side "real available slots" fix
 > (owner item 6). Cross-references SIMF-FDS-008 §5.3 (the one-to-one meeting
 > request / PR approval) and SIMF-FDS-004 (Hall).
+>
+> **Owner resolutions (2026-07-08):** reuse the 3 built meeting types (g2b/g2vip =
+> labels, OI-A); **speaker double-opt-in email with a signed single-use 72h token,
+> AllowAnonymous exception approved** (OI-D/OI-I); **new `HallAvailabilityWindow`**
+> (OI-B). Remaining OIs proceed on recommendation.
 
 ## 15.1 Why this amendment (owner items 6 & 7)
 
@@ -514,19 +520,26 @@ path where the owner explicitly asked for it.
 | Email (speaker) | HTML email with **Approve** / **Reject** links (GAP-3). |
 | Public website | a minimal **token landing page** (approve/reject outcome) — new. |
 
-## 15.9 Open items — OWNER DECISIONS NEEDED BEFORE BUILD
+## 15.9 Open items
 
-| # | Item | Recommendation |
-|---|------|----------------|
-| **OI-A** | g2g/g2b/g2vip taxonomy — reuse the 3 built types + labels, or new request types? | Reuse built types; g2b/g2vip are labels on a BusinessMeeting. |
-| **OI-B** | Hall "available time" — a new `HallAvailabilityWindow`, or existing `HallAllocation` only? | Add `HallAvailabilityWindow` (symmetric with speakers). |
-| **OI-C** | On accept — materialise a `BusinessMeeting`, or stamp the binding on the request? | Stamp on the request for v1.1; converge later. |
-| **OI-D** | Speaker double-opt-in — is admin-accept **not** final (speaker must also approve)? | Yes (as the owner described). |
-| **OI-E** | Delegation requests pick from **hall** slots too? | Yes. |
-| **OI-F** | g2g confirmation channel — email the delegation head, or admin-confirm only? | Admin-confirm in v1.1 (no external delegation email yet). |
-| **OI-G** | Action token — persisted single-use entity vs stateless HMAC/JWT? | Persisted single-use `MeetingActionToken`. |
-| **OI-H** | New requester notification kind, or reuse? | Add `MeetingRequestConfirmed` (append-only). |
-| **OI-I** | Email-link TTL + the new `AllowAnonymous` exception approval. | 72h, single-use; **owner must approve the AllowAnonymous exception (§4).** |
+**Resolved (owner, 2026-07-08):**
+
+| # | Item | Resolution |
+|---|------|-----------|
+| **OI-A** | g2g/g2b/g2vip taxonomy | **Reuse the 3 built types** (Speaker / Delegation(g2g) / admin-arranged BusinessMeeting); g2b/g2vip are **display labels** on a BusinessMeeting — no new request workflow. |
+| **OI-B** | Hall "available time" model | **Add `HallAvailabilityWindow`** (symmetric with `SpeakerAvailabilityWindow`); the reviewer picks a real free hall slot. |
+| **OI-D** | Speaker double-opt-in | **Yes** — admin-accept is **not** final; the speaker must also approve (over the email links). |
+| **OI-I** | Email-link TTL + `AllowAnonymous` exception | **72h, single-use token; the new `AllowAnonymous` exception is APPROVED** (§4) — justified because the speaker cannot be authenticated over an email link. |
+
+**Proceeding on the documented recommendation (owner did not flag; may still override):**
+
+| # | Item | Default taken |
+|---|------|---------------|
+| **OI-C** | On accept — materialise a `BusinessMeeting` vs stamp the binding on the request | Stamp hall/table/slot on the request for v1.1; converge onto `BusinessMeeting` later. |
+| **OI-E** | Delegation requests pick from **hall** slots too | Yes — from `HallAvailabilityWindow` (OI-B). |
+| **OI-F** | g2g confirmation channel | Admin-confirm in v1.1 (no external delegation-head email yet). |
+| **OI-G** | Action token — persisted vs stateless | Persisted single-use, revocable, audited `MeetingActionToken`. |
+| **OI-H** | Requester notification kind | Add `MeetingRequestConfirmed` (append-only). |
 
 ## 15.10 Definition of Done (when approved & built — same changeset)
 
