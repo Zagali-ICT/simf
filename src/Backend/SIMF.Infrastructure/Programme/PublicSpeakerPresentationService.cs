@@ -8,12 +8,16 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Programme;
 
 /// <summary>Wave 2 (Figma 1388:7621 "عروض الجلسات") — the public, read-only view
-/// of speaker-presentation files for the app. Lists every active presentation on
-/// an active session (with the presenting speaker), time-ordered by session start
-/// so the app groups by day. D-568 (Wave C S6): the bytes come from the unified
-/// <c>StoredFile</c> store via <c>StoredFileName</c> (a bare-Guid pointer). Speaker
-/// + Session are real FKs on <see cref="SimfAppDbContext"/>, so both are resolved
-/// in the same query.</summary>
+/// backing the app's "الجلسات" tile. Lists EVERY active session (time-ordered by
+/// start so the app groups by day) with its primary speaker — NOT only the sessions
+/// that happen to have an uploaded deck (D-704, owner 2026-07-08): the card opens the
+/// session detail + AI summary, never the file, so a session with no presentation
+/// still belongs on this list. When a session DOES carry an active presentation, its
+/// id + file metadata ride along so the <c>/{id}/file</c> download route still
+/// resolves; otherwise the item id falls back to the session id and the file fields
+/// are empty (the app decodes them but the card ignores them). D-568 (Wave C S6):
+/// the bytes come from the unified <c>StoredFile</c> store via <c>StoredFileName</c>.
+/// Speaker + Session + Presentation are real FKs on <see cref="SimfAppDbContext"/>.</summary>
 internal sealed class PublicSpeakerPresentationService(
     SimfAppDbContext db,
     IFileStorageProvider fileStorage) : IPublicSpeakerPresentationService
@@ -21,22 +25,44 @@ internal sealed class PublicSpeakerPresentationService(
     public async Task<PublicPresentations> ListAsync(
         CancellationToken cancellationToken = default)
     {
-        var items = await db.SpeakerPresentations.AsNoTracking()
-            .Where(p => p.IsActive && p.Session!.IsActive)
-            .OrderBy(p => p.Session!.StartUtc)
-            .ThenBy(p => p.FileName)
-            .Select(p => new PublicPresentationItem(
-                p.Id,
-                p.SessionId,
-                p.Session!.Title,
-                p.Session.TitleArabic,
-                p.Session.StartUtc,
-                p.Speaker!.Name,
-                p.Speaker.NameArabic,
-                p.FileName,
-                p.ContentType,
-                p.SizeBytes))
+        // One row per active session. The primary speaker is the lowest-ordered
+        // SessionSpeaker; the optional presentation is the first active deck on the
+        // session (its id keeps the file download working where one exists).
+        var rows = await db.Sessions.AsNoTracking()
+            .Where(s => s.IsActive)
+            .OrderBy(s => s.StartUtc)
+            .ThenBy(s => s.Title)
+            .Select(s => new
+            {
+                s.Id,
+                s.Title,
+                s.TitleArabic,
+                s.StartUtc,
+                Speaker = s.Speakers
+                    .OrderBy(ss => ss.DisplayOrder)
+                    .Select(ss => new { ss.Speaker!.Name, ss.Speaker.NameArabic })
+                    .FirstOrDefault(),
+                Presentation = db.SpeakerPresentations
+                    .Where(p => p.SessionId == s.Id && p.IsActive)
+                    .OrderBy(p => p.FileName)
+                    .Select(p => new { p.Id, p.FileName, p.ContentType, p.SizeBytes })
+                    .FirstOrDefault(),
+            })
             .ToListAsync(cancellationToken);
+
+        var items = rows
+            .Select(r => new PublicPresentationItem(
+                r.Presentation is not null ? r.Presentation.Id : r.Id,
+                r.Id,
+                r.Title,
+                r.TitleArabic,
+                r.StartUtc,
+                r.Speaker?.Name ?? string.Empty,
+                r.Speaker?.NameArabic ?? string.Empty,
+                r.Presentation?.FileName ?? string.Empty,
+                r.Presentation?.ContentType ?? string.Empty,
+                r.Presentation?.SizeBytes ?? 0))
+            .ToList();
 
         return new PublicPresentations(items);
     }
