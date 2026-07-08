@@ -19,8 +19,8 @@ class GenderPillsField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    // The frame (168:2972) lays each pill text-then-radio in RTL; force it so
-    // the order holds under English too (D-674).
+    // D-698 (owner) — the gold ring leads and the label follows; forcing RTL
+    // keeps the ring on the right (leading edge) in both Arabic and English.
     return Row(
       children: <Widget>[
         Expanded(

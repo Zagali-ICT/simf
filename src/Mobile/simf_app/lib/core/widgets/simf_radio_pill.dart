@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../../app/theme/tokens.dart';
 
-/// A selectable radio pill (Figma 522:2151): a white pill with the [label] and
-/// an 18px gold-ringed radio that fills when [selected]. Shared form primitive.
-/// [textDirection] pins the label/radio order (null = follow the ambient
-/// direction); the gender field forces RTL so the frame's text-then-radio order
-/// holds in every locale (D-674).
+/// A selectable radio pill (Figma 522:2151): a white pill with an 18px
+/// gold-ringed radio that fills when [selected], then the [label]. Shared form
+/// primitive. [textDirection] pins the radio/label order (null = follow the
+/// ambient direction); the gender field forces RTL so the gold ring sits on the
+/// leading edge — rightmost in Arabic — in every locale (D-698; was text-first,
+/// D-674).
 class SimfRadioPill extends StatelessWidget {
   const SimfRadioPill({
     required this.label,
@@ -38,15 +39,8 @@ class SimfRadioPill extends StatelessWidget {
           textDirection: textDirection,
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: SimfTokens.navy,
-              ),
-            ),
-            const SizedBox(width: 12),
+            // D-698 — the gold ring leads (rightmost under the forced RTL), the
+            // label follows, per the owner's icon-first request.
             Container(
               width: 18,
               height: 18,
@@ -65,6 +59,15 @@ class SimfRadioPill extends StatelessWidget {
                       ),
                     )
                   : null,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: SimfTokens.navy,
+              ),
             ),
           ],
         ),

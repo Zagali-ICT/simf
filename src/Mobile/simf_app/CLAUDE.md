@@ -327,9 +327,25 @@ screenshots, UI affordances, data flow + endpoints, validation, edge cases,
 i18n/RTL, accessibility, E2E scenarios, changelog). Update `PAGE-INDEX.md` +
 `docs/tests/e2e/README.md` in the same changeset (project D-133/D-245/D-246).
 
-### 13.3 Freeze-after-done
-A page that passes the full per-page DoD is **FINAL** — no rework after. So the
-DoD must be fully satisfied (every gate below) before you declare it done.
+### 13.3 Stable-after-done — bug fixes are always allowed
+A page that passes the full per-page DoD is the **reference render**: don't churn
+it for taste or re-open settled design without a reason. But it is **not frozen** —
+correctness fixes and owner-requested changes are always allowed, and a real bug is
+never gated behind a "page is done" status. Whatever you change, re-lock the page's
+goldens, tests, and docs in the **same changeset** — that is what keeps a "done"
+page trustworthy. (This supersedes the old "freeze-after-done / FINAL" rule per the
+owner directive of 2026-07-08; the D-110 schema/enum/wire freeze is unaffected.)
+
+**Blast-radius rule (D-694).** A change to shared foundations — `lib/app/router.dart`,
+`packages/simf_auth_pkg` (session / roles / `effectiveAppRole`),
+`lib/app/theme/tokens.dart`, `lib/core/widgets/*`, or shared strings in
+`lib/app/localization/app_l10n.dart` — can silently break **other** screens' flows.
+Before committing one you MUST: (a) run the role×route matrix test
+(`test/app/router_role_matrix_test.dart`) and the flow tests
+(`integration_test/app_flows_test.dart`); (b) name every screen the change can reach
+in the commit message; (c) for any router/auth change, re-verify the sign-up face-
+capture path on a device. **Goldens prove pixels, not navigation** — a green golden
+did not catch the D-666 face-capture regression; only a flow/matrix test does.
 
 ### 13.4 Shared widgets + stateless, professional code
 Use the `lib/app/widgets/` `Simf*` catalogue; never copy a shared widget into a

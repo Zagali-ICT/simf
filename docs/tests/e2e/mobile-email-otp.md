@@ -22,8 +22,9 @@
 > **KSA-Project redesign (D-364, Figma 505:837):** the sign-up verify screen
 > now renders six segmented code boxes (one invisible capture field), the
 > gold-ringed mail mark, the gold `mm:ss` countdown + muted-blue label, and
-> the **لم يصلك الرمز؟ إعادة الإرسال** footer. The verify / resend / cooldown
-> contract is unchanged; the old screen is parked in
+> the **لم يصلك الرمز؟ إعادة الإرسال** footer. The verify / resend contract is
+> unchanged; the cooldown now runs a fixed **2-minute** countdown that starts on
+> entry (D-695). The old screen is parked in
 > `lib/features/_legacy_mockup/`. (The sign-in 2FA OTP screen keeps its
 > previous look until its own redesign changeset.)
 
@@ -34,7 +35,7 @@
 | E2E-MOB006-001 | Verify disabled until exactly 6 digits; a correct code verifies → "Email verified" → sign-in | happy | P0 | authored ✓ (widget test) |
 | E2E-MOB006-002 | Wrong code → bilingual inline error, field cleared, stays on screen (attempt consumed) | error | P0 | authored ✓ (widget test) |
 | E2E-MOB006-003 | Expired / attempt-capped code → bilingual error steering to Resend | error | P1 | authored (API errors AUTH_CODE_EXPIRED / AUTH_CODE_INVALID) |
-| E2E-MOB006-004 | Resend re-issues the code and starts the cooldown (button disabled while counting down) | happy | P0 | authored ✓ (widget test) |
+| E2E-MOB006-004 | A 2-minute countdown shows on entry (D-695); Resend is disabled until it elapses, then re-issues the code and restarts the 2-minute cooldown | happy | P0 | authored ✓ (widget test) |
 | E2E-MOB006-005 | Resend cap reached → 429 `RATE_LIMIT_EXCEEDED` bilingual message; Resend stays disabled | resilience | P1 | authored (API E2 / repo `_guard`) |
 | E2E-MOB006-006 | Non-digits rejected at input; no request fired for < 6 digits | edge | P1 | authored ✓ (digitsOnly + length gate) |
 | E2E-MOB006-007 | Network / 5xx → generic bilingual message, inputs kept | resilience | P1 | authored ✓ (widget test — NetworkUnavailable branch) |
@@ -84,17 +85,24 @@ Scenario: The code can no longer be used
 
 > Retrying the same code cannot succeed — the user must Resend (Page_006 L-7).
 
-### E2E-MOB006-004 — Resend + cooldown
+### E2E-MOB006-004 — On-entry countdown + resend cooldown (D-695)
 
 ```gherkin
-Scenario: Resend re-issues the code
+Scenario: The countdown shows on entry and gates the first resend
+  Given the guest has just landed on the email-verify screen (the code was sent)
+  Then a 2-minute countdown "إعادة الإرسال خلال 02:00" is shown
+  And the Resend action is disabled until the countdown reaches 00:00
+
+Scenario: Resend re-issues the code after the countdown elapses
+  Given the 2-minute countdown has reached 00:00
   When the guest taps "Resend code"
   Then the app POSTs { email } to /app/auth/resend-code
   And the previous code is invalidated and a fresh one is emailed
-  And the Resend button is disabled and shows a countdown using codeExpiresInSeconds
+  And a fresh 2-minute cooldown restarts (a fixed client cooldown — NOT the
+      600s codeExpiresInSeconds the endpoint returns)
 ```
 
-**Evidence:** `sign_up_email_verify_screen_test` — "Resend re-issues the code and starts the cooldown"; `auth_repository_impl_test` — "resendCode returns codeExpiresInSeconds from the response".
+**Evidence:** `sign_up_email_verify_screen_test` — "the resend cooldown shows on entry and blocks resend until it elapses (D-695)".
 
 ### E2E-MOB006-005 — Resend cap
 

@@ -172,7 +172,7 @@ class AppL10n {
       _t('إنشاء حساب · زائر', 'Sign up — visitor');
   String get profileSectionPersonal => _t('البيانات الشخصية', 'Personal');
   String get profileSectionAffiliation =>
-      _t('الجهة والتصنيف', 'Affiliation');
+      _t('الجهة والفئة', 'Affiliation');
   String get profileSectionInterests => _t('الاهتمامات', 'Interests');
   String get profileLoadError =>
       _t('تعذر تحميل النموذج.', 'Could not load the form.');
@@ -210,9 +210,9 @@ class AppL10n {
   // B3 — D-221 (الجهة): required-field message on the sign-up screen.
   String get organisationRequired =>
       _t('اختر جهتك من القائمة', 'Pick your organisation from the list');
-  String get profileTypeLabel => _t('التصنيف', 'Profile type');
+  String get profileTypeLabel => _t('الفئة', 'Profile type');
   // D-471 — hint for the profile-type searchable picker sheet.
-  String get profileTypeSearchHint => _t('ابحث عن التصنيف', 'Search profile type');
+  String get profileTypeSearchHint => _t('ابحث عن الفئة', 'Search profile type');
   // Page 007 — نوع التسجيل (Visitor/Other) filter (D-332). Visitor reuses
   // [signUpTypeVisitor]; Other is new.
   String get registrationTypeLabel => _t('نوع التسجيل', 'Registration type');
@@ -336,7 +336,7 @@ class AppL10n {
   String get plateDigitsHint => _t('١-٤ أرقام', '1–4 digits');
   // C5 (D-371) — under "Other" the profile-type pick is required.
   String get profileTypeRequired =>
-      _t('يجب اختيار التصنيف', 'A profile type selection is required');
+      _t('يجب اختيار الفئة', 'A profile type selection is required');
   // C4 (D-371) — the standard phone shapes, mirrored client/server.
   String get saudiMobileInvalid => _t(
         'أدخل الرقم بصيغة 05XXXXXXXX أو +9665XXXXXXXX أو 009665XXXXXXXX',

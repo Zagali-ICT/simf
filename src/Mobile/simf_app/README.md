@@ -52,6 +52,20 @@ re-added to the regenerated native projects (or by the build/`simf-run` step):
 **does**. Without the permission the avatar liveness screen degrades to its
 gallery fallback (D-404).
 
+### Launcher icon + name (re-apply after `flutter create`)
+
+Because `android/` is **not committed**, both the launcher icon and its name are
+regenerated/re-applied after `flutter create`:
+
+- **Icon:** run `dart run flutter_launcher_icons` (config in `pubspec.yaml`,
+  D-373/D-388) — writes the white SIMF mark on navy `#01132D`.
+- **Name (D-699):** set `android:label="@string/app_name"` in
+  `android/app/src/main/AndroidManifest.xml`, then add
+  `res/values/strings.xml` (`app_name` = `SIMF`) and
+  `res/values-ar/strings.xml` (`app_name` = `الملتقى البحري`). Android picks the
+  Arabic name on Arabic-locale devices, `SIMF` otherwise. Without this the
+  launcher shows the scaffold default **`simf_app`**.
+
 ### Biometric host activity (re-apply after `flutter create`)
 
 `flutter create` writes `MainActivity` extending `FlutterActivity`. **Change it

@@ -26,7 +26,7 @@ import 'widgets/otp_code_boxes.dart';
 /// issues no session). **Resend** re-issues via `POST /app/auth/resend-code`
 /// and restarts the cooldown from the returned `codeExpiresInSeconds`.
 ///
-/// Clean-code frozen (D-553, Phase 3): the lone sweep-tint const dropped for
+/// Clean-code pass (D-553, Phase 3): the lone sweep-tint const dropped for
 /// `SimfTokens.surfaceTint`; the long `build` split into the shared
 /// [AccountSubHeader] (D-658) / `_buildContent` / `_buildBottomActions`; the
 /// resend link reuses the shared
@@ -52,11 +52,19 @@ class _SignUpEmailVerifyScreenState
   int _cooldown = 0;
   Timer? _timer;
 
+  // The resend cooldown, 2 minutes (D-695). A fixed client cooldown — NOT the
+  // code lifetime the resend endpoint returns (600s); the button just paces
+  // re-requests, matching the 2FA OTP screen's rhythm.
+  static const int _resendCooldownSeconds = 120;
+
   @override
   void initState() {
     super.initState();
     // The focused-box highlight follows the hidden field's focus.
     _codeFocus.addListener(() => setState(() {}));
+    // D-695 — show the countdown from entry (the code was just sent), so resend
+    // is disabled until it elapses, like the 2FA OTP screen.
+    _startCooldown(_resendCooldownSeconds);
   }
 
   @override
@@ -133,14 +141,15 @@ class _SignUpEmailVerifyScreenState
       _error = null;
     });
     try {
-      final seconds =
-          await ref.read(authControllerProvider.notifier).resendCode(
-                email: widget.email,
-              );
+      await ref.read(authControllerProvider.notifier).resendCode(
+            email: widget.email,
+          );
       if (!mounted) {
         return;
       }
-      _startCooldown(seconds > 0 ? seconds : 60);
+      // D-695 — a fixed 2-minute cooldown; the returned value is the code
+      // LIFETIME (600s), not a button cooldown, so we do not use it here.
+      _startCooldown(_resendCooldownSeconds);
     } on AuthFailure catch (failure) {
       if (!mounted) {
         return;

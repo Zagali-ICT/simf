@@ -16,7 +16,7 @@ Future<void> _pump(WidgetTester tester, {required Locale locale}) async {
         GlobalCupertinoLocalizations.delegate,
       ],
       // A tight leading row like the header, so a too-wide label overflows
-      // (the D-674 "ع ر" spacing regression this guards).
+      // (the pill's FittedBox must keep the "ع" label within 48px).
       home: Scaffold(
         body: Row(
           children: <Widget>[
@@ -35,17 +35,18 @@ void main() {
         (tester) async {
       await _pump(tester, locale: const Locale('ar'));
       expect(find.text('EN'), findsOneWidget);
-      expect(find.text('ع ر'), findsNothing);
+      expect(find.text('ع'), findsNothing);
     });
 
-    testWidgets('shows the spaced "ع ر" (switch to Arabic) when English is active',
+    testWidgets('shows "ع" (switch to Arabic) when English is active (D-697)',
         (tester) async {
       await _pump(tester, locale: const Locale('en'));
-      expect(find.text('ع ر'), findsOneWidget);
+      expect(find.text('ع'), findsOneWidget);
+      expect(find.text('ع ر'), findsNothing); // the old spaced label is gone
       expect(find.text('EN'), findsNothing);
     });
 
-    testWidgets('the wider "ع ر" label fits the 48px pill (no overflow)',
+    testWidgets('the "ع" label fits the 48px pill (no overflow)',
         (tester) async {
       await _pump(tester, locale: const Locale('en'));
       // A RenderFlex overflow throws during layout and is recorded here; the

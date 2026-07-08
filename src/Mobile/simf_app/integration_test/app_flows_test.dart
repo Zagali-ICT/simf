@@ -16,6 +16,7 @@ import 'package:simf_app/features/contacts/my_contacts_screen.dart';
 import 'package:simf_app/features/contacts/share_my_contact_screen.dart';
 import 'package:simf_app/features/guest/guest_mode_screen.dart';
 import 'package:simf_app/features/home/home_screen.dart';
+import 'package:simf_app/features/myarea/identity_verification_screen.dart';
 import 'package:simf_app/features/notifications/data/notifications_repository.dart';
 import 'package:simf_app/features/splash/splash_controller.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
@@ -108,6 +109,26 @@ AuthState _signedInApprovedVisitor() => AuthStateSignedIn(
           appRole: AppRole.visitor,
           preferredLanguage: PreferredLanguage.fromJson('en'),
           registrationStatus: RegistrationStatus.approved,
+        ),
+      ),
+    );
+
+/// A signed-in but **not-yet-approved** account. Its token carries a Visitor
+/// role, but `effectiveAppRole` resolves to [AppRole.guest] until approval
+/// (D-666). `profileComplete` defaults true so the splash boots it to Home
+/// (an incomplete profile would route to the sign-up screen instead).
+AuthState _signedInPendingVisitor() => AuthStateSignedIn(
+      Session(
+        accessToken: 'A',
+        refreshToken: 'R',
+        accessTokenExpiresAt: DateTime(2099),
+        user: CurrentUser(
+          id: 'u3',
+          email: 'pending@simf.test',
+          displayName: 'Pat Pending',
+          appRole: AppRole.visitor,
+          preferredLanguage: PreferredLanguage.fromJson('en'),
+          registrationStatus: RegistrationStatus.pending,
         ),
       ),
     );
@@ -219,5 +240,37 @@ void main() {
     await tester.tap(find.widgetWithText(SwitchListTile, 'High contrast'));
     await tester.pumpAndSettle();
     expect(find.byType(AccessibilityScreen), findsOneWidget);
+  });
+
+  testWidgets('D-694 — a pending sign-up account reaches the face-capture '
+      '(identity verification) screen, NOT Home', (tester) async {
+    // The regression: the sign-up "capture face photo" button pushes route 103
+    // (identityVerification). Since D-666 a pending account presents as an
+    // effective guest, and while 103 was attendee-gated the redirect bounced
+    // EVERY sign-up user to Home — sign-up was functionally broken. This drives
+    // the real router with a real pending session through the assembled app.
+    final container = await _boot(tester, _signedInPendingVisitor());
+    expect(find.byType(HomeScreen), findsOneWidget); // pending boots to Home
+
+    container.read(routerProvider).goNamed(RouteNames.identityVerification);
+    // The liveness screen shows a camera-loading spinner that never settles, so
+    // pump a couple of frames rather than pumpAndSettle.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.byType(IdentityVerificationScreen), findsOneWidget);
+    expect(find.byType(HomeScreen), findsNothing);
+  });
+
+  testWidgets('D-694 is targeted: a pending account is STILL sent home from an '
+      'attendee-only route (/meet)', (tester) async {
+    // Proves the fix opened exactly route 103, not the whole attendee tier — the
+    // D-666 pending gate still holds everywhere else.
+    final container = await _boot(tester, _signedInPendingVisitor());
+
+    container.read(routerProvider).goNamed(RouteNames.meetPeople);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(HomeScreen), findsOneWidget);
   });
 }

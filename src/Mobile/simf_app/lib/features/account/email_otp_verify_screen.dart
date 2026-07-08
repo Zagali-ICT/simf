@@ -28,7 +28,7 @@ import 'widgets/otp_code_boxes.dart';
 /// `POST /app/auth/resend-otp` (#12 — keyed by the ticket, no re-authentication)
 /// and restarts the countdown. Frame 758:2616.
 ///
-/// Clean-code frozen (D-552, Phase 3): the lone sweep-tint const dropped for
+/// Clean-code pass (D-552, Phase 3): the lone sweep-tint const dropped for
 /// `SimfTokens.surfaceTint`; the long `build` split into the shared
 /// [AccountSubHeader] (D-658) / `_buildContent` / `_buildSubmitButton` /
 /// `_buildResendRow`; the body + CTA
@@ -48,8 +48,10 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
   bool _busy = false;
   String? _error;
 
-  // Frame 758:2616 — the resend countdown ("إعادة الإرسال خلال 00:42").
-  static const int _resendSeconds = 60;
+  // Frame 758:2616 — the resend countdown ("إعادة الإرسال خلال 01:59"). Two
+  // minutes (D-695); the server's ResendOtpResponse.cooldownSeconds overrides it
+  // after a resend — the on-entry value has no server response yet.
+  static const int _resendSeconds = 120;
   int _secondsLeft = _resendSeconds;
   Timer? _ticker;
   // Owned once (not rebuilt each tick) so it is disposed cleanly.
@@ -64,9 +66,9 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
     _startCountdown();
   }
 
-  void _startCountdown() {
+  void _startCountdown({int? seconds}) {
     _ticker?.cancel();
-    setState(() => _secondsLeft = _resendSeconds);
+    setState(() => _secondsLeft = seconds ?? _resendSeconds);
     _ticker = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) {
         return;
@@ -146,11 +148,14 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
       _error = null;
     });
     try {
-      await ref.read(authControllerProvider.notifier).resendOtp();
+      // D-695 — restart from the server's advised cooldown (falls back to the
+      // 2-minute default when the response omits it).
+      final cooldown =
+          await ref.read(authControllerProvider.notifier).resendOtp();
       if (!mounted) {
         return;
       }
-      _startCountdown();
+      _startCountdown(seconds: cooldown > 0 ? cooldown : _resendSeconds);
       messenger.showSnackBar(SnackBar(content: Text(l10n.otpResentToast)));
     } on AuthFailure catch (failure) {
       if (!mounted) {

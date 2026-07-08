@@ -231,6 +231,15 @@ const Set<int> _authenticatedRoutes = <int>{
   32, // Badge / QR — every signed-in role's own entry pass (a bottom-nav tab, so
   // it must not bounce for Staff/Moderator; the server returns their own badge)
   33, // Notifications — every signed-in role
+  // D-694 (owner 2026-07-08) — face-capture / avatar-liveness moved here from the
+  // attendee-only role gate. Since D-666 a pending sign-up account presents as
+  // [AppRole.guest], so an attendee-gated 103 bounced EVERY sign-up user (all
+  // pending) to Home the moment they tapped "capture face photo" — sign-up was
+  // functionally broken. The screen is on-device only (camera + ML Kit, no
+  // network) and `POST /app/account/avatar` is not role-gated, so any signed-in
+  // account may safely reach it. This also fixes the staff/moderator My-Area
+  // avatar-change dead-bounce.
+  103, // Identity verification — avatar liveness (was attendee-gated, D-404)
 };
 
 /// The clean role→page model (D-519): the explicit set of [AppRole]s allowed to
@@ -252,7 +261,8 @@ const Map<int, Set<AppRole>> _routeRoles = <int, Set<AppRole>>{
   100: _attendee, // My Contacts (FDS-014)
   101: _attendee, // Share my contact (FDS-014)
   102: _attendee, // Scan contact QR (FDS-014)
-  103: _attendee, // Identity verification — avatar liveness (D-404)
+  // 103 (identity verification / avatar liveness) moved to _authenticatedRoutes —
+  // it must be reachable by a pending sign-up account (D-694).
   108: _attendee, // Requests feed (D-500, approved-only)
   109: _attendee, // Seat picker (D-485)
   110: _attendee, // Join-a-session hub (D-485)

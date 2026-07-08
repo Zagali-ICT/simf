@@ -86,6 +86,11 @@ dev_dependencies:
   # D-373 — generates the SIMF launcher icon into the scaffolded native
   # folders. Run AFTER `flutter create --platforms=android .` (the folders
   # are generated, not committed): `dart run flutter_launcher_icons`.
+  # D-699 — the launcher NAME is a manual post-scaffold step (not automated by
+  # flutter_launcher_icons): in android/app/src/main/AndroidManifest.xml set
+  # `android:label="@string/app_name"`, then add res/values/strings.xml
+  # (app_name = SIMF) and res/values-ar/strings.xml (app_name = الملتقى البحري).
+  # Without this the launcher shows the scaffold default "simf_app".
   flutter_launcher_icons: ^0.14.1
   # End-to-end harness: boots the assembled app (real router + screens) with
   # deterministic provider overrides and drives cross-screen flows. Runs headless
