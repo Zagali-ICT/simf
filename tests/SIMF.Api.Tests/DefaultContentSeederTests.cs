@@ -54,9 +54,10 @@ public sealed class DefaultContentSeederTests : IClassFixture<SimfApiFactory>
         // The Highlights news item.
         Assert.Equal(1, await db.News.CountAsync(n => n.Category == "Highlights"));
 
-        // The organisation X link.
+        // The organisation X link — owned by IdentitySeeder (the single owner of
+        // the org profile), which the factory runs before this seed (D-708).
         var org = await db.OrganizationProfile.SingleAsync(p => p.Id == OrganizationProfile.SingletonId);
-        Assert.Equal("https://x.com/modgovksa", org.XUrl);
+        Assert.Equal("https://x.com/SIMF_RSNF", org.XUrl);
     }
 
     private async Task SeedAsync()
