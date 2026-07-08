@@ -19,6 +19,7 @@
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. The engagement feature, build-ready. |
 | 1.1 | 2026-05-21 | Engineering & Architecture Team | Architecture-review amendment (see Amendment A): SignalR group fan-out and comment batching, the backplane as a deferred decision, graceful degradation. |
+| 1.2-DRAFT | 2026-07-08 | Engineering & Architecture Team | **DRAFT amendment (D0-2, Amendment B) — pending owner sign-off.** Folds the already-built 3-stage Q&A pipeline (AI→Scientific Committee→per-session Moderator; Pre/Live phases — completion-programme D-212/D-233/D-236/D-271/D-519) into this spec and defines the owner's item 12 ("ask a speaker — two ways") against it. **Finding: item 12 is built end-to-end;** only small deltas remain (real-AI wiring vs stub; a distinct pre-session ask entry; reproduce the "not working" report). Open items in §B.5. |
 
 ---
 
@@ -258,6 +259,80 @@ messages.
 **Graceful degradation.** If the AI comment filter is unavailable, comments
 still queue for admin review — the AI never auto-approves, so admin moderation
 is unaffected.
+
+---
+
+## Amendment B — the two ask-a-speaker modes & the 3-stage Q&A pipeline (D0-2, DRAFT 2026-07-08)
+
+> **STATUS: DRAFT — pending owner sign-off.** This amendment folds the
+> already-built Q&A pipeline (completion-programme D-212/D-233/D-236/D-271/D-519)
+> into this feature spec and defines the **owner's item 12** ("ask a speaker — two
+> ways") against it. **Finding: item 12 is already built end-to-end;** the deltas
+> are small (§B.4). No new green-field build — this section records the AS-IS so the
+> spec stops trailing the code, and lists the small deltas + owner open items.
+
+### B.1 What the owner asked (item 12, 2026-07-08, verbatim intent)
+
+> *"Ask a speaker, two ways: (A) **live inside the session hall** — the home menu
+> must be filtered by moderator only; and (B) a **pre-question before the session
+> started** — filtered by AI and team and moderator."*
+
+### B.2 As-is — the built 3-stage pipeline (grounded; do not rebuild)
+
+The Q&A is a **3-stage pipeline for BOTH phases** — the owner's "AI + team +
+moderator" is exactly the built `AI (advisory) → Scientific Committee → per-session
+Moderator desk` (D-212):
+
+| Piece | Where (file:line) | State |
+|-------|-------------------|-------|
+| **Phase (Pre vs Live)** — the "two modes" | `QuestionPhase{Pre=0,Live=1}` (`QuestionPhase.cs`); `SessionQuestion.Phase` (`SessionQuestion.cs:69`) **set by the backend at submit from the session's start** — one app screen, not two | **Built** (D-233). |
+| **Stage 1 — AI (advisory)** | `IQuestionAiFilter`/`StubQuestionAiFilter` → `SessionQuestion.AiFilterVerdict` (`SessionQuestionService.cs:152`); advisory only, never auto-hides | **Built but a STUB** (D-236/D-239) — returns `stub-clean`; a real model is a **DI/config swap**, no code (GAP-1). |
+| **Stage 2 — Scientific Committee ("team")** | `QuestionStatus{Pending,Approved,Hidden}` (`QuestionStatus.cs`); CP `/admin/questions/queue` + approve/hide/**escalate-to-role** (`SessionQuestionCommitteeEndpoints.cs:20/36/61/86`); CP page `QuestionQueueList.razor` | **Built** (D-212). The "team" = the الفريق العلمي **role** (a permission bundle, D-207/D-208), not new infra. |
+| **Stage 3 — per-session Moderator desk** | app desk `GET /app/sessions/{id}/questions/moderate` + hide/push/reorder (`SessionQuestionEndpoints.cs:100/132/164/196`), gated by `SessionModeratorAuth` = Administrator **or** a `SessionModerator` grant | **Built** (D-169). Distinct from `MobileAppRole.Moderator` (per `SessionQuestion.cs:19-23`). |
+| **Moderator-only home** (mode A entry) | `home_screen.dart:66` → `AppRole.moderator` gets `ModeratorHome` (`operational_homes.dart:52-70`, → sessions list → detail → Q&A desk); route #104 = `{moderator}` **exclusive** | **Built** (D-519) — the "home menu filtered by moderator only" is already satisfied. |
+| **Attendee ask screen** | `send_question_screen.dart` / `send_question_content.dart`; the session-detail `ask_host_card.dart` (Speaker vs Host recipient, `SessionQuestionRecipient`) | **Built.** Serves both phases (the phase is backend-derived). |
+| **Question window + arrival gate** | open **5 min before** `StartUtc`, **close at** `EndUtc` (D-271); submission gated on hall-arrival (`HallAttendance`, D-242 geofence + `IsAtVenue` fallback) | **Built.** |
+| **Page docs** | `Page_026` (questions), `Page_025` (live) authored (D-271) | **Built.** |
+
+### B.3 Mapping the owner's two modes onto the built pipeline
+
+| Owner's mode | Built reality |
+|--------------|---------------|
+| **(A) live in-hall, moderator-only home** | The attendee asks from the live/session screen (Phase=`Live`, arrival-gated); the **moderator** runs the desk from the moderator-only home (`ModeratorHome`). Already built. |
+| **(B) pre-question, AI+team+moderator** | The **same** ask screen submitted **before** `StartUtc` → Phase=`Pre`; it flows through the identical 3-stage pipeline (AI→Committee→Moderator). Already built — the phase is derived, so there is no separate "pre-question" screen today. |
+
+### B.4 Deltas (the only candidate work — small)
+
+- **GAP-1 (AI wiring).** Stage 1 is a **stub**. Owner decision (mirrors D-239 / the
+  D-578 real-AI summary): **wire the real `IAiService`-backed filter now** (a DI-line
+  swap, no service/test change) **or keep the stub for the PoC**. *(Note the standing
+  key-rotation item — a real key must be provisioned/rotated first.)*
+- **GAP-2 (Mode-B reachability).** Because the phase is backend-derived, there is no
+  distinct "pre-session ask" entry — the owner may expect one. Owner decision: **add a
+  clear pre-session "ask a question" entry/label** (e.g. on the upcoming-session
+  detail before it goes live) **or accept the single phase-derived flow**.
+- **GAP-3 (verify not-broken).** The owner reported "ask speaker not working." Every
+  layer above is built, so the likely causes are an **older build** (cf. D-702 item
+  10), the **arrival gate** (no `HallAttendance` ⇒ composer hidden — by design), or
+  the **window** (opens 5 min before start / closes at end). **Action:** reproduce on
+  the current build before any change — do not "fix" a working gate.
+
+### B.5 Open items — OWNER DECISIONS
+
+| # | Item | Recommendation |
+|---|------|----------------|
+| **OI-B1** | Wire real AI for question filtering now, or keep the stub for the PoC? | Wire it (mirror D-578) once a key is provisioned; else stub is acceptable and swap later. |
+| **OI-B2** | Add a distinct pre-session "ask" entry, or keep the single phase-derived flow? | Add a clear pre-session ask entry on the upcoming-session detail (low cost, matches the owner's "two ways" mental model). |
+| **OI-B3** | Confirm "team" = the الفريق العلمي Scientific-Committee role + its CP `/admin/questions/queue`. | Confirm — it is the built stage 2. |
+| **OI-B4** | Confirm the arrival-gate + 5-min/close-at-end window are the intended behaviour (not the "not working" bug). | Keep as built (D-271); reproduce first. |
+
+### B.6 Definition of Done (only if a delta is approved — same changeset)
+
+Whichever deltas the owner approves: DI swap + a real-provider test for GAP-1;
+the pre-session ask entry + widget test + `Page_026`/E2E update for GAP-2; a
+reproduce-then-fix note for GAP-3. No schema change (the pipeline data model is
+already shipped, D-233); no new enum. `DECISIONS_LOG.md` entry; this Amendment B
+flipped from DRAFT to built with an As-built note.
 
 ---
 
