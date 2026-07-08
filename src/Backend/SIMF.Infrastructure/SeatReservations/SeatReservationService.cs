@@ -65,7 +65,14 @@ internal sealed class SeatReservationService(
             .Where(h => h.Id == session.HallId)
             .Select(h => new { h.Capacity, h.SeatSelectionMode })
             .SingleAsync(cancellationToken);
-        var effectiveMode = session.SeatSelectionModeOverride ?? hall.SeatSelectionMode;
+        // D-706 — a hall/session with no seat layout has no assignable seats, so it
+        // is inherently open seating (a one-tap join); otherwise honour the session
+        // override, else the hall's configured mode. Without this, a seeded session
+        // (AssignedSeat default, no layout) opened an empty seat picker — the "join
+        // not working" the owner reported.
+        var hasLayout = rowLabels.Count > 0 && (layout?.SeatsPerRow ?? 0) > 0;
+        var effectiveMode = EffectiveMode(
+            session.SeatSelectionModeOverride, hall.SeatSelectionMode, hasLayout);
 
         return new SessionSeatMap(
             sessionId, session.HallId, hall.Capacity, session.CapacityOverride,
@@ -76,6 +83,18 @@ internal sealed class SeatReservationService(
             // D-485 — the effective mode drives the app's Join CTA.
             effectiveMode);
     }
+
+    /// <summary>D-706 — the mode the app branches its Join CTA on. A session with
+    /// no seat layout has no assignable seats, so it is inherently
+    /// <see cref="SeatSelectionMode.OpenSeating"/> (a one-tap join) whatever the
+    /// hall's configured mode says; a laid-out session honours the session override,
+    /// else the hall's mode. Kept in one place so the seat-map read and the
+    /// open-seating join can never disagree.</summary>
+    private static SeatSelectionMode EffectiveMode(
+        SeatSelectionMode? sessionOverride, SeatSelectionMode hallMode, bool hasLayout) =>
+        hasLayout
+            ? (sessionOverride ?? hallMode)
+            : SeatSelectionMode.OpenSeating;
 
     public async Task<MySeatReservation> ReserveAsync(
         Guid sessionId, Guid actorUserId,
@@ -234,7 +253,14 @@ internal sealed class SeatReservationService(
             .Where(h => h.Id == session.HallId)
             .Select(h => new { h.Capacity, h.SeatSelectionMode })
             .SingleAsync(cancellationToken);
-        var mode = session.SeatSelectionModeOverride ?? hall.SeatSelectionMode;
+        // D-706 — resolve the effective mode with the no-layout rule so a session
+        // that has no seat layout accepts this open-seating join (there are no
+        // seats to pick); a laid-out assigned-seat session still requires a pick.
+        var layout = await LoadLayoutAsync(session.HallId, cancellationToken);
+        var hasLayout = ParseRowLabels(layout?.RowLabels).Count > 0
+            && (layout?.SeatsPerRow ?? 0) > 0;
+        var mode = EffectiveMode(
+            session.SeatSelectionModeOverride, hall.SeatSelectionMode, hasLayout);
         if (mode != SeatSelectionMode.OpenSeating)
         {
             throw new ApiException(

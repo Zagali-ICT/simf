@@ -50,7 +50,7 @@
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
 | **Auth setup** | **Signed-in for the screen (D-576)** — the Session-detail screen is login-gated: a signed-out guest navigating to `/sessions/{id}` is redirected to sign-in. The detail **endpoint** stays anonymous (the app gates the screen, not the API); the my-seat card needs an **approved Visitor** token (seeded + a held reservation); an **Admin** token only to seed the session + seat layout. **No literal secrets** (admin TOTP via the `Get-Totp` helper). |
-| **Last reviewed** | 2026-07-01 |
+| **Last reviewed** | 2026-07-08 (D-706 — no-layout session = open-seating join) |
 
 ## Coverage matrix
 
@@ -80,6 +80,7 @@
 | E2E-MOB017-022 | **Join CTA (D-485)** — an approved user with no reservation sees a "Join this session" section, branched by the session's effective mode: assigned-seat → "Select my seat" opens the seat picker; open-seating → "Join this session" confirms then joins (Pending) with a "Request sent — pending approval" toast | happy | P1 | authored ✓ (widget — assigned→picker / open→confirm→join+toast) |
 | E2E-MOB017-023 | **Cancel booking (D-485)** — the reservation card's Cancel confirms, then releases the held seat (`DELETE …/seats/mine`) and the section returns to the Join CTA | happy | P2 | authored ✓ (widget — `releaseMine`) |
 | E2E-MOB017-024 | **Join is approved-only (D-485)** — a guest / pending account sees no join section (the seat endpoint 401/403s → null) | auth | P1 | authored ✓ (`…a guest sees no join section`) |
+| E2E-MOB017-025 | **No-layout session joins (D-706)** — an assigned-seat session with **no seat layout** (a hall left on the default with no rows laid out) reports its effective mode as **OpenSeating**, so the Join CTA is a one-tap join (not an empty seat picker) and `…/seats/join` is accepted (Pending). Fixes "join session not working" | happy | P0 | authored ✓ (API `Join_succeeds_on_an_assigned_seat_session_that_has_no_layout`) |
 | E2E-MOB017-025 | **App login-gate (D-576):** a signed-out guest navigating to `/sessions/{id}` is redirected to sign-in before the screen renders (the app gates the screen; the detail endpoint stays anonymous) | auth | P0 | authored ✓ (router-gate `D-576 — a signed-out guest hitting /sessions or a session detail → sign-in`) |
 
 ## Scenarios
@@ -409,4 +410,4 @@ session detail → sign-in`; `routePathRequiresAuth('/sessions/:sessionId')` is 
 
 ---
 
-_Last reviewed:_ `2026-07-01` by `SIMF Team`.
+_Last reviewed:_ `2026-07-08` by `SIMF Team`.
