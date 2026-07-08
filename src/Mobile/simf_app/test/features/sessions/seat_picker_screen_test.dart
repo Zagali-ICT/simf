@@ -20,10 +20,17 @@ SessionSeatMap _map() => const SessionSeatMap(
     );
 
 class _FakePickerRepo implements SeatMapRepository {
-  _FakePickerRepo(this.map, {this.failReserve = false});
+  _FakePickerRepo(
+    this.map, {
+    this.failReserve = false,
+    this.randomSessionFull = false,
+  });
 
   final SessionSeatMap map;
   final bool failReserve;
+  // When set, reserveRandom throws SEAT_SESSION_FULL (the capacity cap) so the
+  // picker's "no places remain" branch can be tested.
+  final bool randomSessionFull;
   String? reservedRow;
   int? reservedSeat;
   int randomCalls = 0;
@@ -59,6 +66,13 @@ class _FakePickerRepo implements SeatMapRepository {
   @override
   Future<MyReservation> reserveRandom(String sessionId) async {
     randomCalls++;
+    if (randomSessionFull) {
+      throw ApiFailure(
+        code: 'SEAT_SESSION_FULL',
+        message: 'full',
+        httpStatus: 409,
+      );
+    }
     return const MyReservation(
       reservationId: 'r2',
       sessionId: 's1',
@@ -158,6 +172,21 @@ void main() {
       // pop and is not frozen — _busy was reset in the finally).
       expect(find.text("Couldn't reserve that seat"), findsOneWidget);
       expect(find.bySemanticsLabel('A2'), findsOneWidget);
+    });
+
+    testWidgets('auto-pick on a FULL session shows "No places remain", not the '
+        'generic failure (the capacity cap — item 4)', (tester) async {
+      await _pump(tester, repo: _FakePickerRepo(_map(), randomSessionFull: true));
+      await tester.tap(find.widgetWithText(FilledButton, 'Auto-pick a seat'));
+      await tester.pumpAndSettle();
+      // The session-full message shows (not the generic seat-reserve failure),
+      // and the picker stays usable.
+      expect(find.text('No places remain'), findsOneWidget);
+      expect(find.text("Couldn't reserve that seat"), findsNothing);
+      expect(
+        find.widgetWithText(FilledButton, 'Auto-pick a seat'),
+        findsOneWidget,
+      );
     });
   });
 }
