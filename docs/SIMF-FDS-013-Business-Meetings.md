@@ -20,6 +20,7 @@
 | 0.1 | 2026-06-03 | Engineering & Architecture Team | First draft. Scope/spec for the admin-arranged B2B/B2C bilateral-meeting module. No code. |
 | 0.2 | 2026-06-03 | Engineering & Architecture Team | Owner resolved the open items (§12): company-type party (OI-1); **flexible per-hall configuration + allocation** — purpose (booth / session / meeting), allocation by whole / random-by-count / by-row-column pre-reserved, each over a from–to time-slot (OI-2/OI-3); **group** meetings, not strictly bilateral (OI-5); free from–to time-slot (OI-8); **freeze lifted** for this module's tables (OI-7, "no freeze"). Two follow-on questions raised (OI-9, OI-10). Still no code — pending §13 build-plan approval. |
 | 1.0 | 2026-06-03 | Engineering & Architecture Team | **Built (D-248)** as one end-to-end commit (owner: "do all", "generalize across all three", "one big commit"). OI-9 + OI-10 resolved; see §14 As-built. |
+| 1.1-DRAFT | 2026-07-08 | Engineering & Architecture Team | **DRAFT amendment (D0-1) — pending owner sign-off; NO code until approved.** Adds the owner's "meeting-in-hall" request→review→speaker-approval workflow (owner batch item 7) + the app "real available slots" fix (item 6) on top of the built 1.0 core. The 1.0 admin-arranged path is unchanged; this adds the **attendee-request → admin-review-vs-hall-availability → speaker double-opt-in email → surfaces in اللقاءات الثنائية** flow that §2 of 1.0 explicitly excluded. Grounded in the shipped code (§15.2); open items in §15.9 need owner decisions before build. |
 
 ---
 
@@ -348,3 +349,201 @@ When approved and built, the same changeset must include:
 7. The mobile dashboard union flipped on; shipped wire contract preserved (append-only).
 8. `DECISIONS_LOG.md` entry (next free `D-NNN`) recording the build + the freeze-lift +
    the OI resolutions.
+
+---
+
+# §15 — v1.1 (DRAFT, D0-1): meeting-in-hall requests, hall availability & speaker double-opt-in
+
+> **STATUS: DRAFT — pending owner sign-off. NO code is written against this section
+> until the §15.9 open items are resolved and the owner approves.** This amendment
+> is additive to the built 1.0 core (§1–§14): the admin-arranged path stays exactly
+> as shipped; §15 adds the *attendee-initiated request* path the owner asked for.
+> It is authored the same way 1.0 was — drafted with open items for the owner to
+> resolve, then built. It also governs the app-side "real available slots" fix
+> (owner item 6). Cross-references SIMF-FDS-008 §5.3 (the one-to-one meeting
+> request / PR approval) and SIMF-FDS-004 (Hall).
+
+## 15.1 Why this amendment (owner items 6 & 7)
+
+Owner directive (2026-07-08, verbatim intent):
+
+> *"bi-meeting is done in hall, meeting is g2g الوفود مع بعض, or speaker with VIP
+> visitor (b2b). In CP must manage this hall — control the hall, how many persons
+> it can hold, and the available time. In CP there must be a clear UI/UX to manage
+> hall time for meetings. For speaker/VIP, admin must review the meeting request
+> from the app before approving; before approval, check the available time in the
+> hall; admin can also reject. If accepted, send an email to the speaker (from
+> their profile email in the system) with two buttons/links — approve or reject.
+> If the speaker approves, it shows in 'اللقاءات الثنائية' (my meetings)."* Plus
+> item 6: *"the app must show the speaker's REAL available slots"* (reverting the
+> D-703 free client-side picker).
+
+The 1.0 core is **admin-arranged only** and explicitly excludes an attendee request
+queue (§2, "It does not cover: Party self-service requests"). The owner now wants
+that queue for the *speaker/VIP* and *delegation* cases, with a **hall-availability
+gate** and a **second approval by the speaker over email**. Much of this is already
+built (§15.2); §15 defines only the **delta**.
+
+## 15.2 As-is — what is already built (grounded; do not rebuild)
+
+| Capability | Where (file:line) | State |
+|-----------|-------------------|-------|
+| **Speaker meeting request** (app → admin) | app submit `POST /app/speakers/{id}/meeting-requests` (`SpeakerMeetingRequestEndpoints.cs:33`); entity `SpeakerMeetingRequest.cs:17` (Subject, `SlotStartUtc?`/`SlotEndUtc?`, `AvailabilityWindowId?`, Status); service `SpeakerMeetingRequestService.cs` | **Built.** Status `Pending→Accepted/Rejected/Cancelled` (`MeetingRequestStatus.cs`). |
+| **Admin review + respond** | `PUT /admin/speaker-meeting-requests/{id}/respond` (`…Endpoints.cs:123`), Accept/Reject | **Built** — but does **not** check/bind hall availability (GAP-2). |
+| **Accept already emails the speaker** | `SpeakerMeetingRequestService.cs:421-441` (purpose `"SpeakerMeetingAccepted"`, plain HTML: topic + proposed slot), speaker email resolved via `Speaker.ContactId` | **Built** — but the email is an FYI with **no approve/reject links** (GAP-3). |
+| **VIP gate on slot picking** | `SpeakerMeetingRequestService.IsVipAsync` reads `ProfileType.AllowsVipMeetingSlots` (`…:382-388`); non-VIP slot → 403 | **Built.** |
+| **Delegation (g2g) request** — country↔country, الوفود مع بعض | `POST /app/delegation-meeting-requests` (`DelegationMeetingRequestEndpoints.cs:15`); entity `DelegationMeetingRequest.cs:14` (RequestingCountryId, TargetCountryId, AttendeeCount, slot); admin respond `…/respond` | **Built.** Same `MeetingRequestStatus` flow. |
+| **Speaker availability → REAL derived slots** | entity `SpeakerAvailabilityWindow.cs:12` (team-defined window + `SlotMinutes`); `GET /app/speakers/{id}/available-slots` (`SpeakerAvailabilityEndpoints.cs:84`); `SpeakerAvailabilityService.GetAvailableSlotsAsync` (`…:113`) chops windows into slots, drops past + Accepted-overlapping; CP window CRUD `/admin/speaker-availability` | **Built.** The app repo method `getAvailableSlots()` (`speakers_repository.dart:39`) exists **and is tested** but the production sheet ignores it (GAP-4 / item 6). |
+| **Hall config + tables + allocations** (admin-arranged) | `Hall.Purpose` (`Hall.cs:43`, `HallPurpose{General,Booth,Session,Meeting}`); `MeetingTable.cs:13` (Code, Row/Col, Capacity); `HallAllocation.cs:18` (Whole/RandomByCount/RowColumn over Start/End); endpoints `BusinessMeetingEndpoints.cs:24-249`; CP `/admin/meeting-tables` | **Built** — but there is **no dedicated "hall-time" management page**; allocations are edited through the meeting-tables tooling (GAP-1). |
+| **Admin-arranged business meeting** | `BusinessMeeting.cs:12` (Confirmed on create), participants `BusinessMeetingParticipant.cs:18`; `POST /admin/business-meetings` (`…:306`); CP `/admin/business-meetings` | **Built** (1.0 core). In-app-only notifications (`SendEmail=false`). |
+| **App "اللقاءات الثنائية" feed** | `RequestsScreen` (`requests_screen.dart:27`, D-500 unified feed); "طلب جديد" → `MeetingRequestSheet` (`meeting_request_sheet.dart:30`) | **Built.** The sheet currently uses a **free client-side date/time pick**, explicitly **not** tied to speaker slots (`…dart:26-29,67-96`) — this is the D-703 behaviour item 6 reverts. |
+| **Outbound email** | `IEmailSender.SendAsync` (`IEmailSender.cs:4`); MailKit `SmtpEmailSender.cs:11`; async `IEmailQueue`→`EmailBackgroundService.cs:22`; `EmailMessage(To,Subject,HtmlBody)` (`EmailMessage.cs:4`) | **Built** — but `EmailMessage` is **HTML-body-only**; **no token / action-link / one-click-callback pattern exists anywhere** in the backend (GAP-3). |
+| **Meeting NotificationKinds** | `MeetingScheduled=43`, `MeetingCancelled=44` (`NotificationKind.cs:109/114`); reused for speaker/delegation accept/decline. **No** "request received" kind (submission is audit-only). | **Built** (append-only frozen enum). |
+
+## 15.3 Meeting-type taxonomy (g2g / g2b / g2vip) — mapping + OPEN ITEM
+
+The owner's shorthand maps onto the built entities as follows (**to be confirmed —
+OI-A**):
+
+| Owner term | Meaning (owner) | Built entity today |
+|-----------|-----------------|--------------------|
+| **g2g** | group↔group — delegation ↔ delegation (الوفود مع بعض) | `DelegationMeetingRequest` (country↔country + AttendeeCount) |
+| **speaker / VIP (b2b)** | a VIP visitor ↔ a speaker | `SpeakerMeetingRequest` (VIP-gated slot) |
+| **g2b** | *ambiguous* — group↔booth/business? | *no exact entity; possibly `BusinessMeeting` B2B (company↔company)* |
+| **g2vip** | *ambiguous* — group↔VIP? | *no exact entity* |
+
+`g2b`/`g2vip` do not map cleanly to a built entity. **OI-A (owner):** confirm the
+exact taxonomy — do we (a) keep the three built types (Speaker / Delegation /
+admin-arranged BusinessMeeting) and treat g2b/g2vip as *labels* on a BusinessMeeting,
+or (b) introduce new request types? **Recommendation:** (a) — reuse the built types;
+add a display label only. No new entity unless the owner names a distinct workflow.
+
+## 15.4 To-be — the deltas (the only new work)
+
+- **GAP-1 — CP hall-time management UI.** A clear CP surface, per **Meeting** hall,
+  to set **capacity** ("how many persons") and the **available meeting time-slots**
+  (from–to windows), so a reviewer can see and pick a free hall slot. Backing exists
+  (`HallAllocation` for reserved slots, `SpeakerAvailabilityWindow` for speaker
+  windows, `MeetingTable.Capacity`) — the gap is a **dedicated, clear page**
+  (owner: "clear UI/UX to manage hall time for meeting"). **OI-B:** is "available
+  time" a property of the **hall** (a new hall-availability window, parallel to
+  `SpeakerAvailabilityWindow`) or expressed purely through existing `HallAllocation`
+  rows? **Recommendation:** add a `HallAvailabilityWindow` (mirrors
+  `SpeakerAvailabilityWindow`) so a hall's bookable meeting times are first-class and
+  the reviewer picks from real free slots — symmetric with the speaker side.
+- **GAP-2 — admin review checks hall availability + binds a slot on accept.** When
+  the admin accepts a speaker/delegation request, the review UI shows the hall's free
+  meeting slots (GAP-1) and the admin **assigns a hall + table + slot**; the request
+  carries that binding. **OI-C:** does an accepted request *materialise a
+  `BusinessMeeting`* (so the two models converge) or just stamp
+  hall/table/slot fields on the request? **Recommendation:** stamp the binding on the
+  request for v1.1 (smaller, reversible); converge onto `BusinessMeeting` later.
+- **GAP-3 — speaker double-opt-in email (approve/reject links).** After admin-accept,
+  the request enters a new **AwaitingSpeaker** stage and the speaker gets an **HTML
+  email with two links — Approve / Reject** (§15.5, §15.6). The speaker clicking a
+  link is the **final gate**: Approve → the meeting is Confirmed and shows in
+  اللقاءات الثنائية for the requester; Reject → the request is Rejected and the
+  requester + admin are notified. This needs (a) a **signed, single-use, short-lived
+  action token**; (b) two **`AllowAnonymous`** token endpoints (§15.7); (c) an
+  **HTML email with the two links** (extends the email path, which is HTML-only
+  today). **OI-D:** confirm the double-opt-in (admin-accept is *not* final; the
+  speaker must also approve). **Recommendation:** yes — it is exactly what the owner
+  described; it is also the correct consent model for contacting a speaker.
+- **GAP-4 (owner item 6) — app shows REAL available slots.** Rewire
+  `MeetingRequestSheet` to call the built `getAvailableSlots()`
+  (`GET /app/speakers/{id}/available-slots`) and present the **real** derived slots
+  instead of the D-703 free 7-day/hourly picker; submit the chosen real slot. When a
+  speaker has **no** availability windows, show a clear empty state ("no slots — the
+  team will schedule"), not a fabricated grid. This is an **app-only** change
+  (backend + repo method already exist) and reverts D-703. Delegation requests keep
+  their own slot model (they target a hall, not a speaker) — **OI-E:** confirm
+  delegation requests pick from **hall** slots (GAP-1) the same way.
+
+## 15.5 Proposed workflow (speaker / VIP path)
+
+```mermaid
+stateDiagram-v2
+    [*] --> Pending : visitor (VIP) submits a request for a speaker + a REAL slot (§15.4 GAP-4)
+    Pending --> Rejected : admin rejects (stage 1)
+    Pending --> AwaitingSpeaker : admin accepts + assigns a free hall/table/slot (§15.4 GAP-1/2)
+    AwaitingSpeaker --> Confirmed : speaker clicks APPROVE in the email (§15.4 GAP-3)
+    AwaitingSpeaker --> Rejected : speaker clicks REJECT in the email
+    AwaitingSpeaker --> Rejected : token expires / admin cancels
+    Confirmed --> [*] : shows in اللقاءات الثنائية for the requester
+```
+
+The delegation (g2g) path is the same minus the speaker email — the head-of-delegation
+confirmation channel is **OI-F** (email the target delegation head? admin-only
+confirm?). **Recommendation:** admin-confirm for g2g in v1.1 (no external delegation
+email until an owner decision), with the email double-opt-in reserved for the speaker
+path where the owner explicitly asked for it.
+
+## 15.6 Data deltas (additive; freeze already lifted for this module, OI-7)
+
+| Change | Detail |
+|--------|--------|
+| `MeetingRequestStatus` (extend) | **append** `AwaitingSpeaker` (new integer, no reorder/rename — enum is append-only per the freeze). Applies to `SpeakerMeetingRequest`; delegation reuse per OI-F. |
+| `SpeakerMeetingRequest` (extend) | additive nullable binding fields — `HallId?`, `MeetingTableId?`, assigned `SlotStartUtc/EndUtc` confirmed at accept, `SpeakerDecisionAt?`. |
+| Speaker action token | a **signed, single-use, expiring** token for the two email links. **OI-G:** persisted token entity (revocable, one-shot) **vs** a stateless HMAC/JWT with a short TTL. **Recommendation:** a small persisted `MeetingActionToken` (single-use, revocable, audited) — safer than a stateless link that can be replayed until expiry. |
+| `HallAvailabilityWindow` (new, if OI-B=yes) | mirrors `SpeakerAvailabilityWindow` — `HallId`, Start/End, `SlotMinutes`, soft-delete. |
+| `EmailMessage`/email path | render the two action links into the HTML body (the field is already HTML). No new email transport — reuses `IEmailQueue`. |
+| Notifications | reuse `MeetingScheduled`/`MeetingCancelled`; **OI-H:** add a `MeetingAwaitingSpeaker`/`MeetingConfirmedBySpeaker` kind (append-only) for the requester, or reuse existing. **Recommendation:** add `MeetingRequestConfirmed` (append-only) so the requester's "your meeting is confirmed" is distinct from the admin-arranged `MeetingScheduled`. |
+
+## 15.7 Security — the email action links (HARD)
+
+- The two links hit **`AllowAnonymous`** endpoints (the speaker is not signed in).
+  This is a **new AllowAnonymous exception** beyond the global §4 baseline
+  (SignIn/SignUp/ForgotPassword) and **must be owner-approved** — it is justified only
+  because a speaker approving their own meeting over email cannot be authenticated.
+- Token rules: **single-use**, **short TTL** (e.g. 72h — OI-I), **high-entropy**,
+  **bound to the specific request + action**, **revoked** once used or once the admin
+  cancels, and **rate-limited**. No PII in the URL. The landing is a minimal
+  **public confirmation page** (website) showing the outcome — no data entry.
+- Every token mint / click / outcome writes `OperationLog`. Reusing an expired/used
+  token shows a neutral "this link is no longer valid" page, never an error leaking
+  state.
+- The admin API (accept/reject/assign) stays **permission-gated** exactly as the 1.0
+  endpoints (`PermissionCatalog` policy + `RequireApprovedAccount`).
+
+## 15.8 Surfaces
+
+| Surface | Screens / changes |
+|---------|-------------------|
+| Control Panel | **GAP-1** hall-time management page (capacity + available meeting slots, per Meeting hall); the speaker-meeting-request **review** modal gains a hall/table/free-slot picker (GAP-2); nav + `[RequirePermission]` + `<AuthorizedAction>` per the CP hard rule. |
+| Mobile app | **GAP-4** `MeetingRequestSheet` uses real speaker slots (+ empty state); the اللقاءات الثنائية feed shows the new `AwaitingSpeaker`/`Confirmed` states. No wire-contract break (append-only fields). |
+| Email (speaker) | HTML email with **Approve** / **Reject** links (GAP-3). |
+| Public website | a minimal **token landing page** (approve/reject outcome) — new. |
+
+## 15.9 Open items — OWNER DECISIONS NEEDED BEFORE BUILD
+
+| # | Item | Recommendation |
+|---|------|----------------|
+| **OI-A** | g2g/g2b/g2vip taxonomy — reuse the 3 built types + labels, or new request types? | Reuse built types; g2b/g2vip are labels on a BusinessMeeting. |
+| **OI-B** | Hall "available time" — a new `HallAvailabilityWindow`, or existing `HallAllocation` only? | Add `HallAvailabilityWindow` (symmetric with speakers). |
+| **OI-C** | On accept — materialise a `BusinessMeeting`, or stamp the binding on the request? | Stamp on the request for v1.1; converge later. |
+| **OI-D** | Speaker double-opt-in — is admin-accept **not** final (speaker must also approve)? | Yes (as the owner described). |
+| **OI-E** | Delegation requests pick from **hall** slots too? | Yes. |
+| **OI-F** | g2g confirmation channel — email the delegation head, or admin-confirm only? | Admin-confirm in v1.1 (no external delegation email yet). |
+| **OI-G** | Action token — persisted single-use entity vs stateless HMAC/JWT? | Persisted single-use `MeetingActionToken`. |
+| **OI-H** | New requester notification kind, or reuse? | Add `MeetingRequestConfirmed` (append-only). |
+| **OI-I** | Email-link TTL + the new `AllowAnonymous` exception approval. | 72h, single-use; **owner must approve the AllowAnonymous exception (§4).** |
+
+## 15.10 Definition of Done (when approved & built — same changeset)
+
+1. Domain: extend `MeetingRequestStatus` (+`AwaitingSpeaker`) + additive fields /
+   `MeetingActionToken` / `HallAvailabilityWindow` (per the resolved OIs); **one
+   additive migration** on `SimfAppDbContext` (Identity untouched; enum append-only).
+2. New `PermissionCatalog` codes for the hall-time page + review-assign action, seeded
+   `AdminOnly`; gates on **both** API and CP; guard tests green.
+3. The `AllowAnonymous` token endpoints (owner-approved exception) — single-use,
+   TTL, rate-limited, audited.
+4. App: `MeetingRequestSheet` on real slots (item 6) + empty state; اللقاءات الثنائية
+   shows the new states; wire contract append-only.
+5. Bilingual EN/AR for every new string, email, and the website landing page.
+6. Unit + integration tests (the state machine, the token single-use/expiry, the
+   hall-availability conflict, the app slot rewire) + permission guard tests.
+7. E2E catalogue: update `cp-business-meetings.md` + author `cp-hall-time.md` +
+   `mobile-meeting-request.md` (real slots) + a website token-landing E2E; README +
+   PAGE-INDEX rows + per-page reference docs.
+8. `DECISIONS_LOG.md` entries; this §15 flipped from DRAFT to built with an As-built
+   note; SIMF-FDS-008 §5.3 cross-referenced.
