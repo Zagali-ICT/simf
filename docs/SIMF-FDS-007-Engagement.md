@@ -19,7 +19,8 @@
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. The engagement feature, build-ready. |
 | 1.1 | 2026-05-21 | Engineering & Architecture Team | Architecture-review amendment (see Amendment A): SignalR group fan-out and comment batching, the backplane as a deferred decision, graceful degradation. |
-| 1.2-DRAFT | 2026-07-08 | Engineering & Architecture Team | **DRAFT amendment (D0-2, Amendment B) — pending owner sign-off.** Folds the already-built 3-stage Q&A pipeline (AI→Scientific Committee→per-session Moderator; Pre/Live phases — completion-programme D-212/D-233/D-236/D-271/D-519) into this spec and defines the owner's item 12 ("ask a speaker — two ways") against it. **Finding: item 12 is built end-to-end;** only small deltas remain (real-AI wiring vs stub; a distinct pre-session ask entry; reproduce the "not working" report). Open items in §B.5. |
+| 1.2-DRAFT | 2026-07-08 | Engineering & Architecture Team | **DRAFT amendment (D0-2, Amendment B) — pending owner sign-off.** Folds the already-built 3-stage Q&A pipeline (AI→Scientific Committee→per-session Moderator; Pre/Live phases — completion-programme D-212/D-233/D-236/D-271/D-519) into this spec and defines the owner's item 12 ("ask a speaker — two ways") against it. **Finding: item 12 is built end-to-end;** only small deltas remain (real-AI wiring vs stub; a distinct pre-session ask entry; reproduce the "not working" report). Open items in §B.5 — **owner-resolved 2026-07-08** (wire real AI; add pre-session entry). |
+| 1.3-DRAFT | 2026-07-08 | Engineering & Architecture Team | **DRAFT amendment (D0-3, Amendment C) — pending owner sign-off.** The multi-trigger ratings home (owner item 8). Records the built ratings system (completion-programme D-677/D-678/D-679/D-680/D-690) and maps the owner's 4 time-triggers onto it. **Finding: 2 of 4 triggers built** (daily-if-checked-in + end-of-programme, D-679); **2 gaps** — rate-on-gate-checkout (GAP-A) + rate-on-live-close (GAP-B) — plus a "watched at time/date" display. Open items in §C.5. |
 
 ---
 
@@ -345,6 +346,96 @@ the pre-session ask entry + widget test + `Page_026`/E2E update for GAP-2; a
 reproduce-then-fix note for GAP-3. No schema change (the pipeline data model is
 already shipped, D-233); no new enum. `DECISIONS_LOG.md` entry; this Amendment B
 flipped from DRAFT to built with an As-built note.
+
+---
+
+## Amendment C — the multi-trigger ratings (D0-3, DRAFT 2026-07-08)
+
+> **STATUS: DRAFT — pending owner sign-off.** Ratings/feedback are not currently
+> owned by a dedicated FDS — they were built across the completion-programme
+> decisions (D-677/D-678 notification+deep-link, D-679 day/programme prompts,
+> D-680 dynamic page, D-690 rate-after-view). Per the owner's Phase-0 plan this
+> section is the ratings home. It defines the **owner's item 8** ("show rate when a
+> session is watched, at time and each date — many rate triggers based on time")
+> against the built system. **Finding: 2 of the 4 owner triggers are already built;
+> 2 are gaps.** Cross-references SIMF-FDS-003 (gate scan / attendance) and
+> SIMF-FDS-011 (statistics consuming the ratings).
+
+### C.1 What the owner asked (item 8, 2026-07-08, verbatim intent)
+
+> *"Show rate when a session is watched, at the time and each date. We have many
+> rate triggers based on time: (1) **daily** — if you checked in, at the end of the
+> date; (2) **end of exhibition**; (3) **end of session on checkout from the gate**;
+> (4) **online session** — on the live-YouTube stream page, after back / close / end,
+> show the rate for the online session."*
+
+### C.2 As-is — the built ratings system (grounded)
+
+| Piece | Where (file:line) | State |
+|-------|-------------------|-------|
+| **Rating scopes** | `RatingScope{Global=0, PerSession=1, PerDay=2}` (`RatingScope.cs`) | **Built** (D-679). |
+| **Seeded rating types** | `App`, `Session` (PerSession), `Day` (PerDay), `Event` + `Exhibition` (Global) — `RatingSeeder`; resolved by `RatingFormService.ResolveTargetAsync` | **Built** (D-679). |
+| **Dynamic rating page** | app `/rate?code={code}&targetId={id}` — code-agnostic; proven for Event/Exhibition/Day | **Built** (D-680). |
+| **Notification + deep-link** | kinds `DayRatingRequest`/`EventRatingRequest`/`AppRatingRequest`/`ExhibitionRatingRequest` (46-49) + `SessionRatingRequest`; `clickUrl` → `/rate?code=…` | **Built** (D-677/D-678). |
+| **Trigger — end-of-day (per checked-in attendee)** | `ProgrammeRatingPromptWorker` end-of-day scan → `DayRatingRequest` to everyone with a Check-In gate scan that event-local day; per-day dedup (`ProgrammeDay.RatingPromptSentUtc`) | **Built** (D-679). |
+| **Trigger — end-of-programme (Event+Exhibition+App)** | `ProgrammeRatingPromptWorker` end-of-programme trio to every ever-checked-in attendee; once-only marker (`SystemSettings` `ProgramEndRatingSentUtc`) | **Built** (D-679). |
+| **Trigger — end-of-session (clock)** | `SessionRatingPromptWorker` — sessions whose `EndUtc` is within a 6h back-fill → `SessionRatingRequest` to every attendee with an active seat; dedup `Session.RatingPromptSentUtc` | **Built.** |
+| **Trigger — session view-leave (app)** | `SessionRatePromptTracker` — `session_detail_screen` fires `/rate?code=Session&targetId={id}` once per session on a real leave, only for an approved attendee of an **ended** session | **Built** (D-690). |
+| **Gate direction (In/Out)** | `GateScan.Direction` (`ScanDirection`), `Gate.DirectionMode{In,Out,Both}`, exit closes `SessionAttendance.LeaveUtc` | **Built** — but the **Out scan fires no rating** (`GateOperatorService` has no rating hook) — see GAP-A. |
+| **Live / YouTube screen** | `live_broadcast_screen.dart` (`youtube_player_iframe`, D-349) | **Built** — but **no rate trigger on close/back** — see GAP-B. |
+
+### C.3 The owner's 4 triggers → built reality
+
+| # | Owner trigger | Built? |
+|---|---------------|--------|
+| 1 | **Daily** at end-of-date **if checked in** → rate the day | ✅ **Built** — `ProgrammeRatingPromptWorker` end-of-day (D-679). |
+| 2 | **End of exhibition** → rate event/exhibition | ✅ **Built** — end-of-programme trio (D-679). |
+| 3 | **End of session on gate checkout** → rate the session | ⚠️ **Partial** — rating fires on **clock-end** (`SessionRatingPromptWorker`) + **app-view-leave** (D-690), **not** on the physical **gate Out-scan** → **GAP-A**. |
+| 4 | **Online session, live-stream close** → rate the online session | ❌ **GAP-B** — the live screen has no rate trigger. |
+
+### C.4 Deltas (the only new work)
+
+- **GAP-A — rate-on-gate-checkout.** When an attendee's gate **Out-scan** closes
+  their `SessionAttendance` for a session hall, fire the **session rating** for the
+  session they attended (an in-app `SessionRatingRequest` deep-linking to
+  `/rate?code=Session&targetId={id}`), deduped so it never double-prompts with the
+  clock-end worker or the app-view-leave (D-690). **OI-C1:** how to map a **hall
+  Out-scan → the session** to rate when a hall hosts several sessions in a day —
+  rate the session **active at the scan time**, or the last one the attendee had an
+  attendance row for? **Recommendation:** the session whose `[StartUtc,EndUtc]`
+  contains the scan (else the most recent attended session in that hall today);
+  reuse `Session.RatingPromptSentUtc`-style per-(session,user) dedup.
+- **GAP-B — rate-on-live-close.** On the live/YouTube screen **leave** (back / close /
+  end), fire the rating once — mirroring the D-690 dispose-fires-`/rate` pattern for
+  `live_broadcast_screen.dart`, eligibility-gated (signed-in approved attendee).
+  **OI-C2:** rate it as the **same `Session` code** (it is the same session, watched
+  online) or a **distinct online-session code**? **Recommendation:** reuse the
+  `Session` code (one rating per session regardless of channel); dedup shared with
+  GAP-A + D-690 so a user who watched online then walked out isn't prompted twice.
+- **"Watched at [time] and each date" (display).** Show the watch context on the
+  rating screen header — "watched {session} · {date} {time}" — sourced from the
+  attendance / last-watched timestamp. **OI-C3:** is this a **per-rating header** or a
+  **watch-history list** the owner wants? **Recommendation:** the per-rating header
+  line for v1; a watch-history list only if the owner asks.
+
+### C.5 Open items — OWNER DECISIONS
+
+| # | Item | Recommendation |
+|---|------|----------------|
+| **OI-C1** | Gate Out-scan → which session to rate when a hall hosts several? | The session active at the scan time (else the most recent attended in that hall today). |
+| **OI-C2** | Online-session rating — reuse the `Session` code or a distinct online code? | Reuse `Session`; share dedup with GAP-A + D-690 (one prompt per session per user). |
+| **OI-C3** | "Watched at time/date" — per-rating header, or a watch-history list? | Per-rating header for v1. |
+| **OI-C4** | Confirm the built end-of-day + end-of-programme + clock-end + view-leave triggers stay as-is (only add GAP-A/B). | Keep the built triggers; add only the two gaps. |
+
+### C.6 Definition of Done (only if a delta is approved — same changeset)
+
+For the approved gaps: the gate-checkout rating hook in `GateOperatorService` /
+attendance close (GAP-A) with per-(session,user) dedup + integration tests; the
+live-screen leave-fires-`/rate` hook (GAP-B) + a widget test (fires once, eligible
+only); the watch-context header + a test. Reuse the built `SessionRatingRequest`
+kind + `/rate` route (no new enum unless OI-C2 chooses a distinct code); no schema
+change beyond a dedup guard if needed. E2E + `Page` doc updates; `DECISIONS_LOG.md`
+entry; this Amendment C flipped from DRAFT to built with an As-built note.
 
 ---
 
