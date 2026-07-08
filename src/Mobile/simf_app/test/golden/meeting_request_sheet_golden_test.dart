@@ -19,19 +19,37 @@ import 'golden_fonts.dart';
 ///   flutter test --update-goldens test/golden/meeting_request_sheet_golden_test.dart
 ///
 /// Parity: gold drag handle, right-aligned طلب مقابلة title, الموضوع subject
-/// field (hint اكتب الموضوع), اختيار التاريخ row of upcoming day cards, اختيار
-/// الوقت row of time chips, and the full-width gold ارسال الطلب button — the beige
-/// sheet with a free date/time pick (owner 2026-07-08). RTL.
+/// field (hint اكتب الموضوع), اختيار التاريخ row of the speaker's available day
+/// cards, اختيار الوقت row of that day's time-slot chips (a day is pre-selected
+/// so both rows render), and the full-width gold ارسال الطلب button — sourced
+/// from the speaker's REAL availability slots (D-709). RTL.
+
+// Two event days of real slots (20 Nov: 09:00 + 10:00, 21 Nov: 09:00). Local →
+// UTC so the sheet's toLocal() round-trips to the same day/time deterministically.
+final List<SpeakerSlot> _goldenSlots = <SpeakerSlot>[
+  SpeakerSlot(
+    startUtc: DateTime(2026, 11, 20, 9).toUtc(),
+    endUtc: DateTime(2026, 11, 20, 9, 30).toUtc(),
+  ),
+  SpeakerSlot(
+    startUtc: DateTime(2026, 11, 20, 10).toUtc(),
+    endUtc: DateTime(2026, 11, 20, 10, 30).toUtc(),
+  ),
+  SpeakerSlot(
+    startUtc: DateTime(2026, 11, 21, 9).toUtc(),
+    endUtc: DateTime(2026, 11, 21, 9, 30).toUtc(),
+  ),
+];
 
 class _FakeRepo implements SpeakersRepository {
-  const _FakeRepo();
+  _FakeRepo();
 
   @override
   Future<List<SpeakerSummary>> getSpeakers() async => const <SpeakerSummary>[];
 
   @override
   Future<List<SpeakerSlot>> getAvailableSlots(String speakerId) async =>
-      const <SpeakerSlot>[];
+      _goldenSlots;
 
   @override
   Future<SpeakerDetail> getSpeaker(String id) => throw UnimplementedError();
@@ -58,7 +76,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: <Override>[
-          speakersRepositoryProvider.overrideWithValue(const _FakeRepo()),
+          speakersRepositoryProvider.overrideWithValue(_FakeRepo()),
         ],
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
@@ -82,7 +100,6 @@ void main() {
                   speakerId: 's1', // fixed speaker → no picker, form immediately
                   defaultName: 'Raed',
                   l10n: AppL10n.of(ctx),
-                  now: DateTime(2026, 7, 8),
                 ),
               ),
             ),
@@ -90,6 +107,10 @@ void main() {
         ),
       ),
     );
+    await tester.pumpAndSettle();
+    // Pre-select the first day so the time-slot chips render alongside the day
+    // cards (the frame shows both rows).
+    await tester.tap(find.byKey(const ValueKey<String>('meeting-day-0')));
     await tester.pumpAndSettle();
 
     await expectLater(
