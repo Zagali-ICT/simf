@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../app/widgets/simf_svg_icon.dart';
 import '../../core/country_flag.dart';
 
 /// The shared exhibitor / sponsor detail layout — Figma **1439:11881 "العارض"**
@@ -95,6 +96,9 @@ class EntityDetailScaffold extends StatelessWidget {
               label: websiteLabel,
               value: website!.trim(),
               icon: Icons.public,
+              // Figma 1439:11927 — the website glyph is the simple stroked globe
+              // (circle + meridian + equator), the same asset the auth screens use.
+              iconAsset: 'assets/icons/auth_globe.svg',
               onTap: onWebsite,
               // Website row (Figma 1439:11917): navyDeep fill, label above value,
               // label Bold-12, value SemiBold-14.
@@ -223,7 +227,8 @@ class _LocationLine extends StatelessWidget {
 }
 
 /// The full-width tier pill (Figma 1439:11898): beige-10% fill, beige hairline,
-/// radius-8, px-20/py-8; gold Bold-14 text on the right, medal glyph on the left.
+/// radius-8, px-20/py-8, gap-8; the 16px medal glyph at the inline start (right
+/// in RTL, node 1439:11899) then the gold Bold-14 label (node 1439:11903).
 class _TierPill extends StatelessWidget {
   const _TierPill({required this.label});
 
@@ -247,6 +252,12 @@ class _TierPill extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
+          const Icon(
+            Icons.workspace_premium_outlined,
+            size: 16,
+            color: SimfTokens.accent,
+          ),
+          const SizedBox(width: SimfTokens.space2),
           Flexible(
             child: Text(
               label,
@@ -259,12 +270,6 @@ class _TierPill extends StatelessWidget {
                 fontWeight: FontWeight.w700,
               ),
             ),
-          ),
-          const SizedBox(width: SimfTokens.space2),
-          const Icon(
-            Icons.workspace_premium_outlined,
-            size: 16,
-            color: SimfTokens.accent,
           ),
         ],
       ),
@@ -337,11 +342,16 @@ class _LinkRow extends StatelessWidget {
     required this.valueSize,
     required this.valueWeight,
     required this.labelWeight,
+    this.iconAsset,
   });
 
   final String label;
   final String value;
   final IconData icon;
+
+  /// Optional bundled SVG glyph (Figma-exact) rendered in the icon box instead
+  /// of [icon] — e.g. the stroked globe on the website row.
+  final String? iconAsset;
   final VoidCallback? onTap;
 
   /// The card fill (navy for the map row, navyDeep for the website row).
@@ -402,7 +412,7 @@ class _LinkRow extends StatelessWidget {
         padding: const EdgeInsets.all(SimfTokens.space4), // 16
         child: Row(
           children: <Widget>[
-            _IconBox(icon: icon),
+            _IconBox(icon: icon, iconAsset: iconAsset),
             const SizedBox(width: SimfTokens.space3), // 12
             Expanded(
               child: Column(
@@ -412,12 +422,15 @@ class _LinkRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: SimfTokens.space2),
-            // Fixed left-caret — like the shared SimfLinkRow / SimfListRow, the
-            // design's caret does not auto-mirror under RTL.
-            const Icon(
-              Icons.chevron_left,
+            // Figma 1439:11906/11919 — a GOLD caret pointing to the drill-in
+            // direction: left in RTL (as the Arabic frame shows), mirrored to
+            // right in LTR. (Owner 2026-07-08 — was a fixed beige left-chevron.)
+            Icon(
+              Directionality.of(context) == TextDirection.rtl
+                  ? Icons.chevron_left
+                  : Icons.chevron_right,
               size: 18,
-              color: SimfTokens.beigeBorder,
+              color: SimfTokens.accent,
             ),
           ],
         ),
@@ -427,11 +440,13 @@ class _LinkRow extends StatelessWidget {
 }
 
 /// The 44×44 beige-fill icon box (Figma 1439:11913 / 11926): beige-10% fill,
-/// beige hairline, radius-4, with a 20px gold glyph centred.
+/// beige hairline, radius-4, with a 20px gold glyph centred. A bundled Figma
+/// SVG ([iconAsset]) takes precedence over the Material [icon] when supplied.
 class _IconBox extends StatelessWidget {
-  const _IconBox({required this.icon});
+  const _IconBox({required this.icon, this.iconAsset});
 
   final IconData icon;
+  final String? iconAsset;
 
   @override
   Widget build(BuildContext context) {
@@ -447,7 +462,9 @@ class _IconBox extends StatelessWidget {
           width: SimfTokens.hairline,
         ),
       ),
-      child: Icon(icon, size: 20, color: SimfTokens.accent),
+      child: iconAsset == null
+          ? Icon(icon, size: 20, color: SimfTokens.accent)
+          : SimfSvgIcon(iconAsset!, size: 20, color: SimfTokens.accent),
     );
   }
 }

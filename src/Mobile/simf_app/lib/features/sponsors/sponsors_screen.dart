@@ -100,7 +100,12 @@ class SponsorsScreen extends ConsumerWidget {
               children: <Widget>[
               for (var i = 0; i < visibleGroups.length; i++) ...<Widget>[
                 if (i > 0) const SizedBox(height: SimfTokens.space6),
-                SimfSectionHeader(title: visibleGroups[i].tierName),
+                SimfSectionHeader(
+                  title: l10n.sponsorTierLabel(
+                    visibleGroups[i].tier,
+                    visibleGroups[i].tierName,
+                  ),
+                ),
                 const SizedBox(height: SimfTokens.space4),
                 // Frame 922:2824 — three bands: the top tier is the gold hero
                 // card, the lowest tier is a compact logo-tile grid, and any tier

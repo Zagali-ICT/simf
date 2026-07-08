@@ -1230,6 +1230,28 @@ class AppL10n {
   String get sponsorsError =>
       _t('تعذّر تحميل الرعاة.', 'Could not load the sponsors.');
   String get sponsorsEmpty => _t('لا يوجد رعاة', 'No sponsors');
+  // The three sponsor band headers (Figma 922:2824). The API returns the raw
+  // English tier enum name, so the app maps the tier weight to the localized
+  // band header itself (Platinum→strategic, Gold→premium, Silver→gold band).
+  String get sponsorTierStrategic =>
+      _t('الرعاية الاستراتيجية', 'Strategic Partner');
+  String get sponsorTierPremium => _t('رعاة بريميوم', 'Premium Sponsors');
+  String get sponsorTierGold => _t('رعاة ذهبيون', 'Gold Sponsors');
+  String get sponsorTierBronze => _t('الرعاة', 'Sponsors');
+  String sponsorTierLabel(int tier, String fallback) {
+    switch (tier) {
+      case 10:
+        return sponsorTierStrategic;
+      case 20:
+        return sponsorTierPremium;
+      case 30:
+        return sponsorTierGold;
+      case 40:
+        return sponsorTierBronze;
+      default:
+        return fallback;
+    }
+  }
 
   // Archive (Page 024).
   String get archiveTitle => _t('الأرشيف', 'Archive');
