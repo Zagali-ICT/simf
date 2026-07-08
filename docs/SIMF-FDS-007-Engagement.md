@@ -264,12 +264,17 @@ is unaffected.
 
 ## Amendment B — the two ask-a-speaker modes & the 3-stage Q&A pipeline (D0-2, DRAFT 2026-07-08)
 
-> **STATUS: DRAFT — pending owner sign-off.** This amendment folds the
-> already-built Q&A pipeline (completion-programme D-212/D-233/D-236/D-271/D-519)
-> into this feature spec and defines the **owner's item 12** ("ask a speaker — two
-> ways") against it. **Finding: item 12 is already built end-to-end;** the deltas
-> are small (§B.4). No new green-field build — this section records the AS-IS so the
-> spec stops trailing the code, and lists the small deltas + owner open items.
+> **STATUS: DRAFT — open items owner-resolved (§B.5, 2026-07-08); build-ready
+> pending the owner's final "go".** This amendment folds the already-built Q&A
+> pipeline (completion-programme D-212/D-233/D-236/D-271/D-519) into this feature
+> spec and defines the **owner's item 12** ("ask a speaker — two ways") against it.
+> **Finding: item 12 is already built end-to-end;** the deltas are small (§B.4).
+> No new green-field build — this section records the AS-IS so the spec stops
+> trailing the code, and lists the small deltas + owner open items.
+>
+> **Owner resolutions (2026-07-08):** **wire the real AI** for question filtering
+> (OI-B1, once a key is provisioned/rotated); **add a distinct pre-session ask
+> entry** (OI-B2). GAP-3 stands: **reproduce the "not working" report first**.
 
 ### B.1 What the owner asked (item 12, 2026-07-08, verbatim intent)
 
@@ -317,14 +322,21 @@ Moderator desk` (D-212):
   the **window** (opens 5 min before start / closes at end). **Action:** reproduce on
   the current build before any change — do not "fix" a working gate.
 
-### B.5 Open items — OWNER DECISIONS
+### B.5 Open items
 
-| # | Item | Recommendation |
-|---|------|----------------|
-| **OI-B1** | Wire real AI for question filtering now, or keep the stub for the PoC? | Wire it (mirror D-578) once a key is provisioned; else stub is acceptable and swap later. |
-| **OI-B2** | Add a distinct pre-session "ask" entry, or keep the single phase-derived flow? | Add a clear pre-session ask entry on the upcoming-session detail (low cost, matches the owner's "two ways" mental model). |
-| **OI-B3** | Confirm "team" = the الفريق العلمي Scientific-Committee role + its CP `/admin/questions/queue`. | Confirm — it is the built stage 2. |
-| **OI-B4** | Confirm the arrival-gate + 5-min/close-at-end window are the intended behaviour (not the "not working" bug). | Keep as built (D-271); reproduce first. |
+**Resolved (owner, 2026-07-08):**
+
+| # | Item | Resolution |
+|---|------|-----------|
+| **OI-B1** | Real AI vs stub for question filtering | **Wire the real `IAiService`-backed filter now** (mirror the D-578 summary), behind the same seam. **Blocker:** a real AI key must be provisioned/rotated first (the standing security item) — the DI swap lands once the key is available; until then the stub stands so nothing is blocked. |
+| **OI-B2** | Distinct pre-session ask entry vs single flow | **Add a clear pre-session "ask a question" entry** on an upcoming (not-yet-live) session's detail, so the two modes are visibly separate; it flows through the same AI→Committee→Moderator pipeline (Phase=`Pre`). |
+
+**Proceeding on the documented recommendation:**
+
+| # | Item | Default taken |
+|---|------|---------------|
+| **OI-B3** | "team" = the الفريق العلمي Scientific-Committee role + CP `/admin/questions/queue` | Confirmed as built stage 2. |
+| **OI-B4** | Arrival-gate + 5-min/close-at-end window are intended (not the "not working" bug) | Keep as built (D-271); **reproduce the "not working" report on the current build first** — do not "fix" a working gate. |
 
 ### B.6 Definition of Done (only if a delta is approved — same changeset)
 
