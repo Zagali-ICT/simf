@@ -131,7 +131,14 @@ class _SpeakerAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const fallback = Icon(Icons.anchor, size: 20, color: SimfTokens.accent);
+    // Same fallback glyph the detail avatar uses (speaker_placeholder.svg, the
+    // Figma 908:2110 gold anchor) so the empty-photo state is consistent across
+    // the speaker list and the profile — not a second Material anchor variant.
+    const fallback = SimfSvgIcon(
+      'assets/icons/speaker_placeholder.svg',
+      size: 24,
+      color: SimfTokens.accent,
+    );
     return Container(
       width: 44,
       height: 44,

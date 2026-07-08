@@ -61,14 +61,12 @@ class _FakeVenueMapRepository implements VenueMapRepository {
     this.booths = const <BoothSummary>[],
     this.detail,
     this.failList = false,
-    this.failDetail = false,
   });
 
   final List<VenueMapNode> nodes;
   final List<BoothSummary> booths;
   final BoothDetail? detail;
   final bool failList;
-  final bool failDetail;
   int nodeCalls = 0;
 
   @override
@@ -89,16 +87,7 @@ class _FakeVenueMapRepository implements VenueMapRepository {
   }
 
   @override
-  Future<BoothDetail> getBoothDetail(String id) async {
-    if (failDetail) {
-      throw const ApiFailure(
-        code: ApiErrorCodes.clientNetwork,
-        message: 'x',
-        httpStatus: 404,
-      );
-    }
-    return detail!;
-  }
+  Future<BoothDetail> getBoothDetail(String id) async => detail!;
 }
 
 Future<void> _pump(
@@ -149,7 +138,7 @@ void main() {
     });
 
     testWidgets('tapping a booth node opens the info card with name, code, '
-        'and both actions', (tester) async {
+        'and the guide-me action', (tester) async {
       await _pump(
         tester,
         repo: _FakeVenueMapRepository(
@@ -166,46 +155,9 @@ void main() {
       expect(find.text('A-12'), findsOneWidget); // code chip
       expect(find.text('SAMI Co · Defense'), findsOneWidget);
       expect(find.text('Guide me'), findsOneWidget);
-      expect(find.text('View details'), findsOneWidget);
-    });
-
-    testWidgets('View details opens the description sheet (lazy detail)',
-        (tester) async {
-      await _pump(
-        tester,
-        repo: _FakeVenueMapRepository(
-          nodes: const <VenueMapNode>[_boothNode, _farNode],
-          booths: const <BoothSummary>[_booth],
-          detail: _detail,
-        ),
-      );
-
-      await tester.tap(find.text('Booth A-12'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('View details'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('World-class maritime systems.'), findsOneWidget);
-    });
-
-    testWidgets('a detail 404 keeps the summary sheet without a description',
-        (tester) async {
-      await _pump(
-        tester,
-        repo: _FakeVenueMapRepository(
-          nodes: const <VenueMapNode>[_boothNode, _farNode],
-          booths: const <BoothSummary>[_booth],
-          failDetail: true,
-        ),
-      );
-
-      await tester.tap(find.text('Booth A-12'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('View details'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('SAMI'), findsWidgets); // summary kept
-      expect(find.text('World-class maritime systems.'), findsNothing);
+      // Figma 758:1358 has a single action — the "View details" button was
+      // removed (owner 2026-07-08), so no booth node shows it.
+      expect(find.text('View details'), findsNothing);
     });
 
     testWidgets('a non-booth node shows the card with Guide-me only and '

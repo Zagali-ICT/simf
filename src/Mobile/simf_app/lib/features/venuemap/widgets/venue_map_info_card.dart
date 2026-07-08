@@ -6,7 +6,7 @@ import '../data/venue_map_models.dart';
 
 /// The bottom white info card for the selected node (frame node 215:562's
 /// SAMI card): gold code box · name + exhibitor/sector line · code chip,
-/// then the gold أرشدني + bordered عرض التفاصيل actions.
+/// then the single gold أرشدني action (Figma 758:1358 shows no details button).
 class VenueMapInfoCard extends StatelessWidget {
   const VenueMapInfoCard({
     required this.l10n,
@@ -141,21 +141,6 @@ class VenueMapInfoCard extends StatelessWidget {
                   label: Text(l10n.venueMapDirectMe),
                 ),
               ),
-              if (onDetails != null) ...<Widget>[
-                const SizedBox(width: SimfTokens.space3),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: onDetails,
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(44),
-                      // Frame 758:1358 — gold 0.5 hairline, not faint navy.
-                      side: const BorderSide(color: SimfTokens.accent, width: 0.5),
-                      foregroundColor: SimfTokens.accent,
-                    ),
-                    child: Text(l10n.venueMapViewDetails),
-                  ),
-                ),
-              ],
             ],
           ),
         ],

@@ -163,7 +163,11 @@ class _IdentityCard extends StatelessWidget {
             ],
             if ((tierPill ?? '').trim().isNotEmpty) ...<Widget>[
               const SizedBox(height: SimfTokens.space4),
-              _TierPill(label: tierPill!.trim()),
+              // The Column stretches its children; the pill must HUG its label
+              // and centre (Figma 1439:11898 — a ~151px content-width pill
+              // centred in the card, not a full-width bar). Center escapes the
+              // stretch; the Row below sizes to content (MainAxisSize.min).
+              Center(child: _TierPill(label: tierPill!.trim())),
             ],
             if ((standCode ?? '').trim().isNotEmpty) ...<Widget>[
               const SizedBox(height: SimfTokens.space4),
@@ -250,6 +254,7 @@ class _TierPill extends StatelessWidget {
         ),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           const Icon(
@@ -422,15 +427,18 @@ class _LinkRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: SimfTokens.space2),
-            // Figma 1439:11906/11919 — the GOLD thin left-chevron. Reuses the
-            // same bundled ic_back.svg as the sponsor / speaker cards (the
-            // iconamoon thin chevron the frame draws — not a filled triangle,
-            // not auto-mirrored), so it matches the design and every other card
-            // caret. (Owner 2026-07-08 — was a fixed BEIGE Material chevron.)
-            const SimfSvgIcon(
-              'assets/icons/ic_back.svg',
-              size: 18,
-              color: SimfTokens.accent,
+            // Figma 1439:11906/11919 — the GOLD thin chevron. Reuses the same
+            // bundled ic_back.svg as the sponsor / speaker cards. The asset is
+            // authored pointing LEFT for the RTL frame and SimfSvgIcon does not
+            // auto-mirror, so mirror it in LTR — a trailing caret then points to
+            // the row's end in both directions. (Owner 2026-07-08.)
+            Transform.flip(
+              flipX: Directionality.of(context) == TextDirection.ltr,
+              child: const SimfSvgIcon(
+                'assets/icons/ic_back.svg',
+                size: 18,
+                color: SimfTokens.accent,
+              ),
             ),
           ],
         ),

@@ -185,7 +185,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       );
       return;
     }
-    if (item.kind == 'BookingConfirmed') {
+    // "بطاقتك الذكية جاهزة" (AccountApproved) and BookingConfirmed both land on
+    // the badge/QR screen (758-1469) so a tap opens the user's entry QR even
+    // when the row predates the clickUrl column.
+    if (item.kind == 'BookingConfirmed' || item.kind == 'AccountApproved') {
       context.pushNamed(RouteNames.badge);
     }
   }

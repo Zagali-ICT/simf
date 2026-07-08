@@ -267,6 +267,12 @@ public sealed class IdentitySeeder(
         await EnsureBaselineInterestsAsync(admin.Id, cancellationToken);
         await EnsureBaselineOrganisationsAsync(admin.Id, cancellationToken);
 
+        // D-170 (Meet-People) — give a few Approved demo visitors overlapping
+        // interests so "قابل أشخاص مثلك" returns matches on a fresh DB. Runs after
+        // the demo accounts (above) + the interest lookup (just now) are seeded.
+        // App-DB-only, idempotent (skips a profile that already has interests).
+        await EnsureDemoVisitorInterestsAsync(cancellationToken);
+
         // D-377 — the app's terms + about content blocks (Page 009 / Page 037
         // render their empty states without them). Insert-when-absent, same
         // shape as the cyber/landing content seeds above.
@@ -277,6 +283,11 @@ public sealed class IdentitySeeder(
         // vision/mission cards). Public marketing content from the event deck;
         // all restricted (محظور) operational data is deliberately excluded.
         await EnsureOrganizationAboutItemsAsync(admin.Id, cancellationToken);
+
+        // Populate the singleton OrganizationProfile's social links + website (set
+        // only when a field is empty) so the app home "تابعنا / Follow us" row
+        // renders. Runtime update — no migration (the row already exists via HasData).
+        await EnsureOrganizationSocialLinksAsync(cancellationToken);
 
         // D-345 — seed a demo speaker roster so the public /app/speakers list
         // (and the Website speakers strip + the app speakers screen) render a
@@ -1321,17 +1332,90 @@ public sealed class IdentitySeeder(
         }
 
         await appDbContext.SaveChangesAsync(cancellationToken);
+
+        // Attach the 2024 edition's rich child lists (session titles + past
+        // speakers) so the Archive detail page (Figma 925-3079) renders content,
+        // not just the head counters. Idempotent — only when the edition currently
+        // has none, so an admin edit is never overwritten. MediaItems are skipped
+        // (no real asset files to point at). No migration — the child tables
+        // already exist (D-432).
+        var edition2024 = await appDbContext.ArchiveEditions
+            .FirstOrDefaultAsync(e => e.Year == 2024, cancellationToken);
+        if (edition2024 is not null)
+        {
+            var hasTitles = await appDbContext.ArchiveSessionTitles
+                .AnyAsync(t => t.ArchiveEditionId == edition2024.Id, cancellationToken);
+            if (!hasTitles)
+            {
+                var titles = new (string En, string Ar)[]
+                {
+                    ("Opening Session: The Future of Maritime Security",
+                        "الجلسة الافتتاحية: مستقبل الأمن البحري"),
+                    ("Protecting Corridors and Ports", "حماية الممرات والموانئ"),
+                    ("Modern Maritime Technologies", "التقنيات البحرية الحديثة"),
+                };
+                var titleOrder = 0;
+                foreach (var (en, ar) in titles)
+                {
+                    appDbContext.ArchiveSessionTitles.Add(new SIMF.Domain.Archive.ArchiveSessionTitle
+                    {
+                        Id = Guid.NewGuid(),
+                        ArchiveEditionId = edition2024.Id,
+                        TitleEn = en,
+                        TitleAr = ar,
+                        DisplayOrder = titleOrder++,
+                    });
+                }
+            }
+
+            var hasPastSpeakers = await appDbContext.ArchivePastSpeakers
+                .AnyAsync(p => p.ArchiveEditionId == edition2024.Id, cancellationToken);
+            if (!hasPastSpeakers)
+            {
+                var pastSpeakers = new (string En, string Ar)[]
+                {
+                    ("Mr. Ali", "أ. علي"),
+                    ("Dr. Khalid", "د. خالد"),
+                    ("Eng. Ahmed", "م. أحمد"),
+                    ("Ms. Sara", "أ. سارة"),
+                    ("Eng. Fahd", "م. فهد"),
+                };
+                var speakerOrder = 0;
+                foreach (var (en, ar) in pastSpeakers)
+                {
+                    appDbContext.ArchivePastSpeakers.Add(new SIMF.Domain.Archive.ArchivePastSpeaker
+                    {
+                        Id = Guid.NewGuid(),
+                        ArchiveEditionId = edition2024.Id,
+                        NameEn = en,
+                        NameAr = ar,
+                        PhotoRelativePath = null,
+                        CountryId = SaudiArabiaCountryId,
+                        DisplayOrder = speakerOrder++,
+                    });
+                }
+                // Align the head-stat counters with Figma 925-3079 (250 speakers,
+                // 30 events) once, alongside the first child seed, so a later admin
+                // edit to the counters is never overwritten.
+                edition2024.Speakers = 250;
+                edition2024.Sessions = 30;
+            }
+
+            await appDbContext.SaveChangesAsync(cancellationToken);
+        }
+
         logger.LogInformation(
             "Demo archive editions ensured (inserted {NewCount}, total {Total}).",
             inserted, seed.Length);
     }
 
-    /// <summary>D-348 — idempotent sponsors + media partners with test logos so
-    /// the public partners strip renders a populated logo row instead of
-    /// name-only text. Idempotent by Name; backfills a test logo onto any active
-    /// row that still has none (incl. the pre-existing demo rows). Logos are test
-    /// placeholders (the column normally holds an asset path; the owner asked for
-    /// any test image while real artwork is pending).</summary>
+    /// <summary>D-348 — idempotent sponsors + media partners. Sponsors carry the
+    /// Figma 922:2824 content (SAMI strategic · GAMI/RSNF/GADD premium · six gold),
+    /// each with a bilingual tagline + about and a NULL logo (the frame renders the
+    /// name-initials fallback, so no asset is needed). The app localizes the three
+    /// tier HEADERS itself (Platinum→"الرعاية الاستراتيجية", Gold→"رعاة بريميوم",
+    /// Silver→"رعاة ذهبيون"), so only the Tier enum is set here. Media partners keep
+    /// their test logos. Idempotent by Name.</summary>
     private async Task EnsureDemoPartnersAsync(
         Guid actorUserId, CancellationToken cancellationToken)
     {
@@ -1339,13 +1423,47 @@ public sealed class IdentitySeeder(
         string Logo(string label) => logoBase + Uri.EscapeDataString(label);
         var now = timeProvider.GetUtcNow();
 
-        var sponsors = new (string Name, string NameAr, SponsorTier Tier, int Order)[]
+        // Figma 922:2824 — Tier drives the three bands the app renders + localizes:
+        // Platinum = strategic hero, Gold = premium band, Silver = the gold-tile grid.
+        var sponsors = new List<(string Name, string NameAr, SponsorTier Tier, int Order,
+            string TaglineEn, string TaglineAr, string AboutEn, string AboutAr)>
         {
-            ("Maritime Defense Systems", "نظم الدفاع البحري", SponsorTier.Platinum, 10),
-            ("Gulf Port Authority", "هيئة موانئ الخليج", SponsorTier.Gold, 20),
-            ("Blue Horizon Logistics", "آفاق زرقاء للخدمات اللوجستية", SponsorTier.Gold, 30),
-            ("Coastal Shield Technologies", "تقنيات الدرع الساحلي", SponsorTier.Silver, 40),
+            ("Saudi Arabian Military Industries", "الشركة السعودية للصناعات العسكرية",
+                SponsorTier.Platinum, 10,
+                "Strategic Sponsor · Defence-transformation partner of the Saudi International Maritime Forum",
+                "الراعي الاستراتيجي · شريك التحول الدفاعي للملتقى البحري السعودي الدولي",
+                "As the forum's strategic sponsor, SAMI is the Kingdom's national military-industries champion and the defence-transformation partner of the Saudi International Maritime Forum.",
+                "بصفتها الراعي الاستراتيجي للملتقى، تُعدّ الشركة السعودية للصناعات العسكرية البطل الوطني للصناعات العسكرية في المملكة وشريك التحول الدفاعي للملتقى البحري السعودي الدولي."),
+            ("General Authority for Military Industries", "الهيئة العامة للصناعات العسكرية",
+                SponsorTier.Gold, 10,
+                "Developing and enhancing the Kingdom's military-industry capabilities",
+                "تطوير وتعزيز قدرات الصناعة العسكرية في المملكة",
+                "The General Authority for Military Industries develops and enhances the Kingdom's military-industry capabilities, regulating and enabling the national defence sector.",
+                "تعمل الهيئة العامة للصناعات العسكرية على تطوير وتعزيز قدرات الصناعة العسكرية في المملكة وتنظيم وتمكين القطاع الدفاعي الوطني."),
+            ("Royal Saudi Naval Forces", "القوات البحرية الملكية السعودية",
+                SponsorTier.Gold, 20,
+                "The naval arm of the armed forces and guardian of the coasts and corridors",
+                "الذراع البحري للقوات المسلحة وحامي السواحل والممرات",
+                "The Royal Saudi Naval Forces are the naval arm of the armed forces and the guardian of the Kingdom's coasts and maritime corridors.",
+                "القوات البحرية الملكية السعودية هي الذراع البحري للقوات المسلحة وحامي سواحل المملكة وممراتها البحرية."),
+            ("General Authority for Defense Development", "الهيئة العامة للتطوير الدفاعي",
+                SponsorTier.Gold, 30,
+                "Empowering the defence ecosystem and accelerating innovation in the sector",
+                "تمكين المنظومة الدفاعية وتسريع الابتكار في القطاع",
+                "The General Authority for Defense Development empowers the national defence ecosystem and accelerates innovation across the sector.",
+                "تعمل الهيئة العامة للتطوير الدفاعي على تمكين المنظومة الدفاعية الوطنية وتسريع الابتكار في القطاع."),
         };
+        // Silver band — the Figma "رعاة ذهبيون" grid: six generic gold sponsors.
+        for (var i = 1; i <= 6; i++)
+        {
+            sponsors.Add((
+                $"Gold Sponsor {i}", $"راعي ذهبي {i}", SponsorTier.Silver, i * 10,
+                "Gold Sponsor of the Saudi International Maritime Forum",
+                "راعٍ ذهبي للملتقى البحري السعودي الدولي",
+                "A gold sponsor supporting the Saudi International Maritime Forum.",
+                "راعٍ ذهبي يدعم الملتقى البحري السعودي الدولي."));
+        }
+
         var sponsorNames = sponsors.Select(x => x.Name).ToList();
         var existingSponsors = await appDbContext.Sponsors
             .Where(s => sponsorNames.Contains(s.Name)).Select(s => s.Name)
@@ -1360,7 +1478,12 @@ public sealed class IdentitySeeder(
                 NameArabic = sp.NameAr,
                 Tier = sp.Tier,
                 DisplayOrder = sp.Order,
-                LogoRelativePath = Logo(sp.Name),
+                Tagline = sp.TaglineEn,
+                TaglineArabic = sp.TaglineAr,
+                About = sp.AboutEn,
+                AboutArabic = sp.AboutAr,
+                // Figma 922:2824 renders the name-initials fallback — no logo asset.
+                LogoRelativePath = null,
                 IsActive = true,
                 CreatedBy = actorUserId,
                 CreatedAt = now,
@@ -1394,15 +1517,10 @@ public sealed class IdentitySeeder(
         }
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        // Backfill a test logo onto any active row that still has none (e.g. the
-        // pre-existing single sponsor + partner) so the strip is all logos.
-        var logolessSponsors = await appDbContext.Sponsors
-            .Where(s => s.IsActive && (s.LogoRelativePath == null || s.LogoRelativePath == ""))
-            .ToListAsync(cancellationToken);
-        foreach (var s in logolessSponsors)
-        {
-            s.LogoRelativePath = Logo(string.IsNullOrWhiteSpace(s.Name) ? "Sponsor" : s.Name);
-        }
+        // Backfill a test logo onto any active MEDIA PARTNER that still has none so
+        // the partners strip is all logos. Sponsors intentionally keep a null logo
+        // (Figma 922:2824 renders the name-initials fallback), so they are NOT
+        // backfilled here.
         var logolessPartners = await appDbContext.MediaPartners
             .Where(m => m.IsActive && (m.LogoRelativePath == null || m.LogoRelativePath == ""))
             .ToListAsync(cancellationToken);
@@ -1412,7 +1530,7 @@ public sealed class IdentitySeeder(
         }
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        logger.LogInformation("Demo partners ensured (sponsors + media partners with logos).");
+        logger.LogInformation("Demo partners ensured (Figma sponsors + media-partner logos).");
     }
 
     /// <summary>D-176 (gap doc G12) — idempotently seeds the default
@@ -1492,5 +1610,125 @@ public sealed class IdentitySeeder(
         logger.LogInformation(
             "D-176: default AI prompts ensured (seeded {NewCount} of {Total}).",
             toSeed, seed.Length);
+    }
+
+    /// <summary>D-170 (Meet-People) — give a few of the seeded, Approved demo
+    /// visitors a couple of OVERLAPPING interests so the "قابل أشخاص مثلك"
+    /// recommender returns matches on a fresh database (it needs the caller AND at
+    /// least one candidate to each carry an overlapping interest). App-DB-only — it
+    /// links existing <see cref="UserInterest"/> rows to the demo profiles'
+    /// <c>UserProfile.Interests</c> M-to-M; no Identity change, no new account, no
+    /// migration. Idempotent: a profile that already has ANY interest is left
+    /// untouched, so an admin edit is never overwritten.</summary>
+    private async Task EnsureDemoVisitorInterestsAsync(CancellationToken cancellationToken)
+    {
+        // Shared interests (from the D-377 baseline lookup) so every pair of these
+        // visitors overlaps.
+        var sharedInterestNames = new[]
+        {
+            "Maritime Security",
+            "Naval Defence Technologies",
+            "Maritime Cybersecurity",
+        };
+        var sharedInterests = await appDbContext.Interests
+            .Where(interest => interest.IsActive && sharedInterestNames.Contains(interest.Name))
+            .ToListAsync(cancellationToken);
+        if (sharedInterests.Count == 0)
+        {
+            return; // the interest lookup is empty — nothing to link.
+        }
+
+        // The Approved demo visitors that should surface to one another (D-585).
+        var demoEmails = new[]
+        {
+            "visitor@simf.local",
+            "vip@simf.local",
+            "vvip@simf.local",
+            "staff@simf.local",
+        };
+
+        var linked = 0;
+        foreach (var email in demoEmails)
+        {
+            var user = await accounts.FindByEmailAsync(email, cancellationToken);
+            if (user is null)
+            {
+                continue;
+            }
+            var profile = await appDbContext.UserProfiles
+                .Include(p => p.Interests)
+                .SingleOrDefaultAsync(p => p.UserId == user.Id, cancellationToken);
+            if (profile is null || profile.Interests.Count > 0)
+            {
+                continue; // no profile, or already has interests — idempotent skip.
+            }
+            foreach (var interest in sharedInterests)
+            {
+                profile.Interests.Add(interest);
+            }
+            linked++;
+        }
+
+        if (linked > 0)
+        {
+            await appDbContext.SaveChangesAsync(cancellationToken);
+        }
+        logger.LogInformation(
+            "Demo visitor interests ensured (linked {Count} profile(s) for Meet-People).",
+            linked);
+    }
+
+    /// <summary>Populate the singleton <see cref="OrganizationProfile"/>'s social
+    /// links + website so the app home "تابعنا / Follow us" row renders. Runtime,
+    /// idempotent, set-ONLY-when-empty per field — so an admin edit (or the D-495
+    /// migration's SiteSettings-migrated values) is never overwritten, and NO new
+    /// migration is needed (the singleton row already exists via HasData). The
+    /// handles are placeholders — replace with the official accounts before handover.</summary>
+    private async Task EnsureOrganizationSocialLinksAsync(CancellationToken cancellationToken)
+    {
+        var profile = await appDbContext.OrganizationProfile
+            .SingleOrDefaultAsync(p => p.Id == OrganizationProfile.SingletonId, cancellationToken);
+        if (profile is null)
+        {
+            return; // the singleton is seeded via HasData; nothing to do if absent.
+        }
+
+        var changed = false;
+        if (string.IsNullOrWhiteSpace(profile.XUrl))
+        {
+            profile.XUrl = "https://x.com/SIMF_RSNF";
+            changed = true;
+        }
+        if (string.IsNullOrWhiteSpace(profile.InstagramUrl))
+        {
+            profile.InstagramUrl = "https://instagram.com/simf_rsnf";
+            changed = true;
+        }
+        if (string.IsNullOrWhiteSpace(profile.LinkedInUrl))
+        {
+            profile.LinkedInUrl = "https://linkedin.com/company/simf-rsnf";
+            changed = true;
+        }
+        if (string.IsNullOrWhiteSpace(profile.YouTubeUrl))
+        {
+            profile.YouTubeUrl = "https://youtube.com/@SIMF_RSNF";
+            changed = true;
+        }
+        if (string.IsNullOrWhiteSpace(profile.TikTokUrl))
+        {
+            profile.TikTokUrl = "https://tiktok.com/@simf_rsnf";
+            changed = true;
+        }
+        if (string.IsNullOrWhiteSpace(profile.ContactWebsite))
+        {
+            profile.ContactWebsite = "https://simf.gov.sa";
+            changed = true;
+        }
+
+        if (changed)
+        {
+            await appDbContext.SaveChangesAsync(cancellationToken);
+            logger.LogInformation("Organization social links ensured (set empty fields).");
+        }
     }
 }
