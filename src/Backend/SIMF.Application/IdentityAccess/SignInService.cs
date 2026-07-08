@@ -48,8 +48,9 @@ public sealed class SignInService(
     private static readonly TimeSpan OtpRequestWindow = TimeSpan.FromHours(1);
     private const int MaxSecondFactorAttempts = 5;
     private const int MaxOtpRequestsPerWindow = 5;
-    // #12 — client resend-button cooldown (the hard cap is MaxOtpRequestsPerWindow).
-    private const int ResendCooldownSeconds = 60;
+    // #12 — client resend-button cooldown, 2 minutes (D-695); the hard cap is
+    // MaxOtpRequestsPerWindow.
+    private const int ResendCooldownSeconds = 120;
 
     public async Task<SignInResponse> SignInAsync(
         SignInRequest request,

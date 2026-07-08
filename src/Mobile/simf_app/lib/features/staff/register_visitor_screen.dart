@@ -12,8 +12,10 @@ import '../../app/localization/locale_controller.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_logo.dart';
+import '../../core/validation/digit_normalization.dart';
 import '../../core/validation/phone_validation.dart';
 import '../../core/validation/required_validation.dart';
+import '../../core/validation/saudi_id_validation.dart';
 import '../account/data/profile_models.dart';
 import '../account/data/profile_repository.dart';
 import 'data/staff_models.dart';
@@ -766,8 +768,12 @@ class _StaffRegisterVisitorScreenState
             controller: _nationalId,
             keyboardType: TextInputType.number,
             maxLength: 10,
+            inputFormatters: <TextInputFormatter>[
+              const WesternDigitsFormatter(),
+              FilteringTextInputFormatter.digitsOnly,
+            ],
             autovalidateMode: AutovalidateMode.onUserInteraction,
-            validator: (v) => _required(l10n, v),
+            validator: (v) => _validateNationalId(l10n, v),
             style: _inputStyle,
             decoration: _decoration(counterText: ''),
           ),
@@ -816,9 +822,10 @@ class _StaffRegisterVisitorScreenState
         const SizedBox(height: 16),
         TextFormField(
           controller: _documentNumber,
-          maxLength: 10,
+          maxLength: _docType == _DocType.iqama ? 10 : 9,
+          inputFormatters: const <TextInputFormatter>[WesternDigitsFormatter()],
           autovalidateMode: AutovalidateMode.onUserInteraction,
-          validator: (v) => _required(l10n, v),
+          validator: (v) => _validateDocumentNumber(l10n, v),
           style: _inputStyle,
           decoration: _decoration(counterText: ''),
         ),
@@ -908,6 +915,28 @@ class _StaffRegisterVisitorScreenState
 
   String? _required(AppL10n l10n, String? value) =>
       isBlank(value) ? l10n.requiredField : null;
+
+  // D-700 — mirror the self-service shape + Luhn checks client-side so staff get
+  // instant feedback (the server already enforces the same via
+  // AdminWalkInRegistrationRequestValidator). Empty keeps the "required" message.
+  String? _validateNationalId(AppL10n l10n, String? value) {
+    final id = value?.trim() ?? '';
+    if (id.isEmpty) {
+      return _required(l10n, value);
+    }
+    return isValidNationalId(id) ? null : l10n.nationalIdInvalid;
+  }
+
+  String? _validateDocumentNumber(AppL10n l10n, String? value) {
+    final number = value?.trim() ?? '';
+    if (number.isEmpty) {
+      return _required(l10n, value);
+    }
+    if (_docType == _DocType.iqama) {
+      return isValidIqama(number) ? null : l10n.iqamaInvalid;
+    }
+    return isValidPassport(number) ? null : l10n.passportInvalid;
+  }
 
   /// Phone is required server-side (Saudi or international); validate inline like
   /// every other required field, with the same standard shapes as self-service.

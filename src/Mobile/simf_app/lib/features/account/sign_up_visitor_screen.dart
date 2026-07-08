@@ -55,10 +55,9 @@ import 'widgets/terms_and_next_buttons.dart';
 /// the Saudi national-ID path are kept (API-required) in the same styling
 /// even though the frame omits them.
 ///
-/// **FROZEN — clean-code D-546 (2026-06-30).** Decomposed to the per-page DoD
+/// Clean-code pass — D-546 (2026-06-30). Decomposed to the per-page DoD
 /// (golden `sign_up_visitor_168-2972.png`); see
-/// `docs/pages/mobile/sign-up-visitor/README.md`. No rework without owner
-/// approval (§13.3).
+/// `docs/pages/mobile/sign-up-visitor/README.md`.
 class SignUpVisitorScreen extends ConsumerStatefulWidget {
   const SignUpVisitorScreen({super.key});
 
@@ -301,7 +300,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
 
   /// D-375 — the picker fetch with a visible state machine: loading spinner
   /// while in flight, inline retry on failure. Pre-D-375 a failure here
-  /// silently hid the التصنيف field (the owner-reported "removed list").
+  /// silently hid the الفئة (category) field (the owner-reported "removed list").
   Future<void> _fetchProfileTypes() async {
     setState(() {
       _profileTypesLoading = true;
@@ -430,10 +429,11 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   /// directive: reuse the existing **face-detection page** (the guided
   /// liveness screen, `identityVerification`, Page 103) the My-Area avatar
   /// already uses and that runs reliably — NOT a direct camera picker. That
-  /// page owns the camera-permission request, the on-device face + liveness
-  /// check and the gallery fallback; the returned selfie becomes the avatar
-  /// and is shown at the top of the card immediately. Mandatory for men,
-  /// optional for women.
+  /// page owns the camera-permission request and the on-device face + liveness
+  /// check (live-only, no gallery fallback — D-662); the returned selfie
+  /// becomes the avatar and is shown at the top of the card immediately.
+  /// Mandatory for men, optional for women. Route 103 is universal-auth (D-694)
+  /// so a pending sign-up account reaches it instead of bouncing home.
   Future<void> _pickFacePhoto() async {
     final selfie = await context
         .pushNamed<CapturedSelfie>(RouteNames.identityVerification);

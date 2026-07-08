@@ -34,7 +34,7 @@ public sealed class ResendOtpTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, resend.StatusCode);
         var body = (await resend.Content
             .ReadFromJsonAsync<ApiResult<ResendOtpResponse>>())!.Data!;
-        Assert.Equal(60, body.CooldownSeconds);
+        Assert.Equal(120, body.CooldownSeconds); // D-695 — 2-minute cooldown
 
         // The freshly issued code verifies against the SAME (unchanged) ticket.
         var newCode = AuthFlow.GetActiveCode(_factory, email, AccountCodePurpose.SignInOtp);

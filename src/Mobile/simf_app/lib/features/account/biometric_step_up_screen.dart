@@ -24,7 +24,7 @@ import 'widgets/otp_code_boxes.dart';
 /// biometric credential. Restyled to the shared KSA OTP frame (D-369) via
 /// [OtpCodeBoxes]/[OtpMark], like the sign-in second factor.
 ///
-/// Clean-code frozen (D-554, Phase 3 — unbound auth screen, render preserved):
+/// Clean-code pass (D-554, Phase 3 — unbound auth screen, render preserved):
 /// the lone sweep-tint const dropped for `SimfTokens.surfaceTint`; the long
 /// `build` split into the shared [AccountSubHeader] (D-658) / `_buildContent` /
 /// `_buildSubmitButton` / `_buildResendRow`; the body + CTA capped by

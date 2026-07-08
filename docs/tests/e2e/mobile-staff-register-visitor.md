@@ -59,9 +59,14 @@ Scenario: An incomplete form is blocked client-side
     details" SnackBar shows
   And NO registration request is sent
 
+Scenario: Client-side ID shape + Luhn check (D-700)
+  Given the staff member types a national ID with the right shape (^1\d{9}$)
+    but a bad Luhn checksum (e.g. 1012345678)
+  Then the field shows the inline "Invalid national ID (10 digits starting with 1)"
+  And NO registration request is sent (the client rejects it before the server)
+
 Scenario: Server validation surfaces the bilingual message
-  Given the form passes the light client checks but fails a server rule
-    (e.g. a malformed Saudi national ID / Iqama checksum)
+  Given the form passes the client checks but fails a server rule
   When POST …/register-onsite returns 400
   Then the server's bilingual error message is shown in a SnackBar
   And the form keeps its entered values

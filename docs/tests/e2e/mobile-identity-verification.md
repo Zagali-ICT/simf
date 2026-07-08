@@ -12,7 +12,7 @@
 | **Page** | [`mobile/identity-verification`](../../pages/mobile/identity-verification.md) |
 | **Route** | app screen #103 `/my-area/verify-identity` · `POST /app/account/avatar` |
 | **Surface** | Mobile (Flutter) |
-| **Role/gate** | Signed-in + Approved (launched only from the My-Area approved dashboard) |
+| **Role/gate** | **Signed-in, any role (universal-auth, D-694)** — the screen is on-device only (camera + ML Kit, no network) and `POST /app/account/avatar` is not role-gated. Two entry points: the sign-up face capture (a **pending** account — this is why 103 must NOT be attendee-gated) and the My-Area avatar change (visitor / exhibitor / staff / moderator). Signed-out is still redirected to sign-in. |
 | **Test runner** | Flutter widget/unit test (screen) + device manual (live camera) |
 
 > **Camera security rules (owner 2026-07-06, D-662) — MUST hold:**

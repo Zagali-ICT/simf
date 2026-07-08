@@ -29,7 +29,8 @@
 > **KSA-Project redesign (D-368, Figma 168:2972):** the form now lives in the
 > beige card under the login-style navy header (logo + forum name + wired
 > globe language toggle); visitor/other + document-type are beige segmented
-> tabs, gender is two radio pills, the attach control is the bordered
+> tabs, gender is two radio pills (gold ring on the leading/right edge, then the
+> label — D-698), the attach control is the bordered
 > إرفاق ملف box, and an underlined terms link opens Page 009. **The
 > lookups/prefill/typeahead/validation/draft contract is unchanged.** Deltas:
 > the plate field "رقم اللوحة (اختياري)" is rendered as three 17-letter Saudi
@@ -60,7 +61,7 @@
 | E2E-MOB007-015 | Other tab (C5, D-371): the filtered picker is shown and a pick is **required** (inline error blocks Next); partner-side picks accepted by the server | validation | P0 | authored ✓ (widget test + server C5 test) |
 | E2E-MOB007-016 | Plate number (C6, D-371/D-459): optional — empty saves fine; restricted to the **official 17 Saudi plate letters** (Arabic or Latin), 3 letters + 1–4 digits, either order; `ABJ1234` / `abj 1234` / `1234-ABJ` / `ابح1234` / `ابح١٢٣٤` accepted and stored as the canonical Latin **code**; the response returns both `plateNumberAr` (ابح١٢٣٤) and `plateNumberEn` (ABJ1234); 2/4 letters, 5 digits, digits-only, symbols, and out-of-set letters (C, ج) rejected — app uses three 17-letter **searchable pickers** (the same beige search sheet as the country/region picker, D-471); client inline + server 400 | validation | P0 | authored ✓ (client `plate_validation_test` + `SaudiPlateTests` + server `UserProfileTests` theories incl. AR/EN round-trip; widget open-sheet test) |
 | E2E-MOB007-017 | **Two-photo split (D-437):** the form ends with **two** image actions — **"Upload ID"** (gallery pick of the ID DOCUMENT, **mandatory for everyone**, no face check) and **"Face photo"** (captured via the existing **face-detection / liveness page** `identityVerification` → the avatar, **mandatory for men, optional for women**). A missing ID blocks Next with "An ID image is required" (all genders); a male missing the face photo blocks with "A face photo is required — capture it with the camera" (shown up front); a female proceeds with the ID alone | validation | P0 | authored ✓ (widget tests; live face-capture drive shares the My-Area avatar flow — needs a real device, verified on the Huawei) |
-| E2E-MOB007-018 | **Face capture page (D-437):** the FACE photo reuses the guided face-detection / liveness screen (smile→turn→turn, with a gallery fallback) the My-Area avatar uses — it owns the camera permission + the on-device face/liveness check; the returned selfie becomes the avatar. The self-service **id-image endpoint no longer face-gates** (it is a document now); the admin walk-in id-document path keeps its server FaceAiSharp gate | validation | P0 | authored ✓ (server `UserProfileFaceGateTests` — self-service accepts a faceless document, admin paths still reject; the liveness capture is verified live on the Huawei) |
+| E2E-MOB007-018 | **Face capture page (D-437):** the FACE photo reuses the guided face-detection / liveness screen (smile→turn→turn, **live-only — no gallery fallback, D-662**) the My-Area avatar uses — it owns the camera permission + the on-device face/liveness check; the returned selfie becomes the avatar. Route 103 is **universal-auth (D-694)** so a pending sign-up account reaches it instead of bouncing to Home. The self-service **id-image endpoint no longer face-gates** (it is a document now); the admin walk-in id-document path keeps its server FaceAiSharp gate | validation | P0 | authored ✓ (server `UserProfileFaceGateTests`; router `router_role_matrix_test` + flow `app_flows_test` prove pending reaches route 103; the liveness capture is verified live on the Huawei) |
 | E2E-MOB007-019 | Missing-items feedback (D-434): a blocked Next shows the bilingual "complete the required fields" toast (not a silent no-op), and the form carries an info banner on entry so a user routed in to complete their profile knows why | validation | P0 | authored ✓ (`completeProfilePrompt` toast on every blocked-Next test path; banner renders on load) |
 | E2E-MOB007-020 | **Top avatar (D-437):** once the face photo is captured, the placeholder person icon at the top of the card is replaced by the captured face | happy | P1 | authored ✓ (widget — header avatar swaps to the captured bytes) |
 | E2E-MOB007-021 | **Name rules (D-437/D-459):** the Arabic name accepts only Arabic letters + spaces (Latin/digits filtered at the keystroke); the English name only Latin letters + spaces; each must be a **full name of 2 to 4 parts** or Next is blocked with "Enter your full name (2 to 4 parts)". Mirrored server-side in `UpsertUserProfileRequestValidator` (400) | validation | P0 | authored ✓ (widget formatter+validator test + server name-rule tests) |
@@ -195,7 +196,7 @@ Scenario: A lookup that returns no rows shows an empty state
 Scenario: A profile-types lookup in flight shows loading, a failure shows retry
   Given the user switches نوع التسجيل to "أخرى" (Other)
   Then while GET /app/account/profile-types?isVisitor=false is in flight the
-       التصنيف field shows a loading spinner (never a blank gap)
+       الفئة field shows a loading spinner (never a blank gap)
   When the lookup fails (network / 5xx)
   Then the field stays visible with the bilingual "Could not load the list."
        message and an inline Retry button
@@ -237,9 +238,10 @@ Scenario: The face photo is captured via the face-detection page (mandatory for 
   Given a signed-in male visitor with the ID document attached but no face photo
   Then the "Face photo" field shows "A face photo is required — capture it with the camera" up front
   When the visitor taps the capture box
+  # Route 103 is universal-auth (D-694) — a pending sign-up account reaches it, not Home.
   Then the app opens the existing face-detection / liveness page (identityVerification) —
-       the same flow the My-Area avatar uses (it owns the camera permission, the
-       on-device face + liveness check and a gallery fallback)
+       the same flow the My-Area avatar uses (it owns the camera permission and the
+       on-device face + liveness check; live-only, no gallery fallback — D-662)
   When the liveness completes
   Then the returned selfie is shown as the captured face and Next proceeds
 

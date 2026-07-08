@@ -179,7 +179,7 @@ void main() {
       await tester.enterText(fields.at(1), '0512345678');
       await tester.enterText(fields.at(2), 'رائد سالم');
       await tester.enterText(fields.at(3), 'Raed Salem');
-      await tester.enterText(fields.at(4), '1012345678');
+      await tester.enterText(fields.at(4), '1000000008'); // Luhn-valid (D-700)
 
       // Pick the organisation (the second/last dropdown; nationality defaults SA).
       final orgDropdown = find.byType(DropdownButtonFormField<String>).last;
@@ -202,6 +202,25 @@ void main() {
       expect(staff.lastRequest?.organisationId, 'org-1');
       expect(staff.lastRequest?.profileTypeId, 'pt-normal');
       expect(find.textContaining('pending approval'), findsOneWidget);
+    });
+
+    testWidgets('D-700 — a national ID with a bad checksum shows the inline '
+        'error and never posts', (tester) async {
+      final staff = _FakeStaffRepo();
+      await _pump(tester, profile: _FakeProfileRepo(), staff: staff);
+
+      // Saudi default order: email, phone, arabicName, englishName, nationalId.
+      // 1012345678 has the right shape (^1\d{9}$) but fails the Luhn checksum;
+      // the client now rejects it before the server does.
+      final fields = find.byType(TextFormField);
+      await tester.enterText(fields.at(4), '1012345678');
+      await tester.pump();
+
+      expect(
+        find.text('Invalid national ID (10 digits starting with 1)'),
+        findsOneWidget,
+      );
+      expect(staff.registerCalls, 0);
     });
   });
 }

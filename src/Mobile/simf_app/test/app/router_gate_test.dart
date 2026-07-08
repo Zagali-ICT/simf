@@ -35,6 +35,9 @@ void main() {
       expect(routePathRequiresAuth('/sign-up/visitor'), isTrue);
       expect(routePathRequiresAuth('/sign-up/interests'), isTrue);
       expect(routePathRequiresAuth('/my-area'), isTrue);
+      // D-694 — identity verification / avatar liveness is universal-auth (still
+      // gated after moving out of the attendee role set).
+      expect(routePathRequiresAuth('/my-area/verify-identity'), isTrue);
       expect(routePathRequiresAuth('/badge'), isTrue);
       expect(routePathRequiresAuth('/notifications'), isTrue);
       expect(routePathRequiresAuth('/meet'), isTrue);
@@ -311,6 +314,8 @@ void main() {
       // Universal-auth + public routes carry no role restriction.
       expect(allowedRolesForPath(badge), isNull);
       expect(allowedRolesForPath('/sessions'), isNull);
+      // D-694 — identity verification is universal-auth, not attendee-gated.
+      expect(allowedRolesForPath('/my-area/verify-identity'), isNull);
     });
 
     test('the moderator desk is moderator-EXCLUSIVE (staff no longer inherits)',
@@ -357,6 +362,21 @@ void main() {
         AppRole.staff,
       ]) {
         expect(hit(badge, role), isNull, reason: role.wireName);
+      }
+    });
+
+    test('D-694 — identity verification is reachable by every role', () {
+      // The avatar-liveness screen (route 103) is on-device only and its upload
+      // endpoint is not role-gated, so it is universal-auth: no signed-in role
+      // is bounced. (A pending account's case is covered in the D-666 group.)
+      const verifyIdentity = '/my-area/verify-identity';
+      for (final role in <AppRole>[
+        AppRole.visitor,
+        AppRole.exhibitor,
+        AppRole.moderator,
+        AppRole.staff,
+      ]) {
+        expect(hit(verifyIdentity, role), isNull, reason: role.wireName);
       }
     });
 
@@ -416,6 +436,10 @@ void main() {
       for (final p in <String>[
         '/badge',
         '/my-area',
+        // D-694 — the sign-up face capture pushes this; a pending user (every
+        // sign-up account) must reach it instead of bouncing home — the exact
+        // regression that shipped when 103 was attendee-gated.
+        '/my-area/verify-identity',
         '/notifications',
         '/sessions',
         '/registration/status',

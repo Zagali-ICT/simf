@@ -11,12 +11,12 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// A fake controller for the sign-up email-verify glue. `build()` returns
 /// SignedOut so no cold-start restore runs; `verifyEmail` optionally throws and
-/// `resendCode` returns a configured cooldown.
+/// `resendCode` returns the code lifetime (which the screen intentionally does
+/// NOT use as the cooldown — D-695).
 class _FakeController extends AuthController {
-  _FakeController({this.verifyFailure, this.resendSeconds = 60});
+  _FakeController({this.verifyFailure});
 
   final AuthFailure? verifyFailure;
-  final int resendSeconds;
   bool verifyCalled = false;
   bool resendCalled = false;
 
@@ -37,7 +37,7 @@ class _FakeController extends AuthController {
   @override
   Future<int> resendCode({required String email}) async {
     resendCalled = true;
-    return resendSeconds;
+    return 600; // the code lifetime the server returns (NOT the cooldown)
   }
 }
 
@@ -77,12 +77,21 @@ Future<void> _pump(WidgetTester tester, _FakeController controller) async {
       ),
     ),
   );
-  await tester.pumpAndSettle();
+  // The screen starts a 1s periodic cooldown timer on entry (D-695), so pump a
+  // frame rather than pumpAndSettle (which would never settle).
+  await tester.pump();
 }
 
 bool _verifyEnabled(WidgetTester tester) {
   return tester
           .widget<FilledButton>(find.widgetWithText(FilledButton, 'Verify'))
+          .onPressed !=
+      null;
+}
+
+bool _resendEnabled(WidgetTester tester) {
+  return tester
+          .widget<TextButton>(find.widgetWithText(TextButton, 'Resend'))
           .onPressed !=
       null;
 }
@@ -102,7 +111,8 @@ void main() {
       expect(_verifyEnabled(tester), isTrue);
 
       await tester.tap(find.widgetWithText(FilledButton, 'Verify'));
-      await tester.pumpAndSettle();
+      await tester.pump(); // start the async verify
+      await tester.pump(const Duration(milliseconds: 350)); // route transition
 
       expect(controller.verifyCalled, isTrue);
       expect(find.text('SIGN-IN'), findsOneWidget);
@@ -124,25 +134,39 @@ void main() {
       await tester.enterText(find.byType(TextField), '000000');
       await tester.pump();
       await tester.tap(find.widgetWithText(FilledButton, 'Verify'));
-      await tester.pumpAndSettle();
+      await tester.pump(); // start the async verify
+      await tester.pump(); // settle the error setState
 
       expect(find.text('The verification code is not correct.'), findsOneWidget);
       expect(find.text('SIGN-IN'), findsNothing);
       expect(_verifyEnabled(tester), isFalse); // field was cleared
+
+      // Cancel the on-entry cooldown timer (the screen stays mounted here).
+      await tester.pumpWidget(const SizedBox());
     });
 
-    testWidgets('Resend re-issues the code and starts the cooldown',
-        (tester) async {
-      final controller = _FakeController(resendSeconds: 45);
+    testWidgets('the resend cooldown shows on entry and blocks resend until it '
+        'elapses (D-695)', (tester) async {
+      final controller = _FakeController();
       await _pump(tester, controller);
 
+      // On entry the 2-minute countdown is visible and resend is disabled;
+      // the reviewer wanted the countdown to appear before resend is allowed.
+      // The D-364 design splits it into a label + mm:ss time.
+      expect(find.text('Resend in'), findsOneWidget);
+      expect(find.text('02:00'), findsOneWidget);
+      expect(_resendEnabled(tester), isFalse);
+
+      // Let the countdown run out; resend then becomes available.
+      await tester.pump(const Duration(seconds: 120));
+      expect(_resendEnabled(tester), isTrue);
+
+      // Resend re-issues the code and restarts a fresh 2-minute cooldown; the
+      // 600s code lifetime returned by resendCode is NOT used as the cooldown.
       await tester.tap(find.widgetWithText(TextButton, 'Resend'));
       await tester.pump();
-
       expect(controller.resendCalled, isTrue);
-      // The D-364 design splits the countdown into a label + mm:ss time.
-      expect(find.text('Resend in'), findsOneWidget);
-      expect(find.text('00:45'), findsOneWidget);
+      expect(find.text('02:00'), findsOneWidget);
 
       // Dispose the tree so the cooldown Timer is cancelled (no pending timer).
       await tester.pumpWidget(const SizedBox());

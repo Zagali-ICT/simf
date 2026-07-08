@@ -31,7 +31,7 @@ import 'widgets/interest_chip.dart';
 /// the existing profile, and routes to Page 010. AUTH-only; a draft-less deep
 /// link shows the recover state back to the profile-data screen.
 ///
-/// Clean-code frozen (D-550, Phase 3): screen-local colour consts dropped for
+/// Clean-code pass (D-550, Phase 3): screen-local colour consts dropped for
 /// `SimfTokens` (`chipBorderNavy` added); the pill extracted to [InterestChip];
 /// header to the shared [AccountSubHeader] (D-658); the body capped by
 /// [MaxWidthBody]. Behaviour + render unchanged — the 505:1083 golden locks it.
