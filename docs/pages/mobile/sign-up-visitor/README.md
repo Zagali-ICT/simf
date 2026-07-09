@@ -32,7 +32,9 @@ stretch edge-to-edge on a tablet — §13.7) holds, in order:
    filters the ProfileType lookup. **C5 (D-371):** Visitor hides the picker and
    auto-locks the seeded **"عادي / Normal"** type; Other shows the picker and a pick
    is **required**.
-2. **التصنيف / ProfileType** (`SimfPickerField`) — Other only.
+2. **التصنيف / ProfileType** (`DropdownButtonFormField`, D-722 — a **simple
+   dropdown/select**, not the full-screen searchable sheet, since the type list is
+   short) — Other only.
 3. Full name **AR** / **EN** (`SimfLabeledTextField`; per-script keystroke filters).
 4. **الجنس** — `GenderPillsField` (ذكر / أنثى; default Male).
 5. **الجهة / Organisation** (`SimfPickerField` typeahead → `LookupSearchSheet`) —

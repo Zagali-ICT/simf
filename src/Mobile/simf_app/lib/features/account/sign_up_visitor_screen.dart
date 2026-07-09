@@ -958,28 +958,45 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         ],
       );
     }
-    // D-471 — the same searchable bottom-sheet picker as nationality / birth-
-    // region / plate, so every lookup field on the form is identical. Under
-    // "Other" a pick is required (the empty-lookup case returns above per L-6);
-    // the picker is not a FormField, so the required gate lives in _next().
-    final selected =
-        _profileTypes.where((ProfileTypeItem t) => t.id == _profileTypeId).toList();
-    final hasValue = selected.isNotEmpty;
-    final label = hasValue
-        ? (l10n.isArabic ? selected.first.nameArabic : selected.first.name)
-        : l10n.profileTypeLabel;
+    // D-722 (owner batch item 3) — profile types are few, so this field is a
+    // simple dropdown/select instead of the shared full-screen searchable sheet
+    // (nationality / birth-region / plate keep the sheet — those lists are long).
+    // Still not gated by the form validator; the required check stays in _next()
+    // (the value can be null until the user picks). Mirrors the register-visitor
+    // dropdowns' idiom (explicit style + chevron, initialValue + onChanged).
     final showError = _triedSubmit && _profileTypeId == null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         SimfFieldLabel(l10n.profileTypeLabel),
         const SizedBox(height: 8),
-        SimfPickerField(
-          fieldKey: 'profileTypePicker',
-          displayText: label,
-          isPlaceholder: !hasValue,
-          onTap: () => unawaited(_pickProfileType(l10n)),
-          errorText: showError ? l10n.profileTypeRequired : null,
+        DropdownButtonFormField<String>(
+          key: const ValueKey<String>('profileTypeDropdown'),
+          initialValue: _profileTypeId,
+          isExpanded: true,
+          style: simfInputStyle,
+          icon: const Icon(
+            Icons.keyboard_arrow_down,
+            color: SimfTokens.inputInk,
+          ),
+          decoration: simfFieldDecoration(
+            errorText: showError ? l10n.profileTypeRequired : null,
+          ),
+          hint: Text(
+            l10n.profileTypeLabel,
+            style: simfInputStyle.copyWith(color: SimfTokens.greyText),
+          ),
+          items: <DropdownMenuItem<String>>[
+            for (final ProfileTypeItem t in _profileTypes)
+              DropdownMenuItem<String>(
+                value: t.id,
+                child: Text(
+                  l10n.isArabic ? t.nameArabic : t.name,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+          ],
+          onChanged: (String? id) => setState(() => _profileTypeId = id),
         ),
       ],
     );
@@ -1139,28 +1156,6 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       _placeOfBirth.text =
           _birthRegionByCode(pickedCode)?.name(isArabic: isArabic) ?? '';
     });
-  }
-
-  /// D-471 — opens the shared searchable sheet over the loaded "Other" profile
-  /// types and stores the picked id. Mirrors the nationality / birth-region
-  /// pickers so every lookup field uses the identical sheet.
-  Future<void> _pickProfileType(AppL10n l10n) async {
-    final picked = await _openLookupSheet(
-      options: <PickerOption>[
-        for (final ProfileTypeItem t in _profileTypes)
-          PickerOption(
-            value: t.id,
-            label: l10n.isArabic ? t.nameArabic : t.name,
-            search: '${t.name} ${t.nameArabic}',
-          ),
-      ],
-      searchHint: l10n.profileTypeSearchHint,
-      searchFieldKey: const ValueKey<String>('profileTypeSearchField'),
-    );
-    if (picked == null || !mounted) {
-      return;
-    }
-    setState(() => _profileTypeId = picked);
   }
 
   List<Widget> _buildDocumentFields(AppL10n l10n) {

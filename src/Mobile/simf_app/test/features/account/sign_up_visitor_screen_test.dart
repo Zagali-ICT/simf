@@ -625,7 +625,7 @@ void main() {
 
       // No picker under the Visitor tab — the type is locked, not chosen.
       expect(
-        find.byKey(const ValueKey<String>('profileTypePicker')),
+        find.byKey(const ValueKey<String>('profileTypeDropdown')),
         findsNothing,
       );
 
@@ -647,7 +647,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // The picker is back for the partner side.
-      const picker = ValueKey<String>('profileTypePicker');
+      const picker = ValueKey<String>('profileTypeDropdown');
       expect(find.byKey(picker), findsOneWidget);
 
       // Without a pick, Next is blocked with the required error.
@@ -686,7 +686,7 @@ void main() {
       const retry = ValueKey<String>('profileTypeRetry');
       expect(find.byKey(retry), findsOneWidget);
       expect(
-        find.byKey(const ValueKey<String>('profileTypePicker')),
+        find.byKey(const ValueKey<String>('profileTypeDropdown')),
         findsNothing,
       );
 
@@ -696,7 +696,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.byKey(const ValueKey<String>('profileTypePicker')),
+        find.byKey(const ValueKey<String>('profileTypeDropdown')),
         findsOneWidget,
       );
       expect(find.text('Could not load the list.'), findsNothing);
