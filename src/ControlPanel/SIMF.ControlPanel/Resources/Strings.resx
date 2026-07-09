@@ -2062,6 +2062,17 @@
   <data name="Admin.SpeakerMeetingRequests.Filter.Pending" xml:space="preserve"><value>Pending</value></data>
   <data name="Admin.SpeakerMeetingRequests.Filter.Accepted" xml:space="preserve"><value>Accepted</value></data>
   <data name="Admin.SpeakerMeetingRequests.Filter.Rejected" xml:space="preserve"><value>Rejected</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Filter.AwaitingSpeaker" xml:space="preserve"><value>Awaiting speaker</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Filter.Cancelled" xml:space="preserve"><value>Cancelled</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.Hall" xml:space="preserve"><value>Bind to hall (optional)</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.NoHall" xml:space="preserve"><value>— No hall (accept only) —</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.Slot" xml:space="preserve"><value>Hall slot</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.SelectSlot" xml:space="preserve"><value>— Select a free slot —</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.LoadingSlots" xml:space="preserve"><value>Loading free slots…</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.NoSlots" xml:space="preserve"><value>This hall has no free slots. Add hall availability first.</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.Table" xml:space="preserve"><value>Meeting table (optional)</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.NoTable" xml:space="preserve"><value>— No table —</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.SlotRequired" xml:space="preserve"><value>Select a free hall slot, or clear the hall to accept without binding.</value></data>
   <data name="Admin.SpeakerMeetingRequests.Col.Speaker" xml:space="preserve"><value>Speaker</value></data>
   <data name="Admin.SpeakerMeetingRequests.Col.Requester" xml:space="preserve"><value>Requester</value></data>
   <data name="Admin.SpeakerMeetingRequests.Col.Subject" xml:space="preserve"><value>Subject</value></data>

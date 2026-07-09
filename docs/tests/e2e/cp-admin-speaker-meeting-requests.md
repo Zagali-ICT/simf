@@ -74,6 +74,9 @@
 | E2E-SMR-013 | Column sort (Requester / Status / Submitted) toggles `Sort` + `SortDescending` | happy | P2 | _to author_ |
 | E2E-SMR-014 | List write is audited `Admin.SpeakerMeetingRequestsListed` | audit | P1 | authored ✓ (`List_writes_audit_event`) |
 | E2E-SMR-015 | Excel export — toolbar Export downloads an .xlsx of the filtered grid; selected rows export just those (D-356) | happy | P1 | _to author_ |
+| E2E-SMR-016 | Accept + bind a hall + free slot (+ optional table) → status `AwaitingSpeaker`, binding stamped (D-716) | happy | P0 | authored ✓ (`Accept_with_a_hall_binds_the_slot_and_awaits_the_speaker`) |
+| E2E-SMR-017 | Accept with a hall chosen but no slot → 400 `SPEAKER_MEETING_REQUEST_INVALID`; CP blocks submit with the SlotRequired toast (D-716) | error | P1 | authored ✓ (`Accept_with_a_hall_but_no_slot_is_400`) |
+| E2E-SMR-018 | Binding a hall slot removes it for the next meeting → a second accept onto the same slot → 409 (D-716) | error | P0 | authored ✓ (`Binding_a_hall_slot_makes_it_unavailable_to_a_second_meeting`) |
 
 ## Scenarios
 
@@ -367,6 +370,44 @@ Scenario: Export the speaker meeting requests queue to an XLSX workbook
 
 **Evidence:** `SpeakerMeetingRequestsExcelTests` (`tests/SIMF.Api.Tests/SpeakerMeetingRequestsExcelTests.cs`) covers the export endpoint at the API layer — the `SpeakerMeetingRequests` sheet, the six-column header (no requester email), filter/selection honoured, and the `SpeakerMeetingRequests.Export` permission gate.
 
+### E2E-SMR-016/017/018 — Accept + bind a hall slot (D-716, FDS-013 §15 GAP-2)
+
+```gherkin
+Feature: Accept a speaker meeting request and bind it to a hall slot
+  # On Accept the modal offers an optional "Bind to hall" picker: choose a Meeting/General
+  # hall → its free slots load (GET /admin/halls/{id}/available-slots) → optionally a table.
+  # Binding a hall + slot moves the request to AwaitingSpeaker (double opt-in, Slice C
+  # advances it). Leaving the hall empty keeps the plain straight-to-Accepted path.
+  # Option A: the picked hall slot is the meeting time of record.
+
+Background:
+  Given an Administrator with SpeakerMeetingRequests.Manage has signed in
+  And a speaker meeting request for a speaker is Pending
+  And a Meeting hall has a free availability window (via /admin/hall-availability)
+
+Scenario: E2E-SMR-016 — Accept with a hall + slot → AwaitingSpeaker
+  When they Respond → Accept, pick the Meeting hall, pick its first free slot, and Send
+  Then PUT /admin/speaker-meeting-requests/{id}/respond carries HallId + SlotStartUtc/SlotEndUtc
+  And the API returns HTTP 200
+  And the request status is AwaitingSpeaker (the grid shows the amber "Awaiting speaker" pill)
+  And the detail carries the bound HallId + SlotStartUtc/SlotEndUtc
+  # No requester notification / speaker email fires yet — that is Slice C.
+
+Scenario: E2E-SMR-017 — Accept with a hall but no slot → blocked
+  When they Respond → Accept, pick a hall, but do NOT pick a slot, and click Send
+  Then the CP shows the "Select a free hall slot…" toast and does not submit
+  # If the PUT is issued directly with HallId and no slot, the API returns 400
+  # SPEAKER_MEETING_REQUEST_INVALID.
+
+Scenario: E2E-SMR-018 — A bound slot is not reusable
+  Given request R1 is already accepted and bound to the hall's first slot (AwaitingSpeaker)
+  When a second request R2 (different speaker) is accepted onto the SAME hall slot
+  Then the slot is no longer in GET /admin/halls/{id}/available-slots
+  And PUT .../respond for R2 returns 409 SPEAKER_MEETING_REQUEST_INVALID
+```
+
+**Evidence:** `SpeakerMeetingRequestsTests.Accept_with_a_hall_binds_the_slot_and_awaits_the_speaker`, `Accept_with_a_hall_but_no_slot_is_400`, `Binding_a_hall_slot_makes_it_unavailable_to_a_second_meeting` (all green).
+
 **Evidence captured (browser run):**
 - Screenshot (toolbar): `docs/screenshots/cp-admin-speaker-meeting-requests-export-toolbar.png` (Export action present, no Import)
 - Network: `POST /account/api/admin/speaker-meeting-requests/export` returns 200 with the .xlsx body
@@ -416,4 +457,4 @@ Scenario: Export the speaker meeting requests queue to an XLSX workbook
 
 ---
 
-_Last reviewed:_ `2026-06-10` by `SIMF Team` (D-356 Phase 5 — Excel + toggle; added E2E-SMR-015 grid Excel export. Original D-269 authoring 2026-06-03).
+_Last reviewed:_ `2026-07-09` by `Claude` (D-716 — item 7 Slice B, accept-binds-hall-slot; added E2E-SMR-016/017/018 + the respond modal's hall/slot/table picker + `AwaitingSpeaker` state). Earlier: D-356 Phase 5 Excel (E2E-SMR-015, 2026-06-10); original D-269 authoring 2026-06-03.

@@ -2403,6 +2403,15 @@ internal static class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.DeleteHallAvailabilityWindowAsync(windowId, token));
         });
+        // D-716 (item 7, GAP-2) — the hall's free meeting slots (read by the
+        // speaker-meeting-request review modal before binding an accept to one).
+        group.MapGet("/admin/halls/{hallId:guid}/available-slots",
+            async (Guid hallId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetHallAvailableSlotsAsync(hallId, token));
+        });
 
         // D-478 (#11) — delegation meeting requests BFF passthroughs.
         group.MapPost("/admin/delegation-meeting-requests/list",

@@ -49,7 +49,9 @@ public sealed record AdminSpeakerMeetingRequestRow(
 /// <c>RequesterEmail</c> (resolved on read from the Identity DB) so the admin can
 /// reach out off-modal; fetched on demand and audit-logged as
 /// <c>SpeakerMeetingRequest.Viewed</c>. Followed the session-scoped detail
-/// pattern (removed D-278).</summary>
+/// pattern (removed D-278). D-716 appends the bound hall/table/slot (all null
+/// until an accept binds one) — appended with defaults so the wire stays
+/// append-only (D-219).</summary>
 public sealed record AdminSpeakerMeetingRequestDetail(
     Guid Id,
     Guid SpeakerId,
@@ -62,11 +64,36 @@ public sealed record AdminSpeakerMeetingRequestDetail(
     MeetingRequestStatus Status,
     string? ResponseNote,
     DateTimeOffset CreatedAt,
-    DateTimeOffset? RespondedAt);
+    DateTimeOffset? RespondedAt,
+    // D-716 (item 7, GAP-2) — the hall slot the meeting was bound to on accept.
+    DateTimeOffset? SlotStartUtc = null,
+    DateTimeOffset? SlotEndUtc = null,
+    Guid? HallId = null,
+    string? HallName = null,
+    Guid? MeetingTableId = null,
+    string? MeetingTableCode = null);
 
 /// <summary>D-269 — admin moves the row off Pending. Status must be Accepted or
 /// Rejected; Pending → Pending is rejected. Open for inheritance so the
-/// route-binding endpoint can carry an <c>Id</c> field (the D-168 pattern).</summary>
+/// route-binding endpoint can carry an <c>Id</c> field (the D-168 pattern).
+/// D-716 (item 7, GAP-2) — an Accept may also bind the meeting to a free hall
+/// slot: when <see cref="HallId"/> is set the picked slot
+/// (<see cref="SlotStartUtc"/>/<see cref="SlotEndUtc"/>, from
+/// <c>GET /admin/halls/{id}/available-slots</c>) becomes the meeting time and the
+/// request moves to <see cref="MeetingRequestStatus.AwaitingSpeaker"/> pending the
+/// speaker's confirmation. An accept with no <see cref="HallId"/> keeps the legacy
+/// straight-to-Accepted behaviour. Ignored on Reject.</summary>
 public class RespondToSpeakerMeetingRequestRequest : RespondToRequest
 {
+    /// <summary>Optional hall to bind the accepted meeting to. When set, a free
+    /// slot (<see cref="SlotStartUtc"/>/<see cref="SlotEndUtc"/>) is required.</summary>
+    public Guid? HallId { get; set; }
+
+    /// <summary>Optional meeting table inside <see cref="HallId"/>.</summary>
+    public Guid? MeetingTableId { get; set; }
+
+    /// <summary>The picked hall slot start/end — required when <see cref="HallId"/>
+    /// is set, must match a currently-free slot for that hall.</summary>
+    public DateTimeOffset? SlotStartUtc { get; set; }
+    public DateTimeOffset? SlotEndUtc { get; set; }
 }

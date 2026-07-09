@@ -395,7 +395,7 @@ built (§15.2); §15 defines only the **delta**.
 | Capability | Where (file:line) | State |
 |-----------|-------------------|-------|
 | **Speaker meeting request** (app → admin) | app submit `POST /app/speakers/{id}/meeting-requests` (`SpeakerMeetingRequestEndpoints.cs:33`); entity `SpeakerMeetingRequest.cs:17` (Subject, `SlotStartUtc?`/`SlotEndUtc?`, `AvailabilityWindowId?`, Status); service `SpeakerMeetingRequestService.cs` | **Built.** Status `Pending→Accepted/Rejected/Cancelled` (`MeetingRequestStatus.cs`). |
-| **Admin review + respond** | `PUT /admin/speaker-meeting-requests/{id}/respond` (`…Endpoints.cs:123`), Accept/Reject | **Built** — but does **not** check/bind hall availability (GAP-2). |
+| **Admin review + respond** | `PUT /admin/speaker-meeting-requests/{id}/respond` (`…Endpoints.cs:123`), Accept/Reject/**Accept-with-hall** (D-716) | **Built.** GAP-2 shipped (D-716): an accept may bind a free **hall slot** (+ optional table) → `AwaitingSpeaker`; the picked hall slot is the meeting time (Option A). |
 | **Accept already emails the speaker** | `SpeakerMeetingRequestService.cs:421-441` (purpose `"SpeakerMeetingAccepted"`, plain HTML: topic + proposed slot), speaker email resolved via `Speaker.ContactId` | **Built** — but the email is an FYI with **no approve/reject links** (GAP-3). |
 | **VIP gate on slot picking** | `SpeakerMeetingRequestService.IsVipAsync` reads `ProfileType.AllowsVipMeetingSlots` (`…:382-388`); non-VIP slot → 403 | **Built.** |
 | **Delegation (g2g) request** — country↔country, الوفود مع بعض | `POST /app/delegation-meeting-requests` (`DelegationMeetingRequestEndpoints.cs:15`); entity `DelegationMeetingRequest.cs:14` (RequestingCountryId, TargetCountryId, AttendeeCount, slot); admin respond `…/respond` | **Built.** Same `MeetingRequestStatus` flow. |
@@ -437,13 +437,16 @@ add a display label only. No new entity unless the owner names a distinct workfl
   rows? **Recommendation:** add a `HallAvailabilityWindow` (mirrors
   `SpeakerAvailabilityWindow`) so a hall's bookable meeting times are first-class and
   the reviewer picks from real free slots — symmetric with the speaker side.
-- **GAP-2 — admin review checks hall availability + binds a slot on accept.** When
-  the admin accepts a speaker/delegation request, the review UI shows the hall's free
-  meeting slots (GAP-1) and the admin **assigns a hall + table + slot**; the request
-  carries that binding. **OI-C:** does an accepted request *materialise a
-  `BusinessMeeting`* (so the two models converge) or just stamp
-  hall/table/slot fields on the request? **Recommendation:** stamp the binding on the
-  request for v1.1 (smaller, reversible); converge onto `BusinessMeeting` later.
+- **GAP-2 — admin review checks hall availability + binds a slot on accept. ✅ BUILT
+  (D-716, Slice B).** When the admin accepts a speaker request, the review modal shows
+  the hall's free meeting slots (GAP-1) and the admin **assigns a hall + optional table
+  + slot**; the request carries that binding and moves to `AwaitingSpeaker` pending the
+  speaker's confirmation (Slice C). **OI-C resolved:** the binding is **stamped on the
+  request** (`HallId`/`MeetingTableId`/`SlotStartUtc`/`SlotEndUtc`), not materialised as
+  a `BusinessMeeting` — smaller and reversible for v1.1 (converge later). **Option A**
+  chosen: the picked **hall** slot is the meeting time of record (one time grid). The
+  hall double-booking backstop is a filtered-unique `(HallId, SlotStartUtc)` index over
+  the live states. *(Delegation requests are not hall-bound in Slice B — speaker only.)*
 - **GAP-3 — speaker double-opt-in email (approve/reject links).** After admin-accept,
   the request enters a new **AwaitingSpeaker** stage and the speaker gets an **HTML
   email with two links — Approve / Reject** (§15.5, §15.6). The speaker clicking a

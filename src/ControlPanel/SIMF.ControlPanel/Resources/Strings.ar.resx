@@ -2055,6 +2055,17 @@
   <data name="Admin.SpeakerMeetingRequests.Filter.Pending" xml:space="preserve"><value>قيد الانتظار</value></data>
   <data name="Admin.SpeakerMeetingRequests.Filter.Accepted" xml:space="preserve"><value>مقبول</value></data>
   <data name="Admin.SpeakerMeetingRequests.Filter.Rejected" xml:space="preserve"><value>مرفوض</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Filter.AwaitingSpeaker" xml:space="preserve"><value>بانتظار المتحدّث</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Filter.Cancelled" xml:space="preserve"><value>ملغى</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.Hall" xml:space="preserve"><value>الربط بقاعة (اختياري)</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.NoHall" xml:space="preserve"><value>— بدون قاعة (قبول فقط) —</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.Slot" xml:space="preserve"><value>فترة القاعة</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.SelectSlot" xml:space="preserve"><value>— اختر فترة متاحة —</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.LoadingSlots" xml:space="preserve"><value>جارٍ تحميل الفترات المتاحة…</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.NoSlots" xml:space="preserve"><value>لا توجد فترات متاحة لهذه القاعة. أضِف توفّر القاعة أولاً.</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.Table" xml:space="preserve"><value>طاولة الاجتماع (اختياري)</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.NoTable" xml:space="preserve"><value>— بدون طاولة —</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.SlotRequired" xml:space="preserve"><value>اختر فترة قاعة متاحة، أو أزِل القاعة للقبول دون ربط.</value></data>
   <data name="Admin.SpeakerMeetingRequests.Col.Speaker" xml:space="preserve"><value>المتحدّث</value></data>
   <data name="Admin.SpeakerMeetingRequests.Col.Requester" xml:space="preserve"><value>مقدّم الطلب</value></data>
   <data name="Admin.SpeakerMeetingRequests.Col.Subject" xml:space="preserve"><value>الموضوع</value></data>

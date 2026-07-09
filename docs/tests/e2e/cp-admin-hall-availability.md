@@ -27,7 +27,7 @@
 | E2E-HAV-001 | Pick a hall, add a 60-min window @ 30-min slots → it lists; the free-slots read yields 2 slots | happy | P0 | authored ✓ (HallAvailabilityTests, API) |
 | E2E-HAV-002 | Delete a window → it leaves the list and its slots disappear | happy | P1 | authored ✓ (HallAvailabilityTests, API) |
 | E2E-HAV-003 | Invalid window (end ≤ start, or shorter than one slot) → 400, no row added; unknown hall → 404 | error | P1 | authored ✓ (HallAvailabilityTests, API) |
-| E2E-HAV-004 | A slot already bound to a meeting is not offered (GAP-2) | edge | P0 | _to author_ (lands with the accept-binds-slot flow, Slice B) |
+| E2E-HAV-004 | A slot already bound to a meeting is not offered (GAP-2) | edge | P0 | authored ✓ (HallAvailabilityTests `A_bound_meeting_removes_its_slot_from_available_slots`, D-716) |
 | E2E-HAV-005 | Auth gate — admin lacking `SpeakerMeetingRequests.Manage` → `/not-permitted`; nav item hidden | auth | P0 | authored ✓ (gate verified by CpNavigationPermissionTests + PermissionEnforcementTests) |
 | E2E-HAV-006 | Only Meeting/General halls appear in the picker | edge | P1 | _to author_ (page filters `HallPurpose.Meeting or General`) |
 | E2E-HAV-007 | RTL / Arabic render — page + add form mirror | i18n | P1 | _to author_ |
@@ -54,6 +54,20 @@ Scenario: Delete a window
   And the window leaves the list and the hall has no free slots
 ```
 
+### E2E-HAV-004 — A bound meeting removes its slot (GAP-2, D-716)
+
+```gherkin
+Feature: Free slots exclude bound meetings
+Background:
+  Given a Meeting hall with a 60-minute window @ 30-minute slots (two free slots)
+
+Scenario: Binding a meeting drops its slot from the free set
+  Given a speaker meeting request is accepted and bound to the hall's first slot
+  And its status is AwaitingSpeaker
+  When GET /admin/halls/{id}/available-slots is read
+  Then only the second slot is returned (the bound slot is filtered out)
+```
+
 ---
 
-_Last reviewed:_ 2026-07-09 by Claude — D-715 (item 7, FDS-013 §15 GAP-1) new hall-availability admin page.
+_Last reviewed:_ 2026-07-09 by Claude — D-716 (item 7, FDS-013 §15 GAP-2) taken-slot filter (E2E-HAV-004 now authored).

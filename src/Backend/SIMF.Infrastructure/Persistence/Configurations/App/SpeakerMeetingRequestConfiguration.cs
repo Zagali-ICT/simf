@@ -40,15 +40,42 @@ internal sealed class SpeakerMeetingRequestConfiguration
             .HasForeignKey(r => r.AvailabilityWindowId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        // D-716 (item 7, GAP-2) — the hall + optional table an accept bound the
+        // meeting to. SetNull: deleting the hall/table clears the binding rather
+        // than blocking (mirrors the availability-window FK above).
+        builder.HasOne<Hall>()
+            .WithMany()
+            .HasForeignKey(r => r.HallId)
+            .OnDelete(DeleteBehavior.SetNull);
+        builder.HasOne<MeetingTable>()
+            .WithMany()
+            .HasForeignKey(r => r.MeetingTableId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.HasIndex(r => new { r.SpeakerId, r.Status, r.CreatedAt });
         builder.HasIndex(r => r.RequestedByUserId);
 
-        // D-611 (Wave B) — at most one ACCEPTED request per (speaker, slot):
-        // Status is stored as int (Accepted=1); the NOT NULL guard excludes
-        // legacy topic-only requests whose slot is null (NULLs collide in a
-        // SQL Server unique index).
+        // D-611 (Wave B) — at most one LIVE request per (speaker, slot). D-716
+        // widened this from Accepted-only to the slot-holding set
+        // (`MeetingRequestStatuses.SlotHolding` = Accepted + AwaitingSpeaker): a
+        // hall-bound request in AwaitingSpeaker writes the hall slot into
+        // SlotStartUtc and so occupies the speaker's calendar — it must be the DB
+        // backstop for the speaker double-booking re-check, symmetric with the hall
+        // index below. Status is int; SQL Server filtered indexes forbid OR, so the
+        // live set is "not a released state" (not Pending=0 / Rejected=2 /
+        // Cancelled=3). The NOT NULL guard excludes legacy topic-only requests
+        // (NULLs collide in a SQL Server unique index).
         builder.HasIndex(r => new { r.SpeakerId, r.SlotStartUtc })
             .IsUnique()
-            .HasFilter("[Status] = 1 AND [SlotStartUtc] IS NOT NULL");
+            .HasFilter("[SlotStartUtc] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
+
+        // D-716 (item 7, GAP-2) — at most one live meeting per (hall, slot): a hall
+        // slot cannot be double-booked across speakers. Same slot-holding live set
+        // as the speaker index above (`MeetingRequestStatuses.SlotHolding`). The DB
+        // backstop for the app-level free-slot re-check in
+        // SpeakerMeetingRequestService.
+        builder.HasIndex(r => new { r.HallId, r.SlotStartUtc })
+            .IsUnique()
+            .HasFilter("[HallId] IS NOT NULL AND [SlotStartUtc] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
     }
 }

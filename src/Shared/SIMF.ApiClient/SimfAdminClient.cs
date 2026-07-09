@@ -2386,6 +2386,15 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Delete, $"hall-availability-windows/{windowId}", content: null,
             accessToken, cancellationToken);
 
+    // D-716 (item 7, GAP-2) — the hall's currently-free meeting slots (the
+    // meeting-review flow reads these before binding an accepted request to one).
+    public Task<ApiCallResult<IReadOnlyList<HallAvailableSlot>>>
+        GetHallAvailableSlotsAsync(Guid hallId, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<IReadOnlyList<HallAvailableSlot>>(
+            HttpMethod.Get, $"halls/{hallId}/available-slots", content: null,
+            accessToken, cancellationToken);
+
     // -- D-478 (#11) — delegation meeting requests (SIMF.Contracts.Programme) -
 
     public Task<ApiCallResult<GridPage<AdminDelegationMeetingRequestRow>>>

@@ -25,6 +25,7 @@ internal sealed class SpeakerMeetingRequestService(
     SimfAppDbContext appDbContext,
     IIdentityUserDirectory userDirectory,
     ISpeakerAvailabilityService availability,
+    IHallAvailabilityService hallAvailability,
     INotificationDispatcher notifications,
     IEmailQueue emailQueue,
     IAuditLog auditLog,
@@ -313,22 +314,28 @@ internal sealed class SpeakerMeetingRequestService(
                 "تمت معالجة طلب المقابلة هذا بالفعل.");
         }
 
-        // A1 — accepting a slot-bearing request must re-check the slot is still
-        // free among Accepted rows (the submit-time check can go stale). Use the
-        // same half-open overlap the availability layer uses (SpeakerAvailability
-        // Service), not start-equality — overlapping windows with different slot
-        // lengths can produce accepted slots that overlap but start at different
-        // times. The DB filtered-unique/overlap backstop is a Wave B item.
-        if (request.Status == MeetingRequestStatus.Accepted
+        // D-716 (item 7, GAP-2) — accept-with-hall (Option A): the admin bound the
+        // meeting to a free hall slot, so the picked hall slot becomes the meeting
+        // time and the request moves to AwaitingSpeaker (awaiting the speaker's own
+        // confirmation, Slice C). An accept with no HallId keeps the legacy
+        // straight-to-Accepted behaviour below.
+        var bindHall = request.Status == MeetingRequestStatus.Accepted
+            && request.HallId is not null;
+        if (bindHall)
+        {
+            await BindHallSlotAsync(req, request, cancellationToken);
+        }
+        else if (request.Status == MeetingRequestStatus.Accepted
             && req.SlotStartUtc is { } slotStart && req.SlotEndUtc is { } slotEnd)
         {
-            var slotTaken = await appDbContext.SpeakerMeetingRequests.AsNoTracking()
-                .AnyAsync(r => r.Id != req.Id
-                    && r.SpeakerId == req.SpeakerId
-                    && r.Status == MeetingRequestStatus.Accepted
-                    && r.SlotStartUtc != null && r.SlotEndUtc != null
-                    && r.SlotStartUtc < slotEnd && slotStart < r.SlotEndUtc, cancellationToken);
-            if (slotTaken)
+            // A1 — accepting a slot-bearing request must re-check the slot is still
+            // free among the speaker's LIVE meetings (the submit-time check can go
+            // stale). D-716: the live set is Accepted OR AwaitingSpeaker (a hall-bound
+            // request in AwaitingSpeaker occupies the speaker's calendar too) — the
+            // shared helper keeps this in step with the bind path. The DB
+            // filtered-unique index is the race backstop.
+            if (await SpeakerHasOverlappingMeetingAsync(
+                    req.SpeakerId, req.Id, slotStart, slotEnd, cancellationToken))
             {
                 throw new ApiException(
                     ErrorCodes.SpeakerMeetingRequestInvalid, 409,
@@ -338,12 +345,27 @@ internal sealed class SpeakerMeetingRequestService(
         }
 
         var now = timeProvider.GetUtcNow();
-        req.Status = request.Status;
+        req.Status = bindHall ? MeetingRequestStatus.AwaitingSpeaker : request.Status;
         req.ResponseNote = string.IsNullOrWhiteSpace(request.ResponseNote)
             ? null : request.ResponseNote.Trim();
         req.RespondedAt = now;
         req.RespondedByUserId = actorUserId;
-        await appDbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await appDbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            // D-716 — a concurrent accept can win the (hall|speaker, slot)
+            // filtered-unique index race after both passed the app-level free-slot
+            // re-check. Surface the same clean 409 the app check would have returned
+            // instead of a generic 500 (mirrors SeatReservationService's uniqueness
+            // guard). Data integrity is intact — the index prevented the double-book.
+            throw new ApiException(
+                ErrorCodes.SpeakerMeetingRequestInvalid, 409,
+                "That slot is no longer available.",
+                "لم تعد هذه الفترة متاحة.");
+        }
 
         await auditLog.WriteAsync(new AuditEntry
         {
@@ -369,10 +391,112 @@ internal sealed class SpeakerMeetingRequestService(
         }, cancellationToken);
 
         // D-474 (#11) — notify the requester in-app, and on Accept email the speaker.
-        await NotifyOutcomeAsync(req, cancellationToken);
+        // D-716 — an accept-with-hall is NOT a terminal decision (it awaits the
+        // speaker), so the requester notification + speaker email are deferred to the
+        // speaker-confirmation step (Slice C); nothing is dispatched here.
+        if (!bindHall)
+        {
+            await NotifyOutcomeAsync(req, cancellationToken);
+        }
 
         return await LoadDetailAsync(id, cancellationToken);
     }
+
+    // D-716 (item 7, GAP-2) — bind an accepted meeting to a free hall slot
+    // (Option A: the picked hall slot is the meeting time of record). Validates the
+    // hall hosts meetings, the slot is still free, the speaker is not already
+    // committed at that time, and the optional table belongs to the hall — then
+    // writes the binding onto the request. The caller sets the status to
+    // AwaitingSpeaker. The DB filtered-unique index (HallId, SlotStartUtc) is the
+    // race backstop.
+    private async Task BindHallSlotAsync(
+        SpeakerMeetingRequest req,
+        RespondToSpeakerMeetingRequestRequest request,
+        CancellationToken cancellationToken)
+    {
+        var hallId = request.HallId!.Value;
+        if (request.SlotStartUtc is not { } start
+            || request.SlotEndUtc is not { } end || end <= start)
+        {
+            throw new ApiException(
+                ErrorCodes.SpeakerMeetingRequestInvalid, 400,
+                "A valid hall slot (start and end) is required to bind a hall.",
+                "يلزم اختيار فترة قاعة صحيحة (بداية ونهاية) لربط القاعة.");
+        }
+
+        var hall = await appDbContext.Halls.AsNoTracking()
+            .Where(h => h.Id == hallId)
+            .Select(h => new { h.IsActive, h.Purpose })
+            .SingleOrDefaultAsync(cancellationToken)
+            ?? throw new ApiException(
+                ErrorCodes.HallNotFound, 404,
+                "The hall was not found.", "لم يتم العثور على القاعة.");
+        if (!hall.IsActive
+            || hall.Purpose is not (HallPurpose.Meeting or HallPurpose.General))
+        {
+            throw new ApiException(
+                ErrorCodes.HallNotFound, 404,
+                "The hall does not host meetings.",
+                "هذه القاعة لا تستضيف الاجتماعات.");
+        }
+
+        // The picked slot must still be a currently-free slot for the hall — the
+        // availability layer already excludes slots taken by a bound meeting
+        // (D-716 taken-filter), so membership is the free check.
+        var slots = await hallAvailability.GetAvailableSlotsAsync(hallId, cancellationToken);
+        if (!slots.Any(s => s.StartUtc == start && s.EndUtc == end))
+        {
+            throw new ApiException(
+                ErrorCodes.SpeakerMeetingRequestInvalid, 409,
+                "That hall slot is no longer available.",
+                "لم تعد فترة القاعة هذه متاحة.");
+        }
+
+        // The speaker cannot be double-booked: no other live meeting for the same
+        // speaker may overlap the picked slot (shared with the legacy accept path).
+        if (await SpeakerHasOverlappingMeetingAsync(
+                req.SpeakerId, req.Id, start, end, cancellationToken))
+        {
+            throw new ApiException(
+                ErrorCodes.SpeakerMeetingRequestInvalid, 409,
+                "The speaker already has a meeting at that time.",
+                "لدى المتحدّث اجتماع بالفعل في هذا الوقت.");
+        }
+
+        if (request.MeetingTableId is { } tableId)
+        {
+            var tableOk = await appDbContext.MeetingTables.AsNoTracking()
+                .AnyAsync(t => t.Id == tableId && t.HallId == hallId && t.IsActive,
+                    cancellationToken);
+            if (!tableOk)
+            {
+                throw new ApiException(
+                    ErrorCodes.SpeakerMeetingRequestInvalid, 400,
+                    "The meeting table was not found in this hall.",
+                    "لم يتم العثور على طاولة الاجتماع في هذه القاعة.");
+            }
+            req.MeetingTableId = tableId;
+        }
+
+        req.HallId = hallId;
+        req.SlotStartUtc = start;
+        req.SlotEndUtc = end;
+    }
+
+    // D-716 — does the speaker already hold a LIVE meeting (Accepted or
+    // AwaitingSpeaker, per MeetingRequestStatuses.SlotHolding) that overlaps
+    // [start, end) — excluding this request? Half-open overlap, the same rule the
+    // availability layer uses. Shared by the legacy accept re-check and the
+    // accept-with-hall bind so the two never diverge on which states hold a slot.
+    private Task<bool> SpeakerHasOverlappingMeetingAsync(
+        Guid speakerId, Guid excludeRequestId,
+        DateTimeOffset start, DateTimeOffset end, CancellationToken cancellationToken) =>
+        appDbContext.SpeakerMeetingRequests.AsNoTracking()
+            .AnyAsync(r => r.Id != excludeRequestId
+                && r.SpeakerId == speakerId
+                && MeetingRequestStatuses.SlotHolding.Contains(r.Status)
+                && r.SlotStartUtc != null && r.SlotEndUtc != null
+                && r.SlotStartUtc < end && start < r.SlotEndUtc, cancellationToken);
 
     // D-474 / D-611 — VIP gate: the requester's profile type opts into VIP
     // meeting slots. D-611 replaced the former brittle "profile-type Name
@@ -463,10 +587,28 @@ internal sealed class SpeakerMeetingRequestService(
         var email = await userDirectory.GetEmailAsync(
             req.RequestedByUserId, cancellationToken);
 
+        // D-716 — resolve the bound hall/table names for display (only when bound).
+        string? hallName = null;
+        if (req.HallId is { } hallId)
+        {
+            hallName = await appDbContext.Halls.AsNoTracking()
+                .Where(h => h.Id == hallId).Select(h => h.Name)
+                .SingleOrDefaultAsync(cancellationToken);
+        }
+        string? tableCode = null;
+        if (req.MeetingTableId is { } tableId)
+        {
+            tableCode = await appDbContext.MeetingTables.AsNoTracking()
+                .Where(t => t.Id == tableId).Select(t => t.Code)
+                .SingleOrDefaultAsync(cancellationToken);
+        }
+
         return new AdminSpeakerMeetingRequestDetail(
             req.Id, req.SpeakerId, speaker.Name, speaker.NameArabic,
             req.RequestedByUserId, req.RequesterName, email,
             req.Subject, req.Status, req.ResponseNote,
-            req.CreatedAt, req.RespondedAt);
+            req.CreatedAt, req.RespondedAt,
+            req.SlotStartUtc, req.SlotEndUtc,
+            req.HallId, hallName, req.MeetingTableId, tableCode);
     }
 }

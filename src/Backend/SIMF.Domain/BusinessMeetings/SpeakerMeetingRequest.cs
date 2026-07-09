@@ -50,8 +50,27 @@ public sealed class SpeakerMeetingRequest
     public Guid? AvailabilityWindowId { get; set; }
 
     /// <summary>Lifecycle state. Pending on create; Accepted or Rejected
-    /// after an admin reviews.</summary>
+    /// after an admin reviews. D-716 adds AwaitingSpeaker for an accept that also
+    /// bound the request to a hall slot (awaiting the speaker's own confirmation).</summary>
     public MeetingRequestStatus Status { get; set; } = MeetingRequestStatus.Pending;
+
+    /// <summary>D-716 (item 7, FDS-013 §15 GAP-2) — the hall the admin bound the
+    /// meeting to on Accept. Real FK to <see cref="Hall"/> on the App DB (SetNull —
+    /// a deleted hall clears the binding rather than blocking). Null for a legacy
+    /// accept-without-hall (the meeting is confirmed but not placed in a hall). When
+    /// set, <see cref="SlotStartUtc"/>/<see cref="SlotEndUtc"/> hold the bound hall
+    /// slot (Option A — the hall slot is the meeting time of record).</summary>
+    public Guid? HallId { get; set; }
+
+    /// <summary>D-716 — the optional meeting table inside <see cref="HallId"/> the
+    /// meeting was placed at. Real FK to <see cref="MeetingTable"/> (SetNull). Null
+    /// when the admin bound a hall but no specific table.</summary>
+    public Guid? MeetingTableId { get; set; }
+
+    /// <summary>D-716 — when the speaker confirmed (or declined) the bound meeting
+    /// via the double-opt-in link. Null while <see cref="MeetingRequestStatus.AwaitingSpeaker"/>;
+    /// set by Slice C's public token flow. Persisted now as an additive column.</summary>
+    public DateTimeOffset? SpeakerDecisionAt { get; set; }
 
     /// <summary>Optional admin response note shown to the requester.</summary>
     public string? ResponseNote { get; set; }

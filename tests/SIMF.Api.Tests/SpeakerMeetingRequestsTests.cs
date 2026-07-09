@@ -9,6 +9,7 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Programme;
+using SIMF.Domain.BusinessMeetings;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Programme;
 using SIMF.Infrastructure.Persistence;
@@ -294,7 +295,190 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
         Assert.Contains("\"count\"", recorded.Detail!);
     }
 
+    [Fact]
+    public async Task Accept_with_a_hall_binds_the_slot_and_awaits_the_speaker()
+    {
+        // D-716 (GAP-2) — accepting with a hall + free slot binds the meeting and
+        // moves the request to AwaitingSpeaker (Option A: the hall slot is the time).
+        var speaker = await SeedSpeakerAsync(allowsMeetings: true);
+        var visitor = await SignInApprovedVisitorAsync();
+        var created = await SubmitAsync(speaker.Id, "Visitor", "Topic", visitor);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var hallId = await SeedMeetingHallAsync();
+        var slots = await CreateHallWindowAndGetSlotsAsync(hallId, admin);
+        var slot = slots[0];
+
+        var respond = await PutAuthAsync(
+            $"/api/v1/admin/speaker-meeting-requests/{created.Id}/respond",
+            new RespondToSpeakerMeetingRequestRequest
+            {
+                Status = MeetingRequestStatus.Accepted,
+                HallId = hallId,
+                SlotStartUtc = slot.StartUtc,
+                SlotEndUtc = slot.EndUtc,
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, respond.StatusCode);
+        var detail = (await respond.Content
+            .ReadFromJsonAsync<ApiResult<AdminSpeakerMeetingRequestDetail>>())!.Data!;
+        Assert.Equal(MeetingRequestStatus.AwaitingSpeaker, detail.Status);
+        Assert.Equal(hallId, detail.HallId);
+        Assert.Equal(slot.StartUtc, detail.SlotStartUtc);
+        Assert.Equal(slot.EndUtc, detail.SlotEndUtc);
+    }
+
+    [Fact]
+    public async Task Accept_with_a_hall_but_no_slot_is_400()
+    {
+        var speaker = await SeedSpeakerAsync(allowsMeetings: true);
+        var visitor = await SignInApprovedVisitorAsync();
+        var created = await SubmitAsync(speaker.Id, "Visitor", "Topic", visitor);
+        var admin = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedMeetingHallAsync();
+
+        var respond = await PutAuthAsync(
+            $"/api/v1/admin/speaker-meeting-requests/{created.Id}/respond",
+            new RespondToSpeakerMeetingRequestRequest
+            {
+                Status = MeetingRequestStatus.Accepted,
+                HallId = hallId, // no slot supplied
+            }, admin);
+        Assert.Equal(HttpStatusCode.BadRequest, respond.StatusCode);
+        var body = (await respond.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SpeakerMeetingRequestInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Binding_a_hall_slot_makes_it_unavailable_to_a_second_meeting()
+    {
+        // D-716 (GAP-2) — a second accept onto the same hall slot (a different
+        // speaker, so the speaker-busy guard is not what fires) is a 409: the
+        // taken-filter removed the slot from the hall's free set.
+        var admin = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedMeetingHallAsync();
+        var slot = (await CreateHallWindowAndGetSlotsAsync(hallId, admin))[0];
+
+        var speaker1 = await SeedSpeakerAsync(allowsMeetings: true);
+        var visitor1 = await SignInApprovedVisitorAsync();
+        var req1 = await SubmitAsync(speaker1.Id, "V1", "T1", visitor1);
+        var bind1 = await PutAuthAsync(
+            $"/api/v1/admin/speaker-meeting-requests/{req1.Id}/respond",
+            new RespondToSpeakerMeetingRequestRequest
+            {
+                Status = MeetingRequestStatus.Accepted,
+                HallId = hallId, SlotStartUtc = slot.StartUtc, SlotEndUtc = slot.EndUtc,
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, bind1.StatusCode);
+
+        var speaker2 = await SeedSpeakerAsync(allowsMeetings: true);
+        var visitor2 = await SignInApprovedVisitorAsync();
+        var req2 = await SubmitAsync(speaker2.Id, "V2", "T2", visitor2);
+        var bind2 = await PutAuthAsync(
+            $"/api/v1/admin/speaker-meeting-requests/{req2.Id}/respond",
+            new RespondToSpeakerMeetingRequestRequest
+            {
+                Status = MeetingRequestStatus.Accepted,
+                HallId = hallId, SlotStartUtc = slot.StartUtc, SlotEndUtc = slot.EndUtc,
+            }, admin);
+        Assert.Equal(HttpStatusCode.Conflict, bind2.StatusCode);
+        var body = (await bind2.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SpeakerMeetingRequestInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Accepting_a_slot_the_speaker_already_holds_as_AwaitingSpeaker_is_409()
+    {
+        // D-716 regression — the legacy accept-WITHOUT-hall re-check must see a
+        // hall-bound AwaitingSpeaker meeting for the same speaker (it occupies the
+        // speaker's calendar via the same SlotStartUtc/EndUtc columns), not only
+        // Accepted rows. Before the fix this accept slipped through and double-booked
+        // the speaker.
+        var speaker = await SeedSpeakerAsync(allowsMeetings: true);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var slotStart = new DateTimeOffset(2031, 5, 1, 10, 0, 0, TimeSpan.Zero);
+        var slotEnd = slotStart.AddMinutes(30);
+
+        // R1 already holds the speaker's 10:00 slot as AwaitingSpeaker.
+        await SeedSpeakerRequestAsync(
+            speaker.Id, MeetingRequestStatus.AwaitingSpeaker, slotStart, slotEnd);
+        // R2 is a pending VIP-style request for the SAME speaker + overlapping slot.
+        var r2 = await SeedSpeakerRequestAsync(
+            speaker.Id, MeetingRequestStatus.Pending, slotStart, slotEnd);
+
+        var respond = await PutAuthAsync(
+            $"/api/v1/admin/speaker-meeting-requests/{r2}/respond",
+            new RespondToSpeakerMeetingRequestRequest { Status = MeetingRequestStatus.Accepted },
+            admin);
+        Assert.Equal(HttpStatusCode.Conflict, respond.StatusCode);
+        var body = (await respond.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SpeakerMeetingRequestInvalid, body.Error!.Code);
+    }
+
     // -- Helpers --------------------------------------------------------------
+
+    // D-716 — seed a SpeakerMeetingRequest row directly (bypasses the submit
+    // guard) to set up multi-request race/overlap scenarios.
+    private async Task<Guid> SeedSpeakerRequestAsync(
+        Guid speakerId, MeetingRequestStatus status,
+        DateTimeOffset? slotStart = null, DateTimeOffset? slotEnd = null)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var req = new SpeakerMeetingRequest
+        {
+            Id = Guid.NewGuid(),
+            SpeakerId = speakerId,
+            RequestedByUserId = Guid.NewGuid(),
+            RequesterName = "Seed", Subject = "Seed",
+            SlotStartUtc = slotStart, SlotEndUtc = slotEnd,
+            Status = status,
+            CreatedAt = DateTimeOffset.UtcNow,
+            RespondedAt = status == MeetingRequestStatus.Pending ? null : DateTimeOffset.UtcNow,
+        };
+        db.SpeakerMeetingRequests.Add(req);
+        await db.SaveChangesAsync();
+        return req.Id;
+    }
+
+    // D-716 — a Meeting-purpose hall for the accept-with-hall flow.
+    private static readonly DateTimeOffset HallWindowStart =
+        new(2031, 3, 1, 9, 0, 0, TimeSpan.Zero);
+
+    private async Task<Guid> SeedMeetingHallAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var hall = new Hall
+        {
+            Id = Guid.NewGuid(),
+            Code = "MH-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+            Name = "Meeting Hall", NameArabic = "قاعة الاجتماعات",
+            Purpose = HallPurpose.Meeting, Capacity = 10, IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        db.Halls.Add(hall);
+        await db.SaveChangesAsync();
+        return hall.Id;
+    }
+
+    private async Task<IReadOnlyList<HallAvailableSlot>> CreateHallWindowAndGetSlotsAsync(
+        Guid hallId, string admin)
+    {
+        var create = await PostAuthAsync(
+            $"/api/v1/admin/halls/{hallId}/availability-windows",
+            new CreateHallAvailabilityWindowRequest
+            {
+                StartUtc = HallWindowStart, EndUtc = HallWindowStart.AddMinutes(60), SlotMinutes = 30,
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+        var slots = await GetAuthAsync(
+            $"/api/v1/admin/halls/{hallId}/available-slots", admin);
+        var list = (await slots.Content
+            .ReadFromJsonAsync<ApiResult<IReadOnlyList<HallAvailableSlot>>>())!.Data!;
+        Assert.NotEmpty(list);
+        return list;
+    }
 
     private async Task<SpeakerMeetingRequestSubmitted> SubmitAsync(
         Guid speakerId, string name, string subject, string token)

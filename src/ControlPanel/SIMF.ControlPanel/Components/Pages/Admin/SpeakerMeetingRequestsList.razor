@@ -75,6 +75,12 @@
                             case MeetingRequestStatus.Rejected:
                                 <SimfPill Variant="off">@L["Admin.SpeakerMeetingRequests.Filter.Rejected"]</SimfPill>
                                 break;
+                            case MeetingRequestStatus.AwaitingSpeaker:
+                                <SimfPill Variant="warn">@L["Admin.SpeakerMeetingRequests.Filter.AwaitingSpeaker"]</SimfPill>
+                                break;
+                            case MeetingRequestStatus.Cancelled:
+                                <SimfPill Variant="off">@L["Admin.SpeakerMeetingRequests.Filter.Cancelled"]</SimfPill>
+                                break;
                         }
                     </CellTemplate>
                 </SimfDataGridColumn>
@@ -146,6 +152,62 @@
                         </option>
                     </select>
                 </label>
+                @* D-716 (item 7, GAP-2) — optional hall binding on Accept. Picking a
+                   hall + free slot moves the request to AwaitingSpeaker (double
+                   opt-in); leaving the hall empty keeps the plain Accept. *@
+                @if (_respondStatus == MeetingRequestStatus.Accepted)
+                {
+                    <label class="simf-field">
+                        <span class="simf-field__label">@L["Admin.SpeakerMeetingRequests.Bind.Hall"]</span>
+                        <select class="simf-field__input" value="@(_bindHallId?.ToString() ?? string.Empty)"
+                                @onchange="OnBindHallChangedAsync" disabled="@_busy">
+                            <option value="">@L["Admin.SpeakerMeetingRequests.Bind.NoHall"]</option>
+                            @foreach (var hall in _halls)
+                            {
+                                <option value="@hall.Id">@hall.Name</option>
+                            }
+                        </select>
+                    </label>
+                    @if (_bindHallId is not null)
+                    {
+                        <label class="simf-field">
+                            <span class="simf-field__label">@L["Admin.SpeakerMeetingRequests.Bind.Slot"]</span>
+                            @if (_loadingSlots)
+                            {
+                                <div class="simf-table__sub">@L["Admin.SpeakerMeetingRequests.Bind.LoadingSlots"]</div>
+                            }
+                            else if (_hallSlots.Count == 0)
+                            {
+                                <div class="simf-table__sub">@L["Admin.SpeakerMeetingRequests.Bind.NoSlots"]</div>
+                            }
+                            else
+                            {
+                                <select class="simf-field__input" value="@_bindSlotIndex"
+                                        @onchange="OnBindSlotChanged" disabled="@_busy">
+                                    <option value="-1">@L["Admin.SpeakerMeetingRequests.Bind.SelectSlot"]</option>
+                                    @for (var i = 0; i < _hallSlots.Count; i++)
+                                    {
+                                        <option value="@i">@FormatSlot(_hallSlots[i])</option>
+                                    }
+                                </select>
+                            }
+                        </label>
+                        @if (_hallTables.Count > 0)
+                        {
+                            <label class="simf-field">
+                                <span class="simf-field__label">@L["Admin.SpeakerMeetingRequests.Bind.Table"]</span>
+                                <select class="simf-field__input" value="@(_bindTableId?.ToString() ?? string.Empty)"
+                                        @onchange="OnBindTableChanged" disabled="@_busy">
+                                    <option value="">@L["Admin.SpeakerMeetingRequests.Bind.NoTable"]</option>
+                                    @foreach (var table in _hallTables)
+                                    {
+                                        <option value="@table.Id">@table.Code</option>
+                                    }
+                                </select>
+                            </label>
+                        }
+                    }
+                }
                 <label class="simf-field">
                     <span class="simf-field__label">@L["Admin.SpeakerMeetingRequests.Respond.Note"]</span>
                     <textarea class="simf-field__input" rows="4"

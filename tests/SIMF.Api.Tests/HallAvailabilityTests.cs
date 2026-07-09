@@ -8,6 +8,7 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Programme;
+using SIMF.Domain.BusinessMeetings;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Programme;
 using SIMF.Infrastructure.Persistence;
@@ -101,7 +102,60 @@ public sealed class HallAvailabilityTests : IClassFixture<SimfApiFactory>
         Assert.Empty(await GetSlotsAsync(hallId, admin));
     }
 
+    [Fact]
+    public async Task A_bound_meeting_removes_its_slot_from_available_slots()
+    {
+        // E2E-HAV-004 (D-716, GAP-2) — a slot taken by a bound meeting (a
+        // SpeakerMeetingRequest in AwaitingSpeaker/Accepted) drops out of the hall's
+        // free slots; the other slots stay offered.
+        var admin = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync();
+        var create = await PostAuthAsync(
+            $"/api/v1/admin/halls/{hallId}/availability-windows",
+            new CreateHallAvailabilityWindowRequest
+            {
+                StartUtc = WindowStart, EndUtc = WindowStart.AddMinutes(60), SlotMinutes = 30,
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+
+        var before = await GetSlotsAsync(hallId, admin);
+        Assert.Equal(2, before.Count);
+
+        await SeedBoundMeetingAsync(hallId, before[0].StartUtc, before[0].EndUtc);
+
+        var after = await GetSlotsAsync(hallId, admin);
+        Assert.Single(after);
+        Assert.Equal(before[1].StartUtc, after[0].StartUtc);
+    }
+
     // -- helpers --------------------------------------------------------------
+
+    private async Task SeedBoundMeetingAsync(
+        Guid hallId, DateTimeOffset start, DateTimeOffset end)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var speaker = new Speaker
+        {
+            Id = Guid.NewGuid(),
+            Code = "SPK-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+            Name = "Bound Speaker", NameArabic = "متحدّث",
+            AllowsMeetingRequests = true, IsActive = true, DisplayOrder = 0,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        db.Speakers.Add(speaker);
+        db.SpeakerMeetingRequests.Add(new SpeakerMeetingRequest
+        {
+            Id = Guid.NewGuid(),
+            SpeakerId = speaker.Id,
+            RequestedByUserId = Guid.NewGuid(),
+            RequesterName = "Bound", Subject = "Bound meeting",
+            HallId = hallId, SlotStartUtc = start, SlotEndUtc = end,
+            Status = MeetingRequestStatus.AwaitingSpeaker,
+            CreatedAt = DateTimeOffset.UtcNow, RespondedAt = DateTimeOffset.UtcNow,
+        });
+        await db.SaveChangesAsync();
+    }
 
     private async Task<IReadOnlyList<AdminHallAvailabilityWindow>> GetWindowsAsync(
         Guid hallId, string token)

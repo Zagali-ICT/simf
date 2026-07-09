@@ -123,8 +123,19 @@ internal sealed class HallAvailabilityService(
             return Array.Empty<HallAvailableSlot>();
         }
 
-        // GAP-2 extends this with the "already bound to a meeting" filter once the
-        // SpeakerMeetingRequest hall/slot binding fields exist.
+        // D-716 (GAP-2) — the slots already taken by a bound meeting are removed.
+        // "Taken" = a request in the slot-holding live set
+        // (`MeetingRequestStatuses.SlotHolding` = Accepted + AwaitingSpeaker), the
+        // single authority the accept re-check + the DB indexes also key off. Load
+        // the busy ranges once, then drop any generated slot that overlaps one
+        // (half-open overlap, the same rule the accept re-check uses).
+        var busy = await appDbContext.SpeakerMeetingRequests.AsNoTracking()
+            .Where(r => r.HallId == hallId
+                && MeetingRequestStatuses.SlotHolding.Contains(r.Status)
+                && r.SlotStartUtc != null && r.SlotEndUtc != null)
+            .Select(r => new { Start = r.SlotStartUtc!.Value, End = r.SlotEndUtc!.Value })
+            .ToListAsync(cancellationToken);
+
         var slots = new List<HallAvailableSlot>();
         foreach (var w in windows)
         {
@@ -133,7 +144,8 @@ internal sealed class HallAvailabilityService(
             while (slotStart + length <= w.EndUtc)
             {
                 var slotEnd = slotStart + length;
-                if (slotStart >= now)
+                if (slotStart >= now
+                    && !busy.Any(b => b.Start < slotEnd && slotStart < b.End))
                 {
                     slots.Add(new HallAvailableSlot(slotStart, slotEnd));
                 }
