@@ -956,6 +956,11 @@ class AppL10n {
   String get sessionLink => _t('رابط الجلسة', 'Session link');
   String get sessionSummary => _t('ملخص الجلسة', 'Session summary');
   String get askHost => _t('اسأل المحاور', 'Ask the host');
+  // D-714 (item 12, FDS-007 §B.4 GAP-2) — before a session goes live the ask
+  // entry reads as the distinct pre-session ("mode B", Phase=Pre) question, so
+  // the two ask modes are visibly separate on the one detail screen.
+  String get askHostPreSession =>
+      _t('اطرح سؤالاً قبل الجلسة', 'Ask a question before it starts');
   // #3 — pre-ask is gated on having JOINED the session (a booking), not on
   // physical check-in; the ask card is disabled with this hint until then.
   String get askHostJoinFirst =>
@@ -1101,6 +1106,8 @@ class AppL10n {
   String get meetingChooseTimeLabel => _t('اختر الوقت', 'Choose the time');
   String get meetingChooseDateFirst =>
       _t('الرجاء اختيار التاريخ أولاً', 'Please choose a date first');
+  String get meetingPickDateTime =>
+      _t('الرجاء اختيار التاريخ والوقت', 'Please choose a date and time');
   String get meetingSlotNone =>
       _t('لا توجد فترات متاحة حالياً', 'No meeting slots available right now');
   String get meetingVipOnly =>
@@ -1387,6 +1394,15 @@ class AppL10n {
       _t('كيف كانت تجربتك في الملتقى؟', 'How was your forum experience?');
   String get rateStarsRequired =>
       _t('يرجى اختيار عدد النجوم', 'Please pick a star rating');
+
+  /// D-713 (item 8) — the "watched" context header on a per-session rating: the
+  /// session title + when it was held, so a user arriving from a rate prompt (or
+  /// a notification days later) knows which session they are rating. A blank
+  /// [when] (unknown session time) drops the trailing separator.
+  String rateWatchedAt(String session, String when) {
+    final base = _t('شاهدت «$session»', 'Watched "$session"');
+    return when.isEmpty ? base : '$base · $when';
+  }
 
   /// The one-word descriptor for an overall score (Figma "جيد جداً").
   String rateScoreWord(int stars) => switch (stars) {

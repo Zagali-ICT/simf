@@ -142,13 +142,17 @@ void main() {
       expect(find.text('\u{1F1F8}\u{1F1E6}'), findsOneWidget);
     });
 
-    testWidgets('each avatar falls back to the anchor when there is no photo — '
-        'the host star is per-session (shown on the detail), not here (D-432)',
-        (tester) async {
+    testWidgets('each avatar falls back to the placeholder when there is no '
+        'photo — the host star is per-session (shown on the detail), not here '
+        '(D-432)', (tester) async {
       await _pump(tester, repo: _FakeSpeakersRepo(list: _speakers));
-      // No photo uploaded (the test image load fails) → every tile shows its
-      // anchor fall-back; host is contextual to a session, so never a star here.
-      expect(find.byIcon(Icons.anchor), findsNWidgets(3));
+      // No photo uploaded (the test image load fails) → every tile shows the
+      // shared speaker placeholder (same glyph as the profile avatar), and host
+      // is contextual to a session, so never a star here.
+      final placeholders = find.byWidgetPredicate(
+        (w) => w is SimfSvgIcon && w.asset.contains('speaker_placeholder'),
+      );
+      expect(placeholders, findsNWidgets(3));
       expect(find.byIcon(Icons.star_border), findsNothing);
     });
 
@@ -180,7 +184,17 @@ void main() {
       // Reference everything to the FIRST card (sp1 = القبطان ريف) so the
       // comparison is unambiguous (not a header/nav SVG).
       final nameDx = tester.getCenter(find.text('القبطان ريف')).dx;
-      final anchorDx = tester.getCenter(find.byIcon(Icons.anchor).first).dx;
+      final anchorDx = tester
+          .getCenter(
+            find
+                .byWidgetPredicate(
+                  (w) =>
+                      w is SimfSvgIcon &&
+                      w.asset.contains('speaker_placeholder'),
+                )
+                .first,
+          )
+          .dx;
       // The card caret is now the iconamoon thin chevron (ic_back.svg) in GOLD;
       // filter on the accent colour so the page header's back button (also
       // ic_back, but white) is excluded — leaving the first card's row caret.

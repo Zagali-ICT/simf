@@ -78,7 +78,7 @@ internal sealed class MyRequestsService(
 
         items.AddRange(speaker.Select(r => new AppRequestItem(
             AppRequestKind.SpeakerMeeting, r.Id, r.Name, r.NameArabic,
-            r.Status, r.SlotStartUtc, r.CreatedAt,
+            ToRequesterDisplayStatus(r.Status), r.SlotStartUtc, r.CreatedAt,
             r.Status == MeetingRequestStatus.Pending,
             Subtitle: r.Rank)));
 
@@ -179,6 +179,15 @@ internal sealed class MyRequestsService(
                 "لا يمكن إلغاء سوى طلب قيد المراجعة.");
         }
     }
+
+    // D-716 (item 7, GAP-2) — AwaitingSpeaker is an admin-only intermediate state
+    // (accepted + bound to a hall, awaiting the speaker's confirmation). The shipped
+    // mobile wire contract only knows values 0–3, and from the requester's view the
+    // request is still under review, so fold it back to Pending on the app feed.
+    private static MeetingRequestStatus ToRequesterDisplayStatus(MeetingRequestStatus status) =>
+        status == MeetingRequestStatus.AwaitingSpeaker
+            ? MeetingRequestStatus.Pending
+            : status;
 
     // BookingStatus → the unified display status (Approved counts as Accepted;
     // Cancelled/Rejected map straight across).

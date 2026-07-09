@@ -7,6 +7,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../core/utils/gregorian_month_names.dart';
 import 'data/feedback_repository.dart';
 import 'data/rating_models.dart';
 import 'widgets/rate_category_row.dart';
@@ -182,6 +183,18 @@ class _RateScreenState extends ConsumerState<RateScreen> {
     final isArabic = l10n.isArabic;
     final children = <Widget>[];
 
+    // D-713 (item 8) — the "watched at" context header on a per-session rating.
+    final watchedSession = form.localizedTargetName(isArabic);
+    if (watchedSession != null) {
+      children.add(_WatchedHeader(
+        text: l10n.rateWatchedAt(
+          watchedSession,
+          _watchedWhen(isArabic, form.targetStartUtc),
+        ),
+      ));
+      children.add(const SizedBox(height: SimfTokens.space5));
+    }
+
     if (form.hasOverallStars) {
       children.add(Column(
         children: <Widget>[
@@ -313,4 +326,64 @@ class _RateScreenState extends ConsumerState<RateScreen> {
         value: _answers[q.id] ?? 0,
         onChanged: (v) => setState(() => _answers[q.id] = v),
       );
+
+  /// The "{day} {month} · {HH:MM}" watch time for the header, device-local and in
+  /// the active locale (mirrors the session-header card). Empty when the session
+  /// start is unknown (an older API), in which case the header shows the title
+  /// alone.
+  String _watchedWhen(bool isArabic, DateTime? startUtc) {
+    if (startUtc == null) {
+      return '';
+    }
+    final local = startUtc.toLocal();
+    final hh = local.hour.toString().padLeft(2, '0');
+    final mm = local.minute.toString().padLeft(2, '0');
+    return '${local.day.toString().padLeft(2, '0')} '
+        '${gregorianMonthName(local.month, isArabic)} · $hh:$mm';
+  }
+}
+
+/// D-713 (item 8) — the per-session "watched at" context line above the rating
+/// form: a calendar glyph + "شاهدت «{session}» · {date}" on a navy chip.
+class _WatchedHeader extends StatelessWidget {
+  const _WatchedHeader({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: SimfTokens.space3,
+        vertical: SimfTokens.space3,
+      ),
+      decoration: BoxDecoration(
+        color: SimfTokens.navyDeep,
+        borderRadius: BorderRadius.circular(SimfTokens.radius),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          const Icon(
+            Icons.event_available_outlined,
+            size: 16,
+            color: SimfTokens.accent,
+          ),
+          const SizedBox(width: SimfTokens.space2),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                color: SimfTokens.beigeBorder,
+                fontSize: SimfTokens.textSm,
+                fontWeight: FontWeight.w600,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

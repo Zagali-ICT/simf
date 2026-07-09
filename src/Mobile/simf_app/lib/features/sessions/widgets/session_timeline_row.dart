@@ -135,6 +135,13 @@ class _TimeRail extends StatelessWidget {
   final DateTime start;
   final DateTime end;
 
+  /// Floor for the rail height so the from→to connector is always visible. The
+  /// connector is an [Expanded] line, so on a short row (a title-only session,
+  /// no description/banner) it collapses to zero — the "line missing between from
+  /// and to time" the owner reported. This floor (two ~15px time labels + a ~14px
+  /// connector) keeps it drawn; taller rows let it stretch to fill.
+  static const double _minRailHeight = 44;
+
   static String _hhmm(DateTime t) =>
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
@@ -144,48 +151,49 @@ class _TimeRail extends StatelessWidget {
     // rail wrapped the time into two rows); the row's content gets the rest of
     // the width via Expanded. The timeline reads from (top) → connector line →
     // to (bottom).
-    return SizedBox(
-      width: 48,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: <Widget>[
-          Text(
-            _hhmm(start),
-            textDirection: TextDirection.ltr,
-            maxLines: 1,
-            softWrap: false,
-            overflow: TextOverflow.visible,
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textSm,
-              fontWeight: FontWeight.w600,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: _minRailHeight),
+      child: SizedBox(
+        width: 48,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              _hhmm(start),
+              textDirection: TextDirection.ltr,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.visible,
+              style: const TextStyle(
+                color: SimfTokens.beigeBorder,
+                fontSize: SimfTokens.textSm,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
-          const Expanded(
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: SimfTokens.space1),
+            const Expanded(
+              // Figma 1310:3243/3244 — the in-rail "from → to" connector is a
+              // SOLID 1px beige (#C2B8A2) line touching the two times directly
+              // (no vertical gap in the frame). (The faint 40% line is the
+              // separate content/rail divider.)
               child: SizedBox(
                 width: 1,
-                // Figma 1310:3244 — the in-rail "from → to" connector is SOLID
-                // beige (#C2B8A2), the timeline feel the owner asked for. (The
-                // faint 40% line is the separate content/rail divider.)
                 child: ColoredBox(color: SimfTokens.beigeBorder),
               ),
             ),
-          ),
-          Text(
-            _hhmm(end),
-            textDirection: TextDirection.ltr,
-            maxLines: 1,
-            softWrap: false,
-            overflow: TextOverflow.visible,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: SimfTokens.textSm,
-              fontWeight: FontWeight.w400,
+            Text(
+              _hhmm(end),
+              textDirection: TextDirection.ltr,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.visible,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: SimfTokens.textSm,
+                fontWeight: FontWeight.w400,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

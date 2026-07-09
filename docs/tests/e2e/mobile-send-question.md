@@ -30,7 +30,7 @@
 | **Route** | `POST /api/v1/app/sessions/{sessionId}/questions` · app screen #26 `/live/question?sessionId={id}` |
 | **Surface** | Mobile (Flutter) + App API |
 | **Auth setup** | **Approved account** — the route is auth-gated and the endpoint is `RequireApprovedAccount`. Auth-setup via the `Get-Totp` helper for an admin, or a visitor email-OTP session. |
-| **Last reviewed** | 2026-06-19 |
+| **Last reviewed** | 2026-07-09 (D-714 — advisory AI filter wired config-gated, item 12 GAP-1) |
 
 ## Coverage matrix
 
@@ -47,6 +47,7 @@
 | E2E-MOB026-009 | No recipient selector is shown; submit still posts default recipient (Speaker=0) | edge | P0 | _to author_ |
 | E2E-MOB026-010 | بيانات الجلسة block renders the session description as a numbered list | layout | P1 | authored ✓ (screen `renders the بيانات الجلسة block as a numbered list`) |
 | E2E-MOB026-011 | Session-detail read fails → block hidden, composer still works | resilience | P1 | authored ✓ (screen `hides the بيانات الجلسة block when the detail read fails`) |
+| E2E-MOB026-012 | **Advisory AI filter (D-714 GAP-1)** — on submit the server runs stage 1: default the offline stub (`stub-clean`), or the real `AiQuestionFilter` (via `IAiService` + the seeded `question-filter` prompt → `ai-clean`/`ai-flagged`, `ai-unavailable` fallback) when `SessionQuestions:AiFilterEnabled=true`. **Advisory only** — the verdict is recorded for the Committee and NEVER changes the question's Pending status, so it never blocks a submission | happy/resilience | P1 | authored ✓ (backend `QuestionAiFilterTests` — verdict map + all fallbacks, offline via a fake `IAiService`) |
 
 ## Scenarios
 

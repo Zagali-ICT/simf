@@ -83,8 +83,9 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/session-moderators` | [`cp-admin-session-moderators.md`](cp-admin-session-moderators.md) | E2E-SMD-001..018 |
 | `/admin/programme/timeline` | [`cp-admin-programme-timeline.md`](cp-admin-programme-timeline.md) | E2E-PTL-001..011 |
 | `/admin/bookings` | [`cp-admin-bookings.md`](cp-admin-bookings.md) | E2E-BKG-001..013 |
-| `/admin/speaker-meeting-requests` | [`cp-admin-speaker-meeting-requests.md`](cp-admin-speaker-meeting-requests.md) | E2E-SMR-001..015 |
+| `/admin/speaker-meeting-requests` | [`cp-admin-speaker-meeting-requests.md`](cp-admin-speaker-meeting-requests.md) | E2E-SMR-001..018 |
 | `/admin/speaker-availability` | [`cp-admin-speaker-availability.md`](cp-admin-speaker-availability.md) | E2E-SAV-001..006 |
+| `/admin/hall-availability` | [`cp-admin-hall-availability.md`](cp-admin-hall-availability.md) | E2E-HAV-001..007 |
 | `/admin/delegation-meetings` | [`cp-admin-delegation-meetings.md`](cp-admin-delegation-meetings.md) | E2E-DLM-001..006 |
 | `/admin/document-requests` | [`cp-document-requests.md`](cp-document-requests.md) | E2E-CPDR-001..008 |
 | `/admin/badge-requests` | [`cp-badge-requests.md`](cp-badge-requests.md) | E2E-CPBR-001..008 |
@@ -177,6 +178,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/account/notifications` | [`web-account-notifications.md`](web-account-notifications.md) | E2E-WNT-001..012 |
 | `/account/pending` | [`web-account-pending.md`](web-account-pending.md) | E2E-WPN-001..010 |
 | `/account/rejected` | [`web-account-rejected.md`](web-account-rejected.md) | E2E-WRJ-001..010 |
+| `/meeting/confirm` | [`web-meeting-confirm.md`](web-meeting-confirm.md) | E2E-MAC-001..008 |
 
 ### Mobile App (Flutter)
 

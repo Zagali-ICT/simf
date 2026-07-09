@@ -1,7 +1,6 @@
 // Tests: SIMF.Api.Tests/DefaultContentSeederTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using SIMF.Domain.Organization;
 using SIMF.Domain.Programme;
 using SIMF.Domain.PublicRelations;
 using SIMF.Infrastructure.Persistence;
@@ -12,11 +11,12 @@ namespace SIMF.Infrastructure.Seeding;
 /// D-681 — seeds the forum's default public content on a fresh database so the
 /// app is not empty on first boot (it fills the post-squash content gap): the
 /// main hall, the three programme days (20-22 Nov 2026) with their sessions
-/// (incl. the opening session), one Highlights news item, and the organisation's
-/// X / Twitter link. Runs in every environment and is idempotent — keyed on the
-/// natural keys (hall code, day date, session code, the highlight marker title,
-/// the org singleton) so re-running only inserts what is missing and never
-/// overwrites an admin edit. Mirrors <c>RegionSeeder</c>.
+/// (incl. the opening session), and one Highlights news item. Runs in every
+/// environment and is idempotent — keyed on the natural keys (hall code, day
+/// date, session code, the highlight marker title) so re-running only inserts
+/// what is missing and never overwrites an admin edit. Mirrors
+/// <c>RegionSeeder</c>. (The organisation profile — incl. its X / social links —
+/// is owned by <c>IdentitySeeder</c>; D-708.)
 ///
 /// <para>The opening session's live URL is a placeholder the owner replaces via
 /// the Control Panel (it must pass <c>LiveStreamUrlPolicy</c>). The Highlights
@@ -46,7 +46,6 @@ public sealed class DefaultContentSeeder(
         changed += await EnsureDaysAsync(now, cancellationToken);
         changed += await EnsureSessionsAsync(hallId, cancellationToken);
         changed += await EnsureHighlightAsync(now, cancellationToken);
-        changed += await EnsureOrganisationXUrlAsync(cancellationToken);
 
         if (changed > 0)
         {
@@ -187,18 +186,6 @@ public sealed class DefaultContentSeeder(
             IsActive = true,
             CreatedAt = now,
         });
-        return 1;
-    }
-
-    private async Task<int> EnsureOrganisationXUrlAsync(CancellationToken cancellationToken)
-    {
-        var profile = await appDbContext.OrganizationProfile
-            .FirstOrDefaultAsync(p => p.Id == OrganizationProfile.SingletonId, cancellationToken);
-        if (profile is null || !string.IsNullOrWhiteSpace(profile.XUrl))
-        {
-            return 0; // no singleton yet (EF HasData creates it) or an admin already set it
-        }
-        profile.XUrl = "https://x.com/modgovksa";
         return 1;
     }
 

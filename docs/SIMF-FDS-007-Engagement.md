@@ -19,6 +19,8 @@
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. The engagement feature, build-ready. |
 | 1.1 | 2026-05-21 | Engineering & Architecture Team | Architecture-review amendment (see Amendment A): SignalR group fan-out and comment batching, the backplane as a deferred decision, graceful degradation. |
+| 1.2-DRAFT | 2026-07-08 | Engineering & Architecture Team | **DRAFT amendment (D0-2, Amendment B) — pending owner sign-off.** Folds the already-built 3-stage Q&A pipeline (AI→Scientific Committee→per-session Moderator; Pre/Live phases — completion-programme D-212/D-233/D-236/D-271/D-519) into this spec and defines the owner's item 12 ("ask a speaker — two ways") against it. **Finding: item 12 is built end-to-end;** only small deltas remain (real-AI wiring vs stub; a distinct pre-session ask entry; reproduce the "not working" report). Open items in §B.5 — **owner-resolved 2026-07-08** (wire real AI; add pre-session entry). |
+| 1.3-DRAFT | 2026-07-08 | Engineering & Architecture Team | **DRAFT amendment (D0-3, Amendment C) — pending owner sign-off.** The multi-trigger ratings home (owner item 8). Records the built ratings system (completion-programme D-677/D-678/D-679/D-680/D-690) and maps the owner's 4 time-triggers onto it. **Finding: 2 of 4 triggers built** (daily-if-checked-in + end-of-programme, D-679); **2 gaps** — rate-on-gate-checkout (GAP-A) + rate-on-live-close (GAP-B) — plus a "watched at time/date" display. Open items in §C.5. |
 
 ---
 
@@ -258,6 +260,220 @@ messages.
 **Graceful degradation.** If the AI comment filter is unavailable, comments
 still queue for admin review — the AI never auto-approves, so admin moderation
 is unaffected.
+
+---
+
+## Amendment B — the two ask-a-speaker modes & the 3-stage Q&A pipeline (D0-2, BUILT 2026-07-09 — D-714)
+
+> **AS-BUILT (2026-07-09, D-714):** both approved deltas shipped. **GAP-2** — the
+> session-detail ask card now reads a distinct pre-session label ("اطرح سؤالاً قبل
+> الجلسة") while the session is upcoming and "اسأل المحاور" once live, so mode-B is
+> visibly separate; the backend still derives the phase + window. **GAP-1** — the
+> real `AiQuestionFilter` (central `IAiService` + the seeded `question-filter`
+> prompt, JSON `{allowed,reason}` → advisory `ai-clean`/`ai-flagged`, safe
+> `ai-unavailable` fallback) is wired behind `SessionQuestions:AiFilterEnabled`
+> (**default = stub** so the PoC needs no key; flip on when a key is provisioned).
+> **GAP-3** — reproduced as the by-design arrival gate + [start−5min, end] window
+> (D-242/D-271), no fix. See DECISIONS_LOG D-714.
+>
+> This amendment folds the already-built Q&A pipeline
+> (completion-programme D-212/D-233/D-236/D-271/D-519) into this feature spec and
+> defines the **owner's item 12** ("ask a speaker — two ways") against it.
+> **Finding: item 12 was already built end-to-end;** the deltas were small (§B.4).
+>
+> **Owner resolutions (2026-07-08):** **wire the real AI** for question filtering
+> (OI-B1 — built config-gated, default stub); **add a distinct pre-session ask
+> entry** (OI-B2 — built). GAP-3: reproduced, by design (no fix).
+
+### B.1 What the owner asked (item 12, 2026-07-08, verbatim intent)
+
+> *"Ask a speaker, two ways: (A) **live inside the session hall** — the home menu
+> must be filtered by moderator only; and (B) a **pre-question before the session
+> started** — filtered by AI and team and moderator."*
+
+### B.2 As-is — the built 3-stage pipeline (grounded; do not rebuild)
+
+The Q&A is a **3-stage pipeline for BOTH phases** — the owner's "AI + team +
+moderator" is exactly the built `AI (advisory) → Scientific Committee → per-session
+Moderator desk` (D-212):
+
+| Piece | Where (file:line) | State |
+|-------|-------------------|-------|
+| **Phase (Pre vs Live)** — the "two modes" | `QuestionPhase{Pre=0,Live=1}` (`QuestionPhase.cs`); `SessionQuestion.Phase` (`SessionQuestion.cs:69`) **set by the backend at submit from the session's start** — one app screen, not two | **Built** (D-233). |
+| **Stage 1 — AI (advisory)** | `IQuestionAiFilter`/`StubQuestionAiFilter` → `SessionQuestion.AiFilterVerdict` (`SessionQuestionService.cs:152`); advisory only, never auto-hides | **Built but a STUB** (D-236/D-239) — returns `stub-clean`; a real model is a **DI/config swap**, no code (GAP-1). |
+| **Stage 2 — Scientific Committee ("team")** | `QuestionStatus{Pending,Approved,Hidden}` (`QuestionStatus.cs`); CP `/admin/questions/queue` + approve/hide/**escalate-to-role** (`SessionQuestionCommitteeEndpoints.cs:20/36/61/86`); CP page `QuestionQueueList.razor` | **Built** (D-212). The "team" = the الفريق العلمي **role** (a permission bundle, D-207/D-208), not new infra. |
+| **Stage 3 — per-session Moderator desk** | app desk `GET /app/sessions/{id}/questions/moderate` + hide/push/reorder (`SessionQuestionEndpoints.cs:100/132/164/196`), gated by `SessionModeratorAuth` = Administrator **or** a `SessionModerator` grant | **Built** (D-169). Distinct from `MobileAppRole.Moderator` (per `SessionQuestion.cs:19-23`). |
+| **Moderator-only home** (mode A entry) | `home_screen.dart:66` → `AppRole.moderator` gets `ModeratorHome` (`operational_homes.dart:52-70`, → sessions list → detail → Q&A desk); route #104 = `{moderator}` **exclusive** | **Built** (D-519) — the "home menu filtered by moderator only" is already satisfied. |
+| **Attendee ask screen** | `send_question_screen.dart` / `send_question_content.dart`; the session-detail `ask_host_card.dart` (Speaker vs Host recipient, `SessionQuestionRecipient`) | **Built.** Serves both phases (the phase is backend-derived). |
+| **Question window + arrival gate** | open **5 min before** `StartUtc`, **close at** `EndUtc` (D-271); submission gated on hall-arrival (`HallAttendance`, D-242 geofence + `IsAtVenue` fallback) | **Built.** |
+| **Page docs** | `Page_026` (questions), `Page_025` (live) authored (D-271) | **Built.** |
+
+### B.3 Mapping the owner's two modes onto the built pipeline
+
+| Owner's mode | Built reality |
+|--------------|---------------|
+| **(A) live in-hall, moderator-only home** | The attendee asks from the live/session screen (Phase=`Live`, arrival-gated); the **moderator** runs the desk from the moderator-only home (`ModeratorHome`). Already built. |
+| **(B) pre-question, AI+team+moderator** | The **same** ask screen submitted **before** `StartUtc` → Phase=`Pre`; it flows through the identical 3-stage pipeline (AI→Committee→Moderator). Already built — the phase is derived, so there is no separate "pre-question" screen today. |
+
+### B.4 Deltas — ✅ BUILT (D-714)
+
+- **GAP-1 (AI wiring) ✅.** `AiQuestionFilter` routes stage 1 through the central
+  `IAiService` + the seeded `question-filter` prompt (JSON `{allowed,reason}` →
+  advisory `ai-clean`/`ai-flagged`, `ai-unavailable` fallback). Config-gated by
+  `SessionQuestions:AiFilterEnabled` — **default = stub** (the PoC needs no key);
+  flip on when a key is provisioned. Advisory only (never changes Status). Verified
+  offline via a fake `IAiService` (`QuestionAiFilterTests`).
+- **GAP-2 (Mode-B reachability) ✅.** The session-detail ask card now reads the
+  distinct pre-session label ("اطرح سؤالاً قبل الجلسة") while the session is upcoming
+  (`now < startUtc`) and "اسأل المحاور" once live, so the two modes are visibly
+  separate; the phase + window stay backend-derived (D-271). App-only.
+- **GAP-3 (verify not-broken).** The owner reported "ask speaker not working." Every
+  layer above is built, so the likely causes are an **older build** (cf. D-702 item
+  10), the **arrival gate** (no `HallAttendance` ⇒ composer hidden — by design), or
+  the **window** (opens 5 min before start / closes at end). **Action:** reproduce on
+  the current build before any change — do not "fix" a working gate.
+
+### B.5 Open items
+
+**Resolved (owner, 2026-07-08):**
+
+| # | Item | Resolution |
+|---|------|-----------|
+| **OI-B1** | Real AI vs stub for question filtering | **Wire the real `IAiService`-backed filter now** (mirror the D-578 summary), behind the same seam. **Blocker:** a real AI key must be provisioned/rotated first (the standing security item) — the DI swap lands once the key is available; until then the stub stands so nothing is blocked. |
+| **OI-B2** | Distinct pre-session ask entry vs single flow | **Add a clear pre-session "ask a question" entry** on an upcoming (not-yet-live) session's detail, so the two modes are visibly separate; it flows through the same AI→Committee→Moderator pipeline (Phase=`Pre`). |
+
+**Proceeding on the documented recommendation:**
+
+| # | Item | Default taken |
+|---|------|---------------|
+| **OI-B3** | "team" = the الفريق العلمي Scientific-Committee role + CP `/admin/questions/queue` | Confirmed as built stage 2. |
+| **OI-B4** | Arrival-gate + 5-min/close-at-end window are intended (not the "not working" bug) | Keep as built (D-271); **reproduce the "not working" report on the current build first** — do not "fix" a working gate. |
+
+### B.6 Definition of Done (only if a delta is approved — same changeset)
+
+Whichever deltas the owner approves: DI swap + a real-provider test for GAP-1;
+the pre-session ask entry + widget test + `Page_026`/E2E update for GAP-2; a
+reproduce-then-fix note for GAP-3. No schema change (the pipeline data model is
+already shipped, D-233); no new enum. `DECISIONS_LOG.md` entry; this Amendment B
+flipped from DRAFT to built with an As-built note.
+
+---
+
+## Amendment C — the multi-trigger ratings (D0-3, BUILT 2026-07-09 — D-712/D-713)
+
+> **AS-BUILT (2026-07-09):** both gaps shipped. **GAP-B** rate-on-live-close =
+> **D-712** (app `live_broadcast_screen` dispose → `/rate?code=Session`, eligible
+> attendee + live feed, shared dedup). **GAP-A** rate-on-**hall-departure** +
+> the "watched at" header = **D-713**. **Correction to §C.2/§C.4:** the DRAFT
+> premise that a **gate Out-scan closes a `SessionAttendance`** is **false** in
+> the built code — a `Gate` is **venue-level and sessionless** (`GateOperatorService`
+> writes only a `GateScan`), and `SessionAttendance` is a read-only CP aggregate
+> over `HallAttendance`, not an entity. The real per-session "leave" signal is
+> `HallAttendanceService.RecordDepartureAsync` (closes `HallAttendance.LeaveUtc`
+> for a known (session,user)). Owner (2026-07-09) chose the **hall-departure
+> hook**: departure now fires a `SessionRatingRequest` for that exact session,
+> deduped one-per-(user,session) via `NotificationRequest.DeduplicateByRelatedEntity`
+> shared with the clock-end worker. OI-C1 therefore **dissolves** — the departure
+> already knows the exact session, so no "which of several sessions in the hall"
+> mapping is needed. The header sources the session's own title + date (appended
+> to `RatingFormView`), the OI-C3 per-rating v1. See DECISIONS_LOG D-712/D-713.
+
+> **STATUS (original DRAFT note): build-ready — owner said "build item 8"
+> (2026-07-09); the §C.5 open items proceed on the documented recommendations.**
+> Ratings/feedback are not
+> currently owned by a dedicated FDS — they were built across the completion-
+> programme decisions (D-677/D-678 notification+deep-link, D-679 day/programme
+> prompts, D-680 dynamic page, D-690 rate-after-view). Per the owner's Phase-0 plan
+> this section is the ratings home. It defines the **owner's item 8** ("show rate
+> when a session is watched, at time and each date — many rate triggers based on
+> time") against the built system. **Finding: 2 of the 4 owner triggers are already
+> built; 2 are gaps (GAP-A rate-on-gate-checkout, GAP-B rate-on-live-close) + a
+> "watched at" header.** Cross-references SIMF-FDS-003 (gate scan / attendance) and
+> SIMF-FDS-011 (statistics consuming the ratings).
+>
+> **OI resolutions (recommendation, owner did not override):** OI-C1 = the session
+> active at the scan time (else the most recent attended in that hall today);
+> OI-C2 = reuse the `Session` rating code (one prompt per session per user, dedup
+> shared with GAP-A/B + D-690); OI-C3 = a per-rating "watched at" header; OI-C4 =
+> keep the built triggers, add only GAP-A/B.
+
+### C.1 What the owner asked (item 8, 2026-07-08, verbatim intent)
+
+> *"Show rate when a session is watched, at the time and each date. We have many
+> rate triggers based on time: (1) **daily** — if you checked in, at the end of the
+> date; (2) **end of exhibition**; (3) **end of session on checkout from the gate**;
+> (4) **online session** — on the live-YouTube stream page, after back / close / end,
+> show the rate for the online session."*
+
+### C.2 As-is — the built ratings system (grounded)
+
+| Piece | Where (file:line) | State |
+|-------|-------------------|-------|
+| **Rating scopes** | `RatingScope{Global=0, PerSession=1, PerDay=2}` (`RatingScope.cs`) | **Built** (D-679). |
+| **Seeded rating types** | `App`, `Session` (PerSession), `Day` (PerDay), `Event` + `Exhibition` (Global) — `RatingSeeder`; resolved by `RatingFormService.ResolveTargetAsync` | **Built** (D-679). |
+| **Dynamic rating page** | app `/rate?code={code}&targetId={id}` — code-agnostic; proven for Event/Exhibition/Day | **Built** (D-680). |
+| **Notification + deep-link** | kinds `DayRatingRequest`/`EventRatingRequest`/`AppRatingRequest`/`ExhibitionRatingRequest` (46-49) + `SessionRatingRequest`; `clickUrl` → `/rate?code=…` | **Built** (D-677/D-678). |
+| **Trigger — end-of-day (per checked-in attendee)** | `ProgrammeRatingPromptWorker` end-of-day scan → `DayRatingRequest` to everyone with a Check-In gate scan that event-local day; per-day dedup (`ProgrammeDay.RatingPromptSentUtc`) | **Built** (D-679). |
+| **Trigger — end-of-programme (Event+Exhibition+App)** | `ProgrammeRatingPromptWorker` end-of-programme trio to every ever-checked-in attendee; once-only marker (`SystemSettings` `ProgramEndRatingSentUtc`) | **Built** (D-679). |
+| **Trigger — end-of-session (clock)** | `SessionRatingPromptWorker` — sessions whose `EndUtc` is within a 6h back-fill → `SessionRatingRequest` to every attendee with an active seat; dedup `Session.RatingPromptSentUtc` | **Built.** |
+| **Trigger — session view-leave (app)** | `SessionRatePromptTracker` — `session_detail_screen` fires `/rate?code=Session&targetId={id}` once per session on a real leave, only for an approved attendee of an **ended** session | **Built** (D-690). |
+| **Venue gate scan (In/Out)** | `GateScan.Direction` (`ScanDirection`), `Gate.DirectionMode{In,Out,Both}` — a `Gate` is a **venue-level** access point with **no hall/session link** (`GateOperatorService` writes only a `GateScan`). | **Built** — but sessionless, so it is **not** the rate-on-checkout hook (corrected from the DRAFT). |
+| **Hall/session attendance close** | `HallAttendanceService.RecordDepartureAsync` sets `HallAttendance.LeaveUtc` for a known (session,user), via `POST /app/sessions/{id}/departure`; `SessionAttendance` is the read-only CP aggregate over these rows. | **Built** — this is the real per-session "leave" signal → **GAP-A** now hooks it (D-713). |
+| **Live / YouTube screen** | `live_broadcast_screen.dart` (`youtube_player_iframe`, D-349) | **Built + rate trigger on leave (D-712 GAP-B).** |
+
+### C.3 The owner's 4 triggers → built reality
+
+| # | Owner trigger | Built? |
+|---|---------------|--------|
+| 1 | **Daily** at end-of-date **if checked in** → rate the day | ✅ **Built** — `ProgrammeRatingPromptWorker` end-of-day (D-679). |
+| 2 | **End of exhibition** → rate event/exhibition | ✅ **Built** — end-of-programme trio (D-679). |
+| 3 | **End of session on checkout** → rate the session | ✅ **Built (D-713 GAP-A)** — leaving the hall (`RecordDepartureAsync`) now fires the session rating, alongside the built **clock-end** (`SessionRatingPromptWorker`) + **app-view-leave** (D-690). The literal *gate* Out-scan is venue-level/sessionless, so the hall-departure close is the correct hook. |
+| 4 | **Online session, live-stream close** → rate the online session | ✅ **Built (D-712 GAP-B)** — the live screen fires the rating on leave. |
+
+### C.4 Deltas (the new work) — ✅ ALL BUILT
+
+- **GAP-A — rate-on-hall-departure ✅ (D-713).** When an attendee's departure
+  closes their `HallAttendance` (`RecordDepartureAsync` sets `LeaveUtc`),
+  `HallAttendanceService` fires the **session rating** for that exact (session,user)
+  — an in-app `SessionRatingRequest` deep-linking to `/rate?code=Session&targetId={id}`.
+  **OI-C1 dissolved:** the departure already carries the exact `sessionId`, so no
+  "which of several sessions in the hall" mapping is needed. Deduped
+  one-per-(user,session) via the new opt-in `NotificationRequest.DeduplicateByRelatedEntity`
+  (dispatcher skips the write when a same-(user,kind,entity) notification exists —
+  `INotificationRepository.ExistsForUserAsync`, a single-context Identity-DB query,
+  D-157 clean); the clock-end `SessionRatingPromptWorker` sets the same flag, so an
+  early-leave + a later clock-end scan can't double-prompt. *(The literal "gate
+  Out-scan" hook the DRAFT assumed does not exist — a gate is venue-level/sessionless.)*
+- **GAP-B — rate-on-live-close ✅ (D-712).** On the live/YouTube screen **leave**
+  (`dispose`), the rating fires once via the D-690 pattern for `live_broadcast_screen.dart`,
+  eligibility-gated (signed-in approved attendee **and** the session carried a live
+  feed). **OI-C2:** reuses the **`Session` code** (one rating per session regardless
+  of channel); dedup shared with GAP-A + D-690 so watching online then walking out
+  isn't prompted twice.
+- **"Watched at" header ✅ (D-713).** The rating screen shows a per-session context
+  chip — "شاهدت «{session}» · {date}" (`rate_screen._WatchedHeader` + `rateWatchedAt`).
+  **OI-C3:** the per-rating header (not a watch-history list). Sourced from 3
+  **appended** `RatingFormView` fields (`TargetName`/`TargetNameArabic`/`TargetStartUtc`,
+  the session's own title + start), so no per-user watch timestamp is plumbed.
+
+### C.5 Open items — OWNER DECISIONS
+
+| # | Item | Recommendation |
+|---|------|----------------|
+| **OI-C1** | Gate Out-scan → which session to rate when a hall hosts several? | The session active at the scan time (else the most recent attended in that hall today). |
+| **OI-C2** | Online-session rating — reuse the `Session` code or a distinct online code? | Reuse `Session`; share dedup with GAP-A + D-690 (one prompt per session per user). |
+| **OI-C3** | "Watched at time/date" — per-rating header, or a watch-history list? | Per-rating header for v1. |
+| **OI-C4** | Confirm the built end-of-day + end-of-programme + clock-end + view-leave triggers stay as-is (only add GAP-A/B). | Keep the built triggers; add only the two gaps. |
+
+### C.6 Definition of Done (only if a delta is approved — same changeset)
+
+For the approved gaps: the gate-checkout rating hook in `GateOperatorService` /
+attendance close (GAP-A) with per-(session,user) dedup + integration tests; the
+live-screen leave-fires-`/rate` hook (GAP-B) + a widget test (fires once, eligible
+only); the watch-context header + a test. Reuse the built `SessionRatingRequest`
+kind + `/rate` route (no new enum unless OI-C2 chooses a distinct code); no schema
+change beyond a dedup guard if needed. E2E + `Page` doc updates; `DECISIONS_LOG.md`
+entry; this Amendment C flipped from DRAFT to built with an As-built note.
 
 ---
 

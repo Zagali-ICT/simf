@@ -1,0 +1,69 @@
+@* Website — D-717 (item 7, FDS-013 §15 GAP-3) — the public speaker double-opt-in
+   landing page. GET previews the pending decision (no state change); Confirm POSTs
+   and applies it. Anonymous; the opaque token in ?token= is the only credential. *@
+@page "/meeting/confirm"
+@rendermode AppRenderMode.InteractiveServerNoPrerender
+@using SIMF.Common.Enums
+@using SIMF.Contracts.Programme
+
+<PageTitle>@L["Meeting.Confirm.Title"]</PageTitle>
+
+<SimfAuthLayout>
+    <Brand>
+        <SimfBrandPanel AltText="@L["Brand.LogoAlt"]" Subtitle="@L["Brand.Subtitle"]" Caption="@L["Brand.Caption"]" />
+    </Brand>
+    <ChildContent>
+        <SimfAuthCard Title="@L["Meeting.Confirm.Title"]" Wide="true">
+            <TopControls>
+                <SimfLanguageSwitch Label="@L["Auth.LanguageSwitch"]" />
+                <SimfThemeToggle />
+            </TopControls>
+            <ChildContent>
+                @if (_loading)
+                {
+                    <p class="simf-form__secondary">@L["Meeting.Confirm.Loading"]</p>
+                }
+                else if (_outcome is not null)
+                {
+                    <SimfAlert Variant="success">
+                        @(_outcome.Action == MeetingActionType.Approve
+                            ? L["Meeting.Confirm.Done.Approve"]
+                            : L["Meeting.Confirm.Done.Reject"])
+                    </SimfAlert>
+                }
+                else if (_preview is null)
+                {
+                    <SimfAlert Variant="error">@L["Meeting.Confirm.Invalid"]</SimfAlert>
+                    <p class="simf-form__secondary">@L["Meeting.Confirm.InvalidHint"]</p>
+                }
+                else
+                {
+                    <p>
+                        @(_preview.Action == MeetingActionType.Approve
+                            ? L["Meeting.Confirm.Intro.Approve"]
+                            : L["Meeting.Confirm.Intro.Reject"])
+                    </p>
+                    <div class="simf-form__fields">
+                        <p><strong>@L["Meeting.Confirm.Requester"]:</strong> @_preview.RequesterName</p>
+                        <p><strong>@L["Meeting.Confirm.Topic"]:</strong> @_preview.Subject</p>
+                        <p><strong>@L["Meeting.Confirm.When"]:</strong> @FormatSlot(_preview)</p>
+                        @if (!string.IsNullOrWhiteSpace(_preview.HallName))
+                        {
+                            <p><strong>@L["Meeting.Confirm.Where"]:</strong> @_preview.HallName</p>
+                        }
+                    </div>
+                    <div class="simf-form__actions">
+                        <SimfButton Type="button" Block="true" Loading="_submitting"
+                                    LoadingLabel="@L["Meeting.Confirm.Submitting"]"
+                                    OnClick="ConfirmAsync">
+                            @(_preview.Action == MeetingActionType.Approve
+                                ? L["Meeting.Confirm.Approve"]
+                                : L["Meeting.Confirm.Reject"])
+                        </SimfButton>
+                    </div>
+                }
+            </ChildContent>
+            <Footer>@L["Auth.Footer"]</Footer>
+        </SimfAuthCard>
+    </ChildContent>
+</SimfAuthLayout>

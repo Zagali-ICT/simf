@@ -33,6 +33,16 @@ public sealed class NotificationRequest
     public string? RelatedEntityType { get; init; }
     public Guid? RelatedEntityId { get; init; }
 
+    /// <summary>D-713 — when true (and <see cref="RelatedEntityId"/> is set), the
+    /// dispatcher skips the write if a notification of the same
+    /// <see cref="Kind"/> for the same <see cref="RelatedEntityId"/> already
+    /// exists for <see cref="UserId"/>. Gives "one prompt per (user, kind,
+    /// entity)" — used so a session-rating prompt fires once whether it comes
+    /// from the hall-departure hook (GAP-A) or the clock-end worker. Default
+    /// false leaves every existing dispatch untouched (some kinds are
+    /// intentionally repeatable).</summary>
+    public bool DeduplicateByRelatedEntity { get; init; }
+
     /// <summary>D-677 — an explicit app-internal deep-link. Null (the default)
     /// lets <see cref="NotificationKindCatalog"/> derive one from the kind +
     /// <see cref="RelatedEntityId"/>; a non-null value here wins.</summary>

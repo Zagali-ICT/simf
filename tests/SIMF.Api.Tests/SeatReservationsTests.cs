@@ -417,6 +417,34 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(ErrorCodes.OpenSeatingOnly, body.Error!.Code);
     }
 
+    [Fact]
+    public async Task Join_succeeds_on_an_assigned_seat_session_that_has_no_layout()
+    {
+        // D-706 — the seeded-prod shape: a hall left on the AssignedSeat default
+        // with NO seat layout. With no seats to assign it is treated as open
+        // seating: the seat map reports OpenSeating (so the app shows a one-tap
+        // join, not an empty picker) and /join is accepted. This is the fix for the
+        // owner's "join session not working".
+        var session = await SeedAssignedSeatNoLayoutSessionAsync(capacity: 50);
+        var visitor = await SignInApprovedVisitorAsync();
+
+        var mapResp = await GetAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats", visitor);
+        Assert.Equal(HttpStatusCode.OK, mapResp.StatusCode);
+        var seatMap = (await mapResp.Content
+            .ReadFromJsonAsync<ApiResult<SessionSeatMap>>())!.Data!;
+        Assert.Equal(SeatSelectionMode.OpenSeating, seatMap.Mode);
+        Assert.Empty(seatMap.RowLabels);
+
+        var join = await PostAuthAsync<object>(
+            $"/api/v1/app/sessions/{session.Id}/seats/join", new { }, visitor);
+        Assert.Equal(HttpStatusCode.OK, join.StatusCode);
+        var mine = (await join.Content
+            .ReadFromJsonAsync<ApiResult<MySeatReservation>>())!.Data!;
+        Assert.Equal(SeatReservationKind.OpenSeating, mine.Kind);
+        Assert.Equal(BookingStatus.Pending, mine.Status);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     private async Task<(Session Session, Hall Hall)> SeedSessionWithLayoutAsync(
@@ -477,6 +505,39 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             Name = "Hall", NameArabic = "قاعة",
             Capacity = capacity,
             SeatSelectionMode = SeatSelectionMode.OpenSeating,
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        db.Halls.Add(hall);
+        var session = new Session
+        {
+            Id = Guid.NewGuid(),
+            Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+            Title = "Live", TitleArabic = "مباشر",
+            HallId = hall.Id,
+            StartUtc = DateTimeOffset.UtcNow.AddHours(1),
+            EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        db.Sessions.Add(session);
+        await db.SaveChangesAsync();
+        return session;
+    }
+
+    private async Task<Session> SeedAssignedSeatNoLayoutSessionAsync(int capacity)
+    {
+        // D-706 — a hall on the AssignedSeat default with NO HallSeatLayout (the
+        // shape the content seeder produces). No seats to assign → open seating.
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var hall = new Hall
+        {
+            Id = Guid.NewGuid(),
+            Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+            Name = "Hall", NameArabic = "قاعة",
+            Capacity = capacity,
+            SeatSelectionMode = SeatSelectionMode.AssignedSeat,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };

@@ -192,6 +192,24 @@ public sealed class SimfPublicClient(HttpClient http)
         }
     }
 
+    /// <summary>D-717 (item 7, GAP-3) — preview a speaker action link WITHOUT
+    /// consuming it (<c>GET /api/v1/app/meeting-actions/{token}</c>). Returns
+    /// <c>null</c> for an invalid / expired / used token (the neutral "link no
+    /// longer valid" case) or an unreachable service.</summary>
+    public Task<MeetingActionPreview?> GetMeetingActionAsync(
+        string token, CancellationToken cancellationToken = default) =>
+        GetAsync<MeetingActionPreview>(
+            $"meeting-actions/{Uri.EscapeDataString(token)}", cancellationToken);
+
+    /// <summary>D-717 — confirm a speaker action link
+    /// (<c>POST /api/v1/app/meeting-actions/{token}</c>): consumes the token and
+    /// applies the decision. Returns <c>null</c> when the token is no longer
+    /// usable.</summary>
+    public Task<MeetingActionOutcome?> ConfirmMeetingActionAsync(
+        string token, CancellationToken cancellationToken = default) =>
+        PostAsync<MeetingActionOutcome>(
+            $"meeting-actions/{Uri.EscapeDataString(token)}", cancellationToken);
+
     private Task<T?> GetAsync<T>(string path, CancellationToken cancellationToken)
         where T : class =>
         ReadEnvelopeAsync<T>(ct => http.GetAsync(BasePath + path, ct), cancellationToken);
@@ -201,6 +219,13 @@ public sealed class SimfPublicClient(HttpClient http)
         where T : class =>
         ReadEnvelopeAsync<T>(
             ct => http.PostAsJsonAsync(BasePath + path, body, JsonOptions, ct),
+            cancellationToken);
+
+    // No-body POST (e.g. a token confirm — the action is baked into the token).
+    private Task<T?> PostAsync<T>(string path, CancellationToken cancellationToken)
+        where T : class =>
+        ReadEnvelopeAsync<T>(
+            ct => http.PostAsync(BasePath + path, content: null, ct),
             cancellationToken);
 
     // Sends one request and unwraps the standard ApiResult envelope. The API

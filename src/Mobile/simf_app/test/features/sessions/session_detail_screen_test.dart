@@ -17,7 +17,13 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../accessibility/_fake_prefs.dart';
 
-SessionDetail _detail({String? liveStreamUrl, int? countryId}) => SessionDetail(
+SessionDetail _detail({
+  String? liveStreamUrl,
+  int? countryId,
+  DateTime? startUtc,
+  DateTime? endUtc,
+}) =>
+    SessionDetail(
       id: 's1',
       code: 'OP-1',
       displayOrder: 2, // D-567 — gold badge shows "02"
@@ -26,8 +32,9 @@ SessionDetail _detail({String? liveStreamUrl, int? countryId}) => SessionDetail(
       hallId: 'h1',
       hallName: 'Main Hall',
       hallNameArabic: 'القاعة الرئيسية',
-      startUtc: DateTime.utc(2026, 11, 23, 6),
-      endUtc: DateTime.utc(2026, 11, 23, 7),
+      // Default: an upcoming session (future) → the D-714 pre-session ask label.
+      startUtc: startUtc ?? DateTime.utc(2026, 11, 23, 6),
+      endUtc: endUtc ?? DateTime.utc(2026, 11, 23, 7),
       speakers: <SessionSpeaker>[
         SessionSpeaker(
           id: 'sp1',
@@ -437,8 +444,9 @@ void main() {
       // Speakers section + a speaker card.
       expect(find.text('Speakers'), findsOneWidget);
       expect(find.text('Dr Reef'), findsOneWidget);
-      // The ask-the-host card (shown to everyone — Figma 1056:12876).
-      expect(find.text('Ask the host'), findsOneWidget);
+      // The ask-the-host card (shown to everyone — Figma 1056:12876). This is an
+      // upcoming session, so D-714 (GAP-2) shows the pre-session ask label.
+      expect(find.text('Ask a question before it starts'), findsOneWidget);
       // The two CTAs.
       expect(
         find.widgetWithText(FilledButton, 'Add to calendar'),
@@ -475,7 +483,7 @@ void main() {
       expect(find.text('AI-SUMMARY'), findsOneWidget);
     });
 
-    testWidgets('#3 — a joined user can ask: the ask-host card opens '
+    testWidgets('#3 — a joined user can ask: the ask card opens '
         'send-question', (tester) async {
       await _pump(
         tester,
@@ -484,7 +492,8 @@ void main() {
         controller: _SignedInController(),
       );
 
-      await tester.tap(find.text('Ask the host'));
+      // Upcoming session → the pre-session ask label (D-714 GAP-2).
+      await tester.tap(find.text('Ask a question before it starts'));
       await tester.pumpAndSettle();
       expect(find.text('SEND-Q'), findsOneWidget);
     });
@@ -498,11 +507,31 @@ void main() {
         controller: _SignedInController(),
       );
 
-      expect(find.text('Ask the host'), findsOneWidget);
+      expect(find.text('Ask a question before it starts'), findsOneWidget);
       expect(find.text('Join the session to ask a question'), findsOneWidget);
-      await tester.tap(find.text('Ask the host'));
+      await tester.tap(find.text('Ask a question before it starts'));
       await tester.pumpAndSettle();
       expect(find.text('SEND-Q'), findsNothing); // tap is inert until joined
+    });
+
+    testWidgets('D-714 (GAP-2) — a live (already started) session shows the '
+        '"Ask the host" label, not the pre-session one', (tester) async {
+      // An ongoing session: started an hour ago, ends far in the future → the
+      // ask entry reverts to the live "Ask the host" (mode A), not the
+      // pre-session label (mode B).
+      final ongoing = _detail(
+        startUtc: DateTime.now().toUtc().subtract(const Duration(hours: 1)),
+        endUtc: DateTime.now().toUtc().add(const Duration(hours: 1)),
+      );
+      await _pump(
+        tester,
+        repo: _FakeDetailRepo(detail: ongoing),
+        seatMap: _seatMap(myCell: _mySeatCell),
+        controller: _SignedInController(),
+      );
+
+      expect(find.text('Ask the host'), findsOneWidget);
+      expect(find.text('Ask a question before it starts'), findsNothing);
     });
 
     testWidgets('a speaker with a country code renders its flag emoji',

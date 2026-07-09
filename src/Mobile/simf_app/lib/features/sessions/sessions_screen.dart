@@ -68,7 +68,17 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
       }
       setState(() {
         _days = days;
-        _selectedDayId = days.isEmpty ? null : days.first.id;
+        // Open on the first day that actually has sessions, not blindly the
+        // first day — otherwise a programme whose sessions sit on a later day
+        // renders an empty schedule until the user taps that day by hand.
+        _selectedDayId = days.isEmpty
+            ? null
+            : days
+                .firstWhere(
+                  (day) => day.sessions.isNotEmpty,
+                  orElse: () => days.first,
+                )
+                .id;
         _loading = false;
       });
     } on ApiFailure {

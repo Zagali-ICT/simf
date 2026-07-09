@@ -32,11 +32,16 @@ import 'golden_fonts.dart';
 /// الموافقة · إلغاء الحجز) and the أضف إلى تقويمي / تذكير CTAs. RTL throughout.
 ///
 /// The provider wiring + fakes mirror the proven widget test
-/// (test/features/sessions/session_detail_screen_test.dart). All rendered values
-/// derive from fixed data (no DateTime.now() on the display path), so the PNG is
-/// stable run-to-run. The meta clock/day come from `startUtc.toLocal()`, so they
-/// are fixed per host timezone — regenerate on the same host as the other
+/// (test/features/sessions/session_detail_screen_test.dart). Rendered values
+/// derive from fixed data; the meta clock/day come from `startUtc.toLocal()`, so
+/// they are fixed per host timezone — regenerate on the same host as the other
 /// goldens (the maintainer's UTC+3 box), as with every golden here.
+///
+/// D-714 (item 12, GAP-2) — the one time-derived value on the display path: the
+/// ask card reads the pre-session label ("اطرح سؤالاً قبل الجلسة") while the
+/// session is upcoming (`now < startUtc`, the case here — an event in Nov 2026)
+/// and reverts to "اسأل المحاور" once it has started. This golden therefore
+/// captures the pre-session state; regenerate it before the event date.
 ///
 /// Known golden-env artifacts (NOT layout/production defects): the speaker photo
 /// is Image.network → placeholder in tests (no HTTP); the country flag is an

@@ -55,7 +55,7 @@
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
 | **Auth setup** | **Signed-in for the screen (D-576)** — the Sessions/Agenda screen is login-gated: a signed-out guest navigating to `/sessions` is redirected to sign-in. The public reads stay `AllowAnonymous` (the app gates the screen, not the API — thin clients still read anonymously); use a signed-in Visitor session to reach the screen. Admin token only to seed sessions/speakers/themes. **No literal secrets.** |
-| **Last reviewed** | 2026-07-03 (D-598 — 3 type tabs, LTR white day strip) |
+| **Last reviewed** | 2026-07-08 (D-705 — from→to time-rail connector always drawn) |
 
 ## Coverage matrix
 
@@ -76,6 +76,7 @@
 | E2E-MOB016-013 | List item binds the real wire names incl. the D-271 speaker country+photo | contract | P0 | authored ✓ (model — `SessionListItem.fromJson`) |
 | E2E-MOB016-014 | **Full-width calendar (#4):** the day strip is a WHITE band over the FULL event date range (first→last programme day, empty in-between days filled), **pinned LTR** (dates ascend left→right as the frame renders), full-width (cells distributed, scroll fallback when long); a day **with** sessions = navy text ("active"), the **selected** day = navy pill/white text, an empty day = muted grey and **not** selectable; weekend labels red | happy/visual | P1 | authored ✓ (screen — `ProgrammeDayStrip`/`_calendarRange`; existing selected-cell-navy + switch-day tests) |
 | E2E-MOB016-015 | **App login-gate (D-576):** a signed-out guest navigating to the `/sessions` screen is redirected to sign-in (the app gates the screen; the reads stay anonymous for thin clients) | auth | P0 | authored ✓ (router-gate `D-576 — a signed-out guest hitting /sessions or a session detail → sign-in`) |
+| E2E-MOB016-016 | **Time-rail from→to connector (D-705):** every المواعيد row shows the vertical beige line between its start and end time — including a **collapsed/short row** (title only, no banner/description) where it previously collapsed to zero (Figma 1310:3243/3244) | visual | P1 | authored ✓ (golden `sessions_883-2308.png` — the connector renders on the featured AND the collapsed row) |
 
 ## Scenarios
 

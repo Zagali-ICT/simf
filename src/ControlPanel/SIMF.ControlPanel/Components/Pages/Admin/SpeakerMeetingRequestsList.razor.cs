@@ -14,6 +14,7 @@ using SIMF.Contracts.UserProfile;
 using SIMF.Contracts.Gates;
 using SIMF.Contracts.Ai;
 using SIMF.Contracts.Programme;
+using SIMF.Contracts.BusinessMeetings;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
 
@@ -38,7 +39,39 @@ public partial class SpeakerMeetingRequestsList
     private MeetingRequestStatus _respondStatus = MeetingRequestStatus.Accepted;
     private string _respondNote = string.Empty;
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    // D-716 (item 7, GAP-2) — optional hall binding on Accept: pick a meeting hall,
+    // one of its free slots, and (optionally) a table. Binding moves the request to
+    // AwaitingSpeaker (double-opt-in). Leaving the hall unset keeps the legacy
+    // straight-to-Accepted behaviour.
+    private List<AdminHallSummary> _halls = new();
+    private List<HallAvailableSlot> _hallSlots = new();
+    private List<MeetingTableRow> _hallTables = new();
+    private Guid? _bindHallId;
+    private int _bindSlotIndex = -1;
+    private Guid? _bindTableId;
+    private bool _loadingSlots;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+        await LoadHallsAsync();
+    }
+
+    // Business meetings are hosted in Meeting (or General) halls — compare via the
+    // enum so a wire-int reorder can't drift (mirrors HallAvailabilityPage).
+    private async Task LoadHallsAsync()
+    {
+        var env = await JS.InvokeAsync<ApiResult<GridPage<AdminHallSummary>>>(
+            "simfAccount.postJson", "/account/api/admin/halls/list",
+            new GridQuery { Top = 500 });
+        if (env is { Success: true, Data: not null })
+        {
+            _halls = env.Data.Items
+                .Where(h => h.IsActive
+                    && ((HallPurpose)h.Purpose) is HallPurpose.Meeting or HallPurpose.General)
+                .OrderBy(h => h.Name).ToList();
+        }
+    }
 
     private async Task OnQueryChangedAsync(GridQuery next)
     {
@@ -48,6 +81,10 @@ public partial class SpeakerMeetingRequestsList
 
     private string FormatSummary(int skip, int taken, int total) =>
         string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    // D-716 — a free hall slot as "2026-07-10 09:00–09:30 UTC".
+    private static string FormatSlot(HallAvailableSlot slot) =>
+        $"{slot.StartUtc.UtcDateTime:yyyy-MM-dd HH:mm}–{slot.EndUtc.UtcDateTime:HH:mm} UTC";
 
     private string FormatPage(int current, int total) =>
         string.Format(L["Grid.Page"], current, total);
@@ -99,6 +136,8 @@ public partial class SpeakerMeetingRequestsList
             row.CreatedAt, row.RespondedAt);
         _respondStatus = MeetingRequestStatus.Accepted;
         _respondNote = string.Empty;
+        _bindHallId = null;
+        ClearBindSelection();
         _respondOpen = true;
         _loadingDetail = true;
         _toast = null;
@@ -127,22 +166,89 @@ public partial class SpeakerMeetingRequestsList
     private void OnRespondNoteChanged(ChangeEventArgs e) =>
         _respondNote = e.Value?.ToString() ?? string.Empty;
 
+    // D-716 — reset the hall-binding selection (the chosen hall is set separately;
+    // this clears the slot/table choice + their loaded lists).
+    private void ClearBindSelection()
+    {
+        _bindSlotIndex = -1;
+        _bindTableId = null;
+        _hallSlots = new();
+        _hallTables = new();
+    }
+
+    // D-716 — pick a hall to bind on Accept; load its free slots + tables. The two
+    // reads are independent, so they run concurrently (one modal-open round-trip).
+    private async Task OnBindHallChangedAsync(ChangeEventArgs e)
+    {
+        _bindHallId = Guid.TryParse(e.Value?.ToString(), out var id) ? id : null;
+        ClearBindSelection();
+        if (_bindHallId is not { } hallId) return;
+
+        _loadingSlots = true;
+        try
+        {
+            var slotsTask = JS.InvokeAsync<ApiResult<IReadOnlyList<HallAvailableSlot>>>(
+                "simfAccount.getJson",
+                $"/account/api/admin/halls/{hallId}/available-slots").AsTask();
+            var tablesTask = JS.InvokeAsync<ApiResult<GridPage<MeetingTableRow>>>(
+                "simfAccount.postJson",
+                $"/account/api/admin/halls/{hallId}/meeting-tables/list",
+                new GridQuery { Top = 500 }).AsTask();
+            await Task.WhenAll(slotsTask, tablesTask);
+
+            if (slotsTask.Result is { Success: true, Data: not null } slotsEnv)
+            {
+                _hallSlots = slotsEnv.Data.ToList();
+            }
+            if (tablesTask.Result is { Success: true, Data: not null } tablesEnv)
+            {
+                _hallTables = tablesEnv.Data.Items.Where(t => t.IsActive).ToList();
+            }
+        }
+        finally { _loadingSlots = false; }
+    }
+
+    private void OnBindSlotChanged(ChangeEventArgs e) =>
+        _bindSlotIndex = int.TryParse(e.Value?.ToString(), out var i) ? i : -1;
+
+    private void OnBindTableChanged(ChangeEventArgs e) =>
+        _bindTableId = Guid.TryParse(e.Value?.ToString(), out var g) ? g : null;
+
     private async Task SendResponseAsync()
     {
         if (_respondTarget is null || _busy) return;
+
+        // D-716 — when a hall is chosen on Accept, a free slot is required.
+        var bindHall = _respondStatus == MeetingRequestStatus.Accepted
+            && _bindHallId is not null;
+        if (bindHall && (_bindSlotIndex < 0 || _bindSlotIndex >= _hallSlots.Count))
+        {
+            _toast = new Toast("error", L["Admin.SpeakerMeetingRequests.Bind.SlotRequired"]);
+            return;
+        }
+
         _busy = true;
         _toast = null;
         try
         {
+            var body = new RespondToSpeakerMeetingRequestRequest
+            {
+                Status = _respondStatus,
+                ResponseNote = string.IsNullOrWhiteSpace(_respondNote)
+                    ? null : _respondNote.Trim(),
+            };
+            if (bindHall)
+            {
+                var slot = _hallSlots[_bindSlotIndex];
+                body.HallId = _bindHallId;
+                body.MeetingTableId = _bindTableId;
+                body.SlotStartUtc = slot.StartUtc;
+                body.SlotEndUtc = slot.EndUtc;
+            }
             var env = await JS.InvokeAsync<ApiResult<AdminSpeakerMeetingRequestDetail>>(
                 "simfAccount.putJson",
                 $"/account/api/admin/speaker-meeting-requests/{_respondTarget.Id}/respond",
-                new RespondToSpeakerMeetingRequestRequest
-                {
-                    Status = _respondStatus,
-                    ResponseNote = string.IsNullOrWhiteSpace(_respondNote)
-                        ? null : _respondNote.Trim(),
-                });
+                body);
             if (env is { Success: true })
             {
                 _respondOpen = false;

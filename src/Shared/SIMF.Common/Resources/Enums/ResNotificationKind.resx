@@ -30,4 +30,5 @@
   <data name="EventRatingRequest" xml:space="preserve"><value>Rate the forum</value></data>
   <data name="AppRatingRequest" xml:space="preserve"><value>Rate the app</value></data>
   <data name="ExhibitionRatingRequest" xml:space="preserve"><value>Rate the exhibition</value></data>
+  <data name="MeetingRequestConfirmed" xml:space="preserve"><value>Your meeting was confirmed</value></data>
 </root>

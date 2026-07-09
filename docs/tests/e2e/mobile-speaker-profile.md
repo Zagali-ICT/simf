@@ -37,13 +37,13 @@
 | E2E-MOB020-009 | Tap a speaker session → Session detail (17) | happy | P1 | authored ✓ (screen) |
 | E2E-MOB020-010 | RTL render; hero, back chevron and tabs right-to-left | i18n | P1 | authored ✓ (screen) |
 | E2E-MOB020-011 | 125px gold-ringed avatar renders the speaker initials | happy | P1 | _to author_ |
-| E2E-MOB020-012 | **VIP slot picker (D-474/D-477):** when the speaker has availability windows, the meeting sheet shows a free-slot dropdown (from `GET …/available-slots`); picking a slot sends it. VIP-only is server-enforced (403 → "VIP guests only"); no slots / none picked = the legacy topic-only request | happy | P0 | authored ✓ (`speaker_profile_screen_test` slot-picker + API `SpeakerMeetingVipSlotTests`) |
+| E2E-MOB020-012 | **VIP slot picker (D-474/D-477; real slots restored by D-709):** when the speaker has availability windows, the meeting sheet shows the real free slots (from `GET …/available-slots`); picking one sends it. VIP-only is server-enforced (403 → "VIP guests only"); **no slots** = the no-slots notice + a subject-only request (the team arranges a time) | happy | P0 | authored ✓ (`meeting_request_sheet_test` real-slot submit + no-slots subject-only + API `SpeakerMeetingVipSlotTests`) |
 | E2E-MOB020-012 | Tapping a CV tab pill swaps the navy bio card content | happy | P0 | _to author_ |
 | E2E-MOB020-013 | Active tab pill is gold-filled; the rest are navy with a beige hairline | happy | P1 | _to author_ |
 | E2E-MOB020-014 | Only CV sections with content render a pill (1–4 pills) | edge | P1 | _to author_ |
 | E2E-MOB020-015 | Speaker with no CV content shows no tabs and no bio card | edge | P1 | _to author_ |
 | E2E-MOB020-016 | Meeting form has **no name field**; only subject (+ optional slot) is entered; `requesterName` is auto-sent from the signed-in account | happy | P1 | authored ✓ (`a signed-in visitor can submit a meeting request`) |
-| E2E-MOB020-017 | Meeting form (D-589, Figma 1776:4958/5036): light sheet — the VIP slot is chosen from a row of **day cards** then that day's **time-slot chips**, both sourced from the speaker's available slots; the chips appear only after a day is tapped | happy | P2 | authored ✓ (`a speaker with availability slots shows day cards then time chips`) |
+| E2E-MOB020-017 | Meeting form (D-589, Figma 1776:4958/5036): light sheet — the VIP slot is chosen from a row of **day cards** then that day's **time-slot chips**, both sourced from the speaker's **real** available slots (D-709 restored this after the D-703 free-picker interlude); the chips appear only after a day is tapped | happy | P2 | authored ✓ (`meeting_request_sheet_test` — "presents the speaker's REAL available days + that day's slots") |
 
 ## Scenarios
 
@@ -306,7 +306,14 @@ Scenario: The VIP slot is picked from day cards then time chips (light sheet)
 
 ---
 
-_Last reviewed:_ `2026-07-02` by `SIMF Team` — D-589: the meeting-request sheet
-redesigned to the light "طلب مقابلة" form (subject + day cards + time-slot chips,
-Figma 1776:4958/5036), replacing the D-579 date/time dropdowns; same slot-sourced
-data + submit (API contract unchanged).
+_Last reviewed:_ `2026-07-09` by `SIMF Team` — **D-709 (item 6, FDS-013 §15.4
+GAP-4): reverted the short-lived D-703 free 7-day/hourly picker back to the
+speaker's REAL availability slots** — day cards for the days that have slots, that
+day's slots as time chips (from `GET …/available-slots`), the chosen slot's exact
+start/end sent; **no windows → a clear "no slots" notice + a subject-only request**
+(the team then arranges a time). App-only; API contract unchanged. This restores
+the D-589 slot-sourced behaviour this catalogue already described.
+
+_Prior:_ `2026-07-02` — D-589: the meeting-request sheet redesigned to the light
+"طلب مقابلة" form (subject + day cards + time-slot chips, Figma 1776:4958/5036),
+replacing the D-579 date/time dropdowns; same slot-sourced data + submit.

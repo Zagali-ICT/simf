@@ -51,6 +51,12 @@ class _FakeFeedbackRepo implements FeedbackRepository {
       commentLabel: null,
       commentLabelArabic: null,
       targetId: session ? (targetId ?? 'sess-1') : null,
+      // D-713 — the per-session form carries the watched-at context; the App
+      // form does not. A UTC start keeps the fixture timezone-independent (the
+      // header assertions check the session name, not the tz-shifted time).
+      targetName: session ? 'Opening Session' : null,
+      targetNameArabic: session ? 'الجلسة الافتتاحية' : null,
+      targetStartUtc: session ? DateTime.utc(2026, 11, 20, 9) : null,
       groups: const <RatingFormGroup>[],
       ungroupedQuestions: hasQuestion
           ? <RatingFormQuestion>[
@@ -177,6 +183,25 @@ void main() {
       await tester.pumpAndSettle();
       expect(repo.lastOverall, 3);
       expect(repo.lastAnswers, <String, int>{'q-org': 5});
+    });
+
+    testWidgets('a per-session rating shows the watched-at header',
+        (tester) async {
+      // D-713 (item 8) — the per-session rate screen leads with a "Watched
+      // {session} · {date}" context line so the user knows what they're rating.
+      await _pump(
+        tester,
+        _FakeFeedbackRepo(session: true),
+        rateScreen: const RateScreen(code: 'Session', targetId: 'sess-1'),
+      );
+      expect(find.textContaining('Opening Session'), findsOneWidget);
+    });
+
+    testWidgets('the global App rating shows no watched-at header',
+        (tester) async {
+      // A Global (App) rating has no target session, so no context header.
+      await _pump(tester, _FakeFeedbackRepo());
+      expect(find.textContaining('Watched'), findsNothing);
     });
 
     testWidgets('a submit failure shows the error toast', (tester) async {

@@ -725,12 +725,14 @@ class SimfLinkRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: SimfTokens.space2),
-              // The frame's gold left-caret (eva:arrow-up-fill rotated). The
+              // Home section-bar caret. Figma 758:1208 / 1049:12845 / 758:1212
+              // (عن الملتقى / الرعاه / الأخبار) fill this caret WHITE — only the
+              // روح السعودية row (758:1275, [SimfListRow]) keeps it gold. The
               // bundled SVG does not auto-mirror under RTL, so it stays pointing
-              // left as the design shows (same as [SimfListRow]).
+              // left as the design shows.
               const SimfSvgIcon(
                 'assets/icons/ic_caret_left.svg',
-                color: SimfTokens.accent,
+                color: Colors.white,
                 size: 24,
               ),
             ],

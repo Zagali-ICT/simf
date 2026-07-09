@@ -302,6 +302,9 @@ public static class AuditEvents
     // D-474 (#11, Group G) — speaker availability windows for the VIP-meeting slots.
     public const string SpeakerAvailabilityWindowCreated = "SpeakerAvailabilityWindow.Created";
     public const string SpeakerAvailabilityWindowDeleted = "SpeakerAvailabilityWindow.Deleted";
+    // D-715 (item 7, FDS-013 §15 GAP-1) — hall availability windows.
+    public const string HallAvailabilityWindowCreated = "HallAvailabilityWindow.Created";
+    public const string HallAvailabilityWindowDeleted = "HallAvailabilityWindow.Deleted";
     // D-478 (#11, Group G phase 2) — delegation↔delegation (G2G) meeting requests.
     public const string DelegationMeetingRequestSubmitted = "DelegationMeetingRequest.Submitted";
     public const string DelegationMeetingRequestResponded = "DelegationMeetingRequest.Responded";
@@ -309,6 +312,12 @@ public static class AuditEvents
     public const string AdminDelegationMeetingRequestViewed = "Admin.DelegationMeetingRequestViewed";
     public const string AdminSpeakerMeetingRequestsListed = "Admin.SpeakerMeetingRequestsListed";
     public const string AdminSpeakerMeetingRequestViewed = "Admin.SpeakerMeetingRequestViewed";
+    // D-717 (item 7, FDS-013 §15.7 GAP-3) — the speaker double-opt-in action-link
+    // token: minted with the email, previewed on link open, applied on confirm
+    // (§15.7 requires an OperationLog row on mint / click / outcome).
+    public const string MeetingActionTokenMinted = "MeetingActionToken.Minted";
+    public const string MeetingActionTokenViewed = "MeetingActionToken.Viewed";
+    public const string MeetingActionTokenApplied = "MeetingActionToken.Applied";
 
     // D-500 (Wave 5, الطلبات) — participation-document + badge-update requests
     // (the admin detail/respond reveals the requester email — same SOC rationale).

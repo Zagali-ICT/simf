@@ -2380,6 +2380,39 @@ internal static class AccountEndpoints
             return Forward(await api.DeleteSpeakerAvailabilityWindowAsync(windowId, token));
         });
 
+        // D-715 (item 7, FDS-013 §15 GAP-1) — hall availability windows passthroughs.
+        group.MapGet("/admin/halls/{hallId:guid}/availability-windows",
+            async (Guid hallId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListHallAvailabilityWindowsAsync(hallId, token));
+        });
+        group.MapPost("/admin/halls/{hallId:guid}/availability-windows",
+            async (Guid hallId, CreateHallAvailabilityWindowRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateHallAvailabilityWindowAsync(hallId, body, token));
+        });
+        group.MapDelete("/admin/hall-availability-windows/{windowId:guid}",
+            async (Guid windowId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeleteHallAvailabilityWindowAsync(windowId, token));
+        });
+        // D-716 (item 7, GAP-2) — the hall's free meeting slots (read by the
+        // speaker-meeting-request review modal before binding an accept to one).
+        group.MapGet("/admin/halls/{hallId:guid}/available-slots",
+            async (Guid hallId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetHallAvailableSlotsAsync(hallId, token));
+        });
+
         // D-478 (#11) — delegation meeting requests BFF passthroughs.
         group.MapPost("/admin/delegation-meeting-requests/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>

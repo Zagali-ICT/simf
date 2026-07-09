@@ -20,6 +20,20 @@ public interface INotificationRepository
 {
     Task AddAsync(Notification notification, CancellationToken cancellationToken = default);
 
+    /// <summary>D-713 — true when a notification of <paramref name="kind"/> for
+    /// <paramref name="relatedEntityId"/> already exists for
+    /// <paramref name="userId"/>. Backs the dispatcher's opt-in
+    /// <see cref="NotificationRequest.DeduplicateByRelatedEntity"/> guard so the
+    /// same (user, kind, entity) is never notified twice — e.g. one session-rating
+    /// prompt per attendee whether it fires on hall departure (GAP-A) or the
+    /// clock-end worker. A single-context query on the Identity DB (D-157: no
+    /// cross-DB join — the entity id is a bare Guid).</summary>
+    Task<bool> ExistsForUserAsync(
+        Guid userId,
+        NotificationKind kind,
+        Guid relatedEntityId,
+        CancellationToken cancellationToken = default);
+
     Task<(IReadOnlyList<NotificationDto> Items, int Total)> ListForUserAsync(
         Guid userId,
         int skip,

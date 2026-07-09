@@ -49,6 +49,7 @@ import '../features/gates/gate_scan_screen.dart';
 import '../features/moderation/session_moderate_screen.dart';
 import '../features/myarea/identity_verification_screen.dart';
 import '../features/myarea/my_area_screen.dart';
+import '../features/myarea/my_sessions_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/venuemap/venue_map_screen.dart';
 import '../features/account/data/profile_models.dart';
@@ -177,7 +178,9 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 111, name: RouteNames.sessionSummaryList, path: '/session-summaries', labelAr: 'ملخص الجلسات', labelEn: 'Session summaries'),
   // #9 — venue map focused on a booth (booth "أرشدني" CTA; public, pushed).
   _Route(number: 112, name: RouteNames.boothMap, path: '/booths/:boothId/map', labelAr: 'الخريطة', labelEn: 'Venue map'),
-  // (D-609: route 113 My-sessions removed — screen backed up as `.bk`.)
+  // #5 (D-710) — My sessions (عروض الجلسات, Figma 1388:9067), approved-attendee;
+  // restored + linked from the More menu (owner reversed the D-609 removal).
+  _Route(number: 113, name: RouteNames.myAreaSessions, path: '/my-sessions', labelAr: 'عروض الجلسات', labelEn: 'My sessions'),
 
   // D-464 — المزيد hub entries with no screen yet (Figma 1129:17224). Public;
   // they fall through to ComingSoonScreen (sentinel numbers 200+).
@@ -266,9 +269,10 @@ const Map<int, Set<AppRole>> _routeRoles = <int, Set<AppRole>>{
   108: _attendee, // Requests feed (D-500, approved-only)
   109: _attendee, // Seat picker (D-485)
   110: _attendee, // Join-a-session hub (D-485)
+  113: _attendee, // My sessions (D-710, restored — owner reversed the D-609 removal)
   202: _attendee, // Session presentations (Wave 2)
-  // (D-609: routes 115 My-meetings, 113 My-sessions, 205 Saved-sessions removed
-  // — screens backed up as `.bk`.)
+  // (D-609: routes 115 My-meetings, 205 Saved-sessions removed — screens backed
+  // up as `.bk`; 113 My-sessions restored by D-710.)
   // Exhibitor-only — lead capture (D-426).
   106: <AppRole>{AppRole.exhibitor}, // Scan visitor badge
   107: <AppRole>{AppRole.exhibitor}, // My Visitors
@@ -386,6 +390,9 @@ Widget _screenFor(BuildContext context, GoRouterState state, _Route r) {
   }
   if (r.name == RouteNames.sessionSummaryList) {
     return const SessionSummaryListScreen();
+  }
+  if (r.name == RouteNames.myAreaSessions) {
+    return const MySessionsScreen();
   }
   if (r.name == RouteNames.speakers) {
     return const SpeakersScreen();

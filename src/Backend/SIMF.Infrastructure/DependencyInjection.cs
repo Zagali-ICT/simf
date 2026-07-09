@@ -180,6 +180,9 @@ public static class DependencyInjection
         // #7a — biometric device-key enrolment step-up toggle (default on).
         services.Configure<DeviceKeyOptions>(
             configuration.GetSection(DeviceKeyOptions.SectionName));
+        // D-717 (item 7, FDS-013 §15 GAP-3) — the speaker email-link base URL + TTL.
+        services.Configure<MeetingLinksOptions>(
+            configuration.GetSection(MeetingLinksOptions.SectionName));
         // R1 — D-074: typed Storage settings; replaces four scattered
         // IConfiguration["Storage:..."] reads across FilesystemAvatarStorage,
         // EncryptedUserIdDocumentStorage, LogFileService, and Program.cs.
@@ -364,6 +367,13 @@ public static class DependencyInjection
         // D-474 (#11, Group G) — speaker availability windows + free-slot derivation.
         services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.ISpeakerAvailabilityService,
             SIMF.Infrastructure.MeetingRequests.SpeakerAvailabilityService>();
+        // D-715 (item 7, FDS-013 §15 GAP-1) — hall availability windows (hall time
+        // for business meetings) + free-slot derivation.
+        services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.IHallAvailabilityService,
+            SIMF.Infrastructure.MeetingRequests.HallAvailabilityService>();
+        // D-717 (item 7, FDS-013 §15.7 GAP-3) — speaker double-opt-in action tokens.
+        services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.IMeetingActionTokenService,
+            SIMF.Infrastructure.MeetingRequests.MeetingActionTokenService>();
         // D-478 (#11, Group G phase 2) — delegation↔delegation meeting requests.
         services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.IDelegationMeetingRequestService,
             SIMF.Infrastructure.MeetingRequests.DelegationMeetingRequestService>();
@@ -464,9 +474,22 @@ public static class DependencyInjection
             SIMF.Infrastructure.Archive.PublicArchiveService>();
         services.AddScoped<SIMF.Application.Archive.Abstractions.IAdminArchiveService,
             SIMF.Infrastructure.Archive.AdminArchiveService>();
-        // P4.2 — D-236: advisory question AI filter (stub). Stateless singleton.
-        services.AddSingleton<SIMF.Application.SessionQuestions.Abstractions.IQuestionAiFilter,
-            SIMF.Infrastructure.SessionQuestions.StubQuestionAiFilter>();
+        // P4.2 — D-236 / D-714 (item 12, GAP-1): advisory question AI filter.
+        // Default = the offline stub (the PoC needs no AI key); set
+        // `SessionQuestions:AiFilterEnabled=true` to route through the real
+        // IAiService + the seeded `question-filter` prompt (AiQuestionFilter,
+        // scoped because IAiService is scoped). Advisory either way — it never
+        // blocks a question. Mirrors the scan-engine selector below.
+        if (configuration.GetValue<bool>("SessionQuestions:AiFilterEnabled"))
+        {
+            services.AddScoped<SIMF.Application.SessionQuestions.Abstractions.IQuestionAiFilter,
+                SIMF.Infrastructure.SessionQuestions.AiQuestionFilter>();
+        }
+        else
+        {
+            services.AddSingleton<SIMF.Application.SessionQuestions.Abstractions.IQuestionAiFilter,
+                SIMF.Infrastructure.SessionQuestions.StubQuestionAiFilter>();
+        }
         // Dynamic, config-driven ratings — app form/submit, admin config CRUD,
         // admin responses + KPI viewer, and the built-in-types seeder.
         services.AddScoped<SIMF.Application.Feedback.Abstractions.IRatingFormService,
@@ -525,6 +548,10 @@ public static class DependencyInjection
         // M3 (security) — install the keyed-HMAC key for AccountCode (OTP)
         // hashing; reuses the JWT signing key (a required, boot-validated secret).
         SIMF.Application.IdentityAccess.AccountCodeHasher.ConfigureKey(
+            configuration[$"{SIMF.Common.Options.JwtOptions.SectionName}:SigningKey"]);
+        // D-717 (item 7, FDS-013 §15.7) — install the keyed-HMAC key for the speaker
+        // action-link tokens; reuses the same boot-validated JWT signing key.
+        SIMF.Application.MeetingRequests.MeetingActionTokenHasher.ConfigureKey(
             configuration[$"{SIMF.Common.Options.JwtOptions.SectionName}:SigningKey"]);
         services.AddSingleton<SIMF.Application.Ai.Abstractions.IAiProvider,
             SIMF.Infrastructure.Ai.EchoAiProvider>();

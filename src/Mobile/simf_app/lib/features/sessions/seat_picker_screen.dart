@@ -91,11 +91,13 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
     var reserved = false;
+    String? failureCode;
     try {
       await action(ref.read(seatMapRepositoryProvider));
       reserved = true;
-    } on ApiFailure {
+    } on ApiFailure catch (failure) {
       // Reported below once we know the screen is still mounted.
+      failureCode = failure.code;
     } finally {
       if (mounted) {
         setState(() => _busy = false);
@@ -108,7 +110,13 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
       messenger.showSnackBar(SnackBar(content: Text(l10n.seatReservedToast)));
       navigator.pop(true);
     } else {
-      messenger.showSnackBar(SnackBar(content: Text(l10n.seatReserveFailed)));
+      // A full session (the capacity cap the CP enforces) gets its own message so
+      // a random/auto pick that hits the maximum reads "no places remain" instead
+      // of a generic failure. Other errors keep the generic seat-reserve message.
+      final message = failureCode == 'SEAT_SESSION_FULL'
+          ? l10n.joinSessionFull
+          : l10n.seatReserveFailed;
+      messenger.showSnackBar(SnackBar(content: Text(message)));
     }
   }
 

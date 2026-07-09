@@ -144,6 +144,10 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     // D-474 (#11, Group G) — speaker availability windows for the VIP-meeting slots.
     public DbSet<SpeakerAvailabilityWindow> SpeakerAvailabilityWindows => Set<SpeakerAvailabilityWindow>();
 
+    // D-715 (item 7, FDS-013 §15 GAP-1) — hall availability windows (the "hall time"
+    // for business meetings); symmetric with SpeakerAvailabilityWindows.
+    public DbSet<HallAvailabilityWindow> HallAvailabilityWindows => Set<HallAvailabilityWindow>();
+
     // D-478 (#11, Group G phase 2) — delegation↔delegation (G2G) meeting requests.
     public DbSet<DelegationMeetingRequest> DelegationMeetingRequests => Set<DelegationMeetingRequest>();
 
@@ -254,6 +258,10 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     public DbSet<BusinessMeeting> BusinessMeetings => Set<BusinessMeeting>();
     public DbSet<BusinessMeetingParticipant> BusinessMeetingParticipants =>
         Set<BusinessMeetingParticipant>();
+
+    // D-717 (item 7, FDS-013 §15.7 GAP-3) — single-use speaker double-opt-in
+    // action-link tokens (Approve / Reject).
+    public DbSet<MeetingActionToken> MeetingActionTokens => Set<MeetingActionToken>();
 
     // D-568 — the single, unified file store: ONE table for every uploaded or
     // linked file (avatar, ID document, VIP photo, media gallery, speaker photo /

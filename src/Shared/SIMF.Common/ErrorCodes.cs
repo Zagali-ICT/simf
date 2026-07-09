@@ -238,12 +238,19 @@ public static class ErrorCodes
     public const string SpeakerMeetingRequestNotFound = "SPEAKER_MEETING_REQUEST_NOT_FOUND";
     /// <summary>D-474 (#11) — the speaker availability window was not found.</summary>
     public const string SpeakerAvailabilityWindowNotFound = "SPEAKER_AVAILABILITY_WINDOW_NOT_FOUND";
+    /// <summary>D-715 (item 7) — the hall availability window was not found.</summary>
+    public const string HallAvailabilityWindowNotFound = "HALL_AVAILABILITY_WINDOW_NOT_FOUND";
     /// <summary>D-478 (#11) — invalid delegation meeting request (subject/count/self).</summary>
     public const string DelegationMeetingRequestInvalid = "DELEGATION_MEETING_REQUEST_INVALID";
     /// <summary>D-478 (#11) — the delegation meeting request was not found.</summary>
     public const string DelegationMeetingRequestNotFound = "DELEGATION_MEETING_REQUEST_NOT_FOUND";
     public const string SpeakerMeetingRequestsNotAllowed = "SPEAKER_MEETING_REQUESTS_NOT_ALLOWED";
     public const string SpeakerMeetingRequestStatusInvalid = "SPEAKER_MEETING_REQUEST_STATUS_INVALID";
+    /// <summary>D-717 (item 7, FDS-013 §15.7 GAP-3) — a speaker action-link token
+    /// is unusable: not found, expired, already used, or its request is no longer
+    /// awaiting the speaker. Deliberately NEUTRAL — the same code for every reason
+    /// so the response never leaks which one it was (§15.7).</summary>
+    public const string MeetingActionTokenInvalid = "MEETING_ACTION_TOKEN_INVALID";
 
     // Unified requests (D-500, Wave 5 — الطلبات 1408:9726).
     public const string ParticipationDocumentRequestInvalid = "PARTICIPATION_DOCUMENT_REQUEST_INVALID";

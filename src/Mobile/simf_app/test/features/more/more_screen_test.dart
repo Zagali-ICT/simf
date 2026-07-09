@@ -86,6 +86,13 @@ GoRouter _router() {
           body: Center(child: Text('FORGOT-MARKER')),
         ),
       ),
+      GoRoute(
+        name: RouteNames.myAreaSessions,
+        path: '/my-sessions',
+        builder: (context, state) => const Scaffold(
+          body: Center(child: Text('MY-SESSIONS-MARKER')),
+        ),
+      ),
       // The shared shell's bottom-nav destinations + the my-area target.
       for (final (name, path) in <(String, String)>[
         (RouteNames.home, '/'),
@@ -211,6 +218,21 @@ void main() {
       await tester.tap(find.text('Reset password'));
       await tester.pumpAndSettle();
       expect(find.text('FORGOT-MARKER'), findsOneWidget);
+    });
+
+    testWidgets('signed-in attendee sees + taps عروض الجلسات → My sessions '
+        '(D-710, restored)', (tester) async {
+      await _pump(tester, router: _router(), signedIn: true);
+      expect(find.text('My sessions'), findsOneWidget);
+      await tester.tap(find.text('My sessions'));
+      await tester.pumpAndSettle();
+      expect(find.text('MY-SESSIONS-MARKER'), findsOneWidget);
+    });
+
+    testWidgets('guest does not see the attendee-gated My sessions row',
+        (tester) async {
+      await _pump(tester, router: _router());
+      expect(find.text('My sessions'), findsNothing);
     });
   });
 }

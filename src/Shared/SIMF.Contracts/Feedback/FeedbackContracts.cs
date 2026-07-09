@@ -57,7 +57,14 @@ public sealed record RatingFormView(
     Guid? TargetId,
     IReadOnlyList<RatingFormGroup> Groups,
     IReadOnlyList<RatingFormQuestion> UngroupedQuestions,
-    RatingExistingSubmission? Existing);
+    RatingExistingSubmission? Existing,
+    // D-713 (item 8) — the rated target's display context, for the app's
+    // "watched at {session} · {date}" header on a per-session rating. Populated
+    // for a per-session target; null for a Global type. Appended (append-only
+    // wire, D-219) so the shipped app decodes unchanged.
+    string? TargetName = null,
+    string? TargetNameArabic = null,
+    DateTimeOffset? TargetStartUtc = null);
 
 /// <summary>One per-question score in a submission.</summary>
 public sealed record RatingAnswerInput(Guid QuestionId, int Stars);

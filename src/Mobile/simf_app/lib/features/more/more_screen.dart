@@ -96,11 +96,15 @@ class MoreScreen extends ConsumerWidget {
                 title: l10n.faqRowTitle,
                 onTap: () => context.pushNamed(RouteNames.faq),
               ),
-              // The "عروض الجلسات" my-sessions row (route myAreaSessions) was
-              // removed 2026-07-04 (D-609, owner directive) — the My-sessions
-              // screen was backed up as `.bk` and taken out of the app. The
-              // downloadable-slides screen (1388:7621) stays reachable from the
-              // Home "الجلسات" tile.
+              // "عروض الجلسات" — My sessions (Figma 1388:9067). Restored to the
+              // More menu 2026-07-09 (D-710, owner reversed the D-609 removal).
+              // The route is attendee-gated, so the row is shown only when the
+              // signed-in role may reach it.
+              if (routeAllowsRole(RouteNames.myAreaSessions, role))
+                MoreRow(
+                  title: l10n.mySessionsTitle,
+                  onTap: () => context.pushNamed(RouteNames.myAreaSessions),
+                ),
               MoreRow(
                 title: l10n.moreVisitSaudi,
                 onTap: () => unawaited(

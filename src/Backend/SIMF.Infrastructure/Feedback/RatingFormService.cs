@@ -62,11 +62,31 @@ internal sealed class RatingFormService(
 
         var existing = await LoadExistingAsync(userId, type.Id, targetId, cancellationToken);
 
+        // D-713 (item 8) — the rated session's title + date, for the app's
+        // "watched at {session} · {date}" header. Session scope only; a one-row
+        // projection (Global/Day carry no header).
+        string? targetName = null, targetNameArabic = null;
+        DateTimeOffset? targetStartUtc = null;
+        if (type.Scope == RatingScope.PerSession && targetId != Guid.Empty)
+        {
+            var session = await dbContext.Sessions.AsNoTracking()
+                .Where(s => s.Id == targetId)
+                .Select(s => new { s.Title, s.TitleArabic, s.StartUtc })
+                .SingleOrDefaultAsync(cancellationToken);
+            if (session is not null)
+            {
+                targetName = session.Title;
+                targetNameArabic = session.TitleArabic;
+                targetStartUtc = session.StartUtc;
+            }
+        }
+
         return new RatingFormView(
             type.Id, type.Code, type.Name, type.NameArabic, type.Scope,
             type.HasOverallStars, type.AllowComment, type.CommentLabel, type.CommentLabelArabic,
             type.Scope == RatingScope.Global ? null : targetId,
-            grouped, ungrouped, existing);
+            grouped, ungrouped, existing,
+            targetName, targetNameArabic, targetStartUtc);
     }
 
     public async Task<RatingSubmissionView> SubmitAsync(

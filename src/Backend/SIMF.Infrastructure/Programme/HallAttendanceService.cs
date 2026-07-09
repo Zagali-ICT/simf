@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.AccessControl.Abstractions;
 using SIMF.Application.Auditing;
+using SIMF.Application.Notifications;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -25,6 +26,7 @@ internal sealed class HallAttendanceService(
     SimfAppDbContext appDbContext,
     IQrResolver qrResolver,
     IAuditLog auditLog,
+    INotificationDispatcher notifications,
     TimeProvider timeProvider,
     ILogger<HallAttendanceService> logger) : IHallAttendanceService
 {
@@ -204,7 +206,55 @@ internal sealed class HallAttendanceService(
             Detail = $"sessionId={sessionId}; hallId={open.HallId}",
         }, cancellationToken);
 
+        // D-713 (GAP-A) — leaving the hall closes the attendee's session
+        // attendance, so prompt them to rate the session they just left. The
+        // dispatcher's DeduplicateByRelatedEntity guard shares one prompt per
+        // (session, user) with the clock-end worker, so a re-enter/re-leave or a
+        // later clock-end scan never double-prompts.
+        await PromptSessionRatingOnDepartureAsync(userId, sessionId, cancellationToken);
+
         return ToStatus(open);
+    }
+
+    /// <summary>D-713 (GAP-A) — fires the "please rate this session" prompt when an
+    /// attendee's hall attendance closes on departure. Loads the session title for
+    /// the notification body; a dispatch failure is logged and swallowed so it
+    /// never fails the departure itself (the leave time is already committed —
+    /// mirrors <c>SessionRatingPromptWorker</c>'s per-attendee resilience).</summary>
+    private async Task PromptSessionRatingOnDepartureAsync(
+        Guid userId, Guid sessionId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var session = await appDbContext.Sessions
+                .AsNoTracking()
+                .Where(s => s.Id == sessionId)
+                .Select(s => new { s.Title, s.TitleArabic })
+                .SingleOrDefaultAsync(cancellationToken);
+            if (session is null) { return; }
+
+            await notifications.DispatchAsync(new NotificationRequest
+            {
+                UserId = userId,
+                Kind = NotificationKind.SessionRatingRequest,
+                Title = "Rate this session",
+                TitleArabic = "قيّم هذه الجلسة",
+                Body = $"How was \"{session.Title}\"? Tap to rate it.",
+                BodyArabic = $"كيف كانت جلسة \"{session.TitleArabic}\"؟ اضغط للتقييم.",
+                Severity = NotificationSeverity.Info,
+                RelatedEntityType = "Session",
+                RelatedEntityId = sessionId,
+                SendEmail = false,
+                // Share the one-per-(session, user) guard with the clock-end worker.
+                DeduplicateByRelatedEntity = true,
+            }, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex,
+                "Session-rating prompt on departure failed for user {UserId} on session {SessionId}.",
+                userId, sessionId);
+        }
     }
 
     public async Task<HallAttendanceStatus> GetStatusAsync(

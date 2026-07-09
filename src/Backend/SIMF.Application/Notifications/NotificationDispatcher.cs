@@ -29,6 +29,21 @@ internal sealed class NotificationDispatcher(
         NotificationRequest request,
         CancellationToken cancellationToken = default)
     {
+        // D-713 — opt-in one-per-(user, kind, entity) guard. When the caller asks
+        // to deduplicate and a matching notification already exists, skip the whole
+        // dispatch (row + email) so a session-rating prompt never double-fires
+        // across the hall-departure hook (GAP-A) and the clock-end worker.
+        if (request.DeduplicateByRelatedEntity
+            && request.RelatedEntityId is { } relatedId
+            && await notifications.ExistsForUserAsync(
+                request.UserId, request.Kind, relatedId, cancellationToken))
+        {
+            logger.LogInformation(
+                "Notification {Kind} for {UserId} skipped — already sent for entity {EntityId}.",
+                request.Kind, request.UserId, relatedId);
+            return;
+        }
+
         var now = timeProvider.GetUtcNow();
         var notification = new Notification
         {

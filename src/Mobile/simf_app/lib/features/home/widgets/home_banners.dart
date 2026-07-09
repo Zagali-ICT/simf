@@ -70,13 +70,13 @@ class LiveBanner extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: SimfTokens.space2),
-              // Owner 2026-06-27 — the LIVE (YouTube/broadcast) banner's caret
-              // must match the "عن الملتقى" / section rows: the same gold
-              // ic_caret_left.svg (not a white Material arrow). The bundled SVG
-              // points left and does not mirror under RTL.
+              // The LIVE (YouTube/broadcast) banner's caret matches the home
+              // section rows: Figma 758:1151 fills it WHITE (like the عن الملتقى
+              // / الرعاه / الأخبار carets — only روح السعودية 758:1275 is gold).
+              // The bundled SVG points left and does not mirror under RTL.
               const SimfSvgIcon(
                 'assets/icons/ic_caret_left.svg',
-                color: SimfTokens.accent,
+                color: Colors.white,
                 size: 24,
               ),
             ],

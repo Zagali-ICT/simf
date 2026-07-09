@@ -74,6 +74,7 @@
   <data name="Module.SessionSeatPlans" xml:space="preserve"><value>مخطط مقاعد الجلسات</value></data>
   <data name="Module.SpeakerMeetingRequests" xml:space="preserve"><value>طلبات مقابلة المتحدثين</value></data>
   <data name="Module.AdminSpeakerAvailability" xml:space="preserve"><value>توفّر المتحدثين</value></data>
+  <data name="Module.AdminHallAvailability" xml:space="preserve"><value>توفّر القاعات</value></data>
   <data name="Module.AdminDelegationMeetings" xml:space="preserve"><value>اجتماعات الوفود</value></data>
   <data name="Module.AdminDocumentRequests" xml:space="preserve"><value>طلبات الوثائق</value></data>
   <data name="Module.AdminBadgeRequests" xml:space="preserve"><value>طلبات تحديث البادج</value></data>
@@ -92,6 +93,21 @@
   <data name="Admin.SpeakerAvailability.Failed" xml:space="preserve"><value>فشلت العملية.</value></data>
   <data name="Admin.SpeakerAvailability.BadDates" xml:space="preserve"><value>أدخل بداية ونهاية صحيحتين.</value></data>
   <data name="Admin.SpeakerAvailability.BadSlot" xml:space="preserve"><value>أدخل مدة فترة موجبة.</value></data>
+  <data name="Admin.HallAvailability.Title" xml:space="preserve"><value>توفّر القاعات (وقت الاجتماعات)</value></data>
+  <data name="Admin.HallAvailability.Hall" xml:space="preserve"><value>القاعة</value></data>
+  <data name="Admin.HallAvailability.PickHall" xml:space="preserve"><value>اختر قاعة…</value></data>
+  <data name="Admin.HallAvailability.AddWindow" xml:space="preserve"><value>إضافة فترة توفّر</value></data>
+  <data name="Admin.HallAvailability.Start" xml:space="preserve"><value>البداية (UTC)</value></data>
+  <data name="Admin.HallAvailability.End" xml:space="preserve"><value>النهاية (UTC)</value></data>
+  <data name="Admin.HallAvailability.SlotMinutes" xml:space="preserve"><value>مدة الفترة (دقائق)</value></data>
+  <data name="Admin.HallAvailability.Add" xml:space="preserve"><value>إضافة الفترة</value></data>
+  <data name="Admin.HallAvailability.Windows" xml:space="preserve"><value>الفترات</value></data>
+  <data name="Admin.HallAvailability.None" xml:space="preserve"><value>لا توجد فترات توفّر بعد.</value></data>
+  <data name="Admin.HallAvailability.Min" xml:space="preserve"><value>دقيقة/فترة</value></data>
+  <data name="Admin.HallAvailability.Added" xml:space="preserve"><value>تمت إضافة الفترة.</value></data>
+  <data name="Admin.HallAvailability.Failed" xml:space="preserve"><value>فشلت العملية.</value></data>
+  <data name="Admin.HallAvailability.BadDates" xml:space="preserve"><value>أدخل بداية ونهاية صحيحتين.</value></data>
+  <data name="Admin.HallAvailability.BadSlot" xml:space="preserve"><value>أدخل مدة فترة موجبة.</value></data>
   <data name="Module.Gates" xml:space="preserve"><value>البوابات</value></data>
   <data name="Module.GatesOperator" xml:space="preserve"><value>مشغل البوابة</value></data>
   <data name="Module.Speakers" xml:space="preserve"><value>المتحدثون</value></data>
@@ -2039,6 +2055,17 @@
   <data name="Admin.SpeakerMeetingRequests.Filter.Pending" xml:space="preserve"><value>قيد الانتظار</value></data>
   <data name="Admin.SpeakerMeetingRequests.Filter.Accepted" xml:space="preserve"><value>مقبول</value></data>
   <data name="Admin.SpeakerMeetingRequests.Filter.Rejected" xml:space="preserve"><value>مرفوض</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Filter.AwaitingSpeaker" xml:space="preserve"><value>بانتظار المتحدّث</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Filter.Cancelled" xml:space="preserve"><value>ملغى</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.Hall" xml:space="preserve"><value>الربط بقاعة (اختياري)</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.NoHall" xml:space="preserve"><value>— بدون قاعة (قبول فقط) —</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.Slot" xml:space="preserve"><value>فترة القاعة</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.SelectSlot" xml:space="preserve"><value>— اختر فترة متاحة —</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.LoadingSlots" xml:space="preserve"><value>جارٍ تحميل الفترات المتاحة…</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.NoSlots" xml:space="preserve"><value>لا توجد فترات متاحة لهذه القاعة. أضِف توفّر القاعة أولاً.</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.Table" xml:space="preserve"><value>طاولة الاجتماع (اختياري)</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.NoTable" xml:space="preserve"><value>— بدون طاولة —</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.SlotRequired" xml:space="preserve"><value>اختر فترة قاعة متاحة، أو أزِل القاعة للقبول دون ربط.</value></data>
   <data name="Admin.SpeakerMeetingRequests.Col.Speaker" xml:space="preserve"><value>المتحدّث</value></data>
   <data name="Admin.SpeakerMeetingRequests.Col.Requester" xml:space="preserve"><value>مقدّم الطلب</value></data>
   <data name="Admin.SpeakerMeetingRequests.Col.Subject" xml:space="preserve"><value>الموضوع</value></data>

@@ -27,7 +27,9 @@ class FollowUsSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final social = ref.watch(orgProfileProvider)?.social;
+    final profile = ref.watch(orgProfileProvider);
+    final social = profile?.social;
+    final website = profile?.contactWebsite?.trim() ?? '';
     // (asset, url, label) — the exact Figma beige glyphs (node 758:1186); kept
     // only when the URL is set so an unconfigured platform is hidden, not inert.
     final links = <(String, String, String)>[
@@ -54,8 +56,8 @@ class FollowUsSection extends ConsumerWidget {
       ),
     ].where((l) => l.$2.trim().isNotEmpty).toList();
 
-    // No social link set → hide the entire section.
-    if (links.isEmpty) {
+    // Nothing to show (no social link and no website) → hide the whole section.
+    if (links.isEmpty && website.isEmpty) {
       return const SizedBox.shrink();
     }
 
@@ -65,32 +67,40 @@ class FollowUsSection extends ConsumerWidget {
         const SizedBox(height: SimfTokens.space6),
         SimfSectionHeader(title: l10n.followUsSection),
         const SizedBox(height: SimfTokens.space4),
-        // The brand row stays LTR (X · Instagram · … · TikTok) in any locale.
-        Directionality(
-          textDirection: TextDirection.ltr,
-          child: Row(
-            children: <Widget>[
-              for (final (index, (asset, url, label)) in links.indexed)
-                ...<Widget>[
-                if (index > 0) const SizedBox(width: SimfTokens.space4),
-                Expanded(
-                  child: _SocialButton(asset: asset, url: url, label: label),
-                ),
+        if (links.isNotEmpty) ...<Widget>[
+          // The brand row stays LTR (X · Instagram · … · TikTok) in any locale.
+          Directionality(
+            textDirection: TextDirection.ltr,
+            child: Row(
+              children: <Widget>[
+                for (final (index, (asset, url, label)) in links.indexed)
+                  ...<Widget>[
+                  if (index > 0) const SizedBox(width: SimfTokens.space4),
+                  Expanded(
+                    child: _SocialButton(asset: asset, url: url, label: label),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
-        ),
-        const SizedBox(height: SimfTokens.space2),
-        Text(
-          l10n.followUsHandle,
-          textAlign: TextAlign.center,
-          // Frame 758:1202 — handle line is Medium, beige.
-          style: const TextStyle(
-            color: SimfTokens.beigeBorder,
-            fontSize: SimfTokens.textSm,
-            fontWeight: FontWeight.w500,
+          const SizedBox(height: SimfTokens.space2),
+          Text(
+            l10n.followUsHandle,
+            textAlign: TextAlign.center,
+            // Frame 758:1202 — handle line is Medium, beige.
+            style: const TextStyle(
+              color: SimfTokens.beigeBorder,
+              fontSize: SimfTokens.textSm,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-        ),
+        ],
+        // Owner 2026-07-08 — the org website on Home. No Figma home node carries
+        // it (it also lives on About/Contact); shown only when the CP sets one.
+        if (website.isNotEmpty) ...<Widget>[
+          const SizedBox(height: SimfTokens.space3),
+          _WebsiteLink(url: website, label: l10n.websiteLabel),
+        ],
       ],
     );
   }
@@ -135,6 +145,51 @@ class _SocialButton extends StatelessWidget {
                 color: SimfTokens.beigeBorder,
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The org website line under the social row: a centred gold globe + label that
+/// asks to confirm leaving the app, then opens the site externally (same launch
+/// path as the social buttons). Rendered only when the CP sets a website.
+class _WebsiteLink extends StatelessWidget {
+  const _WebsiteLink({required this.url, required this.label});
+
+  final String url;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: InkWell(
+        onTap: () => unawaited(confirmThenLaunchExternal(context, url)),
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: SimfTokens.space3,
+            vertical: SimfTokens.space2,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              const SimfSvgIcon(
+                'assets/icons/auth_globe.svg',
+                size: 16,
+                color: SimfTokens.accent,
+              ),
+              const SizedBox(width: SimfTokens.space2),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: SimfTokens.accent,
+                  fontSize: SimfTokens.textSm,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
         ),
       ),

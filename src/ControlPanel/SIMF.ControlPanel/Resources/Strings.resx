@@ -74,6 +74,7 @@
   <data name="Module.SessionSeatPlans" xml:space="preserve"><value>Session seat plans</value></data>
   <data name="Module.SpeakerMeetingRequests" xml:space="preserve"><value>Speaker meeting requests</value></data>
   <data name="Module.AdminSpeakerAvailability" xml:space="preserve"><value>Speaker availability</value></data>
+  <data name="Module.AdminHallAvailability" xml:space="preserve"><value>Hall availability</value></data>
   <data name="Module.AdminDelegationMeetings" xml:space="preserve"><value>Delegation meetings</value></data>
   <data name="Module.AdminDocumentRequests" xml:space="preserve"><value>Document requests</value></data>
   <data name="Module.AdminBadgeRequests" xml:space="preserve"><value>Badge requests</value></data>
@@ -92,6 +93,21 @@
   <data name="Admin.SpeakerAvailability.Failed" xml:space="preserve"><value>The operation failed.</value></data>
   <data name="Admin.SpeakerAvailability.BadDates" xml:space="preserve"><value>Enter a valid start and end.</value></data>
   <data name="Admin.SpeakerAvailability.BadSlot" xml:space="preserve"><value>Enter a positive slot length.</value></data>
+  <data name="Admin.HallAvailability.Title" xml:space="preserve"><value>Hall availability (meeting time)</value></data>
+  <data name="Admin.HallAvailability.Hall" xml:space="preserve"><value>Hall</value></data>
+  <data name="Admin.HallAvailability.PickHall" xml:space="preserve"><value>Select a hall…</value></data>
+  <data name="Admin.HallAvailability.AddWindow" xml:space="preserve"><value>Add an availability window</value></data>
+  <data name="Admin.HallAvailability.Start" xml:space="preserve"><value>Start (UTC)</value></data>
+  <data name="Admin.HallAvailability.End" xml:space="preserve"><value>End (UTC)</value></data>
+  <data name="Admin.HallAvailability.SlotMinutes" xml:space="preserve"><value>Slot length (minutes)</value></data>
+  <data name="Admin.HallAvailability.Add" xml:space="preserve"><value>Add window</value></data>
+  <data name="Admin.HallAvailability.Windows" xml:space="preserve"><value>Windows</value></data>
+  <data name="Admin.HallAvailability.None" xml:space="preserve"><value>No availability windows yet.</value></data>
+  <data name="Admin.HallAvailability.Min" xml:space="preserve"><value>min slots</value></data>
+  <data name="Admin.HallAvailability.Added" xml:space="preserve"><value>Window added.</value></data>
+  <data name="Admin.HallAvailability.Failed" xml:space="preserve"><value>The operation failed.</value></data>
+  <data name="Admin.HallAvailability.BadDates" xml:space="preserve"><value>Enter a valid start and end.</value></data>
+  <data name="Admin.HallAvailability.BadSlot" xml:space="preserve"><value>Enter a positive slot length.</value></data>
   <data name="Module.Gates" xml:space="preserve"><value>Gates</value></data>
   <data name="Module.GatesOperator" xml:space="preserve"><value>Gate operator</value></data>
   <data name="Module.Speakers" xml:space="preserve"><value>Speakers</value></data>
@@ -2046,6 +2062,17 @@
   <data name="Admin.SpeakerMeetingRequests.Filter.Pending" xml:space="preserve"><value>Pending</value></data>
   <data name="Admin.SpeakerMeetingRequests.Filter.Accepted" xml:space="preserve"><value>Accepted</value></data>
   <data name="Admin.SpeakerMeetingRequests.Filter.Rejected" xml:space="preserve"><value>Rejected</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Filter.AwaitingSpeaker" xml:space="preserve"><value>Awaiting speaker</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Filter.Cancelled" xml:space="preserve"><value>Cancelled</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.Hall" xml:space="preserve"><value>Bind to hall (optional)</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.NoHall" xml:space="preserve"><value>— No hall (accept only) —</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.Slot" xml:space="preserve"><value>Hall slot</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.SelectSlot" xml:space="preserve"><value>— Select a free slot —</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.LoadingSlots" xml:space="preserve"><value>Loading free slots…</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.NoSlots" xml:space="preserve"><value>This hall has no free slots. Add hall availability first.</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.Table" xml:space="preserve"><value>Meeting table (optional)</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.NoTable" xml:space="preserve"><value>— No table —</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Bind.SlotRequired" xml:space="preserve"><value>Select a free hall slot, or clear the hall to accept without binding.</value></data>
   <data name="Admin.SpeakerMeetingRequests.Col.Speaker" xml:space="preserve"><value>Speaker</value></data>
   <data name="Admin.SpeakerMeetingRequests.Col.Requester" xml:space="preserve"><value>Requester</value></data>
   <data name="Admin.SpeakerMeetingRequests.Col.Subject" xml:space="preserve"><value>Subject</value></data>

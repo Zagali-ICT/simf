@@ -114,7 +114,7 @@ const _allSocial = OrgSocial(
   tiktok: 'https://tiktok.com/@simf',
 );
 
-OrgProfile _orgProfile(OrgSocial social) => OrgProfile(
+OrgProfile _orgProfile(OrgSocial social, {String? contactWebsite}) => OrgProfile(
       name: '',
       nameArabic: '',
       title: '',
@@ -122,6 +122,7 @@ OrgProfile _orgProfile(OrgSocial social) => OrgProfile(
       currentYear: 0,
       status: '',
       social: social,
+      contactWebsite: contactWebsite,
       aboutItems: const <OrgAboutItem>[],
       details: const <OrgDetail>[],
     );
@@ -183,6 +184,7 @@ Future<void> _pump(
   MyAreaDashboard? profile,
   Locale locale = const Locale('en'),
   OrgSocial social = _allSocial,
+  String? website,
 }) async {
   final router = GoRouter(
     initialLocation: '/',
@@ -203,6 +205,7 @@ Future<void> _pump(
         (RouteNames.aboutForum, '/about', 'ABOUT'),
         (RouteNames.faq, '/faq', 'FAQ-PAGE'),
         (RouteNames.meetPeople, '/meet', 'MEET'),
+        (RouteNames.requests, '/requests', 'REQUESTS'),
         (RouteNames.chatbot, '/chatbot', 'CHATBOT'),
         (RouteNames.aiSummary, '/ai-summary', 'AI-SUMMARY'),
         (RouteNames.badge, '/badge', 'BADGE'),
@@ -234,8 +237,11 @@ Future<void> _pump(
         // The social row reads the CP org profile (warmed at splash) — override
         // it with a fixed profile (social set by default) so no real fetch /
         // prefs access happens.
-        orgProfileProvider
-            .overrideWith(() => _FakeOrgProfileController(_orgProfile(social))),
+        orgProfileProvider.overrideWith(
+          () => _FakeOrgProfileController(
+            _orgProfile(social, contactWebsite: website),
+          ),
+        ),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -581,6 +587,53 @@ void main() {
           .where((w) => w.asset.contains('social_'))
           .toList();
       expect(none, isEmpty);
+    });
+
+    testWidgets('the org website renders on Home when the CP sets one '
+        '(owner 2026-07-08)', (tester) async {
+      await _pump(
+        tester,
+        controller: _SignedInController(),
+        website: 'https://simf.example.sa',
+      );
+      await tester.scrollUntilVisible(
+        find.text('Follow us'),
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+      // The website link shows its label + the gold globe glyph below the socials.
+      expect(find.text('Website'), findsOneWidget);
+      final globe = tester
+          .widgetList<SimfSvgIcon>(find.byType(SimfSvgIcon))
+          .where((w) => w.asset.contains('auth_globe'))
+          .toList();
+      expect(globe, hasLength(1));
+    });
+
+    testWidgets('no website set → no website link on Home', (tester) async {
+      await _pump(tester, controller: _SignedInController());
+      await tester.scrollUntilVisible(
+        find.text('Follow us'),
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Website'), findsNothing);
+    });
+
+    testWidgets('the bilateral-meetings tile opens the requests list '
+        '(1408-9726, owner 2026-07-08)', (tester) async {
+      await _pump(tester, controller: _SignedInController());
+      await tester.scrollUntilVisible(
+        find.text('Bilateral meetings'),
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Bilateral meetings'));
+      await tester.pumpAndSettle();
+      expect(find.text('REQUESTS'), findsOneWidget);
     });
 
     testWidgets('only the set platforms render (2 of 5 set)', (tester) async {

@@ -75,6 +75,10 @@ class RouteNames {
   // #1/#6 — the session-summaries LIST (home tile → list → the aiSummary details
   // page). Additive, public (Guest+, like the summary it lists).
   static const String sessionSummaryList = 'sessionSummaryList';
+  // #5 (D-710) — My sessions (عروض الجلسات, Figma 1388:9067): the attendee's own
+  // booked/attended sessions. Restored + linked from the More menu (owner reversed
+  // the D-609 removal).
+  static const String myAreaSessions = 'myAreaSessions';
   static const String meetPeople = 'meetPeople';
   static const String chatbot = 'chatbot';
   static const String aboutForum = 'aboutForum';

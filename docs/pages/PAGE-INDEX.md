@@ -74,6 +74,7 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/bookings` | ✅ Real (D-227) | Administrator  | [cp/admin-bookings.md](cp/admin-bookings.md) | [e2e/cp-admin-bookings.md](../tests/e2e/cp-admin-bookings.md) |
 | `/admin/speaker-meeting-requests` | ✅ Real (D-269) | Administrator  | [cp/admin-speaker-meeting-requests.md](cp/admin-speaker-meeting-requests.md) | [e2e/cp-admin-speaker-meeting-requests.md](../tests/e2e/cp-admin-speaker-meeting-requests.md) |
 | `/admin/speaker-availability` | ✅ Real (D-474/D-476 #11: team-defined availability windows → VIP free slots) | Administrator | _(see e2e)_ | [e2e/cp-admin-speaker-availability.md](../tests/e2e/cp-admin-speaker-availability.md) |
+| `/admin/hall-availability` | ✅ Real (D-715 item 7 §15 GAP-1: team-defined hall meeting-time windows → free slots) | Administrator | _(see e2e)_ | [e2e/cp-admin-hall-availability.md](../tests/e2e/cp-admin-hall-availability.md) |
 | `/admin/delegation-meetings` | ✅ Real (D-478 #11: delegation↔delegation meeting review desk — team accept/reject + notify/email) | Administrator | _(see e2e)_ | [e2e/cp-admin-delegation-meetings.md](../tests/e2e/cp-admin-delegation-meetings.md) |
 | `/admin/document-requests` | ✅ Real (D-500 Wave 5: participation document requests review desk — Accept/Reject + note; mirrors speaker-meeting-requests) | Administrator | [cp/document-requests.md](cp/document-requests.md) | [e2e/cp-document-requests.md](../tests/e2e/cp-document-requests.md) |
 | `/admin/badge-requests` | ✅ Real (D-500 Wave 5: badge update requests review desk — Accept applies the title to the user's profile JobTitle) | Administrator | [cp/badge-requests.md](cp/badge-requests.md) | [e2e/cp-badge-requests.md](../tests/e2e/cp-badge-requests.md) |
@@ -159,6 +160,7 @@ No public nav per D-064 — every page is reached via direct URL or auth redirec
 | `/account/notifications` | ✅ Real | Any signed-in | [web/account-notifications.md](web/account-notifications.md) | [e2e/web-account-notifications.md](../tests/e2e/web-account-notifications.md) |
 | `/account/pending` | 🔒 State-banner | Pending account | [web/account-pending.md](web/account-pending.md) | [e2e/web-account-pending.md](../tests/e2e/web-account-pending.md) |
 | `/account/rejected` | 🔒 State-banner | Rejected account | [web/account-rejected.md](web/account-rejected.md) | [e2e/web-account-rejected.md](../tests/e2e/web-account-rejected.md) |
+| `/meeting/confirm` | ✅ Real (D-717) | Public (token) | — | [e2e/web-meeting-confirm.md](../tests/e2e/web-meeting-confirm.md) |
 
 ---
 
@@ -246,7 +248,7 @@ testing (see [`SIMF-APP-Build-Plan.md`](../App/SIMF-APP-Build-Plan.md)).
 | #203 `contactUs` (`POST /app/contact-inquiry` + `GET /app/organization-profile`) | ✅ Real — Figma `1388:7711`; **clean-code frozen (D-627)**. Form + org-profile info panel + social; _(backend, other session: new `ContactInquiries` table + CP inbox `/admin/contact-inquiries` perms `ContactInquiries.View`/`.Manage` — pending)_ | Guest+ (submit anonymous) | [mobile/contact-us/](mobile/contact-us/README.md) | [e2e/mobile-contact-us.md](../tests/e2e/mobile-contact-us.md) |
 | #207 `aboutApp` (`GET /app/organization-profile` for support) | ✅ Real (D-668). App version / release date / organizer + support (org-profile) + Contact us / Terms links; **distinct from #37 About-the-forum**; reached from the side-drawer end group | Guest+ | [mobile/about-app/](mobile/about-app/README.md) | [e2e/mobile-about-app.md](../tests/e2e/mobile-about-app.md) |
 | #202 `sessionPresentations` (`GET /app/presentations`) | 🟢 Screen built from ComingSoon (D-464 stub → Figma `1388:7621`, title **"الجلسات"** — matches the Home tile); day-tabbed session list over the D-228 `SpeakerPresentation` files; reached from the Home "الجلسات" about-tile (D-583). **Owner 2026-07-03:** card tap → session **detail** (17); the gold **تحميل** button → session **summary** (34) — no longer downloads the deck (the `/{id}/file` endpoint is retained on the backend but unused by this screen) | Approved | _(Figma 1388:7621)_ | [e2e/mobile-session-presentations.md](../tests/e2e/mobile-session-presentations.md) |
-| #113 `myAreaSessions` (`GET /app/account/sessions`) | 🗑️ **Removed from app — D-609 (2026-07-04)**, owner directive: screen backed up as `.bk`, More-menu "عروض الجلسات" row deleted, route removed _(was: 🟢 Wave 2 my-sessions "عروض الجلسات", Figma `1388:9067`, D-588)_ | Approved | _(Figma 1388:9067)_ | [e2e/mobile-my-sessions.md](../tests/e2e/mobile-my-sessions.md) |
+| #113 `myAreaSessions` (`GET /app/account/sessions`) | 🟢 **Restored — D-710 (2026-07-09)**, owner reversed the D-609 removal: My-sessions "عروض الجلسات" (Figma `1388:9067`, 4 tabs القادمة/حضرتها/فاتتني/الأرشيف) recovered + re-routed + linked from the **More menu** (attendee-gated); golden + tests re-locked | Approved | _(Figma 1388:9067)_ | [e2e/mobile-my-sessions.md](../tests/e2e/mobile-my-sessions.md) |
 
 ---
 
