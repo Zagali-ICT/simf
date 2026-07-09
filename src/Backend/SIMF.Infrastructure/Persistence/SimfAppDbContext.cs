@@ -259,6 +259,10 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     public DbSet<BusinessMeetingParticipant> BusinessMeetingParticipants =>
         Set<BusinessMeetingParticipant>();
 
+    // D-717 (item 7, FDS-013 §15.7 GAP-3) — single-use speaker double-opt-in
+    // action-link tokens (Approve / Reject).
+    public DbSet<MeetingActionToken> MeetingActionTokens => Set<MeetingActionToken>();
+
     // D-568 — the single, unified file store: ONE table for every uploaded or
     // linked file (avatar, ID document, VIP photo, media gallery, speaker photo /
     // presentation, session recording, all logos, news / archive / banner images).

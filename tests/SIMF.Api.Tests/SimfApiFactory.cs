@@ -118,6 +118,11 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         // DeviceKeyStepUpTests re-enables it via BiometricStepUpApiFactory to
         // exercise the real gate.
         Environment.SetEnvironmentVariable("DeviceKey__RequireStepUpForEnrol", "false");
+        // D-717 (item 7, GAP-3) — a public Website base URL so the speaker
+        // action-link mint builds real URLs (and so MeetingActionTokenTests can
+        // extract the token secret from the returned link).
+        Environment.SetEnvironmentVariable(
+            "MeetingLinks__PublicWebBaseUrl", "https://test.simf.local");
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)

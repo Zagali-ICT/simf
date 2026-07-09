@@ -26,6 +26,7 @@ internal sealed class SpeakerMeetingRequestService(
     IIdentityUserDirectory userDirectory,
     ISpeakerAvailabilityService availability,
     IHallAvailabilityService hallAvailability,
+    IMeetingActionTokenService meetingActionTokens,
     INotificationDispatcher notifications,
     IEmailQueue emailQueue,
     IAuditLog auditLog,
@@ -350,6 +351,13 @@ internal sealed class SpeakerMeetingRequestService(
             ? null : request.ResponseNote.Trim();
         req.RespondedAt = now;
         req.RespondedByUserId = actorUserId;
+
+        // D-717 — stage the speaker Approve/Reject tokens into the SAME unit of work
+        // as the AwaitingSpeaker transition (they are durable domain state, not a
+        // notification): the SaveChanges below commits status + tokens atomically, so
+        // the request can never be AwaitingSpeaker without its token pair. Only the
+        // email that follows is best-effort.
+        var links = bindHall ? meetingActionTokens.StageTokensForRequest(req.Id) : null;
         try
         {
             await appDbContext.SaveChangesAsync(cancellationToken);
@@ -391,16 +399,90 @@ internal sealed class SpeakerMeetingRequestService(
         }, cancellationToken);
 
         // D-474 (#11) — notify the requester in-app, and on Accept email the speaker.
-        // D-716 — an accept-with-hall is NOT a terminal decision (it awaits the
-        // speaker), so the requester notification + speaker email are deferred to the
-        // speaker-confirmation step (Slice C); nothing is dispatched here.
-        if (!bindHall)
+        // D-717 — an accept-WITH-hall is not a terminal decision: instead of the
+        // outcome notification it emails the SPEAKER a double-opt-in Approve/Reject
+        // link (the tokens were already committed atomically above). The requester
+        // "confirmed"/"declined" notification fires only when the speaker acts.
+        if (bindHall)
+        {
+            await meetingActionTokens.AuditMintedAsync(req.Id, cancellationToken);
+            await EmailSpeakerConfirmationLinksAsync(req, links!, cancellationToken);
+        }
+        else
         {
             await NotifyOutcomeAsync(req, cancellationToken);
         }
 
         return await LoadDetailAsync(id, cancellationToken);
     }
+
+    // D-717 (item 7, GAP-3) — email the speaker the Approve/Reject links (the tokens
+    // are already committed). Best-effort (swallow-and-log): an email failure leaves
+    // the request AwaitingSpeaker with valid tokens; it never rolls back the accept.
+    // A re-send admin action is a future follow-up.
+    private async Task EmailSpeakerConfirmationLinksAsync(
+        SpeakerMeetingRequest req, MeetingActionLinks links, CancellationToken cancellationToken)
+    {
+        if (!links.HasUrls)
+        {
+            logger.LogWarning(
+                "Meeting request {Id} is AwaitingSpeaker but MeetingLinks:PublicWebBaseUrl "
+                + "is unconfigured — the speaker confirmation email was skipped.", req.Id);
+            return;
+        }
+        var contactEmail = await ResolveSpeakerContactEmailAsync(req.SpeakerId, cancellationToken);
+        if (string.IsNullOrWhiteSpace(contactEmail))
+        {
+            return;
+        }
+
+        var slot = req.SlotStartUtc is { } s
+            ? $"{s:yyyy-MM-dd HH:mm} UTC"
+            : "to be scheduled";
+        var html =
+            $"<p>You have a meeting request from <strong>{HtmlEnc(req.RequesterName)}</strong>.</p>"
+            + $"<p>Topic: {HtmlEnc(req.Subject)}<br/>Proposed time: {HtmlEnc(slot)}</p>"
+            + "<p>Please confirm — this decides whether the meeting goes ahead:</p>"
+            + $"<p><a href=\"{HtmlEnc(links.ApproveUrl)}\">Approve the meeting</a>"
+            + $" &nbsp;|&nbsp; <a href=\"{HtmlEnc(links.RejectUrl)}\">Decline</a></p>"
+            + "<p style=\"color:#666\">These links expire in 72 hours and each can be used once.</p>";
+        await SendSpeakerEmailAsync(
+            contactEmail!, "SIMF — please confirm a meeting request", html,
+            purpose: "SpeakerMeetingConfirm", cancellationToken);
+    }
+
+    private static string HtmlEnc(string value) => System.Net.WebUtility.HtmlEncode(value);
+
+    // The speaker's contact email — the ContactId on Speaker is a bare Guid resolved
+    // on read (no nav). Shared by the accept-outcome email and the D-717 links email.
+    private async Task<string?> ResolveSpeakerContactEmailAsync(
+        Guid speakerId, CancellationToken cancellationToken)
+    {
+        var contactId = await appDbContext.Speakers.AsNoTracking()
+            .Where(s => s.Id == speakerId)
+            .Select(s => s.ContactId)
+            .SingleOrDefaultAsync(cancellationToken);
+        if (contactId is not { } id)
+        {
+            return null;
+        }
+        return await appDbContext.Contacts.AsNoTracking()
+            .Where(c => c.Id == id)
+            .Select(c => c.Email)
+            .SingleOrDefaultAsync(cancellationToken);
+    }
+
+    // The fixed enqueue shape for a speaker-facing email (subjectUserId is Guid.Empty
+    // — the speaker is not a SIMF account). Shared by the two speaker emails.
+    private Task SendSpeakerEmailAsync(
+        string toEmail, string subject, string html, string purpose,
+        CancellationToken cancellationToken) =>
+        emailQueue.TryEnqueueAsync(
+            new EmailMessage(toEmail, subject, html),
+            purpose: purpose,
+            subjectEmail: toEmail,
+            subjectUserId: Guid.Empty,
+            auditLog, logger, cancellationToken);
 
     // D-716 (item 7, GAP-2) — bind an accepted meeting to a free hall slot
     // (Option A: the picked hall slot is the meeting time of record). Validates the
@@ -554,14 +636,11 @@ internal sealed class SpeakerMeetingRequestService(
                     ? $" Proposed slot: {s:yyyy-MM-dd HH:mm} UTC."
                     : string.Empty;
                 var html =
-                    $"<p>A meeting request from <strong>{System.Net.WebUtility.HtmlEncode(req.RequesterName)}</strong> has been accepted.{slot}</p>"
-                    + $"<p>Topic: {System.Net.WebUtility.HtmlEncode(req.Subject)}</p>";
-                await emailQueue.TryEnqueueAsync(
-                    new EmailMessage(contactEmail!, "SIMF — a meeting request was accepted", html),
-                    purpose: "SpeakerMeetingAccepted",
-                    subjectEmail: contactEmail!,
-                    subjectUserId: Guid.Empty,
-                    auditLog, logger, cancellationToken);
+                    $"<p>A meeting request from <strong>{HtmlEnc(req.RequesterName)}</strong> has been accepted.{slot}</p>"
+                    + $"<p>Topic: {HtmlEnc(req.Subject)}</p>";
+                await SendSpeakerEmailAsync(
+                    contactEmail!, "SIMF — a meeting request was accepted", html,
+                    purpose: "SpeakerMeetingAccepted", cancellationToken);
             }
         }
     }

@@ -447,17 +447,20 @@ add a display label only. No new entity unless the owner names a distinct workfl
   chosen: the picked **hall** slot is the meeting time of record (one time grid). The
   hall double-booking backstop is a filtered-unique `(HallId, SlotStartUtc)` index over
   the live states. *(Delegation requests are not hall-bound in Slice B — speaker only.)*
-- **GAP-3 — speaker double-opt-in email (approve/reject links).** After admin-accept,
-  the request enters a new **AwaitingSpeaker** stage and the speaker gets an **HTML
-  email with two links — Approve / Reject** (§15.5, §15.6). The speaker clicking a
-  link is the **final gate**: Approve → the meeting is Confirmed and shows in
-  اللقاءات الثنائية for the requester; Reject → the request is Rejected and the
-  requester + admin are notified. This needs (a) a **signed, single-use, short-lived
-  action token**; (b) two **`AllowAnonymous`** token endpoints (§15.7); (c) an
-  **HTML email with the two links** (extends the email path, which is HTML-only
-  today). **OI-D:** confirm the double-opt-in (admin-accept is *not* final; the
-  speaker must also approve). **Recommendation:** yes — it is exactly what the owner
-  described; it is also the correct consent model for contacting a speaker.
+- **GAP-3 — speaker double-opt-in email (approve/reject links). ✅ BUILT (D-717,
+  Slice C).** After accept-with-hall the request is **AwaitingSpeaker** and the
+  speaker gets an HTML email with **Approve / Reject** links. Clicking is the final
+  gate: Approve → `Accepted` + the requester gets `MeetingRequestConfirmed`; Reject →
+  `Rejected` + `MeetingCancelled`. Built as: (a) a **persisted single-use, 72h,
+  action-bound `MeetingActionToken`** (two per request, keyed-HMAC hash at rest —
+  **OI-G resolved: persisted, not stateless**); (b) two **`AllowAnonymous`** endpoints
+  `GET/POST /api/v1/app/meeting-actions/{token}` (GET previews without consuming, POST
+  applies — §15.7), unusable token → neutral 404; (c) the HTML links email +
+  (d) a public **Website landing page** `/meeting/confirm`. **OI-D resolved: yes** —
+  admin-accept is not final; the speaker must approve. **OI-I resolved:** 72h TTL, new
+  AllowAnonymous exception owner-approved. **On reject the admin is NOT separately
+  notified** (owner decision C) — the CP row flipping to `Rejected` is the admin
+  signal.
 - **GAP-4 (owner item 6) — app shows REAL available slots.** Rewire
   `MeetingRequestSheet` to call the built `getAvailableSlots()`
   (`GET /app/speakers/{id}/available-slots`) and present the **real** derived slots

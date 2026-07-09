@@ -180,6 +180,9 @@ public static class DependencyInjection
         // #7a — biometric device-key enrolment step-up toggle (default on).
         services.Configure<DeviceKeyOptions>(
             configuration.GetSection(DeviceKeyOptions.SectionName));
+        // D-717 (item 7, FDS-013 §15 GAP-3) — the speaker email-link base URL + TTL.
+        services.Configure<MeetingLinksOptions>(
+            configuration.GetSection(MeetingLinksOptions.SectionName));
         // R1 — D-074: typed Storage settings; replaces four scattered
         // IConfiguration["Storage:..."] reads across FilesystemAvatarStorage,
         // EncryptedUserIdDocumentStorage, LogFileService, and Program.cs.
@@ -368,6 +371,9 @@ public static class DependencyInjection
         // for business meetings) + free-slot derivation.
         services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.IHallAvailabilityService,
             SIMF.Infrastructure.MeetingRequests.HallAvailabilityService>();
+        // D-717 (item 7, FDS-013 §15.7 GAP-3) — speaker double-opt-in action tokens.
+        services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.IMeetingActionTokenService,
+            SIMF.Infrastructure.MeetingRequests.MeetingActionTokenService>();
         // D-478 (#11, Group G phase 2) — delegation↔delegation meeting requests.
         services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.IDelegationMeetingRequestService,
             SIMF.Infrastructure.MeetingRequests.DelegationMeetingRequestService>();
@@ -542,6 +548,10 @@ public static class DependencyInjection
         // M3 (security) — install the keyed-HMAC key for AccountCode (OTP)
         // hashing; reuses the JWT signing key (a required, boot-validated secret).
         SIMF.Application.IdentityAccess.AccountCodeHasher.ConfigureKey(
+            configuration[$"{SIMF.Common.Options.JwtOptions.SectionName}:SigningKey"]);
+        // D-717 (item 7, FDS-013 §15.7) — install the keyed-HMAC key for the speaker
+        // action-link tokens; reuses the same boot-validated JWT signing key.
+        SIMF.Application.MeetingRequests.MeetingActionTokenHasher.ConfigureKey(
             configuration[$"{SIMF.Common.Options.JwtOptions.SectionName}:SigningKey"]);
         services.AddSingleton<SIMF.Application.Ai.Abstractions.IAiProvider,
             SIMF.Infrastructure.Ai.EchoAiProvider>();

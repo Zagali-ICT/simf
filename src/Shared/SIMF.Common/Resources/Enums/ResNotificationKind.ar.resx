@@ -30,4 +30,5 @@
   <data name="EventRatingRequest" xml:space="preserve"><value>قيّم الملتقى</value></data>
   <data name="AppRatingRequest" xml:space="preserve"><value>قيّم التطبيق</value></data>
   <data name="ExhibitionRatingRequest" xml:space="preserve"><value>قيّم المعرض</value></data>
+  <data name="MeetingRequestConfirmed" xml:space="preserve"><value>تم تأكيد اجتماعك</value></data>
 </root>

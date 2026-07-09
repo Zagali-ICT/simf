@@ -143,4 +143,11 @@ public enum NotificationKind
     /// Additive value.</summary>
     [Display(Description = nameof(ResNotificationKind.ExhibitionRatingRequest), ResourceType = typeof(ResNotificationKind))]
     ExhibitionRatingRequest = 49,
+
+    /// <summary>D-717 (item 7, FDS-013 §15 GAP-3) — the requester's meeting is
+    /// CONFIRMED because the speaker approved it via the double-opt-in email link.
+    /// Distinct from the admin-arranged <see cref="MeetingScheduled"/>. In-app row
+    /// only. Additive value (append-only, the frozen-enum rule).</summary>
+    [Display(Description = nameof(ResNotificationKind.MeetingRequestConfirmed), ResourceType = typeof(ResNotificationKind))]
+    MeetingRequestConfirmed = 50,
 }

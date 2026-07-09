@@ -160,6 +160,7 @@ No public nav per D-064 — every page is reached via direct URL or auth redirec
 | `/account/notifications` | ✅ Real | Any signed-in | [web/account-notifications.md](web/account-notifications.md) | [e2e/web-account-notifications.md](../tests/e2e/web-account-notifications.md) |
 | `/account/pending` | 🔒 State-banner | Pending account | [web/account-pending.md](web/account-pending.md) | [e2e/web-account-pending.md](../tests/e2e/web-account-pending.md) |
 | `/account/rejected` | 🔒 State-banner | Rejected account | [web/account-rejected.md](web/account-rejected.md) | [e2e/web-account-rejected.md](../tests/e2e/web-account-rejected.md) |
+| `/meeting/confirm` | ✅ Real (D-717) | Public (token) | — | [e2e/web-meeting-confirm.md](../tests/e2e/web-meeting-confirm.md) |
 
 ---
 

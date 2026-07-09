@@ -391,7 +391,9 @@ Scenario: E2E-SMR-016 — Accept with a hall + slot → AwaitingSpeaker
   And the API returns HTTP 200
   And the request status is AwaitingSpeaker (the grid shows the amber "Awaiting speaker" pill)
   And the detail carries the bound HallId + SlotStartUtc/SlotEndUtc
-  # No requester notification / speaker email fires yet — that is Slice C.
+  # D-717 (Slice C): accept-with-hall now emails the SPEAKER Approve/Reject links
+  # (single-use tokens) — see web-meeting-confirm.md. The requester "confirmed" /
+  # "declined" notification fires only when the speaker acts, not here.
 
 Scenario: E2E-SMR-017 — Accept with a hall but no slot → blocked
   When they Respond → Accept, pick a hall, but do NOT pick a slot, and click Send

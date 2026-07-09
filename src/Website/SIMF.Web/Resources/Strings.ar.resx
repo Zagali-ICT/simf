@@ -184,4 +184,20 @@
   <data name="Visit.Hours.Body" xml:space="preserve"><value>يفتح الملتقى أبوابه يوميًا خلال أيام الفعالية. سيتم تأكيد مواعيد الفتح والإغلاق الدقيقة لكل يوم هنا قبل بدء الفعالية.</value></data>
   <data name="Visit.Accessibility.Title" xml:space="preserve"><value>إمكانية الوصول</value></data>
   <data name="Visit.Accessibility.Body" xml:space="preserve"><value>تم تصميم الموقع ليكون متاحًا للزوار من ذوي الحركة المحدودة. إذا كانت لديك احتياجات وصول محددة، يُرجى التواصل مع منسق الفعالية مسبقًا حتى نتمكن من مساعدتك في يوم الزيارة.</value></data>
+  <data name="Meeting.Confirm.Title" xml:space="preserve"><value>تأكيد الاجتماع</value></data>
+  <data name="Meeting.Confirm.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
+  <data name="Meeting.Confirm.Invalid" xml:space="preserve"><value>لم يعد هذا الرابط صالحاً.</value></data>
+  <data name="Meeting.Confirm.InvalidHint" xml:space="preserve"><value>ربما انتهت صلاحيته أو استُخدم من قبل أو أُلغي الطلب.</value></data>
+  <data name="Meeting.Confirm.Intro.Approve" xml:space="preserve"><value>أنت على وشك الموافقة على طلب المقابلة هذا:</value></data>
+  <data name="Meeting.Confirm.Intro.Reject" xml:space="preserve"><value>أنت على وشك رفض طلب المقابلة هذا:</value></data>
+  <data name="Meeting.Confirm.Requester" xml:space="preserve"><value>مقدّم الطلب</value></data>
+  <data name="Meeting.Confirm.Topic" xml:space="preserve"><value>الموضوع</value></data>
+  <data name="Meeting.Confirm.When" xml:space="preserve"><value>الوقت</value></data>
+  <data name="Meeting.Confirm.Where" xml:space="preserve"><value>المكان</value></data>
+  <data name="Meeting.Confirm.TBD" xml:space="preserve"><value>سيُحدَّد لاحقاً</value></data>
+  <data name="Meeting.Confirm.Approve" xml:space="preserve"><value>الموافقة على الاجتماع</value></data>
+  <data name="Meeting.Confirm.Reject" xml:space="preserve"><value>رفض الاجتماع</value></data>
+  <data name="Meeting.Confirm.Submitting" xml:space="preserve"><value>جارٍ الإرسال…</value></data>
+  <data name="Meeting.Confirm.Done.Approve" xml:space="preserve"><value>شكراً لك — تم تأكيد الاجتماع.</value></data>
+  <data name="Meeting.Confirm.Done.Reject" xml:space="preserve"><value>شكراً لك — تم رفض الاجتماع.</value></data>
 </root>

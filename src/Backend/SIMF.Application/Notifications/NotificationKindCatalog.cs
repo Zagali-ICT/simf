@@ -50,7 +50,8 @@ public static class NotificationKindCatalog
         NotificationKind.SessionReminder => Groups.Sessions,
 
         NotificationKind.MeetingScheduled or
-        NotificationKind.MeetingCancelled => Groups.Meetings,
+        NotificationKind.MeetingCancelled or
+        NotificationKind.MeetingRequestConfirmed => Groups.Meetings,
 
         NotificationKind.SessionRatingRequest or
         NotificationKind.DayRatingRequest or
