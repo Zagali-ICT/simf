@@ -56,6 +56,13 @@
                  alt="@L["Admin.Pending.View.Field.IdImage"]" />
         </div>
     }
+    @* D-727 (owner item 5) — the staff/partner profile photo (avatar), alongside
+       the ID image, streamed from the admin avatar-fetch route (Others.View). *@
+    @if (Initial.HasAvatar)
+    {
+        <AdminProfilePhotoBlock Heading="@L["Admin.Pending.View.Field.Photo"]"
+                                Src="@($"/account/api/admin/others/{Initial.Id}/avatar?v={DateTime.UtcNow.Ticks}")" />
+    }
 
     <div class="simf-form__actions">
         <SimfButton Type="button" Variant="secondary" OnClick="OnCancel">

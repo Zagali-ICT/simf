@@ -22,6 +22,11 @@ press, contractors) in `PendingApproval`. Same View / Approve-with-review
   filled their profile (admin-created Others may sit in PendingApproval
   before filling).
 - The ID-document image URL routes to `/admin/others/{id}/id-document`.
+- **D-727 (owner item 5):** when the applicant has a profile photo
+  (`HasAvatar`), the View modal renders a "Profile photo" block (shared
+  `AdminProfilePhotoBlock`) streaming `/admin/others/{id}/avatar`, so the
+  reviewer sees the staff member's face before approving. Same for the approved
+  Others / Visitors detail views.
 - Cross-kind security: a Visitor id on `/admin/others/{id}/profile-for-approval`
   returns 404.
 

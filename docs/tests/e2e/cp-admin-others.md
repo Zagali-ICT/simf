@@ -168,6 +168,8 @@ Scenario: Details modal streams the encrypted ID-document image inline
       derived from whichever number is present
   And an <img> loads from /account/api/admin/others/{id}/id-document?v={ticks}
   And that image request returns 200 with Cache-Control "private, max-age=60"
+  And when the account has a profile photo (HasAvatar = true) a "Profile photo" block
+      renders an <img> from /account/api/admin/others/{id}/avatar?v={ticks} (D-727, owner item 5)
   When the profile read fails (envelope.Success = false)
   Then a SimfAlert error shows the bilingual fallback instead of the description list
 ```

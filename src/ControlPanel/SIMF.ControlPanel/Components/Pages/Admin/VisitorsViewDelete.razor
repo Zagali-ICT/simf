@@ -65,6 +65,13 @@ else if (_profile is not null)
                  alt="@L["Admin.Pending.View.Field.IdImage"]" />
         </div>
     }
+    @* D-727 (owner item 5) — the visitor's profile photo (avatar) alongside the
+       ID image, streamed from the admin avatar-fetch route (Visitors.View). *@
+    @if (_profile.HasAvatar)
+    {
+        <AdminProfilePhotoBlock Heading="@L["Admin.Pending.View.Field.Photo"]"
+                                Src="@($"/account/api/admin/visitors/{_profile.Id}/avatar?v={DateTime.UtcNow.Ticks}")" />
+    }
 }
 
 <div class="simf-form__actions">

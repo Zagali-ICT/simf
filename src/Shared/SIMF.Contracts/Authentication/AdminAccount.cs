@@ -568,6 +568,10 @@ public sealed record AdminUserProfileView(
     string? SaudiMobile,
     string? InternationalMobile,
     bool HasIdImage,
+    // D-727 (owner item 5) — whether the subject has a profile photo (avatar) so
+    // the CP view / pending-review can render it (streamed from
+    // GET /admin/{visitors,others}/{id}/avatar). Mirrors HasIdImage.
+    bool HasAvatar,
     IReadOnlyList<Guid> InterestIds,
     string? RejectionReason,
     string? RejectionReasonArabic,

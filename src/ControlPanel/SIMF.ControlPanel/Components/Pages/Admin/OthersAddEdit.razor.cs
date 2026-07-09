@@ -58,6 +58,7 @@ public partial class OthersAddEdit
             SaudiMobile: null,
             InternationalMobile: null,
             HasIdImage: false,
+            HasAvatar: false,
             InterestIds: Array.Empty<Guid>(),
             RejectionReason: null,
             RejectionReasonArabic: null,
