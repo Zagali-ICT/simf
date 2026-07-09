@@ -95,9 +95,14 @@ class SessionDetailBody extends StatelessWidget {
         // my-seat card. #3 — pre-ask is allowed only once the user has JOINED the
         // session (holds a booking), NOT on physical check-in; until then the
         // card is disabled with a "join first" hint.
+        // D-714 (item 12, GAP-2) — before the session starts the label reads
+        // as the distinct pre-session ask (Phase=Pre); once live it becomes
+        // "Ask the host" (Phase=Live). The backend derives the phase + window.
         const SizedBox(height: SimfTokens.space5),
         AskHostCard(
-          label: l10n.askHost,
+          label: detail.startUtc.isAfter(DateTime.now().toUtc())
+              ? l10n.askHostPreSession
+              : l10n.askHost,
           onTap: onAskHost,
           enabled: seatMap?.myCell != null,
           // Only show the "join first" hint when a Join CTA is actually offered

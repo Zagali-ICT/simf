@@ -50,7 +50,7 @@
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
 | **Auth setup** | **Signed-in for the screen (D-576)** — the Session-detail screen is login-gated: a signed-out guest navigating to `/sessions/{id}` is redirected to sign-in. The detail **endpoint** stays anonymous (the app gates the screen, not the API); the my-seat card needs an **approved Visitor** token (seeded + a held reservation); an **Admin** token only to seed the session + seat layout. **No literal secrets** (admin TOTP via the `Get-Totp` helper). |
-| **Last reviewed** | 2026-07-08 (D-706 — no-layout session = open-seating join) |
+| **Last reviewed** | 2026-07-09 (D-714 — pre-session ask label, item 12 GAP-2) |
 
 ## Coverage matrix
 
@@ -76,6 +76,7 @@
 | E2E-MOB017-018 | رابط الجلسة — shown only when `liveStreamUrl` present; opens Live (25) | happy | P1 | authored ✓ (Figma 889:2715; `…live link shows only when…opens the live screen`) |
 | E2E-MOB017-019 | ملخص الجلسة — always shown; opens AI summary (34) | happy | P1 | authored ✓ (Figma 889:2715; `…summary button opens the AI session summary`) |
 | E2E-MOB017-020 | اسأل المحاور card — **gated on joining (#3)**: enabled (opens Send question #26) only once the user has **joined** the session (holds a booking, NOT physical check-in); not joined → the card is disabled with a "Join the session to ask a question" hint and the tap is inert | happy/auth | P1 | authored ✓ (Figma 1056:12876; `#3 — a joined user can ask…` + `#3 — pre-ask is gated on joining…`) |
+| E2E-MOB017-026 | **Pre-session ask label (D-714 GAP-2)** — while the session is **upcoming** (`now < startUtc`) the ask card reads the distinct pre-session label "اطرح سؤالاً قبل الجلسة" / "Ask a question before it starts" (mode B, `Phase=Pre`); once **live/started** it reverts to "اسأل المحاور" / "Ask the host" (mode A). The backend derives the phase + enforces the [start−5min, end] window either way | happy/i18n | P1 | authored ✓ (screen `a live (already started) session shows the "Ask the host" label` + the ask-label tests; golden `session_detail_889-2450` shows the pre-session label) |
 | E2E-MOB017-021 | Speaker country flag — `CountryId` 682 → 🇸🇦 emoji beside the name | happy | P2 | authored ✓ (`…renders its flag emoji`; `core/country_flag.dart`) |
 | E2E-MOB017-022 | **Join CTA (D-485)** — an approved user with no reservation sees a "Join this session" section, branched by the session's effective mode: assigned-seat → "Select my seat" opens the seat picker; open-seating → "Join this session" confirms then joins (Pending) with a "Request sent — pending approval" toast | happy | P1 | authored ✓ (widget — assigned→picker / open→confirm→join+toast) |
 | E2E-MOB017-023 | **Cancel booking (D-485)** — the reservation card's Cancel confirms, then releases the held seat (`DELETE …/seats/mine`) and the section returns to the Join CTA | happy | P2 | authored ✓ (widget — `releaseMine`) |

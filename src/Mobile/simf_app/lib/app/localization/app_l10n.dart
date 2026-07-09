@@ -956,6 +956,11 @@ class AppL10n {
   String get sessionLink => _t('رابط الجلسة', 'Session link');
   String get sessionSummary => _t('ملخص الجلسة', 'Session summary');
   String get askHost => _t('اسأل المحاور', 'Ask the host');
+  // D-714 (item 12, FDS-007 §B.4 GAP-2) — before a session goes live the ask
+  // entry reads as the distinct pre-session ("mode B", Phase=Pre) question, so
+  // the two ask modes are visibly separate on the one detail screen.
+  String get askHostPreSession =>
+      _t('اطرح سؤالاً قبل الجلسة', 'Ask a question before it starts');
   // #3 — pre-ask is gated on having JOINED the session (a booking), not on
   // physical check-in; the ask card is disabled with this hint until then.
   String get askHostJoinFirst =>

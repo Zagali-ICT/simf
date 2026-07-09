@@ -464,9 +464,22 @@ public static class DependencyInjection
             SIMF.Infrastructure.Archive.PublicArchiveService>();
         services.AddScoped<SIMF.Application.Archive.Abstractions.IAdminArchiveService,
             SIMF.Infrastructure.Archive.AdminArchiveService>();
-        // P4.2 — D-236: advisory question AI filter (stub). Stateless singleton.
-        services.AddSingleton<SIMF.Application.SessionQuestions.Abstractions.IQuestionAiFilter,
-            SIMF.Infrastructure.SessionQuestions.StubQuestionAiFilter>();
+        // P4.2 — D-236 / D-714 (item 12, GAP-1): advisory question AI filter.
+        // Default = the offline stub (the PoC needs no AI key); set
+        // `SessionQuestions:AiFilterEnabled=true` to route through the real
+        // IAiService + the seeded `question-filter` prompt (AiQuestionFilter,
+        // scoped because IAiService is scoped). Advisory either way — it never
+        // blocks a question. Mirrors the scan-engine selector below.
+        if (configuration.GetValue<bool>("SessionQuestions:AiFilterEnabled"))
+        {
+            services.AddScoped<SIMF.Application.SessionQuestions.Abstractions.IQuestionAiFilter,
+                SIMF.Infrastructure.SessionQuestions.AiQuestionFilter>();
+        }
+        else
+        {
+            services.AddSingleton<SIMF.Application.SessionQuestions.Abstractions.IQuestionAiFilter,
+                SIMF.Infrastructure.SessionQuestions.StubQuestionAiFilter>();
+        }
         // Dynamic, config-driven ratings — app form/submit, admin config CRUD,
         // admin responses + KPI viewer, and the built-in-types seeder.
         services.AddScoped<SIMF.Application.Feedback.Abstractions.IRatingFormService,

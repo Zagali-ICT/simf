@@ -263,19 +263,27 @@ is unaffected.
 
 ---
 
-## Amendment B — the two ask-a-speaker modes & the 3-stage Q&A pipeline (D0-2, DRAFT 2026-07-08)
+## Amendment B — the two ask-a-speaker modes & the 3-stage Q&A pipeline (D0-2, BUILT 2026-07-09 — D-714)
 
-> **STATUS: DRAFT — open items owner-resolved (§B.5, 2026-07-08); build-ready
-> pending the owner's final "go".** This amendment folds the already-built Q&A
-> pipeline (completion-programme D-212/D-233/D-236/D-271/D-519) into this feature
-> spec and defines the **owner's item 12** ("ask a speaker — two ways") against it.
-> **Finding: item 12 is already built end-to-end;** the deltas are small (§B.4).
-> No new green-field build — this section records the AS-IS so the spec stops
-> trailing the code, and lists the small deltas + owner open items.
+> **AS-BUILT (2026-07-09, D-714):** both approved deltas shipped. **GAP-2** — the
+> session-detail ask card now reads a distinct pre-session label ("اطرح سؤالاً قبل
+> الجلسة") while the session is upcoming and "اسأل المحاور" once live, so mode-B is
+> visibly separate; the backend still derives the phase + window. **GAP-1** — the
+> real `AiQuestionFilter` (central `IAiService` + the seeded `question-filter`
+> prompt, JSON `{allowed,reason}` → advisory `ai-clean`/`ai-flagged`, safe
+> `ai-unavailable` fallback) is wired behind `SessionQuestions:AiFilterEnabled`
+> (**default = stub** so the PoC needs no key; flip on when a key is provisioned).
+> **GAP-3** — reproduced as the by-design arrival gate + [start−5min, end] window
+> (D-242/D-271), no fix. See DECISIONS_LOG D-714.
+>
+> This amendment folds the already-built Q&A pipeline
+> (completion-programme D-212/D-233/D-236/D-271/D-519) into this feature spec and
+> defines the **owner's item 12** ("ask a speaker — two ways") against it.
+> **Finding: item 12 was already built end-to-end;** the deltas were small (§B.4).
 >
 > **Owner resolutions (2026-07-08):** **wire the real AI** for question filtering
-> (OI-B1, once a key is provisioned/rotated); **add a distinct pre-session ask
-> entry** (OI-B2). GAP-3 stands: **reproduce the "not working" report first**.
+> (OI-B1 — built config-gated, default stub); **add a distinct pre-session ask
+> entry** (OI-B2 — built). GAP-3: reproduced, by design (no fix).
 
 ### B.1 What the owner asked (item 12, 2026-07-08, verbatim intent)
 
@@ -307,16 +315,18 @@ Moderator desk` (D-212):
 | **(A) live in-hall, moderator-only home** | The attendee asks from the live/session screen (Phase=`Live`, arrival-gated); the **moderator** runs the desk from the moderator-only home (`ModeratorHome`). Already built. |
 | **(B) pre-question, AI+team+moderator** | The **same** ask screen submitted **before** `StartUtc` → Phase=`Pre`; it flows through the identical 3-stage pipeline (AI→Committee→Moderator). Already built — the phase is derived, so there is no separate "pre-question" screen today. |
 
-### B.4 Deltas (the only candidate work — small)
+### B.4 Deltas — ✅ BUILT (D-714)
 
-- **GAP-1 (AI wiring).** Stage 1 is a **stub**. Owner decision (mirrors D-239 / the
-  D-578 real-AI summary): **wire the real `IAiService`-backed filter now** (a DI-line
-  swap, no service/test change) **or keep the stub for the PoC**. *(Note the standing
-  key-rotation item — a real key must be provisioned/rotated first.)*
-- **GAP-2 (Mode-B reachability).** Because the phase is backend-derived, there is no
-  distinct "pre-session ask" entry — the owner may expect one. Owner decision: **add a
-  clear pre-session "ask a question" entry/label** (e.g. on the upcoming-session
-  detail before it goes live) **or accept the single phase-derived flow**.
+- **GAP-1 (AI wiring) ✅.** `AiQuestionFilter` routes stage 1 through the central
+  `IAiService` + the seeded `question-filter` prompt (JSON `{allowed,reason}` →
+  advisory `ai-clean`/`ai-flagged`, `ai-unavailable` fallback). Config-gated by
+  `SessionQuestions:AiFilterEnabled` — **default = stub** (the PoC needs no key);
+  flip on when a key is provisioned. Advisory only (never changes Status). Verified
+  offline via a fake `IAiService` (`QuestionAiFilterTests`).
+- **GAP-2 (Mode-B reachability) ✅.** The session-detail ask card now reads the
+  distinct pre-session label ("اطرح سؤالاً قبل الجلسة") while the session is upcoming
+  (`now < startUtc`) and "اسأل المحاور" once live, so the two modes are visibly
+  separate; the phase + window stay backend-derived (D-271). App-only.
 - **GAP-3 (verify not-broken).** The owner reported "ask speaker not working." Every
   layer above is built, so the likely causes are an **older build** (cf. D-702 item
   10), the **arrival gate** (no `HallAttendance` ⇒ composer hidden — by design), or
