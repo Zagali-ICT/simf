@@ -16,6 +16,17 @@ internal sealed class NotificationRepository(SimfIdentityDbContext dbContext)
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    public Task<bool> ExistsForUserAsync(
+        Guid userId, NotificationKind kind, Guid relatedEntityId,
+        CancellationToken cancellationToken = default) =>
+        dbContext.Notifications
+            .AsNoTracking()
+            .AnyAsync(
+                row => row.UserId == userId
+                    && row.Kind == kind
+                    && row.RelatedEntityId == relatedEntityId,
+                cancellationToken);
+
     public async Task<(IReadOnlyList<NotificationDto> Items, int Total)> ListForUserAsync(
         Guid userId, int skip, int top, bool unreadOnly,
         IReadOnlyCollection<NotificationKind>? kinds = null,

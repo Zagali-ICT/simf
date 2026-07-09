@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -98,6 +99,40 @@ public sealed class HallAttendanceTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Departure_fires_a_session_rating_prompt_once()
+    {
+        // D-713 (GAP-A) — leaving the hall closes the session attendance and
+        // prompts the attendee to rate that session, exactly once even if they
+        // re-enter and leave again (shared per-(session, user) dedup).
+        var visitor = await SeedApprovedVisitorAsync();
+        var sessionId = await SeedSessionAsync(withGeofence: true);
+
+        await ArriveAsync(sessionId, CenterLat, CenterLon, visitor);
+        var departed = await PostAuthAsync(
+            $"/api/v1/app/sessions/{sessionId}/departure", new { }, visitor);
+        Assert.Equal(HttpStatusCode.OK, departed.StatusCode);
+        Assert.Equal(1, await CountSessionRatingPromptsAsync(sessionId));
+
+        // Re-enter, leave again — the dedup guard means no second prompt.
+        await ArriveAsync(sessionId, CenterLat, CenterLon, visitor);
+        await PostAuthAsync($"/api/v1/app/sessions/{sessionId}/departure", new { }, visitor);
+        Assert.Equal(1, await CountSessionRatingPromptsAsync(sessionId));
+    }
+
+    [Fact]
+    public async Task Departure_with_no_open_row_fires_no_rating_prompt()
+    {
+        // Never arrived → departure is a no-op → no rating prompt.
+        var visitor = await SeedApprovedVisitorAsync();
+        var sessionId = await SeedSessionAsync(withGeofence: true);
+
+        var response = await PostAuthAsync(
+            $"/api/v1/app/sessions/{sessionId}/departure", new { }, visitor);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(0, await CountSessionRatingPromptsAsync(sessionId));
+    }
+
+    [Fact]
     public async Task Invalid_coordinate_is_400()
     {
         var visitor = await SeedApprovedVisitorAsync();
@@ -143,6 +178,15 @@ public sealed class HallAttendanceTests : IClassFixture<SimfApiFactory>
         Guid sessionId, double lat, double lon, string token) =>
         PostAuthAsync($"/api/v1/app/sessions/{sessionId}/arrival",
             new RecordArrivalRequest { Lat = lat, Lon = lon }, token);
+
+    private async Task<int> CountSessionRatingPromptsAsync(Guid sessionId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var idDb = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        return await idDb.Notifications.CountAsync(n =>
+            n.Kind == NotificationKind.SessionRatingRequest
+            && n.RelatedEntityId == sessionId);
+    }
 
     private async Task<Guid> SeedSessionAsync(bool withGeofence)
     {

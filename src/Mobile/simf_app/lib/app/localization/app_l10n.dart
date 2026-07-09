@@ -1390,6 +1390,15 @@ class AppL10n {
   String get rateStarsRequired =>
       _t('يرجى اختيار عدد النجوم', 'Please pick a star rating');
 
+  /// D-713 (item 8) — the "watched" context header on a per-session rating: the
+  /// session title + when it was held, so a user arriving from a rate prompt (or
+  /// a notification days later) knows which session they are rating. A blank
+  /// [when] (unknown session time) drops the trailing separator.
+  String rateWatchedAt(String session, String when) {
+    final base = _t('شاهدت «$session»', 'Watched "$session"');
+    return when.isEmpty ? base : '$base · $when';
+  }
+
   /// The one-word descriptor for an overall score (Figma "جيد جداً").
   String rateScoreWord(int stars) => switch (stars) {
         1 => _t('ضعيف جداً', 'Very poor'),

@@ -120,6 +120,9 @@ class RatingFormView {
     required this.groups,
     required this.ungroupedQuestions,
     required this.existing,
+    this.targetName,
+    this.targetNameArabic,
+    this.targetStartUtc,
   });
 
   final String ratingTypeId;
@@ -134,6 +137,21 @@ class RatingFormView {
   final List<RatingFormGroup> groups;
   final List<RatingFormQuestion> ungroupedQuestions;
   final RatingExistingSubmission? existing;
+
+  /// D-713 (item 8) — the rated session's title + start time, for the "watched
+  /// at {session} · {date}" header. Present only for a per-session rating.
+  final String? targetName;
+  final String? targetNameArabic;
+  final DateTime? targetStartUtc;
+
+  /// The rated session's title in the active locale, or null when there is no
+  /// per-session target (a Global "App" rating).
+  String? localizedTargetName(bool isArabic) {
+    final ar = (targetNameArabic ?? '').trim();
+    final en = (targetName ?? '').trim();
+    final value = isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+    return value.isEmpty ? null : value;
+  }
 
   String? localizedCommentLabel(bool isArabic) {
     final ar = (commentLabelArabic ?? '').trim();
@@ -165,6 +183,9 @@ class RatingFormView {
           .map((e) => RatingFormQuestion.fromJson(e.cast<String, dynamic>()))
           .toList(growable: false),
       existing: RatingExistingSubmission.fromJson(json['existing']),
+      targetName: json['targetName'] as String?,
+      targetNameArabic: json['targetNameArabic'] as String?,
+      targetStartUtc: DateTime.tryParse(json['targetStartUtc'] as String? ?? ''),
     );
   }
 }

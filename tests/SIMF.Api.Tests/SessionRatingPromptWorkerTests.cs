@@ -70,6 +70,33 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
     }
 
     [Fact]
+    public async Task Scan_does_not_resend_when_the_attendee_was_already_prompted_on_departure()
+    {
+        // D-713 (GAP-A) — the attendee left the hall (prompted once already);
+        // the clock-end worker must not send a second rating prompt, though it
+        // still stamps the session so it stops scanning it.
+        var now = DateTimeOffset.UtcNow;
+        var visitorId = await SeedVisitorAsync();
+        var sessionId = await SeedEndedSessionWithSeatAsync(now.AddMinutes(-5), visitorId);
+        await SeedExistingRatingPromptAsync(sessionId, visitorId);
+
+        await RunScanAsync(now);
+
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var idDb = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+
+        var session = await appDb.Sessions.SingleAsync(s => s.Id == sessionId);
+        Assert.NotNull(session.RatingPromptSentUtc);
+
+        var count = await idDb.Notifications.CountAsync(n =>
+            n.Kind == NotificationKind.SessionRatingRequest
+            && n.RelatedEntityId == sessionId
+            && n.UserId == visitorId);
+        Assert.Equal(1, count);
+    }
+
+    [Fact]
     public async Task Scan_ignores_a_session_that_ended_before_the_backfill_window()
     {
         var now = DateTimeOffset.UtcNow;
@@ -111,6 +138,25 @@ public sealed class SessionRatingPromptWorkerTests : IClassFixture<SimfApiFactor
         return await SessionRatingPromptWorker.RunRatingPromptScanAsync(
             db, dispatcher, now, SessionRatingPromptWorker.BackfillWindow,
             NullLogger.Instance, CancellationToken.None);
+    }
+
+    private async Task SeedExistingRatingPromptAsync(Guid sessionId, Guid visitorId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var dispatcher = scope.ServiceProvider.GetRequiredService<INotificationDispatcher>();
+        await dispatcher.DispatchAsync(new NotificationRequest
+        {
+            UserId = visitorId,
+            Kind = NotificationKind.SessionRatingRequest,
+            Title = "Rate this session",
+            TitleArabic = "قيّم هذه الجلسة",
+            Body = "Departure prompt.",
+            BodyArabic = "طلب عند المغادرة.",
+            RelatedEntityType = "Session",
+            RelatedEntityId = sessionId,
+            SendEmail = false,
+            DeduplicateByRelatedEntity = true,
+        }, CancellationToken.None);
     }
 
     private async Task<Guid> SeedVisitorAsync()

@@ -19,7 +19,11 @@
 - `GET /app/feedback/form?code=App|Session|Day|Event|Exhibition&ratingTypeId=&targetId=` → `RatingFormView`
   `{ ratingTypeId, code, name, scope, hasOverallStars, allowComment, commentLabel,
   targetId, groups[{ name, questions[{ id, text, isRequired }] }], ungroupedQuestions[],
-  existing{ overallStars, comment, answers[{ questionId, stars }] } }`.
+  existing{ overallStars, comment, answers[{ questionId, stars }] },
+  targetName?, targetNameArabic?, targetStartUtc? }`.
+  **D-713 (appended):** `targetName` / `targetNameArabic` / `targetStartUtc` carry the
+  rated **session's** title + start time (null for a Global type), for the app's
+  "watched at {session} · {date}" header. Append-only (D-219) — the shipped app ignores them.
 - `POST /app/feedback/submit` body `{ ratingTypeId|code, targetId?, overallStars?,
   comment?, answers[{ questionId, stars }] }` → `RatingSubmissionView` (upsert; one
   per user per (type, target)).
@@ -51,6 +55,9 @@
 | E2E-MOB040-012 | Global `Event` / `Exhibition` form needs no target and submits | happy | P1 | authored ✓ (API `DynamicRatingFormTests.Global_rating_form_needs_no_target_and_is_submittable`) |
 | E2E-MOB040-013 | `Day` form without a target → 400; submit for an unknown day → 404; a real `ProgrammeDay` → 200 (the new PerDay branch) | validation | P1 | authored ✓ (API `DynamicRatingFormTests` Day cases) |
 | E2E-MOB040-014 | End-of-day / end-of-programme prompts deep-link to `code=Day\|Event\|Exhibition\|App` | happy | P1 | authored ✓ (worker `ProgrammeRatingPromptWorkerTests`; clickUrl via `NotificationKindCatalog`) |
+| E2E-MOB040-015 | Leaving a session's hall (departure) fires a SessionRatingRequest once; re-enter+leave does not double; the clock-end worker then skips that attendee (D-713 GAP-A) | happy | P0 | authored ✓ (API `HallAttendanceTests.Departure_fires_a_session_rating_prompt_once` + `SessionRatingPromptWorkerTests.Scan_does_not_resend_when_the_attendee_was_already_prompted_on_departure`) |
+| E2E-MOB040-016 | The per-session rate form shows a "Watched {session} · {date}" header; the App (global) form shows none (D-713) | happy | P1 | authored ✓ (screen `a per-session rating shows the watched-at header` / `the global App rating shows no watched-at header` + API `Per_session_form_carries_the_watched_at_context`) |
+| E2E-MOB040-017 | Departure with no open attendance row fires no rating prompt | resilience | P2 | authored ✓ (API `HallAttendanceTests.Departure_with_no_open_row_fires_no_rating_prompt`) |
 
 ## Scenarios
 
@@ -109,6 +116,26 @@ Scenario: The end-of-programme prompts open the overall rating forms (D-679)
   Given the whole 3-day programme has ended
   When the worker fires the Event + Exhibition + App prompts to every checked-in attendee
   Then each opens its global form (code=Event|Exhibition|App, no target) which submits with 200
+
+Scenario: Leaving a session's hall prompts to rate it, once (D-713 GAP-A)
+  Given an approved visitor arrived at a session's hall (an open HallAttendance row)
+  When they leave (POST /app/sessions/{id}/departure closes the row)
+  Then exactly one SessionRatingRequest notification exists for that (session, visitor)
+  When they re-enter and leave the hall again
+  Then no second prompt is created (DeduplicateByRelatedEntity)
+  And when the clock-end SessionRatingPromptWorker later scans the ended session
+  Then it skips that visitor (already prompted) but still stamps the session
+
+Scenario: A departure with no prior arrival prompts nothing (D-713)
+  Given the visitor never arrived at the session's hall (no open row)
+  When they POST /app/sessions/{id}/departure
+  Then the call succeeds (no-op) and no rating prompt is created
+
+Scenario: The per-session rate form shows the watched-at header (D-713)
+  Given the visitor opens /rate?code=Session&targetId={sessionId}
+  Then GET /app/feedback/form returns targetName + targetStartUtc for that session
+  And the screen shows a "Watched {session} · {date}" context chip above the form
+  But the global App form (code=App, no target) shows no such header
 ```
 
 **Evidence:** `rate_screen_test.dart` (4 widget tests, all green) + `FeedbackRatingsTests`
@@ -122,4 +149,4 @@ config lives on `/admin/rating-config` (see `cp-admin-rating-config.md`).
 
 ---
 
-_Last reviewed:_ `2026-07-07` by Claude (D-679/D-680 — Day/Event/Exhibition prompt codes).
+_Last reviewed:_ `2026-07-09` by Claude (D-713 — rate-on-hall-departure GAP-A + the watched-at header).

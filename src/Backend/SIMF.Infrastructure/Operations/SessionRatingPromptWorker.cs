@@ -146,6 +146,11 @@ internal sealed class SessionRatingPromptWorker(
                         RelatedEntityType = "Session",
                         RelatedEntityId = session.Id,
                         SendEmail = false,
+                        // D-713 — share the one-per-(session, user) guard with the
+                        // hall-departure hook (GAP-A): if the attendee already got a
+                        // rating prompt for this session when they left the hall,
+                        // the clock-end worker does not send a second.
+                        DeduplicateByRelatedEntity = true,
                     }, cancellationToken);
                 }
                 catch (Exception ex)

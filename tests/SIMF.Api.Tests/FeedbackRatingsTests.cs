@@ -11,6 +11,8 @@ using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Feedback;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Programme;
+using SIMF.Infrastructure.Persistence;
 using Xunit;
 
 namespace SIMF.Api.Tests;
@@ -147,6 +149,23 @@ public sealed class FeedbackRatingsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Per_session_form_carries_the_watched_at_context()
+    {
+        // D-713 (item 8) — a per-session form returns the rated session's title +
+        // start time so the app can show the "Watched {session} · {date}" header.
+        var visitor = await SignInApprovedVisitorAsync();
+        var sessionId = await SeedSessionAsync();
+
+        var form = await GetFormAsync("Session", sessionId, visitor);
+
+        Assert.Equal(RatingScope.PerSession, form.Scope);
+        Assert.Equal(sessionId, form.TargetId);
+        Assert.Equal("Watched-At Session", form.TargetName);
+        Assert.Equal("جلسة السياق", form.TargetNameArabic);
+        Assert.NotNull(form.TargetStartUtc);
+    }
+
+    [Fact]
     public async Task Per_session_submit_for_unknown_session_is_404()
     {
         var visitor = await SignInApprovedVisitorAsync();
@@ -202,6 +221,38 @@ public sealed class FeedbackRatingsTests : IClassFixture<SimfApiFactory>
     }
 
     // -- Helpers --------------------------------------------------------------
+
+    private async Task<Guid> SeedSessionAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var hall = new Hall
+        {
+            Id = Guid.NewGuid(),
+            Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+            Name = "Rate Hall",
+            NameArabic = "قاعة التقييم",
+            Capacity = 10,
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        db.Halls.Add(hall);
+        var session = new Session
+        {
+            Id = Guid.NewGuid(),
+            Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+            Title = "Watched-At Session",
+            TitleArabic = "جلسة السياق",
+            HallId = hall.Id,
+            StartUtc = DateTimeOffset.UtcNow.AddHours(-2),
+            EndUtc = DateTimeOffset.UtcNow.AddHours(-1),
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        db.Sessions.Add(session);
+        await db.SaveChangesAsync();
+        return session.Id;
+    }
 
     private async Task<RatingFormView> GetFormAsync(string? code, Guid? targetId, string token)
     {

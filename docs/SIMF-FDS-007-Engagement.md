@@ -349,10 +349,28 @@ flipped from DRAFT to built with an As-built note.
 
 ---
 
-## Amendment C — the multi-trigger ratings (D0-3, DRAFT 2026-07-08)
+## Amendment C — the multi-trigger ratings (D0-3, BUILT 2026-07-09 — D-712/D-713)
 
-> **STATUS: build-ready — owner said "build item 8" (2026-07-09); the §C.5 open
-> items proceed on the documented recommendations.** Ratings/feedback are not
+> **AS-BUILT (2026-07-09):** both gaps shipped. **GAP-B** rate-on-live-close =
+> **D-712** (app `live_broadcast_screen` dispose → `/rate?code=Session`, eligible
+> attendee + live feed, shared dedup). **GAP-A** rate-on-**hall-departure** +
+> the "watched at" header = **D-713**. **Correction to §C.2/§C.4:** the DRAFT
+> premise that a **gate Out-scan closes a `SessionAttendance`** is **false** in
+> the built code — a `Gate` is **venue-level and sessionless** (`GateOperatorService`
+> writes only a `GateScan`), and `SessionAttendance` is a read-only CP aggregate
+> over `HallAttendance`, not an entity. The real per-session "leave" signal is
+> `HallAttendanceService.RecordDepartureAsync` (closes `HallAttendance.LeaveUtc`
+> for a known (session,user)). Owner (2026-07-09) chose the **hall-departure
+> hook**: departure now fires a `SessionRatingRequest` for that exact session,
+> deduped one-per-(user,session) via `NotificationRequest.DeduplicateByRelatedEntity`
+> shared with the clock-end worker. OI-C1 therefore **dissolves** — the departure
+> already knows the exact session, so no "which of several sessions in the hall"
+> mapping is needed. The header sources the session's own title + date (appended
+> to `RatingFormView`), the OI-C3 per-rating v1. See DECISIONS_LOG D-712/D-713.
+
+> **STATUS (original DRAFT note): build-ready — owner said "build item 8"
+> (2026-07-09); the §C.5 open items proceed on the documented recommendations.**
+> Ratings/feedback are not
 > currently owned by a dedicated FDS — they were built across the completion-
 > programme decisions (D-677/D-678 notification+deep-link, D-679 day/programme
 > prompts, D-680 dynamic page, D-690 rate-after-view). Per the owner's Phase-0 plan
@@ -389,8 +407,9 @@ flipped from DRAFT to built with an As-built note.
 | **Trigger — end-of-programme (Event+Exhibition+App)** | `ProgrammeRatingPromptWorker` end-of-programme trio to every ever-checked-in attendee; once-only marker (`SystemSettings` `ProgramEndRatingSentUtc`) | **Built** (D-679). |
 | **Trigger — end-of-session (clock)** | `SessionRatingPromptWorker` — sessions whose `EndUtc` is within a 6h back-fill → `SessionRatingRequest` to every attendee with an active seat; dedup `Session.RatingPromptSentUtc` | **Built.** |
 | **Trigger — session view-leave (app)** | `SessionRatePromptTracker` — `session_detail_screen` fires `/rate?code=Session&targetId={id}` once per session on a real leave, only for an approved attendee of an **ended** session | **Built** (D-690). |
-| **Gate direction (In/Out)** | `GateScan.Direction` (`ScanDirection`), `Gate.DirectionMode{In,Out,Both}`, exit closes `SessionAttendance.LeaveUtc` | **Built** — but the **Out scan fires no rating** (`GateOperatorService` has no rating hook) — see GAP-A. |
-| **Live / YouTube screen** | `live_broadcast_screen.dart` (`youtube_player_iframe`, D-349) | **Built** — but **no rate trigger on close/back** — see GAP-B. |
+| **Venue gate scan (In/Out)** | `GateScan.Direction` (`ScanDirection`), `Gate.DirectionMode{In,Out,Both}` — a `Gate` is a **venue-level** access point with **no hall/session link** (`GateOperatorService` writes only a `GateScan`). | **Built** — but sessionless, so it is **not** the rate-on-checkout hook (corrected from the DRAFT). |
+| **Hall/session attendance close** | `HallAttendanceService.RecordDepartureAsync` sets `HallAttendance.LeaveUtc` for a known (session,user), via `POST /app/sessions/{id}/departure`; `SessionAttendance` is the read-only CP aggregate over these rows. | **Built** — this is the real per-session "leave" signal → **GAP-A** now hooks it (D-713). |
+| **Live / YouTube screen** | `live_broadcast_screen.dart` (`youtube_player_iframe`, D-349) | **Built + rate trigger on leave (D-712 GAP-B).** |
 
 ### C.3 The owner's 4 triggers → built reality
 
@@ -398,33 +417,34 @@ flipped from DRAFT to built with an As-built note.
 |---|---------------|--------|
 | 1 | **Daily** at end-of-date **if checked in** → rate the day | ✅ **Built** — `ProgrammeRatingPromptWorker` end-of-day (D-679). |
 | 2 | **End of exhibition** → rate event/exhibition | ✅ **Built** — end-of-programme trio (D-679). |
-| 3 | **End of session on gate checkout** → rate the session | ⚠️ **Partial** — rating fires on **clock-end** (`SessionRatingPromptWorker`) + **app-view-leave** (D-690), **not** on the physical **gate Out-scan** → **GAP-A**. |
-| 4 | **Online session, live-stream close** → rate the online session | ❌ **GAP-B** — the live screen has no rate trigger. |
+| 3 | **End of session on checkout** → rate the session | ✅ **Built (D-713 GAP-A)** — leaving the hall (`RecordDepartureAsync`) now fires the session rating, alongside the built **clock-end** (`SessionRatingPromptWorker`) + **app-view-leave** (D-690). The literal *gate* Out-scan is venue-level/sessionless, so the hall-departure close is the correct hook. |
+| 4 | **Online session, live-stream close** → rate the online session | ✅ **Built (D-712 GAP-B)** — the live screen fires the rating on leave. |
 
-### C.4 Deltas (the only new work)
+### C.4 Deltas (the new work) — ✅ ALL BUILT
 
-- **GAP-A — rate-on-gate-checkout.** When an attendee's gate **Out-scan** closes
-  their `SessionAttendance` for a session hall, fire the **session rating** for the
-  session they attended (an in-app `SessionRatingRequest` deep-linking to
-  `/rate?code=Session&targetId={id}`), deduped so it never double-prompts with the
-  clock-end worker or the app-view-leave (D-690). **OI-C1:** how to map a **hall
-  Out-scan → the session** to rate when a hall hosts several sessions in a day —
-  rate the session **active at the scan time**, or the last one the attendee had an
-  attendance row for? **Recommendation:** the session whose `[StartUtc,EndUtc]`
-  contains the scan (else the most recent attended session in that hall today);
-  reuse `Session.RatingPromptSentUtc`-style per-(session,user) dedup.
-- **GAP-B — rate-on-live-close.** On the live/YouTube screen **leave** (back / close /
-  end), fire the rating once — mirroring the D-690 dispose-fires-`/rate` pattern for
-  `live_broadcast_screen.dart`, eligibility-gated (signed-in approved attendee).
-  **OI-C2:** rate it as the **same `Session` code** (it is the same session, watched
-  online) or a **distinct online-session code**? **Recommendation:** reuse the
-  `Session` code (one rating per session regardless of channel); dedup shared with
-  GAP-A + D-690 so a user who watched online then walked out isn't prompted twice.
-- **"Watched at [time] and each date" (display).** Show the watch context on the
-  rating screen header — "watched {session} · {date} {time}" — sourced from the
-  attendance / last-watched timestamp. **OI-C3:** is this a **per-rating header** or a
-  **watch-history list** the owner wants? **Recommendation:** the per-rating header
-  line for v1; a watch-history list only if the owner asks.
+- **GAP-A — rate-on-hall-departure ✅ (D-713).** When an attendee's departure
+  closes their `HallAttendance` (`RecordDepartureAsync` sets `LeaveUtc`),
+  `HallAttendanceService` fires the **session rating** for that exact (session,user)
+  — an in-app `SessionRatingRequest` deep-linking to `/rate?code=Session&targetId={id}`.
+  **OI-C1 dissolved:** the departure already carries the exact `sessionId`, so no
+  "which of several sessions in the hall" mapping is needed. Deduped
+  one-per-(user,session) via the new opt-in `NotificationRequest.DeduplicateByRelatedEntity`
+  (dispatcher skips the write when a same-(user,kind,entity) notification exists —
+  `INotificationRepository.ExistsForUserAsync`, a single-context Identity-DB query,
+  D-157 clean); the clock-end `SessionRatingPromptWorker` sets the same flag, so an
+  early-leave + a later clock-end scan can't double-prompt. *(The literal "gate
+  Out-scan" hook the DRAFT assumed does not exist — a gate is venue-level/sessionless.)*
+- **GAP-B — rate-on-live-close ✅ (D-712).** On the live/YouTube screen **leave**
+  (`dispose`), the rating fires once via the D-690 pattern for `live_broadcast_screen.dart`,
+  eligibility-gated (signed-in approved attendee **and** the session carried a live
+  feed). **OI-C2:** reuses the **`Session` code** (one rating per session regardless
+  of channel); dedup shared with GAP-A + D-690 so watching online then walking out
+  isn't prompted twice.
+- **"Watched at" header ✅ (D-713).** The rating screen shows a per-session context
+  chip — "شاهدت «{session}» · {date}" (`rate_screen._WatchedHeader` + `rateWatchedAt`).
+  **OI-C3:** the per-rating header (not a watch-history list). Sourced from 3
+  **appended** `RatingFormView` fields (`TargetName`/`TargetNameArabic`/`TargetStartUtc`,
+  the session's own title + start), so no per-user watch timestamp is plumbed.
 
 ### C.5 Open items — OWNER DECISIONS
 
