@@ -34,8 +34,12 @@ Stack child (on top of the centred body).
    SVG eye-toggle.
 6. **Confirm password** (obscured, maxLength 32) — must equal the password; SVG
    eye-toggle; submit on field-submit.
-7. **Gold CTA "إنشاء حساب"** — shared `AuthSubmitButton` (busy spinner).
-8. **Foot** — "هل لديك حساب؟ تسجيل الدخول" → sign-in.
+7. **Mandatory T&C checkbox** (`AccountTermsCheckbox`, D-719) — "أوافق على الشروط
+   والأحكام"; the "الشروط والأحكام" span is a link that opens Page 009 in consent
+   mode and a موافق there auto-checks the box. Gates the CTA; an unchecked submit
+   shows "يجب الموافقة على الشروط والأحكام" and reddens the box.
+8. **Gold CTA "إنشاء حساب"** — shared `AuthSubmitButton` (busy spinner).
+9. **Foot** — "هل لديك حساب؟ تسجيل الدخول" → sign-in.
 
 ## 4. Data / API (wire contract D-219 frozen)
 - `POST` via `authControllerProvider.signUp(email, password, confirmPassword)`.
@@ -44,6 +48,10 @@ Stack child (on top of the centred body).
 ## 5. Validation & edge cases
 - Email format, password policy, confirm-match — all inline
   (`AutovalidateMode.onUserInteraction`). The form blocks submit until valid.
+- **T&C acceptance is mandatory** (D-719): the submit is gated on the checkbox;
+  an unchecked submit shows the terms error next to the box (alongside any field
+  errors, not one gate at a time) and sends no request. Ticking the box — or
+  accepting on Page 009 — clears it. Client-side only (D8); no wire change.
 - `AuthFailure` / network failure → inline bilingual error; the CTA re-enables.
 
 ## 6. i18n / RTL
@@ -76,6 +84,12 @@ font applied once in the theme (incl. the gold CTA).
       contract (D-219) unchanged
 
 ## 9. Changelog
+- **2026-07-09 (D-719):** added the mandatory `AccountTermsCheckbox` — registration
+  now gates the CTA on an explicit T&C accept (the profile / More menu keep the
+  read-only link). The "الشروط والأحكام" span opens Page 009 in consent mode and a
+  موافق there auto-checks the box. Client-side only (D8); no wire-contract change.
+  New l10n `termsAcceptLead` / `termsMustAccept`; +4 widget cases (011–014); golden
+  re-locked with the box present. Owner-mandated addition, no Figma frame of its own.
 - **2026-06-30 (Phase 3, D-551):** clean-code freeze — dropped 8 colour aliases for
   `SimfTokens`; adopted the shared `AuthTopControls` / `AuthBrandHeader` /
   `AuthSubmitButton` / `authLinkButtonStyle`; **swapped the Material back/globe/eye

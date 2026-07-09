@@ -366,6 +366,13 @@ class AppL10n {
         'أوافق على الشروط والأحكام',
         'I accept the terms and conditions',
       );
+  // Sign-up mandatory-accept checkbox (D-719): the lead text before the
+  // tappable الشروط والأحكام link, and the error when it is left unchecked.
+  String get termsAcceptLead => _t('أوافق على', 'I accept the');
+  String get termsMustAccept => _t(
+        'يجب الموافقة على الشروط والأحكام',
+        'You must accept the terms and conditions',
+      );
   // KSA-Project terms frame copy (Figma 505:1553, D-367).
   String get termsImportantInfoTitle => _t(
         'معلومات هامة لزوار الملتقى',

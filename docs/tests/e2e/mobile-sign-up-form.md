@@ -39,6 +39,10 @@
 | E2E-MOB005-008 | RTL render (Arabic) — labels/errors/button mirror; the email field stays LTR | i18n | P1 | authored (screen) |
 | E2E-MOB005-009 | Back chevron pops; with no history it falls back to sign-in | happy | P2 | authored ✓ (widget test, D-370) |
 | E2E-MOB005-010 | Globe button toggles AR ↔ EN and persists the choice | i18n | P2 | authored ✓ (widget test, D-370) |
+| E2E-MOB005-011 | Valid fields but the mandatory T&C box unchecked → terms error, **no** request sent | error | P0 | authored ✓ (widget test, D-719) |
+| E2E-MOB005-012 | Ticking the T&C box clears the error and lets the submit through | happy | P0 | authored ✓ (widget test, D-719) |
+| E2E-MOB005-013 | The terms link opens Page 009 (consent mode); موافق auto-checks the box | happy | P1 | authored ✓ (widget test, D-719) |
+| E2E-MOB005-014 | Declining on Page 009 (back/رفض) leaves the box unchecked → submit still blocked | edge | P2 | authored ✓ (widget test, D-719) |
 
 ## Scenarios
 
@@ -184,6 +188,63 @@ Scenario: Switching language from the sign-up form
 
 **Evidence:** `sign_up_form_screen_test` — "the globe button toggles and persists the language (D-370)".
 
+### E2E-MOB005-011 — Mandatory T&C gate blocks submit (D-719)
+
+```gherkin
+Scenario: Registration requires an explicit accept of the terms
+  Given the guest entered a valid email, password and matching confirm
+  And the "I accept the terms and conditions" box is left unchecked
+  When they tap "Create account"
+  Then the terms message "You must accept the terms and conditions" is shown
+  And no request is sent to /app/auth/sign-up
+```
+
+> The accept is a **checkbox** on registration (owner batch 2026-07-09), not the
+> read-only link that the profile / More menu keeps. Consent is client-side only
+> (D8) — nothing is added to the frozen sign-up wire contract.
+
+**Evidence:** `sign_up_form_screen_test` — "valid fields but the T&C box unchecked blocks submit with the terms error and never calls sign-up (D-719)".
+
+### E2E-MOB005-012 — Accepting the terms clears the gate (D-719)
+
+```gherkin
+Scenario: Ticking the box lets a valid submit through
+  Given a blocked submit has shown the terms error
+  When the guest ticks "I accept the terms and conditions"
+  Then the terms error clears immediately
+  And a subsequent "Create account" posts to /app/auth/sign-up
+```
+
+**Evidence:** `sign_up_form_screen_test` — "ticking the T&C box clears the error and lets the submit through (D-719)".
+
+### E2E-MOB005-013 — Reading the terms auto-accepts (D-719)
+
+```gherkin
+Scenario: The terms link opens Page 009 and موافق ticks the box
+  Given the guest is on the sign-up form
+  When they tap the underlined "الشروط والأحكام / Terms & conditions" link
+  Then the terms screen (Page 009) opens in consent mode
+  And tapping موافق returns and auto-checks the accept box
+  And "Create account" then proceeds
+```
+
+> Reuses the existing `TermsScreen(requireConsent:true)` gate (`/terms?consent=1`,
+> D-375) — موافق pops `true`, the back chevron pops `false` (declines).
+
+**Evidence:** `sign_up_form_screen_test` — "the terms link opens Page 009 and موافق auto-checks the box (D-719)".
+
+### E2E-MOB005-014 — Declining the terms does not accept (D-719)
+
+```gherkin
+Scenario: Backing out / declining on Page 009 keeps the gate closed
+  Given the guest opened the terms screen from the accept link
+  When they decline (back chevron / رفض) — the screen pops false
+  Then the accept box stays unchecked
+  And "Create account" is still blocked with the terms error
+```
+
+**Evidence:** `sign_up_form_screen_test` — "declining on Page 009 leaves the box unchecked and still blocks submit (D-719)".
+
 ---
 
-_Last reviewed:_ `2026-06-12` by `SIMF Team`.
+_Last reviewed:_ `2026-07-09` by `SIMF Team`.
