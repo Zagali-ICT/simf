@@ -106,6 +106,9 @@ public sealed class UpdateAdminProfileTypeRouteRequest
     public bool IsActive { get; set; } = true;
     /// <summary>D-186 — audience (true) or partner / staff (false).</summary>
     public bool IsVisitor { get; set; } = true;
+    /// <summary>D-725 — whether the type appears in the app sign-up picker
+    /// (false = CP-only, e.g. Staff / Moderator).</summary>
+    public bool IsAppRegisterable { get; set; } = true;
 }
 
 public sealed class UpdateAdminProfileTypeEndpoint(IAdminProfileTypeCommandService service)
@@ -138,6 +141,7 @@ public sealed class UpdateAdminProfileTypeEndpoint(IAdminProfileTypeCommandServi
                 MobileAppRole = req.MobileAppRole,
                 IsActive = req.IsActive,
                 IsVisitor = req.IsVisitor,
+                IsAppRegisterable = req.IsAppRegisterable,
             }, ct);
         await Send.OkAsync(ApiResult<AdminProfileTypeSummary>.Ok(summary), ct);
     }

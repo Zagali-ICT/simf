@@ -51,6 +51,14 @@ internal sealed class ProfileTypeConfiguration : IEntityTypeConfiguration<UserPr
             .HasDefaultValue(false)
             .IsRequired();
 
+        // D-725 (owner item 1) — app sign-up picker visibility. Default true
+        // so existing + freshly created rows stay registerable; the D-725
+        // migration's data step flips Staff / Moderator to false, and the CP
+        // form lets an admin toggle any row.
+        builder.Property(profileType => profileType.IsAppRegisterable)
+            .HasDefaultValue(true)
+            .IsRequired();
+
         // D-186 — after the UserType collapse every profile type is
         // Visitor-scope; the CP picker + approval queues filter by
         // (IsForVisitor, IsActive), so one composite index serves both.

@@ -42,6 +42,7 @@
 | E2E-OPT-013 | Deactivate in-use type → 409 `ProfileTypeInUse` (bilingual) | error | P0 | _to author_ |
 | E2E-OPT-014 | Server 500 on `/list` → empty grid, no crash | resilience | P2 | _to author_ |
 | E2E-OPT-015 | RTL / Arabic render mirrors page + Add modal | i18n | P1 | _to author_ |
+| E2E-OPT-016 | "Show in the app sign-up picker" toggle hides the type from the app (D-725) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -68,7 +69,8 @@ Scenario: Create, edit, view, then deactivate one partner profile type
   Then the Add modal opens titled "Add profile type"
   And it shows the read-only "Account type" value "Partner / staff (Sponsor, Exhibitor, Media, …)"
   And it shows the fields: Name (English), Name (Arabic), Page colour (text + colour swatch),
-    Mobile-app role (select), and the "Visible in pickers (active)" checkbox (ticked)
+    Mobile-app role (select), the "Visible in pickers (active)" checkbox (ticked), and
+    the "Show in the app sign-up picker" checkbox (ticked by default, D-725)
   When they fill Name (English)="Sponsor staff"
   And they fill Name (Arabic)="فريق الرعاة"
   And they set Page colour to "#FFD700" via the paired text input (the swatch mirrors it)
@@ -325,6 +327,34 @@ Scenario: Arabic toggle mirrors the page and the Add modal
   And the form actions ("إنشاء نوع الملف" / "إلغاء") appear in reverse order
 ```
 
+### E2E-OPT-016 — "Show in the app sign-up picker" toggle (D-725)
+
+```gherkin
+Scenario: Un-ticking "Show in the app sign-up picker" hides the type from mobile registration
+  Given the Add modal is open on /admin/profile-types/other
+  Then the "Show in the app sign-up picker" checkbox is present and ticked by default
+  And a helper reads "When off, this type is admin-assigned only and never appears when a user
+    registers in the mobile app (e.g. Staff, Moderator)."
+  When the administrator fills Name (English)="Ops lead", Name (Arabic)="قائد العمليات",
+    Page colour "#6366F1", Mobile-app role = "Moderator — content & user authority"
+  And un-ticks "Show in the app sign-up picker"
+  And clicks "Create profile type"
+  Then the POST /account/api/admin/profile-types body carries IsAppRegisterable=false
+  And the API returns HTTP 200
+  When a mobile client (or a direct GET) calls /api/v1/app/account/profile-types?isVisitor=false
+  Then the "Ops lead" row is ABSENT from the picker (IsAppRegisterable=false is filtered out)
+  When the administrator re-opens the row's Edit modal, re-ticks the box, and saves
+  Then the PUT body carries IsAppRegisterable=true and the row re-appears in the app picker
+
+Scenario: The seeded Staff / Moderator types are hidden out of the box
+  Given a freshly seeded / migrated database
+  When a mobile client calls /api/v1/app/account/profile-types (any scope)
+  Then neither the seeded "Staff" nor the seeded "Moderator" type appears
+    (the D-725 migration data step + the IdentitySeeder derive IsAppRegisterable=false
+     for MobileAppRole IN (Staff, Moderator))
+  And their rows still appear in THIS CP grid (CP admin listings show every type)
+```
+
 ---
 
 ## Implementation notes
@@ -346,7 +376,11 @@ Scenario: Arabic toggle mirrors the page and the Add modal
   - `Cannot_delete_a_profile_type_that_is_still_referenced_by_a_user_profile` (→ `ProfileTypeInUse`, mirrors E2E-OPT-013),
   - `A_non_admin_caller_is_forbidden_from_every_profile_type_endpoint` (auth, lower-layer twin of E2E-OPT-009),
   - `IsVisitor_round_trips_through_Create_Get_List` (Theory) + `Update_flipping_IsVisitor_persists_and_audits_the_change` (the audience/partner flag + audit Detail),
+  - `IsAppRegisterable_round_trips_through_Create_Get_and_Update` (D-725 — the app-picker visibility flag persists + flips, backing E2E-OPT-016),
   - `Create_others_rejects_an_audience_profile_type` (the partner-side guard backing this page).
+  The app-side exclusion is covered by
+  [`tests/SIMF.Api.Tests/ProfileTypePickerTests.cs`](../../../tests/SIMF.Api.Tests/ProfileTypePickerTests.cs)
+  `Non_app_registerable_types_are_excluded` (a non-registerable partner row never reaches the picker).
   The Mobile-app role rules also have lower-layer coverage in
   [`tests/SIMF.Api.Tests/MobileAppRoleTests.cs`](../../../tests/SIMF.Api.Tests/MobileAppRoleTests.cs)
   and the CP form is unit-tested in

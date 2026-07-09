@@ -329,7 +329,10 @@ public sealed record AdminProfileTypeSummary(
     // D-186 — audience-vs-partner split inside the Visitor scope.
     // true = audience profile type (VIP, Normal); false = partner /
     // staff profile type (Sponsor, Exhibitor, Media, Staff).
-    bool IsVisitor);
+    bool IsVisitor,
+    // D-725 — whether the type is offered in the app sign-up picker.
+    // false = CP-only (admin-assigned), e.g. Staff / Moderator.
+    bool IsAppRegisterable);
 
 /// <summary>
 /// D-115 — body of <c>POST /api/v1/admin/profile-types</c>. Creates a
@@ -368,6 +371,11 @@ public sealed class AdminCreateProfileTypeRequest
     /// true so a freshly created profile type lands on the Visitors
     /// approval queue until an admin explicitly flips it.</summary>
     public bool IsVisitor { get; set; } = true;
+
+    /// <summary>D-725 (owner item 1) — whether the type appears in the app
+    /// sign-up picker. Default true; set false for CP-only operational types
+    /// (Staff, Moderator) that an admin assigns rather than a customer picks.</summary>
+    public bool IsAppRegisterable { get; set; } = true;
 }
 
 /// <summary>
@@ -388,6 +396,10 @@ public sealed class AdminUpdateProfileTypeRequest
 
     /// <summary>D-186 — audience (true) or partner / staff (false).</summary>
     public bool IsVisitor { get; set; } = true;
+
+    /// <summary>D-725 (owner item 1) — whether the type appears in the app
+    /// sign-up picker. Default true; false = CP-only (Staff, Moderator).</summary>
+    public bool IsAppRegisterable { get; set; } = true;
 }
 
 /// <summary>

@@ -63,7 +63,11 @@ Read on load (concurrent), per `ProfileRepository`:
 - **E3** `GET /app/account/user-profile/countries` → `{ countries: [{ code, name,
   nameArabic }] }`.
 - **E4** `GET /app/account/profile-types?isVisitor={bool}` → `{ items: [{ id, name,
-  nameArabic, isVisitor }] }` (re-queried when the Visitor/Other tab flips).
+  nameArabic, isVisitor }] }` (re-queried when the Visitor/Other tab flips). **D-725:**
+  the endpoint now returns only **app-registerable** types — CP-only operational types
+  (Staff, Moderator, or any type an admin has un-ticked "Show in the app sign-up picker")
+  are filtered out server-side, so they never appear on the Other tab. The response
+  shape is unchanged (wire-safe).
 - **E6** `GET /app/organisations?search={text}&top=20` → `[{ id, nameAr, nameEn, city }]`.
 
 The **save** (`POST /app/account/user-profile` + the multipart id-image upload + the

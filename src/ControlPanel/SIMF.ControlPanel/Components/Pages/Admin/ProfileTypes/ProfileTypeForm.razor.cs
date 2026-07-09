@@ -70,6 +70,7 @@ public partial class ProfileTypeForm
             _model.MobileAppRole = string.IsNullOrEmpty(Initial.MobileAppRole)
                 ? "None" : Initial.MobileAppRole;
             _model.IsActive = Initial.IsActive;
+            _model.IsAppRegisterable = Initial.IsAppRegisterable;
         }
         _editContext = new EditContext(_model);
         _messages = new ValidationMessageStore(_editContext);
@@ -103,6 +104,21 @@ public partial class ProfileTypeForm
 
     private string PageColorAsHex =>
         HexSixPattern.IsMatch(_model.PageColor) ? _model.PageColor : "#244A77";
+
+    // D-725 — mirror the seeder default in the CP create path: selecting an
+    // operational app role (Staff / Moderator) auto-hides the type from the
+    // app sign-up picker, so a hand-created CP-only type behaves like the
+    // seeded one (which ships IsAppRegisterable=false). The admin can still
+    // re-tick "Show in the app sign-up picker" deliberately; picking a
+    // non-operational role never touches the box.
+    private void OnMobileAppRoleChanged(string? value)
+    {
+        _model.MobileAppRole = string.IsNullOrEmpty(value) ? "None" : value;
+        if (_model.MobileAppRole is "Staff" or "Moderator")
+        {
+            _model.IsAppRegisterable = false;
+        }
+    }
 
     private void OnPageColorTextInput(ChangeEventArgs e)
     {
@@ -164,6 +180,8 @@ public partial class ProfileTypeForm
                         // the row's existing audience/partner flag
                         // unless the host explicitly changes it.
                         IsVisitor = Initial.IsVisitor,
+                        // D-725: app sign-up picker visibility toggle.
+                        IsAppRegisterable = _model.IsAppRegisterable,
                     });
             }
             else
@@ -182,6 +200,8 @@ public partial class ProfileTypeForm
                         MobileAppRole = mobileAppRolePayload,
                         IsActive = _model.IsActive,
                         IsVisitor = !IsPartnerForm,
+                        // D-725: app sign-up picker visibility toggle.
+                        IsAppRegisterable = _model.IsAppRegisterable,
                     });
             }
 
@@ -210,5 +230,7 @@ public partial class ProfileTypeForm
         // by picking Staff or Moderator.
         public string MobileAppRole { get; set; } = "None";
         public bool IsActive { get; set; } = true;
+        // D-725 — app sign-up picker visibility; default true (visible).
+        public bool IsAppRegisterable { get; set; } = true;
     }
 }

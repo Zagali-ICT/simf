@@ -53,9 +53,14 @@ public sealed class ProfileTypesPickerEndpoint(SimfAppDbContext appDb)
         // Admin-scope rows (if any are ever seeded) are never valid
         // for a self-registering user to pick. Combined with the
         // IsActive filter so soft-deleted rows never appear.
+        // D-725 (owner item 1): CP-only operational types (Staff /
+        // Moderator, or any row an admin has un-flagged) are hidden from
+        // the self-registration picker — they are admin-assigned, never
+        // customer-selected.
         var query = appDb.ProfileTypes
             .AsNoTracking()
-            .Where(p => p.IsActive);
+            .Where(p => p.IsActive)
+            .Where(p => p.IsAppRegisterable);
 
         if (req.IsVisitor is { } flag)
         {

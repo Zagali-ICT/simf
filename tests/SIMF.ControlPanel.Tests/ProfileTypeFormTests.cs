@@ -57,7 +57,8 @@ public sealed class ProfileTypeFormTests : CpComponentTestBase
         JSInterop.Mode = JSRuntimeMode.Loose;
         var summary = new AdminProfileTypeSummary(
             Guid.NewGuid(), "VIP", "كبار", "#FFD700",
-            "Visitor", "None", IsActive: true, IsVisitor: true);
+            "Visitor", "None", IsActive: true, IsVisitor: true,
+            IsAppRegisterable: true);
         var handler = JSInterop.Setup<ApiResult<AdminProfileTypeSummary>>(
             "simfAccount.postJson", _ => true)
             .SetResult(ApiResult<AdminProfileTypeSummary>.Ok(summary));
@@ -89,7 +90,8 @@ public sealed class ProfileTypeFormTests : CpComponentTestBase
         JSInterop.Mode = JSRuntimeMode.Loose;
         var summary = new AdminProfileTypeSummary(
             Guid.NewGuid(), "Sponsor", "راعي", "#8B5CF6",
-            "Visitor", "None", IsActive: true, IsVisitor: false);
+            "Visitor", "None", IsActive: true, IsVisitor: false,
+            IsAppRegisterable: true);
         var handler = JSInterop.Setup<ApiResult<AdminProfileTypeSummary>>(
             "simfAccount.postJson", _ => true)
             .SetResult(ApiResult<AdminProfileTypeSummary>.Ok(summary));
@@ -108,6 +110,37 @@ public sealed class ProfileTypeFormTests : CpComponentTestBase
     }
 
     [Fact]
+    public void Selecting_the_Staff_app_role_auto_hides_the_type_from_the_app_picker()
+    {
+        // D-725: the create form mirrors the seeder — picking an operational
+        // app role (Staff / Moderator) auto-unchecks "Show in the app sign-up
+        // picker", so a hand-created CP-only type is hidden from mobile
+        // self-registration just like the seeded Staff / Moderator rows.
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        var summary = new AdminProfileTypeSummary(
+            Guid.NewGuid(), "Gate operator", "مشغّل", "#244A77",
+            "Visitor", "Staff", IsActive: true, IsVisitor: false,
+            IsAppRegisterable: false);
+        var handler = JSInterop.Setup<ApiResult<AdminProfileTypeSummary>>(
+            "simfAccount.postJson", _ => true)
+            .SetResult(ApiResult<AdminProfileTypeSummary>.Ok(summary));
+
+        var cut = RenderComponent<ProfileTypeForm>(parameters => parameters
+            .Add(p => p.IsPartnerForm, true));
+
+        cut.FindAll("input.simf-field__input")[0].Change("Gate operator");
+        cut.FindAll("input.simf-field__input")[1].Change("مشغّل");
+        // Pick the operational Staff role from the Mobile-app role select.
+        cut.Find("select.simf-field__select").Change("Staff");
+        cut.Find("form").Submit();
+
+        var body = (AdminCreateProfileTypeRequest)handler.Invocations.Single().Arguments[1]!;
+        Assert.Equal("Staff", body.MobileAppRole);
+        // The box was auto-unchecked when Staff was picked.
+        Assert.False(body.IsAppRegisterable);
+    }
+
+    [Fact]
     public void Edit_mode_preserves_existing_IsVisitor_on_PUT()
     {
         // D-187 review-pass discovered: the route-bound
@@ -119,7 +152,8 @@ public sealed class ProfileTypeFormTests : CpComponentTestBase
         JSInterop.Mode = JSRuntimeMode.Loose;
         var partnerSummary = new AdminProfileTypeSummary(
             Guid.NewGuid(), "Exhibitor", "عارض", "#10B981",
-            "Visitor", "Staff", IsActive: true, IsVisitor: false);
+            "Visitor", "Staff", IsActive: true, IsVisitor: false,
+            IsAppRegisterable: true);
         var handler = JSInterop.Setup<ApiResult<AdminProfileTypeSummary>>(
             "simfAccount.putJson", _ => true)
             .SetResult(ApiResult<AdminProfileTypeSummary>.Ok(partnerSummary));

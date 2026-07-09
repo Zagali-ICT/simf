@@ -75,4 +75,16 @@ public sealed class UserProfileType : BaseAuditEntity
     /// would wrongly match any future type whose name merely embedded "VIP".
     /// Admin-curated; the seeder sets it <c>true</c> for the VVIP + VIP rows.</summary>
     public bool AllowsVipMeetingSlots { get; set; }
+
+    /// <summary>D-725 (owner batch item 1) — whether this profile type is
+    /// offered to a self-registering user in the mobile app's sign-up picker
+    /// (<c>GET /app/account/profile-types</c>). <c>true</c> for audience +
+    /// self-serviceable partner types; <c>false</c> for CP-only operational
+    /// types (Staff, Moderator) that an admin assigns rather than a customer
+    /// self-selecting. Defaults to <c>true</c> so a brand-new type is visible
+    /// until an admin hides it. Admin-curated at runtime — a plain checkbox on
+    /// the CP profile-type form, not a code change. Does NOT affect CP admin
+    /// listings (which always show every type) or any permission — it is a
+    /// pure app-registration-picker visibility flag.</summary>
+    public bool IsAppRegisterable { get; set; } = true;
 }

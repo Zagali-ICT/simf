@@ -65,12 +65,19 @@
                         ValueFor="@(role => role)"
                         LabelFor="@(role => L[$"Admin.ProfileTypes.MobileAppRole.{role}"])"
                         Value="@_model.MobileAppRole"
-                        ValueChanged="@(v => _model.MobileAppRole = string.IsNullOrEmpty(v) ? "None" : v)"
+                        ValueChanged="OnMobileAppRoleChanged"
                         Disabled="_busy" />
         }
         <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">
             @L["Admin.ProfileTypes.Field.IsActive"]
         </SimfCheckbox>
+        @* D-725 (owner item 1) — app sign-up picker visibility. Unchecked =
+           a CP-only (admin-assigned) type, hidden from the mobile registration
+           picker (e.g. Staff / Moderator). CP admin listings always show it. *@
+        <SimfCheckbox @bind-Value="_model.IsAppRegisterable" Disabled="_busy">
+            @L["Admin.ProfileTypes.Field.ShowInApp"]
+        </SimfCheckbox>
+        <div class="simf-field__helper">@L["Admin.ProfileTypes.Field.ShowInAppHint"]</div>
     </div>
     <div class="simf-form__actions">
         <SimfButton Loading="_busy" LoadingLabel="@L["Admin.ProfileTypes.Submitting"]">

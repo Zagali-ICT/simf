@@ -237,6 +237,8 @@
   <data name="Admin.ProfileTypes.MobileAppRole.Moderator" xml:space="preserve"><value>مشرف — صلاحية المحتوى والمستخدمين</value></data>
   <data name="Admin.ProfileTypes.MobileAppRole.Exhibitor" xml:space="preserve"><value>عارض — التقاط الزوار (مسح + زواري)</value></data>
   <data name="Admin.ProfileTypes.Field.IsActive" xml:space="preserve"><value>مرئي في القوائم (نشط)</value></data>
+  <data name="Admin.ProfileTypes.Field.ShowInApp" xml:space="preserve"><value>إظهاره في قائمة التسجيل بالتطبيق</value></data>
+  <data name="Admin.ProfileTypes.Field.ShowInAppHint" xml:space="preserve"><value>عند إيقافه، يُسنَد هذا النوع من قِبل المشرف فقط ولا يظهر عند تسجيل المستخدم في تطبيق الجوال (مثل: فريق، منسّق).</value></data>
   <data name="Admin.ProfileTypes.Field.NameInvalid" xml:space="preserve"><value>يجب أن يتراوح الاسم بين 1 و128 حرفًا.</value></data>
   <data name="Admin.ProfileTypes.Field.NameArabicInvalid" xml:space="preserve"><value>يجب أن يتراوح الاسم العربي بين 1 و128 حرفًا.</value></data>
   <data name="Admin.ProfileTypes.Field.PageColorInvalid" xml:space="preserve"><value>يجب أن يتراوح لون الصفحة بين 1 و32 حرفًا.</value></data>
