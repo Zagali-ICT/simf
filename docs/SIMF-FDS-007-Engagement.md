@@ -351,15 +351,23 @@ flipped from DRAFT to built with an As-built note.
 
 ## Amendment C — the multi-trigger ratings (D0-3, DRAFT 2026-07-08)
 
-> **STATUS: DRAFT — pending owner sign-off.** Ratings/feedback are not currently
-> owned by a dedicated FDS — they were built across the completion-programme
-> decisions (D-677/D-678 notification+deep-link, D-679 day/programme prompts,
-> D-680 dynamic page, D-690 rate-after-view). Per the owner's Phase-0 plan this
-> section is the ratings home. It defines the **owner's item 8** ("show rate when a
-> session is watched, at time and each date — many rate triggers based on time")
-> against the built system. **Finding: 2 of the 4 owner triggers are already built;
-> 2 are gaps.** Cross-references SIMF-FDS-003 (gate scan / attendance) and
+> **STATUS: build-ready — owner said "build item 8" (2026-07-09); the §C.5 open
+> items proceed on the documented recommendations.** Ratings/feedback are not
+> currently owned by a dedicated FDS — they were built across the completion-
+> programme decisions (D-677/D-678 notification+deep-link, D-679 day/programme
+> prompts, D-680 dynamic page, D-690 rate-after-view). Per the owner's Phase-0 plan
+> this section is the ratings home. It defines the **owner's item 8** ("show rate
+> when a session is watched, at time and each date — many rate triggers based on
+> time") against the built system. **Finding: 2 of the 4 owner triggers are already
+> built; 2 are gaps (GAP-A rate-on-gate-checkout, GAP-B rate-on-live-close) + a
+> "watched at" header.** Cross-references SIMF-FDS-003 (gate scan / attendance) and
 > SIMF-FDS-011 (statistics consuming the ratings).
+>
+> **OI resolutions (recommendation, owner did not override):** OI-C1 = the session
+> active at the scan time (else the most recent attended in that hall today);
+> OI-C2 = reuse the `Session` rating code (one prompt per session per user, dedup
+> shared with GAP-A/B + D-690); OI-C3 = a per-rating "watched at" header; OI-C4 =
+> keep the built triggers, add only GAP-A/B.
 
 ### C.1 What the owner asked (item 8, 2026-07-08, verbatim intent)
 

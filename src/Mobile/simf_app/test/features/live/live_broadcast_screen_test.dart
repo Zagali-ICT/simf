@@ -4,12 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/core/organization_profile/organization_profile.dart';
 import 'package:simf_app/features/live/data/live_repository.dart';
 import 'package:simf_app/features/live/live_broadcast_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
+
+import '../accessibility/_fake_prefs.dart';
 
 LiveSession _liveSession({
   String? liveStreamUrl,
@@ -112,7 +115,7 @@ class _Guest extends AuthController {
   AuthState build() => const AuthStateSignedOut();
 }
 
-Future<void> _pump(
+Future<GoRouter> _pump(
   WidgetTester tester, {
   required LiveRepository repo,
   String? sessionId,
@@ -120,6 +123,7 @@ Future<void> _pump(
   Locale locale = const Locale('en'),
   bool settle = true,
   AuthController? auth,
+  SimfPrefsStorage? prefs,
 }) async {
   // Tall surface so the whole lazy scroll (player band → title → region notice →
   // ask-question, or the not-live message) lays out in the test viewport.
@@ -134,6 +138,20 @@ Future<void> _pump(
         path: '/live',
         builder: (_, state) => LiveBroadcastScreen(sessionId: sessionId),
       ),
+      // Navigating here disposes the live screen so the D-712 after-watch prompt
+      // can fire; the /rate landing echoes its query so the prompt is observable.
+      GoRoute(
+        path: '/gone',
+        builder: (_, __) => const Scaffold(body: Text('GONE')),
+      ),
+      GoRoute(
+        path: '/rate',
+        name: RouteNames.rate,
+        builder: (_, state) => Scaffold(
+          body: Text('RATE ${state.uri.queryParameters['targetId']} '
+              '${state.uri.queryParameters['code']}'),
+        ),
+      ),
     ],
   );
 
@@ -143,6 +161,7 @@ Future<void> _pump(
         liveRepositoryProvider.overrideWithValue(repo),
         orgProfileProvider.overrideWith(() => _StubOrgProfile(profile)),
         authControllerProvider.overrideWith(() => auth ?? _SignedIn()),
+        simfPrefsStorageProvider.overrideWithValue(prefs ?? FakePrefs()),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -167,6 +186,7 @@ Future<void> _pump(
       await tester.pump(const Duration(milliseconds: 50));
     }
   }
+  return router;
 }
 
 void main() {
@@ -516,6 +536,71 @@ void main() {
       );
 
       expect(find.text('الافتتاح'), findsOneWidget);
+    });
+
+    testWidgets('D-712 — leaving a watched live session opens the rate screen '
+        'once (shared dedup with the after-view prompt)', (tester) async {
+      final router = await _pump(
+        tester,
+        repo: _FakeLiveRepo(
+          session: _liveSession(
+            liveStreamUrl: 'https://live.example.sa/main.m3u8',
+          ),
+        ),
+        sessionId: 's1',
+        // The player can't init headless — settle:false; the after-watch prompt
+        // is captured in _load regardless of the player.
+        settle: false,
+      );
+
+      // Leaving the live screen opens the dynamic rate screen for THIS session.
+      // The player is disposed on leave, so pumpAndSettle is safe here.
+      router.go('/gone');
+      await tester.pumpAndSettle();
+      expect(find.text('RATE s1 Session'), findsOneWidget);
+
+      // Re-enter + leave again → not prompted a second time (the shared tracker
+      // already recorded it). The re-mount re-inits the (headless-failing) player,
+      // so pump fixed frames rather than settling on it.
+      router.go('/live');
+      await tester.pump(const Duration(milliseconds: 200));
+      router.go('/gone');
+      await tester.pumpAndSettle();
+      expect(find.text('RATE s1 Session'), findsNothing);
+      expect(find.text('GONE'), findsOneWidget);
+    });
+
+    testWidgets('D-712 — a non-live session (no stream) does not prompt on leave',
+        (tester) async {
+      final router = await _pump(
+        tester,
+        repo: _FakeLiveRepo(session: _liveSession()), // no liveStreamUrl
+        sessionId: 's1',
+      );
+
+      router.go('/gone');
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.text('RATE s1 Session'), findsNothing);
+    });
+
+    testWidgets('D-712 — a signed-out guest is never prompted on leave',
+        (tester) async {
+      final router = await _pump(
+        tester,
+        repo: _FakeLiveRepo(
+          session: _liveSession(
+            liveStreamUrl: 'https://www.youtube.com/watch?v=simf',
+          ),
+        ),
+        sessionId: 's1',
+        auth: _Guest(),
+      );
+
+      router.go('/gone');
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.text('RATE s1 Session'), findsNothing);
     });
   });
 }

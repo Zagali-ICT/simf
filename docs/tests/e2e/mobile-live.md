@@ -63,6 +63,7 @@
 | E2E-MOB025-019 | P5 — live session with no caption → the muted placeholder hint (D-439) | edge | P1 | authored ✓ (screen `P5 — a live session with no caption shows the placeholder hint`) |
 | E2E-MOB025-020 | P5 — caption locale fallback: Arabic text under `ar`, English under `en` (D-439) | i18n | P1 | authored ✓ (screen `P5 — the caption renders the Arabic text under the ar locale`) |
 | E2E-MOB025-021 | Login-gate (D-577): a signed-out guest sees the in-screen "need login" prompt + Sign-in button (never the player), and no session is fetched | auth | P0 | authored ✓ (screen `a signed-out guest sees the need-login gate, not the stream (owner, D-577)`) |
+| E2E-MOB025-022 | **Rate-on-live-close (item 8 / D-712, FDS-007 §C.4 GAP-B):** an approved attendee leaving the live screen for a session that carried a live feed opens `/rate?code=Session&targetId={id}` **once**; re-entering + leaving does not re-prompt (shared dedup with the D-690 after-view prompt). A non-live session and a signed-out guest are never prompted | happy | P0 | authored ✓ (screen `D-712 — leaving a watched live session opens the rate screen once` + `… non-live session … does not prompt` + `… guest is never prompted`) |
 
 ## Scenarios
 
@@ -333,4 +334,5 @@ Frame node 934:3613. Widget tests: `live_broadcast_screen_test.dart` (`P5 — �
 
 ---
 
-_Last reviewed:_ `2026-06-19` by `SIMF Team`.
+_Last reviewed:_ `2026-07-09` by `SIMF Team` — D-712 added the rate-on-live-close
+prompt (E2E-MOB025-022, FDS-007 §C.4 GAP-B, owner item 8).

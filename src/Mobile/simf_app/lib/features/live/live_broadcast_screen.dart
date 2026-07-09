@@ -12,6 +12,7 @@ import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import '../../core/organization_profile/organization_profile.dart';
+import '../sessions/data/rate_prompt_tracker.dart';
 import 'data/live_repository.dart';
 import 'widgets/live_content.dart';
 import 'widgets/live_message_surfaces.dart';
@@ -72,6 +73,17 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
   /// otherwise).
   bool _showSignLanguage = false;
 
+  /// The router captured in [didChangeDependencies] so [dispose] can push the
+  /// after-watch rate prompt (D-712) after this element is gone.
+  GoRouter? _router;
+
+  /// Non-null only when this view is eligible to prompt on leave — a signed-in
+  /// approved attendee who actually had a live feed to watch. Captured in [_load]
+  /// so [dispose] never reads a provider from a dead element. Shares the D-690
+  /// tracker + the `Session` rating code, so watching online then leaving the
+  /// (ended) session detail can't double-prompt.
+  SessionRatePromptTracker? _rateTracker;
+
   bool get _hasId =>
       widget.sessionId != null && widget.sessionId!.trim().isNotEmpty;
 
@@ -84,6 +96,56 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
     if (isSignedIn && _hasId) {
       unawaited(_load());
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // maybeOf (not of): a bare-MaterialApp test host with no GoRouter leaves this
+    // null, and the leave-prompt simply does not fire.
+    _router = GoRouter.maybeOf(context);
+  }
+
+  @override
+  void dispose() {
+    _maybePromptRateAfterWatch();
+    super.dispose();
+  }
+
+  bool _isAttendeeRole(AppRole role) =>
+      role == AppRole.visitor || role == AppRole.exhibitor;
+
+  /// D-712 (FDS-007 §C.4 GAP-B, owner item 8) — "online session, live-stream
+  /// close → rate the online session". When an approved attendee leaves the live
+  /// screen for a session that carried a live feed, open the dynamic rate screen
+  /// for it once. Runs from [dispose] (the reliable "left the screen" signal for
+  /// every exit path) and pushes through the captured [GoRouter] on the next
+  /// frame. Forward navigations (ask-a-question, sign-in) keep this screen alive,
+  /// so they do not fire it; the shared tracker dedups it with the D-690
+  /// after-view prompt so a session is rated at most once.
+  void _maybePromptRateAfterWatch() {
+    final router = _router;
+    final tracker = _rateTracker;
+    final sessionId = widget.sessionId?.trim();
+    if (router == null ||
+        tracker == null ||
+        sessionId == null ||
+        sessionId.isEmpty ||
+        tracker.hasShown(sessionId)) {
+      return;
+    }
+    unawaited(tracker.markShown(sessionId));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(
+        router.pushNamed(
+          RouteNames.rate,
+          queryParameters: <String, String>{
+            'code': 'Session',
+            'targetId': sessionId,
+          },
+        ),
+      );
+    });
   }
 
   Future<void> _load() async {
@@ -99,6 +161,16 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
       if (!mounted) {
         return;
       }
+      // D-712 — capture the after-watch rate eligibility: an approved attendee
+      // (a pending account presents as guest via effectiveAppRole and is excluded)
+      // who actually had a live feed to watch. Captured here so [dispose] reuses
+      // the reference instead of reading a provider from a dead element.
+      final auth = ref.read(authControllerProvider);
+      final isApprovedAttendee = auth is AuthStateSignedIn &&
+          _isAttendeeRole(auth.session.user.effectiveAppRole);
+      _rateTracker = isApprovedAttendee && session.liveStreamUrl != null
+          ? ref.read(sessionRatePromptTrackerProvider)
+          : null;
       setState(() {
         _session = session;
         _showSignLanguage = false;
