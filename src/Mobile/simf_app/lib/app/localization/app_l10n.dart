@@ -464,6 +464,14 @@ class AppL10n {
         'هل تريد تسجيل الخروج من حسابك؟',
         'Do you want to sign out of your account?',
       );
+  // D-726 (item 11) — the idle session-timeout warning (SessionGuard).
+  String get sessionExpiryTitle =>
+      _t('هل ما زلت هنا؟', 'Are you still there?');
+  String sessionExpiryCountdown(int seconds) => _t(
+        'ستُنهى جلستك خلال $seconds ثانية بسبب عدم النشاط.',
+        'Your session will end in $seconds seconds due to inactivity.',
+      );
+  String get sessionStaySignedIn => _t('البقاء مسجّلاً', 'Stay signed in');
 
   // Sign in (Page 003).
   String get signInTitle => _t('تسجيل الدخول', 'Sign in');

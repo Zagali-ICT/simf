@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme/tokens.dart';
+import '../../../core/session/session_activity.dart';
 import '../../accessibility/data/accessibility_controller.dart';
 import 'live_badges.dart';
 import 'live_video_player.dart';
@@ -9,7 +12,7 @@ import 'live_video_player.dart';
 /// The black live player surface (frame 934:3614): the player fills a 16:9 box
 /// over a black backdrop, with the LIVE badge + language chip in the top row and
 /// the gold-bordered AI live-caption strip below the feed.
-class LivePlayerSurface extends StatelessWidget {
+class LivePlayerSurface extends ConsumerStatefulWidget {
   const LivePlayerSurface({
     required this.url,
     required this.liveLabel,
@@ -26,6 +29,37 @@ class LivePlayerSurface extends StatelessWidget {
   final String captionHint;
 
   @override
+  ConsumerState<LivePlayerSurface> createState() => _LivePlayerSurfaceState();
+}
+
+class _LivePlayerSurfaceState extends ConsumerState<LivePlayerSurface> {
+  /// D-726 (#13) — the watch keep-alive lives here because this surface is built
+  /// ONLY when a live feed is actually on screen (`mainUrl != null`). While it is
+  /// mounted, ping the session activity clock every minute so watching the stream
+  /// (which produces no touch input) does not trip the SessionGuard's idle
+  /// sign-out. It cannot outlive playback — a non-feed state (not-started / error
+  /// / empty) or leaving the screen unmounts this widget, and `dispose` cancels
+  /// the timer — and it can never exceed the server 24h cap (a refresh past it
+  /// fails, D-443).
+  Timer? _keepAlive;
+
+  @override
+  void initState() {
+    super.initState();
+    ref.read(sessionActivityProvider).markActive();
+    _keepAlive = Timer.periodic(
+      const Duration(minutes: 1),
+      (_) => ref.read(sessionActivityProvider).markActive(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _keepAlive?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ColoredBox(
       color: Colors.black,
@@ -39,15 +73,15 @@ class LivePlayerSurface extends StatelessWidget {
             // the inline-end / left), not overlaid on the video.
             Row(
               children: <Widget>[
-                LiveBadge(label: liveLabel),
+                LiveBadge(label: widget.liveLabel),
                 const Spacer(),
                 const LanguageChip(),
               ],
             ),
             const SizedBox(height: SimfTokens.space4),
-            LiveVideoPlayer(url: url),
+            LiveVideoPlayer(url: widget.url),
             const SizedBox(height: SimfTokens.space4),
-            _CaptionStrip(caption: caption, hint: captionHint),
+            _CaptionStrip(caption: widget.caption, hint: widget.captionHint),
           ],
         ),
       ),

@@ -33,6 +33,11 @@ router redirect); the reads themselves stay `AllowAnonymous`.
   caption strip shows the admin-set caption or a placeholder; hidden when the
   user turns captions off (accessibility toggle).
 - Language chip toggles the app locale; the ask-question button opens #26.
+- **Watch keep-alive (item 13 / D-726):** while a signed-in user is on this
+  screen, a 60s timer pings the shared `SessionActivity` clock so the app-wide
+  `SessionGuard` treats watching (no touch) as activity and silently refreshes —
+  no idle sign-out mid-stream. Bounded by the server 24h cap (D-443); cancelled
+  on leave (dispose).
 
 ## 4. Button / action audit (Level F, 2026-07-03)
 | Control | Handler | Backend |
