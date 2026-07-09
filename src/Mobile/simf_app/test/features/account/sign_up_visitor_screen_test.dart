@@ -228,6 +228,8 @@ UserProfileResponse _completeProfile({
   bool hasIdImage = true, // ID document — mandatory for everyone
   bool hasAvatar = true, // face photo — mandatory for men, optional for women
   String? plateNumber,
+  String? jobTitle = 'Engineer', // D-723 — required; pass null for the empty case
+  String? saudiMobile = '0512345678', // D-723 — required; pass null for empty case
   String placeOfBirth = 'Riyadh',
 }) =>
     UserProfileResponse(
@@ -236,12 +238,14 @@ UserProfileResponse _completeProfile({
       arabicName: 'راكان عبدالله أحمد السالم',
       englishName: 'Rakan Abdullah Ahmed Alsalem',
       nationalityCode: 'SA',
+      jobTitle: jobTitle,
       placeOfBirth: placeOfBirth,
       isSaudi: true,
       gender: gender,
       hasIdImage: hasIdImage,
       hasAvatar: hasAvatar,
       nationalId: '1000000008', // matches ^1\d{9}$ and is Luhn-valid
+      saudiMobile: saudiMobile,
       dateOfBirth: '2000-01-31',
       organisationId: 'o1', // B3 — D-221: organisation is now required
       plateNumber: plateNumber,
@@ -417,6 +421,44 @@ void main() {
 
       // The field now shows the picked region.
       expect(find.text('Eastern Province'), findsOneWidget);
+    });
+
+    testWidgets('an empty job title blocks Next with the required error (D-723)',
+        (tester) async {
+      final repo =
+          _FakeProfileRepository(profile: _completeProfile(jobTitle: null));
+      await _pump(tester, repo);
+
+      await _tapNext(tester);
+
+      // Blocked at the profile step — the required error shows, no navigation.
+      expect(find.text('INTERESTS'), findsNothing);
+      expect(find.text('Job title is required'), findsOneWidget);
+    });
+
+    testWidgets(
+        'an empty place of birth (Saudi, no region) blocks Next with the '
+        'required error (D-723)', (tester) async {
+      final repo =
+          _FakeProfileRepository(profile: _completeProfile(placeOfBirth: ''));
+      await _pump(tester, repo);
+
+      await _tapNext(tester);
+
+      expect(find.text('INTERESTS'), findsNothing);
+      expect(find.text('Place of birth is required'), findsOneWidget);
+    });
+
+    testWidgets('an empty mobile number blocks Next with the required error '
+        '(D-723)', (tester) async {
+      final repo =
+          _FakeProfileRepository(profile: _completeProfile(saudiMobile: null));
+      await _pump(tester, repo);
+
+      await _tapNext(tester);
+
+      expect(find.text('INTERESTS'), findsNothing);
+      expect(find.text('Mobile number is required'), findsOneWidget);
     });
 
     testWidgets(
@@ -791,12 +833,14 @@ void main() {
         arabicName: 'راكان عبدالله أحمد السالم',
         englishName: 'Rakan Abdullah Ahmed Alsalem',
         nationalityCode: 'ZZ',
+        jobTitle: 'Engineer', // D-723 — job title is now required
         placeOfBirth: 'Riyadh',
         isSaudi: true,
         gender: AppGender.female,
         hasIdImage: true, // ID present (required for all); face optional for women
         hasAvatar: false,
         nationalId: '1000000008',
+        saudiMobile: '0512345678', // D-723 — mobile is now required
         dateOfBirth: '2000-01-31',
         organisationId: 'o1',
       );

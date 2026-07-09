@@ -473,6 +473,10 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     // side; the picker is not a FormField, so its inline error (line ~985)
     // must also gate Next, otherwise an empty code reaches the server (400).
     final nationalityValid = _nationalityCode != null;
+    // D-723 — place of birth is required. Non-Saudi uses the free-text field
+    // (caught by the form validator); Saudi uses the region picker (not a
+    // FormField), so its required gate lives here.
+    final placeOfBirthValid = !_isSaudi || _birthRegionCode != null;
     // D-471 — the profile-type picker is now a searchable field, not a FormField,
     // so its required gate (only when the "Other" picker is actually shown — never
     // when Visitor-locked, loading, failed or empty, per L-6) lives here.
@@ -492,6 +496,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         !dateOfBirthValid ||
         !organisationValid ||
         !nationalityValid ||
+        !placeOfBirthValid ||
         !profileTypeValid ||
         !idImageValid ||
         !faceImageValid) {
@@ -653,8 +658,9 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   /// mirroring `UpsertUserProfileRequestValidator` exactly.
   String? _validateSaudiMobile(String? value) {
     final phone = value?.trim() ?? '';
+    // D-723 — mobile is required (only the plate number stays optional).
     if (phone.isEmpty) {
-      return null;
+      return AppL10n.of(context).mobileRequired;
     }
     return isStandardSaudiMobile(phone)
         ? null
@@ -663,8 +669,9 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
 
   String? _validateInternationalMobile(String? value) {
     final phone = value?.trim() ?? '';
+    // D-723 — mobile is required (only the plate number stays optional).
     if (phone.isEmpty) {
-      return null;
+      return AppL10n.of(context).mobileRequired;
     }
     return isStandardInternationalMobile(phone)
         ? null
@@ -807,6 +814,10 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     label: l10n.jobTitleLabel,
                     controller: _jobTitle,
                     maxLength: 100,
+                    // D-723 — required (only the plate number stays optional).
+                    validator: (String? v) => (v == null || v.trim().isEmpty)
+                        ? l10n.jobTitleRequired
+                        : null,
                   ),
                   const SizedBox(height: 16),
                   _buildNationalityField(l10n),
@@ -1229,12 +1240,20 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     l10n.placeOfBirthRegionHint),
             isPlaceholder: _birthRegionCode == null,
             onTap: () => unawaited(_pickBirthRegion(l10n, isArabic)),
+            errorText: (_triedSubmit && _birthRegionCode == null)
+                ? l10n.placeOfBirthRequired
+                : null,
           )
         else
           TextFormField(
             controller: _placeOfBirth,
             maxLength: 128,
             style: simfInputStyle,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            // D-723 — place of birth is required for non-Saudi registrants too.
+            validator: (String? v) => (v == null || v.trim().isEmpty)
+                ? l10n.placeOfBirthRequired
+                : null,
             decoration: simfFieldDecoration(
               counterText: '',
               hintText: l10n.placeOfBirthPassportHint,

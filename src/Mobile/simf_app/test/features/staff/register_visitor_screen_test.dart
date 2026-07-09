@@ -180,6 +180,7 @@ void main() {
       await tester.enterText(fields.at(2), 'رائد سالم');
       await tester.enterText(fields.at(3), 'Raed Salem');
       await tester.enterText(fields.at(4), '1000000008'); // Luhn-valid (D-700)
+      await tester.enterText(fields.at(5), 'Engineer'); // jobTitle (required, D-723)
 
       // Pick the organisation (the second/last dropdown; nationality defaults SA).
       final orgDropdown = find.byType(DropdownButtonFormField<String>).last;

@@ -564,7 +564,13 @@ class _StaffRegisterVisitorScreenState
         gap,
         _twoCol(
           wide,
-          _textField(l10n.jobTitleLabel, _jobTitle, maxLength: 100),
+          _textField(
+            l10n.jobTitleLabel,
+            _jobTitle,
+            maxLength: 100,
+            // D-723 — required (matches the app self-registration form).
+            validator: (v) => _required(l10n, v),
+          ),
           _organisationField(l10n),
         ),
         gap,
