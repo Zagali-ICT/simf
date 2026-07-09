@@ -1,0 +1,52 @@
+@* D-728 (owner item 9) — shared "change account type" block. Reused by
+   VisitorsViewDelete + OthersViewDelete so both desks flip an account into the
+   OPPOSITE scope (Visitor <-> Other) from one control. The host gates it with
+   <AuthorizedAction Permission="Accounts.ChangeType">. Loads the opposite
+   scope's active profile types, then POSTs the flip; on success the host's
+   OnChanged closes the details shell. *@
+@using SIMF.Contracts.Authentication
+
+<div class="simf-form simf-changetype">
+    <h4>@L["Admin.ChangeType.Heading"]</h4>
+    <p class="simf-form__hint">@ScopeNote</p>
+
+    @if (_done)
+    {
+        <SimfAlert Variant="success">@L["Admin.ChangeType.Success"]</SimfAlert>
+    }
+    else if (_targetTypes.Count == 0)
+    {
+        @* Either a load failure (_error set) or genuinely no opposite-scope
+           types — show ONE alert, never both (D-728 review finding). *@
+        <SimfAlert Variant="@(_error is not null ? "error" : "info")">
+            @(_error ?? L["Admin.ChangeType.NoTargets"].Value)
+        </SimfAlert>
+    }
+    else
+    {
+        @* Targets loaded: show the picker. A failed POST surfaces its error
+           above while keeping the picker so the admin can retry. *@
+        @if (_error is not null)
+        {
+            <SimfAlert Variant="error">@_error</SimfAlert>
+        }
+
+        <SimfSelect TValue="AdminProfileTypeSummary"
+                    Label="@L["Admin.ChangeType.NewType"]"
+                    Items="_targetTypes"
+                    ValueFor="@(p => p.Id.ToString())"
+                    LabelFor="@(p => p.Name)"
+                    Value="@_selected"
+                    ValueChanged="@(v => _selected = v)"
+                    Placeholder="@L["Admin.ChangeType.Choose"].Value" />
+
+        <div class="simf-form__actions">
+            <SimfButton Type="button" Loading="_busy"
+                        LoadingLabel="@L["Admin.ChangeType.Working"]"
+                        Disabled="@(_selected is null || _busy)"
+                        OnClick="ChangeAsync">
+                @L["Admin.ChangeType.Action"]
+            </SimfButton>
+        </div>
+    }
+</div>

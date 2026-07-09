@@ -159,6 +159,22 @@ public sealed class AdminUpdateOtherRequest
     public Guid ProfileTypeId { get; set; }
 }
 
+/// <summary>
+/// D-728 (owner item 9) — the body of
+/// <c>POST /api/v1/admin/accounts/{id}/change-type</c>. Flips an existing
+/// account between the audience (Visitor) and partner (Other) scope by
+/// reassigning its profile type. <see cref="NewProfileTypeId"/> must be an
+/// active profile type in the <b>opposite</b> scope to the account's current
+/// one (a same-scope change is an edit, not a type change). Administrator-only.
+/// </summary>
+public sealed class AdminChangeAccountTypeRequest
+{
+    /// <summary>The target profile type (<c>ProfileTypes</c> row id). Required;
+    /// must be active and its <c>IsVisitor</c> must be the opposite of the
+    /// account's current scope.</summary>
+    public Guid NewProfileTypeId { get; set; }
+}
+
 /// <summary>The body of a successful admin-created account (D-042).</summary>
 public sealed record AdminCreateUserResponse(
     Guid UserId,

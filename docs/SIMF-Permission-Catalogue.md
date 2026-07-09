@@ -88,6 +88,7 @@ Administrator can grant any code to any custom role at runtime.
 | `Others.Import` | Others · Import | — | `POST /admin/others/import` |
 | `Others.RegisterOnsite` | Others · RegisterOnsite | — | `POST /admin/others/register-onsite` |
 | `Visitors.*` | Visitors · View/Create/Edit/Delete/Approve/Reject/Export/Import/RegisterOnsite | — | mirror of Others under `/admin/visitors` |
+| `Accounts.ChangeType` | Accounts · ChangeType | — | `POST /admin/accounts/{id}/change-type` (D-728) — flip an account between Visitor and Other; the "Change type" block on the Visitors / Others detail views |
 | `Attendees.View` | Attendees · View | — | `/admin/attendees`; `POST /admin/attendees/list`, `GET /admin/qr-lookup/{qrId}` |
 | `Attendees.PrintBag` | Attendees · PrintBag | — | `/admin/print-bag` |
 | `Roles.View` | Roles · View | — | `/admin/roles`; `POST /admin/roles/list`, `GET /admin/roles/{id}` |

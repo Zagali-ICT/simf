@@ -63,6 +63,11 @@
         <AdminProfilePhotoBlock Heading="@L["Admin.Pending.View.Field.Photo"]"
                                 Src="@($"/account/api/admin/others/{Initial.Id}/avatar?v={DateTime.UtcNow.Ticks}")" />
     }
+    @* D-728 (owner item 9) — flip this partner account into a visitor type. *@
+    <AuthorizedAction Permission="@PermissionCatalog.Accounts.ChangeType">
+        <ChangeAccountTypeBlock AccountId="Initial.Id" IsVisitorScope="false"
+                                OnChanged="OnCancel" />
+    </AuthorizedAction>
 
     <div class="simf-form__actions">
         <SimfButton Type="button" Variant="secondary" OnClick="OnCancel">

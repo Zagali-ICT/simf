@@ -58,6 +58,17 @@
   <data name="Admin.Edit.Save" xml:space="preserve"><value>Save changes</value></data>
   <data name="Admin.Edit.Saving" xml:space="preserve"><value>Saving…</value></data>
   <data name="Admin.Edit.Saved" xml:space="preserve"><value>The account was updated.</value></data>
+  <data name="Admin.ChangeType.Heading" xml:space="preserve"><value>Change account type</value></data>
+  <data name="Admin.ChangeType.Note.VisitorToOther" xml:space="preserve"><value>Convert this visitor into a partner account (staff, sponsor, exhibitor, media…). The account is signed out and re-issued under the new type.</value></data>
+  <data name="Admin.ChangeType.Note.OtherToVisitor" xml:space="preserve"><value>Convert this partner account into a visitor. The account is signed out and re-issued under the new type.</value></data>
+  <data name="Admin.ChangeType.NewType" xml:space="preserve"><value>New type</value></data>
+  <data name="Admin.ChangeType.Choose" xml:space="preserve"><value>Choose the new type…</value></data>
+  <data name="Admin.ChangeType.Action" xml:space="preserve"><value>Change type</value></data>
+  <data name="Admin.ChangeType.Working" xml:space="preserve"><value>Changing…</value></data>
+  <data name="Admin.ChangeType.Success" xml:space="preserve"><value>The account type was changed. It now appears in the other list.</value></data>
+  <data name="Admin.ChangeType.NoTargets" xml:space="preserve"><value>No active types are available in the other scope.</value></data>
+  <data name="Admin.ChangeType.LoadFailed" xml:space="preserve"><value>The available types could not be loaded.</value></data>
+  <data name="Admin.ChangeType.Failed" xml:space="preserve"><value>The account type could not be changed.</value></data>
   <data name="Admin.Edit.LoadFailed" xml:space="preserve"><value>The account could not be loaded.</value></data>
   <data name="Admin.Edit.Fallback" xml:space="preserve"><value>The account could not be updated.</value></data>
 

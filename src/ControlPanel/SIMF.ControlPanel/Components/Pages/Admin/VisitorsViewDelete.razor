@@ -72,6 +72,11 @@ else if (_profile is not null)
         <AdminProfilePhotoBlock Heading="@L["Admin.Pending.View.Field.Photo"]"
                                 Src="@($"/account/api/admin/visitors/{_profile.Id}/avatar?v={DateTime.UtcNow.Ticks}")" />
     }
+    @* D-728 (owner item 9) — flip this visitor into a partner (Other) type. *@
+    <AuthorizedAction Permission="@PermissionCatalog.Accounts.ChangeType">
+        <ChangeAccountTypeBlock AccountId="_profile.Id" IsVisitorScope="true"
+                                OnChanged="OnCancel" />
+    </AuthorizedAction>
 }
 
 <div class="simf-form__actions">

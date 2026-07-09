@@ -58,6 +58,17 @@
   <data name="Admin.Edit.Save" xml:space="preserve"><value>حفظ التغييرات</value></data>
   <data name="Admin.Edit.Saving" xml:space="preserve"><value>جارٍ الحفظ…</value></data>
   <data name="Admin.Edit.Saved" xml:space="preserve"><value>تم تحديث الحساب.</value></data>
+  <data name="Admin.ChangeType.Heading" xml:space="preserve"><value>تغيير نوع الحساب</value></data>
+  <data name="Admin.ChangeType.Note.VisitorToOther" xml:space="preserve"><value>تحويل هذا الزائر إلى حساب شريك (موظف، راعٍ، عارض، إعلام…). يتم تسجيل خروج الحساب وإعادة إصداره بالنوع الجديد.</value></data>
+  <data name="Admin.ChangeType.Note.OtherToVisitor" xml:space="preserve"><value>تحويل هذا الحساب الشريك إلى زائر. يتم تسجيل خروج الحساب وإعادة إصداره بالنوع الجديد.</value></data>
+  <data name="Admin.ChangeType.NewType" xml:space="preserve"><value>النوع الجديد</value></data>
+  <data name="Admin.ChangeType.Choose" xml:space="preserve"><value>اختر النوع الجديد…</value></data>
+  <data name="Admin.ChangeType.Action" xml:space="preserve"><value>تغيير النوع</value></data>
+  <data name="Admin.ChangeType.Working" xml:space="preserve"><value>جارٍ التغيير…</value></data>
+  <data name="Admin.ChangeType.Success" xml:space="preserve"><value>تم تغيير نوع الحساب. يظهر الآن في القائمة الأخرى.</value></data>
+  <data name="Admin.ChangeType.NoTargets" xml:space="preserve"><value>لا توجد أنواع نشطة متاحة في النطاق الآخر.</value></data>
+  <data name="Admin.ChangeType.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الأنواع المتاحة.</value></data>
+  <data name="Admin.ChangeType.Failed" xml:space="preserve"><value>تعذّر تغيير نوع الحساب.</value></data>
   <data name="Admin.Edit.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الحساب.</value></data>
   <data name="Admin.Edit.Fallback" xml:space="preserve"><value>تعذّر تحديث الحساب.</value></data>
 
