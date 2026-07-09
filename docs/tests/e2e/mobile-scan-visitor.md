@@ -7,7 +7,14 @@
 > captures the visitor server-side, then the app routes to
 > [`myVisitors`](mobile-my-visitors.md). The screen delegates its surface to the
 > shared `QrScanView` (D-430): the manual-entry path always works and the bounded
-> opt-in camera can never trap the user on EMUI. App tests:
+> opt-in camera can never trap the user on EMUI. **D-724 (owner item 10):**
+> `QrScanView` was re-skinned to the navy/gold KSA-Project language (Figma
+> 1701:7080) — circular back header, beige field chrome, gold "or" divider, and
+> the `SimfScannerFrame` gold-bracket viewfinder (node 758:4735) for the
+> camera-on state — so it matches the badge "Share my QR" page. Presentation
+> only; the manual-first / bounded-camera / two-exit contract is unchanged, and
+> both goldens (`scan_visitor.png` + `scan_contact_1701-7080.png`) were re-locked.
+> App tests:
 > `test/features/exhibitor/scan_visitor_screen_test.dart` (widget, 4 cases — the
 > `_onCode` capture/route + 404/403/5xx toast branches) + the render-lock golden
 > `test/golden/scan_visitor_golden_test.dart` (`goldens/scan_visitor.png`
