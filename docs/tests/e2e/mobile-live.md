@@ -64,6 +64,7 @@
 | E2E-MOB025-020 | P5 — caption locale fallback: Arabic text under `ar`, English under `en` (D-439) | i18n | P1 | authored ✓ (screen `P5 — the caption renders the Arabic text under the ar locale`) |
 | E2E-MOB025-021 | Login-gate (D-577): a signed-out guest sees the in-screen "need login" prompt + Sign-in button (never the player), and no session is fetched | auth | P0 | authored ✓ (screen `a signed-out guest sees the need-login gate, not the stream (owner, D-577)`) |
 | E2E-MOB025-022 | **Rate-on-live-close (item 8 / D-712, FDS-007 §C.4 GAP-B):** an approved attendee leaving the live screen for a session that carried a live feed opens `/rate?code=Session&targetId={id}` **once**; re-entering + leaving does not re-prompt (shared dedup with the D-690 after-view prompt). A non-live session and a signed-out guest are never prompted | happy | P0 | authored ✓ (screen `D-712 — leaving a watched live session opens the rate screen once` + `… non-live session … does not prompt` + `… guest is never prompted`) |
+| E2E-MOB025-023 | **Fullscreen (owner item 14 / D-721):** the YouTube player shows a fullscreen button; entering fullscreen rotates to landscape, exiting restores portrait — a deliberate, owner-approved exception to the app-wide portrait lock. YouTube only; the HLS/MP4 fallback keeps its play-only control | happy | P1 | authored ✓ (unit `live_video_player_test.dart` orientation helper; real fullscreen playback is manual/device) |
 
 ## Scenarios
 
@@ -332,7 +333,33 @@ The strip is built only on the live-feed branch (`mainUrl != null`). Provider
 stubbed — the text is an admin-set field on the session (manual entry for the POC).
 Frame node 934:3613. Widget tests: `live_broadcast_screen_test.dart` (`P5 — …` cases).
 
+### E2E-MOB025-023 — Fullscreen button, landscape while fullscreen (owner item 14 / D-721)
+
+```gherkin
+Scenario: The live YouTube feed can go fullscreen in landscape
+  Given a live session with a YouTube liveStreamUrl
+  When the approved viewer taps the player's fullscreen button
+  Then the player enters fullscreen and the device rotates to landscape
+  When they exit fullscreen
+  Then the player returns inline and the device restores portrait
+
+Scenario: The HLS/MP4 fallback keeps its play-only control
+  Given a live session with a non-YouTube (HLS/MP4) liveStreamUrl
+  Then the fallback video shows only its play/pause control (no fullscreen button)
+```
+
+> Portrait is the app-wide lock (`main.dart`); the live video is the one
+> owner-approved exception (D-721). YouTube is the POC provider (D-349), so only
+> that path gets the button (`YoutubePlayerParams(showFullscreenButton: true)` +
+> `setFullScreenListener` toggling `SystemChrome` to landscape/portrait).
+
+**Evidence:** unit test `live_video_player_test.dart` — `liveFullScreenOrientations`
+(landscape in / portrait out, never left in landscape on exit). Real fullscreen
+playback is **manual** (a device is needed — the IFrame webview has no headless
+platform channel).
+
 ---
 
-_Last reviewed:_ `2026-07-09` by `SIMF Team` — D-712 added the rate-on-live-close
-prompt (E2E-MOB025-022, FDS-007 §C.4 GAP-B, owner item 8).
+_Last reviewed:_ `2026-07-09` by `SIMF Team` — D-721 added the fullscreen button
+(E2E-MOB025-023, owner item 14); D-712 added the rate-on-live-close prompt
+(E2E-MOB025-022, FDS-007 §C.4 GAP-B, owner item 8).

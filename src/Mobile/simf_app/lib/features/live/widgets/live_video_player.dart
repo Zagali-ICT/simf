@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
@@ -8,10 +9,29 @@ import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
 import '../youtube_url.dart';
 
+/// The device orientations to lock while the live player is (not) fullscreen
+/// (D-721): landscape in fullscreen, back to the app-wide portrait lock out of
+/// it. A pure function so the portrait-lock exception is unit-testable without
+/// the platform channel.
+List<DeviceOrientation> liveFullScreenOrientations(bool isFullScreen) {
+  return isFullScreen
+      ? const <DeviceOrientation>[
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+        ]
+      : const <DeviceOrientation>[DeviceOrientation.portraitUp];
+}
+
 /// The live video surface. Owns its own controller and picks the player by the
 /// URL (D-349): a YouTube link → the IFrame player; anything else (HLS/MP4) →
 /// `video_player`. The parent rebuilds this with a new `ValueKey(url)` to switch
 /// feeds, so this widget only ever binds one URL for its lifetime.
+///
+/// The YouTube path shows a fullscreen button (D-721): entering fullscreen
+/// rotates to landscape and exiting restores portrait — a deliberate,
+/// owner-approved exception to the app-wide portrait lock in `main.dart`, for
+/// the video surface only (YouTube is the POC provider; the HLS/MP4 fallback
+/// keeps its play-only controls).
 class LiveVideoPlayer extends StatefulWidget {
   const LiveVideoPlayer({required this.url, super.key});
 
@@ -40,7 +60,8 @@ class _LiveVideoPlayerState extends State<LiveVideoPlayer> {
         _youtube = YoutubePlayerController.fromVideoId(
           videoId: videoId,
           autoPlay: true,
-        );
+          params: const YoutubePlayerParams(showFullscreenButton: true),
+        )..setFullScreenListener(_onFullScreenChanged);
       } catch (_) {
         // A failure building the IFrame controller degrades to the error
         // surface rather than crashing the screen (Page_025 L-7).
@@ -96,10 +117,23 @@ class _LiveVideoPlayerState extends State<LiveVideoPlayer> {
     );
   }
 
+  /// Fired by the IFrame's fullscreen button (D-721). Video is the one surface
+  /// allowed to break the app-wide portrait lock: landscape while fullscreen,
+  /// portrait again on exit.
+  void _onFullScreenChanged(bool isFullScreen) {
+    unawaited(
+      SystemChrome.setPreferredOrientations(liveFullScreenOrientations(isFullScreen)),
+    );
+  }
+
   @override
   void dispose() {
     _youtube?.close();
     _video?.dispose();
+    // Re-assert the portrait lock in case we're torn down mid-fullscreen.
+    unawaited(
+      SystemChrome.setPreferredOrientations(liveFullScreenOrientations(false)),
+    );
     super.dispose();
   }
 
