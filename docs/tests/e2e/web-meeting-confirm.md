@@ -31,8 +31,8 @@
 | E2E-MAC-004 | A used token (and its sibling) → neutral "no longer valid" | error | P0 | authored ✓ (`A_used_token_and_its_sibling_are_neutral_404s`, API) |
 | E2E-MAC-005 | An unknown / malformed token → neutral "no longer valid" | error | P1 | authored ✓ (`An_unknown_token_is_a_neutral_404`, API) |
 | E2E-MAC-006 | An expired token (>72h) → neutral "no longer valid" | error | P1 | authored ✓ (`An_expired_token_is_a_neutral_404`, API) |
-| E2E-MAC-007 | RTL / Arabic render — the preview + confirm mirror | i18n | P1 | _to author_ (browser) |
-| E2E-MAC-008 | No `?token=` at all → neutral state, no API call | edge | P2 | _to author_ (browser) |
+| E2E-MAC-007 | RTL / Arabic render — the preview + confirm mirror | i18n | P1 | authored ✓ (browser) |
+| E2E-MAC-008 | No `?token=` at all → neutral state, no API call | edge | P2 | authored ✓ (browser) |
 
 ## Scenarios
 
@@ -74,6 +74,28 @@ Scenario: Reuse / sibling / unknown / expired all show the same neutral page
   And the page shows "This link is no longer valid." with no hint of the exact reason
 ```
 
+### E2E-MAC-007 — RTL / Arabic render
+
+```gherkin
+Scenario: The preview + confirm mirror in Arabic
+  Given a valid Approve token and the language switched to العربية
+  When the speaker opens /meeting/confirm?token=…
+  Then the card direction is RTL, the intro and the Requester/Topic/When (and Where, if bound)
+       labels are Arabic, and the confirm button label is Arabic
+  And no element overflows horizontally (scrollWidth == clientWidth)
+```
+
+### E2E-MAC-008 — No ?token= → neutral state, no API call
+
+```gherkin
+Scenario: Opening the page with no token
+  When /meeting/confirm is opened with no ?token= (or a blank / whitespace token)
+  Then the page makes NO request to /api/v1/app/meeting-actions/…
+  And it shows the neutral "This link is no longer valid." card (Meeting.Confirm.Invalid)
+  # grounded in MeetingConfirm.razor.cs — OnInitializedAsync skips the GET when Token is blank,
+  # so _preview stays null and the razor renders the neutral error card (MeetingConfirm.razor:34-38)
+```
+
 ---
 
-_Last reviewed:_ 2026-07-09 by Claude — D-717 (item 7 Slice C, FDS-013 §15.7 GAP-3) new public token landing page.
+_Last reviewed:_ 2026-07-09 by Claude — D-720 (item 7 DoD close — E2E-MAC-007/008 authored). Earlier: D-717 (item 7 Slice C, FDS-013 §15.7 GAP-3) new public token landing page.

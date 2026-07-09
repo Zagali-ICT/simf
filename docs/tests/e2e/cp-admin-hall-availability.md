@@ -29,8 +29,8 @@
 | E2E-HAV-003 | Invalid window (end ≤ start, or shorter than one slot) → 400, no row added; unknown hall → 404 | error | P1 | authored ✓ (HallAvailabilityTests, API) |
 | E2E-HAV-004 | A slot already bound to a meeting is not offered (GAP-2) | edge | P0 | authored ✓ (HallAvailabilityTests `A_bound_meeting_removes_its_slot_from_available_slots`, D-716) |
 | E2E-HAV-005 | Auth gate — admin lacking `SpeakerMeetingRequests.Manage` → `/not-permitted`; nav item hidden | auth | P0 | authored ✓ (gate verified by CpNavigationPermissionTests + PermissionEnforcementTests) |
-| E2E-HAV-006 | Only Meeting/General halls appear in the picker | edge | P1 | _to author_ (page filters `HallPurpose.Meeting or General`) |
-| E2E-HAV-007 | RTL / Arabic render — page + add form mirror | i18n | P1 | _to author_ |
+| E2E-HAV-006 | Only Meeting/General halls appear in the picker | edge | P1 | authored ✓ (browser) |
+| E2E-HAV-007 | RTL / Arabic render — page + add form mirror | i18n | P1 | authored ✓ (browser) |
 
 ## Scenarios
 
@@ -68,6 +68,32 @@ Scenario: Binding a meeting drops its slot from the free set
   Then only the second slot is returned (the bound slot is filtered out)
 ```
 
+### E2E-HAV-006 — Only Meeting/General halls appear in the picker
+
+```gherkin
+Feature: The hall picker is limited to meeting-capable halls
+Background:
+  Given halls exist with purposes General, Meeting, Booth and Session
+
+Scenario: Booth and Session halls are not offered
+  When an Administrator opens /admin/hall-availability and expands the hall <select>
+  Then only the General and Meeting halls are listed
+  And the Booth hall and the Session hall are absent
+  # grounded in HallAvailabilityPage.razor.cs — the filter is `HallPurpose.Meeting or General`
+  # (HallPurpose: General=0, Booth=1, Session=2, Meeting=3)
+```
+
+### E2E-HAV-007 — RTL / Arabic render
+
+```gherkin
+Scenario: The page and add-window form mirror in Arabic
+  Given the Administrator switches the CP language to العربية
+  When they open /admin/hall-availability
+  Then the page direction is RTL and the labels (hall, start, end, slot minutes, add) are Arabic
+  And the window list and its delete action mirror to the right edge
+  And no element overflows horizontally (scrollWidth == clientWidth)
+```
+
 ---
 
-_Last reviewed:_ 2026-07-09 by Claude — D-716 (item 7, FDS-013 §15 GAP-2) taken-slot filter (E2E-HAV-004 now authored).
+_Last reviewed:_ 2026-07-09 by Claude — D-720 (item 7 DoD close — E2E-HAV-006/007 authored). Earlier: D-716 (item 7, FDS-013 §15 GAP-2) taken-slot filter (E2E-HAV-004).
