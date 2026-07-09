@@ -364,6 +364,10 @@ public static class DependencyInjection
         // D-474 (#11, Group G) — speaker availability windows + free-slot derivation.
         services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.ISpeakerAvailabilityService,
             SIMF.Infrastructure.MeetingRequests.SpeakerAvailabilityService>();
+        // D-715 (item 7, FDS-013 §15 GAP-1) — hall availability windows (hall time
+        // for business meetings) + free-slot derivation.
+        services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.IHallAvailabilityService,
+            SIMF.Infrastructure.MeetingRequests.HallAvailabilityService>();
         // D-478 (#11, Group G phase 2) — delegation↔delegation meeting requests.
         services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.IDelegationMeetingRequestService,
             SIMF.Infrastructure.MeetingRequests.DelegationMeetingRequestService>();

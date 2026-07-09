@@ -2361,6 +2361,31 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Delete, $"speaker-availability-windows/{windowId}", content: null,
             accessToken, cancellationToken);
 
+    // -- D-715 (item 7, FDS-013 §15 GAP-1) — hall availability windows ---------
+
+    public Task<ApiCallResult<IReadOnlyList<AdminHallAvailabilityWindow>>>
+        ListHallAvailabilityWindowsAsync(Guid hallId, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<IReadOnlyList<AdminHallAvailabilityWindow>>(
+            HttpMethod.Get, $"halls/{hallId}/availability-windows", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminHallAvailabilityWindow>>
+        CreateHallAvailabilityWindowAsync(Guid hallId,
+            CreateHallAvailabilityWindowRequest request, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<AdminHallAvailabilityWindow>(
+            HttpMethod.Post, $"halls/{hallId}/availability-windows",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>>
+        DeleteHallAvailabilityWindowAsync(Guid windowId, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"hall-availability-windows/{windowId}", content: null,
+            accessToken, cancellationToken);
+
     // -- D-478 (#11) — delegation meeting requests (SIMF.Contracts.Programme) -
 
     public Task<ApiCallResult<GridPage<AdminDelegationMeetingRequestRow>>>

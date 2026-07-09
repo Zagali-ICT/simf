@@ -1,0 +1,77 @@
+@* D-715 (item 7, FDS-013 §15 GAP-1) — the team defines a hall's meeting time
+   (availability windows); the meeting-review flow (GAP-2) binds an accepted request
+   to a free hall slot. Gated by SpeakerMeetingRequests.Manage (the meeting area). *@
+@page "/admin/hall-availability"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.SpeakerMeetingRequests.Manage)]
+@using System.Globalization
+@using SIMF.Contracts.Programme
+
+<PageTitle>@L["Admin.HallAvailability.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.HallAvailability.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <div class="simf-field">
+            <label class="simf-field__label" for="hall-pick">@L["Admin.HallAvailability.Hall"]</label>
+            <div class="simf-field__control">
+                <select id="hall-pick" class="simf-field__input"
+                        value="@_hallId" @onchange="OnHallChanged">
+                    <option value="">@L["Admin.HallAvailability.PickHall"]</option>
+                    @foreach (var h in _halls)
+                    {
+                        <option value="@h.Id">@h.Name</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        @if (_hallId is not null)
+        {
+            <h3 class="simf-section-title">@L["Admin.HallAvailability.AddWindow"]</h3>
+            <div class="simf-form__fields">
+                <SimfTextField Label="@L["Admin.HallAvailability.Start"]" Type="datetime-local"
+                               @bind-Value="_start" Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.HallAvailability.End"]" Type="datetime-local"
+                               @bind-Value="_end" Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.HallAvailability.SlotMinutes"]" Type="number"
+                               @bind-Value="_slotMinutes" Disabled="_busy" />
+            </div>
+            <div class="simf-form__actions">
+                <SimfButton Type="button" Loading="_busy" OnClick="AddWindowAsync">
+                    @L["Admin.HallAvailability.Add"]
+                </SimfButton>
+            </div>
+
+            <h3 class="simf-section-title">@L["Admin.HallAvailability.Windows"]</h3>
+            @if (_windows.Count == 0)
+            {
+                <SimfEmptyState Title="@L["Admin.HallAvailability.None"]" />
+            }
+            else
+            {
+                <ul class="simf-plain-list">
+                    @foreach (var w in _windows)
+                    {
+                        <li>
+                            @w.StartUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm")
+                            – @w.EndUtc.UtcDateTime.ToString("HH:mm") UTC
+                            · @w.SlotMinutes @L["Admin.HallAvailability.Min"]
+                            <AuthorizedAction Permission="@PermissionCatalog.SpeakerMeetingRequests.Manage">
+                                <SimfToolbarButton Icon="trash" Title="@L["Grid.Delete"]"
+                                                   Disabled="_busy"
+                                                   OnClick="@(() => DeleteWindowAsync(w.Id))" />
+                            </AuthorizedAction>
+                        </li>
+                    }
+                </ul>
+            }
+        }
+    </div>
+</div>
