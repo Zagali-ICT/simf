@@ -144,6 +144,8 @@
                             @onchange="OnTypeChanged" disabled="@_busy">
                         <option value="@((int)BusinessMeetingType.B2B)">B2B</option>
                         <option value="@((int)BusinessMeetingType.B2C)">B2C</option>
+                        @* D-730 (owner item 15B) — government-to-business type. *@
+                        <option value="@((int)BusinessMeetingType.G2B)">G2B</option>
                     </select>
                 </label>
                 <label class="simf-field">
