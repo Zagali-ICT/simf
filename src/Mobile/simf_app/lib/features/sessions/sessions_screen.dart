@@ -99,6 +99,16 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
     );
   }
 
+  /// The empty-list message for the active type tab — "no workshops" under
+  /// ورش العمل, "no sessions" under جلسات, and a day-level "no programme" under
+  /// الكل / All (where "no sessions" would misdescribe a day that simply has
+  /// nothing scheduled). The tab-less event bucket shares the الكل message.
+  String _filteredEmptyMessage(AppL10n l10n) => switch (_typeFilter) {
+        SessionType.session => l10n.sessionsEmpty,
+        SessionType.workshop => l10n.sessionsEmptyWorkshops,
+        SessionType.event || null => l10n.sessionsEmptyDay,
+      };
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
@@ -218,7 +228,7 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: SimfTokens.space4),
               child: Text(
-                l10n.sessionsEmpty,
+                _filteredEmptyMessage(l10n),
                 style: const TextStyle(color: SimfTokens.beigeBorder),
               ),
             )

@@ -1001,6 +1001,11 @@ class AppL10n {
   String get sessionTypeWorkshop => _t('ورش العمل', 'Workshops');
   String get sessionTypeSession => _t('جلسات', 'Sessions');
   String get sessionsEmpty => _t('لا توجد جلسات', 'No sessions');
+  String get sessionsEmptyWorkshops => _t('لا توجد ورش عمل', 'No workshops');
+  // Shown when the whole selected day is empty — the الكل / All tab (or a
+  // tab-less event-typed day), so the message is about the day, not "sessions".
+  String get sessionsEmptyDay =>
+      _t('لا يوجد برنامج في هذا اليوم', 'No programme for this day');
   String get sessionsError =>
       _t('تعذّر تحميل الجلسات.', 'Could not load the sessions.');
 
