@@ -384,7 +384,10 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
 
               // Ask-a-question entry → Page 026 (the frame's L-3 Q&A affordance).
               // Session-specific — only for a real session, not the global main-live.
-              if (_hasId) ...<Widget>[
+              // #7 (owner) — and only while the session is actually LIVE (a feed
+              // is up): the post-session recording view is a YouTube archive, not
+              // a live broadcast, so no asking once the session is done.
+              if (_hasId && isLive) ...<Widget>[
                 const SizedBox(height: SimfTokens.space6),
                 AskQuestionButton(
                   label: l10n.liveAskQuestion,

@@ -389,7 +389,12 @@ behaviour is a device check.
 
 ---
 
-_Last reviewed:_ `2026-07-09` by `SIMF Team` — D-726 added the watch keep-alive
+_Last reviewed:_ `2026-07-10` by `SIMF Team` — **#7 (D-733): the "Ask a question"
+entry is now LIVE-ONLY — shown only while the session is actually broadcasting (a
+live feed is up); it is HIDDEN on the post-session recording view (a YouTube
+archive is not a live broadcast, so no asking once the session is done). Widget
+tests: not-live/recording hide the ask; the live-with-ask render is locked by the
+live-broadcast golden.** _Prior:_ `2026-07-09` — D-726 added the watch keep-alive
 (E2E-MOB025-024, owner item 13); D-721 added the fullscreen button
 (E2E-MOB025-023, owner item 14); D-712 added the rate-on-live-close prompt
 (E2E-MOB025-022, FDS-007 §C.4 GAP-B, owner item 8).

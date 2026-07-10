@@ -288,23 +288,25 @@ void main() {
       );
     });
 
-    testWidgets('the loaded content renders the region notice + ask-question',
-        (tester) async {
+    testWidgets('a not-live session renders the region notice but HIDES the '
+        'ask-question entry (#7)', (tester) async {
       await _pump(
         tester,
         repo: _FakeLiveRepo(session: _liveSession()),
         sessionId: 's1',
       );
 
-      // The static region-restriction notice card (frame 934:3619).
+      // The static region-restriction notice card (frame 934:3619) always shows.
       expect(
         find.textContaining(
           'Live broadcasting is available only inside the Riyadh region',
         ),
         findsOneWidget,
       );
-      // The ask-a-question entry to Page 026.
-      expect(find.text('Ask a question'), findsOneWidget);
+      // #7 (owner) — the ask entry shows only while the session is actually LIVE;
+      // a not-live / recording view (a YouTube archive) offers no ask. (A live
+      // session WITH the ask entry is locked by the live-broadcast golden.)
+      expect(find.text('Ask a question'), findsNothing);
     });
 
     testWidgets('no stream but a recording shows the recording note',
@@ -321,6 +323,9 @@ void main() {
         find.text('A recording of this session is available.'),
         findsOneWidget,
       );
+      // #7 (owner) — no ask on the post-session recording view (a YouTube
+      // archive is not a live broadcast).
+      expect(find.text('Ask a question'), findsNothing);
     });
 
     testWidgets('a sign-language url shows the sign-language note',

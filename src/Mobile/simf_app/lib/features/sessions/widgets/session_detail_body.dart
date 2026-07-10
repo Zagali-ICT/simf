@@ -92,24 +92,22 @@ class SessionDetailBody extends StatelessWidget {
           ],
         ],
         // اسأل المحاور (Figma 1056:12876) — sits between the speakers and the
-        // my-seat card. #3 — pre-ask is allowed only once the user has JOINED the
-        // session (holds a booking), NOT on physical check-in; until then the
-        // card is disabled with a "join first" hint.
-        // D-714 (item 12, GAP-2) — before the session starts the label reads
-        // as the distinct pre-session ask (Phase=Pre); once live it becomes
-        // "Ask the host" (Phase=Live). The backend derives the phase + window.
-        const SizedBox(height: SimfTokens.space5),
-        AskHostCard(
-          label: detail.startUtc.isAfter(DateTime.now().toUtc())
-              ? l10n.askHostPreSession
-              : l10n.askHost,
-          onTap: onAskHost,
-          enabled: seatMap?.myCell != null,
-          // Only show the "join first" hint when a Join CTA is actually offered
-          // below (an approved account); a guest sees the card plainly disabled
-          // rather than a hint pointing at a join affordance they can't see.
-          disabledHint: seatMap != null ? l10n.askHostJoinFirst : null,
-        ),
+        // my-seat card. #7 (owner) — the ask is offered ONLY for a FUTURE session
+        // (before it starts): any approved user may ask ahead of time, no booking
+        // required. Once the session is live the ask moves to the live-broadcast
+        // screen (check-in gated); after it ends there is no ask (the post-session
+        // view is a recording, not a live broadcast). The backend enforces the
+        // same window + phase-gated venue rule.
+        if (detail.startUtc.isAfter(DateTime.now().toUtc())) ...<Widget>[
+          const SizedBox(height: SimfTokens.space5),
+          AskHostCard(
+            label: l10n.askHostPreSession,
+            onTap: onAskHost,
+            // Approved accounts may ask ahead; a guest / pending account (no
+            // seat map) sees it disabled.
+            enabled: seatMap != null,
+          ),
+        ],
         // D-485 / owner 2026-06-30 — the join section (approved account only).
         // Not booked: the single gold "الانضمام إلى الجلسة" button. Booked: the
         // مقعدي seat card; its cancel is NOT in the card — it sits on its own
