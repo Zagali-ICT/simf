@@ -14,6 +14,7 @@ using SIMF.Domain.Contacts;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Profiles;
 using SIMF.Domain.Programme;
+using SIMF.Contracts.UserProfile;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -69,6 +70,67 @@ public sealed class SpeakerMeetingVipSlotTests : IClassFixture<SimfApiFactory>
             SlotRequest(WindowStart, WindowStart.AddMinutes(30)), plain);
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_non_vip_topic_only_request_is_403()
+    {
+        // D-729 (owner item 15) — requesting a speaker meeting is now VIP-only,
+        // even a topic-only request (no slot): a non-VIP is rejected up front.
+        var speakerId = await SeedSpeakerWithWindowAsync();
+        var (plain, _) = await CreateVisitorAsync(vip: false);
+
+        var response = await PostAuthAsync(
+            $"/api/v1/app/speakers/{speakerId}/meeting-requests",
+            new SubmitSpeakerMeetingRequestRequest
+            {
+                RequesterName = "Plain Visitor",
+                Subject = "Topic-only meeting",
+            },
+            plain);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_vip_topic_only_request_is_ok()
+    {
+        var speakerId = await SeedSpeakerWithWindowAsync();
+        var (vip, _) = await CreateVisitorAsync(vip: true);
+
+        var response = await PostAuthAsync(
+            $"/api/v1/app/speakers/{speakerId}/meeting-requests",
+            new SubmitSpeakerMeetingRequestRequest
+            {
+                RequesterName = "VIP Guest",
+                Subject = "Topic-only meeting",
+            },
+            vip);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task The_user_profile_read_reports_IsVip_from_the_tier()
+    {
+        // D-729 (owner item 15) — UserProfileResponse.IsVip mirrors the assigned
+        // tier's AllowsVipMeetingSlots; the app uses it to gate the speaker CTA.
+        var (vip, _) = await CreateVisitorAsync(vip: true);
+        var (plain, _) = await CreateVisitorAsync(vip: false);
+
+        Assert.True(await ReadIsVipAsync(vip));
+        Assert.False(await ReadIsVipAsync(plain));
+    }
+
+    private async Task<bool> ReadIsVipAsync(string token)
+    {
+        var request = new HttpRequestMessage(
+            HttpMethod.Get, "/api/v1/app/account/user-profile");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var response = await _client.SendAsync(request);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!;
+        return body.Data!.IsVip;
     }
 
     [Fact]

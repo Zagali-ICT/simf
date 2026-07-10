@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/speakers/data/speaker_models.dart';
 import 'package:simf_app/features/speakers/data/speakers_repository.dart';
 import 'package:simf_app/features/speakers/speaker_profile_screen.dart';
@@ -148,6 +149,7 @@ Future<void> _pump(
   WidgetTester tester, {
   required SpeakersRepository repo,
   required AuthController controller,
+  bool isVip = false,
   Locale locale = const Locale('en'),
 }) async {
   final router = GoRouter(
@@ -178,6 +180,8 @@ Future<void> _pump(
         simfDataConfigProvider.overrideWithValue(_testConfig),
         speakersRepositoryProvider.overrideWithValue(repo),
         authControllerProvider.overrideWith(() => controller),
+        // D-729 — the speaker "request meeting" CTA is VIP-only; gate it here.
+        currentUserIsVipProvider.overrideWith((ref) async => isVip),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -212,9 +216,9 @@ void main() {
       // The active CV tab + the bio body it reveals.
       expect(find.text('Biography'), findsOneWidget);
       expect(find.text('A maritime leader.'), findsOneWidget);
-      // The speaker's sessions + the gated meeting action.
+      // The speaker's sessions render. (The meeting CTA is VIP-only, D-729 —
+      // covered by the dedicated VIP / non-VIP tests below; a guest never sees it.)
       expect(find.text('Opening talk'), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, 'Request meeting'), findsOneWidget);
     });
 
     testWidgets('the CV avatar builds from the SpeakerPhoto asset route',
@@ -232,22 +236,32 @@ void main() {
       );
     });
 
-    testWidgets('a guest tapping Request meeting is sent to sign-in',
+    testWidgets('a guest does not see the Request meeting CTA (VIP-only, D-729)',
         (tester) async {
       await _pump(tester, repo: _FakeRepo(detail: _detail()), controller: _Guest());
-      await tester.tap(find.widgetWithText(FilledButton, 'Request meeting'));
-      await tester.pumpAndSettle();
-      expect(find.text('SIGN-IN'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Request meeting'), findsNothing);
     });
 
-    testWidgets('a signed-in visitor can submit a meeting request',
+    testWidgets(
+        'a signed-in NON-VIP visitor does not see the Request meeting CTA '
+        '(VIP-only, D-729)', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeRepo(detail: _detail()),
+        controller: _SignedIn(),
+        isVip: false,
+      );
+      expect(find.widgetWithText(FilledButton, 'Request meeting'), findsNothing);
+    });
+
+    testWidgets('a signed-in VIP visitor can submit a meeting request',
         (tester) async {
       tester.view.physicalSize = const Size(1200, 2600);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       final repo = _FakeRepo(detail: _detail(), slots: _profileSlots);
-      await _pump(tester, repo: repo, controller: _SignedIn());
+      await _pump(tester, repo: repo, controller: _SignedIn(), isVip: true);
 
       await tester.tap(find.widgetWithText(FilledButton, 'Request meeting'));
       await tester.pumpAndSettle();
@@ -285,6 +299,7 @@ void main() {
         tester,
         repo: _FakeRepo(detail: _detail(), slots: _profileSlots),
         controller: _SignedIn(),
+        isVip: true,
       );
       await tester.tap(find.widgetWithText(FilledButton, 'Request meeting'));
       await tester.pumpAndSettle();
@@ -295,7 +310,12 @@ void main() {
       );
 
       // With no slots → the no-slots notice, and no day cards.
-      await _pump(tester, repo: _FakeRepo(detail: _detail()), controller: _SignedIn());
+      await _pump(
+        tester,
+        repo: _FakeRepo(detail: _detail()),
+        controller: _SignedIn(),
+        isVip: true,
+      );
       await tester.tap(find.widgetWithText(FilledButton, 'Request meeting'));
       await tester.pumpAndSettle();
       expect(find.text('No meeting slots available right now'), findsOneWidget);
@@ -323,10 +343,13 @@ void main() {
     });
 
     testWidgets('no meeting button when the speaker opted out', (tester) async {
+      // isVip:true so the absence is specifically the speaker opt-out, not the
+      // VIP gate (D-729).
       await _pump(
         tester,
         repo: _FakeRepo(detail: _detail(allowsMeeting: false)),
         controller: _SignedIn(),
+        isVip: true,
       );
       expect(find.widgetWithText(FilledButton, 'Request meeting'), findsNothing);
     });

@@ -166,6 +166,19 @@ final referenceNumberProvider = FutureProvider.autoDispose<String?>((ref) async 
   }
 });
 
+/// D-729 (owner item 15) — whether the signed-in user is a VIP tier (VVIP/VIP,
+/// server-computed from ProfileType.AllowsVipMeetingSlots). Gates the speaker
+/// "request a meeting" CTA to VIP guests; the endpoint enforces the same rule.
+/// False for guests / non-VIP / on error.
+final currentUserIsVipProvider = FutureProvider.autoDispose<bool>((ref) async {
+  try {
+    final profile = await ref.watch(profileRepositoryProvider).getMyProfile();
+    return profile.isVip;
+  } on ApiFailure {
+    return false;
+  }
+});
+
 /// Cache-buster for the signed-in user's avatar. Bumped after a successful
 /// avatar upload so [myAvatarBytesProvider] refetches and every avatar on
 /// screen (home greeting / badge / profile) shows the new photo immediately —

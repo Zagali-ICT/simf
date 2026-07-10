@@ -132,7 +132,10 @@ public interface IUserProfileRepository
 /// C5 (D-371) added the audience flag + name so the self-pick lock
 /// ("Visitor → Normal only") can be enforced in the service.</summary>
 public sealed record ProfileTypeFacts(
-    bool IsActive, UserType UserType, bool IsForVisitor, string Name);
+    bool IsActive, UserType UserType, bool IsForVisitor, string Name,
+    // D-729 (owner item 15) — the VIP-tier flag (VVIP/VIP), so the app profile
+    // read can report IsVip for the speaker-meeting CTA gate.
+    bool AllowsVipMeetingSlots);
 
 /// <summary>Audience flag + mobile role read off an assigned profile type.</summary>
 public sealed record ProfileTypeRole(bool IsVisitor, MobileAppRole MobileAppRole);

@@ -82,6 +82,13 @@ public sealed class UserProfileResponse
     /// <summary>The 12-character Crockford QR id; null when the account is
     /// not yet Approved.</summary>
     public string? QrId { get; set; }
+
+    /// <summary>D-729 (owner item 15) — true when the account's assigned
+    /// <see cref="ProfileType"/> is a VIP tier
+    /// (<c>AllowsVipMeetingSlots</c>, i.e. VVIP / VIP). The app uses it to
+    /// show the "request a speaker meeting" affordance to VIP guests only;
+    /// the endpoint enforces the same rule server-side. Append-only field.</summary>
+    public bool IsVip { get; set; }
 }
 
 /// <summary>The body posted to <c>POST /api/v1/app/account/user-profile</c>
