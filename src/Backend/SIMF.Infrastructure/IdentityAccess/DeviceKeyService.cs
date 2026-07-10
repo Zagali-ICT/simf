@@ -552,19 +552,16 @@ internal sealed class DeviceKeyService(
 
     /// <summary>Builds the bilingual step-up email; caller pairs it with
     /// <c>IEmailQueue.TryEnqueueAsync</c>.</summary>
-    private static EmailMessage BuildBiometricStepUpEmail(string email, string code)
-    {
-        var minutes = (int)StepUpLifetime.TotalMinutes;
-        var body =
-            $"<p>Your SIMF biometric sign-in confirmation code is <strong>{code}</strong>.</p>" +
-            $"<p>The code expires in {minutes} minutes. If you did not request to " +
-            "enable Face-ID sign-in, ignore this email.</p>" +
-            $"<hr/><p dir=\"rtl\">رمز تأكيد تفعيل تسجيل الدخول ببصمة الوجه هو " +
-            $"<strong>{code}</strong>.</p>" +
-            $"<p dir=\"rtl\">ينتهي الرمز خلال {minutes} دقائق. إذا لم تطلب تفعيل " +
-            "تسجيل الدخول ببصمة الوجه فتجاهل هذه الرسالة.</p>";
-        return new EmailMessage(email, "SIMF biometric sign-in code", body);
-    }
+    private static EmailMessage BuildBiometricStepUpEmail(string email, string code) =>
+        TransactionalEmail.Code(
+            email,
+            "SIMF biometric sign-in code",
+            enLead: "Your SIMF biometric sign-in confirmation code is",
+            arLead: "رمز تأكيد تفعيل تسجيل الدخول ببصمة الوجه هو",
+            code: code,
+            expiryMinutes: (int)StepUpLifetime.TotalMinutes,
+            enNote: "If you did not request to enable Face-ID sign-in, ignore this email.",
+            arNote: "إذا لم تطلب تفعيل تسجيل الدخول ببصمة الوجه فتجاهل هذه الرسالة.");
 
     /// <summary>Masks an email for the "we sent a code to a***@x.com" line —
     /// keeps the first character + the full domain and stars the rest of the

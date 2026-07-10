@@ -295,14 +295,16 @@ internal sealed class BadgeAuthService(
             Encoding.UTF8.GetBytes(stored),
             Encoding.UTF8.GetBytes(supplied ?? string.Empty));
 
-    private static EmailMessage BuildActivationEmail(string email, string code)
-    {
-        var minutes = (int)CodeLifetime.TotalMinutes;
-        var body =
-            $"<p>Your SIMF account activation code is <strong>{code}</strong>.</p>" +
-            $"<p>Enter it in the app to set your password. The code expires in {minutes} minutes.</p>";
-        return new EmailMessage(email, "SIMF account activation", body);
-    }
+    private static EmailMessage BuildActivationEmail(string email, string code) =>
+        TransactionalEmail.Code(
+            email,
+            "SIMF account activation",
+            enLead: "Your SIMF account activation code is",
+            arLead: "رمز تفعيل حسابك هو",
+            code: code,
+            expiryMinutes: (int)CodeLifetime.TotalMinutes,
+            enNote: "Enter it in the app to set your password.",
+            arNote: "أدخله في التطبيق لتعيين كلمة المرور.");
 
     /// <summary>Masks an email for display: <c>khalid@gmail.com</c> →
     /// <c>k****@gmail.com</c> (first char + domain).</summary>

@@ -496,15 +496,16 @@ public sealed class PasswordService(
     /// — one helper, one failure audit pattern across all four call
     /// sites (password reset, sign-up, resend verification, sign-in OTP).
     /// </summary>
-    private static EmailMessage BuildResetEmail(string email, string code)
-    {
-        var minutes = (int)ResetCodeLifetime.TotalMinutes;
-        var body =
-            $"<p>Your SIMF password reset code is <strong>{code}</strong>.</p>" +
-            $"<p>The code expires in {minutes} minutes. If you did not request a " +
-            "password reset, you can ignore this email.</p>";
-        return new EmailMessage(email, "SIMF password reset", body);
-    }
+    private static EmailMessage BuildResetEmail(string email, string code) =>
+        TransactionalEmail.Code(
+            email,
+            "SIMF password reset",
+            enLead: "Your SIMF password reset code is",
+            arLead: "رمز إعادة تعيين كلمة المرور الخاص بك هو",
+            code: code,
+            expiryMinutes: (int)ResetCodeLifetime.TotalMinutes,
+            enNote: "If you did not request a password reset, you can ignore this email.",
+            arNote: "إذا لم تطلب إعادة تعيين كلمة المرور فيمكنك تجاهل هذه الرسالة.");
 
     private static DataValidationException PasswordRejected(UserOperationResult result) =>
         new(

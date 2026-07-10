@@ -492,14 +492,14 @@ public sealed class RegistrationService(
     /// H23 — D-083: builds the verification email; caller pairs with
     /// `IEmailQueue.TryEnqueueAsync` which owns the failure audit.
     /// </summary>
-    private static EmailMessage BuildVerificationEmail(string email, string code)
-    {
-        var minutes = (int)CodeLifetime.TotalMinutes;
-        var body =
-            $"<p>Your SIMF email verification code is <strong>{code}</strong>.</p>" +
-            $"<p>The code expires in {minutes} minutes.</p>";
-        return new EmailMessage(email, "SIMF email verification", body);
-    }
+    private static EmailMessage BuildVerificationEmail(string email, string code) =>
+        TransactionalEmail.Code(
+            email,
+            "SIMF email verification",
+            enLead: "Your SIMF email verification code is",
+            arLead: "رمز التحقق من بريدك الإلكتروني هو",
+            code: code,
+            expiryMinutes: (int)CodeLifetime.TotalMinutes);
 
     /// <summary>
     /// D-198 — the heads-up sent to the OWNER of an existing verified
@@ -507,16 +507,20 @@ public sealed class RegistrationService(
     /// deliberately confirms no account detail; it only points a legitimate
     /// owner at sign-in / password-reset.
     /// </summary>
-    private static EmailMessage BuildAccountExistsEmail(string email)
-    {
-        var body =
-            "<p>Someone tried to create a SIMF account with this email address, " +
-            "but an account already exists.</p>" +
-            "<p>If this was you, please sign in instead — or use the " +
-            "&quot;forgot password&quot; option if you don't remember your password.</p>" +
-            "<p>If this wasn't you, you can safely ignore this email.</p>";
-        return new EmailMessage(email, "SIMF account already exists", body);
-    }
+    private static EmailMessage BuildAccountExistsEmail(string email) =>
+        TransactionalEmail.Notice(
+            email,
+            "SIMF account already exists",
+            enHtml:
+                "<p>Someone tried to create a SIMF account with this email address, " +
+                "but an account already exists.</p>" +
+                "<p>If this was you, please sign in instead — or use the " +
+                "&quot;forgot password&quot; option if you don't remember your password.</p>" +
+                "<p>If this wasn't you, you can safely ignore this email.</p>",
+            arHtml:
+                "<p>حاول أحدهم إنشاء حساب بهذا البريد الإلكتروني، لكن يوجد حساب مسجَّل بالفعل.</p>" +
+                "<p>إن كان ذلك أنت، فسجّل الدخول بدلاً من ذلك — أو استخدم خيار «نسيت كلمة المرور» إن لم تتذكّرها.</p>" +
+                "<p>إن لم يكن ذلك أنت، فيمكنك تجاهل هذه الرسالة بأمان.</p>");
 
     private Task AuditAsync(
         string eventType,

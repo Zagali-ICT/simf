@@ -771,14 +771,14 @@ public sealed class SignInService(
     /// H23 — D-083: builds the OTP email; caller pairs with
     /// `IEmailQueue.TryEnqueueAsync`.
     /// </summary>
-    private static EmailMessage BuildSignInOtpEmail(string email, string code)
-    {
-        var minutes = (int)OtpLifetime.TotalMinutes;
-        var body =
-            $"<p>Your SIMF sign-in code is <strong>{code}</strong>.</p>" +
-            $"<p>The code expires in {minutes} minutes.</p>";
-        return new EmailMessage(email, "SIMF sign-in code", body);
-    }
+    private static EmailMessage BuildSignInOtpEmail(string email, string code) =>
+        TransactionalEmail.Code(
+            email,
+            "SIMF sign-in code",
+            enLead: "Your SIMF sign-in code is",
+            arLead: "رمز تسجيل الدخول الخاص بك هو",
+            code: code,
+            expiryMinutes: (int)OtpLifetime.TotalMinutes);
 
     private Task AuditAsync(
         string eventType,
