@@ -10,6 +10,7 @@ using SIMF.Contracts.Authentication;
 using SIMF.Contracts.BusinessMeetings;
 using SIMF.Contracts.Exhibitors;
 using SIMF.Contracts.Exhibition;
+using SIMF.Contracts.Email;
 using SIMF.Contracts.Faq;
 using SIMF.Contracts.Feedback;
 using SIMF.Contracts.Organisations;
@@ -2233,6 +2234,50 @@ internal static class AccountEndpoints
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
             return Forward(await api.GetAiDashboardAsync(token));
+        });
+
+        // D-735 — transactional email-template editor (list / read / edit /
+        // reset / preview). The {type} segment is the EmailTemplateType name.
+        group.MapPost("/admin/email/templates/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListEmailTemplatesAsync(body, token));
+        });
+
+        group.MapGet("/admin/email/templates/{type}",
+            async (string type, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetEmailTemplateAsync(type, token));
+        });
+
+        group.MapPut("/admin/email/templates/{type}",
+            async (string type, UpdateEmailTemplateRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateEmailTemplateAsync(type, body, token));
+        });
+
+        group.MapPost("/admin/email/templates/{type}/reset",
+            async (string type, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ResetEmailTemplateAsync(type, token));
+        });
+
+        group.MapPost("/admin/email/templates/{type}/preview",
+            async (string type, PreviewEmailTemplateRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.PreviewEmailTemplateAsync(type, body, token));
         });
 
         // D-182 (CP UI for D-175 seat reservations).

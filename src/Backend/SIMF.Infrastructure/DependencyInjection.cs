@@ -575,6 +575,12 @@ public static class DependencyInjection
             SIMF.Infrastructure.Ai.AiService>();
         services.AddScoped<SIMF.Application.Ai.Abstractions.IAdminAiPromptService,
             SIMF.Infrastructure.Ai.AdminAiPromptService>();
+        // D-735 — transactional-email templates: the resolver (DB override else
+        // code default) and the CP admin service.
+        services.AddScoped<SIMF.Application.Email.IEmailTemplateResolver,
+            SIMF.Infrastructure.Email.EmailTemplateResolver>();
+        services.AddScoped<SIMF.Application.Email.IAdminEmailTemplateService,
+            SIMF.Infrastructure.Email.AdminEmailTemplateService>();
         // D-578 — server-side subtitle fetch from a video (YouTube) for the CP
         // Sessions editor. Uses a DEDICATED no-redirect HttpClient (not the shared
         // singleton): the caption baseUrl comes from YouTube's response, so following

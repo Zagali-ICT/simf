@@ -193,6 +193,7 @@
   <data name="Module.PreviousEditions" xml:space="preserve"><value>الدورات السابقة</value></data>
   <data name="Module.Notifications" xml:space="preserve"><value>الإشعارات</value></data>
   <data name="Module.Configuration" xml:space="preserve"><value>الإعدادات العامة</value></data>
+  <data name="Module.EmailTemplates" xml:space="preserve"><value>قوالب البريد الإلكتروني</value></data>
   <data name="Module.OperationLog" xml:space="preserve"><value>سجل العمليات</value></data>
   <data name="Module.Settings" xml:space="preserve"><value>الإعدادات</value></data>
   <data name="Module.AdminResetTwoFactor" xml:space="preserve"><value>إعادة تعيين المصادقة الثنائية لمستخدم</value></data>
@@ -2004,6 +2005,40 @@
   <data name="Admin.AiPrompts.Saved" xml:space="preserve"><value>تمّ حفظ المحفّز.</value></data>
   <data name="Admin.AiPrompts.Deleted" xml:space="preserve"><value>تمّ تعطيل المحفّز.</value></data>
   <data name="Admin.AiPrompts.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Admin.EmailTemplates.Title" xml:space="preserve"><value>قوالب البريد الإلكتروني</value></data>
+  <data name="Admin.EmailTemplates.None" xml:space="preserve"><value>لا توجد قوالب بريد إلكتروني.</value></data>
+  <data name="Admin.EmailTemplates.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
+  <data name="Admin.EmailTemplates.LoadFailed" xml:space="preserve"><value>تعذّر تحميل قوالب البريد الإلكتروني.</value></data>
+  <data name="Admin.EmailTemplates.Col.Type" xml:space="preserve"><value>القالب</value></data>
+  <data name="Admin.EmailTemplates.Col.Subject" xml:space="preserve"><value>الموضوع</value></data>
+  <data name="Admin.EmailTemplates.Col.Customised" xml:space="preserve"><value>مُخصّص</value></data>
+  <data name="Admin.EmailTemplates.Col.Version" xml:space="preserve"><value>الإصدار</value></data>
+  <data name="Admin.EmailTemplates.Col.UpdatedAt" xml:space="preserve"><value>آخر تحديث</value></data>
+  <data name="Admin.EmailTemplates.Customised.Yes" xml:space="preserve"><value>مُخصّص</value></data>
+  <data name="Admin.EmailTemplates.Customised.No" xml:space="preserve"><value>افتراضي</value></data>
+  <data name="Admin.EmailTemplates.Edit" xml:space="preserve"><value>تعديل</value></data>
+  <data name="Admin.EmailTemplates.Edit.Title" xml:space="preserve"><value>تعديل قالب البريد الإلكتروني</value></data>
+  <data name="Admin.EmailTemplates.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.EmailTemplates.Field.Subject" xml:space="preserve"><value>الموضوع</value></data>
+  <data name="Admin.EmailTemplates.Field.BodyEn" xml:space="preserve"><value>النص (إنجليزي)</value></data>
+  <data name="Admin.EmailTemplates.Field.BodyAr" xml:space="preserve"><value>النص (عربي)</value></data>
+  <data name="Admin.EmailTemplates.Field.IsActive" xml:space="preserve"><value>استخدام هذا القالب المخصّص</value></data>
+  <data name="Admin.EmailTemplates.Tokens" xml:space="preserve"><value>الرموز المتاحة</value></data>
+  <data name="Admin.EmailTemplates.Tokens.Hint" xml:space="preserve"><value>انقر على رمز لإدراجه في النص الذي حرّرته آخر مرة.</value></data>
+  <data name="Admin.EmailTemplates.Preview" xml:space="preserve"><value>معاينة</value></data>
+  <data name="Admin.EmailTemplates.Preview.Subject" xml:space="preserve"><value>الموضوع</value></data>
+  <data name="Admin.EmailTemplates.Preview.Body" xml:space="preserve"><value>النص المُقدَّم</value></data>
+  <data name="Admin.EmailTemplates.Preview.Empty" xml:space="preserve"><value>عدّل القالب لرؤية معاينة مباشرة.</value></data>
+  <data name="Admin.EmailTemplates.UnknownTokens" xml:space="preserve"><value>يجب إزالة الرموز غير المعروفة قبل الحفظ: {0}</value></data>
+  <data name="Admin.EmailTemplates.Status.Customised" xml:space="preserve"><value>مُخصّص (النسخة {0})</value></data>
+  <data name="Admin.EmailTemplates.Status.Default" xml:space="preserve"><value>الافتراضي المدمج</value></data>
+  <data name="Admin.EmailTemplates.Save" xml:space="preserve"><value>حفظ</value></data>
+  <data name="Admin.EmailTemplates.Saved" xml:space="preserve"><value>تمّ حفظ القالب.</value></data>
+  <data name="Admin.EmailTemplates.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.EmailTemplates.Reset" xml:space="preserve"><value>إعادة التعيين إلى الافتراضي</value></data>
+  <data name="Admin.EmailTemplates.Reset.Title" xml:space="preserve"><value>إعادة تعيين قالب البريد</value></data>
+  <data name="Admin.EmailTemplates.Reset.Message" xml:space="preserve"><value>هل تريد إعادة تعيين «{0}» إلى الافتراضي المدمج؟ سيتم حذف الموضوع والنص المخصّصَين.</value></data>
+  <data name="Admin.EmailTemplates.Reset.Done" xml:space="preserve"><value>تمت إعادة تعيين القالب إلى الافتراضي المدمج.</value></data>
   <data name="Admin.AiInvocations.Title" xml:space="preserve"><value>سجلّ استدعاءات الذكاء الاصطناعي</value></data>
   <data name="Admin.AiInvocations.None" xml:space="preserve"><value>لا توجد استدعاءات حتى الآن.</value></data>
   <data name="Admin.AiInvocations.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>

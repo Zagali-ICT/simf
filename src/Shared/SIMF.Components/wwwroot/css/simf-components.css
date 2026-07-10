@@ -2225,6 +2225,69 @@ h1:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
 }
 
 /* ===========================================================================
+   D-735 — Email-template editor: clickable token chips + live-preview box.
+   Tokens only (theme.tokens.css); no raw colour / font.
+   ========================================================================= */
+.simf-email-template__status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-block-end: var(--space-3);
+}
+
+.simf-email-template__tokens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-block: var(--space-2) var(--space-3);
+}
+
+.simf-email-template__token {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background-color: var(--color-surface-sunken);
+  color: var(--color-text);
+  font-size: var(--font-size-caption);
+  line-height: var(--line-height-caption);
+  cursor: pointer;
+}
+
+.simf-email-template__token:hover:not(:disabled) {
+  border-color: var(--color-secondary);
+}
+
+.simf-email-template__token:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.simf-email-template__preview {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: var(--space-4);
+  background-color: var(--color-surface);
+  overflow-x: auto;
+}
+
+.simf-email-template__preview-subject {
+  font-weight: var(--font-weight-heading);
+  margin-block-end: var(--space-3);
+}
+
+/* D-735 (security review): the email body is admin-authored raw HTML, rendered
+   inside a sandboxed iframe (no allow-scripts) so it previews like a mail client
+   without executing script in the CP origin. */
+.simf-email-template__preview-frame {
+  inline-size: 100%;
+  min-block-size: 12rem;
+  border: 0;
+  background-color: var(--color-surface);
+}
+
+/* ===========================================================================
    D-117 — Q-E: Logs viewer 2-row layout.
    Row 1 = filters (Project / File / Lines + Auto-refresh).
    Row 2 = action buttons (Refresh / Download). Group-aligned.

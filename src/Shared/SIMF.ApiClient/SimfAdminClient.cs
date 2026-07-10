@@ -12,6 +12,7 @@ using SIMF.Contracts.Authentication;
 using SIMF.Contracts.BusinessMeetings;
 using SIMF.Contracts.Exhibition;
 using SIMF.Contracts.Exhibitors;
+using SIMF.Contracts.Email;
 using SIMF.Contracts.Faq;
 using SIMF.Contracts.Organisations;
 using SIMF.Contracts.Contacts;
@@ -2231,6 +2232,48 @@ public sealed class SimfAdminClient(HttpClient http)
         string accessToken, CancellationToken cancellationToken = default) =>
         SendAsync<AdminAiDashboard>(
             HttpMethod.Get, "ai/dashboard", content: null,
+            accessToken, cancellationToken);
+
+    // -- D-735 — transactional email templates (list / read / edit / reset /
+    //    preview). The {type} segment is the EmailTemplateType name (the DB holds
+    //    only overrides; the catalogue backs every read so the grid shows all six).
+
+    public Task<ApiCallResult<GridPage<AdminEmailTemplateSummary>>> ListEmailTemplatesAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminEmailTemplateSummary>>(
+            HttpMethod.Post, "email/templates/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminEmailTemplateDetail>> GetEmailTemplateAsync(
+        string type, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminEmailTemplateDetail>(
+            HttpMethod.Get, $"email/templates/{type}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminEmailTemplateDetail>> UpdateEmailTemplateAsync(
+        string type, UpdateEmailTemplateRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminEmailTemplateDetail>(
+            HttpMethod.Put, $"email/templates/{type}",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminEmailTemplateDetail>> ResetEmailTemplateAsync(
+        string type, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminEmailTemplateDetail>(
+            HttpMethod.Post, $"email/templates/{type}/reset", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<EmailTemplatePreviewResult>> PreviewEmailTemplateAsync(
+        string type, PreviewEmailTemplateRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<EmailTemplatePreviewResult>(
+            HttpMethod.Post, $"email/templates/{type}/preview",
+            JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
     // -- D-182 (CP UI for D-175 seat reservations) -------------------------

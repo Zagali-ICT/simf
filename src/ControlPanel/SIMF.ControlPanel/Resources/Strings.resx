@@ -919,6 +919,7 @@
   <data name="Admin.WalkIn.Field.Plate.Letter" xml:space="preserve"><value>Letter</value></data>
   <data name="Admin.WalkIn.Field.Plate.Digits" xml:space="preserve"><value>Digits</value></data>
   <data name="Module.SiteSettings" xml:space="preserve"><value>Site Settings</value></data>
+  <data name="Module.EmailTemplates" xml:space="preserve"><value>Email Templates</value></data>
   <data name="Module.OrganizationProfile" xml:space="preserve"><value>Organization Profile</value></data>
   <data name="Admin.OrganizationProfile.Title" xml:space="preserve"><value>Organization Profile</value></data>
   <data name="Admin.OrganizationProfile.Loading" xml:space="preserve"><value>Loading…</value></data>
@@ -2011,6 +2012,40 @@
   <data name="Admin.AiPrompts.Saved" xml:space="preserve"><value>Prompt saved.</value></data>
   <data name="Admin.AiPrompts.Deleted" xml:space="preserve"><value>Prompt deactivated.</value></data>
   <data name="Admin.AiPrompts.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
+  <data name="Admin.EmailTemplates.Title" xml:space="preserve"><value>Email templates</value></data>
+  <data name="Admin.EmailTemplates.None" xml:space="preserve"><value>No email templates.</value></data>
+  <data name="Admin.EmailTemplates.Loading" xml:space="preserve"><value>Loading…</value></data>
+  <data name="Admin.EmailTemplates.LoadFailed" xml:space="preserve"><value>Could not load email templates.</value></data>
+  <data name="Admin.EmailTemplates.Col.Type" xml:space="preserve"><value>Template</value></data>
+  <data name="Admin.EmailTemplates.Col.Subject" xml:space="preserve"><value>Subject</value></data>
+  <data name="Admin.EmailTemplates.Col.Customised" xml:space="preserve"><value>Customised</value></data>
+  <data name="Admin.EmailTemplates.Col.Version" xml:space="preserve"><value>Version</value></data>
+  <data name="Admin.EmailTemplates.Col.UpdatedAt" xml:space="preserve"><value>Updated</value></data>
+  <data name="Admin.EmailTemplates.Customised.Yes" xml:space="preserve"><value>Customised</value></data>
+  <data name="Admin.EmailTemplates.Customised.No" xml:space="preserve"><value>Default</value></data>
+  <data name="Admin.EmailTemplates.Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Admin.EmailTemplates.Edit.Title" xml:space="preserve"><value>Edit email template</value></data>
+  <data name="Admin.EmailTemplates.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.EmailTemplates.Field.Subject" xml:space="preserve"><value>Subject</value></data>
+  <data name="Admin.EmailTemplates.Field.BodyEn" xml:space="preserve"><value>Body (English)</value></data>
+  <data name="Admin.EmailTemplates.Field.BodyAr" xml:space="preserve"><value>Body (Arabic)</value></data>
+  <data name="Admin.EmailTemplates.Field.IsActive" xml:space="preserve"><value>Serve this customised template</value></data>
+  <data name="Admin.EmailTemplates.Tokens" xml:space="preserve"><value>Available tokens</value></data>
+  <data name="Admin.EmailTemplates.Tokens.Hint" xml:space="preserve"><value>Click a token to insert it into the body you last edited.</value></data>
+  <data name="Admin.EmailTemplates.Preview" xml:space="preserve"><value>Preview</value></data>
+  <data name="Admin.EmailTemplates.Preview.Subject" xml:space="preserve"><value>Subject</value></data>
+  <data name="Admin.EmailTemplates.Preview.Body" xml:space="preserve"><value>Rendered body</value></data>
+  <data name="Admin.EmailTemplates.Preview.Empty" xml:space="preserve"><value>Edit the template to see a live preview.</value></data>
+  <data name="Admin.EmailTemplates.UnknownTokens" xml:space="preserve"><value>Unknown tokens must be removed before saving: {0}</value></data>
+  <data name="Admin.EmailTemplates.Status.Customised" xml:space="preserve"><value>Customised (v{0})</value></data>
+  <data name="Admin.EmailTemplates.Status.Default" xml:space="preserve"><value>Built-in default</value></data>
+  <data name="Admin.EmailTemplates.Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Admin.EmailTemplates.Saved" xml:space="preserve"><value>Template saved.</value></data>
+  <data name="Admin.EmailTemplates.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.EmailTemplates.Reset" xml:space="preserve"><value>Reset to default</value></data>
+  <data name="Admin.EmailTemplates.Reset.Title" xml:space="preserve"><value>Reset email template</value></data>
+  <data name="Admin.EmailTemplates.Reset.Message" xml:space="preserve"><value>Reset “{0}” to the built-in default? Your customised subject and body will be removed.</value></data>
+  <data name="Admin.EmailTemplates.Reset.Done" xml:space="preserve"><value>Template reset to the built-in default.</value></data>
   <data name="Admin.AiInvocations.Title" xml:space="preserve"><value>AI invocations</value></data>
   <data name="Admin.AiInvocations.None" xml:space="preserve"><value>No invocations recorded yet.</value></data>
   <data name="Admin.AiInvocations.Loading" xml:space="preserve"><value>Loading…</value></data>

@@ -366,6 +366,9 @@ public static class AuditEvents
     public const string AiPromptCreated = "AiPrompt.Created";
     public const string AiPromptUpdated = "AiPrompt.Updated";
     public const string AiPromptDeactivated = "AiPrompt.Deactivated";
+    // D-735 — transactional email templates.
+    public const string EmailTemplateUpdated = "EmailTemplate.Updated";
+    public const string EmailTemplateReset = "EmailTemplate.Reset";
     public const string AiInvocationSucceeded = "AiInvocation.Succeeded";
     public const string AiInvocationFailed = "AiInvocation.Failed";
 

@@ -31,6 +31,7 @@ internal sealed class BadgeAuthService(
     IUserAccountRepository accounts,
     IAccountCodeRepository accountCodeRepository,
     IEmailQueue emailQueue,
+    IEmailTemplateResolver emailTemplates,
     IAuditLog auditLog,
     ITransactionRunner transactionRunner,
     TimeProvider timeProvider,
@@ -119,7 +120,7 @@ internal sealed class BadgeAuthService(
         }
 
         await emailQueue.TryEnqueueAsync(
-            BuildActivationEmail(targetEmail, code),
+            await BuildActivationEmailAsync(targetEmail, code, cancellationToken),
             "badge-activation", targetEmail, user.Id, auditLog, logger, cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -295,16 +296,11 @@ internal sealed class BadgeAuthService(
             Encoding.UTF8.GetBytes(stored),
             Encoding.UTF8.GetBytes(supplied ?? string.Empty));
 
-    private static EmailMessage BuildActivationEmail(string email, string code) =>
-        TransactionalEmail.Code(
-            email,
-            "SIMF account activation",
-            enLead: "Your SIMF account activation code is",
-            arLead: "رمز تفعيل حسابك هو",
-            code: code,
-            expiryMinutes: (int)CodeLifetime.TotalMinutes,
-            enNote: "Enter it in the app to set your password.",
-            arNote: "أدخله في التطبيق لتعيين كلمة المرور.");
+    private Task<EmailMessage> BuildActivationEmailAsync(
+        string email, string code, CancellationToken cancellationToken) =>
+        emailTemplates.RenderAsync(
+            EmailTemplateType.BadgeActivation, email,
+            EmailTokens.ForCode(code, CodeLifetime), cancellationToken);
 
     /// <summary>Masks an email for display: <c>khalid@gmail.com</c> →
     /// <c>k****@gmail.com</c> (first char + domain).</summary>

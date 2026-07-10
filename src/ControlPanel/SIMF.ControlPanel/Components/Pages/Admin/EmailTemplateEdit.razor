@@ -1,0 +1,157 @@
+@* D-735 — the reusable email-template editor, hosted by CrudShell from
+   EmailTemplatesList.razor (popup or full page per CpPreferences). Inherits
+   CrudAddEditFormBase<AdminEmailTemplateDetail> so it exposes the standard
+   CRUD-form parameter surface (Initial / OnSuccess / OnCancel); IsEdit is
+   always true (there is no Add). For the selected type the admin edits the
+   bilingual subject/body, drops tokens in with one click (they land in the
+   body last focused), sees a live server-rendered preview, and — for a
+   customised template — resets back to the built-in default. Save PUTs the
+   override and is blocked while the last preview reported unknown tokens. *@
+@inherits CrudAddEditFormBase<AdminEmailTemplateDetail>
+@using SIMF.Contracts.Email
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+@if (_detail is not null)
+{
+    <div class="simf-email-template__status">
+        @if (_detail.IsOverride)
+        {
+            <SimfPill Variant="on">@string.Format(L["Admin.EmailTemplates.Status.Customised"], _detail.Version)</SimfPill>
+        }
+        else
+        {
+            <SimfPill Variant="off">@L["Admin.EmailTemplates.Status.Default"]</SimfPill>
+        }
+    </div>
+
+    <div class="simf-form">
+        <div class="simf-form__fields">
+            <label class="simf-field">
+                <span class="simf-field__label">@L["Admin.EmailTemplates.Field.Subject"]</span>
+                <input class="simf-field__input" type="text"
+                       value="@_subject"
+                       maxlength="256"
+                       @onchange="OnSubjectChanged"
+                       disabled="@Working" />
+            </label>
+
+            @* Token chips — click drops {Token} into the last-focused body. *@
+            <div class="simf-field">
+                <span class="simf-field__label">@L["Admin.EmailTemplates.Tokens"]</span>
+                <div class="simf-email-template__tokens">
+                    @foreach (var token in _detail.Tokens)
+                    {
+                        var name = token.Name;
+                        <button type="button" class="simf-email-template__token"
+                                title="@TokenTitle(token)"
+                                disabled="@Working"
+                                @onclick="@(() => InsertTokenAsync(name))">
+                            @TokenLabel(token)
+                        </button>
+                    }
+                </div>
+                <span class="simf-field__helper">@L["Admin.EmailTemplates.Tokens.Hint"]</span>
+            </div>
+
+            <label class="simf-field">
+                <span class="simf-field__label">@L["Admin.EmailTemplates.Field.BodyEn"]</span>
+                <textarea id="@BodyEnId" class="simf-field__input" rows="8"
+                          maxlength="8000"
+                          value="@_bodyEn"
+                          @onfocus="@(() => { _lastFocused = BodyEnId; })"
+                          @onchange="OnBodyEnChanged"
+                          disabled="@Working"></textarea>
+            </label>
+
+            <label class="simf-field">
+                <span class="simf-field__label">@L["Admin.EmailTemplates.Field.BodyAr"]</span>
+                <textarea id="@BodyArId" class="simf-field__input" rows="8" dir="rtl"
+                          maxlength="8000"
+                          value="@_bodyAr"
+                          @onfocus="@(() => { _lastFocused = BodyArId; })"
+                          @onchange="OnBodyArChanged"
+                          disabled="@Working"></textarea>
+            </label>
+
+            <SimfCheckbox @bind-Value="_isActive" Disabled="Working">
+                @L["Admin.EmailTemplates.Field.IsActive"]
+            </SimfCheckbox>
+        </div>
+
+        @if (_unknownTokens.Count > 0)
+        {
+            <SimfAlert Variant="error">
+                @string.Format(L["Admin.EmailTemplates.UnknownTokens"], string.Join(", ", _unknownTokens))
+            </SimfAlert>
+        }
+
+        @* Live preview — server-rendered subject + composed HTML body. *@
+        <div class="simf-form__fields">
+            <div class="simf-field">
+                <span class="simf-field__label">@L["Admin.EmailTemplates.Preview"]</span>
+                @if (_preview is not null)
+                {
+                    <div class="simf-email-template__preview">
+                        <div class="simf-email-template__preview-subject">@_preview.Subject</div>
+                        @* Security (D-735 review): the body is admin-authored raw HTML —
+                           render it in a sandboxed iframe with NO allow-scripts so it
+                           displays like a mail client but cannot execute script in the CP
+                           origin (stored-XSS defence). srcdoc is HTML-attribute-encoded by
+                           Blazor. *@
+                        <iframe class="simf-email-template__preview-frame" sandbox
+                                title="@L["Admin.EmailTemplates.Preview"]"
+                                srcdoc="@_preview.HtmlBody"></iframe>
+                    </div>
+                }
+                else
+                {
+                    <SimfEmptyState Title="@L["Admin.EmailTemplates.Preview.Empty"]" />
+                }
+            </div>
+        </div>
+
+        <div class="simf-form__actions">
+            <AuthorizedAction Permission="@PermissionCatalog.EmailTemplates.Edit">
+                <SimfButton Type="button" Disabled="@(!CanSave)" Loading="_busy"
+                            LoadingLabel="@L["Admin.EmailTemplates.Save"]"
+                            OnClick="SaveAsync">
+                    @L["Admin.EmailTemplates.Save"]
+                </SimfButton>
+            </AuthorizedAction>
+            <SimfButton Type="button" Variant="secondary" Disabled="Working"
+                        OnClick="PreviewAsync">
+                @L["Admin.EmailTemplates.Preview"]
+            </SimfButton>
+            @if (_detail.IsOverride)
+            {
+                <AuthorizedAction Permission="@PermissionCatalog.EmailTemplates.Edit">
+                    <SimfButton Type="button" Variant="danger" Disabled="Working"
+                                OnClick="@(() => _confirmingReset = true)">
+                        @L["Admin.EmailTemplates.Reset"]
+                    </SimfButton>
+                </AuthorizedAction>
+            }
+            @if (OnCancel.HasDelegate)
+            {
+                <SimfButton Type="button" Variant="secondary" Disabled="Working"
+                            OnClick="OnCancel">
+                    @L["Admin.EmailTemplates.Cancel"]
+                </SimfButton>
+            }
+        </div>
+    </div>
+
+    <SimfConfirm Open="_confirmingReset"
+                 Title="@L["Admin.EmailTemplates.Reset.Title"]"
+                 Message="@string.Format(L["Admin.EmailTemplates.Reset.Message"], _detail.TypeName)"
+                 ConfirmLabel="@L["Admin.EmailTemplates.Reset"]"
+                 CancelLabel="@L["Admin.EmailTemplates.Cancel"]"
+                 Danger="true"
+                 Busy="_busy"
+                 OnConfirm="ConfirmResetAsync"
+                 OnCancel="@(() => _confirmingReset = false)" />
+}
