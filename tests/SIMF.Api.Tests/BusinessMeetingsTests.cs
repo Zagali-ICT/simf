@@ -75,6 +75,41 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Schedule_a_g2b_meeting_round_trips_the_type()
+    {
+        // D-730 (owner item 15B) — the new government-to-business type is accepted
+        // on schedule and read back verbatim (additive value; no schema change).
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting);
+        var tableId = await CreateTableAsync(hallId, token, capacity: 4);
+        var (a, b) = (await SeedCompanyAsync(), await SeedCompanyAsync());
+        var start = DateTimeOffset.UtcNow.AddDays(1);
+
+        var schedule = await PostAuthAsync(
+            "/api/v1/admin/business-meetings",
+            new ScheduleMeetingRequest
+            {
+                MeetingTableId = tableId,
+                MeetingType = BusinessMeetingType.G2B,
+                StartUtc = start,
+                EndUtc = start.AddHours(1),
+                Participants =
+                [
+                    new() { Kind = MeetingPartyKind.Company, CompanyId = a },
+                    new() { Kind = MeetingPartyKind.Company, CompanyId = b },
+                ],
+            }, token);
+        Assert.Equal(HttpStatusCode.OK, schedule.StatusCode);
+        var scheduled = (await schedule.Content
+            .ReadFromJsonAsync<ApiResult<BusinessMeetingScheduled>>())!.Data!;
+
+        var get = await GetAuthAsync($"/api/v1/admin/business-meetings/{scheduled.Id}", token);
+        var detail = (await get.Content
+            .ReadFromJsonAsync<ApiResult<BusinessMeetingDetail>>())!.Data!;
+        Assert.Equal(BusinessMeetingType.G2B, detail.MeetingType);
+    }
+
+    [Fact]
     public async Task Schedule_with_fewer_than_two_participants_is_400()
     {
         var token = await CreateAdministratorAndSignInAsync();

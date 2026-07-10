@@ -179,7 +179,7 @@ class AppL10n {
   String get arabicNameLabel => _t('الاسم الكامل (بالعربية)', 'Full name (Arabic)');
   String get englishNameLabel =>
       _t('الاسم الكامل (بالإنجليزية)', 'Full name (English)');
-  String get jobTitleLabel => _t('المسمى الوظيفي (اختياري)', 'Job title (optional)');
+  String get jobTitleLabel => _t('المسمى الوظيفي', 'Job title');
   String get nationalityLabel => _t('الجنسية', 'Nationality');
   String get isSaudiLabel => _t('سعودي الجنسية', 'Saudi national');
   String get nationalIdLabel => _t('رقم الهوية الوطنية', 'National ID');
@@ -188,11 +188,11 @@ class AppL10n {
   String get passportSegment => _t('جواز السفر', 'Passport');
   String get iqamaNumberLabel => _t('رقم الإقامة', 'Iqama number');
   String get passportNumberLabel => _t('رقم جواز السفر', 'Passport number');
-  String get saudiMobileLabel => _t('رقم الجوال (اختياري)', 'Mobile (optional)');
+  String get saudiMobileLabel => _t('رقم الجوال', 'Mobile');
   String get internationalMobileLabel =>
-      _t('رقم الجوال الدولي (اختياري)', 'International mobile (optional)');
+      _t('رقم الجوال الدولي', 'International mobile');
   String get dateOfBirthLabel => _t('تاريخ الميلاد', 'Date of birth');
-  String get placeOfBirthLabel => _t('مكان الميلاد (اختياري)', 'Place of birth (optional)');
+  String get placeOfBirthLabel => _t('مكان الميلاد', 'Place of birth');
   // D-469 — Saudi → region dropdown; others → free text "as in passport".
   String get placeOfBirthRegionHint => _t('اختر المنطقة', 'Select region');
   String get placeOfBirthPassportHint =>
@@ -261,6 +261,13 @@ class AppL10n {
         'Please complete the required fields below to finish your profile.',
       );
   String get nationalityRequired => _t('الجنسية مطلوبة', 'Nationality is required');
+  // D-723 — create-profile now requires every field except the plate number.
+  String get jobTitleRequired =>
+      _t('المسمى الوظيفي مطلوب', 'Job title is required');
+  String get placeOfBirthRequired =>
+      _t('مكان الميلاد مطلوب', 'Place of birth is required');
+  String get mobileRequired =>
+      _t('رقم الجوال مطلوب', 'Mobile number is required');
   String get nationalIdInvalid => _t(
         'رقم الهوية الوطنية غير صحيح (10 أرقام تبدأ بـ 1)',
         'Invalid national ID (10 digits starting with 1)',
@@ -366,6 +373,13 @@ class AppL10n {
         'أوافق على الشروط والأحكام',
         'I accept the terms and conditions',
       );
+  // Sign-up mandatory-accept checkbox (D-719): the lead text before the
+  // tappable الشروط والأحكام link, and the error when it is left unchecked.
+  String get termsAcceptLead => _t('أوافق على', 'I accept the');
+  String get termsMustAccept => _t(
+        'يجب الموافقة على الشروط والأحكام',
+        'You must accept the terms and conditions',
+      );
   // KSA-Project terms frame copy (Figma 505:1553, D-367).
   String get termsImportantInfoTitle => _t(
         'معلومات هامة لزوار الملتقى',
@@ -450,6 +464,14 @@ class AppL10n {
         'هل تريد تسجيل الخروج من حسابك؟',
         'Do you want to sign out of your account?',
       );
+  // D-726 (item 11) — the idle session-timeout warning (SessionGuard).
+  String get sessionExpiryTitle =>
+      _t('هل ما زلت هنا؟', 'Are you still there?');
+  String sessionExpiryCountdown(int seconds) => _t(
+        'ستُنهى جلستك خلال $seconds ثانية بسبب عدم النشاط.',
+        'Your session will end in $seconds seconds due to inactivity.',
+      );
+  String get sessionStaySignedIn => _t('البقاء مسجّلاً', 'Stay signed in');
 
   // Sign in (Page 003).
   String get signInTitle => _t('تسجيل الدخول', 'Sign in');

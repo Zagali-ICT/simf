@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
+import '../core/session/session_guard.dart';
 import '../features/accessibility/data/accessibility_controller.dart';
 import 'localization/app_l10n.dart';
 import 'localization/locale_controller.dart';
@@ -67,7 +68,10 @@ class SimfApp extends ConsumerWidget {
             textScaler: TextScaler.linear(a11y.textSize.scaleFactor),
             disableAnimations: a11y.reduceMotion || mq.disableAnimations,
           ),
-          child: child ?? const SizedBox.shrink(),
+          // D-726 (item 11) — the app-wide session auto-extend guard wraps every
+          // screen: it marks activity on each touch, silently refreshes the
+          // access token while active, and paints the idle timeout countdown.
+          child: SessionGuard(child: child ?? const SizedBox.shrink()),
         );
       },
     );

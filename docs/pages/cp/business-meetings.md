@@ -1,6 +1,6 @@
 # Control Panel — Business Meetings (`/admin/business-meetings`)
 
-> **Authority:** SIMF-FDS-013 (D-248). Admin-arranged B2B/B2C business meetings.
+> **Authority:** SIMF-FDS-013 (D-248). Admin-arranged B2B/B2C/G2B business meetings (G2B added D-730).
 
 ## Purpose
 
@@ -24,9 +24,9 @@ once that aggregate read ships (the union already reserves space for them).
 ## Layout
 
 - **Status filter** (All / Confirmed / Cancelled) + a **Schedule meeting** button.
-- **Grid:** Hall · Table · Type (B2B/B2C) · Start · End · Participants · Status · View/Cancel.
+- **Grid:** Hall · Table · Type (B2B/B2C/G2B) · Start · End · Participants · Status · View/Cancel.
 - **Schedule modal:** hall picker → table picker (tables of the chosen Meeting/General
-  hall) → type (B2B/B2C, admin-set) → Start/End (UTC) → participant builder (add any
+  hall) → type (B2B/B2C/G2B, admin-set) → Start/End (UTC) → participant builder (add any
   number of Company or Visitor parties; ≥ 2, ≤ table capacity) → optional Notes.
 - **Cancel modal:** optional reason. **Detail modal:** participants + slot + reason.
 - **Excel export (D-356):** a toolbar **Export** action downloads the grid as an
@@ -67,7 +67,8 @@ once that aggregate read ships (the union already reserves space for them).
 | Date | Change |
 |------|--------|
 | 2026-06-10 | D-356 — added Excel **export** (toolbar Export → `.xlsx`, "BusinessMeetings" sheet). Export-only: no import, and no D-353 Page↔Popup toggle (page keeps its bespoke schedule/cancel/detail modals). |
+| 2026-07-10 | D-730 (owner item 15B) — added the **G2B** (government-to-business) type to the schedule dropdown + the Excel `TypeText`. Additive `BusinessMeetingType` value; no schema change. "g2g" stays the separate Delegation-meetings desk. |
 
 ---
 
-_Last reviewed:_ 2026-06-10 (D-356 Phase 5 — Excel export added; export-only).
+_Last reviewed:_ 2026-07-10 (D-730 — G2B business-meeting type). Prior: 2026-06-10 (D-356 Phase 5 — Excel export added; export-only).

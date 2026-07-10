@@ -437,6 +437,11 @@ public sealed class IdentitySeeder(
             PageColor = pageColor,
             IsForVisitor = isVisitor,
             MobileAppRole = mobileAppRole,
+            // D-725 (owner item 1) — CP-only operational types (Staff,
+            // Moderator) are hidden from the app sign-up picker; everything
+            // else is self-registerable by default. Mirrors the D-725
+            // migration data step so a fresh-seeded DB matches a migrated one.
+            IsAppRegisterable = mobileAppRole is not (MobileAppRole.Staff or MobileAppRole.Moderator),
             IsActive = true,
             CreatedAt = timeProvider.GetUtcNow(),
         });

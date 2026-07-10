@@ -111,6 +111,18 @@ public static class PermissionCatalog
         public const string BulkGenerate = "Visitors.BulkGenerate";
     }
 
+    /// <summary>Cross-scope account operations that span both the audience
+    /// (Visitor) and partner (Other) desks.</summary>
+    public static class Accounts
+    {
+        /// <summary>D-728 (owner item 9) — flip an existing account between the
+        /// audience (Visitor) and partner (Other) scope by reassigning its
+        /// profile type to one in the opposite scope. A privilege change
+        /// (rolls the security stamp + revokes sessions), so it carries its own
+        /// dedicated code rather than reusing Visitors.Edit / Others.Edit.</summary>
+        public const string ChangeType = "Accounts.ChangeType";
+    }
+
     /// <summary>Attendee roster + badge printing.</summary>
     public static class Attendees
     {
@@ -725,6 +737,8 @@ public static class PermissionCatalog
         new(Visitors.RegisterOnsite, "Visitors", "RegisterOnsite", "Walk-in register a visitor", AdminOnly),
         new(Visitors.BulkGenerate, "Visitors", "BulkGenerate", "Bulk-generate placeholder badges (visitors / delegates)", AdminOnly),
         new(Visitors.ExportVip, "Visitors", "ExportVip", "Export the VVIP/VIP welcome roster (Mawj)", AdminOnly),
+
+        new(Accounts.ChangeType, "Accounts", "ChangeType", "Change an account's type (Visitor <-> Other)", AdminOnly),
 
         new(Attendees.View, "Attendees", "View", "View the attendee roster", AdminOnly),
         new(Attendees.PrintBag, "Attendees", "PrintBag", "Print attendee badges", AdminOnly),

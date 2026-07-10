@@ -243,7 +243,7 @@ Scenario: Export the business-meetings grid to an XLSX workbook
   And the browser saves a file named simf-business-meetings-{yyyyMMddHHmmss}.xlsx
   And the workbook's "BusinessMeetings" sheet header row reads
     Hall | Table | Type | Start | End | Parties | Status
-  And the Type cells render "B2B"/"B2C" and the Status cells render "Confirmed"/"Cancelled" (display text, not the wire enum)
+  And the Type cells render "B2B"/"B2C"/"G2B" and the Status cells render "Confirmed"/"Cancelled" (display text, not the wire enum)
 
   When the admin instead ticks exactly two meeting rows and clicks "Export"
   Then the request carries those two row Ids and a null Query
@@ -264,6 +264,20 @@ Scenario: Export is permission-gated (export-only — no import)
   `SimfModal` dialogs (see E2E-BMT-001 / E2E-BMT-005). Only the D-356 Excel
   **export** was added; there is intentionally **no import** path.
 
+### E2E-BMT-017 — Schedule a G2B meeting (D-730, owner item 15B)
+
+```gherkin
+Scenario: The type dropdown offers G2B and it round-trips
+  Given an Administrator on /admin/business-meetings scheduling a meeting
+  Then the "Type" dropdown offers B2B, B2C, and G2B (government-to-business)
+  When the admin picks G2B, fills a Meeting-purpose hall / table / slot + two
+    participants and schedules
+  Then POST /account/api/admin/business-meetings succeeds
+  And the detail + grid show the type G2B, and the Excel export renders "G2B"
+  # G2B is an additive BusinessMeetingType value (no schema change); the
+  # delegation (g2g) desk is unchanged.
+```
+
 ---
 
-_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel export added; export-only, no import/toggle). Prior: 2026-06-03 (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-07-10 by SIMF Team (D-730, item 15B — added the G2B business-meeting type + E2E-BMT-017). Prior: 2026-06-10 (D-356 Phase 5 — Excel export added; export-only, no import/toggle); 2026-06-03 (D-256/D-257 grid affordances reconciled).

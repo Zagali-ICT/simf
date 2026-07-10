@@ -488,6 +488,16 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(body, options: JsonOptions),
             accessToken, cancellationToken);
 
+    /// <summary>D-728 (owner item 9) — flip an account's type between Visitor
+    /// and Other by reassigning it to a profile type in the opposite scope.</summary>
+    public Task<ApiCallResult<bool>> ChangeAccountTypeAsync(
+        Guid id, AdminChangeAccountTypeRequest body, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Post, $"accounts/{id}/change-type",
+            JsonContent.Create(body, options: JsonOptions),
+            accessToken, cancellationToken);
+
     /// <summary>D-164 (gap doc G2) — bulk-approve a batch of pending visitors.
     /// Up to 500 ids per request; per-subject failures are reported in
     /// <see cref="AdminBulkApprovalResponse.Failures"/>.</summary>

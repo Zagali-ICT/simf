@@ -210,6 +210,13 @@
                                  alt="@L["Admin.Pending.View.Field.IdImage"]" />
                         </div>
                     }
+                    @* D-727 (owner item 5) — the staff/partner profile photo (avatar)
+                       so the reviewer sees the person before approving. *@
+                    @if (_viewProfile.HasAvatar)
+                    {
+                        <AdminProfilePhotoBlock Heading="@L["Admin.Pending.View.Field.Photo"]"
+                                                Src="@($"/account/api/admin/others/{_viewProfile.Id}/avatar?v={DateTime.UtcNow.Ticks}")" />
+                    }
                 }
                 else
                 {

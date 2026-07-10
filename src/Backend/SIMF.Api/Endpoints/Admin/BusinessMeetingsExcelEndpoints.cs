@@ -48,6 +48,7 @@ public sealed class ExportBusinessMeetingsEndpoint(IBusinessMeetingService servi
     private static string TypeText(BusinessMeetingType type) => type switch
     {
         BusinessMeetingType.B2C => "B2C",
+        BusinessMeetingType.G2B => "G2B",
         _ => "B2B",
     };
 

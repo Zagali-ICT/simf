@@ -3807,6 +3807,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsAppRegisterable")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
                     b.Property<bool>("IsForVisitor")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")

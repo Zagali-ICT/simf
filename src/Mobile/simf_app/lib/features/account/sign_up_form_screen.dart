@@ -18,6 +18,7 @@ import 'widgets/account_auth_prompt.dart';
 import 'widgets/account_card.dart';
 import 'widgets/account_form_field.dart';
 import 'widgets/account_header.dart';
+import 'widgets/account_terms_checkbox.dart';
 import 'widgets/account_top_controls.dart';
 import 'widgets/auth_chrome.dart';
 
@@ -41,6 +42,12 @@ import 'widgets/auth_chrome.dart';
 /// sister card — instead of local `_build*` copies and hardcoded eye glyphs; the
 /// decorative sweep is the shared [SimfAuthSweep]; the API error is localized
 /// through [ApiFailureL10n]. Locked by the 168:3454 golden.
+///
+/// D-719 (owner batch 2026-07-09): a **mandatory** "accept the terms" checkbox
+/// ([AccountTermsCheckbox]) gates the submit — registration requires an explicit
+/// accept, not a link. This is an owner-mandated addition with no Figma frame of
+/// its own (168:3454 predates it); the golden is re-locked with the box present.
+/// Consent stays client-side (D8) — no wire-contract change.
 class SignUpFormScreen extends ConsumerStatefulWidget {
   const SignUpFormScreen({super.key});
 
@@ -56,6 +63,8 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
   bool _obscure = true;
   bool _obscureConfirm = true;
   bool _busy = false;
+  bool _acceptedTerms = false;
+  bool _showTermsError = false;
   String? _error;
 
   @override
@@ -86,8 +95,39 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
         : AppL10n.of(context).passwordsDoNotMatch;
   }
 
+  /// Checking the box clears the "must accept" error; unchecking leaves it
+  /// hidden until the next submit attempt re-triggers it.
+  void _setAcceptedTerms(bool accepted) {
+    setState(() {
+      _acceptedTerms = accepted;
+      if (accepted) {
+        _showTermsError = false;
+      }
+    });
+  }
+
+  /// Opens the terms screen (Page 009) in consent mode; a موافق there returns
+  /// true and auto-checks the box, so the visitor never has to tick it twice.
+  Future<void> _openTerms() async {
+    final accepted = await context.pushNamed<bool>(
+      RouteNames.terms,
+      queryParameters: <String, String>{'consent': '1'},
+    );
+    if (!mounted) {
+      return;
+    }
+    if (accepted ?? false) {
+      _setAcceptedTerms(true);
+    }
+  }
+
   Future<void> _submit() async {
-    if (!(_formKey.currentState?.validate() ?? false)) {
+    final formValid = _formKey.currentState?.validate() ?? false;
+    // Surface the terms error alongside any field errors, not one gate at a time.
+    if (!_acceptedTerms) {
+      setState(() => _showTermsError = true);
+    }
+    if (!formValid || !_acceptedTerms) {
       return;
     }
     final l10n = AppL10n.of(context);
@@ -236,6 +276,14 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
               enabled: !_busy,
               validator: _validateConfirm,
               onSubmitted: (_) => unawaited(_submit()),
+            ),
+            const SizedBox(height: 16),
+            AccountTermsCheckbox(
+              accepted: _acceptedTerms,
+              onChanged: _setAcceptedTerms,
+              onOpenTerms: () => unawaited(_openTerms()),
+              enabled: !_busy,
+              showError: _showTermsError,
             ),
             if (_error != null) ...<Widget>[
               const SizedBox(height: 12),

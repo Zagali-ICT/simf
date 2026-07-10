@@ -11,6 +11,7 @@ using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Programme;
 using SIMF.Domain.BusinessMeetings;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Domain.Programme;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
@@ -529,11 +530,59 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
         // D-373 — registration enables 2FA; this auth plumbing needs the
         // direct-token path (the admin-disabled scenario).
         AuthFlow.DisableTwoFactor(_factory, email);
+        // D-729 (owner item 15) — speaker meetings are now VIP-only, so the
+        // flow requester used by these submit + admin-respond tests must be a
+        // VIP tier (AllowsVipMeetingSlots). The dedicated VIP-gate coverage lives
+        // in SpeakerMeetingVipSlotTests.
+        await AssignVipProfileAsync(email);
         var sign = await _client.PostAsJsonAsync(
             "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = AuthFlow.Password });
         var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
         return body.Data!.Tokens!.AccessToken;
+    }
+
+    // D-729 — assign a VIP-tier profile (AllowsVipMeetingSlots) to the signed-up
+    // requester, reusing the seeded VVIP/VIP type when present, so the VIP-only
+    // speaker-meeting gate lets the flow tests through.
+    private async Task AssignVipProfileAsync(string email)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var user = await users.FindByEmailAsync(email)
+            ?? throw new InvalidOperationException($"User {email} was not found.");
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var vipType = await appDb.ProfileTypes
+            .FirstOrDefaultAsync(p => p.AllowsVipMeetingSlots && p.IsForVisitor);
+        if (vipType is null)
+        {
+            vipType = new UserProfileType
+            {
+                Id = Guid.NewGuid(),
+                Name = "VIP", NameArabic = "VIP", PageColor = "#FFD700",
+                IsForVisitor = true, AllowsVipMeetingSlots = true, IsActive = true,
+                CreatedAt = DateTimeOffset.UtcNow,
+            };
+            appDb.ProfileTypes.Add(vipType);
+        }
+        var profile = await appDb.UserProfiles
+            .FirstOrDefaultAsync(p => p.UserId == user.Id);
+        if (profile is null)
+        {
+            appDb.UserProfiles.Add(new UserProfile
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                ProfileTypeId = vipType.Id,
+                Name = "SMR Visitor", NameArabic = "زائر",
+                CreatedAt = DateTimeOffset.UtcNow,
+            });
+        }
+        else
+        {
+            profile.ProfileTypeId = vipType.Id;
+        }
+        await appDb.SaveChangesAsync();
     }
 
     private async Task<string> CreateAdministratorAndSignInAsync()

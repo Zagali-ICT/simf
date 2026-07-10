@@ -67,8 +67,9 @@ internal sealed class UserProfileService(
         }
 
         var nationalityCode = await profiles.ResolveCountryCodeAsync(profile.NationalityId, cancellationToken);
+        var isVip = await ResolveIsVipAsync(profile.ProfileTypeId, cancellationToken);
         return ToResponse(profile, profile.QrId, nationalityCode,
-            !string.IsNullOrEmpty(user.AvatarRelativePath));
+            !string.IsNullOrEmpty(user.AvatarRelativePath), isVip);
     }
 
     public async Task<UserProfileResponse> UpsertMineAsync(
@@ -399,8 +400,9 @@ internal sealed class UserProfileService(
             await DispatchAdminPendingVisitorAsync(user, cancellationToken);
         }
 
+        var isVip = await ResolveIsVipAsync(profile.ProfileTypeId, cancellationToken);
         return ToResponse(profile, profile.QrId, request.NationalityCode.ToUpperInvariant(),
-            !string.IsNullOrEmpty(user.AvatarRelativePath));
+            !string.IsNullOrEmpty(user.AvatarRelativePath), isVip);
     }
 
     /// <summary>
@@ -852,7 +854,8 @@ internal sealed class UserProfileService(
     }
 
     private static UserProfileResponse ToResponse(
-        UserProfile profile, string? qrId, string nationalityCode, bool hasAvatar) =>
+        UserProfile profile, string? qrId, string nationalityCode, bool hasAvatar,
+        bool isVip) =>
         new()
         {
             ProfileTypeId = profile.ProfileTypeId,
@@ -880,7 +883,23 @@ internal sealed class UserProfileService(
             HasIdImage = !string.IsNullOrEmpty(profile.IdImageRelativePath),
             HasAvatar = hasAvatar,
             QrId = qrId,
+            IsVip = isVip,
         };
+
+    // D-729 (owner item 15) — the account's VIP status for the app, from the
+    // assigned ProfileType.AllowsVipMeetingSlots (VVIP/VIP). Computed and passed
+    // into ToResponse (like hasAvatar) rather than read off a nav, so a freshly
+    // upserted profile whose ProfileType nav is not loaded still reports it.
+    private async Task<bool> ResolveIsVipAsync(
+        Guid? profileTypeId, CancellationToken cancellationToken)
+    {
+        if (profileTypeId is not { } id)
+        {
+            return false;
+        }
+        var profileType = await profiles.FindProfileTypeAsync(id, cancellationToken);
+        return profileType?.AllowsVipMeetingSlots ?? false;
+    }
 
     private static string? NormaliseOptional(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();

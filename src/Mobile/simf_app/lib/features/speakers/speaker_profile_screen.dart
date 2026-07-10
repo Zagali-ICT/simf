@@ -11,6 +11,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../account/data/profile_repository.dart';
 import 'data/speaker_models.dart';
 import 'data/speakers_repository.dart';
 import 'speaker_initials.dart';
@@ -29,8 +30,9 @@ import 'widgets/speaker_sessions.dart';
 /// avatar (`SpeakerAvatar`, D-357 photo + placeholder), the four CV tab pills
 /// (`SpeakerCvTabs`) over the navy bio card (`SpeakerCvCard`). Below the frame's
 /// minimal content the screen keeps its full behaviour: the **Request meeting**
-/// action (only when `allowsMeetingRequests`) — login-only
-/// (`POST …/meeting-requests`, D-269), opening the `MeetingRequestSheet`; the
+/// action (only when `allowsMeetingRequests` **and the viewer is a VIP tier**,
+/// D-729) — login-only (`POST …/meeting-requests`, D-269), opening the
+/// `MeetingRequestSheet` (the endpoint enforces the same VIP rule); the
 /// opted-in social links (only when `allowsDataSharing`); and the speaker's
 /// sessions (`SpeakerSessionRow`, tap → session detail 17).
 class SpeakerProfileScreen extends ConsumerStatefulWidget {
@@ -177,6 +179,9 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
     // The avatar builds `{base}/app/assets/SpeakerPhoto/{id}/image` for the
     // uploaded photo; the base already includes `/api/v1`.
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
+    // D-729 (owner item 15) — requesting a speaker meeting is VIP-only; false
+    // while the profile loads / for guests / non-VIP (the endpoint also gates).
+    final isVip = ref.watch(currentUserIsVipProvider).value ?? false;
     final sections = <SpeakerCvSection>[
       SpeakerCvSection(l10n.cvBio, speaker.localizedBio(isArabic)),
       SpeakerCvSection(
@@ -226,7 +231,9 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
           const SizedBox(height: SimfTokens.space6), // 24
           SpeakerCvCard(body: sections[activeCv].body!),
         ],
-        if (speaker.allowsMeetingRequests) ...<Widget>[
+        // D-729 (owner item 15) — VIP-only: only VVIP/VIP guests see the
+        // "request meeting" CTA (the endpoint enforces the same rule).
+        if (speaker.allowsMeetingRequests && isVip) ...<Widget>[
           const SizedBox(height: SimfTokens.space5),
           // Figma 1049:2302 — a text-only gold CTA (no leading icon).
           FilledButton(

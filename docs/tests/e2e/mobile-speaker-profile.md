@@ -275,6 +275,22 @@ Scenario: The VIP slot is picked from day cards then time chips (light sheet)
   # (which 409s a non-free slot and 403s a non-VIP) accepts it.
 ```
 
+### E2E-MOB020-018 — Speaker meeting is VIP-only (D-729, owner item 15)
+
+```gherkin
+Scenario: Only a VIP guest sees and can use the request-meeting CTA
+  Given a speaker whose allowsMeetingRequests is true
+  When a GUEST views the speaker profile
+  Then the "Request meeting" CTA is NOT shown
+  When a signed-in NON-VIP visitor views the speaker profile
+  Then the "Request meeting" CTA is NOT shown (isVip=false on the profile read)
+  When a signed-in VIP (VVIP/VIP tier) visitor views the speaker profile
+  Then the "Request meeting" CTA IS shown and opens the meeting sheet
+  # Server backstop: POST /api/v1/app/speakers/{id}/meeting-requests returns 403
+  # for a non-VIP even without a slot (the whole request is VIP-only, not just
+  # slot-booking).
+```
+
 > **Owner change (2026-07-02, Figma 1776:4958 → 1776:5036):** the meeting sheet
 > was redesigned from the D-579 date/time **dropdowns** to a light "طلب مقابلة"
 > sheet — a subject field, a row of **day cards**, then that day's **time-slot
@@ -306,7 +322,19 @@ Scenario: The VIP slot is picked from day cards then time chips (light sheet)
 
 ---
 
-_Last reviewed:_ `2026-07-09` by `SIMF Team` — **D-709 (item 6, FDS-013 §15.4
+_Last reviewed:_ `2026-07-10` by `SIMF Team` — **D-731 (review follow-up to
+D-729): the VIP-flag read (`currentUserIsVipProvider`) now makes NO network call
+for a guest and is cached across speaker-profile opens (re-fetched only on an
+auth transition, not per screen-open), so browsing speaker profiles no longer
+drains the shared per-IP "auth" rate-limit bucket (sign-in/OTP). CTA behaviour is
+unchanged — the existing VIP / non-VIP / guest scenarios still hold; no new E2E
+scenario.**
+
+_Prior review:_ `2026-07-10` — **D-729 (item 15A): speaker meetings are VIP-only
+— the request-meeting CTA shows only for VVIP/VIP guests (profile `isVip`), and
+the submit endpoint 403s a non-VIP; added E2E-MOB020-018.**
+
+_Prior review:_ `2026-07-09` — **D-709 (item 6, FDS-013 §15.4
 GAP-4): reverted the short-lived D-703 free 7-day/hourly picker back to the
 speaker's REAL availability slots** — day cards for the days that have slots, that
 day's slots as time chips (from `GET …/available-slots`), the chosen slot's exact

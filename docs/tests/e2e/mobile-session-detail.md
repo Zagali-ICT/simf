@@ -411,4 +411,10 @@ session detail → sign-in`; `routePathRequiresAuth('/sessions/:sessionId')` is 
 
 ---
 
-_Last reviewed:_ `2026-07-08` by `SIMF Team`.
+_Last reviewed:_ `2026-07-10` by `SIMF Team` — **#7 (D-733): the "اسأل المحاور"
+ask card is now FUTURE-ONLY — shown (and, for any approved account, enabled
+without a booking) only while `startUtc` is in the future; it is HIDDEN once the
+session is live or ended (asking during a live session moves to the
+live-broadcast screen; a past session's view is a recording, not a live
+broadcast). Widget tests: approved-user-can-ask-future / live-hides / past-hides.**
+_Prior:_ `2026-07-08`.

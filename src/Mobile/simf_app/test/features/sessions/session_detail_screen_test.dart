@@ -498,27 +498,27 @@ void main() {
       expect(find.text('SEND-Q'), findsOneWidget);
     });
 
-    testWidgets('#3 — pre-ask is gated on joining: not joined → the ask card is '
-        'disabled with a hint and does not open send-question', (tester) async {
+    testWidgets('#7 — an approved user can ask a FUTURE session without a '
+        'booking (no join gate): the ask card is enabled and opens send-question',
+        (tester) async {
       await _pump(
         tester,
         repo: _FakeDetailRepo(detail: _detail()),
-        seatMap: _seatMap(), // approved, no reservation → not joined
+        seatMap: _seatMap(), // approved, no reservation (myCell null)
         controller: _SignedInController(),
       );
 
+      // #7 dropped the "join first" gate for the pre-start ask — no hint now.
       expect(find.text('Ask a question before it starts'), findsOneWidget);
-      expect(find.text('Join the session to ask a question'), findsOneWidget);
+      expect(find.text('Join the session to ask a question'), findsNothing);
       await tester.tap(find.text('Ask a question before it starts'));
       await tester.pumpAndSettle();
-      expect(find.text('SEND-Q'), findsNothing); // tap is inert until joined
+      expect(find.text('SEND-Q'), findsOneWidget);
     });
 
-    testWidgets('D-714 (GAP-2) — a live (already started) session shows the '
-        '"Ask the host" label, not the pre-session one', (tester) async {
-      // An ongoing session: started an hour ago, ends far in the future → the
-      // ask entry reverts to the live "Ask the host" (mode A), not the
-      // pre-session label (mode B).
+    testWidgets('#7 — a LIVE (already started) session HIDES the ask card on the '
+        'session detail (asking moves to the live-broadcast screen)',
+        (tester) async {
       final ongoing = _detail(
         startUtc: DateTime.now().toUtc().subtract(const Duration(hours: 1)),
         endUtc: DateTime.now().toUtc().add(const Duration(hours: 1)),
@@ -530,8 +530,28 @@ void main() {
         controller: _SignedInController(),
       );
 
-      expect(find.text('Ask the host'), findsOneWidget);
+      // The session-detail ask is future-only now — nothing once it is live.
       expect(find.text('Ask a question before it starts'), findsNothing);
+      expect(find.text('Ask the host'), findsNothing);
+    });
+
+    testWidgets('#7 — a PAST (ended) session HIDES the ask card (the after-view '
+        'is a recording, not a live broadcast)', (tester) async {
+      // The ask-card hide is purely time-based (the `if (future)` wrapper does
+      // not depend on the viewer), so a guest proves it — and a guest never
+      // trips the approved-attendee after-view rate prompt.
+      final ended = _detail(
+        startUtc: DateTime.now().toUtc().subtract(const Duration(hours: 3)),
+        endUtc: DateTime.now().toUtc().subtract(const Duration(hours: 2)),
+      );
+      await _pump(
+        tester,
+        repo: _FakeDetailRepo(detail: ended),
+        controller: _GuestController(),
+      );
+
+      expect(find.text('Ask a question before it starts'), findsNothing);
+      expect(find.text('Ask the host'), findsNothing);
     });
 
     testWidgets('a speaker with a country code renders its flag emoji',

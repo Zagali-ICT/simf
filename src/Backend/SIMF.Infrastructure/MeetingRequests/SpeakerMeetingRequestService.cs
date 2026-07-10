@@ -86,6 +86,21 @@ internal sealed class SpeakerMeetingRequestService(
                 "هذا المتحدّث لا يقبل طلبات المقابلة.");
         }
 
+        // D-729 (owner item 15) — requesting a speaker meeting is now VIP-only
+        // (VVIP/VIP tier, via ProfileType.AllowsVipMeetingSlots). Previously any
+        // approved attendee could submit a topic-only request and VIP was
+        // required only to *book a slot* (the later check). The owner restricted
+        // the whole request to VIP guests: the app hides the CTA for non-VIP
+        // (UserProfileResponse.IsVip) and this is the server-side backstop. The
+        // slot-only VIP check below is now subsumed but kept as defence in depth.
+        if (!await IsVipAsync(requesterUserId, cancellationToken))
+        {
+            throw new ApiException(
+                ErrorCodes.Forbidden, 403,
+                "Requesting a speaker meeting is available to VIP guests only.",
+                "طلب مقابلة المتحدّث متاح لضيوف كبار الشخصيات فقط.");
+        }
+
         // A1 — one open request per (requester, speaker): a duplicate Pending
         // submission floods the review queue and (for VIP slots) stacks rival
         // claims on one slot. The DB filtered-unique backstop is a Wave B item.

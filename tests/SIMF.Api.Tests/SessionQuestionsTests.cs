@@ -77,48 +77,41 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Submit_outside_live_window_returns_SESSION_NOT_LIVE_FOR_QUESTIONS()
+    public async Task Submit_for_a_future_session_is_accepted_without_a_venue_gate()
     {
-        var admin = await CreateAdministratorAndSignInAsync();
+        // #7 (owner) — a FUTURE session (before start) accepts questions from any
+        // approved user with NO venue gate (asking ahead of time); the question
+        // lands Pending in the Pre phase. (Previously rejected as "not live".)
         var session = await SeedFutureSessionAsync();
         var visitor = await SignInApprovedVisitorAsync();
 
         var response = await PostAuthAsync(
             $"/api/v1/app/sessions/{session.Id}/questions",
-            new SubmitSessionQuestionRequest { QuestionText = "Too early", IsAtVenue = true },
+            new SubmitSessionQuestionRequest { QuestionText = "Ask ahead", IsAtVenue = false },
             visitor.AccessToken);
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
-        Assert.Equal(ErrorCodes.SessionNotLiveForQuestions, body.Error!.Code);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var id = (await response.Content
+            .ReadFromJsonAsync<ApiResult<SessionQuestionSubmitted>>())!.Data!.Id;
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var row = await db.SessionQuestions.AsNoTracking().SingleAsync(q => q.Id == id);
+        Assert.Equal(QuestionStatus.Pending, row.Status);
+        Assert.Equal(QuestionPhase.Pre, row.Phase);
     }
 
     [Fact]
-    public async Task Questions_are_closed_more_than_five_minutes_before_start()
+    public async Task Questions_open_well_before_start_for_a_future_session()
     {
-        // §7 ("قبل الجلسة بخمس دقائق") — questions open only 5 min before start;
-        // a session starting in 10 minutes is still closed.
+        // #7 (owner) — no lower bound now: a session starting in 10 minutes
+        // accepts questions (previously closed until 5 min before start), and the
+        // pre-start slice needs no venue presence.
         var session = await SeedSessionWindowAsync(
             DateTimeOffset.UtcNow.AddMinutes(10), DateTimeOffset.UtcNow.AddMinutes(70));
         var visitor = await SignInApprovedVisitorAsync();
         var response = await PostAuthAsync(
             $"/api/v1/app/sessions/{session.Id}/questions",
-            new SubmitSessionQuestionRequest { QuestionText = "Ten minutes early", IsAtVenue = true },
-            visitor.AccessToken);
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
-        Assert.Equal(ErrorCodes.SessionNotLiveForQuestions, body.Error!.Code);
-    }
-
-    [Fact]
-    public async Task Questions_open_within_five_minutes_before_start()
-    {
-        // §7 — a session starting in 3 minutes accepts questions.
-        var session = await SeedSessionWindowAsync(
-            DateTimeOffset.UtcNow.AddMinutes(3), DateTimeOffset.UtcNow.AddMinutes(63));
-        var visitor = await SignInApprovedVisitorAsync();
-        var response = await PostAuthAsync(
-            $"/api/v1/app/sessions/{session.Id}/questions",
-            new SubmitSessionQuestionRequest { QuestionText = "Pre-question", IsAtVenue = true },
+            new SubmitSessionQuestionRequest { QuestionText = "Ten minutes early", IsAtVenue = false },
             visitor.AccessToken);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }

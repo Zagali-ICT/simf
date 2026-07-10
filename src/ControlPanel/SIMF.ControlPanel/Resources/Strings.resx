@@ -58,6 +58,17 @@
   <data name="Admin.Edit.Save" xml:space="preserve"><value>Save changes</value></data>
   <data name="Admin.Edit.Saving" xml:space="preserve"><value>Saving…</value></data>
   <data name="Admin.Edit.Saved" xml:space="preserve"><value>The account was updated.</value></data>
+  <data name="Admin.ChangeType.Heading" xml:space="preserve"><value>Change account type</value></data>
+  <data name="Admin.ChangeType.Note.VisitorToOther" xml:space="preserve"><value>Convert this visitor into a partner account (staff, sponsor, exhibitor, media…). The account is signed out and re-issued under the new type.</value></data>
+  <data name="Admin.ChangeType.Note.OtherToVisitor" xml:space="preserve"><value>Convert this partner account into a visitor. The account is signed out and re-issued under the new type.</value></data>
+  <data name="Admin.ChangeType.NewType" xml:space="preserve"><value>New type</value></data>
+  <data name="Admin.ChangeType.Choose" xml:space="preserve"><value>Choose the new type…</value></data>
+  <data name="Admin.ChangeType.Action" xml:space="preserve"><value>Change type</value></data>
+  <data name="Admin.ChangeType.Working" xml:space="preserve"><value>Changing…</value></data>
+  <data name="Admin.ChangeType.Success" xml:space="preserve"><value>The account type was changed. It now appears in the other list.</value></data>
+  <data name="Admin.ChangeType.NoTargets" xml:space="preserve"><value>No active types are available in the other scope.</value></data>
+  <data name="Admin.ChangeType.LoadFailed" xml:space="preserve"><value>The available types could not be loaded.</value></data>
+  <data name="Admin.ChangeType.Failed" xml:space="preserve"><value>The account type could not be changed.</value></data>
   <data name="Admin.Edit.LoadFailed" xml:space="preserve"><value>The account could not be loaded.</value></data>
   <data name="Admin.Edit.Fallback" xml:space="preserve"><value>The account could not be updated.</value></data>
 
@@ -240,6 +251,8 @@
   <data name="Admin.ProfileTypes.MobileAppRole.Moderator" xml:space="preserve"><value>Moderator — content &amp; user authority</value></data>
   <data name="Admin.ProfileTypes.MobileAppRole.Exhibitor" xml:space="preserve"><value>Exhibitor — lead capture (scan + My Visitors)</value></data>
   <data name="Admin.ProfileTypes.Field.IsActive" xml:space="preserve"><value>Visible in pickers (active)</value></data>
+  <data name="Admin.ProfileTypes.Field.ShowInApp" xml:space="preserve"><value>Show in the app sign-up picker</value></data>
+  <data name="Admin.ProfileTypes.Field.ShowInAppHint" xml:space="preserve"><value>When off, this type is admin-assigned only and never appears when a user registers in the mobile app (e.g. Staff, Moderator).</value></data>
   <data name="Admin.ProfileTypes.Field.NameInvalid" xml:space="preserve"><value>Name must be 1–128 characters.</value></data>
   <data name="Admin.ProfileTypes.Field.NameArabicInvalid" xml:space="preserve"><value>Arabic name must be 1–128 characters.</value></data>
   <data name="Admin.ProfileTypes.Field.PageColorInvalid" xml:space="preserve"><value>Page colour must be 1–32 characters.</value></data>

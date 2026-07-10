@@ -253,6 +253,14 @@ internal static class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.UpdateOtherAsync(id, body, token));
         });
+        // D-728 (owner item 9) — change an account's type (Visitor <-> Other).
+        group.MapPost("/admin/accounts/{id:guid}/change-type",
+            async (Guid id, AdminChangeAccountTypeRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ChangeAccountTypeAsync(id, body, token));
+        });
 
         // D-164 (gap doc G2) — bulk approve passthroughs.
         group.MapPost("/admin/visitors/bulk-approve",

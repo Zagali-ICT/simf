@@ -168,6 +168,8 @@ Scenario: Details modal streams the encrypted ID-document image inline
       derived from whichever number is present
   And an <img> loads from /account/api/admin/others/{id}/id-document?v={ticks}
   And that image request returns 200 with Cache-Control "private, max-age=60"
+  And when the account has a profile photo (HasAvatar = true) a "Profile photo" block
+      renders an <img> from /account/api/admin/others/{id}/avatar?v={ticks} (D-727, owner item 5)
   When the profile read fails (envelope.Success = false)
   Then a SimfAlert error shows the bilingual fallback instead of the description list
 ```
@@ -466,6 +468,31 @@ Scenario: Add (walk-in) / Edit / Details take over the content area; Save return
   Then the frame closes and the grid re-appears unchanged
 ```
 
+### E2E-OTH-025 — Change type: flip an Other account to a Visitor type (D-728)
+
+```gherkin
+Scenario: An admin converts a partner (Other) account back into a visitor
+  Given an approved Other account (a partner profile type, IsVisitor=false)
+  And at least one active Visitor-scope profile type exists
+  When the administrator opens the account's Details view
+  Then the "Change account type" block renders (gated by Accounts.ChangeType)
+  And its "New type" dropdown lists ONLY active Visitor-scope types
+      (no partner types, no inactive types — the opposite scope only)
+  When they pick a Visitor-scope type and click "Change type"
+  Then POST /account/api/admin/accounts/{id}/change-type returns 200
+  And the block shows the green "The account type was changed..." success alert
+  And the account's ProfileTypeId is now the picked Visitor type
+  And the account no longer appears in /admin/others and now appears in /admin/visitors
+  And the account's security stamp was rolled + its sessions revoked (privilege change),
+      while its approval state is unchanged (stays Approved)
+
+Scenario: Change-type is gated
+  Given an admin whose role lacks Accounts.ChangeType
+  When they open an Other account's Details view
+  Then the "Change account type" block is NOT rendered
+  And a direct POST /admin/accounts/{id}/change-type returns 403
+```
+
 ---
 
 ## Implementation notes
@@ -495,4 +522,4 @@ Scenario: Add (walk-in) / Edit / Details take over the content area; Save return
 
 ---
 
-_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle; D-353 presentation toggle scenarios added).
+_Last reviewed:_ 2026-07-09 by SIMF Team (D-728 — added E2E-OTH-025 for the change-account-type action on the Other Details view). Earlier: 2026-06-10 (D-356 Phase 5 — Excel + toggle; D-353 presentation toggle scenarios added).

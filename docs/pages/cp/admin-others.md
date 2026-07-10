@@ -84,5 +84,6 @@ UC-OTH-DUPLICATE, UC-OTH-IMPORT, UC-OTH-EXPORT _(pending UCS)_.
 | 2026-05-26 | D-113 + D-114 | Type-scoped endpoints + canonical CRUD adoption. |
 | 2026-05-28 | D-127 + D-129 | Walk-in wizard + ID-image upload. |
 | 2026-06-10 | D-353 + D-356 | Add/Edit/Details moved to `CrudShell` with the Page↔Popup `CrudPresentationToggle` (`simf.cp.prefs.others`). Uniform-Excel (`CrudGridExcel`) N/A — account page keeps its existing direct export/import. |
+| 2026-07-09 | D-728 | **Change type (owner item 9).** The Details view (`OthersViewDelete`) now hosts a shared `ChangeAccountTypeBlock` (gated `Accounts.ChangeType`) that flips the account into a Visitor-scope type via `POST /admin/accounts/{id}/change-type`. The dropdown lists only active Visitor-scope types (opposite scope); the flip rolls the security stamp + revokes sessions and keeps the approval state. E2E-OTH-025. |
 
-_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle).
+_Last reviewed:_ 2026-07-09 by SIMF Team (D-728 — change-account-type action). Earlier: 2026-06-10 (D-356 Phase 5 — Excel + toggle).

@@ -328,6 +328,77 @@ public sealed class AdminProfileTypeTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task IsAppRegisterable_round_trips_through_Create_Get_and_Update()
+    {
+        // D-725 (owner item 1): the app-sign-up-picker visibility flag must
+        // persist through Create → Get and be flippable on Update, so an admin
+        // can hide a CP-only type (Staff / Moderator) or re-expose it.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var name = $"CpOnly {Guid.NewGuid():N}";
+
+        var created = await PostAuthAsync(
+            "/api/v1/admin/profile-types",
+            new AdminCreateProfileTypeRequest
+            {
+                UserType = "Visitor",
+                IsVisitor = false,
+                Name = name,
+                NameArabic = "فريق",
+                PageColor = "#10B981",
+                IsActive = true,
+                IsAppRegisterable = false,
+            }, adminToken);
+        Assert.Equal(HttpStatusCode.OK, created.StatusCode);
+        var detail = (await created.Content
+            .ReadFromJsonAsync<ApiResult<AdminProfileTypeSummary>>())!.Data!;
+        Assert.False(detail.IsAppRegisterable);
+
+        var get = await GetAuthAsync(
+            $"/api/v1/admin/profile-types/{detail.Id}", adminToken);
+        var fetched = (await get.Content
+            .ReadFromJsonAsync<ApiResult<AdminProfileTypeSummary>>())!.Data!;
+        Assert.False(fetched.IsAppRegisterable);
+
+        // Flip it back on — the admin re-exposes the type in the app picker.
+        var update = await PutAuthAsync(
+            $"/api/v1/admin/profile-types/{detail.Id}",
+            new AdminUpdateProfileTypeRequest
+            {
+                Name = detail.Name,
+                NameArabic = detail.NameArabic,
+                PageColor = detail.PageColor,
+                IsActive = true,
+                IsVisitor = detail.IsVisitor,
+                IsAppRegisterable = true,
+            }, adminToken);
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+        var after = (await update.Content
+            .ReadFromJsonAsync<ApiResult<AdminProfileTypeSummary>>())!.Data!;
+        Assert.True(after.IsAppRegisterable);
+
+        // The grid projection must carry the flag too (the Edit modal pre-fills
+        // from the row summary). After the flip IsAppRegisterable=true while
+        // IsVisitor stays false — the two trailing bools now DIFFER, so a
+        // swapped/mis-ordered projection would surface here.
+        var list = await PostAuthAsync(
+            "/api/v1/admin/profile-types/list",
+            new GridQuery
+            {
+                Top = 200,
+                Filters = new Dictionary<string, string>
+                {
+                    ["userType"] = "Visitor",
+                    ["isVisitor"] = "false",
+                },
+            }, adminToken);
+        var page = (await list.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminProfileTypeSummary>>>())!.Data!;
+        var listed = Assert.Single(page.Items, row => row.Id == detail.Id);
+        Assert.True(listed.IsAppRegisterable);
+        Assert.False(listed.IsVisitor);
+    }
+
+    [Fact]
     public async Task Update_flipping_IsVisitor_persists_and_audits_the_change()
     {
         // D-186 review-pass (threat-detection H-1): an admin flipping

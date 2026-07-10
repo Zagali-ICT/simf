@@ -95,6 +95,28 @@ Future<void> _pump(
         path: '/sign-in',
         builder: (c, s) => const Scaffold(body: Text('SIGN-IN')),
       ),
+      // Stand-in for Page 009 in consent mode: AGREE pops true, DECLINE pops
+      // false — the two hand-backs the screen's auto-check branch reads (the
+      // real screen loads the terms body from a repository, not needed here).
+      GoRoute(
+        name: RouteNames.terms,
+        path: '/terms',
+        builder: (c, s) => Scaffold(
+          body: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              TextButton(
+                onPressed: () => c.pop(true),
+                child: const Text('AGREE'),
+              ),
+              TextButton(
+                onPressed: () => c.pop(false),
+                child: const Text('DECLINE'),
+              ),
+            ],
+          ),
+        ),
+      ),
     ],
   );
 
@@ -140,6 +162,13 @@ Future<void> _tapCreate(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+/// Ticks the mandatory terms box (the screen's only [Checkbox]) so a submit can
+/// proceed (D-719).
+Future<void> _acceptTerms(WidgetTester tester) async {
+  await tester.tap(find.byType(Checkbox));
+  await tester.pump();
+}
+
 void main() {
   group('SignUpFormScreen (Page 005 — KSA design, D-370)', () {
     testWidgets('valid input creates the account and routes to the email-OTP '
@@ -153,6 +182,7 @@ void main() {
         password: 'Password1!',
         confirm: 'Password1!',
       );
+      await _acceptTerms(tester);
       await _tapCreate(tester);
 
       expect(controller.signUpCalled, isTrue);
@@ -228,6 +258,7 @@ void main() {
         password: 'Password1!',
         confirm: 'Password1!',
       );
+      await _acceptTerms(tester);
       await _tapCreate(tester);
 
       expect(controller.signUpCalled, isTrue);
@@ -263,6 +294,7 @@ void main() {
         password: 'Password1!',
         confirm: 'Password1!',
       );
+      await _acceptTerms(tester);
       await _tapCreate(tester);
 
       expect(controller.signUpCalled, isTrue);
@@ -271,6 +303,104 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('One or more fields are invalid.'), findsNothing);
+    });
+
+    testWidgets('valid fields but the T&C box unchecked blocks submit with the '
+        'terms error and never calls sign-up (D-719)', (tester) async {
+      final controller = _FakeSignUpController();
+      await _pump(tester, controller: controller);
+
+      await _fill(
+        tester,
+        email: 'visitor@example.sa',
+        password: 'Password1!',
+        confirm: 'Password1!',
+      );
+      // No _acceptTerms — the box stays unchecked.
+      await _tapCreate(tester);
+
+      expect(
+        find.text('You must accept the terms and conditions'),
+        findsOneWidget,
+      );
+      expect(controller.signUpCalled, isFalse);
+      expect(find.textContaining('OTP email='), findsNothing);
+    });
+
+    testWidgets('ticking the T&C box clears the error and lets the submit '
+        'through (D-719)', (tester) async {
+      final controller = _FakeSignUpController();
+      await _pump(tester, controller: controller);
+
+      await _fill(
+        tester,
+        email: 'visitor@example.sa',
+        password: 'Password1!',
+        confirm: 'Password1!',
+      );
+      await _tapCreate(tester); // blocked — terms error shows
+      expect(
+        find.text('You must accept the terms and conditions'),
+        findsOneWidget,
+      );
+
+      await _acceptTerms(tester); // ticking clears the error
+      expect(
+        find.text('You must accept the terms and conditions'),
+        findsNothing,
+      );
+
+      await _tapCreate(tester);
+      expect(controller.signUpCalled, isTrue);
+    });
+
+    testWidgets('the terms link opens Page 009 and موافق auto-checks the box '
+        '(D-719)', (tester) async {
+      final controller = _FakeSignUpController();
+      await _pump(tester, controller: controller);
+
+      await _fill(
+        tester,
+        email: 'visitor@example.sa',
+        password: 'Password1!',
+        confirm: 'Password1!',
+      );
+
+      // Tap the underlined "Terms & conditions" span → Page 009 (consent mode).
+      await tester.tap(find.text('Terms & conditions'));
+      await tester.pumpAndSettle();
+      // Accept there → pop(true) → the screen ticks the box for the visitor.
+      await tester.tap(find.widgetWithText(TextButton, 'AGREE'));
+      await tester.pumpAndSettle();
+
+      await _tapCreate(tester);
+      expect(controller.signUpCalled, isTrue);
+    });
+
+    testWidgets('declining on Page 009 leaves the box unchecked and still '
+        'blocks submit (D-719)', (tester) async {
+      final controller = _FakeSignUpController();
+      await _pump(tester, controller: controller);
+
+      await _fill(
+        tester,
+        email: 'visitor@example.sa',
+        password: 'Password1!',
+        confirm: 'Password1!',
+      );
+
+      await tester.tap(find.text('Terms & conditions'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(TextButton, 'DECLINE'));
+      await tester.pumpAndSettle();
+
+      // Declining returns false → the box is not auto-checked → submit blocks.
+      await _tapCreate(tester);
+      expect(
+        find.text('You must accept the terms and conditions'),
+        findsOneWidget,
+      );
+      expect(controller.signUpCalled, isFalse);
     });
 
     testWidgets('the Sign in link leaves the sign-up flow', (tester) async {

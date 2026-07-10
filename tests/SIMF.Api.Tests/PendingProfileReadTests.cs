@@ -203,6 +203,42 @@ public sealed class PendingProfileReadTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Full_other_profile_read_reports_HasAvatar_once_a_photo_is_set()
+    {
+        // D-727 (owner item 5) — the CP view / pending-review renders the staff
+        // photo only when HasAvatar is true, so the full-profile read
+        // (GET /admin/others/{id}/profile → AdminUserProfileView) must reflect
+        // the subject's avatar (SimfUser.AvatarRelativePath) presence.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var otherId = await CreatePendingOtherAsync(adminToken);
+
+        // No photo yet → HasAvatar false.
+        var before = await GetAuthAsync(
+            $"/api/v1/admin/others/{otherId}/profile", adminToken);
+        Assert.Equal(HttpStatusCode.OK, before.StatusCode);
+        var beforeView = (await before.Content
+            .ReadFromJsonAsync<ApiResult<AdminUserProfileView>>())!.Data!;
+        Assert.False(beforeView.HasAvatar);
+
+        // Set the avatar sentinel on the subject (SimfUser / Identity).
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+            var user = await db.Users.SingleAsync(u => u.Id == otherId);
+            user.AvatarRelativePath = "storedfile:" + Guid.NewGuid().ToString("N");
+            await db.SaveChangesAsync();
+        }
+
+        var after = await GetAuthAsync(
+            $"/api/v1/admin/others/{otherId}/profile", adminToken);
+        Assert.Equal(HttpStatusCode.OK, after.StatusCode);
+        var afterView = (await after.Content
+            .ReadFromJsonAsync<ApiResult<AdminUserProfileView>>())!.Data!;
+        Assert.True(afterView.HasAvatar);
+        Assert.False(afterView.HasIdImage); // control: the ID image is untouched
+    }
+
+    [Fact]
     public async Task Reading_an_approved_visitor_returns_404()
     {
         var adminToken = await CreateAdministratorAndSignInAsync();

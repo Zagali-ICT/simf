@@ -14,11 +14,14 @@ namespace SIMF.Infrastructure.SessionQuestions;
 
 /// <summary>
 /// D-169 (gap doc G6, PDF §2.7.2 + §2.10) — public submission service.
-/// Submission requires the session to be active and within (or near) its time
-/// window, and the attendee to be at the hall. P5.1 — D-242 (FR-704) resolved
-/// the §G7 / G-OI-2 venue gate: when the session's hall has a geofence (D-240)
-/// the attendee must have a <c>HallAttendance</c> arrival record (D-241); when
-/// it has none, the gate falls back to the D-171 self-assert toggle.
+/// #7 (owner) — the acceptance window is **phase-based**: a FUTURE session
+/// (before start) takes questions from any approved user with **no** venue gate
+/// (asking ahead of time); once **LIVE** (<c>now &gt;= StartUtc</c>) the attendee
+/// must be at the hall; after <c>EndUtc</c> the session is done (a recording, not
+/// a live broadcast) and no question is taken. P5.1 — D-242 (FR-704) is the LIVE
+/// venue gate: when the session's hall has a geofence (D-240) the attendee must
+/// have a <c>HallAttendance</c> arrival record (D-241); when it has none, the
+/// gate falls back to the D-171 self-assert toggle.
 /// </summary>
 internal sealed class SessionQuestionService(
     SimfAppDbContext appDbContext,
@@ -27,13 +30,13 @@ internal sealed class SessionQuestionService(
     IQuestionAiFilter questionAiFilter,
     ILogger<SessionQuestionService> logger) : ISessionQuestionService
 {
-    /// <summary>§7 (owner spec "تقفل بنهاية الجلسة") — questions close at the
-    /// end of the session: zero grace after <c>EndUtc</c>.</summary>
+    /// <summary>#7 (owner) — questions CLOSE at the end of the session: zero
+    /// grace after <c>EndUtc</c>. After that the session view is a recording /
+    /// archive, not a live broadcast, so no asking once the session is done.
+    /// There is deliberately **no** lower bound now: a FUTURE (active,
+    /// not-yet-ended) session accepts questions from any approved user — see the
+    /// window check + the phase-gated venue check below.</summary>
     private static readonly TimeSpan PostEndWindow = TimeSpan.Zero;
-
-    /// <summary>§7 (owner spec "قبل الجلسة بخمس دقائق") — questions open five
-    /// minutes before the session starts.</summary>
-    private static readonly TimeSpan PreStartWindow = TimeSpan.FromMinutes(5);
 
     public async Task<SessionQuestionSubmitted> SubmitAsync(
         Guid sessionId,
@@ -76,13 +79,16 @@ internal sealed class SessionQuestionService(
         }
 
         var now = timeProvider.GetUtcNow();
-        if (now < session.StartUtc - PreStartWindow
-            || now > session.EndUtc + PostEndWindow)
+        // #7 (owner) — a FUTURE session (before start) accepts questions from any
+        // approved user (asking ahead of time); questions only CLOSE once the
+        // session is over. No lower bound — the whole pre-start slice is open.
+        // The venue (check-in) gate below then applies only once the session is LIVE.
+        if (now > session.EndUtc + PostEndWindow)
         {
             throw new ApiException(
                 ErrorCodes.SessionNotLiveForQuestions, 400,
-                "The session is not currently accepting questions.",
-                "الجلسة لا تستقبل الأسئلة في الوقت الحالي.");
+                "The session is over and no longer accepting questions.",
+                "انتهت الجلسة ولم تعد تستقبل الأسئلة.");
         }
 
         // P5.1 — D-242 (FR-704): questions are gated by hall arrival. When the
@@ -98,10 +104,15 @@ internal sealed class SessionQuestionService(
         // window, and the future QR-door-scan path's closed rows also satisfy
         // the gate. (This is a deliberate divergence from the present-tense
         // `HallAttendanceStatus.Arrived`, which reports current presence.)
-        var atVenue = session.HasGeofence
-            ? await appDbContext.HallAttendances.AnyAsync(
-                a => a.SessionId == sessionId && a.UserId == submittedByUserId, cancellationToken)
-            : request.IsAtVenue;
+        // #7 (owner) — the venue (check-in-to-hall) gate applies ONLY once the
+        // session is LIVE (now >= StartUtc); before start any approved user may
+        // ask (the `!isLive` short-circuit skips the arrival query entirely).
+        var isLive = now >= session.StartUtc;
+        var atVenue = !isLive
+            || (session.HasGeofence
+                ? await appDbContext.HallAttendances.AnyAsync(
+                    a => a.SessionId == sessionId && a.UserId == submittedByUserId, cancellationToken)
+                : request.IsAtVenue);
         if (!atVenue)
         {
             await auditLog.WriteAsync(new AuditEntry

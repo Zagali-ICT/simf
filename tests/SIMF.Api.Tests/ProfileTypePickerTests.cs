@@ -105,10 +105,33 @@ public sealed class ProfileTypePickerTests : IClassFixture<SimfApiFactory>
         Assert.DoesNotContain(body.Items, row => row.Id == dormantId);
     }
 
+    [Fact]
+    public async Task Non_app_registerable_types_are_excluded()
+    {
+        // D-725 (owner item 1) — a CP-only type (IsAppRegisterable=false,
+        // e.g. Staff / Moderator) is admin-assigned and must never appear in
+        // the self-registration picker, even though it is active + partner.
+        var cpOnlyId = await SeedProfileTypeAsync(
+            $"CpOnly-{Guid.NewGuid():N}", isVisitor: false, isAppRegisterable: false);
+        var pickableId = await SeedProfileTypeAsync(
+            $"Pickable-{Guid.NewGuid():N}", isVisitor: false);
+
+        var token = await SignInVisitorAsync();
+        // Query the partner scope where the hidden row would otherwise land.
+        var response = await GetAuthAsync(
+            "/api/v1/app/account/profile-types?isVisitor=false", token);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<ProfileTypePickerListResponse>>())!.Data!;
+        Assert.DoesNotContain(body.Items, row => row.Id == cpOnlyId);
+        Assert.Contains(body.Items, row => row.Id == pickableId);
+    }
+
     // -- Helpers ---------------------------------------------------------------
 
     private async Task<Guid> SeedProfileTypeAsync(
-        string name, bool isVisitor, bool isActive = true)
+        string name, bool isVisitor, bool isActive = true, bool isAppRegisterable = true)
     {
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -120,6 +143,7 @@ public sealed class ProfileTypePickerTests : IClassFixture<SimfApiFactory>
             PageColor = "#3B82F6",
             IsForVisitor = isVisitor,
             IsActive = isActive,
+            IsAppRegisterable = isAppRegisterable,
             CreatedAt = DateTimeOffset.UtcNow,
         };
         appDb.ProfileTypes.Add(row);

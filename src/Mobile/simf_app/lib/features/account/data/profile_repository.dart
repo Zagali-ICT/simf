@@ -166,6 +166,34 @@ final referenceNumberProvider = FutureProvider.autoDispose<String?>((ref) async 
   }
 });
 
+/// D-729 (owner item 15) — whether the signed-in user is a VIP tier (VVIP/VIP,
+/// server-computed from ProfileType.AllowsVipMeetingSlots). Gates the speaker
+/// "request a meeting" CTA to VIP guests; the endpoint enforces the same rule.
+///
+/// D-731 — the speaker profile is a **Guest+ browse** surface, and the profile
+/// GET behind this sits on the shared per-IP "auth" rate-limit bucket (sign-in /
+/// OTP / sign-up). So this provider (a) short-circuits guests with NO network
+/// call — a guest can never be VIP — and (b) is **not** autoDispose, so the flag
+/// is cached across speaker-profile opens (fetched once, NOT re-fetched on every
+/// open); browsing many speakers therefore can't drain the auth budget for
+/// co-located attendees behind one venue IP. It [watch]es the auth controller,
+/// so it re-fetches on any auth transition (sign-in/out, token refresh/reload,
+/// or the D-563 stamp-roll + token revoke that follows an admin account-type
+/// change) — the cache tracks the live tier and never goes stale. False for
+/// guests / non-VIP / on error.
+final currentUserIsVipProvider = FutureProvider<bool>((ref) async {
+  final auth = ref.watch(authControllerProvider);
+  if (auth is! AuthStateSignedIn) {
+    return false;
+  }
+  try {
+    final profile = await ref.watch(profileRepositoryProvider).getMyProfile();
+    return profile.isVip;
+  } on ApiFailure {
+    return false;
+  }
+});
+
 /// Cache-buster for the signed-in user's avatar. Bumped after a successful
 /// avatar upload so [myAvatarBytesProvider] refetches and every avatar on
 /// screen (home greeting / badge / profile) shows the new photo immediately —

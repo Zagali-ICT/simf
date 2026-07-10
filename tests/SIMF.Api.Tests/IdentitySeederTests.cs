@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Application.Auditing;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Identity;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
@@ -185,6 +186,41 @@ public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
         Assert.True(vvip!.IsForVisitor, "VVIP must be a visitor-side tier");
         Assert.NotNull(vip);
         Assert.True(vip!.IsForVisitor, "VIP must be a visitor-side tier");
+    }
+
+    [Fact]
+    public async Task SeedAsync_derives_IsAppRegisterable_from_the_mobile_app_role()
+    {
+        // D-725 (owner item 1) — the seeder derives the app-sign-up-picker
+        // visibility from MobileAppRole: the CP-only operational types (Staff,
+        // Moderator) ship HIDDEN, everything else stays registerable. This is
+        // the actual hide mechanism (the same rule the D-725 migration data
+        // step applies), so it needs a direct assertion — and it guards the
+        // critical invariant that the audience "Normal" type (the single type a
+        // self-registering visitor is locked to, C5/D-371) is NEVER hidden,
+        // which would silently break all mobile self-registration.
+        using var scope = _factory.Services.CreateScope();
+        var seeder = scope.ServiceProvider.GetRequiredService<IdentitySeeder>();
+
+        await seeder.SeedAsync();
+
+        var database = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        UserProfileType Type(string name) =>
+            database.ProfileTypes.Single(profileType => profileType.Name == name);
+
+        // Hidden from the app picker — CP-only operational types.
+        Assert.False(Type("Staff").IsAppRegisterable, "Staff must be CP-only");
+        Assert.False(Type("Moderator").IsAppRegisterable, "Moderator must be CP-only");
+
+        // Registerable — audience tiers (must include Normal, the locked
+        // self-registration type) + the non-operational / self-serviceable
+        // partner types the owner did not name.
+        Assert.True(Type("Normal").IsAppRegisterable, "Normal must stay registerable");
+        Assert.True(Type("VVIP").IsAppRegisterable);
+        Assert.True(Type("VIP").IsAppRegisterable);
+        Assert.True(Type("Media").IsAppRegisterable);
+        Assert.True(Type("Sponsor").IsAppRegisterable);
+        Assert.True(Type("Exhibitor").IsAppRegisterable);
     }
 
     [Fact]

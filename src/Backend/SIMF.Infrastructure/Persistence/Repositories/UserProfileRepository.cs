@@ -131,7 +131,7 @@ internal sealed class UserProfileRepository(
             .Where(p => p.Id == profileTypeId)
             .Select(p => new ProfileTypeFacts(
                 p.IsActive, SIMF.Common.Enums.UserType.Visitor,
-                p.IsForVisitor, p.Name))
+                p.IsForVisitor, p.Name, p.AllowsVipMeetingSlots))
             .SingleOrDefaultAsync(cancellationToken);
 
     public async Task<IReadOnlyList<Guid>> FilterActiveInterestIdsAsync(

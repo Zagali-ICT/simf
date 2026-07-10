@@ -159,6 +159,22 @@ public sealed class AdminUpdateOtherRequest
     public Guid ProfileTypeId { get; set; }
 }
 
+/// <summary>
+/// D-728 (owner item 9) — the body of
+/// <c>POST /api/v1/admin/accounts/{id}/change-type</c>. Flips an existing
+/// account between the audience (Visitor) and partner (Other) scope by
+/// reassigning its profile type. <see cref="NewProfileTypeId"/> must be an
+/// active profile type in the <b>opposite</b> scope to the account's current
+/// one (a same-scope change is an edit, not a type change). Administrator-only.
+/// </summary>
+public sealed class AdminChangeAccountTypeRequest
+{
+    /// <summary>The target profile type (<c>ProfileTypes</c> row id). Required;
+    /// must be active and its <c>IsVisitor</c> must be the opposite of the
+    /// account's current scope.</summary>
+    public Guid NewProfileTypeId { get; set; }
+}
+
 /// <summary>The body of a successful admin-created account (D-042).</summary>
 public sealed record AdminCreateUserResponse(
     Guid UserId,
@@ -329,7 +345,10 @@ public sealed record AdminProfileTypeSummary(
     // D-186 — audience-vs-partner split inside the Visitor scope.
     // true = audience profile type (VIP, Normal); false = partner /
     // staff profile type (Sponsor, Exhibitor, Media, Staff).
-    bool IsVisitor);
+    bool IsVisitor,
+    // D-725 — whether the type is offered in the app sign-up picker.
+    // false = CP-only (admin-assigned), e.g. Staff / Moderator.
+    bool IsAppRegisterable);
 
 /// <summary>
 /// D-115 — body of <c>POST /api/v1/admin/profile-types</c>. Creates a
@@ -368,6 +387,11 @@ public sealed class AdminCreateProfileTypeRequest
     /// true so a freshly created profile type lands on the Visitors
     /// approval queue until an admin explicitly flips it.</summary>
     public bool IsVisitor { get; set; } = true;
+
+    /// <summary>D-725 (owner item 1) — whether the type appears in the app
+    /// sign-up picker. Default true; set false for CP-only operational types
+    /// (Staff, Moderator) that an admin assigns rather than a customer picks.</summary>
+    public bool IsAppRegisterable { get; set; } = true;
 }
 
 /// <summary>
@@ -388,6 +412,10 @@ public sealed class AdminUpdateProfileTypeRequest
 
     /// <summary>D-186 — audience (true) or partner / staff (false).</summary>
     public bool IsVisitor { get; set; } = true;
+
+    /// <summary>D-725 (owner item 1) — whether the type appears in the app
+    /// sign-up picker. Default true; false = CP-only (Staff, Moderator).</summary>
+    public bool IsAppRegisterable { get; set; } = true;
 }
 
 /// <summary>
@@ -556,6 +584,10 @@ public sealed record AdminUserProfileView(
     string? SaudiMobile,
     string? InternationalMobile,
     bool HasIdImage,
+    // D-727 (owner item 5) — whether the subject has a profile photo (avatar) so
+    // the CP view / pending-review can render it (streamed from
+    // GET /admin/{visitors,others}/{id}/avatar). Mirrors HasIdImage.
+    bool HasAvatar,
     IReadOnlyList<Guid> InterestIds,
     string? RejectionReason,
     string? RejectionReasonArabic,

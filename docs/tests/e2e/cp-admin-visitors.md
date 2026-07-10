@@ -477,6 +477,37 @@ Scenario: A non-Saudi walk-in types the place of birth
 the auth-gated walk-in wizard is pending the broader E2E-VIS authoring pass (all
 E2E-VIS rows are `_to author_`).
 
+### E2E-VIS-026 — Change type: flip a Visitor to a partner (Other) type (D-728)
+
+```gherkin
+Scenario: An admin converts a visitor into a partner (Other) account
+  Given an approved visitor account
+  And at least one active partner profile type (IsVisitor=false, e.g. Sponsor/Staff)
+  When the administrator opens the visitor's Details view
+  Then the "Change account type" block renders (gated by Accounts.ChangeType)
+  And its "New type" dropdown lists ONLY active partner-scope types
+      (no visitor types, no inactive types — the opposite scope only)
+  When they pick a partner type and click "Change type"
+  Then POST /account/api/admin/accounts/{id}/change-type returns 200
+  And the block shows the green "The account type was changed..." success alert
+  And the account's ProfileTypeId is now the picked partner type
+  And the account leaves /admin/visitors and appears in /admin/others
+  And the security stamp was rolled + sessions revoked (a partner type may grant
+      Staff/Moderator app perms), while the approval state is unchanged
+
+Scenario: A same-scope target is rejected
+  Given an approved visitor account
+  When a change-type request targets ANOTHER visitor-scope profile type
+  Then POST /account/api/admin/accounts/{id}/change-type returns 400
+      (ADMIN_PROFILE_TYPE_INVALID — a same-scope change is an edit, not a type change)
+```
+
+**Evidence:** `tests/SIMF.Api.Tests/AdminChangeAccountTypeTests.cs` (flip both
+directions, same-scope 400, inactive 400, empty 400, 404, non-admin 403, stamp
+roll, approval-state preserved); CP block behaviour in
+`tests/SIMF.ControlPanel.Tests/ChangeAccountTypeBlockTests.cs` (opposite-scope
+filter + POST wiring). Live browser drive pending the E2E-VIS authoring pass.
+
 ---
 
 ## Implementation notes
@@ -509,4 +540,4 @@ E2E-VIS rows are `_to author_`).
 
 ---
 
-_Last reviewed:_ 2026-06-20 by SIMF Team (D-469 — added E2E-VIS-025 for the Saudi birth-location region dropdown in the walk-in wizard). Earlier: 2026-06-10 (D-356 Phase 5 — Excel + toggle; E2E-VIS-023/024 for the D-353 Page↔Popup presentation toggle).
+_Last reviewed:_ 2026-07-09 by SIMF Team (D-728 — added E2E-VIS-026 for the change-account-type action on the visitor Details view). Earlier: 2026-06-20 (D-469 — E2E-VIS-025 Saudi birth-location region dropdown); 2026-06-10 (D-356 Phase 5 — Excel + toggle; E2E-VIS-023/024 for the D-353 Page↔Popup presentation toggle).

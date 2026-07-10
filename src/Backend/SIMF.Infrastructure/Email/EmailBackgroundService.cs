@@ -41,7 +41,16 @@ public sealed class EmailBackgroundService(
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to send email to {Recipient}", message.To);
+                // Log the SMTP endpoint that was attempted (host / port / from —
+                // never the user or password) so ops can tell a wrong host/port
+                // or unauthorised From address apart from a real outage straight
+                // from the log, without cross-referencing the config (#2 — a
+                // "code not received" report is almost always this transport
+                // step, since the code itself is already persisted + enqueued).
+                var smtp = options.Value;
+                logger.LogError(ex,
+                    "Failed to send email {Subject} to {Recipient} via SMTP {SmtpHost}:{SmtpPort} from {FromAddress}",
+                    message.Subject, message.To, smtp.Host, smtp.Port, smtp.FromAddress);
                 await NotifyFailureAsync(message, ex, stoppingToken);
             }
         }

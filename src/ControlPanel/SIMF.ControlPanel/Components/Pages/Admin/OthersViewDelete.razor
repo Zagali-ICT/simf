@@ -56,6 +56,18 @@
                  alt="@L["Admin.Pending.View.Field.IdImage"]" />
         </div>
     }
+    @* D-727 (owner item 5) — the staff/partner profile photo (avatar), alongside
+       the ID image, streamed from the admin avatar-fetch route (Others.View). *@
+    @if (Initial.HasAvatar)
+    {
+        <AdminProfilePhotoBlock Heading="@L["Admin.Pending.View.Field.Photo"]"
+                                Src="@($"/account/api/admin/others/{Initial.Id}/avatar?v={DateTime.UtcNow.Ticks}")" />
+    }
+    @* D-728 (owner item 9) — flip this partner account into a visitor type. *@
+    <AuthorizedAction Permission="@PermissionCatalog.Accounts.ChangeType">
+        <ChangeAccountTypeBlock AccountId="Initial.Id" IsVisitorScope="false"
+                                OnChanged="OnCancel" />
+    </AuthorizedAction>
 
     <div class="simf-form__actions">
         <SimfButton Type="button" Variant="secondary" OnClick="OnCancel">

@@ -101,6 +101,9 @@ Scenario: View renders the full pending profile without approving
       Date of birth, Place of birth, Identity type, Identity number, Saudi mobile,
       International mobile, ID image uploaded (Yes/No), Selected interests
   And when "ID image uploaded" = Yes an <img> loads from /account/api/admin/others/{id}/id-document
+  And when the applicant has a profile photo (HasAvatar = true) a "Profile photo" block
+      renders an <img> from /account/api/admin/others/{id}/avatar (D-727, owner item 5) —
+      so the reviewer sees the staff member's face before approving
   When they click "Close"
   Then the modal closes and no approve/reject request fires
 

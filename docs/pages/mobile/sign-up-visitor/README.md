@@ -32,19 +32,24 @@ stretch edge-to-edge on a tablet — §13.7) holds, in order:
    filters the ProfileType lookup. **C5 (D-371):** Visitor hides the picker and
    auto-locks the seeded **"عادي / Normal"** type; Other shows the picker and a pick
    is **required**.
-2. **التصنيف / ProfileType** (`SimfPickerField`) — Other only.
+2. **التصنيف / ProfileType** (`DropdownButtonFormField`, D-722 — a **simple
+   dropdown/select**, not the full-screen searchable sheet, since the type list is
+   short) — Other only.
 3. Full name **AR** / **EN** (`SimfLabeledTextField`; per-script keystroke filters).
 4. **الجنس** — `GenderPillsField` (ذكر / أنثى; default Male).
 5. **الجهة / Organisation** (`SimfPickerField` typeahead → `LookupSearchSheet`) —
    **required** (B3 / D-221).
-6. **المسمى الوظيفي** — job title (optional).
+6. **المسمى الوظيفي** — job title (**required**, D-723).
 7. **الجنسية** — searchable country sheet (default SA). The pick **drives the
    document path** (D-373): SA → national-ID; else Iqama / Passport tabs + number.
 8. **document fields** (`_buildDocumentFields`).
-9. **رقم الجوال** — one conditional `MobileField` (Saudi or international, C4 shapes).
+9. **رقم الجوال** — one conditional `MobileField` (Saudi or international, C4 shapes);
+   **required** (D-723).
 10. **تاريخ الميلاد** — `DateOfBirthField` (**≥ 18**, D-197).
-11. **مكان الميلاد** — place of birth (optional, D-163).
-12. **رقم اللوحة** — Saudi plate (optional, C6/D-371; assemble/parse in
+11. **مكان الميلاد** — place of birth (**required**, D-723; Saudi = region picker,
+    else free text).
+12. **رقم اللوحة** — Saudi plate (**optional** — the one optional field, C6/D-371;
+    assemble/parse in
     `plate_validation.dart`).
 13. **المرفقات** — `AttachmentField` ID document (mandatory) + face photo
     (**camera-only**, mandatory for men — C7/D-371; server face-gate).
@@ -58,7 +63,11 @@ Read on load (concurrent), per `ProfileRepository`:
 - **E3** `GET /app/account/user-profile/countries` → `{ countries: [{ code, name,
   nameArabic }] }`.
 - **E4** `GET /app/account/profile-types?isVisitor={bool}` → `{ items: [{ id, name,
-  nameArabic, isVisitor }] }` (re-queried when the Visitor/Other tab flips).
+  nameArabic, isVisitor }] }` (re-queried when the Visitor/Other tab flips). **D-725:**
+  the endpoint now returns only **app-registerable** types — CP-only operational types
+  (Staff, Moderator, or any type an admin has un-ticked "Show in the app sign-up picker")
+  are filtered out server-side, so they never appear on the Other tab. The response
+  shape is unchanged (wire-safe).
 - **E6** `GET /app/organisations?search={text}&top=20` → `[{ id, nameAr, nameEn, city }]`.
 
 The **save** (`POST /app/account/user-profile` + the multipart id-image upload + the

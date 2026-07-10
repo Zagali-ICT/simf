@@ -96,6 +96,26 @@ public interface IAdminUserProvisioningService
         AdminUpdateOtherRequest request,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// D-728 (owner item 9) — flips an existing non-admin account between the
+    /// audience (Visitor) and partner (Other) scope by reassigning its
+    /// <c>ProfileType</c> to <paramref name="newProfileTypeId"/>, which must be
+    /// active and in the <b>opposite</b> scope to the account's current one (a
+    /// same-scope change is an edit, not a type change). A type flip is always a
+    /// privilege change — the new type's <c>MobileAppRole</c> re-sources the
+    /// app permission claims — so it always rolls the security stamp and revokes
+    /// the subject's sessions. Approval state is left unchanged (an approved
+    /// account stays approved under the new type; the re-issued token carries
+    /// the new perms). Throws <c>AdminUserNotFound</c> (404) when the id is
+    /// missing or is an Admin account, and <c>AdminProfileTypeInvalid</c> (400)
+    /// for an inactive, missing, or same-scope target type.
+    /// </summary>
+    Task ChangeAccountTypeAsync(
+        Guid actorUserId,
+        Guid userId,
+        Guid newProfileTypeId,
+        CancellationToken cancellationToken = default);
+
     // -- Duplicate (single-user create with a different source) --------------
 
     /// <summary>

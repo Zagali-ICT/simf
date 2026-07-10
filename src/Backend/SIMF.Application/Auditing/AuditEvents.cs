@@ -106,6 +106,9 @@ public static class AuditEvents
     // P1.3 (D-214) — admin edit of a Visitor / Other account.
     public const string AdminUserUpdated = "Admin.UserUpdated";
     public const string AdminUserUpdateFailed = "Admin.UserUpdateFailed";
+    // D-728 (owner item 9) — admin flip of an account between the audience
+    // (Visitor) and partner (Other) scope. Failures reuse AdminUserUpdateFailed.
+    public const string AdminUserTypeChanged = "Admin.UserTypeChanged";
 
     // Admin-driven bulk actions (D-044 b)
     public const string AdminUserDeleted = "Admin.UserDeleted";

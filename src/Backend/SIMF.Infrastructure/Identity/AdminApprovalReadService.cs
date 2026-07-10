@@ -114,6 +114,7 @@ internal sealed class AdminApprovalReadService(
                 u.AccountState,
                 u.CreatedAt,
                 u.UpdatedAt,
+                u.AvatarRelativePath,
             })
             .SingleOrDefaultAsync(cancellationToken);
         if (user is null) { return null; }
@@ -175,6 +176,9 @@ internal sealed class AdminApprovalReadService(
             profile?.SaudiMobile,
             profile?.InternationalMobile,
             profile?.HasIdImage ?? false,
+            // D-727 — the avatar (profile photo) lives on SimfUser (Identity);
+            // AvatarRelativePath is its StoredFile presence sentinel (D-568 S3).
+            !string.IsNullOrEmpty(user.AvatarRelativePath),
             profile?.InterestIds ?? new List<Guid>(),
             profile?.RejectionReason,
             profile?.RejectionReasonArabic,

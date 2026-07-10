@@ -165,6 +165,7 @@ class UserProfileResponse {
     this.referenceNumber,
     this.organisationId,
     this.qrId,
+    this.isVip = false,
   });
 
   final String? profileTypeId;
@@ -205,6 +206,12 @@ class UserProfileResponse {
   final bool hasAvatar;
   final String? qrId;
 
+  /// D-729 (owner item 15) — true when the account's tier is VVIP/VIP
+  /// (server-computed from ProfileType.AllowsVipMeetingSlots). Gates the
+  /// "request a speaker meeting" CTA to VIP guests. Append-only wire field
+  /// (defaults false when an older server omits it).
+  final bool isVip;
+
   /// SUPERSEDED for routing (D-374): the post-sign-in gate now reads the
   /// server-computed `profileComplete` on the session user — do NOT reuse
   /// this getter for routing; the server rule is the single authority.
@@ -244,6 +251,7 @@ class UserProfileResponse {
       hasIdImage: json['hasIdImage'] as bool? ?? false,
       hasAvatar: json['hasAvatar'] as bool? ?? false,
       qrId: json['qrId'] as String?,
+      isVip: json['isVip'] as bool? ?? false,
     );
   }
 }

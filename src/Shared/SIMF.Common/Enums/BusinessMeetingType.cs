@@ -12,4 +12,9 @@ public enum BusinessMeetingType
 
     /// <summary>Business-to-consumer — typically company/sponsor ↔ visitor.</summary>
     B2C = 1,
+
+    /// <summary>D-730 (owner item 15B) — government-to-business, a meeting between
+    /// a government/official party and a business. Additive value (append-only
+    /// under the frozen-enum rule); persisted as the same int column as B2B/B2C.</summary>
+    G2B = 2,
 }

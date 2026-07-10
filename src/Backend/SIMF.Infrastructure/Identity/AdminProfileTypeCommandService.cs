@@ -80,7 +80,8 @@ internal sealed class AdminProfileTypeCommandService(
                 nameof(UserType.Visitor),
                 profileType.MobileAppRole.ToString(),
                 profileType.IsActive,
-                profileType.IsForVisitor))
+                profileType.IsForVisitor,
+                profileType.IsAppRegisterable))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminProfileTypeSummary>.Of(page, total,
@@ -147,6 +148,9 @@ internal sealed class AdminProfileTypeCommandService(
             // approval queue, false = Others approval queue.
             IsForVisitor = request.IsVisitor,
             MobileAppRole = mobileAppRole,
+            // D-725: app sign-up picker visibility (default true; the CP
+            // form sends false for CP-only operational types).
+            IsAppRegisterable = request.IsAppRegisterable,
             IsActive = request.IsActive,
             CreatedAt = now,
         };
@@ -215,6 +219,9 @@ internal sealed class AdminProfileTypeCommandService(
         // between the CP Visitors and Others approval queues. The
         // underlying user accounts already use UserType.Visitor either way.
         profileType.IsForVisitor = request.IsVisitor;
+        // D-725: app sign-up picker visibility — the admin toggles whether a
+        // self-registering user may pick this type.
+        profileType.IsAppRegisterable = request.IsAppRegisterable;
         profileType.UpdatedAt = timeProvider.GetUtcNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -298,7 +305,8 @@ internal sealed class AdminProfileTypeCommandService(
             nameof(UserType.Visitor),
             profileType.MobileAppRole.ToString(),
             profileType.IsActive,
-            profileType.IsForVisitor);
+            profileType.IsForVisitor,
+            profileType.IsAppRegisterable);
 
     /// <summary>D-161 — parses the wire-side stringly mobile-app-role,
     /// rejecting unknown values with a typed 400. Null / empty defaults
