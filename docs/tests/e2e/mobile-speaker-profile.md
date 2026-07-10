@@ -322,9 +322,17 @@ Scenario: Only a VIP guest sees and can use the request-meeting CTA
 
 ---
 
-_Last reviewed:_ `2026-07-10` by `SIMF Team` — **D-729 (item 15A): speaker
-meetings are VIP-only — the request-meeting CTA shows only for VVIP/VIP guests
-(profile `isVip`), and the submit endpoint 403s a non-VIP; added E2E-MOB020-018.**
+_Last reviewed:_ `2026-07-10` by `SIMF Team` — **D-731 (review follow-up to
+D-729): the VIP-flag read (`currentUserIsVipProvider`) now makes NO network call
+for a guest and is cached across speaker-profile opens (re-fetched only on an
+auth transition, not per screen-open), so browsing speaker profiles no longer
+drains the shared per-IP "auth" rate-limit bucket (sign-in/OTP). CTA behaviour is
+unchanged — the existing VIP / non-VIP / guest scenarios still hold; no new E2E
+scenario.**
+
+_Prior review:_ `2026-07-10` — **D-729 (item 15A): speaker meetings are VIP-only
+— the request-meeting CTA shows only for VVIP/VIP guests (profile `isVip`), and
+the submit endpoint 403s a non-VIP; added E2E-MOB020-018.**
 
 _Prior review:_ `2026-07-09` — **D-709 (item 6, FDS-013 §15.4
 GAP-4): reverted the short-lived D-703 free 7-day/hourly picker back to the

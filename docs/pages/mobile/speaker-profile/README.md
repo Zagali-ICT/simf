@@ -21,8 +21,12 @@ and the speaker's sessions.
 
 ## 2. Audience & access
 Guest+ for the read; the Request-meeting sheet is **login-only** (a guest is sent
-to sign-in) and VIP-slot-aware (D-474/D-475). Social links show only when the
-speaker `allowsDataSharing`.
+to sign-in) and VIP-slot-aware (D-474/D-475). The Request-meeting CTA itself is
+**VIP-only** (D-729) — driven by `currentUserIsVipProvider`, which (D-731) makes
+**no** network call for a guest and caches the flag across speaker-profile opens
+(re-fetched only on an auth transition, not per screen-open), so the browse
+surface never drains the shared per-IP "auth" rate-limit bucket. Social links
+show only when the speaker `allowsDataSharing`.
 
 ## 3. Button / action audit (Level F, 2026-07-04)
 | Control | Handler | Backend |
