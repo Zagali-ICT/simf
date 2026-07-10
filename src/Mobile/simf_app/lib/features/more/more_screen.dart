@@ -39,7 +39,7 @@ final _moreProfileProvider =
 /// (signed-in), three grouped sections (معلومات الملتقى / الإعدادات / قانوني)
 /// of bordered nav rows, the تسجيل الخروج link (signed-in) and the static
 /// version line. Unbuilt entries (Forum guide / FAQ / presentations / Contact
-/// us) route to the ComingSoon placeholder; استكشف الرياض opens VisitSaudi; the
+/// us) route to the ComingSoon placeholder; اكتشف السعودية opens VisitSaudi; the
 /// اللغة row shows the current language and toggles it (D-464).
 class MoreScreen extends ConsumerWidget {
   const MoreScreen({super.key});

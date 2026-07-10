@@ -164,7 +164,7 @@ void main() {
       expect(find.text('About the forum'), findsOneWidget);
       expect(find.text('Forum guide'), findsOneWidget);
       expect(find.text('FAQ'), findsOneWidget);
-      expect(find.text('Explore Riyadh · VisitSaudi'), findsOneWidget);
+      expect(find.text('Discover Saudi'), findsOneWidget);
       // الإعدادات rows (Language shows the current value).
       expect(find.text('Language'), findsOneWidget);
       expect(find.text('English'), findsOneWidget);

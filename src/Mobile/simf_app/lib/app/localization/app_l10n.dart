@@ -653,7 +653,6 @@ class AppL10n {
   String get onboardingMutedTooltip => _t('الصوت مكتوم', 'Sound muted');
 
   // Login header controls (Page 003) — buttons only for now (no wiring yet).
-  String get themeToggleTooltip => _t('المظهر · ليلي/نهاري', 'Light / dark mode');
   String get languageToggleLabel => 'العربية · English';
 
   // Home — landing / router screen (Page 013). Interim copy + tile labels for
@@ -742,10 +741,10 @@ class AppL10n {
   String get followUsSection => _t('تابعنا', 'Follow us');
   // The official handle line — a proper noun, identical in both languages.
   String get followUsHandle => '@SIMF_RSNF · الملتقى البحري السعودي الدولي';
-  String get discoverSection => _t('اكتشف', 'Discover');
+  String get discoverSection => _t('اكتشف السعودية', 'Discover Saudi');
   // The top discovery hero banner on the signed-in home (frame 758:1134 node
-  // 758:1203): the gold "اكتشف" title reuses [discoverSection]; this is the
-  // white sub-line over the event photo.
+  // 758:1203): the gold "اكتشف السعودية" title reuses [discoverSection]; this is
+  // the white sub-line over the event photo.
   String get discoverBannerSubtitle =>
       _t('تعال واكتشف جديدك المفضل', 'Come discover your favourites');
   // ابرز الاحداث — the highlights / latest-news teaser card on the signed-in
@@ -1581,7 +1580,7 @@ class AppL10n {
   // Items new to the redesigned hub.
   String get moreForumGuide => _t('دليل الملتقى', 'Forum guide');
   String get morePresentations => _t('عروض الجلسات', 'Session presentations');
-  String get moreVisitSaudi => _t('استكشف الرياض · VisitSaudi', 'Explore Riyadh · VisitSaudi');
+  String get moreVisitSaudi => _t('اكتشف السعودية', 'Discover Saudi');
 
   // دليل الملتقى — Forum guide (Figma 1388-7493). Static in-app copy (no
   // backend). The Arabic strings are reproduced verbatim from the design; the

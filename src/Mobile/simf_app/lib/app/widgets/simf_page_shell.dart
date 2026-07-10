@@ -194,8 +194,8 @@ class SimfPageShell extends StatelessWidget {
               ),
             ),
           ),
-          // The shared trailing action cluster (bell + language + inert theme +
-          // drawer ☰) when [showHeaderActions]; otherwise the gold language
+          // The shared trailing action cluster (bell + language + drawer ☰)
+          // when [showHeaderActions]; otherwise the gold language
           // globe alone — the Figma sub-page frames (908-1744 …) carry it at the
           // trailing corner (owner 2026-07-05: add the globe to every sub-page,
           // superseding the 2026-06-28 back+title-only nav). Its 40-wide box also
@@ -383,60 +383,11 @@ class SimfPullableHost extends StatelessWidget {
   }
 }
 
-/// The shared header actions added to every in-app app-bar — the standard
-/// [SimfPageShell] header and the home greeting header: the language globe (toggles
-/// AR ↔ EN, persisted via [LocaleController]) and the dark-mode icon.
-///
-/// Dark mode is intentionally **inert** for now: the app is navy-always (the
-/// owner's design decision) and has no light theme yet, so the icon is shown
-/// for parity but disabled — mirroring the side-drawer's inert theme tile. The
-/// bell + drawer ☰ stay owned by each header.
-///
-/// The locale notifier is read **only in the onPressed callback** (never
-/// `watch`ed at build), so this control adds no build-time dependency on
-/// [localeControllerProvider]: screens render without overriding it in tests.
-/// (Tapping the globe does resolve the provider, so a test that exercises the
-/// toggle must still override it — see simf_page_shell_test.)
-class SimfLangThemeButtons extends ConsumerWidget {
-  const SimfLangThemeButtons({this.size = 22, super.key});
-
-  /// The glyph size — 22 in the standard header, 26 in the larger home header.
-  final double size;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppL10n.of(context);
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        IconButton(
-          tooltip: l10n.languageToggleLabel,
-          onPressed: () =>
-              unawaited(ref.read(localeControllerProvider.notifier).toggle()),
-          icon: Icon(Icons.language, color: Colors.white, size: size),
-        ),
-        IconButton(
-          tooltip: l10n.themeToggleTooltip,
-          // Node 1049:2087 — the gold crescent (iconamoon:mode-dark-fill).
-          // Intentionally inert: the app is navy-always (owner decision), no
-          // light theme yet, so the icon shows for parity but does nothing.
-          onPressed: null,
-          icon: Icon(
-            Icons.dark_mode,
-            color: SimfTokens.accent,
-            size: size,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 /// The shared trailing action cluster on every in-app page's top nav (owner
-/// 2026-06-27): the notifications bell, the language globe, the inert dark-mode
-/// crescent (node 1049:2087) and the menu ☰ — each a **gold glyph in a navy
-/// rounded box** (frame 758:1136), so the top nav is identical on the signed-in
-/// home greeting header and every [SimfPageShell] sub-page.
+/// 2026-06-27): the notifications bell, the language globe and the menu ☰ —
+/// each a **gold glyph in a navy rounded box** (frame 758:1136), so the top nav
+/// is identical on the signed-in home greeting header and every [SimfPageShell]
+/// sub-page.
 ///
 /// [showBell] is true on every signed-in surface; the guest home (frame
 /// 758:2910) sets it false — a guest has no personal notifications.
@@ -501,13 +452,6 @@ class SimfHeaderActions extends ConsumerWidget {
           SimfLanguageToggle(
             onPressed: () =>
                 unawaited(ref.read(localeControllerProvider.notifier).toggle()),
-          ),
-          const SizedBox(width: SimfTokens.space2),
-          // Node 1049:2087 — the gold crescent, intentionally inert (navy-always).
-          _box(
-            tooltip: l10n.themeToggleTooltip,
-            onTap: null,
-            glyph: const Icon(Icons.dark_mode),
           ),
           const SizedBox(width: SimfTokens.space2),
           Builder(
