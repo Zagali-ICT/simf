@@ -15,8 +15,9 @@ import 'splash_controller.dart';
 /// name, and the edition/date lines, centred on the navy primary surface.
 ///
 /// Shows the lock-up while [SplashController] runs the boot sequence
-/// (store-update check + cold-start session restore), then routes out once.
-/// The previous placeholder screen is parked in `_legacy_mockup/`.
+/// (version-policy update check (D-736) + cold-start session restore), then
+/// routes out once. The previous placeholder screen is parked in
+/// `_legacy_mockup/`.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -113,6 +114,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     String? location,
   ) async {
     await _showUpdateDialog(hard: false);
+    // D-736 — however the prompt was dismissed, snooze this version so it
+    // doesn't re-nag on every launch (the About manual check still surfaces it).
+    unawaited(ref.read(appUpdateCheckerProvider).snoozeOptionalUpdate());
     _routeOut(routeName: routeName, location: location);
   }
 
@@ -135,28 +139,41 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       // A forced update cannot be dismissed; a soft one can.
       barrierDismissible: !hard,
       builder: (dialogContext) {
-        return AlertDialog(
-          title: Text(
-            hard ? l10n.updateRequiredTitle : l10n.updateOptionalTitle,
-          ),
-          content: Text(
-            hard ? l10n.updateRequiredBody : l10n.updateOptionalBody,
-          ),
-          actions: <Widget>[
-            if (!hard)
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: Text(l10n.updateLaterLabel),
-              ),
-            FilledButton(
-              onPressed: () {
-                unawaited(
-                  ref.read(appUpdateCheckerProvider).openStoreListing(),
-                );
-              },
-              child: Text(l10n.updateNowLabel),
+        // A forced update also blocks the Android back button — the barrier
+        // alone leaves it dismissible, which would strand the user on a bare
+        // splash (D-736). A soft dialog stays freely dismissible.
+        return PopScope(
+          canPop: !hard,
+          child: AlertDialog(
+            title: Text(
+              hard ? l10n.updateRequiredTitle : l10n.updateOptionalTitle,
             ),
-          ],
+            content: Text(
+              hard ? l10n.updateRequiredBody : l10n.updateOptionalBody,
+            ),
+            actions: <Widget>[
+              if (!hard)
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: Text(l10n.updateLaterLabel),
+                ),
+              FilledButton(
+                onPressed: () {
+                  unawaited(
+                    ref.read(appUpdateCheckerProvider).openStoreListing(),
+                  );
+                  // A soft update must still route out after the store opens
+                  // (the user is coming back to the app) — pop so the awaiting
+                  // _softUpdateThenRouteOut resumes. A forced update never pops;
+                  // it stays blocked until the user actually updates.
+                  if (!hard) {
+                    Navigator.of(dialogContext).pop();
+                  }
+                },
+                child: Text(l10n.updateNowLabel),
+              ),
+            ],
+          ),
         );
       },
     );

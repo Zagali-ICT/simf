@@ -21,8 +21,8 @@ padding; one min-size `Column`:
 3. **No progress affordance** — the design shows none (no spinner); the minimum-display
    timer + hard caps (Logic L-1/L-6) bound the wait instead.
 4. **Update dialog (conditional)** — an `AlertDialog` over the splash only when the
-   store-native check reports an update (hard = non-dismissible, soft = dismissible) —
-   see Logic L-2.
+   version-policy check (D-736) reports an update (hard = non-dismissible, soft =
+   dismissible) — see Logic L-2.
 
 The screen is **non-interactive** apart from the conditional update dialog; there is no
 bottom nav, back button, or input on the splash itself.
@@ -31,7 +31,7 @@ bottom nav, back button, or input on the splash itself.
 | UI moment | Backing work |
 |---|---|
 | Lock-up appears | Minimum display timer (1200 ms) starts (Logic L-1) |
-| (behind lock-up) | Store-native update check, 5 s cap (Logic L-2) — concurrent with the timer |
+| (behind lock-up) | Version-policy update check (`GET /app/version-policy`, D-736), 5 s cap (Logic L-2) — concurrent with the timer |
 | (behind lock-up) | Auth cold-start restore: secure-storage session load → `POST /app/auth/refresh` (E1, only if the access token is missing/expired) → `GET /app/users/me` (E2) — Logic L-4; waited on with an 8 s cap |
 | Route-out | One replace-navigation to the destination (Logic L-5) |
 
@@ -43,8 +43,8 @@ bottom nav, back button, or input on the splash itself.
 | Boot completes — awaiting email-OTP | Replace-navigate to the OTP entry screen (`verifyOtp`). |
 | Boot completes — first run | Replace-navigate to onboarding. |
 | Boot completes — signed out / refresh failed | Replace-navigate to the sign-in entry. |
-| Update dialog → **تحديث الآن / Update now** (`FilledButton`) | Calls `openStoreListing()` (store-native intent; a no-op until the store-plugin checker is wired). The button does not close the dialog. |
-| Update dialog → **لاحقاً / Later** (`TextButton`, soft only) | Closes the dialog; the splash then routes out. A soft dialog routes out **however** it was closed (Later, scrim, or after Update now). |
+| Update dialog → **تحديث الآن / Update now** (`FilledButton`) | Calls `openStoreListing()` — opens the admin-configured store URL for this platform (D-736). The button does not close the dialog. |
+| Update dialog → **لاحقاً / Later** (`TextButton`, soft only) | Closes the dialog; the splash records the 3-day per-version snooze (D-736) and routes out. A soft dialog routes out — and snoozes — **however** it was closed (Later, scrim, or after Update now). |
 
 ## States
 - **Loading** — the only splash state: the static lock-up while boot work runs (no spinner).
@@ -72,7 +72,8 @@ dialog layout mirrors for RTL. The centred column is direction-neutral.
 ## Design notes
 - The 1200 ms minimum display time prevents a logo flash; the 5 s / 8 s caps prevent an
   indefinite splash (Logic L-6).
-- The update check is **store-native** — no SIMF version call, no in-screen version text.
+- The update check reads the **SIMF version policy** (D-736 — supersedes the original
+  store-native contract); still no in-screen version text on the splash itself.
 - No privilege gate on this screen: it runs before privilege is known and resolves it (L-5).
 - D-361 changed the visual subtree only — `SplashController`, the update dialogs and the
   one-shot route-out glue are unchanged from the pre-redesign build.

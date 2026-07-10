@@ -45,4 +45,11 @@ class StorageKeys {
   static const String orgProfileJson = 'simf.prefs.org_profile_json';
   static const String orgProfileLastModified =
       'simf.prefs.org_profile_last_modified';
+
+  /// D-736 — soft-update snooze: the latest version the user dismissed on the
+  /// splash prompt + when, so the same version doesn't re-nag for a few days.
+  static const String appUpdateSnoozedVersion =
+      'simf.prefs.app_update_snoozed_version';
+  static const String appUpdateSnoozedAtIso =
+      'simf.prefs.app_update_snoozed_at_iso';
 }

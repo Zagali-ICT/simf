@@ -7,6 +7,7 @@ import 'package:simf_app/app/app.dart';
 import 'package:simf_app/app/localization/locale_controller.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/router.dart';
+import 'package:simf_app/core/startup/app_update_checker.dart';
 import 'package:simf_app/features/accessibility/accessibility_screen.dart';
 import 'package:simf_app/features/accessibility/data/accessibility_controller.dart';
 import 'package:simf_app/features/account/sign_in_screen.dart';
@@ -142,6 +143,9 @@ List<Override> _overrides(AuthState auth) {
         .overrideWith(() => AccessibilityController(prefs: prefs)),
     // Collapse the splash min-display so boot routes immediately.
     minSplashDurationProvider.overrideWithValue(Duration.zero),
+    // D-736 — pin the launch update check inert (the server checker would
+    // fail open anyway; this keeps the harness deterministic).
+    appUpdateCheckerProvider.overrideWithValue(const NoopAppUpdateChecker()),
     authControllerProvider.overrideWith(() => _FakeAuth(auth)),
     // Home's only live call — pin it so the home never touches HTTP.
     unreadNotificationCountProvider.overrideWith((ref) async => 0),

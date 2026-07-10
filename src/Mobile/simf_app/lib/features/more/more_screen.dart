@@ -14,6 +14,7 @@ import '../../app/theme/tokens.dart';
 import '../../app/widgets/confirm_external_link.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import '../../core/env/build_config.dart';
+import '../../core/startup/app_version_policy.dart';
 import '../account/sign_out.dart';
 import '../myarea/data/myarea_models.dart';
 import '../myarea/data/myarea_repository.dart';
@@ -192,7 +193,8 @@ class MoreScreen extends ConsumerWidget {
           const SizedBox(height: SimfTokens.space4),
           Center(
             child: Text(
-              l10n.moreVersion,
+              // D-736 — the real installed version (package_info_plus).
+              l10n.moreVersionLine(ref.watch(installedAppVersionProvider)),
               style: const TextStyle(
                 color: SimfTokens.inkMuted,
                 fontSize: SimfTokens.textSm,

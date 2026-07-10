@@ -2,15 +2,15 @@
 
 Boot/bootstrap rules behind the screen. The order below is the launch sequence, as built
 in `lib/features/splash/splash_controller.dart` (+ the auth cold-start restore in
-`simf_auth_pkg`'s `AuthController`). Last updated 2026-06-13 (conformance pass on the
-D-361 as-built; the redesign changed visuals only — this boot logic is unchanged).
+`simf_auth_pkg`'s `AuthController`). Last updated 2026-07-10 (D-736 — the update check
+moved to the SIMF version-policy endpoint; the boot order and caps are unchanged).
 
 ## L-1 Boot sequence (order)
 On cold launch the splash runs these steps, then routes out:
 1. Show the brand lock-up + start the **minimum display timer** — **1200 ms**
    (`minSplashDurationProvider`; overridable to zero in tests) so the splash never flickers.
 2. Kick off the **auth cold-start restore** (touching `authControllerProvider` starts it; L-4).
-3. **Store-update check** (L-2) — store-native; runs **concurrently** with the timer,
+3. **Version-policy update check** (L-2, D-736) — runs **concurrently** with the timer,
    capped at **5 s** (on timeout it resolves as up-to-date).
 4. If the check reports a **forced** update → stop on the non-dismissible prompt (L-2).
 5. Otherwise **wait for the auth restore to resolve** (leave `AuthStateInitial`), capped
@@ -18,21 +18,32 @@ On cold launch the splash runs these steps, then routes out:
 6. **Route out** (L-5), showing the dismissible soft-update prompt first when the check
    reported an optional update.
 
-## L-2 Store-update check (store-native — NOT a SIMF API)
-The latest-version lookup is done through the **native app store** mechanism
-(Play Store / App Store in-app-update APIs), **not** a SIMF backend endpoint.
-- **Hard / forced update** → show a **non-dismissible** prompt; the only action opens the
-  store listing. The app does not route into its screens until updated.
-- **Soft update** → show a **dismissible** prompt ("لاحقاً / Later"); the splash routes out
-  **however** the dialog was closed (Later, scrim, or after "تحديث الآن / Update now") so
-  the user is never stranded (L-6).
-- **Up to date** or **store check unreachable/slow** (5 s cap, and `check()` must never
-  throw) → skip silently and continue (never block boot).
+## L-2 Update check (SIMF version policy — D-736)
+The launch check reads the **SIMF server policy** — `GET /app/version-policy`
+(anonymous; the per-platform `minVersion` / `latestVersion` / `storeUrl` an admin edits
+on the CP configuration page) — and compares it against the installed version
+(`package_info_plus`) with **semver** ordering (`pub_semver`). Built as
+`ServerAppUpdateChecker` behind the `appUpdateCheckerProvider` seam
+(`lib/core/startup/`); web builds keep the inert `NoopAppUpdateChecker`.
+- **Hard / forced update** (installed < `minVersion`) → show a **non-dismissible**
+  prompt; the only action opens the configured store listing. The app does not route
+  into its screens until updated.
+- **Soft update** (installed < `latestVersion`) → show a **dismissible** prompt
+  ("لاحقاً / Later"); the splash routes out **however** the dialog was closed (Later,
+  scrim, or after "تحديث الآن / Update now") so the user is never stranded (L-6).
+  Dismissing it **snoozes that version for 3 days** (prefs
+  `simf.prefs.app_update_snoozed_version` + `…_at_iso`) so it doesn't re-nag every
+  launch; a newer version prompts immediately. The About-the-app manual check
+  (Page 207) ignores the snooze.
+- **Up to date** or **check unreachable/slow** (5 s cap, and `check()` must never
+  throw) → skip silently and continue (**fail-open** — never block boot).
+- **Anti-brick rules:** a gate/prompt requires a **usable http(s) `storeUrl`** (no
+  dead-end update screens), unparseable versions disable their rule, and a hard block
+  only ever follows a **live successful fetch** on this launch — never a cached policy.
 
-> There is no SIMF version endpoint. Do not add one; the store is the source of truth.
-> As-built the active checker is the pre-launch **`NoopAppUpdateChecker`** (always
-> up-to-date; `openStoreListing()` is a no-op). The store-plugin implementation is wired
-> at store-submission time by overriding `appUpdateCheckerProvider`.
+> D-736 (2026-07-10) reversed the original L-2 contract ("store-native, never a SIMF
+> endpoint") on the owner's direction — the server policy gives the CP remote control
+> of the minimum/latest version per platform. Contract + payload: Page_001_API E3.
 
 ## L-3 First-run vs returning launch (preferences flag)
 The first-run signal is the **`StorageKeys.onboardingCompleted`** boolean in the app's
@@ -100,7 +111,8 @@ App privilege (Guest / Visitor / Moderator / Staff) is decided from the restored
 privilege gate; it runs before privilege is known.
 
 ## L-6 Edge cases & fallbacks (as-built caps)
-- Store check unreachable / slower than **5 s** → continue as up-to-date.
+- Version-policy check unreachable / slower than **5 s** → continue as up-to-date
+  (fail-open, D-736).
 - Secure-storage reads slower than **4 s** or throwing → treated as signed-out, no crash.
 - Corrupt cached-user JSON → ignored (no cached identity); the restore continues.
 - Auth restore not resolved within **8 s** → the splash routes out on whatever auth state
@@ -118,10 +130,13 @@ privilege gate; it runs before privilege is known.
 - **`GET /app/users/me`** — shipped (D-249, `profileComplete` added D-374); identity +
   `appRole` + registration status + profile-completeness to derive privilege and the
   add-profile gate (Page_001_API E2). The token payload's `AuthUser` omits these.
-- **`AppUpdateChecker`** (`appUpdateCheckerProvider`) — the store-native seam; the
-  pre-launch default is `NoopAppUpdateChecker`. Platform SDK, not SIMF; no backend dependency.
-- **Preferences storage** — `StorageKeys.onboardingCompleted` (first-run flag, L-3) and
-  `StorageKeys.lastRoute` (last saved location, L-5).
+- **`GET /app/version-policy`** — shipped (D-736); the per-platform min/latest version
+  + store URL for the launch update check (Page_001_API E3). Fail-open on any error.
+- **`AppUpdateChecker`** (`appUpdateCheckerProvider`) — the update seam; the device
+  default is `ServerAppUpdateChecker` (D-736), web/tests use `NoopAppUpdateChecker`.
+- **Preferences storage** — `StorageKeys.onboardingCompleted` (first-run flag, L-3),
+  `StorageKeys.lastRoute` (last saved location, L-5) and the soft-update snooze pair
+  `StorageKeys.appUpdateSnoozedVersion` / `appUpdateSnoozedAtIso` (L-2, D-736).
 - **Secure storage** — access/refresh tokens, access-token expiry, cached user JSON
   (the cold-start restore inputs, L-4).
 

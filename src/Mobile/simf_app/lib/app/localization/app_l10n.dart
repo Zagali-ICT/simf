@@ -1628,7 +1628,11 @@ class AppL10n {
   /// The display name of the currently active language (shown on the اللغة row).
   String get languageCurrentName => _t('العربية', 'English');
 
-  String get moreVersion => _t('SIMF 2026 · v1.0.0', 'SIMF 2026 · v1.0.0');
+  /// D-736 — the More-menu footer line over the REAL installed version
+  /// (package_info_plus). Empty (a bare dev/test runtime) → the edition alone.
+  String moreVersionLine(String version) => version.isEmpty
+      ? 'SIMF 2026'
+      : _t('SIMF 2026 · الإصدار $version', 'SIMF 2026 · v$version');
   // D-668 — About-the-app screen (version / release date / organizer + links).
   // The release date is a maintained constant (no build-date source in the app).
   String get aboutAppTitle => _t('عن التطبيق', 'About the app');
@@ -1639,6 +1643,22 @@ class AppL10n {
   String get aboutAppOrganizerValue =>
       _t('القوات البحرية الملكية السعودية', 'Royal Saudi Naval Forces');
   String get aboutAppLinksTitle => _t('روابط', 'Links');
+  // D-736 — About-the-app manual update check (server version policy).
+  String get aboutCheckForUpdates =>
+      _t('التحقق من التحديثات', 'Check for updates');
+  String get updateCheckingLabel => _t('جارٍ التحقق…', 'Checking…');
+  String get aboutUpToDateTitle =>
+      _t('أنت على أحدث إصدار', "You're up to date");
+  String aboutUpToDateBody(String version) => version.isEmpty
+      ? _t('لا يتوفر تحديث جديد.', 'No new update is available.')
+      : _t('الإصدار الحالي: $version', 'Current version: $version');
+  String aboutUpdateAvailableBody(String version) => version.isEmpty
+      ? updateOptionalBody
+      : _t(
+          'يتوفر إصدار جديد ($version). ننصح بالتحديث للحصول على أحدث التحسينات.',
+          'A new version ($version) is available. We recommend updating for the latest improvements.',
+        );
+  String get okLabel => _t('حسناً', 'OK');
 
   // Guest mode (Page 012 — informational entry).
   String get guestModeTitle => _t('وضع الضيف', 'Guest mode');

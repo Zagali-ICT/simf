@@ -28,6 +28,9 @@ class _StubUpdateChecker implements AppUpdateChecker {
   Future<AppUpdateStatus> check() async => _status;
 
   @override
+  Future<void> snoozeOptionalUpdate() async {}
+
+  @override
   Future<void> openStoreListing() async {}
 }
 

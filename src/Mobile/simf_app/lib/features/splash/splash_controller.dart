@@ -48,9 +48,10 @@ class SplashReady extends SplashState {
 }
 
 /// Orchestrates the launch sequence behind the splash logo (Page_001 Logic
-/// L-1..L-6): runs the store-update check and the minimum-display timer
-/// concurrently, waits for the auth cold-start restore to resolve, then emits
-/// the route-out decision. The widget reacts to the emitted [SplashState].
+/// L-1..L-6): runs the version-policy update check (D-736) and the
+/// minimum-display timer concurrently, waits for the auth cold-start restore
+/// to resolve, then emits the route-out decision. The widget reacts to the
+/// emitted [SplashState].
 class SplashController extends Notifier<SplashState> {
   @override
   SplashState build() {
@@ -72,7 +73,7 @@ class SplashController extends Notifier<SplashState> {
 
     final results = await Future.wait(<Future<Object?>>[
       Future<void>.delayed(minDisplay),
-      // Hard cap (Logic L-6): a hung store check never blocks boot.
+      // Hard cap (Logic L-6): a hung policy check never blocks boot.
       checker.check().timeout(
         const Duration(seconds: 5),
         onTimeout: () => AppUpdateStatus.upToDate,

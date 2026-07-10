@@ -22,14 +22,16 @@
 - **الإعدادات**: اللغة (shows the current language, taps to toggle); إمكانية الوصول → `/settings/accessibility`; الإشعارات → `/notifications`; إعادة تعيين كلمة المرور (**signed-in only**, D-658) → `/forgot-password` (reuses the forgot→email-code→reset flow).
 - **قانوني**: الشروط والأحكام → `/terms`; تواصل معنا → ComingSoon (`/contact-us`); تقييم التطبيق → `/rate`.
 - **تسجيل الخروج** (signed-in only) → confirm dialog → sign-out → `/sign-in`.
-- Version line `SIMF 2026 · v1.0.0`.
+- Version line from the REAL installed version (`package_info_plus`, D-736):
+  `SIMF 2026 · الإصدار {v}` (AR) / `SIMF 2026 · v{v}` (EN) — e.g.
+  `SIMF 2026 · v1.0.0` when the installed version is 1.0.0.
 
 ## Coverage matrix
 
 | ID | Scenario | Type | Priority | Status |
 |----|----------|------|----------|--------|
 | E2E-MOB041-001 | The three grouped sections + their rows render | happy | P0 | authored ✓ (screen `renders the three grouped sections and their rows`) |
-| E2E-MOB041-002 | The version line shows `SIMF 2026 · v1.0.0` | happy | P1 | authored ✓ (screen `shows the app-version line`) |
+| E2E-MOB041-002 | The version line shows the real installed version — `SIMF 2026 · الإصدار {v}` / `SIMF 2026 · v{v}` (D-736) | happy | P1 | authored ✓ (screen `shows the app-version line`) |
 | E2E-MOB041-003 | Guest hides the منطقتي card + sign-out | auth | P0 | authored ✓ (screen `guest hides the profile card and sign-out`) |
 | E2E-MOB041-004 | Signed-in shows the منطقتي card (name · tier) + sign-out | happy | P0 | authored ✓ (screen `signed-in shows the منطقتي profile card + sign-out`) |
 | E2E-MOB041-005 | Tapping About routes to the About screen | happy | P0 | authored ✓ (screen `tapping About navigates to the About route`) |
@@ -50,7 +52,9 @@ Scenario: The grouped sections render
       استكشف الرياض, اللغة, إمكانية الوصول, الإشعارات, الشروط والأحكام,
       تواصل معنا and تقييم التطبيق
   And the اللغة row shows the current language value
-  And a static "SIMF 2026 · v1.0.0" line is shown at the bottom
+  And the footer version line shows the REAL installed version (package_info,
+      D-736) — "SIMF 2026 · الإصدار {v}" (AR) / "SIMF 2026 · v{v}" (EN), e.g.
+      "SIMF 2026 · v1.0.0" only when the installed version is 1.0.0
 
 Scenario: The profile card and sign-out are signed-in only
   Given a guest (signed out) opens /more
@@ -81,4 +85,4 @@ ComingSoon routing covered by the router's fall-through for routes 200–203.
 
 ---
 
-_Last reviewed:_ `2026-07-06` by `SIMF Team`.
+_Last reviewed:_ `2026-07-10` by `SIMF Team` (D-736 — the version line reads the real installed version, no longer a literal).

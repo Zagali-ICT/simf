@@ -294,6 +294,10 @@ public static class DependencyInjection
         // (registration welcome message + social links).
         services.AddScoped<SIMF.Application.Configuration.Abstractions.ISiteSettingsService,
             SIMF.Infrastructure.Configuration.SiteSettingsService>();
+        // D-736 — public read-path over the whitelisted app-update version-policy
+        // keys (per-platform min/latest app version + store URL).
+        services.AddScoped<SIMF.Application.Configuration.Abstractions.IAppVersionPolicyService,
+            SIMF.Infrastructure.Configuration.AppVersionPolicyService>();
         // D-495 — the singleton Organization / About profile: cached public read +
         // admin full-document upsert (the edition-generic forum config).
         services.AddScoped<SIMF.Application.Configuration.Abstractions.IOrganizationProfileReadService,

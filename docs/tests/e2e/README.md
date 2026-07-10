@@ -143,7 +143,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/gates` | [`cp-admin-gates.md`](cp-admin-gates.md) | E2E-GAT-001..021 |
 | `/admin/gates/operator` | [`cp-admin-gates-operator.md`](cp-admin-gates-operator.md) | E2E-GOP-001..013 |
 | `/admin/gates/dashboard` | [`cp-admin-gates-dashboard.md`](cp-admin-gates-dashboard.md) | E2E-GDS-001..011 |
-| `/admin/configuration` | [`cp-admin-configuration.md`](cp-admin-configuration.md) | E2E-CFG-001..023 |
+| `/admin/configuration` | [`cp-admin-configuration.md`](cp-admin-configuration.md) | E2E-CFG-001..024 |
 | `/admin/email/templates` | [`cp-admin-email-templates.md`](cp-admin-email-templates.md) | E2E-EMT-001..013 |
 | `/admin/site-settings` | [`cp-site-settings.md`](cp-site-settings.md) | E2E-CPSET-001..006 |
 | `/admin/organization-profile` | [`cp-organization-profile.md`](cp-organization-profile.md) | E2E-ORGP-001..008 |
@@ -189,7 +189,7 @@ API endpoints land (D-249). The per-screen design docs live under
 
 | App screen | File | Scenarios |
 |------------|------|-----------|
-| #1 `splash` (`POST /app/auth/refresh` + `GET /app/users/me`) | [`mobile-splash.md`](mobile-splash.md) | E2E-MOB001-001..013 |
+| #1 `splash` (`POST /app/auth/refresh` + `GET /app/users/me` + `GET /app/version-policy` — D-736) | [`mobile-splash.md`](mobile-splash.md) | E2E-MOB001-001..017 |
 | #2 `onboarding` (no API) | [`mobile-onboarding.md`](mobile-onboarding.md) | E2E-MOB002-001..008 |
 | #3 `signIn` (+ verify-otp / forgot / reset) | [`mobile-sign-in.md`](mobile-sign-in.md) | E2E-MOB003-001..017 |
 | ~~#4 `signUpType`~~ **REMOVED (D-332)** — invented; not in the mockup | [`mobile-sign-up-type.md`](mobile-sign-up-type.md) | _(retired — E2E-MOB004-* removed)_ |
@@ -233,7 +233,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #33 `notifications` (`POST /app/account/notifications/list` · `/{id}/read` · `/read-all`) | [`mobile-notifications.md`](mobile-notifications.md) | E2E-MOB033-001..006 |
 | #35 `meetPeople` (`GET /app/account/recommendations/meet-like-you`) | [`mobile-meet-people.md`](mobile-meet-people.md) | E2E-MOB035-001..005 |
 | #38 `accessibility` (no API) | [`mobile-accessibility.md`](mobile-accessibility.md) | E2E-MOB038-001..004 |
-| #41 `more` (no API) | [`mobile-more.md`](mobile-more.md) | E2E-MOB041-001..003 |
+| #41 `more` (no API) | [`mobile-more.md`](mobile-more.md) | E2E-MOB041-001..009 |
 | #34 `aiSummary` (`GET /app/programme/sessions/{id}/summary`) | [`mobile-ai-summary.md`](mobile-ai-summary.md) | E2E-MOB034-001..006 |
 | #111 `sessionSummaryList` (cached programme + favourites/booked overlay) — Wave 2 pixel pass, Figma `1388:8392` | [`mobile-session-summaries.md`](mobile-session-summaries.md) | E2E-MOB111-001..008 |
 | #26 `sendQuestion` (`POST /app/sessions/{id}/questions`) | [`mobile-send-question.md`](mobile-send-question.md) | E2E-MOB026-001..006 |
@@ -249,7 +249,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #200 `forumGuide` (no API — static guide) — built from ComingSoon, Figma `1388:7493` | [`mobile-forum-guide.md`](mobile-forum-guide.md) | E2E-MOB200-001..005 |
 | #201 `faq` (`GET /app/faq` — public) — built from ComingSoon, Figma `1388:7567` | [`mobile-faq.md`](mobile-faq.md) | E2E-MOB201-001..006 |
 | #203 `contactUs` (`POST /app/contact-inquiry` + `GET /app/organization-profile`) — built from ComingSoon, Figma `1388:7711` | [`mobile-contact-us.md`](mobile-contact-us.md) | E2E-MOB203-001..007 |
-| #207 `aboutApp` (`GET /app/organization-profile` for support) — app version/date/organizer + links (D-668) | [`mobile-about-app.md`](mobile-about-app.md) | E2E-MOB207-001..003 |
+| #207 `aboutApp` (`GET /app/organization-profile` for support + `GET /app/version-policy` manual check — D-736) — app version/date/organizer + links (D-668) | [`mobile-about-app.md`](mobile-about-app.md) | E2E-MOB207-001..006 |
 | #202 `sessionPresentations` (`GET /app/presentations` + `/{id}/file`) — built from ComingSoon, Figma `1388:7621` | [`mobile-session-presentations.md`](mobile-session-presentations.md) | E2E-MOB202-001..006 |
 | #113 `myAreaSessions` (`GET /app/account/sessions`) — Wave 2 my-sessions, titled "عروض الجلسات" (Figma `1388:9067`; retitled + reached from the More "عروض الجلسات" row, D-588) | [`mobile-my-sessions.md`](mobile-my-sessions.md) | E2E-MOB113-001..007 |
 

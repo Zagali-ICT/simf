@@ -3,20 +3,25 @@
 > **Authority:** SIMF E2E test catalogue (D-133 / D-245). Mobile screen #1, the
 > first screen on every cold launch. The boot logic is documented in
 > [`Page_001`](../../App/Page_001/README.md); it reuses two already-shipped App
-> endpoints and adds **no** new endpoint. Runner-agnostic Gherkin. The Flutter
+> endpoints plus the anonymous `GET /api/v1/app/version-policy` update policy
+> (D-736). Runner-agnostic Gherkin. The Flutter
 > boot decision is unit-tested in
-> `src/Mobile/simf_app/test/features/splash/splash_controller_test.dart` and the
+> `src/Mobile/simf_app/test/features/splash/splash_controller_test.dart`, the
 > cold-start restore in
-> `src/Mobile/packages/simf_auth_pkg/test/auth_controller_restore_test.dart`.
+> `src/Mobile/packages/simf_auth_pkg/test/auth_controller_restore_test.dart`,
+> and the server update policy (forced/soft/snooze/fail-open) in
+> `src/Mobile/simf_app/test/core/startup/server_app_update_checker_test.dart`
+> + the dialog glue in
+> `src/Mobile/simf_app/test/features/splash/splash_screen_test.dart`.
 
 | | |
 |--|--|
 | **Page** | [`Page_001`](../../App/Page_001/README.md) (App page docs) |
-| **Route** | app screen #1 `/splash` · `POST /api/v1/app/auth/refresh` (E1) + `GET /api/v1/app/users/me` (E2) |
+| **Route** | app screen #1 `/splash` · `POST /api/v1/app/auth/refresh` (E1) + `GET /api/v1/app/users/me` (E2) + `GET /api/v1/app/version-policy` (anonymous, D-736) |
 | **Surface** | Mobile (Flutter) — bootstrap screen, non-interactive except the update dialog |
 | **Test runner** | Flutter widget/unit test (boot decision) · device/emulator drive for the visual + route-out |
 | **Auth setup** | A secure-storage seed (refresh token ± access token ± cached user). For a live device run, sign in once on screen #3, then relaunch. **No literal secrets** — the device-key/refresh token comes from a real prior sign-in. |
-| **Last reviewed** | 2026-06-11 |
+| **Last reviewed** | 2026-07-10 (D-736 — server version-policy update gate) |
 
 > **KSA-Project redesign (D-361, Figma 159:573):** the splash now renders the
 > brand lock-up — `SimfLogo` (136) over "SAUDI · MOD · RSNF", the forum name,
@@ -26,6 +31,22 @@
 > placeholder screen is parked in `lib/features/_legacy_mockup/`. New widget
 > tests: `splash_screen_test.dart` (lock-up render + route-out by name +
 > resumed location).
+
+> **Server version-policy update gate (D-736):** the launch update check is no
+> longer store-native — `ServerAppUpdateChecker` fetches the anonymous
+> `GET /api/v1/app/version-policy` (per-platform `minVersion` / `latestVersion`
+> / `storeUrl`, sourced from the six `appUpdate.android.*` / `appUpdate.ios.*`
+> SystemSettings keys an admin edits on `/admin/configuration`) with a
+> **5-second fail-open cap** — any error/timeout continues the boot normally.
+> The installed version (real `package_info_plus` version; pubspec `1.0.0+2`)
+> is compared per-platform with semver (`pub_semver`, lenient leading-`v`):
+> installed < `minVersion` **and** a usable store URL → the FORCED
+> non-dismissible dialog; `minVersion` ≤ installed < `latestVersion` + store
+> URL → the dismissible soft prompt, and dismissing it (any way) snoozes THAT
+> version for 3 days (prefs `simf.prefs.app_update_snoozed_version` +
+> `simf.prefs.app_update_snoozed_at_iso`). No store URL or unparseable values
+> → that rule is off (anti-brick). A hard block only follows a live successful
+> fetch, never a cached policy.
 
 ## Coverage matrix
 
@@ -40,10 +61,14 @@
 | E2E-MOB001-007 | A non-resumable saved location (auth/transient) falls back to Home | edge | P1 | authored ✓ (`SplashController` test) |
 | E2E-MOB001-008 | Offline at launch (expired access) → degraded resume on cached identity | resilience | P0 | authored ✓ (restore test) |
 | E2E-MOB001-009 | Expired / revoked refresh token → clear session → Sign-in | auth | P0 | authored ✓ (restore test) |
-| E2E-MOB001-010 | Forced store update → non-dismissible dialog, boot blocked | edge | P1 | authored ✓ (`SplashController` test) |
-| E2E-MOB001-011 | Optional store update → dismissible dialog, then continue | edge | P2 | authored ✓ (`SplashController` test) |
+| E2E-MOB001-010 | Forced update (server policy) → non-dismissible dialog, boot blocked | edge | P1 | authored ✓ (`SplashController` test + checker test) |
+| E2E-MOB001-011 | Optional update (server policy) → dismissible dialog, then continue | edge | P2 | authored ✓ (`SplashController` test + screen tests) |
 | E2E-MOB001-012 | Minimum logo display time honoured (no sub-100 ms flash) | ux | P2 | authored (min-display provider) |
 | E2E-MOB001-013 | RTL render of the splash + update dialog (Arabic primary) | i18n | P1 | authored (screen) |
+| E2E-MOB001-014 | Forced-update gate — admin `appUpdate.android.minVersion` above installed + store URL → app blocked until updated (D-736) | edge | P0 | authored ✓ (`ServerAppUpdateChecker` test) |
+| E2E-MOB001-015 | Soft update + snooze — "لاحقاً" continues; the same version stays quiet for 3 days; a newer version prompts again (D-736) | happy | P1 | authored ✓ (checker snooze tests + screen Later/scrim tests) |
+| E2E-MOB001-016 | Fail-open — API stopped/unreachable → normal boot, no dialog (D-736) | resilience | P0 | authored ✓ (`ServerAppUpdateChecker` test) |
+| E2E-MOB001-017 | Anti-brick — `minVersion` set but `storeUrl` EMPTY → no gate, normal boot (D-736) | resilience | P0 | authored ✓ (`ServerAppUpdateChecker` test) |
 
 ## Scenarios
 
@@ -178,34 +203,40 @@ Scenario: A dead refresh token ends the session
 
 **Evidence:** `auth_controller_restore_test` — "an expired refresh token signs out".
 
-### E2E-MOB001-010 — Forced store update blocks boot
+### E2E-MOB001-010 — Forced update blocks boot
 
 ```gherkin
 Scenario: A mandatory update gates entry
-  Given the store-native update check reports a forced update
+  Given GET /api/v1/app/version-policy reports this platform's minVersion above
+        the installed version
+  And the policy carries a usable (absolute http(s)) store URL
   When the app cold-starts
-  Then a non-dismissible update dialog is shown over the logo
-  And the only action opens the store listing
+  Then a non-dismissible dialog titled "تحديث مطلوب" / "Update required" is
+        shown over the logo
+  And the only action "تحديث الآن" / "Update now" opens the store listing URL
   And the app does not route into its screens
 ```
 
-> The store check is store-native (Page_001 Logic L-2). Pre-launch the default
-> `NoopAppUpdateChecker` reports up-to-date; this scenario drives a stub checker.
+> The update check is the server version policy (D-736 — `ServerAppUpdateChecker`
+> against `GET /api/v1/app/version-policy`, 5 s fail-open cap; it replaced the
+> pre-D-736 store-native check). A hard block only follows a live successful
+> fetch on THIS launch — never a cached policy.
 
-**Evidence:** `splash_controller_test` — "a forced update short-circuits to SplashUpdateRequired".
+**Evidence:** `splash_controller_test` — "a forced update short-circuits to SplashUpdateRequired"; `server_app_update_checker_test` — "installed below the minimum → forced".
 
-### E2E-MOB001-011 — Optional store update is dismissible
+### E2E-MOB001-011 — Optional update is dismissible
 
 ```gherkin
 Scenario: A soft update can be deferred
-  Given the store-native update check reports an optional update
+  Given GET /api/v1/app/version-policy reports the installed version at or above
+        minVersion but below latestVersion, with a usable store URL
   When the app cold-starts and boot resolves
-  Then a dismissible update dialog is shown
-  And tapping "Later" continues to the resolved destination
-  And tapping "Update now" opens the store listing
+  Then a dismissible dialog titled "يتوفر تحديث" / "Update available" is shown
+  And tapping "لاحقاً" / "Later" continues to the resolved destination
+  And tapping "تحديث الآن" / "Update now" opens the store listing URL
 ```
 
-**Evidence:** `splash_controller_test` — "an optional update flags the soft prompt".
+**Evidence:** `splash_controller_test` — "an optional update flags the soft prompt"; `splash_screen_test` — the two soft-update dismissal tests (D-736).
 
 ### E2E-MOB001-012 — Minimum display time
 
@@ -226,6 +257,84 @@ Scenario: Arabic-primary splash renders right-to-left
   And any update-dialog text reads in Arabic and the dialog mirrors for RTL
 ```
 
+### E2E-MOB001-014 — Forced-update gate from the admin policy (D-736)
+
+```gherkin
+Scenario: An admin-set minimum version above the installed one blocks the app
+  Given the installed Android app version is "1.0.0" (the real package_info_plus
+        version; pubspec 1.0.0+2)
+  And an administrator on /admin/configuration sets
+        appUpdate.android.minVersion = "2.0.0"
+  And sets appUpdate.android.storeUrl to a valid Google Play listing URL
+        (absolute https)
+  When the app is relaunched
+  Then GET /api/v1/app/version-policy returns android.minVersion "2.0.0" and
+        the store URL
+  And a non-dismissible dialog "تحديث مطلوب" / "Update required" opens over the
+        splash
+  And pressing the system back button does nothing — the dialog stays and the
+        app never routes into its screens
+  And the only action "تحديث الآن" / "Update now" opens the Google Play listing
+  And the app is unusable until it is updated
+```
+
+**Evidence:** `server_app_update_checker_test` — "installed below the minimum → forced"; `splash_controller_test` — "a forced update short-circuits to SplashUpdateRequired".
+
+### E2E-MOB001-015 — Soft update prompts once, then snoozes 3 days (D-736)
+
+```gherkin
+Scenario: A newer latest version prompts, "لاحقاً" snoozes that version
+  Given the installed version is "1.0.0"
+  And appUpdate.android.minVersion is empty (or at/below "1.0.0")
+  And an administrator sets appUpdate.android.latestVersion = "1.1.0" and a
+        valid store URL
+  When the app is relaunched
+  Then a dismissible dialog "يتوفر تحديث" / "Update available" is shown once
+        boot resolves
+  When the user taps "لاحقاً" / "Later"
+  Then the app continues normally to its resolved destination
+  And prefs simf.prefs.app_update_snoozed_version = "1.1.0" and
+        simf.prefs.app_update_snoozed_at_iso are stored
+  When the app is relaunched within the 3-day snooze window
+  Then NO update prompt is shown (the snoozed version stays quiet)
+  And when the admin later raises latestVersion to "1.2.0", the prompt shows
+        again on the next launch (a newer version prompts immediately)
+  # Dismissing the prompt ANY way (Later / scrim) snoozes; the snooze never
+  # suppresses a FORCED update, and the About-the-app manual check ignores it.
+```
+
+**Evidence:** `server_app_update_checker_test` — the snooze group ("a snoozed version stays quiet inside the window", "an expired snooze prompts again", "a NEWER version than the snoozed one prompts immediately", "a snooze never suppresses a FORCED update"); `splash_screen_test` — 'soft update — "Later" snoozes the version and routes out' + 'a scrim dismiss also snoozes and routes out'.
+
+### E2E-MOB001-016 — Fail-open when the policy is unreachable (D-736)
+
+```gherkin
+Scenario: An unreachable version-policy endpoint never blocks boot
+  Given the API is stopped or unreachable
+  When the app cold-starts
+  Then the GET /api/v1/app/version-policy check fails open within its
+        5-second cap
+  And no update dialog is shown
+  And the app boots and routes out normally on the cached/derived state
+```
+
+**Evidence:** `server_app_update_checker_test` — "an unreachable server fails open to upToDate" + "an unoverridden provider graph fails open too".
+
+### E2E-MOB001-017 — Anti-brick: a minimum version without a store URL is off (D-736)
+
+```gherkin
+Scenario: A forced gate without an Update target is ignored
+  Given appUpdate.android.minVersion = "2.0.0" is set
+  But appUpdate.android.storeUrl is EMPTY
+  When the app (installed version "1.0.0") is relaunched
+  Then no forced-update dialog is shown
+  And the app boots normally
+  # No usable store URL → the rule is off (anti-brick): the app must never be
+  # blocked without a working Update button. Unparseable version values are
+  # likewise ignored (lenient semver; a leading 'v' is tolerated).
+```
+
+**Evidence:** `server_app_update_checker_test` — "below the minimum without a store URL → upToDate (anti-brick)".
+
 ---
 
-_Last reviewed:_ `2026-06-11` by `SIMF Team`.
+_Last reviewed:_ `2026-07-10` by `SIMF Team` (D-736 — server version-policy update gate; rewrote E2E-MOB001-010/011 off the old store-native contract, appended 014–017).

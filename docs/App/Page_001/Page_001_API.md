@@ -2,26 +2,48 @@
 
 Authoritative backend contract for this page. Inherits the `ApiResult<T>` envelope,
 headers, error model and auth from SIMF-API-001 + SIMF-MOB-API-001 §3–§4. Boot rules are
-in [Page_001_Logic.md](Page_001_Logic.md). Last updated 2026-06-13 (conformance pass on
-the D-361 as-built; the redesign changed visuals only — the API surface is unchanged).
+in [Page_001_Logic.md](Page_001_Logic.md). Last updated 2026-07-10 (D-736 — the launch
+update check moved from the never-wired store-native seam to the SIMF version-policy
+endpoint E3 below; the owner reversed the old "no SIMF version API" contract).
 
-> **Status:** **no new endpoint.** The splash reuses two **already-shipped** App
-> endpoints for silent session resume + identity. The version/update check is
-> **store-native (NOT a SIMF API)** — see the note below. No schema change, no
-> enum change, no migration.
+> **Status:** the splash reuses two **already-shipped** App endpoints for silent
+> session resume + identity, plus the **D-736 version-policy read** (E3). No schema
+> change, no enum change, no migration (the policy lives in the pre-existing
+> `SystemSettings` key/value table).
 >
 > **Path-prefix note:** App routes are under **`/api/v1/app/*`** (App↔CP split shipped,
-> D-247) — so the routes below are `POST /api/v1/app/auth/refresh` and
-> `GET /api/v1/app/users/me`.
+> D-247) — so the routes below are `POST /api/v1/app/auth/refresh`,
+> `GET /api/v1/app/users/me` and `GET /api/v1/app/version-policy`.
 
-## Version / update check — store-native (NO SIMF API)
-There is **no** SIMF endpoint for the launch update check. The app queries the **native
-app store** (Play Store / App Store in-app-update APIs) for the latest version and the
-hard/soft-update decision — see [Page_001_Logic.md](Page_001_Logic.md) L-2. Do **not**
-add a SIMF version endpoint; the store is the source of truth. As-built the active
-checker is the pre-launch `NoopAppUpdateChecker` (`lib/core/startup/app_update_checker.dart`),
-which always reports up-to-date; the store-plugin implementation is wired at
-store-submission time by overriding `appUpdateCheckerProvider`.
+## E3 — `GET /app/version-policy`  (launch update check, D-736)
+| | |
+|---|---|
+| Route | `GET /api/v1/app/version-policy` |
+| Access | `AllowAnonymous` (runs before sign-in on every launch); **no** dedicated rate-limit bucket (D-731 — the global per-IP limiter applies) |
+| App privilege | None |
+| Status | **Exists (D-736).** `GetAppVersionPolicyEndpoint` (`src/Backend/SIMF.Api/Endpoints/Public/AppVersionPolicyEndpoint.cs`). |
+| Returns | `ApiResult<AppVersionPolicyResponse>` |
+| Source | The six whitelisted `AppUpdateSettingKeys` rows (`appUpdate.{android\|ios}.{minVersion\|latestVersion\|storeUrl}`) in `SystemSettings`, admin-edited on the CP configuration page (`/admin/configuration`); seeded empty by `DefaultContentSeeder`. |
+
+```jsonc
+// Response data (AppVersionPolicyResponse) — every field null when unconfigured
+{
+  "android": {
+    "minVersion": "1.0.0",    // installed < min  → forced update (semver)
+    "latestVersion": "1.1.0", // installed < latest → dismissible prompt (semver)
+    "storeUrl": "https://play.google.com/store/apps/details?id=…" // http(s)-only (D-467)
+  },
+  "ios": { "minVersion": null, "latestVersion": null, "storeUrl": null }
+}
+```
+
+Client rules (`ServerAppUpdateChecker`, `lib/core/startup/server_app_update_checker.dart`):
+compare semver via `pub_semver` against the installed `package_info_plus` version;
+**fail-open** — any fetch/parse error → up-to-date (the 5 s splash cap still applies);
+**anti-brick** — `forced`/`optional` require a usable http(s) `storeUrl` (no dead-end
+update screens), and a hard block only ever follows a **live** successful fetch, never a
+cached policy. A dismissed optional prompt snoozes that version for 3 days (Logic L-2);
+the About-the-app manual check reuses this endpoint and ignores the snooze.
 
 ## E1 — `POST /app/auth/refresh`  (silent session resume)
 | | |
@@ -109,7 +131,8 @@ Standard envelope errors apply (see SIMF-API-001 error model). The splash treats
 | Server unreachable / timeout on refresh | — | network error | L-4/L-6: offline-degraded resume on the cached identity; with no cached identity → signed-out entry |
 | `GET /app/users/me` fails (any wire error) | 401/5xx | `success:false` | L-4: swallowed — the restored/cached session is kept; the next protected call surfaces it |
 | Server error on refresh | 500 | `success:false` | L-4: treated like an invalid refresh → clear session → signed-out entry; never strand on splash |
+| `GET /app/version-policy` fails (any error/timeout) | — | any | L-2/L-6: **fail-open** — treated as up-to-date; boot continues normally (D-736) |
 
-## No new endpoint
-This page introduces **no** new or `(TO BUILD)` SIMF endpoint. It composes the launch flow
-from the two shipped reads above plus the **store-native** update check.
+## Endpoint summary
+This page composes the launch flow from the two shipped session reads above plus the
+**D-736 version-policy read** (E3) — one small anonymous GET, no schema change.
