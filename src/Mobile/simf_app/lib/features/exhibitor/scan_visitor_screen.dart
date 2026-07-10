@@ -76,7 +76,6 @@ class _ScanVisitorScreenState extends ConsumerState<ScanVisitorScreen> {
       title: l10n.scanVisitorTitle,
       fieldLabel: l10n.scanContactManualField,
       continueLabel: l10n.scanContactResolve,
-      cameraLabel: l10n.scanStartCamera,
       enableCamera: widget.enableCamera,
       onCode: _onCode,
       onLeave: _leave,

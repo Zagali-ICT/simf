@@ -14,6 +14,10 @@
 > camera-on state — so it matches the badge "Share my QR" page. Presentation
 > only; the manual-first / bounded-camera / two-exit contract is unchanged, and
 > both goldens (`scan_visitor.png` + `scan_contact_1701-7080.png`) were re-locked.
+> **D-737 (unified scanner):** `QrScanView` now hosts the shared
+> `SimfScannerBody` (`lib/app/widgets/simf_scanner_body.dart`) with the single
+> `ScanGate` dedupe policy and a visible camera-permission-denied error card; the
+> manual-first / bounded-camera / two-exit contract and the golden are unchanged.
 > App tests:
 > `test/features/exhibitor/scan_visitor_screen_test.dart` (widget, 4 cases — the
 > `_onCode` capture/route + 404/403/5xx toast branches) + the render-lock golden
@@ -95,6 +99,30 @@ Scenario: RTL
     "بحث" button and the "رجوع" link render right-to-left, no tofu
 ```
 
+### E2E-MOBSCANVIS-006 — Unified scanner: camera-first + camera-denied (D-737)
+
+```gherkin
+Scenario: The camera stage is the shared SimfScannerBody
+  Given a signed-in approved exhibitor opens "مسح بطاقة زائر" and starts the camera
+  Then the gold-bracket viewfinder opens over the bounded live camera
+  And the manual field + gold "بحث" button stay usable below it
+
+Scenario: A denied / missing camera shows the error card, not a black box
+  When the OS denies the camera permission (or the device has no camera)
+  Then the shared error card shows
+       "تعذّر تشغيل الكاميرا. فعّل إذن الكاميرا من إعدادات النظام، أو أدخل الرمز يدويًا بالأسفل." /
+       "Camera unavailable. Enable camera permission in system settings, or type the code below."
+  And a "إعادة المحاولة / Try again" retry control is offered
+  And the exhibitor can still type the badge code and run scanByBadge (same capture flow)
+```
+
+**Evidence:** source-verified — `simf_scanner_body.dart` `_CameraErrorCard` on a
+controller error / the 8 s watchdog (device-only render); `simf_scanner_body_test`
+covers the always-mounted manual field with the camera off; `scan_gate_test`
+(single-flight + dedupe). The capture / 404 / 403 / 5xx branches remain in
+`scan_visitor_screen_test`.
+
 ---
 
-_Last reviewed:_ `2026-07-04` by `SIMF Team`.
+_Last reviewed:_ `2026-07-11` by `SIMF Team` — D-737 unified scanner (QrScanView
+now hosts SimfScannerBody + camera-error state). Earlier: `2026-07-04`.

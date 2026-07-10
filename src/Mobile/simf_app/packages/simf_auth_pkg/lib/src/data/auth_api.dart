@@ -35,6 +35,22 @@ class AuthApi {
     );
   }
 
+  // D-738 — badge-QR password sign-in; returns the standard sign-in envelope.
+  Future<SignInResponseData> badgeSignIn(BadgeSignInRequest request) {
+    return _client.post<SignInResponseData>(
+      '/app/auth/badge-sign-in',
+      body: request.toJson(),
+      decodeData: (data) {
+        if (data is! Map<String, dynamic>) {
+          throw const FormatException(
+            'badge-sign-in response data was not an object.',
+          );
+        }
+        return SignInResponseData.fromJson(data);
+      },
+    );
+  }
+
   // SIMF-API-001 Amendment A.1 — visitor email-OTP second factor.
   Future<TokenPayloadDto> verifyOtp(VerifyOtpRequest request) {
     return _client.post<TokenPayloadDto>(

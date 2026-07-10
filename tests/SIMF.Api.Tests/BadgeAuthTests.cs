@@ -81,6 +81,10 @@ public sealed class BadgeAuthTests : IClassFixture<SimfApiFactory>
         var body = await ResolveAsync(qrId);
         Assert.True(body.Found);
         Assert.True(body.HasPassword);
+        // The has-password resolve now also returns the masked on-file email so
+        // the app can show it on the password step (was null before the feature).
+        Assert.NotNull(body.MaskedEmail);
+        Assert.Contains("*", body.MaskedEmail!);
     }
 
     [Fact]

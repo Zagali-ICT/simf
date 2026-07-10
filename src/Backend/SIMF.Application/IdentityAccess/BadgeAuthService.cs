@@ -29,6 +29,7 @@ namespace SIMF.Application.IdentityAccess;
 internal sealed class BadgeAuthService(
     IQrResolver qrResolver,
     IUserAccountRepository accounts,
+    ISignInService signInService,
     IAccountCodeRepository accountCodeRepository,
     IEmailQueue emailQueue,
     IEmailTemplateResolver emailTemplates,
@@ -52,8 +53,11 @@ internal sealed class BadgeAuthService(
 
         if (HasPassword(user))
         {
-            // Already has a password — the app routes to the normal sign-in.
-            return new ResolveBadgeResponse(true, true, user.DisplayName, false, null);
+            // Already has a password — the app routes to the normal sign-in and
+            // shows the holder's name + masked on-file email on the password
+            // step. A placeholder / @simf.local account keeps a null email.
+            var maskedEmail = IsPlaceholderEmail(user.Email) ? null : MaskEmail(user.Email);
+            return new ResolveBadgeResponse(true, true, user.DisplayName, false, maskedEmail);
         }
 
         var needsEmail = IsPlaceholderEmail(user.Email);
@@ -61,6 +65,44 @@ internal sealed class BadgeAuthService(
             true, false, user.DisplayName,
             needsEmail,
             needsEmail ? null : MaskEmail(user.Email));
+    }
+
+    public async Task<SignInResponse> SignInAsync(
+        BadgeSignInRequest request, CancellationToken cancellationToken = default)
+    {
+        var user = await ResolveApprovedUserAsync(request.QrId, cancellationToken);
+        if (user is null)
+        {
+            // Unknown / not-approved QR — write the same failed-sign-in audit the
+            // password path writes for bad credentials, then throw the same
+            // generic invalid-credentials error, so an unknown badge is
+            // indistinguishable from a wrong password (the public badge is never
+            // a valid-QR oracle and never bypasses the password).
+            await auditLog.WriteAsync(new AuditEntry
+            {
+                EventType = AuditEvents.SignInBadCredentials,
+                Outcome = AuditOutcome.Failure,
+                ErrorCode = ErrorCodes.AuthInvalidCredentials,
+                Detail = "badge",
+            }, cancellationToken);
+            throw new ApiException(ErrorCodes.AuthInvalidCredentials, 401,
+                "The email address or password is not correct.",
+                "البريد الإلكتروني أو كلمة المرور غير صحيحة.");
+        }
+
+        // Delegate to the real sign-in pipeline (password + 2FA + lockout +
+        // account-state). A resolved-but-passwordless account is NOT special-
+        // cased: it passes straight through and fails as generic-invalid because
+        // CheckPasswordAsync returns false with no password hash — so the badge
+        // can never substitute for the password.
+        return await signInService.SignInAsync(
+            new SignInRequest
+            {
+                Email = user.Email!,
+                Password = request.Password,
+                Audience = SignInAudience.App,
+            },
+            cancellationToken);
     }
 
     public async Task<BadgeActivationStartResponse> StartActivationAsync(

@@ -12,6 +12,7 @@ import '../../app/widgets/simf_page_shell.dart';
 import '../../core/sharing/content_sharer.dart';
 import '../myarea/data/myarea_repository.dart';
 import 'data/contacts_repository.dart';
+import 'data/share_qr_payload.dart';
 
 /// Share my contact (SIMF-FDS-014 §5.4–5.5, D-286). **Auth-gated** (Approved
 /// only). On open it fetches the caller's dedicated share token
@@ -49,8 +50,10 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
     });
     try {
       final token = await ref.read(contactsRepositoryProvider).getMyShareToken();
-      // D-470 — the QR now encodes the user's vCard (Arabic name + phones) so any
-      // phone camera can add the contact. Only the QR's content changed; the rest
+      // D-470 + D-737 — the QR encodes the user's vCard (Arabic name + phones)
+      // with the share token embedded as an X-SIMF-TOKEN property: any phone
+      // camera can add the contact, AND the in-app scanner can extract the token
+      // to resolve + save the live card. Only the QR's content changed; the rest
       // of the screen (share .vcf, rotate) is unchanged.
       final vcard = await ref.read(myAreaRepositoryProvider).getContactCardVcf();
       if (!mounted) {
@@ -165,7 +168,7 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(SimfTokens.space6),
                 child: QrImageView(
-                  data: vcard,
+                  data: buildShareQrPayload(vcard, _token ?? ''),
                   version: QrVersions.auto,
                   size: 240,
                   gapless: true,

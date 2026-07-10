@@ -12,16 +12,28 @@ import 'package:simf_app/features/account/biometric_auth.dart';
 /// without the device plugin. #7a — enrolment is no longer one-tap here; the
 /// fake only needs the capability/enabled probes + the disable revoke.
 class _FakeBiometricAuth implements BiometricAuth {
-  _FakeBiometricAuth({this.available = true, this.enabled = false});
+  _FakeBiometricAuth({
+    this.available = true,
+    this.enabled = false,
+    this.confirmOutcome = LocalAuthOutcome.success,
+  });
 
   bool available;
   bool enabled;
+  LocalAuthOutcome confirmOutcome;
   int disableCalls = 0;
+  int confirmCalls = 0;
 
   @override
   Future<bool> isAvailable() async => available;
   @override
   Future<bool> isEnabled() async => enabled;
+
+  @override
+  Future<LocalAuthOutcome> confirmDeviceIdentity(String reason) async {
+    confirmCalls++;
+    return confirmOutcome;
+  }
 
   @override
   Future<void> disable() async {

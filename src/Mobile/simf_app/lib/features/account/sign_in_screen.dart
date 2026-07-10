@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:local_auth/local_auth.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -33,9 +32,10 @@ import 'widgets/sign_in_alt_actions.dart';
 /// (D-360); the previous mockup screen is parked in `_legacy_mockup/`.
 ///
 /// Email + password against `POST /app/auth/sign-in` with the 2FA email-OTP
-/// redirect, the post-sign-in profile-completeness route (D-288), best-effort
-/// device-key enrolment after a successful sign-in, and the Face-ID device-key
-/// path. The email is pre-filled from the last successful sign-in; the design's
+/// redirect, the post-sign-in profile-completeness route (D-288), and the
+/// Face-ID device-key path. Face-ID enrolment is offered post-sign-in via the
+/// step-up nudge (D-486/D-738: emailed OTP + OS device-credential confirm), not
+/// auto-enrolled. The email is pre-filled from the last successful sign-in; the design's
 /// "remember me" checkbox gates whether it is stored. The globe language toggle
 /// (top-right, wired to [LocaleController], D-363) and the underlined guest link
 /// (Page_012) round out the screen.
@@ -56,7 +56,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _email = TextEditingController();
   final TextEditingController _password = TextEditingController();
-  final LocalAuthentication _localAuth = LocalAuthentication();
   bool _obscure = true;
   bool _busy = false;
   // Default ON natively; OFF on the web PoC, where prefs live in shared browser
@@ -164,71 +163,68 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     }
   }
 
-  /// The design shows the Face-ID button unconditionally. The button now gives
-  /// clear feedback for the two cases that previously failed silently (D-422):
-  /// (1) the device has no enrolled OS face/fingerprint; (2) face login has not
-  /// been enabled yet because the user hasn't done a password sign-in on this
-  /// device (which enrols the device key). Otherwise it runs the OS biometric
-  /// then the device-key sign-in.
+  /// The design shows the Face-ID button unconditionally. The button gives clear
+  /// feedback for the cases that previously failed silently (D-422):
+  /// (1) the device has no enrolled OS biometric / secured lock; (2) face login
+  /// isn't enabled yet (no device key). Otherwise it runs the OS prompt
+  /// (biometric-first with a device-PIN fallback, the banking standard — D-738)
+  /// then the device-key sign-in. Prompt outcomes are surfaced explicitly: a
+  /// user cancel is silent (their own choice), a lockout / unavailable shows a
+  /// message instead of the old silent password-path fallback.
   Future<void> _biometricSignIn() async {
     final l10n = AppL10n.of(context);
+    final biometric = ref.read(biometricAuthProvider);
     final notifier = ref.read(authControllerProvider.notifier);
-    // (1) The device must actually have a biometric enrolled.
-    try {
-      final supported = await _localAuth.isDeviceSupported();
-      final available = supported
-          ? await _localAuth.getAvailableBiometrics()
-          : const <BiometricType>[];
-      if (!supported || available.isEmpty) {
-        if (mounted) {
-          setState(() => _error = l10n.biometricUnavailable);
-        }
-        return;
-      }
-    } catch (_) {
+    // (1) The device must have a usable biometric / secured lock.
+    if (!await biometric.isAvailable()) {
       if (mounted) {
         setState(() => _error = l10n.biometricUnavailable);
       }
       return;
     }
-    // (2) Face login needs a device key, enrolled on a prior password sign-in.
+    if (!mounted) {
+      return;
+    }
+    // (2) Face login needs a device key, enrolled on a prior sign-in.
+    bool enrolled;
     try {
-      if (!await notifier.hasEnrolledDeviceKey()) {
-        if (mounted) {
-          setState(() => _error = l10n.biometricNotEnrolled);
-        }
-        return;
-      }
+      enrolled = await notifier.hasEnrolledDeviceKey();
     } catch (_) {
+      enrolled = false;
+    }
+    if (!enrolled) {
       if (mounted) {
         setState(() => _error = l10n.biometricNotEnrolled);
       }
       return;
     }
-    try {
-      final ok = await _localAuth.authenticate(
-        localizedReason: l10n.biometricSignInTooltip,
-        options: const AuthenticationOptions(
-          biometricOnly: true,
-          stickyAuth: true,
-        ),
-      );
-      if (!ok || !mounted) {
-        return;
+    // (3) OS prompt — biometric-first, device-PIN fallback (D-738).
+    final outcome =
+        await biometric.confirmDeviceIdentity(l10n.biometricSignInTooltip);
+    if (!mounted) {
+      return;
+    }
+    if (outcome != LocalAuthOutcome.success) {
+      // A cancel is the user's own choice → silent (null); other outcomes get
+      // feedback, via the shared BiometricAuth mapping.
+      final message = localizedBiometricError(l10n, outcome);
+      if (message != null) {
+        setState(() => _error = message);
       }
-      setState(() {
-        _busy = true;
-        _error = null;
-      });
-      await ref.read(authControllerProvider.notifier).signInWithDeviceKey();
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await notifier.signInWithDeviceKey();
     } on AuthFailure catch (failure) {
       if (mounted) {
         setState(() {
           _error = failure.source.localizedMessage(l10n);
         });
       }
-    } catch (_) {
-      // Biometric / plugin failure — fall back to the password path silently.
     } finally {
       if (mounted) {
         setState(() => _busy = false);
@@ -236,8 +232,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     }
     // Route on the resulting auth state, OUTSIDE the try: signInWithDeviceKey
     // establishes the session before its trailing profile reload, so a
-    // non-AuthFailure thrown there (swallowed above) must not skip the
-    // navigation home — the biometric path now mirrors the password path (D-441).
+    // non-AuthFailure thrown there must not skip the navigation home — the
+    // biometric path mirrors the password path (D-441).
     if (mounted && ref.read(authControllerProvider) is AuthStateSignedIn) {
       routeAfterAuth(context, ref);
     }

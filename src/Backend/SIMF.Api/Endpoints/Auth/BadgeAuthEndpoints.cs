@@ -35,6 +35,37 @@ public sealed class ResolveBadgeEndpoint(IBadgeAuthService badgeAuthService)
 }
 
 /// <summary>
+/// Part B — <c>POST /api/v1/app/auth/badge-sign-in</c>. A returning holder scans
+/// their badge and completes sign-in with only their password; the QR selects
+/// the account and the password (plus any 2FA / lockout) runs through the normal
+/// sign-in pipeline. Returns the standard <see cref="SignInResponse"/> — the
+/// issued tokens or the 2FA challenge, identical to email sign-in. Anonymous +
+/// both auth rate-limits (mirrors the email sign-in); the QR's ~60-bit entropy
+/// plus the generic-invalid response make it a non-viable enumeration oracle.
+/// </summary>
+public sealed class BadgeSignInEndpoint(IBadgeAuthService badgeAuthService)
+    : Endpoint<BadgeSignInRequest, ApiResult<SignInResponse>>
+{
+    public override void Configure()
+    {
+        Post("/app/auth/badge-sign-in");
+        AllowAnonymous();
+        Tags("Authentication");
+        Options(routeBuilder => routeBuilder
+            .RequireRateLimiting("auth")
+            .RequireRateLimiting("auth-email"));
+        Summary(summary => summary.Summary =
+            "Complete a badge sign-in with the account password (returning holders).");
+    }
+
+    public override async Task HandleAsync(BadgeSignInRequest req, CancellationToken ct)
+    {
+        var response = await badgeAuthService.SignInAsync(req, ct);
+        await Send.OkAsync(ApiResult<SignInResponse>.Ok(response), ct);
+    }
+}
+
+/// <summary>
 /// Part B — <c>POST /api/v1/app/auth/badge-activation/start</c>. Emails the
 /// verification code that gates the first-password step for a passwordless
 /// account. Anonymous + the email rate-limit (mirrors forgot-password).

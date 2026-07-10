@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_zxing/flutter_zxing.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -10,10 +9,10 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../../app/widgets/simf_scanner_body.dart';
 import 'data/gate_models.dart';
 import 'data/gates_repository.dart';
 import 'widgets/gate_result_view.dart';
-import 'widgets/gate_scanner_view.dart';
 import 'widgets/gate_setup_view.dart';
 
 /// Staff gate-operator console — Figma 758:4651 (setup: pick gate + movement),
@@ -38,11 +37,9 @@ class GateScanScreen extends ConsumerStatefulWidget {
 }
 
 class _GateScanScreenState extends ConsumerState<GateScanScreen> {
-  final TextEditingController _manual = TextEditingController();
   bool _loading = true;
   bool _forbidden = false;
   bool _error = false;
-  bool _busy = false;
   // The console has two stages: the setup card (gate + movement) and, once the
   // operator taps "Scan code", the live camera / manual-entry scanner.
   bool _scanning = false;
@@ -59,12 +56,6 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
   void initState() {
     super.initState();
     unawaited(_loadGates());
-  }
-
-  @override
-  void dispose() {
-    _manual.dispose();
-    super.dispose();
   }
 
   Future<void> _loadGates() async {
@@ -118,28 +109,15 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
     });
   }
 
-  void _onScan(Code result) {
-    if (_busy || !result.isValid) {
-      return;
-    }
-    final code = result.text?.trim();
-    if (code != null && code.isNotEmpty) {
-      unawaited(_scan(code));
-    }
-  }
-
+  /// The scanner body (camera + manual) resolves/branches through this; single-
+  /// flight + dedupe are owned by [SimfScannerBody]'s ScanGate.
   Future<void> _scan(String qr) async {
     final gate = _gate;
     final direction = _direction;
     final trimmed = qr.trim();
-    if (gate == null || trimmed.isEmpty || _busy) {
+    if (gate == null || trimmed.isEmpty) {
       return;
     }
-    // Debounce a repeat of the same code while a result is already shown.
-    if (trimmed == _lastQr && _result != null) {
-      return;
-    }
-    _busy = true;
     _lastQr = trimmed;
     final l10n = AppL10n.of(context);
     final messenger = ScaffoldMessenger.of(context);
@@ -164,8 +142,6 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
       messenger.showSnackBar(
         SnackBar(content: Text(_failureText(l10n, e.httpStatus))),
       );
-    } finally {
-      _busy = false;
     }
   }
 
@@ -186,7 +162,6 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
     setState(() {
       _result = null;
       _lastQr = '';
-      _manual.clear();
       _scanning = true;
     });
   }
@@ -198,7 +173,6 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
       setState(() {
         _result = null;
         _lastQr = '';
-        _manual.clear();
       });
       return;
     }
@@ -346,13 +320,17 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
         onScan: () => setState(() => _scanning = true),
       );
     }
-    return GateScannerView(
-      l10n: l10n,
-      enableCamera: widget.enableCamera,
-      manual: _manual,
-      onScan: _onScan,
-      onBack: () => setState(() => _scanning = false),
-      onManual: () => unawaited(_scan(_manual.text)),
+    // The shared scanner (D-737): camera-first gold viewfinder, always-usable
+    // manual entry, one dedupe policy, and a visible camera-error state.
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(SimfTokens.space4),
+      child: SimfScannerBody(
+        fieldLabel: l10n.gateManualHint,
+        continueLabel: l10n.gateManualSubmit,
+        bottomHint: l10n.gateScanHint,
+        enableCamera: widget.enableCamera,
+        onCode: _scan,
+      ),
     );
   }
 

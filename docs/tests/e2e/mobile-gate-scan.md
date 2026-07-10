@@ -12,6 +12,12 @@
 > toggle — then **سكان الرمز** opens the live camera. The operator's direction
 > choice is sent on the scan and **honoured for a Both-mode gate**; a fixed
 > In/Out gate locks the toggle to its one direction (no CP round-trip).
+>
+> **D-737 (unified scanner):** the camera stage now uses the shared
+> `SimfScannerBody` (`lib/app/widgets/simf_scanner_body.dart`) — the old bespoke
+> `gate_scanner_view.dart` is **deleted**. Same behaviour, plus one shared
+> `ScanGate` dedupe/single-flight policy and a visible camera-permission-denied
+> error card (بدل الشاشة السوداء) with the manual field always usable below it.
 
 | | |
 |--|--|
@@ -103,6 +109,38 @@ Scenario: RTL
   Then the scanner, result card and fields render right-to-left
 ```
 
+### E2E-MOBGATE-005 — Unified scanner: camera-first + camera-denied error card (D-737)
+
+```gherkin
+Scenario: The camera stage is the shared SimfScannerBody
+  Given the operator picked دخول/خروج and tapped "سكان الرمز"
+  Then the gold-bracket viewfinder (SimfScannerFrame) opens over the bounded live camera
+  And the "إيقاف الكاميرا / Stop camera" control sits OUTSIDE the camera surface (EMUI-safe)
+  And the manual field + "تحقّق / Check" stay usable below
+
+Scenario: A denied / missing camera shows the error card, not a black box
+  Given the console opens the camera stage
+  When the OS denies the camera permission (or the device has no camera)
+  Then the shared error card shows
+       "تعذّر تشغيل الكاميرا. فعّل إذن الكاميرا من إعدادات النظام، أو أدخل الرمز يدويًا بالأسفل." /
+       "Camera unavailable. Enable camera permission in system settings, or type the code below."
+  And a "إعادة المحاولة / Try again" retry control is offered
+  And the operator can still type the badge code and run the same scan flow
+
+Scenario: A steady badge under the camera fires one scan
+  Given the camera is live and reading ~1 frame/second
+  When a badge stays in the viewfinder
+  Then POST /app/gates/{gateId}/scans runs ONCE (ScanGate single-flight + dedupe)
+  And re-presenting the badge after the result lets the next person be scanned (onNoCode reset)
+```
+
+**Evidence:** source-verified — `simf_scanner_body.dart` renders `_CameraErrorCard`
+on a controller error / the 8 s watchdog (device-only render). `simf_scanner_body_test`
+covers the always-mounted manual field with the camera off; `scan_gate_test`
+(single-flight + same-code dedupe + `onNoCode` reset). Gate scan outcomes remain
+covered by `GateScanTests` + `test/features/gates/`.
+
 ---
 
-_Last reviewed:_ `2026-06-27` by `SIMF Team`.
+_Last reviewed:_ `2026-07-11` by `SIMF Team` — D-737 unified scanner
+(SimfScannerBody; `gate_scanner_view.dart` deleted). Earlier: `2026-06-27`.

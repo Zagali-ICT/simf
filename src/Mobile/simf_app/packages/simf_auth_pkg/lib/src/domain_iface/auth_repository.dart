@@ -79,6 +79,16 @@ abstract class AuthRepository {
   Future<({bool found, bool hasPassword, String? displayName, bool needsEmail, String? maskedEmail})>
       resolveBadge({required String qrId});
 
+  /// D-738 — finish sign-in for a resolved has-password badge holder with only
+  /// their password. The server resolves the user from the qrId and runs the
+  /// full existing password + OTP pipeline; returns a [Session] or an
+  /// [SignInOtpChallenge] exactly like [signIn]. An unknown / non-approved /
+  /// passwordless qrId fails as the same generic invalid-credentials `AuthFailure`.
+  Future<SignInResult> signInWithBadge({
+    required String qrId,
+    required String password,
+  });
+
   /// Part B — email a verification code to begin activating a passwordless
   /// badge account. Returns where the code went (masked) + its lifetime.
   Future<({String maskedEmail, int codeExpiresInSeconds})> badgeActivationStart({

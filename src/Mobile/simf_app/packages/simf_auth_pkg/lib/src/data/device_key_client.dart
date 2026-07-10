@@ -33,8 +33,10 @@ class DeviceKeyPair {
 /// NOTE: the .NET ↔ Dart byte-interop (SPKI import + `VerifyData` with
 /// `IeeeP1363FixedFieldConcatenation`) is to be integration-verified against the
 /// running backend (simf-run); the round-trip is unit-tested within Dart here.
-/// A future hardening step moves the key into the platform secure enclave
-/// (CryptoKit / Tink) — see Page_003 Logic L-2.
+/// A future hardening step (D-738 Tier-2) moves the key into the platform
+/// secure enclave — Android Keystore/StrongBox with setUserAuthenticationRequired
+/// + iOS Secure Enclave — so it is biometric-bound and non-exportable; the
+/// backend contract (SPKI + ES256) is unchanged. See Page_003 Logic L-2.
 class DeviceKeyClient {
   const DeviceKeyClient();
 

@@ -9,6 +9,7 @@ import '../../app/theme/tokens.dart';
 import '../../app/widgets/qr_scan_view.dart';
 import 'data/contact_models.dart';
 import 'data/contacts_repository.dart';
+import 'data/share_qr_payload.dart';
 import 'widgets/contact_card.dart';
 
 /// Scan a visitor's QR → preview → save (SIMF-FDS-014 §5.5–5.6, D-286).
@@ -36,13 +37,25 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
     }
   }
 
-  Future<void> _handleToken(String token) async {
-    final code = token.trim();
+  Future<void> _handleToken(String scanned) async {
+    final l10n = AppL10n.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    // The app's own share QR is a vCard with the token embedded (D-737); a
+    // native phone's vCard, or an old QR, carries no token → clear guidance.
+    String code = scanned.trim();
+    if (isVCardPayload(code)) {
+      final embedded = extractShareToken(code);
+      if (embedded == null || embedded.isEmpty) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.scanContactVcardNoToken)),
+        );
+        return;
+      }
+      code = embedded;
+    }
     if (code.isEmpty) {
       return;
     }
-    final l10n = AppL10n.of(context);
-    final messenger = ScaffoldMessenger.of(context);
     try {
       final card = await ref.read(contactsRepositoryProvider).resolve(code);
       if (!mounted) {
@@ -87,7 +100,6 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
       title: l10n.scanContactTitle,
       fieldLabel: l10n.scanContactManualField,
       continueLabel: l10n.scanContactResolve,
-      cameraLabel: l10n.scanStartCamera,
       enableCamera: widget.enableCamera,
       onCode: _handleToken,
       onLeave: _leave,

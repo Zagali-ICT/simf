@@ -14,6 +14,25 @@ public sealed class ResolveBadgeRequest
 }
 
 /// <summary>
+/// Part B — the body of <c>POST /api/v1/app/auth/badge-sign-in</c>. A returning
+/// holder (an account that already has a password) scans their badge QR and
+/// finishes sign-in with only their password: the QR selects the account and the
+/// password (plus any 2FA / lockout) runs through the normal sign-in pipeline.
+/// The response is the standard <see cref="SignInResponse"/> — the issued tokens
+/// or the 2FA challenge, identical to email sign-in. An unknown QR is
+/// indistinguishable from a wrong password — the public badge never bypasses the
+/// password.
+/// </summary>
+public sealed class BadgeSignInRequest
+{
+    /// <summary>The 12-char QR id scanned from the badge.</summary>
+    public string QrId { get; set; } = string.Empty;
+
+    /// <summary>The holder's existing account password.</summary>
+    public string Password { get; set; } = string.Empty;
+}
+
+/// <summary>
 /// Part B — the outcome of resolving a scanned badge. Returned to the app so it
 /// can branch. Only an <b>approved</b>, active account resolves; an unknown or
 /// not-yet-approved QR returns <see cref="Found"/> = false.

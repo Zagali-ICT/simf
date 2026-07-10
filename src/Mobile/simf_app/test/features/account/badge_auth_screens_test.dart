@@ -99,6 +99,13 @@ Widget _host({required Widget Function(GoRouterState) home, required AuthReposit
         builder: (c, s) => const Scaffold(body: Text('SIGN-IN-STUB')),
       ),
       GoRoute(
+        name: RouteNames.badgePassword,
+        path: '/auth/badge-password',
+        builder: (c, s) => Scaffold(
+          body: Text('BADGE-PW:${s.uri.queryParameters['name']}'),
+        ),
+      ),
+      GoRoute(
         name: RouteNames.badgeActivation,
         path: '/auth/badge-activation',
         builder: (c, s) => BadgeActivationScreen(
@@ -126,8 +133,8 @@ Widget _host({required Widget Function(GoRouterState) home, required AuthReposit
 }
 
 void main() {
-  testWidgets('manual-entry resolve of a has-password badge routes to sign-in',
-      (tester) async {
+  testWidgets('manual-entry resolve of a has-password badge routes to the '
+      'password step with the resolved name (D-738)', (tester) async {
     await tester.pumpWidget(_host(
       home: (_) => const BadgeSignInScreen(enableCamera: false),
       repo: _FakeAuthRepo((
@@ -142,7 +149,9 @@ void main() {
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
 
-    expect(find.text('SIGN-IN-STUB'), findsOneWidget);
+    // Now goes to the password-completion step (not the blank sign-in form),
+    // carrying the resolved name.
+    expect(find.text('BADGE-PW:Khalid'), findsOneWidget);
   });
 
   testWidgets('manual-entry resolve of a passwordless badge opens activation',

@@ -545,6 +545,24 @@ class AppL10n {
       _t('أدخل رمز التأكيد', 'Enter the confirmation code');
   String get biometricStepUpSendFailed =>
       _t('تعذّر إرسال الرمز. حاول مرة أخرى.', "Couldn't send the code. Try again.");
+  // D-738 — the OS device-credential confirm step at enrolment (banking flow:
+  // emailed OTP → device PIN/biometric → enable) and its failure states.
+  String get biometricLocalConfirmReason => _t(
+        'أكّد قفل الشاشة أو بصمتك لتفعيل الدخول ببصمة الوجه',
+        'Confirm your device PIN or biometric to enable Face ID sign-in',
+      );
+  String get biometricLocalConfirmCancelled => _t(
+        'أُلغي التأكيد — لم يتم تفعيل الدخول ببصمة الوجه.',
+        'Confirmation cancelled — Face ID sign-in was not enabled.',
+      );
+  String get biometricNoDeviceCredential => _t(
+        'فعّل قفل الشاشة (رمز PIN أو نمط أو كلمة مرور) على جهازك أولاً ثم حاول مجدداً.',
+        'Set a device screen lock (PIN, pattern or password) first, then try again.',
+      );
+  String get biometricLockedOut => _t(
+        'محاولات كثيرة خاطئة. المصادقة مقفلة مؤقتاً — حاول لاحقاً أو استخدم رمز قفل الجهاز.',
+        'Too many attempts. Authentication is temporarily locked — try again shortly or use your device PIN.',
+      );
 
   // Email-OTP second factor + reset flow (Page 003 L-5/L-6).
   String get otpTitle => _t('رمز التحقق', 'Verification code');
@@ -612,6 +630,18 @@ class AppL10n {
   String get qrBack => _t('رجوع', 'Back');
   String get qrManualLabel =>
       _t('أو أدخل الرمز يدويًا', 'Or enter the code manually');
+  // Camera-error / permission-denied state on any scanner (D-737).
+  String get scannerCameraError => _t(
+        'تعذّر تشغيل الكاميرا. فعّل إذن الكاميرا من إعدادات النظام، أو أدخل الرمز يدويًا بالأسفل.',
+        'Camera unavailable. Enable camera permission in system settings, or type the code below.',
+      );
+  String get scannerCameraRetry => _t('إعادة المحاولة', 'Try again');
+  // Shown when the in-app contact scanner reads a contact QR that carries no
+  // SIMF share token (an old QR, or a foreign phone's vCard) — D-737.
+  String get scanContactVcardNoToken => _t(
+        'رمز بطاقة الاتصال هذا لا يحمل رمز مشاركة. اطلب من صاحبه فتح «مشاركة جهة اتصالي» في التطبيق.',
+        'This contact QR has no SIMF share code. Ask them to open “Share my contact” in the app.',
+      );
   String get badgeNotRecognised =>
       _t('تعذّر التعرّف على الشارة.', 'The badge was not recognised.');
   String get badgeScanError =>
@@ -628,6 +658,13 @@ class AppL10n {
       );
   String get badgeSendCodeButton => _t('إرسال الرمز', 'Send code');
   String get badgeActivateButton => _t('تفعيل وتعيين كلمة المرور', 'Activate & set password');
+  // D-738 — the password step after a has-password badge resolves.
+  String get badgePasswordTitle => _t('أدخل كلمة المرور', 'Enter your password');
+  String badgeWelcomeName(String name) => _t('مرحبًا $name', 'Welcome, $name');
+  String badgeSignInAccountLine(String masked) => _t(
+        'تسجيل الدخول إلى الحساب $masked',
+        'Signing in to $masked',
+      );
   String get badgeActivatedDone => _t(
         'تم تفعيل حسابك. سجّل الدخول الآن.',
         'Your account is activated. Sign in now.',

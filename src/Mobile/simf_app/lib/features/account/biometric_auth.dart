@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:local_auth/error_codes.dart' as auth_error;
 import 'package:local_auth/local_auth.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
@@ -11,20 +13,91 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_confirm_dialog.dart';
 
+/// Maps a non-success [LocalAuthOutcome] to a localized message, so the sign-in
+/// prompt and the enrol step-up share one mapping (D-738). Returns null for
+/// [LocalAuthOutcome.cancelled]/[LocalAuthOutcome.success] — the caller decides
+/// whether a user cancel is silent (sign-in) or shows its own copy (enrol).
+/// A top-level function (not a [BiometricAuth] method) so test fakes needn't
+/// implement it.
+String? localizedBiometricError(AppL10n l10n, LocalAuthOutcome outcome) {
+  switch (outcome) {
+    case LocalAuthOutcome.lockedOut:
+      return l10n.biometricLockedOut;
+    case LocalAuthOutcome.noDeviceCredential:
+      return l10n.biometricNoDeviceCredential;
+    case LocalAuthOutcome.unavailable:
+      return l10n.biometricUnavailable;
+    case LocalAuthOutcome.cancelled:
+    case LocalAuthOutcome.success:
+      return null;
+  }
+}
+
+/// The result of an OS device-credential / biometric confirmation (D-738).
+enum LocalAuthOutcome {
+  /// The user proved the device credential (biometric or PIN/pattern/passcode).
+  success,
+
+  /// The user dismissed / failed the prompt without proving identity.
+  cancelled,
+
+  /// The device has no screen lock set — biometric sign-in can't be secured.
+  noDeviceCredential,
+
+  /// Too many failed attempts — authentication is temporarily/permanently locked.
+  lockedOut,
+
+  /// No biometric hardware / OS support, or an unexpected platform failure.
+  unavailable,
+}
+
 /// One home for the device's biometric (Face-ID / fingerprint) sign-in: the OS
-/// capability check (`local_auth`) plus the device-key lifecycle (query / revoke)
-/// on [AuthController]. The sign-in button, the side-menu toggle and the
-/// post-sign-in nudge all go through this, so the `local_auth` + device-key
-/// wiring has a single owner (D-441). #7a — enrolment is no longer a one-tap
-/// action here: both the toggle and the nudge route to [BiometricStepUpScreen],
-/// which verifies an emailed step-up code before the device key is registered.
+/// capability check + prompt (`local_auth`) plus the device-key lifecycle
+/// (query / revoke) on [AuthController]. The sign-in button, the side-menu
+/// toggle, the post-sign-in nudge AND the enrolment step-up all go through this,
+/// so the `local_auth` + device-key wiring has a single owner (D-441).
+///
+/// Enrolment (D-738, banking-standard): the toggle/nudge route to
+/// [BiometricStepUpScreen], which verifies an emailed step-up code AND then
+/// requires an OS device-credential confirmation ([confirmDeviceIdentity])
+/// before the device key is registered — email possession + device custody,
+/// like a bank app.
 class BiometricAuth {
-  BiometricAuth(this._ref);
+  BiometricAuth(this._ref, {LocalAuthentication? localAuth})
+      : _localAuth = localAuth ?? LocalAuthentication();
 
   final Ref _ref;
-  final LocalAuthentication _localAuth = LocalAuthentication();
+  final LocalAuthentication _localAuth;
 
   AuthController get _auth => _ref.read(authControllerProvider.notifier);
+
+  /// Runs the OS device-credential / biometric sheet ([reason] shown on it) and
+  /// maps the result to a [LocalAuthOutcome]. `biometricOnly` is false so the
+  /// sheet offers the device PIN/pattern/passcode as a fallback (the banking
+  /// standard, and what un-bricks the post-lockout path). Used by BOTH the
+  /// enrolment confirm and the sign-in prompt so the mapping lives in one place.
+  Future<LocalAuthOutcome> confirmDeviceIdentity(String reason) async {
+    try {
+      final ok = await _localAuth.authenticate(
+        localizedReason: reason,
+        options: const AuthenticationOptions(stickyAuth: true),
+      );
+      return ok ? LocalAuthOutcome.success : LocalAuthOutcome.cancelled;
+    } on PlatformException catch (e) {
+      switch (e.code) {
+        case auth_error.passcodeNotSet:
+        case auth_error.notEnrolled:
+          return LocalAuthOutcome.noDeviceCredential;
+        case auth_error.lockedOut:
+        case auth_error.permanentlyLockedOut:
+          return LocalAuthOutcome.lockedOut;
+        default:
+          return LocalAuthOutcome.unavailable;
+      }
+    } catch (_) {
+      return LocalAuthOutcome.unavailable;
+    }
+  }
 
   /// Whether the OS has a usable biometric (hardware + an enrolled face/finger).
   /// Errors degrade to "unavailable". A stalled platform call leaves the future

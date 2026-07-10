@@ -7,27 +7,68 @@ const BorderSide _bracketSide = BorderSide(color: SimfTokens.accent, width: 2.36
 
 /// The QR-scanner viewfinder card from Figma node 758:4735 — a navy card holding
 /// a black camera window (gold corner brackets, a gold scan line and a centred
-/// scan glyph) above a "searching" caption + progress bar.
+/// scan glyph) above a "searching" caption + scan bar.
 ///
 /// The live camera is injected as [camera] (e.g. a `flutter_zxing` reader) so
 /// this widget stays plugin-free and rendable in tests; when it is null the
 /// window paints the brackets + glyph on black (the camera-off / preview state).
-class SimfScannerFrame extends StatelessWidget {
+///
+/// Deliberate Figma deviation (D-737): 758:4735 shows the scan bar as a static
+/// "30%" snapshot. A progress bar that never advances reads as broken, so the
+/// bar is an **indeterminate looping gold sweep** while [active] (a live camera
+/// is scanning) and an empty track otherwise. The fake percentage label is gone.
+class SimfScannerFrame extends StatefulWidget {
   const SimfScannerFrame({
     required this.statusLabel,
     this.camera,
-    this.progress = 0.3,
+    this.active = false,
     super.key,
   });
 
   /// The live camera preview painted behind the overlay; null = camera-off.
   final Widget? camera;
 
-  /// The "actively searching" caption shown beside the percentage.
+  /// The "actively searching" caption.
   final String statusLabel;
 
-  /// The decorative scan-progress fraction (0–1) — drives the bar + the label.
-  final double progress;
+  /// Animate the scan sweep (a live camera is scanning). False = static track.
+  final bool active;
+
+  @override
+  State<SimfScannerFrame> createState() => _SimfScannerFrameState();
+}
+
+class _SimfScannerFrameState extends State<SimfScannerFrame>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1600),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.active) {
+      _controller.repeat();
+    }
+  }
+
+  @override
+  void didUpdateWidget(SimfScannerFrame oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.active && !_controller.isAnimating) {
+      _controller.repeat();
+    } else if (!widget.active && _controller.isAnimating) {
+      _controller.stop();
+      _controller.value = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +95,7 @@ class SimfScannerFrame extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
-            child: _buildProgress(),
+            child: _buildScanBar(),
           ),
         ],
       ),
@@ -69,7 +110,7 @@ class SimfScannerFrame extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: <Widget>[
-            ColoredBox(color: Colors.black, child: camera),
+            ColoredBox(color: Colors.black, child: widget.camera),
             const ColoredBox(color: Color(0x59000000)), // black @ 35% overlay
             const Positioned(top: 16, left: 16, child: _Bracket(top: true, left: true)),
             const Positioned(top: 16, right: 16, child: _Bracket(top: true, left: false)),
@@ -108,31 +149,20 @@ class SimfScannerFrame extends StatelessWidget {
     );
   }
 
-  Widget _buildProgress() {
-    // Forced LTR so the percentage sits at the start (left) and the caption at
-    // the end (right), and the bar fills from the left — as in the frame.
+  Widget _buildScanBar() {
+    // Forced LTR so the caption sits at the end (right) as in the frame.
     return Directionality(
       textDirection: TextDirection.ltr,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              Text(
-                '${(progress * 100).round()}%',
-                style: const TextStyle(
-                  color: SimfTokens.accent,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              Text(
-                statusLabel,
-                textDirection: TextDirection.rtl,
-                style: const TextStyle(color: SimfTokens.mutedBlue, fontSize: 12),
-              ),
-            ],
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              widget.statusLabel,
+              textDirection: TextDirection.rtl,
+              style: const TextStyle(color: SimfTokens.mutedBlue, fontSize: 12),
+            ),
           ),
           const SizedBox(height: 8),
           ClipRRect(
@@ -141,17 +171,32 @@ class SimfScannerFrame extends StatelessWidget {
               height: 6,
               child: ColoredBox(
                 color: SimfTokens.scannerTrack,
-                child: FractionallySizedBox(
-                  alignment: Alignment.centerLeft,
-                  widthFactor: progress.clamp(0.0, 1.0),
-                  child: const DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: <Color>[SimfTokens.accent, Color(0xFFE8C96E)],
-                      ),
-                    ),
-                  ),
-                ),
+                child: widget.active
+                    ? AnimatedBuilder(
+                        animation: _controller,
+                        // The gold segment is static — only its alignment
+                        // animates, so build it once and slide it each frame.
+                        child: const FractionallySizedBox(
+                          widthFactor: 0.35,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: <Color>[
+                                  Color(0x00C9A84C),
+                                  SimfTokens.accent,
+                                  Color(0xFFE8C96E),
+                                  Color(0x00C9A84C),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        builder: (context, child) => Align(
+                          alignment: Alignment(_controller.value * 2 - 1, 0),
+                          child: child,
+                        ),
+                      )
+                    : const SizedBox.shrink(),
               ),
             ),
           ),

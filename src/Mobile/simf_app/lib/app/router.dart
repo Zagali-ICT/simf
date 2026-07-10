@@ -6,6 +6,7 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import '../core/widgets/coming_soon_screen.dart';
 import '../features/account/email_otp_verify_screen.dart';
 import '../features/account/badge_activation_screen.dart';
+import '../features/account/badge_password_screen.dart';
 import '../features/account/biometric_step_up_screen.dart';
 import '../features/account/badge_sign_in_screen.dart';
 import '../features/account/forgot_password_screen.dart';
@@ -208,6 +209,8 @@ const List<_Route> _auxRoutes = <_Route>[
   // Part B (D-430) — badge-QR sign-in / activation (anonymous, pre-login).
   _Route(number: 0, name: RouteNames.badgeSignIn, path: '/auth/badge', labelAr: 'الدخول بالشارة', labelEn: 'Badge sign-in'),
   _Route(number: 0, name: RouteNames.badgeActivation, path: '/auth/badge-activation', labelAr: 'تفعيل الحساب', labelEn: 'Activate account'),
+  // D-738 — the password step after a has-password badge resolves.
+  _Route(number: 0, name: RouteNames.badgePassword, path: '/auth/badge-password', labelAr: 'إكمال تسجيل الدخول', labelEn: 'Badge password'),
   // #7a — emailed-OTP step-up to ENABLE biometric sign-in (signed-in; backend-
   // enforced, reached from the Face-ID toggle / post-sign-in nudge).
   _Route(number: 0, name: RouteNames.biometricStepUp, path: '/auth/biometric-step-up', labelAr: 'تأكيد بصمة الوجه', labelEn: 'Confirm Face ID'),
@@ -561,6 +564,14 @@ Widget _auxScreenFor(BuildContext context, GoRouterState state, _Route r) {
     return BadgeActivationScreen(
       qrId: q['qrId'] ?? '',
       needsEmail: q['needsEmail'] == '1',
+      maskedEmail: q['masked'],
+    );
+  }
+  if (r.name == RouteNames.badgePassword) {
+    final q = state.uri.queryParameters;
+    return BadgePasswordScreen(
+      qrId: q['qrId'] ?? '',
+      displayName: q['name'],
       maskedEmail: q['masked'],
     );
   }

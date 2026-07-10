@@ -44,7 +44,7 @@ re-added to the regenerated native projects (or by the build/`simf-run` step):
 
 | Permission | Needed by | Where |
 |------------|-----------|-------|
-| `android.permission.CAMERA` + `<uses-feature android:name="android.hardware.camera" android:required="false"/>` (and `…camera.front`) | `mobile_scanner` (contact QR scan) **and** `camera` (avatar liveness / التحقق من الهوية, D-404) | `android/app/src/main/AndroidManifest.xml` |
+| `android.permission.CAMERA` + `<uses-feature android:name="android.hardware.camera" android:required="false"/>` (and `…camera.front`) | `flutter_zxing` (QR scanning — Huawei/HMS-safe, D-426) **and** `camera` (avatar liveness / التحقق من الهوية, D-404) | `android/app/src/main/AndroidManifest.xml` |
 | `NSCameraUsageDescription` | same two features on iOS | `ios/Runner/Info.plist` |
 
 `image_picker`'s camera capture delegates to the system camera app and does

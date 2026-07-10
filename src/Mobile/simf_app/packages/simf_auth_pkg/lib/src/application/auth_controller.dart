@@ -174,6 +174,29 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
     }
   }
 
+  /// D-738 — finish sign-in for a scanned has-password badge with only the
+  /// password. Mirrors [signIn]; the OTP challenge carries the MASKED
+  /// [displayEmail] for the verify-otp recipient line (the badge path never
+  /// learns the real address, so `StorageKeys.lastEmail` is untouched).
+  Future<void> signInWithBadge({
+    required String qrId,
+    required String password,
+    String? displayEmail,
+    bool rememberSession = true,
+  }) async {
+    _rememberSession = rememberSession;
+    final result =
+        await _repository.signInWithBadge(qrId: qrId, password: password);
+    switch (result) {
+      case SignInSession(:final session):
+        await _persistSession(session);
+        _setSignedIn(session);
+        await reloadCurrentUser();
+      case SignInOtpChallenge(:final otpToken):
+        state = AuthStateAwaitingOtp(otpToken, email: displayEmail);
+    }
+  }
+
   Future<void> verifyOtp({required String code}) async {
     final current = state;
     if (current is! AuthStateAwaitingOtp) {
