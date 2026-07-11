@@ -71,6 +71,11 @@ public partial class SponsorsList
     private string FormatPage(int current, int total) =>
         string.Format(L["Grid.Page"], current, total);
 
+    // The identity cell shows the real logo only when an active SponsorLogo asset
+    // exists (HasLogo); a null URL falls back to an initials tile.
+    private static string? LogoImageUrl(AdminSponsorSummary row) =>
+        row.HasLogo ? CpAssetUrls.AdminImage(nameof(AssetCategory.SponsorLogo), row.Id) : null;
+
     private async Task LoadAsync()
     {
         _loading = true;

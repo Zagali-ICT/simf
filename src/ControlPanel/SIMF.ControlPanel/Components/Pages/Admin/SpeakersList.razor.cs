@@ -182,21 +182,11 @@ public partial class SpeakersList
             ? row.CountryNameAr ?? row.CountryNameEn
             : row.CountryNameEn ?? row.CountryNameAr;
 
-    // The grid renders a real thumbnail (HasPhoto) via the same category+owner
-    // asset proxy the View form uses; a missing photo shows an initials tile.
-    private static string PhotoUrl(Guid id) =>
-        $"/account/api/admin/assets/SpeakerPhoto/{id}/image";
-
-    // First + last name initials for the fallback avatar tile (max 2 chars).
-    private static string Initials(string? name)
-    {
-        if (string.IsNullOrWhiteSpace(name)) return "?";
-        var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 0) return "?";
-        if (parts.Length == 1)
-            return parts[0].Length >= 2 ? parts[0][..2] : parts[0];
-        return $"{parts[0][0]}{parts[^1][0]}";
-    }
+    // The identity cell shows a real thumbnail only when HasPhoto (resolved via
+    // the same category+owner asset proxy the View form uses); a null URL makes
+    // SimfIdentityCell fall back to an initials tile (never a broken image).
+    private static string? PhotoImageUrl(AdminSpeakerSummary row) =>
+        row.HasPhoto ? CpAssetUrls.AdminImage(nameof(AssetCategory.SpeakerPhoto), row.Id) : null;
 
     private void OpenSessions(Guid speakerId) =>
         Nav.NavigateTo($"/admin/sessions?speakerId={speakerId}");

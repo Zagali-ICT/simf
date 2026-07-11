@@ -72,6 +72,11 @@ public partial class MediaPartnersList
     private string FormatPage(int current, int total) =>
         string.Format(L["Grid.Page"], current, total);
 
+    // The identity cell shows the real logo only when an active MediaPartnerLogo
+    // asset exists (HasLogo); a null URL falls back to an initials tile.
+    private static string? LogoImageUrl(AdminMediaPartnerSummary row) =>
+        row.HasLogo ? CpAssetUrls.AdminImage(nameof(AssetCategory.MediaPartnerLogo), row.Id) : null;
+
     private async Task LoadAsync()
     {
         _loading = true;

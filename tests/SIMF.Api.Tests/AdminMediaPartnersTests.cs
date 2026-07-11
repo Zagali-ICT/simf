@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
+using SIMF.Contracts.Assets;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.PublicRelations;
 using SIMF.Domain.IdentityAccess;
@@ -59,6 +60,45 @@ public sealed class AdminMediaPartnersTests : IClassFixture<SimfApiFactory>
         var page = (await listResponse.Content
             .ReadFromJsonAsync<ApiResult<GridPage<AdminMediaPartnerSummary>>>())!.Data!;
         Assert.Contains(page.Items, p => p.Id == created.Id);
+    }
+
+    [Fact]
+    public async Task List_flips_has_logo_once_a_logo_asset_is_attached()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var create = await PostAuthAsync(
+            "/api/v1/admin/media-partners",
+            new AdminCreateMediaPartnerRequest($"Logo Wire {suffix}", $"سلك الشعار {suffix}", null, null, 4700),
+            token);
+        var id = (await create.Content
+            .ReadFromJsonAsync<ApiResult<AdminMediaPartnerDetail>>())!.Data!.Id;
+
+        // No logo asset yet → HasLogo false (the grid shows an initials tile).
+        var before = await ListAndFindAsync(id, token);
+        Assert.NotNull(before);
+        Assert.False(before!.HasLogo);
+
+        // Attaching an active MediaPartnerLogo asset flips it true.
+        var link = await PutAuthAsync(
+            $"/api/v1/admin/assets/MediaPartnerLogo/{id}/link",
+            new SetAssetLinkRequest { Kind = AssetKind.Image, Url = "https://example.com/l.png" },
+            token);
+        Assert.Equal(HttpStatusCode.OK, link.StatusCode);
+
+        var after = await ListAndFindAsync(id, token);
+        Assert.NotNull(after);
+        Assert.True(after!.HasLogo);
+    }
+
+    private async Task<AdminMediaPartnerSummary?> ListAndFindAsync(Guid id, string token)
+    {
+        var resp = await PostAuthAsync(
+            "/api/v1/admin/media-partners/list", new GridQuery { Top = 500 }, token);
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var page = (await resp.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminMediaPartnerSummary>>>())!.Data!;
+        return page.Items.FirstOrDefault(p => p.Id == id);
     }
 
     [Fact]

@@ -68,31 +68,10 @@
                                         Header="@L["Admin.Speakers.Column.Speaker"]"
                                         Sortable="true" Filterable="true">
                         <CellTemplate>
-                            <div class="simf-speaker-cell">
-                                @if (context.HasPhoto)
-                                {
-                                    <SimfImageThumb Src="@PhotoUrl(context.Id)" Alt="@context.Name"
-                                                    Class="simf-speaker-cell__avatar" />
-                                }
-                                else
-                                {
-                                    <span class="simf-avatar-initials simf-speaker-cell__avatar"
-                                          aria-hidden="true">@Initials(context.Name)</span>
-                                }
-                                <span class="simf-speaker-cell__meta">
-                                    <span class="simf-speaker-cell__name">
-                                        @context.Name
-                                        @if (!string.IsNullOrWhiteSpace(context.NameArabic))
-                                        {
-                                            <span class="simf-speaker-cell__name-ar"> · @context.NameArabic</span>
-                                        }
-                                    </span>
-                                    @if (!string.IsNullOrWhiteSpace(context.Rank))
-                                    {
-                                        <span class="simf-speaker-cell__rank">@context.Rank</span>
-                                    }
-                                </span>
-                            </div>
+                            <SimfIdentityCell ImageUrl="@PhotoImageUrl(context)"
+                                              Name="@context.Name"
+                                              NameSecondary="@context.NameArabic"
+                                              Subtitle="@context.Rank" />
                         </CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminSpeakerSummary" Key="country"

@@ -63,28 +63,32 @@
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>
                 <Columns>
-                    <SimfDataGridColumn TItem="AdminSponsorSummary" Key="nameEn"
+                    <SimfDataGridColumn TItem="AdminSponsorSummary" Key="nameEn" Width="38%"
                                         Header="@L["Admin.Sponsors.Col.NameEn"]"
                                         Sortable="true" Filterable="true">
-                        <CellTemplate>@context.NameEn</CellTemplate>
-                    </SimfDataGridColumn>
-                    <SimfDataGridColumn TItem="AdminSponsorSummary" Key="nameAr"
-                                        Header="@L["Admin.Sponsors.Col.NameAr"]"
-                                        Sortable="true" Filterable="true">
-                        <CellTemplate>@context.NameAr</CellTemplate>
+                        <CellTemplate>
+                            <SimfIdentityCell ImageUrl="@LogoImageUrl(context)"
+                                              Name="@context.NameEn"
+                                              NameSecondary="@context.NameAr" />
+                        </CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminSponsorSummary" Key="tier"
                                         Header="@L["Admin.Sponsors.Col.Tier"]"
                                         Sortable="true">
                         <CellTemplate>@context.TierName</CellTemplate>
                     </SimfDataGridColumn>
-                    <SimfDataGridColumn TItem="AdminSponsorSummary" Key="logo"
-                                        Header="@L["Admin.Sponsors.Col.Logo"]">
-                        <CellTemplate>@(string.IsNullOrWhiteSpace(context.LogoRelativePath) ? "—" : context.LogoRelativePath)</CellTemplate>
-                    </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminSponsorSummary" Key="url"
                                         Header="@L["Admin.Sponsors.Col.Url"]">
-                        <CellTemplate>@(string.IsNullOrWhiteSpace(context.Url) ? "—" : context.Url)</CellTemplate>
+                        <CellTemplate>
+                            @if (string.IsNullOrWhiteSpace(context.Url))
+                            {
+                                <span>—</span>
+                            }
+                            else
+                            {
+                                <a href="@context.Url" target="_blank" rel="noopener noreferrer">@context.Url</a>
+                            }
+                        </CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminSponsorSummary" Key="displayOrder"
                                         Header="@L["Admin.Sponsors.Col.DisplayOrder"]"
