@@ -155,16 +155,21 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
       _setSignedIn(merged);
       return true;
     } on AuthFailure {
-      await _clearSessionStorage();
-      _accessToken = null;
-      _refreshToken = null;
-      state = const AuthStateSignedOut();
+      // Do NOT sign out here — the caller decides. [refresh] (the 401 path)
+      // clears the session; [tryRefresh] (the proactive guard path) leaves it in
+      // place so a 30s warning can precede any sign-out (D-737).
       return false;
     }
   }
 
   @override
-  Future<void> onSessionExpired() async {
+  Future<void> onSessionExpired() => _signedOutCleanup();
+
+  /// Clears every trace of the session (storage + in-memory tokens) and flips to
+  /// signed-out. The single place both the 401 [refresh] path and
+  /// [onSessionExpired] converge, so a dead session is always torn down the same
+  /// way.
+  Future<void> _signedOutCleanup() async {
     await _clearSessionStorage();
     _accessToken = null;
     _refreshToken = null;
