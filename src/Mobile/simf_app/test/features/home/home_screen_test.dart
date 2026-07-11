@@ -298,14 +298,14 @@ void main() {
       expect(find.widgetWithText(FilledButton, 'Sign in'), findsOneWidget);
       // The guest home shows NO notifications bell (owner 2026-06-18): the
       // Figma content/guest frames carry no bell — it lives only on the
-      // signed-in home greeting header. The shared ☰ + language controls
-      // remain on the guest top bar.
+      // signed-in home greeting header. The shared ☰ stays on the guest top bar.
       expect(find.byTooltip('Notifications'), findsNothing);
       expect(find.byIcon(Icons.menu), findsOneWidget);
-      // The language control is the EN/عر pill now (D-670), keyed 'languageToggle'.
+      // The language pill was removed from the Home top nav (owner 2026-07-11);
+      // language is changed from the More screen's اللغة row now.
       expect(
         find.byKey(const ValueKey<String>('languageToggle')),
-        findsOneWidget,
+        findsNothing,
       );
     });
 

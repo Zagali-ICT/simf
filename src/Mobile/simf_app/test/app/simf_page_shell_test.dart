@@ -192,8 +192,8 @@ void main() {
       expect(backs, 1);
     });
 
-    testWidgets('the action cluster (showHeaderActions:true) carries the '
-        'language control', (tester) async {
+    testWidgets('the action cluster (showHeaderActions:true) is the bell + menu '
+        '— no language pill (owner 2026-07-11)', (tester) async {
       await _pump(
         tester,
         SimfPageShell(
@@ -204,25 +204,27 @@ void main() {
         ),
       );
 
-      // The shared control renders when the cluster is opted in (Home / guest
-      // home); sub-pages default to back + title + line only (owner 2026-06-28).
-      // The language control is the EN/عر pill (D-670), keyed 'languageToggle';
-      // tapping it flips the locale (exercised in the next test).
+      // The Home/Main cluster carries the bell + drawer ☰ only; the language
+      // pill was dropped from it (owner 2026-07-11) — language now lives on the
+      // sub-page toggle and the More screen's اللغة row.
+      expect(find.byIcon(Icons.notifications_none_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.menu), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('languageToggle')),
-        findsOneWidget,
+        findsNothing,
       );
     });
 
-    testWidgets('tapping the language globe flips the locale AR → EN and '
-        'persists it', (tester) async {
+    testWidgets('tapping the sub-page language pill flips the locale AR → EN '
+        'and persists it', (tester) async {
       final prefs = _FakePrefs();
       await _pump(
         tester,
+        // The language pill lives on a standard sub-page now (not the Home/Main
+        // cluster); showLanguageToggle defaults true, showHeaderActions false.
         SimfPageShell(
           title: 'My page',
           onBack: () {},
-          showHeaderActions: true,
           body: const Text('BODY'),
         ),
         overrides: <Override>[
