@@ -91,6 +91,21 @@ void main() {
       expect(find.text('You can’t save your own card.'), findsOneWidget);
     });
 
+    testWidgets('a plain vCard (no SIMF token) offers save-to-phone',
+        (tester) async {
+      final repo = FakeContactsRepo();
+      await _pump(tester, repo);
+
+      const vcard = 'BEGIN:VCARD\nVERSION:3.0\nFN:Mohannad\nEND:VCARD';
+      await _lookUp(tester, vcard);
+
+      // A foreign vCard is never resolved as a SIMF token; instead the app
+      // offers to add it to the phone's own contacts (D-744).
+      expect(repo.resolveCalls, 0);
+      expect(find.text('Save to phone contacts?'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Add'), findsOneWidget);
+    });
+
     testWidgets('an unavailable subject hides the save action', (tester) async {
       final repo = FakeContactsRepo(
         card: const VisitorCard(

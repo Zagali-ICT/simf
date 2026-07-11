@@ -14,7 +14,8 @@
 > resolve it (it used to always 404). The scan screen uses the shared
 > `SimfScannerBody` (via `QrScanView`) with the single `ScanGate` dedupe and a
 > camera-permission-denied error card. A foreign/old contact vCard that carries no
-> token shows a clear "no SIMF share code" message.
+> token can't resolve to a live SIMF card, so it is offered straight to the
+> phone's own address book via the OS "add contact" flow (D-744).
 
 | | |
 |--|--|
@@ -40,7 +41,7 @@
 | E2E-MMC-010 | Unauthenticated → 401 | auth | P0 | authored |
 | E2E-MMC-011 | Subject deactivated after save → limited card | resilience | P2 | authored |
 | E2E-MMC-012 | **D-737:** scan the app's OWN share QR (vCard + `X-SIMF-TOKEN`) → resolves + saves | happy | P0 | authored ✓ (`share_qr_payload_test` round-trip) |
-| E2E-MMC-013 | Scan a foreign / old contact vCard (no token) → "no SIMF share code" message | error | P1 | authored ✓ (`share_qr_payload_test` foreign-vCard) |
+| E2E-MMC-013 | Scan a foreign / old contact vCard (no token) → offered to save to the phone's contacts (D-744) | edge | P1 | authored ✓ (`scan_contact_screen_test` save-to-phone) |
 | E2E-MMC-014 | Camera-permission-denied on the scanner → error card + manual entry still works | resilience | P1 | source-verified (`simf_scanner_body` error card; manual path in `simf_scanner_body_test`) |
 
 ## Scenarios
@@ -185,21 +186,23 @@ Scenario: The in-app scanner reads the app's dual-purpose contact QR
 routes a vCard through `extractShareToken` → `resolve`. API resolve/save covered
 by `VisitorContactSharingTests`.
 
-### E2E-MMC-013 — Foreign / old vCard has no token → clear message
+### E2E-MMC-013 — Foreign / old vCard has no token → save to phone contacts
 
 ```gherkin
 Scenario: A contact QR minted outside SIMF (or before D-737) carries no token
   Given a vCard QR with NO X-SIMF-TOKEN property (a native phone's contact, or an old QR)
   When visitor B scans it on the in-app contact scanner
-  Then no resolve call is made and a bilingual snackbar shows
-       "رمز بطاقة الاتصال هذا لا يحمل رمز مشاركة. اطلب من صاحبه فتح «مشاركة جهة اتصالي» في التطبيق." /
-       "This contact QR has no SIMF share code. Ask them to open “Share my contact” in the app."
-  And the scanner stays open so a valid SIMF QR can be scanned instead
+  Then no resolve call is made and a bilingual confirm dialog offers to save it
+       to the phone's own contacts ("حفظ في جهات اتصال الهاتف؟" / "Save to phone contacts?")
+  And confirming hands the raw vCard to the OS "add contact" flow (the phone's
+       Contacts app imports it and the user confirms — no WRITE_CONTACTS permission)
+  And cancelling keeps the scanner open so a valid SIMF QR can be scanned instead
 ```
 
 **Evidence:** `share_qr_payload_test` — "null for a foreign vCard with no token";
-`scan_contact_screen` shows `scanContactVcardNoToken` when `isVCardPayload` is true
-but `extractShareToken` is null/empty.
+`scan_contact_screen_test` — "a plain vCard (no SIMF token) offers save-to-phone"
+(no `resolve` call; the `Save to phone contacts?` dialog appears). The confirmed
+path reuses the shared `shareTextContent` vCard export (D-744).
 
 ### E2E-MMC-014 — Camera-permission-denied → error card + manual entry
 
@@ -231,10 +234,12 @@ covers the always-mounted manual field with the camera off.
 
 ---
 
-_Last reviewed:_ 2026-07-11 by SIMF Team — D-737: the Share-my-contact QR is now a
-dual-purpose vCard carrying the share token as an `X-SIMF-TOKEN` property, so the
-in-app scanner resolves the app's own QR (MMC-012) and a token-less foreign vCard
-shows a clear message (MMC-013); the scan screen uses the shared `SimfScannerBody`
+_Last reviewed:_ 2026-07-11 by SIMF Team — D-744: a token-less foreign vCard
+(MMC-013) is now offered straight to the phone's own contacts via the OS "add
+contact" flow (reuses the shared `shareTextContent` vCard export) instead of
+dead-ending. D-737: the Share-my-contact QR is a dual-purpose vCard carrying the
+share token as an `X-SIMF-TOKEN` property, so the in-app scanner resolves the
+app's own QR (MMC-012); the scan screen uses the shared `SimfScannerBody`
 with a camera-denied error card (MMC-014). App coverage: `share_qr_payload_test`,
 `simf_scanner_body_test`, `scan_gate_test`. Earlier: 2026-06-20 (D-470: the QR
 encodes the user's vCard — Arabic name + phones — so any phone camera can add the

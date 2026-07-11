@@ -7,6 +7,8 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/qr_scan_view.dart';
+import '../../app/widgets/simf_confirm_dialog.dart';
+import '../../core/sharing/content_sharer.dart';
 import 'data/contact_models.dart';
 import 'data/contacts_repository.dart';
 import 'data/share_qr_payload.dart';
@@ -18,7 +20,9 @@ import 'widgets/contact_card.dart';
 /// the user on EMUI (D-426). A scanned/typed code is resolved
 /// (`POST /app/contacts/resolve`) to a live card shown in a preview sheet, where
 /// it can be saved to *My Contacts* (`POST /app/contacts/save`, idempotent;
-/// saving yourself is a 400).
+/// saving yourself is a 400). A scanned QR that is a **plain vCard with no SIMF
+/// share token** (a foreign phone's contact, an old QR) can't resolve to a live
+/// card, so it is offered straight to the phone's address book instead (D-744).
 class ScanContactScreen extends ConsumerStatefulWidget {
   const ScanContactScreen({super.key, this.enableCamera = true});
 
@@ -46,9 +50,10 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
     if (isVCardPayload(code)) {
       final embedded = extractShareToken(code);
       if (embedded == null || embedded.isEmpty) {
-        messenger.showSnackBar(
-          SnackBar(content: Text(l10n.scanContactVcardNoToken)),
-        );
+        // Not a SIMF member (a foreign phone's vCard, or an old QR): it can't
+        // resolve to a live in-app card, but it IS a full vCard — offer it to
+        // the phone's own address book instead of dead-ending (D-744).
+        await _saveVcardToPhone(code);
         return;
       }
       code = embedded;
@@ -74,6 +79,36 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
                 : l10n.scanContactError,
           ),
         ),
+      );
+    }
+  }
+
+  /// Hands a non-SIMF vCard to the OS "add contact" flow (D-744). Reuses the
+  /// same share path as *Share my contact*, so the phone's Contacts app imports
+  /// the card and the user confirms the save — no WRITE_CONTACTS permission.
+  Future<void> _saveVcardToPhone(String vcard) async {
+    final l10n = AppL10n.of(context);
+    final confirmed = await SimfConfirmDialog.show(
+      context,
+      title: l10n.scanContactSaveToPhoneTitle,
+      message: l10n.scanContactSaveToPhoneBody,
+      confirmLabel: l10n.scanContactSaveToPhoneConfirm,
+    );
+    if (!confirmed || !mounted) {
+      return;
+    }
+    try {
+      await shareTextContent(
+        content: vcard,
+        filename: 'contact.vcf',
+        mimeType: 'text/vcard',
+      );
+    } on Exception {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.scanContactSaveToPhoneFailed)),
       );
     }
   }
