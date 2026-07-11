@@ -37,12 +37,14 @@ class GreetingHeader extends StatelessWidget {
       child: Row(
         children: <Widget>[
           // Tapping the avatar opens the user's profile / My Area (owner
-          // 2026-06-27). InkWell rides the SimfPageShell Scaffold's Material ancestor.
+          // 2026-06-27). My Area IS the Profile tab, so go (switch tab) — not
+          // push, which would stack a duplicate My Area that hangs on its own
+          // dashboard load (owner-reported blank/frozen, 2026-07-11).
           Semantics(
             button: true,
             label: l10n.navProfile,
             child: InkWell(
-              onTap: () => context.pushNamed(RouteNames.myArea),
+              onTap: () => context.goNamed(RouteNames.myArea),
               borderRadius:
                   const BorderRadius.all(Radius.circular(SimfTokens.radius)),
               child: SimfAvatar(name: name, currentUser: true),

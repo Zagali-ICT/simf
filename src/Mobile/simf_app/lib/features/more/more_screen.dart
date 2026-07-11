@@ -76,7 +76,11 @@ class MoreScreen extends ConsumerWidget {
               name: profile?.identity.localizedName(l10n.isArabic) ??
                   auth.session.user.displayName,
               tier: profile?.identity.localizedTier(l10n.isArabic),
-              onTap: () => context.pushNamed(RouteNames.myArea),
+              // My Area IS the Profile tab (RouteNames.myArea). Use go, not push,
+              // so this switches to the existing tab instead of stacking a second
+              // My Area instance on top — that duplicate re-ran its own dashboard
+              // load and hung blank forever (owner-reported, 2026-07-11).
+              onTap: () => context.goNamed(RouteNames.myArea),
             ),
             const SizedBox(height: SimfTokens.space5),
           ],
