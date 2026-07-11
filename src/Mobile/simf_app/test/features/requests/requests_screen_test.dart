@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/requests/data/request_models.dart';
 import 'package:simf_app/features/requests/data/requests_repository.dart';
 import 'package:simf_app/features/requests/requests_screen.dart';
@@ -30,6 +31,7 @@ Future<void> _pump(
   WidgetTester tester, {
   List<AppRequestItem>? data,
   bool fail = false,
+  bool isVip = true,
 }) async {
   final router = GoRouter(
     initialLocation: '/requests',
@@ -50,6 +52,7 @@ Future<void> _pump(
           }
           return data ?? const <AppRequestItem>[];
         }),
+        currentUserIsVipProvider.overrideWith((ref) => isVip),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -171,6 +174,14 @@ void main() {
     testWidgets('shows the error state on a wire failure', (tester) async {
       await _pump(tester, fail: true);
       expect(find.text('Could not load your requests'), findsOneWidget);
+    });
+
+    testWidgets('D-729: hides "New request" for a non-VIP viewer',
+        (tester) async {
+      await _pump(tester, isVip: false);
+      // The VIP-only new-meeting-request button is gone; the log/filter stays.
+      expect(find.text('New request'), findsNothing);
+      expect(find.text('Log'), findsOneWidget);
     });
   });
 }
