@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.IdentityAccess.Abstractions;
+using SIMF.Application.Notifications;
 using SIMF.Application.Requests.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -22,6 +23,7 @@ namespace SIMF.Infrastructure.Requests;
 internal sealed class BadgeUpdateRequestService(
     SimfAppDbContext appDbContext,
     IIdentityUserDirectory userDirectory,
+    INotificationDispatcher notifications,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<BadgeUpdateRequestService> logger) : IBadgeUpdateRequestService
@@ -51,6 +53,19 @@ internal sealed class BadgeUpdateRequestService(
             .Where(p => p.UserId == requesterUserId)
             .Select(p => p.JobTitle)
             .SingleOrDefaultAsync(cancellationToken);
+
+        // R-4 — one open badge-update request per requester (mirrors the speaker-meeting
+        // dup guard): a second Pending submission just floods the review desk.
+        var hasOpenRequest = await appDbContext.BadgeUpdateRequests.AsNoTracking()
+            .AnyAsync(r => r.RequestedByUserId == requesterUserId
+                && r.Status == MeetingRequestStatus.Pending, cancellationToken);
+        if (hasOpenRequest)
+        {
+            throw new ApiException(
+                ErrorCodes.AppRequestDuplicatePending, 409,
+                "You already have a pending badge update request.",
+                "لديك بالفعل طلب تحديث بادج قيد المراجعة.");
+        }
 
         var now = timeProvider.GetUtcNow();
         var req = new BadgeUpdateRequest
@@ -222,6 +237,28 @@ internal sealed class BadgeUpdateRequestService(
             ActorUserId = actorUserId,
             Detail = JsonSerializer.Serialize(new { badgeUpdateRequestId = req.Id }),
         }, cancellationToken);
+
+        // R-2 — notify the requester of the decision. On Accept the badge job title was
+        // applied above; this makes that side effect visible instead of silent.
+        // Best-effort: a dispatch failure never undoes the committed response.
+        var accepted = req.Status == MeetingRequestStatus.Accepted;
+        await notifications.TryDispatchAsync(new NotificationRequest
+        {
+            UserId = req.RequestedByUserId,
+            Kind = NotificationKind.BadgeUpdateDecided,
+            Title = accepted ? "Badge update accepted" : "Badge update rejected",
+            TitleArabic = accepted ? "تم قبول تحديث البادج" : "تم رفض تحديث البادج",
+            Body = accepted
+                ? $"Your badge job title was updated to \"{req.RequestedJobTitle}\"."
+                : "Your badge update request was rejected.",
+            BodyArabic = accepted
+                ? $"تم تحديث المسمى الوظيفي في بادجك إلى \"{req.RequestedJobTitle}\"."
+                : "تم رفض طلب تحديث البادج الخاص بك.",
+            Severity = NotificationSeverity.Info,
+            RelatedEntityType = nameof(BadgeUpdateRequest),
+            RelatedEntityId = req.Id,
+            SendEmail = false,
+        }, logger, cancellationToken);
 
         return await LoadDetailAsync(id, cancellationToken);
     }

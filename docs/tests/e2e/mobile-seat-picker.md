@@ -25,6 +25,8 @@ page reloads to show the held reservation.
 | E2E-MOBPICK-006 | No layout / 404 / load error → the empty / not-found / error+retry states | edge | P2 | authored ✓ (screen states mirror My-Seat) |
 | E2E-MOBPICK-007 | Approved-only — a guest / pending account is redirected to sign-in (route auth gate) or 401/403s at the seat call | auth | P1 | covered (router gate 109 + server) |
 | E2E-MOBPICK-008 | **Auto-pick on a FULL session (item 4)** — when `reserve-random` returns `409 SEAT_SESSION_FULL` (the session/hall capacity cap the CP enforces), the picker shows the specific **"No places remain"** message (not the generic failure) and stays usable | error | P0 | authored ✓ (widget — `randomSessionFull` → "No places remain" toast, picker still present) |
+| E2E-MOBPICK-009 | **Concurrent bookings never overbook (M-2)** — when several visitors race `reserve` / `reserve-random`, the server's post-insert backstop guarantees the active count never exceeds the declared capacity (CapacityOverride ?? Hall.Capacity); the losers get `409 SEAT_SESSION_FULL` | conflict | P1 | authored ✓ (API) |
+| E2E-MOBPICK-010 | **A stale pending hold auto-expires (M-6)** — a Pending seat hold the CP never decides is auto-released after its hold window, freeing the seat for others | happy | P2 | authored ✓ (API worker) |
 
 ## Scenarios
 
@@ -61,6 +63,37 @@ Scenario: Auto-pick on a full session says "no places remain"
     generic "Couldn't reserve that seat"
   And the picker stays usable (no pop, not frozen)
 ```
+
+### E2E-MOBPICK-009 — Concurrent bookings never overbook (M-2)
+
+```gherkin
+Scenario: A race cannot push the session past its declared capacity
+  Given a session whose effective capacity is 2 (CapacityOverride below the layout)
+  When five approved visitors fire reserve-random at the same instant
+  Then at most two receive 200 and the rest receive 409 SEAT_SESSION_FULL
+  And the session's active reservation count is <= 2 (never overbooked)
+  # The fail-closed backstop guarantees active <= cap; it may over-correct to
+  # fewer under true parallelism, so no exact surviving count is asserted.
+```
+
+**Evidence captured:**
+- API integration tests: `SeatReservationsTests.Concurrent_reserve_random_never_exceeds_capacity_override`, `SeatReservationsTests.Open_seating_join_capacity_is_enforced_under_concurrency`, `SeatReservationsTests.Capacity_override_below_layout_blocks_the_over_cap_reserve` (run on real SQL Server LocalDB)
+
+### E2E-MOBPICK-010 — A stale pending hold auto-expires (M-6)
+
+```gherkin
+Scenario: The expiry worker releases a hold the CP never decided
+  Given a visitor's Pending seat hold whose ExpiresUtc has passed
+  And a second Pending hold whose window is still in the future
+  When the PendingBookingExpiryWorker scan runs
+  Then only the expired hold is released (ReleasedAt set, Status = Cancelled)
+  And the freed seat can be reserved again
+  And the future-dated hold, an Approved hold and an admin block are untouched
+```
+
+**Evidence captured:**
+- API integration tests: `PendingBookingExpiryWorkerTests.Expiry_scan_releases_only_past_pending_holds`, `SeatReservationsTests.Reserving_stamps_an_expiry_on_the_hold`
+- Reserve/random/join stamp `ExpiresUtc = CreatedAt + 24h`; an admin-reserved row never expires (ExpiresUtc null)
 
 ---
 

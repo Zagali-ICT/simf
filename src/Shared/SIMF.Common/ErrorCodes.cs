@@ -275,6 +275,9 @@ public static class ErrorCodes
     // Seat reservations (D-175, gap doc G11 — Mockup page 7).
     public const string SeatLayoutInvalid = "SEAT_LAYOUT_INVALID";
     public const string SeatLayoutMissing = "SEAT_LAYOUT_MISSING";
+    // H-2 — a layout change would strand active reservations that reference a row/
+    // seat the new layout no longer contains.
+    public const string SeatLayoutHasReservations = "SEAT_LAYOUT_HAS_RESERVATIONS";
     public const string SeatOutOfBounds = "SEAT_OUT_OF_BOUNDS";
     public const string SeatAlreadyReserved = "SEAT_ALREADY_RESERVED";
     public const string SeatAlreadyOwnedBySession = "SEAT_ALREADY_OWNED_BY_SESSION";

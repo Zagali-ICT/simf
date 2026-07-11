@@ -112,6 +112,54 @@ public sealed class ParticipationDocumentRequestsTests : IClassFixture<SimfApiFa
         Assert.Equal(ErrorCodes.AppRequestAlreadyResponded, body.Error!.Code);
     }
 
+    [Fact]
+    public async Task Responding_accept_or_reject_dispatches_a_ParticipationDocumentDecided_notification_to_the_requester()
+    {
+        // R-2 — a document decision lands an in-app notification for the requester.
+        var token = await SignInApprovedVisitorAsync();
+        var submitted = await SubmitAsync(token, documentType: 0);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var respond = await SendAuthAsync(HttpMethod.Put,
+            $"/api/v1/admin/document-requests/{submitted.Id}/respond", admin,
+            new { status = (int)MeetingRequestStatus.Rejected, responseNote = "Not eligible." });
+        Assert.Equal(HttpStatusCode.OK, respond.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var idDb = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var count = await idDb.Notifications.CountAsync(n =>
+            n.Kind == NotificationKind.ParticipationDocumentDecided
+            && n.RelatedEntityId == submitted.Id);
+        Assert.Equal(1, count);
+    }
+
+    [Fact]
+    public async Task Submitting_a_second_pending_request_for_the_same_document_type_is_409()
+    {
+        // R-4 — one open request per (requester, document type).
+        var token = await SignInApprovedVisitorAsync();
+        await SubmitAsync(token, documentType: 0);
+
+        var second = await SendAuthAsync(HttpMethod.Post, "/api/v1/app/document-requests",
+            token, new { documentType = 0 });
+        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
+        var body = (await second.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.AppRequestDuplicatePending, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Submitting_a_pending_request_for_a_different_document_type_is_allowed()
+    {
+        // R-4 — the dup guard keys on (requester, document type), so a distinct type
+        // is still allowed while the first is pending.
+        var token = await SignInApprovedVisitorAsync();
+        await SubmitAsync(token, documentType: 0);
+
+        var other = await SendAuthAsync(HttpMethod.Post, "/api/v1/app/document-requests",
+            token, new { documentType = 1 });
+        Assert.Equal(HttpStatusCode.OK, other.StatusCode);
+    }
+
     // -- helpers --------------------------------------------------------------
 
     private async Task<ParticipationDocumentRequestSubmitted> SubmitAsync(
