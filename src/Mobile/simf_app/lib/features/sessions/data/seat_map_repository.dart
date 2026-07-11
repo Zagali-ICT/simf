@@ -45,6 +45,10 @@ class SeatMapRepository {
   Future<MyReservation> reserveRandom(String sessionId) {
     return _client.post<MyReservation>(
       '/app/sessions/$sessionId/seats/reserve-random',
+      // Send an empty JSON object, not a null body: the endpoint rejects a
+      // bodyless POST with 400 VALIDATION_FAILED ("input does not contain any
+      // JSON tokens") before it ever reaches the handler.
+      body: const <String, dynamic>{},
       decodeData: _decodeReservation,
     );
   }
@@ -55,6 +59,9 @@ class SeatMapRepository {
   Future<MyReservation> joinOpenSeating(String sessionId) {
     return _client.post<MyReservation>(
       '/app/sessions/$sessionId/seats/join',
+      // Empty JSON object, not a null body — a bodyless POST is rejected with
+      // 400 VALIDATION_FAILED before the handler runs (see reserveRandom).
+      body: const <String, dynamic>{},
       decodeData: _decodeReservation,
     );
   }
