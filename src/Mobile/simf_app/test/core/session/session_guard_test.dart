@@ -1,7 +1,9 @@
-// D-726 (owner item 11, Model A) — behaviour tests for the app-side session
-// auto-extend guard: silent refresh while active, a countdown overlay once idle,
-// and auto sign-out if the countdown is ignored. A mutable `clock` drives the
-// token expiry / idle maths; the widget timers are advanced with tester.pump.
+// D-726 / D-737 (owner item 11) — behaviour tests for the app-side inactivity
+// session guard: a proactive keep-alive while active, a 30s countdown overlay
+// once idle, auto sign-out if the countdown is ignored, and — the D-737 fix —
+// a fall-back to that same visible countdown (never a silent sign-out) when the
+// keep-alive cannot extend the session. A mutable `clock` drives the token
+// expiry / idle maths; the widget timers are advanced with tester.pump.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -22,14 +24,16 @@ CurrentUser _visitor() => CurrentUser(
       registrationStatus: RegistrationStatus.approved,
     );
 
-/// A signed-in AuthController whose token expiry is fixed and whose refresh /
+/// A signed-in AuthController whose token expiry is fixed and whose tryRefresh /
 /// sign-out are recorded — the same `extends AuthController` + `build()` fake
-/// pattern the live-screen tests use.
+/// pattern the live-screen tests use. [tryRefresh] mirrors the real contract:
+/// on failure it returns false and does NOT sign out (that is the whole point of
+/// D-737 — the guard, not the refresh, decides when to warn / sign out).
 class _FakeAuth extends AuthController {
   _FakeAuth(this.expiry);
 
   final DateTime expiry;
-  int refreshCalls = 0;
+  int tryRefreshCalls = 0;
   int signOutCalls = 0;
   bool refreshSucceeds = true;
 
@@ -44,11 +48,10 @@ class _FakeAuth extends AuthController {
       );
 
   @override
-  Future<bool> refresh() async {
-    refreshCalls++;
+  Future<bool> tryRefresh() async {
+    tryRefreshCalls++;
     if (!refreshSucceeds) {
-      state = const AuthStateSignedOut();
-      return false;
+      return false; // D-737: tryRefresh never signs the user out on failure.
     }
     // A rotated token far in the future so no later tick acts again.
     state = AuthStateSignedIn(_session(expiry.add(const Duration(minutes: 30))));
@@ -78,7 +81,7 @@ void main() {
           localizationsDelegates: AppL10n.localizationsDelegates,
           supportedLocales: AppL10n.supportedLocales,
           home: SessionGuard(
-            // warnLead (60s) + activeWindow (4min) keep their defaults; only the
+            // idleLimit (5min) + warnLead (60s) keep their defaults; only the
             // tick + countdown are shortened so the test pumps are quick.
             tickInterval: const Duration(seconds: 1),
             countdown: const Duration(seconds: 3),
@@ -88,7 +91,7 @@ void main() {
         ),
       );
 
-  testWidgets('near expiry + active → silent refresh, no overlay',
+  testWidgets('active + token near expiry → proactive refresh, no overlay',
       (tester) async {
     final auth = _FakeAuth(_t0.add(const Duration(seconds: 30)));
     final activity = SessionActivity(now: clock); // lastActivity = t0 (active)
@@ -98,25 +101,43 @@ void main() {
     await tester.pump(const Duration(seconds: 1)); // one guard tick
     await tester.pump(); // settle the async refresh
 
-    expect(auth.refreshCalls, 1);
+    expect(auth.tryRefreshCalls, 1);
     expect(auth.signOutCalls, 0);
     expect(find.byType(SessionTimeoutOverlay), findsNothing);
 
     await tester.pumpWidget(const SizedBox()); // dispose → cancel timers
   });
 
-  testWidgets('near expiry + idle → the countdown overlay appears',
+  testWidgets('inactive past the idle limit → the countdown overlay appears',
       (tester) async {
     final auth = _FakeAuth(_t0.add(const Duration(seconds: 30)));
     final activity = SessionActivity(now: clock); // lastActivity = t0
     await tester.pumpWidget(host(auth, activity));
     await tester.pump(); // settle the MaterialApp first frame
 
-    nowValue = _t0.add(const Duration(minutes: 5)); // idle 5 min, token lapsed
+    nowValue = _t0.add(const Duration(minutes: 5)); // idle 5 min
     await tester.pump(const Duration(seconds: 1)); // one guard tick
 
     expect(find.byType(SessionTimeoutOverlay), findsOneWidget);
-    expect(auth.refreshCalls, 0);
+    expect(auth.tryRefreshCalls, 0); // idle path never proactively refreshes
+
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('D-737: keep-alive fails while active → warn, do NOT silently '
+      'sign out', (tester) async {
+    final auth = _FakeAuth(_t0.add(const Duration(seconds: 30)))
+      ..refreshSucceeds = false; // the refresh cannot extend the session
+    final activity = SessionActivity(now: clock); // active (lastActivity = t0)
+    await tester.pumpWidget(host(auth, activity));
+
+    await tester.pump(); // settle the MaterialApp first frame
+    await tester.pump(const Duration(seconds: 1)); // one guard tick → refresh
+    await tester.pump(); // settle the async refresh → fall back to countdown
+
+    expect(auth.tryRefreshCalls, 1);
+    expect(auth.signOutCalls, 0); // the fix: no abrupt, unannounced sign-out
+    expect(find.byType(SessionTimeoutOverlay), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox());
   });
@@ -136,9 +157,31 @@ void main() {
     await tester.pump(); // run _onStaySignedIn + refresh
     await tester.pump();
 
-    expect(auth.refreshCalls, 1);
+    expect(auth.tryRefreshCalls, 1);
     expect(auth.signOutCalls, 0);
     expect(find.byType(SessionTimeoutOverlay), findsNothing);
+
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('idle overlay → "Stay signed in" but refresh fails → signs out',
+      (tester) async {
+    final auth = _FakeAuth(_t0.add(const Duration(seconds: 30)))
+      ..refreshSucceeds = false;
+    final activity = SessionActivity(now: clock);
+    await tester.pumpWidget(host(auth, activity));
+    await tester.pump(); // settle the MaterialApp first frame
+
+    nowValue = _t0.add(const Duration(minutes: 5));
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.byType(SessionTimeoutOverlay), findsOneWidget);
+
+    await tester.tap(find.text('Stay signed in'));
+    await tester.pump(); // refresh returns false → sign out cleanly
+    await tester.pump();
+
+    expect(auth.tryRefreshCalls, 1);
+    expect(auth.signOutCalls, 1);
 
     await tester.pumpWidget(const SizedBox());
   });
@@ -167,8 +210,8 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('token has comfortable life left → the guard does nothing',
-      (tester) async {
+  testWidgets('active + token has comfortable life left → the guard does '
+      'nothing', (tester) async {
     final auth = _FakeAuth(_t0.add(const Duration(minutes: 5))); // far from expiry
     final activity = SessionActivity(now: clock);
     await tester.pumpWidget(host(auth, activity));
@@ -177,7 +220,7 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(seconds: 1));
 
-    expect(auth.refreshCalls, 0);
+    expect(auth.tryRefreshCalls, 0);
     expect(auth.signOutCalls, 0);
     expect(find.byType(SessionTimeoutOverlay), findsNothing);
 

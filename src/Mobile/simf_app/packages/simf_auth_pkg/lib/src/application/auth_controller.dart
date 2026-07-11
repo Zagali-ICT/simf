@@ -102,15 +102,36 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
   String? currentAccessToken() => _accessToken;
 
   @override
-  Future<bool> refresh() {
-    // Single-flight (D-443): when several requests 401 at the same moment —
-    // e.g. the home screen's parallel loads right after the 5-min access token
-    // lapses — they must share ONE refresh, not each rotate the same refresh
-    // token. Without this the second rotation presents an already-rotated token
-    // and the server's reuse-detection revokes the whole session, signing an
-    // active user out mid-use. Serialising the refresh is the standard
-    // OAuth / MSAL guidance for concurrent 401s. The shared Future is cleared
-    // when it settles so the next genuine expiry refreshes again.
+  Future<bool> refresh() async {
+    // The 401-interceptor path: a failed refresh means the session is dead
+    // (expired / revoked / past the 24h cap), so clear it and let the router
+    // redirect to sign-in. The proactive session-guard path uses [tryRefresh]
+    // instead, which does NOT sign out on failure.
+    final ok = await _sharedRefresh();
+    if (!ok) {
+      await _signedOutCleanup();
+    }
+    return ok;
+  }
+
+  /// Proactive refresh for the session guard (D-737): rotates the token but,
+  /// unlike [refresh], does **not** sign the user out on failure — it returns
+  /// `false` and leaves the session in place, so the guard can show its 30s
+  /// "stay signed in?" warning instead of an abrupt, unannounced sign-out.
+  /// Shares the single-flight with [refresh] (below) so a concurrent 401 refresh
+  /// and this proactive one never rotate the same token twice.
+  Future<bool> tryRefresh() => _sharedRefresh();
+
+  /// Single-flight (D-443): when several requests 401 at the same moment — e.g.
+  /// the home screen's parallel loads right after the 5-min access token lapses
+  /// — they must share ONE refresh, not each rotate the same refresh token.
+  /// Without this the second rotation presents an already-rotated token and the
+  /// server's reuse-detection revokes the whole session, signing an active user
+  /// out mid-use. Serialising the refresh is the standard OAuth / MSAL guidance
+  /// for concurrent 401s. The shared Future is cleared when it settles so the
+  /// next genuine expiry refreshes again. [_refreshOnce] never signs out — the
+  /// caller ([refresh] vs [tryRefresh]) owns that decision.
+  Future<bool> _sharedRefresh() {
     return _refreshInFlight ??= _refreshOnce().whenComplete(() {
       _refreshInFlight = null;
     });
