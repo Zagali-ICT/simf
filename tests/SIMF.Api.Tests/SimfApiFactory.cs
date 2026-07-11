@@ -162,6 +162,16 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         // — mirrors Program.cs (D-547). Idempotent.
         services.GetRequiredService<SIMF.Infrastructure.Regions.RegionSeeder>()
             .SeedAsync().GetAwaiter().GetResult();
+        // D-747 — the 2026 event content (speakers, programme, news, sponsors,
+        // media partners, archive, org about) moved out of the C# seeders into
+        // the by-hand SQL lane (docs/migrations/2026/*.sql, owner rule D-718).
+        // Apply the roster files here so a test DB still carries that content —
+        // mirrors Program.cs's Development run. SeedGaps (booths/delegations/
+        // FAQ/venue) is deliberately excluded to keep the profile-count baseline.
+        // Idempotent; missing files (before their slice lands) are skipped.
+        services.GetRequiredService<SIMF.Infrastructure.Seeding.SqlContentSeeder>()
+            .RunAsync(SIMF.Infrastructure.Seeding.SqlContentSeeder.RosterFiles)
+            .GetAwaiter().GetResult();
     }
 
     protected override void Dispose(bool disposing)

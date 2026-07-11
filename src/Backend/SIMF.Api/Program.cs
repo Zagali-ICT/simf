@@ -429,9 +429,9 @@ if (!app.Environment.IsEnvironment("Testing"))
     // required reference data the app's region picker reads, so it must exist in
     // every environment. Idempotent (keyed on Code).
     await services.GetRequiredService<SIMF.Infrastructure.Regions.RegionSeeder>().SeedAsync();
-    // D-681 — default public content (main hall, the 20-22 Nov programme days +
-    // sessions incl. the opening session, one Highlights item, the org X link) so
-    // a fresh DB is not empty on first boot. Every environment; idempotent.
+    // D-736 — default app-update config keys so the CP configuration grid is not
+    // empty on a fresh DB. Every environment; idempotent. (The 2026 event CONTENT
+    // this used to seed moved to the by-hand SQL lane — D-718/D-747.)
     await services.GetRequiredService<SIMF.Infrastructure.Seeding.DefaultContentSeeder>().SeedAsync();
 
     // B3 — D-221 — in Development only, seed a few sample organisations so the
@@ -440,6 +440,15 @@ if (!app.Environment.IsEnvironment("Testing"))
     {
         await services.GetRequiredService<SIMF.Infrastructure.Organisations.OrganisationSeeder>()
             .SeedFakeAsync();
+
+        // D-747 — in Development only, apply the by-hand 2026 content-seed SQL
+        // (docs/migrations/2026/*.sql: speakers, programme, news, sponsors, media
+        // partners, archive, org about + the booths/delegations/FAQ/venue-map
+        // gaps) so a fresh dev DB renders populated screens. Idempotent. In
+        // production this SQL is run by hand (owner rule D-718); this never runs
+        // outside Development.
+        await services.GetRequiredService<SIMF.Infrastructure.Seeding.SqlContentSeeder>()
+            .RunAsync(SIMF.Infrastructure.Seeding.SqlContentSeeder.AllFiles);
     }
 }
 

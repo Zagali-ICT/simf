@@ -461,9 +461,14 @@ public static class DependencyInjection
         services.AddScoped<SIMF.Application.Regions.Abstractions.IPublicRegionService,
             SIMF.Infrastructure.Regions.PublicRegionService>();
         services.AddScoped<SIMF.Infrastructure.Regions.RegionSeeder>();
-        // D-681 — default public content (hall, programme days + sessions,
-        // highlights, org X link) so a fresh DB is not empty. Idempotent.
+        // D-681 — default app-update config keys so the CP configuration grid
+        // is not empty on a fresh DB. Idempotent. (The 2026 event CONTENT it
+        // used to seed moved to the by-hand SQL lane — D-718/D-747.)
         services.AddScoped<SIMF.Infrastructure.Seeding.DefaultContentSeeder>();
+        // D-747 — Development/Testing runner for the by-hand 2026 content SQL
+        // (docs/migrations/2026/*.sql) so a fresh dev/test DB is not empty.
+        // Production never invokes it — content is applied by hand there.
+        services.AddScoped<SIMF.Infrastructure.Seeding.SqlContentSeeder>();
         // SIMF-FDS-014 (D-261) — shared Contact directory admin CRUD.
         services.AddScoped<SIMF.Application.Contacts.Abstractions.IAdminContactService,
             SIMF.Infrastructure.Contacts.AdminContactService>();

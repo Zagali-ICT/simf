@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using SIMF.Domain.Organization;
 using SIMF.Infrastructure.Persistence;
 using SIMF.Infrastructure.Seeding;
 using Xunit;
@@ -8,11 +7,12 @@ using Xunit;
 namespace SIMF.Api.Tests;
 
 /// <summary>
-/// Tests for the default public-content seed (D-681): the hall + 20-22 Nov
-/// programme days + sessions (incl. the opening session), the Highlights news
-/// item and the organisation X link all land, and a second run is a no-op
-/// (idempotent, keyed on natural keys). The production fixture skips this seeder,
-/// so the test invokes it explicitly against its own isolated database.
+/// Tests for the default config seed. Since D-747 the 2026 event CONTENT (hall,
+/// programme days + sessions, Highlights news) moved to the by-hand SQL lane
+/// (<c>docs/migrations/2026/*.sql</c>, covered by <see cref="SqlContentSeederTests"/>);
+/// this seeder now only pre-creates the six app-update policy config keys so the
+/// CP configuration grid is not empty. The production fixture skips this seeder,
+/// so the tests invoke it explicitly against their own isolated database.
 /// </summary>
 public sealed class DefaultContentSeederTests : IClassFixture<SimfApiFactory>
 {
@@ -25,7 +25,7 @@ public sealed class DefaultContentSeederTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Seeds_the_default_content_and_is_idempotent()
+    public async Task Seeds_the_app_update_config_keys_and_is_idempotent()
     {
         await SeedAsync();
         await SeedAsync(); // second run must not duplicate anything
@@ -33,33 +33,10 @@ public sealed class DefaultContentSeederTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
 
-        // The one main hall.
-        Assert.Equal(1, await db.Halls.CountAsync(h => h.Code == "MAIN"));
-
-        // The three programme days (20-22 Nov 2026).
-        var days = await db.ProgrammeDays
-            .Where(d => d.Date >= new DateOnly(2026, 11, 20) && d.Date <= new DateOnly(2026, 11, 22))
-            .Select(d => d.Date)
-            .ToListAsync();
-        Assert.Equal(3, days.Count);
-        Assert.Contains(new DateOnly(2026, 11, 20), days);
-        Assert.Contains(new DateOnly(2026, 11, 22), days);
-
-        // The opening session carries the placeholder live URL.
-        var opening = await db.Sessions.SingleAsync(s => s.Code == "S-D1-01");
-        Assert.Equal("الجلسة الافتتاحية", opening.TitleArabic);
-        Assert.False(string.IsNullOrWhiteSpace(opening.LiveStreamUrl));
-        Assert.Equal(5, await db.Sessions.CountAsync(s => s.Code.StartsWith("S-D")));
-
-        // The Highlights news item.
-        Assert.Equal(1, await db.News.CountAsync(n => n.Category == "Highlights"));
-
-        // The organisation X link — owned by IdentitySeeder (the single owner of
-        // the org profile), which the factory runs before this seed (D-708).
-        var org = await db.OrganizationProfile.SingleAsync(p => p.Id == OrganizationProfile.SingletonId);
-        Assert.Equal("https://x.com/SIMF_RSNF", org.XUrl);
-
-        // D-736 — the six app-update policy keys land once (values empty = off).
+        // D-736 — the six app-update policy keys land once (existence keyed on
+        // Key; a sibling test may have edited one value, so only the count is
+        // asserted here — the empty-default + no-overwrite behaviour is covered
+        // by Reseeding_never_overwrites_an_edited_app_update_value below).
         var updateKeys = await db.SystemSettings
             .Where(s => s.Key.StartsWith("appUpdate."))
             .ToListAsync();

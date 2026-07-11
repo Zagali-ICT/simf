@@ -12,8 +12,8 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     [DbContext(typeof(SimfAppDbContext))]
-    [Migration("20260709085203_D715_AddHallAvailabilityWindow")]
-    partial class D715_AddHallAvailabilityWindow
+    [Migration("20260711191035_20260501001")]
+    partial class _20260501001
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1052,6 +1052,42 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         });
                 });
 
+            modelBuilder.Entity("SIMF.Domain.BusinessMeetings.MeetingActionToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Action")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("ExpiresUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("SpeakerMeetingRequestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTimeOffset?>("UsedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SpeakerMeetingRequestId");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.ToTable("MeetingActionTokens");
+                });
+
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.MeetingTable", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1152,6 +1188,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<Guid?>("HallId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("MeetingTableId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("RequestedByUserId")
                         .HasColumnType("uniqueidentifier");
 
@@ -1176,6 +1218,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<DateTimeOffset?>("SlotStartUtc")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<DateTimeOffset?>("SpeakerDecisionAt")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<Guid>("SpeakerId")
                         .HasColumnType("uniqueidentifier");
 
@@ -1191,11 +1236,17 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("AvailabilityWindowId");
 
+                    b.HasIndex("MeetingTableId");
+
                     b.HasIndex("RequestedByUserId");
+
+                    b.HasIndex("HallId", "SlotStartUtc")
+                        .IsUnique()
+                        .HasFilter("[HallId] IS NOT NULL AND [SlotStartUtc] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
 
                     b.HasIndex("SpeakerId", "SlotStartUtc")
                         .IsUnique()
-                        .HasFilter("[Status] = 1 AND [SlotStartUtc] IS NOT NULL");
+                        .HasFilter("[SlotStartUtc] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
 
                     b.HasIndex("SpeakerId", "Status", "CreatedAt");
 
@@ -2295,6 +2346,53 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasFilter("[IsActive] = 1");
 
                     b.ToTable("VisitorShareTokens", (string)null);
+                });
+
+            modelBuilder.Entity("SIMF.Domain.Email.EmailTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("BodyAr")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BodyEn")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(48)
+                        .HasColumnType("nvarchar(48)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Type")
+                        .IsUnique();
+
+                    b.ToTable("EmailTemplates", (string)null);
                 });
 
             modelBuilder.Entity("SIMF.Domain.Exhibition.Booth", b =>
@@ -3758,6 +3856,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
+
+                    b.Property<bool>("IsAppRegisterable")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<bool>("IsForVisitor")
                         .ValueGeneratedOnAdd()
@@ -5456,6 +5559,17 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Navigation("Hall");
                 });
 
+            modelBuilder.Entity("SIMF.Domain.BusinessMeetings.MeetingActionToken", b =>
+                {
+                    b.HasOne("SIMF.Domain.BusinessMeetings.SpeakerMeetingRequest", "SpeakerMeetingRequest")
+                        .WithMany()
+                        .HasForeignKey("SpeakerMeetingRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("SpeakerMeetingRequest");
+                });
+
             modelBuilder.Entity("SIMF.Domain.BusinessMeetings.MeetingTable", b =>
                 {
                     b.HasOne("SIMF.Domain.Programme.Hall", "Hall")
@@ -5483,6 +5597,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasOne("SIMF.Domain.BusinessMeetings.SpeakerAvailabilityWindow", null)
                         .WithMany()
                         .HasForeignKey("AvailabilityWindowId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("SIMF.Domain.Programme.Hall", null)
+                        .WithMany()
+                        .HasForeignKey("HallId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("SIMF.Domain.BusinessMeetings.MeetingTable", null)
+                        .WithMany()
+                        .HasForeignKey("MeetingTableId")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("SIMF.Domain.Programme.Speaker", "Speaker")
