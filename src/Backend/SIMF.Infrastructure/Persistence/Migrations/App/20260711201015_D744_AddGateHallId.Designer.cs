@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SIMF.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     [DbContext(typeof(SimfAppDbContext))]
-    partial class SimfAppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260711201015_D744_AddGateHallId")]
+    partial class D744_AddGateHallId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3719,10 +3722,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<string>("IqamaNumberHash")
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
@@ -3754,10 +3753,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<string>("NationalIdHash")
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
-
                     b.Property<int>("NationalityId")
                         .HasColumnType("int");
 
@@ -3767,10 +3762,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("PassportNumber")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("PassportNumberHash")
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
 
                     b.Property<string>("PlaceOfBirth")
                         .IsRequired()
@@ -3826,21 +3817,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
-                    b.HasIndex("IqamaNumberHash")
-                        .IsUnique()
-                        .HasFilter("[IqamaNumberHash] IS NOT NULL");
-
-                    b.HasIndex("NationalIdHash")
-                        .IsUnique()
-                        .HasFilter("[NationalIdHash] IS NOT NULL");
-
                     b.HasIndex("NationalityId");
 
                     b.HasIndex("OrganisationId");
-
-                    b.HasIndex("PassportNumberHash")
-                        .IsUnique()
-                        .HasFilter("[PassportNumberHash] IS NOT NULL");
 
                     b.HasIndex("ProfileTypeId");
 

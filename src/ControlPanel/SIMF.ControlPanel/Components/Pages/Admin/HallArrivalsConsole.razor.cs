@@ -44,7 +44,17 @@ public partial class HallArrivalsConsole
                 new GridQuery { Top = 200, Sort = "startUtc" });
             if (envelope is { Success: true, Data: not null })
             {
-                _sessions = envelope.Data.Items.Where(s => s.IsActive).ToList();
+                // X-3 — the operator can only record an arrival against a session
+                // that is currently live (its time window, ± a short grace). Match
+                // the server's EnsureSessionLiveNow rule so the picker never offers
+                // a session the API would reject with SESSION_NOT_LIVE.
+                var now = DateTimeOffset.UtcNow;
+                var grace = TimeSpan.FromMinutes(15);
+                _sessions = envelope.Data.Items
+                    .Where(s => s.IsActive
+                        && now >= s.StartUtc - grace
+                        && now <= s.EndUtc + grace)
+                    .ToList();
             }
             else
             {

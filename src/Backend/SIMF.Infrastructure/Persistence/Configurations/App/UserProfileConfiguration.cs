@@ -47,6 +47,26 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         builder.Property(profile => profile.NationalId).HasMaxLength(20);
         builder.Property(profile => profile.IqamaNumber).HasMaxLength(20);
         builder.Property(profile => profile.PassportNumber).HasMaxLength(32);
+
+        // H-1 — blind-index columns for the duplicate-identity guard. The
+        // plaintext id columns above are randomly-nonce encrypted (SimfAppDbContext
+        // OnModelCreating) so they CANNOT be unique-indexed; these deterministic
+        // keyed-HMAC digests can. Filtered UNIQUE so two profiles cannot share a
+        // National ID / Iqama / Passport, while the many null rows (no id of that
+        // kind, or a row not written through the guarded path) never collide. Same
+        // filtered-unique style as QrId / ReferenceNumber above.
+        builder.Property(profile => profile.NationalIdHash).HasMaxLength(64);
+        builder.Property(profile => profile.IqamaNumberHash).HasMaxLength(64);
+        builder.Property(profile => profile.PassportNumberHash).HasMaxLength(64);
+        builder.HasIndex(profile => profile.NationalIdHash)
+            .IsUnique()
+            .HasFilter("[NationalIdHash] IS NOT NULL");
+        builder.HasIndex(profile => profile.IqamaNumberHash)
+            .IsUnique()
+            .HasFilter("[IqamaNumberHash] IS NOT NULL");
+        builder.HasIndex(profile => profile.PassportNumberHash)
+            .IsUnique()
+            .HasFilter("[PassportNumberHash] IS NOT NULL");
         builder.Property(profile => profile.SaudiMobile).HasMaxLength(20);
         builder.Property(profile => profile.InternationalMobile).HasMaxLength(24);
         // C6 — D-371: stored normalized (3 letters + 1–4 digits, no separators).

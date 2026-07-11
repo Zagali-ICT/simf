@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.IdentityAccess;
+using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.UserProfile;
 using SIMF.Domain.Profiles;
@@ -30,6 +31,26 @@ internal sealed class UserProfileRepository(
         appDbContext.UserProfiles.SingleOrDefaultAsync(p => p.UserId == userId, cancellationToken);
 
     public void Add(UserProfile profile) => appDbContext.UserProfiles.Add(profile);
+
+    public Task<bool> AnyOtherProfileWithIdentityHashAsync(
+        Guid excludeUserId, string? nationalIdHash, string? iqamaNumberHash,
+        string? passportNumberHash, CancellationToken cancellationToken = default)
+    {
+        // The validator forces IsSaudi to partition the identifiers, so at most
+        // one hash is non-null per request; a null hash never matches a stored
+        // NULL because the equality is on the non-null value only.
+        if (nationalIdHash is null && iqamaNumberHash is null && passportNumberHash is null)
+        {
+            return Task.FromResult(false);
+        }
+        return appDbContext.UserProfiles
+            .AsNoTracking()
+            .AnyAsync(p => p.UserId != excludeUserId
+                && ((nationalIdHash != null && p.NationalIdHash == nationalIdHash)
+                    || (iqamaNumberHash != null && p.IqamaNumberHash == iqamaNumberHash)
+                    || (passportNumberHash != null && p.PassportNumberHash == passportNumberHash)),
+                cancellationToken);
+    }
 
     public async Task<long> NextRegistrationReferenceAsync(
         CancellationToken cancellationToken = default)
@@ -196,4 +217,32 @@ internal sealed class UserProfileRepository(
 
     public Task SaveAppChangesAsync(CancellationToken cancellationToken = default) =>
         appDbContext.SaveChangesAsync(cancellationToken);
+
+    public async Task SaveProfileIdentityChangesAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await appDbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (IsIdentityUniqueIndexViolation(ex))
+        {
+            throw new ApiException(
+                ErrorCodes.DuplicateIdentity, 409,
+                "An account is already registered with this national ID, Iqama, or passport number.",
+                "يوجد حساب مسجّل بالفعل بهذه الهوية الوطنية أو رقم الإقامة أو جواز السفر.");
+        }
+    }
+
+    /// <summary>True only for the three filtered UNIQUE identity blind-index
+    /// violations (National ID / Iqama / passport). The SQL Server duplicate-key
+    /// message carries the offending index name, so any other unique/constraint
+    /// violation is left to rethrow unchanged (narrow translation — mirrors
+    /// <c>SeatReservationService.PersistWithUniquenessGuardAsync</c>).</summary>
+    private static bool IsIdentityUniqueIndexViolation(DbUpdateException ex)
+    {
+        var message = ex.InnerException?.Message ?? ex.Message;
+        return message.Contains("IX_UserProfiles_NationalIdHash", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("IX_UserProfiles_IqamaNumberHash", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("IX_UserProfiles_PassportNumberHash", StringComparison.OrdinalIgnoreCase);
+    }
 }

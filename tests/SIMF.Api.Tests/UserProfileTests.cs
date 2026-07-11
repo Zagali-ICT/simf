@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Globalization;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
@@ -585,6 +586,62 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         var seqA = long.Parse(a.ReferenceNumber![^8..]);
         var seqB = long.Parse(b.ReferenceNumber![^8..]);
         Assert.True(seqB > seqA, $"expected {seqB} > {seqA}");
+    }
+
+    // H-1 (FIX A) — the self-service write path must populate the identity blind
+    // index (so the filtered UNIQUE indexes + the duplicate-identity guard see it)
+    // and reject a National ID / Iqama / passport already on ANOTHER user's row,
+    // while never false-flagging a user re-saving their OWN id.
+    [Fact]
+    public async Task Self_service_upsert_persists_a_non_null_national_id_hash()
+    {
+        var token = await CreateUserAndSignInAsync();
+        var actorId = await GetActorIdAsync(token);
+
+        var response = await PostAuthAsync(Path, await ValidSaudiRequestAsync(), token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var hash = await appDb.UserProfiles
+            .Where(p => p.UserId == actorId)
+            .Select(p => p.NationalIdHash)
+            .SingleAsync();
+        Assert.False(string.IsNullOrEmpty(hash));
+    }
+
+    [Fact]
+    public async Task Self_service_upsert_of_an_id_on_another_users_profile_is_409()
+    {
+        var sharedNationalId = MintNationalId();
+
+        var tokenA = await CreateUserAndSignInAsync();
+        var reqA = await ValidSaudiRequestAsync();
+        reqA.NationalId = sharedNationalId;
+        var first = await PostAuthAsync(Path, reqA, tokenA);
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+
+        var tokenB = await CreateUserAndSignInAsync();
+        var reqB = await ValidSaudiRequestAsync();
+        reqB.NationalId = sharedNationalId;
+        var second = await PostAuthAsync(Path, reqB, tokenB);
+        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
+        var body = (await second.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.DuplicateIdentity, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Self_service_resave_of_my_own_id_is_not_a_false_conflict()
+    {
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+
+        var first = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+
+        // Same user, same National ID — self-exclusion means no false 409.
+        var second = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, second.StatusCode);
     }
 
     // C5 (D-371) — a self-registering visitor is locked to the single
@@ -1392,9 +1449,45 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
             DateOfBirth = new DateOnly(1990, 1, 1),
             PlaceOfBirth = "Riyadh",
             IsSaudi = true,
-            NationalId = "1101798278",   // D-197 — Luhn-valid Saudi national id
+            // H-1 (FIX A) — the self-service write path now populates the National-ID
+            // blind index and dedups on it, and this class shares ONE DB across tests,
+            // so a hardcoded id would 409 the second distinct user. Mint a UNIQUE
+            // Luhn-valid Saudi id per call (mirrors WalkInRegistrationTests).
+            NationalId = MintNationalId(),
             OrganisationId = organisationId,
         };
+    }
+
+    // H-1 (FIX A) — unique, Luhn-valid Saudi National IDs per call. Seeded from a
+    // random base so parallel test classes (each on its own DB) never coincide.
+    // Mirrors the WalkInRegistrationTests minter.
+    private static int _identitySeq = Random.Shared.Next(1, 80_000_000);
+
+    private static string MintNationalId()
+    {
+        var n = System.Threading.Interlocked.Increment(ref _identitySeq) % 90_000_000;
+        var body = "1" + n.ToString("D8", CultureInfo.InvariantCulture);
+        return body + LuhnCheckDigit(body).ToString(CultureInfo.InvariantCulture);
+    }
+
+    // The Luhn check digit at the END of the number (position 0 from the right —
+    // not doubled), so the partial's rightmost digit IS doubled.
+    private static int LuhnCheckDigit(string partialWithoutCheck)
+    {
+        var sum = 0;
+        var doubleDigit = true;
+        for (var i = partialWithoutCheck.Length - 1; i >= 0; i--)
+        {
+            var digit = partialWithoutCheck[i] - '0';
+            if (doubleDigit)
+            {
+                digit *= 2;
+                if (digit > 9) { digit -= 9; }
+            }
+            sum += digit;
+            doubleDigit = !doubleDigit;
+        }
+        return (10 - (sum % 10)) % 10;
     }
 
     /// <summary>Creates one active <see cref="UserInterest"/> directly via the

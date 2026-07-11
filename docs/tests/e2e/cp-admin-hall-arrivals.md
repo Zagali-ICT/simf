@@ -269,6 +269,51 @@ Scenario: Arabic toggle mirrors the console
   `.feature` file under `tests/SIMF.E2E.Tests/` (project to be created) +
   step-definition class. The Gherkin shape is already runner-agnostic.
 
+## On-site remediation (W4 — X-2 / X-3 / X-4)
+
+| Id | Scenario | Category | Priority | Status |
+|----|----------|----------|----------|--------|
+| E2E-HAR-015 | Session picker only offers currently-live sessions; a stale/future session is rejected with `SESSION_NOT_LIVE` | validation | P0 | _to author_ |
+| E2E-HAR-016 | Recording an arrival when the hall is at its physical capacity → `HALL_AT_CAPACITY` | validation | P1 | _to author_ |
+| E2E-HAR-017 | Door QR of an approved attendee whose profile-type is inactive → `ATTENDEE_NOT_APPROVED` | validation | P1 | _to author_ |
+
+### E2E-HAR-015 — arrival bound to a live session window (± 15 min grace)
+
+```gherkin
+Scenario: the picker hides non-live sessions and the API rejects a stale one
+  Given a session "Opening Keynote" runs 09:00–10:00 and it is now 14:00
+  When the operator opens /admin/hall-arrivals
+  Then "Opening Keynote" does NOT appear in the Session dropdown
+  When a client posts an arrival for that session id via /admin/sessions/{id}/arrivals
+  Then the API responds 409 with error code SESSION_NOT_LIVE
+  And no HallAttendance row is written for that session
+  # A session live now (± 15 min grace of its window) is offered and accepted.
+```
+
+### E2E-HAR-016 — hall at capacity
+
+```gherkin
+Scenario: a full hall rejects a further distinct arrival
+  Given the hall "Majlis A" has Capacity 1 and one attendee is currently present
+      for the live session
+  When the operator scans a SECOND, distinct approved attendee's badge QR
+  Then the API responds 409 with error code HALL_AT_CAPACITY
+  And a red toast shows the server message "This hall is at capacity." /
+      "بلغت هذه القاعة سعتها القصوى."
+  # A re-scan by the attendee already present merges (no capacity denial).
+```
+
+### E2E-HAR-017 — inactive profile-type is not admitted at the door
+
+```gherkin
+Scenario: an approved holder with a deactivated profile-type is denied
+  Given an attendee is Approved and unlocked but their profile-type is IsActive=false
+  When the operator scans the attendee's badge QR at the hall door
+  Then the API responds 403 with error code ATTENDEE_NOT_APPROVED
+  And no HallAttendance row is written
+  # Mirrors the perimeter gate's ProfileTypeInactive denial (X-4 unifies them).
+```
+
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-07-11 by Claude (W4 on-site remediation — X-2/X-3/X-4 hall-arrival guards). Prior: 2026-06-02 (E2E catalogue rebuild).

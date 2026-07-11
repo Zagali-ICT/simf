@@ -814,6 +814,9 @@
   <data name="Admin.Gates.Field.DescriptionArabicHint" xml:space="preserve"><value>Optional. Up to 1024 characters.</value></data>
   <data name="Admin.Gates.Field.DirectionMode" xml:space="preserve"><value>Direction policy</value></data>
   <data name="Admin.Gates.Field.DirectionModeHint" xml:space="preserve"><value>In / Out fixes the direction; Both infers direction from the visitor's last allowed scan at this gate.</value></data>
+  <data name="Admin.Gates.Field.Hall" xml:space="preserve"><value>Hall (door gate)</value></data>
+  <data name="Admin.Gates.Field.HallNone" xml:space="preserve"><value>None — perimeter gate</value></data>
+  <data name="Admin.Gates.Field.HallHint" xml:space="preserve"><value>Bind this gate to a hall to make it a hall-door gate: an allowed check-in also records hall attendance for the session live in that hall. Leave as "None" for a perimeter/venue gate.</value></data>
   <data name="Admin.Gates.Field.AllowedProfileTypes" xml:space="preserve"><value>Allowed profile types</value></data>
   <data name="Admin.Gates.Field.AllowedProfileTypesHint" xml:space="preserve"><value>Empty = all profile types allowed (general gate). Pick one or more to restrict the gate.</value></data>
   <data name="Admin.Gates.Field.AssignedOperators" xml:space="preserve"><value>Assigned operators</value></data>
