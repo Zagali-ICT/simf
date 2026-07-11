@@ -108,6 +108,15 @@
                                            OnClick="@(() => OnRespondAsync(context))" />
                     </AuthorizedAction>
                 }
+                @* R-1 — an AwaitingSpeaker row is not a dead-end: the admin can re-send
+                   the speaker's Approve/Reject confirmation email (fresh 72h links). *@
+                else if (context.Status == MeetingRequestStatus.AwaitingSpeaker)
+                {
+                    <AuthorizedAction Permission="@PermissionCatalog.SpeakerMeetingRequests.Manage">
+                        <SimfToolbarButton Icon="send" Title="@L["Admin.SpeakerMeetingRequests.Resend"]"
+                                           OnClick="@(() => OnResendAsync(context))" />
+                    </AuthorizedAction>
+                }
             </RowActions>
             <EmptyTemplate>
                 <SimfEmptyState Title="@L["Admin.SpeakerMeetingRequests.None"]" />

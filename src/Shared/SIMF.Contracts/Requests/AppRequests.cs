@@ -55,7 +55,11 @@ public sealed record AppRequestItem(
     /// speaker profile shows; null for the other kinds, where the app falls back
     /// to the meeting-type headline. Append-only (D-219): the app reads it by
     /// name and older clients ignore it.</summary>
-    string? Subtitle = null);
+    string? Subtitle = null,
+    /// <summary>R-3 — the admin's response note for a decided speaker / document / badge
+    /// request (e.g. the rejection reason). Null when none. Append-only (D-219): the app
+    /// reads it by name and older clients ignore it.</summary>
+    string? ResponseNote = null);
 
 /// <summary>D-500 — body for <c>POST /app/my-requests/cancel</c>: the requester
 /// withdraws one of their own still-pending requests.</summary>

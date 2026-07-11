@@ -243,6 +243,37 @@ Scenario: The screen mirrors under Arabic
   Then the labels flip to "Requests" / "New request" / All / Pending / Accepted / Rejected / Cancelled
 ```
 
+### E2E-REQ-012 — An admin-accepted-but-speaker-unconfirmed meeting is still cancellable (R-1c)
+
+```gherkin
+Scenario: An AwaitingSpeaker speaker meeting shows as under review and can be withdrawn
+  Given the user has a speaker meeting the admin Accepted + bound to a hall
+    (server status AwaitingSpeaker), with the speaker not yet confirmed
+  When the user opens الطلبات
+  Then the row shows the folded status قيد المراجعة / Pending (wire values 0-3 only)
+  And the Cancel action is available (canCancel = true)
+  When the user cancels it
+  Then POST /app/my-requests/cancel returns 200, the request becomes Cancelled,
+    the held hall slot is freed, and the speaker's confirmation link no longer resolves
+  # A decided document/badge request stays Pending-only for cancel.
+```
+
+**Evidence:** `MyRequestsTests.My_requests_marks_an_AwaitingSpeaker_speaker_meeting_as_cancellable_but_still_reports_Pending_status`, `Cancelling_an_AwaitingSpeaker_speaker_meeting_sets_Cancelled_and_frees_the_slot`, `Cancelling_a_document_or_badge_request_still_requires_Pending` (all green, API).
+
+### E2E-REQ-013 — A rejected request surfaces the admin's response note (R-3)
+
+```gherkin
+Scenario: The rejection reason is shown in the expanded card
+  Given the user has a Rejected document request whose admin ResponseNote is
+    "Missing passport copy."
+  When the user opens الطلبات and expands that card
+  Then the response note text is shown under the status line
+  And a request with no response note shows no note text
+  # responseNote is an append-only wire field; older clients ignore it.
+```
+
+**Evidence:** `MyRequestsTests.My_requests_surfaces_the_admin_ResponseNote_on_a_rejected_document_and_badge_request` (API); `request_models_test.dart` (parse + blank→null); `request_card_test.dart` (shows-when-present / omits-when-null) — all green.
+
 ---
 
 ## Implementation notes
@@ -291,6 +322,6 @@ Scenario: The screen mirrors under Arabic
 
 ---
 
-_Last reviewed:_ `2026-06-26` by `SIMF Team` — D-500 Wave 5 unified requests feed
+_Last reviewed:_ `2026-07-11` by `Claude` — on-site W2b (R-1c AwaitingSpeaker speaker meeting is cancellable + R-3 admin response-note surfacing; added E2E-REQ-012/013). Prior: `2026-06-26` by `SIMF Team` — D-500 Wave 5 unified requests feed
 (الطلبات, Figma `1408:9726`): five-kind feed + document/badge submit + self-cancel;
 supersedes the D-479 My-meetings screen.

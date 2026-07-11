@@ -65,6 +65,7 @@ class AppRequestItem {
     required this.canCancel,
     this.eventDateUtc,
     this.subtitle,
+    this.responseNote,
   });
 
   final AppRequestKind kind;
@@ -80,6 +81,10 @@ class AppRequestItem {
   /// (Figma 1701:9406). Carries the speaker's rank for a speaker meeting; null
   /// for the other kinds, where the card falls back to the meeting-type line.
   final String? subtitle;
+
+  /// R-3 — the admin's response note for a decided request (e.g. the rejection
+  /// reason). Null when none. Append-only wire field.
+  final String? responseNote;
 
   /// The context line under the type headline, in the active locale (AR/EN with
   /// a fallback).
@@ -110,6 +115,9 @@ class AppRequestItem {
       subtitle: (json['subtitle'] as String?)?.trim().isEmpty ?? true
           ? null
           : (json['subtitle'] as String).trim(),
+      responseNote: (json['responseNote'] as String?)?.trim().isEmpty ?? true
+          ? null
+          : (json['responseNote'] as String).trim(),
     );
   }
 

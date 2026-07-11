@@ -2124,6 +2124,8 @@
   <data name="Admin.SpeakerMeetingRequests.Filter.Accepted" xml:space="preserve"><value>Accepted</value></data>
   <data name="Admin.SpeakerMeetingRequests.Filter.Rejected" xml:space="preserve"><value>Rejected</value></data>
   <data name="Admin.SpeakerMeetingRequests.Filter.AwaitingSpeaker" xml:space="preserve"><value>Awaiting speaker</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Resend" xml:space="preserve"><value>Resend speaker confirmation</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Resend.Done" xml:space="preserve"><value>The speaker confirmation email was re-sent.</value></data>
   <data name="Admin.SpeakerMeetingRequests.Filter.Cancelled" xml:space="preserve"><value>Cancelled</value></data>
   <data name="Admin.SpeakerMeetingRequests.Bind.Hall" xml:space="preserve"><value>Bind to hall (optional)</value></data>
   <data name="Admin.SpeakerMeetingRequests.Bind.NoHall" xml:space="preserve"><value>— No hall (accept only) —</value></data>

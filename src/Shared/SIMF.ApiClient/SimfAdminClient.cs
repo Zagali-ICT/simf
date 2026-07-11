@@ -2341,6 +2341,14 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
+    // R-1 — re-send the speaker's Approve/Reject confirmation links (AwaitingSpeaker only).
+    public Task<ApiCallResult<bool>> ResendSpeakerMeetingConfirmationAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Post, $"speaker-meeting-requests/{id}/resend-confirmation",
+            content: null, accessToken, cancellationToken);
+
     // -- D-500 (Wave 5, الطلبات) — participation-document + badge-update request
     //    desks (SIMF.Contracts.Requests) -------------------------------------
 
