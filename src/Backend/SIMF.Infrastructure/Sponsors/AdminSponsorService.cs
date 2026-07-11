@@ -1,5 +1,6 @@
 // Tests: SIMF.Api.Tests/SponsorsTests.cs
 using Microsoft.EntityFrameworkCore;
+using SIMF.Application.Assets.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.Sponsors.Abstractions;
 using SIMF.Common;
@@ -15,6 +16,7 @@ namespace SIMF.Infrastructure.Sponsors;
 /// audit). Soft-delete via <see cref="Sponsor.Deactivate"/>.</summary>
 internal sealed class AdminSponsorService(
     SimfAppDbContext appDbContext,
+    IAssetService assetService,
     IAuditLog auditLog,
     TimeProvider timeProvider) : IAdminSponsorService
 {
@@ -104,6 +106,12 @@ internal sealed class AdminSponsorService(
                 sponsor.About,
                 sponsor.AboutArabic))
             .ToListAsync(cancellationToken);
+
+        // The grid renders the real logo thumbnail only for rows with an active
+        // SponsorLogo asset (else an initials tile) — one batched query, no N+1.
+        var logoOwners = await assetService.WhichOwnersHaveActiveAssetAsync(
+            AssetCategory.SponsorLogo, page.Select(row => row.Id).ToList(), cancellationToken);
+        page = page.Select(row => row with { HasLogo = logoOwners.Contains(row.Id) }).ToList();
 
         return GridPage<AdminSponsorSummary>.Of(page, total,
             skip, top);

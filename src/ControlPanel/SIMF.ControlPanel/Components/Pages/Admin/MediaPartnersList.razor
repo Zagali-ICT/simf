@@ -1,18 +1,18 @@
-@* D-199 (CP UI for D-199 media partners, Mockup page 31 â€” "Ø´Ø±ÙƒØ§Ø¡ Ø§Ù„Ù†Ø¬Ø§Ø­") â€”
+@* D-199 (CP UI for D-199 media partners, Mockup page 31 - "Success Partners") -
    admin CRUD over the public list of media partners. The public list is
-   ordered by DisplayOrder asc, NameArabic asc â€” admins control name (En/Ar),
-   logo path, link, display order and the active flag here. Centralized
-   dialog/full-page framing D-353: Add / Edit / View / Delete are hosted by
-   CrudShell, which frames the reusable MediaPartnerAddEdit and
-   MediaPartnerViewDelete forms as a popup or a full page per the admin's
-   toolbar choice (persisted in localStorage via CpPreferences). The inline
-   SimfModal form + native confirm() delete it used to carry are gone. *@
+   ordered by DisplayOrder asc, NameArabic asc - admins control name (En/Ar),
+   logo, link, display order and the active flag here. Centralized dialog/full-
+   page framing D-353: Add / Edit / View / Delete are hosted by CrudShell, which
+   frames the reusable MediaPartnerAddEdit and MediaPartnerViewDelete forms as a
+   popup or a full page per the admin's toolbar choice (persisted in localStorage
+   via CpPreferences). D-740: the raw logo-path text column becomes a real logo
+   thumbnail (or initials tile) inside a shared SimfIdentityCell. *@
 @page "/admin/media-partners"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.MediaPartners.View)]
 @using SIMF.Contracts.PublicRelations
 
-<PageTitle>@L["Admin.MediaPartners.Title"] Â· SIMF</PageTitle>
+<PageTitle>@L["Admin.MediaPartners.Title"] · SIMF</PageTitle>
 
 @if (!GridHidden)
 {
@@ -63,23 +63,27 @@
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>
                 <Columns>
-                    <SimfDataGridColumn TItem="AdminMediaPartnerSummary" Key="name"
+                    <SimfDataGridColumn TItem="AdminMediaPartnerSummary" Key="name" Width="42%"
                                         Header="@L["Admin.MediaPartners.Col.NameEn"]"
                                         Sortable="true" Filterable="true">
-                        <CellTemplate>@context.Name</CellTemplate>
-                    </SimfDataGridColumn>
-                    <SimfDataGridColumn TItem="AdminMediaPartnerSummary" Key="namearabic"
-                                        Header="@L["Admin.MediaPartners.Col.NameAr"]"
-                                        Sortable="true" Filterable="true">
-                        <CellTemplate>@context.NameArabic</CellTemplate>
-                    </SimfDataGridColumn>
-                    <SimfDataGridColumn TItem="AdminMediaPartnerSummary" Key="logo"
-                                        Header="@L["Admin.MediaPartners.Col.Logo"]">
-                        <CellTemplate>@(string.IsNullOrWhiteSpace(context.LogoRelativePath) ? "â€”" : context.LogoRelativePath)</CellTemplate>
+                        <CellTemplate>
+                            <SimfIdentityCell ImageUrl="@LogoImageUrl(context)"
+                                              Name="@context.Name"
+                                              NameSecondary="@context.NameArabic" />
+                        </CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminMediaPartnerSummary" Key="url"
                                         Header="@L["Admin.MediaPartners.Col.Url"]">
-                        <CellTemplate>@(string.IsNullOrWhiteSpace(context.Url) ? "â€”" : context.Url)</CellTemplate>
+                        <CellTemplate>
+                            @if (string.IsNullOrWhiteSpace(context.Url))
+                            {
+                                <span>—</span>
+                            }
+                            else
+                            {
+                                <a href="@context.Url" target="_blank" rel="noopener noreferrer">@context.Url</a>
+                            }
+                        </CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminMediaPartnerSummary" Key="displayorder"
                                         Header="@L["Admin.MediaPartners.Col.DisplayOrder"]"

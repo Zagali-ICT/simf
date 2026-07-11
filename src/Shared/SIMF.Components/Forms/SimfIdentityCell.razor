@@ -1,0 +1,57 @@
+@* A scannable "who is this" cell for an admin grid — an image thumbnail when one
+   exists, else a tinted initials tile, beside a name, an optional secondary name
+   (e.g. the Arabic name) and an optional subtitle (e.g. rank / tier). Reusable by
+   any people/entity grid (speakers, sponsors, media partners, contacts). Styling
+   lives in simf-components.css (.simf-identity-cell*). *@
+@namespace SIMF.Components.Forms
+
+<div class="simf-identity-cell">
+    @if (!string.IsNullOrWhiteSpace(ImageUrl))
+    {
+        <SimfImageThumb Src="@ImageUrl" Alt="@Name" Class="simf-identity-cell__avatar" />
+    }
+    else
+    {
+        <span class="simf-avatar-initials simf-identity-cell__avatar"
+              aria-hidden="true">@Initials(Name)</span>
+    }
+    <span class="simf-identity-cell__meta">
+        <span class="simf-identity-cell__name">
+            @Name
+            @if (!string.IsNullOrWhiteSpace(NameSecondary))
+            {
+                <span class="simf-identity-cell__name-secondary"> · @NameSecondary</span>
+            }
+        </span>
+        @if (!string.IsNullOrWhiteSpace(Subtitle))
+        {
+            <span class="simf-identity-cell__sub">@Subtitle</span>
+        }
+    </span>
+</div>
+
+@code {
+    /// <summary>Resolved thumbnail URL. Empty / null renders an initials tile
+    /// instead (so a missing image never shows a broken image).</summary>
+    [Parameter] public string? ImageUrl { get; set; }
+
+    /// <summary>Primary name (also drives the initials tile).</summary>
+    [Parameter] public string? Name { get; set; }
+
+    /// <summary>Optional secondary name shown after the primary (e.g. Arabic name).</summary>
+    [Parameter] public string? NameSecondary { get; set; }
+
+    /// <summary>Optional muted subtitle line (e.g. rank, tier).</summary>
+    [Parameter] public string? Subtitle { get; set; }
+
+    // First + last initials for the fallback tile (max 2 chars).
+    private static string Initials(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "?";
+        var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) return "?";
+        if (parts.Length == 1)
+            return parts[0].Length >= 2 ? parts[0][..2] : parts[0];
+        return $"{parts[0][0]}{parts[^1][0]}";
+    }
+}

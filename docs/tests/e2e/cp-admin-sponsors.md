@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
+| **Last reviewed** | 2026-07-11 (D-740 — logo thumbnail identity cell + URL link) |
 
 > **Page permission:** the page is gated by `@attribute [RequirePermission(PermissionCatalog.Sponsors.View)]`.
 > The action buttons (Add / Edit / Delete) are **not** wrapped in `<AuthorizedAction>` on
@@ -46,8 +46,30 @@
 | E2E-SPN-024 | Logo via the unified media-asset pipeline — upload then external link (D-357) | happy | P1 | _to author_ |
 | E2E-SPN-025 | Edit preserves the bilingual tagline — regression (D-501) | error | P0 | _to author_ |
 | E2E-SPN-026 | Excel export/import round-trips Tagline/TaglineArabic + About/AboutArabic (D-502) | happy | P1 | _to author_ |
+| E2E-SPN-027 | Identity cell — a sponsor WITH a logo asset shows the thumbnail, one WITHOUT shows an initials tile (never a broken image); URL is a link (D-740) | happy | P1 | _authored_ |
 
 ## Scenarios
+
+### E2E-SPN-027 — Identity cell: logo vs initials (D-740)
+
+```gherkin
+Scenario: The Sponsor column shows a logo thumbnail when one exists, else initials
+  Given a sponsor "Saudi Aramco" that has an active SponsorLogo asset
+  And a sponsor "Local Shipyard" that has NO logo asset
+  When the administrator opens /admin/sponsors
+  Then the "Saudi Aramco" row shows a 44px thumbnail whose <img src> is
+    /account/api/admin/assets/SponsorLogo/{id}/image (HasLogo=true)
+  And the "Local Shipyard" row shows a navy initials tile (HasLogo=false)
+  And NO row makes a request that 404s (logoless rows never render an <img>)
+  And each cell stacks the English name and a "· {Arabic name}" suffix
+  And the Website cell renders a clickable link (target=_blank, rel=noopener) or "—" when empty
+```
+
+**Evidence:** the Network tab shows an image request only for rows with a logo
+(zero broken-image / 404 asset requests); screenshot
+`docs/screenshots/cp-admin-sponsors-027-identity-cell.png`. Verified at the API
+layer by `SponsorsTests.Admin_list_flips_has_logo_once_a_logo_asset_is_attached`
+(HasLogo flips false → true after a logo is attached).
 
 ### E2E-SPN-001 — Full CRUD round-trip
 

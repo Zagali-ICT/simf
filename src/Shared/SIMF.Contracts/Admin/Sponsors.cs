@@ -19,7 +19,10 @@ public sealed record AdminSponsorSummary(
     string? Tagline = null,
     string? TaglineArabic = null,
     string? About = null,
-    string? AboutArabic = null);
+    string? AboutArabic = null,
+    // D-740 — "an active SponsorLogo asset exists" so the grid renders the real
+    // logo thumbnail, else an initials tile (set on read via a batched query).
+    bool HasLogo = false);
 
 /// <summary>Full sponsor detail (Details + Edit modals).</summary>
 public sealed record AdminSponsorDetail(

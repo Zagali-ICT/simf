@@ -37,7 +37,10 @@ public sealed record AdminMediaPartnerSummary(
     string? Url,
     int DisplayOrder,
     bool IsActive,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    // D-740 — "an active MediaPartnerLogo asset exists" so the grid renders the
+    // real logo thumbnail, else an initials tile (set on read via a batched query).
+    bool HasLogo = false);
 
 /// <summary>D-199 — admin detail projection of a media partner.
 /// SIMF-FDS-014 (D-281): carries the optional shared-<c>Contact</c> link.</summary>

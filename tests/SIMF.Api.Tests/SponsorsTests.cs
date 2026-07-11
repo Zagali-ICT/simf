@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
+using SIMF.Contracts.Assets;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Sponsors;
 using SIMF.Domain.Common;
@@ -60,6 +61,48 @@ public sealed class SponsorsTests : IClassFixture<SimfApiFactory>
         Assert.Contains(
             body.Groups.SelectMany(g => g.Sponsors),
             s => s.Id == created.Id);
+    }
+
+    [Fact]
+    public async Task Admin_list_flips_has_logo_once_a_logo_asset_is_attached()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var create = await PostAuthAsync(
+            "/api/v1/admin/sponsors",
+            new AdminCreateSponsorRequest
+            {
+                NameEn = $"Logo Co {suffix}", NameAr = $"شركة الشعار {suffix}",
+                Tier = (int)SponsorTier.Gold, DisplayOrder = 0,
+            }, admin);
+        var id = (await create.Content
+            .ReadFromJsonAsync<ApiResult<AdminSponsorDetail>>())!.Data!.Id;
+
+        // No logo asset yet → HasLogo false (the grid shows an initials tile).
+        var before = await AdminListAndFindAsync(id, admin);
+        Assert.NotNull(before);
+        Assert.False(before!.HasLogo);
+
+        // Attaching an active SponsorLogo asset flips it true.
+        var link = await PutAuthAsync(
+            $"/api/v1/admin/assets/SponsorLogo/{id}/link",
+            new SetAssetLinkRequest { Kind = AssetKind.Image, Url = "https://example.com/l.png" },
+            admin);
+        Assert.Equal(HttpStatusCode.OK, link.StatusCode);
+
+        var after = await AdminListAndFindAsync(id, admin);
+        Assert.NotNull(after);
+        Assert.True(after!.HasLogo);
+    }
+
+    private async Task<AdminSponsorSummary?> AdminListAndFindAsync(Guid id, string token)
+    {
+        var resp = await PostAuthAsync(
+            "/api/v1/admin/sponsors/list", new GridQuery { Top = 200 }, token);
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var page = (await resp.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminSponsorSummary>>>())!.Data!;
+        return page.Items.FirstOrDefault(s => s.Id == id);
     }
 
     [Fact]

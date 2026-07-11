@@ -1,6 +1,7 @@
 // Tests: SIMF.Api.Tests/AdminMediaPartnersTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SIMF.Application.Assets.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.PublicRelations.Abstractions;
 using SIMF.Common;
@@ -20,6 +21,7 @@ namespace SIMF.Infrastructure.PublicRelations;
 /// audit trail).</summary>
 internal sealed class AdminMediaPartnerService(
     SimfAppDbContext appDbContext,
+    IAssetService assetService,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<AdminMediaPartnerService> logger) : IAdminMediaPartnerService
@@ -78,6 +80,12 @@ internal sealed class AdminMediaPartnerService(
                 partner.LogoRelativePath, partner.Url, partner.DisplayOrder,
                 partner.IsActive, partner.CreatedAt))
             .ToListAsync(cancellationToken);
+
+        // The grid renders the real logo thumbnail only for rows with an active
+        // MediaPartnerLogo asset (else an initials tile) — one batched query.
+        var logoOwners = await assetService.WhichOwnersHaveActiveAssetAsync(
+            AssetCategory.MediaPartnerLogo, page.Select(row => row.Id).ToList(), cancellationToken);
+        page = page.Select(row => row with { HasLogo = logoOwners.Contains(row.Id) }).ToList();
 
         return GridPage<AdminMediaPartnerSummary>.Of(page, total,
             skip, top);

@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
+| **Last reviewed** | 2026-07-11 (D-740 — logo thumbnail identity cell + URL link; encoding cleanup) |
 
 > **Page facts grounded in source** (`Components/Pages/Admin/MediaPartnersList.razor`,
 > `Endpoints/PublicRelations/MediaPartnerEndpoints.cs`,
@@ -82,8 +82,29 @@
 | E2E-MPR-018 | Excel import: upload a workbook → rows created + result modal "N created…" (D-356) | happy | P1 | _to author_ |
 | E2E-MPR-019 | Excel import: non-.xlsx / wrong-sheet upload → 400 + bilingual rejection, nothing created (D-356) | error | P1 | _to author_ |
 | E2E-MPR-020 | Logo via the unified media-asset pipeline — upload then external link (D-357) | happy | P1 | _to author_ |
+| E2E-MPR-021 | Identity cell — a partner WITH a logo asset shows the thumbnail, one WITHOUT shows an initials tile (never a broken image); URL is a link (D-740) | happy | P1 | _authored_ |
 
 ## Scenarios
+
+### E2E-MPR-021 — Identity cell: logo vs initials (D-740)
+
+```gherkin
+Scenario: The Name column shows a logo thumbnail when one exists, else initials
+  Given a media partner "Al Arabiya" that has an active MediaPartnerLogo asset
+  And a media partner "Coastal Times" that has NO logo asset
+  When the administrator opens /admin/media-partners
+  Then the "Al Arabiya" row shows a 44px thumbnail whose <img src> is
+    /account/api/admin/assets/MediaPartnerLogo/{id}/image (HasLogo=true)
+  And the "Coastal Times" row shows a navy initials tile (HasLogo=false)
+  And NO row makes a request that 404s (logoless rows never render an <img>)
+  And each cell stacks the English name and a "· {Arabic name}" suffix
+  And the URL cell renders a clickable link (target=_blank, rel=noopener) or "—" when empty
+```
+
+**Evidence:** verified at the API layer by
+`AdminMediaPartnersTests.List_flips_has_logo_once_a_logo_asset_is_attached`
+(HasLogo flips false → true after a logo is attached); screenshot
+`docs/screenshots/cp-admin-media-partners-021-identity-cell.png`.
 
 ### E2E-MPR-001 — Full CRUD round-trip
 

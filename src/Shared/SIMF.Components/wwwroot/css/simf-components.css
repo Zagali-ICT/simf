@@ -1079,18 +1079,20 @@
 .simf-image-upload__modes { display: flex; gap: var(--space-2); }
 .simf-image-upload__thumb { inline-size: 96px; block-size: 96px; }
 
-/* -- Speakers redesign — a scannable identity cell in the admin grid: a photo
-      (or an initials tile when none exists) beside the name, rank and Arabic
-      name. Tokens only; the avatar matches .simf-img-thumb sizing. -- */
-.simf-speaker-cell {
+/* -- Identity cell (SimfIdentityCell) — a scannable "who is this" cell in an
+      admin grid: an image thumbnail (or an initials tile when none exists)
+      beside a name, an optional secondary name and an optional subtitle. Reused
+      by the speakers, sponsors and media-partner grids. Tokens only; the avatar
+      matches .simf-img-thumb sizing. -- */
+.simf-identity-cell {
   display: flex;
   align-items: center;
   gap: var(--space-3);
   min-inline-size: 0;
 }
-/* The avatar size lives here only (applied to both the photo thumb and the
-   initials tile via .simf-speaker-cell__avatar) so the two never diverge. */
-.simf-speaker-cell__avatar { flex: 0 0 auto; inline-size: 44px; block-size: 44px; }
+/* The avatar size lives here only (applied to both the image thumb and the
+   initials tile via .simf-identity-cell__avatar) so the two never diverge. */
+.simf-identity-cell__avatar { flex: 0 0 auto; inline-size: 44px; block-size: 44px; }
 .simf-avatar-initials {
   display: inline-flex;
   align-items: center;
@@ -1103,21 +1105,21 @@
   text-transform: uppercase;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-text) 8%, transparent);
 }
-.simf-speaker-cell__meta {
+.simf-identity-cell__meta {
   min-inline-size: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
-.simf-speaker-cell__name {
+.simf-identity-cell__name {
   font-weight: var(--font-weight-heading);
   color: var(--color-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.simf-speaker-cell__name-ar { font-weight: var(--font-weight-body); color: var(--color-text-muted); }
-.simf-speaker-cell__rank {
+.simf-identity-cell__name-secondary { font-weight: var(--font-weight-body); color: var(--color-text-muted); }
+.simf-identity-cell__sub {
   font-size: var(--font-size-caption);
   line-height: var(--line-height-caption);
   color: var(--color-text-muted);
