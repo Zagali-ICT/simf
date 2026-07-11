@@ -92,19 +92,22 @@ class SessionDetailBody extends StatelessWidget {
           ],
         ],
         // اسأل المحاور (Figma 1056:12876) — sits between the speakers and the
-        // my-seat card. #7 (owner) — the ask is offered ONLY for a FUTURE session
-        // (before it starts): any approved user may ask ahead of time, no booking
-        // required. Once the session is live the ask moves to the live-broadcast
-        // screen (check-in gated); after it ends there is no ask (the post-session
-        // view is a recording, not a live broadcast). The backend enforces the
-        // same window + phase-gated venue rule.
-        if (detail.startUtc.isAfter(DateTime.now().toUtc())) ...<Widget>[
+        // my-seat card. The ask is offered until the session ENDS (the backend
+        // closes questions at EndUtc). #7 (owner): a FUTURE session takes
+        // ahead-of-time questions ("before it starts", no booking required). S-4:
+        // a LIVE session (now within [start, end]) takes in-hall questions — but
+        // only when it has NO broadcast feed; a broadcast session's live ask lives
+        // on the live-broadcast screen (check-in gated), so we don't double it.
+        // The backend enforces the same window + hall-arrival gate.
+        if (_showAsk(detail)) ...<Widget>[
           const SizedBox(height: SimfTokens.space5),
           AskHostCard(
-            label: l10n.askHostPreSession,
+            label: detail.startUtc.isAfter(DateTime.now().toUtc())
+                ? l10n.askHostPreSession
+                : l10n.liveAskQuestion,
             onTap: onAskHost,
-            // Approved accounts may ask ahead; a guest / pending account (no
-            // seat map) sees it disabled.
+            // Approved accounts may ask; a guest / pending account (no seat map)
+            // sees it disabled.
             enabled: seatMap != null,
           ),
         ],
@@ -147,5 +150,21 @@ class SessionDetailBody extends StatelessWidget {
         ],
       ],
     );
+  }
+
+  /// S-4 — decides whether the اسأل المحاور card shows. A FUTURE session (before
+  /// start) takes ahead-of-time questions; a LIVE session (now within its
+  /// [start, end] window) takes in-hall questions but only when it has NO
+  /// broadcast feed — a broadcast session's live ask lives on the live-broadcast
+  /// screen. After EndUtc there is no ask (the backend closes the window).
+  static bool _showAsk(SessionDetail detail) {
+    final nowUtc = DateTime.now().toUtc();
+    if (detail.startUtc.isAfter(nowUtc)) {
+      return true;
+    }
+    if (detail.endUtc.isAfter(nowUtc)) {
+      return !detail.hasLiveStream;
+    }
+    return false;
   }
 }
