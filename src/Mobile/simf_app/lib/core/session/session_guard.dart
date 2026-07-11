@@ -7,21 +7,23 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'session_activity.dart';
 import 'session_timeout_overlay.dart';
 
-/// D-726 (owner item 11, Model A) — the app-side session auto-extend guard.
-/// Ports the shipped CP/Web session-timeout behaviour to Flutter: while a
-/// signed-in user is ACTIVE, silently refresh the ~5-min access token before it
-/// lapses (an active user is never interrupted); once the user is IDLE near
-/// expiry, show a 30s "stay signed in / sign out" countdown and sign them out if
-/// it is ignored.
+/// D-726 / D-737 (owner item 11) — the app-side inactivity session guard.
+/// It is an idle timer: while the signed-in user keeps interacting, the guard
+/// silently keeps the ~5-min access token alive so they are never interrupted;
+/// once they have been IDLE for [idleLimit] it shows a 30s "stay signed in /
+/// sign out" countdown and signs them out only if it is ignored.
+///
+/// D-737 — the guard NEVER signs a user out without first showing that 30s
+/// warning. The proactive keep-alive uses [AuthController.tryRefresh] (which
+/// does not sign out on failure); if it cannot extend the session, the guard
+/// falls back to the countdown instead of the old abrupt, unannounced sign-out
+/// that made the app look like it "closed" mid-use.
 ///
 /// The NCA 24h absolute session cap (D-443) is untouched: it is enforced
-/// server-side, so a silent refresh simply fails past 24h and the existing
-/// `SignedIn → SignedOut` router redirect in `app.dart` lands the sign-in screen.
+/// server-side, so once it is hit even "stay signed in" cannot extend and the
+/// existing `SignedIn → SignedOut` router redirect in `app.dart` lands sign-in.
 ///
-/// Built entirely over the existing public `AuthController` API
-/// ([AuthController.refresh] / [AuthController.signOut] /
-/// `session.accessTokenExpiresAt`), so `simf_auth_pkg` is not changed. The
-/// countdown is an in-tree overlay (not a Navigator dialog), so it needs no
+/// The countdown is an in-tree overlay (not a Navigator dialog), so it needs no
 /// router navigator key. Durations + a [now] clock are injectable so the timing
 /// is deterministic under test.
 class SessionGuard extends ConsumerStatefulWidget {
@@ -29,7 +31,7 @@ class SessionGuard extends ConsumerStatefulWidget {
     required this.child,
     this.tickInterval = const Duration(seconds: 15),
     this.warnLead = const Duration(seconds: 60),
-    this.activeWindow = const Duration(minutes: 4),
+    this.idleLimit = const Duration(minutes: 5),
     this.countdown = const Duration(seconds: 30),
     this.now,
     super.key,
@@ -37,17 +39,18 @@ class SessionGuard extends ConsumerStatefulWidget {
 
   final Widget child;
 
-  /// How often the guard checks the access token's time-to-expiry.
+  /// How often the guard re-evaluates idle time + token expiry.
   final Duration tickInterval;
 
-  /// Act (silent refresh, or warn) once the token is within this of expiring.
+  /// Proactively keep the token alive once it is within this of expiring — but
+  /// only while the user is still active (has not yet reached [idleLimit]).
   final Duration warnLead;
 
-  /// The user counts as "active" when they interacted within this window; past
-  /// it they are "idle" and get the countdown instead of a silent refresh.
-  final Duration activeWindow;
+  /// How long the user may be inactive before the "stay signed in?" countdown
+  /// appears. The owner-specified idle timeout: 5 min idle → warn → sign out.
+  final Duration idleLimit;
 
-  /// How long the idle "stay signed in?" countdown runs before auto sign-out.
+  /// How long the "stay signed in?" countdown runs before auto sign-out.
   final Duration countdown;
 
   /// Injectable wall clock for tests; defaults to [DateTime.now].
@@ -109,27 +112,36 @@ class _SessionGuardState extends ConsumerState<SessionGuard>
     if (authState is! AuthStateSignedIn) {
       return;
     }
-    final timeLeft =
-        authState.session.accessTokenExpiresAt.difference(_now());
-    if (timeLeft > widget.warnLead) {
-      return; // the token still has comfortable life left
-    }
+    final now = _now();
     final idleFor =
-        _now().difference(ref.read(sessionActivityProvider).lastActivity);
-    if (idleFor <= widget.activeWindow) {
-      unawaited(_silentRefresh()); // active → extend without interrupting
-    } else {
-      _startCountdown(); // idle → warn, then sign out if ignored
+        now.difference(ref.read(sessionActivityProvider).lastActivity);
+    // Inactive past the limit → warn, then sign out only if the 30s countdown is
+    // ignored. Inactivity-driven and independent of the token, so a user who is
+    // actively using the app is never interrupted.
+    if (idleFor >= widget.idleLimit) {
+      _startCountdown();
+      return;
+    }
+    // Still active, but the access token is about to lapse → keep it alive in the
+    // background so their next request never 401s. Uses tryRefresh (which does
+    // NOT sign out on failure): if it cannot extend, we warn — never a silent
+    // sign-out (D-737).
+    final timeLeft = authState.session.accessTokenExpiresAt.difference(now);
+    if (timeLeft <= widget.warnLead) {
+      unawaited(_proactiveRefresh());
     }
   }
 
-  Future<void> _silentRefresh() async {
+  Future<void> _proactiveRefresh() async {
     _refreshing = true;
     try {
-      // A false result means the refresh failed (e.g. past the 24h cap): the
-      // AuthController has already flipped to SignedOut and app.dart routes to
-      // sign-in, so there is nothing more to do here.
-      await ref.read(authControllerProvider.notifier).refresh();
+      final extended =
+          await ref.read(authControllerProvider.notifier).tryRefresh();
+      // If the token could not be extended, fall back to the visible countdown
+      // instead of an abrupt sign-out — the guard never closes the app silently.
+      if (!extended && mounted && !_warning) {
+        _startCountdown();
+      }
     } finally {
       _refreshing = false;
     }
@@ -157,11 +169,19 @@ class _SessionGuardState extends ConsumerState<SessionGuard>
 
   Future<void> _onStaySignedIn() async {
     _countdownTimer?.cancel();
-    if (mounted) {
-      setState(() => _warning = false);
-    }
     ref.read(sessionActivityProvider).markActive();
-    await _silentRefresh();
+    final extended =
+        await ref.read(authControllerProvider.notifier).tryRefresh();
+    if (!mounted) {
+      return;
+    }
+    if (extended) {
+      setState(() => _warning = false);
+    } else {
+      // Session genuinely can't be extended (past the 24h cap / revoked) — sign
+      // out cleanly rather than leave a dead session behind the dismissed card.
+      await _signOut();
+    }
   }
 
   Future<void> _signOut() async {
@@ -178,7 +198,10 @@ class _SessionGuardState extends ConsumerState<SessionGuard>
       children: <Widget>[
         Listener(
           behavior: HitTestBehavior.translucent,
+          // Any touch OR drag/scroll counts as activity, so reading a long list
+          // by scrolling keeps the session alive (not just discrete taps).
           onPointerDown: (_) => ref.read(sessionActivityProvider).markActive(),
+          onPointerMove: (_) => ref.read(sessionActivityProvider).markActive(),
           child: widget.child,
         ),
         if (_warning)

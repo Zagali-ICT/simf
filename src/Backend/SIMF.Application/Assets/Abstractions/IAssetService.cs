@@ -40,6 +40,17 @@ public interface IAssetService
         bool requireOwnerActive = true,
         CancellationToken cancellationToken = default);
 
+    /// <summary>Of the given owners, which ones currently have an active asset in
+    /// <paramref name="category"/> — resolved in a single batched query. Lets a
+    /// grid render the real thumbnail only for rows that have one (and an
+    /// initials / placeholder tile for the rest) without a per-row probe, keeping
+    /// the (category → storage) mapping and the "active asset" predicate in this
+    /// one service. Any list page (speakers, sponsors, media partners) can reuse
+    /// it.</summary>
+    Task<IReadOnlySet<Guid>> WhichOwnersHaveActiveAssetAsync(
+        AssetCategory category, IReadOnlyCollection<Guid> ownerIds,
+        CancellationToken cancellationToken = default);
+
     // -- Central Media Library management (D-357 / MediaLibrary.* permission) --
 
     /// <summary>One page of all assets (filter by category / kind / sourceType /

@@ -384,10 +384,11 @@ class SimfPullableHost extends StatelessWidget {
 }
 
 /// The shared trailing action cluster on every in-app page's top nav (owner
-/// 2026-06-27): the notifications bell, the language globe and the menu ☰ —
-/// each a **gold glyph in a navy rounded box** (frame 758:1136), so the top nav
-/// is identical on the signed-in home greeting header and every [SimfPageShell]
-/// sub-page.
+/// 2026-06-27): the notifications bell and the menu ☰ — each a **gold glyph in
+/// a navy rounded box** (frame 758:1136), so the top nav is identical on the
+/// signed-in home greeting header and every [SimfPageShell] sub-page. The
+/// language pill was dropped from this cluster (owner 2026-07-11); language is
+/// still switched from a sub-page's own toggle and the More screen's اللغة row.
 ///
 /// [showBell] is true on every signed-in surface; the guest home (frame
 /// 758:2910) sets it false — a guest has no personal notifications.
@@ -447,13 +448,6 @@ class SimfHeaderActions extends ConsumerWidget {
             ),
             const SizedBox(width: SimfTokens.space2),
           ],
-          // The language toggle is the EN/عر pill now (Figma 1967:3661, D-670),
-          // not a globe box — a fixed-width control among the square action boxes.
-          SimfLanguageToggle(
-            onPressed: () =>
-                unawaited(ref.read(localeControllerProvider.notifier).toggle()),
-          ),
-          const SizedBox(width: SimfTokens.space2),
           Builder(
             builder: (ctx) => _box(
               tooltip: l10n.moreTitle,

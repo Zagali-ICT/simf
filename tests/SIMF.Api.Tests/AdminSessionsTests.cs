@@ -205,6 +205,60 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task List_filtered_by_speakerId_returns_only_that_speakers_sessions()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hall = await SeedHallAsync(capacity: 100);
+        var speaker = await SeedSpeakerAsync();
+
+        // One session links the (freshly seeded) speaker; one does not.
+        var linked = await PostAuthAsync(
+            "/api/v1/admin/sessions",
+            new AdminCreateSessionRequest
+            {
+                Code = NewCode(), Title = "Linked", TitleArabic = "مرتبطة",
+                HallId = hall.Id,
+                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
+                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                Speakers = new List<AdminSessionSpeakerEntry>
+                {
+                    new(speaker.Id, speaker.Name, speaker.NameArabic, 0),
+                },
+            },
+            token);
+        Assert.Equal(HttpStatusCode.OK, linked.StatusCode);
+        var linkedId = (await linked.Content
+            .ReadFromJsonAsync<ApiResult<AdminSessionDetail>>())!.Data!.Id;
+
+        var other = await PostAuthAsync(
+            "/api/v1/admin/sessions",
+            new AdminCreateSessionRequest
+            {
+                Code = NewCode(), Title = "Other", TitleArabic = "أخرى",
+                HallId = hall.Id,
+                StartUtc = DateTimeOffset.UtcNow.AddHours(3),
+                EndUtc = DateTimeOffset.UtcNow.AddHours(4),
+            },
+            token);
+        Assert.Equal(HttpStatusCode.OK, other.StatusCode);
+
+        var list = await PostAuthAsync(
+            "/api/v1/admin/sessions/list",
+            new GridQuery
+            {
+                Top = 200,
+                Filters = new Dictionary<string, string> { ["speakerId"] = speaker.Id.ToString() },
+            },
+            token);
+        Assert.Equal(HttpStatusCode.OK, list.StatusCode);
+        var page = (await list.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminSessionSummary>>>())!.Data!;
+        // The speaker is fresh, so exactly the one linked session matches.
+        Assert.Contains(page.Items, s => s.Id == linkedId);
+        Assert.All(page.Items, s => Assert.Equal(linkedId, s.Id));
+    }
+
+    [Fact]
     public async Task Deactivate_makes_the_row_inactive_and_is_idempotent()
     {
         var token = await CreateAdministratorAndSignInAsync();

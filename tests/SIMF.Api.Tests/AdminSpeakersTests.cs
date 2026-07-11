@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
+using SIMF.Contracts.Assets;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
 using Xunit;
@@ -65,6 +66,54 @@ public sealed class AdminSpeakersTests : IClassFixture<SimfApiFactory>
         Assert.False(detail.AllowsDataSharing);
         Assert.Equal("https://x.com/jdoe", detail.XUrl);
         Assert.Equal("https://example.com/jdoe", detail.WebsiteUrl);
+    }
+
+    [Fact]
+    public async Task List_projects_country_code_and_the_has_photo_flag()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var code = NewCode();
+        var create = await PostAuthAsync(
+            "/api/v1/admin/speakers",
+            new AdminCreateSpeakerRequest
+            {
+                Code = code, Name = "Flag Test", NameArabic = "علم", CountryId = 682, // SA
+            },
+            token);
+        var detail = (await create.Content
+            .ReadFromJsonAsync<ApiResult<AdminSpeakerDetail>>())!.Data!;
+
+        // No photo yet: the grid row carries the alpha-2 country code and a
+        // false HasPhoto so it renders an initials tile, not a broken image.
+        var before = await ListAndFindAsync(detail.Id, code, token);
+        Assert.NotNull(before);
+        Assert.Equal("SA", before!.CountryCode);
+        Assert.False(before.HasPhoto);
+
+        // Attaching an active speaker-photo asset (an external link is the
+        // cheapest one) flips HasPhoto to true on the next list.
+        var link = await PutAuthAsync(
+            $"/api/v1/admin/assets/SpeakerPhoto/{detail.Id}/link",
+            new SetAssetLinkRequest { Kind = AssetKind.Image, Url = "https://example.com/p.png" },
+            token);
+        Assert.Equal(HttpStatusCode.OK, link.StatusCode);
+
+        var after = await ListAndFindAsync(detail.Id, code, token);
+        Assert.NotNull(after);
+        Assert.True(after!.HasPhoto);
+    }
+
+    private async Task<AdminSpeakerSummary?> ListAndFindAsync(
+        Guid id, string search, string token)
+    {
+        var response = await PostAuthAsync(
+            "/api/v1/admin/speakers/list",
+            new GridQuery { Top = 200, Search = search },
+            token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var page = (await response.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminSpeakerSummary>>>())!.Data!;
+        return page.Items.FirstOrDefault(s => s.Id == id);
     }
 
     [Fact]

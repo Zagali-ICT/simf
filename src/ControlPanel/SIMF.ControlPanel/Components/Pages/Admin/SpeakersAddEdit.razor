@@ -4,7 +4,8 @@
    Create vs Update on IsEdit (POST when !IsEdit, PUT against Initial!.Id when
    IsEdit). Supersedes SpeakerForm.razor (D-153), which keyed off Initial==null.
    Country picker is populated from /admin/countries/list (active rows only) on
-   first render. *@
+   first render. The long field set is grouped into titled SimfFormSection steps
+   with a responsive two-column grid (bilingual pairs sit side by side). *@
 @inherits CrudAddEditFormBase<AdminSpeakerDetail>
 
 @if (_error is not null)
@@ -13,114 +14,144 @@
 }
 
 <EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
-    <div class="simf-form__fields">
-        <SimfTextField Label="@L["Admin.Speakers.Field.Code"]"
-                       Helper="@L["Admin.Speakers.Field.CodeHint"]"
-                       MaxLength="16"
-                       @bind-Value="_model.Code" Disabled="_busy" />
-        <SimfTextField Label="@L["Admin.Speakers.Field.Name"]"
-                       MaxLength="128"
-                       @bind-Value="_model.Name" Disabled="_busy" />
-        <SimfTextField Label="@L["Admin.Speakers.Field.NameArabic"]"
-                       MaxLength="128"
-                       @bind-Value="_model.NameArabic" Disabled="_busy" />
-        <SimfTextField Label="@L["Admin.Speakers.Field.Rank"]"
-                       MaxLength="64"
-                       @bind-Value="_model.Rank" Disabled="_busy" />
-
-        <SimfSelect TValue="string"
-                    Label="@L["Admin.Speakers.Field.Country"]"
-                    Placeholder="@L["Admin.Speakers.Field.CountryPlaceholder"]"
-                    Items="_countryIds"
-                    ValueFor="@(id => id)"
-                    LabelFor="@(id => CountryLabel(id))"
-                    Value="@_countryIdInput"
-                    ValueChanged="@(v => _countryIdInput = v ?? string.Empty)"
-                    Disabled="_busy" />
-
-        <SimfTextarea Label="@L["Admin.Speakers.Field.Bio"]"
-                      Rows="3" MaxLength="2048"
-                      Value="@_model.Bio"
-                      ValueChanged="@(v => _model.Bio = v)" />
-        <SimfTextarea Label="@L["Admin.Speakers.Field.BioArabic"]"
-                      Rows="3" MaxLength="2048"
-                      Value="@_model.BioArabic"
-                      ValueChanged="@(v => _model.BioArabic = v)" />
-
-        <SimfTextarea Label="@L["Admin.Speakers.Field.Qualifications"]"
-                      Rows="3" MaxLength="1024"
-                      Value="@_model.Qualifications"
-                      ValueChanged="@(v => _model.Qualifications = v)" />
-        <SimfTextarea Label="@L["Admin.Speakers.Field.QualificationsArabic"]"
-                      Rows="3" MaxLength="1024"
-                      Value="@_model.QualificationsArabic"
-                      ValueChanged="@(v => _model.QualificationsArabic = v)" />
-
-        <SimfTextarea Label="@L["Admin.Speakers.Field.TrainingExperience"]"
-                      Rows="3" MaxLength="1024"
-                      Value="@_model.TrainingExperience"
-                      ValueChanged="@(v => _model.TrainingExperience = v)" />
-        <SimfTextarea Label="@L["Admin.Speakers.Field.TrainingExperienceArabic"]"
-                      Rows="3" MaxLength="1024"
-                      Value="@_model.TrainingExperienceArabic"
-                      ValueChanged="@(v => _model.TrainingExperienceArabic = v)" />
-
-        <SimfTextarea Label="@L["Admin.Speakers.Field.Awards"]"
-                      Rows="3" MaxLength="1024"
-                      Value="@_model.Awards"
-                      ValueChanged="@(v => _model.Awards = v)" />
-        <SimfTextarea Label="@L["Admin.Speakers.Field.AwardsArabic"]"
-                      Rows="3" MaxLength="1024"
-                      Value="@_model.AwardsArabic"
-                      ValueChanged="@(v => _model.AwardsArabic = v)" />
-
-        <SimfCheckbox @bind-Value="_model.AllowsMeetingRequests" Disabled="_busy">
-            @L["Admin.Speakers.Field.AllowsMeetingRequests"]
-        </SimfCheckbox>
-        <SimfCheckbox @bind-Value="_model.AllowsDataSharing" Disabled="_busy">
-            @L["Admin.Speakers.Field.AllowsDataSharing"]
-        </SimfCheckbox>
-
-        <SimfTextField Label="@L["Admin.Speakers.Field.FacebookUrl"]"
-                       MaxLength="256"
-                       @bind-Value="_model.FacebookUrl" Disabled="_busy" />
-        <SimfTextField Label="@L["Admin.Speakers.Field.LinkedInUrl"]"
-                       MaxLength="256"
-                       @bind-Value="_model.LinkedInUrl" Disabled="_busy" />
-        <SimfTextField Label="@L["Admin.Speakers.Field.XUrl"]"
-                       MaxLength="256"
-                       @bind-Value="_model.XUrl" Disabled="_busy" />
-        <SimfTextField Label="@L["Admin.Speakers.Field.WebsiteUrl"]"
-                       MaxLength="256"
-                       @bind-Value="_model.WebsiteUrl" Disabled="_busy" />
-
-        @* SIMF-FDS-014 (D-283) — optional link to a shared Contact directory record. *@
-        <ContactPicker Value="_contactId" ValueChanged="@(v => _contactId = v)" Disabled="_busy" />
-
-        <SimfTextField Label="@L["Admin.Speakers.Field.DisplayOrder"]"
-                       Type="number"
-                       Value="@_displayOrderInput"
-                       ValueChanged="@(v => _displayOrderInput = v)"
-                       ValueExpression="@(() => _displayOrderInput)"
-                       Disabled="_busy" />
-
-        @if (IsEdit)
-        {
-            <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">
-                @L["Admin.Speakers.Field.IsActive"]
-            </SimfCheckbox>
-        }
-
-        @* D-357 — speaker photo via the unified media-asset pipeline (edit only;
-           the speaker row must exist before bytes can be attached). *@
-        @if (IsEdit && Initial is not null)
-        {
-            <div class="simf-field">
-                <span class="simf-field__label">@L["Admin.Asset.Heading"]</span>
-                <SimfImageUpload Category="SpeakerPhoto" OwnerId="@Initial.Id" Alt="@_model.Name" />
+    @* Section 1 — Identity: the photo control (edit) beside the core identity
+       fields. Photo moves to the top; a long flat list becomes titled steps. *@
+    <SimfFormSection Number="1" Title="@L["Admin.Speakers.Section.Identity"]"
+                     Hint="@L["Admin.Speakers.Section.IdentityHint"]">
+        <div class="simf-identity-row">
+            <div class="simf-identity-row__photo">
+                @* D-357 — speaker photo via the unified media-asset pipeline
+                   (edit only; the row must exist before bytes can attach). *@
+                @if (IsEdit && Initial is not null)
+                {
+                    <span class="simf-field__label">@L["Admin.Asset.Heading"]</span>
+                    <SimfImageUpload Category="SpeakerPhoto" OwnerId="@Initial.Id" Alt="@_model.Name" />
+                }
+                else
+                {
+                    <div class="simf-photo-empty">
+                        <span class="simf-field__label">@L["Admin.Asset.Heading"]</span>
+                        <SimfImageThumb Class="simf-img-thumb--lg" Alt="@_model.Name" />
+                        <span class="simf-field__helper">@L["Admin.Speakers.Section.PhotoSaveFirst"]</span>
+                    </div>
+                }
             </div>
-        }
-    </div>
+            <div class="simf-identity-row__fields">
+                <div class="simf-form__grid">
+                    <SimfTextField Label="@L["Admin.Speakers.Field.Code"]"
+                                   Helper="@L["Admin.Speakers.Field.CodeHint"]"
+                                   MaxLength="16"
+                                   @bind-Value="_model.Code" Disabled="_busy" />
+                    <SimfTextField Label="@L["Admin.Speakers.Field.Rank"]"
+                                   MaxLength="64"
+                                   @bind-Value="_model.Rank" Disabled="_busy" />
+                    <SimfTextField Label="@L["Admin.Speakers.Field.Name"]"
+                                   MaxLength="128"
+                                   @bind-Value="_model.Name" Disabled="_busy" />
+                    <SimfTextField Label="@L["Admin.Speakers.Field.NameArabic"]"
+                                   MaxLength="128"
+                                   @bind-Value="_model.NameArabic" Disabled="_busy" />
+                    <SimfSelect TValue="string"
+                                Label="@L["Admin.Speakers.Field.Country"]"
+                                Placeholder="@L["Admin.Speakers.Field.CountryPlaceholder"]"
+                                Items="_countryIds"
+                                ValueFor="@(id => id)"
+                                LabelFor="@(id => CountryLabel(id))"
+                                Value="@_countryIdInput"
+                                ValueChanged="@(v => _countryIdInput = v ?? string.Empty)"
+                                Disabled="_busy" />
+                    <SimfTextField Label="@L["Admin.Speakers.Field.DisplayOrder"]"
+                                   Type="number"
+                                   Value="@_displayOrderInput"
+                                   ValueChanged="@(v => _displayOrderInput = v)"
+                                   ValueExpression="@(() => _displayOrderInput)"
+                                   Disabled="_busy" />
+                </div>
+            </div>
+        </div>
+    </SimfFormSection>
+
+    @* Section 2 — Biography & credentials: each field paired English | Arabic. *@
+    <SimfFormSection Number="2" Title="@L["Admin.Speakers.Section.Bio"]"
+                     Hint="@L["Admin.Speakers.Section.BioHint"]">
+        <div class="simf-form__grid">
+            <SimfTextarea Label="@L["Admin.Speakers.Field.Bio"]"
+                          Rows="3" MaxLength="2048"
+                          Value="@_model.Bio"
+                          ValueChanged="@(v => _model.Bio = v)" />
+            <SimfTextarea Label="@L["Admin.Speakers.Field.BioArabic"]"
+                          Rows="3" MaxLength="2048"
+                          Value="@_model.BioArabic"
+                          ValueChanged="@(v => _model.BioArabic = v)" />
+            <SimfTextarea Label="@L["Admin.Speakers.Field.Qualifications"]"
+                          Rows="3" MaxLength="1024"
+                          Value="@_model.Qualifications"
+                          ValueChanged="@(v => _model.Qualifications = v)" />
+            <SimfTextarea Label="@L["Admin.Speakers.Field.QualificationsArabic"]"
+                          Rows="3" MaxLength="1024"
+                          Value="@_model.QualificationsArabic"
+                          ValueChanged="@(v => _model.QualificationsArabic = v)" />
+            <SimfTextarea Label="@L["Admin.Speakers.Field.TrainingExperience"]"
+                          Rows="3" MaxLength="1024"
+                          Value="@_model.TrainingExperience"
+                          ValueChanged="@(v => _model.TrainingExperience = v)" />
+            <SimfTextarea Label="@L["Admin.Speakers.Field.TrainingExperienceArabic"]"
+                          Rows="3" MaxLength="1024"
+                          Value="@_model.TrainingExperienceArabic"
+                          ValueChanged="@(v => _model.TrainingExperienceArabic = v)" />
+            <SimfTextarea Label="@L["Admin.Speakers.Field.Awards"]"
+                          Rows="3" MaxLength="1024"
+                          Value="@_model.Awards"
+                          ValueChanged="@(v => _model.Awards = v)" />
+            <SimfTextarea Label="@L["Admin.Speakers.Field.AwardsArabic"]"
+                          Rows="3" MaxLength="1024"
+                          Value="@_model.AwardsArabic"
+                          ValueChanged="@(v => _model.AwardsArabic = v)" />
+        </div>
+    </SimfFormSection>
+
+    @* Section 3 — Links & contact. *@
+    <SimfFormSection Number="3" Title="@L["Admin.Speakers.Section.Links"]"
+                     Hint="@L["Admin.Speakers.Section.LinksHint"]">
+        <div class="simf-form__grid">
+            <SimfTextField Label="@L["Admin.Speakers.Field.WebsiteUrl"]"
+                           MaxLength="256"
+                           @bind-Value="_model.WebsiteUrl" Disabled="_busy" />
+            <SimfTextField Label="@L["Admin.Speakers.Field.LinkedInUrl"]"
+                           MaxLength="256"
+                           @bind-Value="_model.LinkedInUrl" Disabled="_busy" />
+            <SimfTextField Label="@L["Admin.Speakers.Field.XUrl"]"
+                           MaxLength="256"
+                           @bind-Value="_model.XUrl" Disabled="_busy" />
+            <SimfTextField Label="@L["Admin.Speakers.Field.FacebookUrl"]"
+                           MaxLength="256"
+                           @bind-Value="_model.FacebookUrl" Disabled="_busy" />
+            @* SIMF-FDS-014 (D-283) — optional link to a shared Contact directory record. *@
+            <div class="simf-form__grid-item--full">
+                <ContactPicker Value="_contactId" ValueChanged="@(v => _contactId = v)" Disabled="_busy" />
+            </div>
+        </div>
+    </SimfFormSection>
+
+    @* Section 4 — Visibility & consent. *@
+    <SimfFormSection Number="4" Title="@L["Admin.Speakers.Section.Visibility"]"
+                     Hint="@L["Admin.Speakers.Section.VisibilityHint"]">
+        <div class="simf-form__fields">
+            <SimfCheckbox @bind-Value="_model.AllowsMeetingRequests" Disabled="_busy">
+                @L["Admin.Speakers.Field.AllowsMeetingRequests"]
+            </SimfCheckbox>
+            <SimfCheckbox @bind-Value="_model.AllowsDataSharing" Disabled="_busy">
+                @L["Admin.Speakers.Field.AllowsDataSharing"]
+            </SimfCheckbox>
+            @if (IsEdit)
+            {
+                <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">
+                    @L["Admin.Speakers.Field.IsActive"]
+                </SimfCheckbox>
+            }
+        </div>
+    </SimfFormSection>
+
     <div class="simf-form__actions">
         <SimfButton Loading="_busy"
                     LoadingLabel="@(IsEdit ? L["Admin.Speakers.Edit.Submitting"] : L["Admin.Speakers.New.Submitting"])">

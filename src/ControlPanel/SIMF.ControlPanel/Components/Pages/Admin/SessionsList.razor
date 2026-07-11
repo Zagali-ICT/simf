@@ -22,6 +22,14 @@
                 <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
             }
 
+            @if (SpeakerId.HasValue)
+            {
+                <SimfAlert Variant="info">
+                    @L["Admin.Sessions.FilteredBySpeaker"]
+                    <a href="/admin/sessions">@L["Admin.Sessions.ClearFilter"]</a>
+                </SimfAlert>
+            }
+
             <SimfDataGrid TItem="AdminSessionSummary"
                           Query="_query"
                           Page="_page"

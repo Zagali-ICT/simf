@@ -1,10 +1,15 @@
 namespace SIMF.Contracts.Admin;
 
 /// <summary>One row in the admin Speakers grid (D-151 — SIMF-DAT-001 §5.4).
-/// D-153 — <c>CountryCode</c> field is replaced by <c>CountryId</c>
-/// (ISO 3166-1 numeric, FK to <c>Country.Id</c>); a <c>CountryName</c> is
-/// projected alongside for display so the grid does not need a second
-/// fetch to render the country column.</summary>
+/// D-153 — the country is carried as <c>CountryId</c> (ISO 3166-1 numeric,
+/// FK to <c>Country.Id</c>) with the display names (<c>CountryNameEn</c> /
+/// <c>CountryNameAr</c>) projected alongside so the grid renders the country
+/// column without a second fetch.
+/// <para>The redesigned grid additionally carries <c>CountryCode</c> (ISO
+/// 3166-1 alpha-2, for the flag) and <c>HasPhoto</c> — a batched "an active
+/// speaker-photo asset exists" flag so the grid renders the real thumbnail
+/// only when one is present and falls back to an initials tile otherwise
+/// (never a broken image).</para></summary>
 public sealed record AdminSpeakerSummary(
     Guid Id,
     string Code,
@@ -14,8 +19,10 @@ public sealed record AdminSpeakerSummary(
     int? CountryId,
     string? CountryNameEn,
     string? CountryNameAr,
+    string? CountryCode,
     int DisplayOrder,
     bool IsActive,
+    bool HasPhoto,
     DateTimeOffset CreatedAt);
 
 /// <summary>Full speaker detail (Details + Edit modals). D-153 carries

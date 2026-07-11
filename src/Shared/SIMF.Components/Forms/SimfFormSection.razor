@@ -1,0 +1,38 @@
+@* A titled section for a long CRUD form — a numbered badge, a title + optional
+   hint, and a body slot. Groups a wall of fields into scannable steps. Reusable
+   by any add/edit form; the visual styling lives in simf-components.css
+   (.simf-form-section*). *@
+@namespace SIMF.Components.Forms
+
+<section class="simf-form-section">
+    <header class="simf-form-section__head">
+        @if (Number is not null)
+        {
+            <span class="simf-form-section__num">@Number</span>
+        }
+        <div>
+            <div class="simf-form-section__title">@Title</div>
+            @if (!string.IsNullOrWhiteSpace(Hint))
+            {
+                <div class="simf-form-section__hint">@Hint</div>
+            }
+        </div>
+    </header>
+    <div class="simf-form-section__body">
+        @ChildContent
+    </div>
+</section>
+
+@code {
+    /// <summary>Optional step number shown in the badge.</summary>
+    [Parameter] public int? Number { get; set; }
+
+    /// <summary>Section title.</summary>
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>Optional one-line hint under the title.</summary>
+    [Parameter] public string? Hint { get; set; }
+
+    /// <summary>The section body (the fields).</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}
