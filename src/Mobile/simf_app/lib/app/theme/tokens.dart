@@ -37,6 +37,11 @@ class SimfTokens {
   static const Color statusRejected = Color(0xFFEF4444);
   static const Color statusCancelled = Color(0xFF6B7280);
 
+  // D-745 — bilateral-meetings card flag badge (Figma 1408:9726): the nationality
+  // flag emoji on a soft green well (green #27AE60 @ 9% fill + 21% border).
+  static const Color flagBadgeBg = Color(0x1727AE60);
+  static const Color flagBadgeBorder = Color(0x3627AE60);
+
   // KSA-Project light-surface + auth-flow palette (D-358/D-359).
   static const Color navySurface = Color(0xFF102238); // elevated navy surface (login bg)
   static const Color navyHeader = Color(0xFF071832); // darker header block behind the forum title (Figma 1467:12565 / 1461:12565)

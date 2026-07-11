@@ -1192,8 +1192,14 @@ class AppL10n {
 
   // D-500 (Wave 5, الطلبات 1408:9726) — the unified requests feed (supersedes the
   // D-479 read-only My-meetings screen).
-  // Owner 2026-07-03: match the Figma frame header (1408:9726) "اللقاءات الثنائية".
-  String get requestsTitle => _t('اللقاءات الثنائية', 'Bilateral meetings');
+  // D-745 (owner 2026-07-11): the requests feed became the history page ("طلباتي")
+  // once the VIP bilateral-meetings page ([meetingsTitle]) split off; the frame
+  // header "اللقاءات الثنائية" (1408:9726) now belongs to that new page.
+  String get requestsTitle => _t('طلباتي', 'My requests');
+
+  /// The VIP bilateral-meetings page title (اللقاءات الثنائية, Figma 1408:9726) —
+  /// matches the Home tile label [tileBilateralMeetings].
+  String get meetingsTitle => _t('اللقاءات الثنائية', 'Bilateral meetings');
   String get requestsLink => _t('الطلبات', 'Requests');
   String get requestsEmpty =>
       _t('لا توجد طلبات بعد', 'You have no requests yet');

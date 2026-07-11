@@ -67,6 +67,7 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
       builder: (_) => MeetingRequestSheet(
         speakerId: null, // no fixed speaker → the picker is shown
         defaultName: auth.session.user.displayName,
+        baseUrl: ref.read(simfDataConfigProvider).baseUrl,
         l10n: l10n,
       ),
     );
