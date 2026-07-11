@@ -7,15 +7,21 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
+| **Last reviewed** | 2026-07-11 (redesign — identity cell, country flag, Sessions link, sectioned form) |
 
 > **Page surface (read from `SpeakersList.razor` + `SpeakersAddEdit.razor` +
 > `SpeakersViewDelete.razor`):** a
-> `SimfDataGrid` of speakers with columns Code, Name, Name (Arabic), Rank,
-> Country, Display order, Active; toolbar **Add speaker**; per-row **Edit**,
-> **Details**, **Deactivate** icons; multiselect checkboxes; the column filter
-> (Name), sort (Code, Name, Display order), and the pager (First / Prev / Next /
-> Last / page size). The toolbar also carries the **D-353 presentation toggle**
+> `SimfDataGrid` of speakers. **Redesign (2026-07-11):** the flat text columns are
+> replaced by a scannable **Speaker** identity cell (photo thumbnail when an
+> active `SpeakerPhoto` asset exists — `AdminSpeakerSummary.HasPhoto` — else a
+> tinted **initials** tile; English name + optional Arabic name + rank stacked),
+> a **Country** cell rendering a `SimfCountryTag` (flag glyph from the ISO alpha-2
+> `CountryCode` + name), a monospace **Code** chip, **Display order**, and a
+> **Status** pill. Toolbar **Add speaker**; per-row **Sessions** (calendar icon →
+> `/admin/sessions?speakerId={id}`), **Edit**, **Details**, **Deactivate** icons;
+> multiselect checkboxes; the column filter (Name/Speaker), sort (Speaker/Name,
+> Code, Display order), and the pager (First / Prev / Next / Last / page size).
+> The toolbar also carries the **D-353 presentation toggle**
 > (`CrudPresentationToggle PageKey="speakers"` — "Open as full page" / "Open as
 > dialog") and the **D-356** Excel **Export** + **Import** actions wired through
 > `CrudGridExcel Resource="speakers"`. Add / Edit / Details / Deactivate are now
@@ -30,7 +36,13 @@
 > **Awards** (≤1024) textareas, **Allows meeting requests** + **Allows data
 > sharing** checkboxes, **Facebook / LinkedIn / X / Website URL** (≤256 each —
 > D-544 adds Website), **Display order** (≥0 integer), and — Edit only — an
-> **Active** checkbox.
+> **Active** checkbox. **Redesign (2026-07-11):** the same fields are now grouped
+> into four titled `SimfFormSection` steps — **1 Identity** (photo control /
+> save-first placeholder + Code, Rank, Name En/Ar, Country, Display order in a
+> responsive two-column grid), **2 Biography & credentials** (the four bilingual
+> pairs side by side), **3 Links & contact** (the social URLs + the Contact
+> picker), **4 Visibility & consent** (the two consent checkboxes + the Edit-only
+> Active checkbox). Same fields, same API, same validation.
 >
 > **Permission gate:** `@attribute [RequirePermission(PermissionCatalog.Speakers.View)]`
 > (`Speakers.View`). The four CRUD actions map to `Speakers.View` /
@@ -63,6 +75,10 @@
 | E2E-SPK-021 | Excel import — upload a workbook → rows created + result modal with per-row outcome (D-356) | happy | P1 | _to author_ |
 | E2E-SPK-022 | Excel import rejection — non-.xlsx / wrong-sheet upload → bilingual rejection, nothing created (D-356) | error | P1 | _to author_ |
 | E2E-SPK-023 | Photo via the unified media-asset pipeline — upload then external link (D-357) | happy | P1 | _to author_ |
+| E2E-SPK-024 | Identity cell — a speaker WITH a photo shows the thumbnail; one WITHOUT shows an initials tile (never a broken image) (redesign) | happy | P1 | _authored_ |
+| E2E-SPK-025 | Country cell — `SimfCountryTag` renders the flag glyph + name; a speaker with no country renders "—" (redesign) | function | P2 | _authored_ |
+| E2E-SPK-026 | Per-row **Sessions** action deep-links to `/admin/sessions?speakerId={id}` filtered to that speaker (redesign) | function | P1 | _authored_ |
+| E2E-SPK-027 | Add/Edit form renders four titled `SimfFormSection` steps; all fields still save (redesign) | happy | P1 | _authored_ |
 
 ## Scenarios
 
@@ -496,6 +512,75 @@ Scenario: A bad or wrong-sheet upload is rejected without creating anything
     and nothing is created
 ```
 
+### E2E-SPK-024 — Identity cell: photo vs initials (redesign)
+
+```gherkin
+Scenario: The Speaker column shows a photo when one exists, else initials
+  Given a speaker "Rear Admiral John Carter" that has an active SpeakerPhoto asset
+  And a speaker "Dr Sarah Lin" that has NO photo asset
+  When the administrator opens /admin/speakers
+  Then the "Rear Admiral John Carter" row shows a 44px rounded thumbnail whose
+    <img src> is /account/api/admin/assets/SpeakerPhoto/{id}/image (HasPhoto=true)
+  And the "Dr Sarah Lin" row shows a navy initials tile reading "DL" (HasPhoto=false)
+  And NO row makes a request that 404s (photoless rows never render an <img>)
+  And each cell stacks the English name, a "· {Arabic name}" suffix, and the rank
+```
+
+**Evidence:** the Network tab shows an image request only for rows with a photo
+(zero broken-image / 404 asset requests); screenshot
+`docs/screenshots/cp-admin-speakers-024-identity-cell.png`. Verified at the API
+layer by `AdminSpeakersTests.List_projects_country_code_and_the_has_photo_flag`
+(HasPhoto flips false → true after a photo is attached).
+
+### E2E-SPK-025 — Country cell: flag + name (redesign)
+
+```gherkin
+Scenario: SimfCountryTag renders the flag glyph and the country name
+  Given a speaker whose Country is "Saudi Arabia" (CountryCode "SA")
+  And a speaker with no country selected
+  When the administrator opens /admin/speakers
+  Then the first row's Country cell renders the 🇸🇦 flag glyph followed by the
+    localized country name (Arabic name under the ar culture)
+  And the second row's Country cell renders "—"
+  # Note: on platforms without colour flag emoji (some Windows browsers) the glyph
+  # degrades to the two ISO letters "SA" — still a legible country tag, by design.
+```
+
+### E2E-SPK-026 — Per-row Sessions deep-link (redesign)
+
+```gherkin
+Scenario: The Sessions row action opens the filtered Sessions grid
+  Given a speaker "Rear Admiral John Carter" linked to exactly one session "Opening panel"
+  And another session "Closing remarks" that the speaker is NOT linked to
+  When the administrator clicks the "Sessions" (calendar) icon on the Carter row
+  Then the browser navigates to /admin/sessions?speakerId={carterId}
+  And the Sessions grid shows a blue info note "Showing only the sessions linked
+    to the selected speaker." with a "Clear filter" link
+  And the grid lists "Opening panel" and does NOT list "Closing remarks"
+  When they click "Clear filter"
+  Then the browser navigates to /admin/sessions and the full session list returns
+```
+
+**Evidence:** verified at the API layer by
+`AdminSessionsTests.List_filtered_by_speakerId_returns_only_that_speakers_sessions`
+(a `speakerId` GridQuery filter returns only the linked session); screenshot
+`docs/screenshots/cp-admin-speakers-026-sessions-link.png`.
+
+### E2E-SPK-027 — Sectioned Add/Edit form (redesign)
+
+```gherkin
+Scenario: The Add form is grouped into four titled steps and still saves
+  Given the administrator clicks "Add speaker"
+  Then the form renders four SimfFormSection cards numbered 1–4:
+    "Identity", "Biography & credentials", "Links & contact", "Visibility & consent"
+  And section 1 shows the photo save-first placeholder beside a two-column field grid
+    (Code, Rank, Name En/Ar, Country, Display order)
+  And section 2 shows the four bilingual pairs laid out English | Arabic side by side
+  When they fill Code, Name (English), Name (Arabic), Display order and click "Create speaker"
+  Then a POST /account/api/admin/speakers returns HTTP 200 and the row appears
+  And re-opening it in Edit shows the same four sections plus the Active checkbox in section 4
+```
+
 ---
 
 ## Implementation notes
@@ -566,4 +651,6 @@ already exists is 409 (covered by `tests/SIMF.Api.Tests/AssetEndpointsTests.cs`)
 
 ---
 
-_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle).
+_Last reviewed:_ 2026-07-11 by Claude (redesign — identity cell + `SimfCountryTag`
+flag + `SimfFormSection` sectioned form + per-row Sessions deep-link). Earlier:
+2026-06-10 (D-356 Phase 5 — Excel + toggle).

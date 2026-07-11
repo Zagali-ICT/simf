@@ -123,6 +123,22 @@ internal sealed class AssetService(
             AssetSourceType.Upload, ToKind(file.FileType), bytes, file.ContentType, null);
     }
 
+    public async Task<IReadOnlySet<Guid>> WhichOwnersHaveActiveAssetAsync(
+        AssetCategory category, IReadOnlyCollection<Guid> ownerIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (ownerIds.Count == 0) { return new HashSet<Guid>(); }
+        var service = ServiceFor(category);
+        var ids = ownerIds.ToList();
+        return (await dbContext.StoredFiles.AsNoTracking()
+            .Where(file => file.Service == service && file.IsActive
+                && file.OwnerEntityId != null && ids.Contains(file.OwnerEntityId.Value))
+            .Select(file => file.OwnerEntityId!.Value)
+            .Distinct()
+            .ToListAsync(cancellationToken))
+            .ToHashSet();
+    }
+
     // A9 (security) — mirrors the FULL public-visibility predicate of each
     // category's owner table (polymorphic OwnerId, no FK — one AnyAsync per
     // category). NewsImage additionally gates on PublishedAt <= now (an embargoed

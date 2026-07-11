@@ -57,28 +57,54 @@
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
                 </CustomToolbar>
+                <RowActions Context="speaker">
+                    @* Deep-link to this speaker's sessions (filtered Sessions grid). *@
+                    <SimfToolbarButton Icon="calendar"
+                                       Title="@L["Admin.Speakers.Action.Sessions"]"
+                                       OnClick="@(() => OpenSessions(speaker.Id))" />
+                </RowActions>
                 <Columns>
-                    <SimfDataGridColumn TItem="AdminSpeakerSummary" Key="code"
-                                        Header="@L["Admin.Speakers.Column.Code"]"
-                                        Sortable="true">
-                        <CellTemplate>@context.Code</CellTemplate>
-                    </SimfDataGridColumn>
-                    <SimfDataGridColumn TItem="AdminSpeakerSummary" Key="name"
-                                        Header="@L["Admin.Speakers.Column.Name"]"
+                    <SimfDataGridColumn TItem="AdminSpeakerSummary" Key="name" Width="40%"
+                                        Header="@L["Admin.Speakers.Column.Speaker"]"
                                         Sortable="true" Filterable="true">
-                        <CellTemplate>@context.Name</CellTemplate>
-                    </SimfDataGridColumn>
-                    <SimfDataGridColumn TItem="AdminSpeakerSummary" Key="nameArabic"
-                                        Header="@L["Admin.Speakers.Column.NameArabic"]">
-                        <CellTemplate>@context.NameArabic</CellTemplate>
-                    </SimfDataGridColumn>
-                    <SimfDataGridColumn TItem="AdminSpeakerSummary" Key="rank"
-                                        Header="@L["Admin.Speakers.Column.Rank"]">
-                        <CellTemplate>@(context.Rank ?? "—")</CellTemplate>
+                        <CellTemplate>
+                            <div class="simf-speaker-cell">
+                                @if (context.HasPhoto)
+                                {
+                                    <SimfImageThumb Src="@PhotoUrl(context.Id)" Alt="@context.Name"
+                                                    Class="simf-speaker-cell__avatar" />
+                                }
+                                else
+                                {
+                                    <span class="simf-avatar-initials simf-speaker-cell__avatar"
+                                          aria-hidden="true">@Initials(context.Name)</span>
+                                }
+                                <span class="simf-speaker-cell__meta">
+                                    <span class="simf-speaker-cell__name">
+                                        @context.Name
+                                        @if (!string.IsNullOrWhiteSpace(context.NameArabic))
+                                        {
+                                            <span class="simf-speaker-cell__name-ar"> · @context.NameArabic</span>
+                                        }
+                                    </span>
+                                    @if (!string.IsNullOrWhiteSpace(context.Rank))
+                                    {
+                                        <span class="simf-speaker-cell__rank">@context.Rank</span>
+                                    }
+                                </span>
+                            </div>
+                        </CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminSpeakerSummary" Key="country"
                                         Header="@L["Admin.Speakers.Column.Country"]">
-                        <CellTemplate>@(CountryLabel(context) ?? "—")</CellTemplate>
+                        <CellTemplate>
+                            <SimfCountryTag Name="@CountryLabel(context)" Code="@context.CountryCode" />
+                        </CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminSpeakerSummary" Key="code"
+                                        Header="@L["Admin.Speakers.Column.Code"]"
+                                        Sortable="true">
+                        <CellTemplate><span class="simf-code-chip">@context.Code</span></CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminSpeakerSummary" Key="displayOrder"
                                         Header="@L["Admin.Speakers.Column.DisplayOrder"]"

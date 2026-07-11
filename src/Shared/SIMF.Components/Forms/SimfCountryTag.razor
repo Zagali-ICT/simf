@@ -1,0 +1,44 @@
+@* Country label with a flag glyph derived from the ISO 3166-1 alpha-2 code.
+   The flag renders as a colour flag on platforms that ship flag emoji and falls
+   back to the two letters elsewhere. Reusable by any country-bearing grid
+   (speakers, contacts, countries). Empty name renders an em dash. *@
+@namespace SIMF.Components.Forms
+
+@if (string.IsNullOrWhiteSpace(Name))
+{
+    <span>—</span>
+}
+else
+{
+    <span class="simf-country">
+        @if (!string.IsNullOrEmpty(_flag))
+        {
+            <span class="simf-country__flag" aria-hidden="true">@_flag</span>
+        }
+        <span>@Name</span>
+    </span>
+}
+
+@code {
+    /// <summary>Display name of the country. Empty renders an em dash.</summary>
+    [Parameter] public string? Name { get; set; }
+
+    /// <summary>ISO 3166-1 alpha-2 code (e.g. "SA") — drives the flag glyph.</summary>
+    [Parameter] public string? Code { get; set; }
+
+    private string _flag = string.Empty;
+
+    protected override void OnParametersSet() => _flag = FlagEmoji(Code);
+
+    // ISO 3166-1 alpha-2 → the two regional-indicator symbols. Empty for a
+    // missing / malformed code.
+    private static string FlagEmoji(string? code)
+    {
+        if (string.IsNullOrWhiteSpace(code) || code.Length != 2) return string.Empty;
+        var a = char.ToUpperInvariant(code[0]);
+        var b = char.ToUpperInvariant(code[1]);
+        if (a is < 'A' or > 'Z' || b is < 'A' or > 'Z') return string.Empty;
+        return char.ConvertFromUtf32(0x1F1E6 + (a - 'A'))
+             + char.ConvertFromUtf32(0x1F1E6 + (b - 'A'));
+    }
+}

@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-26 (D-506 — Excel round-trips the 8 dropped fields) |
+| **Last reviewed** | 2026-07-11 (speakers redesign — `?speakerId` deep-link filter + "filtered by speaker" note) |
 
 > **Permissions.** The page is gated `@attribute [RequirePermission(PermissionCatalog.Sessions.View)]`
 > (`"Sessions.View"`). CRUD actions sit behind distinct codes:
@@ -64,6 +64,7 @@
 | E2E-SES-031 | Moderate row action → navigates to the live Q&A desk; hidden without Questions.Moderate (D-646) | happy | P1 | _to author_ |
 | E2E-SES-025 | AI live captions field round-trips + the whole live section survives an edit (regression — D-439) | happy/regression | P1 | authored ✓ (`AdminSessionsTests.Update_round_trips_all_live_fields`) |
 | E2E-SES-026 | Excel export/import round-trips the 8 previously-dropped fields (Description+Arabic, the 2 live URLs, the 2 live captions, Type, SeatSelectionModeOverride) — D-506 | happy/regression | P1 | authored ✓ (`SessionsExcelTests.Export_includes_the_dropped_round_trip_columns` + `.Import_round_trips_the_dropped_fields`) |
+| E2E-SES-032 | Deep-link `/admin/sessions?speakerId={id}` (from the Speakers grid's Sessions action) filters to that speaker's sessions + shows the "filtered by speaker" note (speakers redesign) | function | P1 | authored ✓ (`AdminSessionsTests.List_filtered_by_speakerId_returns_only_that_speakers_sessions`) |
 
 ## Scenarios
 
@@ -257,6 +258,31 @@ Scenario: Filter, sort and page the sessions grid
   When they click "Next"
   Then the pager advances and the summary reads "Showing 21–40 of {total}"
 ```
+
+### E2E-SES-032 — Deep-link filter by speaker (speakers redesign)
+
+```gherkin
+Scenario: Opening /admin/sessions with a ?speakerId filters to that speaker
+  Given a speaker "Rear Admiral John Carter" linked to session "Opening panel"
+  And a session "Closing remarks" that Carter is NOT linked to
+  When the administrator opens /admin/sessions?speakerId={carterId}
+    (as reached from the Speakers grid's per-row "Sessions" action)
+  Then SessionsList reads the [SupplyParameterFromQuery] speakerId and seeds
+    the grid's "speakerId" filter before the first load
+  And the POST /account/api/admin/sessions/list body carries Filters.speakerId
+  And AdminSessionService translates it to a SQL EXISTS over SessionSpeaker
+    (session.Speakers.Any(link => link.SpeakerId == id))
+  And only "Opening panel" renders — "Closing remarks" is absent
+  And a blue SimfAlert info note reads "Showing only the sessions linked to the
+    selected speaker." with a "Clear filter" link to /admin/sessions
+  When they click "Clear filter"
+  Then the browser loads /admin/sessions (no query) and the full list returns
+```
+
+**Evidence:** API integration coverage in
+`tests/SIMF.Api.Tests/AdminSessionsTests.cs`
+(`List_filtered_by_speakerId_returns_only_that_speakers_sessions`); screenshot
+`docs/screenshots/cp-admin-sessions-032-speaker-filter.png`.
 
 ### E2E-SES-007 — Empty list
 

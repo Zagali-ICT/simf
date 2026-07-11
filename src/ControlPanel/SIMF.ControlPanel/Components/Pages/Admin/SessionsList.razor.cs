@@ -53,9 +53,19 @@ public partial class SessionsList
         _ => string.Empty,
     };
 
+    /// <summary>Deep-link from the Speakers grid's "Sessions" action —
+    /// <c>/admin/sessions?speakerId={id}</c> pre-filters the list to that
+    /// speaker's sessions.</summary>
+    [Parameter, SupplyParameterFromQuery(Name = "speakerId")]
+    public Guid? SpeakerId { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         _presentation = await Prefs.GetPresentationAsync(PageKey);
+        if (SpeakerId.HasValue)
+        {
+            _query.Filters["speakerId"] = SpeakerId.Value.ToString();
+        }
         await LoadAsync();
     }
 

@@ -1079,6 +1079,130 @@
 .simf-image-upload__modes { display: flex; gap: var(--space-2); }
 .simf-image-upload__thumb { inline-size: 96px; block-size: 96px; }
 
+/* -- Speakers redesign — a scannable identity cell in the admin grid: a photo
+      (or an initials tile when none exists) beside the name, rank and Arabic
+      name. Tokens only; the avatar matches .simf-img-thumb sizing. -- */
+.simf-speaker-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-inline-size: 0;
+}
+/* The avatar size lives here only (applied to both the photo thumb and the
+   initials tile via .simf-speaker-cell__avatar) so the two never diverge. */
+.simf-speaker-cell__avatar { flex: 0 0 auto; inline-size: 44px; block-size: 44px; }
+.simf-avatar-initials {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-field);
+  background-color: var(--color-primary);
+  color: var(--color-text-on-primary);
+  font-weight: var(--font-weight-emphasis);
+  font-size: var(--font-size-body);
+  text-transform: uppercase;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+.simf-speaker-cell__meta {
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.simf-speaker-cell__name {
+  font-weight: var(--font-weight-heading);
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.simf-speaker-cell__name-ar { font-weight: var(--font-weight-body); color: var(--color-text-muted); }
+.simf-speaker-cell__rank {
+  font-size: var(--font-size-caption);
+  line-height: var(--line-height-caption);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Country cell with a flag glyph. On platforms without colour flag emoji the
+   glyph falls back to the ISO letters — still a legible country tag. */
+.simf-country { display: inline-flex; align-items: center; gap: var(--space-2); white-space: nowrap; }
+.simf-country__flag { font-size: 1.15em; line-height: 1; }
+
+/* Monospace code chip — the programme team's stable speaker identifier. */
+.simf-code-chip {
+  display: inline-block;
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-caption);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-field);
+  background-color: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+}
+
+/* -- Sectioned CRUD form — groups a long field set into titled cards with a
+      responsive two-column grid (bilingual pairs sit side by side). -- */
+.simf-form-section {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background-color: var(--color-surface);
+  margin-block-end: var(--space-4);
+  overflow: hidden;
+}
+.simf-form-section__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  background-color: var(--color-surface-sunken);
+  border-block-end: 1px solid var(--color-border);
+}
+.simf-form-section__num {
+  flex: 0 0 auto;
+  inline-size: 26px;
+  block-size: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  color: var(--color-text-on-primary);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-emphasis);
+}
+.simf-form-section__title { font-weight: var(--font-weight-heading); color: var(--color-text); }
+.simf-form-section__hint {
+  margin-block-start: 2px;
+  font-size: var(--font-size-caption);
+  line-height: var(--line-height-caption);
+  color: var(--color-text-muted);
+}
+.simf-form-section__body { padding: var(--space-5); }
+
+.simf-form__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4) var(--space-5);
+}
+.simf-form__grid-item--full { grid-column: 1 / -1; }
+@media (max-width: 640px) {
+  .simf-form__grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Identity section — the photo control sits beside the identity fields and
+   wraps to its own row on a narrow viewport. */
+.simf-identity-row { display: flex; gap: var(--space-5); align-items: flex-start; flex-wrap: wrap; }
+.simf-identity-row__photo { flex: 0 0 200px; }
+.simf-identity-row__fields { flex: 1 1 280px; min-inline-size: 0; }
+.simf-photo-empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
 /* D-357 — speaker-presentation picker: a wall of profile cards (photo + name +
    country); selecting one reveals that speaker's presentation files below. */
 .simf-speaker-picker {

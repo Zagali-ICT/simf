@@ -602,6 +602,17 @@
   <data name="Admin.Speakers.Field.DisplayOrder" xml:space="preserve"><value>ترتيب العرض</value></data>
   <data name="Admin.Speakers.Field.DisplayOrderInvalid" xml:space="preserve"><value>يجب أن يكون ترتيب العرض صفراً أو عدداً صحيحاً موجباً.</value></data>
   <data name="Admin.Speakers.Field.IsActive" xml:space="preserve"><value>مفعّل — عرضه في القائمة العامة للمتحدّثين</value></data>
+  <data name="Admin.Speakers.Column.Speaker" xml:space="preserve"><value>المتحدّث</value></data>
+  <data name="Admin.Speakers.Action.Sessions" xml:space="preserve"><value>الجلسات</value></data>
+  <data name="Admin.Speakers.Section.Identity" xml:space="preserve"><value>الهوية</value></data>
+  <data name="Admin.Speakers.Section.IdentityHint" xml:space="preserve"><value>من هو المتحدّث وأين يظهر.</value></data>
+  <data name="Admin.Speakers.Section.Bio" xml:space="preserve"><value>السيرة والمؤهلات</value></data>
+  <data name="Admin.Speakers.Section.BioHint" xml:space="preserve"><value>كل حقل بالإنجليزية والعربية.</value></data>
+  <data name="Admin.Speakers.Section.Links" xml:space="preserve"><value>الروابط وجهة الاتصال</value></data>
+  <data name="Admin.Speakers.Section.LinksHint" xml:space="preserve"><value>الملفات العامة وسجل الاتصال الاختياري.</value></data>
+  <data name="Admin.Speakers.Section.Visibility" xml:space="preserve"><value>الظهور والموافقات</value></data>
+  <data name="Admin.Speakers.Section.VisibilityHint" xml:space="preserve"><value>ما وافق عليه المتحدّث، وهل هو ظاهر.</value></data>
+  <data name="Admin.Speakers.Section.PhotoSaveFirst" xml:space="preserve"><value>احفظ المتحدّث أولاً لإضافة صورة.</value></data>
   <data name="Admin.Speakers.Add.Title" xml:space="preserve"><value>إضافة متحدّث</value></data>
   <data name="Admin.Speakers.Edit.Title" xml:space="preserve"><value>تعديل المتحدّث</value></data>
   <data name="Admin.Speakers.Details.Title" xml:space="preserve"><value>تفاصيل المتحدّث</value></data>
@@ -1415,6 +1426,8 @@
 
   <data name="Admin.Pending.Others.Title" xml:space="preserve"><value>موافقات المستخدمين الآخرين المعلّقة</value></data>
   <data name="Admin.Sessions.Title" xml:space="preserve"><value>الجلسات</value></data>
+  <data name="Admin.Sessions.FilteredBySpeaker" xml:space="preserve"><value>عرض الجلسات المرتبطة بالمتحدّث المحدّد فقط.</value></data>
+  <data name="Admin.Sessions.ClearFilter" xml:space="preserve"><value>إزالة التصفية</value></data>
   <data name="Admin.Sessions.None" xml:space="preserve"><value>لا توجد جلسات بعد.</value></data>
   <data name="Admin.Sessions.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الجلسات.</value></data>
   <data name="Admin.Sessions.Fallback" xml:space="preserve"><value>تعذّر إكمال العملية.</value></data>

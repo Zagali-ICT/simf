@@ -604,6 +604,17 @@
   <data name="Admin.Speakers.Field.DisplayOrder" xml:space="preserve"><value>Display order</value></data>
   <data name="Admin.Speakers.Field.DisplayOrderInvalid" xml:space="preserve"><value>Display order must be zero or a positive integer.</value></data>
   <data name="Admin.Speakers.Field.IsActive" xml:space="preserve"><value>Active — show in the public speaker list</value></data>
+  <data name="Admin.Speakers.Column.Speaker" xml:space="preserve"><value>Speaker</value></data>
+  <data name="Admin.Speakers.Action.Sessions" xml:space="preserve"><value>Sessions</value></data>
+  <data name="Admin.Speakers.Section.Identity" xml:space="preserve"><value>Identity</value></data>
+  <data name="Admin.Speakers.Section.IdentityHint" xml:space="preserve"><value>Who the speaker is and where they appear.</value></data>
+  <data name="Admin.Speakers.Section.Bio" xml:space="preserve"><value>Biography &amp; credentials</value></data>
+  <data name="Admin.Speakers.Section.BioHint" xml:space="preserve"><value>Each field in English and Arabic.</value></data>
+  <data name="Admin.Speakers.Section.Links" xml:space="preserve"><value>Links &amp; contact</value></data>
+  <data name="Admin.Speakers.Section.LinksHint" xml:space="preserve"><value>Public profiles and the optional directory record.</value></data>
+  <data name="Admin.Speakers.Section.Visibility" xml:space="preserve"><value>Visibility &amp; consent</value></data>
+  <data name="Admin.Speakers.Section.VisibilityHint" xml:space="preserve"><value>What the speaker has agreed to, and whether they are live.</value></data>
+  <data name="Admin.Speakers.Section.PhotoSaveFirst" xml:space="preserve"><value>Save the speaker first to add a photo.</value></data>
   <data name="Admin.Speakers.Add.Title" xml:space="preserve"><value>Add speaker</value></data>
   <data name="Admin.Speakers.Edit.Title" xml:space="preserve"><value>Edit speaker</value></data>
   <data name="Admin.Speakers.Details.Title" xml:space="preserve"><value>Speaker details</value></data>
@@ -1423,6 +1434,8 @@
   <data name="Admin.Others.Duplicate.Title" xml:space="preserve"><value>Duplicate Other user</value></data>
   <data name="Admin.Pending.Others.Title" xml:space="preserve"><value>Pending Other approvals</value></data>
   <data name="Admin.Sessions.Title" xml:space="preserve"><value>Sessions</value></data>
+  <data name="Admin.Sessions.FilteredBySpeaker" xml:space="preserve"><value>Showing only the sessions linked to the selected speaker.</value></data>
+  <data name="Admin.Sessions.ClearFilter" xml:space="preserve"><value>Clear filter</value></data>
   <data name="Admin.Sessions.None" xml:space="preserve"><value>No sessions yet.</value></data>
   <data name="Admin.Sessions.LoadFailed" xml:space="preserve"><value>The sessions could not be loaded.</value></data>
   <data name="Admin.Sessions.Fallback" xml:space="preserve"><value>The operation could not be completed.</value></data>

@@ -5,6 +5,7 @@ using SIMF.Application.Auditing;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Application.Assets.Abstractions;
 using SIMF.Contracts.Admin;
 using SIMF.Domain.Programme;
 using SIMF.Infrastructure.Persistence;
@@ -23,6 +24,7 @@ namespace SIMF.Infrastructure.Programme;
 /// </summary>
 internal sealed class AdminSpeakerService(
     SimfAppDbContext dbContext,
+    IAssetService assetService,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<AdminSpeakerService> logger) : IAdminSpeakerService
@@ -85,23 +87,34 @@ internal sealed class AdminSpeakerService(
         var countriesById = await dbContext.Countries
             .AsNoTracking()
             .Where(country => countryIds.Contains(country.Id))
-            .Select(country => new { country.Id, country.Name, country.NameArabic })
+            .Select(country => new { country.Id, country.Name, country.NameArabic, country.Code })
             .ToDictionaryAsync(country => country.Id, cancellationToken);
+
+        // The grid renders the real photo thumbnail only when an active
+        // speaker-photo asset exists (the /assets/SpeakerPhoto/{id}/image proxy
+        // resolves from the StoredFile store, not the legacy PhotoRelativePath),
+        // otherwise it falls back to an initials tile — so a missing photo never
+        // shows a broken image. One batched query for the whole page, no N+1.
+        var speakerIds = pageRaw.Select(row => row.Id).ToList();
+        var photoOwners = await assetService.WhichOwnersHaveActiveAssetAsync(
+            AssetCategory.SpeakerPhoto, speakerIds, cancellationToken);
 
         var page = pageRaw
             .Select(row =>
             {
-                string? en = null, ar = null;
+                string? en = null, ar = null, code = null;
                 if (row.CountryId.HasValue
                     && countriesById.TryGetValue(row.CountryId.Value, out var country))
                 {
                     en = country.Name;
                     ar = country.NameArabic;
+                    code = country.Code;
                 }
                 return new AdminSpeakerSummary(
                     row.Id, row.Code, row.Name, row.NameArabic, row.Rank,
-                    row.CountryId, en, ar,
-                    row.DisplayOrder, row.IsActive, row.CreatedAt);
+                    row.CountryId, en, ar, code,
+                    row.DisplayOrder, row.IsActive, photoOwners.Contains(row.Id),
+                    row.CreatedAt);
             })
             .ToList();
 

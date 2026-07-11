@@ -19,6 +19,7 @@ public partial class SpeakersList
     [Inject] private IStringLocalizer<Strings> L { get; set; } = default!;
     [Inject] private IJSRuntime JS { get; set; } = default!;
     [Inject] private CpPreferences Prefs { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
 
     private record Toast(string Variant, string Message);
 
@@ -180,6 +181,25 @@ public partial class SpeakersList
         CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
             ? row.CountryNameAr ?? row.CountryNameEn
             : row.CountryNameEn ?? row.CountryNameAr;
+
+    // The grid renders a real thumbnail (HasPhoto) via the same category+owner
+    // asset proxy the View form uses; a missing photo shows an initials tile.
+    private static string PhotoUrl(Guid id) =>
+        $"/account/api/admin/assets/SpeakerPhoto/{id}/image";
+
+    // First + last name initials for the fallback avatar tile (max 2 chars).
+    private static string Initials(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "?";
+        var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) return "?";
+        if (parts.Length == 1)
+            return parts[0].Length >= 2 ? parts[0][..2] : parts[0];
+        return $"{parts[0][0]}{parts[^1][0]}";
+    }
+
+    private void OpenSessions(Guid speakerId) =>
+        Nav.NavigateTo($"/admin/sessions?speakerId={speakerId}");
 
     private string FormatSummary(int skip, int taken, int total) =>
         string.Format(L["Admin.Speakers.Summary"], skip + 1, skip + taken, total);

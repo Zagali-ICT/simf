@@ -56,6 +56,14 @@ internal sealed class AdminSessionService(
         {
             rows = rows.Where(session => session.HallId == hallId);
         }
+        // "Sessions for this speaker" — the Speakers grid deep-links here with
+        // ?speakerId={id}. The session↔speaker link is the M-to-M SessionSpeaker
+        // set, so match any session the speaker is linked to.
+        if (query.Filters.TryGetValue("speakerId", out var speakerIdRaw)
+            && Guid.TryParse(speakerIdRaw, out var speakerId))
+        {
+            rows = rows.Where(session => session.Speakers.Any(link => link.SpeakerId == speakerId));
+        }
 
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
