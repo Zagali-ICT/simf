@@ -101,6 +101,24 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Speaker_meeting_carries_the_speaker_id_and_country_for_the_card()
+    {
+        var (token, userId) = await SignInApprovedVisitorAsync();
+        // 682 = Saudi Arabia, present in the country seed (see AdminSpeakersTests).
+        var speakerId = await SeedSpeakerMeetingAsync(userId, rank: "باحث بيئي", countryId: 682);
+
+        var items = await GetMyRequestsAsync(token);
+
+        // D-745 — the bilateral-meetings card renders the speaker photo (built from
+        // SpeakerId via the public asset route) and the nationality flag (from
+        // CountryId). Both are append-only wire fields; the non-speaker kinds leave
+        // SpeakerId null.
+        var meeting = Assert.Single(items, i => i.Kind == AppRequestKind.SpeakerMeeting);
+        Assert.Equal(speakerId, meeting.SpeakerId);
+        Assert.Equal(682, meeting.CountryId);
+    }
+
+    [Fact]
     public async Task Cancel_sets_a_pending_request_to_cancelled()
     {
         var (token, _) = await SignInApprovedVisitorAsync();
@@ -170,7 +188,7 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
         SendAuthAsync(HttpMethod.Post, "/api/v1/app/my-requests/cancel", token,
             new { kind = (int)kind, id });
 
-    private async Task SeedSpeakerMeetingAsync(Guid userId, string? rank)
+    private async Task<Guid> SeedSpeakerMeetingAsync(Guid userId, string? rank, int? countryId = null)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -182,6 +200,7 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
             Name = "Dr Ibrahim Al-Hamed",
             NameArabic = "د. ابراهيم الحامد",
             Rank = rank,
+            CountryId = countryId,
             CreatedAt = DateTimeOffset.UtcNow,
         };
         db.Speakers.Add(speaker);
@@ -196,6 +215,7 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
             CreatedAt = DateTimeOffset.UtcNow,
         });
         await db.SaveChangesAsync();
+        return speaker.Id;
     }
 
     private async Task SeedBookingAsync(Guid userId, BookingStatus status)

@@ -112,6 +112,7 @@ Future<void> _pump(
             builder: (ctx) => MeetingRequestSheet(
               speakerId: speakerId,
               defaultName: 'Raed',
+              baseUrl: 'http://test.local/api/v1',
               l10n: AppL10n.of(ctx),
             ),
           ),
@@ -129,15 +130,15 @@ void main() {
         'the form until one is chosen', (tester) async {
       await _pump(tester, speakerId: null);
 
-      // The picker label is shown; the subject form is deferred.
+      // The picker label is shown; every speaker is a selectable row (D-745 —
+      // photo + name + country, no longer a bare dropdown); the form is deferred.
       expect(find.text('Select speaker'), findsOneWidget);
-      expect(find.byType(DropdownButtonFormField<String>), findsOneWidget);
+      expect(find.text('Dr. Sarah Al-Otaibi'), findsOneWidget);
+      expect(find.text('Capt. Omar Nasser'), findsOneWidget);
       expect(find.text('Subject'), findsNothing);
 
-      // Pick a speaker → the subject form appears.
-      await tester.tap(find.byType(DropdownButtonFormField<String>));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Dr. Sarah Al-Otaibi').last);
+      // Tap a speaker row → the subject form appears.
+      await tester.tap(find.text('Dr. Sarah Al-Otaibi'));
       await tester.pumpAndSettle();
       expect(find.text('Subject'), findsOneWidget);
     });
@@ -147,7 +148,8 @@ void main() {
       await _pump(tester, speakerId: 's1');
 
       expect(find.text('Select speaker'), findsNothing);
-      expect(find.byType(DropdownButtonFormField<String>), findsNothing);
+      // No picker rows when the speaker is fixed by the profile flow.
+      expect(find.text('Dr. Sarah Al-Otaibi'), findsNothing);
       expect(find.text('Subject'), findsOneWidget);
     });
 
@@ -209,10 +211,8 @@ void main() {
       final repo = _FakeRepo(slots: _twoDaySlots);
       await _pump(tester, speakerId: null, repo: repo);
 
-      // Pick a speaker → its real slots load into day cards.
-      await tester.tap(find.byType(DropdownButtonFormField<String>));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Dr. Sarah Al-Otaibi').last);
+      // Pick a speaker row → its real slots load into day cards.
+      await tester.tap(find.text('Dr. Sarah Al-Otaibi'));
       await tester.pumpAndSettle();
       expect(find.byType(MeetingDayCard), findsNWidgets(2));
 

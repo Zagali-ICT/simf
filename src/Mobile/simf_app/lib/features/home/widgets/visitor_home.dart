@@ -27,6 +27,7 @@ class VisitorHome extends StatelessWidget {
     required this.baseUrl,
     this.highlights = const <NewsListItem>[],
     this.isExhibitor = false,
+    this.isVip = false,
     this.now,
     super.key,
   });
@@ -39,6 +40,10 @@ class VisitorHome extends StatelessWidget {
   /// Exhibitor (العارض) — the attendee home plus the lead-capture tools section
   /// (scan a visitor's QR + my visitors). D-519.
   final bool isExhibitor;
+
+  /// D-745 — the "اللقاءات الثنائية" tile (the VIP bilateral-meetings page) is
+  /// shown only to VIP guests; non-VIP don't see it (they can't reach the page).
+  final bool isVip;
 
   /// The clock for the greeting word; defaults to live. Injected by the golden
   /// so its greeting is deterministic.
@@ -140,17 +145,19 @@ class VisitorHome extends StatelessWidget {
           ),
           const SizedBox(height: SimfTokens.space6),
           // News tiles (758:1228, h80): right→left اللقاءات الثنائية · الأرشيف.
+          // D-745 — "اللقاءات الثنائية" now opens the VIP-only bilateral-meetings
+          // page ([RouteNames.meetings], Figma 1408:9726) and is hidden for
+          // non-VIP; the requests history moved to My-Area. When hidden, الأرشيف
+          // fills the row on its own (SimfTileRow expands each child).
           SimfTileRow(
             children: <Widget>[
-              SimfNavTile(
-                label: l10n.tileBilateralMeetings,
-                iconAsset: HomeIcons.bilateral,
-                minHeight: 80,
-                // اللقاءات الثنائية opens the my-meetings list (RequestsScreen,
-                // Figma 1408:9726) — owner 2026-07-08. Its own "طلب جديد" starts a
-                // new request, so the create flow is reached from the list itself.
-                onTap: () => context.pushNamed(RouteNames.requests),
-              ),
+              if (isVip)
+                SimfNavTile(
+                  label: l10n.tileBilateralMeetings,
+                  iconAsset: HomeIcons.bilateral,
+                  minHeight: 80,
+                  onTap: () => context.pushNamed(RouteNames.meetings),
+                ),
               SimfNavTile(
                 label: l10n.tileArchive,
                 iconAsset: HomeIcons.archive,

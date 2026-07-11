@@ -4,6 +4,7 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
+import '../account/data/profile_repository.dart';
 import '../myarea/data/myarea_models.dart';
 import '../myarea/data/myarea_repository.dart';
 import '../news/data/news_models.dart';
@@ -84,6 +85,9 @@ class HomeScreen extends ConsumerWidget {
     // The post card builds `{base}/app/assets/NewsImage/{id}/image`; the base
     // already includes `/api/v1` (same anonymous D-357 route as the news list).
     final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
+    // D-745 — the "اللقاءات الثنائية" tile is VIP-only, so it is threaded down and
+    // hidden for non-VIP (they can't reach the meetings page anyway).
+    final isVip = ref.watch(currentUserIsVipProvider).value ?? false;
     return VisitorHome(
       l10n: l10n,
       name: _greetingName(
@@ -93,6 +97,7 @@ class HomeScreen extends ConsumerWidget {
       highlights: highlights,
       baseUrl: baseUrl,
       isExhibitor: role == AppRole.exhibitor,
+      isVip: isVip,
     );
   }
 }

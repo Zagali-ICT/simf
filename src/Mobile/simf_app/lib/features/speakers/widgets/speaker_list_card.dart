@@ -5,6 +5,7 @@ import '../../../app/widgets/simf_page_shell.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
 import '../../../core/country_flag.dart';
 import '../data/speaker_models.dart';
+import 'speaker_photo_tile.dart';
 
 /// One speaker card on the المتحدثون list (frame 908:1999): the navy [SimfCard]
 /// chrome carrying — in RTL — a 44×44 photo tile at the inline start (right),
@@ -47,7 +48,7 @@ class SpeakerListCard extends StatelessWidget {
         // avatar → name → caret.
         child: Row(
           children: <Widget>[
-            _SpeakerAvatar(
+            SpeakerPhotoTile(
               imageUrl: '$baseUrl/app/assets/SpeakerPhoto/${speaker.id}/image',
             ),
             const SizedBox(width: SimfTokens.space4),
@@ -119,52 +120,3 @@ class SpeakerListCard extends StatelessWidget {
   }
 }
 
-/// The 44×44 speaker avatar (frame 908:2004): a **rounded-square (4px)** navy
-/// tile on a 0.2px beige hairline showing the speaker's uploaded **photo** (the
-/// D-357 `SpeakerPhoto` asset) clipped to the same 4px rounding, falling back to
-/// the design's gold **anchor** glyph while it loads or when no photo is set (the
-/// asset route 204s).
-class _SpeakerAvatar extends StatelessWidget {
-  const _SpeakerAvatar({required this.imageUrl});
-
-  final String imageUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    // Same fallback glyph the detail avatar uses (speaker_placeholder.svg, the
-    // Figma 908:2110 gold anchor) so the empty-photo state is consistent across
-    // the speaker list and the profile — not a second Material anchor variant.
-    const fallback = SimfSvgIcon(
-      'assets/icons/speaker_placeholder.svg',
-      size: 24,
-      color: SimfTokens.accent,
-    );
-    return Container(
-      width: 44,
-      height: 44,
-      alignment: Alignment.center,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        // Frame 908:2004 — rounded-square (4px) navy tile with a 0.2px beige
-        // hairline (no gold fill); the photo covers it (clipped to the same 4px
-        // rounding), the gold anchor is the fallback glyph.
-        color: SimfTokens.navyDeep,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        border: Border.all(
-          color: SimfTokens.beigeBorder,
-          width: SimfTokens.hairline,
-        ),
-      ),
-      child: Image.network(
-        imageUrl,
-        width: 44,
-        height: 44,
-        fit: BoxFit.cover,
-        gaplessPlayback: true,
-        loadingBuilder: (context, child, progress) =>
-            progress == null ? child : fallback,
-        errorBuilder: (context, error, stackTrace) => fallback,
-      ),
-    );
-  }
-}

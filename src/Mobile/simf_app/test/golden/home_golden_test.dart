@@ -108,6 +108,9 @@ void main() {
             name: 'أحمد محمد',
             baseUrl: _baseUrl,
             highlights: _highlights,
+            // VIP so the "اللقاءات الثنائية" tile renders (matches the Figma home
+            // 758:1134, which shows it) — D-745.
+            isVip: true,
             // Fixed morning clock → deterministic "صباح الخير".
             now: DateTime(2026, 6, 20, 9),
           ),
