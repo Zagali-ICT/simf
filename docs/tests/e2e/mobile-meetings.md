@@ -31,6 +31,7 @@
 | E2E-MOBMEET-009 | VIP gate — a non-VIP who reaches `/meetings` sees the VIP-only state | auth | P0 | _to author_ |
 | E2E-MOBMEET-010 | Server 500 on the feed → error state + retry | resilience | P2 | _to author_ |
 | E2E-MOBMEET-011 | RTL render (Arabic) matches Figma 1408:9726 | i18n | P1 | _to author_ |
+| E2E-MOBMEET-012 | Picker search filters speakers by name/rank; no-match hint (D-746) | filter | P1 | _to author_ |
 
 ## Scenarios
 
@@ -175,6 +176,28 @@ Scenario: Arabic RTL parity
       inline-end, speaker photo inline-start) and the time row match Figma
       1408:9726
   And there is no horizontal overflow
+```
+
+### E2E-MOBMEET-012 — Picker search (type-to-filter, D-746)
+
+```gherkin
+Scenario: Searching the speaker picker filters by name or rank
+  Given the "طلب مقابلة" sheet is open with no fixed speaker
+  And the picker lists multiple speakers
+  When I type part of a speaker's name (or rank) into the picker search field
+  Then only the speakers whose name or rank contains the query remain
+  And the match is case-insensitive (Arabic and English names both filter)
+  When I type a query that matches no speaker
+  Then the "لا نتائج مطابقة" hint is shown in place of the list
+  When I clear the query
+  Then the full speaker list is restored
+
+Scenario: The selected speaker is never hidden by the filter
+  Given the "طلب مقابلة" sheet is open with no fixed speaker
+  When I select a speaker
+  And I then search for a DIFFERENT speaker
+  Then the selected speaker stays visible alongside the matching one
+  So the picker can never contradict the speaker the request is submitted to
 ```
 
 ---

@@ -83,9 +83,15 @@ Two equal pills (shared `RequestActionButton`):
 
 "طلب جديد" opens `MeetingRequestSheet` (Figma 1776:5036) with the **speaker
 picker** (D-745): a selectable list of every speaker showing the **photo + name +
-country flag + rank** (no longer a bare dropdown). Selecting a speaker loads their
-**real availability** day-cards + time-slots (D-709); with a subject the request
-is sent (`POST …/meeting-requests`). Booking a slot is VIP-only server-side.
+country flag + rank** (no longer a bare dropdown). A **type-to-filter search**
+sits above the list (D-746, key `meeting-speaker-search`): typing filters the
+speakers by **name or rank** (the same case-insensitive match as the المتحدثون
+list); a query that matches nobody shows the shared "لا نتائج مطابقة" hint. A
+speaker already selected stays visible even when it does not match the query, so
+the picker never hides the target the request is submitted to.
+Selecting a speaker loads their **real availability** day-cards + time-slots
+(D-709); with a subject the request is sent (`POST …/meeting-requests`). Booking a
+slot is VIP-only server-side.
 
 ## 6. Data flow
 
@@ -151,6 +157,7 @@ state, both VIP gates (tile hidden + in-screen), server-500, and RTL.
 | Date | Decision | Change |
 |------|----------|--------|
 | 2026-07-11 | D-745 | Split the Home "اللقاءات الثنائية" tile into a VIP-only meetings page (Figma `1408:9726`); the requests feed retitled **طلباتي** and kept in My-Area. Added append-only `AppRequestItem.speakerId` + `countryId` for the card photo + flag (no migration — enriched the existing speaker join). The create-sheet speaker picker became a photo/name/country list. Home tile hidden for non-VIP. |
+| 2026-07-11 | D-746 | Added a **type-to-filter search** above the create-sheet speaker picker (name/rank, mirroring the المتحدثون list; shared "لا نتائج مطابقة" hint). App-only; no wire/schema change. |
 
 ---
 

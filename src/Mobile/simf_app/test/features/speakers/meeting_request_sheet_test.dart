@@ -50,6 +50,9 @@ class _FakeRepo implements SpeakersRepository {
           name: 'Dr. Sarah Al-Otaibi',
           nameArabic: 'د. سارة العتيبي',
           displayOrder: 0,
+          // A rank whose token ('admiral') is in NO speaker name, so a search
+          // for it can only match via the rank branch of the picker predicate.
+          rank: 'Rear Admiral',
         ),
         SpeakerSummary(
           id: 's2',
@@ -143,6 +146,60 @@ void main() {
       expect(find.text('Subject'), findsOneWidget);
     });
 
+    testWidgets('the picker search filters the speaker rows by name and shows '
+        'the no-matches hint when nothing matches (owner 2026-07-11)',
+        (tester) async {
+      await _pump(tester, speakerId: null);
+
+      // The search field is present and both speakers show before any query.
+      final search =
+          find.byKey(const ValueKey<String>('meeting-speaker-search'));
+      expect(search, findsOneWidget);
+      expect(find.text('Dr. Sarah Al-Otaibi'), findsOneWidget);
+      expect(find.text('Capt. Omar Nasser'), findsOneWidget);
+
+      // Typing part of one name leaves only the matching row.
+      await tester.enterText(search, 'omar');
+      await tester.pumpAndSettle();
+      expect(find.text('Capt. Omar Nasser'), findsOneWidget);
+      expect(find.text('Dr. Sarah Al-Otaibi'), findsNothing);
+
+      // Typing part of a RANK ("Rear Admiral") matches via the rank branch of
+      // the predicate — no speaker NAME contains "admiral".
+      await tester.enterText(search, 'admiral');
+      await tester.pumpAndSettle();
+      expect(find.text('Dr. Sarah Al-Otaibi'), findsOneWidget);
+      expect(find.text('Capt. Omar Nasser'), findsNothing);
+
+      // A query that matches nobody shows the shared no-matches hint.
+      await tester.enterText(search, 'zzz-nobody');
+      await tester.pumpAndSettle();
+      expect(find.text('Capt. Omar Nasser'), findsNothing);
+      expect(find.text('No matching speakers'), findsOneWidget);
+    });
+
+    testWidgets('the picker keeps the SELECTED speaker visible even when the '
+        'search would filter it out, so the submit target is never hidden',
+        (tester) async {
+      await _pump(tester, speakerId: null);
+
+      // Select Sarah (the form + her selection now target s1)…
+      await tester.tap(find.text('Dr. Sarah Al-Otaibi'));
+      await tester.pumpAndSettle();
+      expect(find.text('Subject'), findsOneWidget);
+
+      // …then search for Omar. Omar matches the query, but Sarah stays pinned
+      // because she is the chosen target — the picker never contradicts the
+      // speaker the form submits to.
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('meeting-speaker-search')),
+        'omar',
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Capt. Omar Nasser'), findsOneWidget);
+      expect(find.text('Dr. Sarah Al-Otaibi'), findsOneWidget);
+    });
+
     testWidgets('from a speaker profile (speakerId set) shows no picker and the '
         'form immediately', (tester) async {
       await _pump(tester, speakerId: 's1');
@@ -175,7 +232,10 @@ void main() {
       expect(find.text('No meeting slots available right now'), findsOneWidget);
       expect(find.byType(MeetingDayCard), findsNothing);
 
-      await tester.enterText(find.byType(TextField), 'Naval cooperation');
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('meeting-subject')),
+        'Naval cooperation',
+      );
       await tester.tap(find.text('Send request'));
       await tester.pumpAndSettle();
 
@@ -191,7 +251,10 @@ void main() {
       final repo = _FakeRepo(slots: _twoDaySlots);
       await _pump(tester, speakerId: 's1', repo: repo);
 
-      await tester.enterText(find.byType(TextField), 'Naval cooperation');
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('meeting-subject')),
+        'Naval cooperation',
+      );
       await tester.tap(find.byKey(const ValueKey<String>('meeting-day-0')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey<String>('meeting-time-1')));
@@ -216,7 +279,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(MeetingDayCard), findsNWidgets(2));
 
-      await tester.enterText(find.byType(TextField), 'Naval cooperation');
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('meeting-subject')),
+        'Naval cooperation',
+      );
       await tester.tap(find.byKey(const ValueKey<String>('meeting-day-0')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey<String>('meeting-time-0')));
@@ -233,7 +299,10 @@ void main() {
       final repo = _FakeRepo(slots: _twoDaySlots, failSubmitStatus: 403);
       await _pump(tester, speakerId: 's1', repo: repo);
 
-      await tester.enterText(find.byType(TextField), 'Naval cooperation');
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('meeting-subject')),
+        'Naval cooperation',
+      );
       await tester.tap(find.byKey(const ValueKey<String>('meeting-day-0')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey<String>('meeting-time-0')));

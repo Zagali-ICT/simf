@@ -23,7 +23,8 @@ import 'speaker_photo_tile.dart';
 /// - from a **speaker profile** — [speakerId] is set, so the speaker is fixed and
 ///   no picker is shown;
 /// - from the **"طلب جديد"** on the requests list (اللقاءات الثنائية, 1408:9726) —
-///   [speakerId] is **null**, so the sheet first shows a speaker **dropdown**.
+///   [speakerId] is **null**, so the sheet first shows a searchable speaker
+///   picker (type-to-filter by name/rank, owner 2026-07-11).
 ///
 /// D-709 (item 6, FDS-013 §15.4 GAP-4) — the date + time come from the speaker's
 /// **real availability slots** (`GET /app/speakers/{id}/available-slots`), NOT a
@@ -64,6 +65,9 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
   // The picker's speaker list (bilateral flow only; empty on the profile flow).
   List<SpeakerSummary> _speakers = const <SpeakerSummary>[];
   bool _speakersLoaded = false;
+  // The picker's type-to-filter query (owner 2026-07-11) — matched against the
+  // speaker name + rank, mirroring the speakers list search (908:1744).
+  String _speakerQuery = '';
   // The chosen speaker's real availability slots (D-709), loaded once a speaker
   // is set. Empty (once loaded) ⇒ the "no slots" state.
   List<SpeakerSlot> _slots = const <SpeakerSlot>[];
@@ -384,6 +388,7 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
   /// The subject input — a white, beige-bordered field with the "اكتب الموضوع"
   /// hint (Figma 1776:5048).
   Widget _subjectField(AppL10n l10n) => TextField(
+        key: const ValueKey<String>('meeting-subject'),
         controller: _subject,
         textAlign: TextAlign.start,
         maxLength: 1000,
@@ -445,26 +450,99 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
     if (_speakers.isEmpty) {
       return _hint(l10n.meetingSelectSpeakerHint);
     }
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxHeight: 264),
-      child: ListView.separated(
-        shrinkWrap: true,
-        padding: EdgeInsets.zero,
-        itemCount: _speakers.length,
-        separatorBuilder: (_, __) => const SizedBox(height: SimfTokens.space2),
-        itemBuilder: (context, i) {
-          final speaker = _speakers[i];
-          return _SpeakerOptionTile(
-            speaker: speaker,
-            isArabic: isArabic,
-            baseUrl: widget.baseUrl,
-            selected: _selectedSpeakerId == speaker.id,
-            onTap: _submitting ? null : () => _onSpeakerSelected(speaker.id),
-          );
-        },
-      ),
+    final matches = _filteredSpeakers(isArabic);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        _speakerSearchField(l10n),
+        const SizedBox(height: SimfTokens.space2),
+        if (matches.isEmpty)
+          _hint(l10n.speakersNoMatches) // لا نتائج مطابقة
+        else
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 264),
+            child: ListView.separated(
+              shrinkWrap: true,
+              padding: EdgeInsets.zero,
+              itemCount: matches.length,
+              separatorBuilder: (_, __) =>
+                  const SizedBox(height: SimfTokens.space2),
+              itemBuilder: (context, i) {
+                final speaker = matches[i];
+                return _SpeakerOptionTile(
+                  speaker: speaker,
+                  isArabic: isArabic,
+                  baseUrl: widget.baseUrl,
+                  selected: _selectedSpeakerId == speaker.id,
+                  onTap:
+                      _submitting ? null : () => _onSpeakerSelected(speaker.id),
+                );
+              },
+            ),
+          ),
+      ],
     );
   }
+
+  /// The picker's speakers after the type-to-filter query — matched against the
+  /// name + rank, case-insensitive, mirroring the speakers list (908:1744) so
+  /// search behaves identically wherever a speaker is chosen. The already-chosen
+  /// speaker is always kept in the list even when it doesn't match the query, so
+  /// the picker can never hide (or contradict) the target the form submits to.
+  List<SpeakerSummary> _filteredSpeakers(bool isArabic) {
+    final q = _speakerQuery.trim().toLowerCase();
+    if (q.isEmpty) {
+      return _speakers;
+    }
+    return _speakers.where((s) {
+      if (s.id == _selectedSpeakerId) {
+        return true;
+      }
+      final name = s.localizedName(isArabic).toLowerCase();
+      final rank = (s.rank ?? '').toLowerCase();
+      return name.contains(q) || rank.contains(q);
+    }).toList();
+  }
+
+  /// The picker's type-to-filter field (owner 2026-07-11) — the sheet's beige
+  /// field look with a leading magnifier so a VIP can filter a long speaker
+  /// roster instead of scrolling. Reuses the speakers-list search hint.
+  Widget _speakerSearchField(AppL10n l10n) => TextField(
+        key: const ValueKey<String>('meeting-speaker-search'),
+        onChanged: (value) => setState(() => _speakerQuery = value),
+        style: const TextStyle(
+          color: SimfTokens.inputInk,
+          fontSize: SimfTokens.textMd,
+        ),
+        decoration: InputDecoration(
+          isDense: true,
+          hintText: l10n.speakersSearchHint, // ما الذي تبحث عنه
+          hintStyle: const TextStyle(
+            color: SimfTokens.greyText,
+            fontSize: SimfTokens.textMd,
+          ),
+          prefixIcon: const Icon(
+            Icons.search,
+            color: SimfTokens.greyText,
+            size: 18,
+          ),
+          filled: true,
+          fillColor: SimfTokens.surface,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: SimfTokens.space3,
+            vertical: SimfTokens.space3,
+          ),
+          // OutlineInputBorder's default radius is circular-4 (==
+          // SimfTokens.borderRadiusSmall), so it is left implicit — passing it
+          // trips avoid_redundant_argument_values (as in lookup_search_sheet).
+          enabledBorder: const OutlineInputBorder(
+            borderSide: BorderSide(color: SimfTokens.beigeBorder),
+          ),
+          focusedBorder: const OutlineInputBorder(
+            borderSide: BorderSide(color: SimfTokens.accent),
+          ),
+        ),
+      );
 
   /// The horizontal row of the speaker's available day cards (Figma 1776:5052).
   Widget _dayCards(bool isArabic) {
