@@ -49,6 +49,7 @@ internal sealed partial class AdminAccountService(
     ITransactionRunner transactionRunner,
     SimfIdentityDbContext dbContext,
     SimfAppDbContext appDbContext,
+    IUserProfileRepository profiles,
     IPiiEncryptor pii,
     TimeProvider timeProvider,
     INotificationDispatcher notifications,
@@ -379,25 +380,18 @@ internal sealed partial class AdminAccountService(
         var iqamaNumberHash = pii.BlindIndex(iqamaNumber);
         var passportNumberHash = pii.BlindIndex(passportNumber);
 
-        var duplicateIdentity =
-            (nationalIdHash is not null && await appDbContext.UserProfiles
-                .AsNoTracking()
-                .AnyAsync(p => p.NationalIdHash == nationalIdHash, cancellationToken))
-            || (iqamaNumberHash is not null && await appDbContext.UserProfiles
-                .AsNoTracking()
-                .AnyAsync(p => p.IqamaNumberHash == iqamaNumberHash, cancellationToken))
-            || (passportNumberHash is not null && await appDbContext.UserProfiles
-                .AsNoTracking()
-                .AnyAsync(p => p.PassportNumberHash == passportNumberHash, cancellationToken));
+        // Reuse the repository's single OR-query identity-exists check
+        // (IUserProfileRepository.AnyOtherProfileWithIdentityHashAsync). Guid.Empty
+        // excludes nobody — no real profile has UserId == Guid.Empty — so this NEW
+        // walk-in user is checked against every existing profile.
+        var duplicateIdentity = await profiles.AnyOtherProfileWithIdentityHashAsync(
+            Guid.Empty, nationalIdHash, iqamaNumberHash, passportNumberHash, cancellationToken);
         if (duplicateIdentity)
         {
             await AuditFailure(
                 AuditEvents.AdminWalkInRegisterFailed, actorUserId, email, null,
                 ErrorCodes.DuplicateIdentity, cancellationToken);
-            throw new ApiException(
-                ErrorCodes.DuplicateIdentity, 409,
-                "An account is already registered with this national ID, Iqama, or passport number.",
-                "يوجد حساب مسجّل بالفعل بهذه الهوية الوطنية أو رقم الإقامة أو جواز السفر.");
+            throw ApiException.DuplicateIdentity();
         }
 
         var now = timeProvider.GetUtcNow();
@@ -501,15 +495,15 @@ internal sealed partial class AdminAccountService(
         {
             await appDbContext.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException ex) when (IsIdentityUniqueIndexViolation(ex))
+        catch (DbUpdateException ex) when (ex.ViolatesAnyIndex(
+            "IX_UserProfiles_NationalIdHash",
+            "IX_UserProfiles_IqamaNumberHash",
+            "IX_UserProfiles_PassportNumberHash"))
         {
             await AuditFailure(
                 AuditEvents.AdminWalkInRegisterFailed, actorUserId, email, null,
                 ErrorCodes.DuplicateIdentity, cancellationToken);
-            throw new ApiException(
-                ErrorCodes.DuplicateIdentity, 409,
-                "An account is already registered with this national ID, Iqama, or passport number.",
-                "يوجد حساب مسجّل بالفعل بهذه الهوية الوطنية أو رقم الإقامة أو جواز السفر.");
+            throw ApiException.DuplicateIdentity();
         }
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -546,18 +540,6 @@ internal sealed partial class AdminAccountService(
 
     private static string? NormaliseOptional(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-
-    /// <summary>FIX E — true only for the three filtered UNIQUE identity blind-index
-    /// violations (National ID / Iqama / passport). The SQL Server duplicate-key
-    /// message carries the offending index name, so any other unique/constraint
-    /// violation is left to rethrow unchanged (narrow translation).</summary>
-    private static bool IsIdentityUniqueIndexViolation(DbUpdateException ex)
-    {
-        var message = ex.InnerException?.Message ?? ex.Message;
-        return message.Contains("IX_UserProfiles_NationalIdHash", StringComparison.OrdinalIgnoreCase)
-            || message.Contains("IX_UserProfiles_IqamaNumberHash", StringComparison.OrdinalIgnoreCase)
-            || message.Contains("IX_UserProfiles_PassportNumberHash", StringComparison.OrdinalIgnoreCase);
-    }
 
     /// <summary>
     /// Shared back-end of every create call (P7c — D-048). Routes a

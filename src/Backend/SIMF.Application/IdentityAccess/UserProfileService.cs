@@ -259,10 +259,7 @@ internal sealed class UserProfileService(
                 actorUserId, profile.NationalIdHash, profile.IqamaNumberHash,
                 profile.PassportNumberHash, cancellationToken))
         {
-            throw new ApiException(
-                ErrorCodes.DuplicateIdentity, 409,
-                "An account is already registered with this national ID, Iqama, or passport number.",
-                "يوجد حساب مسجّل بالفعل بهذه الهوية الوطنية أو رقم الإقامة أو جواز السفر.");
+            throw ApiException.DuplicateIdentity();
         }
 
         profile.SaudiMobile = NormaliseOptional(request.SaudiMobile);

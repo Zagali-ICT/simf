@@ -1,5 +1,4 @@
-﻿using System.Globalization;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
@@ -613,7 +612,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Self_service_upsert_of_an_id_on_another_users_profile_is_409()
     {
-        var sharedNationalId = MintNationalId();
+        var sharedNationalId = TestIdentity.MintNationalId();
 
         var tokenA = await CreateUserAndSignInAsync();
         var reqA = await ValidSaudiRequestAsync();
@@ -1453,41 +1452,9 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
             // blind index and dedups on it, and this class shares ONE DB across tests,
             // so a hardcoded id would 409 the second distinct user. Mint a UNIQUE
             // Luhn-valid Saudi id per call (mirrors WalkInRegistrationTests).
-            NationalId = MintNationalId(),
+            NationalId = TestIdentity.MintNationalId(),
             OrganisationId = organisationId,
         };
-    }
-
-    // H-1 (FIX A) — unique, Luhn-valid Saudi National IDs per call. Seeded from a
-    // random base so parallel test classes (each on its own DB) never coincide.
-    // Mirrors the WalkInRegistrationTests minter.
-    private static int _identitySeq = Random.Shared.Next(1, 80_000_000);
-
-    private static string MintNationalId()
-    {
-        var n = System.Threading.Interlocked.Increment(ref _identitySeq) % 90_000_000;
-        var body = "1" + n.ToString("D8", CultureInfo.InvariantCulture);
-        return body + LuhnCheckDigit(body).ToString(CultureInfo.InvariantCulture);
-    }
-
-    // The Luhn check digit at the END of the number (position 0 from the right —
-    // not doubled), so the partial's rightmost digit IS doubled.
-    private static int LuhnCheckDigit(string partialWithoutCheck)
-    {
-        var sum = 0;
-        var doubleDigit = true;
-        for (var i = partialWithoutCheck.Length - 1; i >= 0; i--)
-        {
-            var digit = partialWithoutCheck[i] - '0';
-            if (doubleDigit)
-            {
-                digit *= 2;
-                if (digit > 9) { digit -= 9; }
-            }
-            sum += digit;
-            doubleDigit = !doubleDigit;
-        }
-        return (10 - (sum % 10)) % 10;
     }
 
     /// <summary>Creates one active <see cref="UserInterest"/> directly via the

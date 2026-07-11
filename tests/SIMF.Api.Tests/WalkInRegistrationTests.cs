@@ -1,5 +1,4 @@
-﻿using System.Globalization;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
@@ -487,7 +486,7 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
         var adminToken = await CreateAdministratorAndSignInAsync();
         var profileTypeId = await GetVisitorProfileTypeAsync();
         var organisationId = await GetOrganisationIdAsync();
-        var sharedId = MintNationalId();
+        var sharedId = TestIdentity.MintNationalId();
 
         var first = BuildRequest(profileTypeId, $"dupnid-1-{Guid.NewGuid():N}@simf.test", organisationId);
         first.NationalId = sharedId;
@@ -509,7 +508,7 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
         var profileTypeId = await GetVisitorProfileTypeAsync();
         var organisationId = await GetOrganisationIdAsync();
         var countryCode = await GetNonSaudiCountryCodeAsync();
-        var sharedIqama = MintIqama();
+        var sharedIqama = TestIdentity.MintIqama();
 
         var first = BuildNonSaudiRequest(
             profileTypeId, $"dupiq-1-{Guid.NewGuid():N}@simf.test", organisationId,
@@ -569,43 +568,6 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
     }
 
     // -- Helpers --------------------------------------------------------------
-
-    // H-1 — mint unique, Luhn-valid identifiers per call. The class shares one DB
-    // and the walk-in service dedups on the identity blind index, so every test's
-    // BuildRequest must carry a distinct identity. Seeded from a random base so
-    // parallel test classes (each on its own DB) never coincide.
-    private static int _identitySeq = Random.Shared.Next(1, 80_000_000);
-
-    private static string MintNationalId() => MintIdentity('1');
-
-    private static string MintIqama() => MintIdentity('2');
-
-    private static string MintIdentity(char prefix)
-    {
-        var n = System.Threading.Interlocked.Increment(ref _identitySeq) % 90_000_000;
-        var body = prefix + n.ToString("D8", CultureInfo.InvariantCulture);
-        return body + LuhnCheckDigit(body).ToString(CultureInfo.InvariantCulture);
-    }
-
-    // Computes the Luhn check digit that goes at the END of the number (position 0
-    // from the right — not doubled), so the partial's rightmost digit IS doubled.
-    private static int LuhnCheckDigit(string partialWithoutCheck)
-    {
-        var sum = 0;
-        var doubleDigit = true;
-        for (var i = partialWithoutCheck.Length - 1; i >= 0; i--)
-        {
-            var digit = partialWithoutCheck[i] - '0';
-            if (doubleDigit)
-            {
-                digit *= 2;
-                if (digit > 9) { digit -= 9; }
-            }
-            sum += digit;
-            doubleDigit = !doubleDigit;
-        }
-        return (10 - (sum % 10)) % 10;
-    }
 
     private static AdminWalkInRegistrationRequest BuildNonSaudiRequest(
         Guid profileTypeId, string? email, Guid organisationId, string nationalityCode,
@@ -669,7 +631,7 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
             // H-1 — the class shares ONE DB across tests and the walk-in service
             // now dedups on the National-ID blind index, so a hardcoded id would
             // 409 the second walk-in. Mint a UNIQUE Luhn-valid Saudi id per call.
-            NationalId = MintNationalId(),
+            NationalId = TestIdentity.MintNationalId(),
             SaudiMobile = "+966500000001",
             // B3 — D-221: organisation is required at the desk.
             OrganisationId = organisationId,

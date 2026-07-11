@@ -224,25 +224,12 @@ internal sealed class UserProfileRepository(
         {
             await appDbContext.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException ex) when (IsIdentityUniqueIndexViolation(ex))
+        catch (DbUpdateException ex) when (ex.ViolatesAnyIndex(
+            "IX_UserProfiles_NationalIdHash",
+            "IX_UserProfiles_IqamaNumberHash",
+            "IX_UserProfiles_PassportNumberHash"))
         {
-            throw new ApiException(
-                ErrorCodes.DuplicateIdentity, 409,
-                "An account is already registered with this national ID, Iqama, or passport number.",
-                "يوجد حساب مسجّل بالفعل بهذه الهوية الوطنية أو رقم الإقامة أو جواز السفر.");
+            throw ApiException.DuplicateIdentity();
         }
-    }
-
-    /// <summary>True only for the three filtered UNIQUE identity blind-index
-    /// violations (National ID / Iqama / passport). The SQL Server duplicate-key
-    /// message carries the offending index name, so any other unique/constraint
-    /// violation is left to rethrow unchanged (narrow translation — mirrors
-    /// <c>SeatReservationService.PersistWithUniquenessGuardAsync</c>).</summary>
-    private static bool IsIdentityUniqueIndexViolation(DbUpdateException ex)
-    {
-        var message = ex.InnerException?.Message ?? ex.Message;
-        return message.Contains("IX_UserProfiles_NationalIdHash", StringComparison.OrdinalIgnoreCase)
-            || message.Contains("IX_UserProfiles_IqamaNumberHash", StringComparison.OrdinalIgnoreCase)
-            || message.Contains("IX_UserProfiles_PassportNumberHash", StringComparison.OrdinalIgnoreCase);
     }
 }
