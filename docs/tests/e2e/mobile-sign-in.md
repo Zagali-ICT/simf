@@ -263,6 +263,33 @@ nudge", "biometrics unavailable → no nudge". The full step-up + enrol path is
 catalogued in [`mobile-biometric-step-up.md`](mobile-biometric-step-up.md); the
 on-device OS biometric prompt is the owner's device test.
 
+### E2E-MOB003-018 — OS autofill remembers the last-used email, not a first-typed guess (D-742)
+
+```gherkin
+Scenario: A corrected sign-up email is the one offered at login
+  Given a new user starts sign-up, types a mistyped email, then corrects it and
+        completes email verification
+  When the user returns to the sign-in screen
+  Then the email field is pre-filled with the CORRECTED, just-verified address
+        (the app writes it to lastEmail on a successful verify)
+  And the OS password-manager offers the corrected credentials — not the
+        first-typed guess — because the auth form is an AutofillGroup that commits
+        the FINAL submitted values via finishAutofillContext
+
+Scenario: Unchecking "remember me" discards the saved email in both stores
+  Given the sign-in screen with "remember me" unchecked
+  When the user signs in successfully
+  Then the app removes lastEmail AND tells the OS to discard the autofill context
+        (finishAutofillContext(shouldSave: false)), so nothing is pre-filled or
+        offered next time
+```
+
+**Evidence:** `sign_in_screen_test` — "the login form is an AutofillGroup and the
+fields carry OS autofill hints…" and "unchecking remember-me forgets a previously
+remembered email"; `sign_up_email_verify_screen_test` — "…verifies and routes to
+sign-in" asserts `lastEmail` is set to the verified address. The on-device OS
+password-manager save/offer is the owner's device test.
+
 ---
 
-_Last reviewed:_ `2026-06-19` by `SIMF Team`.
+_Last reviewed:_ `2026-07-11` by `SIMF Team`.

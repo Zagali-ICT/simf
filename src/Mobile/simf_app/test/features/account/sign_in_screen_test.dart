@@ -208,6 +208,30 @@ void main() {
       );
     });
 
+    testWidgets('the login form is an AutofillGroup and the fields carry OS '
+        'autofill hints, so the platform saves the FINAL credentials the user '
+        'used — not a first-typed guess (D-742)', (tester) async {
+      await _pump(tester, _Outcome.success, _FakePrefs());
+
+      expect(find.byType(AutofillGroup), findsOneWidget);
+      final editables =
+          tester.widgetList<EditableText>(find.byType(EditableText));
+      expect(
+        editables.any(
+          (e) => e.autofillHints?.contains(AutofillHints.username) ?? false,
+        ),
+        isTrue,
+        reason: 'the email field should carry the username autofill hint',
+      );
+      expect(
+        editables.any(
+          (e) => e.autofillHints?.contains(AutofillHints.password) ?? false,
+        ),
+        isTrue,
+        reason: 'the password field should carry the password autofill hint',
+      );
+    });
+
     testWidgets('a malformed email shows the inline error and does not sign in '
         '(#7)', (tester) async {
       await _pump(tester, _Outcome.success, _FakePrefs());

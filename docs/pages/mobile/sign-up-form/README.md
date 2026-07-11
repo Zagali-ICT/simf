@@ -84,6 +84,11 @@ font applied once in the theme (incl. the gold CTA).
       contract (D-219) unchanged
 
 ## 9. Changelog
+- **2026-07-11 (D-742):** OS-autofill fix — the form is now an `AutofillGroup` with
+  `newUsername`/`newPassword` hints and commits the FINAL submitted email/password
+  via `TextInput.finishAutofillContext()` on a successful submit, so a corrected
+  address replaces any first-typed guess the OS grabbed (fixes "login kept offering
+  the mistyped sign-up email"). Render/goldens unchanged.
 - **2026-07-09 (D-719):** added the mandatory `AccountTermsCheckbox` — registration
   now gates the CTA on an explicit T&C accept (the profile / More menu keep the
   read-only link). The "الشروط والأحكام" span opens Page 009 in consent mode and a

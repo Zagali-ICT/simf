@@ -1,9 +1,11 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
+import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
@@ -112,6 +114,18 @@ class _SignUpEmailVerifyScreenState
           );
       if (!mounted) {
         return;
+      }
+      // The account is verified — prefill THIS address on the sign-in screen
+      // the user lands on next, so login shows the email they just registered,
+      // not a stale one. Native only: the web PoC shares kiosk localStorage
+      // (D-384), matching the sign-in screen's own remember-email gate.
+      if (!kIsWeb) {
+        await ref
+            .read(simfPrefsStorageProvider)
+            .setString(StorageKeys.lastEmail, widget.email);
+        if (!mounted) {
+          return;
+        }
       }
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
