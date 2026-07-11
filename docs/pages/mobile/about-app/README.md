@@ -43,6 +43,10 @@ launch). Reads `orgProfileProvider` (support), `installedAppVersionProvider` (ve
 and `GET /app/version-policy` (manual check, D-736 — the same anonymous endpoint the
 splash launch gate uses); date/organizer are static l10n.
 
+> **Configuring / operating the app-update gate** (the six `appUpdate.*` policy keys,
+> semver rules, and the release runbook): see
+> [`docs/manuals/SIMF-App-Update-Dev-Guide.md`](../../../manuals/SIMF-App-Update-Dev-Guide.md).
+
 ## Tests
 
 `test/features/about/about_app_screen_test.dart` (incl. the D-736 manual-update-check

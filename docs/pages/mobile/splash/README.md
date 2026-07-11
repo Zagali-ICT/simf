@@ -90,4 +90,5 @@ forced/optional/snooze/fail-open/anti-brick). E2E:
 - **D-361** (built to Figma 159:573), **D-431** (always route to Home after
   launch), **D-495** (warm the org profile at splash).
 - **D-736** (server version-policy update gate — `GET /app/version-policy`,
-  forced/soft dialogs, 3-day soft snooze, fail-open anti-brick).
+  forced/soft dialogs, 3-day soft snooze, fail-open anti-brick). Configuration +
+  operator runbook: [`docs/manuals/SIMF-App-Update-Dev-Guide.md`](../../../manuals/SIMF-App-Update-Dev-Guide.md).

@@ -18,7 +18,9 @@
 > app-update policy keys `appUpdate.{android|ios}.{minVersion|latestVersion|storeUrl}`
 > with EMPTY values and format-documenting Descriptions, so a fresh grid lists
 > them ready to edit — their values drive the anonymous
-> `GET /api/v1/app/version-policy` read (see E2E-CFG-024).
+> `GET /api/v1/app/version-policy` read (see E2E-CFG-024). **How to configure +
+> the release runbook** (semver rules, raise `min` only after 100% store rollout):
+> [`docs/manuals/SIMF-App-Update-Dev-Guide.md`](../../manuals/SIMF-App-Update-Dev-Guide.md).
 >
 > **Surface specifics that differ from the gold-standard Interests page:**
 > - Flat key/value/description model — **no** Arabic-name field, **no** display
