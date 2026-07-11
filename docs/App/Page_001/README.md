@@ -16,9 +16,9 @@ Per-page documentation folder. Everything about this app page lives here.
 | Route | `RouteNames.splash` → `/splash` |
 | Titles | AR **البداية** · EN **Splash** |
 | Section | 0 — Bootstrap / launch |
-| Nature | **Splash / bootstrap** (brand lock-up + store-update check + session restore + route-out) |
+| Nature | **Splash / bootstrap** (brand lock-up + version-policy update check + session restore + route-out) |
 | App privilege | **None** — runs before any privilege is known (Guest/Visitor/Moderator/Staff resolved here) |
-| Status | **Built**; redesigned 2026-06-11 to the KSA-Project frame 159:573 (**D-361** — visuals only, boot logic unchanged); API spec **reuses shipped endpoints** (no new endpoint) |
+| Status | **Built**; redesigned 2026-06-11 to the KSA-Project frame 159:573 (**D-361** — visuals only); update check re-based on the SIMF version policy 2026-07-10 (**D-736** — `GET /app/version-policy`, forced/soft gate + 3-day snooze, fail-open) |
 
 ## Sources of truth
 **KSA-Project Figma frame 159:573** (visual as-built, D-361 — `docs/SIMF-App-Redesign-Program.md` board row 1) ·
@@ -26,7 +26,8 @@ Per-page documentation folder. Everything about this app page lives here.
 SIMF-MOB-API-001 (shared API conventions + auth) · SIMF-MAA-001 (mobile architecture).
 
 > Owner reference: **Page 001** (mockup Screen #1, "splash"). This is the app's first
-> screen on every cold launch. It does **not** introduce a new SIMF endpoint — the
-> store-update check is **store-native** (not a SIMF API) and the session/identity
+> screen on every cold launch. The update check reads the **SIMF version policy**
+> (`GET /app/version-policy`, D-736 — CP-configured per-platform min/latest version +
+> store URL; supersedes the original store-native contract) and the session/identity
 > reads reuse the already-shipped `POST /app/auth/refresh` (only when the cached access
 > token is missing/expired) and `GET /app/users/me`.

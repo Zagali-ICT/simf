@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -10,6 +11,7 @@ import 'app/localization/locale_controller.dart';
 import 'core/env/build_config.dart';
 import 'core/net/self_signed_api_tls.dart'
     if (dart.library.io) 'core/net/self_signed_api_tls_io.dart';
+import 'core/startup/app_version_policy.dart';
 import 'features/accessibility/data/accessibility_controller.dart';
 
 Future<void> main() async {
@@ -27,9 +29,11 @@ Future<void> main() async {
   // ONLY (no-op on web; every other host keeps full TLS validation).
   installSelfSignedApiTlsBypass();
 
-  // Eagerly resolve the two values the providers need at construction time
-  // (Prefs and the device type), then build the override list.
-  final prefs = await SimfPrefsStorage.open();
+  // Eagerly resolve the values the providers need at construction time. Prefs
+  // and the installed version are independent native round-trips on the
+  // cold-boot path, so resolve them concurrently rather than in series.
+  final (prefs, installedVersion) =
+      await (SimfPrefsStorage.open(), _installedVersion()).wait;
   final deviceType = _deviceType();
   final dataConfig = BuildConfig.dataConfig(deviceType: deviceType);
 
@@ -39,6 +43,10 @@ Future<void> main() async {
         // The data package's mandatory overrides.
         simfDataConfigProvider.overrideWithValue(dataConfig),
         simfPrefsStorageProvider.overrideWithValue(prefs),
+
+        // D-736 — the real installed version (About/More display + the launch
+        // update-policy comparison).
+        installedAppVersionProvider.overrideWithValue(installedVersion),
 
         // The locale controller — wires the prefs-backed implementation.
         localeControllerProvider.overrideWith(
@@ -69,6 +77,17 @@ Future<void> main() async {
       child: const SimfApp(),
     ),
   );
+}
+
+/// The pubspec `version` of this build (D-736). Best-effort: a platform where
+/// the plugin cannot resolve it (e.g. a bare web dev run) yields '' — the
+/// screens render a dash and the update check fails open.
+Future<String> _installedVersion() async {
+  try {
+    return (await PackageInfo.fromPlatform()).version;
+  } on Object {
+    return '';
+  }
 }
 
 SimfDeviceType _deviceType() {

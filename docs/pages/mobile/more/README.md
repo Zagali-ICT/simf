@@ -9,8 +9,11 @@ The app's "more" hub: a منطقتي profile header card (signed-in → My Area)
 grouped sections of bordered nav rows — **معلومات الملتقى** (about / forum-guide /
 FAQ / VisitSaudi), **الإعدادات** (language toggle / accessibility / notifications),
 **قانوني** (terms / contact-us / rate) — the تسجيل الخروج link (signed-in) and the
-version line. Rows are **role-filtered** (D-519) so a focused Staff/Moderator never
-sees a dead attendee-only link.
+version line. The footer version line reads the REAL installed version
+(`installedAppVersionProvider`, from `package_info_plus` — D-736) rendered as
+`SIMF 2026 · الإصدار {v}` / `SIMF 2026 · v{v}` (edition alone when the version
+is unresolved), no longer a hardcoded literal. Rows are **role-filtered**
+(D-519) so a focused Staff/Moderator never sees a dead attendee-only link.
 
 ## Structure (post-decomposition)
 
@@ -50,3 +53,4 @@ shows them, About navigation). E2E: `docs/tests/e2e/mobile-more.md`.
 
 - **D-635** (this clean-code freeze — profile card + list widgets + first golden).
 - **D-315** (screen built), **D-465** (1129:17224 grouped re-skin), **D-519** (role-filtered rows), **D-609** (my-sessions row removed).
+- **D-736** (footer version line sourced from the real installed version via `package_info_plus`).

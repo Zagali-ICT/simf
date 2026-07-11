@@ -228,6 +228,8 @@ public static class CpNavigation
             new("Module.Configuration", "/admin/configuration", RequiredPermission: PermissionCatalog.Configuration.View, Icon: "settings"),
             // D-464 — labelled Site Settings page (registration message + social links).
             new("Module.SiteSettings", "/admin/site-settings", RequiredPermission: PermissionCatalog.Configuration.View, Icon: "globe"),
+            // D-735 — transactional email-template editor (subject/body per identity email).
+            new("Module.EmailTemplates", "/admin/email/templates", RequiredPermission: PermissionCatalog.EmailTemplates.View, Icon: "mail"),
             // D-495 — Organization / About profile (edition-generic forum config).
             new("Module.OrganizationProfile", "/admin/organization-profile", RequiredPermission: PermissionCatalog.OrganizationProfile.View, Icon: "building"),
             new("Module.AdminLogs", "/admin/logs", RequiredPermission: PermissionCatalog.Logs.View, Icon: "file-text"),

@@ -511,6 +511,13 @@ public static class PermissionCatalog
         public const string View = "AiDashboard.View";
     }
 
+    /// <summary>D-735 — the transactional email-template editor.</summary>
+    public static class EmailTemplates
+    {
+        public const string View = "EmailTemplates.View";
+        public const string Edit = "EmailTemplates.Edit";
+    }
+
     // ── Content ──────────────────────────────────────────────────────────
 
     /// <summary>Dynamic CMS content blocks (upsert covers create + edit).</summary>
@@ -948,6 +955,9 @@ public static class PermissionCatalog
 
         new(AiInvocations.View, "AiInvocations", "View", "View AI invocations log", AdminOnly),
         new(AiDashboard.View, "AiDashboard", "View", "View the AI dashboard", AdminOnly),
+
+        new(EmailTemplates.View, "EmailTemplates", "View", "View email templates", AdminOnly),
+        new(EmailTemplates.Edit, "EmailTemplates", "Edit", "Edit email templates", AdminOnly),
 
         // Content
         new(ContentBlocks.View, "ContentBlocks", "View", "View content blocks", AdminOnly),

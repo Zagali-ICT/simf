@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/core/startup/app_version_policy.dart';
 import 'package:simf_app/features/more/more_screen.dart';
 import 'package:simf_app/features/myarea/data/myarea_models.dart';
 import 'package:simf_app/features/myarea/data/myarea_repository.dart';
@@ -128,6 +129,8 @@ Future<void> _pump(
         authControllerProvider
             .overrideWith(() => _FakeAuthController(signedIn: signedIn)),
         myAreaRepositoryProvider.overrideWithValue(_FakeMyAreaRepository()),
+        // D-736 — the footer shows the real installed version.
+        installedAppVersionProvider.overrideWithValue('1.0.0'),
       ],
       child: MaterialApp.router(
         locale: const Locale('en'),
@@ -161,7 +164,7 @@ void main() {
       expect(find.text('About the forum'), findsOneWidget);
       expect(find.text('Forum guide'), findsOneWidget);
       expect(find.text('FAQ'), findsOneWidget);
-      expect(find.text('Explore Riyadh · VisitSaudi'), findsOneWidget);
+      expect(find.text('Discover Saudi'), findsOneWidget);
       // الإعدادات rows (Language shows the current value).
       expect(find.text('Language'), findsOneWidget);
       expect(find.text('English'), findsOneWidget);
@@ -177,6 +180,7 @@ void main() {
     });
 
     testWidgets('shows the app-version line', (tester) async {
+      // D-736 — the real installed version (from the provider), not a literal.
       await _pump(tester, router: _router());
       expect(find.text('SIMF 2026 · v1.0.0'), findsOneWidget);
     });

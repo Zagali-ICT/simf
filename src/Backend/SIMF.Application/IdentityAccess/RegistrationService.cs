@@ -30,6 +30,7 @@ public sealed class RegistrationService(
     IUserAccountRepository accounts,
     IAccountCodeRepository accountCodeRepository,
     IEmailQueue emailQueue,
+    IEmailTemplateResolver emailTemplates,
     INotificationDispatcher notifications,
     ITransactionRunner transactionRunner,
     IAuditLog auditLog,
@@ -282,7 +283,7 @@ public sealed class RegistrationService(
         // H10 / H23 — D-065 / D-083: same shape as sign-up; helper owns
         // the failure-audit pattern.
         await emailQueue.TryEnqueueAsync(
-            BuildVerificationEmail(user.Email!, code),
+            await BuildVerificationEmailAsync(user.Email!, code, cancellationToken),
             purpose: "ResendVerification",
             subjectEmail: user.Email!,
             subjectUserId: user.Id,
@@ -388,7 +389,7 @@ public sealed class RegistrationService(
         // a verification code touch the account. Email the OWNER a heads-up
         // and return the same generic response a fresh sign-up would.
         await emailQueue.TryEnqueueAsync(
-            BuildAccountExistsEmail(user.Email!),
+            await BuildAccountExistsEmailAsync(user.Email!, cancellationToken),
             purpose: "SignUpExistingAccount",
             subjectEmail: user.Email!,
             subjectUserId: user.Id,
@@ -417,7 +418,7 @@ public sealed class RegistrationService(
         CancellationToken cancellationToken)
     {
         await emailQueue.TryEnqueueAsync(
-            BuildVerificationEmail(user.Email!, code),
+            await BuildVerificationEmailAsync(user.Email!, code, cancellationToken),
             purpose: "EmailVerification",
             subjectEmail: user.Email!,
             subjectUserId: user.Id,
@@ -489,17 +490,16 @@ public sealed class RegistrationService(
     }
 
     /// <summary>
-    /// H23 — D-083: builds the verification email; caller pairs with
-    /// `IEmailQueue.TryEnqueueAsync` which owns the failure audit.
+    /// D-735 (was H23 — D-083): resolves the verification email from the
+    /// admin-editable template (else the code-owned default) and fills
+    /// {Code}/{ExpiryMinutes}. Caller pairs with `IEmailQueue.TryEnqueueAsync`
+    /// which owns the failure audit.
     /// </summary>
-    private static EmailMessage BuildVerificationEmail(string email, string code)
-    {
-        var minutes = (int)CodeLifetime.TotalMinutes;
-        var body =
-            $"<p>Your SIMF email verification code is <strong>{code}</strong>.</p>" +
-            $"<p>The code expires in {minutes} minutes.</p>";
-        return new EmailMessage(email, "SIMF email verification", body);
-    }
+    private Task<EmailMessage> BuildVerificationEmailAsync(
+        string email, string code, CancellationToken cancellationToken) =>
+        emailTemplates.RenderAsync(
+            EmailTemplateType.EmailVerification, email,
+            EmailTokens.ForCode(code, CodeLifetime), cancellationToken);
 
     /// <summary>
     /// D-198 — the heads-up sent to the OWNER of an existing verified
@@ -507,16 +507,13 @@ public sealed class RegistrationService(
     /// deliberately confirms no account detail; it only points a legitimate
     /// owner at sign-in / password-reset.
     /// </summary>
-    private static EmailMessage BuildAccountExistsEmail(string email)
-    {
-        var body =
-            "<p>Someone tried to create a SIMF account with this email address, " +
-            "but an account already exists.</p>" +
-            "<p>If this was you, please sign in instead — or use the " +
-            "&quot;forgot password&quot; option if you don't remember your password.</p>" +
-            "<p>If this wasn't you, you can safely ignore this email.</p>";
-        return new EmailMessage(email, "SIMF account already exists", body);
-    }
+    private Task<EmailMessage> BuildAccountExistsEmailAsync(
+        string email, CancellationToken cancellationToken) =>
+        emailTemplates.RenderAsync(
+            EmailTemplateType.AccountExists,
+            email,
+            new Dictionary<string, string>(),
+            cancellationToken);
 
     private Task AuditAsync(
         string eventType,

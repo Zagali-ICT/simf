@@ -18,6 +18,17 @@ public interface IBadgeAuthService
     Task<ResolveBadgeResponse> ResolveAsync(
         ResolveBadgeRequest request, CancellationToken cancellationToken = default);
 
+    /// <summary>Completes sign-in for a returning holder whose account already has
+    /// a password: the scanned QR selects the account, then the supplied password
+    /// (plus any 2FA / lockout) runs through the normal sign-in pipeline. Returns
+    /// the standard <see cref="SignInResponse"/> (issued tokens or the 2FA
+    /// challenge). An unknown QR — or a resolved account with the wrong password —
+    /// throws the same generic invalid-credentials error, so the public badge
+    /// never reveals whether the QR was valid and never bypasses the
+    /// password.</summary>
+    Task<SignInResponse> SignInAsync(
+        BadgeSignInRequest request, CancellationToken cancellationToken = default);
+
     /// <summary>Issues the email verification code that gates the first-password
     /// step for a passwordless account. Sends to the account's on-file email, or
     /// to the supplied email when the account has none. Throws if the QR is

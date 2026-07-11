@@ -294,6 +294,10 @@ public static class DependencyInjection
         // (registration welcome message + social links).
         services.AddScoped<SIMF.Application.Configuration.Abstractions.ISiteSettingsService,
             SIMF.Infrastructure.Configuration.SiteSettingsService>();
+        // D-736 — public read-path over the whitelisted app-update version-policy
+        // keys (per-platform min/latest app version + store URL).
+        services.AddScoped<SIMF.Application.Configuration.Abstractions.IAppVersionPolicyService,
+            SIMF.Infrastructure.Configuration.AppVersionPolicyService>();
         // D-495 — the singleton Organization / About profile: cached public read +
         // admin full-document upsert (the edition-generic forum config).
         services.AddScoped<SIMF.Application.Configuration.Abstractions.IOrganizationProfileReadService,
@@ -575,6 +579,12 @@ public static class DependencyInjection
             SIMF.Infrastructure.Ai.AiService>();
         services.AddScoped<SIMF.Application.Ai.Abstractions.IAdminAiPromptService,
             SIMF.Infrastructure.Ai.AdminAiPromptService>();
+        // D-735 — transactional-email templates: the resolver (DB override else
+        // code default) and the CP admin service.
+        services.AddScoped<SIMF.Application.Email.IEmailTemplateResolver,
+            SIMF.Infrastructure.Email.EmailTemplateResolver>();
+        services.AddScoped<SIMF.Application.Email.IAdminEmailTemplateService,
+            SIMF.Infrastructure.Email.AdminEmailTemplateService>();
         // D-578 — server-side subtitle fetch from a video (YouTube) for the CP
         // Sessions editor. Uses a DEDICATED no-redirect HttpClient (not the shared
         // singleton): the caption baseUrl comes from YouTube's response, so following

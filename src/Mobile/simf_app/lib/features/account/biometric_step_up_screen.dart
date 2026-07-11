@@ -15,14 +15,16 @@ import 'widgets/account_sub_header.dart';
 import 'widgets/auth_chrome.dart';
 import 'widgets/otp_code_boxes.dart';
 
-/// #7a — the emailed-OTP step-up confirming the user wants to ENABLE biometric
-/// (Face-ID) sign-in. Reached (pushed) from the Face-ID toggle and the
-/// post-sign-in enrol nudge. On open it requests a code
-/// (`POST /app/auth/device-keys/step-up`); entering it enrols the device key
-/// (`POST /app/auth/device-keys` with the code), which the server rejects
-/// without a fresh code — so a borrowed-but-unlocked phone can't silently bind a
-/// biometric credential. Restyled to the shared KSA OTP frame (D-369) via
-/// [OtpCodeBoxes]/[OtpMark], like the sign-in second factor.
+/// #7a / D-738 — the banking-standard step-up confirming the user wants to
+/// ENABLE biometric (Face-ID) sign-in. Reached (pushed) from the Face-ID toggle
+/// and the post-sign-in enrol nudge. On open it requests an emailed code
+/// (`POST /app/auth/device-keys/step-up`); entering it then requires an **OS
+/// device-credential confirmation** (device PIN / biometric via `local_auth`)
+/// before the device key is enrolled (`POST /app/auth/device-keys` with the
+/// code). Two factors gate enrolment — email possession AND custody of the
+/// unlocked device — so neither an emailed code alone nor a borrowed unlocked
+/// phone alone can bind a biometric credential. Restyled to the shared KSA OTP
+/// frame (D-369) via [OtpCodeBoxes]/[OtpMark], like the sign-in second factor.
 ///
 /// Clean-code pass (D-554, Phase 3 — unbound auth screen, render preserved):
 /// the lone sweep-tint const dropped for `SimfTokens.surfaceTint`; the long
@@ -123,8 +125,11 @@ class _BiometricStepUpScreenState extends ConsumerState<BiometricStepUpScreen> {
     }
   }
 
-  /// Enrols the device key with the entered code. The server rejects a missing /
-  /// wrong / expired code, which surfaces here as an inline error.
+  /// Banking-standard enrolment (D-738): emailed OTP → **OS device-credential
+  /// confirm** → enrol. The device-credential step proves custody of the
+  /// unlocked device before a biometric credential is bound; on cancel/failure
+  /// the code stays entered so the user can simply retry. The server then
+  /// rejects a missing / wrong / expired OTP, surfaced inline.
   Future<void> _submit() async {
     final code = _code.text.trim();
     if (code.isEmpty) {
@@ -136,6 +141,21 @@ class _BiometricStepUpScreenState extends ConsumerState<BiometricStepUpScreen> {
       _verifying = true;
       _error = null;
     });
+    final outcome = await ref
+        .read(biometricAuthProvider)
+        .confirmDeviceIdentity(l10n.biometricLocalConfirmReason);
+    if (!mounted) {
+      return;
+    }
+    if (outcome != LocalAuthOutcome.success) {
+      setState(() {
+        _verifying = false;
+        // A user cancel maps to null; show the enrol-specific cancelled copy.
+        _error = localizedBiometricError(l10n, outcome) ??
+            l10n.biometricLocalConfirmCancelled;
+      });
+      return;
+    }
     try {
       await ref
           .read(authControllerProvider.notifier)

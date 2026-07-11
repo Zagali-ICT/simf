@@ -180,6 +180,14 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     /// every AI invocation (success or failure).</summary>
     public DbSet<AiInvocation> AiInvocations => Set<AiInvocation>();
 
+    /// <summary>D-735 — admin overrides for the transactional identity emails
+    /// (sign-in OTP, verification, password reset, activation, biometric
+    /// step-up). Editable from the CP at runtime; one row per type. Empty until
+    /// an admin customises a template (the resolver falls back to code
+    /// defaults).</summary>
+    public DbSet<SIMF.Domain.Email.EmailTemplate> EmailTemplates =>
+        Set<SIMF.Domain.Email.EmailTemplate>();
+
     // D-199 — event modules (freeze lift): media coverage, exhibition,
     // sponsors, archive editions, ratings.
     public DbSet<News> News => Set<News>();

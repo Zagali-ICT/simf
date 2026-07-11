@@ -64,15 +64,17 @@ class SessionFilterTabs extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
       child: Row(
         children: <Widget>[
-          for (var i = 0; i < labels.length; i++)
-            Padding(
-              padding: EdgeInsets.only(left: i == 0 ? 0 : SimfTokens.space2),
-              child: _Pill(
-                label: labels[i],
-                selected: i == selectedIndex,
-                onTap: () => onSelected(i),
-              ),
+          // Gap the pills with a between-sibling SizedBox, not per-pill leading
+          // padding: a physical `left` pad put the gap on the wrong side in RTL
+          // (no space after الكل). A SizedBox is even and direction-agnostic.
+          for (var i = 0; i < labels.length; i++) ...<Widget>[
+            if (i > 0) const SizedBox(width: SimfTokens.space2),
+            _Pill(
+              label: labels[i],
+              selected: i == selectedIndex,
+              onTap: () => onSelected(i),
             ),
+          ],
         ],
       ),
     );

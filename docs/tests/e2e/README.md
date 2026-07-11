@@ -143,7 +143,8 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/gates` | [`cp-admin-gates.md`](cp-admin-gates.md) | E2E-GAT-001..021 |
 | `/admin/gates/operator` | [`cp-admin-gates-operator.md`](cp-admin-gates-operator.md) | E2E-GOP-001..013 |
 | `/admin/gates/dashboard` | [`cp-admin-gates-dashboard.md`](cp-admin-gates-dashboard.md) | E2E-GDS-001..011 |
-| `/admin/configuration` | [`cp-admin-configuration.md`](cp-admin-configuration.md) | E2E-CFG-001..023 |
+| `/admin/configuration` | [`cp-admin-configuration.md`](cp-admin-configuration.md) | E2E-CFG-001..024 |
+| `/admin/email/templates` | [`cp-admin-email-templates.md`](cp-admin-email-templates.md) | E2E-EMT-001..013 |
 | `/admin/site-settings` | [`cp-site-settings.md`](cp-site-settings.md) | E2E-CPSET-001..006 |
 | `/admin/organization-profile` | [`cp-organization-profile.md`](cp-organization-profile.md) | E2E-ORGP-001..008 |
 | `/admin/contact-inquiries` | [`cp-contact-inquiries.md`](cp-contact-inquiries.md) | E2E-CINQ-001..008 |
@@ -188,7 +189,7 @@ API endpoints land (D-249). The per-screen design docs live under
 
 | App screen | File | Scenarios |
 |------------|------|-----------|
-| #1 `splash` (`POST /app/auth/refresh` + `GET /app/users/me`) | [`mobile-splash.md`](mobile-splash.md) | E2E-MOB001-001..013 |
+| #1 `splash` (`POST /app/auth/refresh` + `GET /app/users/me` + `GET /app/version-policy` — D-736) | [`mobile-splash.md`](mobile-splash.md) | E2E-MOB001-001..017 |
 | #2 `onboarding` (no API) | [`mobile-onboarding.md`](mobile-onboarding.md) | E2E-MOB002-001..008 |
 | #3 `signIn` (+ verify-otp / forgot / reset) | [`mobile-sign-in.md`](mobile-sign-in.md) | E2E-MOB003-001..017 |
 | ~~#4 `signUpType`~~ **REMOVED (D-332)** — invented; not in the mockup | [`mobile-sign-up-type.md`](mobile-sign-up-type.md) | _(retired — E2E-MOB004-* removed)_ |
@@ -203,7 +204,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #14 `myArea` (`GET /app/account/dashboard` + `.ics` + `.vcf`) | [`mobile-my-area.md`](mobile-my-area.md) | E2E-MOB014-001..012 |
 | #103 `identityVerification` (`POST /app/account/avatar`) | [`mobile-identity-verification.md`](mobile-identity-verification.md) | E2E-MOBIDV-001..004 |
 | #104 `sessionModerate` (`GET/PUT /app/sessions/{id}/questions/moderate·push·hide`) | [`mobile-session-moderate.md`](mobile-session-moderate.md) | E2E-MOBMOD-001..004 |
-| #105 `gateScanner` (`GET /app/gates/my-assignments` · `POST /app/gates/{id}/scans`) | [`mobile-gate-scan.md`](mobile-gate-scan.md) | E2E-MOBGATE-000..004 |
+| #105 `gateScanner` (`GET /app/gates/my-assignments` · `POST /app/gates/{id}/scans`) | [`mobile-gate-scan.md`](mobile-gate-scan.md) | E2E-MOBGATE-000..005 |
 | #114 `staffRegisterVisitor` (`POST /app/staff/visitors/register-onsite` · `…/{id}/id-document` · `…/{id}/avatar`) | [`mobile-staff-register-visitor.md`](mobile-staff-register-visitor.md) | E2E-MOBSTAFFREG-001..004 |
 | #15 `venueMap` (`GET /app/venue-map` + `/app/booths` + `/{id}`) | [`mobile-venue-map.md`](mobile-venue-map.md) | E2E-MOB015-001..008 |
 | #16 `sessions` (`GET /app/programme/sessions`) | [`mobile-agenda.md`](mobile-agenda.md) | E2E-MOB016-001..013 |
@@ -221,7 +222,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #220 `exhibitorDetail` (`GET /app/booths/{id}`) — Wave 3, Figma `1439:11881` | [`mobile-exhibitor-detail.md`](mobile-exhibitor-detail.md) | E2E-MOB220-001..007 |
 | #221 `sponsorDetail` (`GET /app/sponsors/{id}`) — Wave 3, Figma `1439:11826` | [`mobile-sponsor-detail.md`](mobile-sponsor-detail.md) | E2E-MOB221-001..007 |
 | `myVisitors` (`GET /app/exhibitor/my-visitors`) — D-426 exhibitor captured-visitor list | [`mobile-my-visitors.md`](mobile-my-visitors.md) | E2E-MOBMYVIS-001..006 |
-| `scanVisitor` (`scanByBadge` — exhibitor lead-capture scan) — D-426 | [`mobile-scan-visitor.md`](mobile-scan-visitor.md) | E2E-MOBSCANVIS-001..005 |
+| `scanVisitor` (`scanByBadge` — exhibitor lead-capture scan) — D-426 | [`mobile-scan-visitor.md`](mobile-scan-visitor.md) | E2E-MOBSCANVIS-001..006 |
 | #24 `archive` (`GET /app/archive` + `/{id}`) | [`mobile-archive.md`](mobile-archive.md) | E2E-MOB024-001..005 |
 | #29 `news` (`GET /app/news` + `/{id}`) | [`mobile-news.md`](mobile-news.md) | E2E-MOB029-001..005 |
 | #30 `gallery` (`GET /app/media`) | [`mobile-gallery.md`](mobile-gallery.md) | E2E-MOB030-001..004 |
@@ -232,7 +233,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #33 `notifications` (`POST /app/account/notifications/list` · `/{id}/read` · `/read-all`) | [`mobile-notifications.md`](mobile-notifications.md) | E2E-MOB033-001..006 |
 | #35 `meetPeople` (`GET /app/account/recommendations/meet-like-you`) | [`mobile-meet-people.md`](mobile-meet-people.md) | E2E-MOB035-001..005 |
 | #38 `accessibility` (no API) | [`mobile-accessibility.md`](mobile-accessibility.md) | E2E-MOB038-001..004 |
-| #41 `more` (no API) | [`mobile-more.md`](mobile-more.md) | E2E-MOB041-001..003 |
+| #41 `more` (no API) | [`mobile-more.md`](mobile-more.md) | E2E-MOB041-001..009 |
 | #34 `aiSummary` (`GET /app/programme/sessions/{id}/summary`) | [`mobile-ai-summary.md`](mobile-ai-summary.md) | E2E-MOB034-001..006 |
 | #111 `sessionSummaryList` (cached programme + favourites/booked overlay) — Wave 2 pixel pass, Figma `1388:8392` | [`mobile-session-summaries.md`](mobile-session-summaries.md) | E2E-MOB111-001..008 |
 | #26 `sendQuestion` (`POST /app/sessions/{id}/questions`) | [`mobile-send-question.md`](mobile-send-question.md) | E2E-MOB026-001..006 |
@@ -240,15 +241,16 @@ API endpoints land (D-249). The per-screen design docs live under
 | #25 `liveBroadcast` (`GET /app/programme/sessions/{id}`) | [`mobile-live.md`](mobile-live.md) | E2E-MOB025-001..007 |
 | #36 `chatbot` (interim shell — no API) | [`mobile-chatbot.md`](mobile-chatbot.md) | E2E-MOB036-001..006 |
 | #24-01 `archiveDetail` (`GET /app/archive/{id}`) | [`mobile-archive-detail.md`](mobile-archive-detail.md) | E2E-MOB024D-001..009 |
-| `My Contacts` / `Share my contact` (`/app/account/share-token` + `/app/contacts/*`) | [`mobile-my-contacts.md`](mobile-my-contacts.md) | E2E-MMC-001..011 |
+| `My Contacts` / `Share my contact` (`/app/account/share-token` + `/app/contacts/*`) | [`mobile-my-contacts.md`](mobile-my-contacts.md) | E2E-MMC-001..014 |
 | `requests` (`GET /app/my-requests` + `POST …/document-requests` · `…/badge-requests` · `…/my-requests/cancel`) — Wave 5 (D-500), الطلبات, Figma `1408:9726`; supersedes `My meetings` | [`mobile-requests.md`](mobile-requests.md) | E2E-REQ-001..011 |
 | `myMeetings` (`GET /app/my-requests`, filtered to meetings) — المقابلات (D-587), Figma `1701:9406`; speaker + delegation meetings over status chips; reached from the My-Area "مقابلات" counter | [`mobile-my-meetings.md`](mobile-my-meetings.md) | E2E-MOBMTG-001..007 |
-| `Confirm Face ID` step-up (`POST /app/auth/device-keys/step-up` + gated register) — #7a biometric-enable | [`mobile-biometric-step-up.md`](mobile-biometric-step-up.md) | E2E-MBSU-001..011 |
-| `Badge activation` (`POST /app/auth/badge/activation/start` · `…/complete`) — Part B passwordless badge | [`mobile-badge-activation.md`](mobile-badge-activation.md) | E2E-MOBBADGE-001..007 |
+| `Confirm Face ID` step-up (`POST /app/auth/device-keys/step-up` + gated register) — #7a biometric-enable; **D-738** OS device-credential confirm + sign-in device-PIN fallback | [`mobile-biometric-step-up.md`](mobile-biometric-step-up.md) | E2E-MBSU-001..015 |
+| `Badge activation` + **badge sign-in** (`resolve-badge` · `badge-sign-in` · `badge-activation/{start,complete}`) — Part B passwordless activation **+ D-738 password step + D-737 unified scanner** | [`mobile-badge-activation.md`](mobile-badge-activation.md) | E2E-MOBBADGE-001..013 |
+| `Badge password` step (`POST /app/auth/badge-sign-in`) — D-738 returning has-password holder; doc [`mobile/badge-password/`](../../pages/mobile/badge-password/README.md) | [`mobile-badge-activation.md`](mobile-badge-activation.md) | E2E-MOBBADGE-008..013 |
 | #200 `forumGuide` (no API — static guide) — built from ComingSoon, Figma `1388:7493` | [`mobile-forum-guide.md`](mobile-forum-guide.md) | E2E-MOB200-001..005 |
 | #201 `faq` (`GET /app/faq` — public) — built from ComingSoon, Figma `1388:7567` | [`mobile-faq.md`](mobile-faq.md) | E2E-MOB201-001..006 |
 | #203 `contactUs` (`POST /app/contact-inquiry` + `GET /app/organization-profile`) — built from ComingSoon, Figma `1388:7711` | [`mobile-contact-us.md`](mobile-contact-us.md) | E2E-MOB203-001..007 |
-| #207 `aboutApp` (`GET /app/organization-profile` for support) — app version/date/organizer + links (D-668) | [`mobile-about-app.md`](mobile-about-app.md) | E2E-MOB207-001..003 |
+| #207 `aboutApp` (`GET /app/organization-profile` for support + `GET /app/version-policy` manual check — D-736) — app version/date/organizer + links (D-668) | [`mobile-about-app.md`](mobile-about-app.md) | E2E-MOB207-001..006 |
 | #202 `sessionPresentations` (`GET /app/presentations` + `/{id}/file`) — built from ComingSoon, Figma `1388:7621` | [`mobile-session-presentations.md`](mobile-session-presentations.md) | E2E-MOB202-001..006 |
 | #113 `myAreaSessions` (`GET /app/account/sessions`) — Wave 2 my-sessions, titled "عروض الجلسات" (Figma `1388:9067`; retitled + reached from the More "عروض الجلسات" row, D-588) | [`mobile-my-sessions.md`](mobile-my-sessions.md) | E2E-MOB113-001..007 |
 
@@ -311,3 +313,25 @@ API endpoints land (D-249). The per-screen design docs live under
 - **Removed:** `mobile-my-meetings.md` (`E2E-MMM-*`, D-479) — the read-only
   My-meetings screen is superseded by the requests feed; its ids retire and are
   not reused.
+
+### Update — 2026-07-11 (D-737 unified QR scanner + D-738 QR-login & biometric)
+
+- **D-737 (unified scanner):** all four in-app scanners now share
+  `SimfScannerBody` (`lib/app/widgets/simf_scanner_body.dart`) + one `ScanGate`
+  dedupe/single-flight policy (`lib/core/utils/scan_gate.dart`), with a visible
+  camera-permission-denied error card and an always-usable manual field. New
+  scenarios added: **E2E-MOBGATE-005** (gate), **E2E-MOBSCANVIS-006** (exhibitor),
+  and **E2E-MMC-012..014** (contact scan — the app's own share QR now resolves via
+  the embedded `X-SIMF-TOKEN` vCard property, a foreign vCard shows the no-token
+  message, and camera-denied falls back to manual). `gate_scanner_view.dart` was
+  deleted (folded into the shared body).
+- **D-738 (badge sign-in + biometric):** a returning has-password badge holder now
+  finishes at the new **badge-password** step (`/auth/badge-password`,
+  `POST /app/auth/badge-sign-in`) — **E2E-MOBBADGE-008..013** added to
+  `mobile-badge-activation.md`; new page doc
+  [`docs/pages/mobile/badge-password/`](../../pages/mobile/badge-password/README.md).
+  Biometric enrolment gained an OS device-credential confirmation and the sign-in
+  Face-ID prompt a device-PIN fallback — **E2E-MBSU-012..015** added to
+  `mobile-biometric-step-up.md`.
+- **No new namespaces:** the additions extend existing per-page namespaces
+  (MOBGATE / MOBSCANVIS / MMC / MOBBADGE / MBSU); no scenario was renumbered.

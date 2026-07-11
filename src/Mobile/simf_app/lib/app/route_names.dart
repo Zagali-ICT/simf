@@ -146,6 +146,8 @@ class RouteNames {
   // at login; a passwordless account sets its first password.
   static const String badgeSignIn = 'badgeSignIn';
   static const String badgeActivation = 'badgeActivation';
+  // D-738 — the password step for a resolved has-password badge holder.
+  static const String badgePassword = 'badgePassword';
 
   /// Visitor email-OTP second factor at sign-in (the app has no TOTP).
   static const String verifyOtp = 'verifyOtp';

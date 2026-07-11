@@ -83,8 +83,8 @@ Future<void> _pump(
   );
 
   await tester.pumpWidget(
-    // The shared header now carries [SimfLangThemeButtons] (a ConsumerWidget),
-    // so the shell needs a ProviderScope just like the running app (main.dart).
+    // The shared header carries [SimfHeaderActions] (a ConsumerWidget), so the
+    // shell needs a ProviderScope just like the running app (main.dart).
     ProviderScope(
       overrides: overrides,
       child: MaterialApp.router(
@@ -193,7 +193,7 @@ void main() {
     });
 
     testWidgets('the action cluster (showHeaderActions:true) carries the '
-        'language + inert dark-mode controls', (tester) async {
+        'language control', (tester) async {
       await _pump(
         tester,
         SimfPageShell(
@@ -204,7 +204,7 @@ void main() {
         ),
       );
 
-      // Both shared controls render when the cluster is opted in (Home / guest
+      // The shared control renders when the cluster is opted in (Home / guest
       // home); sub-pages default to back + title + line only (owner 2026-06-28).
       // The language control is the EN/عر pill (D-670), keyed 'languageToggle';
       // tapping it flips the locale (exercised in the next test).
@@ -212,17 +212,6 @@ void main() {
         find.byKey(const ValueKey<String>('languageToggle')),
         findsOneWidget,
       );
-      expect(find.byIcon(Icons.dark_mode), findsOneWidget);
-
-      // Dark mode is intentionally inert — navy-always (owner decision); the
-      // icon is shown for parity but is not tappable until a light theme exists.
-      final darkButton = tester.widget<IconButton>(
-        find.ancestor(
-          of: find.byIcon(Icons.dark_mode),
-          matching: find.byType(IconButton),
-        ),
-      );
-      expect(darkButton.onPressed, isNull);
     });
 
     testWidgets('tapping the language globe flips the locale AR → EN and '
@@ -283,11 +272,10 @@ void main() {
         tester,
         SimfPageShell(title: 'My page', onBack: () {}, body: const Text('BODY')),
       );
-      // The Figma sub-page nav carries no bell / language / theme / menu.
+      // The Figma sub-page nav carries no bell / language / menu.
       expect(find.byIcon(Icons.notifications_none_outlined), findsNothing);
       expect(find.byIcon(Icons.language), findsNothing);
       expect(find.byIcon(Icons.menu), findsNothing);
-      expect(find.byIcon(Icons.dark_mode), findsNothing);
 
       // Opting in (Home / guest home) brings the cluster back, with the bell.
       await _pump(

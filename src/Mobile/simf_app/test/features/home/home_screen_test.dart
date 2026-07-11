@@ -298,8 +298,8 @@ void main() {
       expect(find.widgetWithText(FilledButton, 'Sign in'), findsOneWidget);
       // The guest home shows NO notifications bell (owner 2026-06-18): the
       // Figma content/guest frames carry no bell — it lives only on the
-      // signed-in home greeting header. The shared ☰ + language + dark-mode
-      // controls remain on the guest top bar.
+      // signed-in home greeting header. The shared ☰ + language controls
+      // remain on the guest top bar.
       expect(find.byTooltip('Notifications'), findsNothing);
       expect(find.byIcon(Icons.menu), findsOneWidget);
       // The language control is the EN/عر pill now (D-670), keyed 'languageToggle'.
@@ -307,8 +307,6 @@ void main() {
         find.byKey(const ValueKey<String>('languageToggle')),
         findsOneWidget,
       );
-      // Dark mode is now the gold crescent (node 1049:2087), still inert.
-      expect(find.byIcon(Icons.dark_mode), findsOneWidget);
     });
 
     testWidgets('a public tile navigates to its route', (tester) async {

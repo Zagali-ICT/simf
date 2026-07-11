@@ -3,11 +3,20 @@ namespace SIMF.Domain.IdentityAccess;
 /// <summary>
 /// D-172 (gap doc G10, PDF §2.5) — a registered device key for biometric
 /// (Face ID / Touch ID) sign-in. The client generates an asymmetric
-/// keypair on first registration, stores the private half behind the
-/// device biometric, and sends the public half to the server. On
+/// keypair on first registration, stores the private half in the device's
+/// secure storage (Android EncryptedSharedPreferences / iOS Keychain), and
+/// sends the public half to the server. Enrolment is gated by a server
+/// step-up code AND an OS device-credential confirmation (D-738). On
 /// subsequent sign-ins the client signs a server-issued challenge
 /// with the private key after a biometric prompt; the server verifies
 /// against this stored public key.
+///
+/// <para><b>As-built note (D-738):</b> the private key is software-bound
+/// (secure storage), not hardware/biometric-bound — the biometric prompt
+/// gates the code path, not the key material. Binding the key inside Android
+/// Keystore/StrongBox (setUserAuthenticationRequired) and the iOS Secure
+/// Enclave is a planned Tier-2 hardening; the server contract (SPKI + ES256
+/// verify) is unchanged by it.</para>
 ///
 /// <para><b>Algorithm:</b> ECDSA on the NIST P-256 curve (ES256 / JWS
 /// compatible). Chosen over Ed25519 because .NET 10 has first-class

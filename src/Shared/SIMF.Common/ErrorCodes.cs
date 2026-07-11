@@ -319,6 +319,9 @@ public static class ErrorCodes
     public const string AiPromptInvalid = "AI_PROMPT_INVALID";
     public const string AiPromptNotFound = "AI_PROMPT_NOT_FOUND";
     public const string AiPromptKeyDuplicate = "AI_PROMPT_KEY_DUPLICATE";
+    // D-735 — transactional email templates.
+    public const string EmailTemplateNotFound = "EMAIL_TEMPLATE_NOT_FOUND";
+    public const string EmailTemplateInvalid = "EMAIL_TEMPLATE_INVALID";
     public const string AiProviderNotConfigured = "AI_PROVIDER_NOT_CONFIGURED";
     public const string AiProviderFailed = "AI_PROVIDER_FAILED";
     public const string AiInputInvalid = "AI_INPUT_INVALID";

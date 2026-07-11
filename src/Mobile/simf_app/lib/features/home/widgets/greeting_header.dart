@@ -75,8 +75,8 @@ class GreetingHeader extends StatelessWidget {
             ),
           ),
           // The shared top-nav action cluster — identical to every sub-page:
-          // the bell, the language globe, the dark-mode crescent, and the menu
-          // ☰, each a gold glyph in a navy box. Home carries the unread badge.
+          // the bell, the language globe, and the menu ☰, each a gold glyph in
+          // a navy box. Home carries the unread badge.
           const SimfHeaderActions(showUnreadBadge: true),
         ],
       ),

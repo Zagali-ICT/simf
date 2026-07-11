@@ -30,6 +30,7 @@ public sealed class PasswordService(
     IPasswordHistoryRepository passwordHistory,
     ITransactionRunner transactionRunner,
     IEmailQueue emailQueue,
+    IEmailTemplateResolver emailTemplates,
     INotificationDispatcher notifications,
     IAuditLog auditLog,
     IOptions<IdentityLifecycleOptions> lifecycleOptions,
@@ -65,7 +66,7 @@ public sealed class PasswordService(
                 // TryEnqueueAsync owns the failure-audit pattern so every
                 // credential-flow email-dispatch site uses the same shape.
                 await emailQueue.TryEnqueueAsync(
-                    BuildResetEmail(user.Email!, code),
+                    await BuildResetEmailAsync(user.Email!, code, cancellationToken),
                     purpose: "PasswordReset",
                     subjectEmail: user.Email!,
                     subjectUserId: user.Id,
@@ -496,15 +497,11 @@ public sealed class PasswordService(
     /// — one helper, one failure audit pattern across all four call
     /// sites (password reset, sign-up, resend verification, sign-in OTP).
     /// </summary>
-    private static EmailMessage BuildResetEmail(string email, string code)
-    {
-        var minutes = (int)ResetCodeLifetime.TotalMinutes;
-        var body =
-            $"<p>Your SIMF password reset code is <strong>{code}</strong>.</p>" +
-            $"<p>The code expires in {minutes} minutes. If you did not request a " +
-            "password reset, you can ignore this email.</p>";
-        return new EmailMessage(email, "SIMF password reset", body);
-    }
+    private Task<EmailMessage> BuildResetEmailAsync(
+        string email, string code, CancellationToken cancellationToken) =>
+        emailTemplates.RenderAsync(
+            EmailTemplateType.PasswordReset, email,
+            EmailTokens.ForCode(code, ResetCodeLifetime), cancellationToken);
 
     private static DataValidationException PasswordRejected(UserOperationResult result) =>
         new(

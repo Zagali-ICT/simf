@@ -37,6 +37,7 @@ internal sealed class DeviceKeyService(
     IPermissionResolver permissionResolver,
     IAccountCodeRepository accountCodes,
     IEmailQueue emailQueue,
+    IEmailTemplateResolver emailTemplates,
     IOptions<DeviceKeyOptions> deviceKeyOptions,
     IAuditLog auditLog,
     TimeProvider timeProvider,
@@ -196,7 +197,7 @@ internal sealed class DeviceKeyService(
         }, cancellationToken);
 
         await emailQueue.TryEnqueueAsync(
-            BuildBiometricStepUpEmail(user.Email!, plaintext),
+            await BuildBiometricStepUpEmailAsync(user.Email!, plaintext, cancellationToken),
             purpose: "BiometricEnrolStepUp",
             subjectEmail: user.Email!,
             subjectUserId: callerUserId,
@@ -552,19 +553,11 @@ internal sealed class DeviceKeyService(
 
     /// <summary>Builds the bilingual step-up email; caller pairs it with
     /// <c>IEmailQueue.TryEnqueueAsync</c>.</summary>
-    private static EmailMessage BuildBiometricStepUpEmail(string email, string code)
-    {
-        var minutes = (int)StepUpLifetime.TotalMinutes;
-        var body =
-            $"<p>Your SIMF biometric sign-in confirmation code is <strong>{code}</strong>.</p>" +
-            $"<p>The code expires in {minutes} minutes. If you did not request to " +
-            "enable Face-ID sign-in, ignore this email.</p>" +
-            $"<hr/><p dir=\"rtl\">رمز تأكيد تفعيل تسجيل الدخول ببصمة الوجه هو " +
-            $"<strong>{code}</strong>.</p>" +
-            $"<p dir=\"rtl\">ينتهي الرمز خلال {minutes} دقائق. إذا لم تطلب تفعيل " +
-            "تسجيل الدخول ببصمة الوجه فتجاهل هذه الرسالة.</p>";
-        return new EmailMessage(email, "SIMF biometric sign-in code", body);
-    }
+    private Task<EmailMessage> BuildBiometricStepUpEmailAsync(
+        string email, string code, CancellationToken cancellationToken) =>
+        emailTemplates.RenderAsync(
+            EmailTemplateType.BiometricStepUp, email,
+            EmailTokens.ForCode(code, StepUpLifetime), cancellationToken);
 
     /// <summary>Masks an email for the "we sent a code to a***@x.com" line —
     /// keeps the first character + the full domain and stars the rest of the

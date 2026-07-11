@@ -545,6 +545,24 @@ class AppL10n {
       _t('أدخل رمز التأكيد', 'Enter the confirmation code');
   String get biometricStepUpSendFailed =>
       _t('تعذّر إرسال الرمز. حاول مرة أخرى.', "Couldn't send the code. Try again.");
+  // D-738 — the OS device-credential confirm step at enrolment (banking flow:
+  // emailed OTP → device PIN/biometric → enable) and its failure states.
+  String get biometricLocalConfirmReason => _t(
+        'أكّد قفل الشاشة أو بصمتك لتفعيل الدخول ببصمة الوجه',
+        'Confirm your device PIN or biometric to enable Face ID sign-in',
+      );
+  String get biometricLocalConfirmCancelled => _t(
+        'أُلغي التأكيد — لم يتم تفعيل الدخول ببصمة الوجه.',
+        'Confirmation cancelled — Face ID sign-in was not enabled.',
+      );
+  String get biometricNoDeviceCredential => _t(
+        'فعّل قفل الشاشة (رمز PIN أو نمط أو كلمة مرور) على جهازك أولاً ثم حاول مجدداً.',
+        'Set a device screen lock (PIN, pattern or password) first, then try again.',
+      );
+  String get biometricLockedOut => _t(
+        'محاولات كثيرة خاطئة. المصادقة مقفلة مؤقتاً — حاول لاحقاً أو استخدم رمز قفل الجهاز.',
+        'Too many attempts. Authentication is temporarily locked — try again shortly or use your device PIN.',
+      );
 
   // Email-OTP second factor + reset flow (Page 003 L-5/L-6).
   String get otpTitle => _t('رمز التحقق', 'Verification code');
@@ -612,6 +630,18 @@ class AppL10n {
   String get qrBack => _t('رجوع', 'Back');
   String get qrManualLabel =>
       _t('أو أدخل الرمز يدويًا', 'Or enter the code manually');
+  // Camera-error / permission-denied state on any scanner (D-737).
+  String get scannerCameraError => _t(
+        'تعذّر تشغيل الكاميرا. فعّل إذن الكاميرا من إعدادات النظام، أو أدخل الرمز يدويًا بالأسفل.',
+        'Camera unavailable. Enable camera permission in system settings, or type the code below.',
+      );
+  String get scannerCameraRetry => _t('إعادة المحاولة', 'Try again');
+  // Shown when the in-app contact scanner reads a contact QR that carries no
+  // SIMF share token (an old QR, or a foreign phone's vCard) — D-737.
+  String get scanContactVcardNoToken => _t(
+        'رمز بطاقة الاتصال هذا لا يحمل رمز مشاركة. اطلب من صاحبه فتح «مشاركة جهة اتصالي» في التطبيق.',
+        'This contact QR has no SIMF share code. Ask them to open “Share my contact” in the app.',
+      );
   String get badgeNotRecognised =>
       _t('تعذّر التعرّف على الشارة.', 'The badge was not recognised.');
   String get badgeScanError =>
@@ -628,6 +658,13 @@ class AppL10n {
       );
   String get badgeSendCodeButton => _t('إرسال الرمز', 'Send code');
   String get badgeActivateButton => _t('تفعيل وتعيين كلمة المرور', 'Activate & set password');
+  // D-738 — the password step after a has-password badge resolves.
+  String get badgePasswordTitle => _t('أدخل كلمة المرور', 'Enter your password');
+  String badgeWelcomeName(String name) => _t('مرحبًا $name', 'Welcome, $name');
+  String badgeSignInAccountLine(String masked) => _t(
+        'تسجيل الدخول إلى الحساب $masked',
+        'Signing in to $masked',
+      );
   String get badgeActivatedDone => _t(
         'تم تفعيل حسابك. سجّل الدخول الآن.',
         'Your account is activated. Sign in now.',
@@ -653,7 +690,6 @@ class AppL10n {
   String get onboardingMutedTooltip => _t('الصوت مكتوم', 'Sound muted');
 
   // Login header controls (Page 003) — buttons only for now (no wiring yet).
-  String get themeToggleTooltip => _t('المظهر · ليلي/نهاري', 'Light / dark mode');
   String get languageToggleLabel => 'العربية · English';
 
   // Home — landing / router screen (Page 013). Interim copy + tile labels for
@@ -742,10 +778,10 @@ class AppL10n {
   String get followUsSection => _t('تابعنا', 'Follow us');
   // The official handle line — a proper noun, identical in both languages.
   String get followUsHandle => '@SIMF_RSNF · الملتقى البحري السعودي الدولي';
-  String get discoverSection => _t('اكتشف', 'Discover');
+  String get discoverSection => _t('اكتشف السعودية', 'Discover Saudi');
   // The top discovery hero banner on the signed-in home (frame 758:1134 node
-  // 758:1203): the gold "اكتشف" title reuses [discoverSection]; this is the
-  // white sub-line over the event photo.
+  // 758:1203): the gold "اكتشف السعودية" title reuses [discoverSection]; this is
+  // the white sub-line over the event photo.
   String get discoverBannerSubtitle =>
       _t('تعال واكتشف جديدك المفضل', 'Come discover your favourites');
   // ابرز الاحداث — the highlights / latest-news teaser card on the signed-in
@@ -965,6 +1001,11 @@ class AppL10n {
   String get sessionTypeWorkshop => _t('ورش العمل', 'Workshops');
   String get sessionTypeSession => _t('جلسات', 'Sessions');
   String get sessionsEmpty => _t('لا توجد جلسات', 'No sessions');
+  String get sessionsEmptyWorkshops => _t('لا توجد ورش عمل', 'No workshops');
+  // Shown when the whole selected day is empty — the الكل / All tab (or a
+  // tab-less event-typed day), so the message is about the day, not "sessions".
+  String get sessionsEmptyDay =>
+      _t('لا يوجد برنامج في هذا اليوم', 'No programme for this day');
   String get sessionsError =>
       _t('تعذّر تحميل الجلسات.', 'Could not load the sessions.');
 
@@ -1581,7 +1622,7 @@ class AppL10n {
   // Items new to the redesigned hub.
   String get moreForumGuide => _t('دليل الملتقى', 'Forum guide');
   String get morePresentations => _t('عروض الجلسات', 'Session presentations');
-  String get moreVisitSaudi => _t('استكشف الرياض · VisitSaudi', 'Explore Riyadh · VisitSaudi');
+  String get moreVisitSaudi => _t('اكتشف السعودية', 'Discover Saudi');
 
   // دليل الملتقى — Forum guide (Figma 1388-7493). Static in-app copy (no
   // backend). The Arabic strings are reproduced verbatim from the design; the
@@ -1628,7 +1669,11 @@ class AppL10n {
   /// The display name of the currently active language (shown on the اللغة row).
   String get languageCurrentName => _t('العربية', 'English');
 
-  String get moreVersion => _t('SIMF 2026 · v1.0.0', 'SIMF 2026 · v1.0.0');
+  /// D-736 — the More-menu footer line over the REAL installed version
+  /// (package_info_plus). Empty (a bare dev/test runtime) → the edition alone.
+  String moreVersionLine(String version) => version.isEmpty
+      ? 'SIMF 2026'
+      : _t('SIMF 2026 · الإصدار $version', 'SIMF 2026 · v$version');
   // D-668 — About-the-app screen (version / release date / organizer + links).
   // The release date is a maintained constant (no build-date source in the app).
   String get aboutAppTitle => _t('عن التطبيق', 'About the app');
@@ -1639,6 +1684,22 @@ class AppL10n {
   String get aboutAppOrganizerValue =>
       _t('القوات البحرية الملكية السعودية', 'Royal Saudi Naval Forces');
   String get aboutAppLinksTitle => _t('روابط', 'Links');
+  // D-736 — About-the-app manual update check (server version policy).
+  String get aboutCheckForUpdates =>
+      _t('التحقق من التحديثات', 'Check for updates');
+  String get updateCheckingLabel => _t('جارٍ التحقق…', 'Checking…');
+  String get aboutUpToDateTitle =>
+      _t('أنت على أحدث إصدار', "You're up to date");
+  String aboutUpToDateBody(String version) => version.isEmpty
+      ? _t('لا يتوفر تحديث جديد.', 'No new update is available.')
+      : _t('الإصدار الحالي: $version', 'Current version: $version');
+  String aboutUpdateAvailableBody(String version) => version.isEmpty
+      ? updateOptionalBody
+      : _t(
+          'يتوفر إصدار جديد ($version). ننصح بالتحديث للحصول على أحدث التحسينات.',
+          'A new version ($version) is available. We recommend updating for the latest improvements.',
+        );
+  String get okLabel => _t('حسناً', 'OK');
 
   // Guest mode (Page 012 — informational entry).
   String get guestModeTitle => _t('وضع الضيف', 'Guest mode');

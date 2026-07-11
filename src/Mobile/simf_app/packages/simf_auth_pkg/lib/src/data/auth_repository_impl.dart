@@ -45,6 +45,24 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<SignInResult> signInWithBadge({
+    required String qrId,
+    required String password,
+  }) async {
+    final response = await _guard(
+      () => _api.badgeSignIn(
+        BadgeSignInRequest(qrId: qrId, password: password),
+      ),
+    );
+    switch (response) {
+      case TokenResponseData(:final payload):
+        return SignInSession(payload.toSession(issuedAt: _now()));
+      case OtpChallengeResponseData(:final otpToken):
+        return SignInOtpChallenge(otpToken);
+    }
+  }
+
+  @override
   Future<Session> verifyOtp({
     required String otpToken,
     required String code,

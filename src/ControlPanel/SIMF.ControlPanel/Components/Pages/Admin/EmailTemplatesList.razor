@@ -1,0 +1,104 @@
+@* D-735 — transactional email-template editor list page. The DB holds only
+   overrides; the code catalogue backs every read, so the grid always shows the
+   full fixed set of six identity emails (SignInOtp / EmailVerification /
+   AccountExists / PasswordReset / BadgeActivation / BiometricStepUp). There is
+   NO Add and NO hard Delete — the only row action is Edit, which opens the
+   reusable EmailTemplateEdit form (bilingual subject/body + token chips + live
+   preview + reset-to-default), hosted by CrudShell as a popup or a full page
+   per the admin's CpPreferences choice. *@
+@page "/admin/email/templates"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.EmailTemplates.View)]
+@using SIMF.Contracts.Email
+
+<PageTitle>@L["Admin.EmailTemplates.Title"] · SIMF</PageTitle>
+
+@if (!GridHidden)
+{
+    <SimfBanner Title="@L["Admin.EmailTemplates.Title"]" />
+
+    <div class="simf-page-wide">
+        <div class="simf-surface">
+            @if (_toast is not null)
+            {
+                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            }
+
+            <SimfDataGrid TItem="AdminEmailTemplateSummary"
+                          Query="_query"
+                          Page="_page"
+                          Loading="_loading"
+                          OnQueryChanged="OnQueryChangedAsync"
+                          RowKey="@(r => r.Type.ToString())"
+                          RowLabel="@(r => r.TypeName)"
+                          Caption="@L["Admin.EmailTemplates.Title"]"
+                          FilterColumnLabel="@L["Grid.FilterColumn"]"
+                          PrevLabel="@L["Grid.Prev"]"
+                          NextLabel="@L["Grid.Next"]"
+                          FirstLabel="@L["Grid.First"]"
+                          LastLabel="@L["Grid.Last"]"
+                          PageSizeLabel="@L["Grid.PageSize"]"
+                          PageFormatter="@FormatPage"
+                          LoadingLabel="@L["Admin.EmailTemplates.Loading"]"
+                          FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                          ActionsHeader="@L["Grid.Actions"]"
+                          SummaryFormatter="@FormatSummary">
+                <CustomToolbar>
+                    <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
+                </CustomToolbar>
+                <Columns>
+                    <SimfDataGridColumn TItem="AdminEmailTemplateSummary" Key="type"
+                                        Header="@L["Admin.EmailTemplates.Col.Type"]">
+                        <CellTemplate>@context.TypeName</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminEmailTemplateSummary" Key="subject"
+                                        Header="@L["Admin.EmailTemplates.Col.Subject"]">
+                        <CellTemplate>@context.Subject</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminEmailTemplateSummary" Key="customised"
+                                        Header="@L["Admin.EmailTemplates.Col.Customised"]">
+                        <CellTemplate>
+                            @if (context.IsOverride)
+                            {
+                                <SimfPill Variant="on">@L["Admin.EmailTemplates.Customised.Yes"]</SimfPill>
+                            }
+                            else
+                            {
+                                <SimfPill Variant="off">@L["Admin.EmailTemplates.Customised.No"]</SimfPill>
+                            }
+                        </CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminEmailTemplateSummary" Key="version"
+                                        Header="@L["Admin.EmailTemplates.Col.Version"]">
+                        <CellTemplate>@(context.IsOverride ? $"v{context.Version}" : "—")</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminEmailTemplateSummary" Key="updatedAt"
+                                        Header="@L["Admin.EmailTemplates.Col.UpdatedAt"]">
+                        <CellTemplate>@FormatUpdatedAt(context.UpdatedAt)</CellTemplate>
+                    </SimfDataGridColumn>
+                </Columns>
+                <RowActions>
+                    @* Edit is available to any View admin — the editor itself
+                       gates Save / Reset behind EmailTemplates.Edit. *@
+                    <SimfToolbarButton Icon="edit" Title="@L["Admin.EmailTemplates.Edit"]"
+                                       OnClick="@(() => OnEditAsync(context))" />
+                </RowActions>
+                <EmptyTemplate>
+                    <SimfEmptyState Title="@L["Admin.EmailTemplates.None"]" />
+                </EmptyTemplate>
+            </SimfDataGrid>
+        </div>
+    </div>
+}
+
+@if (FormOpen && _target is not null)
+{
+    <CrudShell Open="true" Presentation="_presentation"
+               Title="@L["Admin.EmailTemplates.Edit.Title"]"
+               CloseLabel="@L["Admin.EmailTemplates.Details.Close"]"
+               OnClose="CloseForm">
+        <EmailTemplateEdit IsEdit="true" Initial="_target"
+                           OnSuccess="OnSavedAsync" OnCancel="CloseForm"
+                           OnReset="OnResetAsync" />
+    </CrudShell>
+}

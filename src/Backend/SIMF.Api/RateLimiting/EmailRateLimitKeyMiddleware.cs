@@ -3,11 +3,12 @@ using System.Text.Json;
 namespace SIMF.Api.RateLimiting;
 
 /// <summary>
-/// Reads the <c>email</c> field out of credential-touching request bodies
-/// (sign-in, forgot-password, reset-password) and stashes it on the
-/// HttpContext as <c>HttpContext.Items["RateLimitEmail"]</c>, so the
-/// <c>"auth-email"</c> rate-limit policy can key its partition on the
-/// target account — independent of the source IP.
+/// Reads the <c>email</c> field (or the <c>qrId</c> fallback for badge sign-in,
+/// D-738) out of credential-touching request bodies (sign-in, forgot-password,
+/// reset-password, badge-sign-in) and stashes it on the HttpContext as
+/// <c>HttpContext.Items["RateLimitEmail"]</c>, so the <c>"auth-email"</c>
+/// rate-limit policy can key its partition on the target account/badge —
+/// independent of the source IP.
 ///
 /// <para>The middleware enables request-body buffering only on the
 /// known credential paths, parses a small JSON document, and rewinds the
@@ -26,6 +27,7 @@ public sealed class EmailRateLimitKeyMiddleware
         "/api/v1/app/auth/sign-in",
         "/api/v1/app/auth/forgot-password",
         "/api/v1/app/auth/reset-password",
+        "/api/v1/app/auth/badge-sign-in",
     };
 
     private readonly RequestDelegate _next;
@@ -87,15 +89,26 @@ public sealed class EmailRateLimitKeyMiddleware
             // Case-insensitive scan — System.Text.Json defaults to
             // PascalCase on the wire (`{"Email":"..."}`) but a future
             // serialiser change or a hand-rolled client may use lowercase.
+            // The badge sign-in body carries no `email` field, so fall back to
+            // the scanned `qrId` — the "auth-email" limiter then partitions per
+            // badge (same normalisation) instead of collapsing to the per-IP key.
+            string? qrId = null;
             foreach (var prop in doc.RootElement.EnumerateObject())
             {
-                if (string.Equals(prop.Name, "email", StringComparison.OrdinalIgnoreCase)
-                    && prop.Value.ValueKind == JsonValueKind.String)
+                if (prop.Value.ValueKind != JsonValueKind.String)
+                {
+                    continue;
+                }
+                if (string.Equals(prop.Name, "email", StringComparison.OrdinalIgnoreCase))
                 {
                     return prop.Value.GetString();
                 }
+                if (string.Equals(prop.Name, "qrId", StringComparison.OrdinalIgnoreCase))
+                {
+                    qrId = prop.Value.GetString();
+                }
             }
-            return null;
+            return qrId;
         }
         catch (OperationCanceledException)
         {

@@ -9,6 +9,18 @@
 > the toggle + nudge launch in
 > `src/Mobile/simf_app/test/features/account/biometric_auth_test.dart`; the backend
 > gate in `tests/SIMF.Api.Tests/DeviceKeyStepUpTests.cs`.
+>
+> **D-738 (device-credential confirm):** enrolment now runs the banking-standard
+> two-factor chain — emailed OTP **AND** an OS device-credential confirmation
+> (device PIN / biometric via `local_auth`, the shared
+> `BiometricAuth.confirmDeviceIdentity` with `biometricOnly: false`) inserted
+> AFTER the code is entered and BEFORE `POST /app/auth/device-keys` enrols the
+> key. So neither an emailed code alone nor a borrowed-but-unlocked phone alone
+> can bind a biometric credential. The same `confirmDeviceIdentity` mapping now
+> also backs the **sign-in** Face-ID prompt (device-PIN fallback + explicit
+> outcome errors instead of the old silent password fallback) —
+> `lib/features/account/sign_in_screen.dart` `_biometricSignIn` /
+> `_biometricPromptError`.
 
 | | |
 |--|--|
@@ -43,6 +55,10 @@
 | E2E-MBSU-009 | Resend re-requests a code once the countdown ends | happy | P2 | authored (screen — resend wired to `_send`) |
 | E2E-MBSU-010 | RTL render (Arabic) — header, hint, boxes and resend row mirror; the email stays LTR | i18n | P1 | authored (shared OTP frame, mirrored) |
 | E2E-MBSU-011 | Network / 500 on send → inline "couldn't send" error, retto via resend; no key mutation | resilience | P1 | authored (screen error surface) |
+| E2E-MBSU-012 | **D-738:** code entered → OS device-credential sheet → success → key enrols → toast + switch ON | happy | P0 | authored ✓ (screen test — device-credential success) |
+| E2E-MBSU-013 | Cancel the device-credential sheet → NOT enrolled, inline "confirmation cancelled" message, retry works | edge | P0 | authored ✓ (screen test — cancelled outcome) |
+| E2E-MBSU-014 | No device screen lock → blocked with the "set a device screen lock" message; no code consumed | edge | P0 | authored ✓ (screen test — noDeviceCredential outcome) |
+| E2E-MBSU-015 | Sign-in Face-ID offers a device-PIN fallback and surfaces explicit lockout/unavailable errors (no silent password fallback) | edge | P1 | source-verified (sign_in_screen `_biometricSignIn`; `confirmDeviceIdentity` `biometricOnly:false`) |
 
 ## Scenarios
 
@@ -161,6 +177,87 @@ Scenario: The post-sign-in nudge's Enable opens the step-up
 
 **Evidence:** `biometric_auth_test` — "tapping Enable routes to the step-up screen".
 
+### E2E-MBSU-012 — Device-credential confirm then enrol (D-738)
+
+```gherkin
+Scenario: The emailed code is followed by an OS device-credential confirmation
+  Given the step-up screen with a code emailed and the 6 digits entered
+  When the user taps Verify
+  Then the app first runs the OS device-credential sheet
+       ("أكّد قفل الشاشة أو بصمتك لتفعيل الدخول ببصمة الوجه" /
+        "Confirm your device PIN or biometric to enable Face ID sign-in")
+  And the user proves it with a fingerprint / Face / device PIN
+  Then the app calls POST /app/auth/device-keys with the code (+ the generated public key)
+  And a "Face ID sign-in enabled" toast shows and the screen pops with the toggle ON
+```
+
+**Evidence:** `biometric_step_up_screen_test` — "entering a code enrols with it
+and pops with a success toast" (the fake `confirmDeviceIdentity` returns
+`success`);
+`DeviceKeyStepUpTests.Register_with_valid_code_succeeds_then_code_is_single_use`.
+
+### E2E-MBSU-013 — Cancel the device-credential sheet
+
+```gherkin
+Scenario: Dismissing the device sheet does not enrol
+  Given the step-up screen with the code entered
+  When the user taps Verify and then dismisses / fails the OS device-credential sheet
+  Then no device key is registered (POST /app/auth/device-keys is NOT called)
+  And an inline message shows
+       "أُلغي التأكيد — لم يتم تفعيل الدخول ببصمة الوجه." /
+       "Confirmation cancelled — Face ID sign-in was not enabled."
+  And the entered code stays so the user can simply tap Verify again
+```
+
+**Evidence:** `biometric_step_up_screen_test` — "cancelling the device-credential
+confirm does NOT enrol and shows the cancelled message" (`LocalAuthOutcome.cancelled`).
+
+### E2E-MBSU-014 — No device screen lock
+
+```gherkin
+Scenario: A device with no screen lock can't secure Face-ID sign-in
+  Given the step-up screen with the code entered
+  And the device has NO screen lock set (no PIN / pattern / passcode)
+  When the user taps Verify
+  Then the OS device-credential step reports no device credential
+  And the screen blocks enrolment with
+       "فعّل قفل الشاشة (رمز PIN أو نمط أو كلمة مرور) على جهازك أولاً ثم حاول مجدداً." /
+       "Set a device screen lock (PIN, pattern or password) first, then try again."
+  And the step-up code is not consumed (no register call)
+```
+
+**Evidence:** `biometric_step_up_screen_test` — "no device screen lock shows the
+set-a-lock message (D-738)" (`LocalAuthOutcome.noDeviceCredential`).
+
+### E2E-MBSU-015 — Sign-in Face-ID device-PIN fallback + explicit errors
+
+```gherkin
+Scenario: The sign-in Face-ID prompt falls back to the device PIN
+  Given a signed-in-capable device with an enrolled device key
+  When the user taps "Sign in with Face ID" on the sign-in screen
+  Then the OS sheet is biometric-first but offers the device PIN/pattern/passcode
+       as a fallback (confirmDeviceIdentity uses biometricOnly:false)
+  And proving either one completes the device-key sign-in (POST /app/auth/device-keys sign-in)
+
+Scenario: A failed biometric surfaces an explicit error, not a silent password fallback
+  Given the same sign-in Face-ID prompt
+  When the OS reports a lockout or an unavailable sensor
+  Then an explicit inline message shows (biometricLockedOut / biometricUnavailable)
+       instead of silently dropping the user to the password field
+  And a plain user cancel stays silent (their own choice)
+```
+
+**Evidence:** source-verified — `sign_in_screen.dart` `_biometricSignIn`
+(availability + enrolment guards → `confirmDeviceIdentity` → explicit
+`_biometricPromptError`, cancel is silent) and `biometric_auth.dart`
+`confirmDeviceIdentity` (`biometricOnly: false` → device-PIN fallback; maps
+`passcodeNotSet`/`notEnrolled` → `noDeviceCredential`, `lockedOut`/
+`permanentlyLockedOut` → `lockedOut`). Widget coverage today asserts the Face-ID
+button visibility (`sign_in_screen_test`); the fallback/lockout branches have no
+dedicated widget test yet — **flagged**.
+
 ---
 
-_Last reviewed:_ `2026-06-21` by `SIMF Team`.
+_Last reviewed:_ `2026-07-11` by `SIMF Team` — D-738 device-credential confirm
+(MBSU-012..014) + sign-in Face-ID device-PIN fallback (MBSU-015). Earlier:
+`2026-06-21`.

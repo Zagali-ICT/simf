@@ -6,6 +6,15 @@
 > screens** (Share my contact / Scan / My Contacts) are **built** (D-324) under
 > `lib/features/contacts/` and bind to these endpoints — see
 > [`docs/App/FDS-014-Contact-UI/README.md`](../../App/FDS-014-Contact-UI/README.md).
+>
+> **D-737 (dual-purpose contact QR + unified scanner):** "Share my contact" now
+> encodes a vCard with the share token embedded as a private `X-SIMF-TOKEN`
+> property (`lib/features/contacts/data/share_qr_payload.dart`, RFC 6350 §6.10) —
+> so a native phone camera still offers "add contact" AND the in-app scanner can
+> resolve it (it used to always 404). The scan screen uses the shared
+> `SimfScannerBody` (via `QrScanView`) with the single `ScanGate` dedupe and a
+> camera-permission-denied error card. A foreign/old contact vCard that carries no
+> token shows a clear "no SIMF share code" message.
 
 | | |
 |--|--|
@@ -30,6 +39,9 @@
 | E2E-MMC-009 | Save your own token → 400 | error | P1 | authored |
 | E2E-MMC-010 | Unauthenticated → 401 | auth | P0 | authored |
 | E2E-MMC-011 | Subject deactivated after save → limited card | resilience | P2 | authored |
+| E2E-MMC-012 | **D-737:** scan the app's OWN share QR (vCard + `X-SIMF-TOKEN`) → resolves + saves | happy | P0 | authored ✓ (`share_qr_payload_test` round-trip) |
+| E2E-MMC-013 | Scan a foreign / old contact vCard (no token) → "no SIMF share code" message | error | P1 | authored ✓ (`share_qr_payload_test` foreign-vCard) |
+| E2E-MMC-014 | Camera-permission-denied on the scanner → error card + manual entry still works | resilience | P1 | source-verified (`simf_scanner_body` error card; manual path in `simf_scanner_body_test`) |
 
 ## Scenarios
 
@@ -154,6 +166,58 @@ Scenario: A saved contact whose subject is gone shows a limited card
   And the app shows a limited / unavailable card (no crash)
 ```
 
+### E2E-MMC-012 — Scan the app's own share QR → resolve + save (D-737)
+
+```gherkin
+Scenario: The in-app scanner reads the app's dual-purpose contact QR
+  Given visitor A opened "Share my contact" — its QR is a vCard with the share
+        token embedded as an X-SIMF-TOKEN property
+  When visitor B scans that QR on the in-app contact scanner
+  Then the scanner recognises the vCard, extracts the X-SIMF-TOKEN value,
+       and calls POST /app/contacts/resolve with the extracted token (no 404)
+  And the live contact card preview sheet is shown
+  When B taps "save"
+  Then POST /app/contacts/save stores the contact and a "saved" toast shows
+```
+
+**Evidence:** `share_qr_payload_test` — "reads the token back from a built payload
+(round-trip)" + "injects the token just before END:VCARD"; `scan_contact_screen`
+routes a vCard through `extractShareToken` → `resolve`. API resolve/save covered
+by `VisitorContactSharingTests`.
+
+### E2E-MMC-013 — Foreign / old vCard has no token → clear message
+
+```gherkin
+Scenario: A contact QR minted outside SIMF (or before D-737) carries no token
+  Given a vCard QR with NO X-SIMF-TOKEN property (a native phone's contact, or an old QR)
+  When visitor B scans it on the in-app contact scanner
+  Then no resolve call is made and a bilingual snackbar shows
+       "رمز بطاقة الاتصال هذا لا يحمل رمز مشاركة. اطلب من صاحبه فتح «مشاركة جهة اتصالي» في التطبيق." /
+       "This contact QR has no SIMF share code. Ask them to open “Share my contact” in the app."
+  And the scanner stays open so a valid SIMF QR can be scanned instead
+```
+
+**Evidence:** `share_qr_payload_test` — "null for a foreign vCard with no token";
+`scan_contact_screen` shows `scanContactVcardNoToken` when `isVCardPayload` is true
+but `extractShareToken` is null/empty.
+
+### E2E-MMC-014 — Camera-permission-denied → error card + manual entry
+
+```gherkin
+Scenario: A denied camera never traps the contact scanner
+  Given the contact scanner opens with the camera enabled
+  When the OS denies the camera permission (or the device has no camera)
+  Then the shared error card shows
+       "تعذّر تشغيل الكاميرا. فعّل إذن الكاميرا من إعدادات النظام، أو أدخل الرمز يدويًا بالأسفل." /
+       "Camera unavailable. Enable camera permission in system settings, or type the code below."
+  And a "إعادة المحاولة / Try again" retry control is offered
+  And the always-visible manual field still drives resolve → preview → save
+```
+
+**Evidence:** source-verified — `simf_scanner_body.dart` `_CameraErrorCard` on a
+controller error / the 8 s watchdog (device-only render); `simf_scanner_body_test`
+covers the always-mounted manual field with the camera off.
+
 ## Implementation notes
 
 - API coverage: `tests/SIMF.Api.Tests/VisitorContactSharingTests.cs` (9 xUnit cases
@@ -167,9 +231,13 @@ Scenario: A saved contact whose subject is gone shows a limited card
 
 ---
 
-_Last reviewed:_ 2026-06-20 by SIMF Team — D-470: the Share-my-contact QR now
-encodes the user's vCard (Arabic name + phones) so any phone camera can add the
-contact; the gate QrId is no longer emitted into the vCard. Backend coverage:
-`MyAreaDashboardTests.Contact_card_vcf_has_the_arabic_name_and_phones_and_omits_the_qr_id`;
-app coverage: `share_my_contact_screen_test` (QR sourced from the vCard). Earlier:
-2026-06-04 (D-286 API + D-324 screens).
+_Last reviewed:_ 2026-07-11 by SIMF Team — D-737: the Share-my-contact QR is now a
+dual-purpose vCard carrying the share token as an `X-SIMF-TOKEN` property, so the
+in-app scanner resolves the app's own QR (MMC-012) and a token-less foreign vCard
+shows a clear message (MMC-013); the scan screen uses the shared `SimfScannerBody`
+with a camera-denied error card (MMC-014). App coverage: `share_qr_payload_test`,
+`simf_scanner_body_test`, `scan_gate_test`. Earlier: 2026-06-20 (D-470: the QR
+encodes the user's vCard — Arabic name + phones — so any phone camera can add the
+contact; the gate QrId is no longer emitted into the vCard; backend
+`MyAreaDashboardTests.Contact_card_vcf_has_the_arabic_name_and_phones_and_omits_the_qr_id`,
+app `share_my_contact_screen_test`); 2026-06-04 (D-286 API + D-324 screens).

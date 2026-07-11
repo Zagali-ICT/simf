@@ -58,6 +58,64 @@ public sealed class DefaultContentSeederTests : IClassFixture<SimfApiFactory>
         // the org profile), which the factory runs before this seed (D-708).
         var org = await db.OrganizationProfile.SingleAsync(p => p.Id == OrganizationProfile.SingletonId);
         Assert.Equal("https://x.com/SIMF_RSNF", org.XUrl);
+
+        // D-736 — the six app-update policy keys land once (values empty = off).
+        var updateKeys = await db.SystemSettings
+            .Where(s => s.Key.StartsWith("appUpdate."))
+            .ToListAsync();
+        Assert.Equal(6, updateKeys.Count);
+    }
+
+    [Fact]
+    public async Task Reseeding_never_overwrites_an_edited_app_update_value()
+    {
+        await SeedAsync();
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var setting = await db.SystemSettings
+                .SingleAsync(s => s.Key == SIMF.Common.AppUpdateSettingKeys.IosMinVersion);
+            setting.Value = "1.0.0";
+            await db.SaveChangesAsync();
+        }
+
+        await SeedAsync(); // the re-run must leave the admin edit alone
+
+        using var verify = _factory.Services.CreateScope();
+        var verifyDb = verify.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var edited = await verifyDb.SystemSettings
+            .SingleAsync(s => s.Key == SIMF.Common.AppUpdateSettingKeys.IosMinVersion);
+        Assert.Equal("1.0.0", edited.Value);
+        Assert.Equal(6, await verifyDb.SystemSettings.CountAsync(s => s.Key.StartsWith("appUpdate.")));
+    }
+
+    [Fact]
+    public async Task Reseeding_never_resurrects_a_deactivated_app_update_key()
+    {
+        await SeedAsync();
+
+        // An admin soft-deletes one of the app-update keys.
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var setting = await db.SystemSettings
+                .SingleAsync(s => s.Key == SIMF.Common.AppUpdateSettingKeys.IosStoreUrl);
+            setting.IsActive = false;
+            await db.SaveChangesAsync();
+        }
+
+        await SeedAsync(); // the re-run keys existence on Key alone, IgnoreActive
+
+        // No duplicate row was inserted (existence is by Key, not by active-Key),
+        // and the deactivated key stays deactivated.
+        using var verify = _factory.Services.CreateScope();
+        var verifyDb = verify.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var rows = await verifyDb.SystemSettings
+            .Where(s => s.Key == SIMF.Common.AppUpdateSettingKeys.IosStoreUrl)
+            .ToListAsync();
+        Assert.Single(rows);
+        Assert.False(rows[0].IsActive);
     }
 
     private async Task SeedAsync()

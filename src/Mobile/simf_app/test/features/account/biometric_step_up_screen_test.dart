@@ -7,9 +7,32 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/features/account/biometric_auth.dart';
 import 'package:simf_app/features/account/biometric_step_up_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
+
+/// D-738 — a controllable [BiometricAuth] so the OS device-credential confirm
+/// step at enrolment can be scripted without the device plugin.
+class _FakeBiometric implements BiometricAuth {
+  _FakeBiometric({this.outcome = LocalAuthOutcome.success});
+
+  LocalAuthOutcome outcome;
+  int confirmCalls = 0;
+
+  @override
+  Future<LocalAuthOutcome> confirmDeviceIdentity(String reason) async {
+    confirmCalls++;
+    return outcome;
+  }
+
+  @override
+  Future<bool> isAvailable() async => true;
+  @override
+  Future<bool> isEnabled() async => false;
+  @override
+  Future<void> disable() async {}
+}
 
 /// #7a — a fake AuthController for the biometric step-up screen: `build()`
 /// returns SignedOut (the screen never reads state), `sendBiometricStepUp`
@@ -44,7 +67,11 @@ class _FakeController extends AuthController {
   }
 }
 
-Future<void> _pump(WidgetTester tester, _FakeController controller) async {
+Future<void> _pump(
+  WidgetTester tester,
+  _FakeController controller, {
+  _FakeBiometric? biometric,
+}) async {
   final router = GoRouter(
     initialLocation: '/home',
     routes: <RouteBase>[
@@ -64,6 +91,9 @@ Future<void> _pump(WidgetTester tester, _FakeController controller) async {
     ProviderScope(
       overrides: <Override>[
         authControllerProvider.overrideWith(() => controller),
+        biometricAuthProvider.overrideWithValue(
+          biometric ?? _FakeBiometric(),
+        ),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -112,6 +142,49 @@ void main() {
       expect(find.text('Face ID sign-in enabled'), findsOneWidget);
 
       await tester.pump(const Duration(seconds: 5)); // flush the SnackBar timer
+    });
+
+    testWidgets('cancelling the device-credential confirm does NOT enrol and '
+        'stays on the screen (D-738)', (tester) async {
+      final controller = _FakeController();
+      final biometric = _FakeBiometric(outcome: LocalAuthOutcome.cancelled);
+      await _pump(tester, controller, biometric: biometric);
+
+      await tester.enterText(find.byType(TextField), '123456');
+      await tester.pump();
+      await tester.tap(find.widgetWithText(FilledButton, 'Verify'));
+      await tester.pumpAndSettle();
+
+      expect(biometric.confirmCalls, 1);
+      expect(controller.enrolledWithCode, isNull); // never enrolled
+      expect(find.text('HOME'), findsNothing); // stayed on the screen
+      expect(
+        find.text('Confirmation cancelled — Face ID sign-in was not enabled.'),
+        findsOneWidget,
+      );
+
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('no device screen lock shows the set-a-lock message (D-738)',
+        (tester) async {
+      final controller = _FakeController();
+      final biometric =
+          _FakeBiometric(outcome: LocalAuthOutcome.noDeviceCredential);
+      await _pump(tester, controller, biometric: biometric);
+
+      await tester.enterText(find.byType(TextField), '123456');
+      await tester.pump();
+      await tester.tap(find.widgetWithText(FilledButton, 'Verify'));
+      await tester.pumpAndSettle();
+
+      expect(controller.enrolledWithCode, isNull);
+      expect(
+        find.textContaining('Set a device screen lock'),
+        findsOneWidget,
+      );
+
+      await tester.pumpWidget(const SizedBox());
     });
 
     testWidgets('a wrong code shows the inline error and stays on the screen',

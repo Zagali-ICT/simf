@@ -17,6 +17,24 @@ public sealed class ResolveBadgeRequestValidator : Validator<ResolveBadgeRequest
     }
 }
 
+/// <summary>Part B — validates a badge sign-in request: the QR id is required;
+/// the password is required (shape only — the account's password policy was
+/// enforced when the password was first set, so it is never re-checked here).</summary>
+public sealed class BadgeSignInRequestValidator : Validator<BadgeSignInRequest>
+{
+    public BadgeSignInRequestValidator()
+    {
+        RuleFor(request => request.QrId)
+            .NotEmpty().Bilingual(
+                "The badge code is required.",
+                "رمز الشارة مطلوب.")
+            .MaximumLength(64);
+
+        RuleFor(request => request.Password)
+            .NotEmpty().Bilingual("Password is required.", "كلمة المرور مطلوبة.");
+    }
+}
+
 /// <summary>Part B — validates the activation-start request: QR id required;
 /// the email, when supplied, must be a valid address.</summary>
 public sealed class BadgeActivationStartRequestValidator : Validator<BadgeActivationStartRequest>

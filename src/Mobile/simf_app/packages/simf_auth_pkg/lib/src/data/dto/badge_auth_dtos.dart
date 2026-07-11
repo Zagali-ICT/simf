@@ -13,6 +13,23 @@ class ResolveBadgeRequest {
   Map<String, dynamic> toJson() => <String, dynamic>{'qrId': qrId};
 }
 
+/// D-738 — the password step of badge sign-in: a resolved has-password holder
+/// finishes with only their password. The server resolves the user from the
+/// qrId and runs the full existing password + 2FA pipeline; the response is the
+/// standard sign-in envelope (tokens or the OTP challenge).
+@immutable
+class BadgeSignInRequest {
+  const BadgeSignInRequest({required this.qrId, required this.password});
+
+  final String qrId;
+  final String password;
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'qrId': qrId,
+        'password': password,
+      };
+}
+
 @immutable
 class BadgeActivationStartRequest {
   const BadgeActivationStartRequest({required this.qrId, this.email});

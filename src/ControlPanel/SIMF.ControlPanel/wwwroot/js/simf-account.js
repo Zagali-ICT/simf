@@ -166,6 +166,32 @@ window.simfAccount = {
         }
     },
 
+    // D-735 — insert text at the caret of a textarea/input and return the new
+    // value so the Blazor model can be kept in sync. Used by the email-template
+    // editor's token chips: clicking a chip drops {Token} into whichever body
+    // (English or Arabic) the admin last focused. Falls back to appending when
+    // the element or its selection is unavailable.
+    insertAtCaret(elementId, text) {
+        const el = document.getElementById(elementId);
+        if (!el) {
+            return text;
+        }
+        const value = el.value || '';
+        const start = typeof el.selectionStart === 'number' ? el.selectionStart : value.length;
+        const end = typeof el.selectionEnd === 'number' ? el.selectionEnd : value.length;
+        const next = value.slice(0, start) + text + value.slice(end);
+        el.value = next;
+        const caret = start + text.length;
+        try {
+            el.focus();
+            el.selectionStart = caret;
+            el.selectionEnd = caret;
+        } catch {
+            /* selection API unavailable — the value is still updated */
+        }
+        return next;
+    },
+
     // POSTs a JSON body to a binary endpoint and saves the response as a
     // file download (used by the SimfDataGrid Export, decision D-044 b).
     async downloadXlsx(url, body) {

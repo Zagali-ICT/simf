@@ -1,6 +1,9 @@
 name: simf_app
 description: SIMF Maritime Forum — the Flutter mobile application for Android and iOS. Routes the 41 mockup screens, applies localisation and theme, and hosts the auth and data packages. See SIMF-MAA-001 v1.2.
-version: 0.1.0+1
+# D-736 — 1.0.0 matches the version the UI has always advertised; the About /
+# More screens now display this real value via package_info_plus, and the
+# server version-policy gate compares against it.
+version: 1.0.0+2
 publish_to: none
 
 environment:
@@ -71,6 +74,12 @@ dependencies:
   # SVGs tinted to the tile colour — the design uses iconify sets (solar/ph/
   # streamline/…) that have no 1:1 Material equivalent. Pure-Dart, no native config.
   flutter_svg: ^2.0.10
+  # D-736 — the real installed version (About/More display + the launch
+  # update-policy comparison). Federated plugin, no manual native config.
+  package_info_plus: ^8.3.0
+  # D-736 — semver parse/compare for the server version-policy check (never
+  # string-compare versions: "1.10.0" < "1.9.0" lexically). Pure Dart.
+  pub_semver: ^2.1.4
 
   simf_data_pkg:
     path: packages/simf_data_pkg

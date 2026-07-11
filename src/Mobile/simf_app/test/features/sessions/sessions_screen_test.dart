@@ -306,6 +306,35 @@ void main() {
       expect(find.text('No sessions'), findsOneWidget);
     });
 
+    testWidgets('the empty message names the active type filter', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeSessionsRepository(
+          days: <ProgrammeDay>[
+            _day(
+              'd1',
+              DateTime(2026, 9, 13),
+              'Day One',
+              'اليوم الأول',
+              <SessionListItem>[
+                _session('s1', 9, 'Keynote', type: SessionType.session),
+              ],
+            ),
+          ],
+        ),
+      );
+      // الكل / All shows the session.
+      expect(find.text('Keynote'), findsOneWidget);
+
+      // Filtering to Workshops empties the day → the message names the filter
+      // ("No workshops"), not the generic "No sessions".
+      await tester.tap(find.text('Workshops'));
+      await tester.pumpAndSettle();
+      expect(find.text('Keynote'), findsNothing);
+      expect(find.text('No workshops'), findsOneWidget);
+      expect(find.text('No sessions'), findsNothing);
+    });
+
     testWidgets('a load failure shows the error + retry, which re-fetches',
         (tester) async {
       final repo = _FakeSessionsRepository(fail: true);

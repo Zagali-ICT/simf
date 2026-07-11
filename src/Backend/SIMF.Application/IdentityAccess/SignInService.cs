@@ -32,6 +32,7 @@ public sealed class SignInService(
     IRefreshTokenRepository refreshTokenRepository,
     IAccountCodeRepository accountCodeRepository,
     IEmailQueue emailQueue,
+    IEmailTemplateResolver emailTemplates,
     INotificationDispatcher notifications,
     IUserProfileService userProfiles,
     IJwtTokenService jwtTokenService,
@@ -236,7 +237,7 @@ public sealed class SignInService(
         // H10 / H23 — D-065 / D-083: helper owns the failure-audit
         // pattern shared across all four credential-flow dispatch sites.
         await emailQueue.TryEnqueueAsync(
-            BuildSignInOtpEmail(user.Email!, otpCode!),
+            await BuildSignInOtpEmailAsync(user.Email!, otpCode!, cancellationToken),
             purpose: "SignInOtp",
             subjectEmail: user.Email!,
             subjectUserId: user.Id,
@@ -457,7 +458,7 @@ public sealed class SignInService(
         await secondFactorTokenRepository.UpdateAsync(ticket, cancellationToken);
 
         await emailQueue.TryEnqueueAsync(
-            BuildSignInOtpEmail(user.Email!, otpCode),
+            await BuildSignInOtpEmailAsync(user.Email!, otpCode, cancellationToken),
             purpose: "SignInOtp",
             subjectEmail: user.Email!,
             subjectUserId: user.Id,
@@ -768,17 +769,15 @@ public sealed class SignInService(
     }
 
     /// <summary>
-    /// H23 — D-083: builds the OTP email; caller pairs with
-    /// `IEmailQueue.TryEnqueueAsync`.
+    /// D-735 (was H23 — D-083): resolves the OTP email from the admin-editable
+    /// template (else the code-owned default) and fills {Code}/{ExpiryMinutes}.
+    /// Caller pairs it with `IEmailQueue.TryEnqueueAsync`.
     /// </summary>
-    private static EmailMessage BuildSignInOtpEmail(string email, string code)
-    {
-        var minutes = (int)OtpLifetime.TotalMinutes;
-        var body =
-            $"<p>Your SIMF sign-in code is <strong>{code}</strong>.</p>" +
-            $"<p>The code expires in {minutes} minutes.</p>";
-        return new EmailMessage(email, "SIMF sign-in code", body);
-    }
+    private Task<EmailMessage> BuildSignInOtpEmailAsync(
+        string email, string code, CancellationToken cancellationToken) =>
+        emailTemplates.RenderAsync(
+            EmailTemplateType.SignInOtp, email,
+            EmailTokens.ForCode(code, OtpLifetime), cancellationToken);
 
     private Task AuditAsync(
         string eventType,

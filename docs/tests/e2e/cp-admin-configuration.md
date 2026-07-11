@@ -7,13 +7,20 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
+| **Last reviewed** | 2026-07-10 (D-736 — app-update policy keys → version-policy endpoint) |
 
 > **Page in one line:** admin CRUD over the platform system-settings key/value
 > store (P2.4 / D-229, FDS-012 §5.5). Permission family `Configuration.*`
 > (`View` gates the page, `Create` / `Edit` / `Delete` gate the actions). The
 > store **ships empty** — the team seeds keys once the client confirms the list
 > (FDS-012 OI-2), so the empty state is the default first-run experience.
+> **Update (D-736):** `DefaultContentSeeder` now pre-creates the six mobile
+> app-update policy keys `appUpdate.{android|ios}.{minVersion|latestVersion|storeUrl}`
+> with EMPTY values and format-documenting Descriptions, so a fresh grid lists
+> them ready to edit — their values drive the anonymous
+> `GET /api/v1/app/version-policy` read (see E2E-CFG-024). **How to configure +
+> the release runbook** (semver rules, raise `min` only after 100% store rollout):
+> [`docs/manuals/SIMF-App-Update-Dev-Guide.md`](../../manuals/SIMF-App-Update-Dev-Guide.md).
 >
 > **Surface specifics that differ from the gold-standard Interests page:**
 > - Flat key/value/description model — **no** Arabic-name field, **no** display
@@ -62,6 +69,7 @@
 | E2E-CFG-021 | Excel export — toolbar Export downloads an .xlsx of the filtered grid / selected rows (D-356) | happy | P1 | _to author_ |
 | E2E-CFG-022 | Excel import — upload a workbook → rows created + result modal with per-row outcome (D-356) | happy | P1 | _to author_ |
 | E2E-CFG-023 | Excel import rejection — non-.xlsx / wrong-sheet upload → 400 + bilingual toast, nothing created (D-356) | error | P1 | _to author_ |
+| E2E-CFG-024 | App-update policy keys — edited `appUpdate.android.*` values flow through the anonymous `GET /api/v1/app/version-policy`; blank → null; `javascript:` store URL → null (D-467/D-736) | happy | P1 | _to author_ (API layer covered — see Implementation notes) |
 
 ## Scenarios
 
@@ -479,6 +487,31 @@ Scenario: A bad / wrong-sheet upload is rejected without creating anything
   # The upload defence (ZIP-magic + 5MB gate) and the 5000-row cap live in the shared import base.
 ```
 
+### E2E-CFG-024 — App-update policy keys feed the public version-policy endpoint (D-736)
+
+```gherkin
+Scenario: Editing the seeded appUpdate keys changes the anonymous version policy
+  Given the six app-update keys are pre-seeded EMPTY by DefaultContentSeeder
+        (appUpdate.android.minVersion / appUpdate.android.latestVersion /
+        appUpdate.android.storeUrl + the matching appUpdate.ios.* trio),
+        each with a Description documenting its format
+  And GET /api/v1/app/version-policy (anonymous — no auth header) returns 200
+        with android/ios objects whose minVersion, latestVersion and storeUrl
+        are all null
+  When the administrator edits appUpdate.android.latestVersion to "1.1.0"
+  And edits appUpdate.android.storeUrl to a valid absolute https Google Play
+        listing URL
+  Then GET /api/v1/app/version-policy returns android.latestVersion = "1.1.0"
+        and android.storeUrl = the saved Play URL (the ios fields stay null)
+  When they blank appUpdate.android.latestVersion again
+  Then the endpoint returns android.latestVersion = null (that rule is off)
+  When they set appUpdate.android.storeUrl to "javascript:alert(1)"
+  Then the endpoint returns android.storeUrl = null
+  # The store URL is sanitised server-side to absolute http(s)-or-null (D-467) —
+  # the value becomes a launched link on-device. Version strings pass through
+  # as-is: the app owns semver parsing and ignores values it cannot parse.
+```
+
 ---
 
 ## Implementation notes
@@ -495,6 +528,17 @@ Scenario: A bad / wrong-sheet upload is rejected without creating anything
   - `Duplicate_active_key_is_409` → mirrors E2E-CFG-012.
   - `Deactivate_marks_the_setting_inactive` → mirrors E2E-CFG-005.
   - `Non_admin_caller_is_forbidden_on_create` → mirrors the API side of E2E-CFG-009.
+- **D-736 version-policy read is covered at the API layer** —
+  [`tests/SIMF.Api.Tests/AppVersionPolicyPublicTests.cs`](../../../tests/SIMF.Api.Tests/AppVersionPolicyPublicTests.cs):
+  - `GET_is_anonymous_and_returns_null_for_unset_keys`,
+    `GET_returns_the_admin_configured_values`,
+    `GET_returns_null_for_a_blank_value`, `GET_drops_a_non_http_store_url`,
+    `GET_ignores_a_deactivated_key` → mirror E2E-CFG-024.
+  - Endpoint: `src/Backend/SIMF.Api/Endpoints/Public/AppVersionPolicyEndpoint.cs`
+    (`GET /app/version-policy`, `AllowAnonymous`); read/sanitise:
+    `src/Backend/SIMF.Infrastructure/Configuration/AppVersionPolicyService.cs`;
+    key whitelist: `src/Shared/SIMF.Common/AppUpdateSettingKeys.cs`; seeding:
+    `src/Backend/SIMF.Infrastructure/Seeding/DefaultContentSeeder.cs`.
 - **Endpoints & gates (ground truth):**
   - API: `src/Backend/SIMF.Api/Endpoints/Admin/SystemSettingEndpoints.cs`
     (`POST /admin/system-settings/list`, `GET /admin/system-settings/{id}`,
@@ -510,4 +554,4 @@ Scenario: A bad / wrong-sheet upload is rejected without creating anything
 
 ---
 
-_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle; appended E2E-CFG-018..023, corrected the stale native-confirm delete note to CrudShell + SimfConfirm).
+_Last reviewed:_ 2026-07-10 by Claude (D-736 — appended E2E-CFG-024: the six seeded `appUpdate.*` keys flow through the anonymous `GET /api/v1/app/version-policy` with D-467 store-URL sanitisation. Prior: 2026-06-10, D-356 Phase 5 — Excel + toggle; appended E2E-CFG-018..023, corrected the stale native-confirm delete note to CrudShell + SimfConfirm).
