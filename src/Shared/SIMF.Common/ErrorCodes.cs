@@ -383,6 +383,11 @@ public static class ErrorCodes
     // P4.1 — D-238: AI session-summary / محضر validation + lookup.
     public const string SessionSummaryInvalid = "SESSION_SUMMARY_INVALID";
     public const string SessionSummaryNotFound = "SESSION_SUMMARY_NOT_FOUND";
+    // On-site-ops remediation (S-1/S-2/S-7) — session admin guards.
+    public const string SessionHasActiveBookings = "SESSION_HAS_ACTIVE_BOOKINGS";
+    public const string SessionCapacityBelowBookings = "SESSION_CAPACITY_BELOW_BOOKINGS";
+    public const string SessionHallTimeOverlap = "SESSION_HALL_TIME_OVERLAP";
+    public const string SessionStatusGuardFailed = "SESSION_STATUS_GUARD_FAILED";
 
     // Gates (D-148 — Gate Module, SIMF-FDS-003 §5.6, SIMF-API-GATES-001).
     public const string GateInvalid = "GATE_INVALID";

@@ -92,6 +92,25 @@ Scenario: RTL
   Then the desk, chips and cards render right-to-left
 ```
 
+### E2E-MOBMOD-005 — Push / hide guards (S-8)
+
+```gherkin
+Scenario: Only an approved question can be pushed on stage
+  Given a question that is still Pending (awaiting the Committee) or Hidden
+  When a push is attempted (PUT …/{id}/push)
+  Then the API returns 400 "SESSION_QUESTION_INVALID"
+  And the question never appears on stage
+  # backend: SessionQuestionCommitteeTests.Pushing_a_pending_question_is_400,
+  #          .Pushing_a_hidden_question_is_400
+
+Scenario: Rejecting a pushed question drops it from the on-stage state
+  Given an approved question that has been pushed on stage (IsPushed)
+  When the moderator rejects it (PUT …/{id}/hide {isHidden:true})
+  Then the persisted row has IsPushed = false and PushedAt = null
+  And it drops off the approved desk
+  # backend: SessionQuestionsTests.Hiding_a_pushed_question_clears_the_pushed_marker
+```
+
 ---
 
-_Last reviewed:_ `2026-06-27` by `SIMF Team`.
+_Last reviewed:_ `2026-07-11` by `Claude` (S-8 — push-only-approved + hide-clears-push guards, MOBMOD-005).

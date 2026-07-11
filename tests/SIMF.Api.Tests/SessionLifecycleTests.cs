@@ -48,6 +48,8 @@ public sealed class SessionLifecycleTests : IClassFixture<SimfApiFactory>
     {
         var token = await CreateAdministratorAndSignInAsync();
         var session = await CreateSessionAsync(token);
+        // S-7 — Recorded/Published require an attached recording.
+        await StampRecordingAsync(session.Id);
 
         var held = await SetStatusAsync(session.Id, SessionStatus.Held, token);
         Assert.Equal(SessionStatus.Held, await ReadStatusAsync(held));
@@ -88,6 +90,8 @@ public sealed class SessionLifecycleTests : IClassFixture<SimfApiFactory>
     {
         var token = await CreateAdministratorAndSignInAsync();
         var session = await CreateSessionAsync(token);
+        // S-7 — Recorded/Published require an attached recording.
+        await StampRecordingAsync(session.Id);
         await SetStatusAsync(session.Id, SessionStatus.Held, token);
         await SetStatusAsync(session.Id, SessionStatus.Recorded, token);
         await SetStatusAsync(session.Id, SessionStatus.Published, token);
@@ -124,6 +128,66 @@ public sealed class SessionLifecycleTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    // -- S-7: clock + recording guards on SetStatus ---------------------------
+
+    // S-7 — a session cannot be marked Held before it has started (clock guard).
+    [Fact]
+    public async Task SetStatusAsync_MarkHeldBeforeStart_ReturnsBadRequest()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var future = DateTimeOffset.UtcNow.AddHours(2);
+        var session = await CreateSessionAsync(token, future, future.AddHours(1));
+
+        var response = await SetStatusAsync(session.Id, SessionStatus.Held, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SessionStatusGuardFailed, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task SetStatusAsync_MarkHeldAfterStart_Succeeds()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var session = await CreateSessionAsync(token); // default past start
+
+        var response = await SetStatusAsync(session.Id, SessionStatus.Held, token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var detail = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminSessionDetail>>())!.Data!;
+        Assert.Equal(SessionStatus.Held, detail.Status);
+    }
+
+    // S-7 — Recorded/Published require an attached recording (recording guard).
+    [Fact]
+    public async Task SetStatusAsync_MarkRecordedWithoutRecording_ReturnsBadRequest()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var session = await CreateSessionAsync(token); // past start, no recording
+        await SetStatusAsync(session.Id, SessionStatus.Held, token);
+
+        var response = await SetStatusAsync(session.Id, SessionStatus.Recorded, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SessionStatusGuardFailed, body.Error!.Code);
+    }
+
+    // S-7 — a reverse (undo) move carries no guard.
+    [Fact]
+    public async Task SetStatusAsync_RevertRecordedToHeld_NoGuard()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var session = await CreateSessionAsync(token);
+        await StampRecordingAsync(session.Id);
+        await SetStatusAsync(session.Id, SessionStatus.Held, token);
+        await SetStatusAsync(session.Id, SessionStatus.Recorded, token);
+
+        var revert = await SetStatusAsync(session.Id, SessionStatus.Held, token);
+        Assert.Equal(HttpStatusCode.OK, revert.StatusCode);
+        var detail = (await revert.Content
+            .ReadFromJsonAsync<ApiResult<AdminSessionDetail>>())!.Data!;
+        Assert.Equal(SessionStatus.Held, detail.Status);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     private async Task<SessionStatus> ReadStatusAsync(HttpResponseMessage response)
@@ -138,7 +202,8 @@ public sealed class SessionLifecycleTests : IClassFixture<SimfApiFactory>
         PutAuthAsync($"/api/v1/admin/sessions/{id}/status",
             new SetSessionStatusRequest { Status = status }, token);
 
-    private async Task<AdminSessionDetail> CreateSessionAsync(string token)
+    private async Task<AdminSessionDetail> CreateSessionAsync(
+        string token, DateTimeOffset? startUtc = null, DateTimeOffset? endUtc = null)
     {
         var hall = await SeedHallAsync(capacity: 100);
         var response = await PostAuthAsync(
@@ -149,13 +214,27 @@ public sealed class SessionLifecycleTests : IClassFixture<SimfApiFactory>
                 Title = "Lifecycle session",
                 TitleArabic = "جلسة دورة الحياة",
                 HallId = hall.Id,
-                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                // S-7 — default to a past start so the Held lifecycle guard passes;
+                // callers testing the pre-start guard pass an explicit future start.
+                StartUtc = startUtc ?? DateTimeOffset.UtcNow.AddHours(-1),
+                EndUtc = endUtc ?? DateTimeOffset.UtcNow.AddHours(1),
             },
             token);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         return (await response.Content
             .ReadFromJsonAsync<ApiResult<AdminSessionDetail>>())!.Data!;
+    }
+
+    // S-7 — stamp a recording pointer directly so the Recorded/Published guard is
+    // satisfied without streaming a real file (this suite only asserts the
+    // lifecycle transitions, not the bytes).
+    private async Task StampRecordingAsync(Guid sessionId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var session = await db.Sessions.FindAsync(sessionId);
+        session!.RecordingStoredFileName = Guid.NewGuid().ToString();
+        await db.SaveChangesAsync();
     }
 
     private async Task<Hall> SeedHallAsync(int capacity)

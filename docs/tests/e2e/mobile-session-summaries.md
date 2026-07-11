@@ -47,6 +47,7 @@
 | E2E-MOB111-006 | Favourite POST/DELETE round-trips + is per-user | happy | P0 | authored ✓ (API `Favourite_then_list_then_unfavourite_round_trips`, `Favourites_are_per_user`) |
 | E2E-MOB111-007 | Favourite an unknown session → 404 | error | P1 | authored ✓ (API `Favourite_an_unknown_session_returns_404`) |
 | E2E-MOB111-008 | Favourites read is approved-only | auth | P0 | authored ✓ (API `Favourites_list_without_a_token_returns_401`) |
+| E2E-MOB111-009 | A published summary stays hidden until the session has STARTED (clock-based, S-6 owner) — a future session's summary is not viewable; once it starts it shows | data | P1 | authored ✓ (API `SessionSummaryTests.GetSessionSummaryAsync_BeforeSessionStarts_ReturnsNull` + `.GetSessionSummaryAsync_AfterStart_ReturnsSummary`) |
 
 ## Scenarios
 
@@ -77,6 +78,13 @@ Scenario: Toggling a favourite round-trips per user
   And a second visitor's favourites do not contain it
   When the visitor DELETEs the favourite
   Then it is no longer in their favourites
+
+Scenario: A published summary is viewable only once the session has started (S-6 owner)
+  Given a FUTURE session (StartUtc ahead of now) with a published summary
+  Then GET /app/programme/sessions/{id}/summary returns 404 — you cannot view a
+    summary before the session begins
+  Given a STARTED session (StartUtc in the past) with a published summary
+  Then the same read returns the summary (200) — gated on the clock, not Session.Status
 ```
 
 **Evidence:** screen tests (5 — list+nav, search, favourites tab, mine tab,

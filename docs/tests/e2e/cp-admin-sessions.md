@@ -65,6 +65,15 @@
 | E2E-SES-025 | AI live captions field round-trips + the whole live section survives an edit (regression — D-439) | happy/regression | P1 | authored ✓ (`AdminSessionsTests.Update_round_trips_all_live_fields`) |
 | E2E-SES-026 | Excel export/import round-trips the 8 previously-dropped fields (Description+Arabic, the 2 live URLs, the 2 live captions, Type, SeatSelectionModeOverride) — D-506 | happy/regression | P1 | authored ✓ (`SessionsExcelTests.Export_includes_the_dropped_round_trip_columns` + `.Import_round_trips_the_dropped_fields`) |
 | E2E-SES-032 | Deep-link `/admin/sessions?speakerId={id}` (from the Speakers grid's Sessions action) filters to that speaker's sessions + shows the "filtered by speaker" note (speakers redesign) | function | P1 | authored ✓ (`AdminSessionsTests.List_filtered_by_speakerId_returns_only_that_speakers_sessions`) |
+| E2E-SES-033 | Booking guard: delete a session with active visitor bookings → 409 `SESSION_HAS_ACTIVE_BOOKINGS` (bilingual toast); the session stays Active (S-1) | error | P0 | authored ✓ (`AdminSessionsTests.DeactivateAsync_WithActiveVisitorBooking_ReturnsConflict`) |
+| E2E-SES-034 | Booking guard: delete succeeds when only an admin row-block remains (no attendee to orphan) (S-1) | happy | P1 | authored ✓ (`AdminSessionsTests.DeactivateAsync_WithOnlyAdminRowBlock_Succeeds`) |
+| E2E-SES-035 | Edit hall → held seats cascade-released + each affected visitor notified (BookingRejected) (S-1) | happy | P1 | authored ✓ (`AdminSessionsTests.UpdateAsync_HallChange_ReleasesHeldSeats_AndDispatchesNotification`) |
+| E2E-SES-036 | Edit start/end window → held seats cascade-released; a title-only edit keeps the seats (S-1) | happy | P2 | authored ✓ (`AdminSessionsTests.UpdateAsync_TimeChange_ReleasesHeldSeats` + `.UpdateAsync_NoHallOrTimeChange_KeepsSeats`) |
+| E2E-SES-037 | Capacity override below the seats already held → 409 `SESSION_CAPACITY_BELOW_BOOKINGS`; a hall move that lowers the override is allowed (seats are released) (S-1) | error | P1 | authored ✓ (`AdminSessionsTests.UpdateAsync_CapacityOverrideBelowHeldSeats_ReturnsConflict` + `.UpdateAsync_HallChange_WithLowerCapacityOverride_Succeeds`) |
+| E2E-SES-038 | Create a session overlapping another in the same hall → 409 `SESSION_HALL_TIME_OVERLAP`; exact back-to-back (half-open) allowed; different hall allowed; a soft-deleted sibling is ignored (S-2) | error | P1 | authored ✓ (`AdminSessionsTests.CreateAsync_OverlappingHallTime_ReturnsConflict` + `.CreateAsync_SameHallBackToBack_NonOverlapping_Succeeds` + `.CreateAsync_OverlapDifferentHall_Succeeds` + `.CreateAsync_OverlapWithSoftDeletedSession_Succeeds`) |
+| E2E-SES-039 | Move a session into an occupied hall/time → 409 `SESSION_HALL_TIME_OVERLAP`; a title-only edit of a legacy overlapping session still saves (S-2) | error | P1 | authored ✓ (`AdminSessionsTests.UpdateAsync_MoveIntoOccupiedHallTime_ReturnsConflict` + `.UpdateAsync_TitleOnlyEdit_WithPreexistingOverlap_Succeeds`) |
+| E2E-SES-040 | Lifecycle guard: mark Held before the session's start → 400 `SESSION_STATUS_GUARD_FAILED`; after start it is allowed (S-7) | error | P1 | authored ✓ (`SessionLifecycleTests.SetStatusAsync_MarkHeldBeforeStart_ReturnsBadRequest` + `.SetStatusAsync_MarkHeldAfterStart_Succeeds`) |
+| E2E-SES-041 | Lifecycle guard: mark Recorded/Published with no recording → 400 `SESSION_STATUS_GUARD_FAILED`; upload a recording first → allowed; a reverse (undo) move carries no guard (S-7) | error | P1 | authored ✓ (`SessionLifecycleTests.SetStatusAsync_MarkRecordedWithoutRecording_ReturnsBadRequest` + `.SetStatusAsync_RevertRecordedToHeld_NoGuard` + `SessionRecordingTests.SetStatusAsync_MarkRecordedWithRecording_Succeeds`) |
 
 ## Scenarios
 
@@ -688,6 +697,117 @@ Scenario: The Moderate action is hidden for an admin without Questions.Moderate
   # UX-only: the desk page + its API still enforce Questions.Moderate (403) if reached directly.
 ```
 
+### E2E-SES-033/034 — Booking guard on delete (S-1)
+
+```gherkin
+Feature: A session with active visitor bookings cannot be deleted
+  As an Administrator
+  I want the delete to be blocked while visitors still hold seats
+  So that a scheduled attendee is never silently orphaned
+
+Scenario: Delete blocked while a visitor booking is held
+  Given a session "SES-BOOK" with one active (held) visitor booking
+  When the administrator opens View/Delete and confirms Deactivate
+  Then the DELETE /account/api/admin/sessions/{id} returns 409
+  And the error code is "SESSION_HAS_ACTIVE_BOOKINGS"
+  And a red toast reads "This session has 1 active booking(s) — cancel or reject
+      them before deleting it." (Arabic mirror in RTL)
+  And the row keeps its green "Active" pill
+
+Scenario: Delete allowed when only an admin row-block remains
+  Given a session "SES-BLK" whose only reservation is an admin row-block (no attendee)
+  When the administrator confirms Deactivate
+  Then the DELETE returns 200 and the row becomes Inactive
+```
+
+### E2E-SES-035/036 — Hall / time edit releases held seats (S-1)
+
+```gherkin
+Feature: Moving a session frees the seats it can no longer honour
+  As an Administrator
+  I want a hall move or a reschedule to release the held seats and notify attendees
+  So that stale seat holds do not block a re-configured hall
+
+Scenario: Change the hall — held seats are released and attendees notified
+  Given a session "SES-MOVE" in "Auditorium A" with two held visitor bookings
+  When the administrator edits it to "Auditorium B" and saves
+  Then the PUT returns 200
+  And every held reservation is released (ReleasedAt set, Status = Cancelled)
+  And each affected visitor receives a "Seat reservation released" notification
+      (kind BookingRejected, session deep-link)
+
+Scenario: Change only the start/end window — held seats are released
+  Given a session "SES-TIME" with a held visitor booking
+  When the administrator shifts Start/End by two hours and saves
+  Then the held reservation is released
+
+Scenario: A title-only edit keeps the seats
+  Given a session "SES-KEEP" with a held visitor booking
+  When the administrator edits only the Title and saves (same hall + window)
+  Then the reservation is untouched and no release notification is sent
+```
+
+### E2E-SES-037 — Capacity override below held seats (S-1)
+
+```gherkin
+Feature: Capacity cannot be shrunk below the seats already held
+Scenario: Override below the held count is rejected
+  Given a session with two held seats (same hall + window unchanged)
+  When the administrator sets Capacity override = 1 and saves
+  Then the PUT returns 409 with code "SESSION_CAPACITY_BELOW_BOOKINGS"
+
+Scenario: A hall move that lowers the override is allowed
+  Given the same session with two held seats
+  When the administrator moves it to another hall AND sets Capacity override = 1
+  Then the PUT returns 200 (the held seats are cascade-released by the move)
+```
+
+### E2E-SES-038/039 — Same-hall time-overlap guard (S-2)
+
+```gherkin
+Feature: Two active sessions must not occupy one hall at overlapping times
+Scenario: Overlapping create is rejected
+  Given an active session in "Auditorium A" from 09:00 to 10:00
+  When the administrator creates another in "Auditorium A" from 09:30 to 10:30
+  Then the POST returns 409 with code "SESSION_HALL_TIME_OVERLAP"
+
+Scenario: Exact back-to-back in the same hall is allowed
+  Given an active session in "Auditorium A" from 09:00 to 10:00
+  When the administrator creates another in "Auditorium A" from 10:00 to 11:00
+  Then the POST returns 200 (half-open comparison)
+
+Scenario: Different hall / soft-deleted sibling never conflict
+  Given the 09:00-10:00 session in "Auditorium A"
+  Then creating an overlapping session in "Auditorium B" succeeds
+  And creating one in "Auditorium A" after the first is soft-deleted succeeds
+
+Scenario: Move into an occupied slot is rejected; a legacy title edit still saves
+  Given two overlapping active sessions already share "Auditorium A" (legacy data)
+  When the administrator edits only the Title of one and saves
+  Then the PUT returns 200 (the overlap check runs only when the hall/time moves)
+  When the administrator moves a session into "Auditorium A" at an occupied time
+  Then the PUT returns 409 with code "SESSION_HALL_TIME_OVERLAP"
+```
+
+### E2E-SES-040/041 — Lifecycle clock + recording guards (S-7)
+
+```gherkin
+Feature: Status moves are guarded by the clock and by the recording
+Scenario: Cannot mark Held before the session has started
+  Given a session whose Start is in the future
+  When the administrator clicks "Mark Held"
+  Then the PUT /status returns 400 with code "SESSION_STATUS_GUARD_FAILED"
+  And after the start time has passed the same move succeeds
+
+Scenario: Cannot mark Recorded/Published without a recording
+  Given a started session with no recording attached
+  When the administrator marks it Held then tries "Mark Recorded"
+  Then the PUT /status returns 400 with code "SESSION_STATUS_GUARD_FAILED"
+  When a recording is uploaded first
+  Then the Held → Recorded move is allowed
+  And a reverse move (Recorded → Held) carries no guard
+```
+
 ---
 
 ## Implementation notes
@@ -726,4 +846,4 @@ Scenario: The Moderate action is hidden for an admin without Questions.Moderate
 
 ---
 
-_Last reviewed:_ 2026-07-01 by Claude (D-578 — subtitle import: upload `.srt`/`.vtt` + fetch-from-video, SES-027..030).
+_Last reviewed:_ 2026-07-11 by Claude (on-site ops — booking guards on delete/edit + capacity (S-1), same-hall time-overlap guard (S-2), lifecycle clock + recording guards (S-7): SES-033..041).

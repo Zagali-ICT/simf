@@ -256,6 +256,18 @@ internal sealed class AdminSessionSummaryService(
         var summary = await LoadSummaryAsync(sessionId, cancellationToken);
 
         var now = timeProvider.GetUtcNow();
+        // S-6 (owner) — a محضر may only be PUBLISHED once the session has actually
+        // STARTED (now >= StartUtc). Publishing minutes for a not-yet-started
+        // session would surface a summary for a talk that has not happened. Keyed
+        // on the CLOCK, never the manual Held flag. Unpublish is always allowed.
+        if (publish && now < session.StartUtc)
+        {
+            throw new ApiException(
+                ErrorCodes.SessionSummaryInvalid, 400,
+                "The session has not started yet — its summary cannot be published before it begins.",
+                "لم تبدأ الجلسة بعد — لا يمكن نشر ملخّصها قبل أن تبدأ.");
+        }
+
         summary.PublishedAt = publish ? now : null;
         summary.PublishedByUserId = publish ? actorUserId : null;
         summary.UpdatedAt = now;
