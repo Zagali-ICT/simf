@@ -587,6 +587,62 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         Assert.True(seqB > seqA, $"expected {seqB} > {seqA}");
     }
 
+    // H-1 (FIX A) — the self-service write path must populate the identity blind
+    // index (so the filtered UNIQUE indexes + the duplicate-identity guard see it)
+    // and reject a National ID / Iqama / passport already on ANOTHER user's row,
+    // while never false-flagging a user re-saving their OWN id.
+    [Fact]
+    public async Task Self_service_upsert_persists_a_non_null_national_id_hash()
+    {
+        var token = await CreateUserAndSignInAsync();
+        var actorId = await GetActorIdAsync(token);
+
+        var response = await PostAuthAsync(Path, await ValidSaudiRequestAsync(), token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var hash = await appDb.UserProfiles
+            .Where(p => p.UserId == actorId)
+            .Select(p => p.NationalIdHash)
+            .SingleAsync();
+        Assert.False(string.IsNullOrEmpty(hash));
+    }
+
+    [Fact]
+    public async Task Self_service_upsert_of_an_id_on_another_users_profile_is_409()
+    {
+        var sharedNationalId = TestIdentity.MintNationalId();
+
+        var tokenA = await CreateUserAndSignInAsync();
+        var reqA = await ValidSaudiRequestAsync();
+        reqA.NationalId = sharedNationalId;
+        var first = await PostAuthAsync(Path, reqA, tokenA);
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+
+        var tokenB = await CreateUserAndSignInAsync();
+        var reqB = await ValidSaudiRequestAsync();
+        reqB.NationalId = sharedNationalId;
+        var second = await PostAuthAsync(Path, reqB, tokenB);
+        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
+        var body = (await second.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.DuplicateIdentity, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Self_service_resave_of_my_own_id_is_not_a_false_conflict()
+    {
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+
+        var first = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+
+        // Same user, same National ID — self-exclusion means no false 409.
+        var second = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, second.StatusCode);
+    }
+
     // C5 (D-371) — a self-registering visitor is locked to the single
     // "Normal" audience profile type; richer audience tiers are admin-
     // assigned only, while partner-side ("Other") picks stay free.
@@ -1392,7 +1448,11 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
             DateOfBirth = new DateOnly(1990, 1, 1),
             PlaceOfBirth = "Riyadh",
             IsSaudi = true,
-            NationalId = "1101798278",   // D-197 — Luhn-valid Saudi national id
+            // H-1 (FIX A) — the self-service write path now populates the National-ID
+            // blind index and dedups on it, and this class shares ONE DB across tests,
+            // so a hardcoded id would 409 the second distinct user. Mint a UNIQUE
+            // Luhn-valid Saudi id per call (mirrors WalkInRegistrationTests).
+            NationalId = TestIdentity.MintNationalId(),
             OrganisationId = organisationId,
         };
     }

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.IdentityAccess.Abstractions;
+using SIMF.Application.Notifications;
 using SIMF.Application.Requests.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -22,6 +23,7 @@ namespace SIMF.Infrastructure.Requests;
 internal sealed class ParticipationDocumentRequestService(
     SimfAppDbContext appDbContext,
     IIdentityUserDirectory userDirectory,
+    INotificationDispatcher notifications,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<ParticipationDocumentRequestService> logger)
@@ -45,6 +47,20 @@ internal sealed class ParticipationDocumentRequestService(
                 ErrorCodes.ParticipationDocumentRequestInvalid, 400,
                 "Note must be 1000 characters or fewer.",
                 "يجب ألا يتجاوز طول الملاحظة 1000 حرف.");
+        }
+
+        // R-4 — one open request per (requester, document type): a duplicate Pending
+        // submission floods the review desk (mirrors the speaker-meeting dup guard).
+        var hasOpenRequest = await appDbContext.ParticipationDocumentRequests.AsNoTracking()
+            .AnyAsync(r => r.RequestedByUserId == requesterUserId
+                && r.DocumentType == request.DocumentType
+                && r.Status == MeetingRequestStatus.Pending, cancellationToken);
+        if (hasOpenRequest)
+        {
+            throw new ApiException(
+                ErrorCodes.AppRequestDuplicatePending, 409,
+                "You already have a pending request for this document.",
+                "لديك بالفعل طلب قيد المراجعة لهذه الوثيقة.");
         }
 
         var now = timeProvider.GetUtcNow();
@@ -206,6 +222,27 @@ internal sealed class ParticipationDocumentRequestService(
             ActorUserId = actorUserId,
             Detail = JsonSerializer.Serialize(new { participationDocumentRequestId = req.Id }),
         }, cancellationToken);
+
+        // R-2 — notify the requester of the decision (mirrors the speaker/booking flows).
+        // Best-effort: a dispatch failure never undoes the committed response.
+        var accepted = req.Status == MeetingRequestStatus.Accepted;
+        await notifications.TryDispatchAsync(new NotificationRequest
+        {
+            UserId = req.RequestedByUserId,
+            Kind = NotificationKind.ParticipationDocumentDecided,
+            Title = accepted ? "Document request accepted" : "Document request rejected",
+            TitleArabic = accepted ? "تم قبول طلب الوثيقة" : "تم رفض طلب الوثيقة",
+            Body = accepted
+                ? "Your participation-document request was accepted."
+                : "Your participation-document request was rejected.",
+            BodyArabic = accepted
+                ? "تم قبول طلب وثيقة المشاركة الخاص بك."
+                : "تم رفض طلب وثيقة المشاركة الخاص بك.",
+            Severity = NotificationSeverity.Info,
+            RelatedEntityType = nameof(ParticipationDocumentRequest),
+            RelatedEntityId = req.Id,
+            SendEmail = false,
+        }, logger, cancellationToken);
 
         return await LoadDetailAsync(id, cancellationToken);
     }

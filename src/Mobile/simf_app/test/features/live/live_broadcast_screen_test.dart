@@ -9,6 +9,7 @@ import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/core/organization_profile/organization_profile.dart';
 import 'package:simf_app/features/live/data/live_repository.dart';
 import 'package:simf_app/features/live/live_broadcast_screen.dart';
+import 'package:simf_app/features/live/widgets/live_badges.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -21,6 +22,8 @@ LiveSession _liveSession({
   int status = 0,
   String? liveCaptions,
   String? liveCaptionsArabic,
+  DateTime? startUtc,
+  DateTime? endUtc,
 }) =>
     LiveSession(
       title: 'Opening',
@@ -31,6 +34,8 @@ LiveSession _liveSession({
       liveSignLanguageUrl: liveSignLanguageUrl,
       liveCaptions: liveCaptions,
       liveCaptionsArabic: liveCaptionsArabic,
+      startUtc: startUtc,
+      endUtc: endUtc,
     );
 
 class _FakeLiveRepo implements LiveRepository {
@@ -606,6 +611,91 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
       expect(find.text('RATE s1 Session'), findsNothing);
+    });
+
+    testWidgets('S-3 — a URL set but the session has NOT started (future) hides '
+        'the LIVE badge and the Ask button', (tester) async {
+      final now = DateTime.now().toUtc();
+      await _pump(
+        tester,
+        repo: _FakeLiveRepo(
+          session: _liveSession(
+            liveStreamUrl: 'https://live.example.sa/main.m3u8',
+            startUtc: now.add(const Duration(hours: 1)),
+            endUtc: now.add(const Duration(hours: 2)),
+          ),
+        ),
+        sessionId: 's1',
+        settle: false,
+      );
+
+      // A premiere URL is up but the window has not opened → nothing lies live.
+      expect(find.byType(LiveBadge), findsNothing);
+      expect(find.text('Ask a question'), findsNothing);
+      expect(find.text('Now broadcasting'), findsNothing);
+    });
+
+    testWidgets('S-3 — an in-window session (start<now<end) with a URL shows the '
+        'LIVE badge, the Ask button and the now-broadcasting header',
+        (tester) async {
+      final now = DateTime.now().toUtc();
+      await _pump(
+        tester,
+        repo: _FakeLiveRepo(
+          session: _liveSession(
+            liveStreamUrl: 'https://live.example.sa/main.m3u8',
+            startUtc: now.subtract(const Duration(hours: 1)),
+            endUtc: now.add(const Duration(hours: 1)),
+          ),
+        ),
+        sessionId: 's1',
+        settle: false,
+      );
+
+      expect(find.byType(LiveBadge), findsOneWidget);
+      expect(find.text('Ask a question'), findsOneWidget);
+      // "يُبث الآن" — asserted in the default English locale as its translation.
+      expect(find.text('Now broadcasting'), findsOneWidget);
+    });
+
+    testWidgets('S-3 — an ENDED session (end<now) with the URL still set hides '
+        'the LIVE badge + Ask and does NOT say now-broadcasting', (tester) async {
+      final now = DateTime.now().toUtc();
+      await _pump(
+        tester,
+        repo: _FakeLiveRepo(
+          session: _liveSession(
+            liveStreamUrl: 'https://live.example.sa/main.m3u8',
+            startUtc: now.subtract(const Duration(hours: 3)),
+            endUtc: now.subtract(const Duration(hours: 2)),
+          ),
+        ),
+        sessionId: 's1',
+        settle: false,
+      );
+
+      expect(find.byType(LiveBadge), findsNothing);
+      expect(find.text('Ask a question'), findsNothing);
+      // The archive header reads the neutral session label, not "now broadcasting".
+      expect(find.text('Now broadcasting'), findsNothing);
+      expect(find.text('Session'), findsOneWidget);
+    });
+
+    testWidgets('S-3 — the global main-live (no window) still reads live: the '
+        'LIVE badge shows', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeLiveRepo(session: _liveSession()),
+        sessionId: null,
+        profile: _orgProfile(
+          liveStreamUrl: 'https://www.youtube.com/watch?v=simf',
+        ),
+        settle: false,
+      );
+
+      // No start/end on the synthetic session → fall back to "a feed is up".
+      expect(find.byType(LiveBadge), findsOneWidget);
+      expect(find.text('Now broadcasting'), findsOneWidget);
     });
   });
 }

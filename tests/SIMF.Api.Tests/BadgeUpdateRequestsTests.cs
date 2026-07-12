@@ -113,6 +113,76 @@ public sealed class BadgeUpdateRequestsTests : IClassFixture<SimfApiFactory>
         Assert.Equal("Lieutenant", title);
     }
 
+    [Fact]
+    public async Task Accepting_a_badge_update_dispatches_a_BadgeUpdateDecided_notification_and_still_applies_the_JobTitle()
+    {
+        // R-2 — the accept still applies the title AND now tells the requester.
+        var (token, userId) = await SignInApprovedVisitorAsync();
+        await SeedProfileAsync(userId, jobTitle: "Lieutenant");
+        var submitted = await SubmitAsync(token, "Commander");
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var respond = await SendAuthAsync(HttpMethod.Put,
+            $"/api/v1/admin/badge-requests/{submitted.Id}/respond", admin,
+            new { status = (int)MeetingRequestStatus.Accepted });
+        Assert.Equal(HttpStatusCode.OK, respond.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var title = await db.UserProfiles.Where(p => p.UserId == userId)
+            .Select(p => p.JobTitle).SingleAsync();
+        Assert.Equal("Commander", title);
+
+        var idDb = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var count = await idDb.Notifications.CountAsync(n =>
+            n.Kind == NotificationKind.BadgeUpdateDecided
+            && n.RelatedEntityId == submitted.Id
+            && n.UserId == userId);
+        Assert.Equal(1, count);
+    }
+
+    [Fact]
+    public async Task Rejecting_a_badge_update_dispatches_the_notification_and_does_not_touch_the_JobTitle()
+    {
+        // R-2 — a reject notifies but leaves the profile title alone.
+        var (token, userId) = await SignInApprovedVisitorAsync();
+        await SeedProfileAsync(userId, jobTitle: "Lieutenant");
+        var submitted = await SubmitAsync(token, "Commander");
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var respond = await SendAuthAsync(HttpMethod.Put,
+            $"/api/v1/admin/badge-requests/{submitted.Id}/respond", admin,
+            new { status = (int)MeetingRequestStatus.Rejected, responseNote = "No change." });
+        Assert.Equal(HttpStatusCode.OK, respond.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var title = await db.UserProfiles.Where(p => p.UserId == userId)
+            .Select(p => p.JobTitle).SingleAsync();
+        Assert.Equal("Lieutenant", title);
+
+        var idDb = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var count = await idDb.Notifications.CountAsync(n =>
+            n.Kind == NotificationKind.BadgeUpdateDecided
+            && n.RelatedEntityId == submitted.Id
+            && n.UserId == userId);
+        Assert.Equal(1, count);
+    }
+
+    [Fact]
+    public async Task Submitting_a_second_pending_badge_update_is_409()
+    {
+        // R-4 — one open badge-update request per requester.
+        var (token, _) = await SignInApprovedVisitorAsync();
+        await SubmitAsync(token, "Commander");
+
+        var second = await SendAuthAsync(HttpMethod.Post, "/api/v1/app/badge-requests",
+            token, new { requestedJobTitle = "Captain" });
+        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
+        var body = (await second.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.AppRequestDuplicatePending, body.Error!.Code);
+    }
+
     // -- helpers --------------------------------------------------------------
 
     private async Task<BadgeUpdateRequestSubmitted> SubmitAsync(string token, string title)

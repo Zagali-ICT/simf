@@ -45,6 +45,37 @@ void main() {
       expect(item.localizedSubtitle(false), 'Official attendance certificate');
     });
 
+    test('parses responseNote and treats blank as null', () {
+      final withNote = AppRequestItem.fromJson(<String, dynamic>{
+        'kind': 3,
+        'id': 'r1',
+        'title': 'Doc',
+        'titleArabic': 'وثيقة',
+        'status': 2,
+        'responseNote': '  Missing passport copy.  ',
+      });
+      expect(withNote.responseNote, 'Missing passport copy.');
+
+      final blankNote = AppRequestItem.fromJson(<String, dynamic>{
+        'kind': 3,
+        'id': 'r2',
+        'title': 'Doc',
+        'titleArabic': 'وثيقة',
+        'status': 2,
+        'responseNote': '   ',
+      });
+      expect(blankNote.responseNote, isNull);
+
+      final noKey = AppRequestItem.fromJson(<String, dynamic>{
+        'kind': 3,
+        'id': 'r3',
+        'title': 'Doc',
+        'titleArabic': 'وثيقة',
+        'status': 0,
+      });
+      expect(noKey.responseNote, isNull);
+    });
+
     test('canCancel defaults to false and missing dates fall back', () {
       final item = AppRequestItem.fromJson(<String, dynamic>{
         'kind': 0,

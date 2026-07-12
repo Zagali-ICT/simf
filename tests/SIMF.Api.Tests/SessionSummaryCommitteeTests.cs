@@ -89,6 +89,8 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
     public async Task Publish_exposes_the_public_read_then_unpublish_hides_it()
     {
         var admin = await CreateAdministratorAndSignInAsync();
+        // S-6 — a summary can only be published once the session has started; the
+        // default seed uses a past start (started).
         var sessionId = await SeedSessionAsync();
         await SaveAsync(sessionId, new SaveSessionSummaryRequest
         {
@@ -116,6 +118,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
     public async Task The_desk_list_reflects_the_summary_state()
     {
         var admin = await CreateAdministratorAndSignInAsync();
+        // S-6 — publish requires a started session (the default seed's past start).
         var sessionId = await SeedSessionAsync();
         await GenerateAsync(sessionId, admin);
         await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/publish", new { }, admin);
@@ -151,6 +154,59 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         var response = await PutAuthAsync(
             $"/api/v1/admin/session-summaries/{sessionId}/publish", new { }, admin);
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    // S-6 (owner) — a محضر may only be PUBLISHED once the session has STARTED.
+    [Fact]
+    public async Task PublishAsync_BeforeSessionStarts_ReturnsBadRequest()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        // A future session — it has not started yet.
+        var sessionId = await SeedSessionAsync(startUtc: DateTimeOffset.UtcNow.AddDays(1));
+        await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر." }, admin);
+
+        var response = await PutAuthAsync(
+            $"/api/v1/admin/session-summaries/{sessionId}/publish", new { }, admin);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SessionSummaryInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task PublishAsync_AfterSessionStarts_Succeeds()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        // A started session (past start).
+        var sessionId = await SeedSessionAsync(startUtc: DateTimeOffset.UtcNow.AddHours(-1));
+        await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر." }, admin);
+
+        var response = await PutAuthAsync(
+            $"/api/v1/admin/session-summaries/{sessionId}/publish", new { }, admin);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var detail = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminSessionSummaryDetail>>())!.Data!;
+        Assert.True(detail.IsPublished);
+    }
+
+    [Fact]
+    public async Task UnpublishAsync_WhileScheduled_StillAllowed()
+    {
+        // Unpublish only retracts, so it is allowed regardless of the clock — even
+        // after the session is rescheduled back into the future.
+        var admin = await CreateAdministratorAndSignInAsync();
+        var sessionId = await SeedSessionAsync(startUtc: DateTimeOffset.UtcNow.AddHours(-1));
+        await SaveAsync(sessionId, new SaveSessionSummaryRequest { FullTextArabic = "محضر." }, admin);
+        await PutAuthAsync($"/api/v1/admin/session-summaries/{sessionId}/publish", new { }, admin);
+
+        // Reschedule the session into the future (it "hasn't started" again).
+        await SetSessionStartUtcDirectAsync(sessionId, DateTimeOffset.UtcNow.AddDays(1));
+
+        var response = await PutAuthAsync(
+            $"/api/v1/admin/session-summaries/{sessionId}/unpublish", new { }, admin);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var detail = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminSessionSummaryDetail>>())!.Data!;
+        Assert.False(detail.IsPublished);
     }
 
     [Fact]
@@ -416,7 +472,8 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
     }
 
     private async Task<Guid> SeedSessionAsync(
-        string? liveCaptions = null, string? liveCaptionsArabic = null)
+        string? liveCaptions = null, string? liveCaptionsArabic = null,
+        DateTimeOffset? startUtc = null)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -428,14 +485,17 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
             Capacity = 100, IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
         };
         db.Halls.Add(hall);
+        // S-6 — the publish gate is clock-based: default to a STARTED session (past
+        // start) so publish is allowed; the "before start" tests pass a future start.
+        var start = startUtc ?? DateTimeOffset.UtcNow.AddMinutes(-90);
         var session = new Session
         {
             Id = Guid.NewGuid(),
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Maritime Supply-Chain Security", TitleArabic = "أمن سلاسل الإمداد البحرية",
             HallId = hall.Id,
-            StartUtc = DateTimeOffset.UtcNow.AddMinutes(-90),
-            EndUtc = DateTimeOffset.UtcNow.AddMinutes(-30),
+            StartUtc = start,
+            EndUtc = start.AddHours(1),
             LiveCaptions = liveCaptions,
             LiveCaptionsArabic = liveCaptionsArabic,
             IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
@@ -443,6 +503,16 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
         db.Sessions.Add(session);
         await db.SaveChangesAsync();
         return session.Id;
+    }
+
+    private async Task SetSessionStartUtcDirectAsync(Guid sessionId, DateTimeOffset startUtc)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var session = await db.Sessions.FindAsync(sessionId);
+        session!.StartUtc = startUtc;
+        session.EndUtc = startUtc.AddHours(1);
+        await db.SaveChangesAsync();
     }
 
     private async Task<string> SeedApprovedVisitorAsync()

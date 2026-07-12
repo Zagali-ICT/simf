@@ -20,8 +20,10 @@ namespace SIMF.Infrastructure.SessionQuestions;
 /// must be at the hall; after <c>EndUtc</c> the session is done (a recording, not
 /// a live broadcast) and no question is taken. P5.1 — D-242 (FR-704) is the LIVE
 /// venue gate: when the session's hall has a geofence (D-240) the attendee must
-/// have a <c>HallAttendance</c> arrival record (D-241); when it has none, the
-/// gate falls back to the D-171 self-assert toggle.
+/// have a <c>HallAttendance</c> arrival record (D-241). S-5 — when the hall has
+/// no arrival mechanism presence cannot be verified, so the question is accepted
+/// (remote Q&amp;A works); the client-sent <c>isAtVenue</c> flag is no longer
+/// trusted as a gate.
 /// </summary>
 internal sealed class SessionQuestionService(
     SimfAppDbContext appDbContext,
@@ -93,9 +95,9 @@ internal sealed class SessionQuestionService(
 
         // P5.1 — D-242 (FR-704): questions are gated by hall arrival. When the
         // hall has a geofence (D-240) the authoritative gate is a HallAttendance
-        // arrival record (D-241); when it has none (QR-only / coordinates not yet
-        // seeded), fall back to the D-171 self-assert toggle so nothing breaks
-        // pre-seed. The session-end close is the time-window check above (FR-704).
+        // arrival record (D-241); when it has none the question is accepted (S-5 —
+        // remote Q&A works, the client self-assert is not trusted). The session-end
+        // close is the time-window check above (FR-704).
         //
         // Intentionally NO `LeaveUtc == null` filter: FDS-007 FR-704 gates on
         // "has a HallAttendance enter record for the session" — i.e. arrived at
@@ -104,15 +106,21 @@ internal sealed class SessionQuestionService(
         // window, and the future QR-door-scan path's closed rows also satisfy
         // the gate. (This is a deliberate divergence from the present-tense
         // `HallAttendanceStatus.Arrived`, which reports current presence.)
-        // #7 (owner) — the venue (check-in-to-hall) gate applies ONLY once the
-        // session is LIVE (now >= StartUtc); before start any approved user may
-        // ask (the `!isLive` short-circuit skips the arrival query entirely).
+        // S-5 (owner) — the LIVE venue gate is REAL hall arrival, never a client
+        // self-assert. It applies only once the session is LIVE (now >= StartUtc);
+        // before start any approved user may ask (the `!isLive` short-circuit
+        // skips the arrival query). When the hall has an arrival mechanism (a
+        // geofence [D-240]; a hall-door gate feeds the SAME HallAttendance record)
+        // the authoritative signal is a HallAttendance row for this session. When
+        // the hall has NO arrival mechanism presence cannot be verified, so — per
+        // owner — remote Q&A still works and the question is accepted (the earlier
+        // `request.IsAtVenue` self-assert was hardcoded `true` by the app and gated
+        // nothing; it is no longer trusted).
         var isLive = now >= session.StartUtc;
         var atVenue = !isLive
-            || (session.HasGeofence
-                ? await appDbContext.HallAttendances.AnyAsync(
-                    a => a.SessionId == sessionId && a.UserId == submittedByUserId, cancellationToken)
-                : request.IsAtVenue);
+            || !session.HasGeofence
+            || await appDbContext.HallAttendances.AnyAsync(
+                a => a.SessionId == sessionId && a.UserId == submittedByUserId, cancellationToken);
         if (!atVenue)
         {
             await auditLog.WriteAsync(new AuditEntry
@@ -121,16 +129,12 @@ internal sealed class SessionQuestionService(
                 Outcome = AuditOutcome.Failure,
                 ActorUserId = submittedByUserId,
                 ErrorCode = ErrorCodes.NotAtVenue,
-                Detail = $"sessionId={sessionId}; gate={(session.HasGeofence ? "geofence" : "self-assert")}",
+                Detail = $"sessionId={sessionId}; gate=hall-arrival",
             }, cancellationToken);
             throw new ApiException(
                 ErrorCodes.NotAtVenue, 403,
-                session.HasGeofence
-                    ? "You must have arrived at the hall to ask a question."
-                    : "You must be at the venue to ask a question.",
-                session.HasGeofence
-                    ? "يجب أن تكون قد وصلت إلى القاعة لطرح سؤال."
-                    : "يجب أن تكون في مكان الفعالية لطرح سؤال.");
+                "You must have arrived at the hall to ask a question.",
+                "يجب أن تكون قد وصلت إلى القاعة لطرح سؤال.");
         }
 
         // New arrivals all carry Order=0; the moderator queue sort is

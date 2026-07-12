@@ -812,6 +812,9 @@
   <data name="Admin.Gates.Field.DescriptionArabicHint" xml:space="preserve"><value>اختياري. حتى 1024 حرفاً.</value></data>
   <data name="Admin.Gates.Field.DirectionMode" xml:space="preserve"><value>سياسة الاتجاه</value></data>
   <data name="Admin.Gates.Field.DirectionModeHint" xml:space="preserve"><value>الدخول/الخروج يثبتان الاتجاه؛ "كلاهما" يستنتج الاتجاه من آخر مسح مسموح للزائر في هذه البوابة.</value></data>
+  <data name="Admin.Gates.Field.Hall" xml:space="preserve"><value>القاعة (بوابة باب)</value></data>
+  <data name="Admin.Gates.Field.HallNone" xml:space="preserve"><value>بدون — بوابة محيط</value></data>
+  <data name="Admin.Gates.Field.HallHint" xml:space="preserve"><value>اربط هذه البوابة بقاعة لتصبح بوابة باب للقاعة: يسجّل الدخول المسموح حضور القاعة للجلسة المباشرة في تلك القاعة. اترك "بدون" لبوابة محيط/موقع.</value></data>
   <data name="Admin.Gates.Field.AllowedProfileTypes" xml:space="preserve"><value>أنواع الملفات المسموح بها</value></data>
   <data name="Admin.Gates.Field.AllowedProfileTypesHint" xml:space="preserve"><value>فارغة = جميع الأنواع مسموحة (بوابة عامة). اختر واحدة أو أكثر لتقييد البوابة.</value></data>
   <data name="Admin.Gates.Field.AssignedOperators" xml:space="preserve"><value>المشغلون المعيّنون</value></data>
@@ -2117,6 +2120,8 @@
   <data name="Admin.SpeakerMeetingRequests.Filter.Accepted" xml:space="preserve"><value>مقبول</value></data>
   <data name="Admin.SpeakerMeetingRequests.Filter.Rejected" xml:space="preserve"><value>مرفوض</value></data>
   <data name="Admin.SpeakerMeetingRequests.Filter.AwaitingSpeaker" xml:space="preserve"><value>بانتظار المتحدّث</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Resend" xml:space="preserve"><value>إعادة إرسال تأكيد المتحدّث</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Resend.Done" xml:space="preserve"><value>تمت إعادة إرسال بريد تأكيد المتحدّث.</value></data>
   <data name="Admin.SpeakerMeetingRequests.Filter.Cancelled" xml:space="preserve"><value>ملغى</value></data>
   <data name="Admin.SpeakerMeetingRequests.Bind.Hall" xml:space="preserve"><value>الربط بقاعة (اختياري)</value></data>
   <data name="Admin.SpeakerMeetingRequests.Bind.NoHall" xml:space="preserve"><value>— بدون قاعة (قبول فقط) —</value></data>

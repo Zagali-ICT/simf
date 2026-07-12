@@ -2355,6 +2355,15 @@ internal static class AccountEndpoints
                 id, body, token));
         });
 
+        // R-1 — re-send the speaker confirmation links for an AwaitingSpeaker request.
+        group.MapPost("/admin/speaker-meeting-requests/{id:guid}/resend-confirmation",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ResendSpeakerMeetingConfirmationAsync(id, token));
+        });
+
         // D-500 (Wave 5, الطلبات) — participation-document request BFF passthroughs.
         group.MapPost("/admin/document-requests/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>

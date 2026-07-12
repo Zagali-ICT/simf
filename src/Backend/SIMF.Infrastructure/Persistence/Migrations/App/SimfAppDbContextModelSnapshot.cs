@@ -53,6 +53,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("DirectionMode")
                         .HasColumnType("int");
 
+                    b.Property<Guid?>("HallId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
@@ -76,6 +79,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("Code")
                         .IsUnique();
+
+                    b.HasIndex("HallId");
 
                     b.HasIndex("IsActive", "Name");
 
@@ -3714,6 +3719,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
+                    b.Property<string>("IqamaNumberHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
@@ -3745,6 +3754,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
+                    b.Property<string>("NationalIdHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
                     b.Property<int>("NationalityId")
                         .HasColumnType("int");
 
@@ -3754,6 +3767,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("PassportNumber")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("PassportNumberHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
 
                     b.Property<string>("PlaceOfBirth")
                         .IsRequired()
@@ -3809,9 +3826,21 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
+                    b.HasIndex("IqamaNumberHash")
+                        .IsUnique()
+                        .HasFilter("[IqamaNumberHash] IS NOT NULL");
+
+                    b.HasIndex("NationalIdHash")
+                        .IsUnique()
+                        .HasFilter("[NationalIdHash] IS NOT NULL");
+
                     b.HasIndex("NationalityId");
 
                     b.HasIndex("OrganisationId");
+
+                    b.HasIndex("PassportNumberHash")
+                        .IsUnique()
+                        .HasFilter("[PassportNumberHash] IS NOT NULL");
 
                     b.HasIndex("ProfileTypeId");
 
@@ -5042,6 +5071,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<Guid>("CreatedByUserId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTimeOffset?>("ExpiresUtc")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<int>("Kind")
                         .HasColumnType("int");
 
@@ -5075,6 +5107,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ExpiresUtc")
+                        .HasFilter("[ReleasedAt] IS NULL AND [ExpiresUtc] IS NOT NULL");
 
                     b.HasIndex("ReservedForUserId", "ReleasedAt");
 
@@ -5392,6 +5427,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasIndex("InterestId");
 
                     b.ToTable("UserProfileInterests");
+                });
+
+            modelBuilder.Entity("SIMF.Domain.AccessControl.Gate", b =>
+                {
+                    b.HasOne("SIMF.Domain.Programme.Hall", null)
+                        .WithMany()
+                        .HasForeignKey("HallId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("SIMF.Domain.AccessControl.GateAssignment", b =>

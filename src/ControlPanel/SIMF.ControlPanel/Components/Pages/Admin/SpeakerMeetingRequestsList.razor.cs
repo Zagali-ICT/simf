@@ -155,6 +155,28 @@ public partial class SpeakerMeetingRequestsList
         finally { _loadingDetail = false; }
     }
 
+    // R-1 — re-send the speaker's Approve/Reject confirmation email for an
+    // AwaitingSpeaker row (fresh 72h links). Quiet row action, no modal.
+    private async Task OnResendAsync(AdminSpeakerMeetingRequestRow row)
+    {
+        if (_busy) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.postJson",
+                $"/account/api/admin/speaker-meeting-requests/{row.Id}/resend-confirmation",
+                new { });
+            _toast = env is { Success: true }
+                ? new Toast("success", L["Admin.SpeakerMeetingRequests.Resend.Done"])
+                : new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SpeakerMeetingRequests.LoadFailed"]);
+        }
+        finally { _busy = false; }
+    }
+
     private void OnRespondStatusChanged(ChangeEventArgs e)
     {
         if (int.TryParse(e.Value?.ToString(), out var v))

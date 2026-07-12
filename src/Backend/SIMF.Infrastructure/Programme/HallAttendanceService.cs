@@ -30,6 +30,11 @@ internal sealed class HallAttendanceService(
     TimeProvider timeProvider,
     ILogger<HallAttendanceService> logger) : IHallAttendanceService
 {
+    // X-3 — how far outside a session's [StartUtc, EndUtc] window an arrival is
+    // still accepted (early arrivals + a brief post-end tail). Mirrors the CP
+    // Hall-Arrivals console's live-session picker filter.
+    private static readonly TimeSpan ArrivalGrace = TimeSpan.FromMinutes(15);
+
     public async Task<HallAttendanceStatus> RecordGeofenceArrivalAsync(
         Guid userId, Guid sessionId, double lat, double lon,
         CancellationToken cancellationToken = default)
@@ -47,6 +52,8 @@ internal sealed class HallAttendanceService(
             .Select(s => new
             {
                 s.Id,
+                s.StartUtc,
+                s.EndUtc,
                 s.HallId,
                 s.Hall!.GeofenceCenterLat,
                 s.Hall!.GeofenceCenterLon,
@@ -56,6 +63,11 @@ internal sealed class HallAttendanceService(
             ?? throw new ApiException(ErrorCodes.SessionNotFound, 404,
                 "The session was not found.",
                 "لم يتم العثور على الجلسة.");
+
+        // X-3 — arrival is only valid while the session is live (its time window,
+        // ± a short grace); a stale or future sessionId must not open an
+        // attendance row (single-source attendance, FDS-003 §5.4).
+        EnsureSessionLiveNow(session.StartUtc, session.EndUtc);
 
         if (session.GeofenceCenterLat is not { } centerLat
             || session.GeofenceCenterLon is not { } centerLon
@@ -100,7 +112,14 @@ internal sealed class HallAttendanceService(
                 "That badge QR was not recognised.",
                 "لم يتم التعرّف على رمز الشارة.");
         }
-        if (resolved.AccountState != AccountState.Approved || resolved.IsLockedOut)
+        // X-4 — apply the SAME core holder-admission checks the perimeter gate
+        // engine runs (not-approved, locked, profile-type-inactive) so a hall door
+        // can never admit someone a gate would reject. Approved already excludes
+        // the Disabled state; the gate's allow-list / gate-active / duplicate-window
+        // steps are gate-config-specific and have no hall-door equivalent.
+        if (resolved.AccountState != AccountState.Approved
+            || resolved.IsLockedOut
+            || (resolved.ProfileTypeId is not null && !resolved.ProfileTypeActive))
         {
             throw new ApiException(ErrorCodes.AttendeeNotApproved, 403,
                 "This attendee's account is not approved for entry.",
@@ -110,11 +129,14 @@ internal sealed class HallAttendanceService(
         var session = await appDbContext.Sessions
             .AsNoTracking()
             .Where(s => s.Id == sessionId && s.IsActive)
-            .Select(s => new { s.Id, s.HallId })
+            .Select(s => new { s.Id, s.StartUtc, s.EndUtc, s.HallId })
             .SingleOrDefaultAsync(cancellationToken)
             ?? throw new ApiException(ErrorCodes.SessionNotFound, 404,
                 "The session was not found.",
                 "لم يتم العثور على الجلسة.");
+
+        // X-3 — bind the operator door scan to the session's live window (± grace).
+        EnsureSessionLiveNow(session.StartUtc, session.EndUtc);
 
         // No geofence check — the operator is physically at the door. Merges
         // with any existing open row (e.g. a prior geofence arrival).
@@ -131,6 +153,80 @@ internal sealed class HallAttendanceService(
             resolved.UserId, resolved.DisplayName, resolved.DisplayNameArabic, ToStatus(row));
     }
 
+    public async Task RecordGateDoorScanAsync(
+        Guid attendeeUserId, Guid hallId, ScanDirection direction,
+        bool directionInferred, Guid operatorUserId,
+        CancellationToken cancellationToken = default)
+    {
+        var now = timeProvider.GetUtcNow();
+        // X-3 (FIX B) — bind the arrival to the session live in this hall right
+        // now, using the SAME ±ArrivalGrace window as EnsureSessionLiveNow (the
+        // geofence / QR-door / CP picker) so an early or late gate check-in still
+        // binds instead of recording nothing. The window bounds are shifted onto
+        // the constant `now` (not the DateTimeOffset column) so the filter
+        // translates to SQL. A single hall runs one session at a time
+        // (BookingOverlap prevents overlapping hall bookings), so this candidate
+        // set is tiny; the in-memory ordering prefers the currently-running
+        // session over a grace-margin neighbour, then the nearest start (a
+        // defensive tie-break).
+        var latestStart = now + ArrivalGrace;   // s.StartUtc - grace <= now
+        var earliestEnd = now - ArrivalGrace;    // now < s.EndUtc + grace
+        var sessionId = (await appDbContext.Sessions
+                .AsNoTracking()
+                .Where(s => s.IsActive && s.HallId == hallId
+                    && s.StartUtc <= latestStart && earliestEnd < s.EndUtc)
+                .Select(s => new { s.Id, s.StartUtc, s.EndUtc })
+                .ToListAsync(cancellationToken))
+            .OrderBy(s => now >= s.StartUtc && now < s.EndUtc ? 0 : 1)
+            .ThenBy(s => (s.StartUtc - now).Duration())
+            .Select(s => (Guid?)s.Id)
+            .FirstOrDefault();
+        if (sessionId is not { } liveSessionId)
+        {
+            // No session live in this hall (± grace) — a door scan outside any
+            // session window records no hall attendance (the GateScan row stands).
+            return;
+        }
+
+        if (directionInferred)
+        {
+            // FIX C — on a Both-mode gate the recorded direction is only a per-gate
+            // alternation guess; derive the real action from the attendee's open-row
+            // state so a re-entry after a departure opens a fresh row instead of a
+            // mis-inferred merge. An open row → this scan is the departure.
+            var open = await OpenRowAsync(attendeeUserId, liveSessionId, cancellationToken);
+            if (open is not null)
+            {
+                await RecordDepartureAsync(attendeeUserId, liveSessionId, cancellationToken);
+                return;
+            }
+            // No open row → fall through to the arrival path below.
+        }
+        else if (direction == ScanDirection.CheckOut)
+        {
+            // Fixed In/Out gate — its configured direction is authoritative.
+            await RecordDepartureAsync(attendeeUserId, liveSessionId, cancellationToken);
+            return;
+        }
+
+        // FIX D — capacity is ADVISORY on the passive gate-door path: someone who
+        // physically passed a turnstile MUST be counted even past the cap, so this
+        // arrival records + warns rather than throwing (operator + geofence
+        // arrivals keep the hard HALL_AT_CAPACITY 409).
+        var (_, created) = await OpenOrCreateArrivalAsync(
+            attendeeUserId, liveSessionId, hallId, AttendanceMethod.QrScan,
+            cancellationToken, enforceCapacity: false);
+        if (created)
+        {
+            await AuditArrivalAsync(
+                attendeeUserId, liveSessionId, hallId, AttendanceMethod.QrScan,
+                cancellationToken, operatorUserId);
+            logger.LogInformation(
+                "Hall arrival (hall-door gate) recorded for {UserId} at session {SessionId} by operator {OperatorId}.",
+                attendeeUserId, liveSessionId, operatorUserId);
+        }
+    }
+
     /// <summary>Returns the attendee's open attendance row for the session,
     /// opening one with <paramref name="method"/> when none exists. Idempotent
     /// under a concurrent race: on the one-open-row unique-index violation it
@@ -138,12 +234,34 @@ internal sealed class HallAttendanceService(
     /// mirrors <c>SeatReservationService.PersistWithUniquenessGuardAsync</c>.</summary>
     private async Task<(HallAttendance Row, bool Created)> OpenOrCreateArrivalAsync(
         Guid userId, Guid sessionId, Guid hallId, AttendanceMethod method,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken, bool enforceCapacity = true)
     {
         var open = await OpenRowAsync(userId, sessionId, cancellationToken);
         if (open is not null)
         {
             return (open, false);
+        }
+
+        // X-2 — a NEW arrival must not push live attendance past the hall's
+        // physical capacity. Runs on every arrival means (geofence + door QR +
+        // hall-door gate) because it sits in the shared create path; a re-scan that
+        // merges into an existing open row (early return above) is never re-checked.
+        var capacity = await HallCapacityStateAsync(sessionId, cancellationToken);
+        if (capacity.IsOver)
+        {
+            if (enforceCapacity)
+            {
+                // Operator QR-door + geofence arrivals — hard cap (unchanged).
+                throw new ApiException(ErrorCodes.HallAtCapacity, 409,
+                    "This hall is at capacity.",
+                    "بلغت هذه القاعة سعتها القصوى.");
+            }
+            // FIX D — passive gate-door path: capacity is advisory. A person who
+            // physically passed a turnstile MUST be counted, so record the row and
+            // warn rather than drop it (live occupancy would otherwise under-count).
+            logger.LogWarning(
+                "Hall {HallId} / session {SessionId} exceeded capacity ({Present}/{Cap}) on a gate-door arrival — recorded (advisory).",
+                hallId, sessionId, capacity.Present, capacity.Cap);
         }
 
         var now = timeProvider.GetUtcNow();
@@ -169,6 +287,45 @@ internal sealed class HallAttendanceService(
             return (existing ?? row, false);
         }
         return (row, true);
+    }
+
+    /// <summary>X-2 — the currently-present count against the session's effective
+    /// physical capacity (the session <c>CapacityOverride</c>, else the hall
+    /// <c>Capacity</c>), plus whether that arrival would exceed it. A capacity of 0
+    /// means "no limit configured" and never blocks (<c>IsOver</c> = false). The
+    /// open-row count is intentionally per-session (single-source attendance is a
+    /// per-session model that relies on the no-overlap booking invariant — a future
+    /// overlapping-session feature must revisit this bound). ADVISORY under a
+    /// concurrent race — like the open-seating join, there is no DB constraint on
+    /// the attendance row count. The caller enforces (hard 409) or warns (advisory
+    /// gate-door path) per <c>enforceCapacity</c>.</summary>
+    private async Task<(int Present, int Cap, bool IsOver)> HallCapacityStateAsync(
+        Guid sessionId, CancellationToken cancellationToken)
+    {
+        var cap = await appDbContext.Sessions.AsNoTracking()
+            .Where(s => s.Id == sessionId)
+            .Select(s => s.CapacityOverride ?? s.Hall!.Capacity)
+            .SingleAsync(cancellationToken);
+        if (cap <= 0) { return (0, 0, false); }
+
+        var present = await appDbContext.HallAttendances
+            .Where(a => a.SessionId == sessionId && a.LeaveUtc == null)
+            .CountAsync(cancellationToken);
+        return (present, cap, present >= cap);
+    }
+
+    /// <summary>X-3 — throws when now is outside the session's live window
+    /// (± <see cref="ArrivalGrace"/>). Keeps arrival bound to a session that is
+    /// actually running, so a stale or future sessionId cannot open a row.</summary>
+    private void EnsureSessionLiveNow(DateTimeOffset startUtc, DateTimeOffset endUtc)
+    {
+        var now = timeProvider.GetUtcNow();
+        if (now < startUtc - ArrivalGrace || now > endUtc + ArrivalGrace)
+        {
+            throw new ApiException(ErrorCodes.SessionNotLive, 409,
+                "This session is not open for arrivals right now.",
+                "هذه الجلسة ليست مفتوحة لتسجيل الوصول حالياً.");
+        }
     }
 
     private Task AuditArrivalAsync(

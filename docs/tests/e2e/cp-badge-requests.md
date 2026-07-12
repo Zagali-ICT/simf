@@ -55,6 +55,8 @@
 | E2E-CPBR-006 | Permission gate — a non-Admin role can't open the page (→ `/not-permitted`); `View`-only sees no Respond icon; PUT `/respond` → 403 | auth | P0 | authored ✓ (`BadgeUpdateRequestsTests`, API — admin-role gate) |
 | E2E-CPBR-007 | Empty state renders `SimfEmptyState` ("No badge requests yet.") | empty | P1 | _to author_ |
 | E2E-CPBR-008 | RTL render: Arabic toggle mirrors page + Respond modal | i18n | P1 | _to author_ |
+| E2E-CPBR-009 | Decision notifies the requester (R-2) — Accept still applies the job title AND dispatches a BadgeUpdateDecided notification; Reject notifies without changing the title | happy | P1 | authored ✓ |
+| E2E-CPBR-010 | Duplicate-pending guard (R-4) — a second Pending badge request is 409 APP_REQUEST_DUPLICATE_PENDING | conflict | P1 | authored ✓ |
 
 ## Scenarios
 
@@ -219,6 +221,42 @@ Scenario: Arabic toggle mirrors page + Respond modal
   And the note label reads "ملاحظة الردّ (اختيارية)"
   And the footer buttons read إرسال الردّ and إلغاء, mirrored for RTL
 ```
+
+---
+
+### E2E-CPBR-009 — Decision notifies the requester (R-2)
+
+```gherkin
+Scenario: Accepting a badge request applies the title AND notifies
+  Given a visitor with profile job title "Lieutenant" has a Pending request for
+    "Commander"
+  When an administrator Accepts it
+  Then the profile job title becomes "Commander"
+  And a BadgeUpdateDecided in-app notification is dispatched to the requester
+    (the accept side effect is no longer silent)
+
+Scenario: Rejecting notifies without changing the title
+  Given a visitor with profile job title "Lieutenant" has a Pending request
+  When an administrator Rejects it
+  Then the profile job title stays "Lieutenant"
+  And a BadgeUpdateDecided in-app notification is dispatched to the requester
+```
+
+**Evidence captured:**
+- API integration tests: `BadgeUpdateRequestsTests.Accepting_a_badge_update_dispatches_a_BadgeUpdateDecided_notification_and_still_applies_the_JobTitle`, `BadgeUpdateRequestsTests.Rejecting_a_badge_update_dispatches_the_notification_and_does_not_touch_the_JobTitle`
+- Notification kind `BadgeUpdateDecided` (additive value 53) groups under "Account"
+
+### E2E-CPBR-010 — Duplicate-pending guard (R-4)
+
+```gherkin
+Scenario: A second pending badge request is blocked
+  Given a visitor already has a Pending badge-update request
+  When they submit another badge-update request
+  Then the API returns HTTP 409 with ErrorCodes.AppRequestDuplicatePending
+```
+
+**Evidence captured:**
+- API integration test: `BadgeUpdateRequestsTests.Submitting_a_second_pending_badge_update_is_409`
 
 ---
 

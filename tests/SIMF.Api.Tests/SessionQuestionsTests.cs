@@ -259,6 +259,9 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
         var qid = (await submit.Content
             .ReadFromJsonAsync<ApiResult<SessionQuestionSubmitted>>())!.Data!.Id;
 
+        // S-8 — only an approved question can be pushed; approve it first.
+        await PutAuthAsync($"/api/v1/admin/questions/{qid}/approve", new { }, admin);
+
         var push = await PutAuthAsync(
             $"/api/v1/app/sessions/{session.Id}/questions/{qid}/push",
             new { }, admin);
@@ -274,6 +277,36 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
         var row2 = (await pushAgain.Content
             .ReadFromJsonAsync<ApiResult<SessionQuestionModeratorRow>>())!.Data!;
         Assert.Equal(row.PushedAt, row2.PushedAt);
+    }
+
+    // S-8 — a pushed question that is then HIDDEN must drop its pushed marker so
+    // it leaves the on-stage queue.
+    [Fact]
+    public async Task Hiding_a_pushed_question_clears_the_pushed_marker()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var (session, _) = await SeedLiveSessionAsync();
+        var visitor = await SignInApprovedVisitorAsync();
+        var submit = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions",
+            new SubmitSessionQuestionRequest { QuestionText = "On stage?", IsAtVenue = true },
+            visitor.AccessToken);
+        var qid = (await submit.Content
+            .ReadFromJsonAsync<ApiResult<SessionQuestionSubmitted>>())!.Data!.Id;
+
+        await PutAuthAsync($"/api/v1/admin/questions/{qid}/approve", new { }, admin);
+        await PutAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions/{qid}/push", new { }, admin);
+        await PutAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions/{qid}/hide",
+            new SetQuestionHiddenRequest { IsHidden = true }, admin);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var row = await db.SessionQuestions.AsNoTracking().SingleAsync(q => q.Id == qid);
+        Assert.False(row.IsPushed);
+        Assert.Null(row.PushedAt);
+        Assert.Equal(QuestionStatus.Hidden, row.Status);
     }
 
     [Fact]
@@ -308,8 +341,12 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
             && r.Recipient == SessionQuestionRecipient.Host);
     }
 
+    // S-5 (owner) — a non-geofenced LIVE hall has no arrival mechanism, so the
+    // app's isAtVenue self-assert is no longer trusted: a remote question WITHOUT
+    // a venue claim is accepted (remote Q&A works). Geofenced halls still gate on
+    // a real HallAttendance arrival — see QuestionArrivalGatingTests.
     [Fact]
-    public async Task Submit_without_at_venue_flag_is_403_NOT_AT_VENUE()
+    public async Task Submit_without_at_venue_flag_accepts_remote_question_on_a_non_geofenced_hall()
     {
         var admin = await CreateAdministratorAndSignInAsync();
         var (session, _) = await SeedLiveSessionAsync();
@@ -317,11 +354,9 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
 
         var response = await PostAuthAsync(
             $"/api/v1/app/sessions/{session.Id}/questions",
-            new SubmitSessionQuestionRequest { QuestionText = "Remote troll", IsAtVenue = false },
+            new SubmitSessionQuestionRequest { QuestionText = "Remote but welcome", IsAtVenue = false },
             visitor.AccessToken);
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
-        Assert.Equal(ErrorCodes.NotAtVenue, body.Error!.Code);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]

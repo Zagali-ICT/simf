@@ -50,6 +50,7 @@
 | E2E-HSL-013 | Save-permission gate — viewer with `View` but not `Edit` → PUT 403 on Save | auth | P1 | _to author_ |
 | E2E-HSL-014 | Server 500 on halls `/list` → bilingual fallback toast, no dropdown | resilience | P2 | _to author_ |
 | E2E-HSL-015 | RTL render — Arabic toggle mirrors banner, hint, fields and Save button | i18n | P1 | _to author_ |
+| E2E-HSL-016 | Orphan guard (H-2) — a layout change that would strand active reservations (dropped row or shrunk seats-per-row) is blocked with 409 SEAT_LAYOUT_HAS_RESERVATIONS; a change with no orphans (and released reservations) still saves | conflict | P1 | authored ✓ |
 
 ## Scenarios
 
@@ -285,6 +286,40 @@ Scenario: Arabic toggle mirrors the editor
   And the Save button reads "حفظ المخطط"
   And the whole surface is mirrored right-to-left
 ```
+
+---
+
+### E2E-HSL-016 — Layout change may not orphan active reservations (H-2)
+
+```gherkin
+Feature: Seat-layout orphan guard (H-2)
+  As an Administrator changing a hall's seat layout
+  I must not strand seats that are actively reserved across the hall's sessions
+
+Background:
+  Given a hall with rows A,B × 5 seats and a session on that hall
+
+Scenario: Dropping a booked row is blocked
+  Given a visitor actively holds seat B4
+  When the administrator saves a layout of rows [A] × 5 (row B dropped)
+  Then the API returns HTTP 409 with ErrorCodes.SeatLayoutHasReservations
+  And the stored layout is unchanged (still A,B)
+
+Scenario: Shrinking seats-per-row below a booked seat is blocked
+  Given a visitor actively holds seat A5
+  When the administrator saves a layout of rows [A] × 3
+  Then the API returns HTTP 409 with ErrorCodes.SeatLayoutHasReservations
+
+Scenario: A change with no orphans succeeds (released seats do not block)
+  Given a visitor holds A1 (inside the new grid) and another visitor's B4 was
+    already released
+  When the administrator saves a layout of rows [A] × 5 (row B dropped)
+  Then the API returns HTTP 200 and the layout becomes A only
+```
+
+**Evidence captured:**
+- API integration tests: `SeatReservationsTests.Shrinking_a_layout_that_orphans_a_reservation_is_blocked`, `SeatReservationsTests.Shrinking_seats_per_row_below_a_booked_seat_is_blocked`, `SeatReservationsTests.Layout_change_with_no_orphans_succeeds`
+- CP toast/error map must include SEAT_LAYOUT_HAS_RESERVATIONS so the operator sees the bilingual message
 
 ---
 

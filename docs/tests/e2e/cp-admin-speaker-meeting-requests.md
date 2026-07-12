@@ -416,6 +416,71 @@ Scenario: E2E-SMR-018 — A bound slot is not reusable
 - Downloaded file: `simf-speaker-meeting-requests-{timestamp}.xlsx`, sheet `SpeakerMeetingRequests`, header `Speaker | Requester | Subject | Status | CreatedAt | RespondedAt`
 - Console errors: 0 expected
 
+### E2E-SMR-019 — A stuck AwaitingSpeaker row auto-reverts to Pending (R-1a)
+
+```gherkin
+Scenario: The 72h confirmation links expired and the speaker never clicked
+  Given request R is AwaitingSpeaker (accepted + bound to a hall slot)
+  And its Approve/Reject double-opt-in tokens have all expired or been consumed
+  When the MeetingAwaitingSpeakerExpiryWorker runs its hourly scan
+  Then R is reverted to Pending, its HallId/MeetingTableId/SlotStartUtc/SlotEndUtc/
+    AvailabilityWindowId/ResponseNote are cleared, and a SpeakerMeetingRequest.Reverted
+    audit row is written
+  And the freed hall slot returns to GET /admin/halls/{id}/available-slots
+  And the admin can re-decide R from the queue (it shows the Respond action again)
+  # A row that still has a live (unused + unexpired) token is left AwaitingSpeaker.
+```
+
+**Evidence:** `MeetingAwaitingSpeakerExpiryWorkerTests.Reverts_an_AwaitingSpeaker_request_whose_tokens_all_expired_back_to_Pending_and_clears_the_hall_binding`, `Does_not_revert_an_AwaitingSpeaker_request_that_still_has_an_unused_unexpired_token`, `Does_not_touch_Accepted_or_Rejected_requests` (all green).
+
+### E2E-SMR-020 — Re-send the speaker confirmation email (R-1b)
+
+```gherkin
+Background:
+  Given an Administrator with SpeakerMeetingRequests.Manage has signed in
+  And request R is AwaitingSpeaker (accepted + hall-bound; a token pair was minted)
+
+Scenario: E2E-SMR-020a — Resend re-mints the tokens and re-emails
+  When they click the "Resend speaker confirmation" row action on R
+  Then POST /admin/speaker-meeting-requests/{id}/resend-confirmation returns 200
+  And the prior token pair is invalidated (UsedAt stamped) and a fresh unused pair is minted
+  And R stays AwaitingSpeaker
+  And a SpeakerMeetingRequest.ConfirmationResent audit row is written
+  And the CP shows the "The speaker confirmation email was re-sent." toast
+
+Scenario: E2E-SMR-020b — Resend on a non-AwaitingSpeaker row is rejected
+  Given request P is Pending (never accepted-with-hall)
+  When POST /admin/speaker-meeting-requests/{id}/resend-confirmation is issued for P
+  Then the API returns 409 SPEAKER_MEETING_REQUEST_STATUS_INVALID
+
+Scenario: E2E-SMR-020c — Resend is permission-gated
+  Given a signed-in admin WITHOUT SpeakerMeetingRequests.Manage
+  When they POST .../resend-confirmation
+  Then the API returns 403 (same gate as Respond; the row action is hidden in the CP)
+```
+
+**Evidence:** `SpeakerMeetingRequestsTests.Resend_confirmation_for_an_AwaitingSpeaker_request_invalidates_old_tokens_mints_a_fresh_pair_and_keeps_AwaitingSpeaker`, `Resend_confirmation_on_a_non_AwaitingSpeaker_request_is_409`, `Resend_confirmation_requires_the_manage_permission` (all green).
+
+### E2E-SMR-021 — A requester cannot hold two overlapping meetings (M-7)
+
+```gherkin
+Background:
+  Given an Administrator with SpeakerMeetingRequests.Manage has signed in
+  And the requester already holds a LIVE meeting (Accepted or AwaitingSpeaker) 10:00–10:30
+
+Scenario: E2E-SMR-021a — Accept of an overlapping second meeting is blocked
+  When they Accept a second request (a DIFFERENT speaker) overlapping 10:00–10:30
+  Then PUT .../respond returns 409 SPEAKER_MEETING_REQUEST_INVALID
+    ("The requester already has a meeting booked at that time.")
+  # Fires on both the legacy accept and the accept-with-hall bind path.
+
+Scenario: E2E-SMR-021b — A non-overlapping second meeting is allowed
+  When they Accept a second request for the same requester at 11:00–11:30 (no overlap)
+  Then PUT .../respond returns 200 and the request becomes Accepted
+```
+
+**Evidence:** `SpeakerMeetingRequestsTests.Accepting_a_second_meeting_that_overlaps_the_requesters_existing_accepted_meeting_with_another_speaker_is_409`, `Accepting_with_hall_when_the_requester_already_holds_an_overlapping_meeting_is_409`, `Two_non_overlapping_meetings_for_the_same_requester_are_both_accepted` (all green).
+
 ---
 
 ## Implementation notes
@@ -459,4 +524,4 @@ Scenario: E2E-SMR-018 — A bound slot is not reusable
 
 ---
 
-_Last reviewed:_ `2026-07-09` by `Claude` (D-716 — item 7 Slice B, accept-binds-hall-slot; added E2E-SMR-016/017/018 + the respond modal's hall/slot/table picker + `AwaitingSpeaker` state). Earlier: D-356 Phase 5 Excel (E2E-SMR-015, 2026-06-10); original D-269 authoring 2026-06-03.
+_Last reviewed:_ `2026-07-11` by `Claude` (on-site W2b — R-1a AwaitingSpeaker auto-revert worker + R-1b re-send confirmation row action + M-7 requester-overlap guard; added E2E-SMR-019/020/021). Earlier: D-716 item 7 Slice B, accept-binds-hall-slot (E2E-SMR-016/017/018, 2026-07-09); D-356 Phase 5 Excel (E2E-SMR-015, 2026-06-10); original D-269 authoring 2026-06-03.

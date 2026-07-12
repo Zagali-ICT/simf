@@ -32,6 +32,15 @@ public interface IUserProfileRepository
     /// <see cref="SaveAppChangesAsync"/>).</summary>
     void Add(UserProfile profile);
 
+    /// <summary>H-1 — true when ANOTHER profile (<c>UserId != excludeUserId</c>)
+    /// already carries one of the supplied non-null identity blind-index hashes
+    /// (National ID / Iqama / passport). The self-exclusion lets a user re-save
+    /// their OWN id without a false duplicate. Null hashes are ignored. A plain
+    /// single-context read on the App DB — no cross-DB JOIN (D-157).</summary>
+    Task<bool> AnyOtherProfileWithIdentityHashAsync(
+        Guid excludeUserId, string? nationalIdHash, string? iqamaNumberHash,
+        string? passportNumberHash, CancellationToken cancellationToken = default);
+
     /// <summary>The bilingual rejection text, or null when none is set.</summary>
     Task<RejectionText?> GetRejectionTextAsync(
         Guid userId, CancellationToken cancellationToken = default);
@@ -126,6 +135,14 @@ public interface IUserProfileRepository
     /// interests). Called only after the Identity transaction succeeds, so an
     /// Identity-side failure leaves the profile unsaved.</summary>
     Task SaveAppChangesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>FIX E — like <see cref="SaveAppChangesAsync"/> for the self-service
+    /// profile upsert, but translates the filtered UNIQUE identity-index race (a
+    /// concurrent duplicate National ID / Iqama / passport that slipped the soft
+    /// duplicate-identity guard) into a 409 <c>DuplicateIdentity</c>. Any other
+    /// <c>DbUpdateException</c> is rethrown unchanged. Lives here because the
+    /// Application layer does not reference EF Core / <c>DbUpdateException</c>.</summary>
+    Task SaveProfileIdentityChangesAsync(CancellationToken cancellationToken = default);
 }
 
 /// <summary>Active + scope facts read off a <see cref="UserProfileType"/>.

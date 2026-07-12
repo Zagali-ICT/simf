@@ -75,6 +75,7 @@ dashboard pages (separate routes), served by the same `AdminGateService`.
 | Direction policy | yes | n/a | In / Out / Both (`DirectionMode`; defaults to Both) |
 | Allowed profile types | no | n/a | multi-select; empty = all types; each id must exist |
 | Assigned operators | no | n/a | multi-select (admins, shown "{email} — {display name}"); each id must exist |
+| Hall (hall-door gate) | no | n/a | single-select of active halls; empty = perimeter gate. When set, an Allowed scan feeds `HallAttendance` for the session live in that hall (the scan→arrival→attendance chain). Server-validated: the hall must exist and be active (`GATE_HALL_INVALID`, 400). |
 | Active | (Edit only) | bool | — |
 
 ## 5. Data flow + endpoints
@@ -199,5 +200,6 @@ round-trip (D-353), 018 delete-confirmation gate (D-353), 019 Excel export
 |------|----------|--------|
 | (D-148) | D-148 | Original — Gate Module CRUD list mirroring `HallsList`; Direction + allowed-type + operator columns, allow-list + operator assignment, soft-delete, gate-config cache invalidation. |
 | 2026-06-11 | D-356 / D-353 | Excel export + import added (toolbar Export/Import → `.xlsx`, sheet "Gates", `Gates.Export` / `Gates.Import` permissions); CRUD forms hosted by `CrudShell` as `GatesAddEdit` + `GatesViewDelete` with a `SimfConfirm`-gated Deactivate (no longer a one-click list delete) and a Page↔Popup presentation toggle persisted in `localStorage` (`simf.cp.prefs.gates`). E2E catalogue extended with E2E-GAT-016…021. Reference doc authored. |
+| 2026-07-12 | D-751 (chain) | Optional **Hall** picker added (nullable `Gate.HallId` FK → active halls; migration `D744`). A gate with a Hall is a "hall-door gate": an Allowed scan feeds `HallAttendance` for the session live in that hall (scan→arrival→attendance chain), binding `HallAttendance.UserId` to the Identity user id. Reuses the existing `Gates` manage permission (no new permission). Hall is server-validated (`GATE_HALL_INVALID`). E2E extended with E2E-GAT-023/024. |
 
 _Last reviewed:_ 2026-06-11 by Claude (D-356 Phase 5 — Excel export + import + D-353 toggle).

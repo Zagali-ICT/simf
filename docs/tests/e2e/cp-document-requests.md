@@ -54,6 +54,8 @@
 | E2E-CPDR-006 | Permission gate — a non-Admin role can't open the page (→ `/not-permitted`); `View`-only sees no Respond icon; PUT `/respond` → 403 | auth | P0 | authored ✓ (`ParticipationDocumentRequestsTests`, API — admin-role gate) |
 | E2E-CPDR-007 | Empty state renders `SimfEmptyState` ("No document requests yet.") | empty | P1 | _to author_ |
 | E2E-CPDR-008 | RTL render: Arabic toggle mirrors page + Respond modal | i18n | P1 | _to author_ |
+| E2E-CPDR-009 | Decision notifies the requester (R-2) — Accept or Reject dispatches a ParticipationDocumentDecided in-app notification | happy | P1 | authored ✓ |
+| E2E-CPDR-010 | Duplicate-pending guard (R-4) — a second Pending request for the same document type is 409 APP_REQUEST_DUPLICATE_PENDING; a different type is allowed | conflict | P1 | authored ✓ |
 
 ## Scenarios
 
@@ -217,6 +219,40 @@ Scenario: Arabic toggle mirrors page + Respond modal
   And the note label reads "ملاحظة الردّ (اختيارية)"
   And the footer buttons read إرسال الردّ and إلغاء, mirrored for RTL
 ```
+
+---
+
+### E2E-CPDR-009 — Decision notifies the requester (R-2)
+
+```gherkin
+Scenario: Accepting or rejecting a document request lands an in-app notification
+  Given a visitor has a Pending participation-document request
+  When an administrator Accepts (or Rejects) it
+  Then the response is HTTP 200
+  And a ParticipationDocumentDecided in-app notification is dispatched to the
+    requester (best-effort; a dispatch failure never undoes the committed decision)
+```
+
+**Evidence captured:**
+- API integration test: `ParticipationDocumentRequestsTests.Responding_accept_or_reject_dispatches_a_ParticipationDocumentDecided_notification_to_the_requester`
+- Notification kind `ParticipationDocumentDecided` (additive value 52) groups under "Account"
+
+### E2E-CPDR-010 — Duplicate-pending guard (R-4)
+
+```gherkin
+Scenario: A second pending request for the same document type is blocked
+  Given a visitor already has a Pending request for document type 0
+  When they submit another request for document type 0
+  Then the API returns HTTP 409 with ErrorCodes.AppRequestDuplicatePending
+
+Scenario: A pending request for a different document type is allowed
+  Given a visitor already has a Pending request for document type 0
+  When they submit a request for document type 1
+  Then the API returns HTTP 200
+```
+
+**Evidence captured:**
+- API integration tests: `ParticipationDocumentRequestsTests.Submitting_a_second_pending_request_for_the_same_document_type_is_409`, `ParticipationDocumentRequestsTests.Submitting_a_pending_request_for_a_different_document_type_is_allowed`
 
 ---
 

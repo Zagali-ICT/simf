@@ -164,6 +164,17 @@ class _RequestCardState extends State<RequestCard> {
               ),
             ],
           ),
+          if (item.responseNote != null) ...<Widget>[
+            const SizedBox(height: SimfTokens.space2),
+            Text(
+              item.responseNote!,
+              textAlign: TextAlign.start,
+              style: const TextStyle(
+                color: SimfTokens.beigeBorder,
+                fontSize: SimfTokens.textSm,
+              ),
+            ),
+          ],
           if (item.canCancel) ...<Widget>[
             const SizedBox(height: SimfTokens.space3),
             Align(

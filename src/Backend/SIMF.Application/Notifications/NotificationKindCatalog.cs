@@ -39,13 +39,20 @@ public static class NotificationKindCatalog
         NotificationKind.AccountWelcome or
         NotificationKind.AccountPasswordChanged or
         NotificationKind.AccountPasswordResetCompleted or
-        NotificationKind.AdminPendingApproval => Groups.Account,
+        NotificationKind.AdminPendingApproval or
+        // R-2 — document/badge request outcomes are personal "My Requests" results,
+        // not event-flow items; they belong with the account section (there is no
+        // separate Requests chip), matching the app's default grouping.
+        NotificationKind.ParticipationDocumentDecided or
+        NotificationKind.BadgeUpdateDecided => Groups.Account,
 
         NotificationKind.InvitationReceived or
         NotificationKind.VipBroadcast => Groups.Vip,
 
         NotificationKind.BookingConfirmed or
-        NotificationKind.BookingRejected => Groups.Bookings,
+        NotificationKind.BookingRejected or
+        // M-4 — an admin-released seat is part of the booking lifecycle.
+        NotificationKind.BookingReleased => Groups.Bookings,
 
         NotificationKind.SessionReminder => Groups.Sessions,
 

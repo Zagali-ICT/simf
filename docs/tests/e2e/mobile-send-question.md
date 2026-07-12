@@ -48,6 +48,7 @@
 | E2E-MOB026-010 | بيانات الجلسة block renders the session description as a numbered list | layout | P1 | authored ✓ (screen `renders the بيانات الجلسة block as a numbered list`) |
 | E2E-MOB026-011 | Session-detail read fails → block hidden, composer still works | resilience | P1 | authored ✓ (screen `hides the بيانات الجلسة block when the detail read fails`) |
 | E2E-MOB026-012 | **Advisory AI filter (D-714 GAP-1)** — on submit the server runs stage 1: default the offline stub (`stub-clean`), or the real `AiQuestionFilter` (via `IAiService` + the seeded `question-filter` prompt → `ai-clean`/`ai-flagged`, `ai-unavailable` fallback) when `SessionQuestions:AiFilterEnabled=true`. **Advisory only** — the verdict is recorded for the Committee and NEVER changes the question's Pending status, so it never blocks a submission | happy/resilience | P1 | authored ✓ (backend `QuestionAiFilterTests` — verdict map + all fallbacks, offline via a fake `IAiService`) |
+| E2E-MOB026-013 | **Venue gate — no self-assert (S-5)** — the app always sends `isAtVenue: false`; the server is the authoritative LIVE gate. A **geofenced** hall requires a real `HallAttendance` arrival (else 403 `NOT_AT_VENUE`); a **non-geofenced** hall has no arrival mechanism, so the question is accepted (remote Q&A). Before start the venue gate is skipped entirely | validation | P0 | authored ✓ (app `questions_repository_test.dart` posts `isAtVenue: false`; backend `QuestionArrivalGatingTests` + `SessionQuestionsTests.Submit_without_at_venue_flag_accepts_remote_question_on_a_non_geofenced_hall`) |
 
 ## Scenarios
 
@@ -206,9 +207,37 @@ Scenario: A failed session-detail read hides the block, not the composer
 **Evidence:** screen test `hides the بيانات الجلسة block when the detail read fails`;
 `_loadDetail` swallows `ApiFailure` (the block is optional context).
 
+### E2E-MOB026-013 — Venue gate, no self-assert (S-5)
+
+```gherkin
+Scenario: The app never self-certifies venue presence
+  Given the send-question composer submits a question
+  Then the request body carries isAtVenue = false (the app does not self-assert)
+
+Scenario: The server is the authoritative LIVE venue gate
+  Given a LIVE session whose hall has a geofence
+  And the visitor has NOT recorded a hall arrival
+  When they submit a question
+  Then the API returns 403 "NOT_AT_VENUE"
+  When the visitor has recorded a hall arrival (HallAttendance)
+  Then the submission is accepted (200)
+
+Scenario: A non-geofenced hall accepts remote questions
+  Given a LIVE session whose hall has no arrival mechanism
+  When the visitor submits a question (isAtVenue false)
+  Then it is accepted (200) — remote Q&A works
+```
+
+**Evidence:** app `questions_repository_test.dart` (body `isAtVenue == false`);
+backend `QuestionArrivalGatingTests` (geofenced requires arrival; non-geofenced
+accepts) + `SessionQuestionsTests.Submit_without_at_venue_flag_accepts_remote_question_on_a_non_geofenced_hall`.
+
 ---
 
-_Last reviewed:_ `2026-07-10` by `SIMF Team` — **#7 (D-733): the server question
+_Last reviewed:_ `2026-07-11` by `Claude` — **S-5: the app no longer self-certifies
+venue presence (always sends `isAtVenue: false`); the server is the authoritative
+LIVE gate (geofenced hall requires a real `HallAttendance` arrival, non-geofenced
+hall accepts remote Q&A); E2E-MOB026-013.** _Prior:_ `2026-07-10` by `SIMF Team` — **#7 (D-733): the server question
 window is now phase-based — a FUTURE session (before start) accepts questions from
 any approved user with NO venue gate; a LIVE session keeps the check-in/venue
 gate; a session past its EndUtc is closed (`SESSION_NOT_LIVE_FOR_QUESTIONS`). The

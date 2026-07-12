@@ -67,6 +67,7 @@ class AppRequestItem {
     this.subtitle,
     this.speakerId,
     this.countryId,
+    this.responseNote,
   });
 
   final AppRequestKind kind;
@@ -92,6 +93,10 @@ class AppRequestItem {
   /// speaker's nationality (speaker meeting) or the target country (delegation).
   /// Null when unset / for the non-meeting kinds.
   final int? countryId;
+
+  /// R-3 — the admin's response note for a decided request (e.g. the rejection
+  /// reason). Null when none. Append-only wire field.
+  final String? responseNote;
 
   /// The context line under the type headline, in the active locale (AR/EN with
   /// a fallback).
@@ -132,6 +137,9 @@ class AppRequestItem {
           ? null
           : (json['speakerId'] as String).trim(),
       countryId: (json['countryId'] as num?)?.toInt(),
+      responseNote: (json['responseNote'] as String?)?.trim().isEmpty ?? true
+          ? null
+          : (json['responseNote'] as String).trim(),
     );
   }
 

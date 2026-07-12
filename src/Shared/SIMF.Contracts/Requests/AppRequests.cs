@@ -67,7 +67,11 @@ public sealed record AppRequestItem(
     /// card's flag: the speaker's nationality on a speaker meeting, the target
     /// country on a delegation meeting. Null for the non-meeting kinds / when unset.
     /// Append-only (D-219): older clients ignore it.</summary>
-    int? CountryId = null);
+    int? CountryId = null,
+    /// <summary>R-3 — the admin's response note for a decided speaker / document / badge
+    /// request (e.g. the rejection reason). Null when none. Append-only (D-219): the app
+    /// reads it by name and older clients ignore it.</summary>
+    string? ResponseNote = null);
 
 /// <summary>D-500 — body for <c>POST /app/my-requests/cancel</c>: the requester
 /// withdraws one of their own still-pending requests.</summary>

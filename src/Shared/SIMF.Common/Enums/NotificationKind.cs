@@ -150,4 +150,23 @@ public enum NotificationKind
     /// only. Additive value (append-only, the frozen-enum rule).</summary>
     [Display(Description = nameof(ResNotificationKind.MeetingRequestConfirmed), ResourceType = typeof(ResNotificationKind))]
     MeetingRequestConfirmed = 50,
+
+    /// <summary>M-4 — dispatched to an attendee when an administrator releases
+    /// their held or confirmed seat reservation from the Control Panel (distinct
+    /// from <see cref="BookingRejected"/>, a Pending booking declined with a
+    /// reason). In-app row only. Additive value (append-only — the frozen-enum
+    /// rule).</summary>
+    [Display(Description = nameof(ResNotificationKind.BookingReleased), ResourceType = typeof(ResNotificationKind))]
+    BookingReleased = 51,
+
+    /// <summary>R-2 — dispatched to the requester when the Control Panel Accepts or
+    /// Rejects their participation-document request. In-app row only. Additive value
+    /// (append-only, the frozen-enum rule); persisted by NAME so no schema/data change.</summary>
+    [Display(Description = nameof(ResNotificationKind.ParticipationDocumentDecided), ResourceType = typeof(ResNotificationKind))]
+    ParticipationDocumentDecided = 52,
+
+    /// <summary>R-2 — dispatched to the requester when the Control Panel Accepts or
+    /// Rejects their badge-update request. In-app row only. Additive value.</summary>
+    [Display(Description = nameof(ResNotificationKind.BadgeUpdateDecided), ResourceType = typeof(ResNotificationKind))]
+    BadgeUpdateDecided = 53,
 }

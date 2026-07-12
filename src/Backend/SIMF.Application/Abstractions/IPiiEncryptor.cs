@@ -26,4 +26,13 @@ public interface IPiiEncryptor
     /// (no marker) are returned unchanged. Throws if a marked value is supplied
     /// but no key is configured.</summary>
     string? Decrypt(string? stored);
+
+    /// <summary>H-1 — a deterministic <b>blind index</b> of a value: a keyed
+    /// HMAC-SHA256 hex digest (64 chars). Because <see cref="Encrypt"/> uses a
+    /// random nonce, the encrypted PII columns can never be equality-queried or
+    /// unique-indexed; this stable keyed digest can, so the duplicate-identity
+    /// guard and its filtered UNIQUE indexes key off the digest instead of the
+    /// ciphertext. Null/empty is returned as null. Throws if no key is
+    /// configured.</summary>
+    string? BlindIndex(string? value);
 }

@@ -179,6 +179,15 @@ internal sealed class AdminHallService(
             }
         }
 
+        // H-3 — a Capacity reduction must not drop below what the hall already
+        // commits: its seat-layout total (rows × seats — SetLayoutAsync keeps this
+        // ≤ Capacity) or the largest active (held) reservation count on any single
+        // session held in this hall. Otherwise a shrink silently over-commits seats.
+        if (request.Capacity < hall.Capacity)
+        {
+            await EnsureCapacityNotBelowUsageAsync(id, request.Capacity, cancellationToken);
+        }
+
         hall.Code = code; hall.Name = name; hall.NameArabic = nameArabic;
         hall.Capacity = request.Capacity;
         hall.Floor = floor; hall.EquipmentNotes = equipmentNotes;
@@ -324,5 +333,43 @@ internal sealed class AdminHallService(
                 "يجب أن يكون نصف قطر السياج أكبر من 0 ولا يتجاوز 100000 متر.");
         }
         return (lat, lon, radius);
+    }
+
+    /// <summary>H-3 — guards a hall Capacity reduction. The new capacity must be
+    /// ≥ the hall's seat-layout total (rows × seats) AND ≥ the largest active
+    /// (held, not-released) reservation count on any single session held in this
+    /// hall. Throws <see cref="ErrorCodes.HallCapacityBelowUsage"/> otherwise.
+    /// RowLabels is a comma-separated CSV (same format ParseRowLabels reads) so the
+    /// layout total is computed in memory after projecting both columns; all
+    /// queries stay within SimfAppDbContext (no cross-DB access).</summary>
+    private async Task EnsureCapacityNotBelowUsageAsync(
+        Guid hallId, int newCapacity, CancellationToken cancellationToken)
+    {
+        var layout = await dbContext.HallSeatLayouts.AsNoTracking()
+            .Where(l => l.HallId == hallId)
+            .Select(l => new { l.RowLabels, l.SeatsPerRow })
+            .SingleOrDefaultAsync(cancellationToken);
+        var layoutTotal = layout is null
+            ? 0
+            : (layout.RowLabels ?? string.Empty)
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Length * layout.SeatsPerRow;
+
+        var maxActivePerSession = await dbContext.SeatReservations.AsNoTracking()
+            .Where(r => r.ReleasedAt == null)
+            .Join(dbContext.Sessions.AsNoTracking().Where(s => s.HallId == hallId),
+                r => r.SessionId, s => s.Id, (r, s) => r.SessionId)
+            .GroupBy(sessionId => sessionId)
+            .Select(g => g.Count())
+            .OrderByDescending(count => count)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var committed = Math.Max(layoutTotal, maxActivePerSession);
+        if (newCapacity < committed)
+        {
+            throw new ApiException(ErrorCodes.HallCapacityBelowUsage, 409,
+                $"Capacity cannot drop below what this hall already commits ({committed}).",
+                $"لا يمكن خفض السعة دون ما تلتزم به هذه القاعة بالفعل ({committed}).");
+        }
     }
 }

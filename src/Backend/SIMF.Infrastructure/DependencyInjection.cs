@@ -330,10 +330,19 @@ public static class DependencyInjection
         services.AddHostedService<SIMF.Infrastructure.Operations.RegistrationGateAutoCloseWorker>();
         // P1.7 (D-217) — automated "session starting soon" reminder worker.
         services.AddHostedService<SIMF.Infrastructure.Operations.SessionReminderWorker>();
+        // R-1 — revert a stuck AwaitingSpeaker speaker meeting request to Pending once
+        // its 72h double-opt-in tokens expire (no re-send ever came); frees the held slot.
+        services.AddHostedService<SIMF.Infrastructure.Operations.MeetingAwaitingSpeakerExpiryWorker>();
+        // M-6 — releases Pending seat holds whose hold window has passed, freeing
+        // capacity for other visitors.
+        services.AddHostedService<SIMF.Infrastructure.Operations.PendingBookingExpiryWorker>();
         // End-of-session "please rate this session" prompt worker.
         services.AddHostedService<SIMF.Infrastructure.Operations.SessionRatingPromptWorker>();
         // D-679 — end-of-day + end-of-programme rating prompt worker.
         services.AddHostedService<SIMF.Infrastructure.Operations.ProgrammeRatingPromptWorker>();
+        // G-2 (chain reconciliation) — closes open hall-attendance rows whose
+        // session has ended (In-only hall-door gates never emit a departure).
+        services.AddHostedService<SIMF.Infrastructure.Operations.HallAttendanceCloseoutWorker>();
         // D-168 (gap doc G5) — public-relations team: invitation CRUD +
         // VIP list + bulk-notify dispatcher (PDF §2.7.3).
         services.AddScoped<SIMF.Application.PublicRelations.Abstractions.IAdminInvitationService,

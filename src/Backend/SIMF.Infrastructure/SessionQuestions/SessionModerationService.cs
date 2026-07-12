@@ -106,6 +106,14 @@ internal sealed class SessionModerationService(
             return await ToRowAsync(question, cancellationToken); // idempotent
         }
         question.Status = isHidden ? QuestionStatus.Hidden : QuestionStatus.Approved;
+        // S-8 — a hidden question must not stay "pushed to the speaker": clear the
+        // pushed marker so a pushed-then-hidden question drops off the on-stage
+        // queue. (Un-hiding does not re-push — a fresh push is an explicit action.)
+        if (isHidden && question.IsPushed)
+        {
+            question.IsPushed = false;
+            question.PushedAt = null;
+        }
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -132,6 +140,18 @@ internal sealed class SessionModerationService(
         CancellationToken cancellationToken = default)
     {
         var question = await LoadQuestionAsync(sessionId, questionId, cancellationToken);
+
+        // S-8 — only an APPROVED (desk-visible) question can be pushed to the
+        // speaker. A Pending question has not cleared the Committee, and a Hidden
+        // one was rejected; neither appears on the moderator desk, so pushing it
+        // would surface a suppressed question on stage.
+        if (question.Status != QuestionStatus.Approved)
+        {
+            throw new ApiException(
+                ErrorCodes.SessionQuestionInvalid, 400,
+                "Only an approved question can be pushed to the speaker.",
+                "لا يمكن دفع سؤال غير معتمد إلى المتحدث.");
+        }
 
         if (question.IsPushed)
         {
@@ -171,25 +191,28 @@ internal sealed class SessionModerationService(
                 "تحتوي قائمة الترتيب على معرّفات مكررة.");
         }
 
-        // Reorder is a full-list contract — the supplied set must
-        // cover every question on the session, hidden included.
-        // Partial-list reorder would assign 0..n-1 over a subset and
-        // collide with unlisted rows' existing Order values.
-        var allOnSession = await appDbContext.SessionQuestions
-            .Where(q => q.SessionId == sessionId)
+        // S-8 — reorder operates on the moderator DESK, which shows the
+        // Committee-approved set only (see ListAsync). Validate + renumber against
+        // exactly that subset: a desk holding only Approved rows can only ever
+        // supply Approved ids, so requiring SetEquals over EVERY row (Pending /
+        // Hidden included) made the endpoint unsatisfiable (a latent 400).
+        // Pending/Hidden rows are off the desk and keep their Order (they sort by
+        // CreatedAt when later approved).
+        var deskQuestions = await appDbContext.SessionQuestions
+            .Where(q => q.SessionId == sessionId && q.Status == QuestionStatus.Approved)
             .ToListAsync(cancellationToken);
 
-        var allIds = allOnSession.Select(q => q.Id).ToHashSet();
+        var deskIds = deskQuestions.Select(q => q.Id).ToHashSet();
         var supplied = distinctIds.ToHashSet();
-        if (!supplied.SetEquals(allIds))
+        if (!supplied.SetEquals(deskIds))
         {
             throw new ApiException(
                 ErrorCodes.SessionQuestionInvalid, 400,
-                "Reorder list must contain every question on the session exactly once.",
-                "يجب أن تشمل قائمة الترتيب جميع أسئلة الجلسة بالضبط مرة واحدة.");
+                "Reorder list must contain every approved question on the session exactly once.",
+                "يجب أن تشمل قائمة الترتيب جميع الأسئلة المعتمدة للجلسة بالضبط مرة واحدة.");
         }
 
-        var trackedById = allOnSession.ToDictionary(q => q.Id);
+        var trackedById = deskQuestions.ToDictionary(q => q.Id);
         for (var i = 0; i < distinctIds.Count; i++)
         {
             trackedById[distinctIds[i]].Order = i;

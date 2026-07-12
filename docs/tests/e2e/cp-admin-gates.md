@@ -595,7 +595,41 @@ Scenario: The bilingual Description survives an export then re-import
 
 ---
 
-_Last reviewed:_ 2026-06-26 by Claude (D-506 — appended the Description /
+## On-site remediation (W4 — X-1 / CHAIN-1 hall-door gate)
+
+| Id | Scenario | Category | Priority | Status |
+|----|----------|----------|----------|--------|
+| E2E-GAT-023 | Create a hall-door gate (pick a Hall) vs a perimeter gate (Hall = None); the Hall picker persists and round-trips on edit | crud | P1 | _to author_ |
+| E2E-GAT-024 | Create/Update with an unknown or inactive Hall → `GATE_HALL_INVALID` (400) | validation | P1 | _to author_ |
+
+### E2E-GAT-023 — hall-door binding round-trips
+
+```gherkin
+Scenario: a gate can be bound to a hall (hall-door gate) or left as a perimeter gate
+  Given the admin opens the Gate add form
+  When they set Hall = "Majlis A" and save
+  Then the gate persists with that HallId
+  And re-opening the Edit form pre-selects "Majlis A" in the Hall picker
+  When they change the Hall picker back to "None — perimeter gate" and save
+  Then the gate persists with HallId = null (a perimeter gate)
+  # A hall-door gate feeds HallAttendance on an allowed check-in; a perimeter
+  # gate records only a GateScan.
+```
+
+### E2E-GAT-024 — invalid hall is rejected
+
+```gherkin
+Scenario: binding a gate to a missing/inactive hall is a clean 400
+  Given a hall exists but is deactivated (IsActive = false)
+  When the admin submits a gate create/update bound to that hall id
+  Then the API responds 400 with error code GATE_HALL_INVALID
+  And the message reads "The selected hall was not found or is inactive." /
+      "القاعة المحددة غير موجودة أو غير نشطة."
+```
+
+---
+
+_Last reviewed:_ 2026-07-11 by Claude (W4 on-site remediation — X-1 hall-door gate binding; E2E-GAT-023/024). Prior: 2026-06-26 by Claude (D-506 — appended the Description /
 DescriptionArabic Excel round-trip columns; added E2E-GAT-022 and corrected the
 stale export header list in the page facts + E2E-GAT-019).
 _Previously:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle; added

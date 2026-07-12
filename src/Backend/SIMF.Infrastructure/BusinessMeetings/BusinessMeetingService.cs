@@ -514,62 +514,6 @@ internal sealed class BusinessMeetingService(
 
         var names = await ResolvePartyNamesAsync(companyIds, visitorIds, cancellationToken);
 
-        // The conflict checks below (table / hall / participant overlap) are
-        // read-then-insert: a time range cannot be a SQL unique constraint, so two
-        // truly simultaneous schedules for the same slot could both pass. This is
-        // an accepted residual risk for an admin-only, low-concurrency CP surface
-        // (D-248 review); add a serializable transaction / sp_getapplock here if
-        // automated or concurrent scheduling is ever introduced.
-
-        // Table conflict — another Confirmed meeting overlaps this table/slot.
-        var tableClash = await appDbContext.BusinessMeetings.AsNoTracking()
-            .Where(m => m.MeetingTableId == table.Id
-                && m.Status == BusinessMeetingStatus.Confirmed)
-            .AnyAsync(m => m.StartUtc < request.EndUtc && request.StartUtc < m.EndUtc,
-                cancellationToken);
-        if (tableClash)
-        {
-            throw new ApiException(
-                ErrorCodes.BusinessMeetingTableConflict, 409,
-                "The table is already booked for an overlapping time-slot.",
-                "الطاولة محجوزة بالفعل في فترة زمنية متداخلة.");
-        }
-
-        // Hall conflict — the table's hall is wholly reserved for a non-meeting
-        // purpose (e.g. a session) for an overlapping slot (FDS-013 §5.6: a
-        // whole-hall allocation is a unit that cannot be double-reserved).
-        var hallReserved = await appDbContext.HallAllocations.AsNoTracking()
-            .Where(a => a.HallId == table.HallId
-                && a.ReleasedAt == null
-                && a.Mode == HallAllocationMode.Whole
-                && a.Purpose != HallPurpose.Meeting)
-            .AnyAsync(a => a.StartUtc < request.EndUtc && request.StartUtc < a.EndUtc,
-                cancellationToken);
-        if (hallReserved)
-        {
-            throw new ApiException(
-                ErrorCodes.BusinessMeetingTableConflict, 409,
-                "The hall is reserved for another purpose at this time.",
-                "القاعة محجوزة لغرض آخر في هذا الوقت.");
-        }
-
-        // Participant conflict — a party is already in a Confirmed overlapping meeting.
-        var partyClash = await appDbContext.BusinessMeetingParticipants.AsNoTracking()
-            .Where(p => (p.ExhibitorId != null && companyIds.Contains(p.ExhibitorId.Value))
-                || (p.VisitorUserId != null && visitorIds.Contains(p.VisitorUserId.Value)))
-            .Join(appDbContext.BusinessMeetings.AsNoTracking()
-                    .Where(m => m.Status == BusinessMeetingStatus.Confirmed),
-                p => p.BusinessMeetingId, m => m.Id, (p, m) => m)
-            .AnyAsync(m => m.StartUtc < request.EndUtc && request.StartUtc < m.EndUtc,
-                cancellationToken);
-        if (partyClash)
-        {
-            throw new ApiException(
-                ErrorCodes.BusinessMeetingParticipantConflict, 409,
-                "A participant already has a meeting at this time.",
-                "أحد المشاركين لديه اجتماع بالفعل في هذا الوقت.");
-        }
-
         var now = timeProvider.GetUtcNow();
         var meeting = new BusinessMeeting
         {
@@ -592,8 +536,76 @@ internal sealed class BusinessMeetingService(
                 CreatedAt = now,
             }).ToList(),
         };
-        appDbContext.BusinessMeetings.Add(meeting);
-        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        // M-5 — close the read-then-insert double-book race. A time range cannot be a
+        // SQL unique constraint, so the table / hall / participant overlap checks and
+        // the insert must run inside ONE Serializable transaction: the range scans then
+        // hold key-range locks and a concurrent overlapping insert cannot slip in
+        // between a check and the save. Run through the EF execution strategy so it
+        // composes with EnableRetryOnFailure (a user transaction otherwise throws under
+        // the retrying strategy); on a serialization/deadlock failure the strategy
+        // re-runs the whole unit and the re-checks see the now-committed rival and raise
+        // the clean 409. The meeting is built once above (fixed Id) so a retry re-inserts
+        // the same row instead of duplicating it.
+        var strategy = appDbContext.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
+        {
+            await using var tx = await appDbContext.Database.BeginTransactionAsync(
+                System.Data.IsolationLevel.Serializable, cancellationToken);
+
+            // Table conflict — another Confirmed meeting overlaps this table/slot.
+            var tableClash = await appDbContext.BusinessMeetings.AsNoTracking()
+                .Where(m => m.MeetingTableId == table.Id
+                    && m.Status == BusinessMeetingStatus.Confirmed)
+                .AnyAsync(m => m.StartUtc < request.EndUtc && request.StartUtc < m.EndUtc,
+                    cancellationToken);
+            if (tableClash)
+            {
+                throw new ApiException(
+                    ErrorCodes.BusinessMeetingTableConflict, 409,
+                    "The table is already booked for an overlapping time-slot.",
+                    "الطاولة محجوزة بالفعل في فترة زمنية متداخلة.");
+            }
+
+            // Hall conflict — the table's hall is wholly reserved for a non-meeting
+            // purpose (e.g. a session) for an overlapping slot (FDS-013 §5.6: a
+            // whole-hall allocation is a unit that cannot be double-reserved).
+            var hallReserved = await appDbContext.HallAllocations.AsNoTracking()
+                .Where(a => a.HallId == table.HallId
+                    && a.ReleasedAt == null
+                    && a.Mode == HallAllocationMode.Whole
+                    && a.Purpose != HallPurpose.Meeting)
+                .AnyAsync(a => a.StartUtc < request.EndUtc && request.StartUtc < a.EndUtc,
+                    cancellationToken);
+            if (hallReserved)
+            {
+                throw new ApiException(
+                    ErrorCodes.BusinessMeetingTableConflict, 409,
+                    "The hall is reserved for another purpose at this time.",
+                    "القاعة محجوزة لغرض آخر في هذا الوقت.");
+            }
+
+            // Participant conflict — a party is already in a Confirmed overlapping meeting.
+            var partyClash = await appDbContext.BusinessMeetingParticipants.AsNoTracking()
+                .Where(p => (p.ExhibitorId != null && companyIds.Contains(p.ExhibitorId.Value))
+                    || (p.VisitorUserId != null && visitorIds.Contains(p.VisitorUserId.Value)))
+                .Join(appDbContext.BusinessMeetings.AsNoTracking()
+                        .Where(m => m.Status == BusinessMeetingStatus.Confirmed),
+                    p => p.BusinessMeetingId, m => m.Id, (p, m) => m)
+                .AnyAsync(m => m.StartUtc < request.EndUtc && request.StartUtc < m.EndUtc,
+                    cancellationToken);
+            if (partyClash)
+            {
+                throw new ApiException(
+                    ErrorCodes.BusinessMeetingParticipantConflict, 409,
+                    "A participant already has a meeting at this time.",
+                    "أحد المشاركين لديه اجتماع بالفعل في هذا الوقت.");
+            }
+
+            appDbContext.BusinessMeetings.Add(meeting);
+            await appDbContext.SaveChangesAsync(cancellationToken);
+            await tx.CommitAsync(cancellationToken);
+        });
 
         await auditLog.WriteAsync(new AuditEntry
         {
@@ -857,6 +869,20 @@ internal sealed class BusinessMeetingService(
             throw Invalid(ErrorCodes.HallAllocationInvalid,
                 "The end time must be after the start time.",
                 "يجب أن يكون وقت النهاية بعد وقت البداية.");
+        }
+
+        // M-5 — lower time bound: a meeting / allocation cannot start in the past.
+        // A hard 'within event window' bound is intentionally NOT enforced here: the
+        // event window lives on the admin-editable OrganizationProfile
+        // (EventStartDate/EventEndDate) and currently holds a stale placeholder range
+        // (2026-01-01..2026-04-30), so gating on it would reject every legitimate
+        // future slot. 'Not in the past' is the correct data-independent lower bound;
+        // window enforcement is a follow-up once that data is made real.
+        if (start < timeProvider.GetUtcNow())
+        {
+            throw Invalid(ErrorCodes.HallAllocationInvalid,
+                "The start time cannot be in the past.",
+                "لا يمكن أن يكون وقت البداية في الماضي.");
         }
     }
 

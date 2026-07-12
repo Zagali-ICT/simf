@@ -198,6 +198,11 @@ Scenario: Reusing an idempotency key with a different payload returns 409
 > click, so this conflict is driven at the API layer / via the staff-app
 > replay path. Exercise it with a direct `/account/api/gates/{gateId}/scans`
 > POST reusing a known key, or against the lower-layer integration test.
+>
+> G-6 (shared contract): the Flutter staff app now mints the same fresh
+> per-scan UUIDv4 idempotency key (`randomUuidV4()`) that this console does
+> (`Guid.NewGuid()`), so both consoles share one idempotency policy — a genuine
+> re-entry is a new `GateScan`, and only a replay of the *same* key is a 409.
 
 ### E2E-GOP-011 — Not assigned to the gate
 
