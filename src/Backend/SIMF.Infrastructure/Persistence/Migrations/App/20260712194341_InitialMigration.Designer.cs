@@ -12,8 +12,8 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     [DbContext(typeof(SimfAppDbContext))]
-    [Migration("20260711184649_D743_AddSeatReservationExpiresUtc")]
-    partial class D743_AddSeatReservationExpiresUtc
+    [Migration("20260712194341_InitialMigration")]
+    partial class InitialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -56,6 +56,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("DirectionMode")
                         .HasColumnType("int");
 
+                    b.Property<Guid?>("HallId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
@@ -79,6 +82,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasIndex("Code")
                         .IsUnique();
+
+                    b.HasIndex("HallId");
 
                     b.HasIndex("IsActive", "Name");
 
@@ -3717,6 +3722,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
+                    b.Property<string>("IqamaNumberHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
@@ -3748,6 +3757,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
+                    b.Property<string>("NationalIdHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
                     b.Property<int>("NationalityId")
                         .HasColumnType("int");
 
@@ -3757,6 +3770,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<string>("PassportNumber")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("PassportNumberHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
 
                     b.Property<string>("PlaceOfBirth")
                         .IsRequired()
@@ -3812,9 +3829,21 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
                     b.HasKey("Id");
 
+                    b.HasIndex("IqamaNumberHash")
+                        .IsUnique()
+                        .HasFilter("[IqamaNumberHash] IS NOT NULL");
+
+                    b.HasIndex("NationalIdHash")
+                        .IsUnique()
+                        .HasFilter("[NationalIdHash] IS NOT NULL");
+
                     b.HasIndex("NationalityId");
 
                     b.HasIndex("OrganisationId");
+
+                    b.HasIndex("PassportNumberHash")
+                        .IsUnique()
+                        .HasFilter("[PassportNumberHash] IS NOT NULL");
 
                     b.HasIndex("ProfileTypeId");
 
@@ -5401,6 +5430,14 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.HasIndex("InterestId");
 
                     b.ToTable("UserProfileInterests");
+                });
+
+            modelBuilder.Entity("SIMF.Domain.AccessControl.Gate", b =>
+                {
+                    b.HasOne("SIMF.Domain.Programme.Hall", null)
+                        .WithMany()
+                        .HasForeignKey("HallId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("SIMF.Domain.AccessControl.GateAssignment", b =>
