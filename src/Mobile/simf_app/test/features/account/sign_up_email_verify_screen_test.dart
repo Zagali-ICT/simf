@@ -41,7 +41,47 @@ class _FakeController extends AuthController {
   }
 }
 
-Future<void> _pump(WidgetTester tester, _FakeController controller) async {
+/// In-memory prefs so the screen's D-742 `lastEmail` write on a successful
+/// verify can be exercised (and asserted) without touching the platform.
+class _FakePrefs implements SimfPrefsStorage {
+  final Map<String, Object> _store = <String, Object>{};
+
+  @override
+  String? getString(String key) {
+    final v = _store[key];
+    return v is String ? v : null;
+  }
+
+  @override
+  Future<bool> setString(String key, String value) async {
+    _store[key] = value;
+    return true;
+  }
+
+  @override
+  bool? getBool(String key) => null;
+  @override
+  Future<bool> setBool(String key, bool value) async => true;
+  @override
+  double? getDouble(String key) => null;
+  @override
+  Future<bool> setDouble(String key, double value) async => true;
+  @override
+  int? getInt(String key) => null;
+  @override
+  Future<bool> setInt(String key, int value) async => true;
+  @override
+  Future<bool> remove(String key) async {
+    _store.remove(key);
+    return true;
+  }
+}
+
+Future<void> _pump(
+  WidgetTester tester,
+  _FakeController controller, {
+  SimfPrefsStorage? prefs,
+}) async {
   final router = GoRouter(
     initialLocation: '/sign-up/otp',
     routes: <RouteBase>[
@@ -63,6 +103,7 @@ Future<void> _pump(WidgetTester tester, _FakeController controller) async {
     ProviderScope(
       overrides: <Override>[
         authControllerProvider.overrideWith(() => controller),
+        simfPrefsStorageProvider.overrideWithValue(prefs ?? _FakePrefs()),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -101,7 +142,8 @@ void main() {
     testWidgets('Verify is disabled until 6 digits, then verifies and routes '
         'to sign-in', (tester) async {
       final controller = _FakeController();
-      await _pump(tester, controller);
+      final prefs = _FakePrefs();
+      await _pump(tester, controller, prefs: prefs);
 
       expect(find.text('visitor@example.sa'), findsOneWidget);
       expect(_verifyEnabled(tester), isFalse);
@@ -116,6 +158,9 @@ void main() {
 
       expect(controller.verifyCalled, isTrue);
       expect(find.text('SIGN-IN'), findsOneWidget);
+      // D-742 — a verified account prefills the just-registered address on the
+      // sign-in screen (owner: login kept showing a stale/first-typed email).
+      expect(prefs.getString(StorageKeys.lastEmail), 'visitor@example.sa');
     });
 
     testWidgets('a wrong code shows the inline error and clears the field',

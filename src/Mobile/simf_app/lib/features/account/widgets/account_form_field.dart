@@ -19,6 +19,7 @@ class AccountEmailField extends StatelessWidget {
     required this.enabled,
     this.validator,
     this.onChanged,
+    this.autofillHints,
     this.maxLength = 50,
     super.key,
   });
@@ -28,6 +29,12 @@ class AccountEmailField extends StatelessWidget {
   final bool enabled;
   final FormFieldValidator<String>? validator;
   final ValueChanged<String>? onChanged;
+
+  /// OS autofill hints (e.g. `AutofillHints.username`/`newUsername`). When the
+  /// screen also wraps its form in an [AutofillGroup] and calls
+  /// `TextInput.finishAutofillContext`, the platform saves the FINAL submitted
+  /// address instead of a heuristic first-typed guess.
+  final Iterable<String>? autofillHints;
   final int maxLength;
 
   @override
@@ -40,6 +47,7 @@ class AccountEmailField extends StatelessWidget {
         TextFormField(
           controller: controller,
           keyboardType: TextInputType.emailAddress,
+          autofillHints: autofillHints,
           maxLength: maxLength,
           enabled: enabled,
           onChanged: onChanged,
@@ -66,6 +74,7 @@ class AccountPasswordField extends StatelessWidget {
     this.validator,
     this.onChanged,
     this.onSubmitted,
+    this.autofillHints,
     // Matches the server policy max (PasswordPolicy.MaxLength = 128) so a valid
     // existing password longer than the old 32 cap can still be typed.
     this.maxLength = 128,
@@ -80,6 +89,10 @@ class AccountPasswordField extends StatelessWidget {
   final FormFieldValidator<String>? validator;
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
+
+  /// OS autofill hints (e.g. `AutofillHints.password`/`newPassword`). See
+  /// [AccountEmailField.autofillHints].
+  final Iterable<String>? autofillHints;
   final int maxLength;
 
   @override
@@ -93,6 +106,7 @@ class AccountPasswordField extends StatelessWidget {
         TextFormField(
           controller: controller,
           obscureText: obscure,
+          autofillHints: autofillHints,
           maxLength: maxLength,
           enabled: enabled,
           onChanged: onChanged,

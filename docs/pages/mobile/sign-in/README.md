@@ -90,6 +90,12 @@ Changelog).
       contract (D-219) unchanged
 
 ## 9. Changelog
+- **2026-07-11 (D-742):** OS-autofill fix — the login form is now an `AutofillGroup`
+  with `username`/`password` hints and commits the FINAL submitted credentials via
+  `TextInput.finishAutofillContext(shouldSave: _rememberMe)` on a successful sign-in,
+  so the platform remembers the email the user actually used — not the heuristic
+  first-typed guess it previously saved. Unchecking "remember me" discards both
+  `lastEmail` and the OS autofill context. Render/goldens unchanged (non-visual).
 - **2026-06-30 (Phase 3, D-549):** clean-code freeze — dropped screen-local colour
   aliases; reused `AuthSubmitButton`; extracted `SignInAltActions` + `AuthAltButton`;
   `MaxWidthBody(560)`; top controls moved on top with stable keys; added the

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show TextInput;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
@@ -142,6 +143,10 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
             password: _password.text,
             confirmPassword: _confirm.text,
           );
+      // Commit the FINAL submitted email/password to the OS autofill store now,
+      // so a corrected address replaces any first-typed guess the OS grabbed
+      // (owner: login kept offering the mistyped sign-up email).
+      TextInput.finishAutofillContext();
       if (!mounted) {
         return;
       }
@@ -236,76 +241,91 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
 
   Widget _buildCard(AppL10n l10n) {
     return AccountCard(
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Text(
-              l10n.signUpTitle,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-                color: SimfTokens.headlineInk,
-              ),
-            ),
-            const SizedBox(height: 24),
-            AccountEmailField(
-              controller: _email,
-              label: l10n.emailLabel,
-              enabled: !_busy,
-              validator: _validateEmail,
-            ),
-            const SizedBox(height: 16),
-            AccountPasswordField(
-              controller: _password,
-              label: l10n.passwordLabel,
-              obscure: _obscure,
-              onToggleObscure: () => setState(() => _obscure = !_obscure),
-              enabled: !_busy,
-              validator: _validatePassword,
-            ),
-            const SizedBox(height: 16),
-            AccountPasswordField(
-              controller: _confirm,
-              label: l10n.confirmPasswordLabel,
-              obscure: _obscureConfirm,
-              onToggleObscure: () =>
-                  setState(() => _obscureConfirm = !_obscureConfirm),
-              enabled: !_busy,
-              validator: _validateConfirm,
-              onSubmitted: (_) => unawaited(_submit()),
-            ),
-            const SizedBox(height: 16),
-            AccountTermsCheckbox(
-              accepted: _acceptedTerms,
-              onChanged: _setAcceptedTerms,
-              onOpenTerms: () => unawaited(_openTerms()),
-              enabled: !_busy,
-              showError: _showTermsError,
-            ),
-            if (_error != null) ...<Widget>[
-              const SizedBox(height: 12),
+      // AutofillGroup + the fields' hints let the OS treat this as one
+      // new-account form and, on a successful submit, save the FINAL
+      // email/password (see _submit's finishAutofillContext) rather than a
+      // first-typed guess.
+      child: AutofillGroup(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
               Text(
-                _error!,
-                style: const TextStyle(color: SimfTokens.danger, fontSize: 12),
+                l10n.signUpTitle,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                  color: SimfTokens.headlineInk,
+                ),
+              ),
+              const SizedBox(height: 24),
+              AccountEmailField(
+                controller: _email,
+                label: l10n.emailLabel,
+                enabled: !_busy,
+                validator: _validateEmail,
+                autofillHints: const <String>[
+                  AutofillHints.newUsername,
+                  AutofillHints.email,
+                ],
+              ),
+              const SizedBox(height: 16),
+              AccountPasswordField(
+                controller: _password,
+                label: l10n.passwordLabel,
+                obscure: _obscure,
+                onToggleObscure: () => setState(() => _obscure = !_obscure),
+                enabled: !_busy,
+                validator: _validatePassword,
+                autofillHints: const <String>[AutofillHints.newPassword],
+              ),
+              const SizedBox(height: 16),
+              AccountPasswordField(
+                controller: _confirm,
+                label: l10n.confirmPasswordLabel,
+                obscure: _obscureConfirm,
+                onToggleObscure: () =>
+                    setState(() => _obscureConfirm = !_obscureConfirm),
+                enabled: !_busy,
+                validator: _validateConfirm,
+                onSubmitted: (_) => unawaited(_submit()),
+                autofillHints: const <String>[AutofillHints.newPassword],
+              ),
+              const SizedBox(height: 16),
+              AccountTermsCheckbox(
+                accepted: _acceptedTerms,
+                onChanged: _setAcceptedTerms,
+                onOpenTerms: () => unawaited(_openTerms()),
+                enabled: !_busy,
+                showError: _showTermsError,
+              ),
+              if (_error != null) ...<Widget>[
+                const SizedBox(height: 12),
+                Text(
+                  _error!,
+                  style: const TextStyle(
+                    color: SimfTokens.danger,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 24),
+              AuthSubmitButton(
+                label: l10n.signUpButton,
+                busy: _busy,
+                onPressed: _busy ? null : () => unawaited(_submit()),
+              ),
+              const SizedBox(height: 8),
+              AccountAuthPrompt(
+                question: l10n.haveAccountQuestion,
+                linkLabel: l10n.signInTitle,
+                onTap: () => context.goNamed(RouteNames.signIn),
+                enabled: !_busy,
               ),
             ],
-            const SizedBox(height: 24),
-            AuthSubmitButton(
-              label: l10n.signUpButton,
-              busy: _busy,
-              onPressed: _busy ? null : () => unawaited(_submit()),
-            ),
-            const SizedBox(height: 8),
-            AccountAuthPrompt(
-              question: l10n.haveAccountQuestion,
-              linkLabel: l10n.signInTitle,
-              onTap: () => context.goNamed(RouteNames.signIn),
-              enabled: !_busy,
-            ),
-          ],
+          ),
         ),
       ),
     );

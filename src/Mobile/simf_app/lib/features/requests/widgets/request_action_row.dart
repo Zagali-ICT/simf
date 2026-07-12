@@ -16,6 +16,7 @@ class RequestActionRow extends StatelessWidget {
     required this.filter,
     required this.onNew,
     required this.onSelect,
+    this.showNew = true,
     super.key,
   });
 
@@ -23,6 +24,11 @@ class RequestActionRow extends StatelessWidget {
   final AppRequestStatus? filter;
   final VoidCallback onNew;
   final ValueChanged<AppRequestStatus?> onSelect;
+
+  /// D-729 — the "طلب جديد" new-meeting-request button is VIP-only (the request
+  /// endpoint rejects non-VIP callers), so it is hidden for non-VIP viewers; the
+  /// "السجل" log/filter button always shows.
+  final bool showNew;
 
   @override
   Widget build(BuildContext context) {
@@ -33,15 +39,17 @@ class RequestActionRow extends StatelessWidget {
       textDirection: TextDirection.ltr,
       child: Row(
         children: <Widget>[
-          Expanded(
-            child: RequestActionButton(
-              label: l10n.requestNew,
-              asset: 'assets/icons/request_new.svg',
-              active: false,
-              onTap: onNew,
+          if (showNew) ...<Widget>[
+            Expanded(
+              child: RequestActionButton(
+                label: l10n.requestNew,
+                asset: 'assets/icons/request_new.svg',
+                active: false,
+                onTap: onNew,
+              ),
             ),
-          ),
-          const SizedBox(width: SimfTokens.space4),
+            const SizedBox(width: SimfTokens.space4),
+          ],
           Expanded(
             child: RequestActionButton(
               label: l10n.requestsTabLog,

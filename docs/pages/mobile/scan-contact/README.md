@@ -13,7 +13,10 @@
 
 Scan (or type) another visitor's share code → resolve it to a live `VisitorCard`
 shown in a preview bottom sheet → optionally add a note → save to *My Contacts*.
-A 404 resolves to a not-found toast; a 400 on save (self-save) surfaces inline.
+A 404 resolves to a not-found toast; a 400 on save (self-save) surfaces inline. A
+scanned **plain vCard with no SIMF share token** (a foreign phone's contact, or an
+old QR) can't resolve to a live card, so instead of dead-ending the app offers to
+add it straight to the phone's own contacts via the OS "add contact" flow (D-744).
 
 ## Structure
 
@@ -46,17 +49,22 @@ after a scan, so the golden locks the resting scan surface.
 - **Resolve** — code → live `VisitorCard` in the preview sheet (404 → toast).
 - **Save** — with an optional note → `POST /app/contacts/save` (self-save 400 →
   toast); success toasts + closes so the caller reloads.
+- **Foreign vCard → phone contacts** — a scanned vCard with no `X-SIMF-TOKEN`
+  can't resolve; `_saveVcardToPhone` confirms, then hands the raw vCard to the OS
+  add-contact flow via the shared `shareTextContent` (D-744). No new permission.
 - **Back** — `_leave`.
 
 ## Tests
 
 `test/golden/scan_contact_golden_test.dart` (frame 1701:7080, @375×812, ar,
 `enableCamera:false`) + `test/features/contacts/scan_contact_screen_test.dart`
-(resolve / not-found / self-save / unavailable-hides-save). E2E:
-`docs/tests/e2e/mobile-my-contacts.md`.
+(resolve / not-found / self-save / unavailable-hides-save / foreign-vCard →
+save-to-phone). E2E: `docs/tests/e2e/mobile-my-contacts.md` (E2E-MMC-013).
 
 ## Related decisions
 
+- **D-744** (a token-less foreign vCard is offered to the phone's own contacts via
+  the OS add-contact flow — `shareTextContent` — instead of dead-ending).
 - **D-646** (this clean-code freeze — render-lock golden; no code change).
 - **D-286 / D-324** (built, FDS-014), **D-430** (shared `QrScanView`),
   **D-426** (bounded opt-in camera).

@@ -10,6 +10,7 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_confirm_dialog.dart';
+import '../account/data/profile_repository.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import '../speakers/widgets/meeting_request_sheet.dart';
 import 'data/request_models.dart';
@@ -131,6 +132,9 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
 
   Widget _buildBody(AppL10n l10n, List<AppRequestItem> items) {
     final isArabic = l10n.isArabic;
+    // D-729 — a new meeting request is VIP-only, so hide the "طلب جديد" button
+    // for non-VIP viewers (they would otherwise hit the endpoint's 403 wall).
+    final isVip = ref.watch(currentUserIsVipProvider).value ?? false;
     // A selected status whose chip has dropped to zero items (e.g. the user just
     // cancelled their only pending request) falls back to "All" so the screen
     // never strands the user on a chip-less "no results" view.
@@ -153,6 +157,7 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen> {
             filter: effectiveFilter,
             onNew: () => unawaited(_openNewRequest()),
             onSelect: (status) => setState(() => _filter = status),
+            showNew: isVip,
           ),
           const SizedBox(height: SimfTokens.space4),
           if (items.isNotEmpty)

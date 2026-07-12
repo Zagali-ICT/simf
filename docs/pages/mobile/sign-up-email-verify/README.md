@@ -71,6 +71,10 @@ email render LTR. Brand font applied once in the theme.
       (D-219) unchanged
 
 ## 9. Changelog
+- **2026-07-11 (D-742):** on a successful email verify the just-registered address
+  is written to `lastEmail` (native only, mirroring the sign-in remember-email gate),
+  so the sign-in screen the user lands on next pre-fills the email they created —
+  not a stale one. Render/goldens unchanged.
 - **2026-06-30 (Phase 3, D-553):** clean-code freeze — dropped the sweep-tint const;
   split `build` into focused section builders; capped the body + actions with
   `MaxWidthBody(560)`; the resend link reuses `authLinkButtonStyle`; added the

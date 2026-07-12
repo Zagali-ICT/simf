@@ -636,12 +636,18 @@ class AppL10n {
         'Camera unavailable. Enable camera permission in system settings, or type the code below.',
       );
   String get scannerCameraRetry => _t('إعادة المحاولة', 'Try again');
-  // Shown when the in-app contact scanner reads a contact QR that carries no
-  // SIMF share token (an old QR, or a foreign phone's vCard) — D-737.
-  String get scanContactVcardNoToken => _t(
-        'رمز بطاقة الاتصال هذا لا يحمل رمز مشاركة. اطلب من صاحبه فتح «مشاركة جهة اتصالي» في التطبيق.',
-        'This contact QR has no SIMF share code. Ask them to open “Share my contact” in the app.',
+  // A scanned contact QR that carries no SIMF share token (a foreign phone's
+  // vCard, or an old QR) can't resolve to a live card — offer to add it to the
+  // phone's own contacts instead (D-744).
+  String get scanContactSaveToPhoneTitle =>
+      _t('حفظ في جهات اتصال الهاتف؟', 'Save to phone contacts?');
+  String get scanContactSaveToPhoneBody => _t(
+        'هذه البطاقة ليست لعضو في الملتقى. أضِفها إلى جهات اتصال هاتفك مباشرة.',
+        'This card isn’t a SIMF member. Add it straight to your phone’s contacts.',
       );
+  String get scanContactSaveToPhoneConfirm => _t('إضافة', 'Add');
+  String get scanContactSaveToPhoneFailed =>
+      _t('تعذّر فتح إضافة جهة الاتصال.', 'Couldn’t open add-to-contacts.');
   String get badgeNotRecognised =>
       _t('تعذّر التعرّف على الشارة.', 'The badge was not recognised.');
   String get badgeScanError =>
@@ -1192,8 +1198,14 @@ class AppL10n {
 
   // D-500 (Wave 5, الطلبات 1408:9726) — the unified requests feed (supersedes the
   // D-479 read-only My-meetings screen).
-  // Owner 2026-07-03: match the Figma frame header (1408:9726) "اللقاءات الثنائية".
-  String get requestsTitle => _t('اللقاءات الثنائية', 'Bilateral meetings');
+  // D-743 (owner 2026-07-11): the requests feed became the history page ("طلباتي")
+  // once the VIP bilateral-meetings page ([meetingsTitle]) split off; the frame
+  // header "اللقاءات الثنائية" (1408:9726) now belongs to that new page.
+  String get requestsTitle => _t('طلباتي', 'My requests');
+
+  /// The VIP bilateral-meetings page title (اللقاءات الثنائية, Figma 1408:9726) —
+  /// matches the Home tile label [tileBilateralMeetings].
+  String get meetingsTitle => _t('اللقاءات الثنائية', 'Bilateral meetings');
   String get requestsLink => _t('الطلبات', 'Requests');
   String get requestsEmpty =>
       _t('لا توجد طلبات بعد', 'You have no requests yet');

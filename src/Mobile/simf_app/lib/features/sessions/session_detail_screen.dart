@@ -228,10 +228,15 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
           .joinOpenSeating(widget.sessionId);
       messenger.showSnackBar(SnackBar(content: Text(l10n.joinPendingToast)));
     } on ApiFailure catch (failure) {
-      final full = failure.code == 'SEAT_SESSION_FULL';
-      messenger.showSnackBar(
-        SnackBar(content: Text(full ? l10n.joinSessionFull : l10n.joinFailed)),
-      );
+      // Surface the backend's localized reason (already booked / seat selection
+      // required / …) instead of a generic "join failed" — the generic toast is
+      // why a failed join "looks broken" (matches _cancelReservation below).
+      // SEAT_SESSION_FULL keeps its dedicated copy.
+      final reason = failure.message.trim();
+      final text = failure.code == 'SEAT_SESSION_FULL'
+          ? l10n.joinSessionFull
+          : (reason.isNotEmpty ? reason : l10n.joinFailed);
+      messenger.showSnackBar(SnackBar(content: Text(text)));
     } finally {
       if (mounted) {
         setState(() => _busy = false);
