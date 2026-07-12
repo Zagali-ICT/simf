@@ -56,6 +56,18 @@ public sealed record AppRequestItem(
     /// to the meeting-type headline. Append-only (D-219): the app reads it by
     /// name and older clients ignore it.</summary>
     string? Subtitle = null,
+    /// <summary>D-745 — for a <see cref="AppRequestKind.SpeakerMeeting"/> row, the
+    /// speaker's <c>Id</c> so the bilateral-meetings card can render the speaker's
+    /// photo from the existing public asset route
+    /// (<c>GET /app/assets/SpeakerPhoto/{id}/image</c>). Null for the other kinds
+    /// (delegation carries no speaker photo). Append-only (D-219): older clients
+    /// ignore it.</summary>
+    Guid? SpeakerId = null,
+    /// <summary>D-745 — the ISO 3166-1 numeric country id for the bilateral-meetings
+    /// card's flag: the speaker's nationality on a speaker meeting, the target
+    /// country on a delegation meeting. Null for the non-meeting kinds / when unset.
+    /// Append-only (D-219): older clients ignore it.</summary>
+    int? CountryId = null,
     /// <summary>R-3 — the admin's response note for a decided speaker / document / badge
     /// request (e.g. the rejection reason). Null when none. Append-only (D-219): the app
     /// reads it by name and older clients ignore it.</summary>

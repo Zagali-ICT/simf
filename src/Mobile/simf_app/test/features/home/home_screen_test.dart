@@ -8,6 +8,7 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/widgets/simf_page_shell.dart';
 import 'package:simf_app/app/widgets/simf_svg_icon.dart';
 import 'package:simf_app/core/organization_profile/organization_profile.dart';
+import 'package:simf_app/features/account/data/profile_repository.dart';
 import 'package:simf_app/features/home/home_screen.dart';
 import 'package:simf_app/features/myarea/data/myarea_models.dart';
 import 'package:simf_app/features/news/data/news_models.dart';
@@ -185,6 +186,7 @@ Future<void> _pump(
   Locale locale = const Locale('en'),
   OrgSocial social = _allSocial,
   String? website,
+  bool isVip = false,
 }) async {
   final router = GoRouter(
     initialLocation: '/',
@@ -206,6 +208,7 @@ Future<void> _pump(
         (RouteNames.faq, '/faq', 'FAQ-PAGE'),
         (RouteNames.meetPeople, '/meet', 'MEET'),
         (RouteNames.requests, '/requests', 'REQUESTS'),
+        (RouteNames.meetings, '/meetings', 'MEETINGS'),
         (RouteNames.chatbot, '/chatbot', 'CHATBOT'),
         (RouteNames.aiSummary, '/ai-summary', 'AI-SUMMARY'),
         (RouteNames.badge, '/badge', 'BADGE'),
@@ -229,6 +232,9 @@ Future<void> _pump(
     ProviderScope(
       overrides: <Override>[
         authControllerProvider.overrideWith(() => controller),
+        // D-745 — the VIP flag drives the "اللقاءات الثنائية" tile; overridden so
+        // no real getMyProfile() network call happens in the home tests.
+        currentUserIsVipProvider.overrideWith((ref) => isVip),
         simfDataConfigProvider.overrideWithValue(_testConfig),
         notificationsRepositoryProvider
             .overrideWithValue(_FakeNotificationsRepository(unread)),
@@ -389,7 +395,8 @@ void main() {
   group('HomeScreen — signed-in layout (frame 758:1134)', () {
     testWidgets('shows the greeting header, live banner, the section bars and '
         'every tile section', (tester) async {
-      await _pump(tester, controller: _SignedInController());
+      // VIP so the "اللقاءات الثنائية" tile is in the section list (D-745).
+      await _pump(tester, controller: _SignedInController(), isVip: true);
 
       expect(find.textContaining('Ahmed Mohammed'), findsOneWidget);
       expect(find.byTooltip('Notifications'), findsOneWidget);
@@ -620,9 +627,10 @@ void main() {
       expect(find.text('Website'), findsNothing);
     });
 
-    testWidgets('the bilateral-meetings tile opens the requests list '
-        '(1408-9726, owner 2026-07-08)', (tester) async {
-      await _pump(tester, controller: _SignedInController());
+    testWidgets('the bilateral-meetings tile opens the VIP meetings page '
+        '(1408-9726, D-745)', (tester) async {
+      // The tile is VIP-only now — a VIP sees it, and it opens /meetings.
+      await _pump(tester, controller: _SignedInController(), isVip: true);
       await tester.scrollUntilVisible(
         find.text('Bilateral meetings'),
         120,
@@ -631,7 +639,13 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Bilateral meetings'));
       await tester.pumpAndSettle();
-      expect(find.text('REQUESTS'), findsOneWidget);
+      expect(find.text('MEETINGS'), findsOneWidget);
+    });
+
+    testWidgets('the bilateral-meetings tile is hidden for a non-VIP (D-745)',
+        (tester) async {
+      await _pump(tester, controller: _SignedInController());
+      expect(find.text('Bilateral meetings'), findsNothing);
     });
 
     testWidgets('only the set platforms render (2 of 5 set)', (tester) async {
@@ -725,6 +739,8 @@ void main() {
         controller: _SignedInController(),
         news: <NewsListItem>[_post()],
         locale: const Locale('ar'),
+        // VIP so the "اللقاءات الثنائية" tile renders in the RTL order checks.
+        isVip: true,
       );
     }
 

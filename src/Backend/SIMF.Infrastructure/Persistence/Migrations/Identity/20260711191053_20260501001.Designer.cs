@@ -12,8 +12,8 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.Identity
 {
     [DbContext(typeof(SimfIdentityDbContext))]
-    [Migration("20260707092156_D677_NotificationClickUrlGroup")]
-    partial class D677_NotificationClickUrlGroup
+    [Migration("20260711191053_20260501001")]
+    partial class _20260501001
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

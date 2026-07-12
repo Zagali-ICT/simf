@@ -91,6 +91,7 @@ void main() {
     '/contacts/share', // 101
     '/contacts/scan', // 102
     '/requests', // 108
+    '/meetings', // 116 (VIP-only enforced in-screen; role gate = attendee)
     '/sessions/:sessionId/pick-seat', // 109
     '/sessions/join', // 110
     '/session-presentations', // 202

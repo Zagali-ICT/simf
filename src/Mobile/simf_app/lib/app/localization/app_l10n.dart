@@ -1206,7 +1206,7 @@ class AppL10n {
 
   // D-500 (Wave 5, الطلبات 1408:9726) — the unified requests feed (supersedes the
   // D-479 read-only My-meetings screen).
-  // D-743 (owner 2026-07-11): the requests feed became the history page ("طلباتي")
+  // D-745 (owner 2026-07-11): the requests feed became the history page ("طلباتي")
   // once the VIP bilateral-meetings page ([meetingsTitle]) split off; the frame
   // header "اللقاءات الثنائية" (1408:9726) now belongs to that new page.
   String get requestsTitle => _t('طلباتي', 'My requests');

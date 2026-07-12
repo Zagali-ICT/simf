@@ -41,30 +41,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 });
 
             migrationBuilder.CreateTable(
-                name: "AiPromptHistory",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    AiPromptId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Version = table.Column<int>(type: "int", nullable: false),
-                    SystemPrompt = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    UserPromptTemplate = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Provider = table.Column<int>(type: "int", nullable: false),
-                    Model = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
-                    Temperature = table.Column<double>(type: "float", nullable: false),
-                    MaxOutputTokens = table.Column<int>(type: "int", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    ContentHash = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
-                    CapturedFromUpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdatedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    CapturedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_AiPromptHistory", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "AiPrompts",
                 columns: table => new
                 {
@@ -137,32 +113,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 });
 
             migrationBuilder.CreateTable(
-                name: "Assets",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Category = table.Column<int>(type: "int", nullable: false),
-                    OwnerId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Kind = table.Column<int>(type: "int", nullable: false),
-                    SourceType = table.Column<int>(type: "int", nullable: false),
-                    StoragePath = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    ExternalUrl = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
-                    ContentType = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
-                    SizeBytes = table.Column<long>(type: "bigint", nullable: true),
-                    OriginalFileName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Assets", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "BadgeUpdateRequests",
                 columns: table => new
                 {
@@ -206,6 +156,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Banners", x => x.Id);
+                    table.CheckConstraint("CK_Banners_TimeWindow", "[EndUtc] > [StartUtc]");
                 });
 
             migrationBuilder.CreateTable(
@@ -269,6 +220,26 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ContentBlocks", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "EmailTemplates",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Type = table.Column<string>(type: "nvarchar(48)", maxLength: 48, nullable: false),
+                    Subject = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
+                    BodyEn = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    BodyAr = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    Version = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_EmailTemplates", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -360,6 +331,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Halls", x => x.Id);
+                    table.CheckConstraint("CK_Halls_Geofence", "([GeofenceCenterLat] IS NULL AND [GeofenceCenterLon] IS NULL AND [GeofenceRadiusMeters] IS NULL) OR ([GeofenceCenterLat] IS NOT NULL AND [GeofenceCenterLon] IS NOT NULL AND [GeofenceRadiusMeters] IS NOT NULL AND [GeofenceRadiusMeters] > 0)");
                 });
 
             migrationBuilder.CreateTable(
@@ -390,9 +362,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Kind = table.Column<int>(type: "int", nullable: false),
                     Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     TitleArabic = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    ImageRelativePath = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    ImageFileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     Url = table.Column<string>(type: "nvarchar(2048)", maxLength: 2048, nullable: true),
-                    ThumbnailRelativePath = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    ThumbnailFileId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     Album = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     AlbumArabic = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
@@ -465,8 +437,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    NameArabic = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: true),
+                    NameArabic = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
                     CommercialRegistration = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: true),
                     Sector = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
                     City = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
@@ -564,6 +536,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     IsForVisitor = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     PageColor = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
                     MobileAppRole = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false, defaultValue: "None"),
+                    AllowsVipMeetingSlots = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    IsAppRegisterable = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
@@ -585,6 +559,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Title = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     TitleArabic = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
+                    RatingPromptSentUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
@@ -839,6 +814,36 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 });
 
             migrationBuilder.CreateTable(
+                name: "AiPromptHistory",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    AiPromptId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Version = table.Column<int>(type: "int", nullable: false),
+                    SystemPrompt = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UserPromptTemplate = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Provider = table.Column<int>(type: "int", nullable: false),
+                    Model = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
+                    Temperature = table.Column<double>(type: "float", nullable: false),
+                    MaxOutputTokens = table.Column<int>(type: "int", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    ContentHash = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
+                    CapturedFromUpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdatedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CapturedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AiPromptHistory", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AiPromptHistory_AiPrompts_AiPromptId",
+                        column: x => x.AiPromptId,
+                        principalTable: "AiPrompts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ArchiveMediaItems",
                 columns: table => new
                 {
@@ -932,7 +937,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         column: x => x.GateId,
                         principalTable: "Gates",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -955,12 +960,39 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_HallAllocations", x => x.Id);
+                    table.CheckConstraint("CK_HallAllocations_TimeWindow", "[EndUtc] > [StartUtc]");
                     table.ForeignKey(
                         name: "FK_HallAllocations_Halls_HallId",
                         column: x => x.HallId,
                         principalTable: "Halls",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "HallAvailabilityWindows",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    HallId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    StartUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    EndUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    SlotMinutes = table.Column<int>(type: "int", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    CreatedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_HallAvailabilityWindows", x => x.Id);
+                    table.CheckConstraint("CK_HallAvailabilityWindows_TimeWindow", "[EndUtc] > [StartUtc]");
+                    table.ForeignKey(
+                        name: "FK_HallAvailabilityWindows_Halls_HallId",
+                        column: x => x.HallId,
+                        principalTable: "Halls",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -1092,62 +1124,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserProfiles",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
-                    NameArabic = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
-                    Gender = table.Column<int>(type: "int", nullable: false),
-                    DateOfBirth = table.Column<DateOnly>(type: "date", nullable: true),
-                    PlaceOfBirth = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
-                    NationalityId = table.Column<int>(type: "int", nullable: false),
-                    IsSaudi = table.Column<bool>(type: "bit", nullable: false),
-                    NationalId = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    IqamaNumber = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    PassportNumber = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    JobTitle = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: true),
-                    OrganisationId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    SaudiMobile = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    InternationalMobile = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    PlateNumber = table.Column<string>(type: "nvarchar(7)", maxLength: 7, nullable: true),
-                    ReferenceNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    MawjId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
-                    Honorific = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
-                    PreferredLanguage = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: true),
-                    VipPhotoRelativePath = table.Column<string>(type: "nvarchar(260)", maxLength: 260, nullable: true),
-                    IsDelegate = table.Column<bool>(type: "bit", nullable: false),
-                    ProfileTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    QrId = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: true),
-                    RejectionReason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    RejectionReasonArabic = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    IdImageRelativePath = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_UserProfiles", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_UserProfiles_Organisations_OrganisationId",
-                        column: x => x.OrganisationId,
-                        principalTable: "Organisations",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_UserProfiles_ProfileTypes_ProfileTypeId",
-                        column: x => x.ProfileTypeId,
-                        principalTable: "ProfileTypes",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "RatingQuestionGroups",
                 columns: table => new
                 {
@@ -1194,10 +1170,74 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_RatingResponses", x => x.Id);
+                    table.CheckConstraint("CK_RatingResponses_OverallStars", "[OverallStars] IS NULL OR [OverallStars] BETWEEN 1 AND 5");
                     table.ForeignKey(
                         name: "FK_RatingResponses_RatingTypes_RatingTypeId",
                         column: x => x.RatingTypeId,
                         principalTable: "RatingTypes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserProfiles",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    NameArabic = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Gender = table.Column<int>(type: "int", nullable: false),
+                    DateOfBirth = table.Column<DateOnly>(type: "date", nullable: true),
+                    PlaceOfBirth = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
+                    NationalityId = table.Column<int>(type: "int", nullable: false),
+                    IsSaudi = table.Column<bool>(type: "bit", nullable: false),
+                    NationalId = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    IqamaNumber = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    PassportNumber = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    JobTitle = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    OrganisationId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    RegionId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    SaudiMobile = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    InternationalMobile = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    PlateNumber = table.Column<string>(type: "nvarchar(7)", maxLength: 7, nullable: true),
+                    ReferenceNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
+                    MawjId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    Honorific = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    PreferredLanguage = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: true),
+                    VipPhotoRelativePath = table.Column<string>(type: "nvarchar(260)", maxLength: 260, nullable: true),
+                    IsDelegate = table.Column<bool>(type: "bit", nullable: false),
+                    ProfileTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    QrId = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: true),
+                    RejectionReason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    RejectionReasonArabic = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    IdImageRelativePath = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserProfiles", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserProfiles_Organisations_OrganisationId",
+                        column: x => x.OrganisationId,
+                        principalTable: "Organisations",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_UserProfiles_ProfileTypes_ProfileTypeId",
+                        column: x => x.ProfileTypeId,
+                        principalTable: "ProfileTypes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_UserProfiles_Regions_RegionId",
+                        column: x => x.RegionId,
+                        principalTable: "Regions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -1243,6 +1283,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Sessions", x => x.Id);
+                    table.CheckConstraint("CK_Sessions_TimeWindow", "[EndUtc] > [StartUtc]");
                     table.ForeignKey(
                         name: "FK_Sessions_Halls_HallId",
                         column: x => x.HallId,
@@ -1278,12 +1319,47 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_BusinessMeetings", x => x.Id);
+                    table.CheckConstraint("CK_BusinessMeetings_TimeWindow", "[EndUtc] > [StartUtc]");
                     table.ForeignKey(
                         name: "FK_BusinessMeetings_MeetingTables_MeetingTableId",
                         column: x => x.MeetingTableId,
                         principalTable: "MeetingTables",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RatingQuestions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RatingTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RatingQuestionGroupId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    Text = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: false),
+                    TextArabic = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: false),
+                    IsRequired = table.Column<bool>(type: "bit", nullable: false),
+                    DisplayOrder = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RatingQuestions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RatingQuestions_RatingQuestionGroups_RatingQuestionGroupId",
+                        column: x => x.RatingQuestionGroupId,
+                        principalTable: "RatingQuestionGroups",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_RatingQuestions_RatingTypes_RatingTypeId",
+                        column: x => x.RatingTypeId,
+                        principalTable: "RatingTypes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -1341,12 +1417,13 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_GateScans", x => x.Id);
+                    table.CheckConstraint("CK_GateScans_DenialPin", "([Outcome] = 1 AND [DenialReasonCode] IS NOT NULL) OR ([Outcome] = 0 AND [DenialReasonCode] IS NULL)");
                     table.ForeignKey(
                         name: "FK_GateScans_Gates_GateId",
                         column: x => x.GateId,
                         principalTable: "Gates",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_GateScans_UserProfiles_UserProfileId",
                         column: x => x.UserProfileId,
@@ -1402,40 +1479,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         name: "FK_UserProfileInterests_UserProfiles_UserProfileId",
                         column: x => x.UserProfileId,
                         principalTable: "UserProfiles",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "RatingQuestions",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    RatingTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    RatingQuestionGroupId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    Text = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: false),
-                    TextArabic = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: false),
-                    IsRequired = table.Column<bool>(type: "bit", nullable: false),
-                    DisplayOrder = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_RatingQuestions", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_RatingQuestions_RatingQuestionGroups_RatingQuestionGroupId",
-                        column: x => x.RatingQuestionGroupId,
-                        principalTable: "RatingQuestionGroups",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_RatingQuestions_RatingTypes_RatingTypeId",
-                        column: x => x.RatingTypeId,
-                        principalTable: "RatingTypes",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -1497,38 +1540,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         column: x => x.SessionId,
                         principalTable: "Sessions",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "SessionComments",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SessionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Body = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false),
-                    AiFilterVerdict = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
-                    LikeCount = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
-                    ModeratedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    ModeratedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SessionComments", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_SessionComments_Sessions_SessionId",
-                        column: x => x.SessionId,
-                        principalTable: "Sessions",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -1632,6 +1644,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_SessionSummaries", x => x.Id);
+                    table.CheckConstraint("CK_SessionSummaries_ReviewOrder", "[ApprovedAt] IS NULL OR ([ReviewSubmittedAt] IS NOT NULL AND [ApprovedAt] >= [ReviewSubmittedAt])");
                     table.ForeignKey(
                         name: "FK_SessionSummaries_Sessions_SessionId",
                         column: x => x.SessionId,
@@ -1662,6 +1675,33 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         principalTable: "Themes",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RatingAnswers",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RatingResponseId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RatingQuestionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Stars = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RatingAnswers", x => x.Id);
+                    table.CheckConstraint("CK_RatingAnswers_Stars", "[Stars] BETWEEN 1 AND 5");
+                    table.ForeignKey(
+                        name: "FK_RatingAnswers_RatingQuestions_RatingQuestionId",
+                        column: x => x.RatingQuestionId,
+                        principalTable: "RatingQuestions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_RatingAnswers_RatingResponses_RatingResponseId",
+                        column: x => x.RatingResponseId,
+                        principalTable: "RatingResponses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -1753,6 +1793,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_DelegationMeetingRequests", x => x.Id);
+                    table.CheckConstraint("CK_DelegationMeetingRequests_Slot", "[SlotStartUtc] IS NULL OR [SlotEndUtc] IS NULL OR [SlotEndUtc] > [SlotStartUtc]");
                     table.ForeignKey(
                         name: "FK_DelegationMeetingRequests_Countries_RequestingCountryId",
                         column: x => x.RequestingCountryId,
@@ -1765,51 +1806,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         principalTable: "Countries",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "RatingAnswers",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    RatingResponseId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    RatingQuestionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Stars = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_RatingAnswers", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_RatingAnswers_RatingQuestions_RatingQuestionId",
-                        column: x => x.RatingQuestionId,
-                        principalTable: "RatingQuestions",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_RatingAnswers_RatingResponses_RatingResponseId",
-                        column: x => x.RatingResponseId,
-                        principalTable: "RatingResponses",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "SessionCommentLikes",
-                columns: table => new
-                {
-                    CommentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SessionCommentLikes", x => new { x.CommentId, x.UserId });
-                    table.ForeignKey(
-                        name: "FK_SessionCommentLikes_SessionComments_CommentId",
-                        column: x => x.CommentId,
-                        principalTable: "SessionComments",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -2030,6 +2026,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_BusinessMeetingParticipants", x => x.Id);
+                    table.CheckConstraint("CK_BusinessMeetingParticipants_PartyXor", "([Kind] = 0 AND [ExhibitorId] IS NOT NULL AND [VisitorUserId] IS NULL) OR ([Kind] = 1 AND [VisitorUserId] IS NOT NULL AND [ExhibitorId] IS NULL)");
                     table.ForeignKey(
                         name: "FK_BusinessMeetingParticipants_BusinessMeetings_BusinessMeetingId",
                         column: x => x.BusinessMeetingId,
@@ -2068,7 +2065,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         column: x => x.ExhibitorId,
                         principalTable: "Exhibitors",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -2114,36 +2111,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_SpeakerAvailabilityWindows", x => x.Id);
+                    table.CheckConstraint("CK_SpeakerAvailabilityWindows_TimeWindow", "[EndUtc] > [StartUtc]");
                     table.ForeignKey(
                         name: "FK_SpeakerAvailabilityWindows_Speakers_SpeakerId",
-                        column: x => x.SpeakerId,
-                        principalTable: "Speakers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "SpeakerMeetingRequests",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SpeakerId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    RequestedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    RequesterName = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
-                    Subject = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
-                    SlotStartUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    SlotEndUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    Status = table.Column<int>(type: "int", nullable: false),
-                    ResponseNote = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    RespondedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    RespondedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SpeakerMeetingRequests", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_SpeakerMeetingRequests_Speakers_SpeakerId",
                         column: x => x.SpeakerId,
                         principalTable: "Speakers",
                         principalColumn: "Id",
@@ -2208,6 +2178,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_VenueMapNodes", x => x.Id);
+                    table.CheckConstraint("CK_VenueMapNodes_KindArc", "([HallId] IS NULL OR [Kind] = 0) AND ([BoothId] IS NULL OR [Kind] = 2) AND NOT ([HallId] IS NOT NULL AND [BoothId] IS NOT NULL)");
                     table.ForeignKey(
                         name: "FK_VenueMapNodes_Booths_BoothId",
                         column: x => x.BoothId,
@@ -2220,6 +2191,80 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         principalTable: "Halls",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SpeakerMeetingRequests",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SpeakerId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RequestedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RequesterName = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
+                    Subject = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
+                    SlotStartUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    SlotEndUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    AvailabilityWindowId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    HallId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    MeetingTableId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    SpeakerDecisionAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    ResponseNote = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    RespondedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    RespondedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SpeakerMeetingRequests", x => x.Id);
+                    table.CheckConstraint("CK_SpeakerMeetingRequests_Slot", "[SlotStartUtc] IS NULL OR [SlotEndUtc] IS NULL OR [SlotEndUtc] > [SlotStartUtc]");
+                    table.ForeignKey(
+                        name: "FK_SpeakerMeetingRequests_Halls_HallId",
+                        column: x => x.HallId,
+                        principalTable: "Halls",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_SpeakerMeetingRequests_MeetingTables_MeetingTableId",
+                        column: x => x.MeetingTableId,
+                        principalTable: "MeetingTables",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_SpeakerMeetingRequests_SpeakerAvailabilityWindows_AvailabilityWindowId",
+                        column: x => x.AvailabilityWindowId,
+                        principalTable: "SpeakerAvailabilityWindows",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_SpeakerMeetingRequests_Speakers_SpeakerId",
+                        column: x => x.SpeakerId,
+                        principalTable: "Speakers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "MeetingActionTokens",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SpeakerMeetingRequestId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Action = table.Column<int>(type: "int", nullable: false),
+                    TokenHash = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
+                    ExpiresUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UsedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MeetingActionTokens", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_MeetingActionTokens_SpeakerMeetingRequests_SpeakerMeetingRequestId",
+                        column: x => x.SpeakerMeetingRequestId,
+                        principalTable: "SpeakerMeetingRequests",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.InsertData(
@@ -2376,18 +2421,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: new[] { "ArchiveEditionId", "DisplayOrder" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Assets_Category_IsActive",
-                table: "Assets",
-                columns: new[] { "Category", "IsActive" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Assets_Category_OwnerId",
-                table: "Assets",
-                columns: new[] { "Category", "OwnerId" },
-                unique: true,
-                filter: "[IsActive] = 1");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_BadgeUpdateRequests_RequestedByUserId",
                 table: "BadgeUpdateRequests",
                 column: "RequestedByUserId");
@@ -2432,6 +2465,20 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "IX_BusinessMeetingParticipants_BusinessMeetingId",
                 table: "BusinessMeetingParticipants",
                 column: "BusinessMeetingId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BusinessMeetingParticipants_BusinessMeetingId_ExhibitorId",
+                table: "BusinessMeetingParticipants",
+                columns: new[] { "BusinessMeetingId", "ExhibitorId" },
+                unique: true,
+                filter: "[ExhibitorId] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BusinessMeetingParticipants_BusinessMeetingId_VisitorUserId",
+                table: "BusinessMeetingParticipants",
+                columns: new[] { "BusinessMeetingId", "VisitorUserId" },
+                unique: true,
+                filter: "[VisitorUserId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_BusinessMeetingParticipants_ExhibitorId",
@@ -2521,6 +2568,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: new[] { "TargetCountryId", "Status", "CreatedAt" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_EmailTemplates_Type",
+                table: "EmailTemplates",
+                column: "Type",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ExhibitorMemberships_ExhibitorId",
                 table: "ExhibitorMemberships",
                 column: "ExhibitorId");
@@ -2528,7 +2581,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
             migrationBuilder.CreateIndex(
                 name: "IX_ExhibitorMemberships_UserId",
                 table: "ExhibitorMemberships",
-                column: "UserId");
+                column: "UserId",
+                unique: true,
+                filter: "[IsActive] = 1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Exhibitors_ContactId",
@@ -2541,14 +2596,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: new[] { "IsActive", "NameArabic" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_ExhibitorVisitorScans_ExhibitorUserId",
-                table: "ExhibitorVisitorScans",
-                column: "ExhibitorUserId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_ExhibitorVisitorScans_ExhibitorUserId_VisitorUserId",
                 table: "ExhibitorVisitorScans",
-                columns: new[] { "ExhibitorUserId", "VisitorUserId" });
+                columns: new[] { "ExhibitorUserId", "VisitorUserId" },
+                unique: true,
+                filter: "[IsActive] = 1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_FaqEntries_FaqGroupId_IsActive_DisplayOrder",
@@ -2564,6 +2616,13 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "IX_GateAssignments_GateId_IsActive",
                 table: "GateAssignments",
                 columns: new[] { "GateId", "IsActive" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GateAssignments_GateId_UserId",
+                table: "GateAssignments",
+                columns: new[] { "GateId", "UserId" },
+                unique: true,
+                filter: "[IsActive] = 1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_GateAssignments_UserId_IsActive",
@@ -2637,6 +2696,23 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 filter: "[LeaveUtc] IS NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_HallAttendances_UserId",
+                table: "HallAttendances",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_HallAvailabilityWindows_HallId_IsActive_StartUtc",
+                table: "HallAvailabilityWindows",
+                columns: new[] { "HallId", "IsActive", "StartUtc" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_HallAvailabilityWindows_HallId_StartUtc",
+                table: "HallAvailabilityWindows",
+                columns: new[] { "HallId", "StartUtc" },
+                unique: true,
+                filter: "[IsActive] = 1");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Halls_Code",
                 table: "Halls",
                 column: "Code",
@@ -2685,6 +2761,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: new[] { "IsActive", "Album", "DisplayOrder" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_MediaItems_IsActive_Kind_DisplayOrder",
+                table: "MediaItems",
+                columns: new[] { "IsActive", "Kind", "DisplayOrder" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_MediaPartners_ContactId",
                 table: "MediaPartners",
                 column: "ContactId");
@@ -2693,6 +2774,17 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "IX_MediaPartners_IsActive_DisplayOrder",
                 table: "MediaPartners",
                 columns: new[] { "IsActive", "DisplayOrder" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MeetingActionTokens_SpeakerMeetingRequestId",
+                table: "MeetingActionTokens",
+                column: "SpeakerMeetingRequestId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MeetingActionTokens_TokenHash",
+                table: "MeetingActionTokens",
+                column: "TokenHash",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_MeetingTables_HallId_Code",
@@ -2710,6 +2802,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "IX_News_IsActive_PublishedAt",
                 table: "News",
                 columns: new[] { "IsActive", "PublishedAt" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OperationLog_ActorUserId_TimestampUtc",
+                table: "OperationLog",
+                columns: new[] { "ActorUserId", "TimestampUtc" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_OperationLog_EventType_TimestampUtc",
@@ -2762,6 +2859,20 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "IX_ProfileTypes_IsForVisitor_IsActive",
                 table: "ProfileTypes",
                 columns: new[] { "IsForVisitor", "IsActive" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProfileTypes_Name",
+                table: "ProfileTypes",
+                column: "Name",
+                unique: true,
+                filter: "[IsActive] = 1");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProgrammeDays_Date",
+                table: "ProgrammeDays",
+                column: "Date",
+                unique: true,
+                filter: "[IsActive] = 1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ProgrammeDays_IsActive_DisplayOrder_Date",
@@ -2842,14 +2953,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 descending: new[] { false, true });
 
             migrationBuilder.CreateIndex(
-                name: "IX_SavedContacts_OwnerUserId",
-                table: "SavedContacts",
-                column: "OwnerUserId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_SavedContacts_OwnerUserId_SubjectUserId",
                 table: "SavedContacts",
-                columns: new[] { "OwnerUserId", "SubjectUserId" });
+                columns: new[] { "OwnerUserId", "SubjectUserId" },
+                unique: true,
+                filter: "[IsActive] = 1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ScanIdempotency_StoredAt",
@@ -2891,19 +2999,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: new[] { "IsActive", "DisplayOrder" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_SessionCommentLikes_UserId",
-                table: "SessionCommentLikes",
-                column: "UserId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SessionComments_SessionId_Status_IsActive",
-                table: "SessionComments",
-                columns: new[] { "SessionId", "Status", "IsActive" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SessionComments_UserId",
-                table: "SessionComments",
-                column: "UserId");
+                name: "IX_SessionCategories_Name",
+                table: "SessionCategories",
+                column: "Name",
+                unique: true,
+                filter: "[IsActive] = 1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SessionFavourites_SessionId",
@@ -2994,9 +3094,40 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 columns: new[] { "SpeakerId", "IsActive", "StartUtc" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_SpeakerAvailabilityWindows_SpeakerId_StartUtc",
+                table: "SpeakerAvailabilityWindows",
+                columns: new[] { "SpeakerId", "StartUtc" },
+                unique: true,
+                filter: "[IsActive] = 1");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SpeakerMeetingRequests_AvailabilityWindowId",
+                table: "SpeakerMeetingRequests",
+                column: "AvailabilityWindowId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SpeakerMeetingRequests_HallId_SlotStartUtc",
+                table: "SpeakerMeetingRequests",
+                columns: new[] { "HallId", "SlotStartUtc" },
+                unique: true,
+                filter: "[HallId] IS NOT NULL AND [SlotStartUtc] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SpeakerMeetingRequests_MeetingTableId",
+                table: "SpeakerMeetingRequests",
+                column: "MeetingTableId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_SpeakerMeetingRequests_RequestedByUserId",
                 table: "SpeakerMeetingRequests",
                 column: "RequestedByUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SpeakerMeetingRequests_SpeakerId_SlotStartUtc",
+                table: "SpeakerMeetingRequests",
+                columns: new[] { "SpeakerId", "SlotStartUtc" },
+                unique: true,
+                filter: "[SlotStartUtc] IS NOT NULL AND [Status] <> 0 AND [Status] <> 2 AND [Status] <> 3");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SpeakerMeetingRequests_SpeakerId_Status_CreatedAt",
@@ -3124,6 +3255,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 filter: "[ReferenceNumber] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_UserProfiles_RegionId",
+                table: "UserProfiles",
+                column: "RegionId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_UserProfiles_UserId",
                 table: "UserProfiles",
                 column: "UserId",
@@ -3153,78 +3289,19 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
             migrationBuilder.CreateIndex(
                 name: "IX_VisitorShareTokens_UserId",
                 table: "VisitorShareTokens",
-                column: "UserId");
-
-            // D-495/D-587 — the OrganizationProfile singleton is seeded via EF model
-            // HasData (kept by the squash), but its About/Details child rows were
-            // hand-written InsertData in the D-495 migration — outside the model, so
-            // the squash regeneration dropped them. Restored verbatim here. The two
-            // About placeholders (Mission/Vision) are what the D-586 seeder rewrites
-            // in place; without them a fresh DB shows only 2 of the 4 about-items and
-            // the Details list is empty (OrganizationProfileTests.GET_public…).
-            migrationBuilder.InsertData(
-                table: "OrganizationAboutItems",
-                columns: new[] { "Id", "OrganizationProfileId", "Title", "TitleArabic", "Text", "TextArabic", "DisplayOrder", "CreatedAt", "CreatedBy", "IsActive" },
-                values: new object[,]
-                {
-                    {
-                        new Guid("00000000-0000-0000-0000-000000000031"),
-                        new Guid("00000000-0000-0000-0000-000000000003"),
-                        "Mission", "الرسالة",
-                        "A Saudi global platform advancing dialogue on maritime-security issues",
-                        "منصة سعودية عالمية لدعم الحوار في قضايا الأمن البحري",
-                        0,
-                        new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
-                        new Guid("00000000-0000-0000-0000-000000000000"),
-                        true
-                    },
-                    {
-                        new Guid("00000000-0000-0000-0000-000000000032"),
-                        new Guid("00000000-0000-0000-0000-000000000003"),
-                        "Vision", "الرؤية",
-                        "The Saudi International Maritime Forum is a high-level international event that brings together leaders, officials and experts to share experience and build a shared global understanding of the future of maritime security.",
-                        "الملتقى البحري السعودي الدولي حدث دولي رفيع المستوى، يجمع القادة والمسؤولين والخبراء لتبادل التجارب وتعزيز فهم عالمي مشترك لمستقبل الأمن البحري.",
-                        1,
-                        new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
-                        new Guid("00000000-0000-0000-0000-000000000000"),
-                        true
-                    },
-                });
-
-            migrationBuilder.InsertData(
-                table: "OrganizationDetails",
-                columns: new[] { "Id", "OrganizationProfileId", "Name", "NameArabic", "Value", "DisplayOrder", "CreatedAt", "CreatedBy", "IsActive" },
-                values: new object[,]
-                {
-                    { new Guid("00000000-0000-0000-0000-000000000041"), new Guid("00000000-0000-0000-0000-000000000003"), "Year", "السنة", "2026", 0, new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero), new Guid("00000000-0000-0000-0000-000000000000"), true },
-                    { new Guid("00000000-0000-0000-0000-000000000042"), new Guid("00000000-0000-0000-0000-000000000003"), "Date", "الزمن", "01-2026 — 04-2026", 1, new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero), new Guid("00000000-0000-0000-0000-000000000000"), true },
-                    { new Guid("00000000-0000-0000-0000-000000000043"), new Guid("00000000-0000-0000-0000-000000000003"), "Location", "المكان", "Saudi Arabia", 2, new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero), new Guid("00000000-0000-0000-0000-000000000000"), true },
-                });
-
-            // D-373/D-587 — the registration-reference sequence (SIMF-YYYY-00000001)
-            // is a raw-SQL schema object outside the EF model, so it is invisible to
-            // the model snapshot and was dropped when this baseline was regenerated
-            // from the model during the migration squash. Restored here so a fresh
-            // database is schema-complete and UserProfileRepository.NextRegistration
-            // ReferenceAsync (SELECT NEXT VALUE FOR) works.
-            migrationBuilder.Sql(
-                "CREATE SEQUENCE [dbo].[RegistrationReferenceSequence] AS bigint START WITH 1 INCREMENT BY 1;");
+                column: "UserId",
+                unique: true,
+                filter: "[IsActive] = 1");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(
-                "DROP SEQUENCE [dbo].[RegistrationReferenceSequence];");
-
             migrationBuilder.DropTable(
                 name: "AiInvocations");
 
             migrationBuilder.DropTable(
                 name: "AiPromptHistory");
-
-            migrationBuilder.DropTable(
-                name: "AiPrompts");
 
             migrationBuilder.DropTable(
                 name: "ArchiveMediaItems");
@@ -3237,9 +3314,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
             migrationBuilder.DropTable(
                 name: "ArchiveVisibility");
-
-            migrationBuilder.DropTable(
-                name: "Assets");
 
             migrationBuilder.DropTable(
                 name: "BadgeUpdateRequests");
@@ -3261,6 +3335,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
             migrationBuilder.DropTable(
                 name: "DelegationMeetingRequests");
+
+            migrationBuilder.DropTable(
+                name: "EmailTemplates");
 
             migrationBuilder.DropTable(
                 name: "ExhibitorMemberships");
@@ -3287,6 +3364,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "HallAttendances");
 
             migrationBuilder.DropTable(
+                name: "HallAvailabilityWindows");
+
+            migrationBuilder.DropTable(
                 name: "HallSeatLayouts");
 
             migrationBuilder.DropTable(
@@ -3297,6 +3377,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
             migrationBuilder.DropTable(
                 name: "MediaPartners");
+
+            migrationBuilder.DropTable(
+                name: "MeetingActionTokens");
 
             migrationBuilder.DropTable(
                 name: "News");
@@ -3320,9 +3403,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "RatingAnswers");
 
             migrationBuilder.DropTable(
-                name: "Regions");
-
-            migrationBuilder.DropTable(
                 name: "RegistrationGate");
 
             migrationBuilder.DropTable(
@@ -3337,9 +3417,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
             migrationBuilder.DropTable(
                 name: "SeatReservations");
-
-            migrationBuilder.DropTable(
-                name: "SessionCommentLikes");
 
             migrationBuilder.DropTable(
                 name: "SessionFavourites");
@@ -3358,12 +3435,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
             migrationBuilder.DropTable(
                 name: "SessionThemes");
-
-            migrationBuilder.DropTable(
-                name: "SpeakerAvailabilityWindows");
-
-            migrationBuilder.DropTable(
-                name: "SpeakerMeetingRequests");
 
             migrationBuilder.DropTable(
                 name: "SpeakerPresentations");
@@ -3387,6 +3458,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "VisitorShareTokens");
 
             migrationBuilder.DropTable(
+                name: "AiPrompts");
+
+            migrationBuilder.DropTable(
                 name: "ArchiveEditions");
 
             migrationBuilder.DropTable(
@@ -3399,6 +3473,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "Gates");
 
             migrationBuilder.DropTable(
+                name: "SpeakerMeetingRequests");
+
+            migrationBuilder.DropTable(
                 name: "OrganizationProfile");
 
             migrationBuilder.DropTable(
@@ -3408,13 +3485,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "RatingResponses");
 
             migrationBuilder.DropTable(
-                name: "SessionComments");
-
-            migrationBuilder.DropTable(
                 name: "Themes");
 
             migrationBuilder.DropTable(
-                name: "Speakers");
+                name: "Sessions");
 
             migrationBuilder.DropTable(
                 name: "Interests");
@@ -3426,22 +3500,25 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "MeetingTables");
 
             migrationBuilder.DropTable(
+                name: "SpeakerAvailabilityWindows");
+
+            migrationBuilder.DropTable(
                 name: "RatingQuestionGroups");
 
             migrationBuilder.DropTable(
-                name: "Sessions");
+                name: "SessionCategories");
 
             migrationBuilder.DropTable(
                 name: "Exhibitors");
 
             migrationBuilder.DropTable(
-                name: "RatingTypes");
-
-            migrationBuilder.DropTable(
                 name: "Halls");
 
             migrationBuilder.DropTable(
-                name: "SessionCategories");
+                name: "Speakers");
+
+            migrationBuilder.DropTable(
+                name: "RatingTypes");
 
             migrationBuilder.DropTable(
                 name: "Contacts");
@@ -3457,6 +3534,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
             migrationBuilder.DropTable(
                 name: "ProfileTypes");
+
+            migrationBuilder.DropTable(
+                name: "Regions");
         }
     }
 }

@@ -282,45 +282,4 @@ public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
             demoProfileCount,
             database.UserProfiles.Count(p => p.NationalId!.StartsWith("100000000")));
     }
-
-    [Fact]
-    public async Task SeedAsync_seeds_the_organization_about_items()
-    {
-        // D-586 — the forum's public About / Vision / Mission / Themes are seeded
-        // as OrganizationAboutItem rows on the singleton profile (bilingual), so a
-        // fresh DB renders the vision/mission cards. Seed-when-empty → the second
-        // run must not duplicate.
-        using var scope = _factory.Services.CreateScope();
-        var seeder = scope.ServiceProvider.GetRequiredService<IdentitySeeder>();
-        var database = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-
-        await seeder.SeedAsync();
-
-        var items = database.OrganizationAboutItems.OrderBy(i => i.DisplayOrder).ToList();
-        Assert.Equal(4, items.Count);
-        Assert.Equal(
-            new[] { "About the Forum", "Vision", "Mission", "Key Themes" },
-            items.Select(i => i.Title).ToArray());
-        Assert.Equal(
-            new[] { "نبذة عن الملتقى", "الرؤية", "الرسالة", "المحاور الرئيسية" },
-            items.Select(i => i.TitleArabic).ToArray());
-        Assert.All(items, i =>
-        {
-            Assert.False(string.IsNullOrWhiteSpace(i.Text), "EN text required");
-            Assert.False(string.IsNullOrWhiteSpace(i.TextArabic), "AR text required");
-            Assert.True(i.IsActive);
-        });
-
-        // The D-495 placeholder Vision was rewritten in place with the deck text
-        // (not left as the generic "دعم الحوار" placeholder).
-        var vision = items.Single(i => i.Title == "Vision");
-        Assert.Contains("رائدة عالمياً", vision.TextArabic);
-
-        // Idempotent — a second seed neither duplicates nor reverts the content.
-        await seeder.SeedAsync();
-        Assert.Equal(4, database.OrganizationAboutItems.Count());
-        Assert.Contains(
-            "رائدة عالمياً",
-            database.OrganizationAboutItems.Single(i => i.Title == "Vision").TextArabic);
-    }
 }

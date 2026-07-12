@@ -67,28 +67,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 });
 
             migrationBuilder.CreateTable(
-                name: "Notifications",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Kind = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
-                    Title = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
-                    TitleArabic = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
-                    Body = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
-                    BodyArabic = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
-                    Severity = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
-                    ReadAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    RelatedEntityType = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
-                    RelatedEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Notifications", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Permissions",
                 columns: table => new
                 {
@@ -284,6 +262,36 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 });
 
             migrationBuilder.CreateTable(
+                name: "Notifications",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Kind = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
+                    TitleArabic = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
+                    Body = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
+                    BodyArabic = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
+                    Severity = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
+                    ReadAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    RelatedEntityType = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    RelatedEntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    ClickUrl = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
+                    GroupCode = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Notifications", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Notifications_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "PasswordHistory",
                 columns: table => new
                 {
@@ -430,7 +438,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
             migrationBuilder.CreateIndex(
                 name: "EmailIndex",
                 table: "AspNetUsers",
-                column: "NormalizedEmail");
+                column: "NormalizedEmail",
+                unique: true,
+                filter: "[NormalizedEmail] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetUsers_AccountState_StateChangedAt",
@@ -438,9 +448,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 columns: new[] { "AccountState", "StateChangedAt" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_AspNetUsers_UserType",
+                name: "IX_AspNetUsers_UserType_CreatedAt",
                 table: "AspNetUsers",
-                column: "UserType");
+                columns: new[] { "UserType", "CreatedAt" });
 
             migrationBuilder.CreateIndex(
                 name: "UserNameIndex",
@@ -448,6 +458,13 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 column: "NormalizedUserName",
                 unique: true,
                 filter: "[NormalizedUserName] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DeviceKeys_UserId_PublicKey",
+                table: "DeviceKeys",
+                columns: new[] { "UserId", "PublicKey" },
+                unique: true,
+                filter: "[RevokedAt] IS NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_DeviceKeys_UserId_RevokedAt",
@@ -529,9 +546,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 column: "CodeHash");
 
             migrationBuilder.CreateIndex(
-                name: "IX_TotpRecoveryCodes_UserId",
+                name: "IX_TotpRecoveryCodes_UserId_CodeHash",
                 table: "TotpRecoveryCodes",
-                column: "UserId");
+                columns: new[] { "UserId", "CodeHash" },
+                unique: true);
         }
 
         /// <inheritdoc />

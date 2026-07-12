@@ -99,7 +99,13 @@ class RouteNames {
 
   // D-500 (Wave 5, الطلبات 1408:9726) — the unified requests feed (reached from My
   // Area; Approved account). Supersedes the D-479 read-only My-meetings route.
+  // Retitled "طلباتي" (My requests) once the meetings page split off (D-745).
   static const String requests = 'requests';
+
+  // D-745 (owner 2026-07-11) — the VIP bilateral-meetings page (اللقاءات الثنائية,
+  // Figma 1408:9726), split from the requests-history feed above. Reached from the
+  // Home VIP-only tile; the full history stays on [requests] in My-Area.
+  static const String meetings = 'meetings';
 
   // (D-609: myMeetings + myAreaSessions route names removed — their screens are
   // backed up as `.bk` and their routes + My-Area/More entry points are gone.)

@@ -31,21 +31,44 @@ reference data every environment needs identically, so migrations are their home
 
 ## How to run
 
-Run from the repo root, in this order. `SpeakerPhotos` must run **after**
-`Speakers` (it points at those speaker rows). Add `-S <server>` if not the
-default local instance.
+Run from the repo root, in this order. Order matters:
+`SIMF_App_Programme.sql` creates the **`MAIN` hall** that
+`SIMF_App_SeedGaps.sql` (booths + venue-map nodes) references, so Programme
+runs **before** SeedGaps. `SpeakerPhotos` must run **after** `Speakers` (it
+points at those speaker rows). Add `-S <server>` if not the default local
+instance.
 
 ```powershell
-sqlcmd -d SIMF_App -i docs\migrations\2026\SIMF_App_SeedGaps.sql
+sqlcmd -d SIMF_App -i docs\migrations\2026\SIMF_App_Programme.sql
+sqlcmd -d SIMF_App -i docs\migrations\2026\SIMF_App_News.sql
+sqlcmd -d SIMF_App -i docs\migrations\2026\SIMF_App_Sponsors.sql
+sqlcmd -d SIMF_App -i docs\migrations\2026\SIMF_App_MediaPartners.sql
+sqlcmd -d SIMF_App -i docs\migrations\2026\SIMF_App_Archive.sql
+sqlcmd -d SIMF_App -i docs\migrations\2026\SIMF_App_Organization.sql
 sqlcmd -d SIMF_App -i docs\migrations\2026\SIMF_App_Speakers.sql
 sqlcmd -d SIMF_App -i docs\migrations\2026\SIMF_App_SpeakerPhotos.sql
+sqlcmd -d SIMF_App -i docs\migrations\2026\SIMF_App_SeedGaps.sql
 # then copy docs\migrations\2026\speaker-photos\speakerphoto  →  C:\SIMF\Storage\files\speakerphoto
 ```
+
+> **Dev / Test auto-run (D-747).** In **Development** and **Testing** these files
+> are applied automatically by `SqlContentSeeder` (dev boot runs all of them;
+> the test fixture runs the roster set, i.e. everything except `SeedGaps`), so a
+> fresh dev/test DB is not empty. **Production still runs them by hand** with the
+> commands above. The content that used to be seeded in C# (`DefaultContentSeeder`
+> hall/programme/news; `IdentitySeeder` speakers/sponsors/media-partners/archive/
+> org-about) now lives ONLY in these files.
 
 ## Files
 
 | File | Seeds | Decision |
 |------|-------|----------|
+| `SIMF_App_Programme.sql` | Main hall · 3 programme days (20-22 Nov 2026) · 5 placeholder sessions | D-747 (was `DefaultContentSeeder`, D-681) |
+| `SIMF_App_News.sql` | One "Highlights" news item | D-747 (was `DefaultContentSeeder`, D-681) |
+| `SIMF_App_Sponsors.sql` | 10 sponsors (SAMI Platinum · GAMI/RSNF/GADD Gold · 6 Silver fillers) | D-747 (was `IdentitySeeder`, D-348) |
+| `SIMF_App_MediaPartners.sql` | 3 media partners (external placeholder logos) | D-747 (was `IdentitySeeder`, D-348) |
+| `SIMF_App_Archive.sql` | 4 past editions (2022-2025) + 2024 child session-titles + past speakers | D-747 (was `IdentitySeeder`, D-347) |
+| `SIMF_App_Organization.sql` | Org About/Vision/Mission/Themes (real deck text) + social links | D-747 (was `IdentitySeeder`, D-586) |
 | `SIMF_App_SeedGaps.sql` | Booths · Delegations · FAQ · Venue map (the 4 empty app screens) | D-687 |
 | `SIMF_App_Speakers.sql` | 32 real SIMF-4 2026 speakers (text) (+ Poland/Tunisia country rows) from `15-04-2024/3قائمة المتحدثين.pptx` | D-718 |
 | `SIMF_App_SpeakerPhotos.sql` | 23 speaker photos as `StoredFile` rows (SpeakerPhoto, public/plaintext) | D-718 |

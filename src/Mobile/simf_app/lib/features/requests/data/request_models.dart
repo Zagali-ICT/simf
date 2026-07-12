@@ -65,6 +65,8 @@ class AppRequestItem {
     required this.canCancel,
     this.eventDateUtc,
     this.subtitle,
+    this.speakerId,
+    this.countryId,
     this.responseNote,
   });
 
@@ -82,6 +84,16 @@ class AppRequestItem {
   /// for the other kinds, where the card falls back to the meeting-type line.
   final String? subtitle;
 
+  /// D-745 — the speaker's id for a speaker meeting, so the bilateral-meetings
+  /// card renders the speaker photo from the public asset route
+  /// (`/app/assets/SpeakerPhoto/{id}/image`). Null for the other kinds.
+  final String? speakerId;
+
+  /// D-745 — the ISO 3166-1 numeric country id for the meeting card's flag: the
+  /// speaker's nationality (speaker meeting) or the target country (delegation).
+  /// Null when unset / for the non-meeting kinds.
+  final int? countryId;
+
   /// R-3 — the admin's response note for a decided request (e.g. the rejection
   /// reason). Null when none. Append-only wire field.
   final String? responseNote;
@@ -96,6 +108,12 @@ class AppRequestItem {
 
   /// The date shown on the card — the session/meeting slot, else the submit date.
   DateTime get displayDate => eventDateUtc ?? createdAt;
+
+  /// D-745 — the two bilateral-meeting kinds shown on the اللقاءات الثنائية page
+  /// (speaker + delegation); the other kinds live only on the requests history.
+  bool get isMeetingKind =>
+      kind == AppRequestKind.speakerMeeting ||
+      kind == AppRequestKind.delegationMeeting;
 
   static AppRequestItem fromJson(Map<String, dynamic> json) {
     final eventRaw = json['eventDateUtc'] as String?;
@@ -115,6 +133,10 @@ class AppRequestItem {
       subtitle: (json['subtitle'] as String?)?.trim().isEmpty ?? true
           ? null
           : (json['subtitle'] as String).trim(),
+      speakerId: (json['speakerId'] as String?)?.trim().isEmpty ?? true
+          ? null
+          : (json['speakerId'] as String).trim(),
+      countryId: (json['countryId'] as num?)?.toInt(),
       responseNote: (json['responseNote'] as String?)?.trim().isEmpty ?? true
           ? null
           : (json['responseNote'] as String).trim(),

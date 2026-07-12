@@ -6,11 +6,13 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
+import '../../../core/country_flag.dart';
 import '../../../core/utils/gregorian_month_names.dart';
 import '../../../core/utils/weekday_names.dart';
 import '../data/speaker_models.dart';
 import '../data/speakers_repository.dart';
 import 'meeting_slot_pickers.dart';
+import 'speaker_photo_tile.dart';
 
 /// The meeting-request form (bottom sheet) — approved-account only (E2). The
 /// beige "طلب مقابلة" sheet, Figma **1776:5036**: a gold drag handle, the
@@ -21,7 +23,8 @@ import 'meeting_slot_pickers.dart';
 /// - from a **speaker profile** — [speakerId] is set, so the speaker is fixed and
 ///   no picker is shown;
 /// - from the **"طلب جديد"** on the requests list (اللقاءات الثنائية, 1408:9726) —
-///   [speakerId] is **null**, so the sheet first shows a speaker **dropdown**.
+///   [speakerId] is **null**, so the sheet first shows a searchable speaker
+///   picker (type-to-filter by name/rank, owner 2026-07-11).
 ///
 /// D-709 (item 6, FDS-013 §15.4 GAP-4) — the date + time come from the speaker's
 /// **real availability slots** (`GET /app/speakers/{id}/available-slots`), NOT a
@@ -33,6 +36,7 @@ class MeetingRequestSheet extends ConsumerStatefulWidget {
   const MeetingRequestSheet({
     required this.speakerId,
     required this.defaultName,
+    required this.baseUrl,
     required this.l10n,
     super.key,
   });
@@ -40,6 +44,11 @@ class MeetingRequestSheet extends ConsumerStatefulWidget {
   /// The speaker to meet, or **null** for the bilateral entry (show the picker).
   final String? speakerId;
   final String defaultName;
+
+  /// The API base URL — used to build the speaker photo asset URL for the
+  /// bilateral picker's identity rows (D-745). Unused on the profile flow (a
+  /// fixed speaker, no picker), but always supplied so the constructor is uniform.
+  final String baseUrl;
   final AppL10n l10n;
 
   @override
@@ -56,6 +65,9 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
   // The picker's speaker list (bilateral flow only; empty on the profile flow).
   List<SpeakerSummary> _speakers = const <SpeakerSummary>[];
   bool _speakersLoaded = false;
+  // The picker's type-to-filter query (owner 2026-07-11) — matched against the
+  // speaker name + rank, mirroring the speakers list search (908:1744).
+  String _speakerQuery = '';
   // The chosen speaker's real availability slots (D-709), loaded once a speaker
   // is set. Empty (once loaded) ⇒ the "no slots" state.
   List<SpeakerSlot> _slots = const <SpeakerSlot>[];
@@ -288,7 +300,7 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
           if (widget.speakerId == null) ...<Widget>[
             _label(l10n.meetingSelectSpeakerLabel), // اختر المتحدث
             const SizedBox(height: SimfTokens.space2),
-            _speakerDropdown(l10n, isArabic),
+            _speakerPicker(l10n, isArabic),
             const SizedBox(height: SimfTokens.space4),
           ],
           // The subject + slots + send appear once a speaker is set (always on
@@ -376,6 +388,7 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
   /// The subject input — a white, beige-bordered field with the "اكتب الموضوع"
   /// hint (Figma 1776:5048).
   Widget _subjectField(AppL10n l10n) => TextField(
+        key: const ValueKey<String>('meeting-subject'),
         controller: _subject,
         textAlign: TextAlign.start,
         maxLength: 1000,
@@ -411,9 +424,13 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
         ),
       );
 
-  /// The bilateral speaker picker — a beige-bordered dropdown of the speakers.
-  /// Shown only when [MeetingRequestSheet.speakerId] is null.
-  Widget _speakerDropdown(AppL10n l10n, bool isArabic) {
+  /// The bilateral speaker picker (owner 2026-07-11) — a selectable list of every
+  /// speaker showing the same **photo + name + country flag + rank** identity the
+  /// speakers list uses, instead of a bare name dropdown. Tapping a row selects
+  /// that speaker (and loads their real availability slots). Shown only when
+  /// [MeetingRequestSheet.speakerId] is null. The list is height-capped and scrolls
+  /// internally so a long roster never pushes the subject/slots off-screen.
+  Widget _speakerPicker(AppL10n l10n, bool isArabic) {
     if (!_speakersLoaded) {
       return const Align(
         alignment: AlignmentDirectional.centerStart,
@@ -430,55 +447,102 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
         ),
       );
     }
-    return DropdownButtonFormField<String>(
-      initialValue: _selectedSpeakerId,
-      isExpanded: true,
-      icon: const Icon(Icons.expand_more, color: SimfTokens.greyText),
-      dropdownColor: SimfTokens.surface,
-      style: const TextStyle(
-        color: SimfTokens.inputInk,
-        fontSize: SimfTokens.textMd,
-      ),
-      hint: Text(
-        l10n.meetingSelectSpeakerHint, // اختر المتحدث…
-        style: const TextStyle(
-          color: SimfTokens.greyText,
-          fontSize: SimfTokens.textMd,
-        ),
-      ),
-      decoration: const InputDecoration(
-        filled: true,
-        fillColor: SimfTokens.surface,
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: SimfTokens.space4,
-          vertical: SimfTokens.space2,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: SimfTokens.borderRadiusSmall,
-          borderSide: BorderSide(color: SimfTokens.beigeBorder),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: SimfTokens.borderRadiusSmall,
-          borderSide: BorderSide(color: SimfTokens.accent),
-        ),
-        border: OutlineInputBorder(
-          borderRadius: SimfTokens.borderRadiusSmall,
-        ),
-      ),
-      items: <DropdownMenuItem<String>>[
-        for (final s in _speakers)
-          DropdownMenuItem<String>(
-            value: s.id,
-            child: Text(
-              s.localizedName(isArabic),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+    if (_speakers.isEmpty) {
+      return _hint(l10n.meetingSelectSpeakerHint);
+    }
+    final matches = _filteredSpeakers(isArabic);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        _speakerSearchField(l10n),
+        const SizedBox(height: SimfTokens.space2),
+        if (matches.isEmpty)
+          _hint(l10n.speakersNoMatches) // لا نتائج مطابقة
+        else
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 264),
+            child: ListView.separated(
+              shrinkWrap: true,
+              padding: EdgeInsets.zero,
+              itemCount: matches.length,
+              separatorBuilder: (_, __) =>
+                  const SizedBox(height: SimfTokens.space2),
+              itemBuilder: (context, i) {
+                final speaker = matches[i];
+                return _SpeakerOptionTile(
+                  speaker: speaker,
+                  isArabic: isArabic,
+                  baseUrl: widget.baseUrl,
+                  selected: _selectedSpeakerId == speaker.id,
+                  onTap:
+                      _submitting ? null : () => _onSpeakerSelected(speaker.id),
+                );
+              },
             ),
           ),
       ],
-      onChanged: _submitting ? null : _onSpeakerSelected,
     );
   }
+
+  /// The picker's speakers after the type-to-filter query — matched against the
+  /// name + rank, case-insensitive, mirroring the speakers list (908:1744) so
+  /// search behaves identically wherever a speaker is chosen. The already-chosen
+  /// speaker is always kept in the list even when it doesn't match the query, so
+  /// the picker can never hide (or contradict) the target the form submits to.
+  List<SpeakerSummary> _filteredSpeakers(bool isArabic) {
+    final q = _speakerQuery.trim().toLowerCase();
+    if (q.isEmpty) {
+      return _speakers;
+    }
+    return _speakers.where((s) {
+      if (s.id == _selectedSpeakerId) {
+        return true;
+      }
+      final name = s.localizedName(isArabic).toLowerCase();
+      final rank = (s.rank ?? '').toLowerCase();
+      return name.contains(q) || rank.contains(q);
+    }).toList();
+  }
+
+  /// The picker's type-to-filter field (owner 2026-07-11) — the sheet's beige
+  /// field look with a leading magnifier so a VIP can filter a long speaker
+  /// roster instead of scrolling. Reuses the speakers-list search hint.
+  Widget _speakerSearchField(AppL10n l10n) => TextField(
+        key: const ValueKey<String>('meeting-speaker-search'),
+        onChanged: (value) => setState(() => _speakerQuery = value),
+        style: const TextStyle(
+          color: SimfTokens.inputInk,
+          fontSize: SimfTokens.textMd,
+        ),
+        decoration: InputDecoration(
+          isDense: true,
+          hintText: l10n.speakersSearchHint, // ما الذي تبحث عنه
+          hintStyle: const TextStyle(
+            color: SimfTokens.greyText,
+            fontSize: SimfTokens.textMd,
+          ),
+          prefixIcon: const Icon(
+            Icons.search,
+            color: SimfTokens.greyText,
+            size: 18,
+          ),
+          filled: true,
+          fillColor: SimfTokens.surface,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: SimfTokens.space3,
+            vertical: SimfTokens.space3,
+          ),
+          // OutlineInputBorder's default radius is circular-4 (==
+          // SimfTokens.borderRadiusSmall), so it is left implicit — passing it
+          // trips avoid_redundant_argument_values (as in lookup_search_sheet).
+          enabledBorder: const OutlineInputBorder(
+            borderSide: BorderSide(color: SimfTokens.beigeBorder),
+          ),
+          focusedBorder: const OutlineInputBorder(
+            borderSide: BorderSide(color: SimfTokens.accent),
+          ),
+        ),
+      );
 
   /// The horizontal row of the speaker's available day cards (Figma 1776:5052).
   Widget _dayCards(bool isArabic) {
@@ -556,4 +620,115 @@ class _MeetingRequestSheetState extends ConsumerState<MeetingRequestSheet> {
           ),
         ),
       );
+}
+
+/// One selectable speaker row in the bilateral picker (owner 2026-07-11): the
+/// shared [SpeakerPhotoTile] photo + the speaker's name (with the country flag
+/// inline) over the rank line, in a beige-bordered tile that turns gold when
+/// selected. Reuses the same photo tile + [countryFlagEmoji] helper as the
+/// speakers list so the identity looks identical across the app.
+class _SpeakerOptionTile extends StatelessWidget {
+  const _SpeakerOptionTile({
+    required this.speaker,
+    required this.isArabic,
+    required this.baseUrl,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final SpeakerSummary speaker;
+  final bool isArabic;
+  final String baseUrl;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final flag = countryFlagEmoji(speaker.countryId);
+    final rank = speaker.rank?.trim() ?? '';
+    return Material(
+      color: SimfTokens.surface,
+      borderRadius: SimfTokens.borderRadiusSmall,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: SimfTokens.borderRadiusSmall,
+        child: Container(
+          padding: const EdgeInsets.all(SimfTokens.space2),
+          decoration: BoxDecoration(
+            borderRadius: SimfTokens.borderRadiusSmall,
+            border: Border.all(
+              color: selected ? SimfTokens.accent : SimfTokens.beigeBorder,
+              width: selected ? SimfTokens.hairlineBold : SimfTokens.hairline,
+            ),
+          ),
+          child: Row(
+            children: <Widget>[
+              SpeakerPhotoTile(
+                imageUrl:
+                    '$baseUrl/app/assets/SpeakerPhoto/${speaker.id}/image',
+                size: 40,
+              ),
+              const SizedBox(width: SimfTokens.space3),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Flexible(
+                          child: Text(
+                            speaker.localizedName(isArabic),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: SimfTokens.headlineInk,
+                              fontWeight: FontWeight.w600,
+                              fontSize: SimfTokens.textMd,
+                            ),
+                          ),
+                        ),
+                        if (flag != null) ...<Widget>[
+                          const SizedBox(width: SimfTokens.space2),
+                          Text(
+                            flag,
+                            textDirection: TextDirection.ltr,
+                            style: const TextStyle(
+                              fontSize: SimfTokens.textSm,
+                              height: 1,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    if (rank.isNotEmpty) ...<Widget>[
+                      const SizedBox(height: SimfTokens.space1),
+                      Text(
+                        rank,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: SimfTokens.greyText,
+                          fontSize: SimfTokens.textSm,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              if (selected) ...<Widget>[
+                const SizedBox(width: SimfTokens.space2),
+                const Icon(
+                  Icons.check_circle,
+                  color: SimfTokens.accent,
+                  size: 20,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

@@ -60,20 +60,34 @@ class SessionTimeoutOverlay extends StatelessWidget {
                             style: SimfTokens.bodyBeige,
                           ),
                           const SizedBox(height: SimfTokens.space5),
-                          FilledButton(
-                            onPressed: onStaySignedIn,
-                            style: FilledButton.styleFrom(
-                              minimumSize: const Size.fromHeight(48),
-                            ),
-                            child: Text(l10n.sessionStaySignedIn),
-                          ),
-                          const SizedBox(height: SimfTokens.space2),
-                          TextButton(
-                            onPressed: onSignOut,
-                            style: TextButton.styleFrom(
-                              foregroundColor: SimfTokens.beigeBorder,
-                            ),
-                            child: Text(l10n.signOutLink),
+                          // Both actions on one row (owner 2026-07-11, D-747),
+                          // matching the SimfConfirmDialog convention (D-565):
+                          // the secondary "sign out" at the inline start, the
+                          // primary "stay signed in" at the inline end, split
+                          // 50/50 so the two never stack.
+                          Row(
+                            children: <Widget>[
+                              Expanded(
+                                child: TextButton(
+                                  onPressed: onSignOut,
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: SimfTokens.beigeBorder,
+                                    minimumSize: const Size.fromHeight(48),
+                                  ),
+                                  child: Text(l10n.signOutLink),
+                                ),
+                              ),
+                              const SizedBox(width: SimfTokens.space3),
+                              Expanded(
+                                child: FilledButton(
+                                  onPressed: onStaySignedIn,
+                                  style: FilledButton.styleFrom(
+                                    minimumSize: const Size.fromHeight(48),
+                                  ),
+                                  child: Text(l10n.sessionStaySignedIn),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

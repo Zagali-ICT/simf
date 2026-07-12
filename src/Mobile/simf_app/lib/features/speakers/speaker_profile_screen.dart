@@ -106,6 +106,7 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
       builder: (_) => MeetingRequestSheet(
         speakerId: speaker.id,
         defaultName: auth.session.user.displayName,
+        baseUrl: ref.read(simfDataConfigProvider).baseUrl,
         l10n: l10n,
       ),
     );
