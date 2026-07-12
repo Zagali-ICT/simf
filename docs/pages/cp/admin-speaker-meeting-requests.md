@@ -46,6 +46,17 @@ never share rows.
   Icon="reply"`) shown **only on `Pending` rows**, wrapped in
   `<AuthorizedAction Permission="SpeakerMeetingRequests.Manage">`. Resolved
   (Accepted / Rejected) rows show no action icon.
+- Per-row **Resend speaker confirmation** action (R-1) — a quiet send (➤) icon
+  (`SimfToolbarButton Icon="send"`) shown **only on `AwaitingSpeaker` rows**,
+  wrapped in `<AuthorizedAction Permission="SpeakerMeetingRequests.Manage">` (the
+  same gate as Respond). It POSTs
+  `/account/api/admin/speaker-meeting-requests/{id}/resend-confirmation` (no modal):
+  the prior 72h Approve/Reject token pair is invalidated and a fresh pair is minted
+  + re-emailed to the speaker; the row stays `AwaitingSpeaker`. Success toast
+  "The speaker confirmation email was re-sent."; a non-`AwaitingSpeaker` row is a
+  409 (`SPEAKER_MEETING_REQUEST_STATUS_INVALID`). A stuck `AwaitingSpeaker` row
+  whose links all expire is also auto-reverted to `Pending` by the
+  `MeetingAwaitingSpeakerExpiryWorker` (R-1a), returning it to the Respond queue.
 - **Respond modal** (`SimfModal`): a description list (Speaker, Requester, Subject)
   + a **Decision** select (Accept / Reject) + an optional **Response note**
   textarea + Send / Cancel footer buttons. The requester email is loaded into the

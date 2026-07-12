@@ -416,7 +416,189 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(ErrorCodes.SpeakerMeetingRequestInvalid, body.Error!.Code);
     }
 
+    // -- R-1b: resend the speaker confirmation links --------------------------
+
+    [Fact]
+    public async Task Resend_confirmation_for_an_AwaitingSpeaker_request_invalidates_old_tokens_mints_a_fresh_pair_and_keeps_AwaitingSpeaker()
+    {
+        // Accept-with-hall mints the first token pair + moves the request to
+        // AwaitingSpeaker. Resend must invalidate that pair and mint a fresh one,
+        // leaving exactly two still-usable tokens and the request AwaitingSpeaker.
+        var speaker = await SeedSpeakerAsync(allowsMeetings: true);
+        var visitor = await SignInApprovedVisitorAsync();
+        var created = await SubmitAsync(speaker.Id, "Visitor", "Topic", visitor);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var hallId = await SeedMeetingHallAsync();
+        var slot = (await CreateHallWindowAndGetSlotsAsync(hallId, admin))[0];
+        var bind = await PutAuthAsync(
+            $"/api/v1/admin/speaker-meeting-requests/{created.Id}/respond",
+            new RespondToSpeakerMeetingRequestRequest
+            {
+                Status = MeetingRequestStatus.Accepted,
+                HallId = hallId, SlotStartUtc = slot.StartUtc, SlotEndUtc = slot.EndUtc,
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, bind.StatusCode);
+
+        var now = DateTimeOffset.UtcNow;
+        var resend = await PostAuthAsync(
+            $"/api/v1/admin/speaker-meeting-requests/{created.Id}/resend-confirmation",
+            new { }, admin);
+        Assert.Equal(HttpStatusCode.OK, resend.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var tokens = await db.MeetingActionTokens
+            .Where(t => t.SpeakerMeetingRequestId == created.Id)
+            .ToListAsync();
+        // The original pair is invalidated (UsedAt stamped); a fresh unused pair minted.
+        Assert.Equal(4, tokens.Count);
+        Assert.Equal(2, tokens.Count(t => t.UsedAt == null && t.ExpiresUtc > now));
+        Assert.Equal(2, tokens.Count(t => t.UsedAt != null));
+
+        var req = await db.SpeakerMeetingRequests.SingleAsync(r => r.Id == created.Id);
+        Assert.Equal(MeetingRequestStatus.AwaitingSpeaker, req.Status);
+    }
+
+    [Fact]
+    public async Task Resend_confirmation_on_a_non_AwaitingSpeaker_request_is_409()
+    {
+        // A plain Pending request has no confirmation flow to re-send.
+        var speaker = await SeedSpeakerAsync(allowsMeetings: true);
+        var visitor = await SignInApprovedVisitorAsync();
+        var created = await SubmitAsync(speaker.Id, "Visitor", "Topic", visitor);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var resend = await PostAuthAsync(
+            $"/api/v1/admin/speaker-meeting-requests/{created.Id}/resend-confirmation",
+            new { }, admin);
+        Assert.Equal(HttpStatusCode.Conflict, resend.StatusCode);
+        var body = (await resend.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SpeakerMeetingRequestStatusInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Resend_confirmation_requires_the_manage_permission()
+    {
+        // A signed-in non-admin visitor must be 403'd on the admin resend action.
+        var visitor = await SignInApprovedVisitorAsync();
+        var resend = await PostAuthAsync(
+            $"/api/v1/admin/speaker-meeting-requests/{Guid.NewGuid()}/resend-confirmation",
+            new { }, visitor);
+        Assert.Equal(HttpStatusCode.Forbidden, resend.StatusCode);
+    }
+
+    // -- M-7: the requester cannot hold two overlapping meetings --------------
+
+    [Fact]
+    public async Task Accepting_a_second_meeting_that_overlaps_the_requesters_existing_accepted_meeting_with_another_speaker_is_409()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var speaker1 = await SeedSpeakerAsync(allowsMeetings: true);
+        var speaker2 = await SeedSpeakerAsync(allowsMeetings: true);
+        var requesterId = Guid.NewGuid();
+        var slotStart = new DateTimeOffset(2031, 6, 1, 10, 0, 0, TimeSpan.Zero);
+        var slotEnd = slotStart.AddMinutes(30);
+
+        // The requester already holds an Accepted meeting with speaker1 at 10:00.
+        await SeedSpeakerRequestForUserAsync(
+            speaker1.Id, requesterId, MeetingRequestStatus.Accepted, slotStart, slotEnd);
+        // A second, Pending request with speaker2 overlapping the same window.
+        var second = await SeedSpeakerRequestForUserAsync(
+            speaker2.Id, requesterId, MeetingRequestStatus.Pending,
+            slotStart.AddMinutes(15), slotEnd.AddMinutes(15));
+
+        var respond = await PutAuthAsync(
+            $"/api/v1/admin/speaker-meeting-requests/{second}/respond",
+            new RespondToSpeakerMeetingRequestRequest { Status = MeetingRequestStatus.Accepted },
+            admin);
+        Assert.Equal(HttpStatusCode.Conflict, respond.StatusCode);
+        var body = (await respond.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SpeakerMeetingRequestInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Accepting_with_hall_when_the_requester_already_holds_an_overlapping_meeting_is_409()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedMeetingHallAsync();
+        var slot = (await CreateHallWindowAndGetSlotsAsync(hallId, admin))[0];
+
+        var speaker1 = await SeedSpeakerAsync(allowsMeetings: true);
+        var speaker2 = await SeedSpeakerAsync(allowsMeetings: true);
+        var requesterId = Guid.NewGuid();
+
+        // The requester already holds an Accepted meeting with speaker1 on the same slot.
+        await SeedSpeakerRequestForUserAsync(
+            speaker1.Id, requesterId, MeetingRequestStatus.Accepted, slot.StartUtc, slot.EndUtc);
+        // A second Pending request with speaker2 — accepted WITH the same hall slot.
+        var second = await SeedSpeakerRequestForUserAsync(
+            speaker2.Id, requesterId, MeetingRequestStatus.Pending, null, null);
+
+        var respond = await PutAuthAsync(
+            $"/api/v1/admin/speaker-meeting-requests/{second}/respond",
+            new RespondToSpeakerMeetingRequestRequest
+            {
+                Status = MeetingRequestStatus.Accepted,
+                HallId = hallId, SlotStartUtc = slot.StartUtc, SlotEndUtc = slot.EndUtc,
+            }, admin);
+        Assert.Equal(HttpStatusCode.Conflict, respond.StatusCode);
+        var body = (await respond.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SpeakerMeetingRequestInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Two_non_overlapping_meetings_for_the_same_requester_are_both_accepted()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var speaker1 = await SeedSpeakerAsync(allowsMeetings: true);
+        var speaker2 = await SeedSpeakerAsync(allowsMeetings: true);
+        var requesterId = Guid.NewGuid();
+        var slotStart = new DateTimeOffset(2031, 7, 1, 10, 0, 0, TimeSpan.Zero);
+
+        await SeedSpeakerRequestForUserAsync(
+            speaker1.Id, requesterId, MeetingRequestStatus.Accepted,
+            slotStart, slotStart.AddMinutes(30));
+        // A non-overlapping second slot (11:00) — the requester overlap guard allows it.
+        var second = await SeedSpeakerRequestForUserAsync(
+            speaker2.Id, requesterId, MeetingRequestStatus.Pending,
+            slotStart.AddHours(1), slotStart.AddHours(1).AddMinutes(30));
+
+        var respond = await PutAuthAsync(
+            $"/api/v1/admin/speaker-meeting-requests/{second}/respond",
+            new RespondToSpeakerMeetingRequestRequest { Status = MeetingRequestStatus.Accepted },
+            admin);
+        Assert.Equal(HttpStatusCode.OK, respond.StatusCode);
+        var detail = (await respond.Content
+            .ReadFromJsonAsync<ApiResult<AdminSpeakerMeetingRequestDetail>>())!.Data!;
+        Assert.Equal(MeetingRequestStatus.Accepted, detail.Status);
+    }
+
     // -- Helpers --------------------------------------------------------------
+
+    // M-7 — seed a SpeakerMeetingRequest for a SPECIFIC requester (so two rows can
+    // share one requester and exercise the requester-overlap guard).
+    private async Task<Guid> SeedSpeakerRequestForUserAsync(
+        Guid speakerId, Guid requesterUserId, MeetingRequestStatus status,
+        DateTimeOffset? slotStart, DateTimeOffset? slotEnd)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var req = new SpeakerMeetingRequest
+        {
+            Id = Guid.NewGuid(),
+            SpeakerId = speakerId,
+            RequestedByUserId = requesterUserId,
+            RequesterName = "Seed", Subject = "Seed",
+            SlotStartUtc = slotStart, SlotEndUtc = slotEnd,
+            Status = status,
+            CreatedAt = DateTimeOffset.UtcNow,
+            RespondedAt = status == MeetingRequestStatus.Pending ? null : DateTimeOffset.UtcNow,
+        };
+        db.SpeakerMeetingRequests.Add(req);
+        await db.SaveChangesAsync();
+        return req.Id;
+    }
 
     // D-716 — seed a SpeakerMeetingRequest row directly (bypasses the submit
     // guard) to set up multi-request race/overlap scenarios.

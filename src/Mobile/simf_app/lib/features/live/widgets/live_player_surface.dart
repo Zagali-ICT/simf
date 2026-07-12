@@ -15,14 +15,18 @@ import 'live_video_player.dart';
 class LivePlayerSurface extends ConsumerStatefulWidget {
   const LivePlayerSurface({
     required this.url,
-    required this.liveLabel,
     required this.captionHint,
+    this.liveLabel,
     this.caption,
     super.key,
   });
 
   final String url;
-  final String liveLabel;
+
+  /// S-3 — the "LIVE" badge label, or null to HIDE the badge when the session is
+  /// not inside its scheduled window (a feed URL may exist before start / after
+  /// end without the session being live).
+  final String? liveLabel;
 
   /// P5 — D-439: the admin-set AI caption text for this session, or null.
   final String? caption;
@@ -73,7 +77,8 @@ class _LivePlayerSurfaceState extends ConsumerState<LivePlayerSurface> {
             // the inline-end / left), not overlaid on the video.
             Row(
               children: <Widget>[
-                LiveBadge(label: widget.liveLabel),
+                if (widget.liveLabel != null)
+                  LiveBadge(label: widget.liveLabel!),
                 const Spacer(),
                 const LanguageChip(),
               ],

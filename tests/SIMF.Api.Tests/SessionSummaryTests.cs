@@ -92,14 +92,42 @@ public sealed class SessionSummaryTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
+    // S-6 (owner) — the public read hides a published summary while the session
+    // has NOT started yet (a future session), even though PublishedAt is stamped.
+    [Fact]
+    public async Task GetSessionSummaryAsync_BeforeSessionStarts_ReturnsNull()
+    {
+        var sessionId = await SeedSummaryAsync(
+            published: true, sessionActive: true, summaryActive: true, aiModel: "echo",
+            startUtc: DateTimeOffset.UtcNow.AddDays(1));
+
+        var response = await _client.GetAsync($"/api/v1/app/programme/sessions/{sessionId}/summary");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetSessionSummaryAsync_AfterStart_ReturnsSummary()
+    {
+        var sessionId = await SeedSummaryAsync(
+            published: true, sessionActive: true, summaryActive: true, aiModel: "echo",
+            startUtc: DateTimeOffset.UtcNow.AddHours(-1));
+
+        var response = await _client.GetAsync($"/api/v1/app/programme/sessions/{sessionId}/summary");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var summary = (await response.Content
+            .ReadFromJsonAsync<ApiResult<PublicSessionSummary>>())!.Data!;
+        Assert.Equal(sessionId, summary.SessionId);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     private async Task<Guid> SeedSummaryAsync(
-        bool published, bool sessionActive, bool summaryActive, string? aiModel)
+        bool published, bool sessionActive, bool summaryActive, string? aiModel,
+        DateTimeOffset? startUtc = null)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var session = NewSession(sessionActive);
+        var session = NewSession(sessionActive, startUtc);
         db.Halls.Add(NewHallFor(session));
         db.Sessions.Add(session);
         db.SessionSummaries.Add(new SessionSummary
@@ -130,16 +158,22 @@ public sealed class SessionSummaryTests : IClassFixture<SimfApiFactory>
         return session.Id;
     }
 
-    private static Session NewSession(bool active) => new()
+    private static Session NewSession(bool active, DateTimeOffset? startUtc = null)
     {
-        Id = Guid.NewGuid(),
-        Code = "SUM-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
-        Title = "Summary Session", TitleArabic = "جلسة الملخص",
-        HallId = Guid.Empty, // set by NewHallFor
-        StartUtc = DateTimeOffset.UtcNow.AddMinutes(-90),
-        EndUtc = DateTimeOffset.UtcNow.AddMinutes(-30),
-        IsActive = active, CreatedAt = DateTimeOffset.UtcNow,
-    };
+        // S-6 — the public summary read gates on the CLOCK (StartUtc <= now), so the
+        // published-read tests seed a STARTED session (past start) by default.
+        var start = startUtc ?? DateTimeOffset.UtcNow.AddMinutes(-90);
+        return new Session
+        {
+            Id = Guid.NewGuid(),
+            Code = "SUM-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+            Title = "Summary Session", TitleArabic = "جلسة الملخص",
+            HallId = Guid.Empty, // set by NewHallFor
+            StartUtc = start,
+            EndUtc = start.AddHours(1),
+            IsActive = active, CreatedAt = DateTimeOffset.UtcNow,
+        };
+    }
 
     private static Hall NewHallFor(Session session)
     {

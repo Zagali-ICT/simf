@@ -114,7 +114,10 @@ public sealed class VipRosterTests : IClassFixture<SimfApiFactory>
             ProfileTypeId = profileTypeId,
             NationalityCode = "SA",
             IsSaudi = true,
-            NationalId = "1101798278",   // D-459 — Luhn-valid Saudi national id
+            // H-1 — the blind-index duplicate-identity guard rejects a repeated
+            // National ID (409), so every registered VIP needs a UNIQUE Luhn-valid
+            // id. The roster assertions key off MawjId, not NationalId.
+            NationalId = TestIdentity.MintNationalId(),
             SaudiMobile = "+966500000001",
             OrganisationId = organisationId,
         };

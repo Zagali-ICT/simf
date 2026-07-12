@@ -52,4 +52,10 @@ class StorageKeys {
       'simf.prefs.app_update_snoozed_version';
   static const String appUpdateSnoozedAtIso =
       'simf.prefs.app_update_snoozed_at_iso';
+
+  /// G-4 — on-device backlog of gate scans that could not reach the server
+  /// (network down / timeout / a 5xx), held for automatic idempotent retry so
+  /// an admitted person is never dropped. Value is a JSON array of
+  /// PendingGateScan.
+  static const String pendingGateScans = 'simf.prefs.pending_gate_scans';
 }

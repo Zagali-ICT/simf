@@ -31,4 +31,7 @@ public sealed record GateConfigSnapshot(
     /// in this case the engine denies all (L-15).</summary>
     IReadOnlyList<Guid> AllowedProfileTypeIdsFiltered,
     /// <summary>The active operator assignment user ids for this gate.</summary>
-    IReadOnlyList<Guid> AssignedOperatorUserIds);
+    IReadOnlyList<Guid> AssignedOperatorUserIds,
+    /// <summary>X-1 — the hall this gate is a door for, or null for a
+    /// perimeter/venue gate. Drives the hall-attendance chain on allowed scans.</summary>
+    Guid? HallId = null);

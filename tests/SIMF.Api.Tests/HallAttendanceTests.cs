@@ -164,6 +164,51 @@ public sealed class HallAttendanceTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Arrival_before_the_session_window_is_409_session_not_live()
+    {
+        // X-3 — a session starting in an hour is not open for arrivals yet.
+        var visitor = await SeedApprovedVisitorAsync();
+        var sessionId = await SeedSessionAsync(
+            withGeofence: true, startOffsetMin: 60, endOffsetMin: 120);
+
+        var response = await PostArriveAsync(sessionId, CenterLat, CenterLon, visitor);
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SessionNotLive, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Arrival_when_the_hall_is_at_capacity_is_409()
+    {
+        // X-2 — a hall of capacity 1 with one attendee already present rejects a
+        // second distinct arrival with HALL_AT_CAPACITY.
+        var first = await SeedApprovedVisitorAsync();
+        var second = await SeedApprovedVisitorAsync();
+        var sessionId = await SeedSessionAsync(withGeofence: true, capacity: 1);
+
+        var firstArrival = await ArriveAsync(sessionId, CenterLat, CenterLon, first);
+        Assert.True(firstArrival.Arrived);
+
+        var response = await PostArriveAsync(sessionId, CenterLat, CenterLon, second);
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.HallAtCapacity, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Re_arrival_of_the_same_attendee_merges_even_when_hall_is_full()
+    {
+        // X-2 — a re-scan by an attendee who already holds the single open row
+        // merges (no capacity denial) because the merge path returns early.
+        var visitor = await SeedApprovedVisitorAsync();
+        var sessionId = await SeedSessionAsync(withGeofence: true, capacity: 1);
+
+        var first = await ArriveAsync(sessionId, CenterLat, CenterLon, visitor);
+        var second = await ArriveAsync(sessionId, CenterLat, CenterLon, visitor);
+        Assert.Equal(first.EnterUtc, second.EnterUtc);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     private async Task<HallAttendanceStatus> ArriveAsync(
@@ -188,7 +233,9 @@ public sealed class HallAttendanceTests : IClassFixture<SimfApiFactory>
             && n.RelatedEntityId == sessionId);
     }
 
-    private async Task<Guid> SeedSessionAsync(bool withGeofence)
+    private async Task<Guid> SeedSessionAsync(
+        bool withGeofence, int capacity = 100,
+        int startOffsetMin = -15, int endOffsetMin = 45)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -197,7 +244,7 @@ public sealed class HallAttendanceTests : IClassFixture<SimfApiFactory>
             Id = Guid.NewGuid(),
             Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Name = "Attendance Hall", NameArabic = "قاعة الحضور",
-            Capacity = 100, IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
+            Capacity = capacity, IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
             GeofenceCenterLat = withGeofence ? CenterLat : null,
             GeofenceCenterLon = withGeofence ? CenterLon : null,
             GeofenceRadiusMeters = withGeofence ? RadiusMeters : null,
@@ -209,8 +256,8 @@ public sealed class HallAttendanceTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Attendance Session", TitleArabic = "جلسة الحضور",
             HallId = hall.Id,
-            StartUtc = DateTimeOffset.UtcNow.AddMinutes(-15),
-            EndUtc = DateTimeOffset.UtcNow.AddMinutes(45),
+            StartUtc = DateTimeOffset.UtcNow.AddMinutes(startOffsetMin),
+            EndUtc = DateTimeOffset.UtcNow.AddMinutes(endOffsetMin),
             IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
         };
         db.Sessions.Add(session);

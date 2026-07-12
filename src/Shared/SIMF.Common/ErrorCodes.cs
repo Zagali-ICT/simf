@@ -72,6 +72,10 @@ public static class ErrorCodes
 
     // Admin user-creation (D-042)
     public const string AdminEmailAlreadyRegistered = "ADMIN_EMAIL_ALREADY_REGISTERED";
+    // H-1 (on-site remediation) — walk-in registration: the supplied National ID
+    // / Iqama / passport already belongs to a profile row (duplicate-identity
+    // guard, matched via the deterministic blind-index hash of the identifier).
+    public const string DuplicateIdentity = "DUPLICATE_IDENTITY";
 
     // Admin bulk actions (D-044 b)
     public const string AdminUserNotFound = "ADMIN_USER_NOT_FOUND";
@@ -140,6 +144,10 @@ public static class ErrorCodes
     public const string HallNotFound = "HALL_NOT_FOUND";
     public const string HallCodeDuplicate = "HALL_CODE_DUPLICATE";
     public const string HallInUse = "HALL_IN_USE";
+    // H-3 (on-site remediation) — a hall Capacity reduction below what the hall
+    // already commits (its seat-layout total, or the largest active reservation
+    // count on any single session held in the hall).
+    public const string HallCapacityBelowUsage = "HALL_CAPACITY_BELOW_USAGE";
 
     // Countries (D-151 — admin-managed country lookup).
     public const string CountryInvalid = "COUNTRY_INVALID";
@@ -275,6 +283,9 @@ public static class ErrorCodes
     // Seat reservations (D-175, gap doc G11 — Mockup page 7).
     public const string SeatLayoutInvalid = "SEAT_LAYOUT_INVALID";
     public const string SeatLayoutMissing = "SEAT_LAYOUT_MISSING";
+    // H-2 — a layout change would strand active reservations that reference a row/
+    // seat the new layout no longer contains.
+    public const string SeatLayoutHasReservations = "SEAT_LAYOUT_HAS_RESERVATIONS";
     public const string SeatOutOfBounds = "SEAT_OUT_OF_BOUNDS";
     public const string SeatAlreadyReserved = "SEAT_ALREADY_RESERVED";
     public const string SeatAlreadyOwnedBySession = "SEAT_ALREADY_OWNED_BY_SESSION";
@@ -373,6 +384,11 @@ public static class ErrorCodes
     // P5.1d — D-244: operator QR-door-scan — unknown badge / non-approved attendee.
     public const string AttendeeQrUnknown = "ATTENDEE_QR_UNKNOWN";
     public const string AttendeeNotApproved = "ATTENDEE_NOT_APPROVED";
+    // On-site remediation — X-3: hall arrival attempted outside the session's live
+    // time window (± grace). X-2: the hall is at its physical capacity. Additive
+    // codes; the app/CP render the server message and fall back on an unknown code.
+    public const string SessionNotLive = "SESSION_NOT_LIVE";
+    public const string HallAtCapacity = "HALL_AT_CAPACITY";
     public const string SessionSpeakerNotFound = "SESSION_SPEAKER_NOT_FOUND";
     public const string SessionThemeNotFound = "SESSION_THEME_NOT_FOUND";
     // P3.2 — D-231: illegal broadcast-lifecycle transition (e.g. skipping a step).
@@ -383,6 +399,11 @@ public static class ErrorCodes
     // P4.1 — D-238: AI session-summary / محضر validation + lookup.
     public const string SessionSummaryInvalid = "SESSION_SUMMARY_INVALID";
     public const string SessionSummaryNotFound = "SESSION_SUMMARY_NOT_FOUND";
+    // On-site-ops remediation (S-1/S-2/S-7) — session admin guards.
+    public const string SessionHasActiveBookings = "SESSION_HAS_ACTIVE_BOOKINGS";
+    public const string SessionCapacityBelowBookings = "SESSION_CAPACITY_BELOW_BOOKINGS";
+    public const string SessionHallTimeOverlap = "SESSION_HALL_TIME_OVERLAP";
+    public const string SessionStatusGuardFailed = "SESSION_STATUS_GUARD_FAILED";
 
     // Gates (D-148 — Gate Module, SIMF-FDS-003 §5.6, SIMF-API-GATES-001).
     public const string GateInvalid = "GATE_INVALID";
@@ -392,6 +413,9 @@ public static class ErrorCodes
     public const string GateOperatorNotAssigned = "GATE_OPERATOR_NOT_ASSIGNED";
     public const string GateAssignmentInvalid = "GATE_ASSIGNMENT_INVALID";
     public const string GateProfileTypeInvalid = "GATE_PROFILE_TYPE_INVALID";
+    // X-1 (chain design) — the hall bound to a hall-door gate was not found or is
+    // inactive (validated on gate create/update).
+    public const string GateHallInvalid = "GATE_HALL_INVALID";
     public const string IdempotencyKeyConflict = "IDEMPOTENCY_KEY_CONFLICT";
     public const string GateFailureCircuitOpen = "GATE_FAILURE_CIRCUIT_OPEN";
 

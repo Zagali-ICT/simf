@@ -108,6 +108,22 @@ internal sealed class AesGcmPiiEncryptor : IPiiEncryptor
         return Encoding.UTF8.GetString(plain);
     }
 
+    public string? BlindIndex(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return null;
+        }
+        var key = RequireKey();
+        // Deterministic (unlike Encrypt): the SAME plaintext always yields the SAME
+        // digest, so the H-1 duplicate-identity guard + its filtered UNIQUE indexes
+        // work — the encrypted columns cannot, because Encrypt uses a random nonce.
+        // Keyed HMAC (not a bare hash) so a DB leak cannot brute-force the small
+        // identifier space back to plaintext offline.
+        var digest = HMACSHA256.HashData(key, Encoding.UTF8.GetBytes(value));
+        return Convert.ToHexStringLower(digest); // 64 hex chars
+    }
+
     private byte[] RequireKey() =>
         _key ?? throw new InvalidOperationException(
             "PII encryption key is not configured (Storage:UserIdDocumentEncryptionKey).");

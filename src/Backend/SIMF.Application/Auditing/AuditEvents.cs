@@ -302,6 +302,10 @@ public static class AuditEvents
     // per-record detail/respond reveals the requester email.
     public const string SpeakerMeetingRequestSubmitted = "SpeakerMeetingRequest.Submitted";
     public const string SpeakerMeetingRequestResponded = "SpeakerMeetingRequest.Responded";
+    // R-1 — the AwaitingSpeaker->Pending auto-revert (worker) + the admin re-send of the
+    // speaker confirmation links.
+    public const string SpeakerMeetingRequestReverted = "SpeakerMeetingRequest.Reverted";
+    public const string SpeakerMeetingConfirmationResent = "SpeakerMeetingRequest.ConfirmationResent";
     // D-474 (#11, Group G) — speaker availability windows for the VIP-meeting slots.
     public const string SpeakerAvailabilityWindowCreated = "SpeakerAvailabilityWindow.Created";
     public const string SpeakerAvailabilityWindowDeleted = "SpeakerAvailabilityWindow.Deleted";

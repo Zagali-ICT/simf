@@ -84,14 +84,14 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/session-moderators` | [`cp-admin-session-moderators.md`](cp-admin-session-moderators.md) | E2E-SMD-001..018 |
 | `/admin/programme/timeline` | [`cp-admin-programme-timeline.md`](cp-admin-programme-timeline.md) | E2E-PTL-001..011 |
 | `/admin/bookings` | [`cp-admin-bookings.md`](cp-admin-bookings.md) | E2E-BKG-001..013 |
-| `/admin/speaker-meeting-requests` | [`cp-admin-speaker-meeting-requests.md`](cp-admin-speaker-meeting-requests.md) | E2E-SMR-001..018 |
+| `/admin/speaker-meeting-requests` | [`cp-admin-speaker-meeting-requests.md`](cp-admin-speaker-meeting-requests.md) | E2E-SMR-001..021 |
 | `/admin/speaker-availability` | [`cp-admin-speaker-availability.md`](cp-admin-speaker-availability.md) | E2E-SAV-001..006 |
 | `/admin/hall-availability` | [`cp-admin-hall-availability.md`](cp-admin-hall-availability.md) | E2E-HAV-001..007 |
-| `/admin/delegation-meetings` | [`cp-admin-delegation-meetings.md`](cp-admin-delegation-meetings.md) | E2E-DLM-001..006 |
+| `/admin/delegation-meetings` | [`cp-admin-delegation-meetings.md`](cp-admin-delegation-meetings.md) | E2E-DLM-001..009 |
 | `/admin/document-requests` | [`cp-document-requests.md`](cp-document-requests.md) | E2E-CPDR-001..008 |
 | `/admin/badge-requests` | [`cp-badge-requests.md`](cp-badge-requests.md) | E2E-CPBR-001..008 |
 | `/admin/meeting-tables` | [`cp-meeting-tables.md`](cp-meeting-tables.md) | E2E-MHT-001..013 |
-| `/admin/business-meetings` | [`cp-business-meetings.md`](cp-business-meetings.md) | E2E-BMT-001..016 |
+| `/admin/business-meetings` | [`cp-business-meetings.md`](cp-business-meetings.md) | E2E-BMT-001..019 |
 
 ### Control Panel — Engagement, Q&A & attendance
 
@@ -243,7 +243,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #36 `chatbot` (interim shell — no API) | [`mobile-chatbot.md`](mobile-chatbot.md) | E2E-MOB036-001..006 |
 | #24-01 `archiveDetail` (`GET /app/archive/{id}`) | [`mobile-archive-detail.md`](mobile-archive-detail.md) | E2E-MOB024D-001..009 |
 | `My Contacts` / `Share my contact` (`/app/account/share-token` + `/app/contacts/*`) | [`mobile-my-contacts.md`](mobile-my-contacts.md) | E2E-MMC-001..014 |
-| `requests` (`GET /app/my-requests` + `POST …/document-requests` · `…/badge-requests` · `…/my-requests/cancel`) — Wave 5 (D-500), الطلبات, Figma `1408:9726`; supersedes `My meetings` | [`mobile-requests.md`](mobile-requests.md) | E2E-REQ-001..011 |
+| `requests` (`GET /app/my-requests` + `POST …/document-requests` · `…/badge-requests` · `…/my-requests/cancel`) — Wave 5 (D-500), الطلبات, Figma `1408:9726`; supersedes `My meetings` | [`mobile-requests.md`](mobile-requests.md) | E2E-REQ-001..013 |
 | `myMeetings` (`GET /app/my-requests`, filtered to meetings) — المقابلات (D-587), Figma `1701:9406`; speaker + delegation meetings over status chips; reached from the My-Area "مقابلات" counter | [`mobile-my-meetings.md`](mobile-my-meetings.md) | E2E-MOBMTG-001..007 |
 | `Confirm Face ID` step-up (`POST /app/auth/device-keys/step-up` + gated register) — #7a biometric-enable; **D-738** OS device-credential confirm + sign-in device-PIN fallback | [`mobile-biometric-step-up.md`](mobile-biometric-step-up.md) | E2E-MBSU-001..015 |
 | `Badge activation` + **badge sign-in** (`resolve-badge` · `badge-sign-in` · `badge-activation/{start,complete}`) — Part B passwordless activation **+ D-738 password step + D-737 unified scanner** | [`mobile-badge-activation.md`](mobile-badge-activation.md) | E2E-MOBBADGE-001..013 |
@@ -299,7 +299,7 @@ API endpoints land (D-249). The per-screen design docs live under
 
 ### Update — 2026-06-26 (D-500 Wave 5 — الطلبات unified requests feed)
 
-- **New mobile catalogue:** `requests` (`mobile-requests.md`, E2E-REQ-001..011) —
+- **New mobile catalogue:** `requests` (`mobile-requests.md`, E2E-REQ-001..013) —
   the Wave-5 unified الطلبات feed (Figma `1408:9726`): five request kinds
   (`SpeakerMeeting`, `DelegationMeeting` read-only, `SessionAttendance` from seat
   bookings, `ParticipationDocument` new, `BadgeUpdate` new), document/badge submit,

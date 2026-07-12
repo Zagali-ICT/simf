@@ -27,4 +27,10 @@ public interface ISpeakerMeetingRequestService
         Guid actorUserId, Guid id,
         RespondToSpeakerMeetingRequestRequest request,
         CancellationToken cancellationToken = default);
+
+    /// <summary>R-1 — re-mint the speaker's Approve/Reject confirmation tokens for a
+    /// request still AwaitingSpeaker (the previous pair expired or the email was never
+    /// sent) and re-email the links. 409 when the request is not AwaitingSpeaker.</summary>
+    Task ResendSpeakerConfirmationAsync(
+        Guid actorUserId, Guid id, CancellationToken cancellationToken = default);
 }

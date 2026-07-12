@@ -74,6 +74,7 @@
 | E2E-SUM-020 | **Approve (D-472)** — an In-review summary → "Approve" (`.Approve`) → Status "Approved" (ready for المحاور), `ApprovedAt` stamped; approving without submitting → 400 | happy | P0 | authored ✓ (SessionSummaryCommitteeTests) |
 | E2E-SUM-021 | **Return to draft (D-472)** — an In-review / Approved summary → "Return to draft" (`.Approve`) clears the review + approval; any content edit also returns it to Draft | happy | P1 | authored ✓ (SessionSummaryCommitteeTests) |
 | E2E-SUM-022 | **Ready for المحاور read (D-472)** — `GET /app/programme/sessions/{id}/summary/approved`: the session **moderator OR host** → 200 (when approved); neither → 403; authorized but not yet approved → 404 | validation | P0 | authored ✓ (SessionSummaryCommitteeTests) |
+| E2E-SUM-023 | **Publish gate (S-6, owner)** — Publish is blocked while the session has NOT started (a future session) → 400 `SESSION_SUMMARY_INVALID` (bilingual); once the session has started (in-progress or finished), Publish succeeds. Gated on the CLOCK (`now >= StartUtc`), not the manual Held flag. Unpublish is always allowed (even after the session is rescheduled into the future) | error | P1 | authored ✓ (`SessionSummaryCommitteeTests.PublishAsync_BeforeSessionStarts_ReturnsBadRequest` + `.PublishAsync_AfterSessionStarts_Succeeds` + `.UnpublishAsync_WhileScheduled_StillAllowed`) |
 
 ## Scenarios
 
@@ -438,4 +439,4 @@ Scenario: Export the active-session set to an XLSX workbook
 
 ---
 
-_Last reviewed:_ 2026-06-20 by SIMF Team (D-472 #9 — added the team review/approval workflow Submit→Approve→Return + the moderator/host "ready for المحاور" approved read; E2E-SUM-019..022, authored at the API layer). Earlier: 2026-06-10 (D-356 Phase 5 — Excel + toggle; E2E-SUM-018); 2026-06-03 (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-07-11 by Claude (S-6 owner — publish gated on the session having STARTED (clock: now >= StartUtc), not the manual Held flag; E2E-SUM-023). Earlier: 2026-06-20 by SIMF Team (D-472 #9 — added the team review/approval workflow Submit→Approve→Return + the moderator/host "ready for المحاور" approved read; E2E-SUM-019..022, authored at the API layer). Earlier: 2026-06-10 (D-356 Phase 5 — Excel + toggle; E2E-SUM-018); 2026-06-03 (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

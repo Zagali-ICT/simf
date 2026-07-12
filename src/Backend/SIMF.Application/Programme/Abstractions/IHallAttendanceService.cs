@@ -1,3 +1,4 @@
+using SIMF.Common.Enums;
 using SIMF.Contracts.Sessions;
 
 namespace SIMF.Application.Programme.Abstractions;
@@ -39,5 +40,26 @@ public interface IHallAttendanceService
     /// 400 unknown/blank QR; 403 non-approved attendee; 404 unknown session.</summary>
     Task<QrArrivalResult> RecordQrArrivalAsync(
         Guid operatorUserId, Guid sessionId, string qrId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>X-1 (chain design) — a hall-door gate scan feeds hall attendance.
+    /// Resolves the session LIVE in <paramref name="hallId"/> right now (active,
+    /// within [StartUtc, EndUtc] ± the arrival grace, nearest/running-first);
+    /// when none is live it records nothing so an out-of-window scan never opens
+    /// attendance (X-3).
+    /// <para>When <paramref name="directionInferred"/> is true (a
+    /// <c>DirectionMode.Both</c> gate, whose recorded direction is only an
+    /// alternation guess), the action is DERIVED from the attendee's open-row
+    /// state — an open row closes it, otherwise a new arrival opens; this keeps a
+    /// re-entry from mis-merging. A fixed In/Out gate passes false and keeps its
+    /// configured direction: <see cref="ScanDirection.CheckIn"/> opens (or returns
+    /// the existing open) row with <c>Method = QrScan</c>,
+    /// <see cref="ScanDirection.CheckOut"/> closes it.</para>
+    /// Idempotent and safe to call after the gate scan is already committed.
+    /// <paramref name="attendeeUserId"/> is the Identity <c>SimfUser.Id</c>
+    /// (QrResolution.UserId), NOT the App UserProfile id.</summary>
+    Task RecordGateDoorScanAsync(
+        Guid attendeeUserId, Guid hallId, ScanDirection direction,
+        bool directionInferred, Guid operatorUserId,
         CancellationToken cancellationToken = default);
 }

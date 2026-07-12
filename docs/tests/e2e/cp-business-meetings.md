@@ -278,6 +278,35 @@ Scenario: The type dropdown offers G2B and it round-trips
   # delegation (g2g) desk is unchanged.
 ```
 
+### E2E-BMT-018 — Schedule a meeting whose start is in the past is blocked (M-5)
+
+```gherkin
+Scenario: A past start is rejected by the shared ValidateSlot lower bound
+  Given an Administrator scheduling a meeting on a Meeting-purpose table
+  When StartUtc is in the past (EndUtc a valid hour later) with two valid companies
+  Then POST /account/api/admin/business-meetings returns 400 HALL_ALLOCATION_INVALID
+    (bilingual toast: "The start time cannot be in the past." /
+    "لا يمكن أن يكون وقت البداية في الماضي.")
+```
+
+### E2E-BMT-019 — Create a hall allocation whose start is in the past is blocked (M-5)
+
+```gherkin
+Scenario: The same not-in-past bound guards the allocation path
+  Given an Administrator creating a Whole hall allocation
+  When StartUtc is in the past and EndUtc is a valid hour after it
+  Then POST /account/api/admin/halls/{id}/hall-allocations returns 400 HALL_ALLOCATION_INVALID
+```
+
+> **Concurrency note (M-5).** The table / hall / participant overlap checks
+> (E2E-BMT-004 table conflict, E2E-BMT-005 participant conflict, and the
+> whole-hall-session block) now run together with the insert inside ONE
+> Serializable transaction (via the EF execution strategy), so two concurrent
+> overlapping schedules can no longer both slip through — the loser retries and
+> re-checks, raising the clean 409. No behaviour change for the sequential paths.
+
+**Evidence:** `BusinessMeetingsTests.Schedule_a_meeting_in_the_past_is_400`, `Create_hall_allocation_in_the_past_is_400`, plus the regression guards `Overlapping_meeting_on_the_same_table_is_409_table_conflict`, `Same_party_in_two_overlapping_meetings_is_409_participant_conflict`, `A_whole_hall_session_allocation_blocks_a_meeting_in_that_hall`, `Schedule_b2c_with_a_visitor_then_cancel` (all green under the Serializable transaction).
+
 ---
 
-_Last reviewed:_ 2026-07-10 by SIMF Team (D-730, item 15B — added the G2B business-meeting type + E2E-BMT-017). Prior: 2026-06-10 (D-356 Phase 5 — Excel export added; export-only, no import/toggle); 2026-06-03 (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-07-11 by Claude (on-site W2b — M-5 not-in-past ValidateSlot lower bound + Serializable-transaction double-book closure; added E2E-BMT-018/019). Prior: 2026-07-10 by SIMF Team (D-730, item 15B — added the G2B business-meeting type + E2E-BMT-017); 2026-06-10 (D-356 Phase 5 — Excel export added; export-only, no import/toggle); 2026-06-03 (D-256/D-257 grid affordances reconciled).

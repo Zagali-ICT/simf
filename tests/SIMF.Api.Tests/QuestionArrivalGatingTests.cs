@@ -77,17 +77,21 @@ public sealed class QuestionArrivalGatingTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
+    // S-5 (owner) — a non-geofenced hall has no arrival mechanism, so presence
+    // cannot be verified: the client isAtVenue flag is ignored and the question is
+    // accepted either way (remote Q&A works). Geofenced halls still require a real
+    // arrival (the two tests above).
     [Fact]
-    public async Task Non_geofenced_hall_falls_back_to_the_self_assert_toggle()
+    public async Task Non_geofenced_hall_accepts_remote_question_without_a_venue_claim()
     {
         var visitor = await SeedApprovedVisitorAsync();
         var sessionId = await SeedSessionAsync(withGeofence: false);
 
-        var accepted = await SubmitAsync(sessionId, visitor, isAtVenue: true);
-        Assert.Equal(HttpStatusCode.OK, accepted.StatusCode);
+        var withClaim = await SubmitAsync(sessionId, visitor, isAtVenue: true);
+        Assert.Equal(HttpStatusCode.OK, withClaim.StatusCode);
 
-        var rejected = await SubmitAsync(sessionId, visitor, isAtVenue: false);
-        Assert.Equal(HttpStatusCode.Forbidden, rejected.StatusCode);
+        var withoutClaim = await SubmitAsync(sessionId, visitor, isAtVenue: false);
+        Assert.Equal(HttpStatusCode.OK, withoutClaim.StatusCode);
     }
 
     // -- Helpers --------------------------------------------------------------

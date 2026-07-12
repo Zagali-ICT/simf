@@ -919,6 +919,14 @@ class AppL10n {
       );
   String get gateRateLimited =>
       _t('محاولات كثيرة. انتظر قليلاً.', 'Too many attempts. Wait a moment.');
+  String get gateSavedOffline => _t(
+        'تعذّر الاتصال — حُفظ المسح وسيُعاد إرساله تلقائيًا.',
+        'No connection — the scan was saved and will retry automatically.',
+      );
+  String gatePendingSync(int count) => _t(
+        'بانتظار المزامنة: $count',
+        '$count scan(s) waiting to sync',
+      );
 
   // Staff walk-in registration — "add a visitor at the exhibition" (Figma
   // 1467:12357, D-509).

@@ -358,6 +358,16 @@ internal sealed class SpeakerMeetingRequestService(
                     "That slot is no longer available.",
                     "لم تعد هذه الفترة متاحة.");
             }
+
+            // M-7 — the requester must not already hold another live meeting at that time.
+            if (await RequesterHasOverlappingMeetingAsync(
+                    req.RequestedByUserId, req.Id, slotStart, slotEnd, cancellationToken))
+            {
+                throw new ApiException(
+                    ErrorCodes.SpeakerMeetingRequestInvalid, 409,
+                    "The requester already has a meeting booked at that time.",
+                    "لدى مقدّم الطلب اجتماع محجوز بالفعل في هذا الوقت.");
+            }
         }
 
         var now = timeProvider.GetUtcNow();
@@ -429,6 +439,48 @@ internal sealed class SpeakerMeetingRequestService(
         }
 
         return await LoadDetailAsync(id, cancellationToken);
+    }
+
+    // R-1 — an admin re-sends the speaker confirmation links for a request that is still
+    // AwaitingSpeaker: the prior token pair expired (or the email never went out because
+    // the public URL / speaker email was unset). Invalidate any live token, mint a fresh
+    // pair in the same unit of work, then best-effort re-email. Only an AwaitingSpeaker
+    // request qualifies — a decided/reverted request is a 409.
+    public async Task ResendSpeakerConfirmationAsync(
+        Guid actorUserId, Guid id, CancellationToken cancellationToken = default)
+    {
+        var req = await appDbContext.SpeakerMeetingRequests
+            .SingleOrDefaultAsync(r => r.Id == id, cancellationToken)
+            ?? throw new ApiException(
+                ErrorCodes.SpeakerMeetingRequestNotFound, 404,
+                "Speaker meeting request not found.",
+                "لم يتم العثور على طلب مقابلة المتحدّث.");
+        if (req.Status != MeetingRequestStatus.AwaitingSpeaker)
+        {
+            throw new ApiException(
+                ErrorCodes.SpeakerMeetingRequestStatusInvalid, 409,
+                "Only a request awaiting the speaker's confirmation can be re-sent.",
+                "لا يمكن إعادة الإرسال إلا لطلب بانتظار تأكيد المتحدّث.");
+        }
+
+        var now = timeProvider.GetUtcNow();
+        // Kill any still-live token so only the fresh pair can decide the request.
+        await appDbContext.MeetingActionTokens
+            .Where(t => t.SpeakerMeetingRequestId == req.Id && t.UsedAt == null)
+            .ExecuteUpdateAsync(s => s.SetProperty(t => t.UsedAt, now), cancellationToken);
+
+        var links = meetingActionTokens.StageTokensForRequest(req.Id);
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.SpeakerMeetingConfirmationResent,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = DetailJson(new { speakerMeetingRequestId = req.Id }),
+        }, cancellationToken);
+        await meetingActionTokens.AuditMintedAsync(req.Id, cancellationToken);
+        await EmailSpeakerConfirmationLinksAsync(req, links, cancellationToken);
     }
 
     // D-717 (item 7, GAP-3) — email the speaker the Approve/Reject links (the tokens
@@ -560,6 +612,16 @@ internal sealed class SpeakerMeetingRequestService(
                 "لدى المتحدّث اجتماع بالفعل في هذا الوقت.");
         }
 
+        // M-7 — the requester must not already hold another live meeting at that time.
+        if (await RequesterHasOverlappingMeetingAsync(
+                req.RequestedByUserId, req.Id, start, end, cancellationToken))
+        {
+            throw new ApiException(
+                ErrorCodes.SpeakerMeetingRequestInvalid, 409,
+                "The requester already has a meeting booked at that time.",
+                "لدى مقدّم الطلب اجتماع محجوز بالفعل في هذا الوقت.");
+        }
+
         if (request.MeetingTableId is { } tableId)
         {
             var tableOk = await appDbContext.MeetingTables.AsNoTracking()
@@ -591,6 +653,20 @@ internal sealed class SpeakerMeetingRequestService(
         appDbContext.SpeakerMeetingRequests.AsNoTracking()
             .AnyAsync(r => r.Id != excludeRequestId
                 && r.SpeakerId == speakerId
+                && MeetingRequestStatuses.SlotHolding.Contains(r.Status)
+                && r.SlotStartUtc != null && r.SlotEndUtc != null
+                && r.SlotStartUtc < end && start < r.SlotEndUtc, cancellationToken);
+
+    // M-7 — does the REQUESTER already hold a LIVE meeting (Accepted or AwaitingSpeaker)
+    // overlapping [start, end) with any speaker — excluding this request? The speaker-side
+    // guard above stops one speaker being double-booked; this stops one VIP holding two
+    // concurrent meetings with two different speakers. Same half-open overlap rule.
+    private Task<bool> RequesterHasOverlappingMeetingAsync(
+        Guid requesterUserId, Guid excludeRequestId,
+        DateTimeOffset start, DateTimeOffset end, CancellationToken cancellationToken) =>
+        appDbContext.SpeakerMeetingRequests.AsNoTracking()
+            .AnyAsync(r => r.Id != excludeRequestId
+                && r.RequestedByUserId == requesterUserId
                 && MeetingRequestStatuses.SlotHolding.Contains(r.Status)
                 && r.SlotStartUtc != null && r.SlotEndUtc != null
                 && r.SlotStartUtc < end && start < r.SlotEndUtc, cancellationToken);

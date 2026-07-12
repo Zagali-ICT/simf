@@ -31,4 +31,7 @@
   <data name="AppRatingRequest" xml:space="preserve"><value>Rate the app</value></data>
   <data name="ExhibitionRatingRequest" xml:space="preserve"><value>Rate the exhibition</value></data>
   <data name="MeetingRequestConfirmed" xml:space="preserve"><value>Your meeting was confirmed</value></data>
+  <data name="BookingReleased" xml:space="preserve"><value>Seat reservation released</value></data>
+  <data name="ParticipationDocumentDecided" xml:space="preserve"><value>Your document request was updated</value></data>
+  <data name="BadgeUpdateDecided" xml:space="preserve"><value>Your badge request was updated</value></data>
 </root>

@@ -59,5 +59,10 @@ internal sealed class SeatReservationConfiguration : IEntityTypeConfiguration<Se
 
         // P2.2 — D-227: the booking approval queue lists Pending, held bookings.
         builder.HasIndex(x => new { x.Status, x.ReleasedAt });
+
+        // M-6 — the expiry worker scans still-held bookings past their hold
+        // window; index ExpiresUtc, narrowed to held rows that carry one.
+        builder.HasIndex(x => x.ExpiresUtc)
+            .HasFilter("[ReleasedAt] IS NULL AND [ExpiresUtc] IS NOT NULL");
     }
 }

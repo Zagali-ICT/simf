@@ -18,6 +18,7 @@ class LiveSession {
     this.hallName,
     this.hallNameArabic,
     this.startUtc,
+    this.endUtc,
     this.speakers = const <LiveSpeaker>[],
     this.liveCaptions,
     this.liveCaptionsArabic,
@@ -36,6 +37,7 @@ class LiveSession {
       hallName: _trimToNull(json['hallName'] as String?),
       hallNameArabic: _trimToNull(json['hallNameArabic'] as String?),
       startUtc: DateTime.tryParse((json['startUtc'] as String?) ?? ''),
+      endUtc: DateTime.tryParse((json['endUtc'] as String?) ?? ''),
       speakers: (json['speakers'] as List? ?? const <dynamic>[])
           .whereType<Map<dynamic, dynamic>>()
           .map((e) => LiveSpeaker.fromJson(e.cast<String, dynamic>()))
@@ -64,6 +66,12 @@ class LiveSession {
   final String? hallName;
   final String? hallNameArabic;
   final DateTime? startUtc;
+
+  /// S-3 — the session's scheduled end (UTC on the wire, decoded from the
+  /// existing PublicSessionDetail.EndUtc). With [startUtc] it defines the LIVE
+  /// window: "live" = now within [start, end], not merely "a feed URL exists".
+  /// Null when the wire omits it (the global main-live synthetic).
+  final DateTime? endUtc;
   final List<LiveSpeaker> speakers;
 
   // P5 — D-439 (Figma 934:3613): the AI live-caption / running-transcript line

@@ -5,6 +5,7 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using SIMF.Application.SeatReservations.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
@@ -13,6 +14,7 @@ using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Programme;
 using SIMF.Domain.SeatReservations;
 using SIMF.Infrastructure.Persistence;
+using SIMF.Infrastructure.SeatReservations;
 using Xunit;
 
 namespace SIMF.Api.Tests;
@@ -445,12 +447,395 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(BookingStatus.Pending, mine.Status);
     }
 
+    // -- M-2: declared-capacity backstop -------------------------------------
+
+    [Fact]
+    public async Task Capacity_override_below_layout_blocks_the_over_cap_reserve()
+    {
+        // M-2 — the effective cap is min(layout, CapacityOverride) = 1, so the
+        // second seat pick is blocked even though the layout has five seats.
+        var (session, _) = await SeedSessionWithLayoutAsync(
+            new[] { "A" }, seatsPerRow: 5, capacityOverride: 1);
+        var v1 = await SignInApprovedVisitorAsync();
+        var v2 = await SignInApprovedVisitorAsync();
+
+        var first = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 1 }, v1);
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+
+        var second = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 2 }, v2);
+        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
+        var body = (await second.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SeatSessionFull, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Concurrent_reserve_random_never_exceeds_capacity_override()
+    {
+        // M-2 — layout A×5 (Hall.Capacity 5) but CapacityOverride 2. Five visitors
+        // race reserve-random; the post-insert backstop guarantees the session never
+        // holds MORE than the declared cap. It may over-correct to fewer under true
+        // parallelism, so assert <= cap (never == cap), and that every loser is a
+        // 409 SeatSessionFull.
+        const int cap = 2;
+        var (session, _) = await SeedSessionWithLayoutAsync(
+            new[] { "A" }, seatsPerRow: 5, capacityOverride: cap);
+        var visitors = new List<string>();
+        for (var i = 0; i < 5; i++)
+        {
+            visitors.Add(await SignInApprovedVisitorAsync());
+        }
+
+        var responses = await Task.WhenAll(visitors.Select(v =>
+            PostAuthAsync<object>(
+                $"/api/v1/app/sessions/{session.Id}/seats/reserve-random", new { }, v)));
+
+        var success = responses.Count(r => r.StatusCode == HttpStatusCode.OK);
+        Assert.True(success <= cap, $"expected at most {cap} successes, got {success}");
+        foreach (var r in responses.Where(r => r.StatusCode != HttpStatusCode.OK))
+        {
+            Assert.Equal(HttpStatusCode.Conflict, r.StatusCode);
+            var body = (await r.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+            Assert.Equal(ErrorCodes.SeatSessionFull, body.Error!.Code);
+        }
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var active = await db.SeatReservations
+            .CountAsync(r => r.SessionId == session.Id && r.ReleasedAt == null);
+        Assert.True(active <= cap, $"active {active} exceeded cap {cap}");
+        Assert.Equal(success, active);
+    }
+
+    // -- M-1: approval-time capacity re-check + open-seating join backstop -----
+
+    [Fact]
+    public async Task Approving_a_booking_beyond_capacity_is_blocked()
+    {
+        // M-1 — two Pending open-seating holds slipped past the join pre-check
+        // (simulated by a direct insert). Cap is 1, so only the first may be approved;
+        // approving the second is a 409 and the booking stays Pending.
+        var session = await SeedOpenSeatingSessionAsync(capacity: 1);
+        var firstId = await SeedPendingOpenSeatingReservationAsync(session.Id);
+        var secondId = await SeedPendingOpenSeatingReservationAsync(session.Id);
+        var admin = Guid.NewGuid();
+
+        using var scope = _factory.Services.CreateScope();
+        var svc = scope.ServiceProvider.GetRequiredService<ISeatReservationService>();
+        await svc.ApproveBookingAsync(admin, firstId);
+
+        var ex = await Assert.ThrowsAsync<ApiException>(
+            () => svc.ApproveBookingAsync(admin, secondId));
+        Assert.Equal(ErrorCodes.SeatSessionFull, ex.Code);
+
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var approved = await db.SeatReservations
+            .CountAsync(r => r.SessionId == session.Id && r.Status == BookingStatus.Approved);
+        Assert.Equal(1, approved);
+    }
+
+    [Fact]
+    public async Task Bulk_approve_stops_at_capacity()
+    {
+        // M-1 — the sequential bulk-approve re-checks after each commit, so it fills
+        // the cap-1 session with exactly one booking and leaves the other Pending.
+        var session = await SeedOpenSeatingSessionAsync(capacity: 1);
+        var id1 = await SeedPendingOpenSeatingReservationAsync(session.Id);
+        var id2 = await SeedPendingOpenSeatingReservationAsync(session.Id);
+        var admin = Guid.NewGuid();
+
+        using var scope = _factory.Services.CreateScope();
+        var svc = scope.ServiceProvider.GetRequiredService<ISeatReservationService>();
+        var approvedCount = await svc.BulkApproveBookingsAsync(admin, new[] { id1, id2 });
+        Assert.Equal(1, approvedCount);
+
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var approved = await db.SeatReservations
+            .CountAsync(r => r.SessionId == session.Id && r.Status == BookingStatus.Approved);
+        var pending = await db.SeatReservations
+            .CountAsync(r => r.SessionId == session.Id && r.Status == BookingStatus.Pending);
+        Assert.Equal(1, approved);
+        Assert.Equal(1, pending);
+    }
+
+    [Fact]
+    public async Task Open_seating_join_capacity_is_enforced_under_concurrency()
+    {
+        // M-1 — six visitors race the open-seating join on a cap-2 session; the
+        // post-insert backstop keeps the active count at or below the cap.
+        const int cap = 2;
+        var session = await SeedOpenSeatingSessionAsync(capacity: cap);
+        var visitors = new List<string>();
+        for (var i = 0; i < 6; i++)
+        {
+            visitors.Add(await SignInApprovedVisitorAsync());
+        }
+
+        var responses = await Task.WhenAll(visitors.Select(v =>
+            PostAuthAsync<object>(
+                $"/api/v1/app/sessions/{session.Id}/seats/join", new { }, v)));
+
+        var success = responses.Count(r => r.StatusCode == HttpStatusCode.OK);
+        Assert.True(success <= cap, $"expected at most {cap} successes, got {success}");
+        foreach (var r in responses.Where(r => r.StatusCode != HttpStatusCode.OK))
+        {
+            Assert.Equal(HttpStatusCode.Conflict, r.StatusCode);
+            var body = (await r.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+            Assert.Equal(ErrorCodes.SeatSessionFull, body.Error!.Code);
+        }
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var active = await db.SeatReservations
+            .CountAsync(r => r.SessionId == session.Id && r.ReleasedAt == null);
+        Assert.True(active <= cap, $"active {active} exceeded cap {cap}");
+        Assert.Equal(success, active);
+    }
+
+    // -- M-4: admin release closes the lifecycle + notifies --------------------
+
+    [Fact]
+    public async Task Admin_release_marks_cancelled_and_notifies()
+    {
+        // M-4 — releasing a confirmed booking now sets a terminal Cancelled status,
+        // stamps the reviewer, and dispatches a BookingReleased notification.
+        var (session, _) = await SeedSessionWithLayoutAsync(new[] { "A" }, seatsPerRow: 5);
+        var visitor = await SignInApprovedVisitorAsync();
+        var pick = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 1 }, visitor);
+        Assert.Equal(HttpStatusCode.OK, pick.StatusCode);
+        var reservationId = (await pick.Content
+            .ReadFromJsonAsync<ApiResult<MySeatReservation>>())!.Data!.ReservationId;
+
+        // Approve directly so the release closes a CONFIRMED booking.
+        using (var seed = _factory.Services.CreateScope())
+        {
+            var db = seed.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var row = await db.SeatReservations.SingleAsync(r => r.Id == reservationId);
+            row.Status = BookingStatus.Approved;
+            await db.SaveChangesAsync();
+        }
+
+        var adminId = Guid.NewGuid();
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var svc = scope.ServiceProvider.GetRequiredService<ISeatReservationService>();
+            await svc.AdminReleaseAsync(adminId, session.Id, reservationId);
+        }
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var row = await db.SeatReservations.SingleAsync(r => r.Id == reservationId);
+            Assert.NotNull(row.ReleasedAt);
+            Assert.Equal(BookingStatus.Cancelled, row.Status);
+            Assert.Equal(adminId, row.ReviewedByUserId);
+
+            var idDb = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+            var count = await idDb.Notifications.CountAsync(n =>
+                n.Kind == NotificationKind.BookingReleased
+                && n.RelatedEntityId == session.Id);
+            Assert.Equal(1, count);
+        }
+    }
+
+    [Fact]
+    public async Task Admin_release_of_admin_reserved_row_does_not_notify()
+    {
+        // M-4 — an admin block has no attendee (ReservedForUserId null), so releasing
+        // it sets Cancelled but dispatches no BookingReleased notification.
+        var (session, _) = await SeedSessionWithLayoutAsync(new[] { "A" }, seatsPerRow: 3);
+        var admin = await CreateAdministratorAndSignInAsync();
+        var block = await PostAuthAsync(
+            $"/api/v1/admin/sessions/{session.Id}/seats/reserve-row",
+            new AdminReserveRowRequest { RowLabel = "A" }, admin);
+        Assert.Equal(HttpStatusCode.OK, block.StatusCode);
+
+        Guid reservationId;
+        using (var seed = _factory.Services.CreateScope())
+        {
+            var db = seed.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            reservationId = await db.SeatReservations
+                .Where(r => r.SessionId == session.Id
+                    && r.Kind == SeatReservationKind.AdminReservedRow)
+                .Select(r => r.Id).FirstAsync();
+        }
+
+        var adminId = Guid.NewGuid();
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var svc = scope.ServiceProvider.GetRequiredService<ISeatReservationService>();
+            await svc.AdminReleaseAsync(adminId, session.Id, reservationId);
+        }
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var row = await db.SeatReservations.SingleAsync(r => r.Id == reservationId);
+            Assert.Equal(BookingStatus.Cancelled, row.Status);
+
+            var idDb = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+            var count = await idDb.Notifications.CountAsync(n =>
+                n.Kind == NotificationKind.BookingReleased
+                && n.RelatedEntityId == session.Id);
+            Assert.Equal(0, count);
+        }
+    }
+
+    // -- M-6: a Pending hold is stamped with an expiry -------------------------
+
+    [Fact]
+    public async Task Reserving_stamps_an_expiry_on_the_hold()
+    {
+        // M-6 — a visitor seat pick is stamped with ExpiresUtc = CreatedAt + the
+        // hold window; an admin-reserved row seat never expires (ExpiresUtc null).
+        var (session, _) = await SeedSessionWithLayoutAsync(new[] { "A" }, seatsPerRow: 5);
+        var visitor = await SignInApprovedVisitorAsync();
+        var pick = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 1 }, visitor);
+        Assert.Equal(HttpStatusCode.OK, pick.StatusCode);
+        var reservationId = (await pick.Content
+            .ReadFromJsonAsync<ApiResult<MySeatReservation>>())!.Data!.ReservationId;
+
+        var admin = await CreateAdministratorAndSignInAsync();
+        var block = await PostAuthAsync(
+            $"/api/v1/admin/sessions/{session.Id}/seats/reserve-row",
+            new AdminReserveRowRequest { RowLabel = "A" }, admin);
+        Assert.Equal(HttpStatusCode.OK, block.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var mine = await db.SeatReservations.SingleAsync(r => r.Id == reservationId);
+        Assert.NotNull(mine.ExpiresUtc);
+        var window = mine.ExpiresUtc!.Value - mine.CreatedAt;
+        Assert.True(
+            (window - SeatReservationService.PendingHoldWindow).Duration() < TimeSpan.FromSeconds(1),
+            $"expiry window {window} not ~ {SeatReservationService.PendingHoldWindow}");
+
+        var adminSeat = await db.SeatReservations
+            .Where(r => r.SessionId == session.Id
+                && r.Kind == SeatReservationKind.AdminReservedRow)
+            .FirstAsync();
+        Assert.Null(adminSeat.ExpiresUtc);
+    }
+
+    // -- H-2: a layout change may not orphan active reservations ---------------
+
+    [Fact]
+    public async Task Shrinking_a_layout_that_orphans_a_reservation_is_blocked()
+    {
+        // H-2 — dropping row B while B4 is actively reserved is a 409, and the stored
+        // layout is left unchanged.
+        var (session, hall) = await SeedSessionWithLayoutAsync(new[] { "A", "B" }, seatsPerRow: 5);
+        var visitor = await SignInApprovedVisitorAsync();
+        var pick = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "B", SeatNumber = 4 }, visitor);
+        Assert.Equal(HttpStatusCode.OK, pick.StatusCode);
+
+        var admin = await CreateAdministratorAndSignInAsync();
+        var put = await PutAuthAsync(
+            $"/api/v1/admin/halls/{hall.Id}/seat-layout",
+            new SetHallSeatLayoutRequest { RowLabels = new[] { "A" }, SeatsPerRow = 5 }, admin);
+        Assert.Equal(HttpStatusCode.Conflict, put.StatusCode);
+        var body = (await put.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SeatLayoutHasReservations, body.Error!.Code);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var rows = await db.HallSeatLayouts.Where(l => l.HallId == hall.Id)
+            .Select(l => l.RowLabels).SingleAsync();
+        Assert.Equal("A,B", rows);
+    }
+
+    [Fact]
+    public async Task Shrinking_seats_per_row_below_a_booked_seat_is_blocked()
+    {
+        // H-2 — A5 is reserved; shrinking the row to 3 seats would strand it → 409.
+        var (session, hall) = await SeedSessionWithLayoutAsync(new[] { "A" }, seatsPerRow: 5);
+        var visitor = await SignInApprovedVisitorAsync();
+        var pick = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 5 }, visitor);
+        Assert.Equal(HttpStatusCode.OK, pick.StatusCode);
+
+        var admin = await CreateAdministratorAndSignInAsync();
+        var put = await PutAuthAsync(
+            $"/api/v1/admin/halls/{hall.Id}/seat-layout",
+            new SetHallSeatLayoutRequest { RowLabels = new[] { "A" }, SeatsPerRow = 3 }, admin);
+        Assert.Equal(HttpStatusCode.Conflict, put.StatusCode);
+        var body = (await put.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SeatLayoutHasReservations, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Layout_change_with_no_orphans_succeeds()
+    {
+        // H-2 — an active A1 stays inside the grid and a RELEASED B4 does not block,
+        // so dropping row B succeeds.
+        var (session, hall) = await SeedSessionWithLayoutAsync(new[] { "A", "B" }, seatsPerRow: 5);
+        var v1 = await SignInApprovedVisitorAsync();
+        var a1 = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 1 }, v1);
+        Assert.Equal(HttpStatusCode.OK, a1.StatusCode);
+
+        var v2 = await SignInApprovedVisitorAsync();
+        var b4 = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "B", SeatNumber = 4 }, v2);
+        Assert.Equal(HttpStatusCode.OK, b4.StatusCode);
+        var release = await DeleteAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/mine", v2);
+        Assert.Equal(HttpStatusCode.OK, release.StatusCode);
+
+        var admin = await CreateAdministratorAndSignInAsync();
+        var put = await PutAuthAsync(
+            $"/api/v1/admin/halls/{hall.Id}/seat-layout",
+            new SetHallSeatLayoutRequest { RowLabels = new[] { "A" }, SeatsPerRow = 5 }, admin);
+        Assert.Equal(HttpStatusCode.OK, put.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var rows = await db.HallSeatLayouts.Where(l => l.HallId == hall.Id)
+            .Select(l => l.RowLabels).SingleAsync();
+        Assert.Equal("A", rows);
+    }
+
     // -- Helpers --------------------------------------------------------------
+
+    private async Task<Guid> SeedPendingOpenSeatingReservationAsync(Guid sessionId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var reservation = new SeatReservation
+        {
+            Id = Guid.NewGuid(),
+            SessionId = sessionId,
+            RowLabel = null,
+            SeatNumber = null,
+            Kind = SeatReservationKind.OpenSeating,
+            ReservedForUserId = Guid.NewGuid(),
+            CreatedByUserId = Guid.NewGuid(),
+            CreatedAt = DateTimeOffset.UtcNow,
+            Status = BookingStatus.Pending,
+            ExpiresUtc = DateTimeOffset.UtcNow.AddHours(24),
+        };
+        db.SeatReservations.Add(reservation);
+        await db.SaveChangesAsync();
+        return reservation.Id;
+    }
 
     private async Task<(Session Session, Hall Hall)> SeedSessionWithLayoutAsync(
         string[] rowLabels, int seatsPerRow,
         SeatSelectionMode hallMode = SeatSelectionMode.AssignedSeat,
-        SeatSelectionMode? sessionModeOverride = null)
+        SeatSelectionMode? sessionModeOverride = null,
+        int? capacityOverride = null)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -480,6 +865,7 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             Title = "Live", TitleArabic = "مباشر",
             HallId = hall.Id,
             SeatSelectionModeOverride = sessionModeOverride,
+            CapacityOverride = capacityOverride,
             // P2.2 — D-227: a FUTURE window so bookings can be cancelled before
             // the session starts (the new cancel-before-start guard, FR-504).
             StartUtc = DateTimeOffset.UtcNow.AddHours(1),

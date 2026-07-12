@@ -5,11 +5,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.Files.Abstractions;
+using SIMF.Application.Notifications;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
 using SIMF.Domain.Programme;
+using SIMF.Domain.SeatReservations;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Programme;
@@ -26,6 +28,7 @@ internal sealed class AdminSessionService(
     IAuditLog auditLog,
     TimeProvider timeProvider,
     IFileService fileService,
+    INotificationDispatcher notifications,
     ILogger<AdminSessionService> logger) : IAdminSessionService
 {
     public async Task<GridPage<AdminSessionSummary>> ListAllAsync(
@@ -138,6 +141,10 @@ internal sealed class AdminSessionService(
         await EnsureThemesExistAsync(request.ThemeIds, cancellationToken);
         await EnsureCategoryIsValidAsync(request.CategoryId, cancellationToken);
 
+        // S-2 — reject a new session that overlaps another in the same hall.
+        await EnsureNoHallTimeOverlapAsync(
+            hall.Id, request.StartUtc, request.EndUtc, Guid.Empty, cancellationToken);
+
         var clash = await dbContext.Sessions
             .AsNoTracking()
             .AnyAsync(row => row.Code == code, cancellationToken);
@@ -238,6 +245,50 @@ internal sealed class AdminSessionService(
         await EnsureThemesExistAsync(request.ThemeIds, cancellationToken);
         await EnsureCategoryIsValidAsync(request.CategoryId, cancellationToken);
 
+        // S-1 (owner default) — capture whether the hall or the time window is
+        // changing BEFORE the fields are overwritten; either invalidates held seats.
+        var hallChanged = session.HallId != hall.Id;
+        var timeChanged = session.StartUtc != request.StartUtc
+            || session.EndUtc != request.EndUtc;
+
+        // S-1 — soft-deleting via update (IsActive true -> false) must not orphan
+        // active visitor bookings (same rule as DeactivateAsync).
+        if (session.IsActive && !request.IsActive)
+        {
+            var heldVisitorBookings = await dbContext.SeatReservations
+                .CountAsync(reservation =>
+                    reservation.SessionId == id
+                    && reservation.ReleasedAt == null
+                    && reservation.ReservedForUserId != null,
+                    cancellationToken);
+            if (heldVisitorBookings > 0)
+            {
+                throw new ApiException(
+                    ErrorCodes.SessionHasActiveBookings, 409,
+                    $"This session has {heldVisitorBookings} active booking(s) — cancel or reject them before deactivating it.",
+                    $"لهذه الجلسة {heldVisitorBookings} حجز نشط — يجب إلغاؤها أو رفضها قبل إلغاء تفعيلها.");
+            }
+        }
+
+        // S-1 — never shrink the effective capacity below the seats already held
+        // (visitor bookings + admin row-blocks), which would silently oversell.
+        // Skipped when the hall or time is changing, because that path
+        // cascade-releases every held seat anyway (verify correction).
+        if (!(hallChanged || timeChanged) && request.CapacityOverride is { } capacityOverride)
+        {
+            var heldSeatCount = await dbContext.SeatReservations
+                .CountAsync(reservation =>
+                    reservation.SessionId == id && reservation.ReleasedAt == null,
+                    cancellationToken);
+            if (capacityOverride < heldSeatCount)
+            {
+                throw new ApiException(
+                    ErrorCodes.SessionCapacityBelowBookings, 409,
+                    $"Capacity override ({capacityOverride}) is below the {heldSeatCount} seat(s) already held.",
+                    $"السعة المخصصة ({capacityOverride}) أقل من {heldSeatCount} مقعد محجوز بالفعل.");
+            }
+        }
+
         if (!string.Equals(session.Code, code, StringComparison.OrdinalIgnoreCase))
         {
             var clash = await dbContext.Sessions
@@ -250,6 +301,16 @@ internal sealed class AdminSessionService(
                     $"A session with code '{code}' already exists.",
                     $"توجد جلسة بالرمز '{code}' بالفعل.");
             }
+        }
+
+        // S-2 — reject the update if the new hall/time overlaps another session.
+        // Only checked when the slot actually moves (verify correction): a
+        // title-only edit of a session with a pre-existing overlapping sibling
+        // (legacy data) must stay saveable, and deactivation must not be blocked.
+        if (hallChanged || timeChanged)
+        {
+            await EnsureNoHallTimeOverlapAsync(
+                hall.Id, request.StartUtc, request.EndUtc, id, cancellationToken);
         }
 
         session.Code = code;
@@ -276,6 +337,24 @@ internal sealed class AdminSessionService(
         ReplaceSpeakerLinks(session, request.Speakers);
         ReplaceThemeLinks(session, request.ThemeIds);
 
+        // S-1 (owner default) — a hall move or a start/end change invalidates every
+        // held seat (a seat belongs to a specific hall + time slot), so cascade-release
+        // the active reservations in the SAME unit of work and notify the affected
+        // visitors after the commit.
+        List<SeatReservation> releasedReservations = [];
+        if (hallChanged || timeChanged)
+        {
+            releasedReservations = await dbContext.SeatReservations
+                .Where(reservation =>
+                    reservation.SessionId == id && reservation.ReleasedAt == null)
+                .ToListAsync(cancellationToken);
+            foreach (var reservation in releasedReservations)
+            {
+                reservation.ReleasedAt = session.UpdatedAt!.Value;
+                reservation.Status = BookingStatus.Cancelled;
+            }
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -285,6 +364,13 @@ internal sealed class AdminSessionService(
             ActorUserId = actorUserId,
             Detail = $"id={session.Id}; code={code}; active={session.IsActive}",
         }, cancellationToken);
+
+        // S-1 — notify each affected visitor AFTER the commit (best-effort; the
+        // dispatcher writes to the Identity DB via its own context, D-157).
+        foreach (var reservation in releasedReservations)
+        {
+            await TryNotifyBookingReleasedAsync(reservation, session, cancellationToken);
+        }
 
         return (await GetAsync(session.Id, cancellationToken))!;
     }
@@ -304,6 +390,22 @@ internal sealed class AdminSessionService(
         if (!session.IsActive)
         {
             return; // idempotent
+        }
+
+        // S-1 (owner default) — block deleting a session that still has active
+        // visitor bookings; they must be cancelled/rejected first (no silent orphan).
+        var activeBookings = await dbContext.SeatReservations
+            .CountAsync(reservation =>
+                reservation.SessionId == id
+                && reservation.ReleasedAt == null
+                && reservation.ReservedForUserId != null,
+                cancellationToken);
+        if (activeBookings > 0)
+        {
+            throw new ApiException(
+                ErrorCodes.SessionHasActiveBookings, 409,
+                $"This session has {activeBookings} active booking(s) — cancel or reject them before deleting it.",
+                $"لهذه الجلسة {activeBookings} حجز نشط — يجب إلغاؤها أو رفضها قبل حذفها.");
         }
 
         session.IsActive = false;
@@ -358,6 +460,10 @@ internal sealed class AdminSessionService(
         }
 
         var now = timeProvider.GetUtcNow();
+        // S-7 — adjacency alone is not enough: a session cannot be marked Held
+        // before it has started, nor Recorded/Published without an attached
+        // recording. Default guard (no admin override in this increment).
+        ValidateStatusGuards(session, status, now);
         session.Status = status;
         session.PublishedAt = status == SessionStatus.Published ? now : null;
         session.UpdatedAt = now;
@@ -536,6 +642,30 @@ internal sealed class AdminSessionService(
         return (code, title, titleArabic);
     }
 
+    // S-7 — the clock + recording guards for a FORWARD lifecycle move. Reverse
+    // (undo) moves (Held->Scheduled, Recorded->Held, Published->Recorded) carry no
+    // guard. No admin override flag in this increment — an admin who must publish
+    // pre-recorded content adjusts the session's start time / uploads a recording.
+    private static void ValidateStatusGuards(
+        Session session, SessionStatus target, DateTimeOffset now)
+    {
+        if (target == SessionStatus.Held && now < session.StartUtc)
+        {
+            throw new ApiException(
+                ErrorCodes.SessionStatusGuardFailed, 400,
+                "A session cannot be marked Held before it has started.",
+                "لا يمكن تعيين الجلسة كمنعقدة قبل أن تبدأ.");
+        }
+        if (target is SessionStatus.Recorded or SessionStatus.Published
+            && session.RecordingStoredFileName is null)
+        {
+            throw new ApiException(
+                ErrorCodes.SessionStatusGuardFailed, 400,
+                "A session needs an attached recording before it can be marked Recorded or Published.",
+                "تحتاج الجلسة إلى تسجيل مرفق قبل تعيينها كمُسجّلة أو منشورة.");
+        }
+    }
+
     private static void ValidateTimeWindow(DateTimeOffset start, DateTimeOffset end)
     {
         if (end <= start)
@@ -577,6 +707,31 @@ internal sealed class AdminSessionService(
         {
             throw new ApiException(
                 ErrorCodes.SessionInvalid, 400, englishMessage, arabicMessage);
+        }
+    }
+
+    // S-2 — two active sessions must not occupy the same hall at overlapping
+    // times. Half-open overlap: existing.Start < newEnd AND newStart < existing.End.
+    // Excludes the session being updated (excludeSessionId) and soft-deleted rows.
+    private async Task EnsureNoHallTimeOverlapAsync(
+        Guid hallId, DateTimeOffset startUtc, DateTimeOffset endUtc,
+        Guid excludeSessionId, CancellationToken cancellationToken)
+    {
+        var overlaps = await dbContext.Sessions
+            .AsNoTracking()
+            .AnyAsync(other =>
+                other.IsActive
+                && other.HallId == hallId
+                && other.Id != excludeSessionId
+                && other.StartUtc < endUtc
+                && startUtc < other.EndUtc,
+                cancellationToken);
+        if (overlaps)
+        {
+            throw new ApiException(
+                ErrorCodes.SessionHallTimeOverlap, 409,
+                "Another active session already uses this hall at an overlapping time.",
+                "توجد جلسة نشطة أخرى تستخدم هذه القاعة في وقت متداخل.");
         }
     }
 
@@ -690,6 +845,40 @@ internal sealed class AdminSessionService(
                 SessionId = session.Id,
                 ThemeId = themeId,
             });
+        }
+    }
+
+    // S-1 (owner default) — tell each affected visitor their held seat was released
+    // because the session was moved or rescheduled. Reuses NotificationKind.BookingRejected
+    // (in-app warning, session deep-link); the authoritative bilingual text is set below.
+    private async Task TryNotifyBookingReleasedAsync(
+        SeatReservation reservation, Session session, CancellationToken cancellationToken)
+    {
+        if (reservation.ReservedForUserId is not { } userId)
+        {
+            return; // an admin row-block has no attendee to notify
+        }
+        try
+        {
+            await notifications.DispatchAsync(new NotificationRequest
+            {
+                UserId = userId,
+                Kind = NotificationKind.BookingRejected,
+                Title = "Seat reservation released",
+                TitleArabic = "تم إلغاء حجز المقعد",
+                Body = $"\"{session.Title}\" was rescheduled or moved to another hall, so your seat was released. Please book again.",
+                BodyArabic = $"تم تغيير موعد أو قاعة جلسة \"{session.TitleArabic}\"، لذا تم إلغاء حجز مقعدك. يرجى الحجز من جديد.",
+                Severity = NotificationSeverity.Warning,
+                RelatedEntityType = "Session",
+                RelatedEntityId = session.Id,
+                SendEmail = false,
+            }, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex,
+                "Booking-released notification failed for reservation {ReservationId}",
+                reservation.Id);
         }
     }
 

@@ -455,6 +455,9 @@ class SimfApiClient {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
+      // dio 5.10 added transformTimeout; it is a timeout like the others, so it
+      // maps to clientTimeout and keeps this switch exhaustive (test compile).
+      case DioExceptionType.transformTimeout:
         return ApiFailure(
           code: ApiErrorCodes.clientTimeout,
           message: e.message ?? 'Request timed out.',

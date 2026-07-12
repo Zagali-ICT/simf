@@ -875,6 +875,58 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(ErrorCodes.HallAllocationNotFound, body.Error!.Code);
     }
 
+    // -- M-5: a slot cannot start in the past (shared ValidateSlot lower bound) --
+
+    [Fact]
+    public async Task Schedule_a_meeting_in_the_past_is_400()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting);
+        var tableId = await CreateTableAsync(hallId, token, capacity: 4);
+        var start = DateTimeOffset.UtcNow.AddDays(-1);
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/business-meetings",
+            new ScheduleMeetingRequest
+            {
+                MeetingTableId = tableId,
+                MeetingType = BusinessMeetingType.B2B,
+                StartUtc = start,
+                EndUtc = start.AddHours(1),
+                Participants =
+                [
+                    new() { Kind = MeetingPartyKind.Company, CompanyId = await SeedCompanyAsync() },
+                    new() { Kind = MeetingPartyKind.Company, CompanyId = await SeedCompanyAsync() },
+                ],
+            }, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.HallAllocationInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Create_hall_allocation_in_the_past_is_400()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting);
+        // A valid end AFTER a past start, so ValidateSlot passes the end<=start
+        // branch and reaches the new not-in-past lower bound.
+        var start = DateTimeOffset.UtcNow.AddDays(-1);
+
+        var response = await PostAuthAsync(
+            $"/api/v1/admin/halls/{hallId}/hall-allocations",
+            new CreateHallAllocationRequest
+            {
+                Purpose = HallPurpose.Meeting,
+                Mode = HallAllocationMode.Whole,
+                StartUtc = start,
+                EndUtc = start.AddHours(1),
+            }, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.HallAllocationInvalid, body.Error!.Code);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     private Task<HttpResponseMessage> ScheduleAsync(

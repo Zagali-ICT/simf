@@ -30,6 +30,11 @@ internal sealed class AdminGateService(
     TimeProvider timeProvider,
     ILogger<AdminGateService> logger) : IAdminGateService
 {
+    /// <summary>G-2 — how long after a visitor's last allowed check-in (with no
+    /// later scan) they are still counted as "currently inside". Bounds the
+    /// occupancy view against In-only gates that never emit a CheckOut.</summary>
+    private static readonly TimeSpan StalePresenceWindow = TimeSpan.FromHours(16);
+
     public async Task<GridPage<AdminGateSummary>> ListAllAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
@@ -124,6 +129,7 @@ internal sealed class AdminGateService(
 
         await ValidateProfileTypesAsync(request.AllowedProfileTypeIds, cancellationToken);
         await ValidateOperatorsAsync(request.AssignedOperatorUserIds, cancellationToken);
+        await ValidateHallAsync(request.HallId, cancellationToken);
 
         var clash = await appDbContext.Gates.AsNoTracking()
             .AnyAsync(gate => gate.Code == code, cancellationToken);
@@ -141,6 +147,7 @@ internal sealed class AdminGateService(
             Code = code, Name = name, NameArabic = nameArabic,
             Description = description, DescriptionArabic = descriptionArabic,
             DirectionMode = request.DirectionMode,
+            HallId = request.HallId,
             IsActive = true,
             CreatedAt = now,
         };
@@ -203,6 +210,7 @@ internal sealed class AdminGateService(
 
         await ValidateProfileTypesAsync(request.AllowedProfileTypeIds, cancellationToken);
         await ValidateOperatorsAsync(request.AssignedOperatorUserIds, cancellationToken);
+        await ValidateHallAsync(request.HallId, cancellationToken);
 
         if (!string.Equals(gate.Code, code, StringComparison.OrdinalIgnoreCase))
         {
@@ -219,6 +227,7 @@ internal sealed class AdminGateService(
         gate.Code = code; gate.Name = name; gate.NameArabic = nameArabic;
         gate.Description = description; gate.DescriptionArabic = descriptionArabic;
         gate.DirectionMode = request.DirectionMode;
+        gate.HallId = request.HallId;
         gate.IsActive = request.IsActive;
         gate.UpdatedAt = timeProvider.GetUtcNow();
 
@@ -353,6 +362,11 @@ internal sealed class AdminGateService(
     {
         // Per design notes §3.3 — most-recent allowed scan across all gates
         // per visitor; inside if CheckIn, outside if CheckOut or absent.
+        // G-2 — In-only gates never emit a CheckOut, so a bare "latest scan is a
+        // CheckIn" counts a visitor as inside forever. Bound presence to a rolling
+        // window: a check-in older than StalePresenceWindow with no later scan is
+        // treated as departed (day/session-boundary reconciliation).
+        var presenceCutoff = timeProvider.GetUtcNow() - StalePresenceWindow;
         var latest = await appDbContext.GateScans.AsNoTracking()
             .Where(s => s.Outcome == ScanOutcome.Allowed && s.UserProfileId != null)
             .GroupBy(s => s.UserProfileId!.Value)
@@ -361,7 +375,8 @@ internal sealed class AdminGateService(
                 UserProfileId = g.Key,
                 Last = g.OrderByDescending(s => s.ScannedAtUtc).First(),
             })
-            .Where(x => x.Last.Direction == ScanDirection.CheckIn)
+            .Where(x => x.Last.Direction == ScanDirection.CheckIn
+                && x.Last.ScannedAtUtc >= presenceCutoff)
             .ToListAsync(cancellationToken);
 
         if (latest.Count == 0) { return Array.Empty<AdminCurrentlyInsideRow>(); }
@@ -475,6 +490,25 @@ internal sealed class AdminGateService(
             throw new ApiException(ErrorCodes.GateProfileTypeInvalid, 400,
                 "One or more allowed profile types are missing or duplicated.",
                 "أحد أنواع الملفات المسموح بها مفقود أو مكرر.");
+        }
+    }
+
+    /// <summary>X-1 — validates the optional hall-door binding. Null is a no-op
+    /// (perimeter gate); a non-null HallId must reference an existing active Hall
+    /// in the App DB (logical-FK validation before write, mirroring
+    /// <see cref="ValidateProfileTypesAsync"/>), else a clean 400 GATE_HALL_INVALID
+    /// instead of a later FK violation.</summary>
+    private async Task ValidateHallAsync(
+        Guid? hallId, CancellationToken cancellationToken)
+    {
+        if (hallId is not { } id) { return; }
+        var exists = await appDbContext.Halls.AsNoTracking()
+            .AnyAsync(hall => hall.Id == id && hall.IsActive, cancellationToken);
+        if (!exists)
+        {
+            throw new ApiException(ErrorCodes.GateHallInvalid, 400,
+                "The selected hall was not found or is inactive.",
+                "القاعة المحددة غير موجودة أو غير نشطة.");
         }
     }
 
@@ -603,5 +637,5 @@ internal sealed class AdminGateService(
             gate.DirectionMode, gate.IsActive,
             gate.AllowedProfileTypes.Select(a => a.ProfileTypeId).ToList(),
             gate.Assignments.Where(a => a.IsActive).Select(a => a.UserId).ToList(),
-            gate.CreatedAt, gate.UpdatedAt);
+            gate.CreatedAt, gate.UpdatedAt, gate.HallId);
 }
