@@ -62,15 +62,18 @@ class BadgeQrCard extends StatelessWidget {
                   version: QrVersions.auto,
                   size: qrSize,
                   gapless: true,
-                  // Frame 758:1477 — rounded finder eyes, pure-black modules.
+                  // Standard square QR. Do NOT re-add the round "circle" style
+                  // (old D-423): round eyes + dot modules read on a phone's ML
+                  // camera but the in-app ZXing reader (flutter_zxing) can NOT
+                  // decode them, so every in-app badge scan (sign-in / gate /
+                  // exhibitor) failed. Owner chose plain square (2026-07-11);
+                  // content/data is unchanged.
                   eyeStyle: const QrEyeStyle(
-                    eyeShape: QrEyeShape.circle,
+                    eyeShape: QrEyeShape.square,
                     color: Colors.black,
                   ),
                   dataModuleStyle: const QrDataModuleStyle(
-                    // Owner: a fully "circle" QR — circular dots, not square
-                    // modules (the finder eyes are already circular) (D-423).
-                    dataModuleShape: QrDataModuleShape.circle,
+                    dataModuleShape: QrDataModuleShape.square,
                     color: Colors.black,
                   ),
                 );
