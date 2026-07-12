@@ -109,4 +109,82 @@ void main() {
     await controller.refresh();
     expect(refreshCalls, 2);
   });
+
+  // D-737 — refresh() (the 401-interceptor path) signs the user out when the
+  // refresh token is dead; tryRefresh() (the proactive session-guard path) does
+  // NOT — it returns false and leaves the session in place so the guard can show
+  // its 30s warning instead of an abrupt, unannounced sign-out.
+  Future<AuthController> signedIn(
+    _MockAuthRepository repo,
+    _MockSecureStorage secure,
+    ProviderContainer container,
+  ) async {
+    when(() => secure.read(any())).thenAnswer((_) async => null);
+    when(() => secure.write(any(), any())).thenAnswer((_) async {});
+    when(secure.clearAuthValues).thenAnswer((_) async {});
+    when(
+      () => repo.signIn(
+        email: any(named: 'email'),
+        password: any(named: 'password'),
+      ),
+    ).thenAnswer((_) async => SignInSession(_session()));
+    when(repo.getCurrentUser).thenAnswer((_) async => _user());
+    final controller = container.read(authControllerProvider.notifier);
+    await _waitFor(container, (s) => s is AuthStateSignedOut);
+    await controller.signIn(email: 'visitor@example.sa', password: 'x');
+    return controller;
+  }
+
+  test('refresh() signs the user out when the refresh token is dead', () async {
+    final repo = _MockAuthRepository();
+    final secure = _MockSecureStorage();
+    final container = _container(repo, secure);
+    addTearDown(container.dispose);
+    final controller = await signedIn(repo, secure, container);
+
+    when(() => repo.refresh(refreshToken: any(named: 'refreshToken'))).thenThrow(
+      const RefreshTokenExpired(
+        ApiFailure(code: ApiErrorCodes.authRefreshTokenExpired, message: 'x'),
+      ),
+    );
+
+    final ok = await controller.refresh();
+    expect(ok, isFalse);
+    expect(container.read(authControllerProvider), isA<AuthStateSignedOut>());
+  });
+
+  test('tryRefresh() failure returns false but keeps the user signed in',
+      () async {
+    final repo = _MockAuthRepository();
+    final secure = _MockSecureStorage();
+    final container = _container(repo, secure);
+    addTearDown(container.dispose);
+    final controller = await signedIn(repo, secure, container);
+
+    when(() => repo.refresh(refreshToken: any(named: 'refreshToken'))).thenThrow(
+      const RefreshTokenExpired(
+        ApiFailure(code: ApiErrorCodes.authRefreshTokenExpired, message: 'x'),
+      ),
+    );
+
+    final ok = await controller.tryRefresh();
+    expect(ok, isFalse);
+    // The whole point of D-737: no silent sign-out — the guard decides.
+    expect(container.read(authControllerProvider), isA<AuthStateSignedIn>());
+  });
+
+  test('tryRefresh() success rotates the token and stays signed in', () async {
+    final repo = _MockAuthRepository();
+    final secure = _MockSecureStorage();
+    final container = _container(repo, secure);
+    addTearDown(container.dispose);
+    final controller = await signedIn(repo, secure, container);
+
+    when(() => repo.refresh(refreshToken: any(named: 'refreshToken')))
+        .thenAnswer((_) async => _session());
+
+    final ok = await controller.tryRefresh();
+    expect(ok, isTrue);
+    expect(container.read(authControllerProvider), isA<AuthStateSignedIn>());
+  });
 }
