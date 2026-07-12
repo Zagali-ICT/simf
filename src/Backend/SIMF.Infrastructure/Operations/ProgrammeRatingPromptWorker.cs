@@ -132,10 +132,11 @@ internal sealed class ProgrammeRatingPromptWorker(
 
     /// <summary>
     /// End-of-day scan, extracted for direct unit testing. For every active day
-    /// that has ended within the back-fill window and not yet been prompted,
-    /// notifies each attendee who checked in that day and stamps
-    /// <c>RatingPromptSentUtc</c> (even a zero-recipient day, so it is not
-    /// re-scanned). Returns the number of days prompted.
+    /// that has ended within the back-fill window and not yet been prompted, it
+    /// claims the day — stamping <c>RatingPromptSentUtc</c> and committing it
+    /// BEFORE dispatch (even a zero-recipient day, so it is not re-scanned) —
+    /// then notifies each attendee who checked in that day, so a restart mid-loop
+    /// cannot re-send an already-processed day. Returns the number of days prompted.
     /// </summary>
     internal static async Task<int> RunDayPromptScanAsync(
         SimfAppDbContext db, INotificationDispatcher notifications,
@@ -167,6 +168,15 @@ internal sealed class ProgrammeRatingPromptWorker(
             }
 
             var recipientIds = await CheckedInUserIdsAsync(db, day.Date, cancellationToken);
+
+            // Claim the day BEFORE dispatching (see the class remarks): stamp
+            // RatingPromptSentUtc and commit it so a restart mid-loop cannot
+            // re-send an already-processed day. Even a zero-recipient day is
+            // claimed so the worker stops re-scanning it.
+            day.RatingPromptSentUtc = now;
+            await db.SaveChangesAsync(cancellationToken);
+            prompted++;
+
             foreach (var userId in recipientIds)
             {
                 try
@@ -192,26 +202,19 @@ internal sealed class ProgrammeRatingPromptWorker(
                         userId, day.Id);
                 }
             }
-
-            // Stamp even a zero-recipient day so the worker stops re-scanning it.
-            day.RatingPromptSentUtc = now;
-            prompted++;
         }
 
-        if (prompted > 0)
-        {
-            await db.SaveChangesAsync(cancellationToken);
-        }
         return prompted;
     }
 
     /// <summary>
     /// End-of-programme scan, extracted for direct unit testing. Once the last
     /// active day has ended (+ <see cref="ProgramEndGrace"/>) within the back-fill
-    /// window and the <see cref="ProgramEndSettingKey"/> marker is unset, dispatches
-    /// the Event + Exhibition + App rating requests to every attendee who ever
-    /// checked in, then writes the marker so it fires exactly once. Returns
-    /// <c>true</c> when it fired.
+    /// window and the <see cref="ProgramEndSettingKey"/> marker is unset, it
+    /// writes the once-only marker FIRST and then dispatches the Event +
+    /// Exhibition + App rating requests to every attendee who ever checked in —
+    /// so a restart mid-dispatch cannot re-fire the whole trio to the audience.
+    /// Returns <c>true</c> when it fired.
     /// </summary>
     internal static async Task<bool> RunProgramEndScanAsync(
         SimfAppDbContext db, INotificationDispatcher notifications,
@@ -244,6 +247,26 @@ internal sealed class ProgrammeRatingPromptWorker(
         }
 
         var recipientIds = await CheckedInUserIdsAsync(db, day: null, cancellationToken);
+
+        // Claim the once-only marker BEFORE dispatching the trio so a restart
+        // mid-dispatch cannot re-fire it to the whole audience. The notification
+        // rows land on SIMF_Identity and cannot share a transaction with this
+        // SIMF_App marker (D-157), so committing the marker first makes the trio
+        // at-most-once (a crash may drop the rest) rather than re-blasting every
+        // checked-in attendee on the next tick. Kept inactive so it does not
+        // surface in the admin System Settings list; the dedup check ignores
+        // IsActive.
+        db.SystemSettings.Add(new SystemSetting
+        {
+            Id = Guid.NewGuid(),
+            Key = ProgramEndSettingKey,
+            Value = now.ToString("O"),
+            Description = "Internal marker: end-of-programme rating prompts dispatched (D-679).",
+            IsActive = false,
+            CreatedBy = Guid.Empty,
+            CreatedAt = now,
+        });
+        await db.SaveChangesAsync(cancellationToken);
 
         var trio = new (NotificationKind Kind, string Title, string TitleAr, string Body, string BodyAr)[]
         {
@@ -282,19 +305,6 @@ internal sealed class ProgrammeRatingPromptWorker(
             }
         }
 
-        // Global once-only marker (kept inactive so it does not surface in the
-        // admin System Settings list; the dedup check ignores IsActive).
-        db.SystemSettings.Add(new SystemSetting
-        {
-            Id = Guid.NewGuid(),
-            Key = ProgramEndSettingKey,
-            Value = now.ToString("O"),
-            Description = "Internal marker: end-of-programme rating prompts dispatched (D-679).",
-            IsActive = false,
-            CreatedBy = Guid.Empty,
-            CreatedAt = now,
-        });
-        await db.SaveChangesAsync(cancellationToken);
         return true;
     }
 

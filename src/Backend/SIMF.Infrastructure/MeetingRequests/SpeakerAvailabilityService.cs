@@ -123,10 +123,16 @@ internal sealed class SpeakerAvailabilityService(
             return Array.Empty<SpeakerAvailableSlot>();
         }
 
-        // Slots already taken by an accepted meeting for this speaker.
+        // Slots already taken by a LIVE meeting for this speaker. "Taken" = a
+        // request in the slot-holding set (`MeetingRequestStatuses.SlotHolding` =
+        // Accepted + AwaitingSpeaker) — the single authority the accept re-check +
+        // the DB filtered-unique indexes also key off. Keying on Accepted only would
+        // advertise a slot already held by a hall-bound AwaitingSpeaker meeting as
+        // free, creating a request the admin could never accept (mirrors
+        // HallAvailabilityService's taken-filter).
         var taken = await appDbContext.SpeakerMeetingRequests.AsNoTracking()
             .Where(r => r.SpeakerId == speakerId
-                && r.Status == MeetingRequestStatus.Accepted
+                && MeetingRequestStatuses.SlotHolding.Contains(r.Status)
                 && r.SlotStartUtc != null && r.SlotEndUtc != null)
             .Select(r => new { Start = r.SlotStartUtc!.Value, End = r.SlotEndUtc!.Value })
             .ToListAsync(cancellationToken);

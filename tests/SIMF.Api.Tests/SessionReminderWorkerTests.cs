@@ -85,7 +85,61 @@ public sealed class SessionReminderWorkerTests : IClassFixture<SimfApiFactory>
         Assert.Null(session.ReminderSentUtc);
     }
 
+    [Fact]
+    public async Task Scan_commits_the_dedup_stamp_before_dispatching_so_a_restart_cannot_resend()
+    {
+        // #12 — the once-only stamp must be committed to SIMF_App BEFORE any
+        // notification goes out, so a restart mid-tick re-scan sees the session
+        // already claimed and never re-sends. The probe reads the session row
+        // from a SEPARATE committed context at the moment of the first dispatch:
+        // under the old stamp-after-loop code it would still be null there.
+        var now = DateTimeOffset.UtcNow;
+        var visitorId = await SeedVisitorAsync();
+        await SeedSessionWithSeatAsync(now.AddMinutes(10), visitorId);
+
+        var probe = new StampProbeDispatcher(_factory);
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            await SessionReminderWorker.RunReminderScanAsync(
+                db, probe, now, SessionReminderWorker.ReminderLeadTime,
+                NullLogger.Instance, CancellationToken.None);
+        }
+
+        Assert.True(probe.Dispatched);
+        Assert.True(probe.StampCommittedAtFirstDispatch,
+            "ReminderSentUtc must be committed before dispatch so a restart cannot resend.");
+    }
+
     // -- Helpers ---------------------------------------------------------------
+
+    /// <summary>A dispatcher that, on the first notification, reads the session it
+    /// is FOR (via <see cref="NotificationRequest.RelatedEntityId"/>) from a fresh
+    /// committed context to prove that session's dedup stamp was persisted before
+    /// its batch went out (#12 claim-before-dispatch). Keying on the dispatched
+    /// session (not a fixed id) keeps it robust when the shared test DB makes more
+    /// than one session due.</summary>
+    private sealed class StampProbeDispatcher(SimfApiFactory factory) : INotificationDispatcher
+    {
+        public bool Dispatched { get; private set; }
+        public bool StampCommittedAtFirstDispatch { get; private set; }
+
+        public async Task DispatchAsync(
+            NotificationRequest request, CancellationToken cancellationToken = default)
+        {
+            if (Dispatched)
+            {
+                return;
+            }
+            Dispatched = true;
+            var sessionId = request.RelatedEntityId!.Value;
+            using var scope = factory.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var session = await db.Sessions.AsNoTracking()
+                .SingleAsync(s => s.Id == sessionId, cancellationToken);
+            StampCommittedAtFirstDispatch = session.ReminderSentUtc != null;
+        }
+    }
 
     private async Task<int> RunScanAsync(DateTimeOffset now)
     {

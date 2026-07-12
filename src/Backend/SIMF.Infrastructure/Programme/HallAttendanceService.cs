@@ -1,5 +1,6 @@
 // Tests: SIMF.Api.Tests/HallAttendanceTests.cs
 // Tests: SIMF.Api.Tests/HallArrivalScanTests.cs (P5.1d — D-244 operator QR scan)
+// Tests: SIMF.Api.Tests/GateHallDoorChainTests.cs (Both-mode gate → hall-attendance chain)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.AccessControl.Abstractions;
@@ -194,13 +195,20 @@ internal sealed class HallAttendanceService(
             // alternation guess; derive the real action from the attendee's open-row
             // state so a re-entry after a departure opens a fresh row instead of a
             // mis-inferred merge. An open row → this scan is the departure.
+            // #24 — but only a row opened by a DOOR scan (Method=QrScan) toggles this
+            // way. A row opened by the GPS geofence is a cross-channel arrival that
+            // the contract says must MERGE into the one open row (interface doc), so
+            // the first turnstile pass after a geofence arrival must NOT close it —
+            // that used to mark a still-present attendee as departed and under-count
+            // live occupancy. Let it fall through to the merge (arrival) path instead.
             var open = await OpenRowAsync(attendeeUserId, liveSessionId, cancellationToken);
-            if (open is not null)
+            if (open is not null && open.Method != AttendanceMethod.Geofence)
             {
                 await RecordDepartureAsync(attendeeUserId, liveSessionId, cancellationToken);
                 return;
             }
-            // No open row → fall through to the arrival path below.
+            // No open row (or a geofence arrival to merge with) → fall through to the
+            // arrival path below.
         }
         else if (direction == ScanDirection.CheckOut)
         {

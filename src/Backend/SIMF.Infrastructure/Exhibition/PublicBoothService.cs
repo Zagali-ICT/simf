@@ -21,7 +21,11 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
     public async Task<IReadOnlyList<PublicBoothSummary>> ListAsync(
         CancellationToken cancellationToken = default) =>
         await db.Booths.AsNoTracking()
-            .Where(b => b.IsActive)
+            // #16 — a soft-deleted exhibitor must not stay publicly visible through
+            // its still-active booths: exclude booths whose linked Exhibitor is
+            // inactive. An unlinked booth (b.Exhibitor == null) keeps showing on its
+            // own / legacy free-text data.
+            .Where(b => b.IsActive && (b.Exhibitor == null || b.Exhibitor.IsActive))
             .OrderBy(b => b.Code)
             .Select(b => new PublicBoothSummary
             {
@@ -80,7 +84,9 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
     public async Task<PublicBoothDetail?> GetAsync(
         Guid id, CancellationToken cancellationToken = default) =>
         await db.Booths.AsNoTracking()
-            .Where(b => b.IsActive && b.Id == id)
+            // #16 — hide a booth whose linked Exhibitor was soft-deleted (see ListAsync).
+            .Where(b => b.IsActive && b.Id == id
+                && (b.Exhibitor == null || b.Exhibitor.IsActive))
             .Select(b => new PublicBoothDetail
             {
                 Id = b.Id,

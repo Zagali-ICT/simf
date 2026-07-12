@@ -154,6 +154,21 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
         Assert.False(body.Blocks.ContainsKey("does-not-exist"));
     }
 
+    // R1 audit (#28) — an explicit {"keys": null} body (System.Text.Json
+    // overwrites the initializer with null) must be a clean 400
+    // (validation_failed), NOT a NullReferenceException 500. Raw JSON is used so
+    // the null-Keys path is exercised regardless of client serializer settings.
+    [Fact]
+    public async Task Public_batch_with_null_keys_is_rejected_400()
+    {
+        var response = await _client.PostAsync(
+            "/api/v1/app/content/batch",
+            new StringContent("{\"keys\":null}", System.Text.Encoding.UTF8, "application/json"));
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.ValidationFailed, body.Error!.Code);
+    }
+
     [Fact]
     public async Task Banner_create_then_public_list_returns_active_only_within_window()
     {

@@ -312,6 +312,21 @@ internal sealed class SpeakerMeetingRequestService(
                 "Response status must be Accepted or Rejected.",
                 "يجب أن تكون حالة الردّ مقبولة أو مرفوضة.");
         }
+
+        // SES §7 validation triple-lock — ResponseNote maps to nvarchar(2000)
+        // (SpeakerMeetingRequestConfiguration.HasMaxLength(2000)). Reject an
+        // over-length note up front with a clear 400 rather than letting the trimmed
+        // value below overflow the column and throw a truncation DbUpdateException,
+        // which the catch around SaveChanges would mask as a misleading "That slot is
+        // no longer available." 409 (nonsensical for a Reject that has no slot).
+        if ((request.ResponseNote ?? string.Empty).Trim().Length > 2000)
+        {
+            throw new ApiException(
+                ErrorCodes.SpeakerMeetingRequestInvalid, 400,
+                "The response note must be 2000 characters or fewer.",
+                "يجب ألا يتجاوز نص الردّ 2000 حرف.");
+        }
+
         var req = await appDbContext.SpeakerMeetingRequests
             .SingleOrDefaultAsync(r => r.Id == id, cancellationToken)
             ?? throw new ApiException(

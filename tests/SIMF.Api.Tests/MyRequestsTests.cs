@@ -200,6 +200,27 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Cancelling_an_already_confirmed_speaker_meeting_is_a_conflict_and_leaves_it_Accepted()
+    {
+        // #10 regression — the self-cancel must never overwrite a speaker's confirmed
+        // (Accepted) decision. The flip is a conditional UPDATE guarded on the still-
+        // cancellable states, so an Accepted request is rejected with a 409 and its
+        // Accepted status survives (in the concurrent race the DB, not the stale read,
+        // is the arbiter; here the terminal Accepted state exercises the same guard).
+        var (token, userId) = await SignInApprovedVisitorAsync();
+        var requestId = await SeedSpeakerMeetingWithStatusAsync(
+            userId, MeetingRequestStatus.Accepted, DateTimeOffset.UtcNow.AddDays(2));
+
+        var cancel = await CancelAsync(token, AppRequestKind.SpeakerMeeting, requestId);
+        Assert.Equal(HttpStatusCode.Conflict, cancel.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var req = await db.SpeakerMeetingRequests.SingleAsync(r => r.Id == requestId);
+        Assert.Equal(MeetingRequestStatus.Accepted, req.Status);
+    }
+
+    [Fact]
     public async Task Cancelling_a_document_or_badge_request_still_requires_Pending()
     {
         var (token, userId) = await SignInApprovedVisitorAsync();

@@ -41,9 +41,16 @@ public sealed class AppBootstrapTests : IClassFixture<SimfApiFactory>
         Assert.Equal(tokens.User.Email, data.User.Email);
         Assert.Equal("Visitor", data.User.AppRole);
         Assert.Equal("Pending", data.User.RegistrationStatus);
-        // The bundle's count is the same source as the dedicated endpoint.
-        Assert.Equal(await StandaloneUnreadCountAsync(tokens.AccessToken), data.UnreadNotificationCount);
         Assert.True(data.ServerTimeUtc > new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
+
+        // The bundle's count is the same source as the dedicated endpoint. The
+        // standalone endpoint now requires an approved account (finding #23), so
+        // cross-check the "same source" invariant against an approved account.
+        var approved = await AuthFlow.SignInApprovedVisitorWithoutTwoFactorAsync(_client, _factory);
+        var approvedBundle = await GetBootstrapAsync(approved.AccessToken);
+        Assert.Equal(
+            await StandaloneUnreadCountAsync(approved.AccessToken),
+            approvedBundle.UnreadNotificationCount);
     }
 
     [Fact]

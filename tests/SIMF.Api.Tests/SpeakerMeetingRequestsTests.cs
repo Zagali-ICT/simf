@@ -257,6 +257,30 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Respond_with_an_over_length_response_note_is_400_not_a_false_slot_conflict()
+    {
+        // #9 regression — ResponseNote maps to nvarchar(2000). A note longer than
+        // 2000 chars must be rejected up front as a clean 400 validation error, NOT
+        // fall through to SaveChanges and surface as a misleading "That slot is no
+        // longer available." 409 (the DbUpdateException-masking-truncation bug).
+        var speaker = await SeedSpeakerAsync(allowsMeetings: true);
+        var visitor = await SignInApprovedVisitorAsync();
+        var created = await SubmitAsync(speaker.Id, "Visitor", "Topic", visitor);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var respond = await PutAuthAsync(
+            $"/api/v1/admin/speaker-meeting-requests/{created.Id}/respond",
+            new RespondToSpeakerMeetingRequestRequest
+            {
+                Status = MeetingRequestStatus.Rejected,
+                ResponseNote = new string('x', 2001),
+            }, admin);
+        Assert.Equal(HttpStatusCode.BadRequest, respond.StatusCode);
+        var body = (await respond.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SpeakerMeetingRequestInvalid, body.Error!.Code);
+    }
+
+    [Fact]
     public async Task Responding_with_Cancelled_status_is_400()
     {
         // A1 (review) — only Accepted/Rejected are valid responses; Cancelled (a

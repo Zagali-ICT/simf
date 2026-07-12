@@ -56,6 +56,29 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Over_length_QR_records_a_QR_UNKNOWN_denial_not_a_500()
+    {
+        // #14 — GateScan.QrIdAtScan is nvarchar(32); a normalised QR longer than the
+        // column (a URL / WiFi / vCard QR someone mis-scans, or manual free-text
+        // entry) must be DENIED as QrUnknown at HTTP 200, not truncate on insert and
+        // surface as a 500.
+        var (token, _) = await CreateAdminAsync();
+        var gate = await CreateGateAsync(token, allowedProfileTypeIds: null,
+            ownAsOperator: true, mode: DirectionMode.Both);
+
+        // 42 chars after normalise (Trim + ToUpper) — over the 32-char column.
+        const string overLengthQr = "HTTPS://EXAMPLE.COM/SOME/LONG/PATH?X=12345";
+        var response = await PostScanAsync(gate.Id, qr: overLengthQr, token, idempotencyKey: null);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+        Assert.Equal(ScanOutcome.Denied, body.Outcome);
+        Assert.Equal(DenialReasonCode.QrUnknown, body.DenialReasonCode);
+        Assert.Null(body.UserProfile);
+    }
+
+    [Fact]
     public async Task Operator_not_assigned_returns_403_GATE_OPERATOR_NOT_ASSIGNED()
     {
         var (adminA, _) = await CreateAdminAsync();
@@ -262,6 +285,43 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
             Assert.Single(rows);
             Assert.NotEqual("stale-request-hash", rows[0].RequestHash);
         }
+    }
+
+    [Fact]
+    public async Task Idempotency_key_reused_past_24h_replays_the_prior_scan_instead_of_500()
+    {
+        // #15 — a real prior scan carries the key on the append-only GateScan unique
+        // index (UX_GateScan_Idempotency). Reusing that key past the 24h replay window
+        // filters the idempotency row out of TryReplayAsync, so the re-scan flows to
+        // RecordAllowed and its fresh GateScan insert collides with the retained prior
+        // row. The idempotency contract is a replay, not a 500: the prior scan comes
+        // back with X-Idempotent-Replay and no duplicate row is written.
+        var (token, _) = await CreateAdminAsync();
+        var gate = await CreateGateAsync(token, allowedProfileTypeIds: null,
+            ownAsOperator: true, mode: DirectionMode.Both);
+        var qrId = await CreateVisitorWithQrAsync(approved: true);
+        var key = Guid.NewGuid().ToString();
+
+        var first = await PostScanAsync(gate.Id, qr: qrId, token, idempotencyKey: key);
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        var firstBody = (await first.Content
+            .ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+
+        // Past the 24h replay-retention window: the stale idempotency row no longer
+        // replays, but the GateScan unique index still retains the prior row.
+        _factory.Time.Advance(TimeSpan.FromHours(25));
+
+        var second = await PostScanAsync(gate.Id, qr: qrId, token, idempotencyKey: key);
+        Assert.Equal(HttpStatusCode.OK, second.StatusCode);
+        Assert.Contains("X-Idempotent-Replay", second.Headers.Select(h => h.Key));
+        var secondBody = (await second.Content
+            .ReadFromJsonAsync<ApiResult<GateScanResponse>>())!.Data!;
+        // Replayed the prior scan — not a fresh insert.
+        Assert.Equal(firstBody.ScanId, secondBody.ScanId);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        Assert.Equal(1, await db.GateScans.CountAsync(s => s.IdempotencyKey == key));
     }
 
     [Fact]

@@ -108,7 +108,65 @@ public sealed class ProgrammeRatingPromptWorkerTests : IClassFixture<SimfApiFact
         Assert.Equal(1, await CountAsync(NotificationKind.EventRatingRequest, checkedIn, null));
     }
 
+    [Fact]
+    public async Task Program_end_scan_commits_the_marker_before_dispatching_so_a_restart_cannot_refire()
+    {
+        // #13 — the global once-only marker must be committed to SIMF_App BEFORE
+        // the trio is dispatched, so a restart mid-dispatch sees the marker set
+        // and never re-fires the whole trio to the audience. The probe reads the
+        // marker from a SEPARATE committed context at the first dispatch: under the
+        // old marker-after-loop code it would still be absent there.
+        await DeactivateExistingDaysAsync();
+        await ClearProgramEndMarkerAsync();
+
+        var now = DateTimeOffset.UtcNow;
+        var start = now.AddHours(-3);
+        var end = now.AddHours(-2);
+        var lastDate = DateOnly.FromDateTime(start.ToOffset(Ast).DateTime);
+        await SeedDayWithSessionAsync(lastDate, start, end);
+        var checkedIn = await SeedApprovedVisitorAsync();
+        await SeedProfileWithScanAsync(checkedIn, scanUtc: start);
+
+        var probe = new MarkerProbeDispatcher(_factory);
+        bool fired;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            fired = await ProgrammeRatingPromptWorker.RunProgramEndScanAsync(
+                db, probe, now, ProgrammeRatingPromptWorker.BackfillWindow,
+                NullLogger.Instance, CancellationToken.None);
+        }
+
+        Assert.True(fired);
+        Assert.True(probe.Dispatched);
+        Assert.True(probe.MarkerCommittedAtFirstDispatch,
+            "The end-of-programme marker must be committed before dispatch so a restart cannot re-fire.");
+    }
+
     // -- Runners ---------------------------------------------------------------
+
+    /// <summary>A dispatcher that, on the first notification, reads the global
+    /// end-of-programme marker from a fresh committed context to prove it was
+    /// persisted before any notification went out (#13 claim-before-dispatch).</summary>
+    private sealed class MarkerProbeDispatcher(SimfApiFactory factory) : INotificationDispatcher
+    {
+        public bool Dispatched { get; private set; }
+        public bool MarkerCommittedAtFirstDispatch { get; private set; }
+
+        public async Task DispatchAsync(
+            NotificationRequest request, CancellationToken cancellationToken = default)
+        {
+            if (Dispatched)
+            {
+                return;
+            }
+            Dispatched = true;
+            using var scope = factory.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            MarkerCommittedAtFirstDispatch = await db.SystemSettings.AnyAsync(
+                s => s.Key == ProgrammeRatingPromptWorker.ProgramEndSettingKey, cancellationToken);
+        }
+    }
 
     private async Task<int> RunDayScanAsync(DateTimeOffset now)
     {
