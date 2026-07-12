@@ -271,6 +271,15 @@ class _SimfScannerBodyState extends State<SimfScannerBody> {
                   // the viewfinder.
                   showScannerOverlay: false,
                   tryInverted: true,
+                  // Spend more effort per frame locking onto the code — more
+                  // reliable reads under real lighting/angle/distance on device.
+                  tryHarder: true,
+                  // Decode the WHOLE frame, not zxing's default centre-50% crop.
+                  // A QR held to fill the gold viewfinder pushes its corner
+                  // finder patterns outside a 0.5 crop, so ZXing can't lock on —
+                  // the reason a phone camera (full-frame) reads a code the app
+                  // could not.
+                  cropPercent: 1,
                   loading: const ColoredBox(color: Colors.black),
                 ),
                 if (_processing)

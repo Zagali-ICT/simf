@@ -18,7 +18,7 @@ load-failure keep their respective states.
 | File | Holds |
 |------|-------|
 | `badge_screen.dart` (158) | `BadgeScreen` + State — the approval-gated dashboard load, the loading / not-approved / error / pending / badge dispatch (`_buildBody`), and the top-level `maskedBadgeId` helper (kept here — the badge test unit-tests it). The badge case composes the card + actions. |
-| `widgets/badge_qr_card.dart` (`BadgeQrCard`) | The gold-bordered white card — the circle-styled QR (`QrImageView`, D-423), the scan hint, and the gold identity strip (`SimfAvatar` + name + tier + `ID · {maskedId}`). |
+| `widgets/badge_qr_card.dart` (`BadgeQrCard`) | The gold-bordered white card — the **standard square** QR (`QrImageView`, D-743; the round D-423 style was undecodable by the in-app ZXing scanner), the scan hint, and the gold identity strip (`SimfAvatar` + name + tier + `ID · {maskedId}`). |
 | `widgets/badge_actions.dart` (`BadgeActions`) | The role-based actions (D-426) — a visitor's gold "امسح لإضافة شخص" (→ the fullscreen `ScanContactScreen`) + outlined "share my contact"; an exhibitor's "scan visitor" — with the shared `_actionButton` filled/outlined helper. |
 
 The off-states already used the shared `SimfEmptyState`/`SimfErrorState` (kept).
@@ -52,4 +52,5 @@ unit test, Arabic name, not-approved, pending, error+retry, role actions). E2E:
 ## Related decisions
 
 - **D-633** (this clean-code freeze — `_Badge` split into `BadgeQrCard` + `BadgeActions`; node inconsistency flagged).
-- **D-320** (screen built), **D-423** (circle QR), **D-426** (role-based actions).
+- **D-320** (screen built), **D-423** (circle QR — visual style superseded by D-743), **D-426** (role-based actions).
+- **D-743** (badge QR → standard **square** so the in-app `flutter_zxing` scanner can decode it; the round style read on a phone camera but not in-app. Same change fixed gate / exhibitor / contact scanners via the shared `SimfScannerBody` full-frame `cropPercent`).

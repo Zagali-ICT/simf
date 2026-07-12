@@ -79,6 +79,15 @@ Scenario: Arabic locale renders RTL
 **Evidence:** screen tests `a load failure shows the error + retry, which re-fetches`,
 `renders the Arabic name + hint in Arabic`.
 
+### Note — QR must be scannable in-app (D-743)
+
+The badge QR is rendered as a **standard square** QR (not the old round D-423
+style). The round style read on a native phone camera but was **undecodable by
+the in-app `flutter_zxing` scanner** (badge sign-in / gate / exhibitor). When
+verifying, confirm a badge shown on one device is decoded by the in-app scanner
+on another — not only by a phone's native camera. (The shared scanner also now
+decodes the **full frame**, so a QR filling the viewfinder still reads.)
+
 ---
 
-_Last reviewed:_ `2026-06-06` by `SIMF Team`.
+_Last reviewed:_ `2026-07-11` by `SIMF Team`.
