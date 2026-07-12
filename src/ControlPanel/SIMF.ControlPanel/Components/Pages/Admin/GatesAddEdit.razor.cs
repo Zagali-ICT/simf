@@ -27,6 +27,7 @@ public partial class GatesAddEdit
 
     private IReadOnlyList<ProfileTypeOption> _profileTypes = Array.Empty<ProfileTypeOption>();
     private IReadOnlyList<OperatorOption> _operators = Array.Empty<OperatorOption>();
+    private IReadOnlyList<HallOption> _halls = Array.Empty<HallOption>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -41,6 +42,7 @@ public partial class GatesAddEdit
             _model.IsActive = Initial.IsActive;
             _model.AllowedProfileTypeIds = new HashSet<Guid>(Initial.AllowedProfileTypeIds);
             _model.AssignedOperatorUserIds = new HashSet<Guid>(Initial.AssignedOperatorUserIds);
+            _model.HallId = Initial.HallId;
         }
         _editContext = new EditContext(_model);
 
@@ -62,6 +64,24 @@ public partial class GatesAddEdit
                 .Select(a => new OperatorOption(a.Id, a.Email, a.DisplayName ?? string.Empty))
                 .ToList();
         }
+
+        // X-1 — load active halls for the optional hall-door binding, same list
+        // endpoint the Booths/Sessions forms use. Empty option maps to null
+        // (perimeter gate).
+        var hallsEnvelope = await JS.InvokeAsync<ApiResult<GridPage<AdminHallSummary>>>(
+            "simfAccount.postJson", "/account/api/admin/halls/list",
+            new GridQuery { Top = 500 });
+        if (hallsEnvelope is { Success: true, Data.Items: { } halls })
+        {
+            _halls = halls.Where(h => h.IsActive)
+                .OrderBy(h => h.Name)
+                .Select(h => new HallOption(h.Id, h.Name)).ToList();
+        }
+    }
+
+    private void OnHallChanged(ChangeEventArgs e)
+    {
+        _model.HallId = e.Value is string s && Guid.TryParse(s, out var g) ? g : (Guid?)null;
     }
 
     private void OnAllowedChanged(ChangeEventArgs e)
@@ -112,6 +132,7 @@ public partial class GatesAddEdit
                         Description = string.IsNullOrWhiteSpace(_model.Description) ? null : _model.Description.Trim(),
                         DescriptionArabic = string.IsNullOrWhiteSpace(_model.DescriptionArabic) ? null : _model.DescriptionArabic.Trim(),
                         DirectionMode = _model.DirectionMode,
+                        HallId = _model.HallId,
                         AllowedProfileTypeIds = _model.AllowedProfileTypeIds.ToList(),
                         AssignedOperatorUserIds = _model.AssignedOperatorUserIds.ToList(),
                     });
@@ -129,6 +150,7 @@ public partial class GatesAddEdit
                         DescriptionArabic = string.IsNullOrWhiteSpace(_model.DescriptionArabic) ? null : _model.DescriptionArabic.Trim(),
                         DirectionMode = _model.DirectionMode,
                         IsActive = _model.IsActive,
+                        HallId = _model.HallId,
                         AllowedProfileTypeIds = _model.AllowedProfileTypeIds.ToList(),
                         AssignedOperatorUserIds = _model.AssignedOperatorUserIds.ToList(),
                     });
@@ -161,8 +183,10 @@ public partial class GatesAddEdit
         public bool IsActive { get; set; } = true;
         public HashSet<Guid> AllowedProfileTypeIds { get; set; } = new();
         public HashSet<Guid> AssignedOperatorUserIds { get; set; } = new();
+        public Guid? HallId { get; set; }
     }
 
     private sealed record ProfileTypeOption(Guid Id, string Name);
     private sealed record OperatorOption(Guid Id, string Email, string DisplayName);
+    private sealed record HallOption(Guid Id, string Name);
 }

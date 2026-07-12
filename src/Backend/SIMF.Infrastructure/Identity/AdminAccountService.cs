@@ -49,6 +49,8 @@ internal sealed partial class AdminAccountService(
     ITransactionRunner transactionRunner,
     SimfIdentityDbContext dbContext,
     SimfAppDbContext appDbContext,
+    IUserProfileRepository profiles,
+    IPiiEncryptor pii,
     TimeProvider timeProvider,
     INotificationDispatcher notifications,
     ILogger<AdminAccountService> logger)
@@ -360,6 +362,38 @@ internal sealed partial class AdminAccountService(
                 "الجهة المحددة غير صالحة.");
         }
 
+        // H-1 — on-site duplicate-identity guard (soft, service-layer). A National
+        // ID / Iqama / passport already on a profile row must not be re-registered
+        // at the desk. The plaintext id columns are AES-GCM encrypted with a RANDOM
+        // nonce (SimfAppDbContext), so they can neither be equality-queried nor
+        // unique-indexed — the guard + its filtered UNIQUE indexes key off the
+        // deterministic blind-index HMAC (pii.BlindIndex) instead. D-157: this is a
+        // plain single-context read on appDbContext — no cross-DB JOIN. The
+        // validator forces two SEPARATE patterns — ^1[0-9]{9}$ (National ID) and
+        // ^2[0-9]{9}$ (Iqama) — so IsSaudi partitions the identifiers: at most one
+        // is non-null per request. Reads never crash on pre-existing data; a
+        // duplicate simply makes the guard match and rejects the new attempt.
+        var nationalId = request.IsSaudi ? NormaliseOptional(request.NationalId) : null;
+        var iqamaNumber = request.IsSaudi ? null : NormaliseOptional(request.IqamaNumber);
+        var passportNumber = request.IsSaudi ? null : NormaliseOptional(request.PassportNumber);
+        var nationalIdHash = pii.BlindIndex(nationalId);
+        var iqamaNumberHash = pii.BlindIndex(iqamaNumber);
+        var passportNumberHash = pii.BlindIndex(passportNumber);
+
+        // Reuse the repository's single OR-query identity-exists check
+        // (IUserProfileRepository.AnyOtherProfileWithIdentityHashAsync). Guid.Empty
+        // excludes nobody — no real profile has UserId == Guid.Empty — so this NEW
+        // walk-in user is checked against every existing profile.
+        var duplicateIdentity = await profiles.AnyOtherProfileWithIdentityHashAsync(
+            Guid.Empty, nationalIdHash, iqamaNumberHash, passportNumberHash, cancellationToken);
+        if (duplicateIdentity)
+        {
+            await AuditFailure(
+                AuditEvents.AdminWalkInRegisterFailed, actorUserId, email, null,
+                ErrorCodes.DuplicateIdentity, cancellationToken);
+            throw ApiException.DuplicateIdentity();
+        }
+
         var now = timeProvider.GetUtcNow();
         var user = new SimfUser
         {
@@ -422,9 +456,15 @@ internal sealed partial class AdminAccountService(
             // derived on read" invariant + the badge/gate/export key.
             PlateNumber = SaudiPlate.Normalize(request.PlateNumber),
             IsSaudi = request.IsSaudi,
-            NationalId = request.IsSaudi ? request.NationalId : null,
-            IqamaNumber = request.IsSaudi ? null : request.IqamaNumber,
-            PassportNumber = request.IsSaudi ? null : request.PassportNumber,
+            // H-1 — store the same normalised values the duplicate-identity guard
+            // keyed on, plus their blind-index hashes, so the stored row and the
+            // guard/index agree (a trailing-space passport can no longer slip past).
+            NationalId = nationalId,
+            IqamaNumber = iqamaNumber,
+            PassportNumber = passportNumber,
+            NationalIdHash = nationalIdHash,
+            IqamaNumberHash = iqamaNumberHash,
+            PassportNumberHash = passportNumberHash,
             SaudiMobile = NormaliseOptional(request.SaudiMobile),
             InternationalMobile = NormaliseOptional(request.InternationalMobile),
             // B3 — D-221 (الجهة): the desk-required organisation pick.
@@ -447,7 +487,24 @@ internal sealed partial class AdminAccountService(
         // path mints the QR badge (D-386). The QR is the access key, granted on
         // approval, not at the desk.
         // D-167: UserProfile lives on App DB now; save both contexts.
-        await appDbContext.SaveChangesAsync(cancellationToken);
+        // FIX E — the H-1 soft guard above is a non-atomic read-then-insert; a
+        // concurrent duplicate that slips it hits the filtered UNIQUE identity
+        // index here. Translate that race into the same 409 DuplicateIdentity
+        // instead of an uncaught 500 (narrow — any other violation rethrows).
+        try
+        {
+            await appDbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (ex.ViolatesAnyIndex(
+            "IX_UserProfiles_NationalIdHash",
+            "IX_UserProfiles_IqamaNumberHash",
+            "IX_UserProfiles_PassportNumberHash"))
+        {
+            await AuditFailure(
+                AuditEvents.AdminWalkInRegisterFailed, actorUserId, email, null,
+                ErrorCodes.DuplicateIdentity, cancellationToken);
+            throw ApiException.DuplicateIdentity();
+        }
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry

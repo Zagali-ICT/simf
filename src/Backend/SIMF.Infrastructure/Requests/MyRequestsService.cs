@@ -33,7 +33,7 @@ internal sealed class MyRequestsService(
             .Join(appDbContext.Speakers, r => r.SpeakerId, s => s.Id, (r, s) => new
             {
                 r.Id, SpeakerId = s.Id, s.Name, s.NameArabic, s.Rank, s.CountryId,
-                r.Status, r.SlotStartUtc, r.CreatedAt,
+                r.Status, r.SlotStartUtc, r.CreatedAt, r.ResponseNote,
             })
             .ToListAsync(cancellationToken);
 
@@ -67,12 +67,12 @@ internal sealed class MyRequestsService(
 
         var documents = await appDbContext.ParticipationDocumentRequests.AsNoTracking()
             .Where(r => r.RequestedByUserId == userId)
-            .Select(r => new { r.Id, r.DocumentType, r.Status, r.CreatedAt })
+            .Select(r => new { r.Id, r.DocumentType, r.Status, r.CreatedAt, r.ResponseNote })
             .ToListAsync(cancellationToken);
 
         var badges = await appDbContext.BadgeUpdateRequests.AsNoTracking()
             .Where(r => r.RequestedByUserId == userId)
-            .Select(r => new { r.Id, r.RequestedJobTitle, r.Status, r.CreatedAt })
+            .Select(r => new { r.Id, r.RequestedJobTitle, r.Status, r.CreatedAt, r.ResponseNote })
             .ToListAsync(cancellationToken);
 
         var items = new List<AppRequestItem>(
@@ -81,8 +81,12 @@ internal sealed class MyRequestsService(
         items.AddRange(speaker.Select(r => new AppRequestItem(
             AppRequestKind.SpeakerMeeting, r.Id, r.Name, r.NameArabic,
             ToRequesterDisplayStatus(r.Status), r.SlotStartUtc, r.CreatedAt,
-            r.Status == MeetingRequestStatus.Pending,
-            Subtitle: r.Rank, SpeakerId: r.SpeakerId, CountryId: r.CountryId)));
+            // R-1 — an AwaitingSpeaker request (admin accepted + bound a hall, speaker not
+            // yet confirmed) is still "under review" to the requester, so let them withdraw
+            // it; cancelling frees the held slot and voids the speaker's confirmation tokens.
+            r.Status is MeetingRequestStatus.Pending or MeetingRequestStatus.AwaitingSpeaker,
+            Subtitle: r.Rank, SpeakerId: r.SpeakerId, CountryId: r.CountryId,
+            ResponseNote: r.ResponseNote)));
 
         items.AddRange(delegation.Select(r => new AppRequestItem(
             AppRequestKind.DelegationMeeting, r.Id, r.Name, r.NameArabic,
@@ -100,13 +104,15 @@ internal sealed class MyRequestsService(
             return new AppRequestItem(
                 AppRequestKind.ParticipationDocument, r.Id, en, ar,
                 r.Status, EventDateUtc: null, r.CreatedAt,
-                r.Status == MeetingRequestStatus.Pending);
+                r.Status == MeetingRequestStatus.Pending,
+                ResponseNote: r.ResponseNote);
         }));
 
         items.AddRange(badges.Select(r => new AppRequestItem(
             AppRequestKind.BadgeUpdate, r.Id, r.RequestedJobTitle, r.RequestedJobTitle,
             r.Status, EventDateUtc: null, r.CreatedAt,
-            r.Status == MeetingRequestStatus.Pending)));
+            r.Status == MeetingRequestStatus.Pending,
+            ResponseNote: r.ResponseNote)));
 
         return items.OrderByDescending(i => i.CreatedAt).ToList();
     }
@@ -123,7 +129,10 @@ internal sealed class MyRequestsService(
                 var r = await appDbContext.SpeakerMeetingRequests.SingleOrDefaultAsync(
                     x => x.Id == id && x.RequestedByUserId == userId, cancellationToken)
                     ?? throw NotFound();
-                EnsurePending(r.Status);
+                // R-1 — a speaker meeting may be withdrawn while Pending OR AwaitingSpeaker
+                // (see the feed's CanCancel). Cancelling voids the double-opt-in tokens
+                // (they validate against this status) and releases the held hall slot.
+                EnsureSpeakerCancellable(r.Status);
                 r.Status = MeetingRequestStatus.Cancelled;
                 break;
             }
@@ -175,6 +184,18 @@ internal sealed class MyRequestsService(
     private static void EnsurePending(MeetingRequestStatus status)
     {
         if (status != MeetingRequestStatus.Pending)
+        {
+            throw new ApiException(
+                ErrorCodes.AppRequestNotCancellable, 409,
+                "Only a pending request can be cancelled.",
+                "لا يمكن إلغاء سوى طلب قيد المراجعة.");
+        }
+    }
+
+    // R-1 — a speaker meeting is withdrawable while Pending OR AwaitingSpeaker.
+    private static void EnsureSpeakerCancellable(MeetingRequestStatus status)
+    {
+        if (status is not (MeetingRequestStatus.Pending or MeetingRequestStatus.AwaitingSpeaker))
         {
             throw new ApiException(
                 ErrorCodes.AppRequestNotCancellable, 409,

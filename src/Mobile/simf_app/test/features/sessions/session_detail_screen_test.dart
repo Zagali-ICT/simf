@@ -516,9 +516,8 @@ void main() {
       expect(find.text('SEND-Q'), findsOneWidget);
     });
 
-    testWidgets('#7 — a LIVE (already started) session HIDES the ask card on the '
-        'session detail (asking moves to the live-broadcast screen)',
-        (tester) async {
+    testWidgets('S-4 — an in-window in-person session (no live URL) SHOWS the '
+        'ask card with the neutral live label on the detail', (tester) async {
       final ongoing = _detail(
         startUtc: DateTime.now().toUtc().subtract(const Duration(hours: 1)),
         endUtc: DateTime.now().toUtc().add(const Duration(hours: 1)),
@@ -530,16 +529,38 @@ void main() {
         controller: _SignedInController(),
       );
 
-      // The session-detail ask is future-only now — nothing once it is live.
+      // Live + in-person (no broadcast feed) → the in-hall ask, using the
+      // neutral label; the pre-session label is future-only.
+      expect(find.text('Ask a question'), findsOneWidget);
       expect(find.text('Ask a question before it starts'), findsNothing);
-      expect(find.text('Ask the host'), findsNothing);
+    });
+
+    testWidgets('S-4 — an in-window BROADCAST session (live URL) HIDES the ask '
+        'card on the detail (asking moves to the live-broadcast screen)',
+        (tester) async {
+      final broadcasting = _detail(
+        startUtc: DateTime.now().toUtc().subtract(const Duration(hours: 1)),
+        endUtc: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        liveStreamUrl: 'https://live.example.sa/main.m3u8',
+      );
+      await _pump(
+        tester,
+        repo: _FakeDetailRepo(detail: broadcasting),
+        seatMap: _seatMap(myCell: _mySeatCell),
+        controller: _SignedInController(),
+      );
+
+      // A broadcast session's live ask lives on the live-broadcast screen, so
+      // the detail must not double it — no ask card here.
+      expect(find.text('Ask a question'), findsNothing);
+      expect(find.text('Ask a question before it starts'), findsNothing);
     });
 
     testWidgets('#7 — a PAST (ended) session HIDES the ask card (the after-view '
         'is a recording, not a live broadcast)', (tester) async {
-      // The ask-card hide is purely time-based (the `if (future)` wrapper does
-      // not depend on the viewer), so a guest proves it — and a guest never
-      // trips the approved-attendee after-view rate prompt.
+      // After EndUtc `_showAsk` returns false regardless of the viewer, so a
+      // guest proves it — and a guest never trips the approved-attendee
+      // after-view rate prompt.
       final ended = _detail(
         startUtc: DateTime.now().toUtc().subtract(const Duration(hours: 3)),
         endUtc: DateTime.now().toUtc().subtract(const Duration(hours: 2)),

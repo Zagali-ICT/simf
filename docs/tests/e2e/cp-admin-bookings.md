@@ -37,6 +37,8 @@
 | E2E-BKG-011 | Per-column grid filter (Session / Seat) narrows the queue | happy | P1 | _to author_ |
 | E2E-BKG-012 | Column sort toggles (Session / Booked) ascending ⇄ descending | happy | P2 | _to author_ |
 | E2E-BKG-013 | Excel export (D-356) — toolbar Export downloads an .xlsx of the queue (whole filtered set vs selected rows) | happy | P1 | _to author_ |
+| E2E-BKG-014 | Approve is re-checked against capacity (M-1) — approving a booking that would push the session's confirmed count past its effective cap is a 409 and the booking stays Pending | conflict | P1 | authored ✓ |
+| E2E-BKG-015 | Admin release closes the lifecycle + notifies (M-4) — releasing a held/confirmed seat sets a terminal Cancelled status and dispatches a BookingReleased notification to the attendee | happy | P1 | authored ✓ |
 
 ## Scenarios
 
@@ -398,6 +400,63 @@ Scenario: Export is export-only — there is no Import affordance
 - Network: `POST /account/api/admin/bookings/export` returns 200; request body shows `ids: []` + a `query` object (whole-grid export) or a populated `ids` array + `query: null` (selected-rows export)
 - Downloaded workbook: `simf-bookings-{timestamp}.xlsx`, sheet "Bookings", header row `SessionTitle | SessionTitleArabic | SessionStart | Row | Seat | Kind | Attendee | BookedAt`
 - API integration test: `tests/SIMF.Api.Tests/BookingsExcelTests.cs` covers the same surface at the endpoint layer (export-only — no import test, as `ExportBookingsEndpoint` is the only Excel endpoint for this page)
+
+---
+
+### E2E-BKG-014 — Approve is re-checked against capacity (M-1)
+
+```gherkin
+Feature: Booking approval capacity backstop (M-1)
+  As an Administrator with Bookings.Approve
+  I must not be able to confirm more bookings than the session can hold
+
+Background:
+  Given an open-seating session whose effective capacity is 1
+  And two Pending, still-held bookings exist for that session (a race let both in)
+
+Scenario: The second approval is blocked once the session is full
+  When the administrator approves the first booking
+  Then the API returns HTTP 200 and the booking becomes Approved
+  When the administrator approves the second booking
+  Then the API returns HTTP 409 with ErrorCodes.SeatSessionFull
+  And the second booking is still Pending (it can be rejected explicitly)
+
+Scenario: Bulk-approve stops at capacity
+  When the administrator bulk-approves both booking ids
+  Then exactly one booking is Approved and the other stays Pending
+  And the bulk endpoint reports an approved count of 1
+```
+
+**Evidence captured:**
+- API integration tests: `SeatReservationsTests.Approving_a_booking_beyond_capacity_is_blocked`, `SeatReservationsTests.Bulk_approve_stops_at_capacity`
+- The single-approve overflow returns the bilingual SeatSessionFull message ("Approving this booking would exceed the session capacity.")
+
+### E2E-BKG-015 — Admin release closes the lifecycle + notifies (M-4)
+
+```gherkin
+Feature: Admin seat release (M-4)
+  As an Administrator releasing a held or confirmed seat
+  The booking must reach a terminal state and the attendee must be told
+
+Background:
+  Given a visitor holds a confirmed (Approved) seat in a session
+
+Scenario: Releasing a visitor booking cancels it and notifies the attendee
+  When the administrator releases the reservation
+  Then the reservation is ReleasedAt != null, Status = Cancelled, and the
+    reviewer id is stamped (no more stale "Approved but released" row)
+  And a BookingReleased in-app notification is dispatched to the attendee for
+    that session
+
+Scenario: Releasing an admin-reserved-row block does not notify
+  Given an AdminReservedRow block (no attendee — ReservedForUserId is null)
+  When the administrator releases one of its seats
+  Then the row is Cancelled and NO BookingReleased notification is dispatched
+```
+
+**Evidence captured:**
+- API integration tests: `SeatReservationsTests.Admin_release_marks_cancelled_and_notifies`, `SeatReservationsTests.Admin_release_of_admin_reserved_row_does_not_notify`
+- Notification kind `BookingReleased` (additive value 51) groups under "Bookings"; bilingual title "Seat reservation released" / "تم إلغاء حجز المقعد"
 
 ---
 

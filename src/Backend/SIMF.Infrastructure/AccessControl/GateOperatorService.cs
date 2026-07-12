@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using SIMF.Application.AccessControl.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.IdentityAccess;
+using SIMF.Application.Programme.Abstractions;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Gates;
 using SIMF.Domain.AccessControl;
@@ -24,6 +25,7 @@ internal sealed class GateOperatorService(
     IQrResolver qrResolver,
     IGateConfigCache configCache,
     IGateFailureCircuit failureCircuit,
+    IHallAttendanceService hallAttendance,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<GateOperatorService> logger) : IGateOperatorService
@@ -78,7 +80,20 @@ internal sealed class GateOperatorService(
         }
 
         var qr = QrId.Normalise(context.Request.Qr ?? string.Empty);
-        var resolution = await qrResolver.ResolveAsync(qr, cancellationToken);
+        QrResolution? resolution;
+        try
+        {
+            resolution = await qrResolver.ResolveAsync(qr, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            // G-3 — a QR-resolver / backend fault (NOT a policy denial) is exactly
+            // the systemic failure the failure-rate circuit exists to trip on.
+            // Feed the circuit, then let the exception surface as a 5xx.
+            logger.LogError(ex, "QR resolver faulted on gate {GateId}.", context.GateId);
+            await failureCircuit.RecordDenialAsync(context.GateId, cancellationToken);
+            throw;
+        }
         if (resolution is null)
         {
             return await RecordDenialAsync(
@@ -160,6 +175,7 @@ internal sealed class GateOperatorService(
         }
 
         return await RecordAllowedAsync(context, qr, resolution, direction,
+            snapshot.HallId, snapshot.DirectionMode == DirectionMode.Both,
             requestHash, idempotencyKey, cancellationToken);
     }
 
@@ -409,7 +425,8 @@ internal sealed class GateOperatorService(
 
     private async Task<GateScanResult> RecordAllowedAsync(
         GateScanContext context, string qr, QrResolution resolution,
-        ScanDirection direction, string? requestHash, string? idempotencyKey,
+        ScanDirection direction, Guid? hallDoorHallId, bool hallDoorDirectionInferred,
+        string? requestHash, string? idempotencyKey,
         CancellationToken cancellationToken)
     {
         var now = timeProvider.GetUtcNow();
@@ -450,6 +467,33 @@ internal sealed class GateOperatorService(
         logger.LogInformation(
             "Allowed scan {ScanId} on gate {GateId} for visitor {ProfileId}",
             scan.Id, context.GateId, resolution.UserProfileId);
+
+        // X-1 (chain design) — a hall-door gate (HallId set) feeds hall attendance
+        // for the session live in that hall. Best-effort: the gate scan is already
+        // committed, so a chain failure is logged and swallowed rather than failing
+        // the operator's scan (mirrors HallAttendanceService's departure-hook
+        // resilience). Perimeter gates (HallId null) are unchanged. The attendee is
+        // carried as resolution.UserId (Identity SimfUser.Id), NEVER
+        // resolution.UserProfileId — HallAttendance.UserId is the Identity id.
+        // FIX C — a Both-mode gate's direction is only an alternation guess, so the
+        // chain derives the real action from attendance state (directionInferred);
+        // a fixed In/Out gate stays authoritative.
+        if (hallDoorHallId is { } hallId)
+        {
+            try
+            {
+                await hallAttendance.RecordGateDoorScanAsync(
+                    resolution.UserId, hallId, direction,
+                    hallDoorDirectionInferred, context.OperatorUserId, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex,
+                    "Hall-attendance chain failed for scan {ScanId} on gate {GateId} (hall {HallId}).",
+                    scan.Id, context.GateId, hallId);
+            }
+        }
+
         return new GateScanResult(GateScanResultKind.Recorded,
             response with { ScanId = scan.Id }, false, null);
     }
@@ -464,6 +508,34 @@ internal sealed class GateOperatorService(
         CancellationToken cancellationToken)
     {
         var now = timeProvider.GetUtcNow();
+
+        // G-5 — debounce denied scans the same way allowed scans are absorbed (the
+        // 5s window in RecordScanAsync only covered Allowed). A malfunctioning or
+        // button-mashed scanner repeating the same denial (same QR + reason) within
+        // DuplicateWindow gets the prior denial replayed instead of writing a fresh
+        // row, re-auditing, or (post G-3) feeding the circuit. Keyed per-scan (QR +
+        // reason) so a denied scan's null UserProfileId (QrUnknown) is handled, and
+        // runs AFTER the idempotency-key replay (TryReplayAsync) so the two dedupe
+        // mechanisms layer: exact-key replay first, then per-scan denial absorption.
+        var denialWindowCutoff = now - DuplicateWindow;
+        var priorDenial = await appDbContext.GateScans.AsNoTracking()
+            .Where(s => s.GateId == context.GateId
+                     && s.Outcome == ScanOutcome.Denied
+                     && s.QrIdAtScan == qrIdAtScan
+                     && s.DenialReasonCode == reason
+                     && s.ScannedAtUtc >= denialWindowCutoff)
+            .OrderByDescending(s => s.ScannedAtUtc)
+            .Select(s => new { s.Id, s.Direction, s.ScannedAtUtc })
+            .FirstOrDefaultAsync(cancellationToken);
+        if (priorDenial is not null)
+        {
+            var absorbed = new GateScanResponse(
+                priorDenial.Id, ScanOutcome.Denied, priorDenial.Direction,
+                priorDenial.ScannedAtUtc, denialCtx.ToProfile(),
+                reason, MessageFor(reason, context.AcceptLanguage));
+            return new GateScanResult(GateScanResultKind.Recorded, absorbed, false, null);
+        }
+
         var scan = BuildScan(context, qrIdAtScan, ScanOutcome.Denied,
             denialReason: reason, userProfileId: denialCtx.UserProfileId,
             direction: direction, now: now, idempotencyKey: idempotencyKey,
@@ -500,7 +572,16 @@ internal sealed class GateOperatorService(
             ActorUserId = context.OperatorUserId,
             Detail = $"gateId={context.GateId}; reason={reason}; scanId={scan.Id}; corr={context.CorrelationId}",
         }, cancellationToken);
-        await failureCircuit.RecordDenialAsync(context.GateId, cancellationToken);
+        // G-3 — only SYSTEM-fault denials count toward the failure-rate circuit.
+        // Benign POLICY denials (unknown QR, holder-not-approved, wrong profile
+        // type, …) are the operator's normal traffic and must never trip a 5-minute
+        // gate outage for everyone. Every reason the engine emits today is a policy
+        // denial, so none feed the circuit here; genuine infrastructure faults feed
+        // it from the QR-resolver catch block above instead.
+        if (IsSystemFaultDenial(reason))
+        {
+            await failureCircuit.RecordDenialAsync(context.GateId, cancellationToken);
+        }
 
         return new GateScanResult(GateScanResultKind.Recorded,
             response with { ScanId = scan.Id }, false, null);
@@ -581,6 +662,26 @@ internal sealed class GateOperatorService(
             scan.Id, scan.Outcome, scan.Direction, scan.ScannedAtUtc,
             profile, scan.DenialReasonCode, message);
     }
+
+    /// <summary>G-3 — classifies a denial as a SYSTEM fault (a backend/infra
+    /// problem that should count toward the failure-rate circuit) vs a benign
+    /// POLICY denial (the constraint engine rejecting a scan on its merits). Every
+    /// reason the engine emits today is a policy denial; the switch is explicit so
+    /// a future infrastructure-fault reason must opt in deliberately.</summary>
+    private static bool IsSystemFaultDenial(DenialReasonCode reason) =>
+        reason switch
+        {
+            DenialReasonCode.QrUnknown => false,
+            DenialReasonCode.GateInactiveAtScan => false,
+            DenialReasonCode.HolderNotApproved => false,
+            DenialReasonCode.HolderDisabled => false,
+            DenialReasonCode.HolderLocked => false,
+            DenialReasonCode.ProfileTypeInactive => false,
+            DenialReasonCode.OutsideTimeWindow => false,
+            DenialReasonCode.ProfileTypeNotAllowed => false,
+            DenialReasonCode.BookingRequiredMissing => false,
+            _ => false,
+        };
 
     private static string MessageFor(DenialReasonCode reason, string? acceptLanguage)
     {

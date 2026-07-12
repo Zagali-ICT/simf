@@ -36,6 +36,7 @@ namespace SIMF.Application.IdentityAccess;
 internal sealed class UserProfileService(
     IUserAccountRepository accounts,
     IUserProfileRepository profiles,
+    IPiiEncryptor pii,
     IFileService fileService,
     IFileStorageProvider fileStorage,
     IAuditLog auditLog,
@@ -235,9 +236,32 @@ internal sealed class UserProfileService(
         profile.DateOfBirth = request.DateOfBirth;
         profile.PlaceOfBirth = request.PlaceOfBirth;
         profile.IsSaudi = request.IsSaudi;
-        profile.NationalId = request.IsSaudi ? request.NationalId : null;
-        profile.IqamaNumber = request.IsSaudi ? null : request.IqamaNumber;
-        profile.PassportNumber = request.IsSaudi ? null : request.PassportNumber;
+        // H-1 — normalise + blind-index the identity columns exactly like the
+        // walk-in desk (AdminAccountService), so the self-service write path (the
+        // dominant one) also populates the hashes the filtered UNIQUE indexes and
+        // the duplicate-identity guard key off. Without the hashes these rows were
+        // invisible to both, defeating H-1 for the dominant registration path.
+        var nationalId = request.IsSaudi ? NormaliseOptional(request.NationalId) : null;
+        var iqamaNumber = request.IsSaudi ? null : NormaliseOptional(request.IqamaNumber);
+        var passportNumber = request.IsSaudi ? null : NormaliseOptional(request.PassportNumber);
+        profile.NationalId = nationalId;
+        profile.NationalIdHash = pii.BlindIndex(nationalId);
+        profile.IqamaNumber = iqamaNumber;
+        profile.IqamaNumberHash = pii.BlindIndex(iqamaNumber);
+        profile.PassportNumber = passportNumber;
+        profile.PassportNumberHash = pii.BlindIndex(passportNumber);
+
+        // H-1 — reject an identifier already registered on ANOTHER user's profile
+        // (409). Self-excluding (UserId != actorUserId) so a user re-saving their
+        // OWN id is never a false conflict. A concurrent duplicate that slips this
+        // soft guard hits the filtered UNIQUE index and is translated below (FIX E).
+        if (await profiles.AnyOtherProfileWithIdentityHashAsync(
+                actorUserId, profile.NationalIdHash, profile.IqamaNumberHash,
+                profile.PassportNumberHash, cancellationToken))
+        {
+            throw ApiException.DuplicateIdentity();
+        }
+
         profile.SaudiMobile = NormaliseOptional(request.SaudiMobile);
         profile.InternationalMobile = NormaliseOptional(request.InternationalMobile);
         // C6 — D-371: رقم اللوحة, stored normalized (validator-checked shape;
@@ -372,7 +396,10 @@ internal sealed class UserProfileService(
         // this). The window where Identity commits and App fails is
         // covered by user retry — the next upsert reattempts the App
         // save against an idempotent (UserId-unique) row.
-        await profiles.SaveAppChangesAsync(cancellationToken);
+        // FIX E — a concurrent duplicate identity that slipped the soft guard
+        // above hits the filtered UNIQUE index here; the repository translates
+        // that race into a 409 DuplicateIdentity instead of an uncaught 500.
+        await profiles.SaveProfileIdentityChangesAsync(cancellationToken);
 
         // D-190 — the audit Detail now carries the ProfileTypeId so
         // the CP pending-profile review surface shows the user's

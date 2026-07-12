@@ -268,6 +268,103 @@ public sealed class DelegationMeetingRequestsTests : IClassFixture<SimfApiFactor
         Assert.Equal(ErrorCodes.DelegationMeetingRequestInvalid, body.Error!.Code);
     }
 
+    // -- M-3: accept validates the proposed slot (not-in-past + no clash) ------
+
+    [Fact]
+    public async Task Accepting_a_request_with_a_free_future_slot_succeeds()
+    {
+        var homeId = await EnsureCountryAsync("SA", 682, invited: true);
+        await EnsureCountryAsync("EG", 818, invited: true);
+        var (delegate1, _) = await CreateDelegateAsync(homeId, isDelegate: true);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var slotStart = new DateTimeOffset(2030, 2, 1, 9, 0, 0, TimeSpan.Zero);
+        var requestId = await SubmitWithSlotAsync(delegate1, "EG", slotStart, slotStart.AddHours(1));
+
+        var respond = await PostAuthAsync(
+            $"/api/v1/admin/delegation-meeting-requests/{requestId}/respond",
+            new RespondToDelegationMeetingRequestRequest { Status = MeetingRequestStatus.Accepted },
+            admin, HttpMethod.Put);
+        Assert.Equal(HttpStatusCode.OK, respond.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var req = await db.DelegationMeetingRequests.SingleAsync(r => r.Id == requestId);
+        Assert.Equal(MeetingRequestStatus.Accepted, req.Status);
+        Assert.Equal(slotStart, req.SlotStartUtc);
+    }
+
+    [Fact]
+    public async Task Accepting_a_request_with_a_slot_in_the_past_is_400()
+    {
+        var homeId = await EnsureCountryAsync("SA", 682, invited: true);
+        await EnsureCountryAsync("EG", 818, invited: true);
+        var (delegate1, _) = await CreateDelegateAsync(homeId, isDelegate: true);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        // Submit only checks end>start, so a past-but-well-formed slot persists.
+        var slotStart = new DateTimeOffset(2020, 2, 1, 9, 0, 0, TimeSpan.Zero);
+        var requestId = await SubmitWithSlotAsync(delegate1, "EG", slotStart, slotStart.AddHours(1));
+
+        var respond = await PostAuthAsync(
+            $"/api/v1/admin/delegation-meeting-requests/{requestId}/respond",
+            new RespondToDelegationMeetingRequestRequest { Status = MeetingRequestStatus.Accepted },
+            admin, HttpMethod.Put);
+        Assert.Equal(HttpStatusCode.BadRequest, respond.StatusCode);
+        var body = (await respond.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.DelegationMeetingRequestInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Accepting_an_overlapping_slot_for_the_same_delegation_is_409()
+    {
+        var homeId = await EnsureCountryAsync("SA", 682, invited: true);
+        await EnsureCountryAsync("EG", 818, invited: true);
+        await EnsureCountryAsync("US", 840, invited: true);
+        var (delegate1, _) = await CreateDelegateAsync(homeId, isDelegate: true);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        // A: SA -> EG, 09:00-10:00 — accepted. A distinct date from the other
+        // slot-bearing M-3 test so the class-shared DB does not cross-contaminate.
+        var slotStart = new DateTimeOffset(2035, 5, 1, 9, 0, 0, TimeSpan.Zero);
+        var reqA = await SubmitWithSlotAsync(delegate1, "EG", slotStart, slotStart.AddHours(1));
+        var acceptA = await PostAuthAsync(
+            $"/api/v1/admin/delegation-meeting-requests/{reqA}/respond",
+            new RespondToDelegationMeetingRequestRequest { Status = MeetingRequestStatus.Accepted },
+            admin, HttpMethod.Put);
+        Assert.Equal(HttpStatusCode.OK, acceptA.StatusCode);
+
+        // B: SA -> US, 09:30-10:30 — shares the SA delegation, overlaps A.
+        var reqB = await SubmitWithSlotAsync(
+            delegate1, "US", slotStart.AddMinutes(30), slotStart.AddMinutes(90));
+        var acceptB = await PostAuthAsync(
+            $"/api/v1/admin/delegation-meeting-requests/{reqB}/respond",
+            new RespondToDelegationMeetingRequestRequest { Status = MeetingRequestStatus.Accepted },
+            admin, HttpMethod.Put);
+        Assert.Equal(HttpStatusCode.Conflict, acceptB.StatusCode);
+        var body = (await acceptB.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.DelegationMeetingRequestInvalid, body.Error!.Code);
+    }
+
+    private async Task<Guid> SubmitWithSlotAsync(
+        string delegateToken, string targetCode, DateTimeOffset slotStart, DateTimeOffset slotEnd)
+    {
+        var submit = await PostAuthAsync(
+            "/api/v1/app/delegation-meeting-requests",
+            new SubmitDelegationMeetingRequestRequest
+            {
+                TargetCountryCode = targetCode,
+                AttendeeCount = 5,
+                Subject = "Slotted meeting",
+                SlotStartUtc = slotStart,
+                SlotEndUtc = slotEnd,
+            },
+            delegateToken);
+        Assert.Equal(HttpStatusCode.OK, submit.StatusCode);
+        return (await submit.Content
+            .ReadFromJsonAsync<ApiResult<DelegationMeetingRequestSubmitted>>())!.Data!.Id;
+    }
+
     // -- helpers --------------------------------------------------------------
 
     private async Task<int> EnsureCountryAsync(string code, int id, bool invited)

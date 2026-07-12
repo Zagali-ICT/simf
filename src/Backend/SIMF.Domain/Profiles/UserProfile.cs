@@ -70,6 +70,23 @@ public class UserProfile : BaseAuditEntity
     /// <summary>Passport number — populated for non-Saudi users.</summary>
     public string? PassportNumber { get; set; }
 
+    /// <summary>H-1 — deterministic <b>blind index</b> of the normalized
+    /// <see cref="NationalId"/> (keyed HMAC-SHA256, 64 hex chars). The plaintext
+    /// column is encrypted with a random nonce (AesGcmPiiEncryptor) so it can never
+    /// be unique-indexed or equality-queried; this stable keyed digest is what a
+    /// filtered UNIQUE index enforces the no-duplicate rule on. Computed on write
+    /// by the walk-in registration path; null when no National ID is set. NOT part
+    /// of the SimfAppDbContext PII-encryption converter loop.</summary>
+    public string? NationalIdHash { get; set; }
+
+    /// <summary>H-1 — blind index of the normalized <see cref="IqamaNumber"/>
+    /// (same scheme as <see cref="NationalIdHash"/>). Null when unset.</summary>
+    public string? IqamaNumberHash { get; set; }
+
+    /// <summary>H-1 — blind index of the normalized <see cref="PassportNumber"/>
+    /// (same scheme as <see cref="NationalIdHash"/>). Null when unset.</summary>
+    public string? PassportNumberHash { get; set; }
+
 
     /// <summary>D-163 (PDF §2.6) — optional job title / professional role
     /// displayed alongside the user's name (e.g. "Captain", "Director of

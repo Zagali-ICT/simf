@@ -45,6 +45,22 @@ class _FakeGates implements GatesRepository {
     ScanDirection? direction,
   }) =>
       throw UnimplementedError();
+
+  @override
+  Future<GateScanResult?> recordScanOrQueue({
+    required String gateId,
+    required String qr,
+    required String idempotencyKey,
+    ScanDirection? direction,
+  }) =>
+      throw UnimplementedError();
+
+  // The setup golden renders with an empty backlog → the sync banner is hidden.
+  @override
+  int pendingCount() => 0;
+
+  @override
+  Future<int> flushPending() async => 0;
 }
 
 void main() {

@@ -31,6 +31,7 @@ internal sealed class GateConfigCache(
             .Select(g => new
             {
                 g.Id, g.Code, g.Name, g.NameArabic, g.DirectionMode, g.IsActive,
+                g.HallId,
                 AllowRaw = g.AllowedProfileTypes
                     .Select(a => a.ProfileTypeId).ToList(),
                 Operators = g.Assignments
@@ -58,7 +59,7 @@ internal sealed class GateConfigCache(
         var snapshot = new GateConfigSnapshot(
             gate.Id, gate.Code, gate.Name, gate.NameArabic,
             gate.DirectionMode, gate.IsActive,
-            gate.AllowRaw, filtered, gate.Operators);
+            gate.AllowRaw, filtered, gate.Operators, gate.HallId);
 
         memoryCache.Set(cacheKey, snapshot, new MemoryCacheEntryOptions
         {

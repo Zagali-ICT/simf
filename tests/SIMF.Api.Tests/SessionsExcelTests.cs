@@ -44,7 +44,8 @@ public sealed class SessionsExcelTests : IClassFixture<SimfApiFactory>
         var adminToken = await CreateAdministratorAndSignInAsync();
         var hallCode = await CreateHallAsync(adminToken);
         await CreateSessionAsync(adminToken, UniqueCode(), hallCode);
-        await CreateSessionAsync(adminToken, UniqueCode(), hallCode);
+        // S-2 — stagger the second same-hall session so it does not overlap.
+        await CreateSessionAsync(adminToken, UniqueCode(), hallCode, startHourOffset: 2);
 
         var response = await PostAuthAsync(
             "/api/v1/admin/sessions/export",
@@ -70,9 +71,12 @@ public sealed class SessionsExcelTests : IClassFixture<SimfApiFactory>
         var codeTwo = UniqueCode();
         var start = "2026-01-30T09:00:00Z";
         var end = "2026-01-30T10:30:00Z";
+        // S-2 — the two rows share one hall, so the second must not overlap.
+        var startTwo = "2026-01-30T11:00:00Z";
+        var endTwo = "2026-01-30T12:30:00Z";
         var workbook = BuildSessionsWorkbook("Sessions",
             (codeOne, "Session One", "جلسة ١", hallCode, start, end),
-            (codeTwo, "Session Two", "جلسة ٢", hallCode, start, end));
+            (codeTwo, "Session Two", "جلسة ٢", hallCode, startTwo, endTwo));
 
         var response = await PostFileAuthAsync(
             "/api/v1/admin/sessions/import", workbook, adminToken);
@@ -332,7 +336,8 @@ public sealed class SessionsExcelTests : IClassFixture<SimfApiFactory>
         return code;
     }
 
-    private async Task CreateSessionAsync(string token, string code, string hallCode)
+    private async Task CreateSessionAsync(
+        string token, string code, string hallCode, int startHourOffset = 0)
     {
         // Resolve the hall id from its code (the create request takes the id).
         var list = await PostAuthAsync(
@@ -344,6 +349,8 @@ public sealed class SessionsExcelTests : IClassFixture<SimfApiFactory>
         var hallId = halls.Items.First(h =>
             string.Equals(h.Code, hallCode, StringComparison.OrdinalIgnoreCase)).Id;
 
+        // S-2 — two sessions in the same hall must not overlap; callers seeding a
+        // second session in the same hall pass a startHourOffset to stagger it.
         var response = await PostAuthAsync(
             "/api/v1/admin/sessions",
             new AdminCreateSessionRequest
@@ -353,9 +360,11 @@ public sealed class SessionsExcelTests : IClassFixture<SimfApiFactory>
                 TitleArabic = $"جلسة {code}",
                 HallId = hallId,
                 StartUtc = DateTimeOffset.Parse(
-                    "2026-01-30T09:00:00Z", CultureInfo.InvariantCulture),
+                    "2026-01-30T09:00:00Z", CultureInfo.InvariantCulture)
+                    .AddHours(startHourOffset),
                 EndUtc = DateTimeOffset.Parse(
-                    "2026-01-30T10:00:00Z", CultureInfo.InvariantCulture),
+                    "2026-01-30T10:00:00Z", CultureInfo.InvariantCulture)
+                    .AddHours(startHourOffset),
             },
             token);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);

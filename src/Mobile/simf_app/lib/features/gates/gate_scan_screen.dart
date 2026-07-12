@@ -10,6 +10,7 @@ import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import '../../app/widgets/simf_scanner_body.dart';
+import '../../core/utils/uuid_v4.dart';
 import 'data/gate_models.dart';
 import 'data/gates_repository.dart';
 import 'widgets/gate_result_view.dart';
@@ -52,6 +53,9 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
   ScanDirection? _direction;
   GateScanResult? _result;
 
+  /// Count of scans held on-device awaiting retry (G-4); drives the sync banner.
+  int _pending = 0;
+
   @override
   void initState() {
     super.initState();
@@ -75,8 +79,12 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
         if (_gate != null) {
           _applyGateDefaults(_gate!);
         }
+        _pending = ref.read(gatesRepositoryProvider).pendingCount();
         _loading = false;
       });
+      // Opening the console is a good moment to drain any backlog left by a
+      // prior offline session (G-4).
+      unawaited(_flushPending());
     } on ApiFailure catch (e) {
       if (!mounted) {
         return;
@@ -121,20 +129,32 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
     _lastQr = trimmed;
     final l10n = AppL10n.of(context);
     final messenger = ScaffoldMessenger.of(context);
+    final repo = ref.read(gatesRepositoryProvider);
     try {
-      final result = await ref.read(gatesRepositoryProvider).recordScan(
+      final result = await repo.recordScanOrQueue(
             gateId: gate.gateId,
             qr: trimmed,
             direction: direction,
-            // Derived from the gate + direction + code so a true rapid re-scan
-            // of the SAME badge in the SAME direction collides server-side
-            // (idempotent replay); switching direction is a fresh scan (D-509).
-            idempotencyKey: '${gate.gateId}-${direction?.name ?? 'auto'}-$trimmed',
+            // A FRESH UUIDv4 per scan (SIMF-API-GATES-001 §9 — ScanIdempotency.
+            // Key is a client UUIDv4): a genuine re-entry of the same badge in
+            // the same direction is a NEW scan, never a 24h-window replay of the
+            // first one (G-1).
+            idempotencyKey: randomUuidV4(),
           );
       if (!mounted) {
         return;
       }
+      if (result == null) {
+        // Server unreachable: the scan is safely queued with its idempotency
+        // key and retried automatically, so the admitted person is not lost
+        // (G-4).
+        setState(() => _pending = repo.pendingCount());
+        messenger.showSnackBar(SnackBar(content: Text(l10n.gateSavedOffline)));
+        return;
+      }
       setState(() => _result = result);
+      // A successful online scan means the link is back — drain any backlog.
+      unawaited(_flushPending());
     } on ApiFailure catch (e) {
       if (!mounted) {
         return;
@@ -154,6 +174,17 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
       default:
         return l10n.gateError;
     }
+  }
+
+  /// Drains the offline scan backlog (G-4): retries each queued scan with its
+  /// original idempotency key so a scan the server already recorded replays
+  /// instead of double-counting. Cheap to call repeatedly.
+  Future<void> _flushPending() async {
+    final remaining = await ref.read(gatesRepositoryProvider).flushPending();
+    if (!mounted) {
+      return;
+    }
+    setState(() => _pending = remaining);
   }
 
   /// "سكان مرة أخرى" — clears the result and returns to the live scanner with the
@@ -309,28 +340,70 @@ class _GateScanScreenState extends ConsumerState<GateScanScreen> {
       );
     }
     if (!_scanning) {
-      return GateSetupView(
-        l10n: l10n,
-        isArabic: isArabic,
-        gates: _gates,
-        gate: _gate!,
-        direction: _direction,
-        onGate: _onGate,
-        onDirection: (d) => setState(() => _direction = d),
-        onScan: () => setState(() => _scanning = true),
+      return _withPendingBanner(
+        l10n,
+        GateSetupView(
+          l10n: l10n,
+          isArabic: isArabic,
+          gates: _gates,
+          gate: _gate!,
+          direction: _direction,
+          onGate: _onGate,
+          onDirection: (d) => setState(() => _direction = d),
+          onScan: () => setState(() => _scanning = true),
+        ),
       );
     }
     // The shared scanner (D-737): camera-first gold viewfinder, always-usable
     // manual entry, one dedupe policy, and a visible camera-error state.
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(SimfTokens.space4),
-      child: SimfScannerBody(
-        fieldLabel: l10n.gateManualHint,
-        continueLabel: l10n.gateManualSubmit,
-        bottomHint: l10n.gateScanHint,
-        enableCamera: widget.enableCamera,
-        onCode: _scan,
+    return _withPendingBanner(
+      l10n,
+      SingleChildScrollView(
+        padding: const EdgeInsets.all(SimfTokens.space4),
+        child: SimfScannerBody(
+          fieldLabel: l10n.gateManualHint,
+          continueLabel: l10n.gateManualSubmit,
+          bottomHint: l10n.gateScanHint,
+          enableCamera: widget.enableCamera,
+          onCode: _scan,
+        ),
       ),
+    );
+  }
+
+  /// Slim "N waiting to sync" banner above the active scanning stages while the
+  /// offline backlog is non-empty (G-4); collapses to nothing when it drains.
+  Widget _withPendingBanner(AppL10n l10n, Widget child) {
+    if (_pending == 0) {
+      return child;
+    }
+    return Column(
+      children: <Widget>[
+        Container(
+          width: double.infinity,
+          color: SimfTokens.navyDeep,
+          padding: const EdgeInsets.symmetric(
+            horizontal: SimfTokens.space4,
+            vertical: SimfTokens.space2,
+          ),
+          child: Row(
+            children: <Widget>[
+              const Icon(Icons.sync, color: SimfTokens.accent, size: 18),
+              const SizedBox(width: SimfTokens.space2),
+              Expanded(
+                child: Text(
+                  l10n.gatePendingSync(_pending),
+                  style: const TextStyle(
+                    color: SimfTokens.beigeBorder,
+                    fontSize: SimfTokens.textSm,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(child: child),
+      ],
     );
   }
 

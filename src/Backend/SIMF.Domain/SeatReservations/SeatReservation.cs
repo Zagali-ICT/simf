@@ -76,4 +76,11 @@ public sealed class SeatReservation
     /// <summary>P2.2 — the reason recorded when a booking is rejected
     /// (required on reject, FDS-005 §8); null otherwise. ≤512 chars.</summary>
     public string? RejectionReason { get; set; }
+
+    /// <summary>M-6 — when a Pending, still-held visitor booking auto-expires and
+    /// frees its seat. Set at creation to CreatedAt + the hold window on the
+    /// visitor-booking kinds (UserBooking / RandomAssignment / OpenSeating); NULL
+    /// for an AdminReservedRow block (admin holds never expire). Existing rows and
+    /// already-decided bookings carry NULL and are ignored by the expiry worker.</summary>
+    public DateTimeOffset? ExpiresUtc { get; set; }
 }

@@ -27,6 +27,12 @@ internal sealed class SeatReservationService(
     TimeProvider timeProvider,
     ILogger<SeatReservationService> logger) : ISeatReservationService
 {
+    /// <summary>M-6 — how long a Pending, unapproved visitor booking holds its
+    /// seat before the expiry worker releases it. Defined here (not on the worker)
+    /// so the stamp written at creation and the scan that reads it share one
+    /// source.</summary>
+    internal static readonly TimeSpan PendingHoldWindow = TimeSpan.FromHours(24);
+
     public async Task<SessionSeatMap> GetSessionSeatMapAsync(
         Guid sessionId, Guid? actorUserId,
         CancellationToken cancellationToken = default)
@@ -147,8 +153,14 @@ internal sealed class SeatReservationService(
             CreatedAt = timeProvider.GetUtcNow(),
             // P2.2 — D-227: the seat is HELD but awaits Control Panel approval.
             Status = BookingStatus.Pending,
+            // M-6 — the hold auto-expires if the CP never decides it.
+            ExpiresUtc = timeProvider.GetUtcNow() + PendingHoldWindow,
         };
         await PersistWithUniquenessGuardAsync(reservation, cancellationToken);
+        // M-2 — hard capacity backstop against a concurrent booking that raced the
+        // pre-count; on overflow removes our row and throws SeatSessionFull.
+        await EnforceCapacityAfterInsertAsync(
+            reservation, EffectiveCapacity(ctx), cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
         {
@@ -213,6 +225,8 @@ internal sealed class SeatReservationService(
                     CreatedAt = timeProvider.GetUtcNow(),
                     // P2.2 — D-227: held, pending Control Panel approval.
                     Status = BookingStatus.Pending,
+                    // M-6 — the hold auto-expires if the CP never decides it.
+                    ExpiresUtc = timeProvider.GetUtcNow() + PendingHoldWindow,
                 };
                 try
                 {
@@ -223,6 +237,11 @@ internal sealed class SeatReservationService(
                     taken.Add((rowLabel, seat));
                     continue;
                 }
+                // M-2 — capacity backstop; on overflow this REMOVES our row and
+                // throws SeatSessionFull (we do NOT try the next seat — the session
+                // is full, not this seat taken), so the throw exits the loop.
+                await EnforceCapacityAfterInsertAsync(
+                    reservation, EffectiveCapacity(ctx), cancellationToken);
 
                 await auditLog.WriteAsync(new AuditEntry
                 {
@@ -311,8 +330,15 @@ internal sealed class SeatReservationService(
             CreatedAt = timeProvider.GetUtcNow(),
             // D-485: held, pending Control Panel approval — same as a seat booking.
             Status = BookingStatus.Pending,
+            // M-6 — the hold auto-expires if the CP never decides it.
+            ExpiresUtc = timeProvider.GetUtcNow() + PendingHoldWindow,
         };
         await PersistWithUniquenessGuardAsync(reservation, cancellationToken);
+        // M-1 — open seating has NO per-seat DB backstop, so the advisory
+        // pre-count above can be raced by concurrent joins. Re-count AFTER the
+        // insert commits and roll our own row back if we pushed the session over
+        // its declared capacity — the hard backstop the pre-check cannot give.
+        await EnforceCapacityAfterInsertAsync(reservation, declaredCap, cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
         {
@@ -438,6 +464,16 @@ internal sealed class SeatReservationService(
 
         var layout = await appDbContext.HallSeatLayouts
             .SingleOrDefaultAsync(l => l.HallId == hallId, cancellationToken);
+        // H-2 — an existing layout may already back active reservations; a change
+        // that drops a row or shrinks the seats-per-row would strand any seat that
+        // now falls outside the grid. Block it (the operator must release those
+        // seats first). A first-time layout (layout is null) can have no seat-
+        // specific reservations yet — the reserve paths require a layout.
+        if (layout is not null)
+        {
+            await EnsureLayoutChangeKeepsActiveReservationsAsync(
+                hallId, rows, request.SeatsPerRow, cancellationToken);
+        }
         var now = timeProvider.GetUtcNow();
         var rowsCsv = string.Join(',', rows);
         if (layout is null)
@@ -550,7 +586,15 @@ internal sealed class SeatReservationService(
         {
             return;
         }
-        reservation.ReleasedAt = timeProvider.GetUtcNow();
+        // M-4 — a release must also close the booking's lifecycle. Leaving Status
+        // untouched left an Approved row with ReleasedAt set (a stale
+        // "confirmed-but-gone" state the CP/app could still read as active). Mark it
+        // Cancelled and stamp the reviewer, mirroring RejectBookingAsync.
+        var now = timeProvider.GetUtcNow();
+        reservation.ReleasedAt = now;
+        reservation.Status = BookingStatus.Cancelled;
+        reservation.ReviewedByUserId = actorUserId;
+        reservation.ReviewedAt = now;
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         var eventType = reservation.Kind == SeatReservationKind.AdminReservedRow
@@ -565,6 +609,11 @@ internal sealed class SeatReservationService(
                 + $"row={reservation.RowLabel}; seat={reservation.SeatNumber}; "
                 + $"kind={reservation.Kind}",
         }, cancellationToken);
+
+        // M-4 — tell the attendee an admin released their held/confirmed seat
+        // (no-op for an AdminReservedRow block: ReservedForUserId is null).
+        var session = await LoadSessionTitleAsync(reservation.SessionId, cancellationToken);
+        await TryNotifyBookingReleasedAsync(reservation, session, cancellationToken);
     }
 
     public async Task<GridPage<SessionSeatCell>> ListSessionReservationsAsync(
@@ -682,6 +731,14 @@ internal sealed class SeatReservationService(
     {
         var booking = await LoadPendingBookingAsync(reservationId, cancellationToken);
 
+        // M-1 — a seat is only HELD while Pending; confirming it must not push the
+        // session's CONFIRMED count past capacity. Re-check here because a race
+        // (open seating especially) can let more Pending holds accumulate than
+        // there are places. Overflow blocks the approval (the booking stays Pending
+        // so the admin can reject it explicitly). This is the CP approval backstop
+        // that previously did not exist.
+        await EnsureApprovalWithinCapacityAsync(booking, cancellationToken);
+
         booking.Status = BookingStatus.Approved;
         booking.ReviewedByUserId = actorUserId;
         booking.ReviewedAt = timeProvider.GetUtcNow();
@@ -757,6 +814,14 @@ internal sealed class SeatReservationService(
             {
                 continue; // skip missing / already-decided
             }
+            // M-1 — skip (do not approve) any booking that would overflow the
+            // session's confirmed capacity. The sequential loop re-checks after each
+            // committed approval, so it naturally stops filling a session once full,
+            // matching the single-approve gate.
+            if (await WouldApprovalOverflowAsync(booking, cancellationToken))
+            {
+                continue;
+            }
             booking.Status = BookingStatus.Approved;
             booking.ReviewedByUserId = actorUserId;
             booking.ReviewedAt = timeProvider.GetUtcNow();
@@ -797,6 +862,54 @@ internal sealed class SeatReservationService(
                 "تم البت في هذا الحجز بالفعل.");
         }
         return booking;
+    }
+
+    /// <summary>M-1 — true if confirming <paramref name="booking"/> would push the
+    /// session's CONFIRMED (Approved, still-held) count past its effective
+    /// capacity. Counts Approved holds only (Pending holds are provisional); the
+    /// booking itself is excluded. Effective capacity = the seat-layout total
+    /// capped by CapacityOverride/Hall.Capacity, or just the declared cap for an
+    /// open-seating session with no layout.</summary>
+    private async Task<bool> WouldApprovalOverflowAsync(
+        SeatReservation booking, CancellationToken cancellationToken)
+    {
+        var session = await appDbContext.Sessions.AsNoTracking()
+            .Where(s => s.Id == booking.SessionId)
+            .Select(s => new { s.HallId, s.CapacityOverride })
+            .SingleAsync(cancellationToken);
+        var hallCapacity = await appDbContext.Halls.AsNoTracking()
+            .Where(h => h.Id == session.HallId)
+            .Select(h => h.Capacity)
+            .SingleAsync(cancellationToken);
+        var layout = await appDbContext.HallSeatLayouts.AsNoTracking()
+            .Where(l => l.HallId == session.HallId)
+            .Select(l => new { l.RowLabels, l.SeatsPerRow })
+            .SingleOrDefaultAsync(cancellationToken);
+
+        var declaredCap = session.CapacityOverride ?? hallCapacity;
+        var effective = layout is not null && layout.SeatsPerRow > 0
+            ? Math.Min(ParseRowLabels(layout.RowLabels).Count * layout.SeatsPerRow, declaredCap)
+            : declaredCap;
+
+        var approvedActive = await appDbContext.SeatReservations
+            .Where(r => r.SessionId == booking.SessionId
+                && r.ReleasedAt == null
+                && r.Status == BookingStatus.Approved
+                && r.Id != booking.Id)
+            .CountAsync(cancellationToken);
+        return approvedActive >= effective;
+    }
+
+    private async Task EnsureApprovalWithinCapacityAsync(
+        SeatReservation booking, CancellationToken cancellationToken)
+    {
+        if (await WouldApprovalOverflowAsync(booking, cancellationToken))
+        {
+            throw new ApiException(
+                ErrorCodes.SeatSessionFull, 409,
+                "Approving this booking would exceed the session capacity.",
+                "الموافقة على هذا الحجز تتجاوز سعة الجلسة.");
+        }
     }
 
     private Task<(string Title, string TitleArabic)> LoadSessionTitleAsync(
@@ -875,6 +988,47 @@ internal sealed class SeatReservationService(
             .SingleOrDefaultAsync(l => l.HallId == hallId, cancellationToken);
     }
 
+    /// <summary>H-2 — reject a hall-layout change that would orphan any active
+    /// (ReleasedAt IS NULL) seat-specific reservation across the hall's sessions:
+    /// a booked row no longer in <paramref name="newRows"/>, or a seat number above
+    /// <paramref name="newSeatsPerRow"/>. Open-seating reservations (null row/seat)
+    /// are unaffected. The operator must release the affected seats before
+    /// shrinking the grid.</summary>
+    private async Task EnsureLayoutChangeKeepsActiveReservationsAsync(
+        Guid hallId, IReadOnlyList<string> newRows, int newSeatsPerRow,
+        CancellationToken cancellationToken)
+    {
+        var sessionIds = await appDbContext.Sessions.AsNoTracking()
+            .Where(s => s.HallId == hallId)
+            .Select(s => s.Id)
+            .ToListAsync(cancellationToken);
+        if (sessionIds.Count == 0)
+        {
+            return;
+        }
+
+        var activeSeats = await appDbContext.SeatReservations.AsNoTracking()
+            .Where(r => sessionIds.Contains(r.SessionId)
+                && r.ReleasedAt == null
+                && r.RowLabel != null)
+            .Select(r => new { r.RowLabel, r.SeatNumber })
+            .ToListAsync(cancellationToken);
+
+        var allowedRows = new HashSet<string>(newRows, StringComparer.OrdinalIgnoreCase);
+        var orphaned = activeSeats.Any(s =>
+            !allowedRows.Contains(s.RowLabel!)
+            || (s.SeatNumber ?? 0) > newSeatsPerRow);
+        if (orphaned)
+        {
+            throw new ApiException(
+                ErrorCodes.SeatLayoutHasReservations, 409,
+                "This layout change would strand active seat reservations. "
+                + "Release the affected seats before changing the layout.",
+                "سيؤدي تغيير المخطط إلى إلغاء حجوزات مقاعد نشطة. "
+                + "يرجى إلغاء المقاعد المتأثرة قبل تغيير المخطط.");
+        }
+    }
+
     private static IReadOnlyList<string> ParseRowLabels(string? csv) =>
         string.IsNullOrWhiteSpace(csv)
             ? Array.Empty<string>()
@@ -917,14 +1071,45 @@ internal sealed class SeatReservationService(
     private async Task EnsureSessionHasCapacityAsync(
         SessionContext ctx, CancellationToken cancellationToken)
     {
-        var layoutCap = ctx.RowLabels.Count * ctx.Layout!.SeatsPerRow;
-        var declaredCap = ctx.CapacityOverride ?? ctx.HallCapacity;
-        var effective = Math.Min(layoutCap, declaredCap);
         var active = await appDbContext.SeatReservations
             .Where(r => r.SessionId == ctx.SessionId && r.ReleasedAt == null)
             .CountAsync(cancellationToken);
-        if (active >= effective)
+        if (active >= EffectiveCapacity(ctx))
         {
+            throw new ApiException(
+                ErrorCodes.SeatSessionFull, 409,
+                "No seats remain in this session.",
+                "لا توجد مقاعد متبقية في هذه الجلسة.");
+        }
+    }
+
+    /// <summary>The session's effective place count: the seat-layout total
+    /// (rows × seatsPerRow) capped by the smaller of Session.CapacityOverride and
+    /// Hall.Capacity. One definition shared by the reserve pre-check and the
+    /// post-insert backstop so they can never disagree.</summary>
+    private static int EffectiveCapacity(SessionContext ctx) =>
+        Math.Min(
+            ctx.RowLabels.Count * ctx.Layout!.SeatsPerRow,
+            ctx.CapacityOverride ?? ctx.HallCapacity);
+
+    /// <summary>M-2/M-1 — the hard capacity backstop the pre-count cannot give.
+    /// The reserve/join pre-check reads-then-counts-then-inserts, so two
+    /// concurrent bookings can each pass the check and both insert; only the
+    /// per-seat unique index stops that, and it caps at the LAYOUT size, not at a
+    /// smaller CapacityOverride (and not at all for open seating). After the
+    /// insert commits we re-count; if this row pushed the session past its
+    /// effective capacity we remove it and fail closed.</summary>
+    private async Task EnforceCapacityAfterInsertAsync(
+        SeatReservation reservation, int effectiveCap,
+        CancellationToken cancellationToken)
+    {
+        var active = await appDbContext.SeatReservations
+            .Where(r => r.SessionId == reservation.SessionId && r.ReleasedAt == null)
+            .CountAsync(cancellationToken);
+        if (active > effectiveCap)
+        {
+            appDbContext.SeatReservations.Remove(reservation);
+            await appDbContext.SaveChangesAsync(cancellationToken);
             throw new ApiException(
                 ErrorCodes.SeatSessionFull, 409,
                 "No seats remain in this session.",
@@ -1039,6 +1224,46 @@ internal sealed class SeatReservationService(
         {
             logger.LogError(ex,
                 "Booking-rejected notification failed for reservation {ReservationId}",
+                booking.Id);
+        }
+    }
+
+    // M-4 — notify the attendee that an administrator released their seat
+    // reservation (held or confirmed). Same swallow-and-log discipline as the
+    // confirm/reject notifications: a notification failure never rolls back the
+    // release (the dispatcher writes to the Identity DB, already committed here).
+    private async Task TryNotifyBookingReleasedAsync(
+        SeatReservation booking, (string Title, string TitleArabic) session,
+        CancellationToken cancellationToken)
+    {
+        if (booking.ReservedForUserId is not { } userId)
+        {
+            return;
+        }
+        try
+        {
+            await notifications.DispatchAsync(new NotificationRequest
+            {
+                UserId = userId,
+                Kind = NotificationKind.BookingReleased,
+                Title = "Seat reservation released",
+                TitleArabic = "تم إلغاء حجز المقعد",
+                Body = booking.RowLabel is { } row
+                    ? $"Your seat {row}{booking.SeatNumber} for \"{session.Title}\" was released by the organiser."
+                    : $"Your place in \"{session.Title}\" was released by the organiser.",
+                BodyArabic = booking.RowLabel is { } rowAr
+                    ? $"تم إلغاء مقعدك {rowAr}{booking.SeatNumber} لجلسة \"{session.TitleArabic}\" من قبل المنظّم."
+                    : $"تم إلغاء حضورك لجلسة \"{session.TitleArabic}\" من قبل المنظّم.",
+                Severity = NotificationSeverity.Warning,
+                RelatedEntityType = "Session",
+                RelatedEntityId = booking.SessionId,
+                SendEmail = false,
+            }, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex,
+                "Booking-released notification failed for reservation {ReservationId}",
                 booking.Id);
         }
     }

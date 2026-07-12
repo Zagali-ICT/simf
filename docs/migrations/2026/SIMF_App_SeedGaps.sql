@@ -10,10 +10,11 @@
                      SET XACT_ABORT ON, so ANY error rolls the whole thing
                      back — no partial data.
 
-   Prerequisites already present in production (verified via the public
-   read API): the Main Hall (Halls.Code = 'MAIN') and the country lookup
-   (Countries). This script only fills the four collections that the app
-   currently returns empty.
+   Prerequisites: the Main Hall (Halls.Code = 'MAIN') and the country lookup
+   (Countries). Run SIMF_App_Programme.sql BEFORE this file — it creates the
+   'MAIN' hall that the booths + venue-map nodes below reference (D-747). The
+   country lookup is seeded by EF (CountryConfiguration.HasData). This script
+   only fills the four collections that the app currently returns empty.
    ===================================================================== */
 
 -- Required for INSERT/UPDATE on tables that carry filtered indexes

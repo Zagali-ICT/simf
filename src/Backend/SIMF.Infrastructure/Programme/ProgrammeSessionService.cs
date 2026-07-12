@@ -25,7 +25,8 @@ namespace SIMF.Infrastructure.Programme;
 /// </summary>
 internal sealed class ProgrammeSessionService(
     SimfAppDbContext dbContext,
-    SimfIdentityDbContext identityDbContext)
+    SimfIdentityDbContext identityDbContext,
+    TimeProvider timeProvider)
     : IProgrammeSessionService
 {
     public async Task<PublicSessions> ListAsync(
@@ -533,12 +534,18 @@ internal sealed class ProgrammeSessionService(
         // Gated on the summary's own publish stamp (the Committee's editorial
         // action), not the broadcast Session.Status. The session must still be
         // active (soft-delete hides its summary too).
+        // S-6 (owner) — a محضر is viewable only once the session has actually
+        // STARTED (in-progress or finished); it stays hidden before the session
+        // begins. Keyed on the CLOCK (now >= StartUtc), never the manual Held flag,
+        // because "logically you can't view a summary before the session starts".
+        var now = timeProvider.GetUtcNow();
         return await dbContext.SessionSummaries
             .AsNoTracking()
             .Where(summary => summary.SessionId == id
                 && summary.IsActive
                 && summary.PublishedAt != null
-                && summary.Session!.IsActive)
+                && summary.Session!.IsActive
+                && summary.Session!.StartUtc <= now)
             .Select(summary => new PublicSessionSummary(
                 summary.SessionId,
                 summary.KeyPoints,

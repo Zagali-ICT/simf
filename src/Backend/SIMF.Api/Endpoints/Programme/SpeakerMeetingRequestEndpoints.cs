@@ -137,3 +137,33 @@ public sealed class RespondToSpeakerMeetingRequestEndpoint(ISpeakerMeetingReques
             await service.RespondAsync(actorId, req.Id, req, ct)), ct);
     }
 }
+
+// R-1 — admin re-sends the speaker's Approve/Reject confirmation links for a request
+// still AwaitingSpeaker (the prior 72h token pair expired, or the email was skipped).
+public sealed class ResendSpeakerMeetingConfirmationRoute
+{
+    public Guid Id { get; set; }
+}
+
+public sealed class ResendSpeakerMeetingConfirmationEndpoint(ISpeakerMeetingRequestService service)
+    : Endpoint<ResendSpeakerMeetingConfirmationRoute, ApiResult<bool>>
+{
+    public override void Configure()
+    {
+        Post("/admin/speaker-meeting-requests/{id:guid}/resend-confirmation");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.SpeakerMeetingRequests.Manage),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Admin");
+    }
+    public override async Task HandleAsync(ResendSpeakerMeetingConfirmationRoute req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        await service.ResendSpeakerConfirmationAsync(actorId, req.Id, ct);
+        await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
+    }
+}

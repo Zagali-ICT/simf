@@ -15,6 +15,11 @@ namespace SIMF.Infrastructure.AccessControl;
 ///
 /// Rolling 60-second window. ≥ 10 denials in the window → open the circuit
 /// for 5 minutes. Allowed scans clear the per-gate state immediately.
+///
+/// <para>G-3 — <see cref="RecordDenialAsync"/> must be called only for SYSTEM
+/// faults (backend/infra failures), never for benign policy denials: the caller
+/// (<c>GateOperatorService</c>) gates the call so normal traffic — unknown QRs,
+/// unapproved holders — cannot trip a venue-wide 5-minute outage.</para>
 /// </summary>
 internal sealed class GateFailureCircuit(
     IServiceScopeFactory scopeFactory,

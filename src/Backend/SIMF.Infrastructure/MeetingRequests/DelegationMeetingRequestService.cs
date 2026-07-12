@@ -234,6 +234,51 @@ internal sealed class DelegationMeetingRequestService(
         }
 
         var now = timeProvider.GetUtcNow();
+
+        // M-3 (owner default: admin-brokered, NO target-consent step) — an accept that
+        // carries a proposed slot must reserve it honestly: the slot cannot be in the
+        // past, and neither delegation may already hold an Accepted meeting that
+        // overlaps it. The Accepted row + its slot IS the reservation (mirrors the
+        // speaker flow, where an Accepted/AwaitingSpeaker slot holds the calendar); this
+        // overlap guard is what stops a delegation being double-booked. A topic-only
+        // request (no slot) accepts unchanged, so the legacy path is untouched.
+        //
+        // NOTE — this overlap check is a read-then-write with an ACCEPTED residual race:
+        // two admins concurrently accepting two overlapping G2G requests could both pass
+        // the AnyAsync guard. That matches the pre-M-5 business-meeting stance and is
+        // acceptable for this admin-brokered, low-concurrency, tiny G2G table; it is NOT
+        // wrapped in a Serializable transaction (unlike M-5's higher-volume path).
+        if (request.Status == MeetingRequestStatus.Accepted
+            && req.SlotStartUtc is { } slotStart && req.SlotEndUtc is { } slotEnd)
+        {
+            if (slotStart < now)
+            {
+                throw new ApiException(ErrorCodes.DelegationMeetingRequestInvalid, 400,
+                    "The proposed meeting slot is in the past.",
+                    "فترة الاجتماع المقترحة في الماضي.");
+            }
+
+            var reqId = req.Id;
+            var homeCountryId = req.RequestingCountryId;
+            var targetCountryId = req.TargetCountryId;
+            var overlaps = await appDbContext.DelegationMeetingRequests.AsNoTracking()
+                .Where(r => r.Id != reqId
+                    && r.Status == MeetingRequestStatus.Accepted
+                    && r.SlotStartUtc != null && r.SlotEndUtc != null
+                    && (r.RequestingCountryId == homeCountryId
+                        || r.TargetCountryId == homeCountryId
+                        || r.RequestingCountryId == targetCountryId
+                        || r.TargetCountryId == targetCountryId))
+                .AnyAsync(r => r.SlotStartUtc < slotEnd && slotStart < r.SlotEndUtc,
+                    cancellationToken);
+            if (overlaps)
+            {
+                throw new ApiException(ErrorCodes.DelegationMeetingRequestInvalid, 409,
+                    "One of the delegations already has a meeting at that time.",
+                    "لدى أحد الوفدين اجتماع بالفعل في ذلك الوقت.");
+            }
+        }
+
         req.Status = request.Status;
         req.ResponseNote = string.IsNullOrWhiteSpace(request.ResponseNote)
             ? null : request.ResponseNote.Trim();

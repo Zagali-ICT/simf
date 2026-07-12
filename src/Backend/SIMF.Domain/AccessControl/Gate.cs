@@ -35,7 +35,16 @@ public class Gate : BaseAuditEntity
     /// step 10).</summary>
     public DirectionMode DirectionMode { get; set; } = DirectionMode.Both;
 
-
+    /// <summary>X-1 (chain design) — optional real FK to the
+    /// <see cref="SIMF.Domain.Programme.Hall"/> this gate is the door of (same
+    /// DbContext, App DB — no Identity crossing). Non-null = a <b>hall-door
+    /// gate</b>: an allowed check-in scan here also opens the attendee's
+    /// <c>HallAttendance</c> for the session currently live in that hall, and a
+    /// check-out closes it. Null = a <b>perimeter/venue gate</b> (the pre-existing
+    /// behaviour) that records only a <c>GateScan</c>. Nullable so every existing
+    /// gate keeps its current perimeter semantics; no navigation property is added
+    /// (navigation-less FK, matching the D-716 precedent).</summary>
+    public Guid? HallId { get; set; }
 
     /// <summary>The allowed-profile-type rows. Empty = all allowed (general
     /// gate). Non-empty = filtered through active ProfileTypes per the

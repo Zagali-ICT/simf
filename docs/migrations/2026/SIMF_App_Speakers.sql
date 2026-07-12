@@ -48,12 +48,12 @@ DECLARE @sys uniqueidentifier = '00000000-0000-0000-0000-000000000000'; -- syste
    no schema change, no migration — respects the D-110 freeze).
    --------------------------------------------------------------------- */
 IF NOT EXISTS (SELECT 1 FROM dbo.Countries WHERE Id = 616)
-    INSERT INTO dbo.Countries (Id, Code, Name, NameArabic, PhonePrefix, DisplayOrder, IsActive, CreatedAt, CreatedBy)
-    VALUES (616, N'PL', N'Poland',  N'بولندا', N'+48',  305, 1, @now, @sys);
+    INSERT INTO dbo.Countries (Id, Code, Name, NameArabic, PhonePrefix, DisplayOrder, IsActive, IsInvited, CreatedAt)
+    VALUES (616, N'PL', N'Poland',  N'بولندا', N'+48',  305, 1, 0, @now);
 
 IF NOT EXISTS (SELECT 1 FROM dbo.Countries WHERE Id = 788)
-    INSERT INTO dbo.Countries (Id, Code, Name, NameArabic, PhonePrefix, DisplayOrder, IsActive, CreatedAt, CreatedBy)
-    VALUES (788, N'TN', N'Tunisia', N'تونس',  N'+216', 105, 1, @now, @sys);
+    INSERT INTO dbo.Countries (Id, Code, Name, NameArabic, PhonePrefix, DisplayOrder, IsActive, IsInvited, CreatedAt)
+    VALUES (788, N'TN', N'Tunisia', N'تونس',  N'+216', 105, 1, 0, @now);
 
 /* ---------------------------------------------------------------------
    1) SPEAKERS — 32 rows, grouped by the deck's 7 topic sections.

@@ -546,6 +546,25 @@ Scenario: Import a workbook carrying the extra fields; export carries them too
 land on the grid summary after import) and `Export_includes_the_extra_columns`
 (asserts the export header row carries the five appended columns).
 
+## On-site remediation (W4 — H-3 capacity-shrink guard)
+
+| Id | Scenario | Category | Priority | Status |
+|----|----------|----------|----------|--------|
+| E2E-HAL-025 | Reducing Capacity below the committed seat-layout total / active reservations → `HALL_CAPACITY_BELOW_USAGE` | validation | P1 | _to author_ |
+
+### E2E-HAL-025 — capacity cannot drop below committed seats
+
+```gherkin
+Scenario: a capacity reduction below the seat-layout total is blocked
+  Given the hall "Majlis A" has a 5-row × 10-seat layout (50 seats committed)
+  When the admin edits the hall and lowers Capacity to 40 and saves
+  Then the API responds 409 with error code HALL_CAPACITY_BELOW_USAGE
+  And the message reads "Capacity cannot drop below what this hall already
+      commits (50)." / "لا يمكن خفض السعة دون ما تلتزم به هذه القاعة بالفعل (50)."
+  # Capacity == committed passes; an increase always passes; a hall with no
+  # layout and no active reservations may shrink freely.
+```
+
 ---
 
-_Last reviewed:_ 2026-06-26 by Claude (D-506 — Excel export/import field-drop fix: EquipmentNotes + geofence triple + SeatSelectionMode now round-trip; scenario E2E-HAL-024 added, E2E-HAL-020/021 column lists reconciled). Prior: 2026-06-10 (D-356 Phase 5 — Excel export/import + D-353 Page<->Popup toggle scenarios E2E-HAL-017..022; E2E-HAL-001 deactivate step reconciled to the CrudShell + SimfConfirm gate).
+_Last reviewed:_ 2026-07-11 by Claude (W4 on-site remediation — H-3 capacity-shrink guard; E2E-HAL-025). Prior: 2026-06-26 by Claude (D-506 — Excel export/import field-drop fix: EquipmentNotes + geofence triple + SeatSelectionMode now round-trip; scenario E2E-HAL-024 added, E2E-HAL-020/021 column lists reconciled). Prior: 2026-06-10 (D-356 Phase 5 — Excel export/import + D-353 Page<->Popup toggle scenarios E2E-HAL-017..022; E2E-HAL-001 deactivate step reconciled to the CrudShell + SimfConfirm gate).

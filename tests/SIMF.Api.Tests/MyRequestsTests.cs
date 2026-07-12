@@ -12,6 +12,7 @@ using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Requests;
 using SIMF.Domain.BusinessMeetings;
 using SIMF.Domain.Programme;
+using SIMF.Domain.Requests;
 using SIMF.Domain.SeatReservations;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
@@ -165,7 +166,142 @@ public sealed class MyRequestsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.Conflict, cancel.StatusCode);
     }
 
+    // -- R-1c: an AwaitingSpeaker speaker meeting is cancellable --------------
+
+    [Fact]
+    public async Task My_requests_marks_an_AwaitingSpeaker_speaker_meeting_as_cancellable_but_still_reports_Pending_status()
+    {
+        var (token, userId) = await SignInApprovedVisitorAsync();
+        await SeedSpeakerMeetingWithStatusAsync(
+            userId, MeetingRequestStatus.AwaitingSpeaker, DateTimeOffset.UtcNow.AddDays(2));
+
+        var items = await GetMyRequestsAsync(token);
+
+        var meeting = Assert.Single(items, i => i.Kind == AppRequestKind.SpeakerMeeting);
+        // Folded to Pending on the app feed (wire values 0-3), but now cancellable.
+        Assert.Equal(MeetingRequestStatus.Pending, meeting.Status);
+        Assert.True(meeting.CanCancel);
+    }
+
+    [Fact]
+    public async Task Cancelling_an_AwaitingSpeaker_speaker_meeting_sets_Cancelled_and_frees_the_slot()
+    {
+        var (token, userId) = await SignInApprovedVisitorAsync();
+        var requestId = await SeedSpeakerMeetingWithStatusAsync(
+            userId, MeetingRequestStatus.AwaitingSpeaker, DateTimeOffset.UtcNow.AddDays(2));
+
+        var cancel = await CancelAsync(token, AppRequestKind.SpeakerMeeting, requestId);
+        Assert.Equal(HttpStatusCode.OK, cancel.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var req = await db.SpeakerMeetingRequests.SingleAsync(r => r.Id == requestId);
+        Assert.Equal(MeetingRequestStatus.Cancelled, req.Status);
+    }
+
+    [Fact]
+    public async Task Cancelling_a_document_or_badge_request_still_requires_Pending()
+    {
+        var (token, userId) = await SignInApprovedVisitorAsync();
+        // Only speaker meetings were relaxed to AwaitingSpeaker; a decided document
+        // request is still not cancellable.
+        var docId = await SeedDocumentRequestAsync(
+            userId, MeetingRequestStatus.Rejected, responseNote: null);
+
+        var cancel = await CancelAsync(token, AppRequestKind.ParticipationDocument, docId);
+        Assert.Equal(HttpStatusCode.Conflict, cancel.StatusCode);
+    }
+
+    // -- R-3: the admin ResponseNote (rejection reason) is surfaced -----------
+
+    [Fact]
+    public async Task My_requests_surfaces_the_admin_ResponseNote_on_a_rejected_document_and_badge_request()
+    {
+        var (token, userId) = await SignInApprovedVisitorAsync();
+        await SeedDocumentRequestAsync(
+            userId, MeetingRequestStatus.Rejected, responseNote: "Missing passport copy.");
+        await SeedBadgeRequestAsync(
+            userId, MeetingRequestStatus.Rejected, responseNote: "Title not on the approved list.");
+
+        var items = await GetMyRequestsAsync(token);
+
+        var doc = Assert.Single(items, i => i.Kind == AppRequestKind.ParticipationDocument);
+        Assert.Equal("Missing passport copy.", doc.ResponseNote);
+        var badge = Assert.Single(items, i => i.Kind == AppRequestKind.BadgeUpdate);
+        Assert.Equal("Title not on the approved list.", badge.ResponseNote);
+    }
+
     // -- helpers --------------------------------------------------------------
+
+    private async Task<Guid> SeedSpeakerMeetingWithStatusAsync(
+        Guid userId, MeetingRequestStatus status, DateTimeOffset? slotStart)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var suffix = Guid.NewGuid().ToString("N")[..6].ToUpperInvariant();
+        var speaker = new Speaker
+        {
+            Id = Guid.NewGuid(),
+            Code = "SPK" + suffix,
+            Name = "Speaker", NameArabic = "متحدّث",
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        db.Speakers.Add(speaker);
+        var req = new SpeakerMeetingRequest
+        {
+            Id = Guid.NewGuid(),
+            SpeakerId = speaker.Id,
+            RequestedByUserId = userId,
+            RequesterName = "Requester", Subject = "Topic",
+            Status = status,
+            SlotStartUtc = slotStart,
+            SlotEndUtc = slotStart?.AddMinutes(30),
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        db.SpeakerMeetingRequests.Add(req);
+        await db.SaveChangesAsync();
+        return req.Id;
+    }
+
+    private async Task<Guid> SeedDocumentRequestAsync(
+        Guid userId, MeetingRequestStatus status, string? responseNote)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var req = new ParticipationDocumentRequest
+        {
+            Id = Guid.NewGuid(),
+            RequestedByUserId = userId,
+            DocumentType = ParticipationDocumentType.ParticipationLetter,
+            Status = status,
+            ResponseNote = responseNote,
+            RespondedAt = status == MeetingRequestStatus.Pending ? null : DateTimeOffset.UtcNow,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        db.ParticipationDocumentRequests.Add(req);
+        await db.SaveChangesAsync();
+        return req.Id;
+    }
+
+    private async Task<Guid> SeedBadgeRequestAsync(
+        Guid userId, MeetingRequestStatus status, string? responseNote)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var req = new BadgeUpdateRequest
+        {
+            Id = Guid.NewGuid(),
+            RequestedByUserId = userId,
+            RequestedJobTitle = "Director of Operations",
+            Status = status,
+            ResponseNote = responseNote,
+            RespondedAt = status == MeetingRequestStatus.Pending ? null : DateTimeOffset.UtcNow,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        db.BadgeUpdateRequests.Add(req);
+        await db.SaveChangesAsync();
+        return req.Id;
+    }
 
     private async Task<List<AppRequestItem>> GetMyRequestsAsync(string token)
     {

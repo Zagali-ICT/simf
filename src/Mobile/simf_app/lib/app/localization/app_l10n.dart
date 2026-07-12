@@ -636,12 +636,18 @@ class AppL10n {
         'Camera unavailable. Enable camera permission in system settings, or type the code below.',
       );
   String get scannerCameraRetry => _t('إعادة المحاولة', 'Try again');
-  // Shown when the in-app contact scanner reads a contact QR that carries no
-  // SIMF share token (an old QR, or a foreign phone's vCard) — D-737.
-  String get scanContactVcardNoToken => _t(
-        'رمز بطاقة الاتصال هذا لا يحمل رمز مشاركة. اطلب من صاحبه فتح «مشاركة جهة اتصالي» في التطبيق.',
-        'This contact QR has no SIMF share code. Ask them to open “Share my contact” in the app.',
+  // A scanned contact QR that carries no SIMF share token (a foreign phone's
+  // vCard, or an old QR) can't resolve to a live card — offer to add it to the
+  // phone's own contacts instead (D-744).
+  String get scanContactSaveToPhoneTitle =>
+      _t('حفظ في جهات اتصال الهاتف؟', 'Save to phone contacts?');
+  String get scanContactSaveToPhoneBody => _t(
+        'هذه البطاقة ليست لعضو في الملتقى. أضِفها إلى جهات اتصال هاتفك مباشرة.',
+        'This card isn’t a SIMF member. Add it straight to your phone’s contacts.',
       );
+  String get scanContactSaveToPhoneConfirm => _t('إضافة', 'Add');
+  String get scanContactSaveToPhoneFailed =>
+      _t('تعذّر فتح إضافة جهة الاتصال.', 'Couldn’t open add-to-contacts.');
   String get badgeNotRecognised =>
       _t('تعذّر التعرّف على الشارة.', 'The badge was not recognised.');
   String get badgeScanError =>
@@ -913,6 +919,14 @@ class AppL10n {
       );
   String get gateRateLimited =>
       _t('محاولات كثيرة. انتظر قليلاً.', 'Too many attempts. Wait a moment.');
+  String get gateSavedOffline => _t(
+        'تعذّر الاتصال — حُفظ المسح وسيُعاد إرساله تلقائيًا.',
+        'No connection — the scan was saved and will retry automatically.',
+      );
+  String gatePendingSync(int count) => _t(
+        'بانتظار المزامنة: $count',
+        '$count scan(s) waiting to sync',
+      );
 
   // Staff walk-in registration — "add a visitor at the exhibition" (Figma
   // 1467:12357, D-509).

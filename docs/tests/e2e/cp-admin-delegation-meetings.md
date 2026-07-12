@@ -72,6 +72,42 @@ Scenario: The target country must be an invited delegation
   Then the response is 400 with error code DELEGATE_COUNTRY_NOT_INVITED
 ```
 
+### E2E-DLM-007 — Accept a request whose proposed slot is free + future (M-3)
+
+```gherkin
+Scenario: The Accepted row + its slot becomes the reservation
+  Given an Administrator opens Respond on a Pending SA -> EG request carrying a
+    future slot (e.g. 2030-02-01 09:00-10:00)
+  When they choose Accept and Send response
+  Then PUT /account/api/admin/delegation-meeting-requests/{id}/respond returns 200
+  And the row status becomes Accepted and the slot is persisted
+```
+
+### E2E-DLM-008 — Accept with a slot in the past is rejected (M-3)
+
+```gherkin
+Scenario: A past proposed slot cannot be reserved
+  Given a Pending request whose proposed slot is in the past (submit only checks end>start)
+  When the Administrator responds Accept
+  Then the API returns 400 DELEGATION_MEETING_REQUEST_INVALID
+    (bilingual toast: "The proposed meeting slot is in the past." /
+    "فترة الاجتماع المقترحة في الماضي.")
+```
+
+### E2E-DLM-009 — Accept clashes with an existing delegation meeting (M-3)
+
+```gherkin
+Scenario: Neither delegation may be double-booked
+  Given SA -> EG (09:00-10:00) is already Accepted
+  When the Administrator accepts SA -> US (09:30-10:30) — the SA delegation overlaps
+  Then the API returns 409 DELEGATION_MEETING_REQUEST_INVALID
+    ("One of the delegations already has a meeting at that time.")
+  # Overlap is keyed on either delegation (requesting or target) with a half-open
+  # [start,end) window; a topic-only accept (no slot) is unaffected.
+```
+
+**Evidence:** `DelegationMeetingRequestsTests.Accepting_a_request_with_a_free_future_slot_succeeds`, `Accepting_a_request_with_a_slot_in_the_past_is_400`, `Accepting_an_overlapping_slot_for_the_same_delegation_is_409` (all green).
+
 ---
 
-_Last reviewed:_ 2026-06-20 by SIMF Team — D-478 (#11) delegation↔delegation meeting desk (Group G phase 2, batch complete).
+_Last reviewed:_ 2026-07-11 by Claude — on-site W2b (M-3 accept-slot validation: not-in-past + no delegation double-book; added E2E-DLM-007/008/009). Prior: 2026-06-20 by SIMF Team — D-478 (#11) delegation↔delegation meeting desk (Group G phase 2, batch complete).

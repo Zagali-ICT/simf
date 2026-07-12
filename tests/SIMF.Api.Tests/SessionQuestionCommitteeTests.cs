@@ -148,6 +148,80 @@ public sealed class SessionQuestionCommitteeTests : IClassFixture<SimfApiFactory
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    // -- S-8: moderator desk push / reorder guards ----------------------------
+
+    // S-8 — only an approved (desk-visible) question can be pushed to the speaker.
+    [Fact]
+    public async Task Pushing_a_pending_question_is_400()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var session = await SeedLiveSessionAsync();
+        var qid = await SubmitQuestionAsync(session.Id);
+
+        var push = await PutAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions/{qid}/push", new { }, admin);
+        Assert.Equal(HttpStatusCode.BadRequest, push.StatusCode);
+        var body = (await push.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SessionQuestionInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Pushing_a_hidden_question_is_400()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var session = await SeedLiveSessionAsync();
+        var qid = await SubmitQuestionAsync(session.Id);
+        await PutAuthAsync($"/api/v1/admin/questions/{qid}/hide", new { }, admin);
+
+        var push = await PutAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions/{qid}/push", new { }, admin);
+        Assert.Equal(HttpStatusCode.BadRequest, push.StatusCode);
+        var body = (await push.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SessionQuestionInvalid, body.Error!.Code);
+    }
+
+    // S-8 — reorder validates + renumbers the Committee-approved DESK subset only.
+    [Fact]
+    public async Task Reorder_over_the_approved_subset_succeeds_and_rejects_other_sets()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var session = await SeedLiveSessionAsync();
+        var q1 = await SubmitQuestionAsync(session.Id);
+        var q2 = await SubmitQuestionAsync(session.Id);
+        await PutAuthAsync($"/api/v1/admin/questions/{q1}/approve", new { }, admin);
+        await PutAuthAsync($"/api/v1/admin/questions/{q2}/approve", new { }, admin);
+
+        // Exactly the two approved ids → OK, and the desk order follows the list.
+        var ok = await PutAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions/reorder",
+            new { orderedQuestionIds = new[] { q2, q1 } }, admin);
+        Assert.Equal(HttpStatusCode.OK, ok.StatusCode);
+
+        var desk = await GetAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions/moderate", admin);
+        var rows = (await desk.Content
+            .ReadFromJsonAsync<ApiResult<IReadOnlyList<SessionQuestionModeratorRow>>>())!.Data!;
+        Assert.Equal(new[] { q2, q1 }, rows.Select(r => r.Id).ToArray());
+
+        // Omitting an approved id → 400.
+        var missing = await PutAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions/reorder",
+            new { orderedQuestionIds = new[] { q1 } }, admin);
+        Assert.Equal(HttpStatusCode.BadRequest, missing.StatusCode);
+        Assert.Equal(ErrorCodes.SessionQuestionInvalid,
+            (await missing.Content.ReadFromJsonAsync<ApiResult<object>>())!.Error!.Code);
+
+        // Including an off-desk (hidden) id → 400.
+        var q3 = await SubmitQuestionAsync(session.Id);
+        await PutAuthAsync($"/api/v1/admin/questions/{q3}/hide", new { }, admin);
+        var withHidden = await PutAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions/reorder",
+            new { orderedQuestionIds = new[] { q1, q2, q3 } }, admin);
+        Assert.Equal(HttpStatusCode.BadRequest, withHidden.StatusCode);
+        Assert.Equal(ErrorCodes.SessionQuestionInvalid,
+            (await withHidden.Content.ReadFromJsonAsync<ApiResult<object>>())!.Error!.Code);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     private async Task<IReadOnlyList<SessionQuestionQueueRow>> ListQueueAsync(

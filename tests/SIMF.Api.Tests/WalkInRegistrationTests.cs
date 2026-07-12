@@ -478,7 +478,142 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
         Assert.Equal("ABJ1234", profile.PlateNumber);
     }
 
+    [Fact]
+    public async Task Walk_in_with_duplicate_national_id_returns_409()
+    {
+        // H-1 — the same Saudi National ID cannot be walked in twice. The second
+        // attempt is blocked by the blind-index duplicate-identity guard (409).
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var profileTypeId = await GetVisitorProfileTypeAsync();
+        var organisationId = await GetOrganisationIdAsync();
+        var sharedId = TestIdentity.MintNationalId();
+
+        var first = BuildRequest(profileTypeId, $"dupnid-1-{Guid.NewGuid():N}@simf.test", organisationId);
+        first.NationalId = sharedId;
+        var r1 = await PostAuthAsync("/api/v1/admin/visitors/register-onsite", first, adminToken);
+        Assert.Equal(HttpStatusCode.OK, r1.StatusCode);
+
+        var second = BuildRequest(profileTypeId, $"dupnid-2-{Guid.NewGuid():N}@simf.test", organisationId);
+        second.NationalId = sharedId;
+        var r2 = await PostAuthAsync("/api/v1/admin/visitors/register-onsite", second, adminToken);
+        Assert.Equal(HttpStatusCode.Conflict, r2.StatusCode);
+        var body = (await r2.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.DuplicateIdentity, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Walk_in_with_duplicate_iqama_returns_409()
+    {
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var profileTypeId = await GetVisitorProfileTypeAsync();
+        var organisationId = await GetOrganisationIdAsync();
+        var countryCode = await GetNonSaudiCountryCodeAsync();
+        var sharedIqama = TestIdentity.MintIqama();
+
+        var first = BuildNonSaudiRequest(
+            profileTypeId, $"dupiq-1-{Guid.NewGuid():N}@simf.test", organisationId,
+            countryCode, iqamaNumber: sharedIqama);
+        var r1 = await PostAuthAsync("/api/v1/admin/visitors/register-onsite", first, adminToken);
+        Assert.Equal(HttpStatusCode.OK, r1.StatusCode);
+
+        var second = BuildNonSaudiRequest(
+            profileTypeId, $"dupiq-2-{Guid.NewGuid():N}@simf.test", organisationId,
+            countryCode, iqamaNumber: sharedIqama);
+        var r2 = await PostAuthAsync("/api/v1/admin/visitors/register-onsite", second, adminToken);
+        Assert.Equal(HttpStatusCode.Conflict, r2.StatusCode);
+        var body = (await r2.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.DuplicateIdentity, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Walk_in_with_duplicate_passport_returns_409()
+    {
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var profileTypeId = await GetVisitorProfileTypeAsync();
+        var organisationId = await GetOrganisationIdAsync();
+        var countryCode = await GetNonSaudiCountryCodeAsync();
+        var sharedPassport = "P" + Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
+
+        var first = BuildNonSaudiRequest(
+            profileTypeId, $"duppp-1-{Guid.NewGuid():N}@simf.test", organisationId,
+            countryCode, passportNumber: sharedPassport);
+        var r1 = await PostAuthAsync("/api/v1/admin/visitors/register-onsite", first, adminToken);
+        Assert.Equal(HttpStatusCode.OK, r1.StatusCode);
+
+        var second = BuildNonSaudiRequest(
+            profileTypeId, $"duppp-2-{Guid.NewGuid():N}@simf.test", organisationId,
+            countryCode, passportNumber: sharedPassport);
+        var r2 = await PostAuthAsync("/api/v1/admin/visitors/register-onsite", second, adminToken);
+        Assert.Equal(HttpStatusCode.Conflict, r2.StatusCode);
+        var body = (await r2.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.DuplicateIdentity, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Walk_in_with_new_unique_identity_still_succeeds()
+    {
+        // Regression: the dedup guard must NOT false-positive — two DISTINCT
+        // National IDs both register cleanly.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var profileTypeId = await GetVisitorProfileTypeAsync();
+        var organisationId = await GetOrganisationIdAsync();
+
+        var a = BuildRequest(profileTypeId, $"uniq-a-{Guid.NewGuid():N}@simf.test", organisationId);
+        var ra = await PostAuthAsync("/api/v1/admin/visitors/register-onsite", a, adminToken);
+        Assert.Equal(HttpStatusCode.OK, ra.StatusCode);
+
+        var b = BuildRequest(profileTypeId, $"uniq-b-{Guid.NewGuid():N}@simf.test", organisationId);
+        var rb = await PostAuthAsync("/api/v1/admin/visitors/register-onsite", b, adminToken);
+        Assert.Equal(HttpStatusCode.OK, rb.StatusCode);
+    }
+
     // -- Helpers --------------------------------------------------------------
+
+    private static AdminWalkInRegistrationRequest BuildNonSaudiRequest(
+        Guid profileTypeId, string? email, Guid organisationId, string nationalityCode,
+        string? iqamaNumber = null, string? passportNumber = null) =>
+        new()
+        {
+            Email = email,
+            DisplayName = "Walk-in Subject",
+            ArabicName = "زائر فوري",
+            EnglishName = "Walk-in Visitor",
+            ProfileTypeId = profileTypeId,
+            NationalityCode = nationalityCode,
+            DateOfBirth = new DateOnly(1990, 1, 1),
+            PlaceOfBirth = "Riyadh",
+            IsSaudi = false,
+            NationalId = null,
+            IqamaNumber = iqamaNumber,
+            PassportNumber = passportNumber,
+            SaudiMobile = "+966500000001",
+            OrganisationId = organisationId,
+        };
+
+    // Returns an active non-Saudi country code (seeded ISO list normally supplies
+    // one; seeds a throwaway country if the test DB has none).
+    private async Task<string> GetNonSaudiCountryCodeAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var existing = await appDb.Countries
+            .Where(c => c.IsActive && c.Code != "SA")
+            .Select(c => c.Code)
+            .FirstOrDefaultAsync();
+        if (!string.IsNullOrEmpty(existing)) { return existing; }
+        var fresh = new SIMF.Domain.Common.Country
+        {
+            Id = 999,
+            Code = "ZZ",
+            Name = "Testland",
+            NameArabic = "أرض الاختبار",
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        appDb.Countries.Add(fresh);
+        await appDb.SaveChangesAsync();
+        return fresh.Code;
+    }
 
     private static AdminWalkInRegistrationRequest BuildRequest(
         Guid profileTypeId, string? email, Guid? organisationId = null) =>
@@ -493,7 +628,10 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
             DateOfBirth = new DateOnly(1990, 1, 1),
             PlaceOfBirth = "Riyadh",
             IsSaudi = true,
-            NationalId = "1101798278",   // D-459 — Luhn-valid Saudi national id
+            // H-1 — the class shares ONE DB across tests and the walk-in service
+            // now dedups on the National-ID blind index, so a hardcoded id would
+            // 409 the second walk-in. Mint a UNIQUE Luhn-valid Saudi id per call.
+            NationalId = TestIdentity.MintNationalId(),
             SaudiMobile = "+966500000001",
             // B3 — D-221: organisation is required at the desk.
             OrganisationId = organisationId,

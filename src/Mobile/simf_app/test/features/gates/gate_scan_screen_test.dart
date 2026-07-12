@@ -24,14 +24,29 @@ class _FakeGates implements GatesRepository {
     this.listStatus = 0,
     this.result,
     this.scanStatus = 0,
+    this.offline = false,
   });
 
   List<OperatorGate> gates;
   final int listStatus;
   final GateScanResult? result;
+
+  /// A hard HTTP failure the scan surfaces (rethrown), e.g. 429. 0 = success.
   final int scanStatus;
+
+  /// Simulates a no-verdict network failure (null httpStatus): the scan is
+  /// queued on-device and `recordScanOrQueue` returns null (G-4).
+  final bool offline;
+
   int scanCalls = 0;
   ScanDirection? lastDirection;
+
+  /// The idempotency keys the screen sent, in order (G-1 asserts a fresh one
+  /// per scan).
+  final List<String> idempotencyKeys = <String>[];
+
+  /// The on-device backlog, backing [pendingCount] / [flushPending].
+  final List<String> _pendingKeys = <String>[];
 
   @override
   Future<List<OperatorGate>> myAssignments() async {
@@ -64,6 +79,38 @@ class _FakeGates implements GatesRepository {
     return result ??
         GateScanResult.fromJson(<String, dynamic>{'outcome': 0, 'direction': 0});
   }
+
+  @override
+  Future<GateScanResult?> recordScanOrQueue({
+    required String gateId,
+    required String qr,
+    required String idempotencyKey,
+    ScanDirection? direction,
+  }) async {
+    scanCalls++;
+    lastDirection = direction;
+    idempotencyKeys.add(idempotencyKey);
+    if (offline) {
+      // No verdict from the server → queue for retry, no toast/result.
+      _pendingKeys.add(idempotencyKey);
+      return null;
+    }
+    if (scanStatus != 0) {
+      throw ApiFailure(
+        code: ApiErrorCodes.clientNetwork,
+        message: 'x',
+        httpStatus: scanStatus,
+      );
+    }
+    return result ??
+        GateScanResult.fromJson(<String, dynamic>{'outcome': 0, 'direction': 0});
+  }
+
+  @override
+  int pendingCount() => _pendingKeys.length;
+
+  @override
+  Future<int> flushPending() async => _pendingKeys.length;
 }
 
 Future<void> _pump(WidgetTester tester, _FakeGates repo) async {
@@ -221,6 +268,54 @@ void main() {
       await tester.pump(); // let the SnackBar appear
       expect(find.textContaining('Too many attempts'), findsOneWidget);
       expect(find.text('Allowed'), findsNothing);
+    });
+
+    testWidgets('G-1: each scan sends a fresh distinct UUIDv4 idempotency key',
+        (tester) async {
+      final uuidV4 = RegExp(
+        r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+      );
+      final repo = _FakeGates(gates: <OperatorGate>[_gate()]);
+      await _pump(tester, repo);
+      await _openScanner(tester);
+      await tester.enterText(find.byType(TextField), 'X');
+      await tester.tap(find.text('Check'));
+      await tester.pumpAndSettle();
+      expect(find.text('Allowed'), findsOneWidget);
+
+      // Scan again → a genuine re-entry of the next holder, a fresh key.
+      await tester.tap(find.widgetWithText(FilledButton, 'Scan again'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'Y');
+      await tester.tap(find.text('Check'));
+      await tester.pumpAndSettle();
+
+      expect(repo.idempotencyKeys.length, 2);
+      expect(repo.idempotencyKeys[0], isNot(repo.idempotencyKeys[1]));
+      expect(uuidV4.hasMatch(repo.idempotencyKeys[0]), isTrue);
+      expect(uuidV4.hasMatch(repo.idempotencyKeys[1]), isTrue);
+    });
+
+    testWidgets('G-4: an unreachable server queues the scan and shows '
+        'saved-offline + the waiting-to-sync banner', (tester) async {
+      final repo = _FakeGates(gates: <OperatorGate>[_gate()], offline: true);
+      await _pump(tester, repo);
+      await _openScanner(tester);
+      await tester.enterText(find.byType(TextField), 'X');
+      await tester.tap(find.text('Check'));
+      await tester.pump(); // resolve the async + setState
+      await tester.pump(); // render the snackbar frame
+
+      // The saved-offline snackbar, no allowed result, and the sync banner.
+      expect(
+        find.text(
+          'No connection — the scan was saved and will retry automatically.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Allowed'), findsNothing);
+      expect(find.textContaining('waiting to sync'), findsOneWidget);
+      expect(repo.pendingCount(), 1);
     });
   });
 }

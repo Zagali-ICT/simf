@@ -35,6 +35,18 @@
             <span class="simf-field__helper">@L["Admin.Gates.Field.DirectionModeHint"]</span>
         </label>
 
+        <label class="simf-field">
+            <span class="simf-field__label">@L["Admin.Gates.Field.Hall"]</span>
+            <select class="simf-select" @onchange="OnHallChanged" disabled="@_busy">
+                <option value="" selected="@(_model.HallId is null)">@L["Admin.Gates.Field.HallNone"]</option>
+                @foreach (var h in _halls)
+                {
+                    <option value="@h.Id" selected="@(_model.HallId == h.Id)">@h.Name</option>
+                }
+            </select>
+            <span class="simf-field__helper">@L["Admin.Gates.Field.HallHint"]</span>
+        </label>
+
         <SimfTextarea Label="@L["Admin.Gates.Field.Description"]"
                       Helper="@L["Admin.Gates.Field.DescriptionHint"]"
                       Rows="2" MaxLength="1024"

@@ -31,4 +31,7 @@
   <data name="AppRatingRequest" xml:space="preserve"><value>قيّم التطبيق</value></data>
   <data name="ExhibitionRatingRequest" xml:space="preserve"><value>قيّم المعرض</value></data>
   <data name="MeetingRequestConfirmed" xml:space="preserve"><value>تم تأكيد اجتماعك</value></data>
+  <data name="BookingReleased" xml:space="preserve"><value>تم إلغاء حجز المقعد</value></data>
+  <data name="ParticipationDocumentDecided" xml:space="preserve"><value>تم تحديث طلب الوثيقة</value></data>
+  <data name="BadgeUpdateDecided" xml:space="preserve"><value>تم تحديث طلب البادج</value></data>
 </root>

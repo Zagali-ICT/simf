@@ -32,7 +32,10 @@ public sealed record AdminGateDetail(
     IReadOnlyList<Guid> AllowedProfileTypeIds,
     IReadOnlyList<Guid> AssignedOperatorUserIds,
     DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTimeOffset? UpdatedAt,
+    // X-1 — the hall this gate is a door for (null = perimeter gate). Appended
+    // with a default so the CP-only contract stays append-only.
+    Guid? HallId = null);
 
 public sealed class AdminCreateGateRequest
 {
@@ -42,6 +45,8 @@ public sealed class AdminCreateGateRequest
     public string? Description { get; set; }
     public string? DescriptionArabic { get; set; }
     public DirectionMode DirectionMode { get; set; } = DirectionMode.Both;
+    // X-1 — optional hall-door binding (null = perimeter gate).
+    public Guid? HallId { get; set; }
     public List<Guid> AllowedProfileTypeIds { get; set; } = new();
     public List<Guid> AssignedOperatorUserIds { get; set; } = new();
 }
@@ -55,6 +60,8 @@ public sealed class AdminUpdateGateRequest
     public string? DescriptionArabic { get; set; }
     public DirectionMode DirectionMode { get; set; } = DirectionMode.Both;
     public bool IsActive { get; set; } = true;
+    // X-1 — optional hall-door binding (null = perimeter gate).
+    public Guid? HallId { get; set; }
     public List<Guid> AllowedProfileTypeIds { get; set; } = new();
     public List<Guid> AssignedOperatorUserIds { get; set; } = new();
 }

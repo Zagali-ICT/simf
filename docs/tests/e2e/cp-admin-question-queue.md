@@ -50,6 +50,7 @@
 | E2E-QQU-013 | Per-column filter narrows the grid — type into the Question / Submitter filter input → in-memory re-projection, Skip → 0, no round-trip | happy | P1 | _to author_ |
 | E2E-QQU-014 | Column sort toggles — click the Session header → asc → desc → in-memory re-order, Skip → 0 | happy | P2 | _to author_ |
 | E2E-QQU-015 | Excel export — toolbar Export downloads an .xlsx of the Pending queue; selected rows export just those (D-356) | happy | P1 | _to author_ |
+| E2E-QQU-016 | **Moderator-desk guards (S-8)** — a question that is Pending (still in this queue) or Hidden cannot be pushed on stage (400 `SESSION_QUESTION_INVALID`); rejecting a pushed question clears its on-stage marker. Cross-ref: `docs/tests/e2e/mobile-session-moderate.md` MOBMOD-005 | error | P1 | authored ✓ (`SessionQuestionCommitteeTests.Pushing_a_pending_question_is_400` + `.Pushing_a_hidden_question_is_400` + `SessionQuestionsTests.Hiding_a_pushed_question_clears_the_pushed_marker`) |
 
 ## Scenarios
 

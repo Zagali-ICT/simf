@@ -538,6 +538,28 @@ filter + POST wiring). Live browser drive pending the E2E-VIS authoring pass.
   Where an E2E scenario fully covers one of these, the lower-layer case may be
   retired later — keep both during the transition.
 
+## On-site remediation (W4 — H-1 duplicate-identity guard)
+
+| Id | Scenario | Category | Priority | Status |
+|----|----------|----------|----------|--------|
+| E2E-VIS-027 | Walk-in with an already-registered National ID / Iqama / passport → `DUPLICATE_IDENTITY` (409) | conflict | P0 | _to author_ |
+
+### E2E-VIS-027 — duplicate identity is rejected at the desk
+
+```gherkin
+Scenario: a National ID that already belongs to a profile cannot be walked in again
+  Given a visitor with National ID 1101798278 is already registered
+  When staff submit a walk-in with the same National ID (different email)
+  Then the API responds 409 with error code DUPLICATE_IDENTITY
+  And the desk shows the bilingual message "An account is already registered with
+      this national ID, Iqama, or passport number." /
+      "يوجد حساب مسجّل بالفعل بهذه الهوية الوطنية أو رقم الإقامة أو جواز السفر."
+  And no new account is created
+  # Iqama and passport are matched the same way (via the identity blind index);
+  # a distinct identity still registers cleanly. The same guard covers the staff
+  # app twin POST /app/staff/visitors/register-onsite.
+```
+
 ---
 
-_Last reviewed:_ 2026-07-09 by SIMF Team (D-728 — added E2E-VIS-026 for the change-account-type action on the visitor Details view). Earlier: 2026-06-20 (D-469 — E2E-VIS-025 Saudi birth-location region dropdown); 2026-06-10 (D-356 Phase 5 — Excel + toggle; E2E-VIS-023/024 for the D-353 Page↔Popup presentation toggle).
+_Last reviewed:_ 2026-07-11 by Claude (W4 on-site remediation — H-1 duplicate-identity guard; E2E-VIS-027). Prior: 2026-07-09 by SIMF Team (D-728 — added E2E-VIS-026 for the change-account-type action on the visitor Details view). Earlier: 2026-06-20 (D-469 — E2E-VIS-025 Saudi birth-location region dropdown); 2026-06-10 (D-356 Phase 5 — Excel + toggle; E2E-VIS-023/024 for the D-353 Page↔Popup presentation toggle).

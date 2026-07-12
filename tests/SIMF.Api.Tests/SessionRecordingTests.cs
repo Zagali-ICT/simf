@@ -195,6 +195,23 @@ public sealed class SessionRecordingTests : IClassFixture<SimfApiFactory>
         Assert.Null(detail.RecordingFileName);
     }
 
+    // S-7 — with a recording attached, Held->Recorded is allowed.
+    [Fact]
+    public async Task SetStatusAsync_MarkRecordedWithRecording_Succeeds()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var session = await CreateSessionAsync(token);
+        await UploadRecordingAsync(session.Id, token);
+
+        var held = await SetStatusAsync(session.Id, SessionStatus.Held, token);
+        Assert.Equal(HttpStatusCode.OK, held.StatusCode);
+        var recorded = await SetStatusAsync(session.Id, SessionStatus.Recorded, token);
+        Assert.Equal(HttpStatusCode.OK, recorded.StatusCode);
+        var detail = (await recorded.Content
+            .ReadFromJsonAsync<ApiResult<AdminSessionDetail>>())!.Data!;
+        Assert.Equal(SessionStatus.Recorded, detail.Status);
+    }
+
     [Fact]
     public async Task Non_admin_caller_cannot_upload_a_recording()
     {
@@ -287,8 +304,10 @@ public sealed class SessionRecordingTests : IClassFixture<SimfApiFactory>
                 Title = "Recording session",
                 TitleArabic = "جلسة التسجيل",
                 HallId = hall.Id,
-                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
-                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                // S-7 — a past start so the Held lifecycle guard passes (the
+                // recording-publish flow marks the session Held before Recorded).
+                StartUtc = DateTimeOffset.UtcNow.AddHours(-1),
+                EndUtc = DateTimeOffset.UtcNow.AddHours(1),
             },
             token);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
