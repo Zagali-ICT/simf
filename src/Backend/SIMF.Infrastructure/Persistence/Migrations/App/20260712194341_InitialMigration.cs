@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     /// <inheritdoc />
-    public partial class _20260501001 : Migration
+    public partial class InitialMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -280,29 +280,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_FaqGroups", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Gates",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Code = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
-                    NameArabic = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
-                    DescriptionArabic = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
-                    DirectionMode = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Gates", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -917,25 +894,31 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 });
 
             migrationBuilder.CreateTable(
-                name: "GateAssignments",
+                name: "Gates",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    GateId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
+                    NameArabic = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
+                    DescriptionArabic = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
+                    DirectionMode = table.Column<int>(type: "int", nullable: false),
+                    HallId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    UpdatedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    RevokedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    RevokedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    CreateBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_GateAssignments", x => x.Id);
+                    table.PrimaryKey("PK_Gates", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_GateAssignments_Gates_GateId",
-                        column: x => x.GateId,
-                        principalTable: "Gates",
+                        name: "FK_Gates_Halls_HallId",
+                        column: x => x.HallId,
+                        principalTable: "Halls",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -1100,30 +1083,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 });
 
             migrationBuilder.CreateTable(
-                name: "GateProfileTypeAllow",
-                columns: table => new
-                {
-                    GateId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ProfileTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_GateProfileTypeAllow", x => new { x.GateId, x.ProfileTypeId });
-                    table.ForeignKey(
-                        name: "FK_GateProfileTypeAllow_Gates_GateId",
-                        column: x => x.GateId,
-                        principalTable: "Gates",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_GateProfileTypeAllow_ProfileTypes_ProfileTypeId",
-                        column: x => x.ProfileTypeId,
-                        principalTable: "ProfileTypes",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "RatingQuestionGroups",
                 columns: table => new
                 {
@@ -1195,6 +1154,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     NationalId = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     IqamaNumber = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     PassportNumber = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    NationalIdHash = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    IqamaNumberHash = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    PassportNumberHash = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
                     JobTitle = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     OrganisationId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     RegionId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
@@ -1294,6 +1256,54 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         name: "FK_Sessions_SessionCategories_CategoryId",
                         column: x => x.CategoryId,
                         principalTable: "SessionCategories",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "GateAssignments",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    GateId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    RevokedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    RevokedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    CreateBy = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GateAssignments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_GateAssignments_Gates_GateId",
+                        column: x => x.GateId,
+                        principalTable: "Gates",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "GateProfileTypeAllow",
+                columns: table => new
+                {
+                    GateId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ProfileTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GateProfileTypeAllow", x => new { x.GateId, x.ProfileTypeId });
+                    table.ForeignKey(
+                        name: "FK_GateProfileTypeAllow_Gates_GateId",
+                        column: x => x.GateId,
+                        principalTable: "Gates",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_GateProfileTypeAllow_ProfileTypes_ProfileTypeId",
+                        column: x => x.ProfileTypeId,
+                        principalTable: "ProfileTypes",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -1530,7 +1540,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     Status = table.Column<int>(type: "int", nullable: false),
                     ReviewedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     ReviewedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    RejectionReason = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true)
+                    RejectionReason = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
+                    ExpiresUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -2641,6 +2652,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_Gates_HallId",
+                table: "Gates",
+                column: "HallId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Gates_IsActive_Name",
                 table: "Gates",
                 columns: new[] { "IsActive", "Name" });
@@ -2965,6 +2981,12 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 column: "StoredAt");
 
             migrationBuilder.CreateIndex(
+                name: "IX_SeatReservations_ExpiresUtc",
+                table: "SeatReservations",
+                column: "ExpiresUtc",
+                filter: "[ReleasedAt] IS NULL AND [ExpiresUtc] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_SeatReservations_ReservedForUserId_ReleasedAt",
                 table: "SeatReservations",
                 columns: new[] { "ReservedForUserId", "ReleasedAt" });
@@ -3226,6 +3248,20 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 column: "InterestId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_UserProfiles_IqamaNumberHash",
+                table: "UserProfiles",
+                column: "IqamaNumberHash",
+                unique: true,
+                filter: "[IqamaNumberHash] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserProfiles_NationalIdHash",
+                table: "UserProfiles",
+                column: "NationalIdHash",
+                unique: true,
+                filter: "[NationalIdHash] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_UserProfiles_NationalityId",
                 table: "UserProfiles",
                 column: "NationalityId");
@@ -3234,6 +3270,13 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 name: "IX_UserProfiles_OrganisationId",
                 table: "UserProfiles",
                 column: "OrganisationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserProfiles_PassportNumberHash",
+                table: "UserProfiles",
+                column: "PassportNumberHash",
+                unique: true,
+                filter: "[PassportNumberHash] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserProfiles_ProfileTypeId",
