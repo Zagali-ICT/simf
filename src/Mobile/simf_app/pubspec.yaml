@@ -133,6 +133,9 @@ flutter_launcher_icons:
   image_path: "icon/app_icon.png"
   adaptive_icon_background: "#01132D"
   adaptive_icon_foreground: "icon/app_icon_foreground.png"
+  # 0: app_icon_foreground.png already bakes in the ~20% safe-zone padding
+  # (mark at ~60%), so the tool's default 16% inset would shrink it twice.
+  adaptive_icon_foreground_inset: 0
   web:
     generate: true
     image_path: "icon/app_icon.png"
