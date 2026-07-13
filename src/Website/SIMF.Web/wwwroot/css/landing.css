@@ -109,7 +109,6 @@
 @media (prefers-reduced-motion: reduce) {
   .landing { scroll-behavior: auto; }
   .ln-js .ln-reveal { opacity: 1; transform: none; transition: none; }
-  .ln-marquee__track { animation: none !important; }
 }
 
 /* reusable brand buttons (Figma button styles; not default Bootstrap) */
@@ -289,15 +288,12 @@
 .ln-intro__title { font-size: 32px; font-weight: 800; line-height: 1.15; color: var(--white); }
 .ln-intro__sub { font-size: 16px; line-height: 24px; color: #bbc7d5; max-width: 720px; }
 .ln-intro__lead { font-size: 16px; line-height: 24px; color: var(--white); max-width: 720px; }
-.ln-intro__strip { width: 100%; overflow: hidden;
+/* static overflow row (matches the Figma mockup — no auto-scroll); horizontally scrollable, native scrollbar hidden, edges masked. */
+.ln-intro__strip { width: 100%; overflow-x: auto; scrollbar-width: none;
   -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%);
           mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%); }
-.ln-marquee__track { display: flex; gap: 16px; width: max-content; animation: ln-scroll-x 70s linear infinite; }
-.ln-intro__strip:hover .ln-marquee__track { animation-play-state: paused; }
-/* one shared horizontal-scroll keyframe for all marquees; each track sets its
-   own duration. Tracks render their content ×N (even count) so the -50% shift
-   lands on an identical copy and loops seamlessly. */
-@keyframes ln-scroll-x { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.ln-intro__strip::-webkit-scrollbar { display: none; }
+.ln-marquee__track { display: flex; gap: 16px; width: max-content; }
 .ln-tstat { flex: 0 0 217px; width: 217px; height: 152px; background: rgba(36, 74, 119, .12);
   border: 1px solid rgba(27, 56, 89, .5); padding: 16px; display: flex; flex-direction: column;
   align-items: flex-start; gap: 24px; }
@@ -402,14 +398,8 @@
 @media (max-width: 720px) { .ln-hero2__block { width: 100%; } }
 
 /* ========================= THEMES (PILLARS) ===================== */
-.ln-themes { position: relative; overflow: hidden; background: var(--navy); padding: 64px clamp(16px, 5.5vw, 80px) 128px; }
-.ln-themes__bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
-.ln-themes__bgimg { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0;
-  transition: opacity .9s ease; }
-.ln-themes__bgimg.is-active { opacity: 1; }
-.ln-themes__overlay { position: absolute; inset: 0; background: rgba(36, 74, 119, .34); opacity: 0; transition: opacity .9s ease; }
-.ln-themes__bg.is-on .ln-themes__overlay { opacity: 1; }
-.ln-themes__inner { position: relative; z-index: 1; max-width: var(--content-w); margin-inline: auto; display: flex;
+.ln-themes { background: var(--navy); padding: 64px clamp(16px, 5.5vw, 80px) 128px; }
+.ln-themes__inner { max-width: var(--content-w); margin-inline: auto; display: flex;
   flex-direction: column; align-items: center; gap: 32px; }
 .ln-themes__head { display: flex; flex-direction: column; align-items: center; gap: 24px; width: 100%; text-align: center; }
 .ln-themes__title { font-size: 32px; font-weight: 800; line-height: 1.2; color: var(--white); }
@@ -417,22 +407,17 @@
 .ln-themes__row { display: flex; width: 100%; }
 .ln-tcard { flex: 1 1 0; min-width: 0; min-height: 296px; padding: 24px; border: 1px solid var(--border-neutral);
   display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 24px;
-  background: transparent; transition: flex-grow .6s ease, background-color .5s ease; cursor: pointer; }
+  background: transparent; }
 .ln-tcard:not(:first-child) { margin-inline-start: -1px; }
-.ln-tcard.is-active { flex-grow: 2.1; background: rgba(255, 255, 255, .64); }
 .ln-tcard__topgrp { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; width: 100%; }
 .ln-tcard__badge { background: rgba(230, 242, 251, .12); border-radius: var(--radius-full); padding: 12px; display: inline-grid;
-  place-items: center; color: var(--white); transition: background-color .5s ease, color .5s ease; }
+  place-items: center; color: var(--white); }
 .ln-tcard__badge svg { width: 24px; height: 24px; display: block; }
-.ln-tcard__title { font-size: 18px; font-weight: 700; line-height: 24px; color: var(--white); text-align: start; transition: color .5s ease; }
-.ln-tcard__desc { font-size: 16px; line-height: 24px; color: var(--primary-light); text-align: start; transition: color .5s ease; }
-.ln-tcard.is-active .ln-tcard__badge { background: var(--gold); color: var(--ink); }
-.ln-tcard.is-active .ln-tcard__title { color: var(--ink); }
-.ln-tcard.is-active .ln-tcard__desc { color: var(--ink); }
+.ln-tcard__title { font-size: 18px; font-weight: 700; line-height: 24px; color: var(--white); text-align: start; }
+.ln-tcard__desc { font-size: 16px; line-height: 24px; color: var(--primary-light); text-align: start; }
 @media (max-width: 1000px) {
   .ln-themes__row { flex-wrap: wrap; }
   .ln-tcard { flex: 1 1 45%; margin-inline-start: 0; }
-  .ln-tcard.is-active { flex-grow: 1; }
 }
 
 .ln-btn--outline-blue { background: transparent; color: var(--primary-light); border: 1px solid var(--primary); }
@@ -475,9 +460,10 @@
 .ln-pband__head { max-width: var(--content-w); margin-inline: auto; width: 100%; padding-inline: clamp(16px, 5.5vw, 80px); display: flex; flex-direction: column; align-items: flex-start; gap: 24px; }
 .ln-pband__title { font-size: 32px; font-weight: 800; line-height: 1.2; color: var(--ink); text-align: start; }
 .ln-pband__desc { font-size: 16px; line-height: 24px; color: var(--ink); text-align: start; }
-.ln-pband__strip { overflow: hidden; }
-.ln-pband__track { display: flex; width: max-content; animation: ln-scroll-x 40s linear infinite; }
-.ln-pband__strip:hover .ln-pband__track { animation-play-state: paused; }
+.ln-pband__strip { overflow-x: auto; scrollbar-width: none; }
+.ln-pband__strip::-webkit-scrollbar { display: none; }
+/* Figma's partner strip is LTR-authored (first logo on the left); force LTR so the 4 logos keep that order on the RTL page. */
+.ln-pband__track { display: flex; width: max-content; direction: ltr; }
 .ln-pcard { flex: 0 0 360px; width: 360px; background: #fff; border: 1px solid #e0e0e0; display: flex; flex-direction: column; }
 .ln-pcard__logo { height: 238px; display: grid; place-items: center; padding: 32px; background: #fff; }
 .ln-pcard__logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
@@ -493,13 +479,13 @@
 .ln-spon__titlerow { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 24px; }
 .ln-spon__title { font-size: 30px; font-weight: 800; line-height: 38px; color: var(--ink); text-align: start; }
 .ln-spon__desc { font-size: 16px; line-height: 24px; color: var(--ink); text-align: start; max-width: 720px; }
-.ln-spon__carousel { display: flex; align-items: center; gap: 16px; }
+/* Figma's sponsor carousel is an LTR-authored component ("Ltr"); force LTR so scroll + arrow direction stay coherent on the RTL page (cards are identical placeholders, so order is invisible). */
+.ln-spon__carousel { display: flex; align-items: center; gap: 16px; direction: ltr; }
 .ln-spon__arrow { flex: 0 0 40px; width: 40px; height: 40px; background: #f3f4f6; border: 0; border-radius: var(--radius-sm); display: inline-grid; place-items: center; cursor: pointer; }
 .ln-spon__arrow img { height: 14px; width: auto; }
-[dir="rtl"] .ln-spon__arrow img { transform: scaleX(-1); }
-.ln-spon__viewport { position: relative; flex: 1 1 0; min-width: 0; overflow: hidden; }
-.ln-spon__track { display: flex; width: max-content; animation: ln-scroll-x 45s linear infinite; }
-.ln-spon__viewport:hover .ln-spon__track { animation-play-state: paused; }
+.ln-spon__viewport { position: relative; flex: 1 1 0; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.ln-spon__viewport::-webkit-scrollbar { display: none; }
+.ln-spon__track { display: flex; width: max-content; }
 /* Figma's sponsor card is LTR auto-layout (external-link icon at the inline-start/left, logo+tag column on the right); force LTR so it does not mirror on the RTL page. */
 .ln-scard2 { flex: 0 0 auto; direction: ltr; display: flex; align-items: center; gap: 24px; width: 243px; height: 122px; padding: 16px; margin-inline-end: 16px; background: #fff; border: 1px solid var(--border-neutral); border-radius: 16px; }
 .ln-scard2__icon { width: 24px; height: 24px; flex: 0 0 24px; }

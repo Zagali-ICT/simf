@@ -28,7 +28,7 @@ static page it supersedes.
 
 - **Rendering** — static SSR (no interactive circuit). All interactivity is
   progressive vanilla JS in `landing.js` (page-loader fade, reveal-on-scroll,
-  search panel, themes crossfade) plus Bootstrap's bundle for the mobile
+  search panel, sponsors-carousel arrows) plus Bootstrap's bundle for the mobile
   offcanvas. The page is fully readable/navigable with JS disabled.
 - **Layout** — uses a minimal `LandingLayout` (no shared public `<nav>`); the
   landing renders its own full chrome. Bootstrap + `landing.css` are injected
@@ -112,9 +112,17 @@ at 1000/640px; sub-nav drops weather+venue on mobile. No horizontal overflow at
   (Figma card is LTR — icon left, logo/tag right); **discover** meta 18px + 2px
   panel backdrop-blur. Intro, stats, about, partners and news verified faithful.
   RTL side-claims were each confirmed against the live Figma render (not code
-  order). **Deliberate enhancements kept** (richer than the flat mockup): the
-  themes photo-crossfade backdrop + card-expand, and the intro/partners/sponsors
-  auto-scroll marquees — flatten on request.
+  order).
+- Flatten-to-Figma pass (2026-07-13, owner "exact as in figma"): the two
+  enhancements that were richer than the flat mockup are now removed to match
+  Figma exactly. **Themes** is flat navy — the `.ln-themes__bg` photo-crossfade
+  backdrop, the `.ln-tcard.is-active` card-expand, and the `initThemes()` JS are
+  gone; 5 equal static cards. The **threat-stats / partners / sponsors** strips no
+  longer auto-scroll (marquee animation + `@keyframes ln-scroll-x` removed) — each
+  is a static `overflow-x:auto` row (native scrollbar hidden). Partners force
+  `direction:ltr` to keep the Figma logo order (State Security first/left);
+  the **sponsors** carousel is `direction:ltr` with its prev/next arrows wired
+  (`initSponsors()` → `scrollBy`). Static rows still scroll by wheel/touch.
 - Almarai is self-hosted (woff2 under `wwwroot/lib/almarai`, CSP-safe). Known
   minor follow-up: the hero-font `<link rel="preload">` href is fingerprinted
   while the `@font-face src` url is not, so the browser can't match them and the

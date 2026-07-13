@@ -5,7 +5,7 @@
  *   1. Page-loader fade-out on window load.
  *   2. Reveal-on-scroll for .ln-reveal blocks (IntersectionObserver).
  *   3. Search drop-panel toggle.
- *   4. Themes crossfade + active card (timer gated to the section's viewport).
+ *   4. Sponsors carousel: prev/next arrows scroll the (static) sponsor strip.
  *   5. Hero video paused while off-screen (saves decode CPU/battery).
  */
 (function () {
@@ -60,44 +60,17 @@
     });
   }
 
-  /* ---- 4. themes crossfade + active card -------------------------------- */
-  // The auto-rotate timer only runs while the Themes section is on-screen, so
-  // it never wakes to recalc off-screen crossfades for the rest of the page.
-  function initThemes() {
-    var section = document.querySelector('.ln-themes');
-    var cards = document.querySelectorAll('.ln-tcard');
-    var bgs = document.querySelectorAll('.ln-themes__bgimg');
-    var bgWrap = document.querySelector('.ln-themes__bg');
-    if (!section || !cards.length) { return; }
-    var idx = 0, timer = null, hovered = false;
-    function activate(i) {
-      idx = i;
-      for (var j = 0; j < cards.length; j++) { cards[j].classList.toggle('is-active', j === i); }
-      for (var k = 0; k < bgs.length; k++) { bgs[k].classList.toggle('is-active', k === i); }
-      if (bgWrap) { bgWrap.classList.add('is-on'); }
-    }
-    function stop() { if (timer) { window.clearInterval(timer); timer = null; } }
-    function start() {
-      if (prefersReducedMotion || hovered || timer) { return; }
-      timer = window.setInterval(function () { activate((idx + 1) % cards.length); }, 4000);
-    }
-    for (var i = 0; i < cards.length; i++) {
-      (function (n) {
-        cards[n].addEventListener('mouseenter', function () { hovered = true; activate(n); stop(); });
-        cards[n].addEventListener('mouseleave', function () { hovered = false; start(); });
-        cards[n].addEventListener('focusin', function () { activate(n); stop(); });
-        cards[n].addEventListener('focusout', function () { start(); });
-      })(i);
-    }
-    activate(0);
-    if ('IntersectionObserver' in window) {
-      var io = new IntersectionObserver(function (entries) {
-        entries.forEach(function (e) { if (e.isIntersecting) { start(); } else { stop(); } });
-      }, { threshold: 0.2 });
-      io.observe(section);
-    } else {
-      start();
-    }
+  /* ---- 4. sponsors carousel: prev/next arrows scroll the strip ---------- */
+  function initSponsors() {
+    var vp = document.querySelector('.ln-spon__viewport');
+    var carousel = document.querySelector('.ln-spon__carousel');
+    if (!vp || !carousel) { return; }
+    var arrows = carousel.querySelectorAll('.ln-spon__arrow');
+    if (arrows.length < 2) { return; }
+    var step = 259; // one sponsor card (243px) + gap (16px)
+    // carousel is forced LTR (see landing.css): standard scrollLeft, so prev = -step (left/back), next = +step (right/advance).
+    arrows[0].addEventListener('click', function () { vp.scrollBy({ left: -step, behavior: 'smooth' }); });
+    arrows[1].addEventListener('click', function () { vp.scrollBy({ left: step, behavior: 'smooth' }); });
   }
 
   /* ---- 5. hero video: pause while off-screen ---------------------------- */
@@ -113,7 +86,7 @@
     io.observe(video);
   }
 
-  function run() { initReveal(); initSearch(); initThemes(); initHeroVideo(); }
+  function run() { initReveal(); initSearch(); initSponsors(); initHeroVideo(); }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', run);
   } else {

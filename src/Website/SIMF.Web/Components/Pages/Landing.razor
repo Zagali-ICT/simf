@@ -214,21 +214,17 @@
                     <p class="ln-intro__sub">@L["Landing.Intro.Sub"]</p>
                     <p class="ln-intro__lead">@L["Landing.Intro.Lead"]</p>
                 </div>
-                <div class="ln-intro__strip" aria-hidden="true">
+                <div class="ln-intro__strip">
                     <div class="ln-marquee__track">
-                        @* rendered twice so the -50% keyframe loops seamlessly *@
-                        @for (var pass = 0; pass < 2; pass++)
+                        @foreach (var s in ThreatStats)
                         {
-                            @foreach (var s in ThreatStats)
-                            {
-                                <div class="ln-tstat">
-                                    <div class="ln-tstat__top">
-                                        <span class="ln-tstat__val">@s.Value.For(rtl)</span>
-                                        <span class="ln-tstat__badge"><img src="assets/figma/intro/stat-icon.svg" alt="" /></span>
-                                    </div>
-                                    <span class="ln-tstat__cap">@s.Caption.For(rtl)</span>
+                            <div class="ln-tstat">
+                                <div class="ln-tstat__top">
+                                    <span class="ln-tstat__val">@s.Value.For(rtl)</span>
+                                    <span class="ln-tstat__badge"><img src="assets/figma/intro/stat-icon.svg" alt="" /></span>
                                 </div>
-                            }
+                                <span class="ln-tstat__cap">@s.Caption.For(rtl)</span>
+                            </div>
                         }
                     </div>
                 </div>
@@ -317,13 +313,6 @@
 
         @* ========================= THEMES (PILLARS) ==================== *@
         <section class="ln-themes" id="themes">
-            <div class="ln-themes__bg" aria-hidden="true">
-                @foreach (var t in Themes)
-                {
-                    <div class="ln-themes__bgimg" style="background-image:url('@t.Background')"></div>
-                }
-                <div class="ln-themes__overlay"></div>
-            </div>
             <div class="ln-themes__inner ln-reveal">
                 <div class="ln-themes__head">
                     <h2 class="ln-themes__title">@L["Landing.Themes.Title"]</h2>
@@ -332,7 +321,7 @@
                 <div class="ln-themes__row">
                     @foreach (var t in Themes)
                     {
-                        <article class="ln-tcard" tabindex="0">
+                        <article class="ln-tcard">
                             <div class="ln-tcard__topgrp">
                                 <span class="ln-tcard__badge"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5" /><path d="M8 12.4l2.6 2.6 5.4-5.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
                                 <h3 class="ln-tcard__title">@t.Title.For(rtl)</h3>
@@ -395,16 +384,12 @@
             </div>
             <div class="ln-pband__strip">
                 <div class="ln-pband__track">
-                    @* rendered ×4 so the -50% keyframe loops seamlessly across the 4 logos *@
-                    @for (var pass = 0; pass < 4; pass++)
+                    @foreach (var p in PartnerLogos)
                     {
-                        @foreach (var p in PartnerLogos)
-                        {
-                            <div class="ln-pcard">
-                                <div class="ln-pcard__logo"><img src="@p.Image" alt="@p.Label.For(rtl)" loading="lazy" /></div>
-                                <div class="ln-pcard__label">@p.Label.For(rtl)</div>
-                            </div>
-                        }
+                        <div class="ln-pcard">
+                            <div class="ln-pcard__logo"><img src="@p.Image" alt="@p.Label.For(rtl)" loading="lazy" /></div>
+                            <div class="ln-pcard__label">@p.Label.For(rtl)</div>
+                        </div>
                     }
                 </div>
             </div>
@@ -425,19 +410,15 @@
                     <button type="button" class="ln-spon__arrow" aria-label="@L["Landing.Sponsors.Prev"]"><img src="assets/figma/sponsors/icon-arrow-left.svg" alt="" /></button>
                     <div class="ln-spon__viewport">
                         <div class="ln-spon__track">
-                            @* rendered ×2 for the seamless -50% marquee loop *@
-                            @for (var pass = 0; pass < 2; pass++)
+                            @foreach (var sp in Sponsors)
                             {
-                                @foreach (var sp in Sponsors)
-                                {
-                                    <div class="ln-scard2">
-                                        <img class="ln-scard2__icon" src="assets/figma/sponsors/icon-external-link.svg" alt="" />
-                                        <div class="ln-scard2__col">
-                                            <img class="ln-scard2__logo" src="@sp.Logo" alt="@sp.Tag.For(rtl)" />
-                                            <span class="ln-scard2__tag">@sp.Tag.For(rtl)</span>
-                                        </div>
+                                <div class="ln-scard2">
+                                    <img class="ln-scard2__icon" src="assets/figma/sponsors/icon-external-link.svg" alt="" />
+                                    <div class="ln-scard2__col">
+                                        <img class="ln-scard2__logo" src="@sp.Logo" alt="@sp.Tag.For(rtl)" />
+                                        <span class="ln-scard2__tag">@sp.Tag.For(rtl)</span>
                                     </div>
-                                }
+                                </div>
                             }
                         </div>
                     </div>

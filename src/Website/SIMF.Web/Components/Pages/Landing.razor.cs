@@ -125,24 +125,19 @@ public partial class Landing
     ];
 
     // ---- Themes / pillars ("المحاور الرئيسية") ---------------------------
-    public sealed record Theme(string Background, Bilingual Title, Bilingual Desc);
+    public sealed record Theme(Bilingual Title, Bilingual Desc);
 
     public static readonly IReadOnlyList<Theme> Themes =
     [
-        new("assets/figma/themes/bg-1.jpg",
-            new("التقنيات الحديثة وتأمين قاع البحار وسلاسل الإمداد", "Advanced technologies for securing the seabed and supply chains"),
+        new(new("التقنيات الحديثة وتأمين قاع البحار وسلاسل الإمداد", "Advanced technologies for securing the seabed and supply chains"),
             new("دور التقنيات الحديثة والابتكار في أمن قاع البحار وسلاسل الإمداد", "The role of modern technology and innovation in seabed and supply-chain security")),
-        new("assets/figma/themes/bg-2.jpg",
-            new("الحوكمة الدولية لأمن قاع البحار", "International governance of seabed security"),
+        new(new("الحوكمة الدولية لأمن قاع البحار", "International governance of seabed security"),
             new("الجهود الدولية في حوكمة أمن وقاع البحار", "International efforts to govern seabed security")),
-        new("assets/figma/themes/bg-3.jpg",
-            new("أمن قاع البحار والأمن الدولي", "Seabed security and international security"),
+        new(new("أمن قاع البحار والأمن الدولي", "Seabed security and international security"),
             new("حماية قاع البحار وأثره على الأمن الدولي", "Protecting the seabed and its impact on international security")),
-        new("assets/figma/themes/bg-4.jpg",
-            new("تهديدات إمداد الطاقة وتداعياتها الاقتصادية", "Energy-supply threats and their economic impact"),
+        new(new("تهديدات إمداد الطاقة وتداعياتها الاقتصادية", "Energy-supply threats and their economic impact"),
             new("التهديدات على سلاسل إمداد الطاقة وأثرها على الاقتصاد العالمي", "Threats to energy supply chains and their effect on the global economy")),
-        new("assets/figma/themes/bg-5.jpg",
-            new("البيئة الاستراتيجية العالمية وأمن سلاسل الإمداد البحرية", "The global strategic environment and maritime supply-chain security"),
+        new(new("البيئة الاستراتيجية العالمية وأمن سلاسل الإمداد البحرية", "The global strategic environment and maritime supply-chain security"),
             new("المتغيرات في البيئة الاستراتيجية العالمية وتأثيرها على أمن سلاسل الإمداد البحرية", "Shifts in the global strategic environment and their impact on maritime supply-chain security")),
     ];
 
