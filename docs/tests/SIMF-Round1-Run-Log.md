@@ -409,3 +409,40 @@ So the CP list surface conforms structurally. The **fine-grained per-page CRUD l
 **on-tablet app manual pass** remain the two genuinely-open Round-1 items — both are owner-gated (they
 need the shared local stack brought up without colliding with the concurrent session, or the physical
 tablet), not code work.
+
+---
+
+## Live CP CRUD sweep — driven on `main` (2026-07-13, later) — PASS
+
+The owner freed the shared Chrome automation profile, so the "fine-grained per-page CRUD live pass"
+above was **driven live**. To avoid disrupting the concurrent web-landing session, an **isolated stack**
+was stood up from a **dedicated worktree** (`D:/SIMF/wt-r1cp`): API on **:5185**, CP on **:5188**
+(pointed at :5185 via `--Api:BaseUrl`), the owner's :5158/:5115 processes untouched. Mid-run the owner
+asked to **sync with remote main** — the testing branch turned out to be **0-ahead / 25-behind and
+already merged into `main` (PR 87 + PR 86)**, so the branch + local `main` were fast-forwarded to
+`origin/main` (`2d1a8290`) and the stack was **rebuilt on `main`** (delta touches **no migration /
+DbContext** → the seeded DB stayed compatible). Everything below ran against that `main` build. Sign-in
+was the real CP login form (super-admin, 2FA-disabled on this dev DB — password only). **DB assertions
+via `sqlcmd` against `SIMF_App`.** Every created row was **cleaned up** afterwards (DB restored: Regions
+13, Halls 1, Settings 6, Categories 0). **Console errors across the whole sweep: 0.**
+
+| Entity (route) | Ops driven live (UI → API → DB) | Result |
+|---|---|---|
+| **Halls** (`/admin/halls`) | **Full lifecycle:** create (code `R1HALL`, cap 120, floor L2) → **edit** (cap 120→175, floor L2→L3) → **soft-delete** (two-step confirm → `IsActive=0`) | **PASS** — grid + toasts (`تم إنشاء/تحديث/تعطيل القاعة`) + DB all matched; **`CreatedBy` = super-admin id** (AuditStamping + cross-DB actor resolve OK) |
+| **Session Categories** (`/admin/session-categories`) | create (`R1 Test Category`, order 7) + **empty-state** render (`لا توجد تصنيفات جلسات بعد.`) | **PASS** — DB `DisplayOrder=7`, `IsActive=1`; empty seed matches OI-2 |
+| **Regions** (`/admin/regions`) | create (`r1test` / `R1 Test Region`) over the seeded 13-region grid + top search box | **PASS** — DB row present, `IsActive=1`; 13 seed rows intact |
+| **System Configuration** (`/admin/configuration`) | create key/value (`round1.test.setting` = `R1-OK` + description) over the 6 seeded app-update settings | **PASS** — DB `[Key]/[Value]` exact, `IsActive=1` |
+
+**What this proves on `main`:** the shared **SimfDataGrid → dialog-form → Admin*Service → API →
+EF/SQL** CRUD pipeline works end-to-end through the real Blazor UI for create / edit / soft-delete,
+with the **AuditStamping** interceptor stamping `CreatedBy` across the DB split, **bilingual
+live-region toasts**, the **two-step deactivate confirm**, **empty-state** rendering, and **in-form
+validation hints that match the EF max-lengths** (Halls: code 2–16, name ≤128, floor ≤32, notes
+≤1024). Four diverse entity shapes (facility / lookup / lookup-with-seed / key-value) exercised the
+same plumbing every other CP CRUD page reuses. Session expiry at the **5-minute NCA access-token cap**
+bounced the browser to `/login` once mid-sweep (expected behaviour, D-443) — re-login restored the
+session cleanly.
+
+**Round-1 open items after this pass:** only the **on-tablet app manual pass** remains (needs the
+physical tablet). The CP CRUD live pass is now **done**; the data-path was already green in the
+1620/1620 integration tests, and this adds the live Blazor-UI layer on top, on `main`.
