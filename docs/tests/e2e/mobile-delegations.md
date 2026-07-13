@@ -28,10 +28,18 @@
 - **Stats strip**: two figures — the **participating-countries** count
   ("دولة مشاركة" / "Participating countries", from `countryCount`) and the
   **total-participants** count ("إجمالي المشاركين" / "Total participants", from
-  `totalParticipants`).
+  `totalParticipants`) — over a faint gold grid with the invited-country
+  **flags scattered** across it. Each scattered flag is a **tap target**:
+  tapping one filters the list below to that country (the tapped flag is ringed
+  in gold); tapping it again clears. Only the first 8 flags are placed (the
+  strip is a fixed-size decorative map).
 - **Search box**: a single filter input with the hint
   "ابحث عن دولة أو وفد..." / "Search for a country or delegation...", filtering
-  the cards by country name (ar/en) and head name (ar/en).
+  the cards by country name (ar/en) and head name (ar/en). **Composes** with the
+  flag filter (both narrow the list).
+- **Active-filter chip**: shown below the search box only while a flag filter is
+  active — the selected country's name + a close glyph ("عرض كل الدول" / "Show
+  all countries" as its assistive label); tapping it clears the flag filter.
 - **Country card** (one per invited country): the **flag** + the bilingual
   **country name**; the **head of delegation** row — label "رئيس الوفد" / "Head
   of delegation" over the head's name + job title, with an **initial avatar**
@@ -55,6 +63,7 @@
 | E2E-DEL-007 | Public / anonymous access — a guest (no token) can open the screen and load `GET /app/delegations` | auth | P0 | _to author_ |
 | E2E-DEL-008 | Wire error → inline retry surface "تعذر تحميل الوفود." / "Could not load delegations." | resilience | P2 | _to author_ |
 | E2E-DEL-009 | RTL render (Arabic) — header, stats, search hint, cards mirror right-to-left; head label "رئيس الوفد" | i18n | P1 | _to author_ |
+| E2E-DEL-010 | Tap a stats-strip flag → list narrows to that country; tapped flag ringed; active-filter chip appears; tapping the chip (or the flag again) restores every country; flag + search filters compose | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -173,6 +182,24 @@ Scenario: The screen mirrors under Arabic
   Then the labels flip to "Delegations" / "Head of delegation" / "Search for a country or delegation..."
 ```
 
+### E2E-DEL-010 — Flag filter (stats-strip flags narrow the list)
+
+```gherkin
+Scenario: Tapping a country's flag isolates its delegation, and the chip clears it
+  Given the screen lists "United States" / "الولايات المتحدة" and "Saudi Arabia" / "السعودية"
+  And no flag filter is active (no active-filter chip is shown)
+  When the user taps the United States flag in the stats strip
+  Then only the "United States" card is shown
+  And the tapped flag is ringed in gold
+  And an active-filter chip shows "United States" with a close glyph
+  When the user also types "Saud" into the search box
+  Then no card is shown (the flag filter and the search compose) and the empty/no-results surface appears
+  When the user clears the search
+  Then the "United States" card returns (the flag filter still applies)
+  When the user taps the active-filter chip (or the ringed flag again)
+  Then the flag filter clears, the chip disappears, and both "United States" and "Saudi Arabia" are shown
+```
+
 **Evidence:** the screen renders the public `GET /app/delegations` feed; the API
 projects only invited + active countries, resolves the head from
 `Country.HeadOfDelegationUserProfileId`, and computes `memberCount` from active
@@ -181,6 +208,9 @@ The CP head-of-delegation picker is fed by `GET /admin/countries/{id}/delegates`
 
 ---
 
-_Last reviewed:_ `2026-06-26` by `SIMF Team` — D-499 Wave 4 delegations screen
-(الوفود, Figma 1426:10771): public invited-country delegations with head +
-arrival/departure dates + member count; screen #21 restored from D-277.
+_Last reviewed:_ `2026-07-13` by `SIMF Team` — added the stats-strip **flag
+filter** (`E2E-DEL-010`): tapping a scattered country flag narrows the list to
+that country (ringed flag + removable active-filter chip; composes with search).
+Originating: D-499 Wave 4 delegations screen (الوفود, Figma 1426:10771): public
+invited-country delegations with head + arrival/departure dates + member count;
+screen #21 restored from D-277.
