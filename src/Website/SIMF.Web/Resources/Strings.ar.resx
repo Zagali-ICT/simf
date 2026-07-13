@@ -168,6 +168,8 @@
   <data name="Landing.Loading" xml:space="preserve"><value>جارٍ التحميل</value></data>
   <data name="Landing.Hero.Title" xml:space="preserve"><value>المُلتقى البحري السعودي الدولي</value></data>
   <data name="Landing.Hero.Subtitle" xml:space="preserve"><value>مستقبل أمن قاع البحار وسلاسل الإمداد في بيئة عالمية متغيرة</value></data>
+  <data name="Landing.Hero.Description" xml:space="preserve"><value>في ظل التحولات العالمية المتسارعة، يُعدّ استشراف مستقبل أمن البحار وحماية الممرات الحيوية وسلاسل الإمداد أولوية استراتيجية، ويعكس الدور الاستراتيجي للمملكة العربية السعودية في تعزيز أمن البحار وصون البنية التحتية الحيوية فوق السطح وفي الأعماق.</value></data>
+  <data name="Landing.Hero.Venue" xml:space="preserve"><value>فندق ومركز مؤتمرات سوفيتيل الرياض</value></data>
 
   <!-- header: digital stamp + nav -->
   <data name="Landing.Nav.Stamp" xml:space="preserve"><value>موقع حكومي مسجل لدى هيئة الحكومة الرقمية</value></data>

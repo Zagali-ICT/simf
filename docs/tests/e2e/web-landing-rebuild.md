@@ -45,6 +45,7 @@ Scenario: All sections are present
   When a visitor opens "/landing"
   Then the response is 200 text/html
   And the page shows the hero title "Saudi International Maritime Forum"
+  And the hero shows the subtitle, a description paragraph, and two info pills (venue + dates), all aligned to the reading-start side
   And the participation stats show 4 counters (+500, +40, +100, +220)
   And the themes row shows 5 pillar cards
   And the programme section ("The Forum Programme") shows 3 day cards tagged "Day One", "Day Two", "Day Three"

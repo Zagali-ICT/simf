@@ -39,6 +39,13 @@ static page it supersedes.
   `ln-`, so the globally-loaded app stylesheets (theme.tokens.css, simf-components)
   cannot collide with it and vice-versa. Design-token **values** mirror the Figma
   variable collection (verified: gold `#e8c060`, primary `#244a77`, Almarai font).
+  One app-global style *does* reach the landing: `Routes.razor`'s
+  `<FocusOnNavigate Selector="h1">` programmatically focuses the hero `<h1>` on
+  load, triggering the global `h1:focus-visible` ring — suppressed with a scoped
+  `.ln-hero__title:focus` override (the h1 is `tabindex=-1`, never a keyboard stop).
+- **Hero** — the hero content is right-aligned (RTL) / start-aligned (EN) per Figma
+  node `5328:23001`: title, subtitle, a description paragraph, and two info pills
+  (venue + event dates). The pills reuse the sub-nav date string + secondnav icons.
 
 ## 3. Bilingual model (AR RTL / EN LTR)
 

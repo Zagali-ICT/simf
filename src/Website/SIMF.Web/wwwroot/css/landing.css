@@ -259,9 +259,21 @@
   background: linear-gradient(180deg, rgba(0, 9, 32, .55) 0%, rgba(0, 9, 32, .12) 42%, rgba(0, 9, 32, .42) 100%); }
 .ln-hero__content { position: relative; z-index: 2; width: 100%; max-width: var(--content-w);
   padding: 128px clamp(16px, 5.5vw, var(--section-gutter)) 40px; display: flex; flex-direction: column;
-  align-items: center; text-align: center; gap: 48px; color: var(--white); }
+  align-items: flex-start; text-align: start; gap: 40px; color: var(--white); }
 .ln-hero__title { font-size: 60px; line-height: 72px; font-weight: 700; letter-spacing: -1.2px; }
+/* Routes.razor <FocusOnNavigate Selector="h1"> programmatically focuses this heading on load
+   (tabindex=-1, not a keyboard tab-stop); the shared simf-components stylesheet then draws its
+   h1:focus-visible ring (box-shadow: var(--focus-ring)). Suppress it here — the ring is not part
+   of the hero design and no keyboard user can reach this heading via Tab. */
+.ln-hero__title:focus, .ln-hero__title:focus-visible { box-shadow: none; outline: none; }
 .ln-hero__subtitle { font-size: 40px; line-height: 1.18; font-weight: 400; max-width: 774px; }
+.ln-hero__desc { font-size: 18px; line-height: 32px; font-weight: 400; color: var(--gold-light); max-width: 554px; }
+.ln-hero__pills { display: flex; flex-wrap: wrap; gap: 12px; }
+.ln-hero__pill { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px;
+  background: color-mix(in srgb, var(--gold) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gold) 10%, transparent);
+  border-radius: var(--radius-sm); font-size: 13px; line-height: 1; color: var(--white); }
+.ln-hero__pill img { width: 16px; height: 16px; flex: 0 0 16px; }
 
 @media (max-width: 900px) {
   .ln-hero { min-height: 560px; }

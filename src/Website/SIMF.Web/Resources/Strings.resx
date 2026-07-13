@@ -168,6 +168,8 @@
   <data name="Landing.Loading" xml:space="preserve"><value>Loading</value></data>
   <data name="Landing.Hero.Title" xml:space="preserve"><value>Saudi International Maritime Forum</value></data>
   <data name="Landing.Hero.Subtitle" xml:space="preserve"><value>The future of seabed security and supply chains in a changing global environment</value></data>
+  <data name="Landing.Hero.Description" xml:space="preserve"><value>Amid accelerating global change, anticipating the future of maritime security and protecting vital corridors and supply chains is a strategic priority — reflecting the strategic role of the Kingdom of Saudi Arabia in strengthening the security of the seas and safeguarding critical infrastructure above the surface and in the depths.</value></data>
+  <data name="Landing.Hero.Venue" xml:space="preserve"><value>Sofitel Riyadh Hotel &amp; Convention Centre</value></data>
 
   <!-- header: digital stamp + nav -->
   <data name="Landing.Nav.Stamp" xml:space="preserve"><value>A government website registered with the Digital Government Authority</value></data>
