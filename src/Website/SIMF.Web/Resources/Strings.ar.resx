@@ -217,7 +217,6 @@
   <data name="Landing.Subnav.Date" xml:space="preserve"><value>23–25 نوفمبر 2026</value></data>
   <data name="Landing.Subnav.Time" xml:space="preserve"><value>2:30 مساءً</value></data>
   <data name="Landing.Subnav.Venue" xml:space="preserve"><value>فندق ومركز مؤتمرات سوفيتيل الرياض، المملكة العربية السعودية</value></data>
-  <data name="Landing.Subnav.Preview" xml:space="preserve"><value>معاينة</value></data>
 
   <!-- intro + participation stats -->
   <data name="Landing.Intro.Title" xml:space="preserve"><value>المُلتقى البحري السعودي الدولي الرابع</value></data>
@@ -236,9 +235,9 @@
   <data name="Landing.Miles.Title" xml:space="preserve"><value>محطات مفصلية في تطور أجندة الأمن البحري العالمي</value></data>
   <data name="Landing.Miles.More" xml:space="preserve"><value>عرض المزيد</value></data>
   <data name="Landing.Miles.Desc" xml:space="preserve"><value>لمحة عن مسيرة الملتقى والمحطات التي شكّلت أجندة الأمن البحري العالمي عبر نسخه السابقة.</value></data>
-  <data name="Landing.Hero2.Title" xml:space="preserve"><value>أهداف طموحة ...</value></data>
+  <data name="Landing.Hero2.Title" xml:space="preserve"><value>أهمية الملتقى</value></data>
   <data name="Landing.Hero2.Lead" xml:space="preserve"><value>لتعزيز منظومة أمن بحري متكاملة تدعم الجهود الدولية لحماية قاع البحار ورفع كفاءة سلاسل إمداد الطاقة والتجارة؛ بما يُسهم في استقرار الاقتصاد العالمي ويتسق مع مستهدفات رؤية 2030.</value></data>
-  <data name="Landing.Hero2.Button" xml:space="preserve"><value>الشراكات</value></data>
+  <data name="Landing.Hero2.Button" xml:space="preserve"><value>اعرف المزيد</value></data>
   <data name="Landing.Themes.Title" xml:space="preserve"><value>المحاور الرئيسية</value></data>
   <data name="Landing.Themes.Sub" xml:space="preserve"><value>لصياغة رؤية استراتيجية شاملة تعالج منظومات الطاقة والتجارة والاتصال بين السطح والأعماق عبر خمسة محاور رئيسية تشكل ركائز الأمن البحري واستقرار الاقتصاد العالمي.</value></data>
 
@@ -252,7 +251,7 @@
   <data name="Landing.Speakers.CollageAlt" xml:space="preserve"><value>أبرز المتحدثين والمشاركين في الملتقى</value></data>
   <data name="Landing.Partners.Title" xml:space="preserve"><value>قسم الشركاء</value></data>
   <data name="Landing.Partners.Desc" xml:space="preserve"><value>يحظى الملتقى بدعم ومشاركة جهات حكومية ومؤسسات وطنية ودولية تُسهم خبراتها في تعزيز حضور المملكة ضمن منظومة الأمن البحري العالمي، وتؤكد أهمية العمل المشترك لمواكبة التحولات المتسارعة في هذا القطاع الحيوي.</value></data>
-  <data name="Landing.Sponsors.Title" xml:space="preserve"><value>الشركاء والرعاة</value></data>
+  <data name="Landing.Sponsors.Title" xml:space="preserve"><value>قسم الرعاة</value></data>
   <data name="Landing.Sponsors.Desc" xml:space="preserve"><value>نخبة من الرعاة والداعمين الذين يُسهمون في إنجاح الملتقى وبرامجه.</value></data>
   <data name="Landing.Sponsors.ViewAll" xml:space="preserve"><value>عرض الكل</value></data>
   <data name="Landing.Sponsors.Tag" xml:space="preserve"><value>مستضيف</value></data>

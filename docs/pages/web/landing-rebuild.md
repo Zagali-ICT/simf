@@ -101,6 +101,20 @@ at 1000/640px; sub-nav drops weather+venue on mobile. No horizontal overflow at
   the Figma 426px footer — logo-only brand block, a `Last modified` line, real
   contact block retained. App-store badges are **intentionally omitted** (the
   SIMF app is not yet on the App/Play stores, so a badge would link nowhere).
+- Full section-by-section re-audit (2026-07-13, every section diffed against its
+  Figma node): **hero** re-aligned reading-start with its dropped description +
+  venue/date pills restored; **sub-nav** reordered (Venue→Time→Date→Weather),
+  up-sized (20px text / 32px icons / 64px strip) and the non-Figma eye button
+  removed; **hero2** heading/button corrected to "أهمية الملتقى" / "اعرف المزيد";
+  **speakers** "view all" made the Figma gold button (+32px heading);
+  **milestones** card arrow moved to the inline-end (left) so date/name hug the
+  right; **sponsors** title → "قسم الرعاة" and the card forced `direction:ltr`
+  (Figma card is LTR — icon left, logo/tag right); **discover** meta 18px + 2px
+  panel backdrop-blur. Intro, stats, about, partners and news verified faithful.
+  RTL side-claims were each confirmed against the live Figma render (not code
+  order). **Deliberate enhancements kept** (richer than the flat mockup): the
+  themes photo-crossfade backdrop + card-expand, and the intro/partners/sponsors
+  auto-scroll marquees — flatten on request.
 - Almarai is self-hosted (woff2 under `wwwroot/lib/almarai`, CSP-safe). Known
   minor follow-up: the hero-font `<link rel="preload">` href is fingerprinted
   while the `@font-face src` url is not, so the browser can't match them and the

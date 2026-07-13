@@ -198,14 +198,11 @@
         <div class="ln-subnav">
             <div class="ln-subnav__inner">
                 <div class="ln-subnav__info">
-                    <span class="ln-subnav__item ln-subnav__item--optional"><span>@L["Landing.Subnav.Weather"]</span><img src="assets/figma/secondnav/icon-weather.svg" alt="" /></span>
-                    <span class="ln-subnav__item"><span>@L["Landing.Subnav.Date"]</span><img src="assets/figma/secondnav/icon-calendar.svg" alt="" /></span>
-                    <span class="ln-subnav__item"><span>@L["Landing.Subnav.Time"]</span><img src="assets/figma/secondnav/icon-clock.svg" alt="" /></span>
                     <span class="ln-subnav__item ln-subnav__item--optional"><span>@L["Landing.Subnav.Venue"]</span><img src="assets/figma/secondnav/icon-location.svg" alt="" /></span>
+                    <span class="ln-subnav__item"><span>@L["Landing.Subnav.Time"]</span><img src="assets/figma/secondnav/icon-clock.svg" alt="" /></span>
+                    <span class="ln-subnav__item"><span>@L["Landing.Subnav.Date"]</span><img src="assets/figma/secondnav/icon-calendar.svg" alt="" /></span>
+                    <span class="ln-subnav__item ln-subnav__item--optional"><span>@L["Landing.Subnav.Weather"]</span><img src="assets/figma/secondnav/icon-weather.svg" alt="" /></span>
                 </div>
-                <button type="button" class="ln-subnav__eye" aria-label="@L["Landing.Subnav.Preview"]">
-                    <img src="assets/figma/secondnav/icon-eye.svg" alt="" />
-                </button>
             </div>
         </div>
 
@@ -295,11 +292,11 @@
                         <div class="@imgClass" style="background-image:url('@m.Image')"></div>
                         <div class="ln-mcard__body">
                             <div class="ln-mcard__top">
-                                <span class="ln-mcard__arrow"><svg viewBox="0 0 22 22" fill="none" aria-hidden="true"><path d="M21 21L1 1M14.3333 1H1V14.3333" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
                                 <div class="ln-mcard__headcol">
                                     <span class="ln-mcard__date">@m.Date.For(rtl)</span>
                                     <h3 class="ln-mcard__name">@m.Name.For(rtl)</h3>
                                 </div>
+                                <span class="ln-mcard__arrow"><svg viewBox="0 0 22 22" fill="none" aria-hidden="true"><path d="M21 21L1 1M14.3333 1H1V14.3333" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
                             </div>
                             <p class="ln-mcard__text">@m.Text.For(rtl)</p>
                         </div>
@@ -314,7 +311,7 @@
             <div class="ln-hero2__block ln-reveal">
                 <h2 class="ln-hero2__title">@L["Landing.Hero2.Title"]</h2>
                 <p class="ln-hero2__lead">@L["Landing.Hero2.Lead"]</p>
-                <a class="ln-btn ln-btn--ghost" href="#partners">@L["Landing.Hero2.Button"]</a>
+                <a class="ln-btn ln-btn--ghost" href="#about">@L["Landing.Hero2.Button"]</a>
             </div>
         </section>
 
@@ -382,7 +379,7 @@
                 <div class="ln-speakers__head">
                     <h2 class="ln-speakers__title">@L["Landing.Speakers.Title"]</h2>
                     <p class="ln-speakers__lead">@L["Landing.Speakers.Lead"]</p>
-                    <a href="speakers.html" class="ln-btn ln-btn--ghost">@L["Landing.Speakers.ViewAll"]</a>
+                    <a href="speakers.html" class="ln-btn ln-btn--gold">@L["Landing.Speakers.ViewAll"]</a>
                 </div>
                 <div class="ln-speakers__collage">
                     <img src="assets/figma/speakers/speakers-collage.png" alt="@L["Landing.Speakers.CollageAlt"]" loading="lazy" />

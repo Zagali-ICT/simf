@@ -123,6 +123,8 @@
 .ln-btn--primary:hover { background: var(--secondary-dark); color: var(--white); }
 .ln-btn--ghost { background: rgba(255, 255, 255, .2); color: var(--white); }
 .ln-btn--ghost:hover { background: rgba(255, 255, 255, .32); }
+.ln-btn--gold { background: var(--gold); color: var(--gold-darker); }
+.ln-btn--gold:hover { background: var(--gold-active); }
 .ln-btn--outline { background: transparent; color: var(--ink);
   border: 1px solid var(--border-neutral); }
 .ln-btn--outline:hover { background: var(--primary); border-color: var(--primary); color: var(--white); }
@@ -232,15 +234,12 @@
 
 /* sub-nav strip (date / venue / weather) */
 .ln-subnav { background: var(--primary); border-bottom: 1px solid var(--navy); }
-.ln-subnav__inner { display: flex; align-items: center; justify-content: space-between; height: 40px;
-  padding-inline: 32px; gap: 16px; }
-.ln-subnav__info { display: flex; align-items: center; gap: 16px; min-width: 0; }
-.ln-subnav__item { display: inline-flex; align-items: center; gap: 4px; color: var(--white); font-size: 16px;
-  line-height: 24px; white-space: nowrap; }
-.ln-subnav__item img { width: 24px; height: 24px; }
-.ln-subnav__eye { background: none; border: 0; width: 32px; height: 32px; display: inline-grid; place-items: center;
-  border-radius: 4px; cursor: pointer; }
-.ln-subnav__eye img { width: 20px; height: 20px; }
+/* cap at the Figma frame width (1440) so the distributed strip does not over-spread past the design on ultra-wide monitors */
+.ln-subnav__inner { display: flex; align-items: center; min-height: 64px; padding-inline: 32px; max-width: 1440px; margin-inline: auto; }
+.ln-subnav__info { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; min-width: 0; }
+.ln-subnav__item { display: inline-flex; align-items: center; gap: 12px; color: var(--white); font-size: 20px;
+  line-height: 32px; white-space: nowrap; }
+.ln-subnav__item img { width: 32px; height: 32px; }
 
 @media (max-width: 1100px) {
   .ln-nav__menu { display: none; }
@@ -465,7 +464,7 @@
 .ln-speakers { background: var(--navy); padding: 40px clamp(16px, 5.5vw, 80px); }
 .ln-speakers__inner { max-width: var(--content-w); margin-inline: auto; display: flex; flex-direction: column; align-items: center; gap: 32px; }
 .ln-speakers__head { display: flex; flex-direction: column; align-items: center; gap: 24px; max-width: 720px; text-align: center; color: var(--white); }
-.ln-speakers__title { font-size: 30px; font-weight: 800; line-height: 38px; }
+.ln-speakers__title { font-size: 32px; font-weight: 800; line-height: 1.2; }
 .ln-speakers__lead { font-size: 16px; line-height: 24px; }
 .ln-speakers__collage { width: 100%; height: 385px; overflow: hidden; }
 .ln-speakers__collage img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
@@ -501,7 +500,8 @@
 .ln-spon__viewport { position: relative; flex: 1 1 0; min-width: 0; overflow: hidden; }
 .ln-spon__track { display: flex; width: max-content; animation: ln-scroll-x 45s linear infinite; }
 .ln-spon__viewport:hover .ln-spon__track { animation-play-state: paused; }
-.ln-scard2 { flex: 0 0 auto; display: flex; align-items: center; gap: 24px; width: 243px; height: 122px; padding: 16px; margin-inline-end: 16px; background: #fff; border: 1px solid var(--border-neutral); border-radius: 16px; }
+/* Figma's sponsor card is LTR auto-layout (external-link icon at the inline-start/left, logo+tag column on the right); force LTR so it does not mirror on the RTL page. */
+.ln-scard2 { flex: 0 0 auto; direction: ltr; display: flex; align-items: center; gap: 24px; width: 243px; height: 122px; padding: 16px; margin-inline-end: 16px; background: #fff; border: 1px solid var(--border-neutral); border-radius: 16px; }
 .ln-scard2__icon { width: 24px; height: 24px; flex: 0 0 24px; }
 .ln-scard2__col { flex: 1; height: 100%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between; }
 .ln-scard2__logo { height: 44px; width: auto; }
@@ -539,11 +539,11 @@
 .ln-dcard__img { position: absolute; inset: 0; }
 .ln-dcard__img img { width: 100%; height: 100%; object-fit: cover; }
 .ln-dcard__img::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, .4) 100%); }
-.ln-dcard__panel { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 8px 16px 16px; background: linear-gradient(180deg, rgba(0, 22, 64, 0) 0%, rgba(0, 22, 64, .64) 100%); }
+.ln-dcard__panel { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 8px 16px 16px; background: linear-gradient(180deg, rgba(0, 22, 64, 0) 0%, rgba(0, 22, 64, .64) 100%); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }
 .ln-dcard__title { font-size: 18px; font-weight: 800; line-height: 28px; color: var(--gold-light); text-align: start; text-shadow: 0 2px 10px rgba(76, 78, 100, .2); transition: color .3s ease; }
 .ln-dcard:hover .ln-dcard__title { color: var(--gold); }
-.ln-dcard__meta { display: flex; align-items: center; gap: 4px; color: #fff; font-size: 16px; font-weight: 700; line-height: 24px; white-space: nowrap; }
-.ln-dcard__meta svg { width: 20px; height: 20px; flex: 0 0 20px; }
+.ln-dcard__meta { display: flex; align-items: center; gap: 4px; color: #fff; font-size: 18px; font-weight: 700; line-height: 24px; white-space: nowrap; }
+.ln-dcard__meta svg { width: 24px; height: 24px; flex: 0 0 24px; }
 @media (max-width: 1000px) { .ln-discover__grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 640px) { .ln-discover__grid { grid-template-columns: 1fr; } }
 

@@ -217,7 +217,6 @@
   <data name="Landing.Subnav.Date" xml:space="preserve"><value>23–25 November 2026</value></data>
   <data name="Landing.Subnav.Time" xml:space="preserve"><value>2:30 PM</value></data>
   <data name="Landing.Subnav.Venue" xml:space="preserve"><value>Sofitel Riyadh Hotel &amp; Convention Centre, Saudi Arabia</value></data>
-  <data name="Landing.Subnav.Preview" xml:space="preserve"><value>Preview</value></data>
 
   <!-- intro + participation stats -->
   <data name="Landing.Intro.Title" xml:space="preserve"><value>The Fourth Saudi International Maritime Forum</value></data>
@@ -236,9 +235,9 @@
   <data name="Landing.Miles.Title" xml:space="preserve"><value>Defining moments in the evolution of the global maritime-security agenda</value></data>
   <data name="Landing.Miles.More" xml:space="preserve"><value>View more</value></data>
   <data name="Landing.Miles.Desc" xml:space="preserve"><value>A look back at the forum's journey and the milestones that have shaped the global maritime-security agenda across its past editions.</value></data>
-  <data name="Landing.Hero2.Title" xml:space="preserve"><value>Ambitious objectives …</value></data>
+  <data name="Landing.Hero2.Title" xml:space="preserve"><value>The importance of the forum</value></data>
   <data name="Landing.Hero2.Lead" xml:space="preserve"><value>To strengthen an integrated maritime-security system that supports international efforts to protect the seabed and improve the efficiency of energy and trade supply chains — contributing to the stability of the global economy and aligning with the goals of Vision 2030.</value></data>
-  <data name="Landing.Hero2.Button" xml:space="preserve"><value>Partnerships</value></data>
+  <data name="Landing.Hero2.Button" xml:space="preserve"><value>Learn more</value></data>
   <data name="Landing.Themes.Title" xml:space="preserve"><value>Key themes</value></data>
   <data name="Landing.Themes.Sub" xml:space="preserve"><value>To shape a comprehensive strategic vision addressing energy, trade and connectivity systems between the surface and the depths — through five key themes that form the pillars of maritime security and global economic stability.</value></data>
 
@@ -252,7 +251,7 @@
   <data name="Landing.Speakers.CollageAlt" xml:space="preserve"><value>Featured speakers and participants at the forum</value></data>
   <data name="Landing.Partners.Title" xml:space="preserve"><value>Partners</value></data>
   <data name="Landing.Partners.Desc" xml:space="preserve"><value>The forum is backed by government bodies and national and international institutions whose expertise strengthens the Kingdom's presence within the global maritime-security system and affirms the importance of joint action to keep pace with rapid change in this vital sector.</value></data>
-  <data name="Landing.Sponsors.Title" xml:space="preserve"><value>Partners &amp; sponsors</value></data>
+  <data name="Landing.Sponsors.Title" xml:space="preserve"><value>Sponsors</value></data>
   <data name="Landing.Sponsors.Desc" xml:space="preserve"><value>A distinguished group of sponsors and supporters contributing to the success of the forum and its programmes.</value></data>
   <data name="Landing.Sponsors.ViewAll" xml:space="preserve"><value>View all</value></data>
   <data name="Landing.Sponsors.Tag" xml:space="preserve"><value>Host</value></data>

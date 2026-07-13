@@ -46,9 +46,12 @@ Scenario: All sections are present
   Then the response is 200 text/html
   And the page shows the hero title "Saudi International Maritime Forum"
   And the hero shows the subtitle, a description paragraph, and two info pills (venue + dates), all aligned to the reading-start side
+  And the sub-nav strip shows Venue, Time, Date and Weather (Venue at the reading-start side) and no preview/eye button
   And the participation stats show 4 counters (+500, +40, +100, +220)
   And the themes row shows 5 pillar cards
+  And the "importance" section (hero2) shows the "The importance of the forum" heading and a "Learn more" button
   And the programme section ("The Forum Programme") shows 3 day cards tagged "Day One", "Day Two", "Day Three"
+  And the speakers section shows a filled gold "view all" button
   And the news row shows 3 article cards
   And the discover grid shows 6 destination cards
   And the footer shows the logo-only brand, important-links, contact, social and legal blocks
