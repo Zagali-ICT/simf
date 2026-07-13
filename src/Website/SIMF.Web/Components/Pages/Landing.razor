@@ -175,21 +175,6 @@
         </div>
     </div>
 
-    @* Sub-nav strip (date / venue / weather) *@
-    <div class="ln-subnav">
-        <div class="ln-subnav__inner">
-            <div class="ln-subnav__info">
-                <span class="ln-subnav__item ln-subnav__item--optional"><span>@L["Landing.Subnav.Weather"]</span><img src="assets/figma/secondnav/icon-weather.svg" alt="" /></span>
-                <span class="ln-subnav__item"><span>@L["Landing.Subnav.Date"]</span><img src="assets/figma/secondnav/icon-calendar.svg" alt="" /></span>
-                <span class="ln-subnav__item"><span>@L["Landing.Subnav.Time"]</span><img src="assets/figma/secondnav/icon-clock.svg" alt="" /></span>
-                <span class="ln-subnav__item ln-subnav__item--optional"><span>@L["Landing.Subnav.Venue"]</span><img src="assets/figma/secondnav/icon-location.svg" alt="" /></span>
-            </div>
-            <button type="button" class="ln-subnav__eye" aria-label="@L["Landing.Subnav.Preview"]">
-                <img src="assets/figma/secondnav/icon-eye.svg" alt="" />
-            </button>
-        </div>
-    </div>
-
     <main id="main-content">
 
         @* =============================== HERO ============================== *@
@@ -203,6 +188,21 @@
                 <p class="ln-hero__subtitle">@L["Landing.Hero.Subtitle"]</p>
             </div>
         </section>
+
+        @* Sub-nav strip (date / venue / weather) — Figma places it BELOW the hero *@
+        <div class="ln-subnav">
+            <div class="ln-subnav__inner">
+                <div class="ln-subnav__info">
+                    <span class="ln-subnav__item ln-subnav__item--optional"><span>@L["Landing.Subnav.Weather"]</span><img src="assets/figma/secondnav/icon-weather.svg" alt="" /></span>
+                    <span class="ln-subnav__item"><span>@L["Landing.Subnav.Date"]</span><img src="assets/figma/secondnav/icon-calendar.svg" alt="" /></span>
+                    <span class="ln-subnav__item"><span>@L["Landing.Subnav.Time"]</span><img src="assets/figma/secondnav/icon-clock.svg" alt="" /></span>
+                    <span class="ln-subnav__item ln-subnav__item--optional"><span>@L["Landing.Subnav.Venue"]</span><img src="assets/figma/secondnav/icon-location.svg" alt="" /></span>
+                </div>
+                <button type="button" class="ln-subnav__eye" aria-label="@L["Landing.Subnav.Preview"]">
+                    <img src="assets/figma/secondnav/icon-eye.svg" alt="" />
+                </button>
+            </div>
+        </div>
 
         @* ===================== INTRO + THREAT MARQUEE ===================== *@
         <section class="ln-intro">
