@@ -1,0 +1,7 @@
+@inherits LayoutComponentBase
+@* Minimal layout for the public marketing landing. The landing renders its own
+   full chrome (government stamp, navy nav, sub-nav, footer), so — unlike
+   MainLayout — it must NOT inject the shared public <nav> or the <main> wrapper.
+   The <html>/<head>/<body> shell still comes from App.razor; the landing adds
+   its Bootstrap + landing stylesheets through <HeadContent>. *@
+@Body
