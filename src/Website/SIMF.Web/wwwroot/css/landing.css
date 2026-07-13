@@ -538,10 +538,10 @@
 /* ============================== FOOTER ========================== */
 .ln-footer { background: var(--navy); color: var(--gold-light); padding-inline: clamp(16px, 5.5vw, 80px); }
 .ln-footer__inner { max-width: var(--content-w); margin-inline: auto; padding-block: 40px 24px; }
-.ln-footer__top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 64px; padding-block: 16px; }
-.ln-ft__brand { width: 399px; max-width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
-.ln-ft__brand img { height: 64px; width: auto; }
-.ln-ft__brand p { font-size: 16px; line-height: 24px; color: var(--gold-light); text-align: justify; }
+.ln-footer__top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 24px 32px; padding-block: 16px; }
+/* fixed logo column: holds the footer top-row on one line (brand + groups <= content width) and keeps the logo/groups spacing close to Figma under space-between */
+.ln-ft__brand { width: 399px; max-width: 100%; }
+.ln-ft__brand img { height: 64px; width: auto; display: block; }
 .ln-ft__groups { display: flex; align-items: flex-start; gap: 24px; flex-wrap: wrap; }
 .ln-ft__group { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; width: 256px; }
 .ln-ft__label { font-size: 16px; line-height: 24px; color: var(--gold); text-align: start; width: 100%; padding-bottom: 8px; border-bottom: 1px solid #f8ebce; }

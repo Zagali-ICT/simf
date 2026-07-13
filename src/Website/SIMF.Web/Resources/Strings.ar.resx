@@ -241,9 +241,9 @@
   <data name="Landing.Themes.Sub" xml:space="preserve"><value>لصياغة رؤية استراتيجية شاملة تعالج منظومات الطاقة والتجارة والاتصال بين السطح والأعماق عبر خمسة محاور رئيسية تشكل ركائز الأمن البحري واستقرار الاقتصاد العالمي.</value></data>
 
   <!-- sessions / speakers / partners / sponsors / news / discover / footer -->
-  <data name="Landing.Sessions.Title" xml:space="preserve"><value>الجلسات الرئيسية</value></data>
+  <data name="Landing.Sessions.Title" xml:space="preserve"><value>برنامج الملتقى</value></data>
   <data name="Landing.Sessions.Desc" xml:space="preserve"><value>ثلاث جلسات رئيسية تتناول محاور الملتقى الأساسية — من أمن الطاقة والخدمات اللوجستية إلى أمن الأعماق الرقمية.</value></data>
-  <data name="Landing.Sessions.ReadMore" xml:space="preserve"><value>قراءة المزيد عن الجلسة</value></data>
+  <data name="Landing.Sessions.ReadMore" xml:space="preserve"><value>تفاصيل البرنامج</value></data>
   <data name="Landing.Speakers.Title" xml:space="preserve"><value>أبرز المتحدثين والمشاركين</value></data>
   <data name="Landing.Speakers.Lead" xml:space="preserve"><value>يشارك في الملتقى نخبة من القادة السعوديين والدوليين وصنّاع القرار والخبراء، مما يعكس دور المملكة الريادي في تشكيل توجهات الأمن البحري وتعزيز التعاون الدولي في ظل التحولات التقنية والاستراتيجية المتسارعة.</value></data>
   <data name="Landing.Speakers.ViewAll" xml:space="preserve"><value>عرض الكل</value></data>
@@ -263,7 +263,7 @@
   <data name="Landing.Discover.Title" xml:space="preserve"><value>أكتشف السعودية</value></data>
   <data name="Landing.Discover.Desc" xml:space="preserve"><value>من الإرث العريق إلى مدن المستقبل — اكتشف الوجهات التي تجعل المملكة لا تُنسى.</value></data>
   <data name="Landing.Discover.Explore" xml:space="preserve"><value>استكشف السعودية</value></data>
-  <data name="Landing.Footer.About" xml:space="preserve"><value>في ظل التحولات العالمية المتسارعة، يُعدّ استشراف مستقبل أمن البحار وحماية الممرات الحيوية وسلاسل الإمداد أولوية استراتيجية، ويعكس الدور المحوري للمملكة العربية السعودية في تعزيز أمن البحار وصون البنية التحتية الحيوية فوق السطح وفي الأعماق.</value></data>
+  <data name="Landing.Footer.LastModified" xml:space="preserve"><value>آخر تحديث: 13 يوليو 2026</value></data>
   <data name="Landing.Footer.ImportantLinks" xml:space="preserve"><value>روابط مهمة</value></data>
   <data name="Landing.Footer.Contact" xml:space="preserve"><value>تواصل معنا</value></data>
   <data name="Landing.Footer.Address" xml:space="preserve"><value>ص.ب 3507، الرياض 12341، المملكة العربية السعودية</value></data>

@@ -47,10 +47,11 @@ Scenario: All sections are present
   And the page shows the hero title "Saudi International Maritime Forum"
   And the participation stats show 4 counters (+500, +40, +100, +220)
   And the themes row shows 5 pillar cards
-  And the sessions row shows 3 session cards
+  And the programme section ("The Forum Programme") shows 3 day cards tagged "Day One", "Day Two", "Day Three"
   And the news row shows 3 article cards
   And the discover grid shows 6 destination cards
-  And the footer shows the important-links, contact, social and legal blocks
+  And the footer shows the logo-only brand, important-links, contact, social and legal blocks
+  And the footer legal block shows a "Last modified" line
 ```
 
 ### E2E-WLB-002 — Arabic RTL

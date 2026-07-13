@@ -17,7 +17,7 @@ A from-Figma **Bootstrap 5 rebuild** of the public SIMF 2026 marketing landing,
 delivered as a **Blazor SSR** Razor page (server-rendered plain HTML + Bootstrap,
 **not** MudBlazor). It reproduces the full Figma home page — hero, intro +
 threat-landscape marquee, participation stats, about, milestones, secondary-hero
-CTA, five key-theme pillars, main sessions, speakers collage, partners band,
+CTA, five key-theme pillars, the forum programme, speakers collage, partners band,
 sponsors carousel, news, discover-Saudi grid and footer.
 
 It coexists with the existing static `wwwroot/index.html` landing (still at `/`)
@@ -65,7 +65,7 @@ models — not hand-copied markup:
 | Participation stats | `Stats` (4) | 2 rows |
 | Milestones | `Milestones` (4) | last card = future edition |
 | Themes | `Themes` (5) | crossfade bg + auto-rotate active card (`landing.js`) |
-| Sessions | `Sessions` (3) | |
+| Programme | `Sessions` (3) | displayed as "The Forum Programme"; navy day-cards tagged Day One/Two/Three (Figma `برنامج الملتقي`) |
 | Partners band | `PartnerLogos` (4) | rendered ×4 for the seamless marquee |
 | Sponsors | placeholder ×16 | marquee; real sponsor data is a follow-up |
 | News | `News` (3) | |
@@ -85,10 +85,19 @@ at 1000/640px; sub-nav drops weather+venue on mobile. No horizontal overflow at
   these `@foreach` models later (sessions/speakers/news/sponsors) if live content
   is wanted on the SSR page.
 - Sponsors + a few section descriptions use authored placeholder copy pending
-  real content; the Figma stats frame shows 6 counters (placeholder duplicates) —
-  this build uses the 4 meaningful counters.
-- Almarai is currently loaded from Google Fonts; localise it for a fully
-  self-contained page before handover.
+  real content; the Figma stats frame shows 6 counters (2 are placeholder
+  duplicates) — per owner decision (2026-07-13) this build keeps the **4**
+  meaningful counters rather than padding to 6.
+- Owner-confirmed Figma-parity pass (2026-07-13): the sessions section is
+  relabelled to the Figma **programme** (`برنامج الملتقي` / "The Forum
+  Programme"), day-tagged navy cards (Day One/Two/Three); the **footer** matches
+  the Figma 426px footer — logo-only brand block, a `Last modified` line, real
+  contact block retained. App-store badges are **intentionally omitted** (the
+  SIMF app is not yet on the App/Play stores, so a badge would link nowhere).
+- Almarai is self-hosted (woff2 under `wwwroot/lib/almarai`, CSP-safe). Known
+  minor follow-up: the hero-font `<link rel="preload">` href is fingerprinted
+  while the `@font-face src` url is not, so the browser can't match them and the
+  700-weight file is fetched-but-unused on cold load — align the two URLs.
 
 ## 7. E2E
 
