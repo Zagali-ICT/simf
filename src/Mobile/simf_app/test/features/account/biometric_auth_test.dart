@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/account/biometric_auth.dart';
+import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
 /// A controllable [BiometricAuth] — `implements` ignores the real constructor
 /// (which needs a Ref + local_auth), so the nudge and the toggle can be driven
@@ -42,6 +43,32 @@ class _FakeBiometricAuth implements BiometricAuth {
   }
 }
 
+/// A signed-in auth whose registration [status] drives the nudge guard (D-666):
+/// the nudge is skipped for a guest — a not-yet-approved account presents as
+/// guest via [CurrentUser.effectiveAppRole], so it has nothing to secure yet.
+Session _session(RegistrationStatus status) => Session(
+      accessToken: 'A',
+      refreshToken: 'R',
+      accessTokenExpiresAt: DateTime.now().add(const Duration(minutes: 30)),
+      user: CurrentUser(
+        id: 'u1',
+        email: 'v@example.sa',
+        displayName: 'Raed',
+        appRole: AppRole.visitor,
+        preferredLanguage: PreferredLanguage.fromJson('ar'),
+        registrationStatus: status,
+      ),
+    );
+
+class _FakeAuth extends AuthController {
+  _FakeAuth({this.status = RegistrationStatus.approved});
+
+  final RegistrationStatus status;
+
+  @override
+  AuthState build() => AuthStateSignedIn(_session(status));
+}
+
 const String _nudgeBody =
     'Use your face or fingerprint to sign in next time — no password needed.';
 
@@ -51,6 +78,7 @@ Future<void> _pump(
   WidgetTester tester,
   Widget home, {
   required _FakeBiometricAuth biometric,
+  AuthController? auth,
 }) async {
   final router = GoRouter(
     initialLocation: '/',
@@ -68,6 +96,9 @@ Future<void> _pump(
     ProviderScope(
       overrides: <Override>[
         biometricAuthProvider.overrideWithValue(biometric),
+        // The nudge guard (D-666) reads the auth state; default to an approved
+        // (non-guest) visitor so the availability tests behave as before.
+        authControllerProvider.overrideWith(() => auth ?? _FakeAuth()),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -128,6 +159,23 @@ void main() {
     testWidgets('biometrics unavailable → no nudge', (tester) async {
       final biometric = _FakeBiometricAuth(available: false, enabled: false);
       await _pump(tester, _nudgeHost(), biometric: biometric);
+
+      await tester.tap(find.text('GO'));
+      await tester.pumpAndSettle();
+      expect(find.text(_nudgeBody), findsNothing);
+    });
+
+    testWidgets('guest (not-yet-approved account) → no nudge (D-666)',
+        (tester) async {
+      // A pending account presents as guest via effectiveAppRole, so the nudge
+      // is skipped even though biometrics are available and not yet enabled.
+      final biometric = _FakeBiometricAuth(available: true, enabled: false);
+      await _pump(
+        tester,
+        _nudgeHost(),
+        biometric: biometric,
+        auth: _FakeAuth(status: RegistrationStatus.pending),
+      );
 
       await tester.tap(find.text('GO'));
       await tester.pumpAndSettle();
