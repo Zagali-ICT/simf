@@ -31,23 +31,48 @@ reference data every environment needs identically, so migrations are their home
 
 ## How to run
 
-Run from the repo root, in this order. Order matters:
-`SIMF_App_Programme.sql` creates the **`MAIN` hall** that
-`SIMF_App_SeedGaps.sql` (booths + venue-map nodes) references, so Programme
-runs **before** SeedGaps. `SpeakerPhotos` must run **after** `Speakers` (it
-points at those speaker rows). Add `-S <server>` if not the default local
-instance.
+Order matters: `SIMF_App_Programme.sql` creates the **`MAIN` hall** that
+`SIMF_App_SeedGaps.sql` (booths + venue-map nodes) references, so Programme runs
+**before** SeedGaps; `SpeakerPhotos` must run **after** `Speakers` (it points at
+those speaker rows). Both options below run the **same 9 content files** in that
+order. The `RegistrationReferenceSequence` hotfix is **not** part of this run
+(see the Files table) — it is a separate, prod-only unblock.
+
+**Target database.** These seeds go to the **App / content** database — the one
+that holds the app tables (`Speakers`, `Halls`, `Sessions`, …), i.e. whatever the
+API's `SimfAppDb` connection string points at. Its physical name is
+**environment-specific**: **`SIMF_Data`** on the deployment server, **`SIMF_App`**
+on a local dev box. **Never** run them against the Identity database
+(`SIMF_Identity`). To find it: `SELECT name FROM sys.databases WHERE
+OBJECT_ID(QUOTENAME(name)+'.dbo.Speakers') IS NOT NULL;`
+
+### Option A — SSMS, one click (`Run_All_App_Seeds.sql`)
+
+Open **`Run_All_App_Seeds.sql`** in SSMS, turn on **SQLCMD Mode**
+(*Query → SQLCMD Mode* — **required**, or the `:r` / `:setvar` lines error with
+"Incorrect syntax near ':'"), edit its two `:setvar` lines at the top
+(`MigrationDir` = the full path to this folder; `AppDb` = the App/content DB —
+`SIMF_Data` on the server, `SIMF_App` on local dev), then press **F5**. It runs all 9 content seeds in order, prints `[1/9]…[9/9]`
+progress, and stops on the first error (`:on error exit`, so no partial data).
+Idempotent — safe to re-run. Then do the speaker-photo copy step below.
+
+### Option B — `sqlcmd` CLI (one file at a time)
+
+Run from the repo root. Set `$Db` to the App/content DB (`SIMF_Data` on the
+server, `SIMF_App` on local dev — never `SIMF_Identity`); add `-S <server>` if
+not the default local instance:
 
 ```powershell
-sqlcmd -d SIMF_App -i docs\migrations\2026\SIMF_App_Programme.sql
-sqlcmd -d SIMF_App -i docs\migrations\2026\SIMF_App_News.sql
-sqlcmd -d SIMF_App -i docs\migrations\2026\SIMF_App_Sponsors.sql
-sqlcmd -d SIMF_App -i docs\migrations\2026\SIMF_App_MediaPartners.sql
-sqlcmd -d SIMF_App -i docs\migrations\2026\SIMF_App_Archive.sql
-sqlcmd -d SIMF_App -i docs\migrations\2026\SIMF_App_Organization.sql
-sqlcmd -d SIMF_App -i docs\migrations\2026\SIMF_App_Speakers.sql
-sqlcmd -d SIMF_App -i docs\migrations\2026\SIMF_App_SpeakerPhotos.sql
-sqlcmd -d SIMF_App -i docs\migrations\2026\SIMF_App_SeedGaps.sql
+$Db = "SIMF_Data"
+sqlcmd -d $Db -i docs\migrations\2026\SIMF_App_Programme.sql
+sqlcmd -d $Db -i docs\migrations\2026\SIMF_App_News.sql
+sqlcmd -d $Db -i docs\migrations\2026\SIMF_App_Sponsors.sql
+sqlcmd -d $Db -i docs\migrations\2026\SIMF_App_MediaPartners.sql
+sqlcmd -d $Db -i docs\migrations\2026\SIMF_App_Archive.sql
+sqlcmd -d $Db -i docs\migrations\2026\SIMF_App_Organization.sql
+sqlcmd -d $Db -i docs\migrations\2026\SIMF_App_Speakers.sql
+sqlcmd -d $Db -i docs\migrations\2026\SIMF_App_SpeakerPhotos.sql
+sqlcmd -d $Db -i docs\migrations\2026\SIMF_App_SeedGaps.sql
 # then copy docs\migrations\2026\speaker-photos\speakerphoto  →  C:\SIMF\Storage\files\speakerphoto
 ```
 
@@ -60,6 +85,19 @@ sqlcmd -d SIMF_App -i docs\migrations\2026\SIMF_App_SeedGaps.sql
 > org-about) now lives ONLY in these files.
 
 ## Files
+
+Two files are **not** content seeds:
+
+- **`Run_All_App_Seeds.sql`** — the SSMS one-click runner (Option A above). Runs
+  the 9 content seeds below, in order, via SQLCMD-Mode `:r` includes.
+- **`SIMF_App_RegistrationReferenceSequence_Hotfix.sql`** — a separate, **prod-only**
+  unblock that creates the missing `dbo.RegistrationReferenceSequence` on a
+  *running* DB (fixes create-user 500 · SqlException 208). Run by hand **only** if
+  a live prod is missing it and you are not rebuilding; see the file header. The
+  permanent fix is the sequence on the model + the consolidated App migration
+  (D-373), so a fresh DB needs nothing from it. **Not part of the seed run.**
+
+The 9 content seeds (run in this order):
 
 | File | Seeds | Decision |
 |------|-------|----------|
