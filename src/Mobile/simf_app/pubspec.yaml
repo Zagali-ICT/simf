@@ -109,21 +109,33 @@ dev_dependencies:
   mocktail: ^1.0.4
   very_good_analysis: ^10.3.0
 
-# D-373 / D-388 — the SIMF app icon (the white brand mark on the navy brand
-# colour). Android/iOS are applied by `dart run flutter_launcher_icons` against
-# the generated native folders (this tree has no native dirs). Web icons
-# (web/favicon.png + web/icons/*) ship committed in the web/ folder, brand-matched
-# to the same navy #01132D; the web: block below keeps a future regenerate
-# consistent with the committed assets.
+# The SIMF app launcher icon (D-373 / D-388; icon art refreshed 2026-07-13).
+# Dedicated 1024x1024 masters live in icon/ (NOT under assets/, so they are not
+# bundled into the app at runtime — flutter_launcher_icons only reads them at
+# build time):
+#   icon/app_icon.png            — opaque brand-navy (#01132D) square with the
+#                                  white compass/palm/anchor mark centred at ~70%
+#                                  (iOS, web, and the legacy full-bleed Android icon).
+#   icon/app_icon_foreground.png — the same mark on a TRANSPARENT canvas at ~60%
+#                                  (Android adaptive foreground): the extra safe-
+#                                  zone padding stops the circular/squircle mask
+#                                  trimming the mark (the earlier full-bleed source
+#                                  was cropped — this fixes that).
+# The in-app brand mark stays assets/images/simf_logo.png (SimfLogo) — a separate
+# asset, unchanged. Android/iOS icons are applied by `dart run
+# flutter_launcher_icons` (android/ is gitignored and ios/ is generated at build,
+# so neither is committed here); the same command regenerates the committed web
+# icons (web/favicon.png + web/icons/*) from icon/app_icon.png. Run it after the
+# native folders exist, then verify the launcher icon on a device.
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/images/simf_logo.png"
+  image_path: "icon/app_icon.png"
   adaptive_icon_background: "#01132D"
-  adaptive_icon_foreground: "assets/images/simf_logo.png"
+  adaptive_icon_foreground: "icon/app_icon_foreground.png"
   web:
     generate: true
-    image_path: "assets/images/simf_logo.png"
+    image_path: "icon/app_icon.png"
     background_color: "#01132D"
     theme_color: "#01132D"
 
