@@ -475,11 +475,12 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Concurrent_reserve_random_never_exceeds_capacity_override()
     {
-        // M-2 — layout A×5 (Hall.Capacity 5) but CapacityOverride 2. Five visitors
-        // race reserve-random; the post-insert backstop guarantees the session never
-        // holds MORE than the declared cap. It may over-correct to fewer under true
-        // parallelism, so assert <= cap (never == cap), and that every loser is a
-        // 409 SeatSessionFull.
+        // #21 — layout A×5 (Hall.Capacity 5) but CapacityOverride 2. Five visitors
+        // race reserve-random. The serializable count-gate + insert (via the execution
+        // strategy) makes the outcome EXACT under true parallelism: precisely `cap`
+        // succeed (no over-reject — a deadlock victim re-runs and fills a real free
+        // seat) and never more than `cap` (no oversell — the key-range lock serialises
+        // count-then-insert). Every loser is a clean 409 SeatSessionFull.
         const int cap = 2;
         var (session, _) = await SeedSessionWithLayoutAsync(
             new[] { "A" }, seatsPerRow: 5, capacityOverride: cap);
@@ -494,7 +495,7 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
                 $"/api/v1/app/sessions/{session.Id}/seats/reserve-random", new { }, v)));
 
         var success = responses.Count(r => r.StatusCode == HttpStatusCode.OK);
-        Assert.True(success <= cap, $"expected at most {cap} successes, got {success}");
+        Assert.Equal(cap, success);
         foreach (var r in responses.Where(r => r.StatusCode != HttpStatusCode.OK))
         {
             Assert.Equal(HttpStatusCode.Conflict, r.StatusCode);
@@ -506,7 +507,7 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var active = await db.SeatReservations
             .CountAsync(r => r.SessionId == session.Id && r.ReleasedAt == null);
-        Assert.True(active <= cap, $"active {active} exceeded cap {cap}");
+        Assert.Equal(cap, active);
         Assert.Equal(success, active);
     }
 
@@ -564,8 +565,11 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Open_seating_join_capacity_is_enforced_under_concurrency()
     {
-        // M-1 — six visitors race the open-seating join on a cap-2 session; the
-        // post-insert backstop keeps the active count at or below the cap.
+        // #21 — six visitors race the open-seating join on a cap-2 session. Open
+        // seating has no per-seat key, so the serializable count-gate + insert (via
+        // the execution strategy) IS the only backstop — and it is exact: precisely
+        // `cap` succeed (no over-reject) and never more (no oversell); every loser is
+        // a clean 409 SeatSessionFull.
         const int cap = 2;
         var session = await SeedOpenSeatingSessionAsync(capacity: cap);
         var visitors = new List<string>();
@@ -579,7 +583,7 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
                 $"/api/v1/app/sessions/{session.Id}/seats/join", new { }, v)));
 
         var success = responses.Count(r => r.StatusCode == HttpStatusCode.OK);
-        Assert.True(success <= cap, $"expected at most {cap} successes, got {success}");
+        Assert.Equal(cap, success);
         foreach (var r in responses.Where(r => r.StatusCode != HttpStatusCode.OK))
         {
             Assert.Equal(HttpStatusCode.Conflict, r.StatusCode);
@@ -591,7 +595,7 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var active = await db.SeatReservations
             .CountAsync(r => r.SessionId == session.Id && r.ReleasedAt == null);
-        Assert.True(active <= cap, $"active {active} exceeded cap {cap}");
+        Assert.Equal(cap, active);
         Assert.Equal(success, active);
     }
 

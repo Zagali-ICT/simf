@@ -153,6 +153,38 @@ public sealed class BookingApprovalTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Booking_a_live_in_progress_session_is_allowed()
+    {
+        // #20 (Round-1 held, option C) — a walk-in may still book a session that has
+        // STARTED but not yet ended (live, in-progress); only an ENDED session is blocked.
+        var session = await SeedSessionAsync(
+            DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow.AddHours(1));
+        var visitor = await SignInApprovedVisitorAsync();
+
+        var pick = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 1 }, visitor);
+        Assert.Equal(HttpStatusCode.OK, pick.StatusCode);
+    }
+
+    [Fact]
+    public async Task Booking_an_ended_session_is_refused()
+    {
+        // #20 (Round-1 held, option C) — an ENDED session can no longer be booked: the
+        // hold could never be attended, so the create paths return BOOKING_SESSION_ENDED.
+        var session = await SeedSessionAsync(
+            DateTimeOffset.UtcNow.AddHours(-2), DateTimeOffset.UtcNow.AddHours(-1));
+        var visitor = await SignInApprovedVisitorAsync();
+
+        var pick = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 1 }, visitor);
+        Assert.Equal(HttpStatusCode.Conflict, pick.StatusCode);
+        var body = (await pick.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.BookingSessionEnded, body.Error!.Code);
+    }
+
+    [Fact]
     public async Task Bulk_approve_approves_the_selected_bookings()
     {
         var session = await SeedSessionAsync(

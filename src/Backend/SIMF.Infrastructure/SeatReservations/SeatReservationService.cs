@@ -111,6 +111,7 @@ internal sealed class SeatReservationService(
         var seat = request.SeatNumber;
         var ctx = await BuildContextAsync(sessionId, cancellationToken);
         EnsureSeatPickAllowed(ctx);
+        EnsureSessionNotEnded(ctx.EndUtc);
         ValidateSeatBounds(ctx, row, seat);
         await EnsureSessionHasCapacityAsync(ctx, cancellationToken);
 
@@ -186,7 +187,7 @@ internal sealed class SeatReservationService(
     {
         var ctx = await BuildContextAsync(sessionId, cancellationToken);
         EnsureSeatPickAllowed(ctx);
-        await EnsureSessionHasCapacityAsync(ctx, cancellationToken);
+        EnsureSessionNotEnded(ctx.EndUtc);
 
         var existing = await GetMyActiveAsync(sessionId, actorUserId, cancellationToken);
         if (existing is not null)
@@ -200,67 +201,33 @@ internal sealed class SeatReservationService(
         await EnsureNoOverlapAsync(
             sessionId, actorUserId, ctx.StartUtc, ctx.EndUtc, cancellationToken);
 
-        var occupied = await appDbContext.SeatReservations.AsNoTracking()
-            .Where(r => r.SessionId == sessionId && r.ReleasedAt == null
-                && r.RowLabel != null)
-            .Select(r => new { r.RowLabel, r.SeatNumber })
-            .ToListAsync(cancellationToken);
-        var taken = new HashSet<(string Row, int Seat)>(
-            occupied.Select(o => (o.RowLabel!, o.SeatNumber!.Value)));
-
-        foreach (var rowLabel in ctx.RowLabels)
-        {
-            for (var seat = 1; seat <= ctx.Layout!.SeatsPerRow; seat++)
+        // M-2 / #21 — the capacity COUNT, the free-seat pick and the INSERT run in
+        // ONE Serializable transaction so concurrent reserve-random can neither
+        // oversell (the key-range lock serialises count-then-insert) nor over-reject
+        // (a deadlock victim re-runs and its re-count sees the committed rival),
+        // filling exactly the declared capacity. See InsertHoldWithinCapacityAsync.
+        var now = timeProvider.GetUtcNow();
+        var reservation = await InsertHoldWithinCapacityAsync(
+            sessionId, EffectiveCapacity(ctx),
+            async ct =>
             {
-                if (taken.Contains((rowLabel, seat))) continue;
-                var reservation = new SeatReservation
-                {
-                    Id = Guid.NewGuid(),
-                    SessionId = sessionId,
-                    RowLabel = rowLabel,
-                    SeatNumber = seat,
-                    Kind = SeatReservationKind.RandomAssignment,
-                    ReservedForUserId = actorUserId,
-                    CreatedByUserId = actorUserId,
-                    CreatedAt = timeProvider.GetUtcNow(),
-                    // P2.2 — D-227: held, pending Control Panel approval.
-                    Status = BookingStatus.Pending,
-                    // M-6 — the hold auto-expires if the CP never decides it.
-                    ExpiresUtc = timeProvider.GetUtcNow() + PendingHoldWindow,
-                };
-                try
-                {
-                    await PersistWithUniquenessGuardAsync(reservation, cancellationToken);
-                }
-                catch (ApiException ex) when (ex.Code == ErrorCodes.SeatAlreadyReserved)
-                {
-                    taken.Add((rowLabel, seat));
-                    continue;
-                }
-                // M-2 — capacity backstop; on overflow this REMOVES our row and
-                // throws SeatSessionFull (we do NOT try the next seat — the session
-                // is full, not this seat taken), so the throw exits the loop.
-                await EnforceCapacityAfterInsertAsync(
-                    reservation, EffectiveCapacity(ctx), cancellationToken);
+                var taken = await LoadHeldSeatsAsync(sessionId, ct);
+                return PickRandomSeat(ctx, taken, actorUserId, now);
+            },
+            cancellationToken);
 
-                await auditLog.WriteAsync(new AuditEntry
-                {
-                    EventType = AuditEvents.SeatReservationCreated,
-                    Outcome = AuditOutcome.Success,
-                    ActorUserId = actorUserId,
-                    Detail = $"reservationId={reservation.Id}; sessionId={sessionId}; "
-                        + $"row={rowLabel}; seat={seat}; kind=RandomAssignment; status=Pending",
-                }, cancellationToken);
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.SeatReservationCreated,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = $"reservationId={reservation.Id}; sessionId={sessionId}; "
+                + $"row={reservation.RowLabel}; seat={reservation.SeatNumber}; "
+                + "kind=RandomAssignment; status=Pending",
+        }, cancellationToken);
 
-                // P2.2 — D-227: booking-confirmed fires on approve, not here.
-                return ToMine(reservation);
-            }
-        }
-
-        throw new ApiException(
-            ErrorCodes.SeatSessionFull, 409,
-            "No seats remain in this session.",
-            "لا توجد مقاعد متبقية في هذه الجلسة.");
+        // P2.2 — D-227: booking-confirmed fires on approve, not here.
+        return ToMine(reservation);
     }
 
     public async Task<MySeatReservation> JoinOpenSeatingAsync(
@@ -288,6 +255,8 @@ internal sealed class SeatReservationService(
                 "تتطلب هذه الجلسة اختيار مقعد محدد.");
         }
 
+        EnsureSessionNotEnded(session.EndUtc);
+
         var existing = await GetMyActiveAsync(sessionId, actorUserId, cancellationToken);
         if (existing is not null)
         {
@@ -300,45 +269,32 @@ internal sealed class SeatReservationService(
         await EnsureNoOverlapAsync(
             sessionId, actorUserId, session.StartUtc, session.EndUtc, cancellationToken);
 
-        // Open-seating capacity = the session override, else the hall capacity
-        // (there is no seat layout to bound it). NOTE this is an ADVISORY cap
-        // only: unlike the seat paths — which have a hard DB backstop (the unique
-        // seat index physically caps occupancy at the layout size) — open seating
-        // has no DB constraint on the row count, so concurrent joins can overshoot
-        // this count. The Control Panel approval count is the authoritative gate.
+        // M-1 / #21 — open-seating capacity = the session override, else the hall
+        // capacity (no seat layout bounds it), and there is NO per-seat DB backstop.
+        // So the capacity COUNT and the INSERT run in ONE Serializable transaction
+        // (via the execution strategy so it composes with EnableRetryOnFailure):
+        // concurrent joins can neither oversell — the key-range lock serialises
+        // count-then-insert — nor over-reject. See InsertHoldWithinCapacityAsync.
         var declaredCap = session.CapacityOverride ?? hall.Capacity;
-        var active = await appDbContext.SeatReservations
-            .Where(r => r.SessionId == sessionId && r.ReleasedAt == null)
-            .CountAsync(cancellationToken);
-        if (active >= declaredCap)
-        {
-            throw new ApiException(
-                ErrorCodes.SeatSessionFull, 409,
-                "No places remain in this session.",
-                "لا توجد أماكن متبقية في هذه الجلسة.");
-        }
-
-        var reservation = new SeatReservation
-        {
-            Id = Guid.NewGuid(),
-            SessionId = sessionId,
-            RowLabel = null,
-            SeatNumber = null,
-            Kind = SeatReservationKind.OpenSeating,
-            ReservedForUserId = actorUserId,
-            CreatedByUserId = actorUserId,
-            CreatedAt = timeProvider.GetUtcNow(),
-            // D-485: held, pending Control Panel approval — same as a seat booking.
-            Status = BookingStatus.Pending,
-            // M-6 — the hold auto-expires if the CP never decides it.
-            ExpiresUtc = timeProvider.GetUtcNow() + PendingHoldWindow,
-        };
-        await PersistWithUniquenessGuardAsync(reservation, cancellationToken);
-        // M-1 — open seating has NO per-seat DB backstop, so the advisory
-        // pre-count above can be raced by concurrent joins. Re-count AFTER the
-        // insert commits and roll our own row back if we pushed the session over
-        // its declared capacity — the hard backstop the pre-check cannot give.
-        await EnforceCapacityAfterInsertAsync(reservation, declaredCap, cancellationToken);
+        var now = timeProvider.GetUtcNow();
+        var reservation = await InsertHoldWithinCapacityAsync(
+            sessionId, declaredCap,
+            _ => Task.FromResult<SeatReservation?>(new SeatReservation
+            {
+                Id = Guid.NewGuid(),
+                SessionId = sessionId,
+                RowLabel = null,
+                SeatNumber = null,
+                Kind = SeatReservationKind.OpenSeating,
+                ReservedForUserId = actorUserId,
+                CreatedByUserId = actorUserId,
+                CreatedAt = now,
+                // D-485: held, pending Control Panel approval — same as a seat booking.
+                Status = BookingStatus.Pending,
+                // M-6 — the hold auto-expires if the CP never decides it.
+                ExpiresUtc = now + PendingHoldWindow,
+            }),
+            cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
         {
@@ -1083,6 +1039,22 @@ internal sealed class SeatReservationService(
         }
     }
 
+    /// <summary>#20 (Round-1 held item, option C) — a booking may still be created on
+    /// a live, in-progress session (a walk-in can join), but NOT on one that has
+    /// already ENDED: an ended session's seat can never be attended, so the hold would
+    /// be dead, un-cancellable weight. Blocks at or after <paramref name="endUtc"/>;
+    /// a merely-started (not yet ended) session stays bookable.</summary>
+    private void EnsureSessionNotEnded(DateTimeOffset endUtc)
+    {
+        if (timeProvider.GetUtcNow() >= endUtc)
+        {
+            throw new ApiException(
+                ErrorCodes.BookingSessionEnded, 409,
+                "This session has ended; you can no longer book a seat.",
+                "انتهت هذه الجلسة، ولم يعد بإمكانك حجز مقعد.");
+        }
+    }
+
     /// <summary>The session's effective place count: the seat-layout total
     /// (rows × seatsPerRow) capped by the smaller of Session.CapacityOverride and
     /// Hall.Capacity. One definition shared by the reserve pre-check and the
@@ -1115,6 +1087,122 @@ internal sealed class SeatReservationService(
                 "No seats remain in this session.",
                 "لا توجد مقاعد متبقية في هذه الجلسة.");
         }
+    }
+
+    /// <summary>M-2/M-1 (#21 — Round-1 held) — insert a Pending hold only while the
+    /// session is below <paramref name="effectiveCap"/>, with the capacity COUNT and
+    /// the INSERT in ONE SERIALIZABLE transaction so concurrent reserve-random /
+    /// open-seating joins can neither oversell nor over-reject. The COUNT takes a
+    /// key-range lock on (SessionId, ReleasedAt), so a concurrent insert cannot slip a
+    /// phantom row in between the count and the save. Run through the EF execution
+    /// strategy so it composes with <c>EnableRetryOnFailure</c> (a manual transaction
+    /// under the retrying strategy throws otherwise): a serialization/deadlock victim
+    /// re-runs the whole unit and the re-count then sees the committed rival, so the
+    /// session fills to exactly the declared capacity — no oversell, no over-reject.
+    /// <paramref name="build"/> runs INSIDE the transaction (so reserve-random's
+    /// free-seat scan reads range-locked, consistent state) and returns the row to
+    /// insert, or null when a specific seat is needed but none is free. Throws
+    /// <see cref="ErrorCodes.SeatSessionFull"/> when full.</summary>
+    private async Task<SeatReservation> InsertHoldWithinCapacityAsync(
+        Guid sessionId, int effectiveCap,
+        Func<CancellationToken, Task<SeatReservation?>> build,
+        CancellationToken cancellationToken)
+    {
+        SeatReservation? added = null;
+        SeatReservation? committed = null;
+        var strategy = appDbContext.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
+        {
+            // A retry re-enters here; drop the row a failed attempt left tracked so the
+            // next SaveChanges never re-inserts a stale (rolled-back) entity.
+            if (added is not null)
+            {
+                appDbContext.Entry(added).State = EntityState.Detached;
+                added = null;
+            }
+            committed = null;
+
+            await using var tx = await appDbContext.Database.BeginTransactionAsync(
+                System.Data.IsolationLevel.Serializable, cancellationToken);
+
+            var active = await appDbContext.SeatReservations
+                .Where(r => r.SessionId == sessionId && r.ReleasedAt == null)
+                .CountAsync(cancellationToken);
+            if (active >= effectiveCap)
+            {
+                return; // full — the transaction rolls back on dispose
+            }
+
+            var reservation = await build(cancellationToken);
+            if (reservation is null)
+            {
+                return; // capacity has room but no seat is free — treat as full
+            }
+
+            appDbContext.SeatReservations.Add(reservation);
+            added = reservation;
+            await appDbContext.SaveChangesAsync(cancellationToken);
+            await tx.CommitAsync(cancellationToken);
+            committed = reservation;
+        });
+
+        return committed ?? throw new ApiException(
+            ErrorCodes.SeatSessionFull, 409,
+            "No seats remain in this session.",
+            "لا توجد مقاعد متبقية في هذه الجلسة.");
+    }
+
+    /// <summary>#21 — the session's currently-held seat-specific cells (row + number),
+    /// read inside the serializable transaction so reserve-random picks a free seat
+    /// against range-locked, consistent state. Open-seating rows (null row/seat) are
+    /// excluded.</summary>
+    private async Task<IReadOnlySet<(string Row, int Seat)>> LoadHeldSeatsAsync(
+        Guid sessionId, CancellationToken cancellationToken)
+    {
+        var occupied = await appDbContext.SeatReservations.AsNoTracking()
+            .Where(r => r.SessionId == sessionId && r.ReleasedAt == null
+                && r.RowLabel != null)
+            .Select(r => new { r.RowLabel, r.SeatNumber })
+            .ToListAsync(cancellationToken);
+        return occupied
+            .Select(o => (Row: o.RowLabel!, Seat: o.SeatNumber!.Value))
+            .ToHashSet();
+    }
+
+    /// <summary>#21 — the first free seat (row-major over the layout) as a fresh
+    /// Pending RandomAssignment hold, or null when every seat is taken. Built with the
+    /// captured <paramref name="now"/> so a transaction retry stamps the same
+    /// created-at / expiry window.</summary>
+    private static SeatReservation? PickRandomSeat(
+        SessionContext ctx, IReadOnlySet<(string Row, int Seat)> taken,
+        Guid actorUserId, DateTimeOffset now)
+    {
+        foreach (var rowLabel in ctx.RowLabels)
+        {
+            for (var seat = 1; seat <= ctx.Layout!.SeatsPerRow; seat++)
+            {
+                if (taken.Contains((rowLabel, seat)))
+                {
+                    continue;
+                }
+                return new SeatReservation
+                {
+                    Id = Guid.NewGuid(),
+                    SessionId = ctx.SessionId,
+                    RowLabel = rowLabel,
+                    SeatNumber = seat,
+                    Kind = SeatReservationKind.RandomAssignment,
+                    ReservedForUserId = actorUserId,
+                    CreatedByUserId = actorUserId,
+                    CreatedAt = now,
+                    // P2.2 — D-227: held, pending Control Panel approval.
+                    Status = BookingStatus.Pending,
+                    // M-6 — the hold auto-expires if the CP never decides it.
+                    ExpiresUtc = now + PendingHoldWindow,
+                };
+            }
+        }
+        return null;
     }
 
     private Task<SeatReservation?> GetMyActiveAsync(
