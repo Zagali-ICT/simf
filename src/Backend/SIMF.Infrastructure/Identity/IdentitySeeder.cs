@@ -1,8 +1,11 @@
 // Tests: SIMF.Api.Tests/IdentitySeederTests.cs (super-admin, TOTP, audit,
 //        idempotency, D-377 baseline lookups + core content,
-//        D-390 2FA-disable-persists-across-reseed)
+//        D-390 2FA-disable-persists-across-reseed, D-585 demo-account matrix);
+//        SIMF.Api.Tests/DemoAccountSeedGateTests.cs (Round-1 #1 — demo seed is
+//        a no-op outside Development / with Seed:EnableDemoAccounts off)
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SIMF.Application.Auditing;
@@ -33,6 +36,7 @@ public sealed class IdentitySeeder(
     IQrIdMinter qrIdMinter,
     IAuditLog auditLog,
     TimeProvider timeProvider,
+    IHostEnvironment hostEnvironment,
     ILogger<IdentitySeeder> logger)
 {
     // D-585 — Saudi Arabia is the seeded default nationality (Country.Id, the
@@ -235,9 +239,20 @@ public sealed class IdentitySeeder(
         // (an extra Admin + a VVIP/VIP/Normal visitor + a Staff/Moderator/
         // Exhibitor/Media/Sponsor partner), so every role is testable from a
         // fresh DB. Runs AFTER the profile types above so the name lookup
-        // resolves. Owner decision D-585: seeds in EVERY environment (prod
-        // included) with one shared password — REMOVE/ROTATE before handover.
-        await EnsureDemoAccountsAsync(admin.Id, cancellationToken);
+        // resolves. Round-1 held item #1 (security): these accounts — including
+        // an Administrator-role admin@simf.local — must NEVER exist in
+        // production, so the whole seed is gated to the Development environment
+        // or an explicit Seed:EnableDemoAccounts opt-in (default false).
+        // Production is clean by construction.
+        if (hostEnvironment.IsDevelopment() || demoOptions.Value.EnableDemoAccounts)
+        {
+            await EnsureDemoAccountsAsync(admin.Id, cancellationToken);
+        }
+        else
+        {
+            logger.LogInformation(
+                "Demo-account seed skipped — not Development and Seed:EnableDemoAccounts is false.");
+        }
 
         // D-174 (gap doc G11, Mockup page 39) — seed the cybersecurity
         // policy content blocks the Flutter "سياسات وضوابط الأمن
@@ -488,11 +503,12 @@ public sealed class IdentitySeeder(
     /// existing account is skipped). An Admin account carries the Administrator
     /// role and no profile; a visitor/partner account gets an <b>Approved</b>
     /// <see cref="UserProfile"/> (Saudi nationality) with a minted QR badge.
-    /// <para><b>Owner decision D-585:</b> this runs in EVERY environment
-    /// (production included) with one shared password from
-    /// <see cref="DemoSeedOptions.DemoPassword"/>. The accounts and that default
-    /// password MUST be removed / rotated before the production publish + NCA
-    /// handover.</para></summary>
+    /// <para><b>Round-1 held item #1 (security):</b> the caller in
+    /// <see cref="SeedAsync"/> only invokes this in the Development environment
+    /// or when <c>Seed:EnableDemoAccounts</c> is explicitly true, so these
+    /// accounts never exist in production. The shared password comes from
+    /// <see cref="DemoSeedOptions.DemoPassword"/> (no committed default — an
+    /// empty value skips the seed here as a second backstop).</para></summary>
     private async Task EnsureDemoAccountsAsync(
         Guid actorUserId, CancellationToken cancellationToken)
     {

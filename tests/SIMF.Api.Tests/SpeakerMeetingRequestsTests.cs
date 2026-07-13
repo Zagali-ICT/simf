@@ -475,6 +475,57 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(ErrorCodes.SpeakerMeetingRequestInvalid, body.Error!.Code);
     }
 
+    [Fact]
+    public async Task Two_concurrent_accepts_of_overlapping_different_start_slots_for_one_speaker_yield_one_200_and_one_409()
+    {
+        // R-1 FIX #22 regression (CONCURRENT) — two Pending requests for the SAME
+        // speaker whose slots OVERLAP but START at DIFFERENT times (10:00-11:00 vs
+        // 10:30-11:30) are accepted at the same instant. The sequential re-check cannot
+        // catch this (both rows are still Pending when each check runs) and the frozen
+        // (SpeakerId, SlotStartUtc) unique index cannot catch a different-start overlap,
+        // so the Serializable accept transaction is the sole arbiter: exactly one accept
+        // must commit (200) and the other must lose the race (409). Before the fix both
+        // slipped through and double-booked the speaker (two 200s).
+        var speaker = await SeedSpeakerAsync(allowsMeetings: true);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var baseStart = new DateTimeOffset(2031, 9, 1, 10, 0, 0, TimeSpan.Zero);
+        // Two DIFFERENT requesters (SeedSpeakerRequestAsync assigns a random requester),
+        // so it is the SPEAKER overlap guard that fires — not the M-7 requester guard.
+        var r1 = await SeedSpeakerRequestAsync(
+            speaker.Id, MeetingRequestStatus.Pending, baseStart, baseStart.AddHours(1));
+        var r2 = await SeedSpeakerRequestAsync(
+            speaker.Id, MeetingRequestStatus.Pending,
+            baseStart.AddMinutes(30), baseStart.AddMinutes(90));
+
+        var accept = new RespondToSpeakerMeetingRequestRequest
+        {
+            Status = MeetingRequestStatus.Accepted,
+        };
+        var responses = await Task.WhenAll(
+            PutAuthAsync($"/api/v1/admin/speaker-meeting-requests/{r1}/respond", accept, admin),
+            PutAuthAsync($"/api/v1/admin/speaker-meeting-requests/{r2}/respond", accept, admin));
+
+        Assert.Equal(1, responses.Count(r => r.StatusCode == HttpStatusCode.OK));
+        Assert.Equal(1, responses.Count(r => r.StatusCode == HttpStatusCode.Conflict));
+
+        // The loser's 409 carries the slot-conflict code (from the re-check on the
+        // serialization retry, or the unique-index backstop).
+        var loser = responses.Single(r => r.StatusCode == HttpStatusCode.Conflict);
+        var body = (await loser.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SpeakerMeetingRequestInvalid, body.Error!.Code);
+
+        // Exactly one row is live (Accepted); the loser stayed Pending — no double-book.
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var statuses = await db.SpeakerMeetingRequests
+            .Where(r => r.Id == r1 || r.Id == r2)
+            .Select(r => r.Status)
+            .ToListAsync();
+        Assert.Equal(1, statuses.Count(s => s == MeetingRequestStatus.Accepted));
+        Assert.Equal(1, statuses.Count(s => s == MeetingRequestStatus.Pending));
+    }
+
     // -- R-1b: resend the speaker confirmation links --------------------------
 
     [Fact]

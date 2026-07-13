@@ -123,6 +123,17 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         // extract the token secret from the returned link).
         Environment.SetEnvironmentVariable(
             "MeetingLinks__PublicWebBaseUrl", "https://test.simf.local");
+        // Round-1 held item #1 — the demo @simf.local accounts (D-585) now seed
+        // ONLY in Development or behind Seed:EnableDemoAccounts (default false),
+        // and DemoSeedOptions.DemoPassword has no hardcoded default. The general
+        // suite (BadgeSignInTests, WalkInRegistrationTests, AdminCreateUserTests,
+        // IdentitySeederTests, …) relies on those accounts, and the host runs as
+        // "Testing" (not Development), so opt IN explicitly and supply the
+        // demo password. Reset here (process-wide vars) so a prior
+        // DemoAccountsDisabledApiFactory cannot leak EnableDemoAccounts=false
+        // into later classes.
+        Environment.SetEnvironmentVariable("Seed__EnableDemoAccounts", "true");
+        Environment.SetEnvironmentVariable("Seed__DemoPassword", "Simf@Demo2026#");
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
