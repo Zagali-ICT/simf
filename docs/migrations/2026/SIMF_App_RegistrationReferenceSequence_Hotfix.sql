@@ -8,28 +8,37 @@
     `SELECT NEXT VALUE FOR [dbo].[RegistrationReferenceSequence]`, only on a
     FIRST-TIME profile save. That sequence was created by hand on the dev DB and
     never captured in a migration, so the D-743 InitialMigration squash (which
-    rebuilt prod after "DROP both DBs") produced a SIMF_App with no sequence.
-    Every "create user / save sign-up profile" then threw
+    rebuilt the App DB from migrations only) produced an App database with no
+    sequence. Every "create user / save sign-up profile" then threw
     SqlException 208 (Invalid object name 'dbo.RegistrationReferenceSequence')
     -> HTTP 500 -> the app showed the generic "An unexpected error occurred /
     حدث خطأ غير متوقع" with no details.
 
-  WHAT
-    1) Idempotently create the sequence (bigint, start 1, increment 1) — this
-       unblocks prod IMMEDIATELY with no redeploy.
-    2) Idempotently mark the EF migration 20260713080333_AddRegistrationReferenceSequence
-       as applied, so the next deploy's startup Migrate() (Program.cs) does NOT
-       try to CREATE SEQUENCE a second time and fail.
+  WHICH DATABASE
+    Run this against the APP database — the one the API's `SimfAppDb` connection
+    string points to (NOT the Identity DB, NOT master). Its name is set by the
+    prod env var, so it may not be literally "SIMF_App". Identify it first with
+    STEP 0 below, then select that database in SSMS (or `sqlcmd -d <name>`) and
+    run STEP 1 + STEP 2. Do NOT add a `USE [...]`; run in the chosen DB context.
 
-  HOW
-    Run once against the SIMF_App database (SSMS or sqlcmd). Idempotent — safe to
-    re-run. The permanent fix lands with the migration on the next deploy; this
-    script only bridges the running prod until then.
+  WHAT
+    STEP 1) Idempotently create the sequence (bigint, start 1, increment 1) —
+            unblocks prod IMMEDIATELY, no redeploy.
+    STEP 2) Idempotently record the EF migration
+            20260713080333_AddRegistrationReferenceSequence as applied, so the
+            next deploy's startup MigrateAsync() (Program.cs) does NOT try to
+            CREATE SEQUENCE a second time and crash startup. Guarded so it is a
+            no-op if the history table is absent.
+
+  Idempotent — safe to re-run.
 */
 
-USE [SIMF_App];
-GO
+-- STEP 0 — find the App database (run against master). The App DB is the one
+-- that contains BOTH [__EFMigrationsHistory] and the App tables (e.g. UserProfiles).
+-- SELECT name FROM sys.databases ORDER BY name;
+-- Then select that database and run STEP 1 + STEP 2 below.
 
+-- ── STEP 1 — create the sequence (the essential unblock) ─────────────────────
 IF NOT EXISTS (
     SELECT 1 FROM sys.sequences
     WHERE name = 'RegistrationReferenceSequence' AND schema_id = SCHEMA_ID('dbo'))
@@ -41,9 +50,11 @@ BEGIN
 END
 GO
 
-IF NOT EXISTS (
-    SELECT 1 FROM [dbo].[__EFMigrationsHistory]
-    WHERE [MigrationId] = N'20260713080333_AddRegistrationReferenceSequence')
+-- ── STEP 2 — mark the migration applied so the next deploy won't re-create it ─
+IF OBJECT_ID(N'dbo.__EFMigrationsHistory', N'U') IS NOT NULL
+   AND NOT EXISTS (
+       SELECT 1 FROM [dbo].[__EFMigrationsHistory]
+       WHERE [MigrationId] = N'20260713080333_AddRegistrationReferenceSequence')
 BEGIN
     INSERT INTO [dbo].[__EFMigrationsHistory] ([MigrationId], [ProductVersion])
     VALUES (N'20260713080333_AddRegistrationReferenceSequence', N'10.0.8');
