@@ -13,6 +13,29 @@
    MudBlazor/Simf pages.
    ===================================================================== */
 
+/* --------------------------- fonts (local) --------------------------- */
+/* Almarai (the Figma type) self-hosted — no external CDN, so the strict CSP
+   is satisfied and the page works offline. Arabic + Latin subsets are split by
+   unicode-range so only the active script downloads. */
+@font-face { font-family: 'Almarai'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('../lib/almarai/almarai-arabic-400-normal.woff2') format('woff2');
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0898-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+FB50-FDFF, U+FE70-FEFC; }
+@font-face { font-family: 'Almarai'; font-style: normal; font-weight: 700; font-display: swap;
+  src: url('../lib/almarai/almarai-arabic-700-normal.woff2') format('woff2');
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0898-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+FB50-FDFF, U+FE70-FEFC; }
+@font-face { font-family: 'Almarai'; font-style: normal; font-weight: 800; font-display: swap;
+  src: url('../lib/almarai/almarai-arabic-800-normal.woff2') format('woff2');
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0898-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+FB50-FDFF, U+FE70-FEFC; }
+@font-face { font-family: 'Almarai'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('../lib/almarai/almarai-latin-400-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Almarai'; font-style: normal; font-weight: 700; font-display: swap;
+  src: url('../lib/almarai/almarai-latin-700-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Almarai'; font-style: normal; font-weight: 800; font-display: swap;
+  src: url('../lib/almarai/almarai-latin-800-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+
 /* --------------------------- design tokens --------------------------- */
 .landing {
   /* brand */
@@ -76,14 +99,16 @@
 /* Each section caps its own content band at --content-w with margin-inline:auto
    and pads to the clamped gutter (kept per-section, all token-driven). */
 
-/* reveal-on-scroll (progressive; visible by default if JS/anim disabled) */
-.ln-reveal { opacity: 0; transform: translateY(26px);
+/* reveal-on-scroll. Gated behind .ln-js (added by an inline head script) so
+   that WITHOUT JavaScript nothing is ever hidden — every section renders at
+   full opacity. With JS, blocks start hidden and animate in on scroll. */
+.ln-js .ln-reveal { opacity: 0; transform: translateY(26px);
   transition: opacity .8s cubic-bezier(.22, .61, .36, 1), transform .8s cubic-bezier(.22, .61, .36, 1); }
-.ln-reveal.is-visible { opacity: 1; transform: none; }
+.ln-js .ln-reveal.is-visible { opacity: 1; transform: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .landing { scroll-behavior: auto; }
-  .ln-reveal { opacity: 1; transform: none; transition: none; }
+  .ln-js .ln-reveal { opacity: 1; transform: none; transition: none; }
   .ln-marquee__track { animation: none !important; }
 }
 

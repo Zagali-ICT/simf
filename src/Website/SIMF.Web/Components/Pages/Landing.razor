@@ -16,13 +16,21 @@
     var bootstrapCss = rtl
         ? "lib/bootstrap/css/bootstrap.rtl.min.css"
         : "lib/bootstrap/css/bootstrap.min.css";
+    // preload the hero-title weight (700) for the active language → no font swap on LCP
+    var heroFont = rtl
+        ? "lib/almarai/almarai-arabic-700-normal.woff2"
+        : "lib/almarai/almarai-latin-700-normal.woff2";
 }
 
 <HeadContent>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@@300;400;700;800&display=swap"
-          rel="stylesheet" />
+    <meta name="description" content="@L["Landing.MetaDescription"]" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="@L["Landing.PageTitle"]" />
+    <meta property="og:description" content="@L["Landing.MetaDescription"]" />
+    <meta property="og:locale" content="@(rtl ? "ar_SA" : "en_US")" />
+    @* mark JS-capable synchronously so reveal-on-scroll never hides content for no-JS visitors *@
+    <script>document.documentElement.classList.add('ln-js');</script>
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="@Assets[heroFont]" />
     <link rel="stylesheet" href="@Assets[bootstrapCss]" />
     <link rel="stylesheet" href="@Assets["css/landing.css"]" />
     <script defer src="@Assets["lib/bootstrap/js/bootstrap.bundle.min.js"]"></script>
@@ -99,7 +107,8 @@
                     <button type="button" class="ln-nav__action" id="ln-search-toggle" aria-label="@L["Landing.Nav.Search"]" aria-expanded="false" aria-controls="ln-search-panel">
                         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6" /><path d="M16 16l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
                     </button>
-                    <a class="ln-nav__action" href="/culture?culture=@otherCulture&redirectUri=/landing" aria-label="@L["Landing.Nav.Language"]">
+                    @* no aria-label: the visible language name IS the accessible name (WCAG 2.5.3) *@
+                    <a class="ln-nav__action" href="/culture?culture=@otherCulture&redirectUri=/landing" hreflang="@otherCulture">
                         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5" /><path d="M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18" stroke="currentColor" stroke-width="1.4" /></svg>
                         <span>@L["Landing.Nav.OtherLanguage"]</span>
                     </a>
