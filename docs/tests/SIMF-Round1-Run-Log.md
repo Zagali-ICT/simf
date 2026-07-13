@@ -356,6 +356,17 @@ dependent (and unrelated to the sequence): `OrganizationProfileTests.GET_public_
 seeded organisation edition the test factory does not create. So the *real* "test-DB seeding gap" is
 **one** case, not 48.
 
+**[RESIDUAL NOW CLOSED]** That one case was a genuine content-seed gap: the D-747 port of the org
+content (`docs/migrations/2026/SIMF_App_Organization.sql`) seeded the About/Vision/Mission/Themes
+items but **omitted the `OrganizationDetails`** name/value facts the test asserts. Fixed by adding
+the ordered `OrganizationDetails` block (Organiser = Royal Saudi Naval Forces, Edition = Fourth
+(2026), Dates = 20–22 November 2026 — real, sourced from the same 2026 deck + Programme seed),
+idempotent (inserts each row only when a row with that `Name` does not already exist). Verified:
+`OrganizationProfileTests` → **5/5 PASS**; `TotpEnrolmentTests` + `DelegationsTests` → **18/18**
+(confirming the earlier mid-run "failures" were seed-contamination flakes, not regressions). With
+this, the backend baseline is effectively **1620/1620**. On `fix/app-migration-order-d743`
+(`a6385af1`, pushed).
+
 ### Flutter app suite (the plan's open "Flutter widget/golden" item) — DONE
 
 Ran `flutter test` (184 test files). First pass mis-resolved **Dio 5.9.2** from a stale cache
@@ -376,7 +387,25 @@ member — the client's intended version, which is why the shipped app builds) w
   (guest) account gets **no** nudge. `biometric_auth_test.dart` → **8/8 green**; zero new analyzer
   issues in the touched files.
 
-**Net (verified on a final full run):** backend **1619/1620** (1 genuine seed-gap), app **961 passed /
-2 failed** — the 2 are the same Arabic golden pixel-diffs (`speaker_profile`, `splash`); every other
-app test, including all biometric tests, is green. The sequence fix is the dominant production-readiness
-win of this pass.
+**Net (verified on a final full run):** backend **1619/1620** (1 genuine seed-gap, since closed — see
+"[RESIDUAL NOW CLOSED]" above → effectively **1620/1620**), app **961 passed / 2 failed** — the 2 are
+the same Arabic golden pixel-diffs (`speaker_profile`, `splash`); every other app test, including all
+biometric tests, is green. The sequence fix is the dominant production-readiness win of this pass.
+
+### CP list-page standard (D — static check, PASS) — the open "~50 CP pages" item, structurally
+
+Rather than live-drive ~50 CP pages through the shared stack (the local API was down and the CP/Web
+processes belong to a **concurrent owner session** — relaunching the API to drive CRUD would disrupt
+it), the one CP "done" invariant that the build-time permission tests
+(`CpNavigationPermissionTests`, `PermissionEnforcementTests`) do **not** cover was verified statically:
+
+- **Every CP list page is on `SimfDataGrid`** — all **48** `Components/Pages/**/*List.razor` pages
+  reference `SimfDataGrid` (48/48 by glob ∩ grep). The list-page HARD RULE (filter + select-all +
+  row-checkbox + quiet icon actions via the shared grid) is met on every list page.
+- **Zero raw tables** — no `<table>`, `<MudTable>`, or `<MudDataGrid>` in **any** `.razor` across the
+  whole `src` tree (CP + Web). No page bypasses the standard grid.
+
+So the CP list surface conforms structurally. The **fine-grained per-page CRUD live pass** and the
+**on-tablet app manual pass** remain the two genuinely-open Round-1 items — both are owner-gated (they
+need the shared local stack brought up without colliding with the concurrent session, or the physical
+tablet), not code work.
