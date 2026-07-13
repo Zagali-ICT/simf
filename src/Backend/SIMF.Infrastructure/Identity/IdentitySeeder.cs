@@ -75,12 +75,7 @@ public sealed class IdentitySeeder(
         // permission ("*") minted into its token and so holds every
         // permission implicitly. The six pre-catalogue codes (D-148 gate
         // triad, D-168 PR/VIP triad) keep their exact strings and grants.
-        foreach (var permission in PermissionCatalog.All)
-        {
-            await EnsurePermissionAsync(
-                permission.Code, permission.Page, permission.Action,
-                permission.DisplayName, permission.BaselineRoles, cancellationToken);
-        }
+        await SeedPermissionCatalogAsync(cancellationToken);
 
         var admin = await accounts.FindByEmailAsync(settings.Email, cancellationToken)
             ?? await CreateSuperAdminAsync(settings, cancellationToken);
@@ -303,46 +298,66 @@ public sealed class IdentitySeeder(
         }
     }
 
-    /// <summary>D-148 — idempotent insert of a Permission row + grants to
-    /// the named baseline roles. Safe to re-run on every startup.</summary>
-    private async Task EnsurePermissionAsync(
-        string code, string page, string action, string displayName,
-        IReadOnlyList<string> grantToRoles,
-        CancellationToken cancellationToken)
+    /// <summary>D-148 — idempotent seed of the whole Permission catalogue plus
+    /// its baseline role grants. Batched: read the existing permissions, grants
+    /// and roles ONCE, diff the catalogue in memory, and persist any additions
+    /// in a single SaveChanges — instead of a SELECT-per-code (plus an AnyAsync
+    /// per grant) on every boot. Still idempotent by Code and by
+    /// (RoleId, PermissionId). Safe to re-run on every startup.</summary>
+    private async Task SeedPermissionCatalogAsync(CancellationToken cancellationToken)
     {
-        var permission = await dbContext.Permissions
-            .SingleOrDefaultAsync(p => p.Code == code, cancellationToken);
-        if (permission is null)
-        {
-            permission = new Permission
-            {
-                Id = Guid.NewGuid(),
-                Code = code,
-                Page = page,
-                Action = action,
-                DisplayName = displayName,
-            };
-            dbContext.Permissions.Add(permission);
-            await dbContext.SaveChangesAsync(cancellationToken);
-        }
+        var permissionsByCode = await dbContext.Permissions
+            .ToDictionaryAsync(p => p.Code, cancellationToken);
+        var existingGrants = (await dbContext.RolePermissions
+                .Select(rp => new { rp.RoleId, rp.PermissionId })
+                .ToListAsync(cancellationToken))
+            .Select(rp => (rp.RoleId, rp.PermissionId))
+            .ToHashSet();
 
-        foreach (var roleName in grantToRoles)
+        // Resolve each distinct baseline role once, through the same RoleManager
+        // normalisation the per-item path used — the catalogue references only a
+        // handful of roles, so this is a few lookups, not one per grant.
+        var rolesByName = new Dictionary<string, SimfRole>();
+        foreach (var roleName in PermissionCatalog.All
+            .SelectMany(def => def.BaselineRoles).Distinct())
         {
-            var role = await roleManager.FindByNameAsync(roleName);
-            if (role is null) { continue; }
-            var grantExists = await dbContext.RolePermissions
-                .AnyAsync(rp => rp.RoleId == role.Id && rp.PermissionId == permission.Id,
-                    cancellationToken);
-            if (!grantExists)
+            if (await roleManager.FindByNameAsync(roleName) is { } role)
             {
-                dbContext.RolePermissions.Add(new RolePermission
-                {
-                    RoleId = role.Id,
-                    PermissionId = permission.Id,
-                });
-                await dbContext.SaveChangesAsync(cancellationToken);
+                rolesByName[roleName] = role;
             }
         }
+
+        foreach (var def in PermissionCatalog.All)
+        {
+            if (!permissionsByCode.TryGetValue(def.Code, out var permission))
+            {
+                permission = new Permission
+                {
+                    Id = Guid.NewGuid(),
+                    Code = def.Code,
+                    Page = def.Page,
+                    Action = def.Action,
+                    DisplayName = def.DisplayName,
+                };
+                dbContext.Permissions.Add(permission);
+                permissionsByCode[def.Code] = permission;
+            }
+
+            foreach (var roleName in def.BaselineRoles)
+            {
+                if (!rolesByName.TryGetValue(roleName, out var role)) { continue; }
+                if (existingGrants.Add((role.Id, permission.Id)))
+                {
+                    dbContext.RolePermissions.Add(new RolePermission
+                    {
+                        RoleId = role.Id,
+                        PermissionId = permission.Id,
+                    });
+                }
+            }
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
     /// <summary>D-124 — idempotent rename. When a row with the old Name
