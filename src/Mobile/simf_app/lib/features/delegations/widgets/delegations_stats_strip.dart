@@ -2,23 +2,46 @@ import 'package:flutter/material.dart';
 
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
+import '../data/delegation_models.dart';
 
 /// The header stats strip (Figma 1426:10781): a navy card with a faint gold
 /// grid, the invited countries' flags scattered across it, and the two big-gold
-/// stats — participating countries (left) + total participants (right).
+/// stats — participating countries (left) + total participants (right). Each
+/// scattered flag is a tap target that filters the list below to that country
+/// (the selected flag is ringed; tapping it again clears — the screen owns the
+/// selection state and the body renders the removable active-filter chip).
 class DelegationsStatsStrip extends StatelessWidget {
   const DelegationsStatsStrip({
     required this.countryCount,
     required this.totalParticipants,
-    required this.flags,
+    required this.flagItems,
+    required this.selectedCountryCode,
+    required this.onFlagTap,
     required this.l10n,
     super.key,
   });
 
   final int countryCount;
   final int totalParticipants;
-  final List<String> flags;
+
+  /// The invited countries whose flag renders a scattered tap target. Only the
+  /// first [_spots] of these are placed (the strip is a fixed-size decorative
+  /// map, not a full list).
+  final List<DelegationItem> flagItems;
+
+  /// The country whose flag is currently selected (filtering the list), or null
+  /// when no flag filter is active.
+  final String? selectedCountryCode;
+
+  /// Fired with the tapped country's code so the screen can toggle the filter.
+  final ValueChanged<String> onFlagTap;
+
   final AppL10n l10n;
+
+  /// The transparent padding around each flag glyph that widens the tap target
+  /// without moving the glyph — the [Positioned] offset is pulled back by the
+  /// same amount, so an unselected flag renders at the exact original pixel.
+  static const double _hitPad = 9;
 
   /// The Figma's decorative scatter positions (relative to the strip), filled
   /// with the real invited-country flags so the map reflects the data.
@@ -35,7 +58,8 @@ class DelegationsStatsStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final count = flags.length < _spots.length ? flags.length : _spots.length;
+    final count =
+        flagItems.length < _spots.length ? flagItems.length : _spots.length;
     return Container(
       height: 100,
       clipBehavior: Clip.antiAlias,
@@ -54,11 +78,12 @@ class DelegationsStatsStrip extends StatelessWidget {
               ),
               for (var i = 0; i < count; i++)
                 Positioned(
-                  left: _spots[i].dx * width,
-                  top: _spots[i].dy * height,
-                  child: Text(
-                    flags[i],
-                    style: const TextStyle(fontSize: 14),
+                  left: _spots[i].dx * width - _hitPad,
+                  top: _spots[i].dy * height - _hitPad,
+                  child: _FlagSpot(
+                    flag: flagItems[i].flagEmoji,
+                    selected: flagItems[i].countryCode == selectedCountryCode,
+                    onTap: () => onFlagTap(flagItems[i].countryCode),
                   ),
                 ),
               Positioned(
@@ -82,6 +107,41 @@ class DelegationsStatsStrip extends StatelessWidget {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+/// One scattered flag glyph as a tap target. The glyph sits inside
+/// [DelegationsStatsStrip._hitPad] of transparent padding (widening the touch
+/// area); when [selected] the padding box is ringed in gold to mark the active
+/// filter.
+class _FlagSpot extends StatelessWidget {
+  const _FlagSpot({
+    required this.flag,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String flag;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(DelegationsStatsStrip._hitPad),
+        decoration: selected
+            ? BoxDecoration(
+                color: SimfTokens.goldFill6,
+                border: Border.all(color: SimfTokens.accent),
+                borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+              )
+            : null,
+        child: Text(flag, style: const TextStyle(fontSize: 14)),
       ),
     );
   }

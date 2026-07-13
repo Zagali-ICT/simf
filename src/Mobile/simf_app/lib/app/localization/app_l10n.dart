@@ -1838,6 +1838,10 @@ class AppL10n {
       _t('إجمالي المشاركين', 'Total participants');
   String get delegationsHeadLabel => _t('رئيس الوفد', 'Head of delegation');
 
+  /// The active-filter chip shown when a stats-strip flag isolates one country;
+  /// tapping the chip clears the flag filter.
+  String get delegationsClearFilter => _t('عرض كل الدول', 'Show all countries');
+
   /// The member count, e.g. "12 عضو" / "12 members" (with the Arabic plural).
   String delegationsMembers(int count) {
     if (!isArabic) {

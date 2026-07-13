@@ -8,6 +8,7 @@ import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/delegations/data/delegation_models.dart';
 import 'package:simf_app/features/delegations/data/delegations_repository.dart';
 import 'package:simf_app/features/delegations/delegations_screen.dart';
+import 'package:simf_app/features/delegations/widgets/delegations_stats_strip.dart';
 
 DelegationItem _item({
   required int id,
@@ -151,6 +152,57 @@ void main() {
 
       expect(find.text('Saudi Arabia'), findsOneWidget);
       expect(find.text('United States'), findsNothing);
+    });
+
+    testWidgets('tapping a stats-strip flag filters to that country',
+        (tester) async {
+      final us = _item(
+        id: 840,
+        code: 'US',
+        name: 'United States',
+        nameAr: 'الولايات المتحدة',
+      );
+      final sa = _item(
+        id: 682,
+        code: 'SA',
+        name: 'Saudi Arabia',
+        nameAr: 'السعودية',
+      );
+      await _pump(
+        tester,
+        data: Delegations(
+          countryCount: 2,
+          totalParticipants: 2,
+          items: <DelegationItem>[us, sa],
+        ),
+      );
+
+      // Both countries listed; no active-filter chip yet.
+      expect(find.text('United States'), findsOneWidget);
+      expect(find.text('Saudi Arabia'), findsOneWidget);
+      expect(find.byIcon(Icons.close), findsNothing);
+
+      // Tap the US flag in the stats strip → the list narrows to the US card.
+      await tester.tap(
+        find.descendant(
+          of: find.byType(DelegationsStatsStrip),
+          matching: find.text(us.flagEmoji),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Saudi Arabia'), findsNothing);
+      // The country name now appears twice: the card + the active-filter chip.
+      expect(find.text('United States'), findsNWidgets(2));
+      expect(find.byIcon(Icons.close), findsOneWidget);
+
+      // Clearing the chip restores every country.
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
+
+      expect(find.text('United States'), findsOneWidget);
+      expect(find.text('Saudi Arabia'), findsOneWidget);
+      expect(find.byIcon(Icons.close), findsNothing);
     });
 
     testWidgets('shows the error state on a wire failure', (tester) async {

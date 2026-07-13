@@ -10,18 +10,19 @@
 The public directory of the **invited countries'** delegations attending the
 forum. A visitor — signed-in or guest — sees which countries are participating,
 the total participant count, and, per country, who leads the delegation, when
-they arrive and leave, and how many members the delegation has. It is a read-only
-browse surface: the only interactions are search and scroll. The data is curated
-in the Control Panel on the `Country` record; the screen renders the current
-state of those records.
+they arrive and leave, and how many members the delegation has. The interactions
+are **search**, **scroll**, and a **flag filter** — tapping an invited country's
+flag in the stats strip narrows the list to that one country (a removable
+active-filter chip clears it). The data is curated in the Control Panel on the
+`Country` record; the screen renders the current state of those records.
 
 ## Structure (post-decomposition)
 
 | File | Holds |
 |------|-------|
-| `delegations_screen.dart` (77) | State — the search `TextEditingController` + `_query`, the `delegationsProvider` watch, the `onRefresh` invalidate, and the loading / error / data branch dispatch inside `SimfPageShell`. |
-| `widgets/delegations_body.dart` (`DelegationsBody`) | The loaded list — the stats strip, the shared `SimfFilterSearchField`, then the filtered per-country cards (or the empty / no-results `SimfEmptyState`). |
-| `widgets/delegations_stats_strip.dart` (`DelegationsStatsStrip` + `_GridPainter` + `_Stat`) | The navy header strip (Figma 1426:10781): the faint gold grid, the scattered invited-country flags, and the two big-gold stats (participating countries left / total participants right). |
+| `delegations_screen.dart` | State — the search `TextEditingController` + `_query`, the selected-flag `_selectedFlagCode` (with the `_onFlagTap` toggle + clear), the `delegationsProvider` watch, the `onRefresh` invalidate, and the loading / error / data branch dispatch inside `SimfPageShell`. |
+| `widgets/delegations_body.dart` (`DelegationsBody` + `_ActiveFilterChip`) | The loaded list — the stats strip, the shared `SimfFilterSearchField`, the active-filter chip (when a flag is selected), then the per-country cards filtered by **both** the flag selection and the search (or the empty / no-results `SimfEmptyState`). |
+| `widgets/delegations_stats_strip.dart` (`DelegationsStatsStrip` + `_FlagSpot` + `_GridPainter` + `_Stat`) | The navy header strip (Figma 1426:10781): the faint gold grid, the scattered invited-country flags (each a `_FlagSpot` tap target that filters the list; the selected flag is ringed), and the two big-gold stats (participating countries left / total participants right). |
 | `widgets/delegation_card.dart` (`DelegationCard` + `_FlagBox`/`_HeadAvatar`/`_HeadChip`/`_MemberChip`/`_DateGroup`) | One country card (Figma 1426:10838): the flag box + bilingual country name, the head-of-delegation box (when set), and the bottom row (member chip + date range). |
 
 The single-use leaf widgets (`_GridPainter`/`_Stat`, and the card's
@@ -45,8 +46,9 @@ to the shared `SimfFilterSearchField` in D-613.)
 ## UI affordances
 
 - **Header:** back chevron + centred title **الوفود**.
-- **Stats strip:** `countryCount` (دولة مشاركة / Participating countries) + `totalParticipants` (إجمالي المشاركين / Total participants), over a faint gold grid with the invited-country flags scattered.
-- **Search box:** one filter input (hint "ابحث عن دولة أو وفد..."), filters cards client-side by country name (ar/en) and head name (ar/en).
+- **Stats strip:** `countryCount` (دولة مشاركة / Participating countries) + `totalParticipants` (إجمالي المشاركين / Total participants), over a faint gold grid with the invited-country flags scattered. Each scattered flag (first 8) is a **tap target** — tapping filters the list to that country and rings the flag in gold; tapping again clears.
+- **Search box:** one filter input (hint "ابحث عن دولة أو وفد..."), filters cards client-side by country name (ar/en) and head name (ar/en). **Composes** with the flag filter.
+- **Active-filter chip:** shown below the search box while a flag filter is active — the selected country's name + a close glyph (assistive label "عرض كل الدول" / "Show all countries"); tapping it clears the flag filter.
 - **Country card (per `items[]`):** flag box + bilingual country name; the head-of-delegation box (gold avatar + `headName`/`headNameArabic` + `headTitle`, رئيس الوفد chip — shown **only** when a head is set); the bottom row — member chip (groups glyph leading, `memberCount`) + date range (clock glyph leading, `arrivalDate`→`departureDate`, when both set).
 
 ## CP-side management (where the data comes from)
@@ -92,27 +94,36 @@ The `delegations_1426-10771` golden **held without `--update`** after the
 decomposition + tokenisation — the render is byte-identical to the frame-verified
 D-499 build (the golden is that build's pixel-comparison artifact, annotated
 throughout the widgets with node ids 1426:10781/10838/10840/10855/10862/10856), so
-the 1426:10771 parity is preserved.
+the 1426:10771 parity is preserved. The **flag-filter** addition keeps the golden
+byte-identical in its default (unfiltered) state: each flag glyph stays at its
+exact original pixel (the tap target's transparent padding is offset-compensated),
+and the gold selection ring paints **only** on a selected flag — a state the
+golden never renders.
 
 ## Level-F
 
-Read-only screen — every affordance wired: search filters client-side; pull-to-
-refresh + retry re-fetch. Reads `GET /app/delegations` (anonymous). No missing API.
-All curation is CP-side (see above).
+Browse screen — every affordance wired: search filters client-side; the stats-strip
+flags filter the list to one country (removable via the active-filter chip);
+pull-to-refresh + retry re-fetch. Reads `GET /app/delegations` (anonymous). No
+missing API. All curation is CP-side (see above).
 
 ## i18n + RTL
 
 All strings localized (AR / EN): title, search hint, the two stat labels, the head
-label رئيس الوفد, the error and empty copy. Country + head names come from the
-record's bilingual fields and switch with the locale. Under Arabic the header,
-stats strip, search box and cards mirror right-to-left (the member chip's groups
-glyph and the date range's clock glyph each lead at the inline-start).
+label رئيس الوفد, the active-filter clear label ("عرض كل الدول" / "Show all
+countries"), the error and empty copy. Country + head names come from the record's
+bilingual fields and switch with the locale. Under Arabic the header, stats strip,
+search box, active-filter chip and cards mirror right-to-left (the member chip's
+groups glyph and the date range's clock glyph each lead at the inline-start; the
+active-filter chip aligns to the inline-start via `AlignmentDirectional`).
 
 ## Tests
 
 `test/golden/delegations_golden_test.dart` (frame 1426:10771, @375×1075, ar) +
-the delegations feature tests. E2E: `docs/tests/e2e/mobile-delegations.md`
-(`E2E-DEL-001..009`).
+the delegations feature tests — including the **flag-filter** widget test
+(`delegations_screen_test.dart`: tap a stats-strip flag → list narrows to that
+country; the active-filter chip clears it). E2E:
+`docs/tests/e2e/mobile-delegations.md` (`E2E-DEL-001..010`).
 
 ## Related decisions
 
@@ -121,4 +132,7 @@ the delegations feature tests. E2E: `docs/tests/e2e/mobile-delegations.md`
 
 ---
 
-_Last reviewed: 2026-07-04 (D-624 — clean-code freeze). Originating doc D-499._
+_Last reviewed: 2026-07-13 — added the stats-strip **flag filter** (tap a country
+flag to narrow the list; removable active-filter chip; composes with search;
+default golden unchanged). Prior: 2026-07-04 (D-624 — clean-code freeze).
+Originating doc D-499._

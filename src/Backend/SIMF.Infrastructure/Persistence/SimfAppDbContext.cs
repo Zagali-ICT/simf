@@ -285,6 +285,18 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
             typeof(SimfAppDbContext).Assembly,
             type => type.Namespace == "SIMF.Infrastructure.Persistence.Configurations.App");
 
+        // D-373 — the concurrency-safe issuer for the human-quotable
+        // registration reference (SIMF-<year>-<8-digit sequence>), read raw in
+        // UserProfileRepository.NextRegistrationReferenceAsync via NEXT VALUE FOR.
+        // Declared on the model so `Migrate()` creates it on every fresh DB
+        // (CI test factory + a re-seeded prod). It was previously created only
+        // by hand on the dev DB and never captured, so migration-built DBs
+        // (prod after the D-743 InitialMigration squash) lacked it and every
+        // first-time profile save threw SqlException 208 → a 500.
+        modelBuilder.HasSequence<long>("RegistrationReferenceSequence")
+            .StartsAt(1)
+            .IncrementsBy(1);
+
         // A2-10 (NCA Secure App-Dev Standard) — encrypt the most sensitive PII
         // identifier columns at rest with AES-GCM (IPiiEncryptor). Applied here
         // (after the entity configurations) because the converter needs the

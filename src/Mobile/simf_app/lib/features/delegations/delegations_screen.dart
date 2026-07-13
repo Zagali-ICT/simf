@@ -23,10 +23,20 @@ class _DelegationsScreenState extends ConsumerState<DelegationsScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
 
+  /// The country code selected by tapping its flag in the stats strip, or null
+  /// when the list is unfiltered by flag. Composes with the [_query] search.
+  String? _selectedFlagCode;
+
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  /// Toggle the flag filter: tapping the already-selected country's flag again
+  /// clears it.
+  void _onFlagTap(String code) {
+    setState(() => _selectedFlagCode = _selectedFlagCode == code ? null : code);
   }
 
   @override
@@ -69,6 +79,9 @@ class _DelegationsScreenState extends ConsumerState<DelegationsScreen> {
             l10n: l10n,
             searchController: _searchController,
             onQueryChanged: (value) => setState(() => _query = value),
+            selectedCountryCode: _selectedFlagCode,
+            onFlagTap: _onFlagTap,
+            onClearFilter: () => setState(() => _selectedFlagCode = null),
           ),
         ),
       ),

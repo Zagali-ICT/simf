@@ -157,6 +157,17 @@ Future<void> maybeOfferBiometricEnrolment(
   BuildContext context,
   WidgetRef ref,
 ) async {
+  // D-666 — a not-yet-approved account presents as guest (effectiveAppRole).
+  // Skip the Face-ID nudge for a guest: it has nothing to secure yet, and
+  // returning here also skips the platform probes below that would otherwise
+  // stall the guest's route home (the caller awaits this before navigating).
+  final auth = ref.read(authControllerProvider);
+  final role = auth is AuthStateSignedIn
+      ? auth.session.user.effectiveAppRole
+      : AppRole.guest;
+  if (role == AppRole.guest) {
+    return;
+  }
   final biometric = ref.read(biometricAuthProvider);
   // Bounded so a stalled platform probe can never wedge the route home.
   final enabled = await biometric

@@ -22,6 +22,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.HasSequence("RegistrationReferenceSequence");
+
             modelBuilder.Entity("SIMF.Domain.AccessControl.Gate", b =>
                 {
                     b.Property<Guid>("Id")
