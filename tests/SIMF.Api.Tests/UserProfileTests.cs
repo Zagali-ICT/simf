@@ -683,6 +683,25 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
+    // R1 audit fix (D-725) — a CP-only operational partner type
+    // (Staff / Moderator, IsAppRegisterable=false) is hidden from the sign-up
+    // picker; the self-service write path must reject it too, so a direct POST
+    // cannot self-assign an operational ProfileType (which — once an admin
+    // approves the account off the "Others" queue — would mint that type's
+    // partner MobileAppRole). Fail-closed 400 mirroring the picker filter.
+    [Fact]
+    public async Task POST_rejects_a_non_app_registerable_partner_profile_type_self_pick()
+    {
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.ProfileTypeId = await SeedProfileTypeAsync(
+            "Staff — R1 test", "طاقم — اختبار",
+            isForVisitor: false, isAppRegisterable: false);
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
     [Fact]
     public async Task Profile_completion_replaces_the_email_placeholder_display_name()
     {
@@ -716,7 +735,8 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     /// <summary>Finds-or-creates an active profile type by name directly on
     /// the App DB (the C5 lock tests need specific audience/partner rows).</summary>
     private async Task<Guid> SeedProfileTypeAsync(
-        string name, string nameArabic, bool isForVisitor)
+        string name, string nameArabic, bool isForVisitor,
+        bool isAppRegisterable = true)
     {
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -735,6 +755,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
             IsForVisitor = isForVisitor,
             MobileAppRole = MobileAppRole.None,
             IsActive = true,
+            IsAppRegisterable = isAppRegisterable,
             CreatedAt = DateTimeOffset.UtcNow,
         };
         appDb.ProfileTypes.Add(fresh);

@@ -140,6 +140,43 @@ public sealed class DelegatesAndBulkBadgesTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Bulk_generate_with_an_invalid_second_batch_writes_zero_accounts_and_400s()
+    {
+        // Fix #6 (data-integrity): every batch's profile type is validated BEFORE
+        // any account is created, so an invalid later batch is a clean 400 with
+        // nothing persisted — no partial write under a failure envelope.
+        var admin = await CreateAdministratorAndSignInAsync();
+        var validProfileTypeId = await FreshVisitorProfileTypeAsync();
+        var missingProfileTypeId = Guid.NewGuid(); // no such profile type exists
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/visitors/bulk-generate",
+            new AdminBulkGenerateBadgesRequest
+            {
+                IsDelegate = false,
+                Batches = new List<BulkBadgeBatch>
+                {
+                    new() { ProfileTypeId = validProfileTypeId, Count = 3 },
+                    new() { ProfileTypeId = missingProfileTypeId, Count = 1 },
+                },
+            },
+            admin);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminBulkGenerateBadgesResponse>>())!;
+        Assert.Equal(ErrorCodes.AdminProfileTypeInvalid, body.Error!.Code);
+
+        // The valid first batch must NOT have been committed — zero badges written.
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var badges = await appDb.UserProfiles
+            .Where(p => p.ProfileTypeId == validProfileTypeId)
+            .ToListAsync();
+        Assert.Empty(badges);
+    }
+
     // -- helpers --------------------------------------------------------------
 
     private static AdminWalkInRegistrationRequest BuildRequest(
