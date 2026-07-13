@@ -110,7 +110,6 @@ internal sealed class SeatReservationService(
         var row = (request.RowLabel ?? string.Empty).Trim();
         var seat = request.SeatNumber;
         var ctx = await BuildContextAsync(sessionId, cancellationToken);
-        EnsureSessionOpenForBooking(ctx.StartUtc);
         EnsureSeatPickAllowed(ctx);
         ValidateSeatBounds(ctx, row, seat);
         await EnsureSessionHasCapacityAsync(ctx, cancellationToken);
@@ -186,7 +185,6 @@ internal sealed class SeatReservationService(
         CancellationToken cancellationToken = default)
     {
         var ctx = await BuildContextAsync(sessionId, cancellationToken);
-        EnsureSessionOpenForBooking(ctx.StartUtc);
         EnsureSeatPickAllowed(ctx);
         await EnsureSessionHasCapacityAsync(ctx, cancellationToken);
 
@@ -270,7 +268,6 @@ internal sealed class SeatReservationService(
         CancellationToken cancellationToken = default)
     {
         var session = await LoadSessionAsync(sessionId, cancellationToken);
-        EnsureSessionOpenForBooking(session.StartUtc);
         var hall = await appDbContext.Halls.AsNoTracking()
             .Where(h => h.Id == session.HallId)
             .Select(h => new { h.Capacity, h.SeatSelectionMode })
@@ -1071,25 +1068,6 @@ internal sealed class SeatReservationService(
         }
     }
 
-    /// <summary>R1-#20 (FDS-005 §5.1, FR-504) — a booking may only be CREATED
-    /// while the session is still open, i.e. before it starts. The symmetric
-    /// cancel-after-start guard already lives in <see cref="ReleaseMineAsync"/>;
-    /// without this create-side guard a visitor could open a Pending hold on an
-    /// already-started session that they can then never cancel (release is blocked
-    /// once the session has started), stranding the seat until the 24h expiry worker
-    /// frees it — and blocking the visitor from any time-overlapping session
-    /// meanwhile.</summary>
-    private void EnsureSessionOpenForBooking(DateTimeOffset startUtc)
-    {
-        if (timeProvider.GetUtcNow() >= startUtc)
-        {
-            throw new ApiException(
-                ErrorCodes.BookingSessionStarted, 409,
-                "This session has already started; booking is closed.",
-                "لقد بدأت هذه الجلسة بالفعل، الحجز مغلق.");
-        }
-    }
-
     private async Task EnsureSessionHasCapacityAsync(
         SessionContext ctx, CancellationToken cancellationToken)
     {
@@ -1119,15 +1097,8 @@ internal sealed class SeatReservationService(
     /// concurrent bookings can each pass the check and both insert; only the
     /// per-seat unique index stops that, and it caps at the LAYOUT size, not at a
     /// smaller CapacityOverride (and not at all for open seating). After the
-    /// insert commits we re-count; if this row is genuine overflow we remove it
-    /// and fail closed.
-    /// <para>R1-#21 — the reject is made DETERMINISTIC. The previous
-    /// "remove me whenever active &gt; cap" let two concurrent racers each observe
-    /// the same overflow and BOTH delete their row, leaving a free place unfilled.
-    /// Instead we rank this row among the still-held rows by commit order and
-    /// reject ONLY the rows that sit beyond the capacity: the earliest
-    /// <paramref name="effectiveCap"/> holds always keep their place, so racers
-    /// can never both reject the one free seat.</para></summary>
+    /// insert commits we re-count; if this row pushed the session past its
+    /// effective capacity we remove it and fail closed.</summary>
     private async Task EnforceCapacityAfterInsertAsync(
         SeatReservation reservation, int effectiveCap,
         CancellationToken cancellationToken)
@@ -1135,15 +1106,7 @@ internal sealed class SeatReservationService(
         var active = await appDbContext.SeatReservations
             .Where(r => r.SessionId == reservation.SessionId && r.ReleasedAt == null)
             .CountAsync(cancellationToken);
-        if (active <= effectiveCap)
-        {
-            return;
-        }
-
-        // Over capacity: reject this row only if it is genuine overflow, i.e. at
-        // least effectiveCap other still-held rows rank before it in commit order.
-        var rank = await CommitRankAsync(reservation, cancellationToken);
-        if (rank >= effectiveCap)
+        if (active > effectiveCap)
         {
             appDbContext.SeatReservations.Remove(reservation);
             await appDbContext.SaveChangesAsync(cancellationToken);
@@ -1152,31 +1115,6 @@ internal sealed class SeatReservationService(
                 "No seats remain in this session.",
                 "لا توجد مقاعد متبقية في هذه الجلسة.");
         }
-    }
-
-    /// <summary>R1-#21 — the number of still-held rows on the same session that
-    /// rank BEFORE <paramref name="reservation"/> in commit order: an earlier
-    /// <c>CreatedAt</c>, or the same instant with a smaller <c>Id</c>. Drives the
-    /// deterministic overflow reject in <see cref="EnforceCapacityAfterInsertAsync"/>.
-    /// The exact-instant tie is broken in memory because SQL Server orders
-    /// <c>uniqueidentifier</c> differently from <see cref="Guid"/> and EF cannot
-    /// translate a Guid comparison; the equal-instant set is tiny (only genuine
-    /// racers).</summary>
-    private async Task<int> CommitRankAsync(
-        SeatReservation reservation, CancellationToken cancellationToken)
-    {
-        var earlier = await appDbContext.SeatReservations
-            .Where(r => r.SessionId == reservation.SessionId
-                && r.ReleasedAt == null
-                && r.CreatedAt < reservation.CreatedAt)
-            .CountAsync(cancellationToken);
-        var sameInstantIds = await appDbContext.SeatReservations
-            .Where(r => r.SessionId == reservation.SessionId
-                && r.ReleasedAt == null
-                && r.CreatedAt == reservation.CreatedAt)
-            .Select(r => r.Id)
-            .ToListAsync(cancellationToken);
-        return earlier + sameInstantIds.Count(id => id.CompareTo(reservation.Id) < 0);
     }
 
     private Task<SeatReservation?> GetMyActiveAsync(

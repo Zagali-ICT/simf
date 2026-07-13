@@ -595,100 +595,6 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(success, active);
     }
 
-    // -- R1-#20: a booking cannot be created once the session has started ------
-
-    [Fact]
-    public async Task Reserving_a_seat_after_the_session_started_is_rejected()
-    {
-        // R1-#20 (FDS-005 §5.1, FR-504) — a seat pick on an already-started session
-        // is a 409 BOOKING_SESSION_STARTED, mirroring the cancel-after-start guard,
-        // so a visitor can never open a hold they could then never cancel.
-        var (session, _) = await SeedSessionWithLayoutAsync(
-            new[] { "A" }, seatsPerRow: 3,
-            startUtc: DateTimeOffset.UtcNow.AddHours(-1),
-            endUtc: DateTimeOffset.UtcNow.AddHours(1));
-        var visitor = await SignInApprovedVisitorAsync();
-
-        var pick = await PostAuthAsync(
-            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
-            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 1 }, visitor);
-        Assert.Equal(HttpStatusCode.Conflict, pick.StatusCode);
-        var body = (await pick.Content.ReadFromJsonAsync<ApiResult<object>>())!;
-        Assert.Equal(ErrorCodes.BookingSessionStarted, body.Error!.Code);
-    }
-
-    [Fact]
-    public async Task Reserve_random_after_the_session_started_is_rejected()
-    {
-        // R1-#20 — the random-allocator create path carries the same guard.
-        var (session, _) = await SeedSessionWithLayoutAsync(
-            new[] { "A" }, seatsPerRow: 3,
-            startUtc: DateTimeOffset.UtcNow.AddHours(-1),
-            endUtc: DateTimeOffset.UtcNow.AddHours(1));
-        var visitor = await SignInApprovedVisitorAsync();
-
-        var pick = await PostAuthAsync<object>(
-            $"/api/v1/app/sessions/{session.Id}/seats/reserve-random", new { }, visitor);
-        Assert.Equal(HttpStatusCode.Conflict, pick.StatusCode);
-        var body = (await pick.Content.ReadFromJsonAsync<ApiResult<object>>())!;
-        Assert.Equal(ErrorCodes.BookingSessionStarted, body.Error!.Code);
-    }
-
-    [Fact]
-    public async Task Joining_open_seating_after_the_session_started_is_rejected()
-    {
-        // R1-#20 — the open-seating join create path carries the same guard.
-        var session = await SeedOpenSeatingSessionAsync(
-            capacity: 50,
-            startUtc: DateTimeOffset.UtcNow.AddHours(-1),
-            endUtc: DateTimeOffset.UtcNow.AddHours(1));
-        var visitor = await SignInApprovedVisitorAsync();
-
-        var join = await PostAuthAsync<object>(
-            $"/api/v1/app/sessions/{session.Id}/seats/join", new { }, visitor);
-        Assert.Equal(HttpStatusCode.Conflict, join.StatusCode);
-        var body = (await join.Content.ReadFromJsonAsync<ApiResult<object>>())!;
-        Assert.Equal(ErrorCodes.BookingSessionStarted, body.Error!.Code);
-    }
-
-    // -- R1-#21: the capacity backstop rejects only the true overflow ----------
-
-    [Fact]
-    public async Task Open_seating_join_never_rejects_every_racer_for_a_free_place()
-    {
-        // R1-#21 — the post-insert backstop must reject only the TRUE overflow, not
-        // both racers. With one free place and three racers, the earliest hold (by
-        // commit order) always survives, so the place is never left unfilled — the
-        // spurious "reject BOTH" over-correction the fix removes. The hard upper
-        // bound stays covered by Open_seating_join_capacity_is_enforced_under_concurrency.
-        const int cap = 1;
-        var session = await SeedOpenSeatingSessionAsync(capacity: cap);
-        var visitors = new List<string>();
-        for (var i = 0; i < 3; i++)
-        {
-            visitors.Add(await SignInApprovedVisitorAsync());
-        }
-
-        var responses = await Task.WhenAll(visitors.Select(v =>
-            PostAuthAsync<object>(
-                $"/api/v1/app/sessions/{session.Id}/seats/join", new { }, v)));
-
-        var success = responses.Count(r => r.StatusCode == HttpStatusCode.OK);
-        Assert.True(success >= cap, $"the free place was left unfilled (success {success})");
-        foreach (var r in responses.Where(r => r.StatusCode != HttpStatusCode.OK))
-        {
-            Assert.Equal(HttpStatusCode.Conflict, r.StatusCode);
-            var body = (await r.Content.ReadFromJsonAsync<ApiResult<object>>())!;
-            Assert.Equal(ErrorCodes.SeatSessionFull, body.Error!.Code);
-        }
-
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var active = await db.SeatReservations
-            .CountAsync(r => r.SessionId == session.Id && r.ReleasedAt == null);
-        Assert.Equal(success, active);
-    }
-
     // -- M-4: admin release closes the lifecycle + notifies --------------------
 
     [Fact]
@@ -929,9 +835,7 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         string[] rowLabels, int seatsPerRow,
         SeatSelectionMode hallMode = SeatSelectionMode.AssignedSeat,
         SeatSelectionMode? sessionModeOverride = null,
-        int? capacityOverride = null,
-        DateTimeOffset? startUtc = null,
-        DateTimeOffset? endUtc = null)
+        int? capacityOverride = null)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -962,11 +866,10 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             HallId = hall.Id,
             SeatSelectionModeOverride = sessionModeOverride,
             CapacityOverride = capacityOverride,
-            // P2.2 — D-227: a FUTURE window by default so bookings can be cancelled
-            // before the session starts (the cancel-before-start guard, FR-504).
-            // Overridable so a started-session case can be seeded (R1-#20).
-            StartUtc = startUtc ?? DateTimeOffset.UtcNow.AddHours(1),
-            EndUtc = endUtc ?? DateTimeOffset.UtcNow.AddHours(2),
+            // P2.2 — D-227: a FUTURE window so bookings can be cancelled before
+            // the session starts (the new cancel-before-start guard, FR-504).
+            StartUtc = DateTimeOffset.UtcNow.AddHours(1),
+            EndUtc = DateTimeOffset.UtcNow.AddHours(2),
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };
@@ -975,10 +878,7 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         return (session, hall);
     }
 
-    private async Task<Session> SeedOpenSeatingSessionAsync(
-        int capacity,
-        DateTimeOffset? startUtc = null,
-        DateTimeOffset? endUtc = null)
+    private async Task<Session> SeedOpenSeatingSessionAsync(int capacity)
     {
         // D-485 — an open-seating hall has NO seat layout; the session is joined
         // in bulk (general admission), capacity-bounded by Hall.Capacity.
@@ -1001,10 +901,8 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Live", TitleArabic = "مباشر",
             HallId = hall.Id,
-            // FUTURE window by default; overridable so a started-session case can be
-            // seeded (R1-#20).
-            StartUtc = startUtc ?? DateTimeOffset.UtcNow.AddHours(1),
-            EndUtc = endUtc ?? DateTimeOffset.UtcNow.AddHours(2),
+            StartUtc = DateTimeOffset.UtcNow.AddHours(1),
+            EndUtc = DateTimeOffset.UtcNow.AddHours(2),
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };
