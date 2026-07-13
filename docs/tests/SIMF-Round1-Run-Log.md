@@ -376,5 +376,7 @@ member — the client's intended version, which is why the shipped app builds) w
   (guest) account gets **no** nudge. `biometric_auth_test.dart` → **8/8 green**; zero new analyzer
   issues in the touched files.
 
-**Net:** backend 1619/1620 (1 genuine seed-gap), app 959/961 (2 env-golden diffs). The sequence fix is
-the dominant production-readiness win of this pass.
+**Net (verified on a final full run):** backend **1619/1620** (1 genuine seed-gap), app **961 passed /
+2 failed** — the 2 are the same Arabic golden pixel-diffs (`speaker_profile`, `splash`); every other
+app test, including all biometric tests, is green. The sequence fix is the dominant production-readiness
+win of this pass.
