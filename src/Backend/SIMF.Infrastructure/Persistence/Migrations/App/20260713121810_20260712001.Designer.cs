@@ -12,8 +12,8 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     [DbContext(typeof(SimfAppDbContext))]
-    [Migration("20260712194341_InitialMigration")]
-    partial class InitialMigration
+    [Migration("20260713121810_20260712001")]
+    partial class _20260712001
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.HasSequence("RegistrationReferenceSequence");
 
             modelBuilder.Entity("SIMF.Domain.AccessControl.Gate", b =>
                 {

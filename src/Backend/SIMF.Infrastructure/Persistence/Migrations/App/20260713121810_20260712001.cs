@@ -8,13 +8,16 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     /// <inheritdoc />
-    public partial class InitialMigration : Migration
+    public partial class _20260712001 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.EnsureSchema(
                 name: "app");
+
+            migrationBuilder.CreateSequence(
+                name: "RegistrationReferenceSequence");
 
             migrationBuilder.CreateTable(
                 name: "AiInvocations",
@@ -3580,6 +3583,9 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
 
             migrationBuilder.DropTable(
                 name: "Regions");
+
+            migrationBuilder.DropSequence(
+                name: "RegistrationReferenceSequence");
         }
     }
 }
