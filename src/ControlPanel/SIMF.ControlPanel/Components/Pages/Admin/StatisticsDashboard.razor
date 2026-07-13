@@ -34,27 +34,38 @@
                as RatingsList). *@
             <div class="simf-form__actions">
                 <SimfStatCard Title="@L["Admin.Statistics.Stat.TotalAttendees"]"
-                              Value="@Count(_dashboard.TotalAttendees)" />
+                              Value="@Count(_dashboard.TotalAttendees)"
+                              Href="/admin/attendees" />
                 <SimfStatCard Title="@L["Admin.Statistics.Stat.ApprovedAttendees"]"
-                              Value="@Count(_dashboard.ApprovedAttendees)" />
+                              Value="@Count(_dashboard.ApprovedAttendees)"
+                              Href="/admin/attendees" />
                 <SimfStatCard Title="@L["Admin.Statistics.Stat.PendingApprovals"]"
-                              Value="@Count(_dashboard.PendingApprovals)" />
+                              Value="@Count(_dashboard.PendingApprovals)"
+                              Href="/admin/visitors/pending" />
                 <SimfStatCard Title="@L["Admin.Statistics.Stat.Sessions"]"
-                              Value="@Count(_dashboard.Sessions)" />
+                              Value="@Count(_dashboard.Sessions)"
+                              Href="/admin/sessions" />
                 <SimfStatCard Title="@L["Admin.Statistics.Stat.Speakers"]"
-                              Value="@Count(_dashboard.Speakers)" />
+                              Value="@Count(_dashboard.Speakers)"
+                              Href="/admin/speakers" />
                 <SimfStatCard Title="@L["Admin.Statistics.Stat.Booths"]"
-                              Value="@Count(_dashboard.Booths)" />
+                              Value="@Count(_dashboard.Booths)"
+                              Href="/admin/booths" />
                 <SimfStatCard Title="@L["Admin.Statistics.Stat.Sponsors"]"
-                              Value="@Count(_dashboard.Sponsors)" />
+                              Value="@Count(_dashboard.Sponsors)"
+                              Href="/admin/sponsors" />
                 <SimfStatCard Title="@L["Admin.Statistics.Stat.NewsArticles"]"
-                              Value="@Count(_dashboard.NewsArticles)" />
+                              Value="@Count(_dashboard.NewsArticles)"
+                              Href="/admin/news" />
                 <SimfStatCard Title="@L["Admin.Statistics.Stat.MediaItems"]"
-                              Value="@Count(_dashboard.MediaItems)" />
+                              Value="@Count(_dashboard.MediaItems)"
+                              Href="/admin/media-library" />
                 <SimfStatCard Title="@L["Admin.Statistics.Stat.RatingsCount"]"
-                              Value="@Count(_dashboard.RatingsCount)" />
+                              Value="@Count(_dashboard.RatingsCount)"
+                              Href="/admin/ratings" />
                 <SimfStatCard Title="@L["Admin.Statistics.Stat.AverageRating"]"
-                              Value="@_dashboard.AverageRating.ToString("0.0", CultureInfo.InvariantCulture)" />
+                              Value="@_dashboard.AverageRating.ToString("0.0", CultureInfo.InvariantCulture)"
+                              Href="/admin/ratings" />
             </div>
         }
     </div>

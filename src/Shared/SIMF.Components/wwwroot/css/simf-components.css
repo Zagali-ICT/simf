@@ -2039,6 +2039,26 @@ body.simf-modal-open { overflow: hidden; }
 .simf-stat__delta--negative { color: var(--color-error); }
 .simf-stat__delta--neutral { color: var(--color-text-muted); }
 
+/* -- Clickable stat card (dashboard nav tiles) ----------------------------- */
+.simf-stat--clickable {
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color var(--transition-fast),
+              box-shadow var(--transition-fast);
+}
+.simf-stat--clickable:hover {
+  border-color: var(--color-accent);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.simf-stat--clickable:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+.simf-stat--clickable:active {
+  transform: translateY(1px);
+}
+
 /* -- Forced Colors / High Contrast Mode (D-045 H2) -------------------------
    In Windows Forced Colors Mode, `box-shadow` is suppressed and the
    browser repaints `outline` in the system color. Our focus ring is a
