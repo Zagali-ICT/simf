@@ -257,6 +257,30 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Respond_with_an_over_length_response_note_is_400_not_a_false_slot_conflict()
+    {
+        // #9 regression — ResponseNote maps to nvarchar(2000). A note longer than
+        // 2000 chars must be rejected up front as a clean 400 validation error, NOT
+        // fall through to SaveChanges and surface as a misleading "That slot is no
+        // longer available." 409 (the DbUpdateException-masking-truncation bug).
+        var speaker = await SeedSpeakerAsync(allowsMeetings: true);
+        var visitor = await SignInApprovedVisitorAsync();
+        var created = await SubmitAsync(speaker.Id, "Visitor", "Topic", visitor);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var respond = await PutAuthAsync(
+            $"/api/v1/admin/speaker-meeting-requests/{created.Id}/respond",
+            new RespondToSpeakerMeetingRequestRequest
+            {
+                Status = MeetingRequestStatus.Rejected,
+                ResponseNote = new string('x', 2001),
+            }, admin);
+        Assert.Equal(HttpStatusCode.BadRequest, respond.StatusCode);
+        var body = (await respond.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SpeakerMeetingRequestInvalid, body.Error!.Code);
+    }
+
+    [Fact]
     public async Task Responding_with_Cancelled_status_is_400()
     {
         // A1 (review) — only Accepted/Rejected are valid responses; Cancelled (a
@@ -406,6 +430,41 @@ public sealed class SpeakerMeetingRequestsTests : IClassFixture<SimfApiFactory>
         // R2 is a pending VIP-style request for the SAME speaker + overlapping slot.
         var r2 = await SeedSpeakerRequestAsync(
             speaker.Id, MeetingRequestStatus.Pending, slotStart, slotEnd);
+
+        var respond = await PutAuthAsync(
+            $"/api/v1/admin/speaker-meeting-requests/{r2}/respond",
+            new RespondToSpeakerMeetingRequestRequest { Status = MeetingRequestStatus.Accepted },
+            admin);
+        Assert.Equal(HttpStatusCode.Conflict, respond.StatusCode);
+        var body = (await respond.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SpeakerMeetingRequestInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Accepting_a_slot_that_overlaps_a_different_start_meeting_the_speaker_already_holds_is_409()
+    {
+        // R-1 FIX #22 regression — the speaker double-book re-check must reject an
+        // overlap even when the two slots START at DIFFERENT times. The frozen
+        // (SpeakerId, SlotStartUtc) unique index can only catch an equal-start
+        // collision, so for two staggered overlapping windows (e.g. 10:00-11:00 vs
+        // 10:30-11:30) the half-open interval re-check in the accept path
+        // (SpeakerHasOverlappingMeetingAsync) is the sole backstop. Both rows carry
+        // distinct requesters, so it is the SPEAKER overlap guard — not the M-7
+        // requester guard — that fires.
+        var speaker = await SeedSpeakerAsync(allowsMeetings: true);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var baseStart = new DateTimeOffset(2031, 8, 1, 10, 0, 0, TimeSpan.Zero);
+
+        // R1 already holds the speaker's 10:00-11:00 slot as a live Accepted meeting.
+        await SeedSpeakerRequestAsync(
+            speaker.Id, MeetingRequestStatus.Accepted,
+            baseStart, baseStart.AddHours(1));
+        // R2 is a Pending request for a DIFFERENT start (10:30-11:30) that overlaps
+        // R1 by 30 minutes — different SlotStartUtc, so the DB index cannot catch it.
+        var r2 = await SeedSpeakerRequestAsync(
+            speaker.Id, MeetingRequestStatus.Pending,
+            baseStart.AddMinutes(30), baseStart.AddMinutes(90));
 
         var respond = await PutAuthAsync(
             $"/api/v1/admin/speaker-meeting-requests/{r2}/respond",

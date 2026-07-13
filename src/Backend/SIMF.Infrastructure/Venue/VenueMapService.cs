@@ -238,6 +238,17 @@ internal sealed class VenueMapService(
     private static void EnsureKindMatchesReferences(
         VenueMapNodeKind kind, Guid? hallId, Guid? boothId)
     {
+        // #25 — reject an out-of-range Kind (e.g. a direct API call sending an
+        // undefined enum value) before it persists: the DB has no enum-range check,
+        // only the weak arc below, so an unreferenced node would otherwise store it.
+        if (!Enum.IsDefined(kind))
+        {
+            throw new ApiException(
+                ErrorCodes.VenueMapNodeInvalid, 400,
+                "The venue-map node kind is not a recognised value.",
+                "نوع عقدة الخريطة غير معروف.");
+        }
+
         var invalid =
             (hallId is not null && kind != VenueMapNodeKind.Hall)
             || (boothId is not null && kind != VenueMapNodeKind.Booth)

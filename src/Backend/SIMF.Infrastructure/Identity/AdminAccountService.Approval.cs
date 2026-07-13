@@ -68,10 +68,21 @@ internal sealed partial class AdminAccountService
             assignedProfileTypeId = chosenTypeId;
         }
 
-        await accounts.UpdateAsync(subject).EnsureSuccessAsync();
-        // D-167: UserProfile lives on App DB; save it separately from
-        // the Identity-side user-state flip.
+        // FIX #4 (R-1 data-integrity) — cross-DB ordering under D-157 (there is
+        // NO distributed transaction spanning the two databases). Persist the
+        // App-DB unit of work (the minted QR + the cleared rejection text +
+        // the optional tier) FIRST, then flip the Identity account to Approved.
+        // A transient App-save failure now leaves the account PendingApproval
+        // — retryable, because the approve path re-runs and MintIfMissingAsync
+        // is idempotent — instead of orphaning an Approved visitor with no QR
+        // (which LoadPendingSubjectAsync would then 409 on every retry, leaving
+        // the visitor permanently un-scannable). The reverse window (a minted
+        // QR on a still-Pending account) is fail-closed: a gate scan denies it
+        // as HolderNotApproved (GateOperatorService), so it grants no access.
+        // D-167: UserProfile lives on the App DB, saved separately from the
+        // Identity-side user-state flip.
         await appDbContext.SaveChangesAsync(cancellationToken);
+        await accounts.UpdateAsync(subject).EnsureSuccessAsync();
         await dbContext.SaveChangesAsync(cancellationToken);
 
         // P10 — revoke every refresh token so the subject's next API

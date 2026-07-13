@@ -383,6 +383,50 @@ public sealed class PublicBoothsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.NotFound, detailResponse.StatusCode);
     }
 
+    // #16 — deactivating an exhibitor must hide its still-active booths from the
+    // public read: the soft-deleted exhibitor's live data must not surface, and the
+    // booth is excluded from both the list and the detail.
+    [Fact]
+    public async Task Booth_linked_to_an_inactive_exhibitor_is_absent_from_public_list_and_detail()
+    {
+        var exhibitorId = Guid.NewGuid();
+        var boothId = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        var code = NewCode();
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            // A soft-deleted (IsActive=false) exhibitor whose booth is still active.
+            db.Set<Exhibitor>().Add(new Exhibitor
+            {
+                Id = exhibitorId,
+                Name = "Retired Exhibitor",
+                NameArabic = "عارض منسحب",
+                IsActive = false,
+                CreatedAt = now,
+            });
+            db.Set<Booth>().Add(new Booth
+            {
+                Id = boothId,
+                Code = code,
+                Name = "Orphan Booth",
+                NameArabic = "جناح يتيم",
+                ExhibitorId = exhibitorId,
+                IsActive = true,
+                CreatedAt = now,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var rows = (await (await _client.GetAsync("/api/v1/app/booths"))
+            .Content.ReadFromJsonAsync<ApiResult<IReadOnlyList<PublicBoothSummary>>>())!.Data!;
+        Assert.DoesNotContain(rows, b => b.Id == boothId);
+
+        var detail = await _client.GetAsync($"/api/v1/app/booths/{boothId}");
+        Assert.Equal(HttpStatusCode.NotFound, detail.StatusCode);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     private static string NewCode() => "B-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant();

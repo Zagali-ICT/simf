@@ -117,6 +117,56 @@ public sealed class RecoveryCodesTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Wrong_recovery_codes_do_not_lock_the_account()
+    {
+        // Regression (Round-1 audit #17): a wrong recovery code must be bounded by
+        // the sign-in ticket's attempt budget only — like a wrong TOTP or email OTP —
+        // and must NOT escalate to a full account lockout, or a user mistyping their
+        // emergency fallback locks themselves out of it. Five wrong codes reaches the
+        // account lockout threshold (MaxFailedAccessAttempts) under the old behaviour.
+        var enrolled = await EnrolAsync();
+
+        for (var i = 0; i < 5; i++)
+        {
+            // A fresh ticket per attempt so the per-ticket 5-strike cap does not
+            // trip before the account-level lockout under test could.
+            var sign = await _client.PostAsJsonAsync(
+                "/api/v1/app/auth/sign-in",
+                new SignInRequest { Email = enrolled.Email, Password = AuthFlow.Password });
+            Assert.Equal(HttpStatusCode.OK, sign.StatusCode);
+            var challenge =
+                (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!.Data!;
+            var verify = await _client.PostAsJsonAsync(
+                "/api/v1/app/auth/verify-recovery-code",
+                new VerifyRecoveryCodeRequest
+                {
+                    MfaToken = challenge.MfaToken!,
+                    Code = "AAAAA-AAAAA",
+                });
+            Assert.Equal(HttpStatusCode.BadRequest, verify.StatusCode);
+        }
+
+        // The account must NOT be locked: a fresh sign-in still returns a 2FA
+        // challenge (not 423 AuthAccountLocked), and a real recovery code completes it.
+        var reSign = await _client.PostAsJsonAsync(
+            "/api/v1/app/auth/sign-in",
+            new SignInRequest { Email = enrolled.Email, Password = AuthFlow.Password });
+        Assert.Equal(HttpStatusCode.OK, reSign.StatusCode);
+        var reChallenge =
+            (await reSign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!.Data!;
+        Assert.NotNull(reChallenge.MfaToken);
+
+        var complete = await _client.PostAsJsonAsync(
+            "/api/v1/app/auth/verify-recovery-code",
+            new VerifyRecoveryCodeRequest
+            {
+                MfaToken = reChallenge.MfaToken!,
+                Code = enrolled.Codes[0],
+            });
+        Assert.Equal(HttpStatusCode.OK, complete.StatusCode);
+    }
+
+    [Fact]
     public async Task Regenerate_invalidates_the_old_batch()
     {
         var enrolled = await EnrolAsync();

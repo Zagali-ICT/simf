@@ -759,6 +759,85 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
         Assert.NotNull(reservation.ReleasedAt);
     }
 
+    // #7 — clearing the override to null must NOT bypass the oversell guard.
+    // Effective capacity falls back to Hall.Capacity, so a null override that
+    // drops below the seats already held must still 409, not silently oversell.
+    [Fact]
+    public async Task UpdateAsync_ClearCapacityOverrideBelowHeldSeats_ReturnsConflict()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hall = await SeedHallAsync(capacity: 2);
+
+        // Create with an override well above the hall (allowed — per-session expansion).
+        var createResponse = await PostAuthAsync(
+            "/api/v1/admin/sessions",
+            new AdminCreateSessionRequest
+            {
+                Code = NewCode(),
+                Title = "Expanded room", TitleArabic = "قاعة موسّعة",
+                HallId = hall.Id,
+                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
+                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                CapacityOverride = 20,
+            },
+            token);
+        Assert.Equal(HttpStatusCode.OK, createResponse.StatusCode);
+        var created = (await createResponse.Content
+            .ReadFromJsonAsync<ApiResult<AdminSessionDetail>>())!.Data!;
+
+        // Hold 3 seats — above the hall's 2 but below the 20 override.
+        await SeedReservationAsync(
+            created.Id, await SeedApprovedVisitorUserAsync(), "A", 1, BookingStatus.Approved);
+        await SeedReservationAsync(
+            created.Id, await SeedApprovedVisitorUserAsync(), "A", 2, BookingStatus.Approved);
+        await SeedReservationAsync(
+            created.Id, reservedForUserId: null, "A", 3, BookingStatus.Approved);
+
+        // Same hall + window, but CLEAR the override → effective drops to 2 < 3 held.
+        var update = await PutAuthAsync(
+            $"/api/v1/admin/sessions/{created.Id}",
+            new AdminUpdateSessionRequest
+            {
+                Code = created.Code,
+                Title = created.Title,
+                TitleArabic = created.TitleArabic,
+                HallId = created.HallId,
+                StartUtc = created.StartUtc,
+                EndUtc = created.EndUtc,
+                CapacityOverride = null,
+                IsActive = created.IsActive,
+            },
+            token);
+        Assert.Equal(HttpStatusCode.Conflict, update.StatusCode);
+        var body = (await update.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SessionCapacityBelowBookings, body.Error!.Code);
+    }
+
+    // #19 — an over-length Description (EF caps the column at nvarchar(2048)) must
+    // return a clean 400 validation error, never a SaveChanges truncation 500.
+    [Fact]
+    public async Task CreateAsync_OverLengthDescription_ReturnsValidationError()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hall = await SeedHallAsync(capacity: 10);
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/sessions",
+            new AdminCreateSessionRequest
+            {
+                Code = NewCode(),
+                Title = "Over-length abstract", TitleArabic = "ملخّص طويل",
+                HallId = hall.Id,
+                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
+                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                Description = new string('x', 2049),
+            },
+            token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SessionInvalid, body.Error!.Code);
+    }
+
     // -- S-2: same-hall time-overlap guard ------------------------------------
 
     [Fact]

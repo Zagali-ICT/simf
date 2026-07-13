@@ -452,10 +452,34 @@ internal sealed class AdminArchiveService(
             }).ToList());
 
     // D-432 — build the child entities from the editable inputs, skipping blank
-    // rows and re-deriving DisplayOrder from the submitted order. Lengths are
-    // enforced by the EF columns + the CP MaxLength.
+    // rows and re-deriving DisplayOrder from the submitted order. Child string
+    // lengths are enforced server-side by RequireChildLength/ChildLengthOrNull
+    // below (the CP MaxLength is only a client-side hint; the admin API can be
+    // POSTed directly).
     private static string? NullIfBlank(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    // R1 audit (#27) — the gallery / session-title / past-speaker columns carry
+    // EF HasMaxLength limits (ArchiveDetailConfigurations) that neither Validate()
+    // nor the FluentValidation validators covered, so an over-length child string
+    // reached SQL Server as a truncation 500. Guard them here — the one point both
+    // Create and Update materialise the child rows — throwing the same clean
+    // bilingual 400 (archive_edition_invalid) the top-level Validate() uses.
+    private static string RequireChildLength(
+        string value, int maxLength, string fieldEn, string fieldAr)
+    {
+        if (value.Length > maxLength)
+        {
+            throw new ApiException(ErrorCodes.ArchiveEditionInvalid, 400,
+                $"{fieldEn} must be {maxLength} characters or fewer.",
+                $"يجب ألا يتجاوز {fieldAr} {maxLength} حرفاً.");
+        }
+        return value;
+    }
+
+    private static string? ChildLengthOrNull(
+        string? value, int maxLength, string fieldEn, string fieldAr) =>
+        value is null ? null : RequireChildLength(value, maxLength, fieldEn, fieldAr);
 
     private static List<ArchiveMediaItem> BuildMedia(
         IEnumerable<ArchiveMediaItemInput>? inputs)
@@ -468,9 +492,12 @@ internal sealed class AdminArchiveService(
                 Kind = Enum.IsDefined(typeof(ArchiveMediaKind), i.Kind)
                     ? (ArchiveMediaKind)i.Kind
                     : ArchiveMediaKind.Image,
-                Url = i.Url.Trim(),
-                CaptionEn = NullIfBlank(i.CaptionEn),
-                CaptionAr = NullIfBlank(i.CaptionAr),
+                Url = RequireChildLength(i.Url.Trim(), 512,
+                    "Gallery item URL", "رابط عنصر المعرض"),
+                CaptionEn = ChildLengthOrNull(NullIfBlank(i.CaptionEn), 256,
+                    "Gallery caption", "تعليق المعرض"),
+                CaptionAr = ChildLengthOrNull(NullIfBlank(i.CaptionAr), 256,
+                    "Gallery caption", "تعليق المعرض"),
                 DisplayOrder = order++,
             })
             .ToList();
@@ -485,8 +512,10 @@ internal sealed class AdminArchiveService(
                      || !string.IsNullOrWhiteSpace(i.TitleEn))
             .Select(i => new ArchiveSessionTitle
             {
-                TitleEn = (i.TitleEn ?? string.Empty).Trim(),
-                TitleAr = (i.TitleAr ?? string.Empty).Trim(),
+                TitleEn = RequireChildLength((i.TitleEn ?? string.Empty).Trim(), 200,
+                    "Session title", "عنوان الجلسة"),
+                TitleAr = RequireChildLength((i.TitleAr ?? string.Empty).Trim(), 200,
+                    "Session title", "عنوان الجلسة"),
                 DisplayOrder = order++,
             })
             .ToList();
@@ -502,9 +531,12 @@ internal sealed class AdminArchiveService(
                      || !string.IsNullOrWhiteSpace(i.NameEn))
             .Select(i => new ArchivePastSpeaker
             {
-                NameEn = (i.NameEn ?? string.Empty).Trim(),
-                NameAr = (i.NameAr ?? string.Empty).Trim(),
-                PhotoRelativePath = NullIfBlank(i.PhotoRelativePath),
+                NameEn = RequireChildLength((i.NameEn ?? string.Empty).Trim(), 128,
+                    "Past speaker name", "اسم المتحدث السابق"),
+                NameAr = RequireChildLength((i.NameAr ?? string.Empty).Trim(), 128,
+                    "Past speaker name", "اسم المتحدث السابق"),
+                PhotoRelativePath = ChildLengthOrNull(NullIfBlank(i.PhotoRelativePath), 256,
+                    "Past speaker photo path", "مسار صورة المتحدث السابق"),
                 // D-456 — drop an unknown/typo'd country code to null (the CP
                 // editor is free-text; an unmatched id would otherwise hit the
                 // Country FK as a 500). Matches the app's "unknown code = no flag".

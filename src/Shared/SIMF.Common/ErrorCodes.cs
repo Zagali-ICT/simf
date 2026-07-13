@@ -190,6 +190,9 @@ public static class ErrorCodes
     public const string BoothInvalid = "BOOTH_INVALID";
     public const string BoothNotFound = "BOOTH_NOT_FOUND";
     public const string BoothCodeDuplicate = "BOOTH_CODE_DUPLICATE";
+    // #26 — a booth still marked by an active venue-map node cannot be
+    // deactivated (the map node would orphan). Mirrors ContactInUse.
+    public const string BoothInUse = "BOOTH_IN_USE";
 
     // News (D-199 — PR / marketing news, Mockup. Promoted from
     // AdminNewsService module-local consts; string values are the wire

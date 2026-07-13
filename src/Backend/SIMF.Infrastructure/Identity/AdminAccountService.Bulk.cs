@@ -1,3 +1,4 @@
+// Tests: SIMF.Api.Tests/DelegatesAndBulkBadgesTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -863,6 +864,15 @@ internal sealed partial class AdminAccountService
 
         var now = timeProvider.GetUtcNow();
         var created = 0;
+
+        // Pre-validate EVERY batch's profile type BEFORE creating any account, so an
+        // invalid later batch is a clean 400 with nothing persisted (mirrors the
+        // up-front empty / cap checks above). Without this pass an invalid Nth batch
+        // would 400 while earlier batches' Approved badges were already committed —
+        // and a 4xx must have no side effects (SIMF-API-001). No cross-DB transaction
+        // (D-157): this only reads the App DB up front; nothing is written until every
+        // batch has passed.
+        var plan = new List<(BulkBadgeBatch Batch, UserProfileType ProfileType)>(batches.Count);
         foreach (var batch in batches)
         {
             var profileType = await appDbContext.ProfileTypes
@@ -884,6 +894,11 @@ internal sealed partial class AdminAccountService
                     "توليد الشارات بالجملة متاح فقط لأنواع ملفات الجمهور (الزوار).");
             }
 
+            plan.Add((batch, profileType));
+        }
+
+        foreach (var (batch, profileType) in plan)
+        {
             // NOTE: each badge writes a SimfUser (Identity DB) then its UserProfile
             // (App DB) with no distributed transaction (D-157). A mid-loop failure
             // can leave the last user without a profile — the established walk-in

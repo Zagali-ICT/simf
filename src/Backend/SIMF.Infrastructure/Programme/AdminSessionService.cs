@@ -135,6 +135,10 @@ internal sealed class AdminSessionService(
         ValidateTimeWindow(request.StartUtc, request.EndUtc);
         ValidateCapacity(request.CapacityOverride);
         ValidateLiveUrls(request.LiveStreamUrl, request.LiveSignLanguageUrl);
+        ValidateTextLengths(
+            request.Description, request.DescriptionArabic,
+            request.LiveCaptions, request.LiveCaptionsArabic,
+            request.LiveStreamUrl, request.LiveSignLanguageUrl);
 
         var hall = await ResolveHallAsync(request.HallId, cancellationToken);
         await EnsureSpeakersExistAsync(request.Speakers, cancellationToken);
@@ -239,6 +243,10 @@ internal sealed class AdminSessionService(
         ValidateTimeWindow(request.StartUtc, request.EndUtc);
         ValidateCapacity(request.CapacityOverride);
         ValidateLiveUrls(request.LiveStreamUrl, request.LiveSignLanguageUrl);
+        ValidateTextLengths(
+            request.Description, request.DescriptionArabic,
+            request.LiveCaptions, request.LiveCaptionsArabic,
+            request.LiveStreamUrl, request.LiveSignLanguageUrl);
 
         var hall = await ResolveHallAsync(request.HallId, cancellationToken);
         await EnsureSpeakersExistAsync(request.Speakers, cancellationToken);
@@ -272,20 +280,25 @@ internal sealed class AdminSessionService(
 
         // S-1 — never shrink the effective capacity below the seats already held
         // (visitor bookings + admin row-blocks), which would silently oversell.
-        // Skipped when the hall or time is changing, because that path
-        // cascade-releases every held seat anyway (verify correction).
-        if (!(hallChanged || timeChanged) && request.CapacityOverride is { } capacityOverride)
+        // Effective capacity = CapacityOverride ?? Hall.Capacity, so CLEARING the
+        // override to null lowers it exactly like reducing it (#7 — a null override
+        // must not bypass this guard); resolve the effective value and check that,
+        // never just the non-null override. Skipped when the hall or time is
+        // changing, because that path cascade-releases every held seat anyway
+        // (verify correction).
+        if (!(hallChanged || timeChanged))
         {
+            var effectiveCapacity = request.CapacityOverride ?? hall.Capacity;
             var heldSeatCount = await dbContext.SeatReservations
                 .CountAsync(reservation =>
                     reservation.SessionId == id && reservation.ReleasedAt == null,
                     cancellationToken);
-            if (capacityOverride < heldSeatCount)
+            if (effectiveCapacity < heldSeatCount)
             {
                 throw new ApiException(
                     ErrorCodes.SessionCapacityBelowBookings, 409,
-                    $"Capacity override ({capacityOverride}) is below the {heldSeatCount} seat(s) already held.",
-                    $"السعة المخصصة ({capacityOverride}) أقل من {heldSeatCount} مقعد محجوز بالفعل.");
+                    $"The effective capacity ({effectiveCapacity}) is below the {heldSeatCount} seat(s) already held.",
+                    $"السعة الفعّالة ({effectiveCapacity}) أقل من {heldSeatCount} مقعد محجوز بالفعل.");
             }
         }
 
@@ -704,6 +717,48 @@ internal sealed class AdminSessionService(
     private static void ValidateLiveUrl(string? url, string englishMessage, string arabicMessage)
     {
         if (!string.IsNullOrWhiteSpace(url) && !LiveStreamUrlPolicy.IsAllowed(url))
+        {
+            throw new ApiException(
+                ErrorCodes.SessionInvalid, 400, englishMessage, arabicMessage);
+        }
+    }
+
+    // §7 (validation triple-lock) — the free-text + live-feed fields carry EF
+    // column caps (SessionConfiguration: Description / DescriptionArabic /
+    // LiveCaptions / LiveCaptionsArabic = nvarchar(2048); LiveStreamUrl /
+    // LiveSignLanguageUrl = nvarchar(1024)). Enforce those caps here so
+    // over-length input returns a clean 400 instead of a SaveChanges
+    // "string or binary data would be truncated" 500 (#19). Measured on the
+    // trimmed value actually persisted by NullIfBlank, mirroring AdminHallService.
+    private static void ValidateTextLengths(
+        string? description, string? descriptionArabic,
+        string? liveCaptions, string? liveCaptionsArabic,
+        string? liveStreamUrl, string? liveSignLanguageUrl)
+    {
+        EnsureMaxLength(description, 2048,
+            "The session description must be 2048 characters or fewer.",
+            "يجب أن يكون وصف الجلسة 2048 حرفاً أو أقل.");
+        EnsureMaxLength(descriptionArabic, 2048,
+            "The Arabic session description must be 2048 characters or fewer.",
+            "يجب أن يكون الوصف العربي للجلسة 2048 حرفاً أو أقل.");
+        EnsureMaxLength(liveCaptions, 2048,
+            "The live captions must be 2048 characters or fewer.",
+            "يجب أن تكون التسميات التوضيحية للبث المباشر 2048 حرفاً أو أقل.");
+        EnsureMaxLength(liveCaptionsArabic, 2048,
+            "The Arabic live captions must be 2048 characters or fewer.",
+            "يجب أن تكون التسميات التوضيحية العربية للبث المباشر 2048 حرفاً أو أقل.");
+        EnsureMaxLength(liveStreamUrl, 1024,
+            "The live stream URL must be 1024 characters or fewer.",
+            "يجب أن يكون رابط البث المباشر 1024 حرفاً أو أقل.");
+        EnsureMaxLength(liveSignLanguageUrl, 1024,
+            "The sign-language stream URL must be 1024 characters or fewer.",
+            "يجب أن يكون رابط بث لغة الإشارة 1024 حرفاً أو أقل.");
+    }
+
+    private static void EnsureMaxLength(
+        string? value, int maxLength, string englishMessage, string arabicMessage)
+    {
+        if (value is not null && value.Trim().Length > maxLength)
         {
             throw new ApiException(
                 ErrorCodes.SessionInvalid, 400, englishMessage, arabicMessage);

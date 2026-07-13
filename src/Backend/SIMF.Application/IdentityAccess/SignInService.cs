@@ -337,9 +337,14 @@ public sealed class SignInService(
             user.Id, request.Code, cancellationToken);
         if (!accepted)
         {
+            // Round-1 audit #17 — a wrong recovery code is bounded by the ticket's
+            // MaxSecondFactorAttempts only (matching the wrong-TOTP path at
+            // VerifyTotpAsync and the wrong-OTP path at VerifyOtpAsync above); it must
+            // NOT also drive the account-level lockout counter, or a user mistyping
+            // their emergency fallback would lock themselves out of the very fallback
+            // they depend on.
             await secondFactorTokenRepository.IncrementAttemptCountAsync(
                 ticket.Id, cancellationToken);
-            await accounts.AccessFailedAsync(user);
             await AuditAsync(AuditEvents.TotpRecoveryCodeFailed, AuditOutcome.Failure,
                 user.Email!, user.Id, ErrorCodes.AuthRecoveryCodeInvalid,
                 cancellationToken: cancellationToken);

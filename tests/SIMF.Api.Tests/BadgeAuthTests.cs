@@ -155,7 +155,70 @@ public sealed class BadgeAuthTests : IClassFixture<SimfApiFactory>
         Assert.False(await users.HasPasswordAsync(user!));
     }
 
+    [Fact]
+    public async Task Activation_wrong_code_leaves_placeholder_email_unchanged_and_badge_still_activatable()
+    {
+        // Regression (verify-then-attach): a bad code at confirm must NOT have
+        // rebound the account email at the start step, so a single typo can never
+        // brick / pre-empt a placeholder badge's self-activation.
+        var (userId, qrId) = await CreateApprovedVisitorAsync(withPassword: false, email: null);
+        var placeholderEmail = await UserEmailAsync(userId);
+        Assert.NotNull(placeholderEmail);
+        Assert.EndsWith("@simf.local", placeholderEmail!);
+
+        var realEmail = $"real-{Guid.NewGuid():N}@example.com";
+
+        // Start: the holder enters their real email. The server stashes it as
+        // pending and must NOT rebind the account email before the code is verified.
+        var start = await _client.PostAsJsonAsync(
+            "/api/v1/app/auth/badge-activation/start",
+            new BadgeActivationStartRequest { QrId = qrId, Email = realEmail });
+        Assert.Equal(HttpStatusCode.OK, start.StatusCode);
+
+        // A wrong code at confirm is rejected — and the placeholder email is
+        // untouched (the badge is not bricked and stays activatable).
+        var wrong = await _client.PostAsJsonAsync(
+            "/api/v1/app/auth/badge-activation/complete",
+            new BadgeActivationCompleteRequest
+            {
+                QrId = qrId, Code = "000000", NewPassword = Password, ConfirmPassword = Password,
+            });
+        Assert.Equal(HttpStatusCode.BadRequest, wrong.StatusCode);
+        Assert.Equal(placeholderEmail, await UserEmailAsync(userId));
+        Assert.False(await HasPasswordAsync(userId));
+
+        // The badge is still activatable: the correct code completes and only NOW
+        // attaches the entered email.
+        var code = await LatestActivationCodeAsync(userId);
+        Assert.NotNull(code);
+        var complete = await _client.PostAsJsonAsync(
+            "/api/v1/app/auth/badge-activation/complete",
+            new BadgeActivationCompleteRequest
+            {
+                QrId = qrId, Code = code!, NewPassword = Password, ConfirmPassword = Password,
+            });
+        Assert.Equal(HttpStatusCode.OK, complete.StatusCode);
+        Assert.Equal(realEmail, await UserEmailAsync(userId));
+        Assert.True(await HasPasswordAsync(userId));
+    }
+
     // -- Helpers --------------------------------------------------------------
+
+    private async Task<string?> UserEmailAsync(Guid userId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var user = await users.FindByIdAsync(userId.ToString());
+        return user?.Email;
+    }
+
+    private async Task<bool> HasPasswordAsync(Guid userId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var user = await users.FindByIdAsync(userId.ToString());
+        return user is not null && await users.HasPasswordAsync(user);
+    }
 
     private async Task<ResolveBadgeResponse> ResolveAsync(string qrId)
     {

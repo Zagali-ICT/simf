@@ -5,9 +5,12 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using SIMF.Api.Endpoints.Admin;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
@@ -69,6 +72,117 @@ public sealed class PermissionEnforcementTests : IClassFixture<SimfApiFactory>
         var denied = await PostAuthAsync("/api/v1/admin/sessions/list", new GridQuery(), token);
         Assert.Equal(HttpStatusCode.Forbidden, denied.StatusCode);
     }
+
+    // Issue-29 — the build-time guard the CLAUDE.md HARD RULE promises but the
+    // three behavioural [Fact]s above do not provide: they spot-check two
+    // hardcoded routes, so a NEW admin endpoint that forgets its gate ships
+    // undetected. This reflection sweep enumerates EVERY mapped route under the
+    // /admin/ surface and fails the build if any one is not both permission-gated
+    // and approval-gated — "treat a missing permission as a security defect".
+    //
+    // Scope is by ROUTE (/admin/*), not by the Endpoints/Admin namespace, on
+    // purpose: ~90 admin endpoints live outside that folder (Archive, Exhibitors,
+    // BusinessMeetings, Attendance, ...), and the app-facing pickers that live
+    // *inside* it route under /app/* — so the /admin/ route, not the folder, is
+    // the true admin-surface boundary the rule is about.
+    //
+    // Reads the runtime authorization the middleware actually enforces
+    // (IAuthorizeData policy names on the mapped endpoint), so it cannot drift
+    // from what Configure() declared.
+    [Fact]
+    public void Every_admin_endpoint_is_permission_and_approval_gated()
+    {
+        var adminEndpoints = _factory.Services
+            .GetServices<EndpointDataSource>()
+            .SelectMany(source => source.Endpoints)
+            .OfType<RouteEndpoint>()
+            .Distinct()
+            .Where(endpoint => AdminPath(endpoint) is not null)
+            .ToList();
+
+        // A reflection sweep that matches nothing passes silently — worse than
+        // useless. The admin surface is several hundred mapped routes; guard
+        // against a future change (route-prefix rename, data-source move) that
+        // would make this test vacuously green.
+        Assert.True(adminEndpoints.Count > 100,
+            $"Expected the full admin endpoint surface but only matched {adminEndpoints.Count} routes " +
+            "— the enumeration is probably broken, not the gates.");
+
+        var ungated = new List<string>();
+        foreach (var endpoint in adminEndpoints)
+        {
+            var path = AdminPath(endpoint)!;
+            var method = endpoint.Metadata.GetMetadata<HttpMethodMetadata>()?
+                .HttpMethods.FirstOrDefault() ?? "?";
+            var policies = endpoint.Metadata
+                .GetOrderedMetadata<IAuthorizeData>()
+                .Select(data => data.Policy)
+                .Where(policy => !string.IsNullOrEmpty(policy))
+                .Select(policy => policy!)
+                .ToList();
+
+            if (endpoint.Metadata.GetMetadata<IAllowAnonymous>() is not null)
+            {
+                ungated.Add($"{method} {path} — is AllowAnonymous; an admin endpoint must be authenticated.");
+                continue;
+            }
+
+            if (!policies.Contains(AuthorizationPolicies.RequireApprovedAccount))
+            {
+                ungated.Add($"{method} {path} — missing the RequireApprovedAccount gate. " +
+                    $"Declared policies: [{string.Join(", ", policies)}].");
+            }
+
+            // The /admin/assets/* endpoints declare RequireApprovedAccount and then
+            // enforce a *dynamic* per-{category} permission imperatively in the
+            // handler (AssetAuth.Has(User, AssetPermissionRegistry.For(category)…)),
+            // so a static Policies(PolicyFor(...)) gate is impossible for them.
+            // They are still authenticated + approval-gated + permission-checked,
+            // just not declaratively — the sole documented carve-out from the
+            // permission-policy requirement (see AssetEndpoints.cs).
+            var imperativelyGated = path.Contains("/admin/assets/", StringComparison.OrdinalIgnoreCase);
+            if (!imperativelyGated && !policies.Any(IsPermissionOrRoleGate))
+            {
+                ungated.Add($"{method} {path} — missing a permission gate " +
+                    "(PermissionCatalog.PolicyFor(...) or a named role policy). " +
+                    $"Declared policies: [{string.Join(", ", policies)}]. " +
+                    "RequireApprovedAccount alone lets EVERY approved admin in.");
+            }
+        }
+
+        Assert.True(ungated.Count == 0,
+            "These admin endpoints are not fully gated. Add " +
+            "Policies(PermissionCatalog.PolicyFor(PermissionCatalog.X.Y), " +
+            "nameof(AuthorizationPolicies.RequireApprovedAccount)) to each Configure():" +
+            Environment.NewLine + string.Join(Environment.NewLine, ungated));
+    }
+
+    // The normalised "/admin/…" path for an admin-surface endpoint, or null when
+    // the route is not under the admin surface (e.g. an /app/* picker that lives
+    // in the Endpoints/Admin folder).
+    private static string? AdminPath(RouteEndpoint endpoint)
+    {
+        var raw = endpoint.RoutePattern.RawText;
+        if (string.IsNullOrEmpty(raw))
+        {
+            return null;
+        }
+
+        var path = "/" + raw.TrimStart('/');
+        return path.Contains("/admin/", StringComparison.OrdinalIgnoreCase) ? path : null;
+    }
+
+    // A policy name that gates by permission (perm:<code>) or by one of the named
+    // role policies — either keeps the endpoint out of reach of an admin who
+    // holds no matching role. RequireApprovedAccount is deliberately NOT counted:
+    // every approved admin satisfies it, so on its own it is not a permission gate.
+    private static bool IsPermissionOrRoleGate(string policy) =>
+        PermissionCatalog.IsPermissionPolicy(policy)
+        || policy is AuthorizationPolicies.AdministratorOnly
+                  or AuthorizationPolicies.GatesManage
+                  or AuthorizationPolicies.GatesOperate
+                  or AuthorizationPolicies.GatesViewOwnReports
+                  or AuthorizationPolicies.PublicRelationsAccess;
 
     // Creates a UserType.Admin user holding a fresh custom role whose only
     // grants are `grantedCodes`, then signs in on the CP audience and returns

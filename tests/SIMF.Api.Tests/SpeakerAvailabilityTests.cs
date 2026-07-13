@@ -93,6 +93,46 @@ public sealed class SpeakerAvailabilityTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task An_awaiting_speaker_meeting_slot_is_excluded_from_the_free_slots()
+    {
+        // #8 regression — a hall-bound accept moves the request to AwaitingSpeaker,
+        // which HOLDS the speaker's slot (MeetingRequestStatuses.SlotHolding). The
+        // taken-filter must exclude it, not only Accepted rows; otherwise the slot is
+        // advertised as free and a second request is created that can never be accepted.
+        var admin = await CreateAdministratorAndSignInAsync();
+        var speakerId = await SeedSpeakerAsync();
+        await PostAuthAsync(
+            $"/api/v1/admin/speakers/{speakerId}/availability-windows",
+            new CreateSpeakerAvailabilityWindowRequest
+            {
+                StartUtc = WindowStart, EndUtc = WindowStart.AddMinutes(60), SlotMinutes = 30,
+            }, admin);
+
+        // Mark the first slot as held by an AwaitingSpeaker (hall-bound) meeting.
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            db.SpeakerMeetingRequests.Add(new SpeakerMeetingRequest
+            {
+                Id = Guid.NewGuid(),
+                SpeakerId = speakerId,
+                RequestedByUserId = Guid.NewGuid(),
+                RequesterName = "VIP",
+                Subject = "Slot held pending speaker confirmation",
+                Status = MeetingRequestStatus.AwaitingSpeaker,
+                SlotStartUtc = WindowStart,
+                SlotEndUtc = WindowStart.AddMinutes(30),
+                CreatedAt = DateTimeOffset.UtcNow,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var slots = await GetSlotsAsync(speakerId, admin);
+        Assert.Single(slots);
+        Assert.Equal(WindowStart.AddMinutes(30), slots[0].StartUtc); // only the 2nd slot remains
+    }
+
+    [Fact]
     public async Task An_invalid_window_is_400_and_an_unknown_speaker_is_404()
     {
         var admin = await CreateAdministratorAndSignInAsync();
