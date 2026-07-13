@@ -23,6 +23,9 @@ public partial class Notifications
     [Inject] private IJSRuntime JS { get; set; } = default!;
     [Inject] private NavigationManager Nav { get; set; } = default!;
 
+    [CascadingParameter(Name = "BellRefresh")]
+    private Func<Task>? BellRefresh { get; set; }
+
     private record Toast(string Variant, string Message);
 
     private GridQuery _query = new() { Top = 25 };
@@ -54,10 +57,24 @@ public partial class Notifications
         finally { _loading = false; }
     }
 
-    private Task OnDetailsAsync(NotificationDto row)
+    private async Task OnDetailsAsync(NotificationDto row)
     {
+        if (row.ReadAt is null)
+        {
+            await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.postJson", $"/account/api/notifications/{row.Id}/read", null);
+
+            var updated = row with { ReadAt = DateTimeOffset.UtcNow, IsRead = true };
+            _page = new GridPage<NotificationDto>
+            {
+                Items = _page.Items.Select(n => n.Id == row.Id ? updated : n).ToList(),
+                Total = _page.Total,
+                Skip = _page.Skip,
+                Top = _page.Top,
+            };
+            if (BellRefresh is not null) await BellRefresh();
+        }
         _detailsTarget = row;
-        return Task.CompletedTask;
     }
 
     private async Task OnDeleteAsync(NotificationDto row)
@@ -65,6 +82,7 @@ public partial class Notifications
         await JS.InvokeAsync<ApiResult<bool>>(
             "simfAccount.deleteJson", $"/account/api/notifications/{row.Id}");
         await LoadAsync();
+        if (BellRefresh is not null) await BellRefresh();
     }
 
     private async Task OnBulkDeleteAsync(IReadOnlyList<NotificationDto> rows)
@@ -79,6 +97,7 @@ public partial class Notifications
         _toast = new Toast("success",
             string.Format(L["Account.Notifications.BulkDismissed"], rows.Count));
         await LoadAsync();
+        if (BellRefresh is not null) await BellRefresh();
     }
 
     private async Task MarkAllReadAsync()
@@ -87,6 +106,7 @@ public partial class Notifications
             "simfAccount.postJson", "/account/api/notifications/read-all", null);
         _toast = new Toast("success", L["Account.Notifications.MarkAllReadDone"]);
         await LoadAsync();
+        if (BellRefresh is not null) await BellRefresh();
     }
 
     private string TitleFor(NotificationDto n) =>
