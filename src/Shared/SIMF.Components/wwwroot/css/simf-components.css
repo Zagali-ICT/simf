@@ -1073,6 +1073,12 @@
 }
 .simf-img-thumb__img { inline-size: 100%; block-size: 100%; object-fit: cover; }
 .simf-img-thumb--lg { inline-size: 96px; block-size: 96px; }
+/* D-357 (hardening) — when the image fails to load, hide it and reveal the
+   placeholder icon rendered alongside it (set by the onerror class toggle in
+   SimfImageThumb) so a missing StoredFile never shows the browser's broken glyph. */
+.simf-img-thumb__fallback { display: none; }
+.simf-img-thumb--broken .simf-img-thumb__img { display: none; }
+.simf-img-thumb--broken .simf-img-thumb__fallback { display: inline-flex; }
 
 /* D-357 — the reusable media-asset upload control (file / external-link tabs). */
 .simf-image-upload { display: flex; flex-direction: column; gap: var(--space-2); }
