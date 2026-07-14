@@ -8,6 +8,8 @@ import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
 import 'data/presentation_models.dart';
 import 'data/presentation_repository.dart';
+import 'data/session_models.dart';
+import 'data/sessions_repository.dart';
 import 'widgets/session_filter_tabs.dart';
 
 /// **Sessions** — App "الجلسات" (Figma 1388:7621, Approved account), reached
@@ -16,6 +18,13 @@ import 'widgets/session_filter_tabs.dart';
 /// Owner 2026-07-03: tapping a card opens the **session detail** (17), and the
 /// gold تحميل button opens that session's **summary** (ملخص الجلسة, 34) — this
 /// screen no longer downloads the deck bytes. Reads `GET /app/presentations`.
+///
+/// Owner 2026-07-14: the تحميل button is **active only when a summary exists** —
+/// a future/live session's محضر isn't published yet, so its button greys out
+/// (inactive, not hidden). The presentations wire carries no summary flag, so the
+/// gate joins each row to the cached programme ([programmeSessionsProvider]) by
+/// `sessionId` and reads its `hasPublishedSummary` — matching the summaries-list
+/// filter exactly ([presentationSummaryReady]).
 class SessionPresentationsScreen extends ConsumerStatefulWidget {
   const SessionPresentationsScreen({super.key});
 
@@ -39,6 +48,15 @@ class _SessionPresentationsScreenState
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     final presentations = ref.watch(presentationsProvider);
+    // The programme drives the تحميل summary-ready gate; keyed by sessionId. It
+    // is usually already cached (Home loaded it) — while it isn't, the map is
+    // empty and [presentationSummaryReady] falls back to the row's own start.
+    final sessionsById = <String, SessionListItem>{
+      for (final s
+          in ref.watch(programmeSessionsProvider).valueOrNull ??
+              const <SessionListItem>[])
+        s.id: s,
+    };
 
     return SimfPageShell(
       title: l10n.sessionPresentationsTitle,
@@ -59,6 +77,7 @@ class _SessionPresentationsScreenState
         ),
         data: (page) => _Body(
           items: page.items,
+          sessionsById: sessionsById,
           dayTab: _dayTab,
           onDayTab: (i) => setState(() => _dayTab = i),
           onRefresh: _refresh,
@@ -69,9 +88,25 @@ class _SessionPresentationsScreenState
   }
 }
 
+/// Whether a presentation's تحميل (open-summary) button is active (owner
+/// 2026-07-14). True only when the matched programme [session] has a published
+/// summary — same signal the summaries list filters on. When the programme isn't
+/// loaded yet ([session] null) it falls back to the presentation's own start: a
+/// not-yet-started session can't have a summary, so its button stays inactive;
+/// a started/past one keeps it (a real 404 shows the summary screen's empty note).
+bool presentationSummaryReady(
+  PresentationItem item,
+  SessionListItem? session,
+  DateTime nowUtc,
+) =>
+    session != null
+        ? session.hasPublishedSummary
+        : !nowUtc.isBefore(item.sessionStartUtc);
+
 class _Body extends StatelessWidget {
   const _Body({
     required this.items,
+    required this.sessionsById,
     required this.dayTab,
     required this.onDayTab,
     required this.onRefresh,
@@ -79,6 +114,10 @@ class _Body extends StatelessWidget {
   });
 
   final List<PresentationItem> items;
+
+  /// The cached programme keyed by `sessionId`, for the summary-ready gate
+  /// ([presentationSummaryReady]). Empty while the programme is still loading.
+  final Map<String, SessionListItem> sessionsById;
   final int dayTab;
   final ValueChanged<int> onDayTab;
   final Future<void> Function() onRefresh;
@@ -99,6 +138,7 @@ class _Body extends StatelessWidget {
     }
 
     final isArabic = l10n.isArabic;
+    final nowUtc = DateTime.now().toUtc();
     final days = _distinctDays(items);
     final tabLabels = <String>[
       l10n.sessionsTabAll,
@@ -145,6 +185,11 @@ class _Body extends StatelessWidget {
                   isArabic: isArabic,
                   dayLabel:
                       dayIndex >= 0 ? l10n.eventDayLabel(dayIndex + 1) : '',
+                  summaryEnabled: presentationSummaryReady(
+                    item,
+                    sessionsById[item.sessionId],
+                    nowUtc,
+                  ),
                 );
               },
             ),
@@ -177,11 +222,16 @@ class _PresentationCard extends StatelessWidget {
     required this.item,
     required this.isArabic,
     required this.dayLabel,
+    required this.summaryEnabled,
   });
 
   final PresentationItem item;
   final bool isArabic;
   final String dayLabel;
+
+  /// Whether the تحميل button is active (a published summary exists) — see
+  /// [presentationSummaryReady]. False greys it out and drops the tap.
+  final bool summaryEnabled;
 
   /// Card tap → تفاصيل الجلسة (session detail, 17).
   void _openDetail(BuildContext context) => context.pushNamed(
@@ -266,6 +316,7 @@ class _PresentationCard extends StatelessWidget {
                   const SizedBox.shrink(),
                 _SessionSummryButton(
                   label: l10n.sessionSummary,
+                  enabled: summaryEnabled,
                   onTap: () => _openSummary(context),
                 ),
               ],
@@ -300,40 +351,52 @@ class _FileIcon extends StatelessWidget {
   }
 }
 
-/// The gold تحميل button (Figma 1388:7621) — opens the session summary (34).
+/// The gold ملخص الجلسة button (Figma 1388:7621) — opens the session summary
+/// (34). When [enabled] is false (no published summary yet) it greys out with
+/// the shell's disabled tokens and stops tapping — inactive, not hidden (owner
+/// 2026-07-14, same treatment as the detail header's ملخص الجلسة button).
 class _SessionSummryButton extends StatelessWidget {
   const _SessionSummryButton({
     required this.label,
+    required this.enabled,
     required this.onTap,
   });
 
   final String label;
+  final bool enabled;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: SimfTokens.accent,
+    final fg = enabled ? Colors.white : SimfTokens.navyDisabledText;
+    final button = Material(
+      color: enabled ? SimfTokens.accent : SimfTokens.navyDisabled,
       borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
       child: InkWell(
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        onTap: onTap,
+        onTap: enabled ? onTap : null,
         child: Padding(
           padding: const EdgeInsets.all(SimfTokens.space2), // p-8
-          // Frame 1388:7657 — the download glyph leads at the inline-end (LEFT in
-          // RTL), with "تحميل" to its right. A plain RTL Row [icon, text] would
-          // put the icon on the right, so the label leads and the icon trails to
-          // land on the left, matching the frame.
           child: Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: SimfTokens.textSm,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+            label,
+            style: TextStyle(
+              color: fg,
+              fontSize: SimfTokens.textSm,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
       ),
     );
+    // Disabled: a deeper no-op tap recogniser wins the gesture arena over the
+    // card's open-detail InkWell, so tapping an inactive button does nothing
+    // (owner 2026-07-14) rather than falling through to the card.
+    return enabled
+        ? button
+        : GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {},
+            child: button,
+          );
   }
 }

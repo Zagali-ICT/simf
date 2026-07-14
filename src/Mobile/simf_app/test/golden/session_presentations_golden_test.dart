@@ -9,6 +9,8 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/theme/app_theme.dart';
 import 'package:simf_app/features/sessions/data/presentation_models.dart';
 import 'package:simf_app/features/sessions/data/presentation_repository.dart';
+import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/data/sessions_repository.dart';
 import 'package:simf_app/features/sessions/session_presentations_screen.dart';
 
 import 'golden_fonts.dart';
@@ -62,6 +64,27 @@ final _items = <PresentationItem>[
   ),
 ];
 
+/// The programme behind each row, all with a published summary so the golden
+/// locks the Figma frame's **active** gold تحميل buttons (owner 2026-07-14 gate).
+SessionListItem _session(String sessionId) => SessionListItem(
+      id: sessionId,
+      code: 'C-$sessionId',
+      title: 't',
+      titleArabic: 't',
+      hallId: 'h1',
+      hallName: 'Main Hall',
+      hallNameArabic: 'القاعة',
+      startUtc: DateTime.utc(2026, 11, 3, 6),
+      endUtc: DateTime.utc(2026, 11, 3, 7),
+      status: SessionStatus.scheduled,
+      speakers: const <SessionSpeaker>[],
+      hasPublishedSummary: true,
+    );
+
+final _sessions = <SessionListItem>[
+  for (final p in _items) _session(p.sessionId),
+];
+
 void main() {
   setUpAll(loadGoldenFonts);
 
@@ -76,6 +99,7 @@ void main() {
         overrides: <Override>[
           presentationsProvider
               .overrideWith((ref) async => PresentationsPage(_items)),
+          programmeSessionsProvider.overrideWith((ref) async => _sessions),
         ],
         child: MaterialApp(
           debugShowCheckedModeBanner: false,

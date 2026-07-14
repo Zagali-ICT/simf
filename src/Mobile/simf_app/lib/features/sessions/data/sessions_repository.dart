@@ -37,3 +37,14 @@ class SessionsRepository {
 final sessionsRepositoryProvider = Provider<SessionsRepository>((ref) {
   return SessionsRepository(ref.watch(simfApiClientProvider));
 });
+
+/// The whole active programme as one cached list (`GET /app/programme/sessions`)
+/// — the single source screens read `SessionListItem` state from (phase,
+/// `hasPublishedSummary`). New readers watch this instead of re-declaring the
+/// same `getSessions()` wrapper. (The pre-existing `aiSummarySessionsProvider`
+/// + `joinHubSessionsProvider` are identical copies kept for now — collapse them
+/// onto this one in a separate DRY pass.)
+final programmeSessionsProvider =
+    FutureProvider.autoDispose<List<SessionListItem>>(
+  (ref) => ref.watch(sessionsRepositoryProvider).getSessions(),
+);
