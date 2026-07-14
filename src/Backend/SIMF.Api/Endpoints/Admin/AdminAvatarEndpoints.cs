@@ -150,3 +150,24 @@ public sealed class FetchOtherAvatarEndpoint(
             "Stream an Other account's profile photo (avatar).");
     }
 }
+
+/// <summary>D-357 — <c>GET /api/v1/admin/admins/{id}/avatar</c>. Backs the
+/// Admins-list thumbnail; gated by Admins.View (the Admins page permission),
+/// mirroring the visitors/others avatar reads. Reuses the same id-keyed
+/// StoredFile read (avatars live in the one central file store for every user
+/// type, admins included).</summary>
+public sealed class FetchAdminAvatarEndpoint(
+    SimfAppDbContext appDb, IFileStorageProvider storage)
+    : AdminAvatarFetchEndpointBase(appDb, storage)
+{
+    public override Guid SubjectId => Route<Guid>("id");
+
+    public override void Configure()
+    {
+        Get("/admin/admins/{id:guid}/avatar");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Admins.View), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Tags("Admin");
+        Summary(summary => summary.Summary =
+            "Stream an admin account's profile photo (avatar).");
+    }
+}

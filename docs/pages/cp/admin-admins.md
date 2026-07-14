@@ -175,6 +175,7 @@ _(catalogue to be authored under `docs/tests/e2e/cp-admin-admins.md`)_
 | Export: select all, click Export → XLSX downloads | E2E-USR-006 | export |
 | Auth: non-admin user → /not-permitted | E2E-USR-007 | role gate |
 | RTL: toggle Arabic → page mirrors, toolbar Arabic, pager Arabic | E2E-USR-008 | i18n |
+| Name column shows the admin's profile-photo thumbnail (initials fallback when none) | E2E-USR-025 | D-357 photo-in-list |
 
 ## 12. Related docs
 
@@ -193,7 +194,8 @@ _(catalogue to be authored under `docs/tests/e2e/cp-admin-admins.md`)_
 | 2026-05-26 | D-117 | Promoted to canonical CRUD pattern (banner + modals + full toolbar). |
 | 2026-05-28 | D-132 | Title resx flipped EN "Users → Admins" + AR "المستخدمون → المسؤولون". |
 | 2026-06-10 | D-353 / D-356 | Add/Edit-roles/Details moved to `CrudShell` + `CrudPresentationToggle` (Page↔Popup, persisted in `simf.cp.prefs.admins`); inline modals removed. Excel export/import kept as the page's bespoke wiring (no generic `CrudGridExcel`). New E2E scenarios E2E-USR-022..024. |
+| 2026-07-14 | D-357 | **Photo thumbnail in the list.** The name column now renders the shared `SimfIdentityCell` — the admin's profile-photo thumbnail (streamed from `/account/api/admin/admins/{id}/avatar`, gated `Admins.View`, when `AdminUserSummary.HasAvatar`, the central `AvatarRelativePath` sentinel) or an initials tile when there is no photo (never a broken image) — matching the visitors/others/speakers lists. Avatars for every user type live in the one central file store (D-568). Column stays `Key="displayName"` so server-side sort/filter is unchanged. E2E-USR-025. |
 
 ---
 
-_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle).
+_Last reviewed:_ 2026-07-14 by Claude (D-357 — profile-photo thumbnail in the list). Earlier: 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle).

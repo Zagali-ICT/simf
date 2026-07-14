@@ -78,7 +78,9 @@
                     <SimfDataGridColumn TItem="AdminUserSummary" Key="displayName"
                                         Header="@L["Admin.Users.Column.DisplayName"]"
                                         Sortable="true" Filterable="true">
-                        <CellTemplate>@context.DisplayName</CellTemplate>
+                        <CellTemplate>
+                            <SimfIdentityCell ImageUrl="@AvatarImageUrl(context)" Name="@context.DisplayName" />
+                        </CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminUserSummary" Key="state"
                                         Header="@L["Admin.Users.Column.State"]"

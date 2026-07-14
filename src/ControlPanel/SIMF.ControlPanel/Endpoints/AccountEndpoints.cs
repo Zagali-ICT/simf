@@ -652,6 +652,23 @@ internal static class AccountEndpoints
             return Results.File(bytes, contentType);
         });
 
+        // D-357 — stream an admin account's avatar for the Admins-list thumbnail.
+        // Mirrors the visitors/others avatar GET proxy; API side is gated by Admins.View.
+        group.MapGet("/admin/admins/{id:guid}/avatar",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            var (status, contentType, bytes) =
+                await api.FetchAdminAvatarAsync(id, token);
+            if (status != 200 || contentType is null || bytes.Length == 0)
+            {
+                return Results.StatusCode(status);
+            }
+            http.Response.Headers.CacheControl = "private, max-age=60";
+            return Results.File(bytes, contentType);
+        });
+
         // P7c — ProfileTypes picker, filtered by UserType.
         group.MapGet("/admin/profile-types",
             async (string userType, HttpContext http, SimfAdminClient api) =>

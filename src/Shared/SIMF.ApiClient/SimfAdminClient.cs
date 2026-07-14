@@ -749,6 +749,12 @@ public sealed class SimfAdminClient(HttpClient http)
         Guid subjectId, string accessToken, CancellationToken cancellationToken = default) =>
         FetchIdDocumentAsync($"others/{subjectId}/avatar", accessToken, cancellationToken);
 
+    /// <summary>D-357 — admin streamed read of an admin account's profile photo
+    /// (avatar) for the Admins-list thumbnail. Gated by Admins.View.</summary>
+    public Task<(int StatusCode, string? ContentType, byte[] Bytes)> FetchAdminAvatarAsync(
+        Guid subjectId, string accessToken, CancellationToken cancellationToken = default) =>
+        FetchIdDocumentAsync($"admins/{subjectId}/avatar", accessToken, cancellationToken);
+
     /// <summary>V-1 (D-429) — admin streamed read of a visitor's VVIP/VIP welcome
     /// photo (موج). Reuses the generic byte-fetch helper.</summary>
     public Task<(int StatusCode, string? ContentType, byte[] Bytes)> FetchVisitorVipPhotoAsync(

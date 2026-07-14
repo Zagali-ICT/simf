@@ -46,6 +46,7 @@
 | E2E-USR-022 | Presentation toggle persists across reload (`simf.cp.prefs.admins`) (D-353) | happy | P1 | _to author_ |
 | E2E-USR-023 | Full-page mode round-trip — Add/Details take over the content area, Save/Close returns to grid (D-353) | happy | P1 | _to author_ |
 | E2E-USR-024 | Excel import rejection — non-`.xlsx` / oversized / wrong-sheet upload → 400 + bilingual toast, nothing created (D-356) | error | P1 | _to author_ |
+| E2E-USR-025 | Name column renders the admin's profile-photo thumbnail (SimfIdentityCell) when `HasAvatar`, else an initials tile; no avatar request when none; broken bytes fall back to the placeholder, not a broken glyph (D-357) | happy | P2 | _to author_ |
 
 ## Scenarios
 
@@ -458,6 +459,34 @@ Scenario: A bad upload is rejected without creating anything
 - Screenshot of the error toast: `docs/screenshots/cp-admin-admins-import-rejected.png`
 - Network: `/account/api/admin/admins/import` returns 400; no follow-up `/list` create occurs
 - Console errors: 0 expected (the rejection is handled, not thrown)
+
+### E2E-USR-025 — Admins-list profile-photo thumbnail (D-357)
+
+```gherkin
+Scenario: the name column renders a photo thumbnail when the admin has an avatar
+  Given the administrator is on /admin/admins
+  And admin "A" has a profile photo (avatar) set and admin "B" has none
+  When the admins grid loads
+  Then admin A's name cell shows a photo thumbnail beside the display name
+       (img src "/account/api/admin/admins/{A.id}/avatar", the CP proxy to the
+        Admins.View-gated GET /api/v1/admin/admins/{id}/avatar)
+  And admin B's name cell shows a tinted initials tile (never a broken image)
+  And no avatar request is issued for admin B (the URL is only built when HasAvatar)
+
+Scenario: a missing StoredFile falls back to the placeholder, not a broken glyph
+  Given admin "A" has HasAvatar true but the avatar bytes are missing from the store
+  When the admins grid loads and the avatar request for A returns 404
+  Then A's cell shows the placeholder icon (SimfImageThumb onerror adds
+       .simf-img-thumb--broken), not the browser's broken-image glyph
+```
+
+**Evidence captured:**
+- Screenshot of the grid with a thumbnail + an initials tile: `docs/screenshots/cp-admin-admins-thumbnails.png`
+- Network: one `/account/api/admin/admins/{A}/avatar` (200) for A; none for B
+- Backend: `tests/SIMF.Api.Tests/AdminCreateUserTests.cs` →
+  `Admins_list_row_reports_HasAvatar_once_a_photo_is_set` asserts the list row's
+  `HasAvatar` flips with the `AvatarRelativePath` sentinel (the same projection
+  backs the visitors/others lists)
 
 ---
 
