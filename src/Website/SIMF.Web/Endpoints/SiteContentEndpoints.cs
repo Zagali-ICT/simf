@@ -1,7 +1,10 @@
-// The legacy static marketing landing (wwwroot/index.legacy.html — the SSR
-// Bootstrap rebuild now owns "/") is a client-rendered page with a designed-in
-// remote-content hook (content.js -> loadSiteContentRemote).
-// This endpoint is that hook's data source: a same-origin GET that server-side
+// NOTE (2026-07-14): this endpoint is currently UNUSED by any shipped page. It
+// was the data source for the legacy static landing's remote-content hook
+// (wwwroot/index.legacy.html + content.js, both removed at the "/" cutover — the
+// SSR Bootstrap rebuild now owns "/" with its own in-page content models). The
+// endpoint + its SimfPublicClient reads + SiteContentMapperTests are retained
+// pending an owner decision to remove them, or to re-wire the SSR landing to a
+// live feed. It remains a same-origin GET that server-side
 // reads the API's anonymous public endpoints and reshapes them into the exact
 // JSON shape the landing's renderers consume (the SITE_DEFAULTS shape). It is a
 // same-origin proxy (the API has no CORS policy, so the browser cannot call it

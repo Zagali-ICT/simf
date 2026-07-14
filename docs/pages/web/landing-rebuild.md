@@ -126,12 +126,13 @@ at 1000/640px; sub-nav drops weather+venue on mobile. No horizontal overflow at
   the **sponsors** carousel is `direction:ltr` with its prev/next arrows wired
   (`initSponsors()` → `scrollBy`). Static rows still scroll by wheel/touch.
 - `/` cutover (2026-07-14, owner-approved): this rebuild is now the public
-  homepage. The old static landing (`wwwroot/index.html`) was **deleted** and
-  `UseDefaultFiles()` removed. The theme backdrops `wwwroot/assets/figma/themes/bg-1..5.jpg`
-  (which only the deleted `index.html` referenced — the SSR page dropped them in
-  the 2026-07-13 flatten) are now **orphaned** and can be removed in a separate
-  cleanup; left in place here to keep this change routing-only. (`content.js` is
-  **not** orphaned — the pre-existing `wwwroot/index.legacy.html` still loads it.)
+  homepage. `UseDefaultFiles()` was removed and the old static landing deleted —
+  both the primary `wwwroot/index.html` and the leftover `wwwroot/index.legacy.html`,
+  their shared renderer `wwwroot/content.js` (5.2 MB), and the orphaned theme
+  backdrops `wwwroot/assets/figma/themes/bg-1..5.jpg`. The `/content/site` proxy
+  (`SiteContentEndpoints` + its `SimfPublicClient` reads + `SiteContentMapperTests`)
+  that fed `content.js` is now **unused** by any shipped page — retained pending an
+  owner decision to remove it or re-wire the SSR landing to a live feed.
 - Almarai is self-hosted (woff2 under `wwwroot/lib/almarai`, CSP-safe). Known
   minor follow-up: the hero-font `<link rel="preload">` href is fingerprinted
   while the `@font-face src` url is not, so the browser can't match them and the
