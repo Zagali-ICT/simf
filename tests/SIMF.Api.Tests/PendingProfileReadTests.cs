@@ -239,6 +239,48 @@ public sealed class PendingProfileReadTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Others_pending_list_row_reports_HasAvatar_once_a_photo_is_set()
+    {
+        // Phase B (D-568 parity) — the pending queue grid renders the applicant's
+        // photo thumbnail, so the pending-list row (AdminPendingUserSummary) must
+        // carry HasAvatar from the SimfUser.AvatarRelativePath sentinel, not only
+        // the single-profile read.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var otherId = await CreatePendingOtherAsync(adminToken);
+
+        // No photo yet → the pending-list row's HasAvatar is false.
+        Assert.False((await FindPendingOtherRowAsync(adminToken, otherId)).HasAvatar);
+
+        // Set the avatar sentinel on the subject (SimfUser / Identity).
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+            var user = await db.Users.SingleAsync(u => u.Id == otherId);
+            user.AvatarRelativePath = "storedfile:" + Guid.NewGuid().ToString("N");
+            await db.SaveChangesAsync();
+        }
+
+        // The list projection now reports the photo.
+        Assert.True((await FindPendingOtherRowAsync(adminToken, otherId)).HasAvatar);
+    }
+
+    // Fetches one page of the pending-Others queue (newest-first, so a
+    // just-created row is on the first page) and returns the row for the subject.
+    private async Task<AdminPendingUserSummary> FindPendingOtherRowAsync(
+        string adminToken, Guid otherId)
+    {
+        var response = await PostAuthAsync(
+            "/api/v1/admin/others/pending/list",
+            new GridQuery { Top = 100 }, adminToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var page = (await response.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminPendingUserSummary>>>())!.Data!;
+        var row = page.Items.SingleOrDefault(r => r.Id == otherId);
+        Assert.NotNull(row);
+        return row!;
+    }
+
+    [Fact]
     public async Task Reading_an_approved_visitor_returns_404()
     {
         var adminToken = await CreateAdministratorAndSignInAsync();

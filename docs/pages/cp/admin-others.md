@@ -69,6 +69,7 @@ UC-OTH-DUPLICATE, UC-OTH-IMPORT, UC-OTH-EXPORT _(pending UCS)_.
 | Cross-kind ProfileTypeId rejected | E2E-OTH-002 |
 | Cross-kind id on `.../profile` → 404 | E2E-OTH-003 |
 | Bulk-delete with reason | E2E-OTH-004 |
+| Name column shows the account's profile-photo thumbnail (initials fallback when none) | E2E-OTH-026 |
 
 ## 12. Related
 
@@ -85,5 +86,6 @@ UC-OTH-DUPLICATE, UC-OTH-IMPORT, UC-OTH-EXPORT _(pending UCS)_.
 | 2026-05-28 | D-127 + D-129 | Walk-in wizard + ID-image upload. |
 | 2026-06-10 | D-353 + D-356 | Add/Edit/Details moved to `CrudShell` with the Page↔Popup `CrudPresentationToggle` (`simf.cp.prefs.others`). Uniform-Excel (`CrudGridExcel`) N/A — account page keeps its existing direct export/import. |
 | 2026-07-09 | D-728 | **Change type (owner item 9).** The Details view (`OthersViewDelete`) now hosts a shared `ChangeAccountTypeBlock` (gated `Accounts.ChangeType`) that flips the account into a Visitor-scope type via `POST /admin/accounts/{id}/change-type`. The dropdown lists only active Visitor-scope types (opposite scope); the flip rolls the security stamp + revokes sessions and keeps the approval state. E2E-OTH-025. |
+| 2026-07-14 | D-568 | **Photo thumbnail in the list.** The name column renders the shared `SimfIdentityCell` — the account's profile-photo thumbnail (streamed from `/account/api/admin/others/{id}/avatar` when `AdminUserSummary.HasAvatar`) or an initials tile when there is no photo. Column key unchanged so server-side sort/filter is unaffected. E2E-OTH-026. |
 
-_Last reviewed:_ 2026-07-09 by SIMF Team (D-728 — change-account-type action). Earlier: 2026-06-10 (D-356 Phase 5 — Excel + toggle).
+_Last reviewed:_ 2026-07-14 by Claude (D-568 — profile-photo thumbnail in the list). Earlier: 2026-07-09 by SIMF Team (D-728 — change-account-type action); 2026-06-10 (D-356 Phase 5 — Excel + toggle).

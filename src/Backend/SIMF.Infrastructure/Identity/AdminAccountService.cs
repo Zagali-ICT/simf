@@ -886,6 +886,10 @@ internal sealed partial class AdminAccountService(
                 user.AccountState,
                 user.TwoFactorEnabled,
                 user.CreatedAt,
+                // D-568 presence sentinel — non-empty when the account has a
+                // profile photo (avatar) in the StoredFile store; drives the
+                // grid photo thumbnail.
+                user.AvatarRelativePath,
                 IsAdmin = adminRoleId != null
                     && dbContext.UserRoles.Any(ur =>
                         ur.UserId == user.Id && ur.RoleId == adminRoleId),
@@ -900,7 +904,8 @@ internal sealed partial class AdminAccountService(
                 row.AccountState.ToString(),
                 row.TwoFactorEnabled,
                 row.IsAdmin,
-                row.CreatedAt))
+                row.CreatedAt,
+                HasAvatar: !string.IsNullOrEmpty(row.AvatarRelativePath)))
             .ToList();
 
         return GridPage<AdminUserSummary>.Of(summaries, total,
@@ -1114,7 +1119,8 @@ internal sealed partial class AdminAccountService(
         var page = await users
             .Skip(skip).Take(top)
             .Select(u => new AdminPendingUserSummary(
-                u.Id, u.Email!, u.DisplayName, u.CreatedAt))
+                u.Id, u.Email!, u.DisplayName, u.CreatedAt,
+                !string.IsNullOrEmpty(u.AvatarRelativePath)))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminPendingUserSummary>.Of(page, total,

@@ -181,7 +181,10 @@ public sealed record AdminCreateUserResponse(
     string Email,
     int InviteExpiresInSeconds);
 
-/// <summary>One row in the admin user-list view (D-042, D-044).</summary>
+/// <summary>One row in the admin user-list view (D-042, D-044). <c>HasAvatar</c>
+/// lets the grid render the account's profile-photo thumbnail (streamed from
+/// <c>GET /admin/{visitors,others,admins}/{id}/avatar</c>) or an initials
+/// fallback.</summary>
 public sealed record AdminUserSummary(
     Guid Id,
     string Email,
@@ -189,7 +192,12 @@ public sealed record AdminUserSummary(
     string AccountState,
     bool TwoFactorEnabled,
     bool IsAdministrator,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    // Whether the account has a profile photo (avatar) — the StoredFile presence
+    // sentinel SimfUser.AvatarRelativePath (D-568). Trailing-optional (append-only,
+    // wire-safe); defaults false for contexts that don't resolve it (bulk export,
+    // the optimistic post-save row — both reload from the server anyway).
+    bool HasAvatar = false);
 
 /// <summary>The body of <c>POST /api/v1/admin/admins/bulk-delete</c>
 /// (decision D-044 b). One audit row is written per subject so SOC has
@@ -319,13 +327,17 @@ public sealed class AdminRejectRequest
 
 /// <summary>
 /// One row in the pending-approval list (P4). A trimmed shape — the
-/// approver only needs to see the identity to decide.
+/// approver only needs to see the identity to decide. <c>HasAvatar</c> drives the
+/// grid profile-photo thumbnail (the D-568 <c>AvatarRelativePath</c> presence
+/// sentinel).
 /// </summary>
 public sealed record AdminPendingUserSummary(
     Guid Id,
     string Email,
     string DisplayName,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    // Trailing-optional (append-only, wire-safe); defaults false where unresolved.
+    bool HasAvatar = false);
 
 /// <summary>
 /// One row in the <c>ProfileTypes</c> lookup (P7c). Used by the CP

@@ -34,6 +34,10 @@ press, contractors) in `PendingApproval`. Same View / Approve-with-review
   by `CrudShell` — a `SimfModal` popup by default, or a full-page `CrudPageFrame`
   that hides the grid — matching `/admin/visitors`. Shared plumbing lives in
   `PendingApprovalPageBase` (`PresentationPageKey`).
+- **D-568 photo-in-list:** the queue's name column renders the applicant's
+  profile-photo thumbnail via the shared `SimfIdentityCell`
+  (`AdminPendingUserSummary.HasAvatar` streams `/account/api/admin/others/{id}/avatar`),
+  or an initials tile when there is no photo.
 
 ## 11. E2E
 

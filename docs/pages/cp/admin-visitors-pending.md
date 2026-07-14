@@ -127,6 +127,10 @@ UC-VIS-PENDING-LIST, UC-VIS-PENDING-VIEW, UC-VIS-APPROVE-WITH-REVIEW
   (popup by default, full-page hides the grid), matching `/admin/visitors`. The
   Reject / bulk-reject modals and the photo lightboxes stay popups. Shared
   plumbing lives in `PendingApprovalPageBase` (opt-in via `PresentationPageKey`).
+- **2026-07-14 (D-568):** the queue's name column now renders the applicant's
+  profile-photo thumbnail via the shared `SimfIdentityCell`
+  (`AdminPendingUserSummary.HasAvatar` streams `/account/api/admin/visitors/{id}/avatar`),
+  or a tinted initials tile when there is no photo.
 
 - **2026-06-13 (D-385 / D-386 / D-387):** modal now shows all captured profile
   data (Job title, Gender, Organisation [bilingual], Plate number, Reference

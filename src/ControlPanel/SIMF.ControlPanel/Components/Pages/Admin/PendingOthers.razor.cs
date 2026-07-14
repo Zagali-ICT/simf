@@ -23,6 +23,11 @@ public partial class PendingOthers
     private bool ViewFullPage =>
         _viewTarget is not null && _presentation == CrudPresentation.Page;
 
+    // The pending row's avatar thumbnail URL, or null so SimfIdentityCell shows an
+    // initials tile (never a broken image). Only when HasAvatar is set (D-568).
+    private static string? AvatarImageUrl(AdminPendingUserSummary row) =>
+        row.HasAvatar ? $"/account/api/admin/others/{row.Id}/avatar" : null;
+
     private AdminPendingUserSummary? _viewTarget;
     private PendingProfileResponse? _viewProfile;
     private bool _viewLoading;

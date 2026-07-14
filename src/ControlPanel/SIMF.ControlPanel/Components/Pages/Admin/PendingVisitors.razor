@@ -56,7 +56,10 @@
                 <SimfDataGridColumn TItem="AdminPendingUserSummary" Key="displayName"
                                     Header="@L["Admin.Users.Column.DisplayName"]"
                                     Sortable="true" Filterable="true">
-                    <CellTemplate>@context.DisplayName</CellTemplate>
+                    <CellTemplate>
+                        <SimfIdentityCell ImageUrl="@AvatarImageUrl(context)"
+                                          Name="@context.DisplayName" />
+                    </CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminPendingUserSummary" Key="created"
                                     Header="@L["Admin.Pending.Column.Created"]">

@@ -25,6 +25,11 @@ public partial class PendingVisitors
     private bool ViewFullPage =>
         _viewTarget is not null && _presentation == CrudPresentation.Page;
 
+    // The pending row's avatar thumbnail URL, or null so SimfIdentityCell shows an
+    // initials tile (never a broken image). Only when HasAvatar is set (D-568).
+    private static string? AvatarImageUrl(AdminPendingUserSummary row) =>
+        row.HasAvatar ? $"/account/api/admin/visitors/{row.Id}/avatar" : null;
+
     // D-125 — View modal state for the D-124 pending-profile preview.
     // D-128 — _approveMode reuses the same modal for the
     // review-before-approve confirmation flow.
