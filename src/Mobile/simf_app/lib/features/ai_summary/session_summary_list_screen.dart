@@ -163,7 +163,7 @@ class _SessionSummaryListScreenState
                   child: SessionSummaryCard(
                     item: item,
                     isArabic: isArabic,
-                    recordedBadge: l10n.sessionRecordedBadge,
+                    l10n: l10n,
                     durationLabel: l10n.sessionDurationMinutes(
                       _durationMinutes(item),
                     ),

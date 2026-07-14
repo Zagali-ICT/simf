@@ -1780,6 +1780,10 @@ class AppL10n {
   String get sessionSummariesEmpty =>
       _t('لا توجد ملخصات منشورة بعد.', 'No published summaries yet.');
   String get sessionRecordedBadge => _t('مسجّل', 'Recorded');
+  // Owner 2026-07-14 — session state chips on the agenda / my-sessions / summary
+  // cards (live now · a published محضر is available).
+  String get sessionLiveBadge => _t('مباشر الآن', 'Live now');
+  String get sessionSummaryReadyBadge => _t('الملخص متاح', 'Summary ready');
   String get favouriteToggleError =>
       _t('تعذر تحديث المفضلة.', 'Could not update favourites.');
   String sessionDurationMinutes(int minutes) =>

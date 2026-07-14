@@ -59,6 +59,7 @@
 | E2E-MOB113-005 | No bookings → empty list | empty | P1 | authored ✓ (API `My_sessions_is_empty_for_a_visitor_with_no_bookings`) |
 | E2E-MOB113-006 | Anonymous read → 401 | auth | P0 | authored ✓ (API `My_sessions_without_a_token_returns_401`) |
 | E2E-MOB113-007 | RTL — Arabic title / category / speaker from the same item | rtl | P2 | covered (models `localized*` getters) |
+| E2E-MOB113-008 | **State chips (owner 2026-07-14):** each card shows a state chip from its phase + status — `مباشر الآن` (live) / `مسجّل` (recorded); my-sessions carries no published-summary flag, so `الملخص متاح` is not shown here; an upcoming card shows none | visual | P1 | authored ✓ (shared `SessionStateChipRow`; `session_state_chip_test.dart` unit + golden `session_state_chips.png`) |
 
 ## Scenarios
 
@@ -95,4 +96,6 @@ models test (3 — decode + flags, upcoming/ended derivation, empty); API tests
 
 ---
 
-_Last reviewed:_ `2026-06-26` by `SIMF Team`.
+_Last reviewed:_ `2026-07-14` by `SIMF Team` — **owner state chips: each card
+shows a `مباشر الآن` / `مسجّل` chip from its `SessionPhase` + status
+(E2E-MOB113-008).** _Prior:_ `2026-06-26`.

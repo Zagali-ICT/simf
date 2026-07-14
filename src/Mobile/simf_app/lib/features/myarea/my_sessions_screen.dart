@@ -6,8 +6,10 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_page_shell.dart';
+import '../sessions/data/session_lifecycle.dart';
 import '../sessions/widgets/favourite_heart_button.dart';
 import '../sessions/widgets/session_filter_tabs.dart';
+import '../sessions/widgets/session_state_chip.dart';
 import 'data/my_sessions_models.dart';
 import 'data/my_sessions_repository.dart';
 
@@ -193,6 +195,14 @@ class _MySessionCard extends StatelessWidget {
         ? '$time · $category'
         : time;
     final hasMeta = speaker != null || (hall != null && hall.isNotEmpty);
+    // Owner 2026-07-14 — the same state chips as the agenda (my-sessions carries
+    // no summary flag, so only live-now / recorded show here).
+    final phase = sessionPhase(item.startUtc, item.endUtc, DateTime.now().toUtc());
+    final stateChips = sessionStateChips(
+      phase: phase,
+      hasPublishedSummary: false,
+      status: item.status,
+    );
 
     return SimfCard(
       onTap: () => context.pushNamed(
@@ -251,6 +261,15 @@ class _MySessionCard extends StatelessWidget {
                       ),
                     ),
                 ],
+              ),
+            ],
+            if (stateChips.isNotEmpty) ...<Widget>[
+              const SizedBox(height: SimfTokens.space3),
+              SessionStateChipRow(
+                phase: phase,
+                hasPublishedSummary: false,
+                status: item.status,
+                l10n: AppL10n.of(context),
               ),
             ],
           ],

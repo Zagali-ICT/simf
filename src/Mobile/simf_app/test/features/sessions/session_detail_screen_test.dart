@@ -434,8 +434,10 @@ void main() {
       // The gold index badge shows the day-ordinal "02" (D-567), not the code.
       expect(find.text('02'), findsOneWidget);
       expect(find.text('OP-1'), findsNothing);
-      // Header action buttons: BOTH always show now (owner 2026-06-30) —
-      // ملخص الجلسة (summary) + رابط الجلسة (session link), per Figma 889:2715.
+      // Header action buttons: both slots always render (Figma 889:2715); owner
+      // 2026-07-14 gates them on state, so on this UPCOMING session both are
+      // present but inactive (greyed) — see the gating tests below + in
+      // session_detail_body_test.dart.
       expect(find.text('Session summary'), findsOneWidget);
       expect(find.text('Session link'), findsOneWidget);
       // Description card + heading.
@@ -455,12 +457,16 @@ void main() {
       expect(find.widgetWithText(OutlinedButton, 'Reminder'), findsOneWidget);
     });
 
-    testWidgets('the session link opens the live screen', (tester) async {
+    testWidgets('the session link opens the live screen while the session is '
+        'live + streaming (owner 2026-07-14 gate)', (tester) async {
+      final live = _detail(
+        liveStreamUrl: 'https://youtu.be/abcdefghijk',
+        startUtc: DateTime.now().toUtc().subtract(const Duration(hours: 1)),
+        endUtc: DateTime.now().toUtc().add(const Duration(hours: 1)),
+      );
       await _pump(
         tester,
-        repo: _FakeDetailRepo(
-          detail: _detail(liveStreamUrl: 'https://youtu.be/abcdefghijk'),
-        ),
+        repo: _FakeDetailRepo(detail: live),
         controller: _GuestController(),
       );
 
@@ -470,11 +476,11 @@ void main() {
       expect(find.text('LIVE'), findsOneWidget);
     });
 
-    testWidgets('the summary button opens the AI session summary',
-        (tester) async {
+    testWidgets('the summary button opens the AI session summary once the '
+        'session has ended (owner 2026-07-14 gate)', (tester) async {
       await _pump(
         tester,
-        repo: _FakeDetailRepo(detail: _detail()),
+        repo: _FakeDetailRepo(detail: _endedDetail()),
         controller: _GuestController(),
       );
 

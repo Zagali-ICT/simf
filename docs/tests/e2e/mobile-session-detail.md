@@ -42,6 +42,19 @@
 > (the gate is app-UX only, not an API change). The "guest" paths below (001,
 > 005) are therefore API-/widget-level guarantees — the live app redirects a
 > guest first. The screen gate is covered by E2E-MOB017-025.
+>
+> **Session-state gating (owner 2026-07-14, supersedes the 2026-06-30 "always
+> both active"):** the two header actions now gate on the session's phase
+> (`SessionPhase` = upcoming/live/ended from `[startUtc, endUtc)`). **ملخص الجلسة**
+> is active only once the session has ENDED (a future/live session has no محضر);
+> **رابط الجلسة** only while the session is LIVE **and** carries a `liveStreamUrl`.
+> Both slots always render (layout unchanged); a gated-off button greys out
+> (navyDisabled tokens) and its tap is inert. The **Join** CTA likewise drops once
+> the session has ended. Behaviour tests:
+> `session_detail_body_test.dart` (future→summary inactive / ended→active /
+> live→live active / future+feed→live inactive); the golden
+> `session_detail_889-2450` renders an upcoming session, so both actions show
+> greyed. Covered by E2E-MOB017-018/019/027.
 
 | | |
 |--|--|
@@ -73,8 +86,8 @@
 | E2E-MOB017-015 | المتحدثون host card → المضيف/Host sub-line (`SessionSpeakerRole.host`) | happy | P0 | authored ✓ (Figma 889:2737 re-skin; real role) |
 | E2E-MOB017-016 | **Reservation card (D-485)** — a held booking shows الصف · مقعد (or "general admission" for an open-seating join) + a "pending approval" hint + a Cancel action; a seat booking's chevron/marker opens the seat map (18), an open-seating join has no map link | happy | P1 | authored ✓ (widget — reservation card: seat/general-admission + pending + cancel) |
 | E2E-MOB017-017 | CTA row — تذكير (outlined) + أضف إلى تقويمي (gold) order and toasts | happy | P1 | authored ✓ (Figma 897:2872 re-skin) |
-| E2E-MOB017-018 | رابط الجلسة — shown only when `liveStreamUrl` present; opens Live (25) | happy | P1 | authored ✓ (Figma 889:2715; `…live link shows only when…opens the live screen`) |
-| E2E-MOB017-019 | ملخص الجلسة — always shown; opens AI summary (34) | happy | P1 | authored ✓ (Figma 889:2715; `…summary button opens the AI session summary`) |
+| E2E-MOB017-018 | رابط الجلسة — **state-gated (owner 2026-07-14)**: both header buttons keep their slots, but رابط الجلسة is ACTIVE only while the session is LIVE **and** carries a `liveStreamUrl` (streaming) — greyed/inert otherwise; when active it opens Live (25) | happy | P1 | authored ✓ (`…session link opens the live screen while the session is live + streaming`; body-gate tests future+feed→inactive) |
+| E2E-MOB017-019 | ملخص الجلسة — **state-gated (owner 2026-07-14)**: ACTIVE only once the session has ENDED (a future/live session has no محضر → greyed/inert); when active it opens AI summary (34) | happy | P1 | authored ✓ (`…summary button opens the AI session summary once the session has ended`; body-gate tests future→inactive / ended→active) |
 | E2E-MOB017-020 | اسأل المحاور card — **gated on joining (#3)**: enabled (opens Send question #26) only once the user has **joined** the session (holds a booking, NOT physical check-in); not joined → the card is disabled with a "Join the session to ask a question" hint and the tap is inert | happy/auth | P1 | authored ✓ (Figma 1056:12876; `#3 — a joined user can ask…` + `#3 — pre-ask is gated on joining…`) |
 | E2E-MOB017-026 | **Pre-session ask label (D-714 GAP-2)** — while the session is **upcoming** (`now < startUtc`) the ask card reads the distinct pre-session label "اطرح سؤالاً قبل الجلسة" / "Ask a question before it starts" (mode B, `Phase=Pre`); once **live/started** it reverts to "اسأل المحاور" / "Ask the host" (mode A). The backend derives the phase + enforces the [start−5min, end] window either way | happy/i18n | P1 | authored ✓ (screen `a live (already started) session shows the "Ask the host" label` + the ask-label tests; golden `session_detail_889-2450` shows the pre-session label) |
 | E2E-MOB017-021 | Speaker country flag — `CountryId` 682 → 🇸🇦 emoji beside the name | happy | P2 | authored ✓ (`…renders its flag emoji`; `core/country_flag.dart`) |
@@ -83,6 +96,7 @@
 | E2E-MOB017-024 | **Join is approved-only (D-485)** — a guest / pending account sees no join section (the seat endpoint 401/403s → null) | auth | P1 | authored ✓ (`…a guest sees no join section`) |
 | E2E-MOB017-025 | **No-layout session joins (D-706)** — an assigned-seat session with **no seat layout** (a hall left on the default with no rows laid out) reports its effective mode as **OpenSeating**, so the Join CTA is a one-tap join (not an empty seat picker) and `…/seats/join` is accepted (Pending). Fixes "join session not working" | happy | P0 | authored ✓ (API `Join_succeeds_on_an_assigned_seat_session_that_has_no_layout`) |
 | E2E-MOB017-025 | **App login-gate (D-576):** a signed-out guest navigating to `/sessions/{id}` is redirected to sign-in before the screen renders (the app gates the screen; the detail endpoint stays anonymous) | auth | P0 | authored ✓ (router-gate `D-576 — a signed-out guest hitting /sessions or a session detail → sign-in`) |
+| E2E-MOB017-027 | **Join gate (owner 2026-07-14):** the Join CTA is only offered while the session has NOT ended — an ended session drops the join section ("open now to join" is a live/upcoming state) | happy | P1 | authored ✓ (body-gate `phase != SessionPhase.ended`; screen join tests unaffected on upcoming fixtures) |
 
 ## Scenarios
 
@@ -311,29 +325,38 @@ Scenario: The تذكير + أضف إلى تقويمي buttons render in order an
   And no network request is made by either CTA
 ```
 
-### E2E-MOB017-018 — رابط الجلسة → Live (Figma 889:2715)
+### E2E-MOB017-018 — رابط الجلسة → Live (Figma 889:2715, state-gated owner 2026-07-14)
 
 ```gherkin
-Scenario: The session-link button is conditional and opens the live screen
-  Given a session whose detail carries a non-null liveStreamUrl
+Scenario: The session-link button is active only while the session is live + streaming
+  Given a session that is LIVE now (now within [startUtc, endUtc]) with a non-null liveStreamUrl
   When Session detail (17) renders the header card
-  Then a "رابط الجلسة" (EN "Session link") button is shown
+  Then a "رابط الجلسة" (EN "Session link") button is shown and active
   When the user taps it
   Then Live broadcast (25) opens at /live?sessionId={id}
-  And given another session whose liveStreamUrl is null
-  Then the "رابط الجلسة" button is NOT shown
+  # Both header buttons keep their slots (layout unchanged); a gated-off button
+  # is greyed (navyDisabled tokens) and its tap is inert.
+  Given a FUTURE session with a liveStreamUrl (the feed is not live yet)
+  Then the "رابط الجلسة" button is present but INACTIVE (greyed; tapping does nothing)
+  Given a session with no liveStreamUrl
+  Then the "رابط الجلسة" button is INACTIVE
 ```
 
-### E2E-MOB017-019 — ملخص الجلسة → AI summary (Figma 889:2715)
+### E2E-MOB017-019 — ملخص الجلسة → AI summary (Figma 889:2715, state-gated owner 2026-07-14)
 
 ```gherkin
-Scenario: The session-summary button always shows and opens the AI summary
-  Given any loaded session detail
+Scenario: The session-summary button is active only once the session has ended
+  Given a FUTURE (or live) session detail
   When the header card renders
-  Then a gold-hairline "ملخص الجلسة" (EN "Session summary") button is shown
+  Then a "ملخص الجلسة" (EN "Session summary") button is present but INACTIVE (greyed) —
+    there is no محضر for a session that has not finished, so tapping does nothing
+  Given a session that has ENDED
+  Then the "ملخص الجلسة" button is active
   When the user taps it
   Then AI session summary (34) opens at /ai-summary?sessionId={id}
   And the summary screen 404s gracefully until the Committee publishes the summary
+  # The summary stays reachable during a live window via the Session-summaries
+  # list (#111), which filters on hasPublishedSummary (E2E-MOB111-010).
 ```
 
 ### E2E-MOB017-020 — اسأل المحاور → Send question (Figma 1056:12876)
@@ -409,9 +432,28 @@ Scenario: A guest opening a session detail is redirected to sign-in
 **Evidence:** router-gate test `D-576 — a signed-out guest hitting /sessions or a
 session detail → sign-in`; `routePathRequiresAuth('/sessions/:sessionId')` is TRUE.
 
+### E2E-MOB017-027 — Join gate on an ended session (owner 2026-07-14)
+
+```gherkin
+Scenario: An ended session offers no Join CTA
+  Given an approved visitor on a session that has ENDED (endUtc in the past)
+  And the visitor holds no reservation
+  Then the "Join this session" section is NOT shown (you cannot join an over session)
+  Given the same visitor on an UPCOMING or LIVE session with no reservation
+  Then the Join CTA is shown (branched by the session's seat-selection mode)
+```
+
+**Evidence:** body-gate `else if (seatMap != null && phase != SessionPhase.ended)`;
+the existing join screen tests use upcoming fixtures (join still offered).
+
 ---
 
-_Last reviewed:_ `2026-07-10` by `SIMF Team` — **#7 (D-733): the "اسأل المحاور"
+_Last reviewed:_ `2026-07-14` by `SIMF Team` — **owner state-gating: the two
+header actions (ملخص الجلسة / رابط الجلسة) and the Join CTA now gate on the
+session phase (upcoming/live/ended); a future session's summary button is
+inactive; the live link is active only while live+streaming; an ended session
+drops Join. Shared `SessionPhase` + `SessionStateChip`. E2E-MOB017-018/019/027.**
+_Prior:_ `2026-07-10` by `SIMF Team` — **#7 (D-733): the "اسأل المحاور"
 ask card is now FUTURE-ONLY — shown (and, for any approved account, enabled
 without a booking) only while `startUtc` is in the future; it is HIDDEN once the
 session is live or ended (asking during a live session moves to the

@@ -77,6 +77,7 @@
 | E2E-MOB016-014 | **Full-width calendar (#4):** the day strip is a WHITE band over the FULL event date range (first→last programme day, empty in-between days filled), **pinned LTR** (dates ascend left→right as the frame renders), full-width (cells distributed, scroll fallback when long); a day **with** sessions = navy text ("active"), the **selected** day = navy pill/white text, an empty day = muted grey and **not** selectable; weekend labels red | happy/visual | P1 | authored ✓ (screen — `ProgrammeDayStrip`/`_calendarRange`; existing selected-cell-navy + switch-day tests) |
 | E2E-MOB016-015 | **App login-gate (D-576):** a signed-out guest navigating to the `/sessions` screen is redirected to sign-in (the app gates the screen; the reads stay anonymous for thin clients) | auth | P0 | authored ✓ (router-gate `D-576 — a signed-out guest hitting /sessions or a session detail → sign-in`) |
 | E2E-MOB016-016 | **Time-rail from→to connector (D-705):** every المواعيد row shows the vertical beige line between its start and end time — including a **collapsed/short row** (title only, no banner/description) where it previously collapsed to zero (Figma 1310:3243/3244) | visual | P1 | authored ✓ (golden `sessions_883-2308.png` — the connector renders on the featured AND the collapsed row) |
+| E2E-MOB016-017 | **State chips (owner 2026-07-14):** each timeline row shows a state chip derived from its phase + flags — `مباشر الآن` (live, red), `الملخص متاح` (a published summary, gold outline), `مسجّل` (recorded, gold); an upcoming session shows no chip | visual | P1 | authored ✓ (`session_state_chip_test.dart` unit + golden `session_state_chips.png`; shared `SessionStateChipRow`) |
 
 ## Scenarios
 
@@ -273,4 +274,6 @@ session detail → sign-in`; `routePathRequiresAuth('/sessions')` is TRUE.
 
 ---
 
-_Last reviewed:_ `2026-07-01` by `SIMF Team`.
+_Last reviewed:_ `2026-07-14` by `SIMF Team` — **owner state chips: each timeline
+row shows a `مباشر الآن` / `الملخص متاح` / `مسجّل` chip from its `SessionPhase` +
+flags (E2E-MOB016-017).** _Prior:_ `2026-07-01`.

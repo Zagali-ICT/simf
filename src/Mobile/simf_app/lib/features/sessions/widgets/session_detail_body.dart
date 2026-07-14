@@ -139,7 +139,9 @@ class SessionDetailBody extends StatelessWidget {
                 ? null
                 : onViewSeat,
           ),
-        ] else if (seatMap != null) ...<Widget>[
+        ] else if (seatMap != null && phase != SessionPhase.ended) ...<Widget>[
+          // Owner 2026-07-14 — an ENDED session can't be joined ("open now to
+          // join" is a live/upcoming state), so the join CTA drops once it ends.
           const SizedBox(height: SimfTokens.space5),
           SessionJoinButton(busy: busy, l10n: l10n, onJoin: onJoin),
         ],
