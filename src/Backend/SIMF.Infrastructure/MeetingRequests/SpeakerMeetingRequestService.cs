@@ -312,6 +312,21 @@ internal sealed class SpeakerMeetingRequestService(
                 "Response status must be Accepted or Rejected.",
                 "يجب أن تكون حالة الردّ مقبولة أو مرفوضة.");
         }
+
+        // SES §7 validation triple-lock — ResponseNote maps to nvarchar(2000)
+        // (SpeakerMeetingRequestConfiguration.HasMaxLength(2000)). Reject an
+        // over-length note up front with a clear 400 rather than letting the trimmed
+        // value below overflow the column and throw a truncation DbUpdateException,
+        // which the catch around SaveChanges would mask as a misleading "That slot is
+        // no longer available." 409 (nonsensical for a Reject that has no slot).
+        if ((request.ResponseNote ?? string.Empty).Trim().Length > 2000)
+        {
+            throw new ApiException(
+                ErrorCodes.SpeakerMeetingRequestInvalid, 400,
+                "The response note must be 2000 characters or fewer.",
+                "يجب ألا يتجاوز نص الردّ 2000 حرف.");
+        }
+
         var req = await appDbContext.SpeakerMeetingRequests
             .SingleOrDefaultAsync(r => r.Id == id, cancellationToken)
             ?? throw new ApiException(
@@ -337,62 +352,88 @@ internal sealed class SpeakerMeetingRequestService(
         // straight-to-Accepted behaviour below.
         var bindHall = request.Status == MeetingRequestStatus.Accepted
             && request.HallId is not null;
-        if (bindHall)
-        {
-            await BindHallSlotAsync(req, request, cancellationToken);
-        }
-        else if (request.Status == MeetingRequestStatus.Accepted
-            && req.SlotStartUtc is { } slotStart && req.SlotEndUtc is { } slotEnd)
-        {
-            // A1 — accepting a slot-bearing request must re-check the slot is still
-            // free among the speaker's LIVE meetings (the submit-time check can go
-            // stale). D-716: the live set is Accepted OR AwaitingSpeaker (a hall-bound
-            // request in AwaitingSpeaker occupies the speaker's calendar too) — the
-            // shared helper keeps this in step with the bind path. The DB
-            // filtered-unique index is the race backstop.
-            if (await SpeakerHasOverlappingMeetingAsync(
-                    req.SpeakerId, req.Id, slotStart, slotEnd, cancellationToken))
-            {
-                throw new ApiException(
-                    ErrorCodes.SpeakerMeetingRequestInvalid, 409,
-                    "That slot is no longer available.",
-                    "لم تعد هذه الفترة متاحة.");
-            }
-
-            // M-7 — the requester must not already hold another live meeting at that time.
-            if (await RequesterHasOverlappingMeetingAsync(
-                    req.RequestedByUserId, req.Id, slotStart, slotEnd, cancellationToken))
-            {
-                throw new ApiException(
-                    ErrorCodes.SpeakerMeetingRequestInvalid, 409,
-                    "The requester already has a meeting booked at that time.",
-                    "لدى مقدّم الطلب اجتماع محجوز بالفعل في هذا الوقت.");
-            }
-        }
 
         var now = timeProvider.GetUtcNow();
-        req.Status = bindHall ? MeetingRequestStatus.AwaitingSpeaker : request.Status;
-        req.ResponseNote = string.IsNullOrWhiteSpace(request.ResponseNote)
-            ? null : request.ResponseNote.Trim();
-        req.RespondedAt = now;
-        req.RespondedByUserId = actorUserId;
 
         // D-717 — stage the speaker Approve/Reject tokens into the SAME unit of work
         // as the AwaitingSpeaker transition (they are durable domain state, not a
-        // notification): the SaveChanges below commits status + tokens atomically, so
-        // the request can never be AwaitingSpeaker without its token pair. Only the
+        // notification): the SaveChanges inside the transaction below commits status +
+        // tokens atomically, so the request can never be AwaitingSpeaker without its
+        // token pair. Staged ONCE here, before the retryable block, so a serialization
+        // retry re-commits the same pair rather than minting a duplicate. Only the
         // email that follows is best-effort.
         var links = bindHall ? meetingActionTokens.StageTokensForRequest(req.Id) : null;
+
+        // FIX #22 (R-1 held item) — close the CONCURRENT speaker double-book race. The
+        // app-level overlap re-check (SpeakerHasOverlappingMeetingAsync) already blocks
+        // the sequential case, but two concurrent accepts of overlapping-but-different-
+        // start slots can each pass the check before either commits, and the frozen
+        // (SpeakerId, SlotStartUtc) filtered-unique index only catches an EQUAL-start
+        // collision. Running the half-open range scan and the status flip in ONE
+        // Serializable transaction makes the scan hold key-range locks, so a concurrent
+        // overlapping accept cannot slip its write in between our check and our save —
+        // the two serialize and one loses. Go through the EF execution strategy so this
+        // composes with EnableRetryOnFailure (a bare user transaction throws under the
+        // retrying strategy); on the serialization/deadlock failure the strategy re-runs
+        // the whole unit and the re-check sees the now-committed rival and raises the
+        // clean 409. Same pattern as BusinessMeetingService (M-5).
+        var strategy = appDbContext.Database.CreateExecutionStrategy();
         try
         {
-            await appDbContext.SaveChangesAsync(cancellationToken);
+            await strategy.ExecuteAsync(async () =>
+            {
+                await using var tx = await appDbContext.Database.BeginTransactionAsync(
+                    System.Data.IsolationLevel.Serializable, cancellationToken);
+
+                if (bindHall)
+                {
+                    await BindHallSlotAsync(req, request, cancellationToken);
+                }
+                else if (request.Status == MeetingRequestStatus.Accepted
+                    && req.SlotStartUtc is { } slotStart && req.SlotEndUtc is { } slotEnd)
+                {
+                    // A1 — accepting a slot-bearing request must re-check the slot is
+                    // still free among the speaker's LIVE meetings (Accepted OR
+                    // AwaitingSpeaker, per the shared helper; D-716). Inside the
+                    // Serializable transaction this half-open range scan holds the
+                    // key-range lock that serializes a concurrent overlapping accept.
+                    if (await SpeakerHasOverlappingMeetingAsync(
+                            req.SpeakerId, req.Id, slotStart, slotEnd, cancellationToken))
+                    {
+                        throw new ApiException(
+                            ErrorCodes.SpeakerMeetingRequestInvalid, 409,
+                            "That slot is no longer available.",
+                            "لم تعد هذه الفترة متاحة.");
+                    }
+
+                    // M-7 — the requester must not already hold another live meeting then.
+                    if (await RequesterHasOverlappingMeetingAsync(
+                            req.RequestedByUserId, req.Id, slotStart, slotEnd, cancellationToken))
+                    {
+                        throw new ApiException(
+                            ErrorCodes.SpeakerMeetingRequestInvalid, 409,
+                            "The requester already has a meeting booked at that time.",
+                            "لدى مقدّم الطلب اجتماع محجوز بالفعل في هذا الوقت.");
+                    }
+                }
+
+                req.Status = bindHall ? MeetingRequestStatus.AwaitingSpeaker : request.Status;
+                req.ResponseNote = string.IsNullOrWhiteSpace(request.ResponseNote)
+                    ? null : request.ResponseNote.Trim();
+                req.RespondedAt = now;
+                req.RespondedByUserId = actorUserId;
+
+                await appDbContext.SaveChangesAsync(cancellationToken);
+                await tx.CommitAsync(cancellationToken);
+            });
         }
         catch (DbUpdateException)
         {
-            // D-716 — a concurrent accept can win the (hall|speaker, slot)
-            // filtered-unique index race after both passed the app-level free-slot
-            // re-check. Surface the same clean 409 the app check would have returned
-            // instead of a generic 500 (mirrors SeatReservationService's uniqueness
+            // D-716 — the (hall|speaker, SlotStartUtc) filtered-unique index is the
+            // equal-start backstop: a concurrent accept that won the index race after
+            // both passed the app-level re-check surfaces here. It is non-transient, so
+            // the execution strategy does not retry it; return the same clean 409 the
+            // app re-check would have (mirrors SeatReservationService's uniqueness
             // guard). Data integrity is intact — the index prevented the double-book.
             throw new ApiException(
                 ErrorCodes.SpeakerMeetingRequestInvalid, 409,

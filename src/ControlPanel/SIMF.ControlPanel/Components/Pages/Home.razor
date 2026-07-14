@@ -1,9 +1,7 @@
 @* Control Panel — the Dashboard (the Overview landing). Shows a welcome panel
-   for every signed-in admin and, for those who hold Statistics.View, a row of
-   live event stat cards (D-339) read from the same aggregate endpoint as the
-   full /admin/statistics dashboard, with a link through to it. The cards are an
-   enhancement gated in code (the page itself stays [Authorize]-only so it is the
-   always-visible landing); the API enforces Statistics.View too. *@
+   for every signed-in admin and, for those who hold Statistics.View, the full
+   set of live event stat cards (D-339, D-202). The cards are clickable and
+   navigate to each module's admin list. *@
 @page "/"
 @layout CpShellLayout
 @attribute [Authorize]
@@ -24,21 +22,39 @@
             <h2 class="simf-panel__title">@L["Dashboard.Stats.Heading"]</h2>
             <div class="simf-form__actions">
                 <SimfStatCard Title="@L["Admin.Statistics.Stat.TotalAttendees"]"
-                              Value="@Count(_dashboard.TotalAttendees)" />
+                              Value="@Count(_dashboard.TotalAttendees)"
+                              Href="/admin/attendees" />
                 <SimfStatCard Title="@L["Admin.Statistics.Stat.ApprovedAttendees"]"
-                              Value="@Count(_dashboard.ApprovedAttendees)" />
+                              Value="@Count(_dashboard.ApprovedAttendees)"
+                              Href="/admin/attendees" />
                 <SimfStatCard Title="@L["Admin.Statistics.Stat.PendingApprovals"]"
-                              Value="@Count(_dashboard.PendingApprovals)" />
+                              Value="@Count(_dashboard.PendingApprovals)"
+                              Href="/admin/visitors/pending" />
                 <SimfStatCard Title="@L["Admin.Statistics.Stat.Sessions"]"
-                              Value="@Count(_dashboard.Sessions)" />
+                              Value="@Count(_dashboard.Sessions)"
+                              Href="/admin/sessions" />
                 <SimfStatCard Title="@L["Admin.Statistics.Stat.Speakers"]"
-                              Value="@Count(_dashboard.Speakers)" />
+                              Value="@Count(_dashboard.Speakers)"
+                              Href="/admin/speakers" />
                 <SimfStatCard Title="@L["Admin.Statistics.Stat.Booths"]"
-                              Value="@Count(_dashboard.Booths)" />
+                              Value="@Count(_dashboard.Booths)"
+                              Href="/admin/booths" />
+                <SimfStatCard Title="@L["Admin.Statistics.Stat.Sponsors"]"
+                              Value="@Count(_dashboard.Sponsors)"
+                              Href="/admin/sponsors" />
+                <SimfStatCard Title="@L["Admin.Statistics.Stat.NewsArticles"]"
+                              Value="@Count(_dashboard.NewsArticles)"
+                              Href="/admin/news" />
+                <SimfStatCard Title="@L["Admin.Statistics.Stat.MediaItems"]"
+                              Value="@Count(_dashboard.MediaItems)"
+                              Href="/admin/media-library" />
+                <SimfStatCard Title="@L["Admin.Statistics.Stat.RatingsCount"]"
+                              Value="@Count(_dashboard.RatingsCount)"
+                              Href="/admin/ratings" />
+                <SimfStatCard Title="@L["Admin.Statistics.Stat.AverageRating"]"
+                              Value="@_dashboard.AverageRating.ToString("0.0", CultureInfo.InvariantCulture)"
+                              Href="/admin/ratings" />
             </div>
-            <p class="simf-panel__text">
-                <a href="/admin/statistics">@L["Dashboard.Stats.ViewAll"]</a>
-            </p>
         </div>
     }
 </div>

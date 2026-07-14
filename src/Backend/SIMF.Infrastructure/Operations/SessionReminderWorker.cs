@@ -17,10 +17,15 @@ namespace SIMF.Infrastructure.Operations;
 /// to every attendee with an active seat in that session.
 ///
 /// <para>Dedup: <c>Session.ReminderSentUtc</c> is the once-only guard
-/// (D-217 freeze-lift). A session is stamped after its batch is dispatched,
-/// so a restart cannot resend (unlike an in-memory set). Granularity is
-/// per-session: a visitor who books AFTER the reminder fired does not get a
-/// late reminder — acceptable for a "starts in {lead}" nudge.</para>
+/// (D-217 freeze-lift). A session is stamped and committed BEFORE its batch
+/// is dispatched, so a restart mid-tick cannot resend (unlike an in-memory
+/// set, or a stamp saved only after the whole loop). The notification rows
+/// land on SIMF_Identity and cannot share a transaction with this SIMF_App
+/// stamp (D-157), so claiming first makes a reminder at-most-once (a crash
+/// may drop the rest of one session's batch) rather than re-sending it on
+/// the next tick. Granularity is per-session: a visitor who books AFTER the
+/// reminder fired does not get a late reminder — acceptable for a "starts in
+/// {lead}" nudge.</para>
 /// </summary>
 internal sealed class SessionReminderWorker(
     IServiceScopeFactory scopeFactory,
@@ -94,12 +99,12 @@ internal sealed class SessionReminderWorker(
     }
 
     /// <summary>
-    /// The core scan, extracted for direct unit testing. Notifies every
-    /// attendee with an active seat in each due session, then stamps
-    /// <c>ReminderSentUtc</c> so each session is reminded exactly once.
-    /// Returns the number of sessions reminded. A single attendee's dispatch
-    /// failure is logged and skipped — it never aborts the batch or blocks the
-    /// dedup stamp.
+    /// The core scan, extracted for direct unit testing. For each due session
+    /// it claims the session — stamping <c>ReminderSentUtc</c> and committing
+    /// it BEFORE dispatch — then notifies every attendee with an active seat,
+    /// so a restart mid-tick can never re-send. Returns the number of sessions
+    /// reminded. A single attendee's dispatch failure is logged and skipped —
+    /// it never aborts the batch.
     /// </summary>
     internal static async Task<int> RunReminderScanAsync(
         SimfAppDbContext db, INotificationDispatcher notifications,
@@ -128,6 +133,15 @@ internal sealed class SessionReminderWorker(
                 .Distinct()
                 .ToListAsync(cancellationToken);
 
+            // Claim the session BEFORE dispatching: stamp ReminderSentUtc and
+            // commit it so a restart mid-batch (or a second worker instance)
+            // cannot re-send this session's reminder. The notification writes
+            // land on SIMF_Identity and cannot share a transaction with this
+            // SIMF_App stamp (D-157). A zero-attendee session is still claimed
+            // so the worker stops re-scanning it every minute until it starts.
+            session.ReminderSentUtc = now;
+            await db.SaveChangesAsync(cancellationToken);
+
             foreach (var userId in attendeeIds)
             {
                 try
@@ -153,13 +167,8 @@ internal sealed class SessionReminderWorker(
                         userId, session.Id);
                 }
             }
-
-            // Stamp even a zero-attendee session so the worker stops
-            // re-scanning it every minute until it starts.
-            session.ReminderSentUtc = now;
         }
 
-        await db.SaveChangesAsync(cancellationToken);
         return due.Count;
     }
 }

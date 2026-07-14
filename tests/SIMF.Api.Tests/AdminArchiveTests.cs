@@ -270,6 +270,33 @@ public sealed class AdminArchiveTests : IClassFixture<SimfApiFactory>
             detail.PastSpeakers!.Select(p => p.NameEn).ToArray());
     }
 
+    // R1 audit (#27) — a child-list string over its EF column limit must be a
+    // clean bilingual 400 (archive_edition_invalid), NOT a SQL-truncation 500.
+    // 2009 is outside the seeded (2022–2025) and other-test year ranges.
+    [Fact]
+    public async Task Create_with_over_length_gallery_url_is_ARCHIVE_EDITION_INVALID_400()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var response = await PostAuthAsync("/api/v1/admin/archive",
+            new CreateArchiveEditionRequest
+            {
+                Year = 2009,
+                TitleEn = "SIMF 2009",
+                TitleAr = "سيمف 2009",
+                Attendees = 1,
+                Sessions = 1,
+                Speakers = 1,
+                Gallery = new List<ArchiveMediaItemInput>
+                {
+                    // Url column is nvarchar(512); 600 chars must be rejected.
+                    new() { Kind = 0, Url = new string('u', 600), DisplayOrder = 0 },
+                },
+            }, admin);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.ArchiveEditionInvalid, body.Error!.Code);
+    }
+
     // -- helpers --
 
     private async Task<string> CreateAdministratorAndSignInAsync()

@@ -117,6 +117,16 @@ internal sealed class SessionQuestionCommitteeService(
             // IsHidden marker is derived from it at projection time, so there is
             // no separate flag to keep in sync.
             question.Status = QuestionStatus.Hidden;
+            // S-8 — a hidden question must not stay "pushed to the speaker": clear
+            // the pushed marker (mirrors SessionModerationService.SetHiddenAsync) so
+            // a pushed-then-committee-hidden question drops off the on-stage queue
+            // and does not resurface on stage if the Committee later re-approves it.
+            // (Re-approval does not re-push — a fresh push is an explicit action.)
+            if (question.IsPushed)
+            {
+                question.IsPushed = false;
+                question.PushedAt = null;
+            }
             await appDbContext.SaveChangesAsync(cancellationToken);
             await AuditAsync(AuditEvents.SessionQuestionHidden, actorUserId, question, cancellationToken);
             logger.LogInformation(

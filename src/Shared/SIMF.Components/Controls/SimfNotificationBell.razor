@@ -162,6 +162,7 @@
         _open = !_open;
         if (_open)
         {
+            await RefreshUnreadAsync();
             _focusOnNextRender = true;
             await LoadLatestAsync();
         }
@@ -194,7 +195,7 @@
         }
     }
 
-    private async Task RefreshUnreadAsync()
+    public async Task RefreshUnreadAsync()
     {
         try
         {

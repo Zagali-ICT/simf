@@ -105,6 +105,39 @@ public sealed class SessionQuestionCommitteeTests : IClassFixture<SimfApiFactory
     }
 
     [Fact]
+    public async Task Committee_hide_of_a_pushed_question_clears_the_on_stage_flag()
+    {
+        // Regression (Round-1 audit #11): a question pushed on stage then retracted
+        // via the Committee 'hide' surface must not keep IsPushed=true, or it
+        // resurfaces on the moderator desk as already-on-stage the moment the
+        // Committee re-approves it — without any fresh push after the retraction.
+        var admin = await CreateAdministratorAndSignInAsync();
+        var session = await SeedLiveSessionAsync();
+        var qid = await SubmitQuestionAsync(session.Id);
+
+        await PutAuthAsync($"/api/v1/admin/questions/{qid}/approve", new { }, admin);
+        var push = await PutAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions/{qid}/push", new { }, admin);
+        Assert.Equal(HttpStatusCode.OK, push.StatusCode);
+        var pushed = (await push.Content
+            .ReadFromJsonAsync<ApiResult<SessionQuestionModeratorRow>>())!.Data!;
+        Assert.True(pushed.IsPushed);
+
+        // Committee retracts (hide) then re-approves the same question.
+        await PutAuthAsync($"/api/v1/admin/questions/{qid}/hide", new { }, admin);
+        await PutAuthAsync($"/api/v1/admin/questions/{qid}/approve", new { }, admin);
+
+        var desk = await GetAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions/moderate", admin);
+        var rows = (await desk.Content
+            .ReadFromJsonAsync<ApiResult<IReadOnlyList<SessionQuestionModeratorRow>>>())!.Data!;
+        // Back on the desk as Approved, but NOT flagged on stage.
+        Assert.Contains(rows, r =>
+            r.Id == qid && r.Status == QuestionStatus.Approved
+            && !r.IsPushed && r.PushedAt is null);
+    }
+
+    [Fact]
     public async Task Escalate_sets_the_role_and_keeps_it_pending()
     {
         var admin = await CreateAdministratorAndSignInAsync();

@@ -206,6 +206,21 @@ public sealed class NotificationTests : IClassFixture<SimfApiFactory>
         Assert.Equal(1, count);
     }
 
+    [Fact]
+    public async Task List_is_forbidden_for_a_non_approved_account()
+    {
+        // Finding #23 — every notification endpoint requires RequireApprovedAccount.
+        // A signed-in but non-approved (EmailVerified / Pending) account holds a
+        // token whose account_state != "Approved", so the policy 403s it — a guest
+        // never reaches the notifications route (docs/tests/e2e/mobile-notifications.md).
+        var tokens = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
+
+        var response = await PostAuthAsync("/api/v1/app/account/notifications/list",
+            new GridQuery { Top = 50 }, tokens.AccessToken);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
     // -- helpers ---------------------------------------------------------------
 
     private async Task<int> GetUnreadCountAsync(string token)
@@ -243,7 +258,9 @@ public sealed class NotificationTests : IClassFixture<SimfApiFactory>
 
     private async Task<(string Token, Guid UserId)> CreateUserAndSignInAsync()
     {
-        var tokens = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
+        // The notification endpoints require RequireApprovedAccount (finding #23),
+        // so the caller must hold an approved-account token.
+        var tokens = await AuthFlow.SignInApprovedVisitorWithoutTwoFactorAsync(_client, _factory);
         // D-099: sign-up now dispatches a "Verification code sent" in-app
         // notification. Clear that pre-seeded row so the per-test seeders +
         // count assertions start from a clean slate.

@@ -126,14 +126,37 @@ internal sealed class MyRequestsService(
         {
             case AppRequestKind.SpeakerMeeting:
             {
-                var r = await appDbContext.SpeakerMeetingRequests.SingleOrDefaultAsync(
+                var r = await appDbContext.SpeakerMeetingRequests.AsNoTracking().SingleOrDefaultAsync(
                     x => x.Id == id && x.RequestedByUserId == userId, cancellationToken)
                     ?? throw NotFound();
                 // R-1 — a speaker meeting may be withdrawn while Pending OR AwaitingSpeaker
                 // (see the feed's CanCancel). Cancelling voids the double-opt-in tokens
                 // (they validate against this status) and releases the held hall slot.
                 EnsureSpeakerCancellable(r.Status);
-                r.Status = MeetingRequestStatus.Cancelled;
+
+                // #10 — the DB is the single arbiter, not the read above (mirrors
+                // MeetingActionTokenService.ApplyAsync). While the requester was on the
+                // cancel screen the speaker may have Approved (AwaitingSpeaker -> Accepted)
+                // via the double-opt-in link; SpeakerMeetingRequest carries no rowversion
+                // (frozen schema), so a tracked read-modify-save would emit an
+                // unconditional UPDATE and silently overwrite that just-confirmed decision.
+                // Flip the status with a conditional UPDATE guarded on the still-cancellable
+                // states; if the speaker's decision landed first it matches 0 rows and we
+                // surface the 409 instead of a lost update.
+                var affected = await appDbContext.SpeakerMeetingRequests
+                    .Where(x => x.Id == id && x.RequestedByUserId == userId
+                        && (x.Status == MeetingRequestStatus.Pending
+                            || x.Status == MeetingRequestStatus.AwaitingSpeaker))
+                    .ExecuteUpdateAsync(
+                        s => s.SetProperty(x => x.Status, MeetingRequestStatus.Cancelled),
+                        cancellationToken);
+                if (affected == 0)
+                {
+                    throw new ApiException(
+                        ErrorCodes.AppRequestNotCancellable, 409,
+                        "Only a pending request can be cancelled.",
+                        "لا يمكن إلغاء سوى طلب قيد المراجعة.");
+                }
                 break;
             }
             case AppRequestKind.ParticipationDocument:

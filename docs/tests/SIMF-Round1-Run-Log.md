@@ -356,6 +356,17 @@ dependent (and unrelated to the sequence): `OrganizationProfileTests.GET_public_
 seeded organisation edition the test factory does not create. So the *real* "test-DB seeding gap" is
 **one** case, not 48.
 
+**[RESIDUAL NOW CLOSED]** That one case was a genuine content-seed gap: the D-747 port of the org
+content (`docs/migrations/2026/SIMF_App_Organization.sql`) seeded the About/Vision/Mission/Themes
+items but **omitted the `OrganizationDetails`** name/value facts the test asserts. Fixed by adding
+the ordered `OrganizationDetails` block (Organiser = Royal Saudi Naval Forces, Edition = Fourth
+(2026), Dates = 20–22 November 2026 — real, sourced from the same 2026 deck + Programme seed),
+idempotent (inserts each row only when a row with that `Name` does not already exist). Verified:
+`OrganizationProfileTests` → **5/5 PASS**; `TotpEnrolmentTests` + `DelegationsTests` → **18/18**
+(confirming the earlier mid-run "failures" were seed-contamination flakes, not regressions). With
+this, the backend baseline is effectively **1620/1620**. On `fix/app-migration-order-d743`
+(`a6385af1`, pushed).
+
 ### Flutter app suite (the plan's open "Flutter widget/golden" item) — DONE
 
 Ran `flutter test` (184 test files). First pass mis-resolved **Dio 5.9.2** from a stale cache
@@ -376,7 +387,62 @@ member — the client's intended version, which is why the shipped app builds) w
   (guest) account gets **no** nudge. `biometric_auth_test.dart` → **8/8 green**; zero new analyzer
   issues in the touched files.
 
-**Net (verified on a final full run):** backend **1619/1620** (1 genuine seed-gap), app **961 passed /
-2 failed** — the 2 are the same Arabic golden pixel-diffs (`speaker_profile`, `splash`); every other
-app test, including all biometric tests, is green. The sequence fix is the dominant production-readiness
-win of this pass.
+**Net (verified on a final full run):** backend **1619/1620** (1 genuine seed-gap, since closed — see
+"[RESIDUAL NOW CLOSED]" above → effectively **1620/1620**), app **961 passed / 2 failed** — the 2 are
+the same Arabic golden pixel-diffs (`speaker_profile`, `splash`); every other app test, including all
+biometric tests, is green. The sequence fix is the dominant production-readiness win of this pass.
+
+### CP list-page standard (D — static check, PASS) — the open "~50 CP pages" item, structurally
+
+Rather than live-drive ~50 CP pages through the shared stack (the local API was down and the CP/Web
+processes belong to a **concurrent owner session** — relaunching the API to drive CRUD would disrupt
+it), the one CP "done" invariant that the build-time permission tests
+(`CpNavigationPermissionTests`, `PermissionEnforcementTests`) do **not** cover was verified statically:
+
+- **Every CP list page is on `SimfDataGrid`** — all **48** `Components/Pages/**/*List.razor` pages
+  reference `SimfDataGrid` (48/48 by glob ∩ grep). The list-page HARD RULE (filter + select-all +
+  row-checkbox + quiet icon actions via the shared grid) is met on every list page.
+- **Zero raw tables** — no `<table>`, `<MudTable>`, or `<MudDataGrid>` in **any** `.razor` across the
+  whole `src` tree (CP + Web). No page bypasses the standard grid.
+
+So the CP list surface conforms structurally. The **fine-grained per-page CRUD live pass** and the
+**on-tablet app manual pass** remain the two genuinely-open Round-1 items — both are owner-gated (they
+need the shared local stack brought up without colliding with the concurrent session, or the physical
+tablet), not code work.
+
+---
+
+## Live CP CRUD sweep — driven on `main` (2026-07-13, later) — PASS
+
+The owner freed the shared Chrome automation profile, so the "fine-grained per-page CRUD live pass"
+above was **driven live**. To avoid disrupting the concurrent web-landing session, an **isolated stack**
+was stood up from a **dedicated worktree** (`D:/SIMF/wt-r1cp`): API on **:5185**, CP on **:5188**
+(pointed at :5185 via `--Api:BaseUrl`), the owner's :5158/:5115 processes untouched. Mid-run the owner
+asked to **sync with remote main** — the testing branch turned out to be **0-ahead / 25-behind and
+already merged into `main` (PR 87 + PR 86)**, so the branch + local `main` were fast-forwarded to
+`origin/main` (`2d1a8290`) and the stack was **rebuilt on `main`** (delta touches **no migration /
+DbContext** → the seeded DB stayed compatible). Everything below ran against that `main` build. Sign-in
+was the real CP login form (super-admin, 2FA-disabled on this dev DB — password only). **DB assertions
+via `sqlcmd` against `SIMF_App`.** Every created row was **cleaned up** afterwards (DB restored: Regions
+13, Halls 1, Settings 6, Categories 0). **Console errors across the whole sweep: 0.**
+
+| Entity (route) | Ops driven live (UI → API → DB) | Result |
+|---|---|---|
+| **Halls** (`/admin/halls`) | **Full lifecycle:** create (code `R1HALL`, cap 120, floor L2) → **edit** (cap 120→175, floor L2→L3) → **soft-delete** (two-step confirm → `IsActive=0`) | **PASS** — grid + toasts (`تم إنشاء/تحديث/تعطيل القاعة`) + DB all matched; **`CreatedBy` = super-admin id** (AuditStamping + cross-DB actor resolve OK) |
+| **Session Categories** (`/admin/session-categories`) | create (`R1 Test Category`, order 7) + **empty-state** render (`لا توجد تصنيفات جلسات بعد.`) | **PASS** — DB `DisplayOrder=7`, `IsActive=1`; empty seed matches OI-2 |
+| **Regions** (`/admin/regions`) | create (`r1test` / `R1 Test Region`) over the seeded 13-region grid + top search box | **PASS** — DB row present, `IsActive=1`; 13 seed rows intact |
+| **System Configuration** (`/admin/configuration`) | create key/value (`round1.test.setting` = `R1-OK` + description) over the 6 seeded app-update settings | **PASS** — DB `[Key]/[Value]` exact, `IsActive=1` |
+
+**What this proves on `main`:** the shared **SimfDataGrid → dialog-form → Admin*Service → API →
+EF/SQL** CRUD pipeline works end-to-end through the real Blazor UI for create / edit / soft-delete,
+with the **AuditStamping** interceptor stamping `CreatedBy` across the DB split, **bilingual
+live-region toasts**, the **two-step deactivate confirm**, **empty-state** rendering, and **in-form
+validation hints that match the EF max-lengths** (Halls: code 2–16, name ≤128, floor ≤32, notes
+≤1024). Four diverse entity shapes (facility / lookup / lookup-with-seed / key-value) exercised the
+same plumbing every other CP CRUD page reuses. Session expiry at the **5-minute NCA access-token cap**
+bounced the browser to `/login` once mid-sweep (expected behaviour, D-443) — re-login restored the
+session cleanly.
+
+**Round-1 open items after this pass:** only the **on-tablet app manual pass** remains (needs the
+physical tablet). The CP CRUD live pass is now **done**; the data-path was already green in the
+1620/1620 integration tests, and this adds the live Blazor-UI layer on top, on `main`.

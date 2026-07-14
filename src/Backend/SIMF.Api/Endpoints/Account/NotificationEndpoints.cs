@@ -1,6 +1,7 @@
 // Tests: SIMF.Api.Tests/NotificationTests.cs
 using System.Security.Claims;
 using FastEndpoints;
+using SIMF.Api.Endpoints.Admin;
 using SIMF.Application.Notifications;
 using SIMF.Common;
 using SIMF.Contracts.Notifications;
@@ -19,6 +20,7 @@ public sealed class ListNotificationsEndpoint(INotificationService service)
     public override void Configure()
     {
         Post("/app/account/notifications/list");
+        Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Account");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
@@ -39,7 +41,7 @@ public sealed class ListNotificationsEndpoint(INotificationService service)
 
 /// <summary>
 /// <c>GET /api/v1/app/account/notifications/unread-count</c> — polled every
-/// 60 s by the notification bell. Auth-only.
+/// 60 s by the notification bell. Requires an approved account.
 /// </summary>
 public sealed class UnreadNotificationCountEndpoint(INotificationService service)
     : EndpointWithoutRequest<ApiResult<UnreadCountResponse>>
@@ -47,6 +49,7 @@ public sealed class UnreadNotificationCountEndpoint(INotificationService service
     public override void Configure()
     {
         Get("/app/account/notifications/unread-count");
+        Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Account");
         Summary(summary => summary.Summary =
             "Return the count of unread notifications for the signed-in user.");
@@ -78,6 +81,7 @@ public sealed class MarkNotificationReadEndpoint(INotificationService service)
     public override void Configure()
     {
         Post("/app/account/notifications/{id:guid}/read");
+        Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Account");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
@@ -105,6 +109,7 @@ public sealed class MarkAllNotificationsReadEndpoint(INotificationService servic
     public override void Configure()
     {
         Post("/app/account/notifications/read-all");
+        Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Account");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
@@ -136,6 +141,7 @@ public sealed class DeleteNotificationEndpoint(INotificationService service)
     public override void Configure()
     {
         Delete("/app/account/notifications/{id:guid}");
+        Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Account");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =

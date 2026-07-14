@@ -128,7 +128,7 @@ public partial class CreateAdminForm
             }
             else
             {
-                _error = envelope?.Error?.MessageForCurrentCulture()
+                _error = envelope?.Error?.DetailedMessageForCurrentCulture()
                     ?? L["Admin.CreateUser.Fallback"];
             }
         }

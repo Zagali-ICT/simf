@@ -13,6 +13,7 @@ using SIMF.Domain.Contacts;
 using SIMF.Domain.Exhibitors;
 using SIMF.Domain.Files;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Venue;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -196,6 +197,44 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
         var list = (await publicList.Content
             .ReadFromJsonAsync<ApiResult<IReadOnlyList<PublicBoothSummary>>>())!.Data!;
         Assert.DoesNotContain(list, b => b.Id == created.Id);
+    }
+
+    // #26 — a booth still marked by an active venue-map node cannot be
+    // deactivated (that would orphan the map node); the admin gets a 409
+    // BOOTH_IN_USE telling them to remove the node first.
+    [Fact]
+    public async Task Deactivate_is_blocked_when_a_venue_map_node_still_marks_the_booth()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var create = await PostAuthAsync(
+            "/api/v1/admin/booths",
+            new AdminCreateBoothRequest { Code = NewCode(), Name = "Mapped", NameArabic = "معلّم" },
+            token);
+        var created = (await create.Content
+            .ReadFromJsonAsync<ApiResult<AdminBoothDetail>>())!.Data!;
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            db.Set<VenueMapNode>().Add(new VenueMapNode
+            {
+                Id = Guid.NewGuid(),
+                Label = "Booth marker",
+                LabelArabic = "علامة الجناح",
+                Kind = VenueMapNodeKind.Booth,
+                X = 10,
+                Y = 20,
+                BoothId = created.Id,
+                IsActive = true,
+                CreatedAt = DateTimeOffset.UtcNow,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var delete = await DeleteAuthAsync($"/api/v1/admin/booths/{created.Id}", token);
+        Assert.Equal(HttpStatusCode.Conflict, delete.StatusCode);
+        var body = (await delete.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.BoothInUse, body.Error!.Code);
     }
 
     [Fact]

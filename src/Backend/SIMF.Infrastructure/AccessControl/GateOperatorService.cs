@@ -31,6 +31,10 @@ internal sealed class GateOperatorService(
     ILogger<GateOperatorService> logger) : IGateOperatorService
 {
     private const string ArabicLanguageCode = "ar";
+    // GateScan.QrIdAtScan column width (GateScanConfiguration.HasMaxLength(32)). A
+    // normalised QR longer than this can never be a badge (UserProfile.QrId is 16)
+    // and would truncate on insert, so it is denied as QrUnknown rather than stored.
+    private const int QrIdAtScanMaxLength = 32;
     private static readonly TimeSpan DuplicateWindow = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan IdempotencyRetention = TimeSpan.FromHours(24);
 
@@ -80,6 +84,22 @@ internal sealed class GateOperatorService(
         }
 
         var qr = QrId.Normalise(context.Request.Qr ?? string.Empty);
+
+        // #14 — GateScan.QrIdAtScan is nvarchar(32) (GateScanConfiguration) and a
+        // real badge QrId is at most 16 chars, so a normalised value longer than the
+        // column can never resolve to a badge and would truncate the append-only scan
+        // row on insert (a 500 for an ordinary over-length mis-scan). Deny it as the
+        // documented QrUnknown at HTTP 200, storing a length-capped QrIdAtScan so the
+        // log row still fits — the same denial the unresolved-QR path below records.
+        if (qr.Length > QrIdAtScanMaxLength)
+        {
+            return await RecordDenialAsync(
+                context, qrIdAtScan: qr[..QrIdAtScanMaxLength], denialCtx: DenialContext.Empty,
+                direction: ResolveDirection(snapshot, context.Request.RequestedDirection, null),
+                reason: DenialReasonCode.QrUnknown,
+                requestHash, idempotencyKey, cancellationToken);
+        }
+
         QrResolution? resolution;
         try
         {
@@ -423,6 +443,77 @@ internal sealed class GateOperatorService(
         });
     }
 
+    /// <summary>#15 — persists a freshly built <see cref="GateScan"/> (with its
+    /// staged idempotency row) and back-fills the idempotency row's ScanId. A
+    /// concurrent same-key retry (both requests clear <see cref="TryReplayAsync"/>
+    /// before either commits) or a key reused past the 24h replay window collides on
+    /// the append-only <c>UX_GateScan_Idempotency</c> / <c>PK_ScanIdempotency</c>
+    /// uniqueness. The idempotency contract (SIMF-API-GATES-001 §9) is a replay, not
+    /// a 500, so that duplicate-key collision is recovered into the prior committed
+    /// scan — mirroring <c>HallAttendanceService.OpenOrCreateArrivalAsync</c> and
+    /// <c>SeatReservationService.PersistWithUniquenessGuardAsync</c>. Returns the
+    /// replay result to hand back to the caller, or <c>null</c> when the insert
+    /// committed normally.</summary>
+    private async Task<GateScanResult?> TrySaveScanAsync(
+        GateScan scan, string? idempotencyKey, Guid gateId,
+        string? acceptLanguage, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await appDbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (
+            !string.IsNullOrWhiteSpace(idempotencyKey)
+            && ex.ViolatesAnyIndex("UX_GateScan_Idempotency", "PK_ScanIdempotency"))
+        {
+            return await RecoverIdempotentReplayAsync(
+                scan, idempotencyKey!, gateId, acceptLanguage, cancellationToken);
+        }
+
+        // ScanId is now populated by the IDENTITY column. Back-fill the idempotency
+        // row in the same transaction window.
+        if (!string.IsNullOrWhiteSpace(idempotencyKey))
+        {
+            await appDbContext.ScanIdempotencies
+                .Where(r => r.Key == idempotencyKey && r.GateId == gateId)
+                .ExecuteUpdateAsync(s => s.SetProperty(r => r.ScanId, scan.Id),
+                    cancellationToken);
+        }
+        return null;
+    }
+
+    /// <summary>#15 — recovers a duplicate-key idempotency collision into a replay:
+    /// detaches the losing scan insert and its staged idempotency row so the context
+    /// is clean, then loads and returns the prior committed scan (the byte-identical
+    /// replay the idempotency contract promises). The <see cref="TrySaveScanAsync"/>
+    /// filter guarantees an idempotency row is committed for the key, so the prior
+    /// lookup resolves.</summary>
+    private async Task<GateScanResult> RecoverIdempotentReplayAsync(
+        GateScan losingScan, string idempotencyKey, Guid gateId,
+        string? acceptLanguage, CancellationToken cancellationToken)
+    {
+        appDbContext.Entry(losingScan).State = EntityState.Detached;
+        foreach (var staged in appDbContext.ChangeTracker
+                     .Entries<ScanIdempotency>()
+                     .Where(e => e.State is EntityState.Added or EntityState.Modified)
+                     .ToList())
+        {
+            staged.State = EntityState.Detached;
+        }
+
+        var prior = await appDbContext.ScanIdempotencies.AsNoTracking()
+            .Where(r => r.Key == idempotencyKey && r.GateId == gateId)
+            .SingleOrDefaultAsync(cancellationToken)
+            ?? throw new InvalidOperationException(
+                "Gate scan idempotency collision with no prior row to replay.");
+
+        logger.LogInformation(
+            "Recovered an idempotent replay on gate {GateId} after a duplicate-key scan insert.",
+            gateId);
+        var replay = await LoadReplayAsync(prior, acceptLanguage, cancellationToken);
+        return new GateScanResult(GateScanResultKind.Recorded, replay, true, null);
+    }
+
     private async Task<GateScanResult> RecordAllowedAsync(
         GateScanContext context, string qr, QrResolution resolution,
         ScanDirection direction, Guid? hallDoorHallId, bool hallDoorDirectionInferred,
@@ -451,17 +542,9 @@ internal sealed class GateOperatorService(
                 idempotencyKey, context.GateId, requestHash, HashResponse(response),
                 now, cancellationToken);
         }
-        await appDbContext.SaveChangesAsync(cancellationToken);
-
-        // ScanId is now populated by the IDENTITY column. Back-fill the
-        // idempotency row in the same transaction window.
-        if (!string.IsNullOrWhiteSpace(idempotencyKey))
-        {
-            await appDbContext.ScanIdempotencies
-                .Where(r => r.Key == idempotencyKey && r.GateId == context.GateId)
-                .ExecuteUpdateAsync(s => s.SetProperty(r => r.ScanId, scan.Id),
-                    cancellationToken);
-        }
+        var replayResult = await TrySaveScanAsync(
+            scan, idempotencyKey, context.GateId, context.AcceptLanguage, cancellationToken);
+        if (replayResult is not null) { return replayResult; }
 
         failureCircuit.RecordAllowed(context.GateId);
         logger.LogInformation(
@@ -555,15 +638,9 @@ internal sealed class GateOperatorService(
                 idempotencyKey, context.GateId, requestHash, HashResponse(response),
                 now, cancellationToken);
         }
-        await appDbContext.SaveChangesAsync(cancellationToken);
-
-        if (!string.IsNullOrWhiteSpace(idempotencyKey))
-        {
-            await appDbContext.ScanIdempotencies
-                .Where(r => r.Key == idempotencyKey && r.GateId == context.GateId)
-                .ExecuteUpdateAsync(s => s.SetProperty(r => r.ScanId, scan.Id),
-                    cancellationToken);
-        }
+        var replayResult = await TrySaveScanAsync(
+            scan, idempotencyKey, context.GateId, context.AcceptLanguage, cancellationToken);
+        if (replayResult is not null) { return replayResult; }
 
         await auditLog.WriteAsync(new AuditEntry
         {

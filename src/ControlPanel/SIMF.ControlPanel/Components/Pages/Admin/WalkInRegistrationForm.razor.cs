@@ -590,7 +590,7 @@ public partial class WalkInRegistrationForm : IDisposable
             }
             else
             {
-                _error = envelope?.Error?.MessageForCurrentCulture()
+                _error = envelope?.Error?.DetailedMessageForCurrentCulture()
                     ?? L["Admin.WalkIn.Error.Fallback"];
             }
         }

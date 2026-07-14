@@ -197,6 +197,38 @@ public sealed class GateHallDoorChainTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Both_mode_gate_scan_after_a_geofence_arrival_keeps_the_attendee_present()
+    {
+        // #24 — a row opened by the GPS geofence is a cross-channel arrival; the doc
+        // merges every arrival means into the one open row, so the FIRST Both-mode
+        // turnstile pass must MERGE, not close it. The old "any open row → departure"
+        // rule closed the geofence row, marking a still-present attendee as departed
+        // and under-counting live occupancy.
+        var (hallId, sessionId) = await SeedHallWithLiveSessionAsync(withGeofence: true);
+        var (_, attendeeUserId) = await CreateApprovedVisitorWithQrAsync();
+        var operatorId = Guid.NewGuid();
+
+        using var scope = _factory.Services.CreateScope();
+        var attendance = scope.ServiceProvider.GetRequiredService<IHallAttendanceService>();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+
+        // Arrival via geofence opens the one attendance row (Method=Geofence).
+        await attendance.RecordGeofenceArrivalAsync(
+            attendeeUserId, sessionId, CenterLat, CenterLon);
+        Assert.Equal(1, await db.HallAttendances.CountAsync(
+            a => a.SessionId == sessionId && a.LeaveUtc == null));
+
+        // First Both-mode turnstile pass for the same attendee — must merge, not depart.
+        await attendance.RecordGateDoorScanAsync(
+            attendeeUserId, hallId, ScanDirection.CheckIn, directionInferred: true, operatorId);
+
+        // Still present: the single open row remains open (merged), not closed.
+        var row = await db.HallAttendances.SingleAsync(a => a.SessionId == sessionId);
+        Assert.Null(row.LeaveUtc);
+        Assert.Equal(AttendanceMethod.Geofence, row.Method);
+    }
+
+    [Fact]
     public async Task Fixed_in_gate_scanned_twice_keeps_the_row_open()
     {
         // FIX C — a fixed In gate (directionInferred: false) is authoritative: two

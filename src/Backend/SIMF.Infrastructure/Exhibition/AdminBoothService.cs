@@ -299,6 +299,21 @@ internal sealed class AdminBoothService(
             return; // idempotent
         }
 
+        // #26 — a soft-deleted booth would orphan any venue-map node that marks it
+        // (the VenueMapNode→Booth FK is Restrict, but that only guards a hard delete,
+        // not a soft delete). Block with a clear 409 so the admin removes the map
+        // node first — mirrors AdminContactService's ContactInUse guard.
+        var markedOnVenueMap = await dbContext.VenueMapNodes
+            .AsNoTracking()
+            .AnyAsync(node => node.IsActive && node.BoothId == id, cancellationToken);
+        if (markedOnVenueMap)
+        {
+            throw new ApiException(
+                ErrorCodes.BoothInUse, 409,
+                "This booth is still marked on the venue map and cannot be deactivated. Remove its venue-map node first.",
+                "ما زال هذا الجناح محدداً على خريطة المكان ولا يمكن إلغاء تفعيله. احذف عقدة الخريطة المرتبطة به أولاً.");
+        }
+
         booth.Deactivate();
         booth.UpdatedAt = timeProvider.GetUtcNow();
         await dbContext.SaveChangesAsync(cancellationToken);

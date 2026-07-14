@@ -116,6 +116,22 @@ internal sealed class UserProfileService(
                     "The selected profile type is no longer active.",
                     "نوع الملف الشخصي المحدّد لم يعد مفعّلاً.");
             }
+            // R1 audit fix (D-725) — the sign-up picker
+            // (GET /app/account/profile-types) only offers rows where
+            // IsAppRegisterable=true; the self-service write path MUST mirror
+            // that server-side. Otherwise a direct POST could self-assign a
+            // CP-only operational type (Staff / Moderator, IsAppRegisterable=false)
+            // — which, once an admin approves the account off the "Others" queue,
+            // mints that partner ProfileType's MobileAppRole. The picker filter is
+            // read-side only; without this guard it is bypassed by a crafted call.
+            // Fail closed: reject any self-picked non-registerable type.
+            if (!pickedProfileType.IsAppRegisterable)
+            {
+                throw new ApiException(
+                    ErrorCodes.AdminProfileTypeInvalid, 400,
+                    "The selected profile type cannot be self-picked.",
+                    "لا يمكن اختيار نوع الملف الشخصي هذا ذاتيًا.");
+            }
             if (pickedProfileType.UserType != UserType.Visitor)
             {
                 throw new ApiException(

@@ -1,5 +1,7 @@
 // Tests: SIMF.Api.Tests/CmsTests.cs
 using FastEndpoints;
+using FluentValidation;
+using SIMF.Api.Endpoints.Auth.Validators;
 using SIMF.Application.Cms.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Cms;
@@ -66,9 +68,29 @@ public sealed class BatchPublicContentBlocksEndpoint(IPublicCmsService service)
     }
     public override async Task HandleAsync(PublicContentBlockBatchRequest req, CancellationToken ct)
     {
+        // R1 audit (#28) — a {"keys": null} body overwrites the property
+        // initializer with null on deserialization. The validator rejects a
+        // null/empty list with a clean 400; this guard keeps the handler
+        // NRE-safe as defense-in-depth if the request ever reaches it.
         var result = await service.GetContentBlocksAsync(
-            req.Keys.ToList(), ct);
+            req.Keys?.ToList() ?? new List<string>(), ct);
         await Send.OkAsync(ApiResult<PublicContentBlockBatch>.Ok(result), ct);
+    }
+}
+
+/// <summary>R1 audit (#28) — rejects a null/empty <c>Keys</c> list on the public
+/// batch read with a clean bilingual 400 (validation_failed) instead of letting
+/// a <c>{"keys": null}</c> body fault the handler. Auto-discovered by
+/// FastEndpoints and bound to the endpoint's request type.</summary>
+public sealed class PublicContentBlockBatchRequestValidator
+    : Validator<PublicContentBlockBatchRequest>
+{
+    public PublicContentBlockBatchRequestValidator()
+    {
+        RuleFor(request => request.Keys)
+            .NotEmpty().Bilingual(
+                "At least one content-block key is required.",
+                "يجب تحديد مفتاح محتوى واحد على الأقل.");
     }
 }
 

@@ -152,7 +152,12 @@ public sealed record ProfileTypeFacts(
     bool IsActive, UserType UserType, bool IsForVisitor, string Name,
     // D-729 (owner item 15) — the VIP-tier flag (VVIP/VIP), so the app profile
     // read can report IsVip for the speaker-meeting CTA gate.
-    bool AllowsVipMeetingSlots);
+    bool AllowsVipMeetingSlots,
+    // R1 audit fix (D-725) — the self-registration picker visibility flag, so the
+    // self-service write path (UpsertMineAsync) can reject a self-picked CP-only
+    // (IsAppRegisterable=false) operational type, mirroring the server-side filter
+    // on GET /app/account/profile-types instead of trusting the client.
+    bool IsAppRegisterable);
 
 /// <summary>Audience flag + mobile role read off an assigned profile type.</summary>
 public sealed record ProfileTypeRole(bool IsVisitor, MobileAppRole MobileAppRole);

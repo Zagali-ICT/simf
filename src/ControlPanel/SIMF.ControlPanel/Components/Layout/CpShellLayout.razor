@@ -14,7 +14,7 @@
         <SimfLanguageSwitch Label='@L["Shell.SwitchLanguage"]' />
         <SimfThemeToggle LightLabel='@L["Shell.ThemeLight"]' DarkLabel='@L["Shell.ThemeDark"]' AriaLabel='@L["Shell.ThemeSwitch"]' />
         <AuthorizeView>
-            <SimfNotificationBell
+            <SimfNotificationBell @ref="_bell"
                 AriaLabel='@L["Shell.Notifications"]'
                 UnreadSuffixLabel='@L["Account.Notifications.UnreadSuffix"]'
                 DropdownTitle='@L["Shell.Notifications"]'
@@ -77,9 +77,24 @@
         }
     </SideNav>
     <ChildContent>
-        @Body
+        <CascadingValue Name="BellRefresh" Value="@(new Func<Task>(RefreshBellAsync))">
+            @Body
+        </CascadingValue>
     </ChildContent>
 </SimfAppShell>
 
 @* D-443 — token-driven session-expiry guard (signed-in shell only). *@
 <SessionTimeoutGuard />
+
+@code {
+    private SIMF.Components.Controls.SimfNotificationBell? _bell;
+
+    private async Task RefreshBellAsync()
+    {
+        if (_bell is not null)
+        {
+            await _bell.RefreshUnreadAsync();
+            StateHasChanged();
+        }
+    }
+}

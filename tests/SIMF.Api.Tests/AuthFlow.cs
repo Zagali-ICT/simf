@@ -96,6 +96,41 @@ internal static class AuthFlow
         return envelope.Data!.Tokens!;
     }
 
+    /// <summary>
+    /// Signs a brand-new visitor up, verifies the email, forces the account to
+    /// <see cref="AccountState.Approved"/> and signs in with 2FA disabled — so the
+    /// issued token carries the <c>account_state=Approved</c> claim that the
+    /// <c>RequireApprovedAccount</c> policy checks (the claim is minted at sign-in,
+    /// not read live, so the state must be set BEFORE sign-in). Returns the token pair.
+    /// </summary>
+    public static async Task<AuthTokens> SignInApprovedVisitorWithoutTwoFactorAsync(
+        HttpClient client,
+        SimfApiFactory factory)
+    {
+        var email = $"flow-approved-{Guid.NewGuid():N}@simf.test";
+
+        await client.PostAsJsonAsync(
+            "/api/v1/app/auth/sign-up",
+            new SignUpRequest { Email = email, Password = Password, ConfirmPassword = Password });
+        await client.PostAsJsonAsync(
+            "/api/v1/app/auth/verify-email",
+            new VerifyEmailRequest
+            {
+                Email = email,
+                Code = GetActiveCode(factory, email, AccountCodePurpose.EmailVerification),
+            });
+        // Approve BEFORE sign-in so the minted JWT carries account_state=Approved,
+        // and disable 2FA so the password step issues tokens directly.
+        SetAccountState(factory, email, AccountState.Approved);
+        DisableTwoFactor(factory, email);
+
+        var response = await client.PostAsJsonAsync(
+            "/api/v1/app/auth/sign-in",
+            new SignInRequest { Email = email, Password = Password });
+        var envelope = (await response.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
+        return envelope.Data!.Tokens!;
+    }
+
     /// <summary>Signs a brand-new visitor in fully and returns the issued token pair.</summary>
     public static async Task<AuthTokens> SignInVisitorAsync(HttpClient client, SimfApiFactory factory)
     {

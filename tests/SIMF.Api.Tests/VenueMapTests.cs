@@ -118,6 +118,25 @@ public sealed class VenueMapTests : IClassFixture<SimfApiFactory>
         Assert.Equal(ErrorCodes.VenueMapNodeInvalid, body.Error!.Code);
     }
 
+    // #25 — an out-of-range Kind (an undefined enum value from a direct API call)
+    // is rejected with a clean 400 instead of persisting an invalid node.
+    [Fact]
+    public async Task Create_with_an_undefined_kind_is_400()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var response = await PostAuthAsync(
+            "/api/v1/admin/venue-map",
+            new AdminCreateVenueMapNodeRequest
+            {
+                Label = "Bad Kind", LabelArabic = "نوع خاطئ",
+                Kind = (VenueMapNodeKind)99, X = 1, Y = 1,
+            },
+            token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.VenueMapNodeInvalid, body.Error!.Code);
+    }
+
     [Fact]
     public async Task Deactivate_drops_it_from_the_public_read()
     {

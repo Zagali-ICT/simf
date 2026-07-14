@@ -42,6 +42,15 @@ internal sealed class BadgeAuthService(
     private const int MaxAttempts = 5;
     private const string PlaceholderEmailSuffix = "@simf.local";
 
+    // Verify-then-attach: the holder-supplied email is stashed on the account's
+    // Identity token store (AspNetUserTokens) at the start step and promoted to the
+    // real account email only AFTER the code is verified at complete — the account
+    // email is never rebound before verification. Mirrors the pending-secret store
+    // in TotpEnrollmentService; the "[SIMF]" provider is the SIMF-owned token
+    // namespace and the distinct token name never collides with the TOTP secret.
+    private const string ActivationTokenProvider = "[SIMF]";
+    private const string PendingEmailTokenName = "PendingActivationEmail";
+
     public async Task<ResolveBadgeResponse> ResolveAsync(
         ResolveBadgeRequest request, CancellationToken cancellationToken = default)
     {
@@ -144,21 +153,18 @@ internal sealed class BadgeAuthService(
                     "البريد الإلكتروني مستخدم بالفعل.");
             }
 
-            // Attach the (still unconfirmed) email and issue the code atomically.
-            var issued = string.Empty;
-            await transactionRunner.ExecuteAsync(
-                async token =>
-                {
-                    user.UserName = email;
-                    user.Email = email;
-                    user.EmailConfirmed = false;
-                    user.UpdatedAt = now;
-                    await accounts.UpdateAsync(user, token).EnsureSuccessAsync();
-                    issued = await IssueCodeAsync(user.Id, now, token);
-                },
-                cancellationToken);
+            // SECURITY (verify-then-attach): stash the supplied email as PENDING and
+            // do NOT rebind user.Email yet. The account stays a placeholder
+            // (IsPlaceholderEmail == true) until the code is verified at the complete
+            // step, so a mistyped or hostile email can never brick or pre-empt the
+            // badge's self-activation — a retry with a corrected email simply
+            // overwrites the pending value. The email is promoted to the account only
+            // after CompleteActivationAsync verifies the code.
+            await accounts.SetAuthenticationTokenAsync(
+                    user, ActivationTokenProvider, PendingEmailTokenName, email, cancellationToken)
+                .EnsureSuccessAsync();
+            code = await IssueCodeAsync(user.Id, now, cancellationToken);
             targetEmail = email;
-            code = issued;
         }
 
         await emailQueue.TryEnqueueAsync(
@@ -216,6 +222,37 @@ internal sealed class BadgeAuthService(
             throw InvalidCode();
         }
 
+        // Verify-then-attach: a placeholder account attaches the email it stashed at
+        // the start step only now that the code is proven. Resolve + re-check it up
+        // front so a bad state fails cleanly before any write.
+        string? pendingEmail = null;
+        if (IsPlaceholderEmail(user.Email))
+        {
+            pendingEmail = await accounts.GetAuthenticationTokenAsync(
+                user, ActivationTokenProvider, PendingEmailTokenName, cancellationToken);
+            if (string.IsNullOrWhiteSpace(pendingEmail))
+            {
+                // No email was stashed (activation was never started, or the stash
+                // was cleared) — fail closed and ask the holder to start again.
+                await AuditFailureAsync(user, ErrorCodes.AuthAccountNotFound, "no pending email", cancellationToken);
+                throw new ApiException(
+                    ErrorCodes.AuthAccountNotFound, 400,
+                    "An email address is required to activate this account.",
+                    "البريد الإلكتروني مطلوب لتفعيل هذا الحساب.");
+            }
+
+            // Re-check uniqueness at attach time (guards a race where the email was
+            // claimed by another account between start and complete).
+            var existing = await accounts.FindByEmailAsync(pendingEmail, cancellationToken);
+            if (existing is not null && existing.Id != user.Id)
+            {
+                throw new ApiException(
+                    ErrorCodes.AuthEmailAlreadyRegistered, 409,
+                    "That email address is already in use.",
+                    "البريد الإلكتروني مستخدم بالفعل.");
+            }
+        }
+
         await transactionRunner.ExecuteAsync(
             async token =>
             {
@@ -227,6 +264,16 @@ internal sealed class BadgeAuthService(
                         "The new password is not allowed: "
                             + string.Join("; ", add.Errors.Select(e => e.Description)),
                         "كلمة المرور الجديدة غير مسموح بها.");
+                }
+                if (pendingEmail is not null)
+                {
+                    // Promote the verified pending email to the account's real login
+                    // identity, then drop the stash.
+                    user.UserName = pendingEmail;
+                    user.Email = pendingEmail;
+                    await accounts.RemoveAuthenticationTokenAsync(
+                            user, ActivationTokenProvider, PendingEmailTokenName, token)
+                        .EnsureSuccessAsync();
                 }
                 user.EmailConfirmed = true;
                 user.UpdatedAt = now;
