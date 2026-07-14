@@ -620,6 +620,10 @@
   text-align: start;
   max-width: 536px;
 }
+/* the h1 is programmatically focused on nav (Routes.razor FocusOnNavigate);
+   it is tabindex=-1, never a keyboard stop, so suppress the focus ring */
+.landing .ln-pagehero__title:focus,
+.landing .ln-pagehero__title:focus-visible { box-shadow: none; outline: none; }
 .landing .ln-pagehero__meta {
   display: inline-flex;
   align-items: center;
@@ -633,13 +637,15 @@
 .landing .ln-pagehero__logo { width: 326px; height: 256px; object-fit: contain; flex-shrink: 0; }
 
 /* -- Speakers grid section -- */
-.landing .ln-speakers { background: var(--bg-gray); }
-.landing .ln-speakers__inner {
-  max-width: var(--content-w);
+.landing .ln-spklist { background: var(--bg-gray); }
+.landing .ln-spklist__inner {
+  /* content-w (1280) + the 24px×2 inner padding → speaker cards land at the
+     Figma 296px ((1280 − 3×32)/4), with 24px side padding below 1280 */
+  max-width: calc(var(--content-w) + 48px);
   margin-inline: auto;
   padding: 128px 24px;
 }
-.landing .ln-speakers__head {
+.landing .ln-spklist__head {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -647,14 +653,14 @@
   gap: 24px;
   margin-bottom: 32px;
 }
-.landing .ln-speakers__title {
+.landing .ln-spklist__title {
   margin: 0;
   font-weight: 800;
   font-size: 32px;
   line-height: 1;
   color: var(--gold-dark);
 }
-.landing .ln-speakers__desc {
+.landing .ln-spklist__desc {
   margin: 0;
   font-weight: 400;
   font-size: 16px;
@@ -662,12 +668,12 @@
   color: var(--ink);
   max-width: 720px;
 }
-.landing .ln-speakers__empty {
+.landing .ln-spklist__empty {
   text-align: center;
   color: var(--ink);
   padding: 40px 0;
 }
-.landing .ln-speakers-grid {
+.landing .ln-spklist-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 32px;
@@ -733,17 +739,17 @@
 
 /* -- Speakers responsive: 4 → 3 → 2 → 1 columns; band stacks -- */
 @media (max-width: 1100px) {
-  .landing .ln-speakers-grid { grid-template-columns: repeat(3, 1fr); }
+  .landing .ln-spklist-grid { grid-template-columns: repeat(3, 1fr); }
 }
 @media (max-width: 860px) {
-  .landing .ln-speakers-grid { grid-template-columns: repeat(2, 1fr); }
+  .landing .ln-spklist-grid { grid-template-columns: repeat(2, 1fr); }
   .landing .ln-pagehero__inner { flex-direction: column-reverse; align-items: flex-start; gap: 40px; }
   .landing .ln-pagehero__logo { width: 240px; height: auto; }
 }
 @media (max-width: 560px) {
-  .landing .ln-speakers-grid { grid-template-columns: 1fr; }
+  .landing .ln-spklist-grid { grid-template-columns: 1fr; }
   .landing .ln-pagehero__inner { padding: 40px 20px; }
   .landing .ln-pagehero__title { font-size: 28px; }
-  .landing .ln-speakers__inner { padding: 64px 20px; }
-  .landing .ln-speakers__title { font-size: 26px; }
+  .landing .ln-spklist__inner { padding: 64px 20px; }
+  .landing .ln-spklist__title { font-size: 26px; }
 }

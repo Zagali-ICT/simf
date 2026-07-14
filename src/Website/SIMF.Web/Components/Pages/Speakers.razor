@@ -21,19 +21,19 @@
     </section>
 
     @* ===== Speakers grid (live data) ===== *@
-    <section class="ln-speakers" aria-label="@L["Speakers.Section.Title"]">
-        <div class="ln-speakers__inner">
-            <header class="ln-speakers__head ln-reveal">
-                <h2 class="ln-speakers__title">@L["Speakers.Section.Title"]</h2>
-                <p class="ln-speakers__desc">@L["Speakers.Section.Desc"]</p>
+    <section class="ln-spklist" aria-label="@L["Speakers.Section.Title"]">
+        <div class="ln-spklist__inner">
+            <header class="ln-spklist__head ln-reveal">
+                <h2 class="ln-spklist__title">@L["Speakers.Section.Title"]</h2>
+                <p class="ln-spklist__desc">@L["Speakers.Section.Desc"]</p>
             </header>
             @if (SpeakerList.Count == 0)
             {
-                <p class="ln-speakers__empty">@L["Speakers.Empty"]</p>
+                <p class="ln-spklist__empty">@L["Speakers.Empty"]</p>
             }
             else
             {
-                <div class="ln-speakers-grid ln-reveal">
+                <div class="ln-spklist-grid ln-reveal">
                     @foreach (var sp in SpeakerList)
                     {
                         var photo = PhotoUrl(sp);
