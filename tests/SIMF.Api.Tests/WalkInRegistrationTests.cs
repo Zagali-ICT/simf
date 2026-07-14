@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
@@ -168,6 +169,77 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var user = await db.Users.SingleAsync(u => u.Id == subjectId);
         Assert.False(string.IsNullOrEmpty(user.AvatarRelativePath));
+    }
+
+    [Fact]
+    public async Task Avatar_family_guard_confines_each_route_to_its_own_family()
+    {
+        // D-357 (review follow-up) — every account type's avatar shares the one
+        // SimfUser id space, so without a family guard a single-type View/Edit
+        // permission could read/overwrite another family's photo by id. Assert the
+        // guard the admin avatar routes gate on (IsSubjectInFamilyAsync) accepts
+        // each subject only for its own route: Visitors=(Visitor,audience),
+        // Others=(Visitor,partner), Admins=(Admin,null).
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var organisationId = await GetOrganisationIdAsync();
+
+        // An audience Visitor and a partner Other, both via the real walk-in flow
+        // (so their linked ProfileType.IsForVisitor drives the audience/partner split).
+        var visitorReg = await PostAuthAsync(
+            "/api/v1/admin/visitors/register-onsite",
+            BuildRequest(await GetVisitorProfileTypeAsync(), $"scope-vis-{Guid.NewGuid():N}@simf.test", organisationId),
+            adminToken);
+        var visitorId = (await visitorReg.Content
+            .ReadFromJsonAsync<ApiResult<AdminWalkInRegistrationResponse>>())!.Data!.UserId;
+
+        var otherReg = await PostAuthAsync(
+            "/api/v1/admin/others/register-onsite",
+            BuildRequest(await GetOtherProfileTypeAsync(), $"scope-oth-{Guid.NewGuid():N}@simf.test", organisationId),
+            adminToken);
+        var otherId = (await otherReg.Content
+            .ReadFromJsonAsync<ApiResult<AdminWalkInRegistrationResponse>>())!.Data!.UserId;
+
+        // A plain Admin subject.
+        Guid adminId;
+        using (var seed = _factory.Services.CreateScope())
+        {
+            var users = seed.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            var email = $"scope-adm-{Guid.NewGuid():N}@simf.test";
+            var admin = new SimfUser
+            {
+                UserName = email,
+                Email = email,
+                EmailConfirmed = true,
+                DisplayName = "Scope Admin",
+                AccountState = AccountState.Approved,
+                UserType = UserType.Admin,
+            };
+            await users.CreateAsync(admin, Password);
+            adminId = admin.Id;
+        }
+
+        using var scope = _factory.Services.CreateScope();
+        var svc = scope.ServiceProvider.GetRequiredService<IAdminUserProvisioningService>();
+
+        // Admins route (Admin, null): only the admin.
+        Assert.True(await svc.IsSubjectInFamilyAsync(adminId, UserType.Admin, null));
+        Assert.False(await svc.IsSubjectInFamilyAsync(visitorId, UserType.Admin, null));
+        Assert.False(await svc.IsSubjectInFamilyAsync(otherId, UserType.Admin, null));
+
+        // Visitors route (Visitor, audience): only the audience visitor — NOT the
+        // admin (the confirmed IDOR) and NOT the partner other. The audience-visitor
+        // TRUE also proves the guard does not break the walk-in avatar upload flow.
+        Assert.True(await svc.IsSubjectInFamilyAsync(visitorId, UserType.Visitor, true));
+        Assert.False(await svc.IsSubjectInFamilyAsync(adminId, UserType.Visitor, true));
+        Assert.False(await svc.IsSubjectInFamilyAsync(otherId, UserType.Visitor, true));
+
+        // Others route (Visitor, partner): only the partner other.
+        Assert.True(await svc.IsSubjectInFamilyAsync(otherId, UserType.Visitor, false));
+        Assert.False(await svc.IsSubjectInFamilyAsync(adminId, UserType.Visitor, false));
+        Assert.False(await svc.IsSubjectInFamilyAsync(visitorId, UserType.Visitor, false));
+
+        // Unknown id → rejected everywhere.
+        Assert.False(await svc.IsSubjectInFamilyAsync(Guid.NewGuid(), UserType.Admin, null));
     }
 
     [Fact]

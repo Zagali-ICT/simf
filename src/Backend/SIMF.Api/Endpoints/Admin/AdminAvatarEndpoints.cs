@@ -1,10 +1,13 @@
-// Tests: SIMF.Api.Tests/WalkInRegistrationTests.cs (Admin_uploads_visitor_avatar_sets_path)
+// Tests: SIMF.Api.Tests/WalkInRegistrationTests.cs (Admin_uploads_visitor_avatar_sets_path,
+//        Avatar_family_guard_confines_each_route_to_its_own_family — D-357 per-family scope guard)
 using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Account;
 using SIMF.Application.Files.Abstractions;
 using SIMF.Application.IdentityAccess;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
+using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Infrastructure.Persistence;
 
@@ -20,16 +23,35 @@ namespace SIMF.Api.Endpoints.Admin;
 /// owner decision). Permission-gated like the admin ID-document upload
 /// (Visitors.Edit / Others.Edit); the same SubjectId route shape.
 /// </summary>
-public abstract class AdminAvatarUploadEndpointBase(IAccountService accountService)
+public abstract class AdminAvatarUploadEndpointBase(
+    IAccountService accountService, IAdminUserProvisioningService provisioning)
     : Endpoint<EmptyRequest, ApiResult<AvatarResponse>>
 {
     public abstract Guid SubjectId { get; }
+
+    /// <summary>The account family this route serves — its View/Edit permission
+    /// must only reach subjects of this family. See
+    /// <see cref="IAdminUserProvisioningService.IsSubjectInFamilyAsync"/>.</summary>
+    public abstract UserType ExpectedType { get; }
+
+    /// <summary>Audience (<c>true</c>) vs partner/Other (<c>false</c>) for the
+    /// Visitor family; <c>null</c> for the Admin family.</summary>
+    public abstract bool? ExpectedIsVisitor { get; }
 
     public override async Task HandleAsync(EmptyRequest req, CancellationToken ct)
     {
         if (!Guid.TryParse(User.FindFirstValue("sub"), out _))
         {
             await Send.UnauthorizedAsync(ct);
+            return;
+        }
+
+        // D-357 (review follow-up) — confine this Edit permission to its own family
+        // so it can't overwrite another family's photo across the shared id space.
+        // 404 (not 403) so a wrong-family id is indistinguishable from a missing one.
+        if (!await provisioning.IsSubjectInFamilyAsync(SubjectId, ExpectedType, ExpectedIsVisitor, ct))
+        {
+            await Send.NotFoundAsync(ct);
             return;
         }
 
@@ -53,10 +75,13 @@ public abstract class AdminAvatarUploadEndpointBase(IAccountService accountServi
 }
 
 /// <summary><c>POST /api/v1/admin/visitors/{id}/avatar</c>.</summary>
-public sealed class UploadVisitorAvatarEndpoint(IAccountService accountService)
-    : AdminAvatarUploadEndpointBase(accountService)
+public sealed class UploadVisitorAvatarEndpoint(
+    IAccountService accountService, IAdminUserProvisioningService provisioning)
+    : AdminAvatarUploadEndpointBase(accountService, provisioning)
 {
     public override Guid SubjectId => Route<Guid>("id");
+    public override UserType ExpectedType => UserType.Visitor;
+    public override bool? ExpectedIsVisitor => true;
 
     public override void Configure()
     {
@@ -71,10 +96,13 @@ public sealed class UploadVisitorAvatarEndpoint(IAccountService accountService)
 }
 
 /// <summary><c>POST /api/v1/admin/others/{id}/avatar</c>.</summary>
-public sealed class UploadOtherAvatarEndpoint(IAccountService accountService)
-    : AdminAvatarUploadEndpointBase(accountService)
+public sealed class UploadOtherAvatarEndpoint(
+    IAccountService accountService, IAdminUserProvisioningService provisioning)
+    : AdminAvatarUploadEndpointBase(accountService, provisioning)
 {
     public override Guid SubjectId => Route<Guid>("id");
+    public override UserType ExpectedType => UserType.Visitor;
+    public override bool? ExpectedIsVisitor => false;
 
     public override void Configure()
     {
@@ -95,13 +123,33 @@ public sealed class UploadOtherAvatarEndpoint(IAccountService accountService)
 /// admin View permission (the avatar is the account's, on SimfUser/Identity).
 /// </summary>
 public abstract class AdminAvatarFetchEndpointBase(
-    SimfAppDbContext appDb, IFileStorageProvider storage)
+    SimfAppDbContext appDb, IFileStorageProvider storage,
+    IAdminUserProvisioningService provisioning)
     : EndpointWithoutRequest
 {
     public abstract Guid SubjectId { get; }
 
+    /// <summary>The account family this route serves — its View permission must
+    /// only reach subjects of this family. See
+    /// <see cref="IAdminUserProvisioningService.IsSubjectInFamilyAsync"/>.</summary>
+    public abstract UserType ExpectedType { get; }
+
+    /// <summary>Audience (<c>true</c>) vs partner/Other (<c>false</c>) for the
+    /// Visitor family; <c>null</c> for the Admin family.</summary>
+    public abstract bool? ExpectedIsVisitor { get; }
+
     public override async Task HandleAsync(CancellationToken ct)
     {
+        // D-357 (review follow-up) — confine this View permission to its own family
+        // so it can't read another family's photo across the shared SimfUser id
+        // space. 404 (not 403) keeps a wrong-family id indistinguishable from a
+        // missing one (also the natural response for the no-avatar case below).
+        if (!await provisioning.IsSubjectInFamilyAsync(SubjectId, ExpectedType, ExpectedIsVisitor, ct))
+        {
+            await Send.NotFoundAsync(ct);
+            return;
+        }
+
         // D-568 (S3) — resolve the subject's avatar from the StoredFile store.
         // Authorization is the route's admin View permission (Configure below);
         // this is a raw decrypt read, not IFileService.DownloadAsync (see AvatarBytes).
@@ -119,10 +167,13 @@ public abstract class AdminAvatarFetchEndpointBase(
 
 /// <summary><c>GET /api/v1/admin/visitors/{id}/avatar</c>.</summary>
 public sealed class FetchVisitorAvatarEndpoint(
-    SimfAppDbContext appDb, IFileStorageProvider storage)
-    : AdminAvatarFetchEndpointBase(appDb, storage)
+    SimfAppDbContext appDb, IFileStorageProvider storage,
+    IAdminUserProvisioningService provisioning)
+    : AdminAvatarFetchEndpointBase(appDb, storage, provisioning)
 {
     public override Guid SubjectId => Route<Guid>("id");
+    public override UserType ExpectedType => UserType.Visitor;
+    public override bool? ExpectedIsVisitor => true;
 
     public override void Configure()
     {
@@ -136,10 +187,13 @@ public sealed class FetchVisitorAvatarEndpoint(
 
 /// <summary><c>GET /api/v1/admin/others/{id}/avatar</c>.</summary>
 public sealed class FetchOtherAvatarEndpoint(
-    SimfAppDbContext appDb, IFileStorageProvider storage)
-    : AdminAvatarFetchEndpointBase(appDb, storage)
+    SimfAppDbContext appDb, IFileStorageProvider storage,
+    IAdminUserProvisioningService provisioning)
+    : AdminAvatarFetchEndpointBase(appDb, storage, provisioning)
 {
     public override Guid SubjectId => Route<Guid>("id");
+    public override UserType ExpectedType => UserType.Visitor;
+    public override bool? ExpectedIsVisitor => false;
 
     public override void Configure()
     {
@@ -157,10 +211,13 @@ public sealed class FetchOtherAvatarEndpoint(
 /// StoredFile read (avatars live in the one central file store for every user
 /// type, admins included).</summary>
 public sealed class FetchAdminAvatarEndpoint(
-    SimfAppDbContext appDb, IFileStorageProvider storage)
-    : AdminAvatarFetchEndpointBase(appDb, storage)
+    SimfAppDbContext appDb, IFileStorageProvider storage,
+    IAdminUserProvisioningService provisioning)
+    : AdminAvatarFetchEndpointBase(appDb, storage, provisioning)
 {
     public override Guid SubjectId => Route<Guid>("id");
+    public override UserType ExpectedType => UserType.Admin;
+    public override bool? ExpectedIsVisitor => null;
 
     public override void Configure()
     {

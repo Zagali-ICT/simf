@@ -160,6 +160,26 @@ public interface IAdminUserProvisioningService
         CancellationToken cancellationToken = default,
         bool? expectedIsVisitor = null);
 
+    // -- D-357 (review follow-up) — per-family avatar scope guard -------------
+
+    /// <summary>
+    /// Confirms a subject account belongs to the given admin family, so the
+    /// per-family avatar routes (Visitors / Others / Admins) only serve their own
+    /// page's subjects and one View / Edit permission cannot read or overwrite
+    /// another family's photo across the shared <c>SimfUser</c> id space.
+    /// <paramref name="expectedType"/> is the <c>UserType</c>;
+    /// <paramref name="expectedIsVisitor"/> further narrows the Visitor family to
+    /// audience (<c>true</c>) vs partner / Other (<c>false</c>) via the linked
+    /// <c>ProfileType.IsForVisitor</c>, mirroring the list scoping;
+    /// <c>null</c> = no profile-scope narrowing (the Admins family). Returns
+    /// <c>false</c> for a missing id or any mismatch.
+    /// </summary>
+    Task<bool> IsSubjectInFamilyAsync(
+        Guid userId,
+        UserType expectedType,
+        bool? expectedIsVisitor,
+        CancellationToken cancellationToken = default);
+
     // -- Issue-1 — RBAC role assignment for an existing admin user ----------
 
     /// <summary>The RBAC role names an Admin-typed user currently holds.
