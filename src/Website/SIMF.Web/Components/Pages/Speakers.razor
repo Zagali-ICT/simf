@@ -12,9 +12,9 @@
         <div class="ln-pagehero__inner">
             <div class="ln-pagehero__info ln-reveal">
                 <h1 class="ln-pagehero__title">@L["Speakers.Band.Theme"]</h1>
-                <span class="ln-pagehero__meta"><img src="assets/figma/secondnav/icon-calendar.svg" alt="" />@L["Speakers.Band.Date"]</span>
-                <span class="ln-pagehero__meta"><img src="assets/figma/secondnav/icon-clock.svg" alt="" />@L["Speakers.Band.Time"]</span>
-                <span class="ln-pagehero__meta"><img src="assets/figma/secondnav/icon-location.svg" alt="" />@L["Speakers.Band.Venue"]</span>
+                <span class="ln-pagehero__meta"><span class="ln-ico ln-ico--calendar" aria-hidden="true"></span>@L["Speakers.Band.Date"]</span>
+                <span class="ln-pagehero__meta"><span class="ln-ico ln-ico--clock" aria-hidden="true"></span>@L["Speakers.Band.Time"]</span>
+                <span class="ln-pagehero__meta"><span class="ln-ico ln-ico--pin" aria-hidden="true"></span>@L["Speakers.Band.Venue"]</span>
             </div>
             <img class="ln-pagehero__logo" src="assets/figma/speakers-page/hero-logo.png" alt="@L["Brand.LogoAlt"]" />
         </div>
@@ -53,7 +53,7 @@
                                 }
                                 @if (!string.IsNullOrWhiteSpace(loc))
                                 {
-                                    <span class="ln-spkcard__loc"><img src="assets/figma/footer/icon-location.svg" alt="" />@loc</span>
+                                    <span class="ln-spkcard__loc"><span class="ln-ico ln-ico--pin" aria-hidden="true"></span>@loc</span>
                                 }
                             </div>
                         </article>

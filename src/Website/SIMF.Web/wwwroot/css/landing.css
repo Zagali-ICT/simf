@@ -592,6 +592,26 @@
  *  band (ln-pagehero) and the speaker card/grid (ln-spkcard).   *
  * ============================================================= */
 
+/* -- Recolorable line-icon --------------------------------------------- *
+ * The DGA glyphs ship as white strokes (built for the dark nav bar), so on
+ * a light surface they are invisible. We reuse the SAME glyph as an alpha
+ * mask and paint it with a token colour, so one asset renders in any colour
+ * (navy on the white band, gray on the speaker card). Shared by every ln-
+ * page that shows the event band. */
+.landing .ln-ico {
+  display: inline-block;
+  flex-shrink: 0;
+  -webkit-mask-position: center;
+          mask-position: center;
+  -webkit-mask-size: contain;
+          mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+}
+.landing .ln-ico--calendar { -webkit-mask-image: url("/assets/figma/secondnav/icon-calendar.svg"); mask-image: url("/assets/figma/secondnav/icon-calendar.svg"); }
+.landing .ln-ico--clock    { -webkit-mask-image: url("/assets/figma/secondnav/icon-clock.svg");    mask-image: url("/assets/figma/secondnav/icon-clock.svg"); }
+.landing .ln-ico--pin      { -webkit-mask-image: url("/assets/figma/secondnav/icon-location.svg"); mask-image: url("/assets/figma/secondnav/icon-location.svg"); }
+
 /* -- Event page-title band: logo lockup + theme + date/time/venue -- */
 .landing .ln-pagehero { background: var(--white); }
 .landing .ln-pagehero__inner {
@@ -633,7 +653,7 @@
   line-height: 24px;
   color: var(--navy);
 }
-.landing .ln-pagehero__meta img { width: 24px; height: 24px; flex-shrink: 0; }
+.landing .ln-pagehero__meta .ln-ico { width: 24px; height: 24px; background-color: var(--navy); }
 .landing .ln-pagehero__logo { width: 326px; height: 256px; object-fit: contain; flex-shrink: 0; }
 
 /* -- Speakers grid section -- */
@@ -735,7 +755,7 @@
   line-height: 16px;
   color: var(--gray-darker);
 }
-.landing .ln-spkcard__loc img { width: 16px; height: 16px; flex-shrink: 0; }
+.landing .ln-spkcard__loc .ln-ico { width: 16px; height: 16px; background-color: var(--gray-darker); }
 
 /* -- Speakers responsive: 4 → 3 → 2 → 1 columns; band stacks -- */
 @media (max-width: 1100px) {
