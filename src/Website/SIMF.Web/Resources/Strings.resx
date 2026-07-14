@@ -162,6 +162,120 @@
   <data name="Nav.Programme" xml:space="preserve"><value>Programme</value></data>
   <data name="Nav.Visit" xml:space="preserve"><value>Visit</value></data>
 
+  <!-- ============ Public landing (Bootstrap rebuild) ============ -->
+  <data name="Landing.PageTitle" xml:space="preserve"><value>Saudi International Maritime Forum 2026</value></data>
+  <data name="Landing.MetaDescription" xml:space="preserve"><value>The Saudi International Maritime Forum 2026 — a global platform on the future of seabed security and maritime supply chains. Riyadh, 23–25 November 2026.</value></data>
+  <data name="Landing.Loading" xml:space="preserve"><value>Loading</value></data>
+  <data name="Landing.Hero.Title" xml:space="preserve"><value>Saudi International Maritime Forum</value></data>
+  <data name="Landing.Hero.Subtitle" xml:space="preserve"><value>The future of seabed security and supply chains in a changing global environment</value></data>
+  <data name="Landing.Hero.Description" xml:space="preserve"><value>Amid accelerating global change, anticipating the future of maritime security and protecting vital corridors and supply chains is a strategic priority — reflecting the strategic role of the Kingdom of Saudi Arabia in strengthening the security of the seas and safeguarding critical infrastructure above the surface and in the depths.</value></data>
+  <data name="Landing.Hero.Venue" xml:space="preserve"><value>Sofitel Riyadh Hotel &amp; Convention Centre</value></data>
+
+  <!-- header: digital stamp + nav -->
+  <data name="Landing.Nav.Stamp" xml:space="preserve"><value>A government website registered with the Digital Government Authority</value></data>
+  <data name="Landing.Nav.StampVerify" xml:space="preserve"><value>How to verify?</value></data>
+  <data name="Landing.Nav.Main" xml:space="preserve"><value>Main navigation</value></data>
+  <data name="Landing.Nav.Menu" xml:space="preserve"><value>Menu</value></data>
+  <data name="Landing.Nav.Contact" xml:space="preserve"><value>Contact us</value></data>
+  <data name="Landing.Nav.Search" xml:space="preserve"><value>Search</value></data>
+  <data name="Landing.Nav.Language" xml:space="preserve"><value>Language</value></data>
+  <data name="Landing.Nav.OtherLanguage" xml:space="preserve"><value>العربية</value></data>
+  <data name="Landing.Nav.About" xml:space="preserve"><value>About</value></data>
+  <data name="Landing.Nav.About.Title" xml:space="preserve"><value>About the Maritime Forum</value></data>
+  <data name="Landing.Nav.About.Overview" xml:space="preserve"><value>About the forum</value></data>
+  <data name="Landing.Nav.About.Goals" xml:space="preserve"><value>Objectives</value></data>
+  <data name="Landing.Nav.About.Themes" xml:space="preserve"><value>Themes</value></data>
+  <data name="Landing.Nav.About.Organizer" xml:space="preserve"><value>Organiser</value></data>
+  <data name="Landing.Nav.About.Partnerships" xml:space="preserve"><value>Partnerships</value></data>
+  <data name="Landing.Nav.About.Venue" xml:space="preserve"><value>Venue</value></data>
+  <data name="Landing.Nav.Programs" xml:space="preserve"><value>Programmes</value></data>
+  <data name="Landing.Nav.Programs.Title" xml:space="preserve"><value>Programmes</value></data>
+  <data name="Landing.Nav.Programs.Opening" xml:space="preserve"><value>Opening ceremony</value></data>
+  <data name="Landing.Nav.Programs.Sessions" xml:space="preserve"><value>Plenary sessions</value></data>
+  <data name="Landing.Nav.Programs.Exhibition" xml:space="preserve"><value>Exhibition</value></data>
+  <data name="Landing.Nav.Programs.GovMeetings" xml:space="preserve"><value>Government business meetings</value></data>
+  <data name="Landing.Nav.Programs.Visit" xml:space="preserve"><value>Visit</value></data>
+  <data name="Landing.Nav.Speakers" xml:space="preserve"><value>Speakers</value></data>
+  <data name="Landing.Nav.Discover" xml:space="preserve"><value>Discover Saudi Arabia</value></data>
+  <data name="Landing.Nav.Discover.About" xml:space="preserve"><value>About Saudi Arabia</value></data>
+  <data name="Landing.Nav.Discover.Invest" xml:space="preserve"><value>Invest in Saudi Arabia</value></data>
+  <data name="Landing.Nav.Discover.Spirit" xml:space="preserve"><value>Saudi spirit</value></data>
+  <data name="Landing.Nav.Discover.Made" xml:space="preserve"><value>Made in Saudi Arabia</value></data>
+  <data name="Landing.Nav.Archive" xml:space="preserve"><value>Archive</value></data>
+  <data name="Landing.Nav.Archive.E1" xml:space="preserve"><value>First edition 2019</value></data>
+  <data name="Landing.Nav.Archive.E2" xml:space="preserve"><value>Second edition 2022</value></data>
+  <data name="Landing.Nav.Archive.E3" xml:space="preserve"><value>Third edition 2024</value></data>
+  <data name="Landing.Search.Placeholder" xml:space="preserve"><value>Search</value></data>
+  <data name="Landing.Search.Submit" xml:space="preserve"><value>Search</value></data>
+  <data name="Landing.Search.Voice" xml:space="preserve"><value>Voice search</value></data>
+  <data name="Landing.Search.Suggestions" xml:space="preserve"><value>Suggestions</value></data>
+  <data name="Landing.Search.Close" xml:space="preserve"><value>Close search</value></data>
+  <data name="Landing.Search.Chip.Articles" xml:space="preserve"><value>Articles</value></data>
+  <data name="Landing.Search.Chip.Services" xml:space="preserve"><value>Services</value></data>
+  <data name="Landing.Search.Chip.Training" xml:space="preserve"><value>Training</value></data>
+  <data name="Landing.Subnav.Weather" xml:space="preserve"><value>Cloudy</value></data>
+  <data name="Landing.Subnav.Date" xml:space="preserve"><value>23–25 November 2026</value></data>
+  <data name="Landing.Subnav.Time" xml:space="preserve"><value>2:30 PM</value></data>
+  <data name="Landing.Subnav.Venue" xml:space="preserve"><value>Sofitel Riyadh Hotel &amp; Convention Centre, Saudi Arabia</value></data>
+
+  <!-- intro + participation stats -->
+  <data name="Landing.Intro.Title" xml:space="preserve"><value>The Fourth Saudi International Maritime Forum</value></data>
+  <data name="Landing.Intro.Sub" xml:space="preserve"><value>The future of seabed security and supply chains in a changing global environment</value></data>
+  <data name="Landing.Intro.Lead" xml:space="preserve"><value>The world is witnessing unprecedented shifts in maritime security. As threats to global supply chains escalate, seabed security is emerging as an urgent international priority — to reinforce the stability of the seas and safeguard the sustainability of the global economy.</value></data>
+  <data name="Landing.Stats.Eyebrow" xml:space="preserve"><value>International participation indicators</value></data>
+  <data name="Landing.Stats.Title" xml:space="preserve"><value>Numbers that reflect global presence and international impact</value></data>
+  <data name="Landing.Stats.Lead" xml:space="preserve"><value>A broad global presence bringing together countries, entities, speakers and experts on one platform to advance cooperation and innovation in maritime security and supply chains.</value></data>
+
+  <!-- about / milestones / secondary hero / themes -->
+  <data name="Landing.About.Eyebrow" xml:space="preserve"><value>About the forum</value></data>
+  <data name="Landing.About.Title" xml:space="preserve"><value>A Saudi global platform for dialogue and cooperation on maritime security</value></data>
+  <data name="Landing.About.Lead" xml:space="preserve"><value>The Saudi International Maritime Forum rises to the level of a global event that brings together leaders, decision-makers and officials to exchange experience and expertise and to build a shared global understanding of the future of maritime security amid accelerating geopolitical and technological shifts — reflecting the Kingdom of Saudi Arabia's strategic role in anchoring the stability of the seas and supporting the sustainability of the global economy.</value></data>
+  <data name="Landing.About.Button" xml:space="preserve"><value>Partnerships</value></data>
+  <data name="Landing.About.ImageAlt" xml:space="preserve"><value>The Saudi International Maritime Forum hall</value></data>
+  <data name="Landing.Miles.Title" xml:space="preserve"><value>Defining moments in the evolution of the global maritime-security agenda</value></data>
+  <data name="Landing.Miles.More" xml:space="preserve"><value>View more</value></data>
+  <data name="Landing.Miles.Desc" xml:space="preserve"><value>A look back at the forum's journey and the milestones that have shaped the global maritime-security agenda across its past editions.</value></data>
+  <data name="Landing.Hero2.Title" xml:space="preserve"><value>The importance of the forum</value></data>
+  <data name="Landing.Hero2.Lead" xml:space="preserve"><value>To strengthen an integrated maritime-security system that supports international efforts to protect the seabed and improve the efficiency of energy and trade supply chains — contributing to the stability of the global economy and aligning with the goals of Vision 2030.</value></data>
+  <data name="Landing.Hero2.Button" xml:space="preserve"><value>Learn more</value></data>
+  <data name="Landing.Themes.Title" xml:space="preserve"><value>Key themes</value></data>
+  <data name="Landing.Themes.Sub" xml:space="preserve"><value>To shape a comprehensive strategic vision addressing energy, trade and connectivity systems between the surface and the depths — through five key themes that form the pillars of maritime security and global economic stability.</value></data>
+
+  <!-- sessions / speakers / partners / sponsors / news / discover / footer -->
+  <data name="Landing.Sessions.Title" xml:space="preserve"><value>The Forum Programme</value></data>
+  <data name="Landing.Sessions.Desc" xml:space="preserve"><value>Three plenary sessions tracing the forum's core themes — from energy and logistics to the security of the digital deep.</value></data>
+  <data name="Landing.Sessions.ReadMore" xml:space="preserve"><value>Programme details</value></data>
+  <data name="Landing.Speakers.Title" xml:space="preserve"><value>Featured speakers &amp; participants</value></data>
+  <data name="Landing.Speakers.Lead" xml:space="preserve"><value>The forum brings together an elite group of Saudi and international leaders, decision-makers and experts — reflecting the Kingdom's leading role in shaping the direction of maritime security and strengthening international cooperation amid accelerating technological and strategic shifts.</value></data>
+  <data name="Landing.Speakers.ViewAll" xml:space="preserve"><value>View all</value></data>
+  <data name="Landing.Speakers.CollageAlt" xml:space="preserve"><value>Featured speakers and participants at the forum</value></data>
+  <data name="Landing.Partners.Title" xml:space="preserve"><value>Partners</value></data>
+  <data name="Landing.Partners.Desc" xml:space="preserve"><value>The forum is backed by government bodies and national and international institutions whose expertise strengthens the Kingdom's presence within the global maritime-security system and affirms the importance of joint action to keep pace with rapid change in this vital sector.</value></data>
+  <data name="Landing.Sponsors.Title" xml:space="preserve"><value>Sponsors</value></data>
+  <data name="Landing.Sponsors.Desc" xml:space="preserve"><value>A distinguished group of sponsors and supporters contributing to the success of the forum and its programmes.</value></data>
+  <data name="Landing.Sponsors.ViewAll" xml:space="preserve"><value>View all</value></data>
+  <data name="Landing.Sponsors.Tag" xml:space="preserve"><value>Host</value></data>
+  <data name="Landing.Sponsors.Prev" xml:space="preserve"><value>Previous</value></data>
+  <data name="Landing.Sponsors.Next" xml:space="preserve"><value>Next</value></data>
+  <data name="Landing.News.Title" xml:space="preserve"><value>News &amp; articles</value></data>
+  <data name="Landing.News.Desc" xml:space="preserve"><value>The latest news, coverage and articles from the Saudi International Maritime Forum.</value></data>
+  <data name="Landing.News.ViewAll" xml:space="preserve"><value>View all</value></data>
+  <data name="Landing.News.ReadMore" xml:space="preserve"><value>Read more</value></data>
+  <data name="Landing.Discover.Title" xml:space="preserve"><value>Discover Saudi Arabia</value></data>
+  <data name="Landing.Discover.Desc" xml:space="preserve"><value>From ancient heritage to future cities — explore the destinations that make the Kingdom unforgettable.</value></data>
+  <data name="Landing.Discover.Explore" xml:space="preserve"><value>Explore Saudi Arabia</value></data>
+  <data name="Landing.Footer.LastModified" xml:space="preserve"><value>Last modified: 13 July 2026</value></data>
+  <data name="Landing.Footer.ImportantLinks" xml:space="preserve"><value>Important links</value></data>
+  <data name="Landing.Footer.Contact" xml:space="preserve"><value>Contact us</value></data>
+  <data name="Landing.Footer.Address" xml:space="preserve"><value>P.O. Box 3507, Riyadh 12341, Saudi Arabia</value></data>
+  <data name="Landing.Footer.Follow" xml:space="preserve"><value>Follow us</value></data>
+  <data name="Landing.Footer.A11y" xml:space="preserve"><value>Accessibility tools</value></data>
+  <data name="Landing.Footer.DevBy" xml:space="preserve"><value>Developed and maintained by</value></data>
+  <data name="Landing.Footer.Sitemap" xml:space="preserve"><value>Sitemap</value></data>
+  <data name="Landing.Footer.MobileApp" xml:space="preserve"><value>Mobile app</value></data>
+  <data name="Landing.Footer.Vision2030" xml:space="preserve"><value>Saudi Vision 2030</value></data>
+  <data name="Landing.Footer.MOD" xml:space="preserve"><value>Ministry of Defense</value></data>
+
   <data name="Programme.PageTitle" xml:space="preserve"><value>Programme · Saudi International Maritime Forum</value></data>
   <data name="Programme.Banner.Title" xml:space="preserve"><value>Programme</value></data>
   <data name="Programme.Banner.Subtitle" xml:space="preserve"><value>The full forum agenda — sessions, halls and times.</value></data>

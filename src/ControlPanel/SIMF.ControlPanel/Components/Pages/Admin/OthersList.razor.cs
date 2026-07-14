@@ -322,6 +322,12 @@ public partial class OthersList
     private string FormatPage(int current, int total) =>
         string.Format(L["Admin.Users.Pager.Page"], current, total);
 
+    // The row's avatar thumbnail URL, or null when the account has no photo so
+    // SimfIdentityCell shows an initials tile (never a broken image). Only
+    // requested when HasAvatar is set so the grid never issues a 404 (D-568).
+    private static string? AvatarImageUrl(AdminUserSummary row) =>
+        row.HasAvatar ? $"/account/api/admin/others/{row.Id}/avatar" : null;
+
     private static bool IsLikelyEmail(string value) =>
         !string.IsNullOrWhiteSpace(value)
         && value.Contains('@', StringComparison.Ordinal)

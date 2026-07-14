@@ -379,4 +379,9 @@ Catalogue file: [`cp-admin-contacts.md`](../../tests/e2e/cp-admin-contacts.md)
 
 ---
 
-_Last reviewed:_ 2026-06-11 by Claude (D-357 contact-logo media-asset doc).
+**2026-07-14 (D-357):** the Arabic-name column now renders the contact's logo
+thumbnail via the shared `SimfIdentityCell` (`AdminContactSummary.HasLogo`, streamed
+from the `CompanyLogo` /assets proxy) or a tinted initials tile. Column key
+unchanged so server-side sort/filter is unaffected. E2E-CON-022.
+
+_Last reviewed:_ 2026-07-14 by Claude (D-357 — contact logo thumbnail in the list). Prior: 2026-06-11 by Claude (D-357 contact-logo media-asset doc).

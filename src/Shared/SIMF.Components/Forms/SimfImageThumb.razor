@@ -1,12 +1,23 @@
 @* D-357 — render a unified media-asset image with a graceful placeholder.
-   Generic (no JS / no BFF) so it is safe in any host; the caller supplies the
-   resolved image URL (e.g. the CP asset-fetch proxy). *@
+   Generic (no JS interop / no BFF) so it is safe in any host; the caller supplies
+   the resolved image URL (e.g. the CP asset-fetch proxy). When a URL is given the
+   placeholder icon is rendered alongside the image and revealed only if the image
+   fails to load (e.g. the StoredFile bytes are missing — the post-squash file-store
+   reset case), via a minimal inline onerror that toggles a CSS class (no inline
+   style; CSP-safe under the CP policy, and degrades to the prior behaviour on any
+   host whose CSP blocks inline handlers). So a broken URL never shows the browser's
+   broken-image glyph. The toggle is two-way (onload clears the class) so that when a
+   grid reuses the same DOM node for a different row (positional diffing, no row key) a
+   stale "broken" state from a prior 404 never suppresses the next row's valid image. *@
 @namespace SIMF.Components.Forms
 
 <span class="simf-img-thumb @Class">
     @if (!string.IsNullOrWhiteSpace(Src))
     {
-        <img class="simf-img-thumb__img" src="@Src" alt="@Alt" loading="lazy" />
+        <img class="simf-img-thumb__img" src="@Src" alt="@Alt" loading="lazy"
+             onload="this.closest('.simf-img-thumb')?.classList.remove('simf-img-thumb--broken')"
+             onerror="this.closest('.simf-img-thumb')?.classList.add('simf-img-thumb--broken')" />
+        <SimfIcon Name="image" Class="simf-img-thumb__placeholder simf-img-thumb__fallback" Size="@IconSize" />
     }
     else
     {

@@ -9,7 +9,9 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Exhibition;
+using SIMF.Domain.Contacts;
 using SIMF.Domain.Exhibitors;
+using SIMF.Domain.Files;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Venue;
 using SIMF.Infrastructure.Persistence;
@@ -249,6 +251,113 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
     // -- Helpers --------------------------------------------------------------
 
     private static string NewCode() => "B-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant();
+
+    [Fact]
+    public async Task Booth_list_reports_HasLogo_from_the_exhibitor_companys_logo()
+    {
+        // D-357 — a booth owns no logo; the grid resolves the two-hop
+        // Booth→Exhibitor→Contact and renders the exhibitor company's CompanyLogo
+        // (else an initials tile). Guards the related-entity flag-population path.
+        var token = await CreateAdministratorAndSignInAsync();
+
+        var exhibitorWithLogo = await SeedExhibitorWithContactAsync(withLogo: true);
+        var exhibitorNoLogo = await SeedExhibitorWithContactAsync(withLogo: false);
+
+        var codeWith = NewCode();
+        var codeWithout = NewCode();
+        var codeOrphan = NewCode();
+        await CreateBoothAsync(codeWith, exhibitorWithLogo, token);
+        await CreateBoothAsync(codeWithout, exhibitorNoLogo, token);
+        // A booth with NO exhibitor at all — must still appear (the two-hop is a
+        // LEFT JOIN, not an INNER JOIN that would silently hide it).
+        await CreateBoothAsync(codeOrphan, exhibitorId: null, token);
+
+        var rows = await ListBoothsAsync(token);
+        var boothWith = rows.Single(b => b.Code == codeWith);
+        var boothWithout = rows.Single(b => b.Code == codeWithout);
+        var boothOrphan = rows.Single(b => b.Code == codeOrphan);
+
+        // The linked exhibitor's contact has an active CompanyLogo → HasLogo true,
+        // and the resolved owner is that contact.
+        Assert.True(boothWith.HasLogo);
+        Assert.NotNull(boothWith.ExhibitorContactId);
+        // The other exhibitor's contact has no logo → initials fallback.
+        Assert.False(boothWithout.HasLogo);
+        Assert.NotNull(boothWithout.ExhibitorContactId);
+        // The exhibitor-less booth still lists, with no resolved contact / logo.
+        Assert.Null(boothOrphan.ExhibitorId);
+        Assert.Null(boothOrphan.ExhibitorContactId);
+        Assert.False(boothOrphan.HasLogo);
+    }
+
+    private async Task CreateBoothAsync(string code, Guid? exhibitorId, string token)
+    {
+        var create = await PostAuthAsync(
+            "/api/v1/admin/booths",
+            new AdminCreateBoothRequest
+            {
+                Code = code,
+                Name = "Booth " + code,
+                NameArabic = "جناح",
+                ExhibitorId = exhibitorId,
+                OfficerName = "Officer",
+                OfficerPhone = "+966500000000",
+                OfficerEmail = "officer@booth.test",
+                Sector = "Naval",
+            },
+            token);
+        Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+    }
+
+    private async Task<IReadOnlyList<AdminBoothSummary>> ListBoothsAsync(string token)
+    {
+        var list = await PostAuthAsync(
+            "/api/v1/admin/booths/list", new GridQuery { Top = 200 }, token);
+        Assert.Equal(HttpStatusCode.OK, list.StatusCode);
+        return (await list.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminBoothSummary>>>())!.Data!.Items;
+    }
+
+    // Seeds a Contact (optionally with an active CompanyLogo asset) and an Exhibitor
+    // linked to it, returning the exhibitor id — so a booth referencing this
+    // exhibitor resolves the two-hop Booth→Exhibitor→Contact logo for the grid.
+    private async Task<Guid> SeedExhibitorWithContactAsync(bool withLogo)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var contactId = Guid.NewGuid();
+        appDb.Contacts.Add(new Contact
+        {
+            Id = contactId,
+            NameArabic = "جهة الشعار",
+            Name = "Logo Co",
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        });
+        if (withLogo)
+        {
+            appDb.Set<StoredFile>().Add(new StoredFile
+            {
+                Id = Guid.NewGuid(),
+                Service = FileService.CompanyLogo,
+                OwnerEntityId = contactId,
+                IsActive = true,
+                CreatedAt = DateTimeOffset.UtcNow,
+            });
+        }
+        var exhibitorId = Guid.NewGuid();
+        appDb.Exhibitors.Add(new Exhibitor
+        {
+            Id = exhibitorId,
+            Name = "Booth Exhibitor",
+            NameArabic = "عارض",
+            ContactId = contactId,
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        });
+        await appDb.SaveChangesAsync();
+        return exhibitorId;
+    }
 
     // B1 — D-222: seed an exhibitor so a booth can reference it. Defaults to an
     // active exhibitor.

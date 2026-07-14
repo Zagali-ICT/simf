@@ -291,6 +291,13 @@ public partial class UsersList
     private string FormatPage(int current, int total) =>
         string.Format(L["Admin.Users.Pager.Page"], current, total);
 
+    // D-357 — the admin's profile photo for the identity-cell thumbnail. Only
+    // requested when HasAvatar is set (so the grid never issues a 404); the CP BFF
+    // streams the bytes from the central StoredFile avatar (D-568), gated Admins.View.
+    // When null, SimfIdentityCell shows an initials tile (never a broken image).
+    private static string? AvatarImageUrl(AdminUserSummary row) =>
+        row.HasAvatar ? $"/account/api/admin/admins/{row.Id}/avatar" : null;
+
     private static bool IsLikelyEmail(string value) =>
         !string.IsNullOrWhiteSpace(value)
         && value.Contains('@', StringComparison.Ordinal)

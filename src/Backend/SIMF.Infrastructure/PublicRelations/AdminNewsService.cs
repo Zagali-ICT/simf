@@ -1,6 +1,7 @@
 // Tests: SIMF.Api.Tests/NewsTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SIMF.Application.Assets.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.PublicRelations.Abstractions;
 using SIMF.Common;
@@ -21,6 +22,7 @@ internal sealed class AdminNewsService(
     SimfAppDbContext dbContext,
     IAuditLog auditLog,
     TimeProvider timeProvider,
+    IAssetService assetService,
     ILogger<AdminNewsService> logger) : IAdminNewsService
 {
     private const int TitleMaxLength = 200;
@@ -87,10 +89,11 @@ internal sealed class AdminNewsService(
         };
 
         var total = await rows.CountAsync(cancellationToken);
-        var page = await rows
+        var pageRows = await rows
             .Skip(skip)
             .Take(top)
-            .Select(news => new AdminNewsSummary(
+            .Select(news => new
+            {
                 news.Id,
                 news.Title,
                 news.TitleArabic,
@@ -100,11 +103,34 @@ internal sealed class AdminNewsService(
                 news.DisplayOrder,
                 news.IsActive,
                 news.CreatedAt,
+                news.BodyArabic,
+                news.ExcerptArabic,
+            })
+            .ToListAsync(cancellationToken);
+
+        // The grid renders the news image thumbnail only when an active NewsImage
+        // asset exists (StoredFile store via the /assets proxy, not the legacy
+        // ImageRelativePath) — one batched query for the page, no N+1.
+        var imageOwners = await assetService.WhichOwnersHaveActiveAssetAsync(
+            AssetCategory.NewsImage, pageRows.Select(news => news.Id).ToList(), cancellationToken);
+
+        var page = pageRows
+            .Select(news => new AdminNewsSummary(
+                news.Id,
+                news.Title,
+                news.TitleArabic,
+                news.Category,
+                news.CategoryArabic,
+                news.PublishedAt,
+                news.DisplayOrder,
+                news.IsActive,
+                imageOwners.Contains(news.Id),
+                news.CreatedAt,
                 // D-506 — append in the same positional order as the record so the
                 // Excel export round-trips the bilingual body + excerpt.
                 news.BodyArabic,
                 news.ExcerptArabic))
-            .ToListAsync(cancellationToken);
+            .ToList();
 
         return GridPage<AdminNewsSummary>.Of(page, total,
             skip, top);

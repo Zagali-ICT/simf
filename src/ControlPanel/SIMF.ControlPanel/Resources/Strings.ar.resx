@@ -29,6 +29,7 @@
   <data name="Shell.SkipToMain" xml:space="preserve"><value>تخطي إلى المحتوى الرئيسي</value></data>
   <data name="Shell.ThemeLight" xml:space="preserve"><value>فاتح</value></data>
   <data name="Shell.ThemeDark" xml:space="preserve"><value>داكن</value></data>
+  <data name="Shell.ThemeSwitch" xml:space="preserve"><value>تبديل السمة</value></data>
   <data name="Shell.SwitchLanguage" xml:space="preserve"><value>English</value></data>
 
   <data name="Nav.Overview" xml:space="preserve"><value>نظرة عامة</value></data>

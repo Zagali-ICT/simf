@@ -336,6 +336,28 @@ Scenario: Clicking a sortable header cycles ascending then descending
   And the "Created" column header is NOT sortable (no sort button, no arrow)
 ```
 
+### E2E-OPN-017 — View / Approve honours the popup / full-page toggle (D-353)
+
+```gherkin
+Scenario: The review modal opens as a popup or a full page per the toolbar toggle
+  Given an Administrator is signed in on /admin/others/pending
+  And at least one Other-typed account is in the pending queue
+  When the administrator sets the toolbar presentation toggle to "popup"
+  And clicks View on a pending row
+  Then the profile review opens as a centred SimfModal overlay with the grid behind it
+  When the administrator closes the review and sets the toggle to "full page"
+  And clicks View on a pending row
+  Then the profile review takes over the full content area (CrudPageFrame) and the grid is hidden
+  And closing the review restores the grid
+  And the chosen presentation persists across a page reload (localStorage "pending-others")
+```
+
+**Covered (component layer, no browser):** the popup/full-page framing is the
+shared `CrudShell` + `CrudPresentationToggle` mechanism proven on `/admin/visitors`
+(`tests/SIMF.ControlPanel.Tests/CrudFramingTests.cs`); `PendingApprovalQueueTests.cs`
+renders the queue with the toggle wired. Persistence + full-page grid-hide are
+confirmed in the manual Chrome DevTools MCP smoke.
+
 ---
 
 ## Implementation notes

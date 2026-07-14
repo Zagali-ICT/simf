@@ -343,4 +343,9 @@ toasts are bilingual (`Message` / `MessageArabic`), surfaced via
 
 ---
 
-_Last reviewed:_ 2026-06-11 by Claude (D-357 media-asset pipeline).
+**2026-07-14 (D-357):** the Title column now renders the article's image thumbnail
+via the shared `SimfIdentityCell` (`AdminNewsSummary.HasImage`, streamed from the
+`NewsImage` /assets proxy) or a tinted initials tile. Column key unchanged so
+server-side sort/filter is unaffected. E2E-NWS-024.
+
+_Last reviewed:_ 2026-07-14 by Claude (D-357 — news image thumbnail in the list). Prior: 2026-06-11 by Claude (D-357 media-asset pipeline).

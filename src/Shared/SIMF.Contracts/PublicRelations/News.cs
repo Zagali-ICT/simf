@@ -55,6 +55,9 @@ public sealed record AdminNewsSummary(
     DateTimeOffset PublishedAt,
     int DisplayOrder,
     bool IsActive,
+    // D-357 — true when an active NewsImage asset exists, so the grid renders the
+    // image thumbnail (SimfIdentityCell), else an initials tile.
+    bool HasImage,
     DateTimeOffset CreatedAt,
     // D-506 — carried so the grid Excel export can round-trip them (not rendered
     // as grid columns). Optional; the long-form body is required on the entity so

@@ -157,6 +157,7 @@ Identical canonical shape — see [`admin-interests.md`](admin-interests.md) §8
 | Bulk-delete with reason → toast + reload | E2E-VIS-006 | bulk |
 | Export selected → XLSX downloads | E2E-VIS-007 | export |
 | RTL → wizard mirrors correctly | E2E-VIS-008 | i18n |
+| Name column shows the visitor's profile-photo thumbnail (initials fallback when none) | E2E-VIS-028 | D-568 photo-in-list |
 
 ## 12. Related docs
 
@@ -176,7 +177,8 @@ Identical canonical shape — see [`admin-interests.md`](admin-interests.md) §8
 | 2026-05-28 | D-131 | Identity field reorder + numbered section badges + bigger tiles. |
 | 2026-06-10 | D-353 / D-356 | Add/Edit/Details moved into `CrudShell` with a Page↔Popup `CrudPresentationToggle` (persisted as `simf.cp.prefs.visitors`). Uniform-CRUD Excel is N/A here — the page keeps its existing visitor-specific Excel export/import (not `CrudGridExcel`); delete stays the reason-gated bulk dialog (View/Delete is details-only). |
 | 2026-07-09 | D-728 | **Change type (owner item 9).** The Details view (`VisitorsViewDelete`) now hosts a shared `ChangeAccountTypeBlock` (gated `Accounts.ChangeType`) that flips the visitor into a partner (Other) type via `POST /admin/accounts/{id}/change-type`. The dropdown lists only active partner-scope types (opposite scope); the flip rolls the security stamp + revokes sessions (a partner type may grant Staff/Moderator app perms) and keeps the approval state. E2E-VIS-026. |
+| 2026-07-14 | D-568 | **Photo thumbnail in the list.** The name column now renders the shared `SimfIdentityCell` — the visitor's profile-photo thumbnail (streamed from `/account/api/admin/visitors/{id}/avatar` when `AdminUserSummary.HasAvatar`, the `AvatarRelativePath` presence sentinel) or an initials tile when there is no photo (never a broken image) — matching the Speakers/Sponsors/Media-Partners lists. Column stays `Key="displayName"` so server-side sort/filter is unchanged. E2E-VIS-028. |
 
 ---
 
-_Last reviewed:_ 2026-07-09 by SIMF Team (D-728 — change-account-type action). Earlier: 2026-06-10 (D-356 Phase 5 — D-353 Page↔Popup toggle note; Excel N/A for this account page).
+_Last reviewed:_ 2026-07-14 by Claude (D-568 — profile-photo thumbnail in the list). Earlier: 2026-07-09 by SIMF Team (D-728 — change-account-type action); 2026-06-10 (D-356 Phase 5 — D-353 Page↔Popup toggle note; Excel N/A for this account page).

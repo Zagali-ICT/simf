@@ -558,6 +558,27 @@ Scenario: Export then re-import carries the exhibitor tier
 
 ---
 
+### E2E-EXH-025 — the list shows the exhibitor's company-logo thumbnail (D-357)
+
+```gherkin
+Scenario: the English-name column renders the LINKED contact's company logo
+  Given an Administrator is on /admin/exhibitors
+  And exhibitor "A" is linked to a Contact that has a CompanyLogo asset
+  And exhibitor "B" is unlinked (or its contact has no logo)
+  When the grid loads a page
+  Then A's name cell shows the company-logo thumbnail beside the name
+  And B's name cell shows a tinted initials tile (never a broken image)
+  And the thumbnail URL points at CompanyLogo/{ContactId} (the linked contact, not the exhibitor id)
+```
+
+**Covered (lower layer):** the two-hop related-contact flag-population path is
+proven by `tests/SIMF.Api.Tests/AdminBoothsTests.cs` →
+`Booth_list_reports_HasLogo_from_the_exhibitor_companys_logo` (Booth→Exhibitor→Contact);
+the Exhibitor list is the one-hop Exhibitor→Contact subset. Confirm the render
+visually in the Chrome DevTools MCP smoke.
+
+---
+
 ## Implementation notes
 
 - **Manual smoke is canonical today.** Until Playwright is adopted, the canonical

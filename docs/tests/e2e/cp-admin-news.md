@@ -466,6 +466,26 @@ Scenario: A bad or wrong-sheet upload is rejected without creating anything
 
 ---
 
+### E2E-NWS-024 — the list shows the article's image thumbnail (D-357)
+
+```gherkin
+Scenario: the Title column renders a thumbnail when the article has an image
+  Given an Administrator is on /admin/news
+  And article "A" has a NewsImage asset and article "B" has none
+  When the grid loads a page
+  Then A's title cell shows the image thumbnail beside the title
+  And B's title cell shows a tinted initials tile (never a broken image)
+  And sorting / filtering by the Title column still works (column key unchanged)
+```
+
+**Covered (lower layer):** the flag-population path is proven by
+`tests/SIMF.Api.Tests/ContactsTests.cs` →
+`Admin_list_flips_HasLogo_once_a_CompanyLogo_asset_is_attached`; News uses the
+identical owner=row.Id `WhichOwnersHaveActiveAssetAsync(NewsImage, ...)` restructure.
+Confirm the render visually in the Chrome DevTools MCP smoke.
+
+---
+
 ## Implementation notes
 
 - **API integration tests** at `tests/SIMF.Api.Tests/NewsTests.cs` cover the same

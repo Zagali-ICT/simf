@@ -43,6 +43,12 @@ public partial class ContactsList
     private bool FormOpen => _form != FormKind.None;
     private bool GridHidden => FormOpen && _presentation == CrudPresentation.Page;
 
+    // The contact's logo thumbnail URL, or null so SimfIdentityCell shows an
+    // initials tile (never a broken image). Only when HasLogo — the /assets proxy
+    // resolves the CompanyLogo StoredFile for this contact (D-357).
+    private static string? LogoImageUrl(AdminContactSummary row) =>
+        row.HasLogo ? CpAssetUrls.AdminImage(nameof(AssetCategory.CompanyLogo), row.Id) : null;
+
     private string FormTitle => _form switch
     {
         FormKind.AddEdit => _isEdit

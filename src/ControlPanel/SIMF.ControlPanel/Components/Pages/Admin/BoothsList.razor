@@ -73,7 +73,11 @@
                     <SimfDataGridColumn TItem="AdminBoothSummary" Key="name"
                                         Header="@L["Admin.Booths.Col.NameEn"]"
                                         Sortable="true" Filterable="true">
-                        <CellTemplate>@context.Name</CellTemplate>
+                        <CellTemplate>
+                            <SimfIdentityCell ImageUrl="@LogoImageUrl(context)"
+                                              Name="@context.Name"
+                                              NameSecondary="@context.NameArabic" />
+                        </CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminBoothSummary" Key="nameArabic"
                                         Header="@L["Admin.Booths.Col.NameAr"]"

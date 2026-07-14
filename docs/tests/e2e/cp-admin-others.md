@@ -493,6 +493,25 @@ Scenario: Change-type is gated
   And a direct POST /admin/accounts/{id}/change-type returns 403
 ```
 
+### E2E-OTH-026 — the list shows the account's profile-photo thumbnail (D-568)
+
+```gherkin
+Scenario: the name column renders a photo thumbnail when the Other account has an avatar
+  Given an Administrator is on /admin/others
+  And account "A" has a profile photo (avatar) set and account "B" has none
+  When the grid loads a page of accounts
+  Then account A's name cell shows a photo thumbnail beside the display name
+  And account B's name cell shows a tinted initials tile (never a broken image)
+  And the avatar URL points at /account/api/admin/others/{id}/avatar (Others segment)
+  And sorting / filtering by the Name column still works (the column key is unchanged)
+```
+
+**Covered (lower layer):** `tests/SIMF.Api.Tests/PendingProfileReadTests.cs` →
+`Others_pending_list_row_reports_HasAvatar_once_a_photo_is_set` asserts the
+`AdminPendingUserSummary.HasAvatar` projection (the same projection backs the
+Others list). The thumbnail is the shared `SimfIdentityCell`; confirm visually in
+the Chrome DevTools MCP smoke.
+
 ---
 
 ## Implementation notes

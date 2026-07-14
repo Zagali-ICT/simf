@@ -85,6 +85,9 @@ public sealed record AdminArchiveEditionSummary(
     string? CoverImageRelativePath,
     bool IsActive,
     DateTimeOffset CreatedAt,
+    // D-357 — true when an active ArchiveCover asset exists, so the grid renders
+    // the cover thumbnail (SimfIdentityCell), else an initials tile.
+    bool HasCover,
     // §9 (screen 24-01) — place + date label, so the CP edit form (which
     // populates straight from the grid row) carries them. Default null
     // preserves existing positional callers.

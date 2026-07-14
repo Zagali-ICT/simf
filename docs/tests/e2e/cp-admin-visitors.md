@@ -560,6 +560,26 @@ Scenario: a National ID that already belongs to a profile cannot be walked in ag
   # app twin POST /app/staff/visitors/register-onsite.
 ```
 
+### E2E-VIS-028 — the list shows the visitor's profile-photo thumbnail (D-568)
+
+```gherkin
+Scenario: the name column renders a photo thumbnail when the visitor has an avatar
+  Given an Administrator is on /admin/visitors
+  And visitor "A" has a profile photo (avatar) set and visitor "B" has none
+  When the grid loads a page of visitors
+  Then visitor A's name cell shows a circular photo thumbnail beside the display name
+  And visitor B's name cell shows a tinted initials tile (never a broken image)
+  And no avatar request is issued for visitor B (the URL is only built when HasAvatar)
+  And sorting / filtering by the Name column still works (the column key is unchanged)
+```
+
+**Covered (lower layer):** `tests/SIMF.Api.Tests/PendingProfileReadTests.cs` →
+`Others_pending_list_row_reports_HasAvatar_once_a_photo_is_set` asserts the list
+row's `HasAvatar` flips with the `AvatarRelativePath` sentinel (the same
+projection backs the visitors list). The thumbnail render itself is the shared
+`SimfIdentityCell` proven on the Speakers/Sponsors lists; confirm visually in the
+Chrome DevTools MCP smoke.
+
 ---
 
 _Last reviewed:_ 2026-07-11 by Claude (W4 on-site remediation — H-1 duplicate-identity guard; E2E-VIS-027). Prior: 2026-07-09 by SIMF Team (D-728 — added E2E-VIS-026 for the change-account-type action on the visitor Details view). Earlier: 2026-06-20 (D-469 — E2E-VIS-025 Saudi birth-location region dropdown); 2026-06-10 (D-356 Phase 5 — Excel + toggle; E2E-VIS-023/024 for the D-353 Page↔Popup presentation toggle).

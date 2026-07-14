@@ -69,6 +69,14 @@ The Select-all toolbar checkbox + per-row checkboxes (D-132) drive the
 **bulk-approve (D-164)** and **bulk-reject (D-209)** endpoints — they are no
 longer presentational.
 
+**View presentation toggle (D-353 parity).** The grid toolbar now carries the
+same **popup / full-page** toggle as `/admin/visitors` (`CrudPresentationToggle`;
+the choice is persisted per-user in localStorage under `pending-visitors`). The
+**View / Approve** review is framed by `CrudShell`: a `SimfModal` popup by
+default, or a full-page `CrudPageFrame` (the grid hides while it is open) when
+the admin picks full page. The Reject / bulk-reject reason modals and the
+face-photo / avatar lightboxes stay popups regardless of the toggle.
+
 ## 7. Edge cases
 
 - **Stale row** — between list-load and Approve click, the row could already
@@ -105,13 +113,24 @@ UC-VIS-PENDING-LIST, UC-VIS-PENDING-VIEW, UC-VIS-APPROVE-WITH-REVIEW
 | Photo thumbnail opens full-size in the lightbox (D-387) | E2E-VPN-022 |
 | Photo downloads via the Download link (D-387) | E2E-VPN-023 |
 | RTL render of the View / Approve modal (D-385/386/387) | E2E-VPN-024 |
+| View / Approve opens as popup or full page per the toolbar toggle; full page hides the grid (D-353) | E2E-VPN-026 |
 
 ## 12. Related
 
 - Sibling: [`admin-visitors.md`](admin-visitors.md)
-- Decisions: D-128 (review-before-approve), D-124 / D-125 / D-126 (pending-profile read), D-132 (canonical sweep), D-385 (all-data display via `PendingProfileResponse` + `AdminApprovalReadService`), D-386 (approve-time profile-type picker + `ADMIN_PROFILE_TYPE_INVALID`), D-387 (face-photo lightbox + download).
+- Decisions: D-128 (review-before-approve), D-124 / D-125 / D-126 (pending-profile read), D-132 (canonical sweep), D-353 (popup/full-page CRUD framing — now extended to the pending review modal), D-385 (all-data display via `PendingProfileResponse` + `AdminApprovalReadService`), D-386 (approve-time profile-type picker + `ADMIN_PROFILE_TYPE_INVALID`), D-387 (face-photo lightbox + download).
 
 ## Changelog
+
+- **2026-07-14 (D-353 parity):** the grid toolbar gained the popup/full-page
+  presentation toggle; the View / Approve review is now framed by `CrudShell`
+  (popup by default, full-page hides the grid), matching `/admin/visitors`. The
+  Reject / bulk-reject modals and the photo lightboxes stay popups. Shared
+  plumbing lives in `PendingApprovalPageBase` (opt-in via `PresentationPageKey`).
+- **2026-07-14 (D-568):** the queue's name column now renders the applicant's
+  profile-photo thumbnail via the shared `SimfIdentityCell`
+  (`AdminPendingUserSummary.HasAvatar` streams `/account/api/admin/visitors/{id}/avatar`),
+  or a tinted initials tile when there is no photo.
 
 - **2026-06-13 (D-385 / D-386 / D-387):** modal now shows all captured profile
   data (Job title, Gender, Organisation [bilingual], Plate number, Reference

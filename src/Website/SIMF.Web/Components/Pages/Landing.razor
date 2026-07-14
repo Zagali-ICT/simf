@@ -1,0 +1,551 @@
+@* SIMF public marketing landing — Bootstrap 5 rebuild of the Figma
+   "Home Page (Desktop AR/EN)". Server-side rendered (no interactive circuit);
+   all interactions are progressive vanilla JS in wwwroot/js/landing.js.
+   Bilingual: Arabic RTL / English LTR follow the request culture (the
+   <html dir/lang> is set in App.razor); Bootstrap's RTL or LTR sheet is
+   chosen here to match. Built at /landing during the build wave; it takes
+   over "/" only at the final, verified cutover. *@
+@page "/landing"
+@layout LandingLayout
+@using System.Globalization
+@inject IStringLocalizer<Strings> L
+
+@{
+    var rtl = CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
+    var otherCulture = rtl ? "en" : "ar";
+    var bootstrapCss = rtl
+        ? "lib/bootstrap/css/bootstrap.rtl.min.css"
+        : "lib/bootstrap/css/bootstrap.min.css";
+    // preload the hero-title weight (700) for the active language → no font swap on LCP
+    var heroFont = rtl
+        ? "lib/almarai/almarai-arabic-700-normal.woff2"
+        : "lib/almarai/almarai-latin-700-normal.woff2";
+}
+
+<HeadContent>
+    <meta name="description" content="@L["Landing.MetaDescription"]" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="@L["Landing.PageTitle"]" />
+    <meta property="og:description" content="@L["Landing.MetaDescription"]" />
+    <meta property="og:locale" content="@(rtl ? "ar_SA" : "en_US")" />
+    @* mark JS-capable synchronously so reveal-on-scroll never hides content for no-JS visitors *@
+    <script>document.documentElement.classList.add('ln-js');</script>
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="@Assets[heroFont]" />
+    <link rel="stylesheet" href="@Assets[bootstrapCss]" />
+    <link rel="stylesheet" href="@Assets["css/landing.css"]" />
+    <script defer src="@Assets["lib/bootstrap/js/bootstrap.bundle.min.js"]"></script>
+    <script defer src="@Assets["js/landing.js"]"></script>
+</HeadContent>
+
+<PageTitle>@L["Landing.PageTitle"]</PageTitle>
+
+<div class="landing">
+
+    @* First-paint splash, faded out on window load by landing.js *@
+    <div class="ln-loader" id="ln-loader" role="status" aria-live="polite"
+         aria-label="@L["Landing.Loading"]">
+        <div class="ln-loader__inner">
+            <img class="ln-loader__logo" src="assets/figma/nav/logo-fill.svg"
+                 alt="@L["Brand.LogoAlt"]" />
+            <div class="ln-loader__bar"><span></span></div>
+        </div>
+    </div>
+
+    <header class="ln-header">
+
+        @* Government digital-stamp strip *@
+        <div class="ln-stamp">
+            <div class="ln-stamp__content">
+                <span class="ln-stamp__flag"><img src="assets/figma/nav/flag-saudi.svg" alt="" /></span>
+                <span class="ln-stamp__label">@L["Landing.Nav.Stamp"]</span>
+                <button type="button" class="ln-stamp__link">
+                    @L["Landing.Nav.StampVerify"]
+                    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                </button>
+            </div>
+        </div>
+
+        @* Navy navigation header *@
+        <nav class="ln-nav" aria-label="@L["Landing.Nav.Main"]">
+            <div class="ln-nav__inner">
+                <div class="ln-nav__brandmenu">
+                    <a href="/landing" aria-label="@L["Brand.LogoAlt"]">
+                        <img class="ln-nav__logo" src="assets/figma/nav/logo-fill.svg" alt="@L["Brand.LogoAlt"]" />
+                    </a>
+                    <div class="ln-nav__menu">
+                        @foreach (var menu in NavMenus)
+                        {
+                            if (menu.Links.Count == 0)
+                            {
+                                <a href="@menu.Href" class="ln-nav__item">@L[menu.LabelKey]</a>
+                            }
+                            else
+                            {
+                                <div class="ln-dd">
+                                    <button type="button" class="ln-nav__item" aria-haspopup="true" aria-expanded="false">
+                                        @L[menu.LabelKey]
+                                        <svg class="ln-nav__chev" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                    </button>
+                                    <div class="ln-dd__panel" role="menu" aria-label="@L[menu.TitleKey]">
+                                        <p class="ln-dd__title">@L[menu.TitleKey]</p>
+                                        <div class="ln-dd__list">
+                                            @foreach (var link in menu.Links)
+                                            {
+                                                <a href="@link.Href" class="ln-dd__link" role="menuitem">@L[link.LabelKey]</a>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+                <div class="ln-nav__actions">
+                    <button type="button" class="ln-nav__action">@L["Landing.Nav.Contact"]
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16v12H4z" stroke="currentColor" stroke-width="1.5" /><path d="M4 7l8 6 8-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </button>
+                    <button type="button" class="ln-nav__action" id="ln-search-toggle" aria-label="@L["Landing.Nav.Search"]" aria-expanded="false" aria-controls="ln-search-panel">
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6" /><path d="M16 16l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+                    </button>
+                    @* no aria-label: the visible language name IS the accessible name (WCAG 2.5.3) *@
+                    <a class="ln-nav__action" href="/culture?culture=@otherCulture&redirectUri=/landing" hreflang="@otherCulture">
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5" /><path d="M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18" stroke="currentColor" stroke-width="1.4" /></svg>
+                        <span>@L["Landing.Nav.OtherLanguage"]</span>
+                    </a>
+                    <button type="button" class="ln-nav__toggler" data-bs-toggle="offcanvas" data-bs-target="#ln-offcanvas-nav" aria-controls="ln-offcanvas-nav" aria-label="@L["Landing.Nav.Menu"]">
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        @* Full-width search drop-panel (toggled by the search action) *@
+        <div class="ln-search" id="ln-search-panel">
+            <div class="ln-search__inner">
+                <button type="button" class="ln-search__close" aria-label="@L["Landing.Search.Close"]">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+                </button>
+                <form class="ln-search__bar" role="search" onsubmit="return false;">
+                    <div class="ln-search__field">
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.7" /><path d="M16 16l4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
+                        <input type="search" placeholder="@L["Landing.Search.Placeholder"]" aria-label="@L["Landing.Nav.Search"]" />
+                        <button type="button" class="ln-search__mic" aria-label="@L["Landing.Search.Voice"]"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" stroke="currentColor" stroke-width="1.6" /><path d="M6 11a6 6 0 0012 0M12 17v4M9 21h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></button>
+                    </div>
+                    <button type="submit" class="ln-search__submit">@L["Landing.Search.Submit"]</button>
+                </form>
+                <div class="ln-search__sugg">
+                    <p class="ln-search__suggtitle">@L["Landing.Search.Suggestions"]</p>
+                    <div class="ln-search__chips">
+                        @foreach (var chip in SearchChips)
+                        {
+                            <button type="button" class="ln-chip">@L[chip]
+                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 6v12M6 12h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    @* Mobile off-canvas navigation (Bootstrap) *@
+    <div class="offcanvas offcanvas-end ln-offcanvas" tabindex="-1" id="ln-offcanvas-nav" aria-label="@L["Landing.Nav.Main"]">
+        <div class="offcanvas-header">
+            <img class="ln-nav__logo" src="assets/figma/nav/logo-fill.svg" alt="@L["Brand.LogoAlt"]" style="height:40px" />
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="@L["Landing.Search.Close"]"></button>
+        </div>
+        <div class="offcanvas-body">
+            @foreach (var menu in NavMenus)
+            {
+                <div class="ln-offcanvas__group">
+                    @if (menu.Links.Count == 0)
+                    {
+                        <a class="ln-offcanvas__title ln-offcanvas__link" href="@menu.Href" data-bs-dismiss="offcanvas">@L[menu.LabelKey]</a>
+                    }
+                    else
+                    {
+                        <p class="ln-offcanvas__title">@L[menu.LabelKey]</p>
+                        @foreach (var link in menu.Links)
+                        {
+                            <a class="ln-offcanvas__link" href="@link.Href" data-bs-dismiss="offcanvas">@L[link.LabelKey]</a>
+                        }
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <main id="main-content">
+
+        @* =============================== HERO ============================== *@
+        <section class="ln-hero" aria-label="@L["Landing.Hero.Title"]">
+            <video class="ln-hero__video" autoplay muted loop playsinline webkit-playsinline
+                   preload="metadata" poster="assets/figma/hero/hero-bg.png"
+                   src="assets/hero-video.mp4"></video>
+            <div class="ln-hero__overlay"></div>
+            <div class="ln-hero__content ln-reveal">
+                <h1 class="ln-hero__title">@L["Landing.Hero.Title"]</h1>
+                <p class="ln-hero__subtitle">@L["Landing.Hero.Subtitle"]</p>
+                <p class="ln-hero__desc">@L["Landing.Hero.Description"]</p>
+                <div class="ln-hero__pills">
+                    <span class="ln-hero__pill"><span>@L["Landing.Hero.Venue"]</span><img src="assets/figma/secondnav/icon-location.svg" alt="" /></span>
+                    <span class="ln-hero__pill"><span>@L["Landing.Subnav.Date"]</span><img src="assets/figma/secondnav/icon-calendar.svg" alt="" /></span>
+                </div>
+            </div>
+        </section>
+
+        @* Sub-nav strip (date / venue / weather) — Figma places it BELOW the hero *@
+        <div class="ln-subnav">
+            <div class="ln-subnav__inner">
+                <div class="ln-subnav__info">
+                    <span class="ln-subnav__item ln-subnav__item--optional"><span>@L["Landing.Subnav.Venue"]</span><img src="assets/figma/secondnav/icon-location.svg" alt="" /></span>
+                    <span class="ln-subnav__item"><span>@L["Landing.Subnav.Time"]</span><img src="assets/figma/secondnav/icon-clock.svg" alt="" /></span>
+                    <span class="ln-subnav__item"><span>@L["Landing.Subnav.Date"]</span><img src="assets/figma/secondnav/icon-calendar.svg" alt="" /></span>
+                    <span class="ln-subnav__item ln-subnav__item--optional"><span>@L["Landing.Subnav.Weather"]</span><img src="assets/figma/secondnav/icon-weather.svg" alt="" /></span>
+                </div>
+            </div>
+        </div>
+
+        @* ===================== INTRO + THREAT MARQUEE ===================== *@
+        <section class="ln-intro">
+            <div class="ln-intro__inner ln-reveal">
+                <div class="ln-intro__text">
+                    <h2 class="ln-intro__title">@L["Landing.Intro.Title"]</h2>
+                    <p class="ln-intro__sub">@L["Landing.Intro.Sub"]</p>
+                    <p class="ln-intro__lead">@L["Landing.Intro.Lead"]</p>
+                </div>
+                <div class="ln-intro__strip">
+                    <div class="ln-marquee__track">
+                        @foreach (var s in ThreatStats)
+                        {
+                            <div class="ln-tstat">
+                                <div class="ln-tstat__top">
+                                    <span class="ln-tstat__val">@s.Value.For(rtl)</span>
+                                    <span class="ln-tstat__badge"><img src="assets/figma/intro/stat-icon.svg" alt="" /></span>
+                                </div>
+                                <span class="ln-tstat__cap">@s.Caption.For(rtl)</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        @* ===================== PARTICIPATION STATS ======================= *@
+        <section class="ln-stats" id="stats">
+            <div class="ln-stats__header ln-reveal">
+                <p class="ln-stats__eyebrow">@L["Landing.Stats.Eyebrow"]</p>
+                <h2 class="ln-stats__title">@L["Landing.Stats.Title"]</h2>
+                <p class="ln-stats__lead">@L["Landing.Stats.Lead"]</p>
+            </div>
+            <div class="ln-stats__band">
+                <div class="ln-stats__row ln-reveal">
+                    @foreach (var s in Stats.Take(2))
+                    {
+                        <div class="ln-stat"><span class="ln-stat__num">@s.Num</span><span class="ln-stat__label">@s.Label.For(rtl)</span></div>
+                    }
+                </div>
+                <div class="ln-stats__row ln-reveal">
+                    @foreach (var s in Stats.Skip(2))
+                    {
+                        <div class="ln-stat"><span class="ln-stat__num">@s.Num</span><span class="ln-stat__label">@s.Label.For(rtl)</span></div>
+                    }
+                </div>
+            </div>
+        </section>
+
+        @* ============================== ABOUT ============================= *@
+        <section class="ln-about" id="about">
+            <div class="ln-about__inner ln-reveal">
+                <div class="ln-about__content">
+                    <div class="ln-about__text">
+                        <p class="ln-about__eyebrow">@L["Landing.About.Eyebrow"]</p>
+                        <h2 class="ln-about__title">@L["Landing.About.Title"]</h2>
+                        <p class="ln-about__lead">@L["Landing.About.Lead"]</p>
+                    </div>
+                    <a class="ln-btn ln-btn--primary" href="#partners">@L["Landing.About.Button"]</a>
+                </div>
+                <div class="ln-about__media">
+                    <img src="assets/figma/about/about-card-1.jpg" alt="@L["Landing.About.ImageAlt"]" loading="lazy" />
+                </div>
+            </div>
+        </section>
+
+        @* ===================== MILESTONES =============================== *@
+        <section class="ln-miles" id="milestones">
+            <div class="ln-miles__head ln-reveal">
+                <div class="ln-miles__titlerow">
+                    <h2 class="ln-miles__title">@L["Landing.Miles.Title"]</h2>
+                    <button type="button" class="ln-btn ln-btn--outline">@L["Landing.Miles.More"]</button>
+                </div>
+                <p class="ln-miles__desc">@L["Landing.Miles.Desc"]</p>
+            </div>
+            <div class="ln-miles__row ln-reveal">
+                @foreach (var m in Milestones)
+                {
+                    var imgClass = m.IsFuture ? "ln-mcard__img ln-mcard__img--future" : "ln-mcard__img";
+                    <article class="ln-mcard">
+                        <div class="@imgClass" style="background-image:url('@m.Image')"></div>
+                        <div class="ln-mcard__body">
+                            <div class="ln-mcard__top">
+                                <div class="ln-mcard__headcol">
+                                    <span class="ln-mcard__date">@m.Date.For(rtl)</span>
+                                    <h3 class="ln-mcard__name">@m.Name.For(rtl)</h3>
+                                </div>
+                                <span class="ln-mcard__arrow"><svg viewBox="0 0 22 22" fill="none" aria-hidden="true"><path d="M21 21L1 1M14.3333 1H1V14.3333" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+                            </div>
+                            <p class="ln-mcard__text">@m.Text.For(rtl)</p>
+                        </div>
+                    </article>
+                }
+            </div>
+        </section>
+
+        @* ====================== SECONDARY HERO / CTA ===================== *@
+        <section class="ln-hero2" id="goals" aria-label="@L["Landing.Hero2.Title"]">
+            <div class="ln-hero2__bg"><img src="assets/figma/hero2/hero2-photo.jpg" alt="" /></div>
+            <div class="ln-hero2__block ln-reveal">
+                <h2 class="ln-hero2__title">@L["Landing.Hero2.Title"]</h2>
+                <p class="ln-hero2__lead">@L["Landing.Hero2.Lead"]</p>
+                <a class="ln-btn ln-btn--ghost" href="#about">@L["Landing.Hero2.Button"]</a>
+            </div>
+        </section>
+
+        @* ========================= THEMES (PILLARS) ==================== *@
+        <section class="ln-themes" id="themes">
+            <div class="ln-themes__inner ln-reveal">
+                <div class="ln-themes__head">
+                    <h2 class="ln-themes__title">@L["Landing.Themes.Title"]</h2>
+                    <p class="ln-themes__sub">@L["Landing.Themes.Sub"]</p>
+                </div>
+                <div class="ln-themes__row">
+                    @foreach (var t in Themes)
+                    {
+                        <article class="ln-tcard">
+                            <div class="ln-tcard__topgrp">
+                                <span class="ln-tcard__badge"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5" /><path d="M8 12.4l2.6 2.6 5.4-5.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+                                <h3 class="ln-tcard__title">@t.Title.For(rtl)</h3>
+                            </div>
+                            <p class="ln-tcard__desc">@t.Desc.For(rtl)</p>
+                        </article>
+                    }
+                </div>
+            </div>
+        </section>
+
+        @* ===================== PROGRAMME (main sessions) ================ *@
+        <section class="ln-sessions" id="sessions">
+            <div class="ln-sessions__inner ln-reveal">
+                <div class="ln-sessions__head">
+                    <h2 class="ln-sessions__title">@L["Landing.Sessions.Title"]</h2>
+                    <p class="ln-sessions__desc">@L["Landing.Sessions.Desc"]</p>
+                </div>
+                <div class="ln-sessions__row">
+                    @foreach (var s in Sessions)
+                    {
+                        <article class="ln-scard">
+                            <div class="ln-scard__img" style="background-image:url('@s.Image')"></div>
+                            <div class="ln-scard__body">
+                                <div class="ln-scard__badgerow">
+                                    <span class="ln-scard__num"><span>@s.Num</span></span>
+                                    <span class="ln-scard__tag">@s.Tag.For(rtl)</span>
+                                </div>
+                                <div class="ln-scard__content">
+                                    <h3 class="ln-scard__title">@s.Title.For(rtl)</h3>
+                                    <p class="ln-scard__text">@s.Text.For(rtl)</p>
+                                </div>
+                                <div class="ln-scard__actions"><button type="button" class="ln-scard__btn">@L["Landing.Sessions.ReadMore"]</button></div>
+                            </div>
+                        </article>
+                    }
+                </div>
+            </div>
+        </section>
+
+        @* ============================ SPEAKERS ========================== *@
+        <section class="ln-speakers" id="speakers">
+            <div class="ln-speakers__inner ln-reveal">
+                <div class="ln-speakers__head">
+                    <h2 class="ln-speakers__title">@L["Landing.Speakers.Title"]</h2>
+                    <p class="ln-speakers__lead">@L["Landing.Speakers.Lead"]</p>
+                    <a href="speakers.html" class="ln-btn ln-btn--gold">@L["Landing.Speakers.ViewAll"]</a>
+                </div>
+                <div class="ln-speakers__collage">
+                    <img src="assets/figma/speakers/speakers-collage.png" alt="@L["Landing.Speakers.CollageAlt"]" loading="lazy" />
+                </div>
+            </div>
+        </section>
+
+        @* ========================== PARTNERS BAND ======================= *@
+        <section class="ln-pband" id="partners">
+            <div class="ln-pband__head ln-reveal">
+                <h2 class="ln-pband__title">@L["Landing.Partners.Title"]</h2>
+                <p class="ln-pband__desc">@L["Landing.Partners.Desc"]</p>
+            </div>
+            <div class="ln-pband__strip">
+                <div class="ln-pband__track">
+                    @foreach (var p in PartnerLogos)
+                    {
+                        <div class="ln-pcard">
+                            <div class="ln-pcard__logo"><img src="@p.Image" alt="@p.Label.For(rtl)" loading="lazy" /></div>
+                            <div class="ln-pcard__label">@p.Label.For(rtl)</div>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="ln-pband__bar"><div class="ln-pband__rail"><span class="ln-pband__thumb"></span></div></div>
+        </section>
+
+        @* ====================== SPONSORS CAROUSEL ======================= *@
+        <section class="ln-spon">
+            <div class="ln-spon__inner ln-reveal">
+                <div class="ln-spon__head">
+                    <div class="ln-spon__titlerow">
+                        <h2 class="ln-spon__title">@L["Landing.Sponsors.Title"]</h2>
+                        <button type="button" class="ln-btn ln-btn--outline">@L["Landing.Sponsors.ViewAll"]</button>
+                    </div>
+                    <p class="ln-spon__desc">@L["Landing.Sponsors.Desc"]</p>
+                </div>
+                <div class="ln-spon__carousel">
+                    <button type="button" class="ln-spon__arrow" aria-label="@L["Landing.Sponsors.Prev"]"><img src="assets/figma/sponsors/icon-arrow-left.svg" alt="" /></button>
+                    <div class="ln-spon__viewport">
+                        <div class="ln-spon__track">
+                            @foreach (var sp in Sponsors)
+                            {
+                                <div class="ln-scard2">
+                                    <img class="ln-scard2__icon" src="assets/figma/sponsors/icon-external-link.svg" alt="" />
+                                    <div class="ln-scard2__col">
+                                        <img class="ln-scard2__logo" src="@sp.Logo" alt="@sp.Tag.For(rtl)" />
+                                        <span class="ln-scard2__tag">@sp.Tag.For(rtl)</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <button type="button" class="ln-spon__arrow" aria-label="@L["Landing.Sponsors.Next"]"><img src="assets/figma/sponsors/icon-arrow-right.svg" alt="" /></button>
+                </div>
+            </div>
+        </section>
+
+        @* ========================= NEWS & ARTICLES ====================== *@
+        <section class="ln-news" id="news">
+            <div class="ln-news__inner ln-reveal">
+                <div class="ln-news__head">
+                    <div class="ln-news__titlerow">
+                        <h2 class="ln-news__title">@L["Landing.News.Title"]</h2>
+                        <button type="button" class="ln-btn ln-btn--outline-blue">@L["Landing.News.ViewAll"]</button>
+                    </div>
+                    <p class="ln-news__desc">@L["Landing.News.Desc"]</p>
+                </div>
+                <div class="ln-news__cards">
+                    @foreach (var n in News)
+                    {
+                        <article class="ln-ncard">
+                            <div class="ln-ncard__img" style="background-image:url('@n.Image')"></div>
+                            <div class="ln-ncard__body">
+                                <div class="ln-ncard__content">
+                                    <span class="ln-ncard__date">@n.Date</span>
+                                    <h3 class="ln-ncard__title">@n.Title.For(rtl)</h3>
+                                    <p class="ln-ncard__excerpt">@n.Excerpt.For(rtl)</p>
+                                </div>
+                                <div class="ln-ncard__actions"><button type="button" class="ln-ncard__btn">@L["Landing.News.ReadMore"]</button></div>
+                            </div>
+                        </article>
+                    }
+                </div>
+            </div>
+        </section>
+
+        @* ========================= DISCOVER SAUDI ======================= *@
+        <section class="ln-discover" id="discover">
+            <div class="ln-discover__inner ln-reveal">
+                <div class="ln-discover__head">
+                    <div class="ln-discover__titlerow">
+                        <h2 class="ln-discover__title">@L["Landing.Discover.Title"]</h2>
+                        <button type="button" class="ln-btn ln-btn--outline">@L["Landing.Discover.Explore"]</button>
+                    </div>
+                    <p class="ln-discover__desc">@L["Landing.Discover.Desc"]</p>
+                </div>
+                <div class="ln-discover__grid">
+                    @foreach (var d in DiscoverCards)
+                    {
+                        <article class="ln-dcard">
+                            <div class="ln-dcard__img"><img src="@d.Image" alt="@d.Title.For(rtl)" loading="lazy" /></div>
+                            <div class="ln-dcard__panel">
+                                <h3 class="ln-dcard__title">@d.Title.For(rtl)</h3>
+                                <span class="ln-dcard__meta"><svg viewBox="0 0 20.732 20.732" fill="none" aria-hidden="true"><path d="M1.7865 9.10371C1.19115 8.87219 0.893481 8.75643 0.806575 8.58963C0.731238 8.44503 0.731136 8.27278 0.806304 8.12809C0.893013 7.96119 1.19055 7.84507 1.78562 7.61285L18.6734 1.02251C19.2106 0.812878 19.4791 0.708063 19.6508 0.765398C19.7998 0.815191 19.9168 0.932159 19.9666 1.08121C20.0239 1.25284 19.9191 1.52143 19.7095 2.05861L13.1191 18.9464C12.8869 19.5414 12.7708 19.839 12.6039 19.9257C12.4592 20.0008 12.2869 20.0007 12.1423 19.9254C11.9755 19.8385 11.8598 19.5408 11.6283 18.9455L9.00015 12.1875C8.95315 12.0666 8.92965 12.0062 8.89336 11.9553C8.86119 11.9102 8.82175 11.8708 8.77666 11.8386C8.72578 11.8023 8.66535 11.7788 8.5445 11.7318L1.7865 9.10371Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg><span>@d.Distance</span></span>
+                                <span class="ln-dcard__meta"><svg viewBox="0 0 17.5 21.5" fill="none" aria-hidden="true"><circle cx="8.75" cy="8.75" r="3" stroke="currentColor" stroke-width="1.5" /><path d="M8.75 20.75C12.75 16.75 16.75 13.1683 16.75 8.75C16.75 4.33172 13.1683 0.75 8.75 0.75C4.33172 0.75 0.75 4.33172 0.75 8.75C0.75 13.1683 4.75 16.75 8.75 20.75Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg><span>@d.Location.For(rtl)</span></span>
+                            </div>
+                        </article>
+                    }
+                </div>
+            </div>
+        </section>
+
+        @* ============================== FOOTER ========================== *@
+        <footer class="ln-footer">
+            <div class="ln-footer__inner">
+                <div class="ln-footer__top">
+                    <div class="ln-ft__brand">
+                        <img src="assets/figma/footer/logo-simf-white.svg" alt="@L["Brand.LogoAlt"]" />
+                    </div>
+                    <div class="ln-ft__groups">
+                        <nav class="ln-ft__group" aria-label="@L["Landing.Footer.ImportantLinks"]">
+                            <p class="ln-ft__label">@L["Landing.Footer.ImportantLinks"]</p>
+                            <div class="ln-ft__list">
+                                @foreach (var link in FooterImportantLinks)
+                                {
+                                    <a class="ln-ft__link ln-ft__link--ul" href="@link.Href" target="_blank" rel="noopener">@link.Label.For(rtl) <img src="assets/figma/footer/icon-link-04.svg" alt="" /></a>
+                                }
+                            </div>
+                        </nav>
+                        <div class="ln-ft__group">
+                            <p class="ln-ft__label">@L["Landing.Footer.Contact"]</p>
+                            <div class="ln-ft__list">
+                                <span class="ln-ft__link">@L["Landing.Footer.Address"] <img src="assets/figma/footer/icon-location.svg" alt="" /></span>
+                                <a class="ln-ft__link" href="tel:920010500">920010500 <img src="assets/figma/footer/icon-phone.svg" alt="" /></a>
+                                <a class="ln-ft__link ln-ft__link--ul" href="mailto:info@@simforum.mod.gov.sa">info@@simforum.mod.gov.sa <img src="assets/figma/footer/icon-email.svg" alt="" /></a>
+                            </div>
+                        </div>
+                        <div class="ln-ft__col">
+                            <div class="ln-ft__group">
+                                <p class="ln-ft__label">@L["Landing.Footer.Follow"]</p>
+                                <div class="ln-ft__icons">
+                                    <a class="ln-ft__iconbtn" href="#" aria-label="Instagram"><img src="assets/figma/footer/icon-instagram.svg" alt="" /></a>
+                                    <a class="ln-ft__iconbtn" href="#" aria-label="YouTube"><img src="assets/figma/footer/icon-youtube.svg" alt="" /></a>
+                                    <a class="ln-ft__iconbtn" href="#" aria-label="X"><img src="assets/figma/footer/icon-x-twitter.svg" alt="" /></a>
+                                    <a class="ln-ft__iconbtn" href="#" aria-label="LinkedIn"><img src="assets/figma/footer/icon-linkedin.svg" alt="" /></a>
+                                </div>
+                            </div>
+                            <div class="ln-ft__group">
+                                <p class="ln-ft__label">@L["Landing.Footer.A11y"]</p>
+                                <div class="ln-ft__icons">
+                                    <button type="button" class="ln-ft__iconbtn" aria-label="@L["Landing.Footer.A11y"]"><img src="assets/figma/footer/icon-a11y-1.svg" alt="" /></button>
+                                    <button type="button" class="ln-ft__iconbtn" aria-label="@L["Landing.Footer.A11y"]"><img src="assets/figma/footer/icon-a11y-2-search.svg" alt="" /></button>
+                                    <button type="button" class="ln-ft__iconbtn" aria-label="@L["Landing.Footer.A11y"]"><img src="assets/figma/footer/icon-a11y-3-view.svg" alt="" /></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ln-footer__legal">
+                    <div class="ln-ft__copywrap">
+                        <p class="ln-ft__copy">© MOD.RSNF – All Rights Reserved</p>
+                        <p class="ln-ft__dev">@L["Landing.Footer.DevBy"] <b>Startime.sa</b></p>
+                        <p class="ln-ft__dev">@L["Landing.Footer.LastModified"]</p>
+                    </div>
+                    <div class="ln-ft__legallinks">
+                        <a href="#">@L["Landing.Footer.Sitemap"]</a>
+                        <a href="#">RSS</a>
+                        <a href="#">@L["Landing.Footer.MobileApp"]</a>
+                    </div>
+                    <div class="ln-ft__logos">
+                        <img src="assets/figma/footer/vision-2030.png" alt="@L["Landing.Footer.Vision2030"]" loading="lazy" />
+                        <img src="assets/figma/footer/logo-mod.png" alt="@L["Landing.Footer.MOD"]" loading="lazy" />
+                    </div>
+                </div>
+            </div>
+        </footer>
+
+    </main>
+</div>

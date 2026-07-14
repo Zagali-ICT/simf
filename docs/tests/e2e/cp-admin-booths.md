@@ -574,6 +574,27 @@ Scenario: A bad / wrong-sheet upload is rejected and nothing is created
 
 ---
 
+### E2E-BTH-024 — the list shows the booth's exhibitor-company logo thumbnail (D-357)
+
+```gherkin
+Scenario: the English-name column renders the exhibitor company's logo (two-hop)
+  Given an Administrator is on /admin/booths
+  And booth "A"'s exhibitor is linked to a Contact that has a CompanyLogo asset
+  And booth "B"'s exhibitor has no logo (or no linked contact)
+  When the grid loads a page
+  Then A's name cell shows the exhibitor-company logo thumbnail beside the booth name
+  And B's name cell shows a tinted initials tile (never a broken image)
+  And the thumbnail URL points at CompanyLogo/{ExhibitorContactId} (resolved two-hop)
+```
+
+**Covered (lower layer):** `tests/SIMF.Api.Tests/AdminBoothsTests.cs` →
+`Booth_list_reports_HasLogo_from_the_exhibitor_companys_logo` seeds a
+Contact(+logo)→Exhibitor→Booth chain and asserts `HasLogo` + the resolved
+`ExhibitorContactId` on the list row. Confirm the render visually in the Chrome
+DevTools MCP smoke.
+
+---
+
 ## Implementation notes
 
 - **API integration tests at a lower layer.** `tests/SIMF.Api.Tests/AdminBoothsTests.cs`

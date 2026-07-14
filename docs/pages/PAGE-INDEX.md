@@ -150,6 +150,7 @@ No public nav per D-064 — every page is reached via direct URL or auth redirec
 | Route | Status | Audience | Doc | Test |
 |-------|--------|----------|-----|------|
 | `/` (marketing landing) | ✅ Real (D-294 dynamic) | Public | [web/landing.md](web/landing.md) | [e2e/web-landing.md](../tests/e2e/web-landing.md) |
+| `/landing` (marketing landing — Bootstrap rebuild) | ✅ Built (bilingual AR/EN; awaiting `/` cutover) | Public | [web/landing-rebuild.md](web/landing-rebuild.md) | [e2e/web-landing-rebuild.md](../tests/e2e/web-landing-rebuild.md) |
 | `/account` | ✅ Real | Any signed-in | [web/home.md](web/home.md) | [e2e/web-home.md](../tests/e2e/web-home.md) |
 | `/programme` | ✅ Real (D-199) | Public | [web/programme.md](web/programme.md) | [e2e/web-programme.md](../tests/e2e/web-programme.md) |
 | `/visit` | ✅ Real | Public | — | [e2e/web-visit.md](../tests/e2e/web-visit.md) |

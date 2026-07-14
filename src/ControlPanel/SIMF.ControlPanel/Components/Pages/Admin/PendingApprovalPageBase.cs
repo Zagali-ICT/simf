@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 using SIMF.Common;
+using SIMF.Components.Forms;
 using SIMF.Contracts.Authentication;
 
 namespace SIMF.ControlPanel.Components.Pages.Admin;
@@ -19,10 +20,21 @@ public abstract class PendingApprovalPageBase : ComponentBase
 {
     [Inject] protected IStringLocalizer<Strings> L { get; set; } = default!;
     [Inject] protected IJSRuntime JS { get; set; } = default!;
+    [Inject] protected CpPreferences Prefs { get; set; } = default!;
 
     /// <summary>The admin API user-type segment for this queue:
     /// <c>admins</c> / <c>others</c> / <c>visitors</c>.</summary>
     protected abstract string ApiBase { get; }
+
+    // Popup/full-page presentation for the profile-review "View" modal, extending
+    // the D-353 CRUD framing to the pending queues so it matches /admin/visitors.
+    // Only the visitors + others queues have a review modal (admins approve
+    // one-click); a queue opts in via PresentationPageKey (null = dialog only).
+    protected CrudPresentation _presentation = CrudPresentation.Dialog;
+
+    /// <summary>The localStorage key the popup/full-page choice persists under
+    /// (D-353), or null for queues without a review modal (the admins queue).</summary>
+    protected virtual string? PresentationPageKey => null;
 
     protected GridQuery _query = new() { Top = 20 };
     protected GridPage<AdminPendingUserSummary>? _page;
@@ -35,7 +47,14 @@ public abstract class PendingApprovalPageBase : ComponentBase
     protected string? _toast;
     protected string _toastVariant = "success";
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        if (PresentationPageKey is not null)
+        {
+            _presentation = await Prefs.GetPresentationAsync(PresentationPageKey);
+        }
+        await LoadAsync();
+    }
 
     protected async Task OnQueryChangedAsync(GridQuery next)
     {

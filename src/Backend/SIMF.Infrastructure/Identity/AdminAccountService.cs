@@ -776,6 +776,36 @@ internal sealed partial class AdminAccountService(
         // ProfileType (IsVisitor=true) OR no ProfileType yet.
         ListAccountsAsync(query, UserType.Visitor, profileScope: true, cancellationToken);
 
+    // D-357 (review follow-up) — the per-family avatar routes gate on this so one
+    // View/Edit permission cannot read/overwrite another family's photo across the
+    // shared SimfUser id space. Mirrors the list scoping: UserType first, then (for
+    // the Visitor family) the audience-vs-partner ProfileType split.
+    public async Task<bool> IsSubjectInFamilyAsync(
+        Guid userId, UserType expectedType, bool? expectedIsVisitor,
+        CancellationToken cancellationToken = default)
+    {
+        // Step 1 (Identity DB): the account's UserType must match the family.
+        var actualType = await dbContext.Users
+            .AsNoTracking()
+            .Where(u => u.Id == userId)
+            .Select(u => (UserType?)u.UserType)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (actualType != expectedType) { return false; }
+        if (expectedIsVisitor is null) { return true; }  // Admin family — type is enough.
+
+        // Step 2 (App DB): narrow the Visitor family to audience vs partner by the
+        // linked ProfileType, mirroring ResolveProfileScopedUserIdsAsync (partner =
+        // a UserProfile linked to a ProfileType with IsForVisitor == false). Two
+        // separate reads across the DB split — never a cross-DB join (D-157).
+        var isPartner = await appDbContext.UserProfiles
+            .AsNoTracking()
+            .Where(p => p.UserId == userId && p.ProfileTypeId != null
+                && appDbContext.ProfileTypes.Any(pt =>
+                    pt.Id == p.ProfileTypeId && !pt.IsForVisitor))
+            .AnyAsync(cancellationToken);
+        return expectedIsVisitor.Value ? !isPartner : isPartner;
+    }
+
     /// <summary>Shared back-end of every list call. Narrows to one
     /// <see cref="UserType"/> and (D-186) optionally further by the
     /// linked ProfileType's <c>IsVisitor</c> flag. <paramref name="profileScope"/>:
@@ -886,6 +916,10 @@ internal sealed partial class AdminAccountService(
                 user.AccountState,
                 user.TwoFactorEnabled,
                 user.CreatedAt,
+                // D-568 presence sentinel — non-empty when the account has a
+                // profile photo (avatar) in the StoredFile store; drives the
+                // grid photo thumbnail.
+                user.AvatarRelativePath,
                 IsAdmin = adminRoleId != null
                     && dbContext.UserRoles.Any(ur =>
                         ur.UserId == user.Id && ur.RoleId == adminRoleId),
@@ -900,7 +934,8 @@ internal sealed partial class AdminAccountService(
                 row.AccountState.ToString(),
                 row.TwoFactorEnabled,
                 row.IsAdmin,
-                row.CreatedAt))
+                row.CreatedAt,
+                HasAvatar: !string.IsNullOrEmpty(row.AvatarRelativePath)))
             .ToList();
 
         return GridPage<AdminUserSummary>.Of(summaries, total,
@@ -1114,7 +1149,8 @@ internal sealed partial class AdminAccountService(
         var page = await users
             .Skip(skip).Take(top)
             .Select(u => new AdminPendingUserSummary(
-                u.Id, u.Email!, u.DisplayName, u.CreatedAt))
+                u.Id, u.Email!, u.DisplayName, u.CreatedAt,
+                !string.IsNullOrEmpty(u.AvatarRelativePath)))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminPendingUserSummary>.Of(page, total,

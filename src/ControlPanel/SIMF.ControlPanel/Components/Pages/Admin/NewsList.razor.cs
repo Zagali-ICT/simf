@@ -40,6 +40,12 @@ public partial class NewsList
     private AdminNewsDetail? _target;
     private CrudGridExcel? _excel;
 
+    // The article's image thumbnail URL, or null so SimfIdentityCell shows an
+    // initials tile (never a broken image). Only when HasImage — the /assets proxy
+    // resolves the NewsImage StoredFile for this article (D-357).
+    private static string? ImageUrl(AdminNewsSummary row) =>
+        row.HasImage ? CpAssetUrls.AdminImage(nameof(AssetCategory.NewsImage), row.Id) : null;
+
     private bool FormOpen => _form != FormKind.None;
     private bool GridHidden => FormOpen && _presentation == CrudPresentation.Page;
 

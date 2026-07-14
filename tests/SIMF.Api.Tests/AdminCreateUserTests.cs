@@ -162,6 +162,55 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Admins_list_row_reports_HasAvatar_once_a_photo_is_set()
+    {
+        // D-357 — the Admins list renders each admin's photo thumbnail
+        // (SimfIdentityCell), so the list row (AdminUserSummary) must carry
+        // HasAvatar from the central SimfUser.AvatarRelativePath sentinel (D-568),
+        // exactly as the visitors / others lists do — avatars for every user type
+        // live in the one central file store.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var email = $"photo-admin-{Guid.NewGuid():N}@simf.test";
+        await PostAuthAsync(
+            "/api/v1/admin/admins",
+            new AdminCreateAdminRequest
+            {
+                Email = email, DisplayName = "Photo Admin",
+                Roles = new List<string> { AppRoles.Administrator },
+            },
+            adminToken);
+
+        // No photo yet → the list row's HasAvatar is false.
+        Assert.False((await FindAdminRowAsync(adminToken, email)).HasAvatar);
+
+        // Set the avatar sentinel on the created admin (SimfUser / Identity).
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+            var user = await db.Users.SingleAsync(u => u.Email == email);
+            user.AvatarRelativePath = "storedfile:" + Guid.NewGuid().ToString("N");
+            await db.SaveChangesAsync();
+        }
+
+        // The admins-list projection now reports the photo.
+        Assert.True((await FindAdminRowAsync(adminToken, email)).HasAvatar);
+    }
+
+    // Fetches one page of the admins list and returns the row for the email.
+    private async Task<AdminUserSummary> FindAdminRowAsync(string adminToken, string email)
+    {
+        var response = await PostAuthAsync(
+            "/api/v1/admin/admins/list",
+            new GridQuery { Top = 200 }, adminToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var page = (await response.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminUserSummary>>>())!.Data!;
+        var row = page.Items.SingleOrDefault(user => user.Email == email);
+        Assert.NotNull(row);
+        return row!;
+    }
+
+    [Fact]
     public async Task Visitors_list_returns_only_UserType_Visitor_after_P7c_split()
     {
         var adminToken = await CreateAdministratorAndSignInAsync();

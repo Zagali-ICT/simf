@@ -53,6 +53,12 @@ public abstract class CpComponentTestBase : TestContext
         // tests to the EN strings).
         Services.AddSingleton<IStringLocalizer<Strings>>(new PassThroughStringLocalizer());
 
+        // Every CP page may inject CpPreferences (the per-page popup/full-page
+        // choice, read from JS localStorage). Backed by the bUnit JS mock, so in
+        // Loose mode the read returns the Dialog default; a test can re-register
+        // its own instance to override.
+        Services.AddSingleton(new CpPreferences(JSInterop.JSRuntime));
+
         // D-191 — register the bUnit test auth context with the
         // Administrator role pre-set so [Authorize]-attributed pages
         // render. Pages that need a different role can override

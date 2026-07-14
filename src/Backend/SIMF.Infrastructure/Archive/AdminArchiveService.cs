@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Archive.Abstractions;
+using SIMF.Application.Assets.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.Operations.Abstractions;
 using SIMF.Common;
@@ -22,6 +23,7 @@ internal sealed class AdminArchiveService(
     IAuditLog auditLog,
     TimeProvider timeProvider,
     IOperationsToggleService operationsToggleService,
+    IAssetService assetService,
     ILogger<AdminArchiveService> logger) : IAdminArchiveService
 {
     private const int MinYear = 2000;
@@ -72,16 +74,36 @@ internal sealed class AdminArchiveService(
         };
 
         var total = await rows.CountAsync(cancellationToken);
-        var page = await rows.Skip(skip).Take(top)
-            .Select(edition => new AdminArchiveEditionSummary(
+        var pageRows = await rows.Skip(skip).Take(top)
+            .Select(edition => new
+            {
                 edition.Id, edition.Year, edition.TitleEn, edition.TitleAr,
                 edition.SummaryEn, edition.SummaryAr,
                 edition.Attendees, edition.Sessions, edition.Speakers,
                 edition.CoverImageRelativePath, edition.IsActive,
                 edition.CreatedAt,
                 edition.LocationEn, edition.LocationAr,
-                edition.DateLabelEn, edition.DateLabelAr))
+                edition.DateLabelEn, edition.DateLabelAr,
+            })
             .ToListAsync(cancellationToken);
+
+        // The grid renders the cover thumbnail only when an active ArchiveCover
+        // asset exists (StoredFile store via the /assets proxy, not the legacy
+        // CoverImageRelativePath) — one batched query for the page, no N+1.
+        var coverOwners = await assetService.WhichOwnersHaveActiveAssetAsync(
+            AssetCategory.ArchiveCover, pageRows.Select(edition => edition.Id).ToList(), cancellationToken);
+
+        var page = pageRows
+            .Select(edition => new AdminArchiveEditionSummary(
+                edition.Id, edition.Year, edition.TitleEn, edition.TitleAr,
+                edition.SummaryEn, edition.SummaryAr,
+                edition.Attendees, edition.Sessions, edition.Speakers,
+                edition.CoverImageRelativePath, edition.IsActive,
+                edition.CreatedAt,
+                coverOwners.Contains(edition.Id),
+                edition.LocationEn, edition.LocationAr,
+                edition.DateLabelEn, edition.DateLabelAr))
+            .ToList();
 
         return GridPage<AdminArchiveEditionSummary>.Of(page, total,
             skip, top);
