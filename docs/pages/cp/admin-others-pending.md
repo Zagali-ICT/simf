@@ -29,6 +29,11 @@ press, contractors) in `PendingApproval`. Same View / Approve-with-review
   Others / Visitors detail views.
 - Cross-kind security: a Visitor id on `/admin/others/{id}/profile-for-approval`
   returns 404.
+- **D-353 parity:** the toolbar carries the popup/full-page presentation toggle
+  (persisted per-user under `pending-others`); the View / Approve review is framed
+  by `CrudShell` — a `SimfModal` popup by default, or a full-page `CrudPageFrame`
+  that hides the grid — matching `/admin/visitors`. Shared plumbing lives in
+  `PendingApprovalPageBase` (`PresentationPageKey`).
 
 ## 11. E2E
 
@@ -37,5 +42,7 @@ press, contractors) in `PendingApproval`. Same View / Approve-with-review
 | Approve with View first → row vanishes + Approved + QR minted | E2E-OPN-001 |
 | Reject with reason → audited | E2E-OPN-002 |
 | Cross-kind id on `.../profile-for-approval` → 404 | E2E-OPN-003 |
+| View / Approve opens as popup or full page per the toolbar toggle; full page hides the grid (D-353) | E2E-OPN-017 |
 
-_Last reviewed:_ 2026-05-28 by Claude (D-133 slice 3).
+_Last reviewed:_ 2026-07-14 by Claude (D-353 parity — popup/full-page toggle on the review modal).
+_Earlier:_ 2026-05-28 by Claude (D-133 slice 3).

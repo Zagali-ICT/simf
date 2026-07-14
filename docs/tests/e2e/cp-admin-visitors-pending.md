@@ -516,6 +516,32 @@ real routes `POST /admin/visitors/register-onsite` → `POST /admin/visitors/pen
 → `POST /admin/visitors/{id}/approve` and asserts the PendingApproval→Approved
 transition, the queue membership before/after, and the minted QR id.
 
+### E2E-VPN-026 — View / Approve honours the popup / full-page toggle (D-353)
+
+```gherkin
+Scenario: The review modal opens as a popup or a full page per the toolbar toggle
+  Given an Administrator is signed in on /admin/visitors/pending
+  And at least one visitor is in the pending queue
+  When the administrator sets the toolbar presentation toggle to "popup"
+  And clicks View on a pending row
+  Then the profile review opens as a centred SimfModal overlay
+  And the grid remains visible behind the overlay
+  When the administrator closes the review and sets the toggle to "full page"
+  And clicks View on a pending row
+  Then the profile review takes over the full content area (CrudPageFrame)
+  And the grid is hidden while the review is open
+  And closing the review restores the grid
+  And the chosen presentation persists across a page reload (localStorage "pending-visitors")
+  And the face-photo / avatar lightbox still opens as an overlay in either mode
+```
+
+**Covered (component layer, no browser):** the popup/full-page framing is the
+shared `CrudShell` + `CrudPresentationToggle` mechanism already proven on
+`/admin/visitors`; `tests/SIMF.ControlPanel.Tests/CrudFramingTests.cs` covers the
+frame switch and `PendingApprovalQueueTests.cs` renders the queue with the toggle
+wired. The persistence + full-page grid-hide are best confirmed in the manual
+Chrome DevTools MCP smoke.
+
 ---
 
 ## Implementation notes
@@ -552,7 +578,9 @@ transition, the queue membership before/after, and the minted QR id.
 
 ---
 
-_Last reviewed:_ 2026-06-13 by Claude (D-385/386/387 — modal all-data display,
+_Last reviewed:_ 2026-07-14 by Claude (D-353 parity — popup/full-page toggle on
+the review modal; added E2E-VPN-026).
+_Earlier:_ 2026-06-13 by Claude (D-385/386/387 — modal all-data display,
 approve-time profile-type picker + `ADMIN_PROFILE_TYPE_INVALID`, photo lightbox +
 download; added E2E-VPN-017..024).
 _Earlier:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

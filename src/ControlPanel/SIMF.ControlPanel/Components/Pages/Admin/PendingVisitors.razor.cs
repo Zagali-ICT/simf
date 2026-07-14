@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using SIMF.Common;
+using SIMF.Components.Forms;
 using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
 using SIMF.ControlPanel.Components.Pages.Admin.ProfileTypes;
@@ -15,6 +16,14 @@ namespace SIMF.ControlPanel.Components.Pages.Admin;
 public partial class PendingVisitors
 {
     protected override string ApiBase => "visitors";
+
+    // D-353 parity — the review "View" modal honours the popup/full-page toggle,
+    // persisted per-user under this key (matches /admin/visitors' "visitors" key
+    // family). ViewFullPage hides the grid while the review takes the full page.
+    protected override string? PresentationPageKey => "pending-visitors";
+
+    private bool ViewFullPage =>
+        _viewTarget is not null && _presentation == CrudPresentation.Page;
 
     // D-125 — View modal state for the D-124 pending-profile preview.
     // D-128 — _approveMode reuses the same modal for the

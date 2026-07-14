@@ -1,4 +1,5 @@
 using SIMF.Common;
+using SIMF.Components.Forms;
 using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
 using SIMF.ControlPanel.Components.Pages.Admin.ProfileTypes;
@@ -13,6 +14,14 @@ namespace SIMF.ControlPanel.Components.Pages.Admin;
 public partial class PendingOthers
 {
     protected override string ApiBase => "others";
+
+    // D-353 parity — the review "View" modal honours the popup/full-page toggle,
+    // persisted per-user under this key. ViewFullPage hides the grid while the
+    // review takes the full page.
+    protected override string? PresentationPageKey => "pending-others";
+
+    private bool ViewFullPage =>
+        _viewTarget is not null && _presentation == CrudPresentation.Page;
 
     private AdminPendingUserSummary? _viewTarget;
     private PendingProfileResponse? _viewProfile;

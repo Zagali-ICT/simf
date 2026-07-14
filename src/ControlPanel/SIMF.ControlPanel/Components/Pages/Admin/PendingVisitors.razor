@@ -10,16 +10,14 @@
 
 <PageTitle>@L["Admin.Pending.Visitors.Title"] · SIMF</PageTitle>
 
+@* D-353 parity — hide the grid while the review "View" takes over the full page. *@
+@if (!ViewFullPage)
+{
 <SimfBanner Title="@L["Admin.Pending.Visitors.Title"]" />
 
 <div class="simf-page-wide">
     <div class="simf-surface">
         <p>@L["Admin.Pending.Supporting"]</p>
-
-        @if (_toast is not null)
-        {
-            <SimfAlert Variant="@_toastVariant">@_toast</SimfAlert>
-        }
 
         <SimfDataGrid TItem="AdminPendingUserSummary"
                       Query="_query"
@@ -46,6 +44,9 @@
                       FilterColumnLabel="@L["Grid.FilterColumn"]"
                       FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
                       SummaryFormatter="@FormatSummary">
+            <CustomToolbar>
+                <CrudPresentationToggle PageKey="@(PresentationPageKey!)" @bind-Value="_presentation" />
+            </CustomToolbar>
             <Columns>
                 <SimfDataGridColumn TItem="AdminPendingUserSummary" Key="email"
                                     Header="@L["Admin.Users.Column.Email"]"
@@ -90,6 +91,16 @@
         </SimfDataGrid>
     </div>
 </div>
+}
+
+@* Toast lives outside the grid-hide guard (matches VisitorsList) so a
+   success/error alert is never swallowed while the review is full-page. *@
+@if (_toast is not null)
+{
+    <div class="simf-toast">
+        <SimfAlert Variant="@_toastVariant">@_toast</SimfAlert>
+    </div>
+}
 
 @if (_rejectTarget is not null)
 {
@@ -150,12 +161,12 @@
 
 @if (_viewTarget is not null)
 {
-    <SimfModal Open="true"
+    <CrudShell Open="true" Presentation="_presentation"
                Title="@(_approveMode
                    ? string.Format(L["Admin.Pending.ApproveReview.Title"], _viewTarget.Email)
                    : string.Format(L["Admin.Pending.View.Title"], _viewTarget.Email))"
+               CloseLabel="@L["Admin.Pending.View.Close"]"
                OnClose="CloseView">
-        <ChildContent>
             @if (_viewLoading)
             {
                 <p>@L["Admin.Pending.View.Loading"]</p>
@@ -289,8 +300,7 @@
                     </div>
                 }
             }
-        </ChildContent>
-        <Footer>
+        <div class="simf-form__actions">
             @if (_approveMode)
             {
                 <SimfButton Type="button" Variant="secondary" OnClick="CloseView">
@@ -309,8 +319,8 @@
                     @L["Admin.Pending.View.Close"]
                 </SimfButton>
             }
-        </Footer>
-    </SimfModal>
+        </div>
+    </CrudShell>
 }
 
 @* CS-E (D-387) — full-size lightbox for the captured face photo. Renders the
