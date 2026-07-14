@@ -264,8 +264,8 @@ class _PresentationCard extends StatelessWidget {
                   )
                 else
                   const SizedBox.shrink(),
-                _DownloadButton(
-                  label: l10n.presentationDownload,
+                _SessionSummryButton(
+                  label: l10n.sessionSummary,
                   onTap: () => _openSummary(context),
                 ),
               ],
@@ -301,8 +301,8 @@ class _FileIcon extends StatelessWidget {
 }
 
 /// The gold تحميل button (Figma 1388:7621) — opens the session summary (34).
-class _DownloadButton extends StatelessWidget {
-  const _DownloadButton({
+class _SessionSummryButton extends StatelessWidget {
+  const _SessionSummryButton({
     required this.label,
     required this.onTap,
   });
@@ -324,10 +324,7 @@ class _DownloadButton extends StatelessWidget {
           // RTL), with "تحميل" to its right. A plain RTL Row [icon, text] would
           // put the icon on the right, so the label leads and the icon trails to
           // land on the left, matching the frame.
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(
+          child: Text(
                 label,
                 style: const TextStyle(
                   color: Colors.white,
@@ -335,14 +332,6 @@ class _DownloadButton extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(width: SimfTokens.space1),
-              const Icon(
-                Icons.download_rounded,
-                size: 14,
-                color: Colors.white,
-              ),
-            ],
-          ),
         ),
       ),
     );
