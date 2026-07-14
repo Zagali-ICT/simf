@@ -41,30 +41,23 @@ List<SessionChipKind> sessionStateChips({
   }
 }
 
-/// Renders the state chips for a card — a compact [Wrap] (empty when the session
-/// has no state to show). Each card drops this in; the selection + styling live
-/// here so all three surfaces stay identical.
+/// Renders the state chips for a card — a compact [Wrap] (empty when [kinds] is
+/// empty). Each card computes [kinds] once (via [sessionStateChips]) and passes
+/// it in, so the same list drives both the card's spacer guard and this row (no
+/// double `now()` read / recompute). The styling lives here so all three
+/// surfaces stay identical.
 class SessionStateChipRow extends StatelessWidget {
   const SessionStateChipRow({
-    required this.phase,
-    required this.hasPublishedSummary,
-    required this.status,
+    required this.kinds,
     required this.l10n,
     super.key,
   });
 
-  final SessionPhase phase;
-  final bool hasPublishedSummary;
-  final SessionStatus status;
+  final List<SessionChipKind> kinds;
   final AppL10n l10n;
 
   @override
   Widget build(BuildContext context) {
-    final kinds = sessionStateChips(
-      phase: phase,
-      hasPublishedSummary: hasPublishedSummary,
-      status: status,
-    );
     if (kinds.isEmpty) {
       return const SizedBox.shrink();
     }

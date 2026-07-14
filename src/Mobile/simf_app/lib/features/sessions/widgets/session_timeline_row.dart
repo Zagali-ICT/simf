@@ -126,12 +126,7 @@ class SessionTimelineRow extends StatelessWidget {
                     ],
                     if (stateChips.isNotEmpty) ...<Widget>[
                       const SizedBox(height: SimfTokens.space3),
-                      SessionStateChipRow(
-                        phase: session.phase(DateTime.now().toUtc()),
-                        hasPublishedSummary: session.hasPublishedSummary,
-                        status: session.status,
-                        l10n: l10n,
-                      ),
+                      SessionStateChipRow(kinds: stateChips, l10n: l10n),
                     ],
                   ],
                 ),

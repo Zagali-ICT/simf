@@ -27,9 +27,12 @@ class SessionHeaderCard extends StatelessWidget {
   final VoidCallback onSessionLink;
   final VoidCallback onSessionSummary;
 
-  /// Owner 2026-07-14 — the ملخص الجلسة button is active only when a summary
-  /// can exist (the session has ended, and — where known — has a published
-  /// محضر); a future/live session shows it greyed/inactive.
+  /// Owner 2026-07-14 — the ملخص الجلسة button is active only once the session
+  /// has ENDED (a future/live session has no محضر → greyed/inactive). The detail
+  /// contract carries no summary flag, so this gates on the phase, not on whether
+  /// a محضر was actually published; an ended-but-unsummarised session opens the
+  /// summary screen's graceful empty note. (The list surfaces gate on the real
+  /// hasPublishedSummary flag instead.)
   final bool summaryEnabled;
 
   /// Owner 2026-07-14 — the رابط الجلسة button is active only when the session

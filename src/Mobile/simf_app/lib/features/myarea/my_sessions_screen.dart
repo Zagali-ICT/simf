@@ -265,12 +265,7 @@ class _MySessionCard extends StatelessWidget {
             ],
             if (stateChips.isNotEmpty) ...<Widget>[
               const SizedBox(height: SimfTokens.space3),
-              SessionStateChipRow(
-                phase: phase,
-                hasPublishedSummary: false,
-                status: item.status,
-                l10n: AppL10n.of(context),
-              ),
+              SessionStateChipRow(kinds: stateChips, l10n: AppL10n.of(context)),
             ],
           ],
         ),

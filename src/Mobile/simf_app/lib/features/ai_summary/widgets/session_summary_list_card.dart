@@ -12,7 +12,8 @@ import '../../sessions/widgets/session_state_chip.dart';
 
 /// One rich session-summary card (Figma 1388:8392): heart on the trailing edge,
 /// the title over the clock·time·duration line, the primary speaker + hall, and
-/// a bottom row with the مسجل badge (for recorded / published) + category chip.
+/// a bottom row with a state chip (مباشر الآن live / مسجّل recorded — the summary
+/// chip is suppressed since the whole list is summarised) + the category chip.
 /// Tapping it opens that session's AI-summary details (#34).
 class SessionSummaryCard extends StatelessWidget {
   const SessionSummaryCard({
@@ -124,13 +125,7 @@ class SessionSummaryCard extends StatelessWidget {
                     Expanded(child: _CategoryPill(label: category)),
                     if (hasChips) const SizedBox(width: SimfTokens.space4),
                   ],
-                  if (hasChips)
-                    SessionStateChipRow(
-                      phase: item.phase(DateTime.now().toUtc()),
-                      hasPublishedSummary: false,
-                      status: item.status,
-                      l10n: l10n,
-                    ),
+                  if (hasChips) SessionStateChipRow(kinds: stateChips, l10n: l10n),
                 ],
               ),
             ],
