@@ -17,7 +17,13 @@ public sealed record AdminExhibitorSummary(
     DateTimeOffset CreatedAt,
     // D-503 — carried so the grid Excel export can round-trip the tier (the grid
     // does not render it as a column). Optional; null = no tier.
-    ExhibitorTier? Tier = null);
+    ExhibitorTier? Tier = null,
+    // D-357 — the linked Contact id + whether that contact has an active
+    // CompanyLogo asset, so the grid renders the exhibitor's company-logo
+    // thumbnail (else an initials tile). Appended trailing-optional (wire-safe);
+    // unlinked exhibitors default null/false.
+    Guid? ContactId = null,
+    bool HasLogo = false);
 
 /// <summary>D-199 #3 — full admin detail for one exhibitor.</summary>
 public sealed record AdminExhibitorDetail(

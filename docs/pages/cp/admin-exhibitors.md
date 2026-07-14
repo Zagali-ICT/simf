@@ -228,4 +228,11 @@ Excel export, 022 Excel import, 023 Excel import rejection.
 | 2026-06-10 | D-353 | Add/Edit/View/Delete split into `ExhibitorsAddEdit` + `ExhibitorsViewDelete` hosted by `CrudShell` (Page↔Popup toggle persisted in `localStorage`); Deactivate gated by `SimfConfirm`. |
 | 2026-06-10 | D-356 | Excel export + import added (toolbar Export/Import via `CrudGridExcel`, sheet "Exhibitors"); E2E catalogue authored (E2E-EXH-001…023). |
 
-_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5).
+**2026-07-14 (D-357):** the English-name column now renders the exhibitor's
+company-logo thumbnail via the shared `SimfIdentityCell` — the **linked Contact's**
+`CompanyLogo` asset (an exhibitor owns no logo of its own; `AdminExhibitorSummary`
+gained `ContactId` + `HasLogo`) — or a tinted initials tile (unlinked exhibitors,
+or contacts with no logo). Column key unchanged so server-side sort/filter is
+unaffected. E2E-EXH-025.
+
+_Last reviewed:_ 2026-07-14 by Claude (D-357 — exhibitor company-logo thumbnail in the list). Prior: 2026-06-10 by Claude (D-356 Phase 5).

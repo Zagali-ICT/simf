@@ -105,6 +105,12 @@ public sealed class AdminBoothSummary
     public string? Sector { get; set; }
     public Guid? HallId { get; set; }
     public bool IsActive { get; set; }
+
+    // D-357 — the booth's exhibitor company's Contact id + whether that contact has
+    // an active CompanyLogo asset, so the grid renders the booth's exhibitor-logo
+    // thumbnail (else an initials tile). A booth owns no logo of its own (D-222).
+    public Guid? ExhibitorContactId { get; set; }
+    public bool HasLogo { get; set; }
 }
 
 /// <summary>D-199 — admin full detail (every column incl. map position).

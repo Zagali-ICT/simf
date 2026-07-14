@@ -270,4 +270,11 @@ See [`docs/tests/e2e/cp-admin-booths.md`](../../tests/e2e/cp-admin-booths.md):
 | 2026-06-10 | D-356 / D-353 | Reference doc created. Documents the D-353 `CrudShell` Add/Edit (`BoothsAddEdit`) + View/Delete (`BoothsViewDelete`) forms with the Page ↔ Popup `CrudPresentationToggle` (PageKey `booths`, persisted in `localStorage`) and the `SimfConfirm`-gated delete (replacing the old inline modal + native `confirm()`), plus the D-356 Excel export (`POST /export`, columns Code/Name/NameArabic/Exhibitor[English name]/Sector/Hall[Code]/IsActive) and insert-only import (`POST /import`, Exhibitor-by-name + Hall-by-code resolution) via `CrudGridExcel`. |
 | 2026-06-02 (orig) | D-199 / D-222 | Booths admin CRUD shipped (Mockup page 22 + 2D venue map); D-222 added the Booth → Exhibitor company link + booth-officer name/phone/email. |
 
-_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5).
+**2026-07-14 (D-357):** the English-name column now renders the booth's
+exhibitor-company logo thumbnail via the shared `SimfIdentityCell` — resolved
+two-hop Booth→Exhibitor→Contact's `CompanyLogo` asset (a booth owns no logo of its
+own; `AdminBoothSummary` gained `ExhibitorContactId` + `HasLogo`) — or a tinted
+initials tile. Column key unchanged so server-side sort/filter is unaffected.
+E2E-BTH-024.
+
+_Last reviewed:_ 2026-07-14 by Claude (D-357 — booth exhibitor-logo thumbnail in the list). Prior: 2026-06-10 by Claude (D-356 Phase 5).

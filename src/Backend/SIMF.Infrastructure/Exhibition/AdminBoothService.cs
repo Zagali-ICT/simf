@@ -1,6 +1,7 @@
 // Tests: SIMF.Api.Tests/AdminBoothsTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SIMF.Application.Assets.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.Exhibition.Abstractions;
 using SIMF.Common;
@@ -23,6 +24,7 @@ internal sealed class AdminBoothService(
     SimfAppDbContext dbContext,
     IAuditLog auditLog,
     TimeProvider timeProvider,
+    IAssetService assetService,
     ILogger<AdminBoothService> logger) : IAdminBoothService
 {
     public async Task<GridPage<AdminBoothSummary>> ListAllAsync(
@@ -83,9 +85,36 @@ internal sealed class AdminBoothService(
         };
 
         var total = await rows.CountAsync(cancellationToken);
-        var page = await rows
+        var pageRows = await rows
             .Skip(skip)
             .Take(top)
+            .Select(booth => new
+            {
+                booth.Id,
+                booth.Code,
+                booth.Name,
+                booth.NameArabic,
+                booth.ExhibitorId,
+                booth.Sector,
+                booth.HallId,
+                booth.IsActive,
+                // Two-hop: the logo owner is the booth's exhibitor's linked Contact
+                // (a booth owns no logo of its own). LEFT-joined; null when the booth
+                // has no exhibitor, or the exhibitor no linked contact.
+                ExhibitorContactId = booth.Exhibitor != null ? booth.Exhibitor.ContactId : (Guid?)null,
+            })
+            .ToListAsync(cancellationToken);
+
+        // The grid renders the booth's exhibitor-company logo thumbnail only when the
+        // resolved Contact has an active CompanyLogo asset — one batched query over
+        // the resolved contact ids, no N+1. Everything else falls back to initials.
+        var contactIds = pageRows
+            .Where(row => row.ExhibitorContactId is not null)
+            .Select(row => row.ExhibitorContactId!.Value).Distinct().ToList();
+        var logoOwners = await assetService.WhichOwnersHaveActiveAssetAsync(
+            AssetCategory.CompanyLogo, contactIds, cancellationToken);
+
+        var page = pageRows
             .Select(booth => new AdminBoothSummary
             {
                 Id = booth.Id,
@@ -96,8 +125,11 @@ internal sealed class AdminBoothService(
                 Sector = booth.Sector,
                 HallId = booth.HallId,
                 IsActive = booth.IsActive,
+                ExhibitorContactId = booth.ExhibitorContactId,
+                HasLogo = booth.ExhibitorContactId is not null
+                    && logoOwners.Contains(booth.ExhibitorContactId.Value),
             })
-            .ToListAsync(cancellationToken);
+            .ToList();
 
         return GridPage<AdminBoothSummary>.Of(page, total,
             skip, top);

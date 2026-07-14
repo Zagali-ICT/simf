@@ -40,6 +40,14 @@ public partial class ExhibitorsList
     private FormKind _form = FormKind.None;
     private bool _isEdit;
     private bool _isDelete;
+
+    // The exhibitor's company-logo thumbnail URL — the LINKED Contact's CompanyLogo
+    // asset (an exhibitor owns no logo itself), or null so SimfIdentityCell shows an
+    // initials tile (never a broken image). Only when linked to a contact with a logo.
+    private static string? LogoImageUrl(AdminExhibitorSummary row) =>
+        row.HasLogo && row.ContactId is not null
+            ? CpAssetUrls.AdminImage(nameof(AssetCategory.CompanyLogo), row.ContactId.Value)
+            : null;
     private AdminExhibitorDetail? _target;
     private CrudGridExcel? _excel;
 

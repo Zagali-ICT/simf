@@ -68,7 +68,11 @@
                     <SimfDataGridColumn TItem="AdminExhibitorSummary" Key="nameEn"
                                         Header="@L["Admin.Exhibitors.Col.NameEn"]"
                                         Sortable="true" Filterable="true">
-                        <CellTemplate>@context.NameEn</CellTemplate>
+                        <CellTemplate>
+                            <SimfIdentityCell ImageUrl="@LogoImageUrl(context)"
+                                              Name="@context.NameEn"
+                                              NameSecondary="@context.NameAr" />
+                        </CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminExhibitorSummary" Key="nameAr"
                                         Header="@L["Admin.Exhibitors.Col.NameAr"]"

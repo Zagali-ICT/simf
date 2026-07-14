@@ -1,5 +1,6 @@
 // Tests: SIMF.Api.Tests/ExhibitorsTests.cs
 using Microsoft.EntityFrameworkCore;
+using SIMF.Application.Assets.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.Exhibitors.Abstractions;
 using SIMF.Application.IdentityAccess.Abstractions;
@@ -23,6 +24,7 @@ internal sealed class AdminExhibitorService(
     IAuditLog auditLog,
     TimeProvider timeProvider,
     IAdminUserProvisioningService provisioning,
+    IAssetService assetService,
     SimfIdentityDbContext identityDbContext) : IAdminExhibitorService
 {
     public async Task<GridPage<AdminExhibitorSummary>> ListAllAsync(
@@ -73,15 +75,37 @@ internal sealed class AdminExhibitorService(
             _ => rows.OrderBy(c => c.NameArabic),
         };
         var total = await rows.CountAsync(cancellationToken);
-        var page = await rows
+        var pageRows = await rows
             .Skip(skip).Take(top)
+            .Select(c => new
+            {
+                c.Id, c.Name, c.NameArabic,
+                c.ContactEmail, c.ContactPhone, c.Website,
+                AccountCount = appDbContext.Set<ExhibitorMembership>()
+                    .Count(m => m.ExhibitorId == c.Id && m.IsActive),
+                c.IsActive, c.CreatedAt, c.Tier, c.ContactId,
+            })
+            .ToListAsync(cancellationToken);
+
+        // The grid renders the exhibitor's company-logo thumbnail from the LINKED
+        // Contact's CompanyLogo asset (an exhibitor owns no logo of its own) — one
+        // batched query over the linked contact ids, no N+1. Unlinked exhibitors
+        // (ContactId null) or contacts with no logo fall back to an initials tile.
+        var contactIds = pageRows
+            .Where(row => row.ContactId is not null)
+            .Select(row => row.ContactId!.Value).Distinct().ToList();
+        var logoOwners = await assetService.WhichOwnersHaveActiveAssetAsync(
+            AssetCategory.CompanyLogo, contactIds, cancellationToken);
+
+        var page = pageRows
             .Select(c => new AdminExhibitorSummary(
                 c.Id, c.Name, c.NameArabic,
                 c.ContactEmail, c.ContactPhone, c.Website,
-                appDbContext.Set<ExhibitorMembership>()
-                    .Count(m => m.ExhibitorId == c.Id && m.IsActive),
-                c.IsActive, c.CreatedAt, c.Tier))
-            .ToListAsync(cancellationToken);
+                c.AccountCount,
+                c.IsActive, c.CreatedAt, c.Tier,
+                c.ContactId,
+                c.ContactId is not null && logoOwners.Contains(c.ContactId.Value)))
+            .ToList();
 
         return GridPage<AdminExhibitorSummary>.Of(page, total,
             skip, top);
