@@ -186,6 +186,11 @@ class _SessionSummaryListScreenState
     final needle = _query.trim().toLowerCase();
 
     return items.where((session) {
+      // Owner 2026-07-14 — the summaries list is ONLY sessions with a published
+      // محضر; a future / not-yet-summarised session must not appear here.
+      if (!session.hasPublishedSummary) {
+        return false;
+      }
       switch (_tab) {
         case _SummaryTab.mine:
           if (!mineIds.contains(session.id)) {
@@ -224,7 +229,8 @@ class _SessionSummaryListScreenState
       case _SummaryTab.favourites:
         return l10n.sessionsNoFavourites;
       case _SummaryTab.all:
-        return l10n.aiSummaryNoSessions;
+        // The programme has sessions but none are summarised yet.
+        return l10n.sessionSummariesEmpty;
     }
   }
 

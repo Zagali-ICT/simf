@@ -39,6 +39,8 @@ Future<void> _pumpBody(
   WidgetTester tester, {
   required SessionDetail detail,
   required SessionSeatMap? seatMap,
+  VoidCallback? onSessionLink,
+  VoidCallback? onSessionSummary,
 }) async {
   tester.view.physicalSize = const Size(1200, 2600);
   tester.view.devicePixelRatio = 1.0;
@@ -63,8 +65,8 @@ Future<void> _pumpBody(
             baseUrl: 'http://test.local/api/v1',
             onAddToCalendar: () {},
             onRemind: () {},
-            onSessionLink: () {},
-            onSessionSummary: () {},
+            onSessionLink: onSessionLink ?? () {},
+            onSessionSummary: onSessionSummary ?? () {},
             onAskHost: () {},
             onJoin: () {},
             onCancelReservation: () {},
@@ -157,6 +159,83 @@ void main() {
       final card = find.byType(AskHostCard);
       expect(card, findsOneWidget);
       expect(tester.widget<AskHostCard>(card).enabled, isFalse);
+    });
+  });
+
+  // Owner 2026-07-14 — the two header actions gate on the session's phase.
+  group('SessionDetailBody header action gating', () {
+    testWidgets('a FUTURE session shows the summary button INACTIVE (no tap)',
+        (tester) async {
+      var tapped = false;
+      await _pumpBody(
+        tester,
+        detail: _detail(
+          startUtc: now.add(const Duration(hours: 1)),
+          endUtc: now.add(const Duration(hours: 2)),
+        ),
+        seatMap: _seatMap(),
+        onSessionSummary: () => tapped = true,
+      );
+
+      await tester.tap(find.text('Session summary'));
+      await tester.pump();
+      expect(tapped, isFalse, reason: 'no summary exists for a future session');
+    });
+
+    testWidgets('an ENDED session shows the summary button ACTIVE',
+        (tester) async {
+      var tapped = false;
+      await _pumpBody(
+        tester,
+        detail: _detail(
+          startUtc: now.subtract(const Duration(hours: 3)),
+          endUtc: now.subtract(const Duration(hours: 2)),
+        ),
+        seatMap: _seatMap(),
+        onSessionSummary: () => tapped = true,
+      );
+
+      await tester.tap(find.text('Session summary'));
+      await tester.pump();
+      expect(tapped, isTrue);
+    });
+
+    testWidgets('a LIVE broadcast session shows the live button ACTIVE',
+        (tester) async {
+      var tapped = false;
+      await _pumpBody(
+        tester,
+        detail: _detail(
+          startUtc: now.subtract(const Duration(hours: 1)),
+          endUtc: now.add(const Duration(hours: 1)),
+          liveStreamUrl: 'https://live.example.sa/main.m3u8',
+        ),
+        seatMap: _seatMap(),
+        onSessionLink: () => tapped = true,
+      );
+
+      await tester.tap(find.text('Session link'));
+      await tester.pump();
+      expect(tapped, isTrue);
+    });
+
+    testWidgets('a FUTURE session with a feed keeps the live button INACTIVE '
+        '(the feed is not live yet)', (tester) async {
+      var tapped = false;
+      await _pumpBody(
+        tester,
+        detail: _detail(
+          startUtc: now.add(const Duration(hours: 1)),
+          endUtc: now.add(const Duration(hours: 2)),
+          liveStreamUrl: 'https://live.example.sa/main.m3u8',
+        ),
+        seatMap: _seatMap(),
+        onSessionLink: () => tapped = true,
+      );
+
+      await tester.tap(find.text('Session link'));
+      await tester.pump();
+      expect(tapped, isFalse);
     });
   });
 }

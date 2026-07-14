@@ -1774,6 +1774,11 @@ class AppL10n {
       _t('لا توجد جلسات محجوزة بعد.', 'No booked sessions yet.');
   String get sessionsNoMatch =>
       _t('لا توجد نتائج مطابقة.', 'No matching results.');
+  // Owner 2026-07-14 — the summaries list holds only sessions with a PUBLISHED
+  // محضر, so a future / not-yet-summarised programme shows this, not "no
+  // sessions".
+  String get sessionSummariesEmpty =>
+      _t('لا توجد ملخصات منشورة بعد.', 'No published summaries yet.');
   String get sessionRecordedBadge => _t('مسجّل', 'Recorded');
   String get favouriteToggleError =>
       _t('تعذر تحديث المفضلة.', 'Could not update favourites.');

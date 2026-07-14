@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:simf_app/features/sessions/data/session_lifecycle.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
 
 SessionListItem _session({
@@ -63,6 +64,7 @@ void main() {
         'categoryNameArabic': 'جلسة رئيسية',
         'description': 'Welcome',
         'descriptionArabic': 'أهلاً',
+        'hasPublishedSummary': true,
         'speakers': <dynamic>[
           <String, dynamic>{
             'id': 'sp1',
@@ -85,6 +87,7 @@ void main() {
       expect(item.localizedHall(false), 'Main Hall');
       expect(item.localizedCategory(true), 'جلسة رئيسية');
       expect(item.status, SessionStatus.published);
+      expect(item.hasPublishedSummary, isTrue);
       expect(item.startUtc.isUtc, isTrue);
 
       expect(item.speakers, hasLength(1));
@@ -107,6 +110,8 @@ void main() {
       expect(item.speakers, isEmpty);
       expect(item.localizedDescription(false), isNull);
       expect(item.localizedCategory(false), isNull);
+      // Append-only wire default: absent hasPublishedSummary decodes to false.
+      expect(item.hasPublishedSummary, isFalse);
     });
   });
 
@@ -195,6 +200,25 @@ void main() {
       ]);
       expect(days, hasLength(2));
       expect(days.first.isBefore(days.last), isTrue);
+    });
+  });
+
+  group('SessionListItem.phase', () {
+    final item = _session(id: 's', startUtc: DateTime.utc(2026, 11, 24, 9));
+    // ends 2026-11-24 10:00.
+    test('classifies upcoming / live / ended against now', () {
+      expect(
+        item.phase(DateTime.utc(2026, 11, 24, 8)),
+        SessionPhase.upcoming,
+      );
+      expect(
+        item.phase(DateTime.utc(2026, 11, 24, 9, 30)),
+        SessionPhase.live,
+      );
+      expect(
+        item.phase(DateTime.utc(2026, 11, 24, 11)),
+        SessionPhase.ended,
+      );
     });
   });
 }
