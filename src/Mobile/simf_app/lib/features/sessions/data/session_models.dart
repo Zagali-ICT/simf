@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import 'session_lifecycle.dart';
+
 /// The session broadcast lifecycle — mirrors `SIMF.Common.Enums.SessionStatus`
 /// (frozen, int-backed: Scheduled=0, Held=1, Recorded=2, Published=3). The wire
 /// value is an **int** — there is no string-enum converter anywhere in the API
@@ -185,6 +187,7 @@ class SessionListItem {
     this.categoryNameArabic,
     this.primaryThemeColor,
     this.type,
+    this.hasPublishedSummary = false,
   });
 
   final String id;
@@ -207,8 +210,18 @@ class SessionListItem {
   final String? categoryNameArabic;
   final String? primaryThemeColor;
 
+  /// A8 (D-237, wire `hasPublishedSummary`) — true when this session has an
+  /// active summary carrying a PublishedAt stamp (the محضر the app renders). Its
+  /// OWN editorial publish state, orthogonal to [status]; drives whether the
+  /// session belongs in the summaries list + the "summary ready" badge, without
+  /// a per-session `/summary` probe.
+  final bool hasPublishedSummary;
+
   /// The session's start in the device-local zone (the wire value is UTC).
   DateTime get startLocal => startUtc.toLocal();
+
+  /// The session's time-phase (upcoming / live / ended) against [nowUtc].
+  SessionPhase phase(DateTime nowUtc) => sessionPhase(startUtc, endUtc, nowUtc);
 
   /// The session's end in the device-local zone — drives the agenda time-rail's
   /// bottom value (Figma 883:2308) and the summary card's duration (1072:13518).
@@ -245,6 +258,7 @@ class SessionListItem {
         categoryNameArabic: json['categoryNameArabic'] as String?,
         primaryThemeColor: json['primaryThemeColor'] as String?,
         type: SessionType.fromJson(json['type']),
+        hasPublishedSummary: json['hasPublishedSummary'] as bool? ?? false,
       );
 }
 
@@ -387,6 +401,10 @@ class SessionDetail {
   /// button's visibility gate).
   bool get hasLiveStream =>
       liveStreamUrl != null && liveStreamUrl!.trim().isNotEmpty;
+
+  /// The session's time-phase (upcoming / live / ended) against [nowUtc] — the
+  /// header buttons gate off this (summary = ended; live = live + hasLiveStream).
+  SessionPhase phase(DateTime nowUtc) => sessionPhase(startUtc, endUtc, nowUtc);
 
   /// The session's 1-based position within its day (D-567, Figma 889:2604) —
   /// the gold index badge shows it zero-padded ("02"). 0 = unknown (an older

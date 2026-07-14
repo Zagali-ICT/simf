@@ -1,29 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/localization/app_l10n.dart';
 import '../../../app/route_names.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_page_shell.dart';
 import '../../../app/widgets/simf_svg_icon.dart';
 import '../../sessions/data/session_models.dart';
 import '../../sessions/widgets/favourite_heart_button.dart';
+import '../../sessions/widgets/session_state_chip.dart';
 
 /// One rich session-summary card (Figma 1388:8392): heart on the trailing edge,
 /// the title over the clock·time·duration line, the primary speaker + hall, and
-/// a bottom row with the مسجل badge (for recorded / published) + category chip.
+/// a bottom row with a state chip (مباشر الآن live / مسجّل recorded — the summary
+/// chip is suppressed since the whole list is summarised) + the category chip.
 /// Tapping it opens that session's AI-summary details (#34).
 class SessionSummaryCard extends StatelessWidget {
   const SessionSummaryCard({
     required this.item,
     required this.isArabic,
-    required this.recordedBadge,
+    required this.l10n,
     required this.durationLabel,
     super.key,
   });
 
   final SessionListItem item;
   final bool isArabic;
-  final String recordedBadge;
+  final AppL10n l10n;
   final String durationLabel;
 
   @override
@@ -35,8 +38,15 @@ class SessionSummaryCard extends StatelessWidget {
     final speaker = _speakerText();
     final hall = item.localizedHall(isArabic);
     final category = item.localizedCategory(isArabic);
-    final isRecorded = item.status == SessionStatus.recorded ||
-        item.status == SessionStatus.published;
+    // Owner 2026-07-14 — the shared state chips. The summaries list is already
+    // all-summarised, so the summary chip is suppressed here (redundant) and the
+    // card shows live-now / مسجّل only.
+    final stateChips = sessionStateChips(
+      phase: item.phase(DateTime.now().toUtc()),
+      hasPublishedSummary: false,
+      status: item.status,
+    );
+    final hasChips = stateChips.isNotEmpty;
 
     final hasMeta = speaker != null || (hall != null && hall.isNotEmpty);
     return SimfCard(
@@ -104,18 +114,18 @@ class SessionSummaryCard extends StatelessWidget {
                 ],
               ),
             ],
-            if (isRecorded ||
+            if (hasChips ||
                 (category != null && category.isNotEmpty)) ...<Widget>[
               const SizedBox(height: SimfTokens.space4),
-              // مسجّل badge on the inline end (left in RTL), the category pill
-              // filling the rest (Figma 1388:8462).
+              // The state chip sits on the inline end (left in RTL), the category
+              // pill filling the rest (Figma 1388:8462).
               Row(
                 children: <Widget>[
                   if (category != null && category.isNotEmpty) ...<Widget>[
                     Expanded(child: _CategoryPill(label: category)),
-                    if (isRecorded) const SizedBox(width: SimfTokens.space4),
+                    if (hasChips) const SizedBox(width: SimfTokens.space4),
                   ],
-                  if (isRecorded) _RecordedBadge(label: recordedBadge),
+                  if (hasChips) SessionStateChipRow(kinds: stateChips, l10n: l10n),
                 ],
               ),
             ],
@@ -202,49 +212,6 @@ class _MetaGroup extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-/// The gold "مسجل" (recorded) badge with a leading dot.
-class _RecordedBadge extends StatelessWidget {
-  const _RecordedBadge({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SimfTokens.space4, // 16
-        vertical: SimfTokens.space2, // 8
-      ),
-      decoration: BoxDecoration(
-        color: SimfTokens.accent,
-        borderRadius: BorderRadius.circular(SimfTokens.radius), // 8
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: SimfTokens.textSm, // 12
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(width: SimfTokens.space2),
-          Container(
-            width: 8,
-            height: 8,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

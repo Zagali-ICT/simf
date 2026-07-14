@@ -55,6 +55,10 @@ SessionListItem _session({
       status: status,
       categoryName: categoryAr,
       categoryNameArabic: categoryAr,
+      // The summaries list only holds sessions with a published محضر (owner
+      // 2026-07-14); these layout fixtures are all summarised so the golden
+      // keeps rendering the 4 cards.
+      hasPublishedSummary: true,
       speakers: <SessionSpeaker>[
         SessionSpeaker(
           id: 'sp-$id',

@@ -29,11 +29,18 @@
 - **Day groups**: a header per distinct event day (اليوم الأول, …) over the cards.
 - **Cards** (navy-deep, beige hairline): the المفضلة heart on the trailing edge;
   title; clock line `time · {duration}`; primary speaker `name · rank` + hall; a
-  bottom row with the **مسجل** badge (Recorded/Published) + the bordered category
-  chip. Tapping a card opens the AI summary details (#34); tapping the heart
-  toggles the favourite (optimistic; reverts + toasts on a server error).
+  bottom row with a **state chip** (`مباشر الآن` live / `مسجّل` recorded — the
+  summary chip is suppressed here since the whole list is summarised, owner
+  2026-07-14) + the bordered category chip. Tapping a card opens the AI summary
+  details (#34); tapping the heart toggles the favourite (optimistic; reverts +
+  toasts on a server error).
+- **List filter** (owner 2026-07-14): the list shows **only sessions with a
+  published summary** (`hasPublishedSummary` on the cached programme) — a future
+  / not-yet-summarised session does not appear.
 - **States**: spinner while loading; retry on a wire error; tab-specific empty
-  messages (no sessions / no booked / no favourites / no search match).
+  messages (no booked / no favourites / no search match); a
+  **`لا توجد ملخصات منشورة بعد`** empty state when the programme has sessions but
+  none are summarised yet.
 
 ## Coverage matrix
 
@@ -48,6 +55,8 @@
 | E2E-MOB111-007 | Favourite an unknown session → 404 | error | P1 | authored ✓ (API `Favourite_an_unknown_session_returns_404`) |
 | E2E-MOB111-008 | Favourites read is approved-only | auth | P0 | authored ✓ (API `Favourites_list_without_a_token_returns_401`) |
 | E2E-MOB111-009 | A published summary stays hidden until the session has STARTED (clock-based, S-6 owner) — a future session's summary is not viewable; once it starts it shows | data | P1 | authored ✓ (API `SessionSummaryTests.GetSessionSummaryAsync_BeforeSessionStarts_ReturnsNull` + `.GetSessionSummaryAsync_AfterStart_ReturnsSummary`) |
+| E2E-MOB111-010 | The list shows ONLY sessions with a published summary — a not-yet-summarised session is excluded (owner 2026-07-14) | data | P0 | authored ✓ (screen `excludes a session with no published summary`) |
+| E2E-MOB111-011 | Programme has sessions but none summarised → the "no published summaries yet" empty state | empty | P1 | authored ✓ (screen `shows the "no summaries yet" empty state when the programme has sessions but none are summarised`) |
 
 ## Scenarios
 
@@ -85,6 +94,17 @@ Scenario: A published summary is viewable only once the session has started (S-6
     summary before the session begins
   Given a STARTED session (StartUtc in the past) with a published summary
   Then the same read returns the summary (200) — gated on the clock, not Session.Status
+
+Scenario: The list is only summarised sessions (owner 2026-07-14)
+  Given the programme has "Summarised" (a published summary) and "NotSummarised" (none)
+  When the user opens /session-summaries
+  Then "Summarised" is listed
+  And "NotSummarised" is not listed
+
+Scenario: No summaries yet
+  Given the programme has sessions but none has a published summary
+  When the user opens /session-summaries
+  Then the "لا توجد ملخصات منشورة بعد" empty state is shown
 ```
 
 **Evidence:** screen tests (5 — list+nav, search, favourites tab, mine tab,

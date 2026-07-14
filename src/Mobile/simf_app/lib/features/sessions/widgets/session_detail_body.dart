@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
 import '../data/seat_map_models.dart';
+import '../data/session_lifecycle.dart';
 import '../data/session_models.dart';
 import 'ask_host_card.dart';
 import 'session_booking_actions.dart';
@@ -54,6 +55,14 @@ class SessionDetailBody extends StatelessWidget {
     final isArabic = l10n.isArabic;
     final description = detail.localizedDescription(isArabic);
 
+    // Owner 2026-07-14 — gate the two header actions on the session's phase:
+    // the ملخص الجلسة summary exists only once the session has ENDED (a future /
+    // live session has none → inactive); رابط الجلسة opens the LIVE feed, so it
+    // is active only while the session is live AND carries an online stream.
+    final phase = detail.phase(DateTime.now().toUtc());
+    final summaryEnabled = phase == SessionPhase.ended;
+    final liveEnabled = detail.hasLiveStream && phase == SessionPhase.live;
+
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
@@ -69,6 +78,8 @@ class SessionDetailBody extends StatelessWidget {
           l10n: l10n,
           onSessionLink: onSessionLink,
           onSessionSummary: onSessionSummary,
+          summaryEnabled: summaryEnabled,
+          liveEnabled: liveEnabled,
         ),
         if (description != null) ...<Widget>[
           const SizedBox(height: SimfTokens.space5),
@@ -128,7 +139,9 @@ class SessionDetailBody extends StatelessWidget {
                 ? null
                 : onViewSeat,
           ),
-        ] else if (seatMap != null) ...<Widget>[
+        ] else if (seatMap != null && phase != SessionPhase.ended) ...<Widget>[
+          // Owner 2026-07-14 — an ENDED session can't be joined ("open now to
+          // join" is a live/upcoming state), so the join CTA drops once it ends.
           const SizedBox(height: SimfTokens.space5),
           SessionJoinButton(busy: busy, l10n: l10n, onJoin: onJoin),
         ],

@@ -16,6 +16,8 @@ class SessionHeaderCard extends StatelessWidget {
     required this.l10n,
     required this.onSessionLink,
     required this.onSessionSummary,
+    required this.summaryEnabled,
+    required this.liveEnabled,
     super.key,
   });
 
@@ -24,6 +26,18 @@ class SessionHeaderCard extends StatelessWidget {
   final AppL10n l10n;
   final VoidCallback onSessionLink;
   final VoidCallback onSessionSummary;
+
+  /// Owner 2026-07-14 — the ملخص الجلسة button is active only once the session
+  /// has ENDED (a future/live session has no محضر → greyed/inactive). The detail
+  /// contract carries no summary flag, so this gates on the phase, not on whether
+  /// a محضر was actually published; an ended-but-unsummarised session opens the
+  /// summary screen's graceful empty note. (The list surfaces gate on the real
+  /// hasPublishedSummary flag instead.)
+  final bool summaryEnabled;
+
+  /// Owner 2026-07-14 — the رابط الجلسة button is active only when the session
+  /// is live AND carries an online feed; otherwise it shows greyed/inactive.
+  final bool liveEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -70,16 +84,20 @@ class SessionHeaderCard extends StatelessWidget {
           const SizedBox(height: SimfTokens.space4),
           _MetaRow(detail: detail, isArabic: isArabic),
           const SizedBox(height: SimfTokens.space4),
-          // Frame 889:2715 — the two action buttons are ALWAYS both shown
-          // (owner 2026-06-30). ملخص الجلسة (gold hairline) leads at the
-          // inline-start (physical right under RTL); رابط الجلسة (beige
-          // hairline) trails at the inline-end (left) — matching the frame.
+          // Frame 889:2715 — both action buttons keep their slots (layout
+          // unchanged), but each is GATED on the session's state (owner
+          // 2026-07-14, superseding the 2026-06-30 "always both active"):
+          // ملخص الجلسة (gold hairline) is active only once a summary exists;
+          // رابط الجلسة (beige hairline) only while the session streams live.
+          // A gated-off button greys out and stops tapping (inactive, not
+          // hidden — the frame's two-chip row is preserved).
           Row(
             children: <Widget>[
               Expanded(
                 child: _HeaderActionButton(
                   label: l10n.sessionSummary,
                   accented: true,
+                  enabled: summaryEnabled,
                   onTap: onSessionSummary,
                 ),
               ),
@@ -88,6 +106,7 @@ class SessionHeaderCard extends StatelessWidget {
                 child: _HeaderActionButton(
                   label: l10n.sessionLink,
                   accented: false,
+                  enabled: liveEnabled,
                   onTap: onSessionLink,
                 ),
               ),
@@ -107,21 +126,33 @@ class _HeaderActionButton extends StatelessWidget {
   const _HeaderActionButton({
     required this.label,
     required this.accented,
+    required this.enabled,
     required this.onTap,
   });
 
   final String label;
   final bool accented;
+
+  /// False greys the chip and drops the tap (owner 2026-07-14): an inactive
+  /// action whose state does not apply yet (a summary on a future session).
+  final bool enabled;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final fg = accented ? SimfTokens.accent : Colors.white;
+    // Disabled overrides the accent/plain palette with the shell's disabled
+    // tokens (same greying the locked اسأل المحاور / بطاقتي cards use).
+    final fg = !enabled
+        ? SimfTokens.navyDisabledText
+        : (accented ? SimfTokens.accent : Colors.white);
+    final borderColor = !enabled
+        ? SimfTokens.navyDisabledBorder
+        : (accented ? SimfTokens.accent : SimfTokens.beigeBorder);
     return Material(
       color: SimfTokens.navyDeep,
       borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
       child: InkWell(
-        onTap: onTap,
+        onTap: enabled ? onTap : null,
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
         child: Container(
           height: 34,
@@ -130,7 +161,7 @@ class _HeaderActionButton extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
             border: Border.all(
-              color: accented ? SimfTokens.accent : SimfTokens.beigeBorder,
+              color: borderColor,
               width: accented ? SimfTokens.hairlineBold : SimfTokens.hairline,
             ),
           ),

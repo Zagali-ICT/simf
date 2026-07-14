@@ -31,6 +31,13 @@ import 'golden_fonts.dart';
 /// caller has joined), the booking card (مقعدي · الصف B · مقعد 12 · بانتظار
 /// الموافقة · إلغاء الحجز) and the أضف إلى تقويمي / تذكير CTAs. RTL throughout.
 ///
+/// Owner 2026-07-14 — the two header actions are now STATE-GATED (superseding the
+/// 2026-06-30 "always both active"). This fixture is an UPCOMING session, so BOTH
+/// render greyed/inactive: ملخص الجلسة (no summary before the session ends) and
+/// رابط الجلسة (the feed is not live yet). The active styling is covered by the
+/// widget test (session_detail_body_test.dart), which drives an ended session
+/// (summary active) and a live broadcast (live active).
+///
 /// The provider wiring + fakes mirror the proven widget test
 /// (test/features/sessions/session_detail_screen_test.dart). Rendered values
 /// derive from fixed data; the meta clock/day come from `startUtc.toLocal()`, so

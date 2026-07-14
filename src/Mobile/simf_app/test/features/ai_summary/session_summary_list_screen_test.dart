@@ -23,7 +23,8 @@ class _FixedFavourites extends SessionFavouritesController {
   Future<Set<String>> build() async => _ids;
 }
 
-SessionListItem _item(String id, String title) => SessionListItem(
+SessionListItem _item(String id, String title, {bool hasSummary = true}) =>
+    SessionListItem(
       id: id,
       code: 'C-$id',
       title: title,
@@ -35,6 +36,7 @@ SessionListItem _item(String id, String title) => SessionListItem(
       endUtc: DateTime.utc(2026, 11, 23, 7),
       status: SessionStatus.scheduled,
       speakers: const <SessionSpeaker>[],
+      hasPublishedSummary: hasSummary,
     );
 
 MyAreaSessionItem _mine(String id) => MyAreaSessionItem(
@@ -158,6 +160,31 @@ void main() {
         (tester) async {
       await _pump(tester, const <SessionListItem>[]);
       expect(find.text('No sessions available yet.'), findsOneWidget);
+    });
+
+    // Owner 2026-07-14 — the summaries list is only sessions with a published
+    // محضر; a future / not-yet-summarised session must not appear.
+    testWidgets('excludes a session with no published summary', (tester) async {
+      await _pump(
+        tester,
+        <SessionListItem>[
+          _item('s1', 'Summarised'),
+          _item('s2', 'NotSummarised', hasSummary: false),
+        ],
+      );
+
+      expect(find.text('Summarised'), findsOneWidget);
+      expect(find.text('NotSummarised'), findsNothing);
+    });
+
+    testWidgets('shows the "no summaries yet" empty state when the programme '
+        'has sessions but none are summarised', (tester) async {
+      await _pump(
+        tester,
+        <SessionListItem>[_item('s1', 'Opening', hasSummary: false)],
+      );
+
+      expect(find.text('No published summaries yet.'), findsOneWidget);
     });
   });
 }

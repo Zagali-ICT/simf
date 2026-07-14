@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/localization/app_l10n.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_page_shell.dart';
 import '../data/session_models.dart';
 import 'programme_day_banner.dart';
+import 'session_state_chip.dart';
 
 /// One المواعيد timeline row (frame 1310:3213 collapsed / 1310:3232 featured):
 /// a navy radius-8 card holding, inline-start→end, the content column (a 14px
@@ -28,6 +30,14 @@ class SessionTimelineRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    // Owner 2026-07-14 — state chips (live now / summary available / recorded)
+    // let the agenda reflect each session's state at a glance.
+    final stateChips = sessionStateChips(
+      phase: session.phase(DateTime.now().toUtc()),
+      hasPublishedSummary: session.hasPublishedSummary,
+      status: session.status,
+    );
     final description = session.localizedDescription(isArabic);
     final descriptionText = description == null
         ? null
@@ -113,6 +123,10 @@ class SessionTimelineRow extends StatelessWidget {
                     if (descriptionText != null) ...<Widget>[
                       const SizedBox(height: SimfTokens.space2),
                       descriptionText,
+                    ],
+                    if (stateChips.isNotEmpty) ...<Widget>[
+                      const SizedBox(height: SimfTokens.space3),
+                      SessionStateChipRow(kinds: stateChips, l10n: l10n),
                     ],
                   ],
                 ),
