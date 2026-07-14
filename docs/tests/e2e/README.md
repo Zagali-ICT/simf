@@ -171,6 +171,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/` (marketing landing) | [`web-landing.md`](web-landing.md) | E2E-WLD-001..008 |
 | `/account` | [`web-home.md`](web-home.md) | E2E-WHM-001..010 |
 | `/programme` | [`web-programme.md`](web-programme.md) | E2E-WPG-001..010 |
+| `/speakers` | [`web-speakers.md`](web-speakers.md) | E2E-WSPK-001..011 |
 | `/visit` | [`web-visit.md`](web-visit.md) | E2E-WVS-001..011 |
 | `/login` | [`web-login.md`](web-login.md) | E2E-WLG-001..017 |
 | `/login/verify` | [`web-otp-verify.md`](web-otp-verify.md) | E2E-WOT-001..010 |

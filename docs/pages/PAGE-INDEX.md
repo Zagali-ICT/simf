@@ -153,6 +153,7 @@ No public nav per D-064 — every page is reached via direct URL or auth redirec
 | ~~`/` (old static landing)~~ | 🗑️ Retired 2026-07-14 (`index.html` deleted) | Public | [web/landing.md](web/landing.md) | [e2e/web-landing.md](../tests/e2e/web-landing.md) |
 | `/account` | ✅ Real | Any signed-in | [web/home.md](web/home.md) | [e2e/web-home.md](../tests/e2e/web-home.md) |
 | `/programme` | ✅ Real (D-199) | Public | [web/programme.md](web/programme.md) | [e2e/web-programme.md](../tests/e2e/web-programme.md) |
+| `/speakers` | ✅ Real (`ln-` SSR rebuild; Figma 5840-26779; live data) | Public | [web/speakers.md](web/speakers.md) | [e2e/web-speakers.md](../tests/e2e/web-speakers.md) |
 | `/visit` | ✅ Real | Public | — | [e2e/web-visit.md](../tests/e2e/web-visit.md) |
 | `/login` | 🔒 Auth-only | Anyone | [web/login.md](web/login.md) | [e2e/web-login.md](../tests/e2e/web-login.md) |
 | `/login/verify` | 🔒 Auth-only | Mid-sign-in | [web/otp-verify.md](web/otp-verify.md) | [e2e/web-otp-verify.md](../tests/e2e/web-otp-verify.md) |
