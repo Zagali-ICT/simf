@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../app/localization/app_l10n.dart';
-import '../../../app/route_names.dart';
 import '../../../app/theme/tokens.dart';
+import '../../../app/widgets/simf_app_shell.dart' show SimfShellScope, tabIndex;
+import '../../../app/widgets/simf_bottom_nav.dart' show SimfTab;
 import '../../../app/widgets/simf_page_shell.dart';
 import '../home_greeting.dart';
 
@@ -44,7 +44,12 @@ class GreetingHeader extends StatelessWidget {
             button: true,
             label: l10n.navProfile,
             child: InkWell(
-              onTap: () => context.goNamed(RouteNames.myArea),
+              onTap: () {
+                final shell = SimfShellScope.maybeOf(context);
+                if (shell != null) {
+                  shell.switchTab(tabIndex(SimfTab.profile));
+                }
+              },
               borderRadius:
                   const BorderRadius.all(Radius.circular(SimfTokens.radius)),
               child: SimfAvatar(name: name, currentUser: true),

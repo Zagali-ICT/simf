@@ -5,7 +5,20 @@ import 'package:go_router/go_router.dart';
 import '../localization/app_l10n.dart';
 import '../route_names.dart';
 import '../theme/tokens.dart';
+import 'simf_app_shell.dart' show SimfShellScope, tabIndex;
 import 'simf_svg_icon.dart';
+
+/// When inside [SimfAppShell] (i.e., when [SimfShellScope] is the nearest
+/// inherited ancestor), switch tabs via the shell. Outside the shell, navigate
+/// via go_router.
+VoidCallback _shellOrGo(BuildContext context, SimfTab tab, String routeName) {
+  final shell = SimfShellScope.maybeOf(context);
+  if (shell != null) {
+    final index = tabIndex(tab);
+    return () => shell.switchTab(index);
+  }
+  return () => context.goNamed(routeName);
+}
 
 /// The app's bottom navigation bar, rebuilt to the KSA-Project frame **758:1476
 /// "Nav Bar"** (icons verified against the nav component **206:1699**): a navy
@@ -62,7 +75,7 @@ class SimfBottomNav extends StatelessWidget {
                   current: current,
                   iconAsset: 'assets/icons/nav_home.svg',
                   label: l10n.homeTitle,
-                  onTap: () => context.goNamed(RouteNames.home),
+                  onTap: _shellOrGo(context, SimfTab.home, RouteNames.home),
                 ),
                 _Item(
                   tab: SimfTab.sessions,
@@ -71,26 +84,26 @@ class SimfBottomNav extends StatelessWidget {
                   // The nav component (Figma 206:1732) labels the active
                   // sessions tab "الجلسات", not the old "الأجندة".
                   label: l10n.sessionsTitle,
-                  onTap: () => context.goNamed(RouteNames.sessions),
+                  onTap: _shellOrGo(context, SimfTab.sessions, RouteNames.sessions),
                 ),
                 _CentreAction(
                   active: current == SimfTab.badge,
                   label: l10n.badgeTitle,
-                  onTap: () => context.goNamed(RouteNames.badge),
+                  onTap: _shellOrGo(context, SimfTab.badge, RouteNames.badge),
                 ),
                 _Item(
                   tab: SimfTab.map,
                   current: current,
                   iconAsset: 'assets/icons/nav_location.svg',
                   label: l10n.tileVenueMap,
-                  onTap: () => context.goNamed(RouteNames.venueMap),
+                  onTap: _shellOrGo(context, SimfTab.map, RouteNames.venueMap),
                 ),
                 _Item(
                   tab: SimfTab.profile,
                   current: current,
                   iconAsset: 'assets/icons/nav_user.svg',
                   label: l10n.navProfile,
-                  onTap: () => context.goNamed(RouteNames.myArea),
+                  onTap: _shellOrGo(context, SimfTab.profile, RouteNames.myArea),
                 ),
               ],
             ),
