@@ -446,3 +446,37 @@ session cleanly.
 **Round-1 open items after this pass:** only the **on-tablet app manual pass** remains (needs the
 physical tablet). The CP CRUD live pass is now **done**; the data-path was already green in the
 1620/1620 integration tests, and this adds the live Blazor-UI layer on top, on `main`.
+
+### Wave 2 — broader entity coverage (owner "more CP CRUD pages") — PASS
+
+Re-stood the same isolated stack on `main` and drove **create + DB-assert** across four more diverse
+entity shapes (all created rows cleaned up afterwards; DB restored to seed — Countries 59, Blocks 54,
+Venue nodes 10, FAQ groups 3). **0 console errors.**
+
+| Entity (route) | Shape / notable | Result |
+|---|---|---|
+| **Countries** (`/admin/countries`) | coded lookup — ISO numeric + ISO alpha-2 + calling code, over the seeded **59-country** grid with pagination | **PASS** — created `ZZ / R1 Test Country / +999`; DB `IsActive=1` |
+| **Content Blocks** (`/admin/content-blocks`) | bilingual CMS key/value over **54** seeded landing/cyber blocks (3 pages) | **PASS** — created `round1.test.block`; toast `تم حفظ الكتلة`; DB `IsActive=1` |
+| **Venue Map** (`/admin/venue-map`) | node with **Kind enum** (Hall/Zone/Booth/PointOfInterest) over 10 seeded nodes | **PASS** — created `R1 Test Node`, Kind persisted as **`3` = PointOfInterest**; the Kind field is a **constrained dropdown** so the UI can't submit an out-of-range value (the Finding #25 vector is UI-safe) |
+| **FAQ** (`/admin/faq`) | **two-level** page — FAQ-groups grid (each row → "manage questions") over 3 seeded groups | **PASS** — created group `R1 Test FAQ Group`; toast `تم الحفظ`; DB `DisplayOrder=9999`, `IsActive=1` |
+
+**Harness note (not a product defect):** the **Programme Days** create was *not* completed — its date
+field is a segmented date-picker that the automation `fill`/native-set couldn't drive reliably (the
+same harness quirk recorded for Add-session in the first sweep; a human types the date normally). The
+5-minute token cap also expired the session twice more during the slower snapshots; re-login restored
+it each time. Total distinct entity types driven live across both waves: **8** (Halls, Session
+Categories, Regions, Configuration, Countries, Content Blocks, Venue Map, FAQ) — facility, four
+lookups, key-value, CMS, enum-node, and a hierarchical page.
+
+### Ultracode parallel validation-alignment audit — THROTTLED (weekly limit), inconclusive
+
+To complement the live sample, a background Workflow (`cp-validation-alignment-audit`, 9 finder
+slices + adversarial verify) was launched to check the CLAUDE.md §7 rule (FluentValidation
+`MaximumLength` ↔ EF `HasMaxLength` ↔ UI) across **every** admin write surface — the Finding #19/#27
+class (over-length input → SQL-truncation 500). It **did not complete**: **19 of 20 agents errored on
+the account's weekly usage limit** ("resets Jul 17 07:00 Asia/Riyadh"), so its `0 confirmed` result is
+**not** a clean pass — the audit is **inconclusive and should be re-run after the limit resets**
+(`Workflow({scriptPath: '…/cp-validation-alignment-audit-wf_a9398929-c53.js', resumeFromRunId:
+'wf_a9398929-c53'})` — completed agents replay from cache). The one slice that ran returned no
+findings; the other 8 (sessions/halls, reference-lookups, exhibition-venue, archive-cms,
+faq-org-ratings, sponsors-media-news, gates-invitations-themes, identity-admin) were never audited.
