@@ -68,7 +68,11 @@
                     <SimfDataGridColumn TItem="AdminNewsSummary" Key="title"
                                         Header="@L["Admin.News.Col.TitleEn"]"
                                         Sortable="true" Filterable="true">
-                        <CellTemplate>@context.Title</CellTemplate>
+                        <CellTemplate>
+                            <SimfIdentityCell ImageUrl="@ImageUrl(context)"
+                                              Name="@context.Title"
+                                              NameSecondary="@context.TitleArabic" />
+                        </CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminNewsSummary" Key="titlearabic"
                                         Header="@L["Admin.News.Col.TitleAr"]"

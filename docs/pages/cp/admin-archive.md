@@ -412,4 +412,9 @@ Scenario id range: **E2E-ARC-001 … E2E-ARC-024**.
 
 ---
 
-_Last reviewed:_ 2026-06-11 by Claude (technical-writer).
+**2026-07-14 (D-357):** the English-title column now renders the edition's cover
+thumbnail via the shared `SimfIdentityCell` (`AdminArchiveEditionSummary.HasCover`,
+streamed from the `ArchiveCover` /assets proxy) or a tinted initials tile. Column
+key unchanged so server-side sort/filter is unaffected. E2E-ARC-026.
+
+_Last reviewed:_ 2026-07-14 by Claude (D-357 — archive cover thumbnail in the list). Prior: 2026-06-11 by Claude (technical-writer).

@@ -43,6 +43,12 @@ public partial class ArchiveList
     private bool _snapshotMakeVisible = true;
     private CrudGridExcel? _excel;
 
+    // The edition's cover thumbnail URL, or null so SimfIdentityCell shows an
+    // initials tile (never a broken image). Only when HasCover — the /assets proxy
+    // resolves the ArchiveCover StoredFile for this edition (D-357).
+    private static string? CoverImageUrl(AdminArchiveEditionSummary row) =>
+        row.HasCover ? CpAssetUrls.AdminImage(nameof(AssetCategory.ArchiveCover), row.Id) : null;
+
     private bool FormOpen => _form != FormKind.None;
     private bool GridHidden => FormOpen && _presentation == CrudPresentation.Page;
 

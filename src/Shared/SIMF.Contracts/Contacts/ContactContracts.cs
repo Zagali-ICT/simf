@@ -17,7 +17,10 @@ public sealed record AdminContactSummary(
     int? CountryId,
     string? CountryNameEn,
     string? CountryNameAr,
-    bool IsActive);
+    bool IsActive,
+    // D-357 — true when an active CompanyLogo asset exists for this contact, so the
+    // grid renders its logo thumbnail (SimfIdentityCell), else an initials tile.
+    bool HasLogo);
 
 /// <summary>Full contact detail — every column for the admin view/edit form.</summary>
 public sealed record AdminContactDetail(

@@ -329,6 +329,26 @@ Scenario: A bad upload is rejected without creating anything
   And the grid is unchanged
 ```
 
+### E2E-CON-022 — the list shows the contact's logo thumbnail (D-357)
+
+```gherkin
+Scenario: the Arabic-name column renders a thumbnail when the contact has a logo
+  Given an Administrator is on /admin/contacts
+  And contact "A" has a CompanyLogo asset and contact "B" has none
+  When the grid loads a page
+  Then A's name cell shows the logo thumbnail beside the Arabic name
+  And B's name cell shows a tinted initials tile (never a broken image)
+  And sorting / filtering by the name column still works (column key unchanged)
+```
+
+**Covered (lower layer):** `tests/SIMF.Api.Tests/ContactsTests.cs` →
+`Admin_list_flips_HasLogo_once_a_CompanyLogo_asset_is_attached` drives the real
+`POST /admin/contacts` → `PUT /admin/assets/CompanyLogo/{id}/link` →
+`POST /admin/contacts/list` and asserts `HasLogo` flips. Confirm the render
+visually in the Chrome DevTools MCP smoke.
+
+---
+
 ## Implementation notes
 
 - API-layer coverage lives in `tests/SIMF.Api.Tests/ContactsTests.cs` (22 cases:

@@ -82,7 +82,11 @@
                     <SimfDataGridColumn TItem="AdminContactSummary" Key="nameAr"
                                         Header="@L["Admin.Contacts.Col.NameAr"]"
                                         Sortable="true" Filterable="true">
-                        <CellTemplate>@context.NameAr</CellTemplate>
+                        <CellTemplate>
+                            <SimfIdentityCell ImageUrl="@LogoImageUrl(context)"
+                                              Name="@context.NameAr"
+                                              NameSecondary="@context.NameEn" />
+                        </CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminContactSummary" Key="nameEn"
                                         Header="@L["Admin.Contacts.Col.NameEn"]"

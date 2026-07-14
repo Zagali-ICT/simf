@@ -531,6 +531,26 @@ Scenario: A bad or wrong-sheet upload is rejected without creating anything
 
 ---
 
+### E2E-ARC-026 — the list shows the edition's cover thumbnail (D-357)
+
+```gherkin
+Scenario: the English-title column renders a thumbnail when the edition has a cover
+  Given an Administrator is on /admin/archive
+  And edition "A" has an ArchiveCover asset and edition "B" has none
+  When the grid loads a page
+  Then A's title cell shows the cover thumbnail beside the title
+  And B's title cell shows a tinted initials tile (never a broken image)
+  And sorting / filtering by the title column still works (column key unchanged)
+```
+
+**Covered (lower layer):** the flag-population path is proven by
+`tests/SIMF.Api.Tests/ContactsTests.cs` →
+`Admin_list_flips_HasLogo_once_a_CompanyLogo_asset_is_attached`; Archive uses the
+identical owner=row.Id `WhichOwnersHaveActiveAssetAsync(ArchiveCover, ...)`
+restructure. Confirm the render visually in the Chrome DevTools MCP smoke.
+
+---
+
 ## Implementation notes
 
 - **Manual smoke is canonical today.** Until a Playwright project exists, the

@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
+using SIMF.Contracts.Assets;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Contacts;
 using SIMF.Contracts.Exhibitors;
@@ -109,6 +110,42 @@ public sealed class ContactsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(countryId, row.CountryId);
         Assert.False(string.IsNullOrWhiteSpace(row.CountryNameEn));
         Assert.False(string.IsNullOrWhiteSpace(row.CountryNameAr));
+    }
+
+    [Fact]
+    public async Task Admin_list_flips_HasLogo_once_a_CompanyLogo_asset_is_attached()
+    {
+        // D-357 — the grid renders the contact's logo thumbnail only when an active
+        // CompanyLogo asset exists; the AdminContactSummary.HasLogo flag drives it.
+        // (Contacts/News/Archive share this owner=row.Id flag-population path.)
+        var token = await CreateAdministratorAndSignInAsync();
+        var nameAr = "شعار " + Guid.NewGuid().ToString("N")[..8];
+        var create = await PostAuthAsync("/api/v1/admin/contacts",
+            new CreateContactRequest { NameAr = nameAr, NameEn = "Logo Contact" }, token);
+        var id = (await create.Content
+            .ReadFromJsonAsync<ApiResult<AdminContactDetail>>())!.Data!.Id;
+
+        // No logo asset yet → HasLogo false (the grid shows an initials tile).
+        Assert.False((await FindContactRowAsync(nameAr, token))!.HasLogo);
+
+        // Attaching an active CompanyLogo asset flips it true.
+        var link = await PutAuthAsync(
+            $"/api/v1/admin/assets/CompanyLogo/{id}/link",
+            new SetAssetLinkRequest { Kind = AssetKind.Image, Url = "https://example.com/logo.png" },
+            token);
+        Assert.Equal(HttpStatusCode.OK, link.StatusCode);
+
+        Assert.True((await FindContactRowAsync(nameAr, token))!.HasLogo);
+    }
+
+    private async Task<AdminContactSummary?> FindContactRowAsync(string search, string token)
+    {
+        var list = await PostAuthAsync("/api/v1/admin/contacts/list",
+            new GridQuery { Search = search, Top = 50 }, token);
+        Assert.Equal(HttpStatusCode.OK, list.StatusCode);
+        var page = (await list.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminContactSummary>>>())!.Data!;
+        return page.Items.FirstOrDefault();
     }
 
     [Fact]

@@ -82,7 +82,11 @@
                     <SimfDataGridColumn TItem="AdminArchiveEditionSummary" Key="titleEn"
                                         Header="@L["Admin.Archive.Col.TitleEn"]"
                                         Sortable="true" Filterable="true">
-                        <CellTemplate>@context.TitleEn</CellTemplate>
+                        <CellTemplate>
+                            <SimfIdentityCell ImageUrl="@CoverImageUrl(context)"
+                                              Name="@context.TitleEn"
+                                              NameSecondary="@context.TitleAr" />
+                        </CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminArchiveEditionSummary" Key="titleAr"
                                         Header="@L["Admin.Archive.Col.TitleAr"]"

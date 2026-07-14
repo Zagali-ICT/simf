@@ -161,6 +161,9 @@ public partial class ArchiveAddEdit
         new(d.Id, d.Year, d.TitleEn, d.TitleAr, d.SummaryEn, d.SummaryAr,
             d.Attendees, d.Sessions, d.Speakers, d.CoverImageRelativePath,
             d.IsActive, d.CreatedAt,
+            // HasCover — optimistic false; OnSavedAsync reloads the grid, which
+            // recomputes it from the ArchiveCover asset presence.
+            false,
             d.LocationEn, d.LocationAr, d.DateLabelEn, d.DateLabelAr);
 
     private void OnYearChanged(ChangeEventArgs e)

@@ -1,6 +1,7 @@
 // Tests: SIMF.Api.Tests/ContactsTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SIMF.Application.Assets.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.Contacts.Abstractions;
 using SIMF.Common;
@@ -24,6 +25,7 @@ internal sealed class AdminContactService(
     SimfAppDbContext db,
     IAuditLog auditLog,
     TimeProvider timeProvider,
+    IAssetService assetService,
     ILogger<AdminContactService> logger) : IAdminContactService
 {
     public async Task<GridPage<AdminContactSummary>> ListAsync(
@@ -85,6 +87,12 @@ internal sealed class AdminContactService(
         var countryNames = await ResolveCountryNamesAsync(
             pageRows.Select(contact => contact.CountryId), ct);
 
+        // The grid renders the logo thumbnail only when an active CompanyLogo asset
+        // exists (resolved from the StoredFile store via the /assets proxy, not the
+        // legacy LogoRelativePath) — one batched query for the page, no N+1.
+        var logoOwners = await assetService.WhichOwnersHaveActiveAssetAsync(
+            AssetCategory.CompanyLogo, pageRows.Select(contact => contact.Id).ToList(), ct);
+
         var page = pageRows
             .Select(contact =>
             {
@@ -98,7 +106,8 @@ internal sealed class AdminContactService(
                     contact.CountryId,
                     countryEn,
                     countryAr,
-                    contact.IsActive);
+                    contact.IsActive,
+                    logoOwners.Contains(contact.Id));
             })
             .ToList();
 
