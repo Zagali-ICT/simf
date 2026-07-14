@@ -37,8 +37,6 @@ public static class CpNavigation
         new("Nav.Overview",
         [
             new("Module.Dashboard", "/", Icon: "layout-dashboard"),
-            // D-202 Track-2 — read-only live-counts statistics dashboard.
-            new("Module.Statistics", "/admin/statistics", RequiredPermission: PermissionCatalog.Statistics.View, Icon: "bar-chart"),
             // FR-506 — read-only session-attendance dashboard over HallAttendance (D-241).
             new("Module.Attendance", "/admin/attendance", RequiredPermission: PermissionCatalog.Attendance.View, Icon: "user-check"),
         ]),

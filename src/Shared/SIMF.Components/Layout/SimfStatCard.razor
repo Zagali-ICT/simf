@@ -3,14 +3,28 @@
    /dashboard pages and module home screens. *@
 @namespace SIMF.Components.Layout
 
-<div class="simf-stat">
-    <p class="simf-stat__title">@Title</p>
-    <p class="simf-stat__value">@Value</p>
-    @if (!string.IsNullOrEmpty(Delta))
-    {
-        <p class="simf-stat__delta simf-stat__delta--@DeltaTone">@Delta</p>
-    }
-</div>
+@if (Href is not null)
+{
+    <a href="@Href" class="simf-stat simf-stat--clickable">
+        <p class="simf-stat__title">@Title</p>
+        <p class="simf-stat__value">@Value</p>
+        @if (!string.IsNullOrEmpty(Delta))
+        {
+            <p class="simf-stat__delta simf-stat__delta--@DeltaTone">@Delta</p>
+        }
+    </a>
+}
+else
+{
+    <div class="simf-stat">
+        <p class="simf-stat__title">@Title</p>
+        <p class="simf-stat__value">@Value</p>
+        @if (!string.IsNullOrEmpty(Delta))
+        {
+            <p class="simf-stat__delta simf-stat__delta--@DeltaTone">@Delta</p>
+        }
+    </div>
+}
 
 @code {
     /// <summary>The tile title (small caption text above the value).</summary>
@@ -18,6 +32,9 @@
 
     /// <summary>The large value text — e.g. "237" or "$12.3k".</summary>
     [Parameter, EditorRequired] public string Value { get; set; } = string.Empty;
+
+    /// <summary>Optional navigation link — when set the card becomes a clickable anchor.</summary>
+    [Parameter] public string? Href { get; set; }
 
     /// <summary>Optional delta line — e.g. "+12 this week".</summary>
     [Parameter] public string? Delta { get; set; }
