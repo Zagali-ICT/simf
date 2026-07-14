@@ -1,0 +1,77 @@
+@* Reusable page wrapper for every public "ln-" marketing page (landing,
+   speakers, about, programme, …). Renders the shared <HeadContent> asset
+   injection (culture-chosen Bootstrap sheet, hero-font preload, landing.css +
+   landing.js), the .landing scope, the splash loader, the shared header/footer
+   and a <main> that hosts the page's own sections via ChildContent.
+
+   A page uses it as:
+     <LandingShell Title="@L["Speakers.PageTitle"]" Description="@L["Speakers.Meta"]">
+         ...page sections...
+     </LandingShell>
+   Each page must still supply its own single <h1> (Routes.razor focuses it). *@
+@inject IStringLocalizer<Strings> L
+
+@{
+    var rtl = CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
+    var bootstrapCss = rtl
+        ? "lib/bootstrap/css/bootstrap.rtl.min.css"
+        : "lib/bootstrap/css/bootstrap.min.css";
+    // preload the hero-title weight (700) for the active language → no font swap on LCP
+    var heroFont = rtl
+        ? "lib/almarai/almarai-arabic-700-normal.woff2"
+        : "lib/almarai/almarai-latin-700-normal.woff2";
+    var desc = Description ?? L["Landing.MetaDescription"].Value;
+}
+
+<HeadContent>
+    <meta name="description" content="@desc" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="@Title" />
+    <meta property="og:description" content="@desc" />
+    <meta property="og:locale" content="@(rtl ? "ar_SA" : "en_US")" />
+    @* mark JS-capable synchronously so reveal-on-scroll never hides content for no-JS visitors *@
+    <script>document.documentElement.classList.add('ln-js');</script>
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="@Assets[heroFont]" />
+    <link rel="stylesheet" href="@Assets[bootstrapCss]" />
+    <link rel="stylesheet" href="@Assets["css/landing.css"]" />
+    <script defer src="@Assets["lib/bootstrap/js/bootstrap.bundle.min.js"]"></script>
+    <script defer src="@Assets["js/landing.js"]"></script>
+    @Head
+</HeadContent>
+
+<PageTitle>@Title</PageTitle>
+
+<div class="landing">
+
+    @* First-paint splash, faded out on window load by landing.js *@
+    <div class="ln-loader" id="ln-loader" role="status" aria-live="polite"
+         aria-label="@L["Landing.Loading"]">
+        <div class="ln-loader__inner">
+            <img class="ln-loader__logo" src="assets/figma/nav/logo-fill.svg"
+                 alt="@L["Brand.LogoAlt"]" />
+            <div class="ln-loader__bar"><span></span></div>
+        </div>
+    </div>
+
+    <LandingHeader />
+
+    <main id="main-content">
+        @ChildContent
+    </main>
+
+    <LandingFooter />
+</div>
+
+@code {
+    // Per-page document title (also the og:title). Required.
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+
+    // Per-page meta description / og:description; falls back to the site default.
+    [Parameter] public string? Description { get; set; }
+
+    // Optional extra <head> content for a specific page (preloads, JSON-LD, …).
+    [Parameter] public RenderFragment? Head { get; set; }
+
+    // The page's own sections, rendered inside <main>.
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

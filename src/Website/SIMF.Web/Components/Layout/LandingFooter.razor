@@ -1,0 +1,73 @@
+@* Shared public-site footer for the "ln-" marketing pages: brand, important-
+   links group, contact, social + accessibility icons, and the legal band.
+   Extracted from Landing.razor so every page renders one copy; the external
+   important-links list is data-driven off LandingChrome.FooterImportantLinks. *@
+@inject IStringLocalizer<Strings> L
+
+@{
+    var rtl = CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
+}
+
+<footer class="ln-footer">
+    <div class="ln-footer__inner">
+        <div class="ln-footer__top">
+            <div class="ln-ft__brand">
+                <img src="assets/figma/footer/logo-simf-white.svg" alt="@L["Brand.LogoAlt"]" />
+            </div>
+            <div class="ln-ft__groups">
+                <nav class="ln-ft__group" aria-label="@L["Landing.Footer.ImportantLinks"]">
+                    <p class="ln-ft__label">@L["Landing.Footer.ImportantLinks"]</p>
+                    <div class="ln-ft__list">
+                        @foreach (var link in LandingChrome.FooterImportantLinks)
+                        {
+                            <a class="ln-ft__link ln-ft__link--ul" href="@link.Href" target="_blank" rel="noopener">@link.Label.For(rtl) <img src="assets/figma/footer/icon-link-04.svg" alt="" /></a>
+                        }
+                    </div>
+                </nav>
+                <div class="ln-ft__group">
+                    <p class="ln-ft__label">@L["Landing.Footer.Contact"]</p>
+                    <div class="ln-ft__list">
+                        <span class="ln-ft__link">@L["Landing.Footer.Address"] <img src="assets/figma/footer/icon-location.svg" alt="" /></span>
+                        <a class="ln-ft__link" href="tel:920010500">920010500 <img src="assets/figma/footer/icon-phone.svg" alt="" /></a>
+                        <a class="ln-ft__link ln-ft__link--ul" href="mailto:info@@simforum.mod.gov.sa">info@@simforum.mod.gov.sa <img src="assets/figma/footer/icon-email.svg" alt="" /></a>
+                    </div>
+                </div>
+                <div class="ln-ft__col">
+                    <div class="ln-ft__group">
+                        <p class="ln-ft__label">@L["Landing.Footer.Follow"]</p>
+                        <div class="ln-ft__icons">
+                            <a class="ln-ft__iconbtn" href="#" aria-label="Instagram"><img src="assets/figma/footer/icon-instagram.svg" alt="" /></a>
+                            <a class="ln-ft__iconbtn" href="#" aria-label="YouTube"><img src="assets/figma/footer/icon-youtube.svg" alt="" /></a>
+                            <a class="ln-ft__iconbtn" href="#" aria-label="X"><img src="assets/figma/footer/icon-x-twitter.svg" alt="" /></a>
+                            <a class="ln-ft__iconbtn" href="#" aria-label="LinkedIn"><img src="assets/figma/footer/icon-linkedin.svg" alt="" /></a>
+                        </div>
+                    </div>
+                    <div class="ln-ft__group">
+                        <p class="ln-ft__label">@L["Landing.Footer.A11y"]</p>
+                        <div class="ln-ft__icons">
+                            <button type="button" class="ln-ft__iconbtn" aria-label="@L["Landing.Footer.A11y"]"><img src="assets/figma/footer/icon-a11y-1.svg" alt="" /></button>
+                            <button type="button" class="ln-ft__iconbtn" aria-label="@L["Landing.Footer.A11y"]"><img src="assets/figma/footer/icon-a11y-2-search.svg" alt="" /></button>
+                            <button type="button" class="ln-ft__iconbtn" aria-label="@L["Landing.Footer.A11y"]"><img src="assets/figma/footer/icon-a11y-3-view.svg" alt="" /></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="ln-footer__legal">
+            <div class="ln-ft__copywrap">
+                <p class="ln-ft__copy">© MOD.RSNF – All Rights Reserved</p>
+                <p class="ln-ft__dev">@L["Landing.Footer.DevBy"] <b>Startime.sa</b></p>
+                <p class="ln-ft__dev">@L["Landing.Footer.LastModified"]</p>
+            </div>
+            <div class="ln-ft__legallinks">
+                <a href="#">@L["Landing.Footer.Sitemap"]</a>
+                <a href="#">RSS</a>
+                <a href="#">@L["Landing.Footer.MobileApp"]</a>
+            </div>
+            <div class="ln-ft__logos">
+                <img src="assets/figma/footer/vision-2030.png" alt="@L["Landing.Footer.Vision2030"]" loading="lazy" />
+                <img src="assets/figma/footer/logo-mod.png" alt="@L["Landing.Footer.MOD"]" loading="lazy" />
+            </div>
+        </div>
+    </div>
+</footer>
