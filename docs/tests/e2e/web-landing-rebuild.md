@@ -3,7 +3,7 @@
 | | |
 |--|--|
 | **Page** | [`web/landing-rebuild.md`](../../pages/web/landing-rebuild.md) |
-| **Route** | `/landing` (Blazor SSR Razor page; slated to take over `/` at cutover) |
+| **Route** | `/` (primary, public homepage) + `/landing` (kept) — Blazor SSR Razor page; cutover done 2026-07-14 |
 | **Surface** | Website (public, anonymous) |
 | **Test runner** | Chrome DevTools MCP + PowerShell driver (tool-agnostic steps) |
 | **Auth setup** | None — anonymous. No API needed: the page is static SSR with in-page content models (no `/content/site` dependency in this build). |
@@ -13,7 +13,9 @@
 > landing, delivered as a **Blazor SSR** Razor page (server-rendered HTML, not
 > MudBlazor). Bilingual Arabic RTL / English LTR via the existing `/culture`
 > switch; dynamic sections are server-side `@foreach` loops over content models.
-> It coexists with the static `/` landing until cutover.
+> Since the 2026-07-14 cutover it **is** the `/` homepage (the old static
+> landing was deleted); `/landing` is kept as an alias — both routes serve the
+> same page.
 
 ## Coverage matrix
 
@@ -30,6 +32,7 @@
 | E2E-WLB-009 | Reduced motion — with `prefers-reduced-motion: reduce`, reveal blocks are visible immediately, marquees and theme auto-rotate do not animate | a11y | P1 | _to author_ |
 | E2E-WLB-010 | Clean console + assets — no console errors and no failed/404 asset requests on load in either language | resilience | P0 | _to author_ |
 | E2E-WLB-011 | Culture persistence — after switching language the choice survives a reload (culture cookie) | i18n | P2 | _to author_ |
+| E2E-WLB-012 | Route cutover — `/` returns 200 and serves this landing via the Blazor endpoint (not static-file middleware); `/landing` still returns 200 (same page); the deleted `/index.html` returns 404 | routing | P0 | _to author_ |
 
 ## Scenarios
 
@@ -96,4 +99,23 @@ Scenario: No console errors or broken assets
   And no <img> is broken (naturalWidth > 0)
 ```
 
-_Last authored:_ 2026-07-13 by Claude (Bootstrap rebuild E2E catalogue).
+### E2E-WLB-012 — Route cutover (`/` is the homepage)
+
+```gherkin
+Scenario: The rebuild is served at the site root
+  When a visitor opens "/"
+  Then the response status is 200
+  And the page has the ".landing" root and the "ln-hero__title" heading
+  And the request is served by the Blazor endpoint, not the static-file middleware
+
+Scenario: The /landing alias still resolves
+  When a visitor opens "/landing"
+  Then the response status is 200
+  And it renders the same landing page as "/"
+
+Scenario: The old static index.html is gone
+  When a visitor requests "/index.html"
+  Then the response status is 404
+```
+
+_Last authored:_ 2026-07-14 by Claude (added E2E-WLB-012 route cutover; `/` cutover).

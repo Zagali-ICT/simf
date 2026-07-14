@@ -2,12 +2,12 @@
 
 | | |
 |--|--|
-| **Route** | `/` (static `wwwroot/index.html` + `content.js`) |
+| **Route** | ~~`/`~~ — **retired** at the 2026-07-14 cutover (`index.html` deleted) |
 | **Surface** | Website (public, anonymous) |
 | **Audience** | Anyone (public marketing site) |
 | **Auth** | None — anonymous |
-| **Status** | ✅ Real (D-294 dynamic content; D-336 editorial sections CMS-driven) |
-| **Source** | [`index.html`](../../../src/Website/SIMF.Web/wwwroot/index.html) · [`content.js`](../../../src/Website/SIMF.Web/wwwroot/content.js) · [`SiteContentEndpoints.cs`](../../../src/Website/SIMF.Web/Endpoints/SiteContentEndpoints.cs) · [`LandingSectionContentKeys.cs`](../../../src/Shared/SIMF.Common/LandingSectionContentKeys.cs) |
+| **Status** | 🗑️ **Retired & deleted** — superseded by the Bootstrap SSR rebuild now serving `/`; see [`landing-rebuild.md`](landing-rebuild.md). The whole static landing was removed at the 2026-07-14 cutover: `index.html`, the leftover `index.legacy.html`, their renderer `content.js`, and `assets/figma/themes/bg-*.jpg`. |
+| **Source** | _(deleted at cutover)_ `wwwroot/index.html` · `wwwroot/index.legacy.html` · `wwwroot/content.js`. Still present: [`SiteContentEndpoints.cs`](../../../src/Website/SIMF.Web/Endpoints/SiteContentEndpoints.cs) (now unused) · [`LandingSectionContentKeys.cs`](../../../src/Shared/SIMF.Common/LandingSectionContentKeys.cs) |
 | **Last reviewed** | 2026-06-07 |
 
 ## 1. Purpose

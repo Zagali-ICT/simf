@@ -2,11 +2,11 @@
 
 | | |
 |--|--|
-| **Route** | `/landing` (Blazor SSR Razor page; slated to take over `/` at cutover) |
+| **Route** | `/` (primary, public homepage) + `/landing` (kept for existing links) — Blazor SSR Razor page |
 | **Surface** | Website (public, anonymous) |
 | **Audience** | Anyone (public marketing site) |
 | **Auth** | None — anonymous |
-| **Status** | ✅ Built — bilingual (AR RTL / EN LTR), responsive; awaiting owner sign-off for `/` cutover |
+| **Status** | ✅ Live at `/` — cutover done 2026-07-14; bilingual (AR RTL / EN LTR), responsive |
 | **Source** | [`Landing.razor`](../../../src/Website/SIMF.Web/Components/Pages/Landing.razor) · [`Landing.razor.cs`](../../../src/Website/SIMF.Web/Components/Pages/Landing.razor.cs) · [`LandingLayout.razor`](../../../src/Website/SIMF.Web/Components/Layout/LandingLayout.razor) · [`landing.css`](../../../src/Website/SIMF.Web/wwwroot/css/landing.css) · [`landing.js`](../../../src/Website/SIMF.Web/wwwroot/js/landing.js) |
 | **Strings** | [`Strings.resx`](../../../src/Website/SIMF.Web/Resources/Strings.resx) / [`Strings.ar.resx`](../../../src/Website/SIMF.Web/Resources/Strings.ar.resx) (`Landing.*` keys) |
 | **Figma** | KSA Maritime Forum — Home Page (Desktop AR/EN), node `5328:22998` |
@@ -20,9 +20,11 @@ threat-landscape marquee, participation stats, about, milestones, secondary-hero
 CTA, five key-theme pillars, the forum programme, speakers collage, partners band,
 sponsors carousel, news, discover-Saudi grid and footer.
 
-It coexists with the existing static `wwwroot/index.html` landing (still at `/`)
-until the owner approves the cutover; see [`landing.md`](landing.md) for the
-static page it supersedes.
+At the **2026-07-14 cutover** it replaced the old static `wwwroot/index.html`
+landing: `index.html` was deleted, `app.UseDefaultFiles()` was removed from
+`Program.cs` (so `/` falls through to endpoint routing), and `Landing.razor`
+gained `@page "/"` alongside its original `@page "/landing"`. See
+[`landing.md`](landing.md) for the retired static page it supersedes.
 
 ## 2. Architecture
 
@@ -123,6 +125,14 @@ at 1000/640px; sub-nav drops weather+venue on mobile. No horizontal overflow at
   `direction:ltr` to keep the Figma logo order (State Security first/left);
   the **sponsors** carousel is `direction:ltr` with its prev/next arrows wired
   (`initSponsors()` → `scrollBy`). Static rows still scroll by wheel/touch.
+- `/` cutover (2026-07-14, owner-approved): this rebuild is now the public
+  homepage. `UseDefaultFiles()` was removed and the old static landing deleted —
+  both the primary `wwwroot/index.html` and the leftover `wwwroot/index.legacy.html`,
+  their shared renderer `wwwroot/content.js` (5.2 MB), and the orphaned theme
+  backdrops `wwwroot/assets/figma/themes/bg-1..5.jpg`. The `/content/site` proxy
+  (`SiteContentEndpoints` + its `SimfPublicClient` reads + `SiteContentMapperTests`)
+  that fed `content.js` is now **unused** by any shipped page — retained pending an
+  owner decision to remove it or re-wire the SSR landing to a live feed.
 - Almarai is self-hosted (woff2 under `wwwroot/lib/almarai`, CSP-safe). Known
   minor follow-up: the hero-font `<link rel="preload">` href is fingerprinted
   while the `@font-face src` url is not, so the browser can't match them and the
