@@ -1,5 +1,6 @@
-// The public marketing landing (wwwroot/index.html) is a static client-rendered
-// page with a designed-in remote-content hook (content.js -> loadSiteContentRemote).
+// The legacy static marketing landing (wwwroot/index.legacy.html — the SSR
+// Bootstrap rebuild now owns "/") is a client-rendered page with a designed-in
+// remote-content hook (content.js -> loadSiteContentRemote).
 // This endpoint is that hook's data source: a same-origin GET that server-side
 // reads the API's anonymous public endpoints and reshapes them into the exact
 // JSON shape the landing's renderers consume (the SITE_DEFAULTS shape). It is a

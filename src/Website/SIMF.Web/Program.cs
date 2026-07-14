@@ -160,8 +160,9 @@ app.UseRequestLocalization(new RequestLocalizationOptions()
     .AddSupportedCultures(supportedCultures)
     .AddSupportedUICultures(supportedCultures));
 
-// Serve the imported static marketing site (wwwroot/index.html) at "/".
-app.UseDefaultFiles();
+// Static assets (bundled Bootstrap, self-hosted fonts, images). "/" is the
+// Blazor SSR marketing landing (Landing.razor @page "/") — no default-document
+// rewrite, so the request falls through to endpoint routing.
 app.UseStaticFiles();
 
 app.UseAuthentication();

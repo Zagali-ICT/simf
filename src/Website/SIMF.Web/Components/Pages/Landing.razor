@@ -3,8 +3,9 @@
    all interactions are progressive vanilla JS in wwwroot/js/landing.js.
    Bilingual: Arabic RTL / English LTR follow the request culture (the
    <html dir/lang> is set in App.razor); Bootstrap's RTL or LTR sheet is
-   chosen here to match. Built at /landing during the build wave; it takes
-   over "/" only at the final, verified cutover. *@
+   chosen here to match. Serves the public homepage at "/" (cutover done);
+   the /landing route is kept so existing links keep resolving. *@
+@page "/"
 @page "/landing"
 @layout LandingLayout
 @using System.Globalization
