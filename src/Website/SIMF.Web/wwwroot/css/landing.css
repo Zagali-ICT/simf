@@ -56,6 +56,10 @@
   --border-neutral: #d2d6db;
   --bg-gray: #f5f8fa;
   --white: #ffffff;
+  --gray-darker: #545555;
+  /* speaker-card photo gradient (blue → gold) */
+  --secondary-tint: #c7dceb;
+  --gold-tint: #f8ebce;
   /* radius / effect */
   --radius-sm: 4px;
   --radius-md: 8px;
@@ -580,4 +584,166 @@
 @media (prefers-reduced-motion: reduce) {
   .ln-loader__logo { animation: none; opacity: 1; }
   .ln-loader__bar span { animation: none; width: 100%; }
+}
+
+/* ============================================================= *
+ *  SPEAKERS PAGE  (/speakers — Figma 5840-26779)                *
+ *  Shared with the other ln- public pages: the event page-title *
+ *  band (ln-pagehero) and the speaker card/grid (ln-spkcard).   *
+ * ============================================================= */
+
+/* -- Event page-title band: logo lockup + theme + date/time/venue -- */
+.landing .ln-pagehero { background: var(--white); }
+.landing .ln-pagehero__inner {
+  max-width: var(--content-w);
+  margin-inline: auto;
+  padding: 64px 80px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 64px;
+}
+.landing .ln-pagehero__info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: start;
+  gap: 24px;
+  min-width: 0;
+}
+.landing .ln-pagehero__title {
+  margin: 0;
+  font-weight: 800;
+  font-size: 40px;
+  line-height: 1;
+  color: var(--navy);
+  text-align: start;
+  max-width: 536px;
+}
+.landing .ln-pagehero__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--navy);
+}
+.landing .ln-pagehero__meta img { width: 24px; height: 24px; flex-shrink: 0; }
+.landing .ln-pagehero__logo { width: 326px; height: 256px; object-fit: contain; flex-shrink: 0; }
+
+/* -- Speakers grid section -- */
+.landing .ln-speakers { background: var(--bg-gray); }
+.landing .ln-speakers__inner {
+  max-width: var(--content-w);
+  margin-inline: auto;
+  padding: 128px 24px;
+}
+.landing .ln-speakers__head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: start;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+.landing .ln-speakers__title {
+  margin: 0;
+  font-weight: 800;
+  font-size: 32px;
+  line-height: 1;
+  color: var(--gold-dark);
+}
+.landing .ln-speakers__desc {
+  margin: 0;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--ink);
+  max-width: 720px;
+}
+.landing .ln-speakers__empty {
+  text-align: center;
+  color: var(--ink);
+  padding: 40px 0;
+}
+.landing .ln-speakers-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px;
+}
+
+/* -- Speaker card: ringed gradient photo + name + gold role pill + location -- */
+.landing .ln-spkcard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+.landing .ln-spkcard__photo {
+  width: 100%;
+  height: 296px;
+  border: 0.5px solid #f1f2f2;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 0 0 5px var(--white);
+  overflow: hidden;
+  background: linear-gradient(231deg, var(--secondary-tint) 0%, var(--gold-tint) 100%);
+}
+.landing .ln-spkcard__photo img { width: 100%; height: 100%; object-fit: cover; }
+.landing .ln-spkcard__body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  text-align: center;
+}
+.landing .ln-spkcard__name {
+  margin: 0;
+  font-weight: 800;
+  font-size: 18px;
+  line-height: 28px;
+  color: var(--ink-display);
+  width: 100%;
+}
+.landing .ln-spkcard__role {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gold-light);
+  border: 0.5px solid var(--gold);
+  border-radius: 2px;
+  padding: 4px 8px;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--gold-dark);
+}
+.landing .ln-spkcard__loc {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--gray-darker);
+}
+.landing .ln-spkcard__loc img { width: 16px; height: 16px; flex-shrink: 0; }
+
+/* -- Speakers responsive: 4 → 3 → 2 → 1 columns; band stacks -- */
+@media (max-width: 1100px) {
+  .landing .ln-speakers-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 860px) {
+  .landing .ln-speakers-grid { grid-template-columns: repeat(2, 1fr); }
+  .landing .ln-pagehero__inner { flex-direction: column-reverse; align-items: flex-start; gap: 40px; }
+  .landing .ln-pagehero__logo { width: 240px; height: auto; }
+}
+@media (max-width: 560px) {
+  .landing .ln-speakers-grid { grid-template-columns: 1fr; }
+  .landing .ln-pagehero__inner { padding: 40px 20px; }
+  .landing .ln-pagehero__title { font-size: 28px; }
+  .landing .ln-speakers__inner { padding: 64px 20px; }
+  .landing .ln-speakers__title { font-size: 26px; }
 }

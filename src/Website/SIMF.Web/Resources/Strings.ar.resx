@@ -314,4 +314,14 @@
   <data name="Meeting.Confirm.Submitting" xml:space="preserve"><value>جارٍ الإرسال…</value></data>
   <data name="Meeting.Confirm.Done.Approve" xml:space="preserve"><value>شكراً لك — تم تأكيد الاجتماع.</value></data>
   <data name="Meeting.Confirm.Done.Reject" xml:space="preserve"><value>شكراً لك — تم رفض الاجتماع.</value></data>
+  <data name="Speakers.PageTitle" xml:space="preserve"><value>المتحدثون — الملتقى البحري السعودي الدولي</value></data>
+  <data name="Speakers.Meta" xml:space="preserve"><value>المتحدثون والمشاركون في الملتقى البحري السعودي الدولي 2026.</value></data>
+  <data name="Speakers.Band.Aria" xml:space="preserve"><value>تفاصيل الملتقى</value></data>
+  <data name="Speakers.Band.Theme" xml:space="preserve"><value>الموضوع: السيادة، الاقتصاد والمجتمع</value></data>
+  <data name="Speakers.Band.Date" xml:space="preserve"><value>23–25 نوفمبر 2026</value></data>
+  <data name="Speakers.Band.Time" xml:space="preserve"><value>2:30 مساءً</value></data>
+  <data name="Speakers.Band.Venue" xml:space="preserve"><value>فندق ومركز مؤتمرات سوفيتيل الرياض، المملكة العربية السعودية</value></data>
+  <data name="Speakers.Section.Title" xml:space="preserve"><value>أبرز المتحدثين والمشاركين</value></data>
+  <data name="Speakers.Section.Desc" xml:space="preserve"><value>نخبة من صنّاع القرار وقادة البحرية وخبراء الصناعة الذين يرسمون مستقبل الأمن البحري.</value></data>
+  <data name="Speakers.Empty" xml:space="preserve"><value>سيتم الإعلان عن المتحدثين قريباً.</value></data>
 </root>

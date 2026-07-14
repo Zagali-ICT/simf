@@ -1,0 +1,66 @@
+@* SIMF public Speakers page — Figma node 5840-26779. Built on the shared
+   LandingShell chrome; live speaker data via SimfPublicClient (see the
+   Speakers.razor.cs code-behind). Bilingual AR-RTL / EN-LTR. *@
+@page "/speakers"
+@layout LandingLayout
+@inject IStringLocalizer<Strings> L
+
+<LandingShell Title="@L["Speakers.PageTitle"]" Description="@L["Speakers.Meta"]">
+
+    @* ===== Event page-title band: logo lockup + theme + date/time/venue ===== *@
+    <section class="ln-pagehero" aria-label="@L["Speakers.Band.Aria"]">
+        <div class="ln-pagehero__inner">
+            <div class="ln-pagehero__info ln-reveal">
+                <h1 class="ln-pagehero__title">@L["Speakers.Band.Theme"]</h1>
+                <span class="ln-pagehero__meta"><img src="assets/figma/secondnav/icon-calendar.svg" alt="" />@L["Speakers.Band.Date"]</span>
+                <span class="ln-pagehero__meta"><img src="assets/figma/secondnav/icon-clock.svg" alt="" />@L["Speakers.Band.Time"]</span>
+                <span class="ln-pagehero__meta"><img src="assets/figma/secondnav/icon-location.svg" alt="" />@L["Speakers.Band.Venue"]</span>
+            </div>
+            <img class="ln-pagehero__logo" src="assets/figma/speakers-page/hero-logo.png" alt="@L["Brand.LogoAlt"]" />
+        </div>
+    </section>
+
+    @* ===== Speakers grid (live data) ===== *@
+    <section class="ln-speakers" aria-label="@L["Speakers.Section.Title"]">
+        <div class="ln-speakers__inner">
+            <header class="ln-speakers__head ln-reveal">
+                <h2 class="ln-speakers__title">@L["Speakers.Section.Title"]</h2>
+                <p class="ln-speakers__desc">@L["Speakers.Section.Desc"]</p>
+            </header>
+            @if (SpeakerList.Count == 0)
+            {
+                <p class="ln-speakers__empty">@L["Speakers.Empty"]</p>
+            }
+            else
+            {
+                <div class="ln-speakers-grid ln-reveal">
+                    @foreach (var sp in SpeakerList)
+                    {
+                        var photo = PhotoUrl(sp);
+                        var loc = LocationName(sp);
+                        <article class="ln-spkcard">
+                            <div class="ln-spkcard__photo">
+                                @if (!string.IsNullOrEmpty(photo))
+                                {
+                                    <img src="@photo" alt="@DisplayName(sp)" loading="lazy" />
+                                }
+                            </div>
+                            <div class="ln-spkcard__body">
+                                <p class="ln-spkcard__name">@DisplayName(sp)</p>
+                                @if (!string.IsNullOrWhiteSpace(sp.Rank))
+                                {
+                                    <span class="ln-spkcard__role">@sp.Rank</span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(loc))
+                                {
+                                    <span class="ln-spkcard__loc"><img src="assets/figma/footer/icon-location.svg" alt="" />@loc</span>
+                                }
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+        </div>
+    </section>
+
+</LandingShell>

@@ -48,7 +48,7 @@ public static class LandingChrome
             new("Landing.Nav.Programs.GovMeetings", "#"),
             new("Landing.Nav.Programs.Visit", "#"),
         ]),
-        new("Landing.Nav.Speakers", "Landing.Nav.Speakers", [], Href: "#speakers"),
+        new("Landing.Nav.Speakers", "Landing.Nav.Speakers", [], Href: "/speakers"),
         new("Landing.Nav.Discover", "Landing.Nav.Discover",
         [
             new("Landing.Nav.Discover.About", "#"),

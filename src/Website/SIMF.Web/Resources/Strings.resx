@@ -314,4 +314,14 @@
   <data name="Meeting.Confirm.Submitting" xml:space="preserve"><value>Submitting…</value></data>
   <data name="Meeting.Confirm.Done.Approve" xml:space="preserve"><value>Thank you — the meeting is confirmed.</value></data>
   <data name="Meeting.Confirm.Done.Reject" xml:space="preserve"><value>Thank you — the meeting was declined.</value></data>
+  <data name="Speakers.PageTitle" xml:space="preserve"><value>Speakers — Saudi International Maritime Forum</value></data>
+  <data name="Speakers.Meta" xml:space="preserve"><value>The speakers and participants of the Saudi International Maritime Forum 2026.</value></data>
+  <data name="Speakers.Band.Aria" xml:space="preserve"><value>Forum details</value></data>
+  <data name="Speakers.Band.Theme" xml:space="preserve"><value>Theme: Sovereignty, Economy and Society</value></data>
+  <data name="Speakers.Band.Date" xml:space="preserve"><value>23–25 November 2026</value></data>
+  <data name="Speakers.Band.Time" xml:space="preserve"><value>2:30 PM</value></data>
+  <data name="Speakers.Band.Venue" xml:space="preserve"><value>Sofitel Riyadh Hotel &amp; Convention Center, Saudi Arabia</value></data>
+  <data name="Speakers.Section.Title" xml:space="preserve"><value>Featured speakers &amp; participants</value></data>
+  <data name="Speakers.Section.Desc" xml:space="preserve"><value>A distinguished roster of decision-makers, naval leaders and industry experts shaping the future of maritime security.</value></data>
+  <data name="Speakers.Empty" xml:space="preserve"><value>Speakers will be announced soon.</value></data>
 </root>
