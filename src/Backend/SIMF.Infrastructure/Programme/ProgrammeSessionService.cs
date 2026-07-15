@@ -305,6 +305,8 @@ internal sealed class ProgrammeSessionService(
                 CategoryName = session.Category != null ? session.Category.Name : null,
                 CategoryNameArabic =
                     session.Category != null ? session.Category.NameArabic : null,
+                session.Language,
+                session.LanguageArabic,
                 Themes = session.Themes
                     .Where(link => link.Theme!.IsActive)
                     .Select(link => new
@@ -314,6 +316,8 @@ internal sealed class ProgrammeSessionService(
                         link.Theme!.NameArabic,
                         link.Theme!.PageColor,
                         link.Theme!.DisplayOrder,
+                        link.Theme!.Description,
+                        link.Theme!.DescriptionArabic,
                     })
                     .ToList(),
                 Speakers = session.Speakers
@@ -329,6 +333,13 @@ internal sealed class ProgrammeSessionService(
                         link.Speaker!.CountryId,
                         link.Speaker!.PhotoRelativePath,
                     })
+                    .ToList(),
+                // Website Session-detail "أبرز المخرجات" bullets (Figma 5991-85840),
+                // active + ordered.
+                Outcomes = session.Outcomes
+                    .Where(outcome => outcome.IsActive)
+                    .OrderBy(outcome => outcome.DisplayOrder)
+                    .Select(outcome => new { outcome.Text, outcome.TextArabic })
                     .ToList(),
             })
             .SingleOrDefaultAsync(cancellationToken);
@@ -354,7 +365,9 @@ internal sealed class ProgrammeSessionService(
                 theme.Id,
                 theme.Name,
                 theme.NameArabic,
-                theme.PageColor))
+                theme.PageColor,
+                theme.Description,
+                theme.DescriptionArabic))
             .ToList();
 
         // §7: resolve the country names for the detail's speakers in one query.
@@ -393,6 +406,11 @@ internal sealed class ProgrammeSessionService(
             effectiveCapacity,
             reserved,
             Math.Max(0, effectiveCapacity - reserved));
+
+        // Website Session-detail "أبرز المخرجات" — already active + ordered above.
+        var outcomes = row.Outcomes
+            .Select(outcome => new PublicSessionOutcome(outcome.Text, outcome.TextArabic))
+            .ToList();
 
         // D-567 (Figma 889:2604) — the gold badge shows the session's 1-based
         // position within its day. A6c — match the agenda's day grouping exactly:
@@ -442,7 +460,11 @@ internal sealed class ProgrammeSessionService(
             row.LiveCaptions,
             row.LiveCaptionsArabic,
             // D-567: the gold-badge ordinal (1-based position within the day).
-            displayOrder);
+            displayOrder,
+            // Website Session-detail (Figma 5991-85840): outcomes + language label.
+            outcomes,
+            row.Language,
+            row.LanguageArabic);
     }
 
     public async Task<SessionRecordingRef?> GetPublishedRecordingAsync(

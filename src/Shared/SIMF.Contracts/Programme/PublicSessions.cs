@@ -120,7 +120,21 @@ public sealed record PublicSessionDetail(
     // within its day (sessions ordered by StartUtc), e.g. 2 → the badge shows
     // "02". Computed by the service; 0 = unknown (an older API → the app falls
     // back to the code on the badge). Appended (append-only, D-219).
-    int DisplayOrder = 0);
+    int DisplayOrder = 0,
+    // Website Session-detail (Figma 5991-85840): the "أبرز المخرجات" key-outcome
+    // bullets (ordered) and the "at a glance" card's bilingual language label.
+    // Sourced from the SessionOutcome table + Session.Language. Appended
+    // (append-only, D-219) — null/empty on an older API and the app ignores them.
+    IReadOnlyList<PublicSessionOutcome>? Outcomes = null,
+    string? Language = null,
+    string? LanguageArabic = null);
+
+/// <summary>One bilingual key-outcome bullet on the public session-detail page
+/// ("أبرز المخرجات", Figma 5991-85840), in the session's display order. Sourced
+/// from the <c>SessionOutcome</c> table.</summary>
+public sealed record PublicSessionOutcome(
+    string Text,
+    string TextArabic);
 
 /// <summary>D-199 — one theme/pillar tag on a public session. Order
 /// follows the session's theme order; the first is the primary pillar
@@ -129,7 +143,12 @@ public sealed record PublicSessionTheme(
     Guid Id,
     string Name,
     string NameArabic,
-    string Color);
+    string Color,
+    // Website Session-detail "المحاور الرئيسية" cards (Figma 5991-85840) render the
+    // theme description under the name. Sourced from the existing Theme.Description
+    // columns. Appended (append-only, D-219) — the app ignores them.
+    string? Description = null,
+    string? DescriptionArabic = null);
 
 /// <summary>D-199 — one speaker on the public session detail card.
 /// <see cref="Title"/> is the speaker's rank/role (Mockup "Chief
