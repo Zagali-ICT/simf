@@ -40,9 +40,7 @@ class JoinSessionHubScreen extends ConsumerWidget {
       onBack: () => backOrHome(context),
       tab: SimfTab.sessions,
       body: sessions.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: SimfTokens.accent),
-        ),
+        loading: () => const SimfLoadingState(),
         error: (_, __) => SimfPullToRefresh(
           onRefresh: () => _refresh(ref),
           child: SimfPullableHost(

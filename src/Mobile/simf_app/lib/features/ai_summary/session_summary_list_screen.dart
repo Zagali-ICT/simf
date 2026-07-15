@@ -76,9 +76,7 @@ class _SessionSummaryListScreenState
           const SizedBox(height: SimfTokens.space3),
           Expanded(
             child: sessions.when(
-              loading: () => const Center(
-                child: CircularProgressIndicator(color: SimfTokens.accent),
-              ),
+              loading: () => const SimfLoadingState(),
               error: (_, __) => SimfPullToRefresh(
                 onRefresh: _refresh,
                 child: SimfPullableHost(

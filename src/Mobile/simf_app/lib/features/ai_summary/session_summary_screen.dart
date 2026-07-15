@@ -153,9 +153,7 @@ class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
       title: l10n.aiSummaryTitle,
       onBack: () => backOrHome(context),
       body: sessions.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: SimfTokens.accent),
-        ),
+        loading: () => const SimfLoadingState(),
         error: (_, __) => SimfEmptyState(
           icon: Icons.event_busy_outlined,
           message: l10n.aiSummaryNoSessions,

@@ -62,9 +62,7 @@ class _SessionPresentationsScreenState
       title: l10n.sessionPresentationsTitle,
       onBack: () => backOrHome(context),
       body: presentations.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: SimfTokens.accent),
-        ),
+        loading: () => const SimfLoadingState(),
         error: (_, __) => SimfPullToRefresh(
           onRefresh: _refresh,
           child: SimfPullableHost(

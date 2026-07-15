@@ -1090,3 +1090,17 @@ class SimfEmptyState extends StatelessWidget {
     );
   }
 }
+
+/// The standard loading surface: the accent spinner, centered — one home for the
+/// loader chrome so screens don't re-emit the raw indicator. Completes the
+/// loading / error / empty triad with [SimfErrorState] and [SimfEmptyState].
+class SimfLoadingState extends StatelessWidget {
+  const SimfLoadingState({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: CircularProgressIndicator(color: SimfTokens.accent),
+    );
+  }
+}

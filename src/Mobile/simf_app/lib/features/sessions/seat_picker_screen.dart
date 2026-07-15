@@ -133,9 +133,7 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
 
   Widget _buildBody(AppL10n l10n) {
     if (_loading) {
-      return const Center(
-        child: CircularProgressIndicator(color: SimfTokens.accent),
-      );
+      return const SimfLoadingState();
     }
     if (_notFound) {
       return SimfEmptyState(
