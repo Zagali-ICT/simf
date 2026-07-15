@@ -324,4 +324,34 @@
   <data name="Speakers.Section.Title" xml:space="preserve"><value>أبرز المتحدثين والمشاركين</value></data>
   <data name="Speakers.Section.Desc" xml:space="preserve"><value>نخبة من صنّاع القرار وقادة البحرية وخبراء الصناعة الذين يرسمون مستقبل الأمن البحري.</value></data>
   <data name="Speakers.Empty" xml:space="preserve"><value>سيتم الإعلان عن المتحدثين قريباً.</value></data>
+  <data name="SessionDetail.BrandShort" xml:space="preserve"><value>الملتقى البحري السعودي الدولي</value></data>
+  <data name="SessionDetail.Meta" xml:space="preserve"><value>تفاصيل الجلسة — الملتقى البحري السعودي الدولي 2026.</value></data>
+  <data name="SessionDetail.NotFound.Title" xml:space="preserve"><value>الجلسة غير موجودة</value></data>
+  <data name="SessionDetail.NotFound.Body" xml:space="preserve"><value>ربما تم إلغاء نشر هذه الجلسة أو أن الرابط لم يعد صالحاً.</value></data>
+  <data name="SessionDetail.NotFound.Back" xml:space="preserve"><value>العودة إلى البرنامج</value></data>
+  <data name="SessionDetail.Hero.Aria" xml:space="preserve"><value>ملخص الجلسة</value></data>
+  <data name="SessionDetail.Breadcrumb.Home" xml:space="preserve"><value>الرئيسية</value></data>
+  <data name="SessionDetail.Breadcrumb.Current" xml:space="preserve"><value>تفاصيل الجلسة</value></data>
+  <data name="SessionDetail.Glance.Title" xml:space="preserve"><value>في لمحة</value></data>
+  <data name="SessionDetail.Glance.Track" xml:space="preserve"><value>المسار</value></data>
+  <data name="SessionDetail.Glance.Language" xml:space="preserve"><value>اللغة</value></data>
+  <data name="SessionDetail.Glance.Hall" xml:space="preserve"><value>القاعة</value></data>
+  <data name="SessionDetail.Glance.Capacity" xml:space="preserve"><value>السعة</value></data>
+  <data name="SessionDetail.Glance.CapacityValue" xml:space="preserve"><value>{0} مقعد</value></data>
+  <data name="SessionDetail.Glance.Live" xml:space="preserve"><value>البث المباشر</value></data>
+  <data name="SessionDetail.Glance.Yes" xml:space="preserve"><value>نعم</value></data>
+  <data name="SessionDetail.Glance.No" xml:space="preserve"><value>لا</value></data>
+  <data name="SessionDetail.Overview.Title" xml:space="preserve"><value>لماذا هذه الجلسة مهمة</value></data>
+  <data name="SessionDetail.Overview.Subtitle" xml:space="preserve"><value>نظرة عامة على الجلسة</value></data>
+  <data name="SessionDetail.Themes.Title" xml:space="preserve"><value>المحاور الرئيسية</value></data>
+  <data name="SessionDetail.Themes.Subtitle" xml:space="preserve"><value>محاور تركيز الجلسة</value></data>
+  <data name="SessionDetail.Speakers.Title" xml:space="preserve"><value>المتحدثون</value></data>
+  <data name="SessionDetail.Speakers.Subtitle" xml:space="preserve"><value>نخبة من صنّاع القرار والخبراء</value></data>
+  <data name="SessionDetail.Speakers.Empty" xml:space="preserve"><value>سيتم الإعلان عن المتحدثين قريباً.</value></data>
+  <data name="SessionDetail.Related.Title" xml:space="preserve"><value>واصل أجندتك</value></data>
+  <data name="SessionDetail.Related.Subtitle" xml:space="preserve"><value>جلسات ذات صلة</value></data>
+  <data name="SessionDetail.Related.View" xml:space="preserve"><value>عرض التفاصيل</value></data>
+  <data name="SessionDetail.Downloads.Title" xml:space="preserve"><value>روابط التحميل</value></data>
+  <data name="SessionDetail.Outcomes.Title" xml:space="preserve"><value>أبرز المخرجات</value></data>
+  <data name="SessionDetail.Outcomes.Subtitle" xml:space="preserve"><value>ما الذي ستخرج به</value></data>
 </root>

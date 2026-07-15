@@ -377,6 +377,20 @@ internal sealed class ProgrammeSessionService(
                 .Select(speaker => speaker.CountryId!.Value),
             cancellationToken);
 
+        // D-357/D-568 — which of the detail's speakers have an active photo asset
+        // (one batched query; OwnerEntityId is the speaker id), so the Website
+        // page can serve the portrait via the /content/assets/SpeakerPhoto proxy.
+        var speakerIds = row.Speakers.Select(speaker => speaker.Id).ToList();
+        var speakersWithPhoto = (await dbContext.StoredFiles
+            .AsNoTracking()
+            .Where(file => file.Service == FileService.SpeakerPhoto
+                && file.IsActive
+                && file.OwnerEntityId != null
+                && speakerIds.Contains(file.OwnerEntityId.Value))
+            .Select(file => file.OwnerEntityId!.Value)
+            .ToListAsync(cancellationToken))
+            .ToHashSet();
+
         var speakers = row.Speakers
             .OrderBy(speaker => speaker.DisplayOrder)
             .Select(speaker =>
@@ -398,7 +412,8 @@ internal sealed class ProgrammeSessionService(
                     speaker.CountryId,
                     countryEn,
                     countryAr,
-                    speaker.PhotoRelativePath);
+                    speaker.PhotoRelativePath,
+                    speakersWithPhoto.Contains(speaker.Id));
             })
             .ToList();
 

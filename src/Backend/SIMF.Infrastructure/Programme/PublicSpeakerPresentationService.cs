@@ -83,4 +83,24 @@ internal sealed class PublicSpeakerPresentationService(
             db, fileStorage, row.StoredFileName, cancellationToken);
         return bytes is null ? null : (bytes, row.ContentType, row.FileName);
     }
+
+    public async Task<(byte[] Content, string ContentType, string FileName)?> GetFileAsync(
+        Guid sessionId, Guid presentationId, CancellationToken cancellationToken = default)
+    {
+        // The session scope is the authorisation for the anonymous website route:
+        // the presentation must belong to THIS session (and both be active).
+        var row = await db.SpeakerPresentations.AsNoTracking()
+            .Where(p => p.Id == presentationId && p.SessionId == sessionId
+                && p.IsActive && p.Session!.IsActive)
+            .Select(p => new { p.StoredFileName, p.ContentType, p.FileName })
+            .SingleOrDefaultAsync(cancellationToken);
+        if (row is null)
+        {
+            return null;
+        }
+
+        var bytes = await PresentationFileReader.ReadBytesAsync(
+            db, fileStorage, row.StoredFileName, cancellationToken);
+        return bytes is null ? null : (bytes, row.ContentType, row.FileName);
+    }
 }

@@ -127,6 +127,24 @@ internal static class SiteContentEndpoints
             http.Response.Headers.CacheControl = "public, max-age=300";
             return Results.File(bytes, contentType);
         });
+
+        // Re-streams one session presentation file same-origin so the public
+        // Session-detail "روابط التحميل" links download without reaching the API
+        // origin directly (owner decision 2026-07-15: these files are public on
+        // the website). The (sessionId, presentationId) pair is validated
+        // server-side to belong together — the API 404s otherwise. Served as an
+        // attachment with the original file name.
+        routes.MapGet("/content/sessions/{sessionId:guid}/downloads/{presentationId:guid}",
+            async (Guid sessionId, Guid presentationId, SimfPublicClient api, CancellationToken ct) =>
+        {
+            var (status, contentType, fileName, bytes) =
+                await api.FetchSessionDownloadAsync(sessionId, presentationId, ct);
+            if (status != 200 || contentType is null || bytes.Length == 0)
+            {
+                return Results.StatusCode(status);
+            }
+            return Results.File(bytes, contentType, fileDownloadName: fileName);
+        });
     }
 
     private static async Task<Dictionary<string, object?>> BuildAsync(

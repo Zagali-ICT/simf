@@ -773,3 +773,187 @@
   .landing .ln-spklist__inner { padding: 64px 20px; }
   .landing .ln-spklist__title { font-size: 26px; }
 }
+
+/* ============================================================= *
+ *  SESSION DETAIL PAGE  (/sessions/{id} — Figma 5991-85840)      *
+ *  Reuses ln-ico + ln-spklist/ln-spkcard; adds the hero,         *
+ *  at-a-glance card, theme cards, related cards, downloads +     *
+ *  outcomes. Translucent fills use color-mix over tokens so no   *
+ *  raw colours leak in.                                          *
+ * ============================================================= */
+
+/* extra recolorable glyphs for this page */
+.landing .ln-ico--star     { -webkit-mask-image: url("/assets/figma/session-detail/icon-star.svg");     mask-image: url("/assets/figma/session-detail/icon-star.svg"); }
+.landing .ln-ico--doc      { -webkit-mask-image: url("/assets/figma/session-detail/icon-document.svg"); mask-image: url("/assets/figma/session-detail/icon-document.svg"); }
+.landing .ln-ico--download { -webkit-mask-image: url("/assets/figma/session-detail/icon-download.svg"); mask-image: url("/assets/figma/session-detail/icon-download.svg"); }
+.landing .ln-ico--check    { -webkit-mask-image: url("/assets/figma/session-detail/icon-check.svg");    mask-image: url("/assets/figma/session-detail/icon-check.svg"); }
+
+/* -- 1. Hero band: navy gradient + breadcrumb + chip + title + pills -- */
+.landing .ln-sesshero {
+  background: linear-gradient(269deg, var(--navy) 0%, var(--primary) 55%, var(--secondary-dark) 100%);
+}
+.landing .ln-sesshero__inner {
+  max-width: var(--content-w);
+  margin-inline: auto;
+  padding: 48px 80px;
+  min-height: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 24px;
+  text-align: start;
+}
+.landing .ln-sesshero__crumbs {
+  display: flex; gap: 8px; align-items: center;
+  font-size: 14px; color: color-mix(in srgb, var(--white) 85%, transparent);
+}
+.landing .ln-sesshero__crumbs a { color: color-mix(in srgb, var(--white) 85%, transparent); text-decoration: none; }
+.landing .ln-sesshero__crumbs a:hover { text-decoration: underline; }
+.landing .ln-sesshero__chip {
+  display: inline-flex; align-items: center;
+  background: var(--gold); color: var(--gold-darker);
+  font-weight: 800; font-size: 14px;
+  padding: 4px 12px; border-radius: var(--radius-full);
+}
+.landing .ln-sesshero__title {
+  margin: 0; font-weight: 800; font-size: 40px; line-height: 1.1;
+  color: var(--white); max-width: 640px;
+}
+.landing .ln-sesshero__title:focus,
+.landing .ln-sesshero__title:focus-visible { box-shadow: none; outline: none; }
+.landing .ln-sesshero__lead {
+  margin: 0; font-weight: 400; font-size: 18px; line-height: 32px;
+  color: color-mix(in srgb, var(--white) 92%, transparent); max-width: 620px;
+}
+.landing .ln-sesshero__pills { display: flex; flex-wrap: wrap; gap: 12px; }
+.landing .ln-sesshero__pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: color-mix(in srgb, var(--gold) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gold) 20%, transparent);
+  border-radius: var(--radius-sm); padding: 10px 16px;
+  color: var(--white); font-size: 13px;
+}
+.landing .ln-sesshero__pill .ln-ico { width: 16px; height: 16px; background-color: var(--gold); }
+
+/* -- 2. Overview: at-a-glance sidebar + about text -- */
+.landing .ln-sessoverview { background: var(--white); }
+.landing .ln-sessoverview__inner {
+  max-width: var(--content-w); margin-inline: auto; padding: 64px 80px;
+  display: grid; grid-template-columns: 360px 1fr; gap: 56px; align-items: start;
+}
+.landing .ln-glance {
+  border: 1px solid var(--border-neutral); border-radius: var(--radius-md); padding: 24px;
+}
+.landing .ln-glance__title { margin: 0 0 8px; font-weight: 800; font-size: 18px; color: var(--ink-display); text-align: start; }
+.landing .ln-glance__list { margin: 0; }
+.landing .ln-glance__row {
+  display: flex; justify-content: space-between; gap: 16px;
+  padding: 12px 0; border-bottom: 1px solid var(--border-neutral);
+}
+.landing .ln-glance__row:last-child { border-bottom: 0; }
+.landing .ln-glance__row dt { margin: 0; color: var(--gray-darker); font-size: 14px; }
+.landing .ln-glance__row dd { margin: 0; color: var(--ink-display); font-weight: 700; font-size: 14px; text-align: end; }
+.landing .ln-sessabout__head { margin-bottom: 16px; }
+.landing .ln-sessabout__title { margin: 0; font-weight: 800; font-size: 32px; color: var(--gold-dark); text-align: start; }
+.landing .ln-sessabout__subtitle { margin: 8px 0 0; font-weight: 400; font-size: 18px; color: var(--ink); text-align: start; }
+.landing .ln-sessabout__body { margin: 16px 0 0; font-size: 16px; line-height: 28px; color: var(--ink); text-align: start; }
+
+/* -- 3. Key themes (navy section, gold-badged cards) -- */
+.landing .ln-sessthemes { background: var(--navy); }
+.landing .ln-sessthemes__inner { max-width: var(--content-w); margin-inline: auto; padding: 64px 80px; }
+.landing .ln-sessthemes__head { margin-bottom: 32px; text-align: start; }
+.landing .ln-sessthemes__title { margin: 0; font-weight: 800; font-size: 32px; color: var(--white); }
+.landing .ln-sessthemes__subtitle { margin: 8px 0 0; font-weight: 400; font-size: 18px; color: color-mix(in srgb, var(--white) 75%, transparent); }
+.landing .ln-sessthemes__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.landing .ln-tcard {
+  display: flex; flex-direction: column; gap: 16px; align-items: flex-start;
+  background: color-mix(in srgb, var(--primary) 50%, transparent);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-sm); padding: 24px; box-shadow: var(--shadow-card);
+}
+.landing .ln-tcard__icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 54px; height: 54px; border-radius: var(--radius-sm); background: var(--gold);
+}
+.landing .ln-tcard__icon .ln-ico { width: 24px; height: 24px; background-color: var(--gold-darker); }
+.landing .ln-tcard__name { margin: 0; font-weight: 700; font-size: 20px; line-height: 28px; color: var(--white); text-align: start; }
+.landing .ln-tcard__desc { margin: 0; font-weight: 400; font-size: 14px; line-height: 22px; color: var(--bg-gray); text-align: start; }
+
+/* -- 5. Related sessions -- */
+.landing .ln-sessrelated { background: var(--bg-gray); }
+.landing .ln-sessrelated__inner { max-width: var(--content-w); margin-inline: auto; padding: 64px 80px; }
+.landing .ln-sessrelated__head { margin-bottom: 32px; text-align: start; }
+.landing .ln-sessrelated__title { margin: 0; font-weight: 800; font-size: 32px; color: var(--gold-dark); }
+.landing .ln-sessrelated__subtitle { margin: 8px 0 0; font-weight: 400; font-size: 18px; color: var(--ink); }
+.landing .ln-sessrelated__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.landing .ln-rcard {
+  display: flex; flex-direction: column; background: var(--navy);
+  border-radius: var(--radius-md); overflow: hidden; text-decoration: none;
+  box-shadow: var(--shadow-card);
+}
+.landing .ln-rcard__media { display: block; height: 180px; background: linear-gradient(231deg, var(--secondary-tint), var(--gold-tint)); }
+.landing .ln-rcard__body { display: flex; flex-direction: column; gap: 12px; padding: 24px; }
+.landing .ln-rcard__meta, .landing .ln-rcard__hall { display: inline-flex; align-items: center; gap: 6px; color: color-mix(in srgb, var(--white) 75%, transparent); font-size: 13px; }
+.landing .ln-rcard__meta .ln-ico, .landing .ln-rcard__hall .ln-ico { width: 16px; height: 16px; background-color: var(--gold); }
+.landing .ln-rcard__title { font-weight: 700; font-size: 18px; line-height: 26px; color: var(--white); }
+.landing .ln-rcard__cta { margin-top: 4px; font-weight: 700; font-size: 14px; color: var(--gold); }
+
+/* -- 6. Downloads + outcomes (two columns) -- */
+.landing .ln-sessreach { background: var(--white); }
+.landing .ln-sessreach__inner {
+  max-width: var(--content-w); margin-inline: auto; padding: 64px 80px;
+  display: grid; grid-template-columns: 440px 1fr; gap: 56px; align-items: start;
+}
+.landing .ln-downloads__title, .landing .ln-outcomes__title { margin: 0; font-weight: 800; font-size: 32px; color: var(--gold-dark); text-align: start; }
+.landing .ln-downloads__list { list-style: none; margin: 24px 0 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.landing .ln-docrow__link {
+  display: flex; align-items: center; gap: 16px;
+  border: 1px solid var(--border-neutral); border-radius: var(--radius-sm);
+  padding: 16px; text-decoration: none;
+}
+.landing .ln-docrow__link:hover { border-color: var(--gold); background: var(--gold-light); }
+.landing .ln-docrow__icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: var(--radius-sm); background: var(--gold-light); flex-shrink: 0;
+}
+.landing .ln-docrow__icon .ln-ico { width: 20px; height: 20px; background-color: var(--gold-dark); }
+.landing .ln-docrow__text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; text-align: start; }
+.landing .ln-docrow__name { font-weight: 700; font-size: 14px; color: var(--ink-display); word-break: break-word; }
+.landing .ln-docrow__size { font-size: 12px; color: var(--gray-darker); }
+.landing .ln-docrow__dl .ln-ico { width: 20px; height: 20px; background-color: var(--gray-darker); flex-shrink: 0; }
+.landing .ln-outcomes__head { margin-bottom: 16px; }
+.landing .ln-outcomes__subtitle { margin: 8px 0 0; font-weight: 400; font-size: 18px; color: var(--ink); text-align: start; }
+.landing .ln-outcomes__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+.landing .ln-outcomes__item { display: flex; align-items: flex-start; gap: 12px; }
+.landing .ln-outcomes__check {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: var(--radius-full); background: var(--gold-light); flex-shrink: 0;
+}
+.landing .ln-outcomes__check .ln-ico { width: 16px; height: 16px; background-color: var(--gold-dark); }
+.landing .ln-outcomes__text { font-size: 16px; line-height: 24px; color: var(--ink); text-align: start; }
+
+/* -- Not-found state -- */
+.landing .ln-sessmissing { background: var(--bg-gray); }
+.landing .ln-sessmissing__inner { max-width: var(--content-w); margin-inline: auto; padding: 96px 80px; text-align: center; }
+.landing .ln-sessmissing__title { margin: 0; font-weight: 800; font-size: 32px; color: var(--ink-display); }
+.landing .ln-sessmissing__body { margin: 16px 0 24px; font-size: 16px; color: var(--ink); }
+.landing .ln-sessmissing__link {
+  display: inline-block; background: var(--gold); color: var(--gold-darker);
+  font-weight: 700; padding: 12px 24px; border-radius: var(--radius-sm); text-decoration: none;
+}
+
+/* -- Session-detail responsive -- */
+@media (max-width: 1100px) {
+  .landing .ln-sessthemes__grid, .landing .ln-sessrelated__grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 900px) {
+  .landing .ln-sessoverview__inner, .landing .ln-sessreach__inner { grid-template-columns: 1fr; gap: 40px; }
+}
+@media (max-width: 860px) {
+  .landing .ln-sessthemes__grid, .landing .ln-sessrelated__grid { grid-template-columns: 1fr; }
+  .landing .ln-sesshero__inner { padding: 40px 20px; min-height: 300px; }
+  .landing .ln-sesshero__title { font-size: 30px; }
+  .landing .ln-sessoverview__inner, .landing .ln-sessthemes__inner,
+  .landing .ln-sessrelated__inner, .landing .ln-sessreach__inner { padding: 48px 20px; }
+}

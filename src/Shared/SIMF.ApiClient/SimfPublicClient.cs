@@ -192,6 +192,44 @@ public sealed class SimfPublicClient(HttpClient http)
         }
     }
 
+    /// <summary>Fetch a session presentation file's bytes for the Website's
+    /// same-origin download proxy (Session-detail "روابط التحميل", Figma
+    /// 5991-85840): <c>GET /app/sessions/{sessionId}/downloads/{presentationId}</c>
+    /// (anonymous). Returns the status, content-type, the original file name (from
+    /// the attachment header) and the bytes; an unreachable service surfaces as 503.</summary>
+    public async Task<(int StatusCode, string? ContentType, string? FileName, byte[] Bytes)>
+        FetchSessionDownloadAsync(
+            Guid sessionId, Guid presentationId, CancellationToken cancellationToken = default)
+    {
+        using var message = new HttpRequestMessage(
+            HttpMethod.Get, $"{BasePath}sessions/{sessionId}/downloads/{presentationId}");
+        try
+        {
+            using var response = await http.SendAsync(message, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                return ((int)response.StatusCode, null, null, []);
+            }
+            var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+            var rawName = response.Content.Headers.ContentDisposition?.FileName?.Trim('"');
+            var fileName = string.IsNullOrEmpty(rawName) ? null : Uri.UnescapeDataString(rawName);
+            return (
+                (int)response.StatusCode,
+                response.Content.Headers.ContentType?.MediaType,
+                fileName,
+                bytes);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (exception is HttpRequestException
+            or TaskCanceledException)
+        {
+            return ((int)HttpStatusCode.ServiceUnavailable, null, null, []);
+        }
+    }
+
     /// <summary>D-717 (item 7, GAP-3) — preview a speaker action link WITHOUT
     /// consuming it (<c>GET /api/v1/app/meeting-actions/{token}</c>). Returns
     /// <c>null</c> for an invalid / expired / used token (the neutral "link no

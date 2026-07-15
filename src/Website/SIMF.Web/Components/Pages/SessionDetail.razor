@@ -1,0 +1,239 @@
+@* SIMF public Session Detail page — Figma node 5991-85840. Built on the shared
+   LandingShell chrome; live session data via SimfPublicClient (see the
+   SessionDetail.razor.cs code-behind). Bilingual AR-RTL / EN-LTR. *@
+@page "/sessions/{Id:guid}"
+@layout LandingLayout
+@inject IStringLocalizer<Strings> L
+
+@{
+    var s = Session;
+    var pageTitle = s is null
+        ? L["SessionDetail.NotFound.Title"].Value
+        : $"{Pick(s.Title, s.TitleArabic)} — {L["SessionDetail.BrandShort"].Value}";
+}
+
+<LandingShell Title="@pageTitle" Description="@(s is null ? L["SessionDetail.Meta"].Value : Pick(s.Description ?? s.Title, s.DescriptionArabic ?? s.TitleArabic))">
+
+    @if (s is null)
+    {
+        @* ===== Not-found state (unknown / unpublished session id) ===== *@
+        <section class="ln-sessmissing">
+            <div class="ln-sessmissing__inner">
+                <h1 class="ln-sessmissing__title">@L["SessionDetail.NotFound.Title"]</h1>
+                <p class="ln-sessmissing__body">@L["SessionDetail.NotFound.Body"]</p>
+                <a class="ln-sessmissing__link" href="/programme">@L["SessionDetail.NotFound.Back"]</a>
+            </div>
+        </section>
+    }
+    else
+    {
+        @* ===== 1. Hero band: breadcrumb + day chip + title + meta pills ===== *@
+        <section class="ln-sesshero" aria-label="@L["SessionDetail.Hero.Aria"]">
+            <div class="ln-sesshero__inner ln-reveal">
+                <nav class="ln-sesshero__crumbs" aria-label="breadcrumb">
+                    <a href="/">@L["SessionDetail.Breadcrumb.Home"]</a>
+                    <span aria-hidden="true">/</span>
+                    <span>@L["SessionDetail.Breadcrumb.Current"]</span>
+                </nav>
+                <span class="ln-sesshero__chip">@WeekdayLabel(s)</span>
+                <h1 class="ln-sesshero__title">@Pick(s.Title, s.TitleArabic)</h1>
+                @{ var lead = PickOrNull(s.Description, s.DescriptionArabic); }
+                @if (lead is not null)
+                {
+                    <p class="ln-sesshero__lead">@lead</p>
+                }
+                <div class="ln-sesshero__pills">
+                    <span class="ln-sesshero__pill"><span class="ln-ico ln-ico--clock" aria-hidden="true"></span>@TimeRange(s)</span>
+                    <span class="ln-sesshero__pill"><span class="ln-ico ln-ico--calendar" aria-hidden="true"></span>@DateLabel(s)</span>
+                    <span class="ln-sesshero__pill"><span class="ln-ico ln-ico--pin" aria-hidden="true"></span>@Pick(s.HallName, s.HallNameArabic)</span>
+                    @{ var cat = PickOrNull(s.CategoryName, s.CategoryNameArabic); }
+                    @if (cat is not null)
+                    {
+                        <span class="ln-sesshero__pill">@cat</span>
+                    }
+                </div>
+            </div>
+        </section>
+
+        @* ===== 2. Overview: at-a-glance card + why-important + description ===== *@
+        <section class="ln-sessoverview">
+            <div class="ln-sessoverview__inner">
+                <aside class="ln-glance ln-reveal" aria-label="@L["SessionDetail.Glance.Title"]">
+                    <h2 class="ln-glance__title">@L["SessionDetail.Glance.Title"]</h2>
+                    <dl class="ln-glance__list">
+                        @if (cat is not null)
+                        {
+                            <div class="ln-glance__row"><dt>@L["SessionDetail.Glance.Track"]</dt><dd>@cat</dd></div>
+                        }
+                        @{ var lang = PickOrNull(s.Language, s.LanguageArabic); }
+                        @if (lang is not null)
+                        {
+                            <div class="ln-glance__row"><dt>@L["SessionDetail.Glance.Language"]</dt><dd>@lang</dd></div>
+                        }
+                        <div class="ln-glance__row"><dt>@L["SessionDetail.Glance.Hall"]</dt><dd>@Pick(s.HallName, s.HallNameArabic)</dd></div>
+                        <div class="ln-glance__row"><dt>@L["SessionDetail.Glance.Capacity"]</dt><dd>@string.Format(L["SessionDetail.Glance.CapacityValue"].Value, s.Seats.Capacity)</dd></div>
+                        <div class="ln-glance__row"><dt>@L["SessionDetail.Glance.Live"]</dt><dd>@(string.IsNullOrWhiteSpace(s.LiveStreamUrl) ? L["SessionDetail.Glance.No"] : L["SessionDetail.Glance.Yes"])</dd></div>
+                    </dl>
+                </aside>
+                <div class="ln-sessabout ln-reveal">
+                    <header class="ln-sessabout__head">
+                        <h2 class="ln-sessabout__title">@L["SessionDetail.Overview.Title"]</h2>
+                        <p class="ln-sessabout__subtitle">@L["SessionDetail.Overview.Subtitle"]</p>
+                    </header>
+                    @if (lead is not null)
+                    {
+                        <p class="ln-sessabout__body">@lead</p>
+                    }
+                </div>
+            </div>
+        </section>
+
+        @* ===== 3. Key themes ("المحاور الرئيسية") ===== *@
+        @if (s.Themes.Count > 0)
+        {
+            <section class="ln-sessthemes" aria-label="@L["SessionDetail.Themes.Title"]">
+                <div class="ln-sessthemes__inner">
+                    <header class="ln-sessthemes__head ln-reveal">
+                        <h2 class="ln-sessthemes__title">@L["SessionDetail.Themes.Title"]</h2>
+                        <p class="ln-sessthemes__subtitle">@L["SessionDetail.Themes.Subtitle"]</p>
+                    </header>
+                    <div class="ln-sessthemes__grid ln-reveal">
+                        @foreach (var theme in s.Themes)
+                        {
+                            <article class="ln-tcard">
+                                <span class="ln-tcard__icon" aria-hidden="true">
+                                    <span class="ln-ico ln-ico--star"></span>
+                                </span>
+                                <h3 class="ln-tcard__name">@ThemeName(theme)</h3>
+                                @{ var td = ThemeDescription(theme); }
+                                @if (td is not null)
+                                {
+                                    <p class="ln-tcard__desc">@td</p>
+                                }
+                            </article>
+                        }
+                    </div>
+                </div>
+            </section>
+        }
+
+        @* ===== 4. Speakers ("المتحدثون") — reuses the ln-spkcard family ===== *@
+        <section class="ln-spklist" aria-label="@L["SessionDetail.Speakers.Title"]">
+            <div class="ln-spklist__inner">
+                <header class="ln-spklist__head ln-reveal">
+                    <h2 class="ln-spklist__title">@L["SessionDetail.Speakers.Title"]</h2>
+                    <p class="ln-spklist__desc">@L["SessionDetail.Speakers.Subtitle"]</p>
+                </header>
+                @if (s.Speakers.Count == 0)
+                {
+                    <p class="ln-spklist__empty">@L["SessionDetail.Speakers.Empty"]</p>
+                }
+                else
+                {
+                    <div class="ln-spklist-grid ln-reveal">
+                        @foreach (var sp in s.Speakers)
+                        {
+                            var photo = SpeakerPhotoUrl(sp);
+                            var loc = SpeakerCountry(sp);
+                            <article class="ln-spkcard">
+                                <div class="ln-spkcard__photo">
+                                    @if (!string.IsNullOrEmpty(photo))
+                                    {
+                                        <img src="@photo" alt="@SpeakerName(sp)" loading="lazy" />
+                                    }
+                                </div>
+                                <div class="ln-spkcard__body">
+                                    <p class="ln-spkcard__name">@SpeakerName(sp)</p>
+                                    @if (!string.IsNullOrWhiteSpace(sp.Title))
+                                    {
+                                        <span class="ln-spkcard__role">@sp.Title</span>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(loc))
+                                    {
+                                        <span class="ln-spkcard__loc"><span class="ln-ico ln-ico--pin" aria-hidden="true"></span>@loc</span>
+                                    }
+                                </div>
+                            </article>
+                        }
+                    </div>
+                }
+            </div>
+        </section>
+
+        @* ===== 5. Related sessions ("واصل أجندتك") ===== *@
+        @if (Related.Count > 0)
+        {
+            <section class="ln-sessrelated" aria-label="@L["SessionDetail.Related.Title"]">
+                <div class="ln-sessrelated__inner">
+                    <header class="ln-sessrelated__head ln-reveal">
+                        <h2 class="ln-sessrelated__title">@L["SessionDetail.Related.Title"]</h2>
+                        <p class="ln-sessrelated__subtitle">@L["SessionDetail.Related.Subtitle"]</p>
+                    </header>
+                    <div class="ln-sessrelated__grid ln-reveal">
+                        @foreach (var r in Related)
+                        {
+                            <a class="ln-rcard" href="/sessions/@r.Id">
+                                <span class="ln-rcard__media" aria-hidden="true"></span>
+                                <span class="ln-rcard__body">
+                                    <span class="ln-rcard__meta"><span class="ln-ico ln-ico--clock" aria-hidden="true"></span>@RelatedTime(r)</span>
+                                    <span class="ln-rcard__title">@RelatedTitle(r)</span>
+                                    <span class="ln-rcard__hall"><span class="ln-ico ln-ico--pin" aria-hidden="true"></span>@RelatedHall(r)</span>
+                                    <span class="ln-rcard__cta">@L["SessionDetail.Related.View"]</span>
+                                </span>
+                            </a>
+                        }
+                    </div>
+                </div>
+            </section>
+        }
+
+        @* ===== 6. Downloads ("روابط التحميل") + Outcomes ("أبرز المخرجات") ===== *@
+        @if ((s.Downloads?.Count ?? 0) > 0 || (s.Outcomes?.Count ?? 0) > 0)
+        {
+            <section class="ln-sessreach">
+                <div class="ln-sessreach__inner">
+                    @if ((s.Downloads?.Count ?? 0) > 0)
+                    {
+                        <aside class="ln-downloads ln-reveal" aria-label="@L["SessionDetail.Downloads.Title"]">
+                            <h2 class="ln-downloads__title">@L["SessionDetail.Downloads.Title"]</h2>
+                            <ul class="ln-downloads__list">
+                                @foreach (var d in s.Downloads!)
+                                {
+                                    <li class="ln-docrow">
+                                        <a class="ln-docrow__link" href="@DownloadUrl(d)" download="@d.FileName">
+                                            <span class="ln-docrow__icon" aria-hidden="true"><span class="ln-ico ln-ico--doc"></span></span>
+                                            <span class="ln-docrow__text">
+                                                <span class="ln-docrow__name">@d.FileName</span>
+                                                <span class="ln-docrow__size">@FileSize(d.SizeBytes)</span>
+                                            </span>
+                                            <span class="ln-docrow__dl" aria-hidden="true"><span class="ln-ico ln-ico--download"></span></span>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </aside>
+                    }
+                    @if ((s.Outcomes?.Count ?? 0) > 0)
+                    {
+                        <div class="ln-outcomes ln-reveal">
+                            <header class="ln-outcomes__head">
+                                <h2 class="ln-outcomes__title">@L["SessionDetail.Outcomes.Title"]</h2>
+                                <p class="ln-outcomes__subtitle">@L["SessionDetail.Outcomes.Subtitle"]</p>
+                            </header>
+                            <ul class="ln-outcomes__list">
+                                @foreach (var o in s.Outcomes!)
+                                {
+                                    <li class="ln-outcomes__item">
+                                        <span class="ln-outcomes__check" aria-hidden="true"><span class="ln-ico ln-ico--check"></span></span>
+                                        <span class="ln-outcomes__text">@OutcomeText(o)</span>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
+                </div>
+            </section>
+        }
+    }
+
+</LandingShell>

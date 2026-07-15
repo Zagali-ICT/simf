@@ -189,7 +189,13 @@ public sealed record PublicSessionSpeaker(
     int? CountryId = null,
     string? CountryNameEn = null,
     string? CountryNameAr = null,
-    string? PhotoRelativePath = null);
+    string? PhotoRelativePath = null,
+    // D-357/D-568 — true when the speaker has an active SpeakerPhoto asset in the
+    // unified StoredFile store; the Website session page then serves it via the
+    // same-origin /content/assets/SpeakerPhoto/{id}/image proxy (post-D-357 the
+    // photo usually lives there, not in PhotoRelativePath). Appended (append-only,
+    // D-219) — the app keeps using PhotoRelativePath / its own avatar route.
+    bool HasPhotoAsset = false);
 
 /// <summary>D-199 — cheap seat-availability summary for the session
 /// detail. <see cref="Capacity"/> is the effective capacity

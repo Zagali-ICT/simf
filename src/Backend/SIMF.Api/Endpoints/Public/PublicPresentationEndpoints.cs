@@ -63,3 +63,44 @@ public sealed class DownloadPublicPresentationEndpoint(IPublicSpeakerPresentatio
             file.Value.Content, contentType: file.Value.ContentType, cancellation: ct);
     }
 }
+
+/// <summary>Website Session-detail "روابط التحميل" (Figma 5991-85840) —
+/// <c>GET /api/v1/app/sessions/{sessionId}/downloads/{presentationId}</c>: streams
+/// one of the session's presentation files as an attachment. ANONYMOUS (owner
+/// decision 2026-07-15 — these files are public on the marketing website); the
+/// session scope is the authorisation, so the presentation must belong to that
+/// session (both active) or the route 404s. Distinct from the signed-in
+/// <c>/app/presentations/{id}/file</c> attendee route above.</summary>
+public sealed class DownloadSessionFileRoute
+{
+    public Guid SessionId { get; set; }
+    public Guid PresentationId { get; set; }
+}
+
+public sealed class DownloadSessionFileEndpoint(IPublicSpeakerPresentationService service)
+    : Endpoint<DownloadSessionFileRoute>
+{
+    public override void Configure()
+    {
+        Get("/app/sessions/{sessionId:guid}/downloads/{presentationId:guid}");
+        AllowAnonymous();
+        Tags("Public");
+        Summary(summary => summary.Summary =
+            "Download a public session presentation file (website Session detail).");
+    }
+
+    public override async Task HandleAsync(DownloadSessionFileRoute req, CancellationToken ct)
+    {
+        var file = await service.GetFileAsync(req.SessionId, req.PresentationId, ct);
+        if (file is null)
+        {
+            await Send.NotFoundAsync(ct);
+            return;
+        }
+
+        HttpContext.Response.Headers.ContentDisposition =
+            $"attachment; filename=\"{Uri.EscapeDataString(file.Value.FileName)}\"";
+        await Send.BytesAsync(
+            file.Value.Content, contentType: file.Value.ContentType, cancellation: ct);
+    }
+}
