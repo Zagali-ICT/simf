@@ -412,6 +412,21 @@ internal sealed class ProgrammeSessionService(
             .Select(outcome => new PublicSessionOutcome(outcome.Text, outcome.TextArabic))
             .ToList();
 
+        // Website Session-detail "روابط التحميل" — the session's downloadable
+        // presentation files, PUBLIC per the owner decision (2026-07-15). A
+        // separate query: SpeakerPresentation carries SessionId but no Session
+        // back-nav. Ordered by upload time for a stable list.
+        var downloads = await dbContext.SpeakerPresentations
+            .AsNoTracking()
+            .Where(presentation => presentation.SessionId == id && presentation.IsActive)
+            .OrderBy(presentation => presentation.CreatedAt)
+            .Select(presentation => new PublicSessionDownload(
+                presentation.Id,
+                presentation.FileName,
+                presentation.ContentType,
+                presentation.SizeBytes))
+            .ToListAsync(cancellationToken);
+
         // D-567 (Figma 889:2604) — the gold badge shows the session's 1-based
         // position within its day. A6c — match the agenda's day grouping exactly:
         // a half-open EVENT-LOCAL (+03:00) window ordered by StartUtc (ProgrammeDay
@@ -464,7 +479,9 @@ internal sealed class ProgrammeSessionService(
             // Website Session-detail (Figma 5991-85840): outcomes + language label.
             outcomes,
             row.Language,
-            row.LanguageArabic);
+            row.LanguageArabic,
+            // "روابط التحميل" — the session's public downloadable files.
+            downloads);
     }
 
     public async Task<SessionRecordingRef?> GetPublishedRecordingAsync(

@@ -127,7 +127,14 @@ public sealed record PublicSessionDetail(
     // (append-only, D-219) — null/empty on an older API and the app ignores them.
     IReadOnlyList<PublicSessionOutcome>? Outcomes = null,
     string? Language = null,
-    string? LanguageArabic = null);
+    string? LanguageArabic = null,
+    // Website Session-detail "روابط التحميل" downloads (Figma 5991-85840): the
+    // session's downloadable presentation files. PUBLIC (owner decision
+    // 2026-07-15) — anonymously downloadable from the website, served by the
+    // same-origin route the page builds from each item's Id. Sourced from the
+    // active SpeakerPresentation rows for the session. Appended (append-only,
+    // D-219) — the app keeps its own signed-in /app/presentations read.
+    IReadOnlyList<PublicSessionDownload>? Downloads = null);
 
 /// <summary>One bilingual key-outcome bullet on the public session-detail page
 /// ("أبرز المخرجات", Figma 5991-85840), in the session's display order. Sourced
@@ -135,6 +142,17 @@ public sealed record PublicSessionDetail(
 public sealed record PublicSessionOutcome(
     string Text,
     string TextArabic);
+
+/// <summary>One downloadable presentation file on the public session-detail page
+/// ("روابط التحميل", Figma 5991-85840). Metadata only — the bytes are fetched
+/// anonymously from the same-origin download route the website builds from
+/// <see cref="Id"/>. Sourced from the active <c>SpeakerPresentation</c> rows for
+/// the session.</summary>
+public sealed record PublicSessionDownload(
+    Guid Id,
+    string FileName,
+    string ContentType,
+    long SizeBytes);
 
 /// <summary>D-199 — one theme/pillar tag on a public session. Order
 /// follows the session's theme order; the first is the primary pillar
