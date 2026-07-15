@@ -2,6 +2,8 @@ using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using SIMF.ApiClient;
 using SIMF.Contracts.Programme;
+using SIMF.Web.Content;
+using static SIMF.Web.Content.LocalizedText;
 
 namespace SIMF.Web.Components.Pages;
 
@@ -23,8 +25,6 @@ public partial class SessionDetail
     // the same way, so the hero/at-a-glance render the session in event-local time.
     private static readonly TimeSpan EventOffset = TimeSpan.FromHours(3);
 
-    private static bool Rtl => CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
-
     protected override async Task OnInitializedAsync()
     {
         Session = await Api.GetSessionAsync(Id);
@@ -33,8 +33,9 @@ public partial class SessionDetail
             return;
         }
 
-        // Best-effort related strip: other upcoming sessions (never this one). A
-        // null agenda result just leaves it empty — it must not break the page.
+        // Best-effort related strip: up to three other sessions from the agenda
+        // (this one excluded), earliest first. A null agenda result just leaves it
+        // empty — it must not break the page.
         var agenda = await Api.GetProgrammeSessionsAsync();
         Related = (agenda?.Items ?? [])
             .Where(item => item.Id != Id)
@@ -43,18 +44,10 @@ public partial class SessionDetail
             .ToList();
     }
 
-    // Arabic-preferred in RTL, English-preferred in LTR; falls back to the other.
-    private static string Pick(string en, string ar) =>
-        Rtl ? (string.IsNullOrWhiteSpace(ar) ? en : ar)
-            : (string.IsNullOrWhiteSpace(en) ? ar : en);
-
-    private static string? PickOrNull(string? en, string? ar)
-    {
-        var value = Rtl
-            ? (string.IsNullOrWhiteSpace(ar) ? en : ar)
-            : (string.IsNullOrWhiteSpace(en) ? ar : en);
-        return string.IsNullOrWhiteSpace(value) ? null : value;
-    }
+    // Optional page-level values used by more than one section (declared here,
+    // not leaked across razor sections): the description lead + the category.
+    private string? Lead(PublicSessionDetail s) => PickOrNull(s.Description, s.DescriptionArabic);
+    private string? Category(PublicSessionDetail s) => PickOrNull(s.CategoryName, s.CategoryNameArabic);
 
     private static string TimeRange(PublicSessionDetail s) =>
         $"{s.StartUtc.ToOffset(EventOffset):HH:mm} – {s.EndUtc.ToOffset(EventOffset):HH:mm}";
@@ -78,12 +71,8 @@ public partial class SessionDetail
     private static string? SpeakerCountry(PublicSessionSpeaker s) =>
         PickOrNull(s.CountryNameEn, s.CountryNameAr);
 
-    // Same-origin photo route (StoredFile SpeakerPhoto) → legacy path → none,
-    // matching the Speakers page so a real portrait renders when one exists.
     private static string SpeakerPhotoUrl(PublicSessionSpeaker s) =>
-        s.HasPhotoAsset ? $"/content/assets/SpeakerPhoto/{s.Id}/image"
-        : !string.IsNullOrWhiteSpace(s.PhotoRelativePath) ? s.PhotoRelativePath!
-        : string.Empty;
+        SpeakerPhoto.Url(s.Id, s.HasPhotoAsset, s.PhotoRelativePath);
 
     // Theme-card helpers.
     private static string ThemeName(PublicSessionTheme t) => Pick(t.Name, t.NameArabic);

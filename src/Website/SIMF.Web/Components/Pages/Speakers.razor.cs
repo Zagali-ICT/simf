@@ -1,7 +1,8 @@
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using SIMF.ApiClient;
 using SIMF.Contracts.Programme;
+using SIMF.Web.Content;
+using static SIMF.Web.Content.LocalizedText;
 
 namespace SIMF.Web.Components.Pages;
 
@@ -16,8 +17,6 @@ public partial class Speakers
 
     private IReadOnlyList<PublicSpeakerSummary> SpeakerList { get; set; } = [];
 
-    private static bool Rtl => CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
-
     protected override async Task OnInitializedAsync()
     {
         var result = await Api.GetSpeakersAsync();
@@ -25,10 +24,7 @@ public partial class Speakers
     }
 
     // Arabic-preferred in RTL, English-preferred in LTR; fall back to the other.
-    private static string DisplayName(PublicSpeakerSummary s) =>
-        Rtl
-            ? (string.IsNullOrWhiteSpace(s.NameArabic) ? s.Name : s.NameArabic)
-            : (string.IsNullOrWhiteSpace(s.Name) ? s.NameArabic : s.Name);
+    private static string DisplayName(PublicSpeakerSummary s) => Pick(s.Name, s.NameArabic);
 
     // Location = country. The public API exposes country only (no city); a
     // city-level field would need an additive backend change — tracked follow-up.
@@ -36,10 +32,6 @@ public partial class Speakers
         Rtl ? s.CountryNameAr : s.CountryNameEn;
 
     // Same-origin photo route (StoredFile SpeakerPhoto) → legacy path → none.
-    // Mirrors SiteContentEndpoints.MapSpeakers so a real portrait renders when
-    // the speaker has one; empty string → the card shows its gradient backdrop.
     private static string PhotoUrl(PublicSpeakerSummary s) =>
-        s.HasPhotoAsset ? $"/content/assets/SpeakerPhoto/{s.Id}/image"
-        : !string.IsNullOrWhiteSpace(s.PhotoRelativePath) ? s.PhotoRelativePath!
-        : string.Empty;
+        SpeakerPhoto.Url(s.Id, s.HasPhotoAsset, s.PhotoRelativePath);
 }

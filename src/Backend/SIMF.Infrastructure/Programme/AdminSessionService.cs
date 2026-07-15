@@ -224,7 +224,8 @@ internal sealed class AdminSessionService(
                 TextArabic = outcome.TextArabic.Trim(),
                 DisplayOrder = outcomeOrder++,
                 IsActive = true,
-                CreatedAt = now,
+                // CreatedAt/CreatedBy are stamped by the audit interceptor (as in
+                // ReplaceOutcomes) — no explicit stamp needed here.
             });
         }
         dbContext.Sessions.Add(session);

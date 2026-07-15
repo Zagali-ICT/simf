@@ -27,6 +27,11 @@
     }
     else
     {
+        @* Page-level values shared by more than one section (declared once here,
+           not leaked from inside a section). *@
+        var lead = Lead(s);
+        var cat = Category(s);
+
         @* ===== 1. Hero band: breadcrumb + day chip + title + meta pills ===== *@
         <section class="ln-sesshero" aria-label="@L["SessionDetail.Hero.Aria"]">
             <div class="ln-sesshero__inner ln-reveal">
@@ -37,7 +42,6 @@
                 </nav>
                 <span class="ln-sesshero__chip">@WeekdayLabel(s)</span>
                 <h1 class="ln-sesshero__title">@Pick(s.Title, s.TitleArabic)</h1>
-                @{ var lead = PickOrNull(s.Description, s.DescriptionArabic); }
                 @if (lead is not null)
                 {
                     <p class="ln-sesshero__lead">@lead</p>
@@ -46,7 +50,6 @@
                     <span class="ln-sesshero__pill"><span class="ln-ico ln-ico--clock" aria-hidden="true"></span>@TimeRange(s)</span>
                     <span class="ln-sesshero__pill"><span class="ln-ico ln-ico--calendar" aria-hidden="true"></span>@DateLabel(s)</span>
                     <span class="ln-sesshero__pill"><span class="ln-ico ln-ico--pin" aria-hidden="true"></span>@Pick(s.HallName, s.HallNameArabic)</span>
-                    @{ var cat = PickOrNull(s.CategoryName, s.CategoryNameArabic); }
                     @if (cat is not null)
                     {
                         <span class="ln-sesshero__pill">@cat</span>
