@@ -227,6 +227,13 @@ class SessionListItem {
   /// bottom value (Figma 883:2308) and the summary card's duration (1072:13518).
   DateTime get endLocal => endUtc.toLocal();
 
+  /// The session length in whole minutes, floored at 0 — the summary card's
+  /// duration label (Figma 1072:13518). Mirrors `MyAreaSessionItem.durationMinutes`.
+  int get durationMinutes {
+    final minutes = endUtc.difference(startUtc).inMinutes;
+    return minutes < 0 ? 0 : minutes;
+  }
+
   String localizedTitle(bool isArabic) =>
       _pickRequired(titleArabic, title, isArabic);
 

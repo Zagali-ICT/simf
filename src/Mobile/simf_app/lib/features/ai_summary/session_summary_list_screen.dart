@@ -165,7 +165,7 @@ class _SessionSummaryListScreenState
                     isArabic: isArabic,
                     l10n: l10n,
                     durationLabel: l10n.sessionDurationMinutes(
-                      _durationMinutes(item),
+                      item.durationMinutes,
                     ),
                   ),
                 ),
@@ -232,10 +232,5 @@ class _SessionSummaryListScreenState
         // The programme has sessions but none are summarised yet.
         return l10n.sessionSummariesEmpty;
     }
-  }
-
-  int _durationMinutes(SessionListItem item) {
-    final minutes = item.endUtc.difference(item.startUtc).inMinutes;
-    return minutes < 0 ? 0 : minutes;
   }
 }
