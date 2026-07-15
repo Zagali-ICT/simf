@@ -74,6 +74,8 @@
 | E2E-SES-039 | Move a session into an occupied hall/time → 409 `SESSION_HALL_TIME_OVERLAP`; a title-only edit of a legacy overlapping session still saves (S-2) | error | P1 | authored ✓ (`AdminSessionsTests.UpdateAsync_MoveIntoOccupiedHallTime_ReturnsConflict` + `.UpdateAsync_TitleOnlyEdit_WithPreexistingOverlap_Succeeds`) |
 | E2E-SES-040 | Lifecycle guard: mark Held before the session's start → 400 `SESSION_STATUS_GUARD_FAILED`; after start it is allowed (S-7) | error | P1 | authored ✓ (`SessionLifecycleTests.SetStatusAsync_MarkHeldBeforeStart_ReturnsBadRequest` + `.SetStatusAsync_MarkHeldAfterStart_Succeeds`) |
 | E2E-SES-041 | Lifecycle guard: mark Recorded/Published with no recording → 400 `SESSION_STATUS_GUARD_FAILED`; upload a recording first → allowed; a reverse (undo) move carries no guard (S-7) | error | P1 | authored ✓ (`SessionLifecycleTests.SetStatusAsync_MarkRecordedWithoutRecording_ReturnsBadRequest` + `.SetStatusAsync_RevertRecordedToHeld_NoGuard` + `SessionRecordingTests.SetStatusAsync_MarkRecordedWithRecording_Succeeds`) |
+| E2E-SES-042 | Session language (bilingual "at a glance" label) round-trips on save; > 64 chars → 400 `SESSION_INVALID` (Website Session-detail, Figma 5991-85840) | happy | P1 | _to author_ |
+| E2E-SES-043 | Key outcomes ("أبرز المخرجات") add / edit / reorder / remove — repeatable bilingual list, renumbered 0..n-1; one-language-only → 400; blank row dropped; remove-all clears (RemoveRange re-sync) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -806,6 +808,53 @@ Scenario: Cannot mark Recorded/Published without a recording
   When a recording is uploaded first
   Then the Held → Recorded move is allowed
   And a reverse move (Recorded → Held) carries no guard
+```
+
+### E2E-SES-042 — Session language round-trips (Website "at a glance")
+
+```gherkin
+Feature: The bilingual session-language label edits and round-trips
+Scenario: Set and re-read the language label
+  Given the administrator opens the session editor (Add or Edit)
+  When they fill Language (English) "English & Arabic" and Language (Arabic) "الإنجليزية والعربية" and save
+  Then the PUT/POST succeeds and re-opening the session shows both language values
+  And the public GET /api/v1/app/programme/sessions/{id} returns Language + LanguageArabic
+  And the Website /sessions/{id} "at a glance" card shows the language row
+
+Scenario: Language over the cap is rejected
+  Given a Language value longer than 64 characters
+  When the administrator saves
+  Then the API returns 400 with code "SESSION_INVALID" ("… 64 characters or fewer")
+  And nothing is persisted
+```
+
+### E2E-SES-043 — Key outcomes add / edit / reorder / remove ("أبرز المخرجات")
+
+```gherkin
+Feature: The session's key-outcome bullets are a repeatable bilingual list
+Scenario: Add, reorder and persist outcomes
+  Given the administrator opens the session editor
+  When they click "Add key outcome" twice and fill each row's English + Arabic text
+  And reorder them with the Up/Down buttons and save
+  Then the outcomes persist renumbered 0..n-1 in the shown order
+  And re-opening the session lists them in that order
+  And the public GET returns PublicSessionDetail.Outcomes in order
+  And the Website /sessions/{id} "key outcomes" checklist renders them
+
+Scenario: An outcome missing one language is rejected
+  Given an outcome row with English text but a blank Arabic text
+  When the administrator saves
+  Then the API returns 400 with code "SESSION_INVALID" ("… both English and Arabic text")
+
+Scenario: An entirely-blank outcome row is dropped, not sent
+  Given an added outcome row left completely empty
+  When the administrator saves
+  Then that row is omitted from the request (no 400) and no empty outcome is persisted
+
+Scenario: Removing all outcomes clears them
+  Given a session with two saved outcomes
+  When the administrator removes both and saves
+  Then the update deletes the SessionOutcome rows (RemoveRange re-sync) and the public read returns none
 ```
 
 ---
