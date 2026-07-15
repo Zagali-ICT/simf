@@ -111,7 +111,7 @@ class _HubList extends StatelessWidget {
           subtitle: _subtitle(context, item, isArabic),
           onTap: () => context.pushNamed(
             RouteNames.sessionDetail,
-            pathParameters: <String, String>{'sessionId': item.id},
+            pathParameters: <String, String>{RouteParams.sessionId: item.id},
           ),
         );
       },

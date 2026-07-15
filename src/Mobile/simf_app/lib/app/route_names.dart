@@ -164,3 +164,19 @@ class RouteNames {
   // POST /app/auth/device-keys/step-up + the gated register.
   static const String biometricStepUp = 'biometricStepUp';
 }
+
+/// The go_router path / query parameter KEYS (the names inside a route's `:param`
+/// slot). Centralised next to [RouteNames] so the producers (`pushNamed`
+/// pathParameters / queryParameters) and the router readers
+/// (`state.pathParameters[...]` / `state.uri.queryParameters[...]`) reference one
+/// const and can never drift; the string values are unchanged, so navigation
+/// resolves identically. NOTE: these are NOT the JSON wire field names (D-219
+/// frozen) — those live in the feature `data/` models and must not be touched.
+class RouteParams {
+  RouteParams._();
+
+  static const String sessionId = 'sessionId';
+  static const String speakerId = 'speakerId';
+  static const String boothId = 'boothId';
+  static const String sponsorId = 'sponsorId';
+}

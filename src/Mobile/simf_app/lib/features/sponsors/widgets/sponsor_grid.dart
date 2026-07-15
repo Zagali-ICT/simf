@@ -44,7 +44,7 @@ class SponsorGrid extends StatelessWidget {
         // Wave 3 — tap → the sponsor detail (Figma 1439:11826).
         onTap: () => context.pushNamed(
           RouteNames.sponsorDetail,
-          pathParameters: <String, String>{'sponsorId': sponsors[i].id},
+          pathParameters: <String, String>{RouteParams.sponsorId: sponsors[i].id},
         ),
       ),
     );

@@ -141,7 +141,7 @@ class MyAreaDashboardBody extends ConsumerWidget {
                         ? () => context.pushNamed(
                               RouteNames.sessionDetail,
                               pathParameters: <String, String>{
-                                'sessionId': item.sessionId!,
+                                RouteParams.sessionId: item.sessionId!,
                               },
                             )
                         : null,

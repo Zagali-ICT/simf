@@ -196,7 +196,7 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
                         onTap: () => context.pushNamed(
                           RouteNames.speakerProfile,
                           pathParameters: <String, String>{
-                            'speakerId': speaker.id,
+                            RouteParams.speakerId: speaker.id,
                           },
                         ),
                       );

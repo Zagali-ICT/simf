@@ -156,7 +156,7 @@ class _MeetingsScreenState extends ConsumerState<MeetingsScreen> {
                       ? () => context.pushNamed(
                             RouteNames.speakerProfile,
                             pathParameters: <String, String>{
-                              'speakerId': item.speakerId!,
+                              RouteParams.speakerId: item.speakerId!,
                             },
                           )
                       : null,
