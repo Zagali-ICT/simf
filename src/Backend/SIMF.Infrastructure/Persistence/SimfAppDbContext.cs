@@ -68,6 +68,8 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options, IPiiEn
     public DbSet<Session> Sessions => Set<Session>();
     public DbSet<SessionSpeaker> SessionSpeakers => Set<SessionSpeaker>();
     public DbSet<SessionTheme> SessionThemes => Set<SessionTheme>();
+    // Session key-outcome bullets ("أبرز المخرجات" on the public detail page).
+    public DbSet<SessionOutcome> SessionOutcomes => Set<SessionOutcome>();
     // P4.1 — D-237: AI session summary / محضر (one per session).
     public DbSet<SessionSummary> SessionSummaries => Set<SessionSummary>();
     // P5.1 — D-241: hall arrival / attendance (GPS geofence or QR door scan).
