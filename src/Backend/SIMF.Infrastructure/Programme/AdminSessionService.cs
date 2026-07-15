@@ -121,6 +121,7 @@ internal sealed class AdminSessionService(
             .Include(row => row.Hall)
             .Include(row => row.Speakers).ThenInclude(speakerLink => speakerLink.Speaker)
             .Include(row => row.Themes)
+            .Include(row => row.Outcomes)
             .SingleOrDefaultAsync(row => row.Id == id, cancellationToken);
         return session is null ? null : ToDetail(session);
     }
@@ -139,6 +140,8 @@ internal sealed class AdminSessionService(
             request.Description, request.DescriptionArabic,
             request.LiveCaptions, request.LiveCaptionsArabic,
             request.LiveStreamUrl, request.LiveSignLanguageUrl);
+        ValidateSessionDetailFields(
+            request.Language, request.LanguageArabic, request.Outcomes);
 
         var hall = await ResolveHallAsync(request.HallId, cancellationToken);
         await EnsureSpeakersExistAsync(request.Speakers, cancellationToken);
@@ -169,6 +172,9 @@ internal sealed class AdminSessionService(
             TitleArabic = titleArabic,
             Description = NullIfBlank(request.Description),
             DescriptionArabic = NullIfBlank(request.DescriptionArabic),
+            // Website Session-detail "at a glance" language label.
+            Language = NullIfBlank(request.Language),
+            LanguageArabic = NullIfBlank(request.LanguageArabic),
             HallId = hall.Id,
             CategoryId = request.CategoryId,
             // D-452 — session type for the app's type tabs.
@@ -205,6 +211,22 @@ internal sealed class AdminSessionService(
                 ThemeId = themeId,
             });
         }
+        // Website Session-detail "أبرز المخرجات" — renumber to a clean 0..n-1
+        // order so the public read renders deterministically.
+        var outcomeOrder = 0;
+        foreach (var outcome in request.Outcomes)
+        {
+            session.Outcomes.Add(new SessionOutcome
+            {
+                Id = Guid.NewGuid(),
+                SessionId = session.Id,
+                Text = outcome.Text.Trim(),
+                TextArabic = outcome.TextArabic.Trim(),
+                DisplayOrder = outcomeOrder++,
+                IsActive = true,
+                CreatedAt = now,
+            });
+        }
         dbContext.Sessions.Add(session);
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -232,6 +254,7 @@ internal sealed class AdminSessionService(
         var session = await dbContext.Sessions
             .Include(row => row.Speakers)
             .Include(row => row.Themes)
+            .Include(row => row.Outcomes)
             .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw new ApiException(
                 ErrorCodes.SessionNotFound, 404,
@@ -247,6 +270,8 @@ internal sealed class AdminSessionService(
             request.Description, request.DescriptionArabic,
             request.LiveCaptions, request.LiveCaptionsArabic,
             request.LiveStreamUrl, request.LiveSignLanguageUrl);
+        ValidateSessionDetailFields(
+            request.Language, request.LanguageArabic, request.Outcomes);
 
         var hall = await ResolveHallAsync(request.HallId, cancellationToken);
         await EnsureSpeakersExistAsync(request.Speakers, cancellationToken);
@@ -331,6 +356,9 @@ internal sealed class AdminSessionService(
         session.TitleArabic = titleArabic;
         session.Description = NullIfBlank(request.Description);
         session.DescriptionArabic = NullIfBlank(request.DescriptionArabic);
+        // Website Session-detail "at a glance" language label.
+        session.Language = NullIfBlank(request.Language);
+        session.LanguageArabic = NullIfBlank(request.LanguageArabic);
         session.HallId = hall.Id;
         session.CategoryId = request.CategoryId;
         session.Type = request.Type; // D-452
@@ -349,6 +377,7 @@ internal sealed class AdminSessionService(
 
         ReplaceSpeakerLinks(session, request.Speakers);
         ReplaceThemeLinks(session, request.ThemeIds);
+        ReplaceOutcomes(session, request.Outcomes);
 
         // S-1 (owner default) — a hall move or a start/end change invalidates every
         // held seat (a seat belongs to a specific hall + time slot), so cascade-release
@@ -619,6 +648,7 @@ internal sealed class AdminSessionService(
             .Include(row => row.Hall)
             .Include(row => row.Speakers).ThenInclude(link => link.Speaker)
             .Include(row => row.Themes)
+            .Include(row => row.Outcomes)
             .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
         ?? throw new ApiException(
             ErrorCodes.SessionNotFound, 404,
@@ -903,6 +933,62 @@ internal sealed class AdminSessionService(
         }
     }
 
+    // Website Session-detail "أبرز المخرجات" — re-sync the session's outcome
+    // bullets. Mirrors ReplaceSpeakerLinks: the explicit RemoveRange hard-deletes
+    // the old rows in the same unit of work (clearing the nav alone would orphan
+    // them), then the new set is re-added renumbered 0..n-1 for a stable order.
+    private void ReplaceOutcomes(Session session, IList<AdminSessionOutcomeEntry> entries)
+    {
+        dbContext.SessionOutcomes.RemoveRange(session.Outcomes);
+        session.Outcomes.Clear();
+        var order = 0;
+        foreach (var entry in entries)
+        {
+            session.Outcomes.Add(new SessionOutcome
+            {
+                Id = Guid.NewGuid(),
+                SessionId = session.Id,
+                Text = entry.Text.Trim(),
+                TextArabic = entry.TextArabic.Trim(),
+                DisplayOrder = order++,
+                IsActive = true,
+            });
+        }
+    }
+
+    // §7 (validation) — the Website Session-detail fields: the bilingual language
+    // label (EF nvarchar(64)) and each outcome bullet (EF nvarchar(512), both
+    // languages required). Over-length / blank input → a clean 400 instead of a
+    // SaveChanges truncation 500 (#19), mirroring ValidateTextLengths.
+    private static void ValidateSessionDetailFields(
+        string? language, string? languageArabic,
+        IEnumerable<AdminSessionOutcomeEntry> outcomes)
+    {
+        EnsureMaxLength(language, 64,
+            "The session language label must be 64 characters or fewer.",
+            "يجب أن يكون وصف لغة الجلسة 64 حرفاً أو أقل.");
+        EnsureMaxLength(languageArabic, 64,
+            "The Arabic session language label must be 64 characters or fewer.",
+            "يجب أن يكون وصف لغة الجلسة بالعربية 64 حرفاً أو أقل.");
+        foreach (var outcome in outcomes)
+        {
+            if (string.IsNullOrWhiteSpace(outcome.Text)
+                || string.IsNullOrWhiteSpace(outcome.TextArabic))
+            {
+                throw new ApiException(
+                    ErrorCodes.SessionInvalid, 400,
+                    "Each session outcome must have both English and Arabic text.",
+                    "يجب أن يحتوي كل مخرج للجلسة على نص بالإنجليزية والعربية.");
+            }
+            EnsureMaxLength(outcome.Text, 512,
+                "Each session outcome must be 512 characters or fewer.",
+                "يجب أن يكون كل مخرج للجلسة 512 حرفاً أو أقل.");
+            EnsureMaxLength(outcome.TextArabic, 512,
+                "Each Arabic session outcome must be 512 characters or fewer.",
+                "يجب أن يكون كل مخرج عربي للجلسة 512 حرفاً أو أقل.");
+        }
+    }
+
     // S-1 (owner default) — tell each affected visitor their held seat was released
     // because the session was moved or rescheduled. Reuses NotificationKind.BookingRejected
     // (in-app warning, session deep-link); the authoritative bilingual text is set below.
@@ -954,6 +1040,12 @@ internal sealed class AdminSessionService(
                 link.Role))
             .ToList();
         var themeIds = session.Themes.Select(link => link.ThemeId).ToList();
+        var outcomes = session.Outcomes
+            .Where(outcome => outcome.IsActive)
+            .OrderBy(outcome => outcome.DisplayOrder)
+            .Select(outcome => new AdminSessionOutcomeEntry(
+                outcome.Text, outcome.TextArabic, outcome.DisplayOrder))
+            .ToList();
         return new AdminSessionDetail(
             session.Id,
             session.Code,
@@ -989,6 +1081,10 @@ internal sealed class AdminSessionService(
             // D-452 — session type for the app's type tabs.
             session.Type,
             // D-485 — per-session seat-selection-mode override (null = inherit).
-            session.SeatSelectionModeOverride);
+            session.SeatSelectionModeOverride,
+            // Website Session-detail — language label + outcome bullets.
+            session.Language,
+            session.LanguageArabic,
+            outcomes);
     }
 }
