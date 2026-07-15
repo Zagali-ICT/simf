@@ -1034,3 +1034,18 @@
   .ln-vcard, .ln-fcard { flex: 1 1 42%; }
 }
 @media (max-width: 520px) { .ln-vcard, .ln-fcard { flex-basis: 100%; } }
+
+/* ============= FEATURE SECTION (ln-fsection: header + card grid) ========= */
+/* A light section with a right-aligned header + a responsive grid of ln-fcard
+   feature cards (3-up → 2 → 1). Reused across the About cluster; unlike the
+   flat 3-card ln-pillars row it lays any card count into rows of three. */
+.ln-fsection { background: var(--bg-gray); padding: 64px clamp(16px, 5.5vw, 80px); }
+.ln-fsection__inner { max-width: var(--content-w); margin-inline: auto; display: flex; flex-direction: column; gap: 32px; }
+.ln-fsection__head { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; text-align: start; }
+.ln-fsection__title { font-size: 32px; font-weight: 800; line-height: 1.15; color: var(--ink); text-align: start; }
+.ln-fsection__sub { font-size: 16px; line-height: 24px; color: var(--ink); text-align: start; max-width: 720px; }
+.ln-fsection__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+/* raised variant: the objectives feature cards carry a soft drop-shadow */
+.ln-fcard--raised { box-shadow: var(--shadow-card); }
+@media (max-width: 900px) { .ln-fsection__grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .ln-fsection__grid { grid-template-columns: 1fr; } }

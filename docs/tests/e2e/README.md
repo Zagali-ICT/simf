@@ -174,6 +174,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/speakers` | [`web-speakers.md`](web-speakers.md) | E2E-WSPK-001..011 |
 | `/sessions/{id}` | [`web-session-detail.md`](web-session-detail.md) | E2E-WSDT-001..013 |
 | `/about` | [`web-about.md`](web-about.md) | E2E-WABT-001..011 |
+| `/about/objectives` | [`web-objectives.md`](web-objectives.md) | E2E-WOBJ-001..007 |
 | `/visit` | [`web-visit.md`](web-visit.md) | E2E-WVS-001..011 |
 | `/login` | [`web-login.md`](web-login.md) | E2E-WLG-001..017 |
 | `/login/verify` | [`web-otp-verify.md`](web-otp-verify.md) | E2E-WOT-001..010 |

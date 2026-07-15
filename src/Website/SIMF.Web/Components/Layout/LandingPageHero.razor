@@ -16,6 +16,11 @@
         <nav class="ln-pghero__crumbs" aria-label="breadcrumb">
             <a href="/">@L["PageHero.Home"]</a>
             <span aria-hidden="true">/</span>
+            @if (ParentHref is not null)
+            {
+                <a href="@ParentHref">@ParentLabel</a>
+                <span aria-hidden="true">/</span>
+            }
             <span class="ln-pghero__crumb-current">@Crumb</span>
         </nav>
         <h1 class="ln-pghero__title">@Title</h1>
@@ -37,8 +42,14 @@
     // Optional supporting line under the title.
     [Parameter] public string? Subtitle { get; set; }
 
-    // Current-page label shown after "Home /" in the breadcrumb. Required.
+    // Current-page label shown last in the breadcrumb. Required.
     [Parameter, EditorRequired] public string Crumb { get; set; } = "";
+
+    // Optional intermediate breadcrumb level between "Home" and the current page
+    // (e.g. About-cluster sub-pages render "Home / About / <page>"). Both must be
+    // set together; when ParentHref is null the breadcrumb stays two-level.
+    [Parameter] public string? ParentLabel { get; set; }
+    [Parameter] public string? ParentHref { get; set; }
 
     // Path to the hero background photo (anchored to the inline-end side). Required.
     [Parameter, EditorRequired] public string ImageSrc { get; set; } = "";

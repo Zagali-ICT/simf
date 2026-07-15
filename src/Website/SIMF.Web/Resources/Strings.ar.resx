@@ -367,4 +367,13 @@
   <data name="About.Values.Title" xml:space="preserve"><value>القيم</value></data>
   <data name="About.Pillars.Title" xml:space="preserve"><value>ركائز الملتقى</value></data>
   <data name="About.Pillars.Sub" xml:space="preserve"><value>ماذا يقدّم الملتقى</value></data>
+
+  <!-- objectives page (/about/objectives) -->
+  <data name="Objectives.PageTitle" xml:space="preserve"><value>الأهداف — الملتقى البحري السعودي الدولي</value></data>
+  <data name="Objectives.Meta" xml:space="preserve"><value>الأهداف الاستراتيجية للملتقى البحري السعودي الدولي — الأمن البحري ومرونة سلاسل الإمداد وأمن الطاقة وحماية البنية التحتية والتحول الرقمي والتعاون الدولي.</value></data>
+  <data name="Objectives.Breadcrumb" xml:space="preserve"><value>الأهداف</value></data>
+  <data name="Objectives.Hero.Title" xml:space="preserve"><value>الأهداف</value></data>
+  <data name="Objectives.Hero.Subtitle" xml:space="preserve"><value>الأهداف الاستراتيجية التي يسعى الملتقى لتحقيقها عبر جلساته وفعالياته.</value></data>
+  <data name="Objectives.Section.Title" xml:space="preserve"><value>ستة أهداف رئيسية</value></data>
+  <data name="Objectives.Section.Sub" xml:space="preserve"><value>يهدف الملتقى البحري السعودي الدولي إلى ترسيخ مكانة المملكة كلاعب محوري في الأمن البحري العالمي، وبناء أطر تعاون عملية بين الدول والمنظمات والقطاع الخاص.</value></data>
 </root>
