@@ -376,4 +376,14 @@
   <data name="Objectives.Hero.Subtitle" xml:space="preserve"><value>الأهداف الاستراتيجية التي يسعى الملتقى لتحقيقها عبر جلساته وفعالياته.</value></data>
   <data name="Objectives.Section.Title" xml:space="preserve"><value>ستة أهداف رئيسية</value></data>
   <data name="Objectives.Section.Sub" xml:space="preserve"><value>يهدف الملتقى البحري السعودي الدولي إلى ترسيخ مكانة المملكة كلاعب محوري في الأمن البحري العالمي، وبناء أطر تعاون عملية بين الدول والمنظمات والقطاع الخاص.</value></data>
+
+  <!-- key themes page (/about/themes) -->
+  <data name="Themes.PageTitle" xml:space="preserve"><value>المحاور — الملتقى البحري السعودي الدولي</value></data>
+  <data name="Themes.Meta" xml:space="preserve"><value>المحاور الرئيسية والمواضيع الاستراتيجية للملتقى البحري السعودي الدولي — من الأمن والحماية إلى التقنية والاستدامة.</value></data>
+  <data name="Themes.Breadcrumb" xml:space="preserve"><value>المحاور</value></data>
+  <data name="Themes.Hero.Title" xml:space="preserve"><value>المحاور</value></data>
+  <data name="Themes.Hero.Subtitle" xml:space="preserve"><value>أبرز الملفات والقضايا التي تناقشها جلسات الملتقى وورش عمله.</value></data>
+  <data name="Themes.Section.Title" xml:space="preserve"><value>المحاور الرئيسية</value></data>
+  <data name="Themes.Section.Sub" xml:space="preserve"><value>يتناول الملتقى منظومة متكاملة من المواضيع الاستراتيجية التي تشكّل مستقبل القطاع البحري عالمياً، من الأمن والحماية إلى التقنية والاستدامة.</value></data>
+  <data name="Themes.OnThisPage" xml:space="preserve"><value>في هذه الصفحة</value></data>
 </root>

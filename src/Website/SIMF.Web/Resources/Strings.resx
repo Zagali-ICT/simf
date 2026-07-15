@@ -376,4 +376,14 @@
   <data name="Objectives.Hero.Subtitle" xml:space="preserve"><value>The strategic objectives the forum works to achieve through its sessions and events.</value></data>
   <data name="Objectives.Section.Title" xml:space="preserve"><value>Six main objectives</value></data>
   <data name="Objectives.Section.Sub" xml:space="preserve"><value>The Saudi International Maritime Forum aims to anchor the Kingdom's position as a pivotal player in global maritime security, and to build practical frameworks for cooperation between states, organisations and the private sector.</value></data>
+
+  <!-- key themes page (/about/themes) -->
+  <data name="Themes.PageTitle" xml:space="preserve"><value>Key themes — Saudi International Maritime Forum</value></data>
+  <data name="Themes.Meta" xml:space="preserve"><value>The key themes and strategic topics of the Saudi International Maritime Forum — from security and protection to technology and sustainability.</value></data>
+  <data name="Themes.Breadcrumb" xml:space="preserve"><value>Key themes</value></data>
+  <data name="Themes.Hero.Title" xml:space="preserve"><value>Key themes</value></data>
+  <data name="Themes.Hero.Subtitle" xml:space="preserve"><value>The main topics and issues discussed across the forum's sessions and workshops.</value></data>
+  <data name="Themes.Section.Title" xml:space="preserve"><value>Key themes</value></data>
+  <data name="Themes.Section.Sub" xml:space="preserve"><value>The forum addresses an integrated set of strategic topics shaping the future of the maritime sector worldwide — from security and protection to technology and sustainability.</value></data>
+  <data name="Themes.OnThisPage" xml:space="preserve"><value>On this page</value></data>
 </root>

@@ -1049,3 +1049,40 @@
 .ln-fcard--raised { box-shadow: var(--shadow-card); }
 @media (max-width: 900px) { .ln-fsection__grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 560px) { .ln-fsection__grid { grid-template-columns: 1fr; } }
+
+/* =============== THEME EXPLORER (ln-themex: tabbed themes) ============== */
+/* A tabbed explorer: a vertical tab list (right) selects a theme, whose
+   title + description show in the panel, beside a shared image (left).
+   Progressive-enhancement: WITHOUT JS the tabs hide and every panel shows
+   stacked (content is never hidden); WITH JS (`.ln-js`) the tabs drive which
+   single panel is visible. Tab switching lives in landing.js (initThemeTabs). */
+.ln-themex { display: flex; gap: 32px; align-items: stretch; }
+.ln-themex__media { flex: 1 1 0; min-width: 0; min-height: 360px; border-radius: var(--radius-sm); overflow: hidden; }
+.ln-themex__media img { width: 100%; height: 100%; object-fit: cover; }
+.ln-themex__panels { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; }
+.ln-themex__panel { display: flex; flex-direction: column; gap: 24px; text-align: start; }
+/* Keyed on `.is-enhanced`, which initThemeTabs adds ONLY once it has wired the
+   tabs — so if the JS never runs (disabled, or failed to load) every panel stays
+   visible and reachable, not just when the `.ln-js` head flag is set. */
+.ln-themex.is-enhanced .ln-themex__panel:not(.is-active) { display: none; }
+.ln-themex__panel + .ln-themex__panel { margin-top: 32px; }   /* spacing only matters in the un-enhanced stacked view */
+.ln-themex.is-enhanced .ln-themex__panel + .ln-themex__panel { margin-top: 0; }
+.ln-themex__panel-title { font-size: 20px; font-weight: 700; line-height: 32px; color: var(--ink); }
+.ln-themex__panel-desc { font-size: 16px; line-height: 24px; color: var(--ink); }
+.ln-themex__nav { flex: 0 0 auto; display: flex; flex-direction: column; gap: 16px; }
+.ln-themex__onpage { font-size: 14px; line-height: 16px; color: var(--gray-darker); text-align: start; }
+.ln-themex__tabs { display: none; flex-direction: column; gap: 24px; }
+.ln-themex.is-enhanced .ln-themex__tabs { display: flex; }
+.ln-themex__tab { position: relative; width: 200px; max-width: 100%; padding-block: 6px; padding-inline: 16px 8px;
+  background: none; border: 0; cursor: pointer; font-family: inherit; font-size: 14px; line-height: 20px;
+  text-align: start; color: var(--gray-darker); transition: color .2s ease; }
+.ln-themex__tab.is-active { color: var(--ink); font-weight: 700; }
+.ln-themex__tab.is-active::before { content: ""; position: absolute; inset-inline-start: 0; top: 0; bottom: 0;
+  width: 3px; border-radius: var(--radius-full); background: var(--gold); }
+@media (max-width: 860px) {
+  .ln-themex { flex-direction: column; }
+  .ln-themex__media { flex-basis: auto; min-height: 240px; }
+  .ln-themex__tabs { flex-direction: row; flex-wrap: wrap; }
+  .ln-themex__tab { width: auto; }
+  .ln-themex__tab.is-active::before { inset-inline-start: 0; top: auto; bottom: 0; width: 100%; height: 3px; }
+}
