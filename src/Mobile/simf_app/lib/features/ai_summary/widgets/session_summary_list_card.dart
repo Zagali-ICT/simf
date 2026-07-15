@@ -5,9 +5,9 @@ import '../../../app/localization/app_l10n.dart';
 import '../../../app/route_names.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../app/widgets/simf_page_shell.dart';
-import '../../../app/widgets/simf_svg_icon.dart';
 import '../../sessions/data/session_models.dart';
 import '../../sessions/widgets/favourite_heart_button.dart';
+import '../../sessions/widgets/session_card_meta.dart';
 import '../../sessions/widgets/session_state_chip.dart';
 
 /// One rich session-summary card (Figma 1388:8392): heart on the trailing edge,
@@ -77,7 +77,7 @@ class SessionSummaryCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: SimfTokens.space2),
-                      _IconLine(
+                      SessionIconLine(
                         // Figma 1388:8441 — the exact iconify clock, not Material.
                         asset: 'assets/icons/session_clock.svg',
                         text: '$time · $durationLabel',
@@ -97,7 +97,7 @@ class SessionSummaryCard extends StatelessWidget {
                 children: <Widget>[
                   if (speaker != null)
                     Flexible(
-                      child: _MetaGroup(
+                      child: SessionMetaGroup(
                         // Figma 1388:8457 — the exact iconify "users" glyph.
                         asset: 'assets/icons/session_users.svg',
                         text: speaker,
@@ -105,7 +105,7 @@ class SessionSummaryCard extends StatelessWidget {
                     ),
                   if (hall != null && hall.isNotEmpty)
                     Flexible(
-                      child: _MetaGroup(
+                      child: SessionMetaGroup(
                         // Figma 1388:8449 — the exact iconify map-pin glyph.
                         asset: 'assets/icons/session_location.svg',
                         text: hall,
@@ -143,76 +143,6 @@ class SessionSummaryCard extends StatelessWidget {
     final name = primary.localizedName(isArabic);
     final title = primary.title?.trim();
     return title == null || title.isEmpty ? name : '$name · $title';
-  }
-}
-
-/// The clock·time·duration line under the title (Figma 1388:8439): a 12px glyph
-/// + a beige 12px label.
-class _IconLine extends StatelessWidget {
-  const _IconLine({required this.asset, required this.text});
-
-  final String asset;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: <Widget>[
-        SimfSvgIcon(asset, size: 12, color: SimfTokens.beigeBorder),
-        const SizedBox(width: SimfTokens.space2),
-        Expanded(
-          child: Text(
-            text,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textSm,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// A speaker / hall meta group (Figma 1388:8445 / 8453): a 24px beige icon box
-/// (navy glyph) leading (right in RTL), then the beige 12px label.
-class _MetaGroup extends StatelessWidget {
-  const _MetaGroup({required this.asset, required this.text});
-
-  final String asset;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Container(
-          width: 24,
-          height: 24,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: SimfTokens.beigeBorder,
-            borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-          ),
-          child: SimfSvgIcon(asset, size: 12, color: SimfTokens.navy),
-        ),
-        const SizedBox(width: SimfTokens.space2),
-        Flexible(
-          child: Text(
-            text,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: SimfTokens.beigeBorder,
-              fontSize: SimfTokens.textSm,
-            ),
-          ),
-        ),
-      ],
-    );
   }
 }
 
