@@ -63,14 +63,12 @@ class _SessionPresentationsScreenState
       onBack: () => backOrHome(context),
       body: presentations.when(
         loading: () => const SimfLoadingState(),
-        error: (_, __) => SimfPullToRefresh(
+        error: (_, __) => SimfRefreshableMessage(
           onRefresh: _refresh,
-          child: SimfPullableHost(
-            child: SimfErrorState(
-              message: l10n.presentationsError,
-              retryLabel: l10n.retryLabel,
-              onRetry: () => ref.invalidate(presentationsProvider),
-            ),
+          child: SimfErrorState(
+            message: l10n.presentationsError,
+            retryLabel: l10n.retryLabel,
+            onRetry: () => ref.invalidate(presentationsProvider),
           ),
         ),
         data: (page) => _Body(
@@ -124,13 +122,11 @@ class _Body extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
-      return SimfPullToRefresh(
+      return SimfRefreshableMessage(
         onRefresh: onRefresh,
-        child: SimfPullableHost(
-          child: SimfEmptyState(
-            icon: Icons.description_outlined,
-            message: l10n.presentationsEmpty,
-          ),
+        child: SimfEmptyState(
+          icon: Icons.description_outlined,
+          message: l10n.presentationsEmpty,
         ),
       );
     }

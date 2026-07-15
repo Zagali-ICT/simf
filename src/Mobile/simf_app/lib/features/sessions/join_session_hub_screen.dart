@@ -41,24 +41,20 @@ class JoinSessionHubScreen extends ConsumerWidget {
       tab: SimfTab.sessions,
       body: sessions.when(
         loading: () => const SimfLoadingState(),
-        error: (_, __) => SimfPullToRefresh(
+        error: (_, __) => SimfRefreshableMessage(
           onRefresh: () => _refresh(ref),
-          child: SimfPullableHost(
-            child: SimfErrorState(
-              message: l10n.sessionsError,
-              retryLabel: l10n.retryLabel,
-              onRetry: () => ref.invalidate(joinHubSessionsProvider),
-            ),
+          child: SimfErrorState(
+            message: l10n.sessionsError,
+            retryLabel: l10n.retryLabel,
+            onRetry: () => ref.invalidate(joinHubSessionsProvider),
           ),
         ),
         data: (items) => items.isEmpty
-            ? SimfPullToRefresh(
+            ? SimfRefreshableMessage(
                 onRefresh: () => _refresh(ref),
-                child: SimfPullableHost(
-                  child: SimfEmptyState(
-                    icon: Icons.event_busy_outlined,
-                    message: l10n.sessionsEmpty,
-                  ),
+                child: SimfEmptyState(
+                  icon: Icons.event_busy_outlined,
+                  message: l10n.sessionsEmpty,
                 ),
               )
             : SimfPullToRefresh(

@@ -77,14 +77,12 @@ class _SessionSummaryListScreenState
           Expanded(
             child: sessions.when(
               loading: () => const SimfLoadingState(),
-              error: (_, __) => SimfPullToRefresh(
+              error: (_, __) => SimfRefreshableMessage(
                 onRefresh: _refresh,
-                child: SimfPullableHost(
-                  child: SimfErrorState(
-                    message: l10n.aiSummaryError,
-                    retryLabel: l10n.retryLabel,
-                    onRetry: () => ref.invalidate(aiSummarySessionsProvider),
-                  ),
+                child: SimfErrorState(
+                  message: l10n.aiSummaryError,
+                  retryLabel: l10n.retryLabel,
+                  onRetry: () => ref.invalidate(aiSummarySessionsProvider),
                 ),
               ),
               data: (items) => _buildList(context, l10n, items),
@@ -108,13 +106,11 @@ class _SessionSummaryListScreenState
     final isArabic = l10n.isArabic;
     final filtered = _filter(items);
     if (filtered.isEmpty) {
-      return SimfPullToRefresh(
+      return SimfRefreshableMessage(
         onRefresh: _refresh,
-        child: SimfPullableHost(
-          child: SimfEmptyState(
-            icon: Icons.summarize_outlined,
-            message: _emptyMessage(l10n, items.isEmpty),
-          ),
+        child: SimfEmptyState(
+          icon: Icons.summarize_outlined,
+          message: _emptyMessage(l10n, items.isEmpty),
         ),
       );
     }
