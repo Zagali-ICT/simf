@@ -139,13 +139,7 @@ class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
     }
     final day = selected.startLocal;
     final rows = all
-        .where(
-          (s) =>
-              s.id != selected.id &&
-              s.startLocal.year == day.year &&
-              s.startLocal.month == day.month &&
-              s.startLocal.day == day.day,
-        )
+        .where((s) => s.id != selected.id && sameLocalDay(s.startLocal, day))
         .toList()
       ..sort((a, b) => a.startUtc.compareTo(b.startUtc));
     return rows;

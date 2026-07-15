@@ -121,7 +121,7 @@ class _SessionSummaryListScreenState
       );
     }
 
-    final days = _distinctDays(filtered);
+    final days = sessionDays(filtered);
 
     return SimfPullToRefresh(
       onRefresh: _refresh,
@@ -137,7 +137,7 @@ class _SessionSummaryListScreenState
         itemBuilder: (context, dayIndex) {
           final day = days[dayIndex];
           final dayItems = filtered
-              .where((s) => _sameDay(s.startLocal, day))
+              .where((s) => sameLocalDay(s.startLocal, day))
               .toList(growable: false);
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -233,20 +233,6 @@ class _SessionSummaryListScreenState
         return l10n.sessionSummariesEmpty;
     }
   }
-
-  List<DateTime> _distinctDays(List<SessionListItem> items) {
-    final byKey = <String, DateTime>{};
-    for (final s in items) {
-      final local = s.startLocal;
-      final key = '${local.year}-${local.month}-${local.day}';
-      byKey.putIfAbsent(key, () => DateTime(local.year, local.month, local.day));
-    }
-    final days = byKey.values.toList()..sort();
-    return days;
-  }
-
-  bool _sameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
 
   int _durationMinutes(SessionListItem item) {
     final minutes = item.endUtc.difference(item.startUtc).inMinutes;
