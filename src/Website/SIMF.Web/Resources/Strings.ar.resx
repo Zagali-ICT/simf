@@ -386,4 +386,13 @@
   <data name="Themes.Section.Title" xml:space="preserve"><value>المحاور الرئيسية</value></data>
   <data name="Themes.Section.Sub" xml:space="preserve"><value>يتناول الملتقى منظومة متكاملة من المواضيع الاستراتيجية التي تشكّل مستقبل القطاع البحري عالمياً، من الأمن والحماية إلى التقنية والاستدامة.</value></data>
   <data name="Themes.OnThisPage" xml:space="preserve"><value>في هذه الصفحة</value></data>
+
+  <!-- the organizer page (/about/organizer) -->
+  <data name="Organizer.PageTitle" xml:space="preserve"><value>المنظم — الملتقى البحري السعودي الدولي</value></data>
+  <data name="Organizer.Meta" xml:space="preserve"><value>الجهات المنظمة للملتقى البحري السعودي الدولي — يُقام تحت رعاية وزارة الدفاع وتنظّمه القوات البحرية الملكية السعودية.</value></data>
+  <data name="Organizer.Breadcrumb" xml:space="preserve"><value>المنظم</value></data>
+  <data name="Organizer.Hero.Title" xml:space="preserve"><value>المنظم</value></data>
+  <data name="Organizer.Hero.Subtitle" xml:space="preserve"><value>منصة دولية جمعت قادة القوات البحرية والخبراء لمناقشة مستقبل الأمن البحري وحماية الممرات الملاحية.</value></data>
+  <data name="Organizer.Section.Title" xml:space="preserve"><value>الجهة المنظمة</value></data>
+  <data name="Organizer.Section.Sub" xml:space="preserve"><value>يُقام الملتقى تحت رعاية وزارة الدفاع وتنظّمه القوات البحرية الملكية السعودية، بالتعاون مع الجهات الحكومية ذات الصلة.</value></data>
 </root>

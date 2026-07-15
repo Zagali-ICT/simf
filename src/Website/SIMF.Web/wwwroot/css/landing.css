@@ -1086,3 +1086,22 @@
   .ln-themex__tab { width: auto; }
   .ln-themex__tab.is-active::before { inset-inline-start: 0; top: auto; bottom: 0; width: 100%; height: 3px; }
 }
+
+/* ==================== ORGANISER CARDS (ln-orgcard) ===================== */
+/* Two centred cards (logo + name + description) for the forum's organising
+   bodies. The forum mark ships white (for the dark nav), so on the white card
+   the RSNF stand-in paints it navy via a CSS mask (same idiom as ln-ico). */
+.ln-orgs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 32px; }
+.ln-orgcard { background: var(--white); border: 1px solid var(--primary-light); border-radius: var(--radius-md);
+  padding: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 32px; text-align: center; }
+.ln-orgcard__logo { height: 86px; display: grid; place-items: center; }
+.ln-orgcard__logo img { max-height: 76px; width: auto; }
+/* a white-shipped mark painted navy so it shows on the white card; the SVG comes
+   from the page via the --logo custom property (set inline per organiser). */
+.ln-orgcard__logo--masked { width: 240px; max-width: 100%; height: 76px; background-color: var(--navy);
+  -webkit-mask: var(--logo) center / contain no-repeat;
+          mask: var(--logo) center / contain no-repeat; }
+.ln-orgcard__body { display: flex; flex-direction: column; gap: 24px; }
+.ln-orgcard__name { font-size: 18px; font-weight: 800; line-height: 28px; color: var(--ink-display); }
+.ln-orgcard__desc { font-size: 16px; line-height: 24px; color: var(--ink-display); }
+@media (max-width: 720px) { .ln-orgs { grid-template-columns: 1fr; } .ln-orgcard { padding: 40px; } }

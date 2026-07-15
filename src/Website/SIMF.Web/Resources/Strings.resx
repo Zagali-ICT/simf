@@ -386,4 +386,13 @@
   <data name="Themes.Section.Title" xml:space="preserve"><value>Key themes</value></data>
   <data name="Themes.Section.Sub" xml:space="preserve"><value>The forum addresses an integrated set of strategic topics shaping the future of the maritime sector worldwide — from security and protection to technology and sustainability.</value></data>
   <data name="Themes.OnThisPage" xml:space="preserve"><value>On this page</value></data>
+
+  <!-- the organizer page (/about/organizer) -->
+  <data name="Organizer.PageTitle" xml:space="preserve"><value>The organizer — Saudi International Maritime Forum</value></data>
+  <data name="Organizer.Meta" xml:space="preserve"><value>The organising bodies of the Saudi International Maritime Forum — held under the patronage of the Ministry of Defense and organised by the Royal Saudi Naval Forces.</value></data>
+  <data name="Organizer.Breadcrumb" xml:space="preserve"><value>The organizer</value></data>
+  <data name="Organizer.Hero.Title" xml:space="preserve"><value>The organizer</value></data>
+  <data name="Organizer.Hero.Subtitle" xml:space="preserve"><value>An international platform that brings together naval leaders and experts to discuss the future of maritime security and the protection of shipping lanes.</value></data>
+  <data name="Organizer.Section.Title" xml:space="preserve"><value>The organising body</value></data>
+  <data name="Organizer.Section.Sub" xml:space="preserve"><value>The forum is held under the patronage of the Ministry of Defense and organised by the Royal Saudi Naval Forces, in cooperation with relevant government bodies.</value></data>
 </root>

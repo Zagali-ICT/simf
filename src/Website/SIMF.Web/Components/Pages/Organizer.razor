@@ -1,0 +1,60 @@
+@* SIMF public "The organizer" page — Figma node 5865-38003. Fourth About-cluster
+   page. Built on the shared LandingShell + LandingPageHero (3-level breadcrumb
+   Home / About / Organizer) + the ln-fsection chrome, with two organizer cards
+   (patron + organising body). Bilingual AR-RTL / EN-LTR. Static content (no API);
+   the organiser cards live in Organizer.razor.cs. Serves "/about/organizer".
+
+   NOTE: the Figma frame is a partially-templated placeholder (a dev-logo in one
+   card, duplicated body text, lorem-style section subtitle). This page fills the
+   shell with the REAL organising bodies (Ministry of Defense + Royal Saudi Naval
+   Forces, per the forum's "MOD.RSNF" identity); see web/organizer.md §7. *@
+@page "/about/organizer"
+@layout LandingLayout
+@inject IStringLocalizer<Strings> L
+
+@{
+    var rtl = CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
+}
+
+<LandingShell Title="@L["Organizer.PageTitle"]" Description="@L["Organizer.Meta"]">
+
+    @* ============================== HERO ============================== *@
+    <LandingPageHero Title="@L["Organizer.Hero.Title"]"
+                     Subtitle="@L["Organizer.Hero.Subtitle"]"
+                     Crumb="@L["Organizer.Breadcrumb"]"
+                     ParentLabel="@L["About.Breadcrumb"]"
+                     ParentHref="/about"
+                     ImageSrc="assets/figma/about/about-hero.jpg" />
+
+    @* ==================== ORGANISING BODIES (cards) ==================== *@
+    <section class="ln-fsection" aria-label="@L["Organizer.Section.Title"]">
+        <div class="ln-fsection__inner ln-reveal">
+            <header class="ln-fsection__head">
+                <h2 class="ln-fsection__title">@L["Organizer.Section.Title"]</h2>
+                <p class="ln-fsection__sub">@L["Organizer.Section.Sub"]</p>
+            </header>
+            <div class="ln-orgs">
+                @foreach (var o in Organizers)
+                {
+                    <article class="ln-orgcard">
+                        @if (o.LogoMasked)
+                        {
+                            @* white-shipped mark recoloured navy via a mask; the asset comes
+                               from the record (--logo) so nothing is hardcoded in the CSS. *@
+                            <span class="ln-orgcard__logo ln-orgcard__logo--masked" style="--logo:url('@o.Logo')" role="img" aria-label="@o.Name.For(rtl)"></span>
+                        }
+                        else
+                        {
+                            <span class="ln-orgcard__logo"><img src="@o.Logo" alt="@o.Name.For(rtl)" /></span>
+                        }
+                        <div class="ln-orgcard__body">
+                            <h3 class="ln-orgcard__name">@o.Name.For(rtl)</h3>
+                            <p class="ln-orgcard__desc">@o.Desc.For(rtl)</p>
+                        </div>
+                    </article>
+                }
+            </div>
+        </div>
+    </section>
+
+</LandingShell>
