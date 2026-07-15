@@ -40,10 +40,9 @@ final sessionsRepositoryProvider = Provider<SessionsRepository>((ref) {
 
 /// The whole active programme as one cached list (`GET /app/programme/sessions`)
 /// — the single source screens read `SessionListItem` state from (phase,
-/// `hasPublishedSummary`). New readers watch this instead of re-declaring the
-/// same `getSessions()` wrapper. (The pre-existing `aiSummarySessionsProvider`
-/// + `joinHubSessionsProvider` are identical copies kept for now — collapse them
-/// onto this one in a separate DRY pass.)
+/// `hasPublishedSummary`). The session-summaries list, the AI-summary screen,
+/// the join hub and the presentations screen all watch this one provider (the
+/// former per-screen `getSessions()` copies were collapsed onto it).
 final programmeSessionsProvider =
     FutureProvider.autoDispose<List<SessionListItem>>(
   (ref) => ref.watch(sessionsRepositoryProvider).getSessions(),

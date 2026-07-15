@@ -13,6 +13,8 @@ import 'package:simf_app/features/ai_summary/data/session_summary_models.dart';
 import 'package:simf_app/features/ai_summary/data/session_summary_repository.dart';
 import 'package:simf_app/features/ai_summary/session_summary_screen.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/data/sessions_repository.dart'
+    show programmeSessionsProvider;
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import 'golden_fonts.dart';
@@ -127,7 +129,7 @@ void main() {
           simfDataConfigProvider.overrideWithValue(_config),
           sessionSummaryRepositoryProvider
               .overrideWithValue(_FakeSummaryRepo()),
-          aiSummarySessionsProvider.overrideWith((ref) async => _sessions),
+          programmeSessionsProvider.overrideWith((ref) async => _sessions),
         ],
         child: MaterialApp.router(
           debugShowCheckedModeBanner: false,

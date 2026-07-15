@@ -16,13 +16,6 @@ import 'widgets/summary_content_card.dart';
 import 'widgets/summary_generate_card.dart';
 import 'widgets/summary_session_card.dart';
 
-/// The programme list, reused for the summaries list + this screen's session
-/// resolution + day agenda (`GET /app/programme/sessions`).
-final aiSummarySessionsProvider =
-    FutureProvider.autoDispose<List<SessionListItem>>(
-  (ref) => ref.watch(sessionsRepositoryProvider).getSessions(),
-);
-
 /// The three summary tabs (Figma 1072:14647), in RTL display order
 /// (right→left): أبرز النقاط · التوصيات · المتحدثون. أبرز النقاط is the default.
 enum _SummaryTab { keyPoints, recommendations, speakers }
@@ -154,7 +147,7 @@ class _AiSummaryScreenState extends ConsumerState<AiSummaryScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    final sessions = ref.watch(aiSummarySessionsProvider);
+    final sessions = ref.watch(programmeSessionsProvider);
     return SimfPageShell(
       title: l10n.aiSummaryTitle,
       onBack: () => backOrHome(context),

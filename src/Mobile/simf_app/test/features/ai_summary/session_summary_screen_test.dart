@@ -9,6 +9,8 @@ import 'package:simf_app/features/ai_summary/data/session_summary_models.dart';
 import 'package:simf_app/features/ai_summary/data/session_summary_repository.dart';
 import 'package:simf_app/features/ai_summary/session_summary_screen.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
+import 'package:simf_app/features/sessions/data/sessions_repository.dart'
+    show programmeSessionsProvider;
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 SessionSummary _summary() => SessionSummary.fromJson(const <String, dynamic>{
@@ -110,7 +112,7 @@ Future<void> _pump(
       overrides: <Override>[
         simfDataConfigProvider.overrideWithValue(_testConfig),
         sessionSummaryRepositoryProvider.overrideWithValue(repo),
-        aiSummarySessionsProvider.overrideWith((ref) async => sessions),
+        programmeSessionsProvider.overrideWith((ref) async => sessions),
       ],
       child: MaterialApp.router(
         routerConfig: router,
