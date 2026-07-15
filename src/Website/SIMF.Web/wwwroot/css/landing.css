@@ -45,6 +45,9 @@
   --secondary: #498fbd;
   --secondary-dark: #376b8e;
   --secondary-light: #edf4f8;
+  /* interior page-hero gradient (Figma colors/blue: dark → bright) */
+  --blue-dark: #005da2;
+  --blue-bright: #007cd8;
   --gold: #e8c060;
   --gold-active: #ba9a4d;
   --gold-dark: #ae9048;
@@ -957,3 +960,77 @@
   .landing .ln-sessoverview__inner, .landing .ln-sessthemes__inner,
   .landing .ln-sessrelated__inner, .landing .ln-sessreach__inner { padding: 48px 20px; }
 }
+
+/* ==================== INTERIOR PAGE HERO (ln-pghero) =============== */
+/* Reusable hero for the marketing sub-pages (About cluster, …): a photo on the
+   inline-END side under a blue brand gradient, with breadcrumb + title +
+   subtitle + two event info-pills. Mirrors the ln-hero2 photo/gradient art. */
+.ln-pghero { position: relative; min-height: 460px; overflow: hidden; background: var(--navy);
+  display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
+  padding: 40px clamp(16px, 5.5vw, 80px); }
+.ln-pghero__bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.ln-pghero__bg img { position: absolute; inset-inline-end: 0; top: 0; width: 51.16%; height: 100%; object-fit: cover; }
+.ln-pghero__bg::after { content: ""; position: absolute; inset: 0; background-image:
+  linear-gradient(90deg, rgba(0, 0, 0, .24) 0%, rgba(0, 0, 0, .24) 100%),
+  linear-gradient(269.98deg, var(--blue-dark) 0%, var(--blue-bright) 49.16%,
+    color-mix(in srgb, var(--blue-bright) 98%, transparent) 51.69%,
+    color-mix(in srgb, var(--blue-bright) 0%, transparent) 99.94%); }
+/* the gradient is genuinely mirrored art, so it keeps an explicit LTR flip */
+[dir="ltr"] .ln-pghero__bg::after { transform: scaleX(-1); }
+.ln-pghero__block { position: relative; z-index: 1; width: 457px; max-width: 100%; display: flex;
+  flex-direction: column; align-items: flex-start; gap: 32px; text-align: start; color: var(--white);
+  text-shadow: 0 2px 10px rgba(76, 78, 100, .22); }
+.ln-pghero__crumbs { display: flex; align-items: center; gap: 8px; font-size: 14px; line-height: 20px; }
+.ln-pghero__crumbs a { color: var(--white); }
+.ln-pghero__crumbs a:hover { text-decoration: underline; }
+.ln-pghero__crumb-current { opacity: .9; }
+.ln-pghero__title { font-size: 40px; font-weight: 800; line-height: 1.15; }
+.ln-pghero__subtitle { font-size: 18px; font-weight: 400; line-height: 32px; }
+.ln-pghero__pills { display: flex; flex-wrap: wrap; gap: 12px; width: 100%; }
+.ln-pghero__pill { flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: flex-end;
+  gap: 8px; padding: 10px 16px; border-radius: var(--radius-sm); font-size: 13px; color: var(--white);
+  background: color-mix(in srgb, var(--gold) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gold) 10%, transparent); }
+.ln-pghero__pill span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ln-pghero__pill img { flex: 0 0 auto; width: 16px; height: 16px; }
+@media (max-width: 720px) {
+  .ln-pghero { min-height: 380px; }
+  .ln-pghero__block { width: 100%; }
+  .ln-pghero__title { font-size: 30px; }
+}
+
+/* ============================ VALUES (ln-values) ================== */
+.ln-values { background: var(--bg-gray); padding: 64px clamp(16px, 5.5vw, 80px); }
+.ln-values__inner { max-width: var(--content-w); margin-inline: auto; display: flex; flex-direction: column; gap: 32px; }
+.ln-values__title { font-size: 32px; font-weight: 800; line-height: 1.15; color: var(--ink); text-align: start; }
+.ln-values__grid { display: flex; gap: 24px; }
+.ln-vcard { flex: 1 1 0; min-width: 0; background: var(--white); border: 1px solid var(--primary-light);
+  padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 24px; }
+.ln-vcard__icon { flex: 0 0 auto; width: 48px; height: 48px; border-radius: var(--radius-full);
+  background: var(--gold-tint); color: var(--gold-dark); display: grid; place-items: center; }
+.ln-vcard__icon svg { width: 24px; height: 24px; display: block; }
+.ln-vcard__label { font-size: 18px; font-weight: 800; line-height: 24px; color: var(--navy); text-align: center; }
+
+/* ==================== FORUM PILLARS / FEATURE CARDS =============== */
+/* ln-fcard: reusable white feature card (gold-tint square icon chip + navy
+   title + gray description) for the About cluster's pillars-style rows. */
+.ln-pillars { background: var(--bg-gray); padding: 40px clamp(16px, 5.5vw, 80px) 64px; }
+.ln-pillars__inner { max-width: var(--content-w); margin-inline: auto; display: flex; flex-direction: column; gap: 32px; }
+.ln-pillars__head { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; text-align: start; }
+.ln-pillars__title { font-size: 32px; font-weight: 800; line-height: 1.15; color: var(--ink); text-align: start; }
+.ln-pillars__sub { font-size: 16px; line-height: 24px; color: var(--ink); text-align: start; }
+.ln-pillars__grid { display: flex; gap: 24px; align-items: stretch; }
+.ln-fcard { flex: 1 1 0; min-width: 0; background: var(--white); border: 1px solid var(--primary-light);
+  border-radius: var(--radius-sm); padding: 24px; display: flex; flex-direction: column; align-items: flex-start;
+  gap: 16px; text-align: start; }
+.ln-fcard__icon { flex: 0 0 auto; width: 54px; height: 54px; border-radius: var(--radius-sm);
+  background: var(--gold-tint); display: grid; place-items: center; overflow: hidden; }
+.ln-fcard__icon img { width: 24px; height: 24px; }
+.ln-fcard__title { font-size: 20px; font-weight: 700; line-height: 32px; color: var(--navy); text-align: start; }
+.ln-fcard__desc { font-size: 14px; line-height: 20px; color: var(--gray-darker); text-align: start; }
+/* values + pillars share the same reflow: multi-col → 2-up → 1-up */
+@media (max-width: 900px) {
+  .ln-values__grid, .ln-pillars__grid { flex-wrap: wrap; }
+  .ln-vcard, .ln-fcard { flex: 1 1 42%; }
+}
+@media (max-width: 520px) { .ln-vcard, .ln-fcard { flex-basis: 100%; } }

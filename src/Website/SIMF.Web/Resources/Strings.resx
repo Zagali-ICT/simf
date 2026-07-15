@@ -354,4 +354,17 @@
   <data name="SessionDetail.Downloads.Title" xml:space="preserve"><value>Downloads</value></data>
   <data name="SessionDetail.Outcomes.Title" xml:space="preserve"><value>Key outcomes</value></data>
   <data name="SessionDetail.Outcomes.Subtitle" xml:space="preserve"><value>What you'll take away</value></data>
+
+  <!-- interior page-hero (shared: About cluster, …) -->
+  <data name="PageHero.Home" xml:space="preserve"><value>Home</value></data>
+
+  <!-- about us page (/about) -->
+  <data name="About.PageTitle" xml:space="preserve"><value>About the Forum — Saudi International Maritime Forum</value></data>
+  <data name="About.Meta" xml:space="preserve"><value>About the Saudi International Maritime Forum — the leading platform for maritime dialogue, its values, participation figures and forum pillars.</value></data>
+  <data name="About.Breadcrumb" xml:space="preserve"><value>About</value></data>
+  <data name="About.Hero.Title" xml:space="preserve"><value>About the Saudi International Maritime Forum</value></data>
+  <data name="About.Hero.Subtitle" xml:space="preserve"><value>The 4th Saudi International Maritime Forum — the leading platform for dialogue and cooperation in maritime affairs.</value></data>
+  <data name="About.Values.Title" xml:space="preserve"><value>Our values</value></data>
+  <data name="About.Pillars.Title" xml:space="preserve"><value>Forum pillars</value></data>
+  <data name="About.Pillars.Sub" xml:space="preserve"><value>What the forum offers</value></data>
 </root>

@@ -354,4 +354,17 @@
   <data name="SessionDetail.Downloads.Title" xml:space="preserve"><value>روابط التحميل</value></data>
   <data name="SessionDetail.Outcomes.Title" xml:space="preserve"><value>أبرز المخرجات</value></data>
   <data name="SessionDetail.Outcomes.Subtitle" xml:space="preserve"><value>ما الذي ستخرج به</value></data>
+
+  <!-- interior page-hero (shared: About cluster, …) -->
+  <data name="PageHero.Home" xml:space="preserve"><value>الرئيسية</value></data>
+
+  <!-- about us page (/about) -->
+  <data name="About.PageTitle" xml:space="preserve"><value>عن الملتقى — الملتقى البحري السعودي الدولي</value></data>
+  <data name="About.Meta" xml:space="preserve"><value>عن الملتقى البحري السعودي الدولي — المنصة الرائدة للحوار البحري، وقيمه ومؤشرات مشاركته وركائزه.</value></data>
+  <data name="About.Breadcrumb" xml:space="preserve"><value>عن الملتقى</value></data>
+  <data name="About.Hero.Title" xml:space="preserve"><value>عن المُلتقى البحري السعودي الدولي</value></data>
+  <data name="About.Hero.Subtitle" xml:space="preserve"><value>الملتقى البحري السعودي الدولي الرابع — المنصة الرائدة للحوار والتعاون في مجال الشؤون البحرية.</value></data>
+  <data name="About.Values.Title" xml:space="preserve"><value>القيم</value></data>
+  <data name="About.Pillars.Title" xml:space="preserve"><value>ركائز الملتقى</value></data>
+  <data name="About.Pillars.Sub" xml:space="preserve"><value>ماذا يقدّم الملتقى</value></data>
 </root>

@@ -155,6 +155,7 @@ No public nav per D-064 — every page is reached via direct URL or auth redirec
 | `/programme` | ✅ Real (D-199) | Public | [web/programme.md](web/programme.md) | [e2e/web-programme.md](../tests/e2e/web-programme.md) |
 | `/speakers` | ✅ Real (`ln-` SSR rebuild; Figma 5840-26779; live data) | Public | [web/speakers.md](web/speakers.md) | [e2e/web-speakers.md](../tests/e2e/web-speakers.md) |
 | `/sessions/{id}` | ✅ Real (`ln-` SSR; Figma 5991-85840; live data + public downloads) | Public | [web/session-detail.md](web/session-detail.md) | [e2e/web-session-detail.md](../tests/e2e/web-session-detail.md) |
+| `/about` | ✅ Real (`ln-` SSR; Figma 5865-33963; static marketing — About cluster #1) | Public | [web/about.md](web/about.md) | [e2e/web-about.md](../tests/e2e/web-about.md) |
 | `/visit` | ✅ Real | Public | — | [e2e/web-visit.md](../tests/e2e/web-visit.md) |
 | `/login` | 🔒 Auth-only | Anyone | [web/login.md](web/login.md) | [e2e/web-login.md](../tests/e2e/web-login.md) |
 | `/login/verify` | 🔒 Auth-only | Mid-sign-in | [web/otp-verify.md](web/otp-verify.md) | [e2e/web-otp-verify.md](../tests/e2e/web-otp-verify.md) |
