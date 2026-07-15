@@ -38,7 +38,7 @@ public static class LandingChrome
             new("Landing.Nav.About.Themes", "/about/themes"),
             new("Landing.Nav.About.Organizer", "/about/organizer"),
             new("Landing.Nav.About.Partnerships", "#partners"),
-            new("Landing.Nav.About.Venue", "#"),
+            new("Landing.Nav.About.Venue", "/about/venue"),
         ]),
         new("Landing.Nav.Programs", "Landing.Nav.Programs.Title",
         [

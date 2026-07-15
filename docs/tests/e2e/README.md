@@ -177,6 +177,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/about/objectives` | [`web-objectives.md`](web-objectives.md) | E2E-WOBJ-001..007 |
 | `/about/themes` | [`web-themes.md`](web-themes.md) | E2E-WTHM-001..009 |
 | `/about/organizer` | [`web-organizer.md`](web-organizer.md) | E2E-WORG-001..007 |
+| `/about/venue` | [`web-venue.md`](web-venue.md) | E2E-WVEN-001..007 |
 | `/visit` | [`web-visit.md`](web-visit.md) | E2E-WVS-001..011 |
 | `/login` | [`web-login.md`](web-login.md) | E2E-WLG-001..017 |
 | `/login/verify` | [`web-otp-verify.md`](web-otp-verify.md) | E2E-WOT-001..010 |

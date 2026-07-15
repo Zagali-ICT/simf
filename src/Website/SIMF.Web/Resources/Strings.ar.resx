@@ -395,4 +395,17 @@
   <data name="Organizer.Hero.Subtitle" xml:space="preserve"><value>منصة دولية جمعت قادة القوات البحرية والخبراء لمناقشة مستقبل الأمن البحري وحماية الممرات الملاحية.</value></data>
   <data name="Organizer.Section.Title" xml:space="preserve"><value>الجهة المنظمة</value></data>
   <data name="Organizer.Section.Sub" xml:space="preserve"><value>يُقام الملتقى تحت رعاية وزارة الدفاع وتنظّمه القوات البحرية الملكية السعودية، بالتعاون مع الجهات الحكومية ذات الصلة.</value></data>
+
+  <!-- the venue page (/about/venue) -->
+  <data name="Venue.PageTitle" xml:space="preserve"><value>المكان — الملتقى البحري السعودي الدولي</value></data>
+  <data name="Venue.Meta" xml:space="preserve"><value>مكان انعقاد الملتقى البحري السعودي الدولي — فندق ومركز مؤتمرات سوفيتيل الرياض، الرياض، المملكة العربية السعودية.</value></data>
+  <data name="Venue.Breadcrumb" xml:space="preserve"><value>المكان</value></data>
+  <data name="Venue.Hero.Title" xml:space="preserve"><value>المكان</value></data>
+  <data name="Venue.Hero.Subtitle" xml:space="preserve"><value>يُقام الملتقى في قلب الرياض، بمرافق مؤتمرات متكاملة تليق بحدث دولي.</value></data>
+  <data name="Venue.Section.Title" xml:space="preserve"><value>مكان الملتقى</value></data>
+  <data name="Venue.Section.Sub" xml:space="preserve"><value>الموقع وتاريخ ووقت انعقاد الملتقى البحري السعودي الدولي 2026.</value></data>
+  <data name="Venue.Address" xml:space="preserve"><value>الرياض، المملكة العربية السعودية</value></data>
+  <data name="Venue.Meta.Date" xml:space="preserve"><value>التاريخ</value></data>
+  <data name="Venue.Meta.Time" xml:space="preserve"><value>وقت الافتتاح</value></data>
+  <data name="Venue.Directions" xml:space="preserve"><value>الاتجاهات على الخريطة</value></data>
 </root>

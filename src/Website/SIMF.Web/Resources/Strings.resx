@@ -395,4 +395,17 @@
   <data name="Organizer.Hero.Subtitle" xml:space="preserve"><value>An international platform that brings together naval leaders and experts to discuss the future of maritime security and the protection of shipping lanes.</value></data>
   <data name="Organizer.Section.Title" xml:space="preserve"><value>The organising body</value></data>
   <data name="Organizer.Section.Sub" xml:space="preserve"><value>The forum is held under the patronage of the Ministry of Defense and organised by the Royal Saudi Naval Forces, in cooperation with relevant government bodies.</value></data>
+
+  <!-- the venue page (/about/venue) -->
+  <data name="Venue.PageTitle" xml:space="preserve"><value>The venue — Saudi International Maritime Forum</value></data>
+  <data name="Venue.Meta" xml:space="preserve"><value>The venue of the Saudi International Maritime Forum — Sofitel Riyadh Hotel &amp; Convention Centre, Riyadh, Saudi Arabia.</value></data>
+  <data name="Venue.Breadcrumb" xml:space="preserve"><value>The venue</value></data>
+  <data name="Venue.Hero.Title" xml:space="preserve"><value>The venue</value></data>
+  <data name="Venue.Hero.Subtitle" xml:space="preserve"><value>The forum is held in the heart of Riyadh, at an integrated convention venue befitting an international event.</value></data>
+  <data name="Venue.Section.Title" xml:space="preserve"><value>Forum venue</value></data>
+  <data name="Venue.Section.Sub" xml:space="preserve"><value>Location, date and time of the Saudi International Maritime Forum 2026.</value></data>
+  <data name="Venue.Address" xml:space="preserve"><value>Riyadh, Kingdom of Saudi Arabia</value></data>
+  <data name="Venue.Meta.Date" xml:space="preserve"><value>Date</value></data>
+  <data name="Venue.Meta.Time" xml:space="preserve"><value>Opening time</value></data>
+  <data name="Venue.Directions" xml:space="preserve"><value>Get directions</value></data>
 </root>
