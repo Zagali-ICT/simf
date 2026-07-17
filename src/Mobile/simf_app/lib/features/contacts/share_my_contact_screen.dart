@@ -125,6 +125,7 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
         content: vcf,
         filename: 'simf.vcf',
         mimeType: 'text/vcard',
+        sharePositionOrigin: shareOriginFromContext(context),
       );
     } on Object catch (_) {
       if (!mounted) return;

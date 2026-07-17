@@ -204,6 +204,7 @@ class MoreDrawer extends ConsumerWidget {
         content: ics,
         filename: 'simf.ics',
         mimeType: 'text/calendar',
+        sharePositionOrigin: shareOriginFromContext(context),
       );
     } on ApiFailure {
       messenger.showSnackBar(SnackBar(content: Text(l10n.shareFailed)));

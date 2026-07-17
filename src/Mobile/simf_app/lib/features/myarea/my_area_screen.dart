@@ -108,6 +108,7 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
         content: vcf,
         filename: 'simf.vcf',
         mimeType: 'text/vcard',
+        sharePositionOrigin: shareOriginFromContext(context),
       );
     } on Object catch (_) {
       if (!mounted) return;
