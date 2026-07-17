@@ -69,6 +69,7 @@ class SimfPageShell extends StatelessWidget {
     this.onBack,
     this.tab,
     this.showSweep = false,
+    this.showBottomNav = true,
     this.showNotificationsBell = true,
     this.showHeaderActions = false,
     this.showLanguageToggle = true,
@@ -93,6 +94,10 @@ class SimfPageShell extends StatelessWidget {
 
   /// Renders the decorative rotated sweep (the entry frames' 28.28° block).
   final bool showSweep;
+
+  /// Whether the bottom navigation bar is rendered. Pages that precede role
+  /// selection (e.g. guest-mode screen) pass false.
+  final bool showBottomNav;
 
   /// Whether the default header's action cluster shows the notifications bell.
   /// True on every signed-in surface; the guest home (frame 758:2910) passes
@@ -125,7 +130,8 @@ class SimfPageShell extends StatelessWidget {
       // that uses this scaffold (opened by the header ☰; RTL slides from the
       // right). Detail/secondary pages inherit it as they migrate onto SimfPageShell.
       drawer: const MoreDrawer(),
-      bottomNavigationBar: SimfBottomNav(current: tab),
+      bottomNavigationBar:
+          showBottomNav ? SimfBottomNav(current: tab) : null,
       body: Stack(
         children: <Widget>[
           if (showSweep) const SimfSweepBackground(),

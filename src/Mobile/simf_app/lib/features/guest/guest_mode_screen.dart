@@ -30,6 +30,7 @@ class GuestModeScreen extends StatelessWidget {
       title: l10n.guestModeTitle,
       onBack: () => backOrHome(context),
       showSweep: true,
+      showBottomNav: false,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(SimfTokens.space6),
