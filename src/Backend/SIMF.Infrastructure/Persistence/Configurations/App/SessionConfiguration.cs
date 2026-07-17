@@ -22,6 +22,10 @@ internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
         builder.Property(s => s.Description).HasMaxLength(2048);
         builder.Property(s => s.DescriptionArabic).HasMaxLength(2048);
 
+        // Optional bilingual session-language label (public "at a glance" card).
+        builder.Property(s => s.Language).HasMaxLength(64);
+        builder.Property(s => s.LanguageArabic).HasMaxLength(64);
+
         // P3.2b — D-232: recording metadata (the bytes live out-of-row on disk).
         builder.Property(s => s.RecordingStoredFileName).HasMaxLength(64);
         builder.Property(s => s.RecordingFileName).HasMaxLength(260);

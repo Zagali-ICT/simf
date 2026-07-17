@@ -1,71 +1,17 @@
+using SIMF.Web.Content;
+
 namespace SIMF.Web.Components.Pages;
 
 // Code-behind for the public landing. Holds the page's static content model —
 // the lists the Razor view walks with @foreach. Labels are stored as resx KEYS
 // (not literal text) so the one model renders in either language: the view
 // resolves each key through IStringLocalizer for the active culture.
+//
+// The shared chrome data (nav mega-menu, search chips, footer links) and the
+// Bilingual record now live in SIMF.Web.Content.LandingChrome — reused by every
+// public "ln-" page (LandingHeader / LandingFooter / LandingShell).
 public partial class Landing
 {
-    // ---- Navigation ------------------------------------------------------
-    public sealed record NavLink(string LabelKey, string Href);
-
-    // A menu with Links renders as a hover/focus dropdown; a menu with only a
-    // Href (Links empty) renders as a plain top-level link.
-    public sealed record NavMenu(
-        string LabelKey, string TitleKey, IReadOnlyList<NavLink> Links, string? Href = null);
-
-    public static readonly IReadOnlyList<NavMenu> NavMenus =
-    [
-        new("Landing.Nav.About", "Landing.Nav.About.Title",
-        [
-            new("Landing.Nav.About.Overview", "#about"),
-            new("Landing.Nav.About.Goals", "#goals"),
-            new("Landing.Nav.About.Themes", "#themes"),
-            new("Landing.Nav.About.Organizer", "#"),
-            new("Landing.Nav.About.Partnerships", "#partners"),
-            new("Landing.Nav.About.Venue", "#"),
-        ]),
-        new("Landing.Nav.Programs", "Landing.Nav.Programs.Title",
-        [
-            new("Landing.Nav.Programs.Opening", "#"),
-            new("Landing.Nav.Programs.Sessions", "#sessions"),
-            new("Landing.Nav.Programs.Exhibition", "#"),
-            new("Landing.Nav.Programs.GovMeetings", "#"),
-            new("Landing.Nav.Programs.Visit", "#"),
-        ]),
-        new("Landing.Nav.Speakers", "Landing.Nav.Speakers", [], Href: "#speakers"),
-        new("Landing.Nav.Discover", "Landing.Nav.Discover",
-        [
-            new("Landing.Nav.Discover.About", "#"),
-            new("Landing.Nav.Discover.Invest", "#"),
-            new("Landing.Nav.Discover.Spirit", "#"),
-            new("Landing.Nav.Discover.Made", "#discover"),
-        ]),
-        new("Landing.Nav.Archive", "Landing.Nav.Archive",
-        [
-            new("Landing.Nav.Archive.E1", "#"),
-            new("Landing.Nav.Archive.E2", "#"),
-            new("Landing.Nav.Archive.E3", "#"),
-        ]),
-    ];
-
-    // Search-panel suggestion chips.
-    public static readonly IReadOnlyList<string> SearchChips =
-    [
-        "Landing.Search.Chip.Articles",
-        "Landing.Search.Chip.Services",
-        "Landing.Search.Chip.Training",
-    ];
-
-    // ---- Bilingual content data (walked by @foreach in the view) ---------
-    // Chrome/section labels live in resx; data COLLECTIONS carry their own
-    // AR/EN so the one list renders in either language — mirroring the backend
-    // field/field_en convention in SiteContentEndpoints.
-    public sealed record Bilingual(string Ar, string En)
-    {
-        public string For(bool rtl) => rtl ? Ar : En;
-    }
-
     public sealed record ThreatStat(Bilingual Value, Bilingual Caption);
 
     // Rotating "threat landscape" marquee under the intro lead.
@@ -214,15 +160,4 @@ public partial class Landing
         new("assets/figma/discover/discover-6.jpg", new("حافة العالم", "Edge of the World"), "90 km", new("الرياض", "Riyadh")),
     ];
 
-    // ---- Footer important links (external government sites) ---------------
-    public sealed record FooterLink(Bilingual Label, string Href);
-
-    public static readonly IReadOnlyList<FooterLink> FooterImportantLinks =
-    [
-        new(new("وزارة الدفاع", "Ministry of Defense"), "https://mod.gov.sa/ar/Pages/default.aspx"),
-        new(new("الهيئة العامة للصناعات العسكرية", "General Authority for Military Industries"), "https://www.gami.gov.sa/ar"),
-        new(new("الهيئة العامة للتطوير الدفاعي", "General Authority for Defense Development"), "https://www.gadd.gov.sa/"),
-        new(new("المحتوى المحلي والمشتريات الحكومية", "Local Content & Government Procurement"), "https://lcgpa.gov.sa"),
-        new(new("الشركة السعودية للصناعات العسكرية", "Saudi Arabian Military Industries"), "https://www.sami.com.sa/ar"),
-    ];
 }

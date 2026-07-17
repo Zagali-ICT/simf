@@ -1663,6 +1663,12 @@
   <data name="Admin.Sessions.Field.TitleArabicInvalid" xml:space="preserve"><value>العنوان العربي مطلوب (1–256 حرفاً).</value></data>
   <data name="Admin.Sessions.Field.Description" xml:space="preserve"><value>الوصف (الإنجليزية)</value></data>
   <data name="Admin.Sessions.Field.DescriptionArabic" xml:space="preserve"><value>الوصف (العربية)</value></data>
+  <data name="Admin.Sessions.Field.Language" xml:space="preserve"><value>اللغة (الإنجليزية)</value></data>
+  <data name="Admin.Sessions.Field.LanguageHint" xml:space="preserve"><value>تظهر في بطاقة "في لمحة" بصفحة الجلسة العامة، مثل "الإنجليزية · العربية".</value></data>
+  <data name="Admin.Sessions.Field.LanguageArabic" xml:space="preserve"><value>اللغة (العربية)</value></data>
+  <data name="Admin.Sessions.Field.OutcomeText" xml:space="preserve"><value>المخرج (الإنجليزية)</value></data>
+  <data name="Admin.Sessions.Field.OutcomeTextArabic" xml:space="preserve"><value>المخرج (العربية)</value></data>
+  <data name="Admin.Sessions.Action.AddOutcome" xml:space="preserve"><value>إضافة مخرج رئيسي</value></data>
   <data name="Admin.Sessions.Field.LiveStreamUrl" xml:space="preserve"><value>رابط البث المباشر</value></data>
   <data name="Admin.Sessions.Field.LiveSignLanguageUrl" xml:space="preserve"><value>رابط بث لغة الإشارة (اختياري)</value></data>
   <data name="Admin.Sessions.Field.LiveStreamUrlHint" xml:space="preserve"><value>ألصق رابط يوتيوب (youtube.com / youtu.be) أو رابط بث مباشر https بصيغة HLS/MP4.</value></data>

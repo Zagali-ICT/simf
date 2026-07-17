@@ -314,4 +314,44 @@
   <data name="Meeting.Confirm.Submitting" xml:space="preserve"><value>Submitting…</value></data>
   <data name="Meeting.Confirm.Done.Approve" xml:space="preserve"><value>Thank you — the meeting is confirmed.</value></data>
   <data name="Meeting.Confirm.Done.Reject" xml:space="preserve"><value>Thank you — the meeting was declined.</value></data>
+  <data name="Speakers.PageTitle" xml:space="preserve"><value>Speakers — Saudi International Maritime Forum</value></data>
+  <data name="Speakers.Meta" xml:space="preserve"><value>The speakers and participants of the Saudi International Maritime Forum 2026.</value></data>
+  <data name="Speakers.Band.Aria" xml:space="preserve"><value>Forum details</value></data>
+  <data name="Speakers.Band.Theme" xml:space="preserve"><value>Theme: Sovereignty, Economy and Society</value></data>
+  <data name="Speakers.Band.Date" xml:space="preserve"><value>23–25 November 2026</value></data>
+  <data name="Speakers.Band.Time" xml:space="preserve"><value>2:30 PM</value></data>
+  <data name="Speakers.Band.Venue" xml:space="preserve"><value>Sofitel Riyadh Hotel &amp; Convention Center, Saudi Arabia</value></data>
+  <data name="Speakers.Section.Title" xml:space="preserve"><value>Featured speakers &amp; participants</value></data>
+  <data name="Speakers.Section.Desc" xml:space="preserve"><value>A distinguished roster of decision-makers, naval leaders and industry experts shaping the future of maritime security.</value></data>
+  <data name="Speakers.Empty" xml:space="preserve"><value>Speakers will be announced soon.</value></data>
+  <data name="SessionDetail.BrandShort" xml:space="preserve"><value>Saudi International Maritime Forum</value></data>
+  <data name="SessionDetail.Meta" xml:space="preserve"><value>Session details — Saudi International Maritime Forum 2026.</value></data>
+  <data name="SessionDetail.NotFound.Title" xml:space="preserve"><value>Session not found</value></data>
+  <data name="SessionDetail.NotFound.Body" xml:space="preserve"><value>This session may have been unpublished, or the link is out of date.</value></data>
+  <data name="SessionDetail.NotFound.Back" xml:space="preserve"><value>Back to the programme</value></data>
+  <data name="SessionDetail.Hero.Aria" xml:space="preserve"><value>Session summary</value></data>
+  <data name="SessionDetail.Breadcrumb.Home" xml:space="preserve"><value>Home</value></data>
+  <data name="SessionDetail.Breadcrumb.Current" xml:space="preserve"><value>Session details</value></data>
+  <data name="SessionDetail.Glance.Title" xml:space="preserve"><value>At a glance</value></data>
+  <data name="SessionDetail.Glance.Track" xml:space="preserve"><value>Track</value></data>
+  <data name="SessionDetail.Glance.Language" xml:space="preserve"><value>Language</value></data>
+  <data name="SessionDetail.Glance.Hall" xml:space="preserve"><value>Hall</value></data>
+  <data name="SessionDetail.Glance.Capacity" xml:space="preserve"><value>Capacity</value></data>
+  <data name="SessionDetail.Glance.CapacityValue" xml:space="preserve"><value>{0} seats</value></data>
+  <data name="SessionDetail.Glance.Live" xml:space="preserve"><value>Live broadcast</value></data>
+  <data name="SessionDetail.Glance.Yes" xml:space="preserve"><value>Yes</value></data>
+  <data name="SessionDetail.Glance.No" xml:space="preserve"><value>No</value></data>
+  <data name="SessionDetail.Overview.Title" xml:space="preserve"><value>Why this session matters</value></data>
+  <data name="SessionDetail.Overview.Subtitle" xml:space="preserve"><value>Session overview</value></data>
+  <data name="SessionDetail.Themes.Title" xml:space="preserve"><value>Key themes</value></data>
+  <data name="SessionDetail.Themes.Subtitle" xml:space="preserve"><value>The session's focus areas</value></data>
+  <data name="SessionDetail.Speakers.Title" xml:space="preserve"><value>Speakers</value></data>
+  <data name="SessionDetail.Speakers.Subtitle" xml:space="preserve"><value>A distinguished panel of decision-makers and experts</value></data>
+  <data name="SessionDetail.Speakers.Empty" xml:space="preserve"><value>Speakers will be announced soon.</value></data>
+  <data name="SessionDetail.Related.Title" xml:space="preserve"><value>Continue your agenda</value></data>
+  <data name="SessionDetail.Related.Subtitle" xml:space="preserve"><value>Related sessions</value></data>
+  <data name="SessionDetail.Related.View" xml:space="preserve"><value>View details</value></data>
+  <data name="SessionDetail.Downloads.Title" xml:space="preserve"><value>Downloads</value></data>
+  <data name="SessionDetail.Outcomes.Title" xml:space="preserve"><value>Key outcomes</value></data>
+  <data name="SessionDetail.Outcomes.Subtitle" xml:space="preserve"><value>What you'll take away</value></data>
 </root>

@@ -1670,6 +1670,12 @@
   <data name="Admin.Sessions.Field.TitleArabicInvalid" xml:space="preserve"><value>Arabic title is required (1–256 characters).</value></data>
   <data name="Admin.Sessions.Field.Description" xml:space="preserve"><value>Description (English)</value></data>
   <data name="Admin.Sessions.Field.DescriptionArabic" xml:space="preserve"><value>Description (Arabic)</value></data>
+  <data name="Admin.Sessions.Field.Language" xml:space="preserve"><value>Language (English)</value></data>
+  <data name="Admin.Sessions.Field.LanguageHint" xml:space="preserve"><value>Shown on the public session "at a glance" card, e.g. "English · Arabic".</value></data>
+  <data name="Admin.Sessions.Field.LanguageArabic" xml:space="preserve"><value>Language (Arabic)</value></data>
+  <data name="Admin.Sessions.Field.OutcomeText" xml:space="preserve"><value>Outcome (English)</value></data>
+  <data name="Admin.Sessions.Field.OutcomeTextArabic" xml:space="preserve"><value>Outcome (Arabic)</value></data>
+  <data name="Admin.Sessions.Action.AddOutcome" xml:space="preserve"><value>Add key outcome</value></data>
   <data name="Admin.Sessions.Field.LiveStreamUrl" xml:space="preserve"><value>Live stream URL (live broadcast)</value></data>
   <data name="Admin.Sessions.Field.LiveSignLanguageUrl" xml:space="preserve"><value>Sign-language stream URL (optional)</value></data>
   <data name="Admin.Sessions.Field.LiveStreamUrlHint" xml:space="preserve"><value>Paste a YouTube link (youtube.com / youtu.be) or a direct https HLS/MP4 stream URL.</value></data>

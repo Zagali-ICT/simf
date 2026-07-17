@@ -48,6 +48,17 @@ public partial class SessionsAddEdit
     private readonly List<AdminSessionSpeakerEntry> _selectedSpeakers = new();
     private readonly List<Guid> _selectedThemes = new();
 
+    // Website Session-detail "أبرز المخرجات" — mutable editor rows for the
+    // session's key-outcome bullets (the contract entry is an immutable record,
+    // so the form binds against these mutable inputs and maps on submit).
+    private readonly List<OutcomeInput> _outcomes = new();
+
+    private sealed class OutcomeInput
+    {
+        public string Text { get; set; } = string.Empty;
+        public string TextArabic { get; set; } = string.Empty;
+    }
+
     protected override void OnInitialized()
     {
         if (Initial is not null)
@@ -57,6 +68,8 @@ public partial class SessionsAddEdit
             _model.TitleArabic = Initial.TitleArabic;
             _model.Description = Initial.Description ?? string.Empty;
             _model.DescriptionArabic = Initial.DescriptionArabic ?? string.Empty;
+            _model.Language = Initial.Language ?? string.Empty;
+            _model.LanguageArabic = Initial.LanguageArabic ?? string.Empty;
             _model.LiveStreamUrl = Initial.LiveStreamUrl ?? string.Empty;
             _model.LiveSignLanguageUrl = Initial.LiveSignLanguageUrl ?? string.Empty;
             _model.LiveCaptions = Initial.LiveCaptions ?? string.Empty;
@@ -75,6 +88,17 @@ public partial class SessionsAddEdit
             _capacityInput = Initial.CapacityOverride?.ToString() ?? string.Empty;
             _selectedSpeakers.AddRange(Initial.Speakers);
             _selectedThemes.AddRange(Initial.ThemeIds);
+            if (Initial.Outcomes is not null)
+            {
+                foreach (var outcome in Initial.Outcomes.OrderBy(o => o.DisplayOrder))
+                {
+                    _outcomes.Add(new OutcomeInput
+                    {
+                        Text = outcome.Text,
+                        TextArabic = outcome.TextArabic,
+                    });
+                }
+            }
         }
         _editContext = new EditContext(_model);
     }
@@ -300,6 +324,44 @@ public partial class SessionsAddEdit
         }
     }
 
+    // Website Session-detail "أبرز المخرجات" — the outcome-list editor. No
+    // DisplayOrder to renumber (the list position IS the order; the service
+    // renumbers 0..n-1 on save).
+    private void AddOutcome() => _outcomes.Add(new OutcomeInput());
+
+    private void MoveOutcomeUp(int index)
+    {
+        if (index <= 0) return;
+        (_outcomes[index - 1], _outcomes[index]) = (_outcomes[index], _outcomes[index - 1]);
+    }
+
+    private void MoveOutcomeDown(int index)
+    {
+        if (index >= _outcomes.Count - 1) return;
+        (_outcomes[index + 1], _outcomes[index]) = (_outcomes[index], _outcomes[index + 1]);
+    }
+
+    private void RemoveOutcome(int index) => _outcomes.RemoveAt(index);
+
+    // Map the editor rows to the request. An entirely-blank row is dropped; a
+    // partially-filled row flows through so the API returns a clean 400 telling
+    // the editor to complete both languages. DisplayOrder = final list position.
+    private List<AdminSessionOutcomeEntry> BuildOutcomes()
+    {
+        var result = new List<AdminSessionOutcomeEntry>();
+        foreach (var outcome in _outcomes)
+        {
+            if (string.IsNullOrWhiteSpace(outcome.Text)
+                && string.IsNullOrWhiteSpace(outcome.TextArabic))
+            {
+                continue;
+            }
+            result.Add(new AdminSessionOutcomeEntry(
+                outcome.Text.Trim(), outcome.TextArabic.Trim(), result.Count));
+        }
+        return result;
+    }
+
     private Task OnAddThemeAsync(string? id)
     {
         if (string.IsNullOrWhiteSpace(id) || !Guid.TryParse(id, out var themeId))
@@ -402,6 +464,9 @@ public partial class SessionsAddEdit
                         LiveCaptions = NullIfBlank(_model.LiveCaptions),
                         LiveCaptionsArabic = NullIfBlank(_model.LiveCaptionsArabic),
                         SeatSelectionModeOverride = ParseSeatModeOverride(),
+                        Language = NullIfBlank(_model.Language),
+                        LanguageArabic = NullIfBlank(_model.LanguageArabic),
+                        Outcomes = BuildOutcomes(),
                     });
             }
             else
@@ -429,6 +494,9 @@ public partial class SessionsAddEdit
                         LiveCaptions = NullIfBlank(_model.LiveCaptions),
                         LiveCaptionsArabic = NullIfBlank(_model.LiveCaptionsArabic),
                         SeatSelectionModeOverride = ParseSeatModeOverride(),
+                        Language = NullIfBlank(_model.Language),
+                        LanguageArabic = NullIfBlank(_model.LanguageArabic),
+                        Outcomes = BuildOutcomes(),
                     });
             }
 
@@ -575,6 +643,9 @@ public partial class SessionsAddEdit
         public string TitleArabic { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string DescriptionArabic { get; set; } = string.Empty;
+        // Website Session-detail "at a glance" language label (Figma 5991-85840).
+        public string Language { get; set; } = string.Empty;
+        public string LanguageArabic { get; set; } = string.Empty;
         // §8 — live broadcast stream URLs (manual stub provider).
         public string LiveStreamUrl { get; set; } = string.Empty;
         public string LiveSignLanguageUrl { get; set; } = string.Empty;

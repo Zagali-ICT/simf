@@ -305,6 +305,8 @@ internal sealed class ProgrammeSessionService(
                 CategoryName = session.Category != null ? session.Category.Name : null,
                 CategoryNameArabic =
                     session.Category != null ? session.Category.NameArabic : null,
+                session.Language,
+                session.LanguageArabic,
                 Themes = session.Themes
                     .Where(link => link.Theme!.IsActive)
                     .Select(link => new
@@ -314,6 +316,8 @@ internal sealed class ProgrammeSessionService(
                         link.Theme!.NameArabic,
                         link.Theme!.PageColor,
                         link.Theme!.DisplayOrder,
+                        link.Theme!.Description,
+                        link.Theme!.DescriptionArabic,
                     })
                     .ToList(),
                 Speakers = session.Speakers
@@ -329,6 +333,13 @@ internal sealed class ProgrammeSessionService(
                         link.Speaker!.CountryId,
                         link.Speaker!.PhotoRelativePath,
                     })
+                    .ToList(),
+                // Website Session-detail "أبرز المخرجات" bullets (Figma 5991-85840),
+                // active + ordered.
+                Outcomes = session.Outcomes
+                    .Where(outcome => outcome.IsActive)
+                    .OrderBy(outcome => outcome.DisplayOrder)
+                    .Select(outcome => new { outcome.Text, outcome.TextArabic })
                     .ToList(),
             })
             .SingleOrDefaultAsync(cancellationToken);
@@ -354,7 +365,9 @@ internal sealed class ProgrammeSessionService(
                 theme.Id,
                 theme.Name,
                 theme.NameArabic,
-                theme.PageColor))
+                theme.PageColor,
+                theme.Description,
+                theme.DescriptionArabic))
             .ToList();
 
         // §7: resolve the country names for the detail's speakers in one query.
@@ -363,6 +376,20 @@ internal sealed class ProgrammeSessionService(
                 .Where(speaker => speaker.CountryId.HasValue)
                 .Select(speaker => speaker.CountryId!.Value),
             cancellationToken);
+
+        // D-357/D-568 — which of the detail's speakers have an active photo asset
+        // (one batched query; OwnerEntityId is the speaker id), so the Website
+        // page can serve the portrait via the /content/assets/SpeakerPhoto proxy.
+        var speakerIds = row.Speakers.Select(speaker => speaker.Id).ToList();
+        var speakersWithPhoto = (await dbContext.StoredFiles
+            .AsNoTracking()
+            .Where(file => file.Service == FileService.SpeakerPhoto
+                && file.IsActive
+                && file.OwnerEntityId != null
+                && speakerIds.Contains(file.OwnerEntityId.Value))
+            .Select(file => file.OwnerEntityId!.Value)
+            .ToListAsync(cancellationToken))
+            .ToHashSet();
 
         var speakers = row.Speakers
             .OrderBy(speaker => speaker.DisplayOrder)
@@ -385,7 +412,8 @@ internal sealed class ProgrammeSessionService(
                     speaker.CountryId,
                     countryEn,
                     countryAr,
-                    speaker.PhotoRelativePath);
+                    speaker.PhotoRelativePath,
+                    speakersWithPhoto.Contains(speaker.Id));
             })
             .ToList();
 
@@ -393,6 +421,26 @@ internal sealed class ProgrammeSessionService(
             effectiveCapacity,
             reserved,
             Math.Max(0, effectiveCapacity - reserved));
+
+        // Website Session-detail "أبرز المخرجات" — already active + ordered above.
+        var outcomes = row.Outcomes
+            .Select(outcome => new PublicSessionOutcome(outcome.Text, outcome.TextArabic))
+            .ToList();
+
+        // Website Session-detail "روابط التحميل" — the session's downloadable
+        // presentation files, PUBLIC per the owner decision (2026-07-15). A
+        // separate query: SpeakerPresentation carries SessionId but no Session
+        // back-nav. Ordered by upload time for a stable list.
+        var downloads = await dbContext.SpeakerPresentations
+            .AsNoTracking()
+            .Where(presentation => presentation.SessionId == id && presentation.IsActive)
+            .OrderBy(presentation => presentation.CreatedAt)
+            .Select(presentation => new PublicSessionDownload(
+                presentation.Id,
+                presentation.FileName,
+                presentation.ContentType,
+                presentation.SizeBytes))
+            .ToListAsync(cancellationToken);
 
         // D-567 (Figma 889:2604) — the gold badge shows the session's 1-based
         // position within its day. A6c — match the agenda's day grouping exactly:
@@ -442,7 +490,13 @@ internal sealed class ProgrammeSessionService(
             row.LiveCaptions,
             row.LiveCaptionsArabic,
             // D-567: the gold-badge ordinal (1-based position within the day).
-            displayOrder);
+            displayOrder,
+            // Website Session-detail (Figma 5991-85840): outcomes + language label.
+            outcomes,
+            row.Language,
+            row.LanguageArabic,
+            // "روابط التحميل" — the session's public downloadable files.
+            downloads);
     }
 
     public async Task<SessionRecordingRef?> GetPublishedRecordingAsync(

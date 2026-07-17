@@ -40,6 +40,14 @@ public class Session : BaseAuditEntity
     /// <summary>Optional Arabic abstract / description (≤2048).</summary>
     public string? DescriptionArabic { get; set; }
 
+    /// <summary>Optional session-language label (e.g. "Arabic", "Arabic &amp;
+    /// English") shown on the public session "at a glance" card (Figma
+    /// 5991-85840). Null = the card omits the language row.</summary>
+    public string? Language { get; set; }
+
+    /// <summary>Arabic pair of <see cref="Language"/> (e.g. "العربية").</summary>
+    public string? LanguageArabic { get; set; }
+
     /// <summary>The hosting hall. Real FK — same DbContext.</summary>
     public Guid HallId { get; set; }
     public Hall? Hall { get; set; }
@@ -167,6 +175,12 @@ public class Session : BaseAuditEntity
     /// the first-listed theme as the "primary pillar".</summary>
     public ICollection<SessionTheme> Themes { get; set; }
         = new List<SessionTheme>();
+
+    /// <summary>The session's key-outcome bullets ("أبرز المخرجات" on the public
+    /// session-detail page), ordered by <see cref="SessionOutcome.DisplayOrder"/>.
+    /// Cascade-deleted with the session.</summary>
+    public ICollection<SessionOutcome> Outcomes { get; set; }
+        = new List<SessionOutcome>();
 }
 
 /// <summary>D-165 — join row linking a <see cref="Session"/> to one

@@ -37,6 +37,15 @@
                       Value="@_model.DescriptionArabic"
                       ValueChanged="@(v => _model.DescriptionArabic = v)" />
 
+        @* Website Session-detail "at a glance" language label (Figma 5991-85840). *@
+        <SimfTextField Label="@L["Admin.Sessions.Field.Language"]"
+                       Helper="@L["Admin.Sessions.Field.LanguageHint"]"
+                       MaxLength="64"
+                       @bind-Value="_model.Language" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Sessions.Field.LanguageArabic"]"
+                       MaxLength="64"
+                       @bind-Value="_model.LanguageArabic" Disabled="_busy" />
+
         @* §8 / D-349 — live broadcast feed URLs (YouTube POC + HLS fallback). *@
         <SimfTextField Label="@L["Admin.Sessions.Field.LiveStreamUrl"]"
                        Helper="@L["Admin.Sessions.Field.LiveStreamUrlHint"]"
@@ -215,6 +224,46 @@
                         <SimfButton Type="button" Variant="ghost"
                                     Disabled="_busy"
                                     OnClick="@(() => RemoveTheme(snap))">
+                            @L["Admin.Sessions.Action.Remove"]
+                        </SimfButton>
+                    </li>
+                }
+            </ul>
+        }
+
+        @* Website Session-detail "أبرز المخرجات" — the session's key-outcome
+           bullets (Figma 5991-85840): a free-text repeatable bilingual list. *@
+        <SimfButton Type="button" Variant="secondary" Disabled="_busy"
+                    OnClick="AddOutcome">
+            @L["Admin.Sessions.Action.AddOutcome"]
+        </SimfButton>
+        @if (_outcomes.Count > 0)
+        {
+            <ul class="simf-form__chips">
+                @for (var i = 0; i < _outcomes.Count; i++)
+                {
+                    var ix = i;
+                    <li class="simf-form__chip">
+                        <span>@(ix + 1).</span>
+                        <SimfTextField Label="@L["Admin.Sessions.Field.OutcomeText"]"
+                                       MaxLength="512"
+                                       @bind-Value="_outcomes[ix].Text" Disabled="_busy" />
+                        <SimfTextField Label="@L["Admin.Sessions.Field.OutcomeTextArabic"]"
+                                       MaxLength="512"
+                                       @bind-Value="_outcomes[ix].TextArabic" Disabled="_busy" />
+                        <SimfButton Type="button" Variant="ghost"
+                                    Disabled="@(_busy || ix == 0)"
+                                    OnClick="@(() => MoveOutcomeUp(ix))">
+                            @L["Admin.Sessions.Action.Up"]
+                        </SimfButton>
+                        <SimfButton Type="button" Variant="ghost"
+                                    Disabled="@(_busy || ix == _outcomes.Count - 1)"
+                                    OnClick="@(() => MoveOutcomeDown(ix))">
+                            @L["Admin.Sessions.Action.Down"]
+                        </SimfButton>
+                        <SimfButton Type="button" Variant="ghost"
+                                    Disabled="_busy"
+                                    OnClick="@(() => RemoveOutcome(ix))">
                             @L["Admin.Sessions.Action.Remove"]
                         </SimfButton>
                     </li>

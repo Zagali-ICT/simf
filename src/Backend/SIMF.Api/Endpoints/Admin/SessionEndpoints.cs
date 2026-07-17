@@ -109,6 +109,13 @@ public sealed class UpdateSessionRequest
     // session type back to null (the same class of bug D-439 fixed for the live
     // URLs). Carried here so the type round-trips on update like the create path.
     public SessionType? Type { get; set; }
+    // Website Session-detail (Figma 5991-85840): the "at a glance" language label +
+    // the "أبرز المخرجات" outcome bullets. Carried on the route DTO so a PUT
+    // round-trips them (same silent-drop trap the live URLs / Type hit above).
+    public string? Language { get; set; }
+    public string? LanguageArabic { get; set; }
+    public IList<AdminSessionOutcomeEntry> Outcomes { get; set; }
+        = new List<AdminSessionOutcomeEntry>();
 }
 
 public sealed class UpdateSessionEndpoint(IAdminSessionService service)
@@ -154,6 +161,10 @@ public sealed class UpdateSessionEndpoint(IAdminSessionService service)
                     LiveCaptionsArabic = req.LiveCaptionsArabic,
                     SeatSelectionModeOverride = req.SeatSelectionModeOverride,
                     Type = req.Type,
+                    // Website Session-detail — language + outcomes round-trip on update.
+                    Language = req.Language,
+                    LanguageArabic = req.LanguageArabic,
+                    Outcomes = req.Outcomes,
                 }, ct)), ct);
     }
 }

@@ -78,7 +78,13 @@ public sealed record AdminSessionDetail(
     SessionType? Type = null,
     // D-485 — per-session override of the hall's seat-selection mode; null =
     // inherit the hall. Appended (defaulted) so the wire stays append-only.
-    SeatSelectionMode? SeatSelectionModeOverride = null);
+    SeatSelectionMode? SeatSelectionModeOverride = null,
+    // Website Session-detail (Figma 5991-85840): the "at a glance" language label
+    // + the "أبرز المخرجات" key-outcome bullets. Appended (defaulted) — wire stays
+    // append-only.
+    string? Language = null,
+    string? LanguageArabic = null,
+    IReadOnlyList<AdminSessionOutcomeEntry>? Outcomes = null);
 
 /// <summary>D-165 — one entry in <see cref="AdminSessionDetail.Speakers"/>.
 /// Order matters: 0 = primary speaker for the session card.</summary>
@@ -90,6 +96,14 @@ public sealed record AdminSessionSpeakerEntry(
     // B9 — D-225: speaker/host role. Default keeps existing construction sites
     // (and old request payloads that omit it) compiling as plain speakers.
     SessionSpeakerRole Role = SessionSpeakerRole.Speaker);
+
+/// <summary>One editable "key outcome" bullet on a session (the "أبرز المخرجات"
+/// list, Figma 5991-85840). Bilingual text + display order. Backed by the
+/// SessionOutcome table.</summary>
+public sealed record AdminSessionOutcomeEntry(
+    string Text,
+    string TextArabic,
+    int DisplayOrder);
 
 public sealed class AdminCreateSessionRequest
 {
@@ -118,6 +132,12 @@ public sealed class AdminCreateSessionRequest
     public SessionType? Type { get; set; }
     // D-485 — optional per-session override of the hall's seat-selection mode.
     public SeatSelectionMode? SeatSelectionModeOverride { get; set; }
+    // Website Session-detail (Figma 5991-85840): bilingual "at a glance" language
+    // label + the "أبرز المخرجات" key-outcome bullets.
+    public string? Language { get; set; }
+    public string? LanguageArabic { get; set; }
+    public IList<AdminSessionOutcomeEntry> Outcomes { get; set; }
+        = new List<AdminSessionOutcomeEntry>();
 }
 
 public sealed class AdminUpdateSessionRequest
@@ -148,6 +168,12 @@ public sealed class AdminUpdateSessionRequest
     public SessionType? Type { get; set; }
     // D-485 — optional per-session override of the hall's seat-selection mode.
     public SeatSelectionMode? SeatSelectionModeOverride { get; set; }
+    // Website Session-detail (Figma 5991-85840): bilingual "at a glance" language
+    // label + the "أبرز المخرجات" key-outcome bullets.
+    public string? Language { get; set; }
+    public string? LanguageArabic { get; set; }
+    public IList<AdminSessionOutcomeEntry> Outcomes { get; set; }
+        = new List<AdminSessionOutcomeEntry>();
 }
 
 /// <summary>P3.2 — D-231: the Committee's lifecycle transition. The service

@@ -17,4 +17,11 @@ public interface IPublicSpeakerPresentationService
     /// soft-deleted.</summary>
     Task<(byte[] Content, string ContentType, string FileName)?> GetFileAsync(
         Guid presentationId, CancellationToken cancellationToken = default);
+
+    /// <summary>The stored file bytes for one presentation validated to belong to
+    /// the given session; null if missing / soft-deleted / not in that session.
+    /// Backs the public (anonymous) website Session-detail download route — the
+    /// session scope is the authorisation check in place of a signed-in account.</summary>
+    Task<(byte[] Content, string ContentType, string FileName)?> GetFileAsync(
+        Guid sessionId, Guid presentationId, CancellationToken cancellationToken = default);
 }
