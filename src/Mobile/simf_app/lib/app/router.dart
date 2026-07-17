@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
 import '../core/widgets/coming_soon_screen.dart';
+import 'widgets/simf_app_shell.dart';
 import '../features/account/email_otp_verify_screen.dart';
 import '../features/account/badge_activation_screen.dart';
 import '../features/account/badge_password_screen.dart';
@@ -293,26 +294,10 @@ const Map<int, Set<AppRole>> _routeRoles = <int, Set<AppRole>>{
   104: <AppRole>{AppRole.moderator}, // Session Q&A desk
 };
 
-/// The five bottom-nav destinations, in reading order. They live inside a
-/// persistent [StatefulShellRoute] (an IndexedStack) so switching between them
-/// keeps the bottom bar fixed, swaps the body with **no page transition**, and
-/// preserves each tab's state — instead of pushing a fresh page each tap (D-422,
-/// the owner's "keep the button fixed, pages render inside" requirement).
-///
-/// D-519 — these five tabs stay **universal** for every signed-in role
-/// (including the focused Staff/Moderator): home is role-aware, the map is
-/// public, and sessions (D-576), my-area, and badge are universal-auth (so a
-/// signed-in tab never dead-bounces; a guest on a gated tab is sent to
-/// sign-in). "Focused" trims the home body + the drawer/More entries for
-/// Staff/Moderator, **not** the bottom bar — a deliberate choice so the bar is
-/// never per-role and a tab can never dead-bounce.
-const List<String> _tabRouteNames = <String>[
-  RouteNames.home,
-  RouteNames.sessions,
-  RouteNames.badge,
-  RouteNames.venueMap,
-  RouteNames.myArea,
-];
+/// The five bottom-nav destinations. They render inside [SimfAppShell]'s
+/// IndexedStack, not as separate GoRouter branches. Tab switching is purely
+/// internal (no go_router) to avoid Flutter's `_debugCheckDuplicatedPageKeys`
+/// assertion with `StatefulShellRoute`'s stable internal page keys.
 
 /// The screen for a numbered mockup route. Shared by the bottom-nav shell
 /// branches and the flat (pushed) routes so both build identically.
@@ -591,7 +576,14 @@ Widget _auxScreenFor(BuildContext context, GoRouterState state, _Route r) {
   );
 }
 
-_Route _routeByName(String name) => _routes.firstWhere((r) => r.name == name);
+/// Incrementing counter so every page key is unique — Flutter 3.44.5's
+/// `_debugCheckDuplicatedPageKeys` builds a reservation set from existing
+/// overlay routes, and a static key (even a unique one) still collides when
+/// `router.refresh()` triggers `Navigator.didUpdateWidget`.
+var _pageKeyCounter = 0;
+
+/// A page key that is unique for the lifetime of the process.
+String _nextPageKey(String prefix) => '$prefix:${_pageKeyCounter++}';
 
 /// Builds the go_router instance.
 ///
@@ -629,38 +621,37 @@ GoRouter buildRouter(Ref ref) {
       );
     },
     routes: <RouteBase>[
-      // The five bottom-nav destinations share one persistent shell: an
-      // IndexedStack of branches. Switching tabs swaps the visible branch with
-      // no transition and keeps every tab's state alive — the bottom bar stays
-      // fixed (each branch renders the same bar via SimfPageShell, so it never
-      // animates). Sub-pages stay flat routes (pushed full-screen) below.
-      StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) => navigationShell,
-        branches: <StatefulShellBranch>[
-          for (final r in _tabRouteNames.map(_routeByName))
-            StatefulShellBranch(
-              routes: <RouteBase>[
-                GoRoute(
-                  name: r.name,
-                  path: r.path,
-                  builder: (context, state) => _screenFor(context, state, r),
-                ),
-              ],
-            ),
-        ],
+      // Shell route — replaces StatefulShellRoute.indexedStack. Renders
+      // SimfAppShell with an IndexedStack of all five tabs. Tab switching is
+      // purely internal (no go_router), so there is only ever ONE page in the
+      // parent Navigator — no key-reservation collision on router.refresh().
+      GoRoute(
+        name: RouteNames.home,
+        path: '/',
+        pageBuilder: (context, state) => NoTransitionPage(
+          key: ValueKey(_nextPageKey('shell')),
+          child: const SimfAppShell(),
+        ),
       ),
+      // Flat (pushed) routes — every non-shell screen.
       for (final r in _routes)
-        if (!_tabRouteNames.contains(r.name))
+        if (r.name != RouteNames.home)
           GoRoute(
             name: r.name,
             path: r.path,
-            builder: (context, state) => _screenFor(context, state, r),
+            pageBuilder: (context, state) => NoTransitionPage(
+              key: ValueKey(_nextPageKey('route:${r.name}')),
+              child: _screenFor(context, state, r),
+            ),
           ),
       for (final r in _auxRoutes)
         GoRoute(
           name: r.name,
           path: r.path,
-          builder: (context, state) => _auxScreenFor(context, state, r),
+          pageBuilder: (context, state) => NoTransitionPage(
+            key: ValueKey(_nextPageKey('aux:${r.name}')),
+            child: _auxScreenFor(context, state, r),
+          ),
         ),
     ],
   );

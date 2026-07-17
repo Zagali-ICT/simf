@@ -64,9 +64,10 @@ class _NewsArticleScreenState extends ConsumerState<NewsArticleScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return Scaffold(
-      appBar: AppBar(leading: const SimfBackButton(), title: Text(l10n.newsTitle)),
-      body: SafeArea(child: _buildBody(l10n)),
+    return SimfPageShell(
+      title: l10n.newsTitle,
+      onBack: () => backOrHome(context),
+      body: _buildBody(l10n),
     );
   }
 
