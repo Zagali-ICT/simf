@@ -102,6 +102,7 @@ class _ScanContactScreenState extends ConsumerState<ScanContactScreen> {
         content: vcard,
         filename: 'contact.vcf',
         mimeType: 'text/vcard',
+        sharePositionOrigin: shareOriginFromContext(context),
       );
     } on Exception {
       if (!mounted) {

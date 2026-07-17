@@ -993,6 +993,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           decoration: simfFieldDecoration(
             errorText: showError ? l10n.profileTypeRequired : null,
           ),
+          dropdownColor: SimfTokens.surface,
           hint: Text(
             l10n.profileTypeLabel,
             style: simfInputStyle.copyWith(color: SimfTokens.greyText),

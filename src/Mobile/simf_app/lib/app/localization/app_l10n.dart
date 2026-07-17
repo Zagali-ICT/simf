@@ -487,7 +487,7 @@ class AppL10n {
   String get showPasswordTooltip => _t('إظهار كلمة المرور', 'Show password');
   String get hidePasswordTooltip => _t('إخفاء كلمة المرور', 'Hide password');
   // Sign in — KSA-Project design (Figma 168:2800, D-358/D-360/D-363).
-  String get guestSignInLink => _t('الدخول كزائر', 'Enter as guest');
+  String get guestSignInLink => _t('الدخول كضيف', 'Enter as guest');
   String get signInForumTitle => _t('الملتقى الدولى البحرى', 'SIMF');
   String get rememberMeLabel => _t('تذكرنى', 'Remember me');
   String get orDividerLabel => _t('او', 'or');

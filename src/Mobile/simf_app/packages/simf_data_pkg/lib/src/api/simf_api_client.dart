@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
 import '../config/simf_data_config.dart';
 import 'api_error_codes.dart';
@@ -61,6 +62,17 @@ class SimfApiClient {
     );
     dio.interceptors.add(
       LoggingInterceptor(enabled: config.enableRequestLogging),
+    );
+    dio.interceptors.add(
+      PrettyDioLogger(
+        enabled: config.enableRequestLogging,
+        requestBody: true,
+        requestHeader: true,
+        responseBody: true,
+        responseHeader: true,
+        error: true,
+        compact: false,
+      ),
     );
 
     return SimfApiClient._(dio, tokenSource, currentLanguageCode);

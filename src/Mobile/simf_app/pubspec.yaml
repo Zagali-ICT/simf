@@ -3,7 +3,7 @@ description: SIMF Maritime Forum — the Flutter mobile application for Android 
 # D-736 — 1.0.0 matches the version the UI has always advertised; the About /
 # More screens now display this real value via package_info_plus, and the
 # server version-policy gate compares against it.
-version: 1.0.1+4
+version: 1.0.1+6
 publish_to: none
 
 environment:
@@ -85,6 +85,7 @@ dependencies:
     path: packages/simf_data_pkg
   simf_auth_pkg:
     path: packages/simf_auth_pkg
+  pretty_dio_logger: ^1.4.0
 
 dev_dependencies:
   flutter_test:

@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart' show BuildContext, RenderBox, Rect;
+
 import 'content_sharer_web.dart'
     if (dart.library.io) 'content_sharer_io.dart' as platform;
 
@@ -10,15 +12,21 @@ import 'content_sharer_web.dart'
 /// browser share API. This is the single share path for the app's vCard/ICS
 /// exports (My-Area + Contacts), so the three call sites stay `dart:io`-free and
 /// the project compiles for web.
+///
+/// [sharePositionOrigin] is required on iPad / Mac Catalyst — a non-empty
+/// [Rect] within the app's view bounds that anchors the popover. On iPhone and
+/// Android it is ignored.
 Future<void> shareTextContent({
   required String content,
   required String filename,
   required String mimeType,
+  Rect? sharePositionOrigin,
 }) {
   return platform.shareTextContent(
     content: content,
     filename: filename,
     mimeType: mimeType,
+    sharePositionOrigin: sharePositionOrigin,
   );
 }
 
@@ -29,14 +37,35 @@ Future<void> shareTextContent({
 /// Save-to-Files / Open); on web it shares the in-memory bytes via the browser
 /// share API. Keeps every call site `dart:io`-free so the project compiles for
 /// web.
+///
+/// [sharePositionOrigin] is required on iPad / Mac Catalyst — a non-empty
+/// [Rect] within the app's view bounds that anchors the popover. On iPhone and
+/// Android it is ignored.
 Future<void> shareBinaryContent({
   required List<int> bytes,
   required String filename,
   required String mimeType,
+  Rect? sharePositionOrigin,
 }) {
   return platform.shareBinaryContent(
     bytes: bytes,
     filename: filename,
     mimeType: mimeType,
+    sharePositionOrigin: sharePositionOrigin,
   );
+}
+
+/// Returns a sensible [Rect] from [context] for anchoring the iPad / Mac
+/// Catalyst share-sheet popover. Returns null when [context] has no render
+/// object, in which case the caller may omit [sharePositionOrigin] (the share
+/// sheet still works on iPhone + Android where a popover is not used).
+///
+/// The returned rect sits at the bottom-centre of the widget so the popover
+/// appears near where the user tapped.
+Rect? shareOriginFromContext(BuildContext context) {
+  final box = context.findRenderObject() as RenderBox?;
+  if (box == null || !box.hasSize) return null;
+  final w = box.size.width;
+  final h = box.size.height;
+  return Rect.fromLTWH(w / 2 - 72, h - 120, 144, 48);
 }

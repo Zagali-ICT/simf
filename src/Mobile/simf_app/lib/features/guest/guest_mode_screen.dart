@@ -26,96 +26,90 @@ class GuestModeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return Scaffold(
-      appBar: AppBar(leading: const SimfBackButton(), title: Text(l10n.guestModeTitle)),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(SimfTokens.space6),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                // Accent explore mark inside a hairline-bordered accent ring
-                // (mockup state-badge idiom on the navy surface).
-                Center(
-                  child: Container(
-                    width: 64,
-                    height: 64,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: SimfTokens.accent.withValues(alpha: 0.08),
-                      border: Border.all(color: SimfTokens.accent, width: 1.5),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.explore_outlined,
-                      size: 30,
-                      color: SimfTokens.accent,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: SimfTokens.space5),
-                Text(
-                  l10n.guestModeHeadline,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: SimfTokens.surface,
-                    fontSize: SimfTokens.textXl,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: SimfTokens.space5),
-                // Accent guest callout (mockup: accent border + accent-6% fill,
-                // on-navy secondary copy — the mockup's dashed-accent banner
-                // rendered with the shipped solid-accent callout idiom). Carries
-                // the "what a guest can browse" line and the "sign in for more"
-                // line.
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: SimfTokens.space4,
-                    vertical: SimfTokens.space4,
-                  ),
+    return SimfPageShell(
+      title: l10n.guestModeTitle,
+      onBack: () => backOrHome(context),
+      showSweep: true,
+      showBottomNav: false,
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(SimfTokens.space6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Center(
+                child: Container(
+                  width: 64,
+                  height: 64,
+                  alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: SimfTokens.accent.withValues(alpha: 0.06),
-                    border: Border.all(color: SimfTokens.accent),
-                    borderRadius: BorderRadius.circular(SimfTokens.radius),
+                    color: SimfTokens.accent.withValues(alpha: 0.08),
+                    border: Border.all(color: SimfTokens.accent, width: 1.5),
+                    shape: BoxShape.circle,
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        l10n.guestModeBrowseBody,
-                        style: const TextStyle(
-                          color: SimfTokens.txtSecondary,
-                          fontSize: SimfTokens.textSm,
-                          height: 1.7,
-                        ),
-                      ),
-                      const SizedBox(height: SimfTokens.space3),
-                      Text(
-                        l10n.guestModeSignInBody,
-                        style: const TextStyle(
-                          color: SimfTokens.txtSecondary,
-                          fontSize: SimfTokens.textSm,
-                          height: 1.7,
-                        ),
-                      ),
-                    ],
+                  child: const Icon(
+                    Icons.explore_outlined,
+                    size: 30,
+                    color: SimfTokens.accent,
                   ),
                 ),
-                const SizedBox(height: SimfTokens.space6),
-                FilledButton(
-                  onPressed: () => context.go('/'),
-                  child: Text(l10n.guestModeContinueButton),
+              ),
+              const SizedBox(height: SimfTokens.space5),
+              Text(
+                l10n.guestModeHeadline,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: SimfTokens.surface,
+                  fontSize: SimfTokens.textXl,
+                  fontWeight: FontWeight.w700,
                 ),
-                const SizedBox(height: SimfTokens.space2),
-                OutlinedButton(
-                  onPressed: () => context.pushNamed(RouteNames.signIn),
-                  child: Text(l10n.guestModeSignInButton),
+              ),
+              const SizedBox(height: SimfTokens.space5),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SimfTokens.space4,
+                  vertical: SimfTokens.space4,
                 ),
-              ],
-            ),
+                decoration: BoxDecoration(
+                  color: SimfTokens.accent.withValues(alpha: 0.06),
+                  border: Border.all(color: SimfTokens.accent),
+                  borderRadius: BorderRadius.circular(SimfTokens.radius),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      l10n.guestModeBrowseBody,
+                      style: const TextStyle(
+                        color: SimfTokens.txtSecondary,
+                        fontSize: SimfTokens.textSm,
+                        height: 1.7,
+                      ),
+                    ),
+                    const SizedBox(height: SimfTokens.space3),
+                    Text(
+                      l10n.guestModeSignInBody,
+                      style: const TextStyle(
+                        color: SimfTokens.txtSecondary,
+                        fontSize: SimfTokens.textSm,
+                        height: 1.7,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: SimfTokens.space6),
+              FilledButton(
+                onPressed: () => context.go('/'),
+                child: Text(l10n.guestModeContinueButton),
+              ),
+              const SizedBox(height: SimfTokens.space2),
+              OutlinedButton(
+                onPressed: () => context.pushNamed(RouteNames.signIn),
+                child: Text(l10n.guestModeSignInButton),
+              ),
+            ],
           ),
         ),
       ),

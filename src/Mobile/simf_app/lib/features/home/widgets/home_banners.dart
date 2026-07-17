@@ -14,6 +14,7 @@ class LiveBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final flip = !l10n.isArabic;
     return Material(
       color: Colors.transparent,
       shape: RoundedRectangleBorder(
@@ -74,10 +75,15 @@ class LiveBanner extends StatelessWidget {
               // section rows: Figma 758:1151 fills it WHITE (like the عن الملتقى
               // / الرعاه / الأخبار carets — only روح السعودية 758:1275 is gold).
               // The bundled SVG points left and does not mirror under RTL.
-              const SimfSvgIcon(
-                'assets/icons/ic_caret_left.svg',
-                color: Colors.white,
-                size: 24,
+              // Flip horizontally in English so the caret points right →
+              // (forward in LTR reading direction).
+              Transform.flip(
+                flipX: flip,
+                child: const SimfSvgIcon(
+                  'assets/icons/ic_caret_left.svg',
+                  color: Colors.white,
+                  size: 24,
+                ),
               ),
             ],
           ),

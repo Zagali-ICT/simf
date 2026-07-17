@@ -69,6 +69,7 @@ class SimfPageShell extends StatelessWidget {
     this.onBack,
     this.tab,
     this.showSweep = false,
+    this.showBottomNav = true,
     this.showNotificationsBell = true,
     this.showHeaderActions = false,
     this.showLanguageToggle = true,
@@ -93,6 +94,10 @@ class SimfPageShell extends StatelessWidget {
 
   /// Renders the decorative rotated sweep (the entry frames' 28.28° block).
   final bool showSweep;
+
+  /// Whether the bottom navigation bar is rendered. Pages that precede role
+  /// selection (e.g. guest-mode screen) pass false.
+  final bool showBottomNav;
 
   /// Whether the default header's action cluster shows the notifications bell.
   /// True on every signed-in surface; the guest home (frame 758:2910) passes
@@ -125,7 +130,8 @@ class SimfPageShell extends StatelessWidget {
       // that uses this scaffold (opened by the header ☰; RTL slides from the
       // right). Detail/secondary pages inherit it as they migrate onto SimfPageShell.
       drawer: const MoreDrawer(),
-      bottomNavigationBar: SimfBottomNav(current: tab),
+      bottomNavigationBar:
+          showBottomNav ? SimfBottomNav(current: tab) : null,
       body: Stack(
         children: <Widget>[
           if (showSweep) const SimfSweepBackground(),
@@ -638,6 +644,7 @@ class SimfLinkRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final flip = !AppL10n.of(context).isArabic;
     return SimfCard(
       onTap: onTap,
       color: Colors.transparent,
@@ -667,11 +674,15 @@ class SimfLinkRow extends StatelessWidget {
               // (عن الملتقى / الرعاه / الأخبار) fill this caret WHITE — only the
               // روح السعودية row (758:1275, [SimfListRow]) keeps it gold. The
               // bundled SVG does not auto-mirror under RTL, so it stays pointing
-              // left as the design shows.
-              const SimfSvgIcon(
-                'assets/icons/ic_caret_left.svg',
-                color: Colors.white,
-                size: 24,
+              // left as the design shows. Flip horizontally in English so the
+              // caret points right → (forward in LTR reading direction).
+              Transform.flip(
+                flipX: flip,
+                child: const SimfSvgIcon(
+                  'assets/icons/ic_caret_left.svg',
+                  color: Colors.white,
+                  size: 24,
+                ),
               ),
             ],
           ),
@@ -942,6 +953,7 @@ class SimfListRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final flip = !AppL10n.of(context).isArabic;
     return SimfCard(
       onTap: onTap,
       borderColor: SimfTokens.goldSoft,
@@ -997,10 +1009,15 @@ class SimfListRow extends StatelessWidget {
             // Frame 758:1274 — a gold left-pointing caret. Material's
             // Icons.arrow_left auto-mirrors to the right under RTL; the bundled
             // SVG does not, so it stays pointing left as the design shows.
-            const SimfSvgIcon(
-              'assets/icons/ic_caret_left.svg',
-              color: SimfTokens.accent,
-              size: 24,
+            // Flip horizontally in English so the caret points right →
+            // (forward in LTR reading direction).
+            Transform.flip(
+              flipX: flip,
+              child: const SimfSvgIcon(
+                'assets/icons/ic_caret_left.svg',
+                color: SimfTokens.accent,
+                size: 24,
+              ),
             ),
           ],
         ),

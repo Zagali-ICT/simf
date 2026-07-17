@@ -36,6 +36,7 @@ class _SavedContactSheetState extends ConsumerState<SavedContactSheet> {
         content: vcf,
         filename: 'simf-contact.vcf',
         mimeType: 'text/vcard',
+        sharePositionOrigin: shareOriginFromContext(context),
       );
       if (mounted) {
         setState(() => _busy = false);
