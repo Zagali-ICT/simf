@@ -50,6 +50,7 @@ class MyAreaScreen extends ConsumerStatefulWidget {
 class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
   bool _loading = true;
   bool _error = false;
+  bool _sharingContact = false;
   MyAreaDashboard? _dashboard;
 
   @override
@@ -98,31 +99,23 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
     }
   }
 
-  Future<void> _shareContact() => _share(
-        () => ref.read(myAreaRepositoryProvider).getContactCardVcf(),
-        'simf.vcf',
-        'text/vcard',
-      );
-
-  Future<void> _share(
-    Future<String> Function() fetch,
-    String filename,
-    String mimeType,
-  ) async {
+  Future<void> _shareContact() async {
+    if (_sharingContact) return;
+    setState(() => _sharingContact = true);
     try {
-      final content = await fetch();
+      final vcf = await ref.read(myAreaRepositoryProvider).getContactCardVcf();
       await shareTextContent(
-        content: content,
-        filename: filename,
-        mimeType: mimeType,
+        content: vcf,
+        filename: 'simf.vcf',
+        mimeType: 'text/vcard',
       );
-    } on ApiFailure {
-      if (!mounted) {
-        return;
-      }
+    } on Object catch (_) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppL10n.of(context).shareFailed)),
       );
+    } finally {
+      if (mounted) setState(() => _sharingContact = false);
     }
   }
 

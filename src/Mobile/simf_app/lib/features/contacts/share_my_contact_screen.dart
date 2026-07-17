@@ -34,6 +34,7 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
   bool _loading = true;
   bool _error = false;
   bool _rotating = false;
+  bool _sharingVcard = false;
   String? _token;
   String? _vcard;
 
@@ -115,6 +116,8 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
   /// Fetches the My-Area vCard and hands it to the OS share sheet (the same
   /// export the My-Area dashboard shares, so there is one vCard source).
   Future<void> _shareVcard() async {
+    if (_sharingVcard) return;
+    setState(() => _sharingVcard = true);
     final l10n = AppL10n.of(context);
     try {
       final vcf = await ref.read(myAreaRepositoryProvider).getContactCardVcf();
@@ -123,22 +126,24 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
         filename: 'simf.vcf',
         mimeType: 'text/vcard',
       );
-    } on ApiFailure {
-      if (!mounted) {
-        return;
-      }
+    } on Object catch (_) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.shareFailed)),
       );
+    } finally {
+      if (mounted) setState(() => _sharingVcard = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return Scaffold(
-      appBar: AppBar(leading: const SimfBackButton(), title: Text(l10n.shareMyContactTitle)),
-      body: SafeArea(child: _buildBody(l10n)),
+    return SimfPageShell(
+      title: l10n.shareMyContactTitle,
+      onBack: () => backOrHome(context),
+      showSweep: true,
+      body: _buildBody(l10n),
     );
   }
 
@@ -148,8 +153,9 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
     }
     final vcard = _vcard;
     if (_error || vcard == null) {
-      return _ErrorState(
+      return SimfErrorState(
         message: l10n.shareMyContactError,
+        retryLabel: l10n.retryLabel,
         onRetry: () => unawaited(_load()),
       );
     }
@@ -159,11 +165,11 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Card(
-              margin: EdgeInsets.zero,
-              color: SimfTokens.surface,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(SimfTokens.radiusLarge),
+            Container(
+              decoration: BoxDecoration(
+                color: SimfTokens.surface,
+                borderRadius: BorderRadius.circular(SimfTokens.radiusLg),
+                border: Border.all(color: SimfTokens.accent),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(SimfTokens.space6),
@@ -179,27 +185,55 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
             Text(
               l10n.shareMyContactHint,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: SimfTokens.inkMuted),
+              style: const TextStyle(color: Colors.white70),
             ),
             const SizedBox(height: SimfTokens.space5),
             FilledButton.icon(
               onPressed: () => unawaited(_shareVcard()),
-              icon: const Icon(Icons.ios_share),
-              label: Text(l10n.shareContact),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+                backgroundColor: SimfTokens.accent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+                ),
+              ),
+              icon: const Icon(Icons.ios_share, color: Colors.white),
+              label: Text(
+                l10n.shareContact,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: SimfTokens.textLg,
+                ),
+              ),
             ),
             const SizedBox(height: SimfTokens.space2),
-            TextButton.icon(
+            OutlinedButton.icon(
               onPressed: (_rotating || _token == null)
                   ? null
                   : () => unawaited(_rotate()),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+                side: const BorderSide(color: SimfTokens.accent, width: 1),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+                ),
+              ),
               icon: _rotating
                   ? const SizedBox(
                       width: 16,
                       height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(Icons.autorenew),
-              label: Text(l10n.shareMyContactRotate),
+                  : const Icon(Icons.autorenew, color: SimfTokens.accent),
+              label: Text(
+                l10n.shareMyContactRotate,
+                style: const TextStyle(
+                  color: SimfTokens.accent,
+                  fontWeight: FontWeight.w700,
+                  fontSize: SimfTokens.textLg,
+                ),
+              ),
             ),
           ],
         ),
@@ -208,27 +242,3 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
   }
 }
 
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.message, required this.onRetry});
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppL10n.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: SimfTokens.space4),
-            FilledButton(onPressed: onRetry, child: Text(l10n.retryLabel)),
-          ],
-        ),
-      ),
-    );
-  }
-}
