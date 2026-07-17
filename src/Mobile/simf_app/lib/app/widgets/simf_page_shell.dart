@@ -638,6 +638,7 @@ class SimfLinkRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final flip = !AppL10n.of(context).isArabic;
     return SimfCard(
       onTap: onTap,
       color: Colors.transparent,
@@ -667,11 +668,15 @@ class SimfLinkRow extends StatelessWidget {
               // (عن الملتقى / الرعاه / الأخبار) fill this caret WHITE — only the
               // روح السعودية row (758:1275, [SimfListRow]) keeps it gold. The
               // bundled SVG does not auto-mirror under RTL, so it stays pointing
-              // left as the design shows.
-              const SimfSvgIcon(
-                'assets/icons/ic_caret_left.svg',
-                color: Colors.white,
-                size: 24,
+              // left as the design shows. Flip horizontally in English so the
+              // caret points right → (forward in LTR reading direction).
+              Transform.flip(
+                flipX: flip,
+                child: const SimfSvgIcon(
+                  'assets/icons/ic_caret_left.svg',
+                  color: Colors.white,
+                  size: 24,
+                ),
               ),
             ],
           ),
@@ -942,6 +947,7 @@ class SimfListRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final flip = !AppL10n.of(context).isArabic;
     return SimfCard(
       onTap: onTap,
       borderColor: SimfTokens.goldSoft,
@@ -997,10 +1003,15 @@ class SimfListRow extends StatelessWidget {
             // Frame 758:1274 — a gold left-pointing caret. Material's
             // Icons.arrow_left auto-mirrors to the right under RTL; the bundled
             // SVG does not, so it stays pointing left as the design shows.
-            const SimfSvgIcon(
-              'assets/icons/ic_caret_left.svg',
-              color: SimfTokens.accent,
-              size: 24,
+            // Flip horizontally in English so the caret points right →
+            // (forward in LTR reading direction).
+            Transform.flip(
+              flipX: flip,
+              child: const SimfSvgIcon(
+                'assets/icons/ic_caret_left.svg',
+                color: SimfTokens.accent,
+                size: 24,
+              ),
             ),
           ],
         ),

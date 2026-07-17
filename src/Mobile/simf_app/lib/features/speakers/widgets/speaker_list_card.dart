@@ -37,6 +37,7 @@ class SpeakerListCard extends StatelessWidget {
     final label = (speaker.rank != null && speaker.rank!.trim().isNotEmpty)
         ? speaker.rank!.trim()
         : '';
+    final flip = !isArabic;
 
     return SimfCard(
       onTap: onTap,
@@ -108,10 +109,15 @@ class SpeakerListCard extends StatelessWidget {
             // Inline-end caret (frame 908:2089) — the iconamoon thin chevron in
             // GOLD on the trailing (left, in RTL) edge. NOT the beige filled
             // triangle (ic_caret_left): the frame draws a stroked chevron.
-            const SimfSvgIcon(
-              'assets/icons/ic_back.svg',
-              size: 20,
-              color: SimfTokens.accent,
+            // Flip horizontally in English so the caret points right →
+            // (forward in LTR reading direction).
+            Transform.flip(
+              flipX: flip,
+              child: const SimfSvgIcon(
+                'assets/icons/ic_back.svg',
+                size: 20,
+                color: SimfTokens.accent,
+              ),
             ),
           ],
         ),
