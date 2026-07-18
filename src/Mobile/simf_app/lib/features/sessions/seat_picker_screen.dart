@@ -11,6 +11,7 @@ import '../../app/widgets/simf_bottom_nav.dart';
 import 'data/seat_map_models.dart';
 import 'data/seat_map_repository.dart';
 import 'widgets/hall_seat_map.dart';
+import 'widgets/seat_map_async_view.dart';
 
 /// D-485 — **Seat picker** (`/sessions/:sessionId/pick-seat`, approved Visitor).
 /// An assigned-seat session's selectable hall grid: tap an **available** seat to
@@ -29,45 +30,7 @@ class SeatPickerScreen extends ConsumerStatefulWidget {
 }
 
 class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
-  bool _loading = true;
-  bool _error = false;
-  bool _notFound = false;
   bool _busy = false;
-  SessionSeatMap? _map;
-
-  @override
-  void initState() {
-    super.initState();
-    unawaited(_load());
-  }
-
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = false;
-      _notFound = false;
-    });
-    try {
-      final map =
-          await ref.read(seatMapRepositoryProvider).getSeatMap(widget.sessionId);
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _map = map;
-        _loading = false;
-      });
-    } on ApiFailure catch (failure) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _loading = false;
-        _notFound = failure.httpStatus == 404;
-        _error = failure.httpStatus != 404;
-      });
-    }
-  }
 
   Future<void> _reserve(AppL10n l10n, String row, int seat) =>
       _hold(l10n, (repo) => repo.reserveSeat(widget.sessionId, rowLabel: row, seatNumber: seat));
@@ -123,38 +86,20 @@ class _SeatPickerScreenState extends ConsumerState<SeatPickerScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
+    final value = ref.watch(seatMapProvider(widget.sessionId));
     return SimfPageShell(
       title: l10n.seatPickerTitle,
       onBack: () => backOrHome(context),
       tab: SimfTab.sessions,
-      body: _buildBody(l10n),
+      body: SeatMapAsyncView(
+        value: value,
+        onRetry: () => ref.invalidate(seatMapProvider(widget.sessionId)),
+        builder: (map) => _picker(l10n, map),
+      ),
     );
   }
 
-  Widget _buildBody(AppL10n l10n) {
-    if (_loading) {
-      return const SimfLoadingState();
-    }
-    if (_notFound) {
-      return SimfEmptyState(
-        icon: Icons.event_busy_outlined,
-        message: l10n.sessionNotFound,
-      );
-    }
-    if (_error || _map == null) {
-      return SimfErrorState(
-        message: l10n.seatMapError,
-        retryLabel: l10n.retryLabel,
-        onRetry: () => unawaited(_load()),
-      );
-    }
-    final map = _map!;
-    if (!map.hasLayout) {
-      return SimfEmptyState(
-        icon: Icons.event_seat_outlined,
-        message: l10n.seatMapUnavailable,
-      );
-    }
+  Widget _picker(AppL10n l10n, SessionSeatMap map) {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: ListView(

@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
@@ -14,6 +13,7 @@ import '../../app/widgets/simf_svg_icon.dart';
 import 'data/seat_map_models.dart';
 import 'data/seat_map_repository.dart';
 import 'widgets/hall_seat_map.dart';
+import 'widgets/seat_map_async_view.dart';
 
 /// Page 018 — مقعدي · My Seat map (#18,
 /// `/sessions/:sessionId/my-seat`, **auth-gated**, approved Visitor only),
@@ -29,104 +29,38 @@ import 'widgets/hall_seat_map.dart';
 /// band, the A–H seat grid and the محجوز/متاح/مقعدك legend, then the two gold
 /// action buttons (share location / guide me to my seat). Navigate opens the
 /// venue map (15); share opens the native sheet (E3).
-class MySeatScreen extends ConsumerStatefulWidget {
+class MySeatScreen extends ConsumerWidget {
   const MySeatScreen({required this.sessionId, super.key});
 
   final String sessionId;
 
   @override
-  ConsumerState<MySeatScreen> createState() => _MySeatScreenState();
-}
-
-class _MySeatScreenState extends ConsumerState<MySeatScreen> {
-  bool _loading = true;
-  bool _error = false;
-  bool _notFound = false;
-  SessionSeatMap? _map;
-
-  @override
-  void initState() {
-    super.initState();
-    unawaited(_load());
-  }
-
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = false;
-      _notFound = false;
-    });
-    try {
-      final map = await ref
-          .read(seatMapRepositoryProvider)
-          .getSeatMap(widget.sessionId);
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _map = map;
-        _loading = false;
-      });
-    } on ApiFailure catch (failure) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _loading = false;
-        _notFound = failure.httpStatus == 404;
-        _error = failure.httpStatus != 404;
-      });
-    }
-  }
-
-  Future<void> _share(AppL10n l10n, SeatCell cell) async {
-    await ref
-        .read(seatShareProvider)
-        .shareText(l10n.seatShareText(cell.rowLabel, cell.seatNumber));
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppL10n.of(context);
+    final value = ref.watch(seatMapProvider(sessionId));
     return SimfPageShell(
       title: l10n.mySeatTitle,
       onBack: () => backOrHome(context),
       tab: SimfTab.sessions,
-      body: _buildBody(l10n),
-    );
-  }
-
-  Widget _buildBody(AppL10n l10n) {
-    if (_loading) {
-      return const SimfLoadingState();
-    }
-    if (_notFound) {
-      return SimfEmptyState(
-        icon: Icons.event_busy_outlined,
-        message: l10n.sessionNotFound,
-      );
-    }
-    if (_error || _map == null) {
-      return SimfErrorState(
-        message: l10n.seatMapError,
-        retryLabel: l10n.retryLabel,
-        onRetry: () => unawaited(_load()),
-      );
-    }
-    final map = _map!;
-    if (!map.hasLayout) {
-      return SimfEmptyState(
-        icon: Icons.event_seat_outlined,
-        message: l10n.seatMapUnavailable,
-      );
-    }
-    return _SeatMapView(
-      map: map,
-      l10n: l10n,
-      onNavigate: () => context.pushNamed(RouteNames.venueMap),
-      onShare: map.myCell == null
-          ? null
-          : () => unawaited(_share(l10n, map.myCell!)),
+      body: SeatMapAsyncView(
+        value: value,
+        onRetry: () => ref.invalidate(seatMapProvider(sessionId)),
+        builder: (map) => _SeatMapView(
+          map: map,
+          l10n: l10n,
+          onNavigate: () => context.pushNamed(RouteNames.venueMap),
+          onShare: map.myCell == null
+              ? null
+              : () => unawaited(
+                    ref.read(seatShareProvider).shareText(
+                          l10n.seatShareText(
+                            map.myCell!.rowLabel,
+                            map.myCell!.seatNumber,
+                          ),
+                        ),
+                  ),
+        ),
+      ),
     );
   }
 }

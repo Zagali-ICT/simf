@@ -84,6 +84,16 @@ final seatMapRepositoryProvider = Provider<SeatMapRepository>((ref) {
   return SeatMapRepository(ref.watch(simfApiClientProvider));
 });
 
+/// The seat map for [sessionId] as one cached async read — the single source the
+/// My-Seat view (#18) and the Seat-picker (#109) both watch (`GET …/seats`).
+/// `autoDispose.family` so a fresh mount or a retry (`ref.invalidate`) re-fetches,
+/// matching the per-mount `initState` load the two screens used before.
+final seatMapProvider =
+    FutureProvider.autoDispose.family<SessionSeatMap, String>(
+  (ref, sessionId) =>
+      ref.watch(seatMapRepositoryProvider).getSeatMap(sessionId),
+);
+
 /// The native "share my seat location" action (Page_018 E3) — a client-local OS
 /// action, kept behind an overridable provider so the widget test injects a fake
 /// (no MethodChannel).
