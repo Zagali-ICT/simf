@@ -223,33 +223,48 @@ class _IdentityVerificationScreenState
   /// The command for the current liveness step (ابتسم / أدر رأسك لليمين / لليسار),
   /// shown big under the live preview so the user knows exactly what to do
   /// (D-683; over the Figma 758:4180 layout).
+  ///
+  /// D-684 / D-XXX — headEulerAngleY sign convention differs between Google ML Kit
+  /// on iOS and Android. On iOS, positive yaw = head turned LEFT in the image;
+  /// with the front-camera mirror this satisfies turnRight (yaw >= +20°) when the
+  /// user turns physical LEFT, so prompts are swapped. On Android, positive yaw =
+  /// head turned RIGHT, so prompts match the step name directly.
   String _stepPrompt(AppL10n l10n) {
     switch (_step) {
       case LivenessStep.smile:
         return l10n.livenessSmilePrompt;
-      // D-684 — the front camera is mirrored, so the ML "turn right" step
-      // (headEulerAngleY +ve) is satisfied by a physical turn to the user's LEFT
-      // (and vice-versa). Present each step as the direction the user must
-      // actually move (owner on-device: the left/right message was reversed).
       case LivenessStep.turnRight:
-        return l10n.livenessTurnLeftPrompt;
+        return Platform.isAndroid
+            ? l10n.livenessTurnRightPrompt
+            : l10n.livenessTurnLeftPrompt;
       case LivenessStep.turnLeft:
-        return l10n.livenessTurnRightPrompt;
+        return Platform.isAndroid
+            ? l10n.livenessTurnLeftPrompt
+            : l10n.livenessTurnRightPrompt;
     }
   }
 
   /// The directional cue for the current step: the 😊 emoji for the front step,
   /// a gold arrow for the right / left turns (Figma 758:4180 / 4248 / 4316).
+  ///
+  /// D-684 / D-XXX — arrows follow the prompt direction, which is platform-
+  /// dependent per the yaw sign convention difference (see _stepPrompt).
   Widget _stepLeading() {
     switch (_step) {
       case LivenessStep.smile:
         return const Text('😊', style: TextStyle(fontSize: 30));
-      // D-684 — arrows follow the (mirror-corrected) prompt: the turnRight step
-      // asks the user to turn LEFT, so it shows a left arrow, and vice-versa.
       case LivenessStep.turnRight:
-        return const Icon(Icons.west, color: SimfTokens.accent, size: 32);
+        return Icon(
+          Platform.isAndroid ? Icons.east : Icons.west,
+          color: SimfTokens.accent,
+          size: 32,
+        );
       case LivenessStep.turnLeft:
-        return const Icon(Icons.east, color: SimfTokens.accent, size: 32);
+        return Icon(
+          Platform.isAndroid ? Icons.west : Icons.east,
+          color: SimfTokens.accent,
+          size: 32,
+        );
     }
   }
 
