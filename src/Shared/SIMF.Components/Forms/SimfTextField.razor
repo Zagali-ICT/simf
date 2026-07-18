@@ -35,6 +35,7 @@
                        type="@Type" inputmode="@InputMode" autocomplete="@Autocomplete"
                        placeholder="@Placeholder" disabled="@Disabled"
                        maxlength="@(MaxLength?.ToString())"
+                       min="@Min" max="@Max"
                        aria-invalid="@(HasError ? "true" : null)"
                        aria-describedby="@DescribedBy" />
         }
@@ -83,6 +84,14 @@
     /// small JS cleaner removes any pasted / typed non-digit from the DOM in
     /// place. Default false — every existing consumer is unaffected.</summary>
     [Parameter] public bool Numeric { get; set; }
+
+    /// <summary>HTML <c>min</c> attribute — restricts the minimum value
+    /// on <c>datetime-local</c> / <c>number</c> / <c>date</c> inputs.</summary>
+    [Parameter] public string? Min { get; set; }
+
+    /// <summary>HTML <c>max</c> attribute — restricts the maximum value
+    /// on <c>datetime-local</c> / <c>number</c> / <c>date</c> inputs.</summary>
+    [Parameter] public string? Max { get; set; }
 
     private string? DescribedBy =>
         HasError ? ErrorElementId

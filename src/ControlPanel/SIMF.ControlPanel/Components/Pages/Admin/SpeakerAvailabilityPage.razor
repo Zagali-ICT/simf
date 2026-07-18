@@ -36,9 +36,11 @@
             <h3 class="simf-section-title">@L["Admin.SpeakerAvailability.AddWindow"]</h3>
             <div class="simf-form__fields">
                 <SimfTextField Label="@L["Admin.SpeakerAvailability.Start"]" Type="datetime-local"
-                               @bind-Value="_start" Disabled="_busy" />
+                               @bind-Value="_start" Disabled="_busy"
+                               Min="2026-11-23T00:00" Max="2026-11-25T23:59" />
                 <SimfTextField Label="@L["Admin.SpeakerAvailability.End"]" Type="datetime-local"
-                               @bind-Value="_end" Disabled="_busy" />
+                               @bind-Value="_end" Disabled="_busy"
+                               Min="2026-11-23T00:00" Max="2026-11-25T23:59" />
                 <SimfTextField Label="@L["Admin.SpeakerAvailability.SlotMinutes"]" Type="number"
                                @bind-Value="_slotMinutes" Disabled="_busy" />
             </div>
