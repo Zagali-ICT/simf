@@ -93,4 +93,34 @@ public partial class HallArrivalsConsole
         }
         finally { _busy = false; }
     }
+
+    // 2026-07-18 — staff check-OUT: scan the badge QR to close the attendee's open
+    // attendance row for the selected session (the seat map's confirmed state clears).
+    private async Task DepartAsync()
+    {
+        if (_selected is null) { _toast = new Toast("error", L["Admin.HallArrivals.NeedSession"]); return; }
+        if (string.IsNullOrWhiteSpace(_qrId)) { return; }
+
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<QrArrivalResult>>(
+                "simfAccount.postJson",
+                $"/account/api/admin/sessions/{_selected.Id}/departures",
+                new RecordQrArrivalRequest { QrId = _qrId.Trim() });
+            if (envelope is { Success: true, Data: not null })
+            {
+                _toast = new Toast("success", $"{L["Admin.HallArrivals.CheckedOut"]}: {envelope.Data.DisplayName}");
+                _qrId = string.Empty; // ready for the next scan
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.HallArrivals.Fallback"]);
+            }
+        }
+        finally { _busy = false; }
+    }
 }

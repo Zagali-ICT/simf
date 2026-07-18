@@ -42,6 +42,17 @@ public interface IHallAttendanceService
         Guid operatorUserId, Guid sessionId, string qrId,
         CancellationToken cancellationToken = default);
 
+    /// <summary>2026-07-18 — an operator records a hall DEPARTURE (check-out) by
+    /// scanning an attendee's badge QR, symmetric to <see cref="RecordQrArrivalAsync"/>.
+    /// Resolves the QR to the attendee, confirms the session exists, and closes the
+    /// attendee's open attendance row (idempotent — a no-op returning Arrived=false
+    /// when they are not checked in / already left). No admission re-check: an
+    /// attendee already in the hall must always be allowed to leave. 400 unknown/blank
+    /// QR; 404 unknown session.</summary>
+    Task<QrArrivalResult> RecordQrDepartureAsync(
+        Guid operatorUserId, Guid sessionId, string qrId,
+        CancellationToken cancellationToken = default);
+
     /// <summary>X-1 (chain design) — a hall-door gate scan feeds hall attendance.
     /// Resolves the session LIVE in <paramref name="hallId"/> right now (active,
     /// within [StartUtc, EndUtc] ± the arrival grace, nearest/running-first);

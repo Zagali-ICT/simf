@@ -1831,6 +1831,15 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
+    // 2026-07-18: operator hall-door QR departure / check-out (/admin/sessions/{id}/departures).
+    public Task<ApiCallResult<SIMF.Contracts.Sessions.QrArrivalResult>>
+        RecordQrDepartureAsync(Guid sessionId, SIMF.Contracts.Sessions.RecordQrArrivalRequest request,
+            string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<SIMF.Contracts.Sessions.QrArrivalResult>(
+            HttpMethod.Post, $"sessions/{sessionId}/departures",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
     public Task<ApiCallResult<IReadOnlyList<SIMF.Contracts.Sessions.SessionQuestionModeratorRow>>>
         ListModeratorQueueAsync(Guid sessionId, string accessToken,
             CancellationToken cancellationToken = default) =>

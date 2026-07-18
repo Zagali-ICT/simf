@@ -1859,7 +1859,9 @@
   <data name="Admin.HallArrivals.Field.Qr" xml:space="preserve"><value>رمز شارة الحاضر</value></data>
   <data name="Admin.HallArrivals.Field.QrHint" xml:space="preserve"><value>امسح أو أدخل رمز الشارة ثم سجّل الوصول.</value></data>
   <data name="Admin.HallArrivals.Action.Record" xml:space="preserve"><value>تسجيل الوصول</value></data>
+  <data name="Admin.HallArrivals.Action.CheckOut" xml:space="preserve"><value>تسجيل الخروج</value></data>
   <data name="Admin.HallArrivals.Recorded" xml:space="preserve"><value>تم تسجيل الوصول</value></data>
+  <data name="Admin.HallArrivals.CheckedOut" xml:space="preserve"><value>تم تسجيل الخروج</value></data>
   <data name="Admin.HallArrivals.NeedSession" xml:space="preserve"><value>اختر جلسة أولاً.</value></data>
   <data name="Admin.HallArrivals.Fallback" xml:space="preserve"><value>حدث خطأ ما. يرجى المحاولة مرة أخرى.</value></data>
   <data name="Admin.SessionModerators.Title" xml:space="preserve"><value>مشرفو الجلسات</value></data>

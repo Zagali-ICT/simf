@@ -1935,6 +1935,16 @@ internal static class AccountEndpoints
             return Forward(await api.RecordQrArrivalAsync(sessionId, body, token));
         });
 
+        // 2026-07-18: operator hall-door QR departure (check-out) passthrough.
+        group.MapPost("/admin/sessions/{sessionId:guid}/departures",
+            async (Guid sessionId, SIMF.Contracts.Sessions.RecordQrArrivalRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.RecordQrDepartureAsync(sessionId, body, token));
+        });
+
         // D-148 — Gate Module BFF passthroughs (admin + operator).
         group.MapPost("/admin/gates/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
