@@ -563,6 +563,7 @@
   <data name="Admin.Speakers.Column.Name" xml:space="preserve"><value>الاسم</value></data>
   <data name="Admin.Speakers.Column.NameArabic" xml:space="preserve"><value>الاسم (بالعربية)</value></data>
   <data name="Admin.Speakers.Column.Rank" xml:space="preserve"><value>الرتبة</value></data>
+  <data name="Admin.Speakers.Column.RankArabic" xml:space="preserve"><value>الرتبة (بالعربية)</value></data>
   <data name="Admin.Speakers.Column.Country" xml:space="preserve"><value>البلد</value></data>
   <data name="Admin.Speakers.Column.DisplayOrder" xml:space="preserve"><value>الترتيب</value></data>
   <data name="Admin.Speakers.Column.Active" xml:space="preserve"><value>الحالة</value></data>
@@ -583,6 +584,7 @@
   <data name="Admin.Speakers.Field.NameArabic" xml:space="preserve"><value>الاسم (بالعربية)</value></data>
   <data name="Admin.Speakers.Field.NameArabicInvalid" xml:space="preserve"><value>الاسم بالعربية مطلوب (1–128 حرفاً).</value></data>
   <data name="Admin.Speakers.Field.Rank" xml:space="preserve"><value>الرتبة / اللقب</value></data>
+  <data name="Admin.Speakers.Field.RankArabic" xml:space="preserve"><value>الرتبة / اللقب (بالعربية)</value></data>
   <data name="Admin.Speakers.Field.Country" xml:space="preserve"><value>البلد</value></data>
   <data name="Admin.Speakers.Field.CountryPlaceholder" xml:space="preserve"><value>— بدون بلد —</value></data>
   <data name="Admin.Speakers.Field.CountryInvalid" xml:space="preserve"><value>يجب اختيار بلد صالح من القائمة.</value></data>
