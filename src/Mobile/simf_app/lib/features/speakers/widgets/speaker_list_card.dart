@@ -34,9 +34,7 @@ class SpeakerListCard extends StatelessWidget {
     // trailing (left, in RTL) edge of the name — NOT a badge on the avatar — and
     // the sub-line carries only the rank.
     final flag = countryFlagEmoji(speaker.countryId);
-    final label = (speaker.rank != null && speaker.rank!.trim().isNotEmpty)
-        ? speaker.rank!.trim()
-        : '';
+    final label = speaker.localizedRank(isArabic)?.trim() ?? '';
     final flip = !isArabic;
 
     return SimfCard(

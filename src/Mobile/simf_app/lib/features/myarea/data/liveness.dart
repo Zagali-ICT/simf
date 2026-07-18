@@ -19,10 +19,13 @@ const double kTurnYawDegrees = 20;
 /// top-level function so the liveness logic is unit-testable without a camera or
 /// the native plugin.
 ///
-/// Note on sign: ML Kit's `headEulerAngleY` is positive when the head turns to
-/// the image's right. The two turn steps require a yaw beyond ±[kTurnYawDegrees]
-/// in opposite directions; front-camera mirroring can swap which way the user
-/// perceives as "right", but a turn in each direction is still required.
+/// Note on sign: ML Kit `headEulerAngleY` convention differs per platform. On
+/// Android, positive yaw = head turned RIGHT; on iOS, positive yaw = head turned
+/// LEFT in the image's coordinate system. The `identity_verification_screen`
+/// compensates per platform via the prompt and arrow logic. The two turn steps
+/// require a yaw beyond ±[kTurnYawDegrees] in opposite directions; front-camera
+/// mirroring can swap which way the user perceives as "right", but a turn in
+/// each direction is still required.
 bool livenessStepSatisfied(
   LivenessStep step, {
   double? smilingProbability,

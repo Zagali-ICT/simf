@@ -123,9 +123,7 @@ class _SpeakerProfileScreenState extends ConsumerState<SpeakerProfileScreen> {
     final l10n = AppL10n.of(context);
     final speaker = _speaker;
     final isArabic = l10n.isArabic;
-    final rank = (speaker?.rank != null && speaker!.rank!.trim().isNotEmpty)
-        ? speaker.rank!.trim()
-        : null;
+    final rank = speaker?.localizedRank(isArabic)?.trim();
     return SimfPageShell(
       onBack: () => backOrHome(context),
       header: SpeakerProfileHeader(
