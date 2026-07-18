@@ -565,6 +565,7 @@
   <data name="Admin.Speakers.Column.Name" xml:space="preserve"><value>Name</value></data>
   <data name="Admin.Speakers.Column.NameArabic" xml:space="preserve"><value>Name (Arabic)</value></data>
   <data name="Admin.Speakers.Column.Rank" xml:space="preserve"><value>Rank</value></data>
+  <data name="Admin.Speakers.Column.RankArabic" xml:space="preserve"><value>Rank (Arabic)</value></data>
   <data name="Admin.Speakers.Column.Country" xml:space="preserve"><value>Country</value></data>
   <data name="Admin.Speakers.Column.DisplayOrder" xml:space="preserve"><value>Order</value></data>
   <data name="Admin.Speakers.Column.Active" xml:space="preserve"><value>Status</value></data>
@@ -585,6 +586,7 @@
   <data name="Admin.Speakers.Field.NameArabic" xml:space="preserve"><value>Name (Arabic)</value></data>
   <data name="Admin.Speakers.Field.NameArabicInvalid" xml:space="preserve"><value>Arabic name is required (1–128 characters).</value></data>
   <data name="Admin.Speakers.Field.Rank" xml:space="preserve"><value>Rank / title</value></data>
+  <data name="Admin.Speakers.Field.RankArabic" xml:space="preserve"><value>Rank / title (Arabic)</value></data>
   <data name="Admin.Speakers.Field.Country" xml:space="preserve"><value>Country</value></data>
   <data name="Admin.Speakers.Field.CountryPlaceholder" xml:space="preserve"><value>— No country —</value></data>
   <data name="Admin.Speakers.Field.CountryInvalid" xml:space="preserve"><value>Country must be a valid id from the picker.</value></data>

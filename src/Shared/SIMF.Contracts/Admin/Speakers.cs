@@ -16,6 +16,7 @@ public sealed record AdminSpeakerSummary(
     string Name,
     string NameArabic,
     string? Rank,
+    string? RankArabic,
     int? CountryId,
     string? CountryNameEn,
     string? CountryNameAr,
@@ -34,6 +35,7 @@ public sealed record AdminSpeakerDetail(
     string Name,
     string NameArabic,
     string? Rank,
+    string? RankArabic,
     int? CountryId,
     string? CountryNameEn,
     string? CountryNameAr,
@@ -65,6 +67,7 @@ public sealed class AdminCreateSpeakerRequest
     public string Name { get; set; } = string.Empty;
     public string NameArabic { get; set; } = string.Empty;
     public string? Rank { get; set; }
+    public string? RankArabic { get; set; }
     public int? CountryId { get; set; }
     public Guid? UserProfileId { get; set; }
     public string? Bio { get; set; }
@@ -99,6 +102,7 @@ public sealed class AdminUpdateSpeakerRequest
     public string Name { get; set; } = string.Empty;
     public string NameArabic { get; set; } = string.Empty;
     public string? Rank { get; set; }
+    public string? RankArabic { get; set; }
     public int? CountryId { get; set; }
     public Guid? UserProfileId { get; set; }
     public string? Bio { get; set; }

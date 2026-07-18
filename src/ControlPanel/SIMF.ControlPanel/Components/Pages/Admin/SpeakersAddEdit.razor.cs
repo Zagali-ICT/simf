@@ -36,6 +36,7 @@ public partial class SpeakersAddEdit
             _model.Name = Initial.Name;
             _model.NameArabic = Initial.NameArabic;
             _model.Rank = Initial.Rank ?? string.Empty;
+            _model.RankArabic = Initial.RankArabic ?? string.Empty;
             _countryIdInput = Initial.CountryId?.ToString() ?? string.Empty;
             _model.Bio = Initial.Bio ?? string.Empty;
             _model.BioArabic = Initial.BioArabic ?? string.Empty;
@@ -138,6 +139,7 @@ public partial class SpeakersAddEdit
                         Name = _model.Name.Trim(),
                         NameArabic = _model.NameArabic.Trim(),
                         Rank = NullIfBlank(_model.Rank),
+                        RankArabic = NullIfBlank(_model.RankArabic),
                         CountryId = countryId,
                         Bio = NullIfBlank(_model.Bio),
                         BioArabic = NullIfBlank(_model.BioArabic),
@@ -167,6 +169,7 @@ public partial class SpeakersAddEdit
                         Name = _model.Name.Trim(),
                         NameArabic = _model.NameArabic.Trim(),
                         Rank = NullIfBlank(_model.Rank),
+                        RankArabic = NullIfBlank(_model.RankArabic),
                         CountryId = countryId,
                         UserProfileId = Initial.UserProfileId, // preserved (not editable in this form yet)
                         Bio = NullIfBlank(_model.Bio),
@@ -215,6 +218,7 @@ public partial class SpeakersAddEdit
         public string Name { get; set; } = string.Empty;
         public string NameArabic { get; set; } = string.Empty;
         public string Rank { get; set; } = string.Empty;
+        public string RankArabic { get; set; } = string.Empty;
         public string Bio { get; set; } = string.Empty;
         public string BioArabic { get; set; } = string.Empty;
         public string Qualifications { get; set; } = string.Empty;
