@@ -52,8 +52,19 @@ internal sealed class SeatReservationService(
             })
             .ToListAsync(cancellationToken);
 
+        // Wave 2 — the "confirmed" (تم التأكيد) seat state: a reservation whose
+        // holder has an OPEN HallAttendance row for this session (scanned in at the
+        // hall gate). One query for the whole session, matched by holder id.
+        var checkedInUserIds = (await appDbContext.HallAttendances.AsNoTracking()
+            .Where(a => a.SessionId == sessionId && a.LeaveUtc == null)
+            .Select(a => a.UserId)
+            .ToListAsync(cancellationToken))
+            .ToHashSet();
+
         var cells = reservations.Select(r => new SessionSeatCell(
-            r.Id, r.RowLabel, r.SeatNumber, r.Kind, r.Status)).ToList();
+            r.Id, r.RowLabel, r.SeatNumber, r.Kind, r.Status,
+            r.ReservedForUserId is { } holder && checkedInUserIds.Contains(holder)))
+            .ToList();
 
         SessionSeatCell? mine = null;
         if (actorUserId is { } actor)
@@ -63,7 +74,8 @@ internal sealed class SeatReservationService(
             {
                 mine = new SessionSeatCell(
                     ownRow.Id, ownRow.RowLabel, ownRow.SeatNumber, ownRow.Kind,
-                    ownRow.Status);
+                    ownRow.Status,
+                    ownRow.ReservedForUserId is { } m && checkedInUserIds.Contains(m));
             }
         }
 

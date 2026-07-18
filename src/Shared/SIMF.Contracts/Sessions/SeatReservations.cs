@@ -31,13 +31,20 @@ public sealed record SessionSeatMap(
 /// and <see cref="SeatNumber"/> are null for an OpenSeating join. D-572 appends
 /// <see cref="Status"/> (append-only wire) so the app's "my seat" card can switch
 /// its hint — Pending → "await approval", Approved → "show your badge at entry";
-/// default Pending keeps older callers safe.</summary>
+/// default Pending keeps older callers safe.
+/// <para>Wave 2 (2026-07-18) appends <see cref="CheckedIn"/> (append-only wire):
+/// the holder has an OPEN <c>HallAttendance</c> row for this session — they scanned
+/// in at the hall gate ("تم التأكيد" / confirmed). The four app/CP seat states are:
+/// available (no cell) · unavailable (<c>Kind == AdminReservedRow</c>) · reserved
+/// (a holder, <c>CheckedIn == false</c>) · confirmed (a holder, <c>CheckedIn ==
+/// true</c>). Default false keeps older callers safe.</para></summary>
 public sealed record SessionSeatCell(
     Guid ReservationId,
     string? RowLabel,
     int? SeatNumber,
     SeatReservationKind Kind,
-    BookingStatus Status = BookingStatus.Pending);
+    BookingStatus Status = BookingStatus.Pending,
+    bool CheckedIn = false);
 
 /// <summary>D-175 — visitor self-pick request. Pass row+seat from
 /// the grid the app rendered against the <see cref="SessionSeatMap"/>.
