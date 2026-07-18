@@ -181,6 +181,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/programme/opening` | [`web-opening.md`](web-opening.md) | E2E-WOPN-001..007 |
 | `/programme/sessions` | [`web-plenary.md`](web-plenary.md) | E2E-WPLN-001..007 |
 | `/programme/exhibition` | [`web-exhibition.md`](web-exhibition.md) | E2E-WEXH-001..006 |
+| `/programme/gov-meetings` | [`web-gov-meetings.md`](web-gov-meetings.md) | E2E-WGBM-001..006 |
 | `/visit` | [`web-visit.md`](web-visit.md) | E2E-WVS-001..011 |
 | `/login` | [`web-login.md`](web-login.md) | E2E-WLG-001..017 |
 | `/login/verify` | [`web-otp-verify.md`](web-otp-verify.md) | E2E-WOT-001..010 |

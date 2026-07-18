@@ -45,7 +45,7 @@ public static class LandingChrome
             new("Landing.Nav.Programs.Opening", "/programme/opening"),
             new("Landing.Nav.Programs.Sessions", "/programme/sessions"),
             new("Landing.Nav.Programs.Exhibition", "/programme/exhibition"),
-            new("Landing.Nav.Programs.GovMeetings", "#"),
+            new("Landing.Nav.Programs.GovMeetings", "/programme/gov-meetings"),
             new("Landing.Nav.Programs.Visit", "#"),
         ]),
         new("Landing.Nav.Speakers", "Landing.Nav.Speakers", [], Href: "/speakers"),

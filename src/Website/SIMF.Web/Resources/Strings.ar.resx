@@ -433,4 +433,15 @@
   <data name="Exhibition.Section.Title" xml:space="preserve"><value>مخطط خريطة المعرض</value></data>
   <data name="Exhibition.Section.Sub" xml:space="preserve"><value>مخطط توزيع أجنحة المعرض المصاحب للملتقى.</value></data>
   <data name="Exhibition.Map.Alt" xml:space="preserve"><value>مخطط خريطة المعرض يوضّح الأجنحة المرقّمة والمناطق.</value></data>
+
+  <!-- government business meetings page (/programme/gov-meetings) -->
+  <data name="GovMeetings.PageTitle" xml:space="preserve"><value>اجتماعات الأعمال الحكومية — الملتقى البحري السعودي الدولي</value></data>
+  <data name="GovMeetings.Meta" xml:space="preserve"><value>اجتماعات الأعمال الحكومية في الملتقى البحري السعودي الدولي — لقاءات ثنائية منظّمة بين القطاع الخاص والجهات الحكومية.</value></data>
+  <data name="GovMeetings.Hero.Title" xml:space="preserve"><value>اجتماعات الأعمال الحكومية</value></data>
+  <data name="GovMeetings.Hero.Subtitle" xml:space="preserve"><value>لقاءات ثنائية منظّمة بين القطاع الخاص والجهات الحكومية تُعقد على هامش الملتقى.</value></data>
+  <data name="GovMeetings.Section.Title" xml:space="preserve"><value>اجتماعات الأعمال الحكومية</value></data>
+  <data name="GovMeetings.Section.Sub" xml:space="preserve"><value>برنامج لقاءات الأعمال بين الجهات الحكومية والشركات المشاركة.</value></data>
+  <data name="GovMeetings.Card.Title" xml:space="preserve"><value>تواصل مباشر بين الأعمال والجهات الحكومية</value></data>
+  <data name="GovMeetings.Card.Body" xml:space="preserve"><value>تتيح اجتماعات الأعمال الحكومية للشركات التواصل المباشر مع الجهات الحكومية واستكشاف فرص التعاون ضمن أجندة منظّمة على هامش الملتقى.</value></data>
+  <data name="GovMeetings.Cta" xml:space="preserve"><value>سجّل اهتمامك</value></data>
 </root>

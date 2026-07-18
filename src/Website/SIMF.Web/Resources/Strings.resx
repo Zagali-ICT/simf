@@ -433,4 +433,15 @@
   <data name="Exhibition.Section.Title" xml:space="preserve"><value>Exhibition floor plan</value></data>
   <data name="Exhibition.Section.Sub" xml:space="preserve"><value>The layout of the exhibition stands accompanying the forum.</value></data>
   <data name="Exhibition.Map.Alt" xml:space="preserve"><value>Exhibition floor plan showing the numbered stands and zones.</value></data>
+
+  <!-- government business meetings page (/programme/gov-meetings) -->
+  <data name="GovMeetings.PageTitle" xml:space="preserve"><value>Government business meetings — Saudi International Maritime Forum</value></data>
+  <data name="GovMeetings.Meta" xml:space="preserve"><value>Government business meetings at the Saudi International Maritime Forum — structured bilateral meetings between the private sector and government entities.</value></data>
+  <data name="GovMeetings.Hero.Title" xml:space="preserve"><value>Government business meetings</value></data>
+  <data name="GovMeetings.Hero.Subtitle" xml:space="preserve"><value>Structured bilateral meetings between the private sector and government entities, held alongside the forum.</value></data>
+  <data name="GovMeetings.Section.Title" xml:space="preserve"><value>Government business meetings</value></data>
+  <data name="GovMeetings.Section.Sub" xml:space="preserve"><value>A programme of business meetings between government entities and participating companies.</value></data>
+  <data name="GovMeetings.Card.Title" xml:space="preserve"><value>Direct business-to-government connections</value></data>
+  <data name="GovMeetings.Card.Body" xml:space="preserve"><value>The government business meetings give companies a chance to connect directly with government entities and explore cooperation opportunities within a structured agenda alongside the forum.</value></data>
+  <data name="GovMeetings.Cta" xml:space="preserve"><value>Register your interest</value></data>
 </root>
