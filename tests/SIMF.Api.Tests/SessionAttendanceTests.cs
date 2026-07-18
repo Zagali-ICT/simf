@@ -12,8 +12,11 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Attendance;
 using SIMF.Contracts.Authentication;
+using SIMF.Contracts.Sessions;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Domain.Programme;
+using SIMF.Domain.SeatReservations;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -105,6 +108,88 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    // -- 2026-07-18: live per-session hall view (present list + 4-state seat map) --
+
+    [Fact]
+    public async Task Present_lists_currently_inside_attendees_with_profile_and_seat()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var (sessionId, hallId) = await SeedSessionWithLayoutAsync();
+        var userId = Guid.NewGuid();
+        await SeedProfileAsync(userId, "Faisal Al-Harbi", "فيصل الحربي", "Captain");
+        await SeedOpenAttendanceAsync(sessionId, hallId, userId);
+        await SeedSeatAsync(sessionId, userId, "A", 3);
+
+        var response = await GetAuthAsync($"/api/v1/admin/sessions/{sessionId}/present", admin);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var present = (await response.Content
+            .ReadFromJsonAsync<ApiResult<IReadOnlyList<SessionPresentAttendee>>>())!.Data!;
+        var attendee = Assert.Single(present);
+        Assert.Equal(userId, attendee.UserId);
+        Assert.Equal("Faisal Al-Harbi", attendee.Name);
+        Assert.Equal("فيصل الحربي", attendee.NameArabic);
+        Assert.Equal("Captain", attendee.JobTitle);
+        Assert.Equal("A", attendee.RowLabel);
+        Assert.Equal(3, attendee.SeatNumber);
+    }
+
+    [Fact]
+    public async Task Present_excludes_a_departed_attendee()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var (sessionId, hallId) = await SeedSessionWithLayoutAsync();
+        var here = Guid.NewGuid();
+        var gone = Guid.NewGuid();
+        await SeedProfileAsync(here, "Present One", "الحاضر", null);
+        await SeedProfileAsync(gone, "Gone Two", "المغادر", null);
+        await SeedOpenAttendanceAsync(sessionId, hallId, here);
+        await SeedClosedAttendanceAsync(sessionId, hallId, gone);
+
+        var response = await GetAuthAsync($"/api/v1/admin/sessions/{sessionId}/present", admin);
+        var list = (await response.Content
+            .ReadFromJsonAsync<ApiResult<IReadOnlyList<SessionPresentAttendee>>>())!.Data!;
+        Assert.Single(list);
+        Assert.Equal(here, list[0].UserId);
+    }
+
+    [Fact]
+    public async Task Present_is_forbidden_for_a_non_admin()
+    {
+        var visitor = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
+        var (sessionId, _) = await SeedSessionWithLayoutAsync();
+        var response = await GetAuthAsync(
+            $"/api/v1/admin/sessions/{sessionId}/present", visitor.AccessToken);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Admin_seat_map_marks_a_checked_in_reservation_confirmed()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var (sessionId, hallId) = await SeedSessionWithLayoutAsync();
+        var userId = Guid.NewGuid();
+        await SeedSeatAsync(sessionId, userId, "A", 1);            // reserved
+        await SeedOpenAttendanceAsync(sessionId, hallId, userId);  // checked in → confirmed
+
+        var response = await GetAuthAsync($"/api/v1/admin/sessions/{sessionId}/seat-map", admin);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var map = (await response.Content
+            .ReadFromJsonAsync<ApiResult<SessionSeatMap>>())!.Data!;
+        Assert.Null(map.MyCell); // admin view has no "my seat"
+        var cell = Assert.Single(map.ReservedCells, c => c.RowLabel == "A" && c.SeatNumber == 1);
+        Assert.True(cell.CheckedIn); // reserved + open attendance row = confirmed
+    }
+
+    [Fact]
+    public async Task Admin_seat_map_is_forbidden_for_a_non_admin()
+    {
+        var visitor = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
+        var (sessionId, _) = await SeedSessionWithLayoutAsync();
+        var response = await GetAuthAsync(
+            $"/api/v1/admin/sessions/{sessionId}/seat-map", visitor.AccessToken);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
     // -- helpers --
 
     /// <summary>Seeds one active session in its own hall, plus HallAttendance
@@ -179,6 +264,97 @@ public sealed class SessionAttendanceTests : IClassFixture<SimfApiFactory>
             LeaveUtc = leaveUtc,
             CreatedAt = DateTimeOffset.UtcNow,
         };
+
+    private async Task<(Guid SessionId, Guid HallId)> SeedSessionWithLayoutAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var now = DateTimeOffset.UtcNow;
+        var hall = new Hall
+        {
+            Id = Guid.NewGuid(),
+            Code = "HL-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+            Name = "Live Hall", NameArabic = "قاعة مباشرة",
+            Capacity = 100, IsActive = true, CreatedAt = now,
+        };
+        db.Halls.Add(hall);
+        db.HallSeatLayouts.Add(new HallSeatLayout
+        {
+            Id = Guid.NewGuid(),
+            HallId = hall.Id,
+            RowLabels = "A,B",
+            SeatsPerRow = 5,
+            CreatedAt = now,
+        });
+        var session = new Session
+        {
+            Id = Guid.NewGuid(),
+            Code = "LIVE-" + Guid.NewGuid().ToString("N")[..8].ToUpperInvariant(),
+            Title = "Live Hall Session", TitleArabic = "جلسة القاعة المباشرة",
+            HallId = hall.Id,
+            StartUtc = now.AddMinutes(-15),
+            EndUtc = now.AddMinutes(45),
+            IsActive = true, CreatedAt = now,
+        };
+        db.Sessions.Add(session);
+        await db.SaveChangesAsync();
+        return (session.Id, hall.Id);
+    }
+
+    private async Task SeedProfileAsync(Guid userId, string name, string nameArabic, string? jobTitle)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        db.UserProfiles.Add(new UserProfile
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Name = name,
+            NameArabic = nameArabic,
+            JobTitle = jobTitle,
+            NationalityId = 682,
+            PlaceOfBirth = "Riyadh",
+            CreatedAt = DateTimeOffset.UtcNow,
+        });
+        await db.SaveChangesAsync();
+    }
+
+    private async Task SeedOpenAttendanceAsync(Guid sessionId, Guid hallId, Guid userId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        db.HallAttendances.Add(NewAttendance(sessionId, hallId, userId,
+            DateTimeOffset.UtcNow.AddMinutes(-3), leaveUtc: null));
+        await db.SaveChangesAsync();
+    }
+
+    private async Task SeedClosedAttendanceAsync(Guid sessionId, Guid hallId, Guid userId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        db.HallAttendances.Add(NewAttendance(sessionId, hallId, userId,
+            DateTimeOffset.UtcNow.AddMinutes(-10), DateTimeOffset.UtcNow.AddMinutes(-2)));
+        await db.SaveChangesAsync();
+    }
+
+    private async Task SeedSeatAsync(Guid sessionId, Guid userId, string row, int seat)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        db.SeatReservations.Add(new SeatReservation
+        {
+            Id = Guid.NewGuid(),
+            SessionId = sessionId,
+            RowLabel = row,
+            SeatNumber = seat,
+            Kind = SeatReservationKind.UserBooking,
+            ReservedForUserId = userId,
+            CreatedByUserId = userId,
+            CreatedAt = DateTimeOffset.UtcNow,
+            Status = BookingStatus.Approved,
+        });
+        await db.SaveChangesAsync();
+    }
 
     private async Task<string> CreateAdministratorAndSignInAsync()
     {

@@ -149,4 +149,67 @@ internal sealed class SessionAttendanceService(
         return GridPage<SessionAttendanceRow>.Of(rows, total,
             skip, top);
     }
+
+    public async Task<IReadOnlyList<SessionPresentAttendee>> GetPresentAttendeesAsync(
+        Guid sessionId, CancellationToken cancellationToken = default)
+    {
+        // Everyone currently inside this session's hall — the open attendance rows.
+        var present = await appDbContext.HallAttendances.AsNoTracking()
+            .Where(a => a.SessionId == sessionId && a.LeaveUtc == null)
+            .Select(a => new { a.UserId, a.EnterUtc, a.Method })
+            .ToListAsync(cancellationToken);
+        if (present.Count == 0)
+        {
+            return Array.Empty<SessionPresentAttendee>();
+        }
+
+        var userIds = present.Select(a => a.UserId).Distinct().ToList();
+
+        // Profile data — App DB only (D-157: resolved from UserProfile, never from
+        // the Identity database). Admin-typed users carry no profile → null fields.
+        var profiles = await appDbContext.UserProfiles.AsNoTracking()
+            .Where(p => userIds.Contains(p.UserId))
+            .Select(p => new
+            {
+                p.UserId,
+                p.Name,
+                p.NameArabic,
+                p.JobTitle,
+                OrganisationName = p.Organisation != null ? p.Organisation.Name : null,
+                ProfileTypeName = p.ProfileType != null ? p.ProfileType.Name : null,
+            })
+            .ToListAsync(cancellationToken);
+        var profileByUser = profiles.ToDictionary(p => p.UserId);
+
+        // Their still-held seat for this session (if any) — open-seating attendees
+        // and admin blocks resolve to no row/seat.
+        var seats = await appDbContext.SeatReservations.AsNoTracking()
+            .Where(r => r.SessionId == sessionId && r.ReleasedAt == null
+                && r.ReservedForUserId != null && userIds.Contains(r.ReservedForUserId!.Value))
+            .Select(r => new { UserId = r.ReservedForUserId!.Value, r.RowLabel, r.SeatNumber })
+            .ToListAsync(cancellationToken);
+        var seatByUser = seats
+            .GroupBy(s => s.UserId)
+            .ToDictionary(g => g.Key, g => g.First());
+
+        return present
+            .OrderBy(a => a.EnterUtc)
+            .Select(a =>
+            {
+                var profile = profileByUser.GetValueOrDefault(a.UserId);
+                var seat = seatByUser.GetValueOrDefault(a.UserId);
+                return new SessionPresentAttendee(
+                    a.UserId,
+                    profile?.Name ?? string.Empty,
+                    profile?.NameArabic ?? string.Empty,
+                    profile?.OrganisationName,
+                    profile?.ProfileTypeName,
+                    profile?.JobTitle,
+                    seat?.RowLabel,
+                    seat?.SeatNumber,
+                    a.EnterUtc,
+                    a.Method);
+            })
+            .ToList();
+    }
 }
