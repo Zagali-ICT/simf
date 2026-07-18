@@ -164,9 +164,12 @@ internal sealed class SeatReservationService(
             ReservedForUserId = actorUserId,
             CreatedByUserId = actorUserId,
             CreatedAt = timeProvider.GetUtcNow(),
-            // P2.2 — D-227: the seat is HELD but awaits Control Panel approval.
-            Status = BookingStatus.Pending,
-            // M-6 — the hold auto-expires if the CP never decides it.
+            // 2026-07-18 (reservation-only) — there is no Control Panel approval
+            // step: the reservation is confirmed the moment it is made. It stays a
+            // provisional hold until the visitor checks in at the hall gate; the
+            // pre-start sweep releases any hold that never checks in.
+            Status = BookingStatus.Approved,
+            // M-6 — retained as the hold's outstanding-until marker.
             ExpiresUtc = timeProvider.GetUtcNow() + PendingHoldWindow,
         };
         await PersistWithUniquenessGuardAsync(reservation, cancellationToken);
@@ -181,15 +184,15 @@ internal sealed class SeatReservationService(
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
             Detail = $"reservationId={reservation.Id}; sessionId={sessionId}; "
-                + $"row={row}; seat={seat}; kind=UserBooking; status=Pending",
+                + $"row={row}; seat={seat}; kind=UserBooking; status=Approved",
         }, cancellationToken);
 
         logger.LogInformation(
-            "Seat {Row}{Seat} booked (pending approval) on session {SessionId} by user {Actor}",
+            "Seat {Row}{Seat} reserved (auto-confirmed) on session {SessionId} by user {Actor}",
             row, seat, sessionId, actorUserId);
 
-        // P2.2 — D-227: booking-confirmed now fires on APPROVE, not reserve
-        // (FDS-005 §5.2). A fresh booking is Pending; nothing is dispatched here.
+        // 2026-07-18 (reservation-only) — no approval step, so nothing is
+        // dispatched here; the app shows the reserve-success message inline.
         return ToMine(reservation);
     }
 
@@ -235,10 +238,10 @@ internal sealed class SeatReservationService(
             ActorUserId = actorUserId,
             Detail = $"reservationId={reservation.Id}; sessionId={sessionId}; "
                 + $"row={reservation.RowLabel}; seat={reservation.SeatNumber}; "
-                + "kind=RandomAssignment; status=Pending",
+                + "kind=RandomAssignment; status=Approved",
         }, cancellationToken);
 
-        // P2.2 — D-227: booking-confirmed fires on approve, not here.
+        // 2026-07-18 (reservation-only) — auto-confirmed on create; nothing dispatched here.
         return ToMine(reservation);
     }
 
@@ -301,9 +304,10 @@ internal sealed class SeatReservationService(
                 ReservedForUserId = actorUserId,
                 CreatedByUserId = actorUserId,
                 CreatedAt = now,
-                // D-485: held, pending Control Panel approval — same as a seat booking.
-                Status = BookingStatus.Pending,
-                // M-6 — the hold auto-expires if the CP never decides it.
+                // 2026-07-18 (reservation-only) — confirmed on create, no approval
+                // step; the hold stays provisional until hall check-in.
+                Status = BookingStatus.Approved,
+                // M-6 — retained as the hold's outstanding-until marker.
                 ExpiresUtc = now + PendingHoldWindow,
             }),
             cancellationToken);
@@ -314,11 +318,11 @@ internal sealed class SeatReservationService(
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
             Detail = $"reservationId={reservation.Id}; sessionId={sessionId}; "
-                + "kind=OpenSeating; status=Pending",
+                + "kind=OpenSeating; status=Approved",
         }, cancellationToken);
 
         logger.LogInformation(
-            "Open-seating join (pending approval) on session {SessionId} by user {Actor}",
+            "Open-seating join (auto-confirmed) on session {SessionId} by user {Actor}",
             sessionId, actorUserId);
 
         return ToMine(reservation);
@@ -1182,8 +1186,8 @@ internal sealed class SeatReservationService(
     }
 
     /// <summary>#21 — the first free seat (row-major over the layout) as a fresh
-    /// Pending RandomAssignment hold, or null when every seat is taken. Built with the
-    /// captured <paramref name="now"/> so a transaction retry stamps the same
+    /// confirmed RandomAssignment hold, or null when every seat is taken. Built with
+    /// the captured <paramref name="now"/> so a transaction retry stamps the same
     /// created-at / expiry window.</summary>
     private static SeatReservation? PickRandomSeat(
         SessionContext ctx, IReadOnlySet<(string Row, int Seat)> taken,
@@ -1207,9 +1211,9 @@ internal sealed class SeatReservationService(
                     ReservedForUserId = actorUserId,
                     CreatedByUserId = actorUserId,
                     CreatedAt = now,
-                    // P2.2 — D-227: held, pending Control Panel approval.
-                    Status = BookingStatus.Pending,
-                    // M-6 — the hold auto-expires if the CP never decides it.
+                    // 2026-07-18 (reservation-only) — confirmed on create, no approval.
+                    Status = BookingStatus.Approved,
+                    // M-6 — retained as the hold's outstanding-until marker.
                     ExpiresUtc = now + PendingHoldWindow,
                 };
             }

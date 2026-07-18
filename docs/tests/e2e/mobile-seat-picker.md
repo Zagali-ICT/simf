@@ -8,10 +8,18 @@
 | **Reached from** | The session page's **Select my seat** Join CTA (assigned-seat sessions only) |
 
 The seat picker draws the hall grid for an **assigned-seat** session and lets the
-attendee tap an **available** seat (or auto-pick) to hold it. The booking is
-created **Pending** — the Control Panel approves it, and the approved/rejected
-notification arrives in the inbox. On success the picker pops back so the session
-page reloads to show the held reservation.
+attendee tap an **available** seat (or auto-pick) to hold it. The reservation is
+**confirmed on create** (reservation-only, 2026-07-18 — `Status = Approved`, no
+Control Panel approval step); it stays a provisional hold until the visitor checks
+in at the hall gate. On success the picker pops back so the session page reloads to
+show the reservation.
+
+> **Reservation-only (2026-07-18) — interim.** The backend now auto-confirms; the
+> app's current *"Reserved — pending approval"* toast copy (in the scenarios below)
+> is superseded by the owner's exact reserve-success message and the 4-state seat map
+> in the **app-side reservation-only slice** — those scenarios will be rewritten
+> there. The wire/data assertions (`Status=Approved`, no `BookingConfirmed` on
+> reserve) apply now.
 
 ## Coverage matrix
 
