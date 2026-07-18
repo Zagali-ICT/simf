@@ -2315,6 +2315,14 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
+    public Task<ApiCallResult<bool>> AdminReserveSessionSeatAsync(
+        Guid sessionId, AdminReserveSeatRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Post, $"sessions/{sessionId}/seats/reserve-seat",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
     public Task<ApiCallResult<bool>> AdminReleaseSessionSeatAsync(
         Guid sessionId, Guid reservationId, string accessToken,
         CancellationToken cancellationToken = default) =>

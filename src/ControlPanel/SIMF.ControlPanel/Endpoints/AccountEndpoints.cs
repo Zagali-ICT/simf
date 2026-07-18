@@ -2335,6 +2335,16 @@ internal static class AccountEndpoints
                 sessionId, body, token));
         });
 
+        group.MapPost("/admin/sessions/{sessionId:guid}/seats/reserve-seat",
+            async (Guid sessionId, AdminReserveSeatRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.AdminReserveSessionSeatAsync(
+                sessionId, body, token));
+        });
+
         group.MapDelete("/admin/sessions/{sessionId:guid}/seats/{reservationId:guid}",
             async (Guid sessionId, Guid reservationId,
                    HttpContext http, SimfAdminClient api) =>

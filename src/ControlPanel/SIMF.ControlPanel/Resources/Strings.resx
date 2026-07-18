@@ -2107,15 +2107,17 @@
   <data name="Admin.SessionSeatPlans.Legend.Admin" xml:space="preserve"><value>Reserved (admin)</value></data>
   <data name="Admin.SessionSeatPlans.Legend.Random" xml:space="preserve"><value>Random</value></data>
   <data name="Admin.SessionSeatPlans.Seat.ReservedTitle" xml:space="preserve"><value>Seat {0} — {1}</value></data>
+  <data name="Admin.SessionSeatPlans.Seat.FreeTitle" xml:space="preserve"><value>Reserve seat {0} for a VIP</value></data>
   <data name="Admin.SessionSeatPlans.Pick" xml:space="preserve"><value>Select a session</value></data>
   <data name="Admin.SessionSeatPlans.None" xml:space="preserve"><value>No sessions available.</value></data>
   <data name="Admin.SessionSeatPlans.NoReservations" xml:space="preserve"><value>No active reservations on this session.</value></data>
   <data name="Admin.SessionSeatPlans.Loading" xml:space="preserve"><value>Loading…</value></data>
   <data name="Admin.SessionSeatPlans.LoadFailed" xml:space="preserve"><value>Could not load session seat plan.</value></data>
-  <data name="Admin.SessionSeatPlans.Hint" xml:space="preserve"><value>Paint an entire row as admin-reserved (blocks the row from visitor self-pick) or clear individual reservations.</value></data>
+  <data name="Admin.SessionSeatPlans.Hint" xml:space="preserve"><value>Paint an entire row as admin-reserved (blocks the row from visitor self-pick), tap a free seat to reserve it for a VIP, or tap a reserved seat to release it.</value></data>
   <data name="Admin.SessionSeatPlans.ReserveRow.Label" xml:space="preserve"><value>Row to reserve (must exist in the hall layout)</value></data>
   <data name="Admin.SessionSeatPlans.ReserveRow.Action" xml:space="preserve"><value>Reserve row</value></data>
   <data name="Admin.SessionSeatPlans.ReserveRow.Done" xml:space="preserve"><value>Row reserved.</value></data>
+  <data name="Admin.SessionSeatPlans.ReserveSeat.Done" xml:space="preserve"><value>Seat reserved for a VIP.</value></data>
   <data name="Admin.SessionSeatPlans.Col.Row" xml:space="preserve"><value>Row</value></data>
   <data name="Admin.SessionSeatPlans.Col.Seat" xml:space="preserve"><value>Seat</value></data>
   <data name="Admin.SessionSeatPlans.Col.Kind" xml:space="preserve"><value>Kind</value></data>

@@ -188,6 +188,57 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Admin_can_reserve_a_single_seat_for_a_vip()
+    {
+        // 2026-07-18 — an admin reserves ONE specific seat for a VIP (a single admin
+        // block). A visitor then cannot book that seat, but its neighbour stays free,
+        // and reserving the same seat twice is a conflict.
+        var (session, _) = await SeedSessionWithLayoutAsync(new[] { "A" }, seatsPerRow: 3);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var block = await PostAuthAsync(
+            $"/api/v1/admin/sessions/{session.Id}/seats/reserve-seat",
+            new AdminReserveSeatRequest { RowLabel = "A", SeatNumber = 2 }, admin);
+        Assert.Equal(HttpStatusCode.OK, block.StatusCode);
+
+        // Reserving the same seat again is a conflict.
+        var again = await PostAuthAsync(
+            $"/api/v1/admin/sessions/{session.Id}/seats/reserve-seat",
+            new AdminReserveSeatRequest { RowLabel = "A", SeatNumber = 2 }, admin);
+        Assert.Equal(HttpStatusCode.Conflict, again.StatusCode);
+
+        var visitor = await SignInApprovedVisitorAsync();
+        // The blocked seat A2 is refused for a visitor.
+        var taken = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 2 }, visitor);
+        Assert.Equal(HttpStatusCode.Conflict, taken.StatusCode);
+        var body = (await taken.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SeatAlreadyReserved, body.Error!.Code);
+
+        // The neighbouring seat A1 is still free.
+        var free = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 1 }, visitor);
+        Assert.Equal(HttpStatusCode.OK, free.StatusCode);
+    }
+
+    [Fact]
+    public async Task Admin_reserve_seat_out_of_bounds_is_400()
+    {
+        // A seat beyond the row width (or a row absent from the layout) is a 400.
+        var (session, _) = await SeedSessionWithLayoutAsync(new[] { "A" }, seatsPerRow: 3);
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var bad = await PostAuthAsync(
+            $"/api/v1/admin/sessions/{session.Id}/seats/reserve-seat",
+            new AdminReserveSeatRequest { RowLabel = "A", SeatNumber = 9 }, admin);
+        Assert.Equal(HttpStatusCode.BadRequest, bad.StatusCode);
+        var body = (await bad.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SeatOutOfBounds, body.Error!.Code);
+    }
+
+    [Fact]
     public async Task Admin_layout_capacity_above_hall_capacity_is_400()
     {
         var hall = await SeedHallAsync(capacity: 5);

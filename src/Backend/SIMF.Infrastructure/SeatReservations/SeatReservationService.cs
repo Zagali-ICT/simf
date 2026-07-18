@@ -543,6 +543,58 @@ internal sealed class SeatReservationService(
         }, cancellationToken);
     }
 
+    // 2026-07-18 — reserve ONE specific seat for a VIP: a single admin block on
+    // that seat (Kind=AdminReservedRow, no attendee), confirmed immediately so it
+    // never enters the (dormant) approval queue. Released like any admin block.
+    public async Task AdminReserveSeatAsync(
+        Guid actorUserId, Guid sessionId,
+        AdminReserveSeatRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var row = (request.RowLabel ?? string.Empty).Trim();
+        var seat = request.SeatNumber;
+        var ctx = await BuildContextAsync(sessionId, cancellationToken);
+        ValidateSeatBounds(ctx, row, seat);
+
+        var clash = await appDbContext.SeatReservations.AsNoTracking()
+            .Where(r => r.SessionId == sessionId
+                && r.RowLabel == row
+                && r.SeatNumber == seat
+                && r.ReleasedAt == null)
+            .Select(r => r.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (clash != Guid.Empty)
+        {
+            throw new ApiException(
+                ErrorCodes.SeatAlreadyReserved, 409,
+                "That seat is already reserved.",
+                "هذا المقعد محجوز بالفعل.");
+        }
+
+        var reservation = new SeatReservation
+        {
+            Id = Guid.NewGuid(),
+            SessionId = sessionId,
+            RowLabel = row,
+            SeatNumber = seat,
+            Kind = SeatReservationKind.AdminReservedRow,
+            ReservedForUserId = null,
+            CreatedByUserId = actorUserId,
+            CreatedAt = timeProvider.GetUtcNow(),
+            // An admin block is confirmed immediately (never enters the queue).
+            Status = BookingStatus.Approved,
+        };
+        await PersistWithUniquenessGuardAsync(reservation, cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.SeatRowAdminReserved,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = $"sessionId={sessionId}; row={row}; seat={seat}; single=true",
+        }, cancellationToken);
+    }
+
     public async Task AdminReleaseAsync(
         Guid actorUserId, Guid sessionId, Guid reservationId,
         CancellationToken cancellationToken = default)
