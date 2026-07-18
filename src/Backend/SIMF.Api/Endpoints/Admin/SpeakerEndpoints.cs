@@ -80,6 +80,7 @@ public sealed class UpdateSpeakerRequest
     public string Name { get; set; } = string.Empty;
     public string NameArabic { get; set; } = string.Empty;
     public string? Rank { get; set; }
+    public string? RankArabic { get; set; }
     public int? CountryId { get; set; }
     public Guid? UserProfileId { get; set; }
     public string? Bio { get; set; }
@@ -128,6 +129,7 @@ public sealed class UpdateSpeakerEndpoint(IAdminSpeakerService service)
                     Name = req.Name,
                     NameArabic = req.NameArabic,
                     Rank = req.Rank,
+                    RankArabic = req.RankArabic,
                     CountryId = req.CountryId,
                     UserProfileId = req.UserProfileId,
                     Bio = req.Bio,
