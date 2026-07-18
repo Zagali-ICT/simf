@@ -81,14 +81,14 @@
                 <SimfDataGridColumn TItem="AdminParticipationDocumentRequestRow" Key="createdAt"
                                     Header="@L["Admin.DocumentRequests.Col.CreatedAt"]"
                                     Sortable="true">
-                    <CellTemplate>@context.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</CellTemplate>
+                    <CellTemplate>@context.CreatedAt.FormatSaudi("yyyy-MM-dd HH:mm")</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminParticipationDocumentRequestRow" Key="respondedAt"
                                     Header="@L["Admin.DocumentRequests.Col.RespondedAt"]"
                                     Sortable="true">
                     <CellTemplate>
                         @(context.RespondedAt is null ? "—"
-                            : context.RespondedAt.Value.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'"))
+                            : context.RespondedAt.Value.FormatSaudi("yyyy-MM-dd HH:mm"))
                     </CellTemplate>
                 </SimfDataGridColumn>
             </Columns>

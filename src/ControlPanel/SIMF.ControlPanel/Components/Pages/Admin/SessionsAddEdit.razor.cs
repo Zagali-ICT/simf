@@ -83,8 +83,8 @@ public partial class SessionsAddEdit
             _seatModeInput = Initial.SeatSelectionModeOverride.HasValue
                 ? ((int)Initial.SeatSelectionModeOverride.Value).ToString()
                 : string.Empty;
-            _startInput = Initial.StartUtc.UtcDateTime.ToString("yyyy-MM-ddTHH:mm");
-            _endInput = Initial.EndUtc.UtcDateTime.ToString("yyyy-MM-ddTHH:mm");
+            _startInput = Initial.StartUtc.ToSaudi().ToString("yyyy-MM-ddTHH:mm");
+            _endInput = Initial.EndUtc.ToSaudi().ToString("yyyy-MM-ddTHH:mm");
             _capacityInput = Initial.CapacityOverride?.ToString() ?? string.Empty;
             _selectedSpeakers.AddRange(Initial.Speakers);
             _selectedThemes.AddRange(Initial.ThemeIds);
@@ -407,8 +407,8 @@ public partial class SessionsAddEdit
         {
             _error = L["Admin.Sessions.Field.TimeInvalid"]; return;
         }
-        var start = new DateTimeOffset(DateTime.SpecifyKind(startLocal, DateTimeKind.Utc));
-        var end = new DateTimeOffset(DateTime.SpecifyKind(endLocal, DateTimeKind.Utc));
+        var start = SaudiTime.FromSaudiWallClock(startLocal);
+        var end = SaudiTime.FromSaudiWallClock(endLocal);
         if (end <= start)
         {
             _error = L["Admin.Sessions.Field.TimeWindowInvalid"]; return;

@@ -24,7 +24,7 @@
         <dt>@L["Admin.Pending.View.Field.ProfileType"]</dt>
         <dd>@(Initial.ProfileTypeName ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
         <dt>@L["Admin.Pending.View.Field.Created"]</dt>
-        <dd>@Initial.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</dd>
+        <dd>@Initial.CreatedAt.FormatSaudi("yyyy-MM-dd HH:mm")</dd>
     </dl>
     <dl class="simf-dl">
         <dt>@L["Admin.Pending.View.Field.ArabicName"]</dt>

@@ -67,7 +67,7 @@
                 <SimfDataGridColumn TItem="SessionAttendanceRow" Key="startUtc"
                                     Header="@L["Admin.Attendance.Col.Start"]"
                                     Sortable="true">
-                    <CellTemplate>@context.StartUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)</CellTemplate>
+                    <CellTemplate>@context.StartUtc.FormatSaudi("yyyy-MM-dd HH:mm")</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="SessionAttendanceRow" Key="total"
                                     Header="@L["Admin.Attendance.Col.TotalAttendees"]">
