@@ -60,6 +60,45 @@ void main() {
         isFalse,
       );
     });
+
+    test('invertYaw normalises the iOS sign (physical right = negative raw)',
+        () {
+      // On iOS the front-camera mirror + per-platform input-image rotation
+      // report the OPPOSITE sign, so a physical RIGHT turn arrives as a negative
+      // raw yaw. invertYaw normalises it so positive always means right.
+      expect(
+        livenessStepSatisfied(
+          LivenessStep.turnRight,
+          headEulerAngleY: -30,
+          invertYaw: true,
+        ),
+        isTrue,
+      );
+      expect(
+        livenessStepSatisfied(
+          LivenessStep.turnRight,
+          headEulerAngleY: 30,
+          invertYaw: true,
+        ),
+        isFalse,
+      );
+      expect(
+        livenessStepSatisfied(
+          LivenessStep.turnLeft,
+          headEulerAngleY: 30,
+          invertYaw: true,
+        ),
+        isTrue,
+      );
+      expect(
+        livenessStepSatisfied(
+          LivenessStep.turnLeft,
+          headEulerAngleY: -30,
+          invertYaw: true,
+        ),
+        isFalse,
+      );
+    });
   });
 
   testWidgets('the screen builds with the header and a loading preview '

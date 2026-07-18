@@ -49,6 +49,12 @@ class _IdentityVerificationScreenState
   bool _cameraReady = false;
   bool _cameraFailed = false;
 
+  // TEMP diagnostic (remove before merge, D-XXX): show the live headEulerAngleY
+  // + its normalised value so the iOS yaw-sign can be confirmed on-device in one
+  // test. Set to false to hide the overlay.
+  static const bool _kShowYawDebug = true;
+  double? _debugYaw;
+
   /// The challenge order is shuffled per session (D-422) so the sequence is not
   /// predictable — a fixed smile→right→left order is easier to defeat with a
   /// pre-recorded clip. The forward selfie is still grabbed on the smile step,
@@ -133,10 +139,22 @@ class _IdentityVerificationScreenState
         return;
       }
       final face = faces.first;
+      if (_kShowYawDebug) {
+        final yaw = face.headEulerAngleY;
+        if (yaw != null &&
+            (_debugYaw == null || (yaw - _debugYaw!).abs() >= 1) &&
+            mounted) {
+          setState(() => _debugYaw = yaw);
+        }
+      }
       if (!livenessStepSatisfied(
         _step,
         smilingProbability: face.smilingProbability,
         headEulerAngleY: face.headEulerAngleY,
+        // iOS reports the yaw with the opposite sign for the same physical turn
+        // (front-camera mirror + per-platform input-image rotation); normalise
+        // so a positive yaw is always a physical RIGHT turn.
+        invertYaw: Platform.isIOS,
       )) {
         return;
       }
@@ -224,47 +242,32 @@ class _IdentityVerificationScreenState
   /// shown big under the live preview so the user knows exactly what to do
   /// (D-683; over the Figma 758:4180 layout).
   ///
-  /// D-684 / D-XXX — headEulerAngleY sign convention differs between Google ML Kit
-  /// on iOS and Android. On iOS, positive yaw = head turned LEFT in the image;
-  /// with the front-camera mirror this satisfies turnRight (yaw >= +20°) when the
-  /// user turns physical LEFT, so prompts are swapped. On Android, positive yaw =
-  /// head turned RIGHT, so prompts match the step name directly.
+  /// The prompt always names the physical direction of the step — the per-platform
+  /// yaw-sign difference is normalised in `livenessStepSatisfied` (`invertYaw`),
+  /// NOT compensated here, so "turn right" reliably means a physical right turn on
+  /// both iOS and Android (D-XXX; supersedes the D-684 / PR-103 prompt swap).
   String _stepPrompt(AppL10n l10n) {
     switch (_step) {
       case LivenessStep.smile:
         return l10n.livenessSmilePrompt;
       case LivenessStep.turnRight:
-        return Platform.isAndroid
-            ? l10n.livenessTurnRightPrompt
-            : l10n.livenessTurnLeftPrompt;
+        return l10n.livenessTurnRightPrompt;
       case LivenessStep.turnLeft:
-        return Platform.isAndroid
-            ? l10n.livenessTurnLeftPrompt
-            : l10n.livenessTurnRightPrompt;
+        return l10n.livenessTurnLeftPrompt;
     }
   }
 
   /// The directional cue for the current step: the 😊 emoji for the front step,
-  /// a gold arrow for the right / left turns (Figma 758:4180 / 4248 / 4316).
-  ///
-  /// D-684 / D-XXX — arrows follow the prompt direction, which is platform-
-  /// dependent per the yaw sign convention difference (see _stepPrompt).
+  /// a gold arrow for the right / left turns (Figma 758:4180 / 4248 / 4316). The
+  /// arrow always matches the step's physical direction (see [_stepPrompt]).
   Widget _stepLeading() {
     switch (_step) {
       case LivenessStep.smile:
         return const Text('😊', style: TextStyle(fontSize: 30));
       case LivenessStep.turnRight:
-        return Icon(
-          Platform.isAndroid ? Icons.east : Icons.west,
-          color: SimfTokens.accent,
-          size: 32,
-        );
+        return const Icon(Icons.east, color: SimfTokens.accent, size: 32);
       case LivenessStep.turnLeft:
-        return Icon(
-          Platform.isAndroid ? Icons.west : Icons.east,
-          color: SimfTokens.accent,
-          size: 32,
-        );
+        return const Icon(Icons.west, color: SimfTokens.accent, size: 32);
     }
   }
 
@@ -344,19 +347,48 @@ class _IdentityVerificationScreenState
         title: Text(l10n.identityVerificationTitle),
       ),
       body: SafeArea(
-        child: _cameraFailed
-            ? IdentityFallbackView(l10n: l10n, onRetry: _retry)
-            : LiveCaptureView(
-                ready: _cameraReady,
-                preview: _cameraReady && _camera != null
-                    ? CameraPreview(_camera!)
-                    : null,
-                humanCheckLabel: l10n.livenessHumanCheckTitle,
-                promptText: _stepPrompt(l10n),
-                promptLeading: _stepLeading(),
-                stepIndex: _stepIndex,
-                stepCount: _sequence.length,
-              ),
+        child: Stack(
+          children: <Widget>[
+            _cameraFailed
+                ? IdentityFallbackView(l10n: l10n, onRetry: _retry)
+                : LiveCaptureView(
+                    ready: _cameraReady,
+                    preview: _cameraReady && _camera != null
+                        ? CameraPreview(_camera!)
+                        : null,
+                    humanCheckLabel: l10n.livenessHumanCheckTitle,
+                    promptText: _stepPrompt(l10n),
+                    promptLeading: _stepLeading(),
+                    stepIndex: _stepIndex,
+                    stepCount: _sequence.length,
+                  ),
+            if (_kShowYawDebug && !_cameraFailed) _yawDebugOverlay(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // TEMP diagnostic (remove before merge, D-XXX). Shows the raw ML Kit yaw, its
+  // normalised value (what the gate uses — positive should mean a physical RIGHT
+  // turn), the current step and the platform. Turn RIGHT on the device: "norm"
+  // should go positive toward +20. If it does, the normalisation is correct.
+  Widget _yawDebugOverlay() {
+    final raw = _debugYaw;
+    final norm = raw == null ? null : (Platform.isIOS ? -raw : raw);
+    return Positioned(
+      top: 8,
+      left: 8,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        color: Colors.black54,
+        child: Text(
+          'yaw ${raw?.toStringAsFixed(1) ?? "—"}  '
+          'norm ${norm?.toStringAsFixed(1) ?? "—"}  '
+          'step ${_step.name}  '
+          '${Platform.isIOS ? "iOS" : "Android"}',
+          style: const TextStyle(color: Colors.greenAccent, fontSize: 13),
+        ),
       ),
     );
   }

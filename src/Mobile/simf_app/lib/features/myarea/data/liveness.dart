@@ -19,25 +19,35 @@ const double kTurnYawDegrees = 20;
 /// top-level function so the liveness logic is unit-testable without a camera or
 /// the native plugin.
 ///
-/// Note on sign: ML Kit `headEulerAngleY` convention differs per platform. On
-/// Android, positive yaw = head turned RIGHT; on iOS, positive yaw = head turned
-/// LEFT in the image's coordinate system. The `identity_verification_screen`
-/// compensates per platform via the prompt and arrow logic. The two turn steps
-/// require a yaw beyond ±[kTurnYawDegrees] in opposite directions; front-camera
-/// mirroring can swap which way the user perceives as "right", but a turn in
-/// each direction is still required.
+/// **Yaw sign convention.** ML Kit `headEulerAngleY` reaches this gate with the
+/// OPPOSITE sign on iOS vs Android for the same physical head turn: the front
+/// camera is mirrored and `identity_verification_screen` feeds ML Kit a different
+/// input-image rotation per platform (raw sensor on iOS, device-orientation-
+/// compensated on Android). Earlier fixes (D-684, PR-103) tried to compensate in
+/// the prompt/arrow, which mislabels the step and left iOS turning the wrong way.
+/// Instead we normalise the sign HERE: the caller passes [invertYaw] = true on
+/// iOS so that, after normalisation, a **positive yaw is always a physical RIGHT
+/// turn** on every platform. The prompt and arrow can then always match the step
+/// name (turnRight → "turn right" + right arrow).
 bool livenessStepSatisfied(
   LivenessStep step, {
   double? smilingProbability,
   double? headEulerAngleY,
+  bool invertYaw = false,
 }) {
   switch (step) {
     case LivenessStep.smile:
       return smilingProbability != null &&
           smilingProbability >= kSmileProbability;
     case LivenessStep.turnRight:
-      return headEulerAngleY != null && headEulerAngleY >= kTurnYawDegrees;
     case LivenessStep.turnLeft:
-      return headEulerAngleY != null && headEulerAngleY <= -kTurnYawDegrees;
+      if (headEulerAngleY == null) {
+        return false;
+      }
+      // Normalise so a positive yaw is a physical RIGHT turn on every platform.
+      final yaw = invertYaw ? -headEulerAngleY : headEulerAngleY;
+      return step == LivenessStep.turnRight
+          ? yaw >= kTurnYawDegrees
+          : yaw <= -kTurnYawDegrees;
   }
 }
