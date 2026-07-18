@@ -408,4 +408,13 @@
   <data name="Venue.Meta.Date" xml:space="preserve"><value>Date</value></data>
   <data name="Venue.Meta.Time" xml:space="preserve"><value>Opening time</value></data>
   <data name="Venue.Directions" xml:space="preserve"><value>Get directions</value></data>
+
+  <!-- opening ceremony page (/programme/opening) -->
+  <data name="Opening.PageTitle" xml:space="preserve"><value>Opening ceremony — Saudi International Maritime Forum</value></data>
+  <data name="Opening.Meta" xml:space="preserve"><value>The opening ceremony and programme of the Saudi International Maritime Forum — an overview of the forum's activities and the target participant segments.</value></data>
+  <data name="Opening.Hero.Title" xml:space="preserve"><value>Opening ceremony</value></data>
+  <data name="Opening.Overview.Title" xml:space="preserve"><value>Overview</value></data>
+  <data name="Opening.Overview.Sub" xml:space="preserve"><value>An overview of the forum's events and activities.</value></data>
+  <data name="Opening.Participants.Title" xml:space="preserve"><value>Target participants</value></data>
+  <data name="Opening.Participants.Sub" xml:space="preserve"><value>The segments the forum invites to take part — across government, industry and the events sector.</value></data>
 </root>

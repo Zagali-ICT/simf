@@ -408,4 +408,13 @@
   <data name="Venue.Meta.Date" xml:space="preserve"><value>التاريخ</value></data>
   <data name="Venue.Meta.Time" xml:space="preserve"><value>وقت الافتتاح</value></data>
   <data name="Venue.Directions" xml:space="preserve"><value>الاتجاهات على الخريطة</value></data>
+
+  <!-- opening ceremony page (/programme/opening) -->
+  <data name="Opening.PageTitle" xml:space="preserve"><value>حفل الافتتاح — الملتقى البحري السعودي الدولي</value></data>
+  <data name="Opening.Meta" xml:space="preserve"><value>حفل الافتتاح وبرنامج الملتقى البحري السعودي الدولي — نظرة عامة على فعاليات الملتقى والجهات المستهدفة للمشاركة.</value></data>
+  <data name="Opening.Hero.Title" xml:space="preserve"><value>حفل الافتتاح</value></data>
+  <data name="Opening.Overview.Title" xml:space="preserve"><value>نظرة عامة</value></data>
+  <data name="Opening.Overview.Sub" xml:space="preserve"><value>نظرة عامة على فعاليات وأنشطة الملتقى.</value></data>
+  <data name="Opening.Participants.Title" xml:space="preserve"><value>الجهات المستهدفة للمشاركة</value></data>
+  <data name="Opening.Participants.Sub" xml:space="preserve"><value>الجهات التي يستهدف الملتقى مشاركتها عبر القطاع الحكومي والصناعي وقطاع الفعاليات.</value></data>
 </root>

@@ -48,6 +48,8 @@
   /* interior page-hero gradient (Figma colors/blue: dark → bright) */
   --blue-dark: #005da2;
   --blue-bright: #007cd8;
+  /* deep-navy hairline for translucent "glass" cards on navy (matches ln-tstat) */
+  --navy-line: #1b3859;
   --gold: #e8c060;
   --gold-active: #ba9a4d;
   --gold-dark: #ae9048;
@@ -1120,3 +1122,29 @@
 .ln-venue__meta dt { font-size: 13px; line-height: 16px; color: var(--gray-darker); }
 .ln-venue__meta dd { font-size: 16px; font-weight: 700; line-height: 24px; color: var(--ink); }
 @media (max-width: 560px) { .ln-venue { padding: 32px; } }
+
+/* ======= OVERVIEW (dark ln-fsection variant + dark value cards) ======= */
+/* The dark overview section reuses the ln-fsection chrome via a --dark modifier
+   (navy bg + white heading); only the 4-up grid is section-specific. */
+.ln-fsection--dark { background: var(--navy); }
+.ln-fsection--dark .ln-fsection__title { color: var(--white); }
+.ln-fsection--dark .ln-fsection__sub { color: var(--primary-light); }
+.ln-overview__grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+/* dark variant of the value card: translucent-blue on navy, blue icon, gold label
+   (the surface + hairline match the landing's ln-tstat glass treatment). */
+.ln-vcard--dark { background: color-mix(in srgb, var(--primary) 12%, transparent);
+  border-color: color-mix(in srgb, var(--navy-line) 50%, transparent); }
+.ln-vcard--dark .ln-vcard__icon { background: color-mix(in srgb, var(--blue-bright) 16%, transparent); color: var(--white); }
+.ln-vcard--dark .ln-vcard__label { color: var(--gold-active); }
+@media (max-width: 900px) { .ln-overview__grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px) { .ln-overview__grid { grid-template-columns: 1fr; } }
+
+/* ================== NUMBERED LIST (ln-numlist / ln-numitem) ============ */
+.ln-numlist { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+.ln-numitem { display: flex; align-items: center; gap: 16px; padding: 16px; background: var(--white);
+  border: 1px solid var(--primary-light); border-radius: var(--radius-sm); }
+.ln-numitem__text { flex: 1 1 auto; min-width: 0; font-size: 16px; line-height: 24px; color: var(--ink); text-align: start; }
+.ln-numitem__num { flex: 0 0 auto; width: 48px; height: 48px; border-radius: var(--radius-full);
+  background: var(--gold-tint); color: var(--gold-dark); display: grid; place-items: center;
+  font-size: 18px; font-weight: 800; direction: ltr; }
+@media (max-width: 720px) { .ln-numlist { grid-template-columns: 1fr; } }

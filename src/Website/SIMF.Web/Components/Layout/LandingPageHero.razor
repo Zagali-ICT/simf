@@ -13,16 +13,19 @@
         <img src="@ImageSrc" alt="" />
     </div>
     <div class="ln-pghero__block ln-reveal">
-        <nav class="ln-pghero__crumbs" aria-label="breadcrumb">
-            <a href="/">@L["PageHero.Home"]</a>
-            <span aria-hidden="true">/</span>
-            @if (ParentHref is not null)
-            {
-                <a href="@ParentHref">@ParentLabel</a>
+        @if (!string.IsNullOrWhiteSpace(Crumb))
+        {
+            <nav class="ln-pghero__crumbs" aria-label="breadcrumb">
+                <a href="/">@L["PageHero.Home"]</a>
                 <span aria-hidden="true">/</span>
-            }
-            <span class="ln-pghero__crumb-current">@Crumb</span>
-        </nav>
+                @if (ParentHref is not null)
+                {
+                    <a href="@ParentHref">@ParentLabel</a>
+                    <span aria-hidden="true">/</span>
+                }
+                <span class="ln-pghero__crumb-current">@Crumb</span>
+            </nav>
+        }
         <h1 class="ln-pghero__title">@Title</h1>
         @if (!string.IsNullOrWhiteSpace(Subtitle))
         {
@@ -42,8 +45,9 @@
     // Optional supporting line under the title.
     [Parameter] public string? Subtitle { get; set; }
 
-    // Current-page label shown last in the breadcrumb. Required.
-    [Parameter, EditorRequired] public string Crumb { get; set; } = "";
+    // Current-page label shown last in the breadcrumb. Optional: when null/blank
+    // no breadcrumb renders at all (the Programme-cluster heroes omit it).
+    [Parameter] public string? Crumb { get; set; }
 
     // Optional intermediate breadcrumb level between "Home" and the current page
     // (e.g. About-cluster sub-pages render "Home / About / <page>"). Both must be

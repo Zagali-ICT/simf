@@ -160,6 +160,7 @@ No public nav per D-064 — every page is reached via direct URL or auth redirec
 | `/about/themes` | ✅ Real (`ln-` SSR; Figma 5865-35289; static + JS theme explorer — About cluster #3) | Public | [web/themes.md](web/themes.md) | [e2e/web-themes.md](../tests/e2e/web-themes.md) |
 | `/about/organizer` | ✅ Real shell (`ln-` SSR; Figma 5865-38003; MOD+RSNF content — About cluster #4) | Public | [web/organizer.md](web/organizer.md) | [e2e/web-organizer.md](../tests/e2e/web-organizer.md) |
 | `/about/venue` | ✅ Real minimal (`ln-` SSR; Figma 5866-40935 stub; real venue facts — About cluster #5) | Public | [web/venue.md](web/venue.md) | [e2e/web-venue.md](../tests/e2e/web-venue.md) |
+| `/programme/opening` | ✅ Real (`ln-` SSR; Figma 5867-22242; static — Programme cluster #1) | Public | [web/opening.md](web/opening.md) | [e2e/web-opening.md](../tests/e2e/web-opening.md) |
 | `/visit` | ✅ Real | Public | — | [e2e/web-visit.md](../tests/e2e/web-visit.md) |
 | `/login` | 🔒 Auth-only | Anyone | [web/login.md](web/login.md) | [e2e/web-login.md](../tests/e2e/web-login.md) |
 | `/login/verify` | 🔒 Auth-only | Mid-sign-in | [web/otp-verify.md](web/otp-verify.md) | [e2e/web-otp-verify.md](../tests/e2e/web-otp-verify.md) |
