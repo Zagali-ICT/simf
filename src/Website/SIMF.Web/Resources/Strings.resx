@@ -425,4 +425,12 @@
   <data name="Plenary.Section.Title" xml:space="preserve"><value>Plenary sessions</value></data>
   <data name="Plenary.Section.Sub" xml:space="preserve"><value>Three days of plenary sessions on the future of maritime security — energy supply chains, logistics infrastructure and the seabed digital domain.</value></data>
   <data name="Plenary.Card.Button" xml:space="preserve"><value>Explore the sessions</value></data>
+
+  <!-- exhibition page (/programme/exhibition) -->
+  <data name="Exhibition.PageTitle" xml:space="preserve"><value>The exhibition — Saudi International Maritime Forum</value></data>
+  <data name="Exhibition.Meta" xml:space="preserve"><value>The exhibition accompanying the Saudi International Maritime Forum — the floor plan and stand layout.</value></data>
+  <data name="Exhibition.Hero.Title" xml:space="preserve"><value>The exhibition</value></data>
+  <data name="Exhibition.Section.Title" xml:space="preserve"><value>Exhibition floor plan</value></data>
+  <data name="Exhibition.Section.Sub" xml:space="preserve"><value>The layout of the exhibition stands accompanying the forum.</value></data>
+  <data name="Exhibition.Map.Alt" xml:space="preserve"><value>Exhibition floor plan showing the numbered stands and zones.</value></data>
 </root>

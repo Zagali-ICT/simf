@@ -162,6 +162,7 @@ No public nav per D-064 — every page is reached via direct URL or auth redirec
 | `/about/venue` | ✅ Real minimal (`ln-` SSR; Figma 5866-40935 stub; real venue facts — About cluster #5) | Public | [web/venue.md](web/venue.md) | [e2e/web-venue.md](../tests/e2e/web-venue.md) |
 | `/programme/opening` | ✅ Real (`ln-` SSR; Figma 5867-22242; static — Programme cluster #1) | Public | [web/opening.md](web/opening.md) | [e2e/web-opening.md](../tests/e2e/web-opening.md) |
 | `/programme/sessions` | ✅ Real (`ln-` SSR; Figma 5867-22842; reuses landing sessions — Programme cluster #2; ln- successor to `/programme`) | Public | [web/plenary.md](web/plenary.md) | [e2e/web-plenary.md](../tests/e2e/web-plenary.md) |
+| `/programme/exhibition` | ✅ Real (`ln-` SSR; Figma 5867-23560; floor-plan map image — Programme cluster #3) | Public | [web/exhibition.md](web/exhibition.md) | [e2e/web-exhibition.md](../tests/e2e/web-exhibition.md) |
 | `/visit` | ✅ Real | Public | — | [e2e/web-visit.md](../tests/e2e/web-visit.md) |
 | `/login` | 🔒 Auth-only | Anyone | [web/login.md](web/login.md) | [e2e/web-login.md](../tests/e2e/web-login.md) |
 | `/login/verify` | 🔒 Auth-only | Mid-sign-in | [web/otp-verify.md](web/otp-verify.md) | [e2e/web-otp-verify.md](../tests/e2e/web-otp-verify.md) |

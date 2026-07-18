@@ -425,4 +425,12 @@
   <data name="Plenary.Section.Title" xml:space="preserve"><value>الجلسات الرئيسية</value></data>
   <data name="Plenary.Section.Sub" xml:space="preserve"><value>ثلاثة أيام من الجلسات الرئيسية حول مستقبل الأمن البحري — سلاسل إمداد الطاقة والبنية اللوجستية والمجال الرقمي لقاع البحار.</value></data>
   <data name="Plenary.Card.Button" xml:space="preserve"><value>استكشف الجلسات</value></data>
+
+  <!-- exhibition page (/programme/exhibition) -->
+  <data name="Exhibition.PageTitle" xml:space="preserve"><value>المعرض — الملتقى البحري السعودي الدولي</value></data>
+  <data name="Exhibition.Meta" xml:space="preserve"><value>المعرض المصاحب للملتقى البحري السعودي الدولي — مخطط توزيع الأجنحة.</value></data>
+  <data name="Exhibition.Hero.Title" xml:space="preserve"><value>المعرض</value></data>
+  <data name="Exhibition.Section.Title" xml:space="preserve"><value>مخطط خريطة المعرض</value></data>
+  <data name="Exhibition.Section.Sub" xml:space="preserve"><value>مخطط توزيع أجنحة المعرض المصاحب للملتقى.</value></data>
+  <data name="Exhibition.Map.Alt" xml:space="preserve"><value>مخطط خريطة المعرض يوضّح الأجنحة المرقّمة والمناطق.</value></data>
 </root>

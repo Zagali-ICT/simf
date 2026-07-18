@@ -1148,3 +1148,13 @@
   background: var(--gold-tint); color: var(--gold-dark); display: grid; place-items: center;
   font-size: 18px; font-weight: 800; direction: ltr; }
 @media (max-width: 720px) { .ln-numlist { grid-template-columns: 1fr; } }
+
+/* ==================== EXHIBITION FLOOR-PLAN MAP (ln-exhibit) =========== */
+/* A dense booth floor-plan rendered as the exported diagram image inside a
+   bordered card; the card scrolls horizontally so the plan stays legible on
+   narrow viewports (the image keeps a min width rather than shrinking to blur). */
+.ln-exhibit { background: var(--white); border: 1px solid var(--primary-light);
+  border-radius: var(--radius-md); padding: 24px; }
+.ln-exhibit__scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.ln-exhibit__map { display: block; height: auto; width: 1232px; max-width: 100%; margin-inline: auto; }
+@media (max-width: 720px) { .ln-exhibit__map { max-width: none; width: 900px; } }

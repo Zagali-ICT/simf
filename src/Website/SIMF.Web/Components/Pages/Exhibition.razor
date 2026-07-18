@@ -1,0 +1,37 @@
+@* SIMF public "Exhibition" page — Figma node 5867-23560. Third Programme-cluster
+   page. Built on the shared LandingShell + LandingPageHero (no breadcrumb) + the
+   reused ln-fsection chrome, showing the exhibition floor-plan map. Bilingual
+   AR-RTL / EN-LTR. Static content (no API). Serves "/programme/exhibition".
+
+   NOTE: the Figma map is a dense booth floor-plan (hundreds of numbered stands +
+   zones); it is rendered as the exported diagram image inside a horizontally
+   scrollable card (impractical + non-interactive to rebuild in HTML). The image
+   carries Arabic zone labels; an EN/SVG variant is a follow-up — see web/exhibition.md §7. *@
+@page "/programme/exhibition"
+@layout LandingLayout
+@inject IStringLocalizer<Strings> L
+
+<LandingShell Title="@L["Exhibition.PageTitle"]" Description="@L["Exhibition.Meta"]">
+
+    @* ============================== HERO ============================== *@
+    <LandingPageHero Title="@L["Exhibition.Hero.Title"]"
+                     Subtitle="@L["About.Hero.Subtitle"]"
+                     ImageSrc="assets/figma/about/about-hero.jpg" />
+
+    @* ==================== EXHIBITION FLOOR-PLAN MAP ==================== *@
+    <section class="ln-fsection" aria-label="@L["Exhibition.Section.Title"]">
+        <div class="ln-fsection__inner ln-reveal">
+            <header class="ln-fsection__head">
+                <h2 class="ln-fsection__title">@L["Exhibition.Section.Title"]</h2>
+                <p class="ln-fsection__sub">@L["Exhibition.Section.Sub"]</p>
+            </header>
+            <div class="ln-exhibit">
+                <div class="ln-exhibit__scroll">
+                    <img class="ln-exhibit__map" src="assets/figma/exhibition/exhibition-map.png"
+                         alt="@L["Exhibition.Map.Alt"]" loading="lazy" />
+                </div>
+            </div>
+        </div>
+    </section>
+
+</LandingShell>
