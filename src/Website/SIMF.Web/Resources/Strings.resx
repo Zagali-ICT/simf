@@ -417,4 +417,12 @@
   <data name="Opening.Overview.Sub" xml:space="preserve"><value>An overview of the forum's events and activities.</value></data>
   <data name="Opening.Participants.Title" xml:space="preserve"><value>Target participants</value></data>
   <data name="Opening.Participants.Sub" xml:space="preserve"><value>The segments the forum invites to take part — across government, industry and the events sector.</value></data>
+
+  <!-- plenary sessions page (/programme/sessions) -->
+  <data name="Plenary.PageTitle" xml:space="preserve"><value>Plenary sessions — Saudi International Maritime Forum</value></data>
+  <data name="Plenary.Meta" xml:space="preserve"><value>The plenary sessions of the Saudi International Maritime Forum — three days of high-level sessions on the future of maritime security.</value></data>
+  <data name="Plenary.Hero.Title" xml:space="preserve"><value>Plenary sessions</value></data>
+  <data name="Plenary.Section.Title" xml:space="preserve"><value>Plenary sessions</value></data>
+  <data name="Plenary.Section.Sub" xml:space="preserve"><value>Three days of plenary sessions on the future of maritime security — energy supply chains, logistics infrastructure and the seabed digital domain.</value></data>
+  <data name="Plenary.Card.Button" xml:space="preserve"><value>Explore the sessions</value></data>
 </root>

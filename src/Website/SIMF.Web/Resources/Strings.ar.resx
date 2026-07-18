@@ -417,4 +417,12 @@
   <data name="Opening.Overview.Sub" xml:space="preserve"><value>نظرة عامة على فعاليات وأنشطة الملتقى.</value></data>
   <data name="Opening.Participants.Title" xml:space="preserve"><value>الجهات المستهدفة للمشاركة</value></data>
   <data name="Opening.Participants.Sub" xml:space="preserve"><value>الجهات التي يستهدف الملتقى مشاركتها عبر القطاع الحكومي والصناعي وقطاع الفعاليات.</value></data>
+
+  <!-- plenary sessions page (/programme/sessions) -->
+  <data name="Plenary.PageTitle" xml:space="preserve"><value>الجلسات الرئيسية — الملتقى البحري السعودي الدولي</value></data>
+  <data name="Plenary.Meta" xml:space="preserve"><value>الجلسات الرئيسية للملتقى البحري السعودي الدولي — ثلاثة أيام من الجلسات رفيعة المستوى حول مستقبل الأمن البحري.</value></data>
+  <data name="Plenary.Hero.Title" xml:space="preserve"><value>الجلسات الرئيسية</value></data>
+  <data name="Plenary.Section.Title" xml:space="preserve"><value>الجلسات الرئيسية</value></data>
+  <data name="Plenary.Section.Sub" xml:space="preserve"><value>ثلاثة أيام من الجلسات الرئيسية حول مستقبل الأمن البحري — سلاسل إمداد الطاقة والبنية اللوجستية والمجال الرقمي لقاع البحار.</value></data>
+  <data name="Plenary.Card.Button" xml:space="preserve"><value>استكشف الجلسات</value></data>
 </root>
