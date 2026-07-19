@@ -47,8 +47,9 @@
 | E2E-MOB026-009 | No recipient selector is shown; submit still posts default recipient (Speaker=0) | edge | P0 | _to author_ |
 | E2E-MOB026-010 | بيانات الجلسة block renders the session description as a numbered list | layout | P1 | authored ✓ (screen `renders the بيانات الجلسة block as a numbered list`) |
 | E2E-MOB026-011 | Session-detail read fails → block hidden, composer still works | resilience | P1 | authored ✓ (screen `hides the بيانات الجلسة block when the detail read fails`) |
-| E2E-MOB026-012 | **Advisory AI filter (D-714 GAP-1)** — on submit the server runs stage 1: default the offline stub (`stub-clean`), or the real `AiQuestionFilter` (via `IAiService` + the seeded `question-filter` prompt → `ai-clean`/`ai-flagged`, `ai-unavailable` fallback) when `SessionQuestions:AiFilterEnabled=true`. **Advisory only** — the verdict is recorded for the Committee and NEVER changes the question's Pending status, so it never blocks a submission | happy/resilience | P1 | authored ✓ (backend `QuestionAiFilterTests` — verdict map + all fallbacks, offline via a fake `IAiService`) |
+| E2E-MOB026-012 | **Advisory AI filter (D-714 GAP-1), PRE-questions only (two-path Q&A, 2026-07-19)** — for a question asked **before** the session goes live the server runs stage 1: default the offline stub (`stub-clean`), or the real `AiQuestionFilter` (via `IAiService` + the seeded `question-filter` prompt → `ai-clean`/`ai-flagged`, `ai-unavailable` fallback) when `SessionQuestions:AiFilterEnabled=true`. **Advisory only** — the verdict is recorded for the Committee and NEVER changes the question's Pending status. A **LIVE** question skips the AI filter entirely (verdict null) — see E2E-MOB026-014 | happy/resilience | P1 | authored ✓ (backend `QuestionAiFilterTests` — verdict map + all fallbacks; `SessionQuestionsTests.Pre_question_is_AI_screened_and_waits_for_the_committee`) |
 | E2E-MOB026-013 | **Venue gate — no self-assert (S-5)** — the app always sends `isAtVenue: false`; the server is the authoritative LIVE gate. A **geofenced** hall requires a real `HallAttendance` arrival (else 403 `NOT_AT_VENUE`); a **non-geofenced** hall has no arrival mechanism, so the question is accepted (remote Q&A). Before start the venue gate is skipped entirely | validation | P0 | authored ✓ (app `questions_repository_test.dart` posts `isAtVenue: false`; backend `QuestionArrivalGatingTests` + `SessionQuestionsTests.Submit_without_at_venue_flag_accepts_remote_question_on_a_non_geofenced_hall`) |
+| E2E-MOB026-014 | **Two-path routing (owner 2026-07-19)** — the server routes a submission by phase. A **LIVE** question (asked once the session has started) skips the AI filter **and** the Scientific Committee and lands **Approved**, straight on the per-session moderator desk for accept (push) / reject (hide). A **PRE** question (asked before start) runs the advisory AI filter and lands **Pending** for the Committee → then the desk. The composer screen is identical for both (the server decides) | happy | P0 | authored ✓ (backend `SessionQuestionsTests.Live_question_skips_AI_and_lands_directly_on_the_moderator_desk` + `Pre_question_is_AI_screened_and_waits_for_the_committee`) |
 
 ## Scenarios
 
@@ -232,9 +233,35 @@ Scenario: A non-geofenced hall accepts remote questions
 backend `QuestionArrivalGatingTests` (geofenced requires arrival; non-geofenced
 accepts) + `SessionQuestionsTests.Submit_without_at_venue_flag_accepts_remote_question_on_a_non_geofenced_hall`.
 
+### E2E-MOB026-014 — Two-path routing (owner 2026-07-19)
+
+```gherkin
+Scenario: A live question goes straight to the moderator desk (no AI, no committee)
+  Given a session that is already live
+  And the attendee submits a question
+  Then the server stores it Approved in the Live phase with no AI verdict
+  And it appears on that session's moderator desk immediately
+  And it never enters the Scientific Committee queue
+
+Scenario: A pre-question is screened by AI and waits for the committee
+  Given a session that has not yet started
+  And the attendee submits a question
+  Then the server runs the advisory AI filter and stores it Pending in the Pre phase
+  And it appears in the Scientific Committee queue
+  And it is NOT on the moderator desk until the committee approves it
+```
+
+**Evidence:** backend `SessionQuestionsTests.Live_question_skips_AI_and_lands_directly_on_the_moderator_desk`
+and `Pre_question_is_AI_screened_and_waits_for_the_committee`. The moderator desk +
+committee mechanics are covered by `cp-session-moderate.md` / `cp-admin-question-queue.md`.
+
 ---
 
-_Last reviewed:_ `2026-07-11` by `Claude` — **S-5: the app no longer self-certifies
+_Last reviewed:_ `2026-07-19` by `Claude` — **Two-path Q&A (owner): the server now
+routes a submission by phase — a LIVE question skips the AI filter + the Scientific
+Committee and lands Approved straight on the moderator desk; a PRE question runs the
+advisory AI filter and lands Pending for the Committee. Composer screen unchanged
+(server decides); E2E-MOB026-014, and 012 clarified as PRE-only.** _Prior:_ `2026-07-11` by `Claude` — **S-5: the app no longer self-certifies
 venue presence (always sends `isAtVenue: false`); the server is the authoritative
 LIVE gate (geofenced hall requires a real `HallAttendance` arrival, non-geofenced
 hall accepts remote Q&A); E2E-MOB026-013.** _Prior:_ `2026-07-10` by `SIMF Team` — **#7 (D-733): the server question

@@ -34,6 +34,14 @@ app and are moderated in place. The three actions are quiet per-row **icon**
 buttons in the grid's `RowActions` slot (Approve = `check-circle`, Hide = `eye-off`,
 Escalate = `share`).
 
+> **Two-path Q&A (owner 2026-07-19).** This committee stage receives **PRE
+> questions only**. A question asked while the session is **LIVE** skips the AI
+> filter **and** this committee queue and auto-approves straight to the per-session
+> moderator desk (`SessionModerationDesk.razor`, stage 3). So a freshly-submitted
+> live question never lands `Pending` here; only pre-session (`Phase = Pre`)
+> questions do. (Legacy `Pending` rows created before the change may still carry the
+> Live phase.) The routing lives in `SessionQuestionService.SubmitAsync`.
+
 ## 4. UI
 
 - `SimfBanner` titled `Admin.QuestionQueue.Title`, inside `simf-page-wide` /
@@ -187,5 +195,8 @@ proxy, not the `CrudGridExcel` helper) and downloads
 | 2026-05 | D-234 (P3.3) | Original — Scientific-Committee central Q&A queue (stage 2): Approve / Hide / Escalate triage over the cross-session Pending queue. |
 | 2026-05 | D-261 | Migrated from the raw `<table>` to the canonical `SimfDataGrid` with **client-side** filter / sort / paging over the non-paged Pending read. |
 | 2026-06-11 | D-356 | Excel **export only** added (toolbar Export → `POST /account/api/admin/questions/export`, sheet "Questions", gated by `Questions.Export`); no import. E2E catalogue extended with E2E-QQU-015. |
+| 2026-07-19 | Owner (two-path Q&A) | This queue now receives **PRE questions only** — a LIVE question auto-approves straight to the moderator desk, skipping the AI filter + this committee stage. No UI/permission change; the routing is in `SessionQuestionService.SubmitAsync`. |
 
-_Last reviewed:_ 2026-06-11 by Claude (D-356 — Excel export-only).
+_Last reviewed:_ 2026-07-19 by Claude — **two-path Q&A: PRE questions only reach
+this committee queue; LIVE questions auto-approve to the moderator desk.** Prior:
+2026-06-11 by Claude (D-356 — Excel export-only).

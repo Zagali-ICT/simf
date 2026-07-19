@@ -36,7 +36,7 @@ public sealed class SessionQuestionCommitteeTests : IClassFixture<SimfApiFactory
     public async Task Pending_question_appears_in_the_committee_queue()
     {
         var admin = await CreateAdministratorAndSignInAsync();
-        var session = await SeedLiveSessionAsync();
+        var session = await SeedPreSessionAsync();
         var qid = await SubmitQuestionAsync(session.Id);
 
         var queue = await ListQueueAsync(admin, session.Id);
@@ -47,7 +47,7 @@ public sealed class SessionQuestionCommitteeTests : IClassFixture<SimfApiFactory
     public async Task Approve_moves_it_off_the_queue_and_onto_the_moderator_desk()
     {
         var admin = await CreateAdministratorAndSignInAsync();
-        var session = await SeedLiveSessionAsync();
+        var session = await SeedPreSessionAsync();
         var qid = await SubmitQuestionAsync(session.Id);
 
         var approve = await PutAuthAsync($"/api/v1/admin/questions/{qid}/approve", new { }, admin);
@@ -67,7 +67,7 @@ public sealed class SessionQuestionCommitteeTests : IClassFixture<SimfApiFactory
     public async Task Hide_keeps_it_off_the_moderator_desk()
     {
         var admin = await CreateAdministratorAndSignInAsync();
-        var session = await SeedLiveSessionAsync();
+        var session = await SeedPreSessionAsync();
         var qid = await SubmitQuestionAsync(session.Id);
 
         await PutAuthAsync($"/api/v1/admin/questions/{qid}/hide", new { }, admin);
@@ -90,7 +90,7 @@ public sealed class SessionQuestionCommitteeTests : IClassFixture<SimfApiFactory
         // hidden→approved round-trip must surface as Approved + not-hidden, not a
         // stale Hidden marker on an otherwise-approved row.
         var admin = await CreateAdministratorAndSignInAsync();
-        var session = await SeedLiveSessionAsync();
+        var session = await SeedPreSessionAsync();
         var qid = await SubmitQuestionAsync(session.Id);
 
         await PutAuthAsync($"/api/v1/admin/questions/{qid}/hide", new { }, admin);
@@ -112,7 +112,7 @@ public sealed class SessionQuestionCommitteeTests : IClassFixture<SimfApiFactory
         // resurfaces on the moderator desk as already-on-stage the moment the
         // Committee re-approves it — without any fresh push after the retraction.
         var admin = await CreateAdministratorAndSignInAsync();
-        var session = await SeedLiveSessionAsync();
+        var session = await SeedPreSessionAsync();
         var qid = await SubmitQuestionAsync(session.Id);
 
         await PutAuthAsync($"/api/v1/admin/questions/{qid}/approve", new { }, admin);
@@ -141,7 +141,7 @@ public sealed class SessionQuestionCommitteeTests : IClassFixture<SimfApiFactory
     public async Task Escalate_sets_the_role_and_keeps_it_pending()
     {
         var admin = await CreateAdministratorAndSignInAsync();
-        var session = await SeedLiveSessionAsync();
+        var session = await SeedPreSessionAsync();
         var qid = await SubmitQuestionAsync(session.Id);
 
         var escalate = await PutAuthAsync(
@@ -162,7 +162,7 @@ public sealed class SessionQuestionCommitteeTests : IClassFixture<SimfApiFactory
     public async Task Escalate_with_an_empty_role_is_400()
     {
         var admin = await CreateAdministratorAndSignInAsync();
-        var session = await SeedLiveSessionAsync();
+        var session = await SeedPreSessionAsync();
         var qid = await SubmitQuestionAsync(session.Id);
 
         var response = await PutAuthAsync(
@@ -188,7 +188,7 @@ public sealed class SessionQuestionCommitteeTests : IClassFixture<SimfApiFactory
     public async Task Pushing_a_pending_question_is_400()
     {
         var admin = await CreateAdministratorAndSignInAsync();
-        var session = await SeedLiveSessionAsync();
+        var session = await SeedPreSessionAsync();
         var qid = await SubmitQuestionAsync(session.Id);
 
         var push = await PutAuthAsync(
@@ -202,7 +202,7 @@ public sealed class SessionQuestionCommitteeTests : IClassFixture<SimfApiFactory
     public async Task Pushing_a_hidden_question_is_400()
     {
         var admin = await CreateAdministratorAndSignInAsync();
-        var session = await SeedLiveSessionAsync();
+        var session = await SeedPreSessionAsync();
         var qid = await SubmitQuestionAsync(session.Id);
         await PutAuthAsync($"/api/v1/admin/questions/{qid}/hide", new { }, admin);
 
@@ -218,7 +218,7 @@ public sealed class SessionQuestionCommitteeTests : IClassFixture<SimfApiFactory
     public async Task Reorder_over_the_approved_subset_succeeds_and_rejects_other_sets()
     {
         var admin = await CreateAdministratorAndSignInAsync();
-        var session = await SeedLiveSessionAsync();
+        var session = await SeedPreSessionAsync();
         var q1 = await SubmitQuestionAsync(session.Id);
         var q2 = await SubmitQuestionAsync(session.Id);
         await PutAuthAsync($"/api/v1/admin/questions/{q1}/approve", new { }, admin);
@@ -273,7 +273,8 @@ public sealed class SessionQuestionCommitteeTests : IClassFixture<SimfApiFactory
         var token = await SignInApprovedVisitorAsync();
         var response = await PostAuthAsync(
             $"/api/v1/app/sessions/{sessionId}/questions",
-            new SubmitSessionQuestionRequest { QuestionText = "Pipeline question?", IsAtVenue = true },
+            // A pre-question (future session, no venue gate) that lands Pending.
+            new SubmitSessionQuestionRequest { QuestionText = "Pipeline question?", IsAtVenue = false },
             token);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         return (await response.Content
@@ -307,7 +308,11 @@ public sealed class SessionQuestionCommitteeTests : IClassFixture<SimfApiFactory
         return envelope.Data!.Tokens!.AccessToken;
     }
 
-    private async Task<Session> SeedLiveSessionAsync()
+    // Owner 2026-07-19 (two-path Q&A): the Scientific Committee handles PRE
+    // questions only (a LIVE question auto-approves straight to the moderator
+    // desk), so the committee tests seed a FUTURE session — every submitted
+    // question lands Pending for the committee, which is what these tests need.
+    private async Task<Session> SeedPreSessionAsync()
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
@@ -325,8 +330,8 @@ public sealed class SessionQuestionCommitteeTests : IClassFixture<SimfApiFactory
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Committee Session", TitleArabic = "جلسة اللجنة",
             HallId = hall.Id,
-            StartUtc = DateTimeOffset.UtcNow.AddMinutes(-15),
-            EndUtc = DateTimeOffset.UtcNow.AddMinutes(45),
+            StartUtc = DateTimeOffset.UtcNow.AddHours(2),
+            EndUtc = DateTimeOffset.UtcNow.AddHours(3),
             IsActive = true, CreatedAt = DateTimeOffset.UtcNow,
         };
         db.Sessions.Add(session);

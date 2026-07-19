@@ -97,8 +97,8 @@ not reused. Each page owns a unique 3–4 letter namespace.
 
 | Page | File | Scenarios |
 |------|------|-----------|
-| `/admin/question-queue` | [`cp-admin-question-queue.md`](cp-admin-question-queue.md) | E2E-QQU-001..015 |
-| `/sessions/{id}/moderate` | [`cp-session-moderate.md`](cp-session-moderate.md) | E2E-MOD-001..012 |
+| `/admin/question-queue` | [`cp-admin-question-queue.md`](cp-admin-question-queue.md) | E2E-QQU-001..016 |
+| `/sessions/{id}/moderate` | [`cp-session-moderate.md`](cp-session-moderate.md) | E2E-MOD-001..013 |
 | `/admin/ratings` | [`cp-admin-ratings.md`](cp-admin-ratings.md) | E2E-RAT-001..012 |
 | `/admin/rating-config` | [`cp-admin-rating-config.md`](cp-admin-rating-config.md) | E2E-RCFG-001..015 |
 | `/admin/session-summaries` | [`cp-admin-session-summaries.md`](cp-admin-session-summaries.md) | E2E-SUM-001..022 |
@@ -241,7 +241,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #41 `more` (no API) | [`mobile-more.md`](mobile-more.md) | E2E-MOB041-001..009 |
 | #34 `aiSummary` (`GET /app/programme/sessions/{id}/summary`) | [`mobile-ai-summary.md`](mobile-ai-summary.md) | E2E-MOB034-001..006 |
 | #111 `sessionSummaryList` (cached programme + favourites/booked overlay) — Wave 2 pixel pass, Figma `1388:8392` | [`mobile-session-summaries.md`](mobile-session-summaries.md) | E2E-MOB111-001..008 |
-| #26 `sendQuestion` (`POST /app/sessions/{id}/questions`) | [`mobile-send-question.md`](mobile-send-question.md) | E2E-MOB026-001..006 |
+| #26 `sendQuestion` (`POST /app/sessions/{id}/questions`) | [`mobile-send-question.md`](mobile-send-question.md) | E2E-MOB026-001..014 |
 | #32 `badge` (`GET /app/account/dashboard`) | [`mobile-badge.md`](mobile-badge.md) | E2E-MOB032-001..004 |
 | #25 `liveBroadcast` (`GET /app/programme/sessions/{id}`) | [`mobile-live.md`](mobile-live.md) | E2E-MOB025-001..007 |
 | #36 `chatbot` (interim shell — no API) | [`mobile-chatbot.md`](mobile-chatbot.md) | E2E-MOB036-001..006 |
