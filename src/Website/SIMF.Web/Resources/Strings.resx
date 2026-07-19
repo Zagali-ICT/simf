@@ -444,4 +444,10 @@
   <data name="GovMeetings.Card.Title" xml:space="preserve"><value>Direct business-to-government connections</value></data>
   <data name="GovMeetings.Card.Body" xml:space="preserve"><value>The government business meetings give companies a chance to connect directly with government entities and explore cooperation opportunities within a structured agenda alongside the forum.</value></data>
   <data name="GovMeetings.Cta" xml:space="preserve"><value>Register your interest</value></data>
+
+  <!-- partners &amp; sponsors page (/partners) -->
+  <data name="Partners.PageTitle" xml:space="preserve"><value>Partners &amp; sponsors — Saudi International Maritime Forum</value></data>
+  <data name="Partners.Meta" xml:space="preserve"><value>The partners and sponsors of the Saudi International Maritime Forum — government bodies and national and international institutions, and the sponsors supporting the forum and its programmes.</value></data>
+  <data name="Partners.Hero.Title" xml:space="preserve"><value>Sponsors &amp; partners 2026</value></data>
+  <data name="Partners.Hero.Subtitle" xml:space="preserve"><value>We are proud to collaborate with a distinguished group of sponsors and partners who share our vision of innovation and excellence in the future of maritime security and the protection of shipping lanes.</value></data>
 </root>

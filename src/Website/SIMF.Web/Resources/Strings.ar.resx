@@ -444,4 +444,10 @@
   <data name="GovMeetings.Card.Title" xml:space="preserve"><value>تواصل مباشر بين الأعمال والجهات الحكومية</value></data>
   <data name="GovMeetings.Card.Body" xml:space="preserve"><value>تتيح اجتماعات الأعمال الحكومية للشركات التواصل المباشر مع الجهات الحكومية واستكشاف فرص التعاون ضمن أجندة منظّمة على هامش الملتقى.</value></data>
   <data name="GovMeetings.Cta" xml:space="preserve"><value>سجّل اهتمامك</value></data>
+
+  <!-- partners &amp; sponsors page (/partners) -->
+  <data name="Partners.PageTitle" xml:space="preserve"><value>الرعاة والشركاء — الملتقى البحري السعودي الدولي</value></data>
+  <data name="Partners.Meta" xml:space="preserve"><value>شركاء ورعاة الملتقى البحري السعودي الدولي — جهات حكومية ومؤسسات وطنية ودولية، والرعاة الداعمون للملتقى وبرامجه.</value></data>
+  <data name="Partners.Hero.Title" xml:space="preserve"><value>الرعاة والشركاء لعام 2026</value></data>
+  <data name="Partners.Hero.Subtitle" xml:space="preserve"><value>يسرنا التعاون مع مجموعة من الرعاة والشركاء المتميزين، الذين يشاركوننا رؤية الابتكار والتميز في مستقبل الأمن البحري وحماية الممرات الملاحية.</value></data>
 </root>

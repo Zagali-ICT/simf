@@ -109,11 +109,10 @@ public sealed class AboutPageTests : WebComponentTestBase
         var cut = RenderComponent<About>();
 
         // the 2-col intro reuses the landing's own About.* content + media,
-        // and its CTA points at the landing partners band (the dedicated
-        // /partners page lands in Wave 4).
+        // and its CTA points at the dedicated /partners page (Wave 4).
         Assert.Single(cut.FindAll(".ln-about"));
         Assert.Contains("Landing.About.Eyebrow", cut.Markup);
         Assert.Contains("Landing.About.Title", cut.Markup);
-        Assert.Contains("href=\"/#partners\"", cut.Markup);
+        Assert.Contains("href=\"/partners\"", cut.Markup);
     }
 }

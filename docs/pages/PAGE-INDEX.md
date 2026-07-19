@@ -164,6 +164,7 @@ No public nav per D-064 — every page is reached via direct URL or auth redirec
 | `/programme/sessions` | ✅ Real (`ln-` SSR; Figma 5867-22842; reuses landing sessions — Programme cluster #2; ln- successor to `/programme`) | Public | [web/plenary.md](web/plenary.md) | [e2e/web-plenary.md](../tests/e2e/web-plenary.md) |
 | `/programme/exhibition` | ✅ Real (`ln-` SSR; Figma 5867-23560; floor-plan map image — Programme cluster #3) | Public | [web/exhibition.md](web/exhibition.md) | [e2e/web-exhibition.md](../tests/e2e/web-exhibition.md) |
 | `/programme/gov-meetings` | ✅ Real minimal (`ln-` SSR; Figma 5867-23988 stub; real content — Programme cluster #4) | Public | [web/gov-meetings.md](web/gov-meetings.md) | [e2e/web-gov-meetings.md](../tests/e2e/web-gov-meetings.md) |
+| `/partners` | ✅ Real (`ln-` SSR; Figma 5866-40017; reuses landing partners + sponsors bands, single-sourced — Partners cluster #1) | Public | [web/partners.md](web/partners.md) | [e2e/web-partners.md](../tests/e2e/web-partners.md) |
 | `/visit` | ✅ Real | Public | — | [e2e/web-visit.md](../tests/e2e/web-visit.md) |
 | `/login` | 🔒 Auth-only | Anyone | [web/login.md](web/login.md) | [e2e/web-login.md](../tests/e2e/web-login.md) |
 | `/login/verify` | 🔒 Auth-only | Mid-sign-in | [web/otp-verify.md](web/otp-verify.md) | [e2e/web-otp-verify.md](../tests/e2e/web-otp-verify.md) |
