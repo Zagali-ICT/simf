@@ -105,6 +105,7 @@
   <data name="Admin.SpeakerAvailability.Failed" xml:space="preserve"><value>فشلت العملية.</value></data>
   <data name="Admin.SpeakerAvailability.BadDates" xml:space="preserve"><value>أدخل بداية ونهاية صحيحتين.</value></data>
   <data name="Admin.SpeakerAvailability.BadSlot" xml:space="preserve"><value>أدخل مدة فترة موجبة.</value></data>
+  <data name="Admin.SpeakerAvailability.BadDateRange" xml:space="preserve"><value>يجب أن تكون التواريخ ضمن 23–25 نوفمبر 2026.</value></data>
   <data name="Admin.HallAvailability.Title" xml:space="preserve"><value>توفّر القاعات (وقت الاجتماعات)</value></data>
   <data name="Admin.HallAvailability.Hall" xml:space="preserve"><value>القاعة</value></data>
   <data name="Admin.HallAvailability.PickHall" xml:space="preserve"><value>اختر قاعة…</value></data>

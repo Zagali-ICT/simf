@@ -69,6 +69,13 @@ public partial class SpeakerAvailabilityPage
             _toast = new Toast("error", L["Admin.SpeakerAvailability.BadDates"]);
             return;
         }
+        var minDate = new DateTimeOffset(2026, 11, 23, 0, 0, 0, TimeSpan.Zero);
+        var maxDate = new DateTimeOffset(2026, 11, 25, 23, 59, 0, TimeSpan.Zero);
+        if (start < minDate || start > maxDate || end > maxDate)
+        {
+            _toast = new Toast("error", L["Admin.SpeakerAvailability.BadDateRange"]);
+            return;
+        }
         if (!int.TryParse(_slotMinutes, out var slot) || slot <= 0)
         {
             _toast = new Toast("error", L["Admin.SpeakerAvailability.BadSlot"]);
