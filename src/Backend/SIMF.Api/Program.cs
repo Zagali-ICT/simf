@@ -43,16 +43,57 @@ builder.Host.UseSerilog((context, configuration) =>
     var logDir = context.Configuration["Storage:LogDirectory"] ?? "logs";
     var appName = context.HostingEnvironment.ApplicationName ?? "SIMF.Api";
     var path = Path.Combine(logDir, appName, "log-.log");
+    // Background-worker logs go to their OWN per-project folder (SIMF.Workers)
+    // so the CP /admin/logs viewer lists them apart from the API request logs,
+    // and they are excluded from the API folder to keep that view clean. The
+    // worker/API split keys off the Serilog SourceContext (the logger's type).
+    var workerPath = Path.Combine(logDir, "SIMF.Workers", "log-.log");
+    const string logTemplate = "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} "
+        + "[{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}";
+
+    // The exact hosted-worker types whose logs go to the SIMF.Workers folder.
+    // Matching by full type name (not namespace prefix) keeps non-worker types
+    // that share these namespaces (e.g. EmailQueue, OperationsToggleService) in
+    // the API log, where the request path that triggered them can be traced.
+    var workerSources = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "SIMF.Infrastructure.Operations.RegistrationGateAutoCloseWorker",
+        "SIMF.Infrastructure.Operations.SessionReminderWorker",
+        "SIMF.Infrastructure.Operations.MeetingAwaitingSpeakerExpiryWorker",
+        "SIMF.Infrastructure.Operations.PendingBookingExpiryWorker",
+        "SIMF.Infrastructure.Operations.SessionRatingPromptWorker",
+        "SIMF.Infrastructure.Operations.ProgrammeRatingPromptWorker",
+        "SIMF.Infrastructure.Operations.HallAttendanceCloseoutWorker",
+        "SIMF.Infrastructure.Email.EmailBackgroundService",
+        "SIMF.Api.HostedServices.RetentionSweepWorker",
+        "SIMF.Api.HostedServices.DormantAccountSweepService",
+    };
+
+    bool IsWorkerLog(Serilog.Events.LogEvent e) =>
+        e.Properties.TryGetValue("SourceContext", out var value)
+        && value is Serilog.Events.ScalarValue { Value: string source }
+        && workerSources.Contains(source);
+
     configuration
         .ReadFrom.Configuration(context.Configuration)
         .Enrich.FromLogContext()
         .WriteTo.Console()
-        .WriteTo.File(
-            path: path,
-            rollingInterval: RollingInterval.Day,
-            retainedFileCountLimit: 31,
-            outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} "
-                + "[{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}");
+        // API log: everything except the background workers.
+        .WriteTo.Logger(api => api
+            .Filter.ByExcluding(IsWorkerLog)
+            .WriteTo.File(
+                path: path,
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 31,
+                outputTemplate: logTemplate))
+        // Background-worker log: a separate SIMF.Workers folder the CP viewer lists on its own.
+        .WriteTo.Logger(workers => workers
+            .Filter.ByIncludingOnly(IsWorkerLog)
+            .WriteTo.File(
+                path: workerPath,
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 31,
+                outputTemplate: logTemplate));
 });
 
 // Database contexts, ASP.NET Core Identity, repositories, email, the audit log.
@@ -264,8 +305,10 @@ builder.Services.SwaggerDocument(options =>
         ep.Routes?.Any(route => route.Contains("admin/")) == true;
 });
 
-// Readiness checks (SIMF-OPS-001 Amendment A.4).
-builder.Services.AddHealthChecks();
+// Readiness checks (SIMF-OPS-001 Amendment A.4). The "workers" check reports the
+// background-worker tier's health from the in-process heartbeat registry.
+builder.Services.AddHealthChecks()
+    .AddCheck<SIMF.Api.HealthChecks.WorkersHealthCheck>("workers");
 
 // Web-app CORS (D-376). Two origin sources, both explicit allow-lists:
 // - Cors:WebAppOrigins — ANY environment; empty/absent = no CORS at all

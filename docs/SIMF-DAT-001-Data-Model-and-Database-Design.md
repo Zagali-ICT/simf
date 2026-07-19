@@ -4,7 +4,7 @@
 |-------|-------|
 | Document ID | SIMF-DAT-001 |
 | Title | Data Model and Database Design |
-| Version | 1.2 |
+| Version | 1.3 |
 | Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
@@ -20,6 +20,7 @@
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. Logical data model by bounded context, conventions, and the core ERD. |
 | 1.1 | 2026-05-21 | Engineering & Architecture Team | Architecture-review amendment (see Amendment A): one database with two DbContexts and separate migration histories; GpsPresence as batched append-only telemetry with a retention purge; peak-load indexes; Booking.Status Rejected, Hall geofence, the account-code generalisation; SQL Server Standard edition. |
 | 1.2 | 2026-05-21 | Engineering & Architecture Team | Increment-2 build amendment (see Amendment B): records how the §5.1 Identity & Access entities map onto ASP.NET Core Identity. |
+| 1.3 | 2026-07-19 | Apexium | Corrected the Booking lifecycle to match the built code (reservation-only, auto-confirm): attendee seat reservations are confirmed immediately (Status `Approved`) with no Control Panel approval, held provisionally until gate check-in (`CheckedIn`) and released by the pre-start sweep (`Released`) if not checked in; the `Pending` / `Rejected` approval queue is retained but dormant and always empty. Updated §5.4, §8 and Amendment A.4. |
 
 ---
 
@@ -165,11 +166,17 @@ Five non-clustered indexes ride the clustered bigint PK:
 | `Speaker` | `NameAr`, `NameEn`, `Rank`, `Bio`, `Qualifications`, `TrainingExperience`, `Awards` | references `Country`, `Asset` (photo); has many `SessionSpeaker`, `SpeakerPresentation` |
 | `SessionSpeaker` | `RoleInSession` (Speaker / Host) | links `Session` and `Speaker` |
 | `SpeakerPresentation` | — | belongs to `Speaker` and `Session`; references `Asset` (the PPT file) |
-| `Booking` | `Status` (Pending / Approved / Cancelled), `RequestedAt`, `ApprovedByUserId`, `ApprovedAt` | belongs to `User`, `Session`, `Seat` |
+| `Booking` | `Status` (Approved / CheckedIn / Released / Cancelled; Pending / Rejected retained but dormant), `RequestedAt`, `ApprovedByUserId`, `ApprovedAt` | belongs to `User`, `Session`, `Seat` |
 
-A `Booking` is for a specific seat in a session; every booking is approved in
-the Control Panel before it is confirmed, and may be cancelled before the
-session starts (decision D4).
+A `Booking` is for a specific seat in a session. The reservation is confirmed
+immediately (Status `Approved`) — there is no Control Panel approval step. The
+seat is held provisionally until the attendee checks in at the hall gate
+(Status `CheckedIn`, a staff QR scan), which confirms it; a sweep shortly before
+the session releases (Status `Released`) any hold not checked in, and the
+attendee may cancel before the session starts (decision D4). The old
+approval-queue surface — the `Pending` / `Rejected` states, the Control Panel
+Bookings approve/reject actions — is **retained but dormant**: nothing creates a
+`Pending` booking, so the queue is always empty (reservation-only, auto-confirm).
 
 ### 5.5 Exhibition
 
@@ -191,7 +198,7 @@ additive boolean columns, no new entity.
 | Entity | Key attributes | Relationships |
 |--------|----------------|---------------|
 | `LiveSessionState` | `IsBroadcasting`, `StartedAt`, `EndedAt`, `Language` | belongs to `Session` |
-| `SessionQuestion` | `Recipient` (Speaker / Host), `Text`, `Status` (Pending / OnAir / Answered / Hidden), `CreatedAt`, `ModeratedByUserId` | belongs to `Session`, asked-by `User` |
+| `SessionQuestion` | `Recipient` (Speaker / Host), `Text`, `Status` (Pending / Approved / Hidden), `Phase` (Pre / Live), `IsPushed`, `CreatedAt`, `ModeratedByUserId` | belongs to `Session`, asked-by `User` |
 | `Comment` | `Text`, `AiResult` (Passed / Flagged), `AiCheckedAt`, `AdminDecision` (Pending / Approved / Discarded), `DecidedByUserId`, `CreatedAt` | belongs to `Session`, author `User` |
 
 A `Comment` always carries both an AI result and an admin decision — the
@@ -340,7 +347,7 @@ erDiagram
 - Natural lookup keys are indexed and, where they must be unique, constrained:
   `User.Email`, `Badge.ReferenceNumber`.
 - A `Booking` is constrained so the same seat in the same session cannot be
-  approved twice.
+  reserved twice.
 - `HallAttendance` is constrained so a user has one open attendance row per
   session at a time.
 - The exact index set is finalised with the EF Core configuration and reviewed
@@ -400,8 +407,12 @@ EnterAt)` and `(UserId, SessionId)`; `VenueEntry` on `(BadgeId, ScannedAt)`;
 `(RecordedAt)`.
 
 ### A.4 Entity adjustments
-- `Booking.Status` includes the value **`Rejected`** (with Pending, Approved,
-  Cancelled) — from SIMF-FDS-005.
+- `Booking.Status` covers **`Approved`**, **`CheckedIn`**, **`Released`** and
+  **`Cancelled`** for the reservation-only flow (a reservation is confirmed
+  immediately on `Approved`, confirmed on gate check-in as `CheckedIn`, and
+  `Released` by the pre-start sweep if not checked in); the **`Pending`** and
+  **`Rejected`** values are retained but dormant (the Control Panel approval
+  queue is always empty) — from SIMF-FDS-005.
 - `Hall` carries a **geofence** (a centre and radius, or a polygon) used for
   hall-arrival detection — from SIMF-FDS-003.
 - `EmailVerificationCode` is generalised to an **account-code** entity with a

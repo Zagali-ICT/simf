@@ -1,3 +1,6 @@
+
+
+
 /* =====================================================================
    SIMF_App — demo seed for the 4 empty app screens
    (Booths / Exhibition · Delegations · FAQ · Venue map)

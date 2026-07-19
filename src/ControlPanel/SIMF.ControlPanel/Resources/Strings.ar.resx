@@ -76,6 +76,7 @@
   <data name="Module.Dashboard" xml:space="preserve"><value>لوحة المعلومات</value></data>
   <data name="Module.Statistics" xml:space="preserve"><value>الإحصائيات</value></data>
   <data name="Module.Attendance" xml:space="preserve"><value>حضور الجلسات</value></data>
+  <data name="Module.SessionLiveHall" xml:space="preserve"><value>القاعة المباشرة</value></data>
   <data name="Module.RegistrationRequests" xml:space="preserve"><value>طلبات التسجيل</value></data>
   <data name="Module.Attendees" xml:space="preserve"><value>الحضور</value></data>
   <data name="Module.Roles" xml:space="preserve"><value>الأدوار والصلاحيات</value></data>
@@ -2577,6 +2578,28 @@
   <data name="Admin.Attendance.Title" xml:space="preserve"><value>حضور الجلسات</value></data>
   <data name="Admin.Attendance.Loading" xml:space="preserve"><value>جارٍ تحميل الحضور…</value></data>
   <data name="Admin.Attendance.None" xml:space="preserve"><value>لم يُسجَّل أي حضور بعد.</value></data>
+  <data name="Module.ServicesMonitor" xml:space="preserve"><value>الخدمات الخلفية</value></data>
+  <data name="Admin.ServicesMonitor.Title" xml:space="preserve"><value>الخدمات الخلفية</value></data>
+  <data name="Admin.ServicesMonitor.Refresh" xml:space="preserve"><value>تحديث</value></data>
+  <data name="Admin.ServicesMonitor.Loading" xml:space="preserve"><value>جارٍ تحميل الخدمات…</value></data>
+  <data name="Admin.ServicesMonitor.None" xml:space="preserve"><value>لا توجد خدمات خلفية مسجلة.</value></data>
+  <data name="Admin.ServicesMonitor.LoadFailed" xml:space="preserve"><value>تعذّر تحميل حالة الخدمات الخلفية.</value></data>
+  <data name="Admin.ServicesMonitor.Refreshed" xml:space="preserve"><value>آخر تحديث في {0}.</value></data>
+  <data name="Admin.ServicesMonitor.Summary" xml:space="preserve"><value>{0} خدمة خلفية.</value></data>
+  <data name="Admin.ServicesMonitor.Stat.Up" xml:space="preserve"><value>تعمل</value></data>
+  <data name="Admin.ServicesMonitor.Stat.Stale" xml:space="preserve"><value>متأخرة</value></data>
+  <data name="Admin.ServicesMonitor.Stat.Faulted" xml:space="preserve"><value>متعطلة</value></data>
+  <data name="Admin.ServicesMonitor.Col.Worker" xml:space="preserve"><value>الخدمة</value></data>
+  <data name="Admin.ServicesMonitor.Col.State" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.ServicesMonitor.Col.LastRun" xml:space="preserve"><value>آخر تشغيل</value></data>
+  <data name="Admin.ServicesMonitor.Col.LastSuccess" xml:space="preserve"><value>آخر نجاح</value></data>
+  <data name="Admin.ServicesMonitor.Col.Runs" xml:space="preserve"><value>مرات التشغيل</value></data>
+  <data name="Admin.ServicesMonitor.Col.Failures" xml:space="preserve"><value>الإخفاقات</value></data>
+  <data name="Admin.ServicesMonitor.Col.Error" xml:space="preserve"><value>آخر خطأ</value></data>
+  <data name="Admin.ServicesMonitor.State.Starting" xml:space="preserve"><value>قيد البدء</value></data>
+  <data name="Admin.ServicesMonitor.State.Healthy" xml:space="preserve"><value>تعمل</value></data>
+  <data name="Admin.ServicesMonitor.State.Stale" xml:space="preserve"><value>متأخرة</value></data>
+  <data name="Admin.ServicesMonitor.State.Faulted" xml:space="preserve"><value>متعطلة</value></data>
   <data name="Admin.Attendance.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الحضور. حاول مرة أخرى.</value></data>
   <data name="Admin.Attendance.Stat.LiveNow" xml:space="preserve"><value>الحاضرون الآن</value></data>
   <data name="Admin.Attendance.Stat.SessionsWithAttendance" xml:space="preserve"><value>جلسات بها حضور</value></data>
@@ -2587,6 +2610,34 @@
   <data name="Admin.Attendance.Col.Start" xml:space="preserve"><value>البداية (UTC)</value></data>
   <data name="Admin.Attendance.Col.TotalAttendees" xml:space="preserve"><value>إجمالي الحضور</value></data>
   <data name="Admin.Attendance.Col.LiveNow" xml:space="preserve"><value>الآن</value></data>
+  <!-- 2026-07-18 — live per-session hall view (4-state seat map + who's present). -->
+  <data name="Admin.SessionLiveHall.Title" xml:space="preserve"><value>القاعة المباشرة</value></data>
+  <data name="Admin.SessionLiveHall.Hint" xml:space="preserve"><value>اختر جلسة لمتابعة قاعتها مباشرة — خريطة المقاعد (متاح / غير متاح / محجوز / تم التأكيد) وكل من يوجد داخلها الآن.</value></data>
+  <data name="Admin.SessionLiveHall.Pick" xml:space="preserve"><value>اختر جلسة</value></data>
+  <data name="Admin.SessionLiveHall.None" xml:space="preserve"><value>لا توجد جلسات متاحة.</value></data>
+  <data name="Admin.SessionLiveHall.Loading" xml:space="preserve"><value>جارٍ تحميل القاعة المباشرة…</value></data>
+  <data name="Admin.SessionLiveHall.LoadFailed" xml:space="preserve"><value>تعذّر تحميل القاعة المباشرة. حاول مرة أخرى.</value></data>
+  <data name="Admin.SessionLiveHall.Refresh" xml:space="preserve"><value>تحديث</value></data>
+  <data name="Admin.SessionLiveHall.SeatMap.Heading" xml:space="preserve"><value>خريطة المقاعد</value></data>
+  <data name="Admin.SessionLiveHall.SeatMap.NoLayout" xml:space="preserve"><value>لا يوجد تخطيط مقاعد لهذه القاعة، لذا لا توجد خريطة مقاعد لعرضها.</value></data>
+  <data name="Admin.SessionLiveHall.Seat.Available" xml:space="preserve"><value>متاح</value></data>
+  <data name="Admin.SessionLiveHall.Seat.Unavailable" xml:space="preserve"><value>غير متاح</value></data>
+  <data name="Admin.SessionLiveHall.Seat.Reserved" xml:space="preserve"><value>محجوز</value></data>
+  <data name="Admin.SessionLiveHall.Seat.Confirmed" xml:space="preserve"><value>تم التأكيد</value></data>
+  <data name="Admin.SessionLiveHall.SeatTitle" xml:space="preserve"><value>مقعد {0} — {1}</value></data>
+  <data name="Admin.SessionLiveHall.Present.Heading" xml:space="preserve"><value>داخل القاعة الآن</value></data>
+  <data name="Admin.SessionLiveHall.Present.None" xml:space="preserve"><value>لا يوجد أحد داخل القاعة بعد.</value></data>
+  <data name="Admin.SessionLiveHall.Present.Count" xml:space="preserve"><value>عدد الحاضرين: {0}</value></data>
+  <data name="Admin.SessionLiveHall.Col.Name" xml:space="preserve"><value>الاسم</value></data>
+  <data name="Admin.SessionLiveHall.Col.Organisation" xml:space="preserve"><value>الجهة</value></data>
+  <data name="Admin.SessionLiveHall.Col.Type" xml:space="preserve"><value>النوع</value></data>
+  <data name="Admin.SessionLiveHall.Col.JobTitle" xml:space="preserve"><value>المسمى الوظيفي</value></data>
+  <data name="Admin.SessionLiveHall.Col.Seat" xml:space="preserve"><value>المقعد</value></data>
+  <data name="Admin.SessionLiveHall.Col.Entered" xml:space="preserve"><value>وقت الدخول (UTC)</value></data>
+  <data name="Admin.SessionLiveHall.Col.Method" xml:space="preserve"><value>الطريقة</value></data>
+  <data name="Admin.SessionLiveHall.Method.QrScan" xml:space="preserve"><value>مسح QR</value></data>
+  <data name="Admin.SessionLiveHall.Method.Geofence" xml:space="preserve"><value>تحديد الموقع</value></data>
+  <data name="Admin.SessionLiveHall.OpenSeating" xml:space="preserve"><value>دخول عام</value></data>
   <!-- D-202 Track-2 — Statistics dashboard (read-only). -->
   <data name="Admin.Statistics.Title" xml:space="preserve"><value>الإحصائيات</value></data>
   <data name="Admin.Statistics.Loading" xml:space="preserve"><value>جارٍ تحميل الإحصائيات…</value></data>

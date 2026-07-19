@@ -4,7 +4,7 @@
 |-------|-------|
 | Document ID | SIMF-FDS-008 |
 | Title | Feature Design Specification — Networking and Cognitive AI |
-| Version | 1.0 |
+| Version | 1.1 |
 | Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
@@ -18,6 +18,7 @@
 | Version | Date | Author | Summary of change |
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. The networking and cognitive-AI feature, build-ready. |
+| 1.1 | 2026-07-19 | Apexium | Corrected the AI session summary (section 5.5) to the as-built pipeline: server-to-server subtitle import (paste/upload fallback), AI draft through the controlled egress point, Scientific Committee edit/review/approve, then administrator publish; added the Echo-stub and NCA caption-egress caveats (FR-708). |
 
 ---
 
@@ -132,10 +133,25 @@ section 9.2); the provider is configuration, not code (decision D7).
 - For a session, the system produces an **AI-generated summary** (FR-708,
   mockup Screen 34): the key points, the recommendations, and a link to the
   full transcript.
-- The summary is generated through the cognitive-AI abstraction and stored as a
-  `SessionSummary` against the session.
-- The attendee can read, save and share a summary, and pick a different session
-  to summarise.
+- The summary is produced through a controlled pipeline. The session subtitle
+  is imported **server-to-server** from YouTube — a stateless fetch-then-save,
+  so the team reviews the text before it is saved — and where egress is
+  unavailable the subtitle is pasted or uploaded instead. The API then calls
+  the configured AI provider, through the cognitive-AI abstraction and the
+  controlled egress point, to **draft** the summary from that subtitle. The
+  draft and the result are stored as a `SessionSummary` against the session.
+- The draft is not published automatically. A user holding the session-summary
+  page in the **Scientific Committee** views the text, **edits** the draft,
+  submits it for review and approves it; an **administrator** then **publishes**
+  it once the session has started. Only a published summary is shown to
+  attendees.
+- The attendee can read, save and share a published summary, and pick a
+  different session to summarise.
+- Operational caveats: the AI provider defaults to the **Echo** stub until
+  egress is approved — the real Gemini, OpenAI and Anthropic adapters are
+  swappable by Control Panel configuration (decision D7); and because YouTube
+  caption egress is blocked on the NCA network, pasting or uploading the
+  transcript is the fallback path.
 
 ### 5.6 Accessibility AI
 

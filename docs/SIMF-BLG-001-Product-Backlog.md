@@ -4,7 +4,7 @@
 |-------|-------|
 | Document ID | SIMF-BLG-001 |
 | Title | Product Backlog |
-| Version | 1.0 |
+| Version | 1.1 |
 | Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
@@ -18,6 +18,7 @@
 | Version | Date | Author | Summary of change |
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-21 | Engineering & Architecture Team | First issue. |
+| 1.1 | 2026-07-19 | Apexium | Corrected US-052 to match the built behaviour: attendee seat reservations are confirmed immediately (no Control Panel approval step) and held provisionally until gate check-in; the Control Panel approval queue is retained but dormant. Reflects the FR-503 meaning change. |
 
 ---
 
@@ -138,7 +139,7 @@ planning; this document goes to the story level.
 |----|-------|-----------|
 | US-050 | As an attendee, I want to book a seat in a session, so that I have a place | FDS-005 §5.1 |
 | US-051 | As the system, I want to block overlapping bookings, so that an attendee is not double-booked | FDS-005 §5.1 |
-| US-052 | As the PR team, I want to approve or reject bookings, so that bookings are controlled | FDS-005 §5.2 |
+| US-052 | As an attendee, I want my seat reservation confirmed immediately — no Control Panel approval step — and held provisionally until gate check-in confirms it (or a pre-start sweep releases it), so that I get a place without waiting on manual approval. The Control Panel approval queue (list-pending / approve / reject / bulk-approve) is retained but dormant: nothing creates a Pending booking, so the queue is always empty | FDS-005 §5.2 |
 | US-053 | As an attendee, I want to cancel a booking before the session starts, so that I can change my plan | FDS-005 §5.3 |
 | US-054 | As an attendee, I want to see my seat on the hall map, so that I can find it | FDS-005 §5.4 |
 | US-055 | As the system, I want session attendance from the hall-arrival records, so that attendance is reported | FDS-005 §5.6 |

@@ -1,0 +1,100 @@
+@* Background-services monitor. Read-only: a live roll-up (workers up / stale /
+   faulted) plus a per-worker grid of state, last run, run/failure counts and the
+   last error, over the API's in-process heartbeat registry. Auto-refreshes every
+   15s. No create / edit / delete, so the grid carries no row actions. *@
+@page "/admin/ops/services"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.ServicesMonitor.View)]
+@using SIMF.Contracts.Ops
+
+<PageTitle>@L["Admin.ServicesMonitor.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.ServicesMonitor.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        @if (_data is not null)
+        {
+            <div class="simf-form__actions">
+                <SimfStatCard Title="@L["Admin.ServicesMonitor.Stat.Up"]"
+                              Value="@_data.HealthyCount.ToString()" />
+                <SimfStatCard Title="@L["Admin.ServicesMonitor.Stat.Stale"]"
+                              Value="@_data.StaleCount.ToString()" />
+                <SimfStatCard Title="@L["Admin.ServicesMonitor.Stat.Faulted"]"
+                              Value="@_data.FaultedCount.ToString()" />
+            </div>
+        }
+
+        <div class="simf-form simf-form--inline">
+            <div class="simf-form__fields">
+                <p>@RefreshedText()</p>
+            </div>
+            <div class="simf-form__actions">
+                <SimfButton Type="button" Variant="secondary" OnClick="LoadAsync">
+                    @L["Admin.ServicesMonitor.Refresh"]
+                </SimfButton>
+            </div>
+        </div>
+
+        <SimfDataGrid TItem="WorkerStatus"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Caption="@L["Admin.ServicesMonitor.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.ServicesMonitor.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="WorkerStatus" Key="name"
+                                    Header="@L["Admin.ServicesMonitor.Col.Worker"]">
+                    <CellTemplate>
+                        <strong>@context.Name</strong><br />
+                        <span>@context.Description</span>
+                    </CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="WorkerStatus" Key="state"
+                                    Header="@L["Admin.ServicesMonitor.Col.State"]">
+                    <CellTemplate>
+                        <SimfPill Variant="@StateVariant(context.State)">@StateLabel(context.State)</SimfPill>
+                    </CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="WorkerStatus" Key="lastRun"
+                                    Header="@L["Admin.ServicesMonitor.Col.LastRun"]">
+                    <CellTemplate>@Local(context.LastRunUtc)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="WorkerStatus" Key="lastSuccess"
+                                    Header="@L["Admin.ServicesMonitor.Col.LastSuccess"]">
+                    <CellTemplate>@Local(context.LastSuccessUtc)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="WorkerStatus" Key="runs"
+                                    Header="@L["Admin.ServicesMonitor.Col.Runs"]">
+                    <CellTemplate>@context.RunCount</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="WorkerStatus" Key="failures"
+                                    Header="@L["Admin.ServicesMonitor.Col.Failures"]">
+                    <CellTemplate>@context.FailureCount</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="WorkerStatus" Key="error"
+                                    Header="@L["Admin.ServicesMonitor.Col.Error"]">
+                    <CellTemplate>@(string.IsNullOrEmpty(context.LastError) ? "-" : context.LastError)</CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.ServicesMonitor.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>

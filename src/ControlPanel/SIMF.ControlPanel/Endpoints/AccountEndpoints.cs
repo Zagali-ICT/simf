@@ -1128,6 +1128,16 @@ internal static class AccountEndpoints
             return Forward(await api.GetOperationLogAsync(id, token));
         });
 
+        // Services monitor proxy - live background-worker health from the API's
+        // in-process heartbeat registry (read-only, no query).
+        group.MapGet("/admin/ops/workers",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetWorkerStatusesAsync(token));
+        });
+
         // P1.6 — binary XLSX download. Cannot reuse Forward() because the
         // response body is the workbook bytes, not the JSON envelope.
         group.MapPost("/admin/operation-log/export",
@@ -2363,6 +2373,25 @@ internal static class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.AdminReleaseSessionSeatAsync(
                 sessionId, reservationId, token));
+        });
+
+        // 2026-07-18 (live per-session hall view, CP page 2e) — the 4-state seat
+        // map + everyone currently present in the hall, both API-side gated
+        // Attendance.View.
+        group.MapGet("/admin/sessions/{sessionId:guid}/seat-map",
+            async (Guid sessionId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetAdminSessionSeatMapAsync(sessionId, token));
+        });
+
+        group.MapGet("/admin/sessions/{sessionId:guid}/present",
+            async (Guid sessionId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetSessionPresentAttendeesAsync(sessionId, token));
         });
 
         // D-269 — speaker meeting requests BFF passthroughs.

@@ -152,8 +152,10 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/operations` | [`cp-admin-operations.md`](cp-admin-operations.md) | E2E-OPS-001..011 |
 | `/admin/operation-log` | [`cp-admin-operation-log.md`](cp-admin-operation-log.md) | E2E-OPL-001..018 |
 | `/admin/logs` | [`cp-admin-logs.md`](cp-admin-logs.md) | E2E-LOG-001..013 |
+| `/admin/ops/services` | [`cp-ops-services.md`](cp-ops-services.md) | E2E-SVCM-001..008 |
 | `/admin/statistics` | [`cp-admin-statistics.md`](cp-admin-statistics.md) | E2E-STA-001..012 |
 | `/admin/attendance` | [`cp-admin-attendance.md`](cp-admin-attendance.md) | E2E-ATT-001..014 |
+| `/admin/sessions/live-hall` | [`cp-admin-session-live-hall.md`](cp-admin-session-live-hall.md) | E2E-SLH-001..013 |
 
 ### Control Panel — Account & auth (not in main nav)
 

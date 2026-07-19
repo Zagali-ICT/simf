@@ -4,10 +4,17 @@
 |-------|-------|
 | Document | Low-Level Design (LLD) |
 | System | SIMF — Saudi International Maritime Forum platform |
-| Version | 1.0 (Draft) |
-| Date | 2026-06-25 |
+| Version | 1.1 (Draft) |
+| Date | 2026-07-19 |
 | Status | Draft for review |
 | Audience | Engineers implementing, extending, reviewing or maintaining SIMF |
+
+### Change history
+
+| Version | Date | Author | Summary |
+|---------|------|--------|---------|
+| 1.0 (Draft) | 2026-06-25 | SIMF Team | Initial low-level design. |
+| 1.1 (Draft) | 2026-07-19 | Apexium | Corrected the seat-reservation flow to match code: attendee bookings auto-confirm (`Status = Approved`) with no Control Panel approval and no notification; the seat is a provisional hold confirmed by gate check-in, with a pre-start sweep releasing holds not checked in; the approval-queue path is retained but dormant. Meaning change to the booking lifecycle. |
 
 > Written to a **generic industry LLD template**, **self-contained**, and grounded in the
 > current source tree on branch `feature/app-cp-api-split`. Depth is **representative**:
@@ -353,7 +360,7 @@ The full catalogue is in Appendix 14.2 and `SIMF-API-001`. Representative routes
 | Auth | `POST /app/auth/sign-in`, `/verify-otp`, `/verify-totp`, `/refresh`, `/forgot-password`, `/reset-password` | — |
 | Account | `GET /app/bootstrap`, `GET/POST /app/account/user-profile`, `POST /app/account/avatar` | `GET /admin/visitors/{id}` |
 | Programme | `GET /app/programme/days`, `GET /app/programme/sessions/{id}` | `POST /admin/sessions/list`, `POST/PUT/DELETE /admin/sessions` |
-| Bookings | `POST /app/sessions/{id}/seats/reserve`, `/reserve-random`, `/open-seating` | `POST /admin/bookings/{id}/approve` / `reject` |
+| Bookings | `POST /app/sessions/{id}/seats/reserve`, `/reserve-random`, `/open-seating` (auto-confirm) | `POST /admin/bookings/{id}/approve` / `reject` (retained but dormant) |
 | Gates | `POST /app/gates/{gateId}/scans`, `GET /app/gates/my-reports/today` | `POST /admin/gates`, `PUT /admin/gates/{id}` |
 | Exhibition | `GET /app/booths`, `GET /app/sponsors` | `POST /admin/exhibitors/list`, `POST /admin/sponsors` |
 | News/Media | `GET /app/news`, `GET /app/media` | `POST /admin/news`, `POST /admin/media/list` |
@@ -368,11 +375,18 @@ The full catalogue is in Appendix 14.2 and `SIMF-API-001`. Representative routes
 2. The seat-reservation service loads the `Session` and its `Hall`/`HallSeatLayout`, checks the
    `SeatSelectionMode`, and verifies the seat is free using the filtered unique index
    (one active reservation per seat per session).
-3. It creates a `SeatReservation` (`Kind = UserBooking`, `Status = Pending` when approval is
-   required) and saves; the audit interceptors stamp and row-audit the insert.
-4. On approval (`ApproveBookingEndpoint`), `Status → Approved`, `ReviewedByUserId/At` set, and a
-   `Notification` (`BookingConfirmed`) is queued; rejection sets `Status → Rejected` with a
-   reason and queues `BookingRejected`.
+3. It creates a `SeatReservation` (`Kind = UserBooking`, `Status = Approved`) and saves; the
+   reservation is confirmed immediately — there is no Control Panel approval step and no
+   notification is sent, the app shows the confirmation inline. The audit interceptors stamp and
+   row-audit the insert. The seat is a **provisional hold**: it is confirmed when the attendee
+   checks in at the hall gate (staff QR scan, recorded as `HallAttendance`), and a pre-start
+   sweep releases any hold not checked in shortly before the session starts.
+4. The approval-queue path (`ApproveBookingEndpoint` → `Status → Approved` with
+   `ReviewedByUserId/At` and a `BookingConfirmed` notification; rejection → `Status → Rejected`
+   with a reason and a `BookingRejected` notification) is **retained but dormant**: nothing
+   creates a `Pending` booking, so the queue is always empty. Admins may still reserve or block a
+   specific seat or a whole row for a VIP (`Kind = AdminReservedRow`, confirmed immediately, no
+   attendee).
 
 See §12 for the sequence diagram.
 
@@ -650,7 +664,7 @@ sequenceDiagram
     end
 ```
 
-### 12.3 Seat reservation and approval
+### 12.3 Seat reservation (auto-confirm) and gate check-in
 
 ```mermaid
 sequenceDiagram
@@ -660,11 +674,11 @@ sequenceDiagram
     App->>API: POST /app/sessions/{id}/seats/reserve {row,seat}
     API->>DBA: load Session + HallSeatLayout
     API->>DBA: check seat free (filtered unique index)
-    API->>DBA: insert SeatReservation (Pending)
+    API->>DBA: insert SeatReservation (Status=Approved, provisional hold)
     Note over API,DBA: AuditStamping + RowAudit interceptors fire
-    API-->>App: 200 reservation (Pending)
-    API->>DBA: (admin) approve -> Status=Approved, ReviewedBy/At
-    API->>DBA: queue Notification BookingConfirmed
+    API-->>App: 200 reservation (confirmed inline; no notification)
+    Note over API,DBA: hold confirmed when the attendee checks in at the hall gate (staff QR scan, HallAttendance)
+    Note over API,DBA: pre-start sweep releases any hold not checked in; CP approve/reject path retained but dormant (queue always empty)
 ```
 
 ### 12.4 Gate scan (idempotent)

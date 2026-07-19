@@ -5,7 +5,7 @@
 | **Route** | `/admin/bookings` |
 | **Audience** | Administrator (and any role granted `Bookings.View`) |
 | **Auth** | `@attribute [RequirePermission(PermissionCatalog.Bookings.View)]` (CP page) + per-action API policies + `RequireApprovedAccount`; mutations also `RequireRateLimiting("auth")` |
-| **Pattern** | P2.2 / D-227 (FDS-005 §5.2) — **review/approval queue, not CRUD**. Migrated to `SimfDataGrid` (D-255). |
+| **Pattern** | P2.2 / D-227 (FDS-005 §5.2) — **review/approval queue, not CRUD**. Migrated to `SimfDataGrid` (D-255). **Retained but dormant / always empty** — attendee reserves auto-confirm (`Status = Approved`); the real seat confirmation is the gate check-in (staff QR scan), not this queue. |
 | **Status** | ✅ Real (D-227) |
 | **Required permissions** | `Bookings.View` (page + list), `Bookings.Approve` (row Approve + bulk Approve), `Bookings.Reject` (row Reject), `Bookings.Export` (Excel export) — `PermissionCatalog.Bookings.*` |
 | **Backend endpoints** | BFF `/account/api/admin/bookings/*` → API: `POST /admin/bookings/list` (`GridQuery`), `POST /admin/bookings/{id}/approve` (empty body), `POST /admin/bookings/{id}/reject` (`RejectBookingRequest`), `POST /admin/bookings/bulk-approve` (`AdminBulkApprovalRequest`), `POST /admin/bookings/export` (`AdminGridExportRequest`) |
@@ -16,11 +16,19 @@
 
 ## 1. Purpose
 
-The Control Panel **booking approval queue** per SIMF-FDS-005 §5.2. When a visitor
-picks (or randomly receives) a session seat in the Flutter app, the seat is **held**
-but written `Status = Pending` — it is **not** confirmed until an administrator
-reviews it here. This page lists every Pending, still-held visitor booking across
-all sessions (newest-first by default) and lets a reviewer:
+The Control Panel **booking approval queue** per SIMF-FDS-005 §5.2. **This queue is
+retained but dormant (always empty).** In the shipped code, `SeatReservationService`
+(`ReserveAsync` / `ReserveRandomAsync` / `JoinOpenSeatingAsync`) writes every attendee
+booking `Status = Approved` on create — the reservation is confirmed immediately with
+**no** Control Panel approval step, and **no** notification fires on reserve (the app
+shows an inline success message). The reservation is a **provisional hold** until the
+attendee **checks in at the hall gate** (staff QR scan), which is what confirms the
+seat; a pre-start sweep releases any hold not checked in shortly before the session
+starts. Because nothing ever writes `Status = Pending`, this page lists no rows in
+practice.
+
+The approve / reject / bulk-approve surface below is kept intact but never exercised
+on the live attendee path. Were a Pending booking to exist, a reviewer could:
 
 - **Approve** a booking (seat confirmed; a `BookingConfirmed` in-app notification
   fires to the attendee),
@@ -32,7 +40,8 @@ This is a **review queue, not a CRUD grid** — there is no Add / Edit / Details
 Deactivate, and there is **no import** (bookings are created by visitors in the app,
 never uploaded here). Admin row-blocks never appear: `AdminReserveRowAsync` writes
 those rows `Status = Approved` with a null `ReservedForUserId`, and the queue filters
-to `Status == Pending && ReleasedAt == null && ReservedForUserId != null`.
+to `Status == Pending && ReleasedAt == null && ReservedForUserId != null` — a filter
+that matches nothing because attendee reserves are auto-`Approved`.
 
 ## 4. UI
 
@@ -198,5 +207,6 @@ sort, 013 Excel export (export-only — no import). API integration coverage:
 | Date | Decision | Change |
 |------|----------|--------|
 | 2026-06-11 | D-356 | First authored page reference doc for the booking approval queue (P2.2 / D-227), grounded in live source. Documents the queue columns + Approve/Reject/bulk-approve actions and the D-356 Excel **export only** (no import — bookings are created by visitors in the app). |
+| 2026-07-19 | Apexium | Corrected the doc to match `SeatReservationService`: attendee reserves auto-confirm (`Status = Approved`) with no Control Panel approval step and no reserve-time notification; the seat is a provisional hold confirmed by the **gate check-in** (staff QR scan), with a pre-start sweep releasing un-checked-in holds. Relabelled this approval queue as **retained but dormant / always empty** without deleting the approve/reject/bulk documentation. |
 
-_Last reviewed:_ 2026-06-11 by Claude (D-356 — authored from live source; export-only per `ExportBookingsEndpoint`).
+_Last reviewed:_ 2026-07-19 by Apexium (corrected to reservation-only auto-confirm + gate check-in; queue retained but dormant). Prior: 2026-06-11 by Claude (D-356 — authored from live source; export-only per `ExportBookingsEndpoint`).

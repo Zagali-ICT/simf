@@ -327,6 +327,11 @@ public static class DependencyInjection
         // singletons + the auto-close background worker (PDF §2.3, §2.4).
         services.AddScoped<SIMF.Application.Operations.Abstractions.IOperationsToggleService,
             SIMF.Infrastructure.Operations.OperationsToggleService>();
+        // In-process heartbeat registry the hosted workers report to, so the CP
+        // services monitor and /health can tell which workers are up. Singleton,
+        // shared by the API host and every worker (no schema, no cross-process).
+        services.AddSingleton<SIMF.Application.Operations.IWorkerHeartbeatRegistry,
+            SIMF.Infrastructure.Operations.WorkerHeartbeatRegistry>();
         services.AddHostedService<SIMF.Infrastructure.Operations.RegistrationGateAutoCloseWorker>();
         // P1.7 (D-217) — automated "session starting soon" reminder worker.
         services.AddHostedService<SIMF.Infrastructure.Operations.SessionReminderWorker>();

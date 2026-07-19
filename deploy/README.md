@@ -30,6 +30,38 @@ Build, Test & Publish ──▶ Deploy to IIS
   [`iis-deploy.ps1`](iis-deploy.ps1) which stops each site + app pool, releases
   file locks, `robocopy /MIR`s the files, and restarts.
 
+## Operating the sites (`ops.ps1`)
+
+[`ops.ps1`](ops.ps1) is the single entry point for installing, removing, and
+controlling the three IIS apps and the background-worker tier on the server. Run
+it **as Administrator**.
+
+| Action | Effect |
+|--------|--------|
+| `Status` | Report each site + app-pool state |
+| `Start` / `Stop` / `Restart` | Control the site + its application pool |
+| `Install` | Create the app pool (No Managed Code) + site + HTTP binding if missing |
+| `Uninstall` | Remove the site + app pool |
+
+`-Target` selects the scope: `All` (default), `Api`, `Cp`, `Web`, or `Workers`.
+
+The 10 background workers run **in-process inside the API application pool**, so
+`-Target Workers` maps to the API app: restarting the workers restarts the API
+pool. Their live health is on the Control Panel "Background services" page
+(`/admin/ops/services`, gated by `ServicesMonitor.View`) plus the `/health`
+`workers` check, and their logs are written to their own `SIMF.Workers` folder
+under `Storage:LogDirectory`. When the workers later move to a dedicated Windows
+Service, only the `Workers` block in `ops.ps1` changes.
+
+```
+.\ops.ps1 -Action Status
+.\ops.ps1 -Action Restart -Target Workers
+.\ops.ps1 -Action Install -Target All -ApiPort 12340 -CpPort 12341 -WebPort 12342
+```
+
+TLS bindings and the CA certificate are configured separately (see the HLD /
+SIMF-OPS-001); `Install` creates the HTTP binding only.
+
 ## ⚠️ Prerequisite — code must be on `main`
 
 `main` currently holds **documentation only**; the application code lives on the

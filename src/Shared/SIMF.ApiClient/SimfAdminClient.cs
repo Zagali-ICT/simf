@@ -26,6 +26,7 @@ using SIMF.Contracts.Regions;
 using SIMF.Contracts.Sessions;
 using SIMF.Contracts.Statistics;
 using SIMF.Contracts.Configuration;
+using SIMF.Contracts.Ops;
 using SIMF.Contracts.Support;
 
 using SIMF.Common.Enums;
@@ -51,6 +52,15 @@ public sealed class SimfAdminClient(HttpClient http)
         SendAsync<bool>(
             HttpMethod.Post, "admins/reset-two-factor",
             JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>The live status of every in-process background worker, for the CP
+    /// services monitor. Reads the API's heartbeat-registry snapshot.</summary>
+    public Task<ApiCallResult<WorkerStatusListResponse>> GetWorkerStatusesAsync(
+        string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<WorkerStatusListResponse>(
+            HttpMethod.Get, "ops/workers", content: null,
             accessToken, cancellationToken);
 
     // -- P7c — three-family create + list ------------------------------------
@@ -2338,6 +2348,23 @@ public sealed class SimfAdminClient(HttpClient http)
         SendAsync<bool>(
             HttpMethod.Delete, $"sessions/{sessionId}/seats/{reservationId}",
             content: null, accessToken, cancellationToken);
+
+    // 2026-07-18 (live per-session hall view, CP page 2e) — the session's 4-state
+    // seat map (no "my seat" cell) and everyone currently present in the hall.
+    // Both API-side gated Attendance.View.
+    public Task<ApiCallResult<SessionSeatMap>> GetAdminSessionSeatMapAsync(
+        Guid sessionId, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<SessionSeatMap>(
+            HttpMethod.Get, $"sessions/{sessionId}/seat-map", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<IReadOnlyList<SessionPresentAttendee>>> GetSessionPresentAttendeesAsync(
+        Guid sessionId, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<IReadOnlyList<SessionPresentAttendee>>(
+            HttpMethod.Get, $"sessions/{sessionId}/present", content: null,
+            accessToken, cancellationToken);
 
     // -- D-269 — speaker meeting requests (SIMF.Contracts.Programme) ---------
 

@@ -955,7 +955,7 @@ is global in `Directory.Build.props`.
 ### 23.3 Health
 
 `GET /health` returns 200 + `{"status":"healthy"}` when the API +
-database are reachable. Wire to the load balancer.
+database are reachable. Wire to the reverse proxy.
 
 ### 23.4 Rollback
 

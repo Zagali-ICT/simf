@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 2,
+  "title": "Design System: SIMF Control Panel",
+  "extensions": {
+    "colorMeta": {
+      "primary-navy": {
+        "role": "primary",
+        "displayName": "Deep Navy",
+        "canonical": "#244A77",
+        "tonalRamp": ["#0E1C2E", "#142941", "#1A3354", "#1D3D63", "#244A77", "#3A5F8B", "#6E8CAE", "#AFC1D6"]
+      },
+      "secondary-blue": {
+        "role": "secondary",
+        "displayName": "Mid Blue",
+        "canonical": "#498FBD",
+        "tonalRamp": ["#16334A", "#1F4A6B", "#2C648C", "#3E7FA8", "#498FBD", "#6FA9CE", "#9CC5DF", "#CBE1EF"]
+      },
+      "accent-blue": {
+        "role": "tertiary",
+        "displayName": "Bright Blue",
+        "canonical": "#007CD8",
+        "tonalRamp": ["#062B47", "#0A3F69", "#0E5491", "#0E6ABB", "#007CD8", "#3D9AE4", "#7FBEEF", "#BFE0F8"]
+      },
+      "accent-gold": {
+        "role": "tertiary",
+        "displayName": "Brand Gold",
+        "canonical": "#E8C060",
+        "tonalRamp": ["#4A3A12", "#6E561C", "#937328", "#BE9740", "#E8C060", "#EECE83", "#F3DCA8", "#F9ECCD"]
+      },
+      "neutral-bg": {
+        "role": "neutral",
+        "displayName": "Brand Neutral",
+        "canonical": "#F1F2F2",
+        "tonalRamp": ["#16191C", "#2A2F33", "#444A50", "#6B7178", "#969BA1", "#C2C6C9", "#E2E5E9", "#F1F2F2"]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Ink (near-black navy)",
+        "canonical": "#1A2433",
+        "tonalRamp": ["#0C1119", "#141C28", "#1A2433", "#33404F", "#5A6573", "#8A93A0", "#C0C6CE", "#E8EBEF"]
+      }
+    },
+    "shadows": [
+      { "name": "card", "value": "0 1px 2px rgba(26,36,51,0.04), 0 4px 12px rgba(26,36,51,0.06)", "purpose": "The only ambient elevation — sign-in card, modals. Flat everywhere else." },
+      { "name": "sm", "value": "0 1px 3px rgba(26,36,51,0.12)", "purpose": "Detached popovers / menus." },
+      { "name": "focus-ring", "value": "0 0 0 3px rgba(0,124,216,0.18)", "purpose": "Keyboard focus, layered over the 1px border." }
+    ],
+    "motion": [
+      { "name": "fast", "value": "120ms cubic-bezier(0.2, 0, 0, 1)", "purpose": "Button/field state changes; ease-out, no bounce." },
+      { "name": "base", "value": "180ms cubic-bezier(0.2, 0, 0, 1)", "purpose": "Larger state transitions." }
+    ],
+    "breakpoints": [
+      { "name": "form-stack", "value": "760px" },
+      { "name": "form-2col", "value": "1180px" },
+      { "name": "shell-wide", "value": "1600px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one primary action per screen — navy fill.",
+      "html": "<button class=\"ds-btn-primary\">Register</button>",
+      "css": ".ds-btn-primary{background:var(--color-action,#244A77);color:var(--color-text-on-primary,#fff);font:700 .875rem/1.375rem var(--font-family-base,'Segoe UI',sans-serif);padding:.5rem 1.25rem;min-inline-size:140px;border:0;border-radius:var(--radius-field,6px);cursor:pointer;transition:background var(--transition-fast,120ms cubic-bezier(.2,0,0,1));}.ds-btn-primary:hover{background:var(--color-action-hover,#1D3D63);}.ds-btn-primary:active{background:var(--color-action-active,#172F4D);}.ds-btn-primary:focus-visible{outline:0;box-shadow:var(--focus-ring,0 0 0 3px rgba(0,124,216,.18));}"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Secondary / Cancel beside the single primary.",
+      "html": "<button class=\"ds-btn-ghost\">Cancel</button>",
+      "css": ".ds-btn-ghost{background:var(--color-surface,#fff);color:var(--color-action,#244A77);font:700 .875rem/1.375rem var(--font-family-base,'Segoe UI',sans-serif);padding:.5rem 1.25rem;border:1px solid var(--color-border,#E2E5E9);border-radius:var(--radius-field,6px);cursor:pointer;transition:background var(--transition-fast,120ms cubic-bezier(.2,0,0,1));}.ds-btn-ghost:hover{background:var(--color-surface-sunken,#F7F8F8);}.ds-btn-ghost:focus-visible{outline:0;box-shadow:var(--focus-ring,0 0 0 3px rgba(0,124,216,.18));}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Standard field — 1px border, navy focus ring.",
+      "html": "<input class=\"ds-input\" placeholder=\"Name on badge\" />",
+      "css": ".ds-input{background:var(--color-field-background,#fff);color:var(--color-text,#1A2433);font:400 .875rem/1.375rem var(--font-family-base,'Segoe UI',sans-serif);padding:.5rem .75rem;border:1px solid var(--color-border,#E2E5E9);border-radius:var(--radius-field,6px);inline-size:100%;}.ds-input:focus-visible{outline:0;border-color:var(--color-accent-blue,#007CD8);box-shadow:var(--focus-ring,0 0 0 3px rgba(0,124,216,.18));}"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Flat surface delineated by a 1px border, generous padding.",
+      "html": "<section class=\"ds-card\"><h2 class=\"ds-card__title\">Section</h2><p>Content.</p></section>",
+      "css": ".ds-card{background:var(--color-surface,#fff);color:var(--color-text,#1A2433);border:1px solid var(--color-border,#E2E5E9);border-radius:var(--radius-card,10px);padding:1.5rem;}.ds-card__title{margin:0 0 .75rem;font:700 1.125rem/1.625rem var(--font-family-base,'Segoe UI',sans-serif);color:var(--color-text,#1A2433);}"
+    },
+    {
+      "name": "Selectable Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Interest / filter pill; navy fill when selected.",
+      "html": "<button class=\"ds-chip\" aria-pressed=\"false\">Maritime Security</button><button class=\"ds-chip is-selected\" aria-pressed=\"true\">Cybersecurity</button>",
+      "css": ".ds-chip{background:var(--color-background,#F1F2F2);color:var(--color-text,#1A2433);font:400 .875rem/1.375rem var(--font-family-base,'Segoe UI',sans-serif);border:1px solid var(--color-border,#E2E5E9);border-radius:999px;padding:6px 14px;cursor:pointer;}.ds-chip:hover{border-color:var(--color-secondary,#498FBD);}.ds-chip.is-selected{background:var(--color-primary,#244A77);color:#fff;border-color:var(--color-primary,#244A77);}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Ship's Bridge",
+    "overview": "A calm operational bridge: every instrument legible at a glance, nothing blinking for attention's sake, the whole console trustworthy under load. Deep navy is the structural voice; the surface is quiet and tinted; colour speaks only when it means something. Restrained and flat by default, bilingual EN/AR by construction.",
+    "keyCharacteristics": [
+      "Navy-led, restrained palette; accent <=10% of any screen.",
+      "Flat by default; a single soft card shadow, used sparingly.",
+      "Three first-class themes: light (default), dark, grey.",
+      "Bilingual EN/AR + RTL as a baseline, never an add-on.",
+      "Comfortable density with clear one-primary-action hierarchy."
+    ],
+    "rules": [
+      { "name": "The One Accent Rule", "body": "Bright blue (#007CD8) is links and focus only. Navy carries structure and primary action. Gold is a highlight measured in pixels, not regions.", "section": "colors" },
+      { "name": "The Tinted-Neutral Rule", "body": "Never #000 or #fff; neutrals are tinted toward navy (ink #1A2433, neutral #F1F2F2).", "section": "colors" },
+      { "name": "The Weight-Not-Size Rule", "body": "No giant display type; separate hierarchy by weight and a >=1.25 step, not by inflating sizes.", "section": "typography" },
+      { "name": "The Flat-At-Rest Rule", "body": "Surfaces are flat at rest; lift is a response to state, never decoration.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do take every colour, font, space, radius, shadow from theme.tokens.css (zero hardcoded hex / font-family).",
+      "Do keep the page navy-structural and quiet: one primary action per screen, accent <=10%.",
+      "Do build on logical properties (inline-size, margin-inline, padding-block) so Arabic RTL mirrors for free.",
+      "Do convey depth by tonal layering and 1px tinted borders; reserve the card shadow for floating surfaces.",
+      "Do use SimfDataGrid for every list; use a 3px bright-blue focus ring on every focusable control."
+    ],
+    "donts": [
+      "Don't look consumer-playful or casual: no bright rounded-everything, no emoji, no informal microcopy.",
+      "Don't ship generic AI-slop SaaS: no identical icon-card grids, no gradient hero-metric template.",
+      "Don't go crypto-neon / flashy: no neon-on-black, no glows, no gradients-everywhere.",
+      "Don't fall into cluttered legacy-ERP density: no wall-to-wall raw tables, no hierarchy-free cramming.",
+      "Don't use a colored border-left/right > 1px as an accent stripe; don't use gradient background-clip:text; don't use glassmorphism by default.",
+      "Don't use #000/#fff; don't make gold a status or a fill; don't animate layout properties or add bounce/elastic motion."
+    ]
+  }
+}

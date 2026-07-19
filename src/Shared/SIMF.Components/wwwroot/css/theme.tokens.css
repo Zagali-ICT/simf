@@ -170,12 +170,14 @@
   /* Seat-plan states (SessionSeatPlan). free / free-border alias the theme
      surfaces so they adapt to light / dark / grey; user + admin are brand
      tokens; random is a brand-distinct constant; contrast is the label colour
-     on a filled seat. */
+     on a filled seat. confirmed (2026-07-18, live-hall view) aliases the success
+     token — the holder has checked in at the hall gate. */
   --color-seat-free: var(--color-surface-sunken);
   --color-seat-free-border: var(--color-border);
   --color-seat-user: var(--color-secondary);
   --color-seat-admin: var(--color-primary);
   --color-seat-random: #6C5CB0;
+  --color-seat-confirmed: var(--color-success);
   --color-seat-contrast: #FFFFFF;
 }
 
