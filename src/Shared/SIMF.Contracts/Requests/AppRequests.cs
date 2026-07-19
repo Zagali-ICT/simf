@@ -71,7 +71,12 @@ public sealed record AppRequestItem(
     /// <summary>R-3 — the admin's response note for a decided speaker / document / badge
     /// request (e.g. the rejection reason). Null when none. Append-only (D-219): the app
     /// reads it by name and older clients ignore it.</summary>
-    string? ResponseNote = null);
+    string? ResponseNote = null,
+    /// <summary>2026-07-19 (owner) — the Arabic twin of <see cref="Subtitle"/>
+    /// (from <c>Speaker.RankArabic</c>), so the المقابلات card shows the speaker's
+    /// rank in the active locale. Null for the non-speaker kinds / when unset.
+    /// Append-only (D-219): older clients ignore it.</summary>
+    string? SubtitleArabic = null);
 
 /// <summary>D-500 — body for <c>POST /app/my-requests/cancel</c>: the requester
 /// withdraws one of their own still-pending requests.</summary>

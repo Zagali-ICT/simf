@@ -56,9 +56,10 @@
                 {
                     <li>
                         <span class="simf-card__supporting">@SpeakerName(speaker)</span>
-                        @if (!string.IsNullOrWhiteSpace(speaker.Rank))
+                        @{ var role = PickOrNull(speaker.Rank, speaker.RankArabic); }
+                        @if (!string.IsNullOrWhiteSpace(role))
                         {
-                            <SimfPill Variant="neutral">@speaker.Rank</SimfPill>
+                            <SimfPill Variant="neutral">@role</SimfPill>
                         }
                     </li>
                 }

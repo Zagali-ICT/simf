@@ -31,10 +31,11 @@ class SessionSpeakerCard extends StatelessWidget {
     final flag = countryFlagEmoji(speaker.countryId);
     final isHost = speaker.role == SessionSpeakerRole.host;
     // The country is now carried by the flag (Figma 889:2726), so the second
-    // line is the rank + the host marker only.
+    // line is the rank + the host marker only. The rank localizes (Arabic ↔
+    // English) to match the name above it (owner 2026-07-19).
+    final rank = speaker.localizedTitle(isArabic)?.trim();
     final subParts = <String>[
-      if (speaker.title != null && speaker.title!.trim().isNotEmpty)
-        speaker.title!.trim(),
+      if (rank != null && rank.isNotEmpty) rank,
       if (isHost) hostLabel,
     ];
 

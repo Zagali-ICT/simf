@@ -32,7 +32,7 @@ internal sealed class MyRequestsService(
             .Where(r => r.RequestedByUserId == userId)
             .Join(appDbContext.Speakers, r => r.SpeakerId, s => s.Id, (r, s) => new
             {
-                r.Id, SpeakerId = s.Id, s.Name, s.NameArabic, s.Rank, s.CountryId,
+                r.Id, SpeakerId = s.Id, s.Name, s.NameArabic, s.Rank, s.RankArabic, s.CountryId,
                 r.Status, r.SlotStartUtc, r.CreatedAt, r.ResponseNote,
             })
             .ToListAsync(cancellationToken);
@@ -85,7 +85,8 @@ internal sealed class MyRequestsService(
             // yet confirmed) is still "under review" to the requester, so let them withdraw
             // it; cancelling frees the held slot and voids the speaker's confirmation tokens.
             r.Status is MeetingRequestStatus.Pending or MeetingRequestStatus.AwaitingSpeaker,
-            Subtitle: r.Rank, SpeakerId: r.SpeakerId, CountryId: r.CountryId,
+            Subtitle: r.Rank, SubtitleArabic: r.RankArabic,
+            SpeakerId: r.SpeakerId, CountryId: r.CountryId,
             ResponseNote: r.ResponseNote)));
 
         items.AddRange(delegation.Select(r => new AppRequestItem(
