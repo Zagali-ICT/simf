@@ -450,4 +450,10 @@
   <data name="Partners.Meta" xml:space="preserve"><value>The partners and sponsors of the Saudi International Maritime Forum — government bodies and national and international institutions, and the sponsors supporting the forum and its programmes.</value></data>
   <data name="Partners.Hero.Title" xml:space="preserve"><value>Sponsors &amp; partners 2026</value></data>
   <data name="Partners.Hero.Subtitle" xml:space="preserve"><value>We are proud to collaborate with a distinguished group of sponsors and partners who share our vision of innovation and excellence in the future of maritime security and the protection of shipping lanes.</value></data>
+
+  <!-- discover Saudi Arabia page (/discover) -->
+  <data name="Discover.PageTitle" xml:space="preserve"><value>Discover Saudi Arabia — Saudi International Maritime Forum</value></data>
+  <data name="Discover.Meta" xml:space="preserve"><value>Discover Saudi Arabia around the Saudi International Maritime Forum — from ancient heritage to future cities, the destinations to explore near the Riyadh venue.</value></data>
+  <data name="Discover.Hero.Title" xml:space="preserve"><value>Welcome to the Kingdom of Saudi Arabia</value></data>
+  <data name="Discover.Hero.Subtitle" xml:space="preserve"><value>Between the forum's sessions and beyond, explore the destinations across the Kingdom that blend an ancient heritage with the cities of the future.</value></data>
 </root>

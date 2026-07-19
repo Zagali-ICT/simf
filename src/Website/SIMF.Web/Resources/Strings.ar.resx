@@ -450,4 +450,10 @@
   <data name="Partners.Meta" xml:space="preserve"><value>شركاء ورعاة الملتقى البحري السعودي الدولي — جهات حكومية ومؤسسات وطنية ودولية، والرعاة الداعمون للملتقى وبرامجه.</value></data>
   <data name="Partners.Hero.Title" xml:space="preserve"><value>الرعاة والشركاء لعام 2026</value></data>
   <data name="Partners.Hero.Subtitle" xml:space="preserve"><value>يسرنا التعاون مع مجموعة من الرعاة والشركاء المتميزين، الذين يشاركوننا رؤية الابتكار والتميز في مستقبل الأمن البحري وحماية الممرات الملاحية.</value></data>
+
+  <!-- discover Saudi Arabia page (/discover) -->
+  <data name="Discover.PageTitle" xml:space="preserve"><value>أكتشف السعودية — الملتقى البحري السعودي الدولي</value></data>
+  <data name="Discover.Meta" xml:space="preserve"><value>اكتشف المملكة العربية السعودية حول الملتقى البحري السعودي الدولي — من الإرث العريق إلى مدن المستقبل، وجهات تستحق الاستكشاف قرب مقر الملتقى بالرياض.</value></data>
+  <data name="Discover.Hero.Title" xml:space="preserve"><value>أهلاً بكم في المملكة العربية السعودية</value></data>
+  <data name="Discover.Hero.Subtitle" xml:space="preserve"><value>بين جلسات الملتقى وبعدها، استكشف وجهات المملكة التي تمزج بين الإرث العريق ومدن المستقبل.</value></data>
 </root>
