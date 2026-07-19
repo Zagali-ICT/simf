@@ -1,37 +1,84 @@
-@* Website — Visit & Entry (public attendee info). INFORMATIONAL only:
-   there is no public gate-data endpoint (gates are operator-only), so this
-   page renders clean bilingual static copy via L[...] — no API client, no
-   fabricated gate data. Static SSR is the right mode for read-only public
-   content. The section bodies are placeholder copy now; they could later be
-   driven by the CMS ContentBlock endpoint without changing this layout. *@
+@* SIMF public "Visiting & travel" page — Figma node 5867-24636. This ln SSR page
+   SUPERSEDES the old MudBlazor visit-entry page at the same "/visit" route (owner
+   decision, Wave 4): the old attendee-logistics copy is retired and replaced with
+   the Figma's two sections. Built on the shared LandingShell chrome + the reusable
+   LandingPageHero (no breadcrumb — single-page cluster). Bilingual AR-RTL / EN-LTR.
+
+   Section 1 "Why visit" REUSES the landing's ln-discover / ln-dcard destinations
+   band (single-sourced Landing.DiscoverCards, same as /discover) on a navy
+   background (ln-discover--dark modifier). Section 2 "Travel & visa" is the page's
+   real content — the Saudi eVisa summary (transcribed from the Figma) in the
+   reused ln-about 2-column layout. Static content (no API). Serves "/visit". *@
 @page "/visit"
+@layout LandingLayout
 @inject IStringLocalizer<Strings> L
 
-<PageTitle>@L["Visit.PageTitle"]</PageTitle>
+@{
+    var rtl = CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft;
+}
 
-<section class="simf-account-page">
-    @* SimfBanner renders the page <h1>; the section cards below are <h2>. *@
-    <SimfBanner Title="@L["Visit.Banner.Title"]" Subtitle="@L["Visit.Banner.Subtitle"]" />
+<LandingShell Title="@L["Visit.PageTitle"]" Description="@L["Visit.Meta"]">
 
-    <section class="simf-card simf-page-card" aria-labelledby="visit-getting-here-title">
-        <h2 id="visit-getting-here-title" class="simf-card__title">@L["Visit.GettingHere.Title"]</h2>
-        <p class="simf-card__supporting">@L["Visit.GettingHere.Body"]</p>
-        <p class="simf-card__supporting">@L["Visit.GettingHere.Transport"]</p>
+    @* ============================== HERO ============================== *@
+    <LandingPageHero Title="@L["Visit.Hero.Title"]"
+                     Subtitle="@L["Visit.Hero.Subtitle"]"
+                     ImageSrc="assets/figma/about/about-hero.jpg" />
+
+    @* ===== Why visit ("لماذا الزيارة") — reuses the landing's ln-discover band
+         on a navy background (ln-discover--dark). Same six single-sourced
+         destinations as /discover. *@
+    <section class="ln-discover ln-discover--dark" aria-label="@L["Visit.Why.Title"]">
+        <div class="ln-discover__inner ln-reveal">
+            <div class="ln-discover__head">
+                <h2 class="ln-discover__title">@L["Visit.Why.Title"]</h2>
+                <p class="ln-discover__desc">@L["Visit.Why.Desc"]</p>
+            </div>
+            <div class="ln-discover__grid">
+                @foreach (var d in Landing.DiscoverCards)
+                {
+                    <article class="ln-dcard">
+                        <div class="ln-dcard__img"><img src="@d.Image" alt="@d.Title.For(rtl)" loading="lazy" /></div>
+                        <div class="ln-dcard__panel">
+                            <h3 class="ln-dcard__title">@d.Title.For(rtl)</h3>
+                            <span class="ln-dcard__meta"><svg viewBox="0 0 20.732 20.732" fill="none" aria-hidden="true"><path d="M1.7865 9.10371C1.19115 8.87219 0.893481 8.75643 0.806575 8.58963C0.731238 8.44503 0.731136 8.27278 0.806304 8.12809C0.893013 7.96119 1.19055 7.84507 1.78562 7.61285L18.6734 1.02251C19.2106 0.812878 19.4791 0.708063 19.6508 0.765398C19.7998 0.815191 19.9168 0.932159 19.9666 1.08121C20.0239 1.25284 19.9191 1.52143 19.7095 2.05861L13.1191 18.9464C12.8869 19.5414 12.7708 19.839 12.6039 19.9257C12.4592 20.0008 12.2869 20.0007 12.1423 19.9254C11.9755 19.8385 11.8598 19.5408 11.6283 18.9455L9.00015 12.1875C8.95315 12.0666 8.92965 12.0062 8.89336 11.9553C8.86119 11.9102 8.82175 11.8708 8.77666 11.8386C8.72578 11.8023 8.66535 11.7788 8.5445 11.7318L1.7865 9.10371Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg><span>@d.Distance</span></span>
+                            <span class="ln-dcard__meta"><svg viewBox="0 0 17.5 21.5" fill="none" aria-hidden="true"><circle cx="8.75" cy="8.75" r="3" stroke="currentColor" stroke-width="1.5" /><path d="M8.75 20.75C12.75 16.75 16.75 13.1683 16.75 8.75C16.75 4.33172 13.1683 0.75 8.75 0.75C4.33172 0.75 0.75 4.33172 0.75 8.75C0.75 13.1683 4.75 16.75 8.75 20.75Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg><span>@d.Location.For(rtl)</span></span>
+                        </div>
+                    </article>
+                }
+            </div>
+        </div>
     </section>
 
-    <section class="simf-card simf-page-card" aria-labelledby="visit-entry-title">
-        <h2 id="visit-entry-title" class="simf-card__title">@L["Visit.Entry.Title"]</h2>
-        <p class="simf-card__supporting">@L["Visit.Entry.Badge"]</p>
-        <p class="simf-card__supporting">@L["Visit.Entry.SignUp"]</p>
+    @* ===== Travel & visa ("السفر والتأشيرة") — the page's real Saudi eVisa
+         summary in the reused ln-about 2-column (photo + content) layout. *@
+    <section class="ln-visa" aria-label="@L["Visit.Visa.Title"]">
+        <div class="ln-visa__inner ln-reveal">
+            <header class="ln-visa__head">
+                <h2 class="ln-visa__title">@L["Visit.Visa.Title"]</h2>
+                <p class="ln-visa__sub">@L["Visit.Visa.Sub"]</p>
+            </header>
+            <div class="ln-about__inner">
+                @* Reused shared marketing photo until a visa-specific image is
+                   provided (kept distinct from the six grid photos above) —
+                   see web/visit.md §7. *@
+                <div class="ln-about__media"><img src="assets/figma/about/about-card-1.jpg" alt="" loading="lazy" /></div>
+                <div class="ln-about__content">
+                    <h3 class="ln-visa__heading">@L["Visit.Visa.Heading"]</h3>
+                    <p class="ln-visa__p">@L["Visit.Visa.Body1"]</p>
+                    <div class="ln-visa-cta">
+                        @* TODO(owner): link to the official Saudi eVisa portal once the URL is
+                           confirmed — placeholder per web/visit.md §7 (no invented link ships).
+                           aria-describedby makes the button announce its context. *@
+                        <button type="button" class="ln-btn ln-btn--primary" aria-describedby="visa-countries-label">@L["Visit.Visa.Cta"]</button>
+                        <div class="ln-visa-cta__text">
+                            <span id="visa-countries-label" class="ln-visa-cta__title">@L["Visit.Visa.CtaTitle"]</span>
+                            <span class="ln-visa-cta__sub">@L["Visit.Visa.CtaSub"]</span>
+                        </div>
+                    </div>
+                    <p class="ln-visa__p">@L["Visit.Visa.Body2"]</p>
+                </div>
+            </div>
+        </div>
     </section>
 
-    <section class="simf-card simf-page-card" aria-labelledby="visit-hours-title">
-        <h2 id="visit-hours-title" class="simf-card__title">@L["Visit.Hours.Title"]</h2>
-        <p class="simf-card__supporting">@L["Visit.Hours.Body"]</p>
-    </section>
-
-    <section class="simf-card simf-page-card" aria-labelledby="visit-accessibility-title">
-        <h2 id="visit-accessibility-title" class="simf-card__title">@L["Visit.Accessibility.Title"]</h2>
-        <p class="simf-card__supporting">@L["Visit.Accessibility.Body"]</p>
-    </section>
-</section>
+</LandingShell>

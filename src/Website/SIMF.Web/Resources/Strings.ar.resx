@@ -285,19 +285,21 @@
   <data name="Programme.Empty.Text" xml:space="preserve"><value>لم يتم نشر الأجندة بعد. يُرجى التحقق لاحقًا.</value></data>
   <data name="Programme.Speakers.Title" xml:space="preserve"><value>المتحدثون</value></data>
 
-  <data name="Visit.PageTitle" xml:space="preserve"><value>الزيارة والدخول · الملتقى البحري السعودي الدولي</value></data>
-  <data name="Visit.Banner.Title" xml:space="preserve"><value>الزيارة والدخول</value></data>
-  <data name="Visit.Banner.Subtitle" xml:space="preserve"><value>كل ما تحتاج معرفته قبل وصولك إلى الملتقى.</value></data>
-  <data name="Visit.GettingHere.Title" xml:space="preserve"><value>الوصول إلى الموقع</value></data>
-  <data name="Visit.GettingHere.Body" xml:space="preserve"><value>يُقام الملتقى في مقر الفعالية الرسمي. سيُنشر العنوان الكامل وخريطة الموقع هنا مع اقتراب موعد الفعالية. يُرجى اتباع اللافتات الإرشادية في الموقع وتوجيهات المنظمين عند الوصول.</value></data>
-  <data name="Visit.GettingHere.Transport" xml:space="preserve"><value>سيُعلن عن تفاصيل مواقف السيارات ووسائل النقل، بما في ذلك أقرب طرق الوصول، قبل يوم الافتتاح.</value></data>
-  <data name="Visit.Entry.Title" xml:space="preserve"><value>الدخول والبطاقات</value></data>
-  <data name="Visit.Entry.Badge" xml:space="preserve"><value>يتم الدخول عن طريق بطاقة رمز الاستجابة السريعة (QR). بعد اعتماد حسابك، افتح تطبيق سيمف للجوال لعرض بطاقتك الشخصية، ويقوم الموظفون بمسحها عند المدخل لتسجيل دخولك.</value></data>
-  <data name="Visit.Entry.SignUp" xml:space="preserve"><value>ليس لديك حساب بعد؟ سجّل في تطبيق سيمف قبل سفرك ليكون بطاقتك جاهزة في الوقت المناسب للدخول.</value></data>
-  <data name="Visit.Hours.Title" xml:space="preserve"><value>ساعات العمل</value></data>
-  <data name="Visit.Hours.Body" xml:space="preserve"><value>يفتح الملتقى أبوابه يوميًا خلال أيام الفعالية. سيتم تأكيد مواعيد الفتح والإغلاق الدقيقة لكل يوم هنا قبل بدء الفعالية.</value></data>
-  <data name="Visit.Accessibility.Title" xml:space="preserve"><value>إمكانية الوصول</value></data>
-  <data name="Visit.Accessibility.Body" xml:space="preserve"><value>تم تصميم الموقع ليكون متاحًا للزوار من ذوي الحركة المحدودة. إذا كانت لديك احتياجات وصول محددة، يُرجى التواصل مع منسق الفعالية مسبقًا حتى نتمكن من مساعدتك في يوم الزيارة.</value></data>
+  <!-- visits page (/visit) — Figma 5867-24636 (supersedes the old MudBlazor visit-entry page) -->
+  <data name="Visit.PageTitle" xml:space="preserve"><value>الزيارة والسفر — الملتقى البحري السعودي الدولي</value></data>
+  <data name="Visit.Meta" xml:space="preserve"><value>خطّط لزيارتك للملتقى البحري السعودي الدولي — أسباب زيارة المملكة، وكيفية السفر والحصول على التأشيرة السعودية.</value></data>
+  <data name="Visit.Hero.Title" xml:space="preserve"><value>الزيارة والسفر</value></data>
+  <data name="Visit.Hero.Subtitle" xml:space="preserve"><value>كل ما تحتاجه لتخطيط زيارتك للملتقى — أسباب الحضور، وكيفية السفر إلى المملكة والدخول إليها.</value></data>
+  <data name="Visit.Why.Title" xml:space="preserve"><value>لماذا الزيارة</value></data>
+  <data name="Visit.Why.Desc" xml:space="preserve"><value>من الإرث العريق إلى مدن المستقبل، اكتشف الوجهات التي تجعل زيارة المملكة لا تُنسى.</value></data>
+  <data name="Visit.Visa.Title" xml:space="preserve"><value>السفر والتأشيرة</value></data>
+  <data name="Visit.Visa.Sub" xml:space="preserve"><value>أصبح دخول المملكة العربية السعودية أسهل من أي وقت مضى — إليك كيفية تخطيط سفرك وتأشيرتك لحضور الملتقى.</value></data>
+  <data name="Visit.Visa.Heading" xml:space="preserve"><value>التأشيرة السياحية</value></data>
+  <data name="Visit.Visa.Body1" xml:space="preserve"><value>أصبح الحصول على تأشيرة دخول إلى المملكة العربية السعودية أسهل! تتوفر التأشيرات الإلكترونية والتأشيرات السياحية عند الوصول لـ 66 جنسية، بالإضافة لمن لديهم تأشيرات صالحة ومستعملة للولايات المتحدة أو المملكة المتحدة أو تأشيرة شنغن. كما يمكن للمقيمين في دول مجلس التعاون الخليجي الذين يعملون في مهن مؤهلة التقدم للحصول على تأشيرات إلكترونية من خلال بوابتهم الإلكترونية.</value></data>
+  <data name="Visit.Visa.Body2" xml:space="preserve"><value>كما أعلنت السلطات السعودية أن مواطني أي بلد يحمل تأشيرة الولايات المتحدة أو المملكة المتحدة أو تأشيرة شنغن سيكونون مؤهلين للتقدم للحصول على التأشيرات السياحية. تسمح هذه التأشيرات السياحية للمسلمين من الدول المؤهلة بأداء العمرة في أي وقت خارج موسم الحج. يمكن للمسلمين من أي من الجنسيات المذكورة أعلاه زيارة مكة والمدينة بتأشيرة إلكترونية. لا يمكن لغير المسلمين دخول مكة المكرمة في أي وقت أثناء زيارتهم للمملكة العربية السعودية.</value></data>
+  <data name="Visit.Visa.Cta" xml:space="preserve"><value>التفاصيل</value></data>
+  <data name="Visit.Visa.CtaTitle" xml:space="preserve"><value>عرض قائمة البلدان</value></data>
+  <data name="Visit.Visa.CtaSub" xml:space="preserve"><value>الدول المؤهلة للحصول على التأشيرة الإلكترونية</value></data>
   <data name="Meeting.Confirm.Title" xml:space="preserve"><value>تأكيد الاجتماع</value></data>
   <data name="Meeting.Confirm.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
   <data name="Meeting.Confirm.Invalid" xml:space="preserve"><value>لم يعد هذا الرابط صالحاً.</value></data>
