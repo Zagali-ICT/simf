@@ -67,7 +67,22 @@ public sealed class SessionSummaryTests : IClassFixture<SimfApiFactory>
     public async Task Unpublished_draft_summary_is_404()
     {
         var sessionId = await SeedSummaryAsync(
-            published: false, sessionActive: true, summaryActive: true, aiModel: "echo");
+            published: false, approved: false, sessionActive: true, summaryActive: true,
+            aiModel: "echo");
+
+        var response = await _client.GetAsync($"/api/v1/app/programme/sessions/{sessionId}/summary");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    // Owner 2026-07-19 — the public read also requires team APPROVAL, so a summary
+    // published by the OLD code (PublishedAt set, ApprovedAt null) is NOT served to the
+    // app; this guards legacy data the write-side gate cannot retroactively fix.
+    [Fact]
+    public async Task Published_but_unapproved_summary_is_404()
+    {
+        var sessionId = await SeedSummaryAsync(
+            published: true, approved: false, sessionActive: true, summaryActive: true,
+            aiModel: "echo");
 
         var response = await _client.GetAsync($"/api/v1/app/programme/sessions/{sessionId}/summary");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
@@ -123,13 +138,18 @@ public sealed class SessionSummaryTests : IClassFixture<SimfApiFactory>
 
     private async Task<Guid> SeedSummaryAsync(
         bool published, bool sessionActive, bool summaryActive, string? aiModel,
-        DateTimeOffset? startUtc = null)
+        DateTimeOffset? startUtc = null, bool approved = true)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var session = NewSession(sessionActive, startUtc);
         db.Halls.Add(NewHallFor(session));
         db.Sessions.Add(session);
+        // Owner 2026-07-19 — the public read requires team approval, and the D-611
+        // check constraint requires ReviewSubmittedAt whenever ApprovedAt is set, so an
+        // approved summary carries both stamps. A "published but unapproved" legacy row
+        // (approved: false, published: true) is the shape the read guard must hide.
+        var reviewedAt = approved ? DateTimeOffset.UtcNow : (DateTimeOffset?)null;
         db.SessionSummaries.Add(new SessionSummary
         {
             Id = Guid.NewGuid(),
@@ -140,6 +160,8 @@ public sealed class SessionSummaryTests : IClassFixture<SimfApiFactory>
             FullText = "FULL-en", FullTextArabic = "FULL-ar",
             AiModel = aiModel,
             IsActive = summaryActive,
+            ReviewSubmittedAt = reviewedAt,
+            ApprovedAt = reviewedAt,
             PublishedAt = published ? DateTimeOffset.UtcNow : null,
             CreatedAt = DateTimeOffset.UtcNow,
         });

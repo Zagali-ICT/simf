@@ -118,8 +118,12 @@
                         }
                         else
                         {
-                            <SimfToolbarButton Icon="power" Title="@L["Admin.SessionSummaries.Action.Publish"]"
-                                               Disabled="_busy" OnClick="@(() => SetPublishedAsync(context.SessionId, true))" />
+                            @* Owner 2026-07-19 — Publish is only allowed once the team has
+                               approved the summary; keep the button visible but disabled with
+                               an explanatory tooltip so the reviewer knows what unblocks it. *@
+                            <SimfToolbarButton Icon="power"
+                                               Title="@(context.IsApproved ? L["Admin.SessionSummaries.Action.Publish"] : L["Admin.SessionSummaries.Action.PublishNeedsApproval"])"
+                                               Disabled="_busy || !context.IsApproved" OnClick="@(() => SetPublishedAsync(context.SessionId, true))" />
                         }
                     </AuthorizedAction>
                 }

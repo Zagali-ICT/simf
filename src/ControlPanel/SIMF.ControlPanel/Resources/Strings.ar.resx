@@ -1835,6 +1835,7 @@
   <data name="Admin.SessionSummaries.Action.Generate" xml:space="preserve"><value>توليد بالذكاء الاصطناعي</value></data>
   <data name="Admin.SessionSummaries.Action.Edit" xml:space="preserve"><value>تعديل</value></data>
   <data name="Admin.SessionSummaries.Action.Publish" xml:space="preserve"><value>نشر</value></data>
+  <data name="Admin.SessionSummaries.Action.PublishNeedsApproval" xml:space="preserve"><value>يجب اعتماد الملخّص قبل نشره</value></data>
   <data name="Admin.SessionSummaries.Action.Unpublish" xml:space="preserve"><value>إلغاء النشر</value></data>
   <data name="Admin.SessionSummaries.AiBanner" xml:space="preserve"><value>تم توليد هذه المسودة بالذكاء الاصطناعي — راجعها وعدّلها قبل النشر.</value></data>
   <data name="Admin.SessionSummaries.Field.KeyPoints" xml:space="preserve"><value>أبرز النقاط (الإنجليزية) — نقطة في كل سطر</value></data>

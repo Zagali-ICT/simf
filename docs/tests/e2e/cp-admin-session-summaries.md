@@ -23,7 +23,11 @@
 >   `SessionSummaries.Edit`.
 > - **Publish / Unpublish** (only shown when `HasSummary`) — PUTs `…/{sessionId}/publish`
 >   or `…/{sessionId}/unpublish`; this is the gate the public app read honours.
->   Gated by `SessionSummaries.Publish`.
+>   Gated by `SessionSummaries.Publish`. **Owner 2026-07-19 — Publish is a hard gate on
+>   `ApprovedAt`:** a Draft / In-review summary cannot be published (API returns 400
+>   `SESSION_SUMMARY_INVALID`), and the Publish button is **disabled** with the tooltip
+>   "Approve the summary before it can be published" until the team has approved it.
+>   Unpublish is always allowed.
 > - **Submit for review → Approve → Return to draft (D-472, req #9)** — the team
 >   review/approval workflow on top of publish: **Submit for review** PUTs
 >   `…/{sessionId}/submit-review` (`.Edit`, Draft → In review); **Approve** PUTs
@@ -52,11 +56,11 @@
 
 | ID | Scenario | Type | Priority | Status |
 |----|----------|------|----------|--------|
-| E2E-SUM-001 | Golden round-trip — AI draft → edit + Save → Publish → Unpublish | happy | P0 | _to author_ |
+| E2E-SUM-001 | Golden round-trip — AI draft → edit + Save → Submit for review → Approve → Publish → Unpublish | happy | P0 | _to author_ |
 | E2E-SUM-002 | List renders one row per active session with Status + Source labels | happy | P1 | _to author_ |
 | E2E-SUM-003 | AI draft (Generate) on a session with no summary → Arabic full-text filled, editor opens | happy | P0 | _to author_ |
 | E2E-SUM-004 | Edit existing summary — open editor pre-filled, change a section, Save | happy | P1 | _to author_ |
-| E2E-SUM-005 | Publish a draft → Status becomes "Published" | happy | P1 | _to author_ |
+| E2E-SUM-005 | Publish an **approved** summary → Status becomes "Published" | happy | P1 | _to author_ |
 | E2E-SUM-006 | Unpublish a published summary → Status returns to "Draft" | happy | P1 | _to author_ |
 | E2E-SUM-007 | Editor Cancel discards edits without saving | happy | P2 | _to author_ |
 | E2E-SUM-008 | Empty state — no active sessions renders `SimfEmptyState` | happy | P1 | _to author_ |
@@ -74,7 +78,9 @@
 | E2E-SUM-020 | **Approve (D-472)** — an In-review summary → "Approve" (`.Approve`) → Status "Approved" (ready for المحاور), `ApprovedAt` stamped; approving without submitting → 400 | happy | P0 | authored ✓ (SessionSummaryCommitteeTests) |
 | E2E-SUM-021 | **Return to draft (D-472)** — an In-review / Approved summary → "Return to draft" (`.Approve`) clears the review + approval; any content edit also returns it to Draft | happy | P1 | authored ✓ (SessionSummaryCommitteeTests) |
 | E2E-SUM-022 | **Ready for المحاور read (D-472)** — `GET /app/programme/sessions/{id}/summary/approved`: the session **moderator OR host** → 200 (when approved); neither → 403; authorized but not yet approved → 404 | validation | P0 | authored ✓ (SessionSummaryCommitteeTests) |
-| E2E-SUM-023 | **Publish gate (S-6, owner)** — Publish is blocked while the session has NOT started (a future session) → 400 `SESSION_SUMMARY_INVALID` (bilingual); once the session has started (in-progress or finished), Publish succeeds. Gated on the CLOCK (`now >= StartUtc`), not the manual Held flag. Unpublish is always allowed (even after the session is rescheduled into the future) | error | P1 | authored ✓ (`SessionSummaryCommitteeTests.PublishAsync_BeforeSessionStarts_ReturnsBadRequest` + `.PublishAsync_AfterSessionStarts_Succeeds` + `.UnpublishAsync_WhileScheduled_StillAllowed`) |
+| E2E-SUM-023 | **Publish requires approval (owner 2026-07-19)** — publishing a Draft / In-review (unapproved) summary → 400 `SESSION_SUMMARY_INVALID`, public read stays 404; the Publish button is disabled with the "Approve the summary before it can be published" tooltip until `ApprovedAt` is set | error | P0 | authored ✓ (SessionSummaryCommitteeTests) |
+| E2E-SUM-024 | **Edit after publish takes it offline (owner 2026-07-19)** — a published summary that is edited (Save / re-Generate / Return-to-draft) clears approval AND unpublishes (`PublishedAt` cleared); the public read returns to 404 so the app never serves edited, unapproved text; it must be re-approved + re-published | error | P0 | authored ✓ Save path (`SessionSummaryCommitteeTests.Editing_a_published_summary_takes_it_offline_until_reapproved`); re-Generate / Return-to-draft share the same `ResetReviewState` code path (not separately asserted) |
+| E2E-SUM-025 | **Publish gate (S-6, owner)** — Publish is blocked while the session has NOT started (a future session) → 400 `SESSION_SUMMARY_INVALID` (bilingual); once the session has started (in-progress or finished), Publish succeeds. Gated on the CLOCK (`now >= StartUtc`), not the manual Held flag. Unpublish is always allowed (even after the session is rescheduled into the future) | error | P1 | authored ✓ (`SessionSummaryCommitteeTests.PublishAsync_BeforeSessionStarts_ReturnsBadRequest` + `.PublishAsync_AfterSessionStarts_Succeeds` + `.UnpublishAsync_WhileScheduled_StillAllowed`) |
 
 ## Scenarios
 
@@ -113,6 +119,16 @@ Scenario: AI-draft → edit → publish → unpublish one session summary
   Then PUT /account/api/admin/session-summaries/{sessionId} returns 200
   And the modal closes
   And a green toast reads "Summary saved." / "تم حفظ الملخص."
+  And the Publish (power) action is disabled with the tooltip "Approve the summary before it can be published"
+
+  # Owner 2026-07-19 — the scientific team must review + approve before publish is allowed.
+  When the administrator clicks "Submit for review"
+  Then PUT /account/api/admin/session-summaries/{sessionId}/submit-review returns 200
+  And the row Status changes to "In review"
+  When the administrator clicks "Approve"
+  Then PUT /account/api/admin/session-summaries/{sessionId}/approve returns 200
+  And the row Status changes to "Approved"
+  And the Publish (power) action is now enabled
 
   When the administrator clicks the row's Publish (power) action
   Then PUT /account/api/admin/session-summaries/{sessionId}/publish returns 200
@@ -182,11 +198,11 @@ Scenario: Edit opens the editor pre-filled and Save persists the change
   And re-opening Edit shows the changed value persisted
 ```
 
-### E2E-SUM-005 — Publish a draft
+### E2E-SUM-005 — Publish an approved summary
 
 ```gherkin
-Scenario: Publishing flips Status to Published
-  Given session "S-101" has a draft summary (Status="Draft")
+Scenario: Publishing an approved summary flips Status to Published
+  Given session "S-101" has an approved summary (Status="Approved")
   When the administrator clicks the row's Publish (power) action
   Then PUT /account/api/admin/session-summaries/{sessionId}/publish returns 200
   And a green toast reads "Summary published." / "تم نشر الملخص."
@@ -439,4 +455,4 @@ Scenario: Export the active-session set to an XLSX workbook
 
 ---
 
-_Last reviewed:_ 2026-07-11 by Claude (S-6 owner — publish gated on the session having STARTED (clock: now >= StartUtc), not the manual Held flag; E2E-SUM-023). Earlier: 2026-06-20 by SIMF Team (D-472 #9 — added the team review/approval workflow Submit→Approve→Return + the moderator/host "ready for المحاور" approved read; E2E-SUM-019..022, authored at the API layer). Earlier: 2026-06-10 (D-356 Phase 5 — Excel + toggle; E2E-SUM-018); 2026-06-03 (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-07-19 by Claude (owner approval hard-gate — Publish requires `ApprovedAt`, and editing a published summary clears `PublishedAt` so the app never sees unreviewed minutes; the public read + `HasPublishedSummary` also require `ApprovedAt`; E2E-SUM-023/024). Earlier: 2026-07-11 by Claude (S-6 owner — publish gated on the session having STARTED (clock: now >= StartUtc), not the manual Held flag; E2E-SUM-025). Earlier: 2026-06-20 by SIMF Team (D-472 #9 — added the team review/approval workflow Submit→Approve→Return + the moderator/host "ready for المحاور" approved read; E2E-SUM-019..022, authored at the API layer). Earlier: 2026-06-10 (D-356 Phase 5 — Excel + toggle; E2E-SUM-018); 2026-06-03 (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
