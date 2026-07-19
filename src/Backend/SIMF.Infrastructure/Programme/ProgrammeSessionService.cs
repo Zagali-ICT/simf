@@ -84,12 +84,16 @@ internal sealed class ProgrammeSessionService(
                 // A8 — D-237: does this session have a PUBLISHED محضر? There is no
                 // Session→SessionSummary navigation, so this is a correlated EXISTS
                 // over SessionSummaries (the pattern AdminSessionSummaryService uses).
-                // Gate matches the summary read: an active summary with a PublishedAt
-                // stamp (Session.IsActive is already ensured by the outer Where).
+                // Gate matches the summary read: an active summary that is BOTH
+                // published AND team-approved (owner 2026-07-19 — the app never sees an
+                // unreviewed summary, so PublishedAt alone is not enough; this also
+                // hides any legacy row published before the approval gate existed).
+                // Session.IsActive is already ensured by the outer Where.
                 HasPublishedSummary = dbContext.SessionSummaries.Any(summary =>
                     summary.SessionId == session.Id
                     && summary.IsActive
-                    && summary.PublishedAt != null),
+                    && summary.PublishedAt != null
+                    && summary.ApprovedAt != null),
                 Themes = session.Themes
                     .Where(link => link.Theme!.IsActive)
                     .Select(link => new
@@ -598,6 +602,10 @@ internal sealed class ProgrammeSessionService(
             .Where(summary => summary.SessionId == id
                 && summary.IsActive
                 && summary.PublishedAt != null
+                // Owner 2026-07-19 — the app only sees a summary the scientific team
+                // APPROVED; this also hides any legacy row published before the approval
+                // gate existed (PublishedAt set, ApprovedAt null).
+                && summary.ApprovedAt != null
                 && summary.Session!.IsActive
                 && summary.Session!.StartUtc <= now)
             .Select(summary => new PublicSessionSummary(

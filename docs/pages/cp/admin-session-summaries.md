@@ -11,7 +11,7 @@
 | **Source** | [`SessionSummariesList.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionSummariesList.razor), [`SessionSummaryEndpoints.cs`](../../../src/Backend/SIMF.Api/Endpoints/Admin/SessionSummaryEndpoints.cs), [`SessionSummariesExcelEndpoints.cs`](../../../src/Backend/SIMF.Api/Endpoints/Admin/SessionSummariesExcelEndpoints.cs), [`AdminSessionSummaryService.cs`](../../../src/Backend/SIMF.Infrastructure/Programme/AdminSessionSummaryService.cs), [`SessionSummary.cs`](../../../src/Backend/SIMF.Domain/Programme/SessionSummary.cs), [`SessionSummaries.cs`](../../../src/Shared/SIMF.Contracts/Admin/SessionSummaries.cs) |
 | **Backed by** | `dbo.SessionSummaries` (1:1 with `Session`, migration `D237_AddSessionSummary`, 2026-06-02). |
 | **Tests** | [`docs/tests/e2e/cp-admin-session-summaries.md`](../../tests/e2e/cp-admin-session-summaries.md) |
-| **Last reviewed** | 2026-06-11 |
+| **Last reviewed** | 2026-07-19 |
 
 ## 1. Purpose
 
@@ -29,12 +29,21 @@ descending) with the state of its summary, and the Committee acts per row:
   provider in the CP (no code change). The draft is written into the **Arabic
   full-text column only**, leaving the English column + curated sections for the
   Committee. Re-generating replaces the Arabic AI draft but preserves the
-  Committee's English text, curated sections, and publish state.
+  Committee's English text and curated sections; because the content changed it
+  returns the summary to **Draft** and takes it **offline** — any prior approval and
+  publish stamp are cleared (invariant `PublishedAt ⇒ ApprovedAt`), so it must be
+  re-approved and re-published (owner 2026-07-19).
 - **Edit / Save** — eight bilingual sections (key points, recommendations,
   speakers, full text — each EN + AR). Saving a session that has no summary yet
   creates a hand-written draft (`AiModel` stays null).
 - **Publish / Unpublish** — stamps / clears `PublishedAt`; this is the gate the
-  public app read honours.
+  public app read honours. **Owner 2026-07-19 — Publish is hard-gated on `ApprovedAt`:**
+  a Draft / In-review summary cannot be published (API 400 `SESSION_SUMMARY_INVALID`);
+  the Publish button is disabled until the team approves it. So the app can never show
+  an unreviewed summary. Unpublish is always allowed. **Editing a published summary**
+  (Save / re-Generate / Return-to-draft) invalidates its approval and therefore
+  **unpublishes it** (clears `PublishedAt`) — the invariant is `PublishedAt ⇒ ApprovedAt`,
+  so edited-but-unreviewed text can never stay live; it must be re-approved + re-published.
 
 This is a session-driven desk: rows appear / disappear with the active `Session`
 set; the summary is a 1:1 child created lazily. There is no "Add" button and no
@@ -62,7 +71,9 @@ per-row Deactivate.
   - **Edit** (pencil, `SessionSummaries.Edit`) — only when `HasSummary`.
   - **Publish / Unpublish** (power, `SessionSummaries.Publish`) — only when
     `HasSummary`; the icon's tooltip toggles between Publish / Unpublish on
-    `IsPublished`.
+    `IsPublished`. When not yet published, the Publish button is **disabled until
+    `IsApproved`** and carries the "Approve the summary before it can be published"
+    tooltip (owner 2026-07-19 hard gate).
   - There is **no bulk action** — no select-all / multiselect toolbar on this
     desk.
 - **Empty state** — `SimfEmptyState` titled `Admin.SessionSummaries.None` when
@@ -152,6 +163,13 @@ The BFF `AccountEndpoints` forwards each route with the bearer token via
   summary returns HTTP 404, `Code = "SESSION_SUMMARY_NOT_FOUND"`
   (`ErrorCodes.SessionSummaryNotFound`), "No summary exists for this session
   yet." / "لا يوجد ملخّص لهذه الجلسة بعد."
+- **Publish without approval** (owner 2026-07-19) — publishing a Draft / In-review
+  (`ApprovedAt == null`) summary returns HTTP 400, `Code =
+  "SESSION_SUMMARY_INVALID"`, "This summary must be reviewed and approved by the
+  scientific team before it can be published." / "يجب أن يراجع الفريق العلمي هذا
+  الملخّص ويوافق عليه قبل نشره." The CP Publish button is disabled until `IsApproved`,
+  so this guard fires on a forged call. (The S-6 clock gate — publish before the
+  session starts → 400 — still applies as well.)
 - **Session not found** — generate/save/publish against an unknown or
   soft-deleted (`IsActive = false`) session returns HTTP 404, `Code =
   "SESSION_NOT_FOUND"` (`ErrorCodes.SessionNotFound`), "The session was not
@@ -170,8 +188,10 @@ The BFF `AccountEndpoints` forwards each route with the bearer token via
   columns would surface the wrong language once a real Arabic provider replaces
   Echo.
 - **Provenance, not state.** `AiModel` records the draft origin; editing never
-  clears it. Re-generate preserves the Committee's English text, curated
-  sections, and publish state.
+  clears it. Re-generate preserves the Committee's English text and curated
+  sections, but (like any content edit) returns the summary to Draft and takes it
+  offline — `ResetReviewState` clears `PublishedAt`, keeping the invariant
+  `PublishedAt ⇒ ApprovedAt` (owner 2026-07-19).
 - **Publish is orthogonal to the session's broadcast `Status`** — the محضر is the
   Committee's own editorial document, published by its own action.
 - **Export only.** No import path exists on this desk (export endpoint with no
@@ -206,13 +226,16 @@ publish notice.
 ## 11. E2E
 
 See [`docs/tests/e2e/cp-admin-session-summaries.md`](../../tests/e2e/cp-admin-session-summaries.md):
-E2E-SUM-001 golden round-trip (AI draft → edit → publish → unpublish), 002 list
-renders one row per active session, 003 AI draft fills Arabic full-text, 004 edit
-existing, 005 publish, 006 unpublish, 007 editor cancel discards, 008 empty state,
-009 page auth gate, 010 action gate, 011 section over max length (400), 012
-publish without a summary (404), 013 missing / deleted session (404), 014 server
-500 on list, 015 RTL render, 016 per-column filter (client-side), 017 column sort,
-018 Excel export (export only).
+E2E-SUM-001 golden round-trip (AI draft → edit → Submit for review → Approve →
+publish → unpublish), 002 list renders one row per active session, 003 AI draft
+fills Arabic full-text, 004 edit existing, 005 publish an approved summary, 006
+unpublish, 007 editor cancel discards, 008 empty state, 009 page auth gate, 010
+action gate, 011 section over max length (400), 012 publish without a summary
+(404), 013 missing / deleted session (404), 014 server 500 on list, 015 RTL
+render, 016 per-column filter (client-side), 017 column sort, 018 Excel export
+(export only), 019-022 team review/approval workflow + المحاور read, **023 publish
+requires approval (400)**, **024 edit-after-publish takes it offline (owner
+2026-07-19)**, 025 publish clock-gate (S-6).
 
 ## 12. Related docs
 
@@ -229,5 +252,6 @@ publish without a summary (404), 013 missing / deleted session (404), 014 server
 |------|----------|--------|
 | 2026-06-02 | D-237 / D-238 | Original — `SessionSummary` entity + migration `D237_AddSessionSummary` + the Scientific-Committee محضر desk (list / generate / edit / publish / unpublish) through the central AI seam (Echo provider). Gated by `SessionSummaries.View` / `.Edit` / `.Publish`. |
 | 2026-06-11 | D-356 | Excel **export added** (toolbar Export → `/account/api/admin/session-summaries/export`, sheet "SessionSummaries", columns `SessionCode \| SessionTitle \| SessionTitleArabic \| SessionStartUtc \| Status \| Source \| PublishedAt \| UpdatedAt`, capped at 5000 rows). New permission `SessionSummaries.Export`. **Export only** — no import path (source wires `OnExport`, not `OnImport`). E2E catalogue extended with E2E-SUM-018. |
+| 2026-07-19 | owner (Q&A/summary/rating batch) | **Approval hard-gate before publish.** `SetPublishedAsync` now requires `ApprovedAt` (Draft/In-review → 400 `SESSION_SUMMARY_INVALID`); editing / re-generating / returning a **published** summary clears `PublishedAt` (invariant `PublishedAt ⇒ ApprovedAt`); the public app read **and** `HasPublishedSummary` now also require `ApprovedAt` (hides legacy published-but-unapproved rows). New resx `Admin.SessionSummaries.Action.PublishNeedsApproval` (en+ar); CP Publish button disabled until approved. E2E-SUM-023/024 added; the S-6 clock-gate case renumbered to E2E-SUM-025. |
 
-_Last reviewed:_ 2026-06-11 by Claude (D-356 — reference doc authored, grounded in live source; Excel export-only).
+_Last reviewed:_ 2026-07-19 by Claude (owner approval hard-gate — Publish requires ApprovedAt; edit-after-publish unpublishes; the public read + HasPublishedSummary require ApprovedAt). Earlier: 2026-06-11 by Claude (D-356 — reference doc authored, grounded in live source; Excel export-only).

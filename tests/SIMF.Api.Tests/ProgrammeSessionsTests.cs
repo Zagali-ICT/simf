@@ -61,8 +61,9 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
     public async Task List_flags_sessions_with_a_published_summary()
     {
         // A8 (D-237) — HasPublishedSummary is true only for a session whose محضر is
-        // ACTIVE and carries a PublishedAt stamp; false for no summary, a draft
-        // (PublishedAt == null), or a soft-deleted (IsActive == false) summary.
+        // ACTIVE, team-APPROVED, and carries a PublishedAt stamp (owner 2026-07-19);
+        // false for no summary, a draft (PublishedAt == null), or a soft-deleted
+        // (IsActive == false) summary.
         var admin = await CreateAdminAsync();
         var hallId = await CreateHallAsync(admin);
         var speakerId = await CreateSpeakerAsync(admin);
@@ -89,6 +90,11 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
                 Speakers = "spk", SpeakersArabic = "spk",
                 FullText = "full", FullTextArabic = "full",
                 IsActive = active,
+                // Owner 2026-07-19 — HasPublishedSummary now requires team approval too,
+                // so a published summary also carries the review + approval stamps (the
+                // D-611 constraint requires ReviewSubmittedAt whenever ApprovedAt is set).
+                ReviewSubmittedAt = published ? DateTimeOffset.UtcNow : null,
+                ApprovedAt = published ? DateTimeOffset.UtcNow : null,
                 PublishedAt = published ? DateTimeOffset.UtcNow : null,
                 CreatedAt = DateTimeOffset.UtcNow,
             };
