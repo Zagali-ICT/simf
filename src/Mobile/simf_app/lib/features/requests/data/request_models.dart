@@ -65,6 +65,7 @@ class AppRequestItem {
     required this.canCancel,
     this.eventDateUtc,
     this.subtitle,
+    this.subtitleArabic,
     this.speakerId,
     this.countryId,
     this.responseNote,
@@ -83,6 +84,10 @@ class AppRequestItem {
   /// (Figma 1701:9406). Carries the speaker's rank for a speaker meeting; null
   /// for the other kinds, where the card falls back to the meeting-type line.
   final String? subtitle;
+
+  /// 2026-07-19 (owner) — the Arabic twin of [subtitle] (the speaker's rank), so
+  /// the rank line localizes AR/EN. Null for the non-speaker kinds / when unset.
+  final String? subtitleArabic;
 
   /// D-745 — the speaker's id for a speaker meeting, so the bilateral-meetings
   /// card renders the speaker photo from the public asset route
@@ -104,6 +109,16 @@ class AppRequestItem {
     final ar = titleArabic.trim();
     final en = title.trim();
     return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+  }
+
+  /// D-590 — the speaker's rank (the المقابلات subtitle line) in the active
+  /// locale (owner 2026-07-19). Null for the non-speaker kinds / when unset.
+  String? localizedRank(bool isArabic) {
+    final ar = subtitleArabic?.trim() ?? '';
+    final en = subtitle?.trim() ?? '';
+    final picked =
+        isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+    return picked.isEmpty ? null : picked;
   }
 
   /// The date shown on the card — the session/meeting slot, else the submit date.
@@ -133,6 +148,9 @@ class AppRequestItem {
       subtitle: (json['subtitle'] as String?)?.trim().isEmpty ?? true
           ? null
           : (json['subtitle'] as String).trim(),
+      subtitleArabic: (json['subtitleArabic'] as String?)?.trim().isEmpty ?? true
+          ? null
+          : (json['subtitleArabic'] as String).trim(),
       speakerId: (json['speakerId'] as String?)?.trim().isEmpty ?? true
           ? null
           : (json['speakerId'] as String).trim(),

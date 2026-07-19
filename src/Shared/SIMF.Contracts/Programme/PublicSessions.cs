@@ -195,7 +195,11 @@ public sealed record PublicSessionSpeaker(
     // same-origin /content/assets/SpeakerPhoto/{id}/image proxy (post-D-357 the
     // photo usually lives there, not in PhotoRelativePath). Appended (append-only,
     // D-219) — the app keeps using PhotoRelativePath / its own avatar route.
-    bool HasPhotoAsset = false);
+    bool HasPhotoAsset = false,
+    // 2026-07-19 (owner) — the Arabic rank/title, mapped from Speaker.RankArabic
+    // (the twin of Title = Speaker.Rank). Appended (append-only, D-219) so the app
+    // shows the rank in the active locale; older builds ignore it and keep Title.
+    string? TitleArabic = null);
 
 /// <summary>D-199 — cheap seat-availability summary for the session
 /// detail. <see cref="Capacity"/> is the effective capacity

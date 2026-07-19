@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SIMF.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     [DbContext(typeof(SimfAppDbContext))]
-    partial class SimfAppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260719174901_WidenSpeakerRankColumns")]
+    partial class WidenSpeakerRankColumns
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3709,10 +3712,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
-                    b.Property<string>("HonorificArabic")
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
-
                     b.Property<string>("IdImageRelativePath")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -3739,10 +3738,6 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasColumnType("bit");
 
                     b.Property<string>("JobTitle")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("JobTitleArabic")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 

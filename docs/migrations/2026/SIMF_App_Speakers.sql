@@ -365,6 +365,46 @@ IF NOT EXISTS (SELECT 1 FROM dbo.Speakers WHERE Code = N'SIMF4-SPK-32')
         N'https://asbar.com/about/', NULL, NULL, 320,
         0, 1, @now, @sys, 1);
 
+/* ---------------------------------------------------------------------
+   1b) RankArabic backfill (owner 2026-07-19) — the Arabic rank/title for
+   each SIMF-4 speaker, mirroring the live SIMF_App data. NON-DESTRUCTIVE:
+   only fills rows with no Arabic rank yet (WHERE RankArabic IS NULL), so a
+   value entered/edited via the CP is never overwritten. Needs the
+   WidenSpeakerRankColumns migration (RankArabic nvarchar(256)).
+   --------------------------------------------------------------------- */
+UPDATE dbo.Speakers SET [RankArabic] = N'القائد، الأكاديمية البحرية البولندية' WHERE Code = N'SIMF4-SPK-01' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'باحث ومحلل في الأمن البحري' WHERE Code = N'SIMF4-SPK-02' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'رئيس قسم مكافحة الإرهاب ومنع التطرف العنيف، مركز جنيف للسياسات ا' WHERE Code = N'SIMF4-SPK-03' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'أستاذ الحرب والاستراتيجية، كلية كينغز لندن (KCL)' WHERE Code = N'SIMF4-SPK-04' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'رئيس قسم دراسات الدفاع والأمن، المعهد الوطني للدراسات الدفاعية (' WHERE Code = N'SIMF4-SPK-05' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'أستاذ، جامعة جنوب آسيا' WHERE Code = N'SIMF4-SPK-06' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'نائب المحافظ للتمكين، هيئة النقل' WHERE Code = N'SIMF4-SPK-07' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'أستاذ الأمن السيبراني، جامعة أكسفورد' WHERE Code = N'SIMF4-SPK-08' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'باحث، جامعة ليمريك، أيرلندا' WHERE Code = N'SIMF4-SPK-09' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'عقيد متقاعد في الجيش الأمريكي؛ استراتيجي في الأمن السيبراني' WHERE Code = N'SIMF4-SPK-10' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'باحث، جامعة فريزر فالي، كندا' WHERE Code = N'SIMF4-SPK-11' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'أستاذ مشارك، جامعة الدفاع الوطني التركية' WHERE Code = N'SIMF4-SPK-12' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'أستاذ القانون البحري الدولي، الجامعة الوطنية الأسترالية (ANU)' WHERE Code = N'SIMF4-SPK-13' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'أستاذ العلاقات الدولية والأمن البحري' WHERE Code = N'SIMF4-SPK-14' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'أستاذ علوم الحاسب، جامعة نانيانغ التكنولوجية، سنغافورة (NTU)' WHERE Code = N'SIMF4-SPK-15' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'خبير في البنية التحتية الرقمية، إنفرا أناليسس (Infra Analysis)' WHERE Code = N'SIMF4-SPK-16' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'أستاذ متميز، جامعة الملك عبدالله للعلوم والتقنية (KAUST)' WHERE Code = N'SIMF4-SPK-17' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'أستاذ الهندسة الكهربائية وهندسة الحاسب، جامعة الملك عبدالله للعل' WHERE Code = N'SIMF4-SPK-18' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'باحث، مركز الدراسات الاستراتيجية والدولية (CSIS) – الأمن التكنول' WHERE Code = N'SIMF4-SPK-19' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'الرئيس السابق لمركز الثورة الصناعية الرابعة التابع للمنتدى الاقت' WHERE Code = N'SIMF4-SPK-20' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'أستاذ مشارك، جامعة جازان' WHERE Code = N'SIMF4-SPK-21' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'رئيس شركة جواثا للاستشارات (Joatha Consulting)' WHERE Code = N'SIMF4-SPK-22' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'مستشار في الحوكمة وسرية المعلومات' WHERE Code = N'SIMF4-SPK-23' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'أستاذ، جامعة جدة' WHERE Code = N'SIMF4-SPK-24' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'جامعة الدفاع الوطني' WHERE Code = N'SIMF4-SPK-25' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'أستاذ الأمن الدولي والاستراتيجي' WHERE Code = N'SIMF4-SPK-26' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'ضابط متقاعد في البحرية الملكية؛ خبير في أمن البنية التحتية لقاع' WHERE Code = N'SIMF4-SPK-27' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'رئيس كرسي النقل البحري، جامعة ليفربول جون مورز (LJMU)' WHERE Code = N'SIMF4-SPK-28' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'مدير مركز الدراسات الاستراتيجية الدفاعية، وزارة الدفاع' WHERE Code = N'SIMF4-SPK-29' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'عميد كلية الدراسات البحرية، جامعة الملك عبدالعزيز (KAU)' WHERE Code = N'SIMF4-SPK-30' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'باحث خبير، مركز البحرين للدراسات الاستراتيجية والدولية والطاقة (' WHERE Code = N'SIMF4-SPK-31' AND [RankArabic] IS NULL;
+UPDATE dbo.Speakers SET [RankArabic] = N'رئيس مركز أسبار للدراسات' WHERE Code = N'SIMF4-SPK-32' AND [RankArabic] IS NULL;
+
 COMMIT TRANSACTION;
 
 /* Verification — expect 32 SIMF-4 speakers after a fresh run. */

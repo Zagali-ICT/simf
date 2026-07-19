@@ -45,6 +45,43 @@ void main() {
       expect(item.localizedSubtitle(false), 'Official attendance certificate');
     });
 
+    // Owner 2026-07-19 — the speaker rank (subtitle line) localizes AR/EN.
+    test('localizedRank picks the speaker rank per locale, with fallback', () {
+      final both = AppRequestItem.fromJson(<String, dynamic>{
+        'kind': 0,
+        'id': 's1',
+        'title': 'Dr. Sadie Creese',
+        'titleArabic': 'الدكتورة سادي كريز',
+        'status': 0,
+        'subtitle': 'Professor of Cybersecurity, Oxford',
+        'subtitleArabic': 'أستاذة الأمن السيبراني، أكسفورد',
+      });
+      expect(both.localizedRank(true), 'أستاذة الأمن السيبراني، أكسفورد');
+      expect(both.localizedRank(false), 'Professor of Cybersecurity, Oxford');
+
+      // Arabic requested but only English present → falls back to English.
+      final enOnly = AppRequestItem.fromJson(<String, dynamic>{
+        'kind': 0,
+        'id': 's2',
+        'title': 'X',
+        'titleArabic': 'س',
+        'status': 0,
+        'subtitle': 'Analyst',
+      });
+      expect(enOnly.localizedRank(true), 'Analyst');
+
+      // No rank at all → null (the card falls back to the type headline).
+      final none = AppRequestItem.fromJson(<String, dynamic>{
+        'kind': 1,
+        'id': 's3',
+        'title': 'Poland',
+        'titleArabic': 'بولندا',
+        'status': 0,
+      });
+      expect(none.localizedRank(true), isNull);
+      expect(none.localizedRank(false), isNull);
+    });
+
     test('parses responseNote and treats blank as null', () {
       final withNote = AppRequestItem.fromJson(<String, dynamic>{
         'kind': 3,

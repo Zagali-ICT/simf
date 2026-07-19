@@ -69,7 +69,8 @@ internal sealed class PublicDelegationService(SimfAppDbContext appDbContext)
                     && profile.IsDelegate)
                 .Select(profile => new HeadCard(
                     profile.Id, profile.Name, profile.NameArabic,
-                    profile.JobTitle ?? profile.Honorific))
+                    profile.JobTitle ?? profile.Honorific,
+                    profile.JobTitleArabic ?? profile.HonorificArabic))
                 .ToDictionaryAsync(card => card.Id, cancellationToken);
 
         var items = countries
@@ -88,7 +89,8 @@ internal sealed class PublicDelegationService(SimfAppDbContext appDbContext)
                     head?.Title,
                     c.DelegationArrivalDate,
                     c.DelegationDepartureDate,
-                    memberCounts.GetValueOrDefault(c.Id, 0));
+                    memberCounts.GetValueOrDefault(c.Id, 0),
+                    head?.ArabicTitle);
             })
             .ToList();
 
@@ -96,5 +98,6 @@ internal sealed class PublicDelegationService(SimfAppDbContext appDbContext)
     }
 
     /// <summary>The head-of-delegation fields resolved from the pointed-at profile.</summary>
-    private sealed record HeadCard(Guid Id, string Name, string NameArabic, string? Title);
+    private sealed record HeadCard(
+        Guid Id, string Name, string NameArabic, string? Title, string? ArabicTitle);
 }

@@ -112,6 +112,7 @@ internal sealed class ProgrammeSessionService(
                         link.Speaker!.Name,
                         link.Speaker!.NameArabic,
                         link.Speaker!.Rank,
+                        link.Speaker!.RankArabic,
                         link.DisplayOrder,
                         link.Role,
                         // §7: country (flag) + photo shown with the speaker.
@@ -160,7 +161,8 @@ internal sealed class ProgrammeSessionService(
                             speaker.CountryId,
                             countryEn,
                             countryAr,
-                            speaker.PhotoRelativePath);
+                            speaker.PhotoRelativePath,
+                            TitleArabic: speaker.RankArabic);
                     })
                     .ToList();
                 return new PublicSessionListItem(
@@ -332,6 +334,7 @@ internal sealed class ProgrammeSessionService(
                         link.Speaker!.Name,
                         link.Speaker!.NameArabic,
                         link.Speaker!.Rank,
+                        link.Speaker!.RankArabic,
                         link.DisplayOrder,
                         link.Role,
                         link.Speaker!.CountryId,
@@ -417,7 +420,8 @@ internal sealed class ProgrammeSessionService(
                     countryEn,
                     countryAr,
                     speaker.PhotoRelativePath,
-                    speakersWithPhoto.Contains(speaker.Id));
+                    speakersWithPhoto.Contains(speaker.Id),
+                    TitleArabic: speaker.RankArabic);
             })
             .ToList();
 
